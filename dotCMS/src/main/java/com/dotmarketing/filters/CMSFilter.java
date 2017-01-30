@@ -65,7 +65,7 @@ public class CMSFilter implements Filter {
 	private static VisitorAPI visitorAPI = APILocator.getVisitorAPI();
 
 	public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
-
+		System.out.println("&&&&& CMSFilter " + ((HttpServletRequest) req).getRequestURL() + " " + ((HttpServletRequest) req).getQueryString());
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) res;
 
@@ -80,6 +80,7 @@ public class CMSFilter implements Filter {
 			response.sendRedirect(xssRedirect);
 			return;
 		}
+
 
 
 

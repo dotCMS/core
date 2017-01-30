@@ -47,7 +47,7 @@ catch(Exception e){
 		<%if(contentEditable){ %>
 		    <a onClick="unlockContent('<%=contentlet.getInode() %>');" id="unlockContentButton">
 				<span class="unlockIcon"></span>
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Release-Lock")) %>
+				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Release-Lock")) + " AAAAAAA"%>
 			</a>
 		<%}else{ %>
 		    <a onClick="stealLock('<%=contentlet.getInode() %>');" id="stealLockContentButton">

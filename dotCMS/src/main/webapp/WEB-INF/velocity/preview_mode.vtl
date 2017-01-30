@@ -22,10 +22,6 @@
 			    }
 			
 				var win = this.window;
-				while (win.frameMain == undefined && win.frameMenu==undefined && win != window.top && win.name !="detailFrame"){
-					//listFrames(win);
-					win=win.parent;
-				}
 				
 				console.log("winner:" + win.name);
 				

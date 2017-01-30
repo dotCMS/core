@@ -36,12 +36,15 @@ public class LoginEditModeServlet extends HttpServlet {
 			_edit_mode_id.setURI("/"); 
 			try{
 				Clickstream clickstream = (Clickstream) request.getSession().getAttribute("clickstream");
-				String pageId= clickstream.getLastPageId();
-				_edit_mode_id = (Identifier) HibernateUtil.load(Identifier.class, pageId);
-					
-				if(_edit_mode_id.getAssetType().equals("contentlet")){
-					com.dotmarketing.portlets.contentlet.model.Contentlet cont =  APILocator.getContentletAPI().findContentletByIdentifier(_edit_mode_id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
-					_edit_mode_id.setURI(cont.getMap().get("URL_MAP_FOR_CONTENT").toString());
+
+				if (clickstream != null) {
+					String pageId = clickstream.getLastPageId();
+					_edit_mode_id = (Identifier) HibernateUtil.load(Identifier.class, pageId);
+
+					if (_edit_mode_id.getAssetType().equals("contentlet")) {
+						com.dotmarketing.portlets.contentlet.model.Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(_edit_mode_id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+						_edit_mode_id.setURI(cont.getMap().get("URL_MAP_FOR_CONTENT").toString());
+					}
 				}
 			}
 			catch(Exception e){
