@@ -39,4 +39,5 @@ public interface IPublisher {
      */
     PublisherConfig setUpConfig(PublisherConfig config);
 
+    boolean shouldForcePush(String hostId, long languageId);
 }
