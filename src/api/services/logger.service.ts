@@ -1,6 +1,9 @@
 import {Injectable} from '@angular/core';
 import {Logger} from 'angular2-logger/core';
-import {CONSTANT} from '../../view/app.constant.dev';
+import {CONSTANTS} from "../../view/constants";
+import {DotcmsConfig} from "./system/dotcms-config";
+import {Config} from "../util/config";
+
 
 /**
  * LoggerService to log.  Allows logger to be changed at runtime
@@ -9,10 +12,10 @@ import {CONSTANT} from '../../view/app.constant.dev';
 @Injectable()
 export class LoggerService {
 
-    constructor(private logger: Logger) {
+    constructor(private logger: Logger, private config: Config) {
 
-        console.log('Setting the logger');
-        if (CONSTANT.ENV !== 'PROD') {
+        console.log('Setting the logger...');
+        if (!this.config.isProduction()) {
 
             console.log('Developer mode logger on');
             logger.level = logger.Level.LOG;

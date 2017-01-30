@@ -179,6 +179,7 @@ import {ToolbarModule} from 'primeng/primeng';
 import {DialogModule} from 'primeng/primeng';
 import {RadioButtonModule} from 'primeng/primeng';
 import {LoggerService} from "../../api/services/logger.service";
+import {Config} from "../../api/util/config";
 
 const NGFACES_MODULES = [
     InputTextModule,
@@ -209,6 +210,7 @@ const NGFACES_MODULES = [
         ...NGFACES_MODULES,
     ],
     providers: [
+        Config,
         Logger,
         LoggerService,
         CoreWebService,
