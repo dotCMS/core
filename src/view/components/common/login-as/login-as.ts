@@ -1,8 +1,9 @@
 import {BaseComponent} from '../_base/base-component';
-import {Component, Output, EventEmitter, Input, ViewEncapsulation} from '@angular/core';
+import {Component, Output, EventEmitter, Input, ViewEncapsulation, ViewChild} from '@angular/core';
 import {LoginService, User} from '../../../../api/services/login-service';
 import {MessageService} from '../../../../api/services/messages-service';
 import {DotRouterService} from '../../../../api/services/dot-router-service';
+import {AutoComplete} from "primeng/primeng";
 
 @Component({
     directives: [],
@@ -20,6 +21,8 @@ export class LoginAsComponent extends BaseComponent {
     private needPassword: boolean = false;
     private userLists: Array<User>;
     private filteredLoginAsUsersResults: Array<any>;
+
+    @ViewChild(AutoComplete) private autoCompleteComponent: AutoComplete;
 
     constructor(private loginService: LoginService, private router: DotRouterService, private messageService: MessageService) {
         super(['Change', 'cancel', 'password', 'loginas.select.loginas.user', 'login-as'], messageService);
@@ -83,7 +86,12 @@ export class LoginAsComponent extends BaseComponent {
      *
      * @param event - The click event to display the dropdown options
      */
-    handleLoginAsUsersDropdownClick(): void {
+    handleLoginAsUsersDropdownClick(event: {originalEvent: Event, query: string}): void {
+        // TODO: get rid of this three lines when this is fixed: https://github.com/primefaces/primeng/issues/745
+        event.originalEvent.preventDefault();
+        event.originalEvent.stopPropagation();
+        this.autoCompleteComponent.panelVisible = !this.autoCompleteComponent.panelVisible;
+
         this.filteredLoginAsUsersResults = [];
 
         /**
@@ -98,6 +106,7 @@ export class LoginAsComponent extends BaseComponent {
          *
          */
         setTimeout(() => {
+
             this.filteredLoginAsUsersResults = this.userLists.map(user => {
                 return {
                     label: user.fullName,

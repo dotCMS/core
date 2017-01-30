@@ -1,8 +1,9 @@
-import {DotcmsConfig} from "./system/dotcms-config";
-import {Injectable} from "@angular/core";
-import {Observable} from "rxjs/Rx";
-import {$WebSocket} from "./websockets-service";
-import {Subject} from "rxjs/Subject";
+import {DotcmsConfig} from './system/dotcms-config';
+import {Injectable} from '@angular/core';
+import {Observable} from 'rxjs/Rx';
+import {$WebSocket} from './websockets-service';
+import {LoggerService} from './logger.service';
+import {Subject} from 'rxjs/Subject';
 
 @Injectable()
 export class DotcmsEventsService {
@@ -25,7 +26,7 @@ export class DotcmsEventsService {
      * @param dotcmsConfig - The dotCMS configuration properties that include
      *                        the Websocket parameters.
      */
-    constructor(private dotcmsConfig: DotcmsConfig) {
+    constructor(private dotcmsConfig: DotcmsConfig, private loggerService: LoggerService) {
 
         this.dotcmsConfig.getConfig().subscribe(dotcmsConfig => {
 
@@ -39,7 +40,7 @@ export class DotcmsEventsService {
     /**
      * Close the socket
      */
-    close() : void {
+    close(): void {
 
         // On logout, meaning no authenticated user lets try to close the socket
         if (this.ws) {
@@ -57,7 +58,10 @@ export class DotcmsEventsService {
      * Opens the Websocket connection with the System Events end-point.
      */
     connectWithSocket(): void {
-        if (!this.ws) {
+        if (!this.ws && this.protocol && this.baseUrl && this.endPoint) {
+
+            this.loggerService.debug('Creating a new Web Socket connection', this.protocol, this.baseUrl, this.endPoint);
+
             this.ws = new $WebSocket(`${this.protocol}://${this.baseUrl}${this.endPoint}`);
             this.ws.connect();
 
@@ -77,7 +81,7 @@ export class DotcmsEventsService {
             this.ws.getDataStream().subscribe(
                 res => {
                     let data = (JSON.parse(res.data));
-               
+
                     if (!this.subjects[data.event]) {
                         this.subjects[data.event] = new Subject();
                     }
@@ -111,8 +115,8 @@ export class DotcmsEventsService {
         return this.subjects[clientEventType].asObservable();
     }
 
-    subscribeToEvents(clientEventTypes: string[]): Observable<any> {
-        let subject: Subject = new Subject();
+    subscribeToEvents(clientEventTypes: string[]): Observable<EventTypeWrapper> {
+        let subject: Subject<EventTypeWrapper> = new Subject<EventTypeWrapper>();
 
         clientEventTypes.forEach( eventType => this.subscribeTo(eventType).subscribe(data =>  subject.next({
             data: data,
@@ -128,7 +132,7 @@ export class DotcmsEventsService {
     }
 }
 
-interface AAAA {
+interface EventTypeWrapper {
     data: any;
     eventType: string;
 }

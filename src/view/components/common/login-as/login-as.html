@@ -2,7 +2,8 @@
     <!--TODO: manage errors on required fields and errors messages -->
     <form #loginAsForm="ngForm" class="login-as">
         <div class="form-group">
-            <p-autoComplete ngModel required field="label"
+            <!--TODO: get rid of this let autoComplete when this is fixed: https://github.com/primefaces/primeng/issues/745-->
+            <p-autoComplete let autoComplete ngModel required field="label"
                 name="user" id="userId" [suggestions]="filteredLoginAsUsersResults" (completeMethod)="filterUsers($event)" size="30"
                 (onSelect)="userSelectedHandler($event)" minLength="1" placeholder="{{i18nMessages['loginas.select.loginas.user']}}"
                 [dropdown]="true" (onDropdownClick)="handleLoginAsUsersDropdownClick($event)">

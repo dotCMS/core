@@ -22,7 +22,7 @@ export class MainNavigation {
         'System': 'cog',
     };
 
-    constructor(routingService: RoutingService) {
+    constructor(private routingService: RoutingService) {
         if (routingService.menus) {
             this.menuItems = routingService.menus;
         }
@@ -30,5 +30,13 @@ export class MainNavigation {
         routingService.menusChange$.subscribe(menu => {
             this.menuItems = menu;
         });
+    }
+
+    /**
+     * Change or refresh the portlets from the main menu
+     * @param link portlet url
+     */
+    public gotToPage(link: string): void {
+        this.routingService.changeRefreshPortlet(link);
     }
 }

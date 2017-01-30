@@ -1,88 +1,51 @@
 import {Injectable} from '@angular/core';
-import {ApiRoot} from '../persistence/ApiRoot';
 import {CoreWebService} from './core-web-service';
 import {Observable} from 'rxjs/Rx';
 import {RequestMethod, Http} from '@angular/http';
 import {Subject} from 'rxjs/Subject';
 import {LoginService} from './login-service';
 import {DotcmsEventsService} from './dotcms-events-service';
+import {LoggerService} from './logger.service';
 
 @Injectable()
 export class SiteService {
-    private _sites$: Subject<Site[]> = new Subject();
-    private _switchSite$: Subject<Site> = new Subject();
-    private site: Site;
     private sites: Site[];
     private sitesCounter: number;
-
-    private _switchSite$: Subject<Site> = new Subject();
-    private _sites$: Subject<Site[]> = new Subject();
-    private _updatedCurrentSite$: Subject<Site> = new Subject();
-    private _archivedCurrentSite$: Subject<Site> = new Subject();
-    private _sitesCounter$: Subject<number> = new Subject();
+    private selectedSite: Site;
     private urls: any;
 
+    private _switchSite$: Subject<Site> = new Subject<Site>();
+    private _sites$: Subject<Site[]> = new Subject<Site[]>();
+    private _sitesCounter$: Subject<number> = new Subject<number>();
+
+    private events: string[] = ['SAVE_SITE', 'PUBLISH_SITE', 'UPDATE_SITE_PERMISSIONS', 'UN_ARCHIVE_SITE', 'UPDATE_SITE'];
+    private eventsWithSwitch: string[] = ['ARCHIVE_SITE'];
+
     constructor(loginService: LoginService, dotcmsEventsService: DotcmsEventsService,
-                private coreWebService: CoreWebService) {
+                private coreWebService: CoreWebService, private loggerService: LoggerService) {
         this.urls = {
             allSiteUrl: 'v1/site/currentSite',
-            switchSiteUrl: 'v1/site/switch',
-            sitesUrl: 'v1/site'
+            sitesUrl: 'v1/site',
+            switchSiteUrl: 'v1/site/switch'
         };
 
-        dotcmsEventsService.subscribeTo('SAVE_SITE').pluck('data').subscribe( site => {
-            this.sites.push(site);
-            this._sites$.next(this.sites);
-        });
+        dotcmsEventsService.subscribeToEvents(this.events).subscribe(eventTypeWrapper => {
 
-        dotcmsEventsService.subscribeTo('UPDATE_SITE').pluck('data').subscribe(updatedSite => {
-            this.sites = this.sites.map(site => site.identifier === updatedSite.identifier ? updatedSite : site);
-            this._sites$.next(this.sites);
+            this.loggerService.debug('Capturing Site event', eventTypeWrapper.eventType, eventTypeWrapper.data);
 
-            if (this.site.identifier === updatedSite.identifier) {
-                this.site = updatedSite;
-
-                if (loginService.auth.user.userId !== updatedSite.modUser) {
-                    this._updatedCurrentSite$.next(updatedSite);
-                }
-            }
-        });
-
-        dotcmsEventsService.subscribeTo('ARCHIVE_SITE').pluck('data').subscribe( archivedSite => {
-            this.sites = this.sites.filter(site => site.identifier !== archivedSite.identifier);
-            this._sites$.next(this.sites);
-
-            if (this.site.identifier === archivedSite.identifier) {
-
-                if (loginService.auth.user.userId !== archivedSite.modUser) {
-                    this._archivedCurrentSite$.next(archivedSite);
-                }
-
-                this.site = this.sites[0];
-                this._switchSite$.next(this.site);
-            }
-        });
-
-        dotcmsEventsService.subscribeTo('UN_ARCHIVE_SITE').pluck('data').subscribe( site => {
-            this.sites.push(site);
-            this._sites$.next(this.sites);
-        });
-
-        dotcmsEventsService.subscribeTo('UPDATE_SITE_PERMISSIONS').pluck('data').subscribe(updatedSite => {
+            // Update the sites list
             this.loadSites();
         });
 
-        loginService.watchUser(this.loadSites.bind(this));
-    }
+        dotcmsEventsService.subscribeToEvents(this.eventsWithSwitch).subscribe(eventTypeWrapper => {
 
-    switchSite(siteId: String): Observable<any> {
-        return this.coreWebService.requestView({
-            method: RequestMethod.Put,
-            url: `${this.urls.switchSiteUrl}/${siteId}`,
-        }).map(response => {
-            this.setCurrentSiteIdentifier(siteId);
-            return response;
+            this.loggerService.debug('Capturing Site event', eventTypeWrapper.eventType, eventTypeWrapper.data);
+
+            // Update the sites list
+            this.loadSitesAndSwitch(eventTypeWrapper.data.data.identifier);
         });
+
+        loginService.watchUser(this.loadSites.bind(this));
     }
 
     get switchSite$(): Observable<Site> {
@@ -97,41 +60,8 @@ export class SiteService {
         return this._sitesCounter$.asObservable();
     }
 
-    get updatedCurrentSite$(): Observable<Site> {
-        return this._updatedCurrentSite$.asObservable();
-    }
-
-    get archivedCurrentSite$(): Observable<Site> {
-        return this._archivedCurrentSite$.asObservable();
-    }
-
-    private setCurrentSiteIdentifier(siteIdentifier: string): void {
-        this.site = Object.assign({}, this.sites.filter( site => site.identifier === siteIdentifier)[0]);
-        this._switchSite$.next(this.site);
-    }
-
-    private loadSites(): void {
-        this.coreWebService.requestView({
-            method: RequestMethod.Get,
-            url: this.urls.allSiteUrl,
-        }).subscribe(response => {
-            this.setSites(response.entity.sites);
-            this.setSitesCounter(response.entity.sitesCounter);
-            this.setCurrentSiteIdentifier(response.entity.currentSite);
-        });
-    }
-
-    private setSites(sites: Site[]): void {
-        this.sites = sites;
-        this._sites$.next(this.sites);
-    }
-
-    private setSitesCounter(counter: number): void {
-        this.sitesCounter = counter;
-        this._sitesCounter$.next(this.sitesCounter);
-    }
-    get currentSite(): Site{
-        return this.site;
+    get currentSite(): Site {
+        return this.selectedSite;
     }
 
     /**
@@ -153,10 +83,75 @@ export class SiteService {
             return response.entity;
         });
     }
+
+    switchSite(siteId: string): Observable<any> {
+
+        this.loggerService.debug('Applying a Site Switch', siteId);
+
+        return this.coreWebService.requestView({
+            method: RequestMethod.Put,
+            url: `${this.urls.switchSiteUrl}/${siteId}`,
+        }).map(response => {
+            this.setCurrentSiteIdentifier(siteId);
+            return response;
+        });
+    }
+
+    private setCurrentSiteIdentifier(siteIdentifier: string): void {
+        this.selectedSite = Object.assign({}, this.sites.filter(site => site.identifier === siteIdentifier)[0]);
+        this._switchSite$.next(this.selectedSite);
+    }
+
+    private setNextAndSwitchSite(siteIdentifier: string): void {
+        this.selectedSite = Object.assign({}, this.sites.filter(site => site.identifier !== siteIdentifier)[0]);
+        this._switchSite$.next(this.selectedSite);
+
+        this.switchSite(this.selectedSite.identifier).subscribe(response => {
+            // For now do nothing....
+        });
+    }
+
+    private loadSites(): void {
+        this.coreWebService.requestView({
+            method: RequestMethod.Get,
+            url: this.urls.allSiteUrl,
+        }).subscribe(response => {
+            this.setSites(response.entity.sites);
+            this.setSitesCounter(response.entity.sitesCounter);
+            this.setCurrentSiteIdentifier(response.entity.currentSite);
+        });
+    }
+
+    private loadSitesAndSwitch(siteToExclude: string): void {
+        this.coreWebService.requestView({
+            method: RequestMethod.Get,
+            url: this.urls.allSiteUrl,
+        }).subscribe(response => {
+            this.setSites(response.entity.sites);
+            this.setSitesCounter(response.entity.sitesCounter);
+
+            if (siteToExclude === this.selectedSite.identifier) {// Only if the option we want to excluded is selected
+                this.setNextAndSwitchSite(siteToExclude);
+            } else {
+                this.setCurrentSiteIdentifier(response.entity.currentSite);
+            }
+        });
+    }
+
+    private setSites(sites: Site[]): void {
+        this.sites = sites;
+        this._sites$.next(this.sites);
+    }
+
+    private setSitesCounter(counter: number): void {
+        this.sitesCounter = counter;
+        this._sitesCounter$.next(this.sitesCounter);
+    }
+
 }
 
 export interface Site {
-    hostName: string;
+    hostname: string;
     type: string;
     identifier: string;
 }

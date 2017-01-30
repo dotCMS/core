@@ -7,6 +7,7 @@ import {SiteChangeListener} from '../../../../api/util/site-change-listener';
 import {SiteService} from '../../../../api/services/site-service';
 import {DotcmsEventsService} from '../../../../api/services/dotcms-events-service';
 import {MessageService} from '../../../../api/services/messages-service';
+import {LoggerService} from '../../../../api/services/logger.service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -22,8 +23,20 @@ export class IframeLegacyComponent extends SiteChangeListener {
 
     constructor(private route: ActivatedRoute, private routingService: RoutingService, private siteService: SiteService,
                 private sanitizer: DomSanitizer, private element: ElementRef, private loginService: LoginService,
-                private dotcmsEventsService: DotcmsEventsService, messageService: MessageService) {
+                private dotcmsEventsService: DotcmsEventsService, messageService: MessageService,
+                private loggerService: LoggerService) {
         super(siteService, ['ask-reload-page-message'], messageService);
+
+        /**
+         * Subscribe to the portletUrl$ changes to force the
+         * reload of a portlet in the iframe legacy component
+         * when the user click the subnav link and the user is on the
+         * same portlet or other
+         */
+        routingService.portletUrl$.subscribe(url => {
+            this.reloadIframePortlet(url);
+        });
+
     }
 
     ngOnInit(): void {
@@ -42,12 +55,10 @@ export class IframeLegacyComponent extends SiteChangeListener {
             'MOVE_FILE_ASSET', 'COPY_FILE_ASSET', 'MOVE_PAGE_ASSET', 'COPY_PAGE_ASSET'
         ];
 
-        this.dotcmsEventsService.subscribeToEvents(events).subscribe( content => {
+        this.dotcmsEventsService.subscribeToEvents(events).subscribe( eventTypeWrapper => {
             if (this.routingService.currentPortletId === 'site-browser') {
-
-                if (confirm(this.i18nMessages['ask-reload-page-message'])) {
-                    this.iframeElement.contentWindow.location.reload();
-                }
+                this.loggerService.debug('Capturing Site Browser event', eventTypeWrapper.eventType, eventTypeWrapper.data);
+                // TODO: When we finish the migration of the site browser this event will be handle.....
             }
         });
     }
@@ -103,6 +114,19 @@ export class IframeLegacyComponent extends SiteChangeListener {
                     console.log(error);
                 });
             }
+        }
+    }
+
+    /**
+     * Force to reload the current iframe component portlet,
+     * with the specified portlet url
+     * @param url Url of the portlet to display
+     */
+    reloadIframePortlet(url: string): void {
+        if(url !== undefined && url !== '') {
+            let urlSplit = url.split('/');
+            let id = urlSplit[urlSplit.length - 1];
+            this.iframe = this.loadURL(this.routingService.getPortletURL(id) + '&in_frame=true&frame=detailFrame');
         }
     }
 }

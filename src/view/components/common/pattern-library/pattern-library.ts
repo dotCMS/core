@@ -1,6 +1,5 @@
-import {Component, ViewEncapsulation} from '@angular/core';
-import {SelectItem} from "primeng/primeng";
-
+import {Component, ViewEncapsulation, ViewChild} from '@angular/core';
+import {SelectItem, AutoComplete} from "primeng/primeng";
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -19,6 +18,8 @@ export class PatternLibrary {
     private autocompleteResults: Array<string> = [];
     private displayDialog: boolean = false;
 
+    @ViewChild(AutoComplete) private autoCompleteComponent: AutoComplete;
+
     constructor() {
         this.cities = [];
         this.cities.push({label:'Select City', value:null});
@@ -34,11 +35,14 @@ export class PatternLibrary {
         this.autocompleteResults = ['Hello', 'World'];
     }
 
-    autocompleteCompleteDropdownClick($event) {
-        this.autocompleteResults = [];
-        setTimeout(() => {
-            this.autocompleteResults = ['Hello', 'World'];
-        }, 100);
+    autocompleteCompleteDropdownClick(event: {originalEvent: Event, query: string}) {
+        // TODO: get rid of this three lines when this is fixed: https://github.com/primefaces/primeng/issues/745
+        event.originalEvent.preventDefault();
+        event.originalEvent.stopPropagation();
+        this.autoCompleteComponent.panelVisible = !this.autoCompleteComponent.panelVisible;
+
+        this.autocompleteResults = ['Hello', 'World'];
+
     }
 
     showDialog() {
