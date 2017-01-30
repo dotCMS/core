@@ -145,7 +145,7 @@ public class OSGIAJAX extends OSGIBaseAJAX {
                     if ( !felixFolder.exists() 
                             ||   !osgiJar.getCanonicalPath().startsWith(felixFolder.getCanonicalPath())) {
                         response.sendError(403);
-                        SecurityLogger.logInfo(TailLogServlet.class,  "Invalid File request:" + osgiJar.getCanonicalPath() + " from:" +request.getRemoteHost() + " " );
+                        SecurityLogger.logInfo(this.getClass(),  "Invalid OSGI Upload request:" + osgiJar.getCanonicalPath() + " from:" +request.getRemoteHost() + " " );
                         return;
                     }
                     
