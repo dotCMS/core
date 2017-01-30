@@ -47,6 +47,9 @@ public class OSGIAJAX extends OSGIBaseAJAX {
         File from = new File( FileUtil.getRealPath( "/WEB-INF/felix/load/" + jar ) );
         File to = new File( FileUtil.getRealPath( "/WEB-INF/felix/undeployed/" + jar ) );
 
+        if(to.exists()) {
+            to.delete();
+        }
         Boolean success = FileUtil.move( from, to );
         if ( success ) {
         	Logger.info( OSGIAJAX.class, "OSGI Bundle "+jar+ " Undeployed");
