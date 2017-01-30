@@ -477,7 +477,7 @@ var editButtonRow="editContentletButtonRow";
 			<div id="contentletVersionsDiv" style="height:100%;" class="content-edit__history-version">
 			</div>
 			<hr class="history__divider">
-			<div class="content-edit__history-status">
+			<div class="history__status">
 			<%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
 			</div>
 		</div>

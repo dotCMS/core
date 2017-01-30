@@ -6736,6 +6736,14 @@ a.category_higlighted, a.tag_higlighted {
   padding: 0;
 }
 
+.design-template__sidebar-wrapper {
+  height: 100%;
+  min-height: 617px;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+}
+
 /* PORTLET STYLES 2.0 */
 .portlet-main {
   padding: 16px 0;

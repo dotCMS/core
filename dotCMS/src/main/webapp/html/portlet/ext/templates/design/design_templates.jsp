@@ -394,7 +394,7 @@
 	
 			<%-- Start Template Controls --%>
 	
-			<div class="buttonRow-left lineRight portlet-sidebar-wrapper" id="editContentletButtonRow" style="height: 100%; min-height: 617px;position:absolute;top:0px;left:0px;">
+			<div class="portlet-sidebar-wrapper design-template__sidebar-wrapper" id="editContentletButtonRow">
 				<%
 					if(null!=parameters) { // retrieve the parameters for auto-populate the fields
 				%>
