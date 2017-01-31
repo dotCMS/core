@@ -64,6 +64,7 @@ export class IframeLegacyComponent extends SiteChangeListener {
     }
 
     initComponent(): void {
+
         this.route.params.pluck<string>('id').subscribe(id => {
             setTimeout(() => {
                     this.iframe = this.loadURL(this.routingService.getPortletURL(id));
@@ -72,7 +73,9 @@ export class IframeLegacyComponent extends SiteChangeListener {
 
         this.route.queryParams.pluck<string>('url').subscribe( url => {
             setTimeout(() => {
-                this.iframe = this.loadURL(url);
+                if (url) {
+                    this.iframe = this.loadURL(url);
+                }
             }, 1);
         } );
     }
