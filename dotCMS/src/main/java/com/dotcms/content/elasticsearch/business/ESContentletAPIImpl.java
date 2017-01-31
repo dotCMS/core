@@ -5661,4 +5661,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    public Contentlet checkin(Contentlet contentlet, ContentletRelationships contentRelationships,
+    		List<Category> cats, List<Permission> selectedPermissions, User user,		
+            boolean respectFrontendRoles, boolean generateSystemEvent) throws IllegalArgumentException,		
+    		DotDataException, DotSecurityException, DotContentletStateException, DotContentletValidationException {		
+    			return checkin(contentlet, contentRelationships, cats, selectedPermissions, user, respectFrontendRoles, true, generateSystemEvent);		
+    }		
+
+
 }
