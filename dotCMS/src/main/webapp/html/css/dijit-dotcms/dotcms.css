@@ -3156,6 +3156,10 @@ select[multiple]:hover {
   font-weight: bold;
   background-color: #FAFAFA;
 }
+.listingTable td a {
+  color: #161616;
+  text-decoration: none;
+}
 .listingTable td table td:first-child, .listingTable td table td:last-child {
   padding: 0;
 }
