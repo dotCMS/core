@@ -89,7 +89,6 @@ public class MenuHelper implements Serializable {
 
         String portletClass = portlet.getPortletClass();
         Class classs = Class.forName( portletClass );
-        MenuResource.App appFrom = menuContext.getAppFrom();
 
         Logger.debug(MenuResource.class,"### getPortletId" + menuContext.getPortletId());
         Logger.debug(MenuResource.class,"### portletClass" + portletClass);
@@ -103,11 +102,7 @@ public class MenuHelper implements Serializable {
             return portletURLImpl.toString() + "&dm_rlout=1&r=" + System.currentTimeMillis()
             +"&"+WebKeys.AJAX_PORTLET+"=true";
         }else if(PortletController.class.isAssignableFrom( classs )){
-            if (MenuResource.App.CORE.equals( appFrom )) {
-                return "/spring/portlet/" + menuContext.getPortletId();
-            }else{
-                return "/" + menuContext.getPortletId();
-            }
+            return "/" + menuContext.getPortletId();
         }
 
         return null;

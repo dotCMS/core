@@ -1223,7 +1223,7 @@ public class ContentletAjax {
 		for (String element:formData) {
 			if(element!=null) {
     			String elementName = element.substring(0, element.indexOf(WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR));
-    			if (elementName.startsWith("_EXT") && elementName.endsWith("cmd")) {
+    			if (elementName.startsWith("_") && elementName.endsWith("cmd")) {
     				strutsAction = elementName.substring(0, elementName.indexOf("cmd"));
     				break;
     			}
@@ -1372,7 +1372,7 @@ public class ContentletAjax {
 		try {
 
 			// if it is save and publish, the save event must be not generagted
-            newInode = contentletWebAPI.saveContent(contentletFormData,isAutoSave,isCheckin,user);
+            newInode = contentletWebAPI.saveContent(contentletFormData,isAutoSave,isCheckin,user, !publish);
 
             Contentlet contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
 

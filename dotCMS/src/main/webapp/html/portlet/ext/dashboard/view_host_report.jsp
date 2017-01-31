@@ -1035,9 +1035,9 @@ try {
 
 	<!-- Properties Tabs -->
 	<div id="hostPropertiesTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Properties") %>">
-	 <% if(content != null){ %>
-	      <%@ include file="/html/portlet/ext/dashboard/host_properties_tab_inc.jsp" %>
-	 <%} %>	
+		<% if(content != null){ %>
+			<%@ include file="/html/portlet/ext/dashboard/host_properties_tab_inc.jsp" %>
+		<%} %>
 	</div>
 	<!-- Properties Tabs -->
 	

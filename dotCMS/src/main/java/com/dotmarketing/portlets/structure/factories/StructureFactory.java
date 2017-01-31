@@ -417,12 +417,14 @@ public class StructureFactory {
 		pushSaveUpdateEvent(structure, isNew);
 	}
 
-	private static void pushSaveUpdateEvent(Structure structure, boolean isNew) {
+	private static void pushSaveUpdateEvent(final Structure structure, final boolean isNew) {
 
 		ContentType type=new StructureTransformer(structure).from();
 
 		final DotSubmitter dotSubmitter =
 				SystemEventsFactory.getInstance().getDotSubmitter();
+		
+		final String actionUrl = isNew ? contentTypeUtil.getActionUrl(type) : null;
 
 		dotSubmitter.execute(() -> {
 
@@ -431,7 +433,6 @@ public class StructureFactory {
 
 			try {
 
-		 		String actionUrl = contentTypeUtil.getActionUrl(type);
 				ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
 				systemEventsAPI.push(systemEventType, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION,
 	                            PermissionAPI.PERMISSION_READ));
@@ -458,7 +459,7 @@ public class StructureFactory {
 		deleteStructure(structure);
 	}
 
-	public static void deleteStructure(Structure structure) throws DotDataException
+	public static void deleteStructure(final Structure structure) throws DotDataException
 	{
 		final DotSubmitter dotSubmitter =
 				SystemEventsFactory.getInstance().getDotSubmitter();
@@ -470,11 +471,12 @@ public class StructureFactory {
 			typeAPI.delete(type);
 
 			if (null != dotSubmitter) {
+				
+				final String actionUrl = contentTypeUtil.getActionUrl(type);
 
 				dotSubmitter.execute(() -> {
 
 					try {
-						String actionUrl = contentTypeUtil.getActionUrl(type);
 						ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
 						systemEventsAPI.push(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION, PermissionAPI.PERMISSION_READ));
 					} catch (DotDataException e) {

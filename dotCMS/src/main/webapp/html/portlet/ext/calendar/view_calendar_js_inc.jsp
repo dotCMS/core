@@ -673,7 +673,7 @@
 	function editEvent(inode, referer) {
 			var loc = '';
 			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/calendar/edit_event" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + inode + '&referer=' + referer;
-			top.location = loc;
+			window.location = loc;
 	}
 
 	function editRecurrentEvent(inode, startDate, endDate, referer) {
@@ -683,7 +683,7 @@
 			}else{
 			  var loc = '';
 			  loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/calendar/edit_event" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + event.inode + '&referer=' + referer;
-			  top.location = loc;
+			  window.location = loc;
 			}
 		});
     }
@@ -691,7 +691,7 @@
 	function copyEvent(inode, referer) {
 		var loc = '';
 		loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/calendar/edit_event" /><portlet:param name="cmd" value="copy" /></portlet:actionURL>&inode=' + inode + '&referer=' + referer;
-		top.location = loc;
+		window.location = loc;
     }
 
 	function copyRecurrentEvent(inode, startDate, endDate, referer) {
@@ -701,7 +701,7 @@
 			}else{
 			  var loc = '';
 			  loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/calendar/edit_event" /><portlet:param name="cmd" value="copy" /></portlet:actionURL>&inode=' + event.inode + '&referer=' + referer;
-			  top.location = loc;
+			  window.location = loc;
 		  }
 		});
     }

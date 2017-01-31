@@ -120,7 +120,13 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	 * This funtion works similar to EditContentletAction cmd = Constants.ADD
 	 */
 	public String saveContent(Map<String, Object> contentletFormData,
-			boolean isAutoSave, boolean isCheckin,User user) throws DotContentletValidationException,Exception {
+			  boolean isAutoSave, boolean isCheckin, User user) throws DotContentletValidationException, Exception {
+		return saveContent(contentletFormData, isAutoSave, isCheckin, user, false);
+	}
+
+	public String saveContent(Map<String, Object> contentletFormData,
+			  boolean isAutoSave, boolean isCheckin, User user, boolean generateSystemEvent) throws DotContentletValidationException, Exception {
+
 
 		HttpServletRequest req =WebContextFactory.get().getHttpServletRequest();
 
@@ -147,7 +153,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		try {
 			Logger.debug(this, "Calling Save Method");
 			try{
-				_saveWebAsset(contentletFormData,isAutoSave,isCheckin,user);
+				_saveWebAsset(contentletFormData,isAutoSave,isCheckin,user, generateSystemEvent);
 			}catch (DotContentletValidationException ce) {
 				if(!isAutoSave)
 				SessionMessages.add(req, "message.contentlet.save.error");
@@ -331,7 +337,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	}
 
 	private void _saveWebAsset(Map<String, Object> contentletFormData,
-			boolean isAutoSave, boolean isCheckin, User user) throws Exception, DotContentletValidationException {
+			boolean isAutoSave, boolean isCheckin, User user, boolean generateSystemEvent) throws Exception, DotContentletValidationException {
 
 		/**
 		System.out.println("----------------------------from form-------------------------");
@@ -597,7 +603,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			if(!isAutoSave){
 
 				currentContentlet.setInode(null);
-				currentContentlet = conAPI.checkin(currentContentlet, contRel,cats, perAPI.getPermissions(currentContentlet, false, true), user, false);
+				currentContentlet = conAPI.checkin(currentContentlet, contRel,cats, perAPI.getPermissions(currentContentlet, false, true), user, false,generateSystemEvent);
 
 
 			}else{

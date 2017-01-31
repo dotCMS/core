@@ -11,7 +11,6 @@ import javax.servlet.http.HttpServletRequest;
 public class MenuContext {
 
     private final User user;
-    private final MenuResource.App appFrom;
     private HttpServletRequest httpServletRequest;
     private Layout layout;
     private String portletId;
@@ -21,12 +20,10 @@ public class MenuContext {
      * Generate the Menu Context for the MenuResource
      * @param httpServletRequest httpservlet resquest
      * @param user User initializing this context
-     * @param appFrom app initializinf this context
      */
-    public MenuContext(HttpServletRequest httpServletRequest, User user, MenuResource.App appFrom) {
+    public MenuContext(HttpServletRequest httpServletRequest, User user) {
         this.httpServletRequest = httpServletRequest;
         this.user = user;
-        this.appFrom = appFrom;
     }
 
     /**
@@ -93,11 +90,4 @@ public class MenuContext {
         return user;
     }
 
-    /**
-     * Get the Me
-     * @return
-     */
-    public MenuResource.App getAppFrom() {
-        return appFrom;
-    }
 }

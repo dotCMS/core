@@ -63,27 +63,27 @@
 			<dd><input id="layoutDescription" type="text" dojoType="dijit.form.TextBox" /></dd>
 			<dt><%= LanguageUtil.get(pageContext, "order") %>:</dt>
 			<dd><input id="layoutOrder" type="text" value="0" dojoType="dijit.form.ValidationTextBox" /></dd>
-			<dt><%= LanguageUtil.get(pageContext, "tools") %>:</dt>
+			<dt><%= LanguageUtil.get(pageContext, "Tools") %>:</dt>
 			<dd>
 				<select id="portletList"></select>
-				<button dojoType="dijit.form.Button" onclick="addPortletToLayoutList()" type="button" iconClass="plusIcon"><%= LanguageUtil.get(pageContext, "add") %></button>
+				<button dojoType="dijit.form.Button" onclick="addPortletToLayoutList()" type="button"><%= LanguageUtil.get(pageContext, "add") %></button>
 			</dd>
 		</dl>
 
-		<div id="portletsListWrapper" style="max-height:200px;"></div>
+		<div id="portletsListWrapper" class="view-roles__portlets-list"></div>
 
 		<div class="inputCaption" style="text-align:right">* <%= LanguageUtil.get(pageContext, "drag-a-tool-to-order-it") %></div>
 
 		<div class="buttonRow" style="margin-top:20px;">
-		    <button dojoType="dijit.form.Button" type="button" onClick="saveLayout()" iconClass="saveIcon">
+		    <button dojoType="dijit.form.Button" type="button" onClick="saveLayout()">
 		        <%= LanguageUtil.get(pageContext, "Save") %>
 		    </button>
 			<span id="deleteLayoutButtonWrapper">
-			    <button dojoType="dijit.form.Button" type="button" onClick="deleteLayout()" iconClass="deleteIcon">
+			    <button dojoType="dijit.form.Button" type="button" onClick="deleteLayout()" class="dijitButtonDanger" iconClass="deleteIcon">
 			        <%= LanguageUtil.get(pageContext, "Delete") %>
 			    </button>
 			</span>
-		    <button dojoType="dijit.form.Button" type="button" onClick="cancelEditLayout()" iconClass="cancelIcon">
+		    <button dojoType="dijit.form.Button" type="button" onClick="cancelEditLayout()" class="dijitButtonFlat">
 		        <%= LanguageUtil.get(pageContext, "Cancel") %>
 		    </button>
 		</div>
@@ -134,7 +134,7 @@
 <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer" class="view-roles">
 
 	<!-- START Left Column -->
-	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width: 350px" class="portlet-sidebar-wrapper">
+	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width: 260px" class="portlet-sidebar-wrapper">
 		<div class="portlet-sidebar">
 			<div id="loadingRolesWrapper"><img src="/html/images/icons/processing.gif" /></div>
 

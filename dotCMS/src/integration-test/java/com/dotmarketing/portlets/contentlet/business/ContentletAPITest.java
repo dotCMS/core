@@ -1647,7 +1647,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      */
     @Test
     public void deleteRelatedContent () throws DotSecurityException, DotDataException {
-    	HibernateUtil.startTransaction();
+
         //First lets create a test structure
         Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ), "junit_test_structure_" + String.valueOf( new Date().getTime() ) );
 
@@ -1673,7 +1673,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Try to find the deleted Contentlet
         List<Contentlet> foundContentlets = contentletAPI.getRelatedContent( parentContentlet, testRelationship, user, false );
-        HibernateUtil.commitTransaction();
+
         //Validations
         assertTrue( foundContentlets == null || foundContentlets.isEmpty() );
     }
@@ -1688,7 +1688,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      */
     @Test
     public void deleteRelatedContentWithParent () throws DotSecurityException, DotDataException {
-    	HibernateUtil.startTransaction();
+
         //First lets create a test structure
         Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ), "junit_test_structure_" + String.valueOf( new Date().getTime() ) );
 
@@ -1716,7 +1716,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Try to find the deleted Contentlet
         List<Contentlet> foundContentlets = contentletAPI.getRelatedContent( parentContentlet, testRelationship, user, false );
-        HibernateUtil.commitTransaction();
+
         //Validations
         assertTrue( foundContentlets == null || foundContentlets.isEmpty() );
     }

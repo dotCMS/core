@@ -32,9 +32,9 @@
         </div>
 
         <%  if(Config.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", true)) { %>
-                <div id="networkTab" dojoType="dijit.layout.ContentPane" title="<%=LanguageUtil.get(pageContext, "Network")%>" >
-                    <div id="networkTabContentDiv"></div>
-                </div>
+            <div id="networkTab" dojoType="dijit.layout.ContentPane" title="<%=LanguageUtil.get(pageContext, "Network")%>" >
+                <div id="networkTabContentDiv"></div>
+            </div>
         <%
             }
         %>

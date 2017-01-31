@@ -121,7 +121,6 @@ List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketin
 
 <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer" class="shadowBox headerBox" style="white-space: nowrap">
 	<div dojoType="dijit.layout.ContentPane" splitter="true" region="leading" style="width: 200px; overflow: auto;" class="portlet-sidebar-wrapper" id="leftContentPane">
-
 	<!-- Browser Tree - Left Hand Side -->
 		<div id="assetTreeWrapper">
 			<ul id="TreeUL"> </ul>
@@ -188,7 +187,7 @@ List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketin
 
 <div id="statusDiv" align="left" style="width: 100%; display: none; height: 100px; overflow: auto;"></div>
 
-<div id="popups"></div>
+<div id="popups" class="site-browser__context-menues"></div>
 
 
 <script type="text/javascript">

@@ -156,7 +156,7 @@ public abstract class DashboardFactory {
 		// This query counts legacy html pages
 		StringBuilder sbCountLegacyHtmlPages = new StringBuilder("(SELECT COUNT(*) ")
 		.append("FROM htmlpage_version_info pageinfo JOIN identifier ON (identifier.id = pageinfo.identifier) ") 
-		.append("WHERE identifier.host_inode = ? AND pageinfo.live_inode IS NOT NULL GROUP BY identifier.host_inode)");
+		.append("WHERE identifier.host_inode = ? AND pageinfo.live_inode IS NOT NULL)");
 		
 		// This query counts html pages by combine 'html page contentlets' and 'legacy html pages'
 		StringBuilder sbCountAllHtmlPages = new StringBuilder("SELECT identifier.host_inode AS host_inode, ")

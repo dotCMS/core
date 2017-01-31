@@ -65,6 +65,12 @@ public class ContentTypeUtil {
     public String getActionUrl(final ContentType ContentType) {
         HttpServletRequest request = httpServletRequestThreadLocal.getRequest();
         User user = loginService.getLoggedInUser(request);
+        
+      //It is ok not to have a logged in user all the time as this can be called by a plugin or by a Unit test
+        if ( user == null ) {
+            Logger.debug(this, "No Logged in User found when calling ContentTypeUtil.getActionUrl");
+            return null;
+        }
 
         return getActionUrl(request, ContentType, user);
     }
@@ -96,19 +102,29 @@ public class ContentTypeUtil {
 
                 final Layout layout = layouts.get(0);
                 final List<String> portletIds = layout.getPortletIds();
-                final String portletName = portletIds.get(0);
-                final PortletURL portletURL = new PortletURLImpl(request, portletName, layout.getId(), true);
+                if (0 != portletIds.size()) {
+                	
+                	final String portletName = portletIds.get(0);
+                	final PortletURL portletURL = new PortletURLImpl(request, portletName, layout.getId(), true);
 
-                portletURL.setWindowState(WindowState.MAXIMIZED);
+                	portletURL.setWindowState(WindowState.MAXIMIZED);
 
-                portletURL.setParameters(map(
+	                portletURL.setParameters(map(
                         "struts_action", new String[]{"/ext/contentlet/edit_contentlet"},
                         "cmd", new String[]{"new"},
                         "inode", new String[]{""}
-                ));
+    	            ));
 
-                actionUrl = portletURL.toString() + "&selectedContentType=" + ContentTypeInode +
+        	        actionUrl = portletURL.toString() + "&selectedContentType=" + ContentTypeInode +
                         "&lang=" + this.getLanguageId(user.getLanguageId(), languageAPI);
+                } else {		
+               		
+                    Logger.info(this, "Portlets are empty for the Layout: " + 		
+                    		layout.getId());		
+                }		
+             } else {		
+             		
+             	Logger.info(this, "Layouts are empty for the user: " + user.getUserId());
             }
         } catch (Exception e) {
 
