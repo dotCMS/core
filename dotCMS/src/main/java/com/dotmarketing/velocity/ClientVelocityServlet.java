@@ -8,14 +8,12 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.SecurityUtils;
-import com.dotmarketing.util.PageRequestModeUtil;
-import com.dotmarketing.util.URLEncoder;
+import com.dotmarketing.util.*;
 import org.apache.jasper.security.SecurityUtil;
 import org.apache.velocity.runtime.parser.node.BooleanPropertyExecutor;
 import org.apache.velocity.tools.view.context.ChainedContext;
-
-import com.dotmarketing.util.Config;
 
 import java.io.IOException;
 
@@ -24,7 +22,7 @@ import java.io.IOException;
  */
 public class ClientVelocityServlet extends VelocityServlet {
 
-    private URLEncoder encoder = new URLEncoder();
+    private final PortletURLUtil PORTLET_URL_UTIL = new PortletURLUtil();
     private static String IN_FRAME_PARAMETER_NAME = "in_frame";
 
     /**
@@ -33,24 +31,21 @@ public class ClientVelocityServlet extends VelocityServlet {
     private static final long serialVersionUID = 1L;
 
     protected void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
-        boolean ADMIN_MODE = PageRequestModeUtil.isAdminMode( req.getSession() );
+        boolean adminMode = PageRequestModeUtil.isAdminMode( req.getSession() );
         boolean notRedirect = notRedirect( req );
 
-        if ( ADMIN_MODE  && !notRedirect ){
-            String pageUrl = req.getAttribute("javax.servlet.forward.request_uri").toString();
+        if ( adminMode  && !notRedirect ){
+            String pageUrl = req.getAttribute(Constants.ORIGINAL_REQUEST_URL_HTTP_HEADER).toString();
 
             if (pageUrl != null && pageUrl.indexOf(IN_FRAME_PARAMETER_NAME) == -1) {
-                String redirectURL = getRedirectURL(pageUrl);
+                String redirectURL = PORTLET_URL_UTIL.getPortletUrl(PortletID.SITE_BROWSER,
+                        CollectionsUtils.map("url", pageUrl));
                 response.sendRedirect(redirectURL);
                 return;
             }
         }
 
         super.service(req, response);
-    }
-
-    public String getRedirectURL(String pageUrl){
-        return String.format("/dotAdmin/#/c/site-browser?&url=%s", encoder.encode( pageUrl ));
     }
 
     /**
@@ -65,7 +60,7 @@ public class ClientVelocityServlet extends VelocityServlet {
      * @return
      */
     private boolean notRedirect(HttpServletRequest req) {
-        String refererValue = req.getHeader("Referer");
+        String refererValue = req.getHeader(Constants.REFERER_URL_HTTP_HEADER);
 
         return (refererValue != null && (refererValue.contains( "host_id=" )
                     || refererValue.contains( "fromAngular=true" )
