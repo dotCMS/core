@@ -565,7 +565,7 @@
         <!-- END Right Column -->
 
         <!-- START Show Query -->
-        <div id="queryDiv" dojoType="dijit.Dialog" style="display: none;padding-top:15px\9;">
+        <div id="queryDiv" dojoType="dijit.Dialog" class="content-search__show-query-dialog" style="display: none;padding-top:15px\9;">
             <div id="queryResults"></div>
         </div>
         <!-- END Show Query -->

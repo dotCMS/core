@@ -1770,7 +1770,7 @@ html, body {
   font-weight: bold;
 }
 .dijitCalendarHoveredDate {
-  background-color: rgba(14, 128, 203, 0.15);
+  background-color: #C5C5C5;
   color: #161616;
 }
 .dijitCalendarIncrementControl {
@@ -6412,6 +6412,23 @@ a.category_higlighted, a.tag_higlighted {
   height: 100%;
 }
 
+.content-search__show-query-dialog .dijitDialogTitleBar {
+  height: 0px;
+  z-index: 1;
+}
+
+.content-search__key-fields {
+  margin-top: 8px;
+}
+
+.content-search__import-content-form {
+  margin-top: 24px;
+}
+
+.content-search__assign-workflow-form .dijitTextArea {
+  max-height: 100px;
+}
+
 .content-type__edit-field-form {
   width: 550px;
 }
@@ -6841,7 +6858,7 @@ a.category_higlighted, a.tag_higlighted {
   position: absolute;
   background: #fff;
   border: 1px solid #ECEDEE;
-  min-width: 190px;
+  min-width: 200px;
 }
 .context-menu .pop_divider {
   border-bottom: 1px solid #ECEDEE;
@@ -7108,7 +7125,7 @@ a.category_higlighted, a.tag_higlighted {
   position: absolute;
   background: #fff;
   border: 1px solid #ECEDEE;
-  min-width: 190px;
+  min-width: 200px;
 }
 .context-menu .pop_divider {
   border-bottom: 1px solid #ECEDEE;
