@@ -41,8 +41,8 @@ public class ShortyId implements Serializable {
             return false;
         }
         ShortyId newShorty = (ShortyId) obj;
-        return (newShorty.longId == this.longId && newShorty.type == this.type
-                && newShorty.subType == this.subType && newShorty.shortId == this.shortId);
+        return (newShorty.longId.equals(this.longId) && newShorty.type == this.type
+                && newShorty.subType == this.subType && newShorty.shortId.equals(this.shortId));
 
 
     }
