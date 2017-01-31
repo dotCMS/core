@@ -2,6 +2,7 @@ import {Component,ViewEncapsulation} from '@angular/core';
 import {HttpRequestUtils} from '../../../../../api/util/httpRequestUtils';
 import {LoginService} from '../../../../../api/services/login-service';
 import {DotRouterService} from '../../../../../api/services/dot-router-service';
+import {LoggerService} from "../../../../../api/services/logger.service";
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -28,7 +29,8 @@ export class LoginContainer{
     private resetEmail: string = '';
     private resetEmailSent: boolean = false;
 
-    constructor(private loginService: LoginService, private router: DotRouterService, private httprequestUtils: HttpRequestUtils) {
+    constructor(private loginService: LoginService, private router: DotRouterService,
+                private httprequestUtils: HttpRequestUtils, private loggerService: LoggerService) {
         // TODO: change the httpRequestUtils.getQueryParams() with an NG2 method equivalent to QueryParams on NGRX.
         let queryParams: Map = this.httprequestUtils.getQueryParams();
         if (<boolean> queryParams.get('changedPassword')) {
@@ -51,7 +53,7 @@ export class LoginContainer{
             if (error.response.status === 400 || error.response.status === 401) {
                 this.message = error.errorsMessages;
             } else {
-                console.log(error);
+                this.loggerService.debug(error);
             }
             this.isLoginInProgress = false
             ;

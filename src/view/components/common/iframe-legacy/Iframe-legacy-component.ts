@@ -97,7 +97,7 @@ export class IframeLegacyComponent extends SiteChangeListener {
             if (currentPath.indexOf('/c/portal_public/login') !== -1) {
                 this.loginService.logOutUser().subscribe(data => {
                 }, (error) => {
-                    console.log(error);
+                    this.loggerService.error(error);
                 });
             }
         }

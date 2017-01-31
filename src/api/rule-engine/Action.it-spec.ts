@@ -65,7 +65,6 @@ describe('Integration.api.rule-engine.ActionService', function () {
   })
 
   it("Can add a new Action", function (done) {
-    console.log("can add new", setSessionActionlet)
     var anAction = new ActionModel(null, setSessionActionlet)
     anAction.setParameter("sessionKey", "foo")
     anAction.setParameter("sessionValue", "bar")
@@ -86,9 +85,6 @@ describe('Integration.api.rule-engine.ActionService', function () {
         ruleService.loadRule(ruleUnderTest.key).subscribe( (rule:RuleModel)=> {
           expect(rule.ruleActions[action.key]).toBe(true)
           let sub = actionService.allAsArray(rule.key, Object.keys(rule.ruleActions)).subscribe((actions:ActionModel[])=> {
-            console.log("Rule: ", rule)
-            console.log("Rehydrated Rule: ", rule)
-            console.log("Rehydrated Actions: ", actions)
             let rehydratedAction = actions[0]
             expect(rehydratedAction.getParameterValue("sessionKey")).toEqual("foo")
             sub.unsubscribe()
@@ -152,7 +148,6 @@ describe('Integration.api.rule-engine.ActionService', function () {
 
 class Gen {
   static createRules(ruleService:RuleService) {
-    console.log('Attempting to create rule.')
     let rule = new RuleModel(null)
     rule.enabled = true
     rule.name = "TestRule-" + new Date().getTime()

@@ -1,6 +1,7 @@
 import {Component, EventEmitter, Input, NgZone, Output, ViewEncapsulation} from '@angular/core';
 import {LoginData} from './login-container';
 import {LoginService} from '../../../../../api/services/login-service';
+import {LoggerService} from "../../../../../api/services/logger.service";
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -57,7 +58,7 @@ export class LoginComponent {
        'angular.login.component.community.licence.message', 'reset-password-success',
        'a-new-password-has-been-sent-to-x'];
 
-    constructor(private loginService: LoginService, private ngZone: NgZone) {
+    constructor(private loginService: LoginService, private ngZone: NgZone, private loggerService: LoggerService) {
         this.language = '';
         this.renderPageData();
     }
@@ -166,7 +167,7 @@ export class LoginComponent {
                 this.message = this.resetEmailMessage.replace('{0}', this.resetEmail);
             }
         }, (error) => {
-             console.log(error);
+             this.loggerService.debug(error);
         });
     }
 

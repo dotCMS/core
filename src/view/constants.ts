@@ -8,4 +8,5 @@ export const CONSTANTS = {
     ENV:        CONSTANT.env,
     PROD_MODE: 'PROD',
     DEV_MODE:  'DEV',
+    DEFAULT_LOCALE: 'en-US'
 };

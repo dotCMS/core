@@ -5,6 +5,7 @@ import {Observable} from 'rxjs/Rx'
 import {ApiRoot} from "../../persistence/ApiRoot";
 import {Verify} from "../../validation/Verify";
 import {Observer} from "rxjs/Observer";
+import {LoggerService} from "../../services/logger.service";
 
 export class TreeNode {
   [key:string]: TreeNode | any
@@ -93,7 +94,7 @@ export class I18nService {
   private _http:Http;
   private _baseUrl
 
-  constructor(apiRoot:ApiRoot, http:Http) {
+  constructor(apiRoot:ApiRoot, http:Http, private loggerService: LoggerService) {
     this._http = http;
     this._apiRoot = apiRoot
     this._baseUrl = apiRoot.baseUrl + 'api/v1/system/i18n'
@@ -117,12 +118,11 @@ export class I18nService {
     let cNode = this.root.$descendant(path)
     if (!cNode.$isLoaded() && !cNode.$isLoading()) {
       let promise = new Promise((resolve, reject)=> {
-        //console.log("I18n", "Requesting: ", msgKey)
         this.makeRequest(path.join('/')).catch((err:any, source:Observable<any>)=>{
           if(err && err.status === 404){
-            console.log("Missing Resource: '" , msgKey, "'")
+            this.loggerService.debug("Missing Resource: '" , msgKey, "'")
           } else {
-            console.log("I18n", "Failed:: ", msgKey, "=", cNode, 'error:', err)
+            this.loggerService.debug("I18n", "Failed:: ", msgKey, "=", cNode, 'error:', err)
           }
           return Observable.create(obs =>{
             obs.next(defaultValue)
@@ -134,13 +134,12 @@ export class I18nService {
         })
       })
       cNode.$markAsLoading(promise)
-    } else {
-      // console.log("I18n", "Awaiting: ", msgKey)
     }
+
     return Observable.defer(()=> {
       return Observable.create((obs:Observer<string>  )=> {
         if (cNode._loading == null) {
-          console.log("I18n", "Failed: ", msgKey, "=", cNode)
+          this.loggerService.debug("I18n", "Failed: ", msgKey, "=", cNode);
           obs.next("-I18nLoadFailed-")
           obs.complete()
         } else {
@@ -149,14 +148,12 @@ export class I18nService {
             if(!cNode.$isLeaf() ){
                 if(forceText){
                   v = defaultValue
-                  //console.log("Misconfigured resource:", msgKey )
                 } else {
                   v = cNode
                 }
             } else{
               v = cNode._value
             }
-            // console.log("I18n", "Providing: ", msgKey, "=", v)
             obs.next(v)
             obs.complete()
           })
