@@ -20,4 +20,24 @@ export class HttpRequestUtils {
 
         return map;
     }
+
+    /**
+     * Get a single parameter form the query string, null if does not exits.
+     * it is based on the window.location.href.
+     * @returns {string}
+     */
+    getQueryStringParam(name: string): string {
+
+        let value = null;
+        var regex = new RegExp("[?&]" + name.replace(/[\[\]]/g, "\\$&") + "(=([^&#]*)|&|#|$)");
+        let results = regex.exec(window.location.href);
+
+        if (results && results[2]) {
+
+            value = decodeURIComponent(results[2].replace(/\+/g, " "));
+        }
+
+        return value;
+    } // getQueryStringParam.
+
 }
