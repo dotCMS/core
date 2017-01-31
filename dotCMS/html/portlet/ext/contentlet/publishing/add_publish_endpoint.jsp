@@ -54,6 +54,7 @@
 		
 		if (form.validate()) {
 
+			dijit.byId("save").setAttribute('disabled',true);
 
 			var xhrArgs = {
 				url: "/DotAjaxDirector/com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction/cmd/addEndpoint",
@@ -61,6 +62,7 @@
 				handleAs: "text",
 				load: function(data){
 					if(data.indexOf("FAILURE") > -1){
+						dijit.byId("save").setAttribute('disabled',false);
 
 						alert(data);
 					}
@@ -73,8 +75,9 @@
 					}
 				},
 				error: function(error){
+					dijit.byId("save").setAttribute('disabled',false);
+					
 					alert(error);
-
 				}
 			}
 
