@@ -65,7 +65,7 @@ public class ClientVelocityServlet extends VelocityServlet {
         return (refererValue != null && (refererValue.contains( "host_id=" )
                     || refererValue.contains( "fromAngular=true" )
                     || refererValue.contains(PortletURLUtil.URL_ADMIN_PREFIX )
-                    || refererValue.contains( "p_p_id=site-browser" )));
+                    || refererValue.contains( "p_p_id=" + PortletID.SITE_BROWSER )));
     }
 
     //EACH CLIENT MAY HAVE ITS OWN VARIABLES
