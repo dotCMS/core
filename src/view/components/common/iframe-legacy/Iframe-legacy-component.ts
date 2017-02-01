@@ -64,12 +64,20 @@ export class IframeLegacyComponent extends SiteChangeListener {
     }
 
     initComponent(): void {
+
         this.route.params.pluck<string>('id').subscribe(id => {
             setTimeout(() => {
-                    this.iframe = this.loadURL(this.routingService.getPortletURL(id) + '&in_frame=true&frame=detailFrame');
-                },
-            1);
+                    this.iframe = this.loadURL(this.routingService.getPortletURL(id));
+                }, 1);
         });
+
+        this.route.queryParams.pluck<string>('url').subscribe( url => {
+            setTimeout(() => {
+                if (url) {
+                    this.iframe = this.loadURL(url);
+                }
+            }, 1);
+        } );
     }
 
     changeSiteReload(): void {
@@ -82,8 +90,15 @@ export class IframeLegacyComponent extends SiteChangeListener {
     }
 
     loadURL(url: string): SafeResourceUrl {
+
+        let urlWithParameters = url;
+
         this.loadingInProgress = true;
-        return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+
+        urlWithParameters += urlWithParameters.indexOf('?') === -1 ? '?' : '&';
+        urlWithParameters += urlWithParameters.indexOf('in_frame') === -1 ? 'in_frame=true&frame=detailFrame&fromAngular=true' : '';
+
+        return this.sanitizer.bypassSecurityTrustResourceUrl(urlWithParameters);
     }
 
     /**
@@ -109,10 +124,10 @@ export class IframeLegacyComponent extends SiteChangeListener {
      * @param url Url of the portlet to display
      */
     reloadIframePortlet(url: string): void {
-        if(url !== undefined && url !== '') {
+        if (url !== undefined && url !== '') {
             let urlSplit = url.split('/');
             let id = urlSplit[urlSplit.length - 1];
-            this.iframe = this.loadURL(this.routingService.getPortletURL(id) + '&in_frame=true&frame=detailFrame');
+            this.iframe = this.loadURL(this.routingService.getPortletURL(id));
         }
     }
 }
