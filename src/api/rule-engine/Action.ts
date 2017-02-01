@@ -1,14 +1,14 @@
 import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs/Rx'
-import {ApiRoot} from '../persistence/ApiRoot';
-import {ServerSideTypeModel} from './ServerSideFieldModel';
-import {Http, Response} from '@angular/http';
-import {ActionModel} from './Rule';
+import {ApiRoot} from "../persistence/ApiRoot";
+import {ServerSideTypeModel} from "./ServerSideFieldModel";
+import {Http, Response} from "@angular/http";
+import {ActionModel} from "./Rule";
 import {
     UNKNOWN_RESPONSE_ERROR, CwError, SERVER_RESPONSE_ERROR,
     NETWORK_CONNECTION_ERROR, CLIENTS_ONLY_MESSAGES
-} from ' ../system/http-response-util';
-import {LoggerService} from '../services/logger.service';
+} from "../system/http-response-util";
+import {LoggerService} from "../services/logger.service";
 
 let noop = (...arg:any[])=> {
 }
@@ -57,9 +57,9 @@ export class ActionService {
       return res.json()
     }).catch((err:any, source:Observable<any>)=> {
       if (err && err.status === 404) {
-        this.loggerService.error('Could not retrieve ' + this._typeName + ' : 404 path not valid.', path)
+        this.loggerService.error("Could not retrieve " + this._typeName + " : 404 path not valid.", path)
       } else if (err) {
-        this.loggerService.debug('Could not retrieve ' + this._typeName + ': Response status code: ', err.status, 'error: ', err, path)
+        this.loggerService.debug("Could not retrieve" + this._typeName + ": Response status code: ", err.status, 'error:', err, path)
       }
       return Observable.empty()
     })
