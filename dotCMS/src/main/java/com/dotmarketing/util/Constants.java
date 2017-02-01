@@ -129,7 +129,7 @@ public final class Constants {
 
 	//Http headres
 	public static String ORIGINAL_REQUEST_URL_HTTP_HEADER = "javax.servlet.forward.request_uri";
-	public static String REFERER_URL_HTTP_HEADER = "Referer";
+	public static String REFERER_URL_HTTP_HEADER = "referer";
 
     
 }

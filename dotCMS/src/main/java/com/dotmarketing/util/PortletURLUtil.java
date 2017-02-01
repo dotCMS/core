@@ -29,7 +29,8 @@ import javafx.beans.binding.When;
  */
 public class PortletURLUtil {
 
-	public static String  ROOT_URL = "/dotAdmin/#/c";
+	public static String URL_ADMIN_PREFIX = Config.getStringProperty("URL_ADMIN_ANGULAR_PREFIX", "dotAdmin");
+	public static String ROOT_URL = String.format("/%s/#/c", URL_ADMIN_PREFIX);
 	private final URLEncoder ENCODER = new URLEncoder();
 
 	public static String getActionURL(ActionRequest req, String _windowState, Map _params) {
@@ -168,28 +169,28 @@ public class PortletURLUtil {
 	}
 
 	public String getPortletUrl(PortletID portletID){
-		return String.format("%s/%s", ROOT_URL, portletID.toString().toLowerCase());
+		return getPortletUrl(portletID, null);
 	}
 
 	public String getPortletUrl(PortletID portletID, Map<String, String> parameters){
 
 		StringBuilder buffer = new StringBuilder();
 
-		for (Map.Entry<String, String> parametersEntry : parameters.entrySet()) {
+		if ( parameters != null) {
+			buffer.append("?");
 
-			if ( buffer.length() > 0 ){
-				buffer.append("&");
+			for (Map.Entry<String, String> parametersEntry : parameters.entrySet()) {
+
+				if (buffer.length() > 1) {
+					buffer.append("&");
+				}
+
+				buffer.append(parametersEntry.getKey())
+						.append("=")
+						.append(ENCODER.encode(parametersEntry.getValue()));
 			}
-
-			buffer.append( parametersEntry.getKey() )
-					.append( "=" )
-					.append( ENCODER.encode( parametersEntry.getValue() ) );
 		}
 
-		return String.format("%s/%s?%s", ROOT_URL, getPortletId( portletID ), buffer.toString());
-	}
-
-	private String getPortletId(PortletID portletID) {
-		return portletID.toString().toLowerCase().replace("_", "-");
+		return ROOT_URL + "/" + portletID.toString() + buffer.toString();
 	}
 }
