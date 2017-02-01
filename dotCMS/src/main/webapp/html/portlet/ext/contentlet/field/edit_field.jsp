@@ -1,4 +1,5 @@
 
+<%@page import="com.dotmarketing.util.PortletID"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Field"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
@@ -985,8 +986,8 @@
   List<Layout> layoutListForLicenseManager=APILocator.getLayoutAPI().findAllLayouts();
   for (Layout layoutForLicenseManager:layoutListForLicenseManager) {
       List<String> portletIdsForLicenseManager=layoutForLicenseManager.getPortletIds();
-      if (portletIdsForLicenseManager.contains("configuration")) {
-          licenseURL = "/c/portal/layout?p_l_id=" + layoutForLicenseManager.getId() +"&p_p_id=9&p_p_action=0&tab=licenseTab";
+      if (portletIdsForLicenseManager.contains(PortletID.CONFIGURATION)) {
+          licenseURL = "/c/portal/layout?p_l_id=" + layoutForLicenseManager.getId() +"&p_p_id="+PortletID.CONFIGURATION+"&p_p_action=0&tab=licenseTab";
           break;
       }
   }

@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.util.PortletID"%>
 <%@page import="com.dotcms.repackage.bsh.This"%>
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@ include file="/html/portlet/ext/contentlet/init.jsp" %>
@@ -308,7 +309,7 @@
             label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Import-Content" )) %>",
                         iconClass: "uploadIcon",
                         onClick: function() {
-               	window.location='/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=content&p_p_action=1&p_p_state=maximized&_content_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById("structureInode").value;
+               	window.location='/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById("structureInode").value;
             }
         });
         menu.addChild(menuItem2);
@@ -465,7 +466,7 @@
                                 <span><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %></span>
                                 <script type="text/javascript">
                                     function importContent() {
-                                        window.location = '/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=content&p_p_action=1&p_p_state=maximized&_content_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById('structureInode').value;
+                                        window.location = '/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById('structureInode').value;
                                     }
                                 </script>
                                 <ul data-dojo-type="dijit/Menu" id="actionPrimaryMenu" style="display: none;">

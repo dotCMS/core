@@ -311,7 +311,7 @@
                             inode = contentlet.getInode();
                             structureName = contentlet.getStructure().getName();
                         %>
-						    <a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=/ext/contentlet/edit_contentlet&_content_cmd=edit&inode=<%=inode %>&referer=<%=referer %>">
+						    <a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id="+PortletID.CONTENT+"&p_p_action=1&p_p_state=maximized&p_p_mode=view&_"+PortletID.CONTENT+"_struts_action=/ext/contentlet/edit_contentlet&_"+PortletID.CONTENT+"_cmd=edit&inode=<%=inode %>&referer=<%=referer %>">
 						        <%=StringEscapeUtils.escapeHtml(title)%>
                             </a>
 						<% } else {
