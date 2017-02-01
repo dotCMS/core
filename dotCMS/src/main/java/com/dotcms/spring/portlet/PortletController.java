@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotmarketing.util.PortletURLUtil;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,7 +33,7 @@ public class PortletController implements Portlet {
 		//TODO include user validation
 		
 		Logger.debug(PortletController.class, "PortletController.renderPortlet");
-		return "redirect:/dotAdmin/?id=" + portletId;
+		return "redirect:/" + PortletURLUtil.URL_ADMIN_PREFIX + "/?id=" + portletId;
 	}
 
 	@Override
