@@ -1,6 +1,6 @@
 import {Component, EventEmitter, Output, ViewEncapsulation} from '@angular/core';
 import {LoginService} from '../../../../api/services/login-service';
-import {LoggerService} from "../../../../api/services/logger.service";
+import {LoggerService} from '../../../../api/services/logger.service';
 
 @Component({
     encapsulation: ViewEncapsulation.None,

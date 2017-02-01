@@ -2,7 +2,7 @@ import {Component,ViewEncapsulation} from '@angular/core';
 import {HttpRequestUtils} from '../../../../../api/util/httpRequestUtils';
 import {LoginService} from '../../../../../api/services/login-service';
 import {DotRouterService} from '../../../../../api/services/dot-router-service';
-import {LoggerService} from "../../../../../api/services/logger.service";
+import {LoggerService} from '../../../../../api/services/logger.service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,

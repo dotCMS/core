@@ -3,7 +3,7 @@ import {LoginService} from '../../../../../api/services/login-service';
 
 // angular material imports
 import {ChangePasswordData} from './reset-password-container';
-import {LoggerService} from "../../../../../api/services/logger.service";
+import {LoggerService} from '../../../../../api/services/logger.service';
 
 @Component({
     directives: [],

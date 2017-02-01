@@ -2,10 +2,10 @@ import {Injectable} from '@angular/core';
 import {Http} from '@angular/http';
 import {Observable} from 'rxjs/Rx'
 
-import {ApiRoot} from "../../persistence/ApiRoot";
-import {Verify} from "../../validation/Verify";
-import {Observer} from "rxjs/Observer";
-import {LoggerService} from "../../services/logger.service";
+import {ApiRoot} from '../../persistence/ApiRoot';
+import {Verify} from '../../validation/Verify';
+import {Observer} from 'rxjs/Observer';
+import {LoggerService} from '../../services/logger.service';
 
 export class TreeNode {
   [key:string]: TreeNode | any

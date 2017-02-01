@@ -1,7 +1,7 @@
-import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "@angular/core";
-import {ModalDialogComponent} from "../modal-dialog/dialog-component";
-import {GoogleMapService, GCircle} from "../../../../api/maps/GoogleMapService";
-import {LoggerService} from "../../../../api/services/logger.service";
+import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from '@angular/core';
+import {ModalDialogComponent} from '../modal-dialog/dialog-component';
+import {GoogleMapService, GCircle} from '../../../../api/maps/GoogleMapService';
+import {LoggerService} from '../../../../api/services/logger.service';
 
 
 var mapIdCounter = 1;

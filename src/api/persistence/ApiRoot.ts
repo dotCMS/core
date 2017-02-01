@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import {Headers, RequestOptions} from '@angular/http';
-import {UserModel} from "../auth/UserModel";
-import {LoggerService} from "../services/logger.service";
+import {UserModel} from '../auth/UserModel';
+import {LoggerService} from '../services/logger.service';
 
 @Injectable()
 export class ApiRoot {
@@ -46,7 +46,7 @@ export class ApiRoot {
       this.setBaseUrl(baseUrl) // if null, just uses the base of the current URL
       this.configureUser(query, authUser)
     } catch (e) {
-      this.loggerService.error("Could not set baseUrl automatically.", e)
+      this.loggerService.error('Could not set baseUrl automatically.', e)
     }
   }
 

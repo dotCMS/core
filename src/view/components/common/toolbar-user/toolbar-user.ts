@@ -4,7 +4,7 @@ import {DotRouterService} from '../../../../api/services/dot-router-service';
 import {DropdownComponent} from '../dropdown-component/dropdown-component';
 import {LoginService, Auth} from '../../../../api/services/login-service';
 import {MessageService} from '../../../../api/services/messages-service';
-import {LoggerService} from "../../../../api/services/logger.service";
+import {LoggerService} from '../../../../api/services/logger.service';
 
 @Component({
     moduleId: __moduleName,
