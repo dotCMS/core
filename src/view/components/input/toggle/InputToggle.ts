@@ -1,4 +1,5 @@
 import {Component, View, EventEmitter, Attribute, Input, Output} from '@angular/core';
+import {LoggerService} from "../../../../api/services/logger.service";
 
 @Component({
   selector: 'cw-toggle-input',
@@ -48,7 +49,7 @@ export class InputToggle {
 
   @Output() change:EventEmitter<boolean> = new EventEmitter()
 
-  constructor() {}
+  constructor(private loggerService: LoggerService) {}
 
   ngOnChanges(change){
     if(change.value){
@@ -59,7 +60,7 @@ export class InputToggle {
   updateValue($event) {
     $event.stopPropagation() // grrr.
     let value = $event.target.checked
-    console.log("InputToggle", "updateValue", 'input value changed: [from / to]', this.value, value)
+    this.loggerService.debug("InputToggle", "updateValue", 'input value changed: [from / to]', this.value, value);
     this.value = value
     this.change.emit(value)
   }

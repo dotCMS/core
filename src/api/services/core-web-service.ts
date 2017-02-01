@@ -11,6 +11,7 @@ import {
 import {ApiRoot} from '../persistence/ApiRoot';
 import {ResponseView} from './response-view';
 import {HttpErrorHandler} from './http-error-handler';
+import {LoggerService} from "./logger.service";
 
 export const RULE_CREATE = 'RULE_CREATE';
 export const RULE_DELETE = 'RULE_DELETE';
@@ -41,7 +42,7 @@ export class CoreWebService {
 
   private httpErrosSubjects: Subject<any>[] = [];
 
-  constructor(private _apiRoot: ApiRoot, private _http: Http) {}
+  constructor(private _apiRoot: ApiRoot, private _http: Http, private loggerService: LoggerService) {}
 
   request(options: any): Observable<any> {
     let request = this.getRequestOpts( options );
@@ -61,7 +62,7 @@ export class CoreWebService {
                 throw new CwError(SERVER_RESPONSE_ERROR, response.headers.get('error-message'), request, response, source);
               }
             }  else if (response.status === 404) {
-              console.error('Could not execute request: 404 path not valid.', options.url);
+              this.loggerService.error('Could not execute request: 404 path not valid.', options.url);
               throw new CwError(UNKNOWN_RESPONSE_ERROR, response.headers.get('error-message'), request, response, source);
             }
           }

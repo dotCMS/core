@@ -1,6 +1,7 @@
-import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "@angular/core";
-import {ModalDialogComponent} from "../modal-dialog/dialog-component";
-import {GoogleMapService, GCircle} from "../../../../api/maps/GoogleMapService";
+import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from '@angular/core';
+import {ModalDialogComponent} from '../modal-dialog/dialog-component';
+import {GoogleMapService, GCircle} from '../../../../api/maps/GoogleMapService';
+import {LoggerService} from '../../../../api/services/logger.service';
 
 
 var mapIdCounter = 1;
@@ -41,8 +42,8 @@ export class AreaPickerDialogComponent {
 
   private _prevCircle:GCircle
 
-  constructor(public mapsService:GoogleMapService) {
-    console.log("AreaPickerDialogComponent", "constructor", this.mapId)
+  constructor(public mapsService:GoogleMapService, private loggerService: LoggerService) {
+    this.loggerService.debug("AreaPickerDialogComponent", "constructor", this.mapId)
   }
 
   ngOnChanges(change) {
@@ -55,7 +56,7 @@ export class AreaPickerDialogComponent {
       this.mapsService.loadApi()
     }
     if(change.hidden && this.hidden && this.map){
-      console.log("AreaPickerDialogComponent", "ngOnChanges",
+      this.loggerService.debug("AreaPickerDialogComponent", "ngOnChanges",
           'hiding map: ',
           this.map.getDiv().getAttribute('id'),
           this.map.getDiv()['style']['height']
@@ -70,7 +71,7 @@ export class AreaPickerDialogComponent {
       this.map = null 
     }
     if(change.hidden && !this.hidden && this.map){
-      console.log("AreaPickerDialogComponent", "ngOnChanges", 'showing map: ', this.map.getDiv().getAttribute('id'))
+      this.loggerService.debug("AreaPickerDialogComponent", "ngOnChanges", 'showing map: ', this.map.getDiv().getAttribute('id'))
     }
   }
 
@@ -108,11 +109,11 @@ export class AreaPickerDialogComponent {
       });
 
       google.maps.event.addListener(circle, 'radius_changed', () => {
-        console.log('radius changed', circle.getRadius(), this.circle.radius)
+        this.loggerService.debug('radius changed', circle.getRadius(), this.circle.radius)
         let ll = circle.getCenter()
         let center = {lat: ll.lat(), lng: ll.lng()}
         this.circle = {center, radius: circle.getRadius()}
-        console.log('radius changed to', circle.getRadius(), this.circle.radius)
+        this.loggerService.debug('radius changed to', circle.getRadius(), this.circle.radius)
       })
     }
   }

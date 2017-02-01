@@ -1,6 +1,7 @@
 import {Injectable} from '@angular/core';
 import {Headers, RequestOptions} from '@angular/http';
-import {UserModel} from "../auth/UserModel";
+import {UserModel} from '../auth/UserModel';
+import {LoggerService} from '../services/logger.service';
 
 @Injectable()
 export class ApiRoot {
@@ -13,7 +14,7 @@ export class ApiRoot {
   hideFireOn:boolean = false;
   hideRulePushOptions:boolean = false; 
 
-  constructor(authUser:UserModel) {
+  constructor(authUser:UserModel, private loggerService: LoggerService) {
     this.authUser = authUser
     this.authToken = ApiRoot.createAuthToken(authUser)
     try {
@@ -26,26 +27,26 @@ export class ApiRoot {
       let siteId = ApiRoot.parseQueryParam(query, "realmId");
       if (siteId) {
         this.siteId = siteId
-        //console.log('Site Id set to ', this.siteId)
+        this.loggerService.debug('Site Id set to ', this.siteId);
       }
       let hideFireOn = ApiRoot.parseQueryParam(query, "hideFireOn");
       if (hideFireOn) {
         this.hideFireOn = (hideFireOn === 'true' || hideFireOn === '1')
-        console.log('hideFireOn set to ', this.hideFireOn)
+        this.loggerService.debug('hideFireOn set to ', this.hideFireOn)
       }
       
       let hideRulePushOptions = ApiRoot.parseQueryParam(query, "hideRulePushOptions");
       if (hideRulePushOptions) {
         this.hideRulePushOptions = (hideRulePushOptions === 'true' || hideRulePushOptions === '1')
-        console.log('hideRulePushOptions set to ', this.hideRulePushOptions)
+        this.loggerService.debug('hideRulePushOptions set to ', this.hideRulePushOptions)
       }
       
       let baseUrl = ApiRoot.parseQueryParam(query, 'baseUrl');
-      //console.log('Proxy server Base URL set to ', baseUrl)
+      this.loggerService.debug('Proxy server Base URL set to ', baseUrl)
       this.setBaseUrl(baseUrl) // if null, just uses the base of the current URL
       this.configureUser(query, authUser)
     } catch (e) {
-      console.log("Could not set baseUrl automatically.", e)
+      this.loggerService.error('Could not set baseUrl automatically.', e)
     }
   }
 

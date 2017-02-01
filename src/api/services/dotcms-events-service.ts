@@ -88,10 +88,10 @@ export class DotcmsEventsService {
                     this.subjects[data.event].next(data.payload);
                 },
                 function (e): void {
-                    console.log('Error in the System Events service: ' + e.message);
+                    this.loggerService.debug('Error in the System Events service: ' + e.message);
                 },
                 function (): void {
-                    console.log('Completed');
+                    this.loggerService.debug('Completed');
                 }
             );
         }

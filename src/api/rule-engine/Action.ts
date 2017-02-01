@@ -8,6 +8,7 @@ import {
     UNKNOWN_RESPONSE_ERROR, CwError, SERVER_RESPONSE_ERROR,
     NETWORK_CONNECTION_ERROR, CLIENTS_ONLY_MESSAGES
 } from "../system/http-response-util";
+import {LoggerService} from "../services/logger.service";
 
 let noop = (...arg:any[])=> {
 }
@@ -22,7 +23,7 @@ export class ActionService {
   private _http:Http
   private _actionsEndpointUrl:string
 
-  constructor(apiRoot:ApiRoot, http:Http) {
+  constructor(apiRoot:ApiRoot, http:Http, private loggerService: LoggerService) {
     this._apiRoot = apiRoot
     this._http = http;
     this._actionsEndpointUrl = `${apiRoot.baseUrl}api/v1/sites/${apiRoot.siteId}/ruleengine/actions/`
@@ -56,9 +57,9 @@ export class ActionService {
       return res.json()
     }).catch((err:any, source:Observable<any>)=> {
       if (err && err.status === 404) {
-        console.error("Could not retrieve " + this._typeName + " : 404 path not valid.", path)
+        this.loggerService.error("Could not retrieve " + this._typeName + " : 404 path not valid.", path)
       } else if (err) {
-        console.log("Could not retrieve" + this._typeName + ": Response status code: ", err.status, 'error:', err, path)
+        this.loggerService.debug("Could not retrieve" + this._typeName + ": Response status code: ", err.status, 'error:', err, path)
       }
       return Observable.empty()
     })
@@ -89,7 +90,7 @@ export class ActionService {
 
 
   createRuleAction(ruleId: string, model:ActionModel):Observable<any> {
-    console.log("Action", "add", model)
+    this.loggerService.debug("Action", "add", model)
     if (!model.isValid()) {
       throw new Error("This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.")
     }
@@ -115,7 +116,7 @@ export class ActionService {
   }
 
   updateRuleAction(ruleId:string, model:ActionModel) {
-    console.log("actionService", "save")
+    this.loggerService.debug("actionService", "save")
     if (!model.isValid()) {
       throw new Error("This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.")
     }
@@ -152,10 +153,10 @@ export class ActionService {
           }
         }
         else if (response.status === 404) {
-          console.error("Could not execute request: 404 path not valid.")
+          this.loggerService.error("Could not execute request: 404 path not valid.")
           throw new CwError(UNKNOWN_RESPONSE_ERROR, response.headers.get('error-message'))
         } else {
-          console.log("Could not execute request: Response status code: ", response.status, 'error:', response)
+          this.loggerService.debug("Could not execute request: Response status code: ", response.status, 'error:', response)
           throw new CwError(UNKNOWN_RESPONSE_ERROR, response.headers.get('error-message'))
         }
       }

@@ -3,6 +3,7 @@ import {LoginService} from '../../../../../api/services/login-service';
 
 // angular material imports
 import {ChangePasswordData} from './reset-password-container';
+import {LoggerService} from '../../../../../api/services/logger.service';
 
 @Component({
     directives: [],
@@ -42,7 +43,7 @@ export class ResetPasswordComponent {
 
     private i18nMessages: Array<string> = [ 'error.form.mandatory', 'reset-password', 'enter-password', 're-enter-password', 'change-password', 'reset-password-success', 'reset-password-confirmation-do-not-match'];
 
-    constructor(private loginService: LoginService) {}
+    constructor(private loginService: LoginService, private loggerService: LoggerService) {}
 
     ngOnInit() {
         this.loginService.getLoginFormInfo(this.language, this.i18nMessages).subscribe((data) => {
@@ -58,7 +59,7 @@ export class ResetPasswordComponent {
             this.resetPasswordConfirmationDoNotMessage = dataI18n['reset-password-confirmation-do-not-match'];
             this.resetPasswordSuccessMessage = dataI18n['reset-password-success'];
         }, (error) => {
-                console.log(error);
+                this.loggerService.error(error);
         });
     }
 
