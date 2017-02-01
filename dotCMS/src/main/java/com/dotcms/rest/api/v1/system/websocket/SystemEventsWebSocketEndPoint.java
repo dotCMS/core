@@ -2,17 +2,16 @@ package com.dotcms.rest.api.v1.system.websocket;
 
 import com.dotcms.api.system.event.*;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.javax.ws.rs.ForbiddenException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
-import javax.websocket.OnClose;
-import javax.websocket.OnError;
-import javax.websocket.OnOpen;
-import javax.websocket.Session;
+import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Queue;
@@ -65,7 +64,7 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 	public void open(final Session session) {
 
 		User user = null;
-		boolean addToNormalSession = true;
+		boolean isLoggedIn = false;
 
 		if (session.getUserProperties().containsKey(USER)) {
 
@@ -73,7 +72,7 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 
 				user = (User) session.getUserProperties().get(USER);
 				this.queue.add(new SessionWrapper(session, user));
-				addToNormalSession = false; // not need to add the normal session, since the wrapper was added.
+				isLoggedIn = true;
 			} catch (Exception e) {
 
 				if (Logger.isErrorEnabled(this.getClass())) {
@@ -83,9 +82,25 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 			}
 		}
 
-		if (addToNormalSession) {
+		if (!isLoggedIn) {
 
-			this.queue.add(session);
+			try {
+
+				final ForbiddenException forbiddenException = new ForbiddenException("A web socket connection requires a previous web session created");
+				if (session.isOpen()) {
+
+					session.getAsyncRemote().sendObject(forbiddenException);
+					session.close(new CloseReason(new ForbiddenCloseCode(),
+							"A web socket connection requires a previous web session created"));
+				}
+				throw forbiddenException;
+			} catch (IOException e) {
+				if (Logger.isErrorEnabled(this.getClass())) {
+
+					Logger.error(this.getClass(), e.getMessage(), e);
+				}
+				throw new IllegalStateException(e);
+			}
 		}
 	} // open.
 
