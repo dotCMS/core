@@ -22,7 +22,7 @@ import {LoggerService} from '../../../../../api/services/logger.service';
         </dot-login-component>
     `,
 })
-export class LoginContainer{
+export class LoginContainer {
     private isLoginInProgress: boolean = false;
     private message:string;
     private passwordChanged: boolean = false;

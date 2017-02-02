@@ -15,6 +15,7 @@ import {RuleEngineContainer} from './rule-engine/rule-engine.container';
 import {CONSTANT} from '../constant';
 import {MainCoreComponent} from './main-core-component/MainCoreComponent';
 import {NotLicensedComponent} from './not-licensed-component/not-licensed-component';
+import {LogOutContainer} from './common/login/login-component/log-out-container';
 
 let angularComponents: any[] = [];
 angularComponents.push({component: RuleEngineContainer, id: 'rules'});
@@ -112,6 +113,10 @@ const appRoutes: Routes = [
         children: fromCoreChildren,
         component: MainCoreComponent,
         path: 'fromCore'
+    },
+    {
+        component: LogOutContainer,
+        path: 'logout'
     }
 ];
 

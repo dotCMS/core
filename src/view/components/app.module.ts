@@ -67,18 +67,18 @@ import {ToolbarUserComponent} from './common/toolbar-user/toolbar-user';
 import {NotLicensedComponent} from './not-licensed-component/not-licensed-component';
 
 // RULES ENGINE COMPONENTS
-import {AddToBundleDialogComponent} from "./common/push-publish/add-to-bundle-dialog-component";
-import {AddToBundleDialogContainer} from "./common/push-publish/add-to-bundle-dialog-container";
+import {AddToBundleDialogComponent} from './common/push-publish/add-to-bundle-dialog-component';
+import {AddToBundleDialogContainer} from './common/push-publish/add-to-bundle-dialog-container';
 import {AreaPickerDialogComponent} from './common/google-map/area-picker-dialog.component';
 import {ConditionComponent} from './rule-engine/rule-condition-component';
 import {ConditionGroupComponent} from './rule-engine/rule-condition-group-component';
-import {Dropdown, InputOption} from "./semantic/modules/dropdown/dropdown";
+import {Dropdown, InputOption} from './semantic/modules/dropdown/dropdown';
 import {InputDate} from './semantic/elements/input-date/input-date';
-import {InputText} from "./semantic/elements/input-text/input-text";
+import {InputText} from './semantic/elements/input-text/input-text';
 import {InputToggle} from './input/toggle/inputToggle';
 import {ModalDialogComponent} from './common/modal-dialog/dialog-component';
-import {PushPublishDialogComponent} from "./common/push-publish/push-publish-dialog-component";
-import {PushPublishDialogContainer} from "./common/push-publish/push-publish-dialog-container";
+import {PushPublishDialogComponent} from './common/push-publish/push-publish-dialog-component';
+import {PushPublishDialogContainer} from './common/push-publish/push-publish-dialog-container';
 import {RestDropdown} from './semantic/modules/restdropdown/RestDropdown';
 import {RuleActionComponent} from './rule-engine/rule-action-component';
 import {RuleComponent} from './rule-engine/rule-component';
@@ -148,7 +148,8 @@ const COMPONENTS = [
     ToolbarNotifications,
     ToolbarUserComponent,
     MainCoreComponent,
-    NotLicensedComponent
+    NotLicensedComponent,
+    LogOutContainer
 ];
 
 const PIPES = [
@@ -178,9 +179,10 @@ import {MainCoreComponent} from './main-core-component/MainCoreComponent';
 import {ToolbarModule} from 'primeng/primeng';
 import {DialogModule} from 'primeng/primeng';
 import {RadioButtonModule} from 'primeng/primeng';
-import {LoggerService} from "../../api/services/logger.service";
-import {Config} from "../../api/util/config";
-import {StringUtils} from "../../api/util/string.utils";
+import {LoggerService} from '../../api/services/logger.service';
+import {LogOutContainer} from './common/login/login-component/log-out-container';
+import {Config} from '../../api/util/config';
+import {StringUtils} from '../../api/util/string.utils';
 
 const NGFACES_MODULES = [
     InputTextModule,
