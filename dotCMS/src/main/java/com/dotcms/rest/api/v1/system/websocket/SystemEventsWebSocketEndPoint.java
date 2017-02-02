@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  *
  */
 @SuppressWarnings("serial")
-@ServerEndpoint(value = "/api/v1/system/events", encoders = { SystemEventEncoder.class }, configurator = DotCmsWebSocketConfigurator.class)
+@ServerEndpoint(value = "/api/ws/v1/system/events", encoders = { SystemEventEncoder.class }, configurator = DotCmsWebSocketConfigurator.class)
 public class SystemEventsWebSocketEndPoint implements Serializable {
 
 	public static final String ID = "userId";
