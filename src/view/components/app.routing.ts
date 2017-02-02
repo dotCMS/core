@@ -15,6 +15,7 @@ import {RuleEngineContainer} from './rule-engine/rule-engine.container';
 import {CONSTANT} from '../constant';
 import {MainCoreComponent} from './main-core-component/MainCoreComponent';
 import {NotLicensedComponent} from './not-licensed-component/not-licensed-component';
+import {LogOutContainer} from './common/login/login-component/log-out-container';
 
 let angularComponents: any[] = [];
 angularComponents.push({component: RuleEngineContainer, id: 'rules'});
@@ -89,6 +90,16 @@ const appRoutes: Routes = [
         path: 'c',
     },
     {
+        children: [
+            {
+                component: LogOutContainer,
+                path: ''
+            }
+        ],
+        component: LoginPageComponent,
+        path: 'public/logout',
+    },
+    {
         canActivate: [RoutingPublicAuthService],
         children: [
             {
@@ -102,6 +113,10 @@ const appRoutes: Routes = [
             {
                 component: ResetPasswordContainer,
                 path: 'resetPassword/:token'
+            },
+            {
+                component: LogOutContainer,
+                path: 'logout'
             }
         ],
         component: LoginPageComponent,

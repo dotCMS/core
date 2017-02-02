@@ -35,7 +35,6 @@ export class ToolbarUserComponent extends BaseComponent {
      */
     logout(): boolean {
         this.loginService.logOutUser().subscribe(data => {
-            this.router.goToLogin();
         }, (error) => {
             console.log(error);
         });
