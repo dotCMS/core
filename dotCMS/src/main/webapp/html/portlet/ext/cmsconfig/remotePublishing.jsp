@@ -918,7 +918,7 @@ function deleteEnvPushHistory(envId) {
                                 <font class="bg" size="2"> <b><%= LanguageUtil.get( pageContext, "Loading" ) %></b> <br />
                                     <img src="/html/images/icons/processing.gif" /></font>
                             </div>
-                            <button dojoType="dijit.form.Button" onClick="cancelIntegrityCheck('<%=endpoint.getId()%>');" id="cancelCheckIntegrityButton<%=endpoint.getId()%>" iconClass="stopIcon" style="padding-left:10px; padding-top:5px; display:none;">
+                            <button dojoType="dijit.form.Button" onClick="cancelIntegrityCheck('<%=endpoint.getId()%>');" id="cancelCheckIntegrityButton<%=endpoint.getId()%>" iconClass="stopIcon" style="margin-left:10px; display:none;">
                                 <%= LanguageUtil.get( pageContext, "cancel" ) %>
                             </button>
                             <button dojoType="dijit.form.Button" onclick="deleteEndpoint('<%=endpoint.getId()%>', true)" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>" iconClass="deleteIcon" class="dijitButtonDanger" style="margin-left: 8px">
