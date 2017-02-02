@@ -12,7 +12,7 @@ import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.util.CollectionsUtils;
+
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -21,7 +21,7 @@ import com.liferay.portal.util.WebKeys;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portlet.PortletConfigImpl;
 import com.liferay.util.Validator;
-import javafx.beans.binding.When;
+
 
 /**
  * @author Maria
