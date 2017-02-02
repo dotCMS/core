@@ -6356,17 +6356,22 @@ a.category_higlighted, a.tag_higlighted {
   border-radius: 2px;
   border: solid 1px #C5C5C5;
 }
-.content-edit-actions > div a {
+.content-edit-actions a {
   display: block;
   padding: 8px;
   border-bottom: solid 1px #C5C5C5;
   cursor: pointer;
+  transition: background-color 0.1s;
 }
-.content-edit-actions > div a:hover {
+.content-edit-actions a [class$="Icon"],
+.content-edit-actions a [class*="Icon"] {
+  display: none;
+}
+.content-edit-actions a:hover {
   background-color: #ECEDEE;
   color: #161616;
 }
-.content-edit-actions > div a:last-of-type {
+.content-edit-actions a:last-of-type {
   border-bottom: none;
 }
 
@@ -7437,6 +7442,12 @@ Resize Handle
   display: inline-block;
   margin: 0 4px;
   text-decoration: none;
+}
+
+.noDijitDialogTitleBar .dijitDialogTitleBar {
+  border: none;
+  background: none;
+  height: 18px;
 }
 
 body {
