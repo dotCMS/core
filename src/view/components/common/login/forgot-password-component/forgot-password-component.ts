@@ -1,5 +1,6 @@
 import {Component, EventEmitter , Input, Output, ViewEncapsulation} from '@angular/core';
 import {LoginService} from '../../../../../api/services/login-service';
+import {LoggerService} from "../../../../../api/services/logger.service";
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -31,7 +32,7 @@ export class ForgotPasswordComponent {
     private i18nMessages: Array<string> = [  'error.form.mandatory', 'user-id', 'email-address', 'forgot-password',
         'get-new-password', 'cancel', 'an-email-with-instructions-will-be-sent'];
 
-    constructor( private loginService: LoginService) {
+    constructor( private loginService: LoginService, private loggerService: LoggerService) {
 
     }
 
@@ -71,7 +72,7 @@ export class ForgotPasswordComponent {
             this.forgotPasswordConfirmationMessage = dataI18n['an-email-with-instructions-will-be-sent'];
             this.emailMandatoryFieldError = (dataI18n['error.form.mandatory']).replace('{0}', this.userIdOrEmailLabel);
         }, (error) => {
-             console.log(error);
+            this.loggerService.error(error);
         });
     }
 }

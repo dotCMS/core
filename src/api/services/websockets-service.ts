@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import {Injectable} from '@angular/core';
 import {Subject} from 'rxjs/Subject';
+import {LoggerService} from "./logger.service";
 
 @Injectable()
 export class $WebSocket {
@@ -25,7 +26,7 @@ export class $WebSocket {
     private dataStream: Subject<any>;
     private internalConnectionState: number;
 
-    constructor(private url:string, private protocols?:Array<string>, private config?:WebSocketConfig  ) {
+    constructor(private url:string, private protocols?:Array<string>, private config?:WebSocketConfig, private loggerService: LoggerService ) {
         var match = new RegExp('wss?:\/\/').test(url);
         if (!match) {
             throw new Error('Invalid url provided [' + url + ']');
@@ -40,22 +41,18 @@ export class $WebSocket {
             self.socket = this.protocols ? new WebSocket(this.url, this.protocols) : new WebSocket(this.url);
 
             self.socket.onopen = (ev: Event) => {
-                //console.log('onOpen: %s', ev);
                 this.onOpenHandler(ev);
             };
             self.socket.onmessage = (ev: MessageEvent) => {
-                //console.log('onNext: %s', ev.data);
                 self.onMessageHandler(ev);
                 this.dataStream.next(ev);
             };
             this.socket.onclose = (ev: CloseEvent) => {
-                //console.log('onClose, completed');
                 self.onCloseHandler(ev);
                 this.dataStream.complete()
             };
 
             this.socket.onerror = (ev: ErrorEvent) => {
-                //console.log('onError', ev);
                 self.onErrorHandler(ev);
                 this.dataStream.error(ev);
             };
@@ -175,7 +172,7 @@ export class $WebSocket {
         this.close(true);
         var backoffDelay = this.getBackoffDelay(++this.reconnectAttempts);
         var backoffDelaySeconds = backoffDelay / 1000;
-        // console.log('Reconnecting in ' + backoffDelaySeconds + ' seconds');
+        this.loggerService.debug('Reconnecting in ' + backoffDelaySeconds + ' seconds');
         setTimeout( this.connect(), backoffDelay);
         return this;
     }

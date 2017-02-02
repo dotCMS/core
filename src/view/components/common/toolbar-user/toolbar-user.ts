@@ -4,6 +4,7 @@ import {DotRouterService} from '../../../../api/services/dot-router-service';
 import {DropdownComponent} from '../dropdown-component/dropdown-component';
 import {LoginService, Auth} from '../../../../api/services/login-service';
 import {MessageService} from '../../../../api/services/messages-service';
+import {LoggerService} from '../../../../api/services/logger.service';
 
 @Component({
     moduleId: __moduleName,
@@ -20,7 +21,8 @@ export class ToolbarUserComponent extends BaseComponent {
     private auth: Auth;
     private showMyAccount: boolean = false;
 
-    constructor(private router: DotRouterService, private loginService: LoginService, private messageService: MessageService) {
+    constructor(private router: DotRouterService, private loginService: LoginService,
+                private messageService: MessageService, private loggerService: LoggerService) {
         super(['my-account'], messageService);
     }
 
@@ -36,7 +38,7 @@ export class ToolbarUserComponent extends BaseComponent {
     logout(): boolean {
         this.loginService.logOutUser().subscribe(data => {
         }, (error) => {
-            console.log(error);
+            this.loggerService.error(error);
         });
         return false;
     }
@@ -47,7 +49,7 @@ export class ToolbarUserComponent extends BaseComponent {
             this.router.goToMain();
             this.dropdown.closeIt();
         }, (error) => {
-            console.log(error);
+            this.loggerService.error(error);
         });
 
     }

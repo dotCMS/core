@@ -1,6 +1,10 @@
 import {Injectable} from '@angular/core';
 import {Logger} from 'angular2-logger/core';
-import {CONSTANT} from '../../view/app.constant.dev';
+import {CONSTANTS} from '../../view/constants';
+import {DotcmsConfig} from './system/dotcms-config';
+import {Config} from '../util/config';
+import {StringUtils} from '../util/string.utils';
+
 
 /**
  * LoggerService to log.  Allows logger to be changed at runtime
@@ -9,10 +13,15 @@ import {CONSTANT} from '../../view/app.constant.dev';
 @Injectable()
 export class LoggerService {
 
-    constructor(private logger: Logger) {
+    private isProduction : boolean = true;
 
-        console.log('Setting the logger');
-        if (CONSTANT.ENV !== 'PROD') {
+    constructor(private logger: Logger, private config: Config, private stringUtils : StringUtils) {
+
+        console.log('Setting the logger...');
+
+        this.isProduction = this.config.isProduction();
+
+        if (!this.isProduction) {
 
             console.log('Developer mode logger on');
             logger.level = logger.Level.LOG;
@@ -21,36 +30,55 @@ export class LoggerService {
     }
 
     info(message?: any, ...optionalParams: any[]): void {
+
         if (optionalParams && optionalParams.length > 0) {
-            this.logger.info(message, optionalParams);
+            this.logger.info(this.wrapMessage(message), optionalParams);
         } else {
-            this.logger.info(message);
+            this.logger.info(this.wrapMessage(message));
         }
     }
 
     error(message?: any, ...optionalParams: any[]): void {
+
         if (optionalParams && optionalParams.length > 0) {
-            this.logger.error(message, optionalParams);
+            this.logger.error(this.wrapMessage(message), optionalParams);
         } else {
-            this.logger.error(message);
+            this.logger.error(this.wrapMessage(message));
         }
     }
 
     warn(message?: any, ...optionalParams: any[]): void {
         if (optionalParams && optionalParams.length > 0) {
-            this.logger.warn(message, optionalParams);
+            this.logger.warn(this.wrapMessage(message), optionalParams);
         } else {
-            this.logger.warn(message);
+            this.logger.warn(this.wrapMessage(message));
         }
     }
 
     debug(message?: any, ...optionalParams: any[]): void {
 
         if (optionalParams && optionalParams.length > 0) {
-            this.logger.debug(message, optionalParams);
+            this.logger.debug(this.wrapMessage(message), optionalParams);
         } else {
-            this.logger.debug(message);
+            this.logger.debug(this.wrapMessage(message));
         }
+    }
+
+    private wrapMessage (message?: any) : string {
+        // on prod, we do not attach the caller.
+        return this.isProduction? message :
+                                  this.getCaller() + '>> ' + message;
+    }
+    private getCaller (): string {
+
+        let caller = 'unknown';
+        try { throw new Error(); } catch (e) { caller = this.cleanCaller(this.stringUtils.getLine(e.stack, 4)); }
+        return caller;
+    }
+
+    private cleanCaller (caller: string): string {
+
+        return (caller)? caller.trim().substr(3):'unknown';
     }
 
 }

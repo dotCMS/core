@@ -60,7 +60,6 @@ export class DataTypeModel {
           this._vFns.push(fn)
         }
       })
-      // console.log("DataTypeModel", "validators", Object.keys(this), this)
     }
     return this._vFns
   }

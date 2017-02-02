@@ -81,17 +81,17 @@ export class DotcmsEventsService {
             this.ws.getDataStream().subscribe(
                 res => {
                     let data = (JSON.parse(res.data));
-
+               
                     if (!this.subjects[data.event]) {
                         this.subjects[data.event] = new Subject();
                     }
                     this.subjects[data.event].next(data.payload);
                 },
                 function (e): void {
-                    console.log('Error in the System Events service: ' + e.message);
+                    this.loggerService.debug('Error in the System Events service: ' + e.message);
                 },
                 function (): void {
-                    console.log('Completed');
+                    this.loggerService.debug('Completed');
                 }
             );
         }
@@ -118,10 +118,10 @@ export class DotcmsEventsService {
     subscribeToEvents(clientEventTypes: string[]): Observable<EventTypeWrapper> {
         let subject: Subject<EventTypeWrapper> = new Subject<EventTypeWrapper>();
 
-        clientEventTypes.forEach( eventType => this.subscribeTo(eventType).subscribe(data =>  subject.next({
+        clientEventTypes.forEach(eventType => this.subscribeTo(eventType).subscribe(data => subject.next({
             data: data,
             eventType: eventType
-        })) );
+        })));
 
         return subject.asObservable();
     }
