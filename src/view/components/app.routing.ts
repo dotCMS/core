@@ -113,10 +113,6 @@ const appRoutes: Routes = [
             {
                 component: ResetPasswordContainer,
                 path: 'resetPassword/:token'
-            },
-            {
-                component: LogOutContainer,
-                path: 'logout'
             }
         ],
         component: LoginPageComponent,
@@ -127,6 +123,10 @@ const appRoutes: Routes = [
         children: fromCoreChildren,
         component: MainCoreComponent,
         path: 'fromCore'
+    },
+    {
+        component: LogOutContainer,
+        path: 'logout'
     }
 ];
 

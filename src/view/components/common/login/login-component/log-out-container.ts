@@ -1,36 +1,25 @@
 import {Component,ViewEncapsulation} from '@angular/core';
 import {LoginContainer} from './login-container';
-import {HttpRequestUtils} from '../../../../../api/util/httpRequestUtils';
 import {LoginService} from '../../../../../api/services/login-service';
 import {DotRouterService} from '../../../../../api/services/dot-router-service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
     moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
-    providers: [HttpRequestUtils],
     selector: 'dot-log-out-container',
-    template: `
-        <dot-login-component
-            [message]="message"
-            [isLoginInProgress] = "isLoginInProgress"
-            (login)="logInUser($event)"
-            (recoverPassword)="showForgotPassword()"
-            [passwordChanged]="passwordChanged"
-            [resetEmailSent]="resetEmailSent"
-            [resetEmail]="resetEmail"
-        >
-        </dot-login-component>
-    `,
+    template: ''
 })
-export class LogOutContainer extends LoginContainer {
+export class LogOutContainer {
 
-    constructor ( loginService: LoginService,  router: DotRouterService, httprequestUtils: HttpRequestUtils) {
-        super(loginService, router, httprequestUtils);
+    constructor ( loginService: LoginService,  router: DotRouterService) {
 
         loginService.isLogin$.subscribe(isLogin => {
 
             if (isLogin) {
-                loginService.logOutUser().subscribe(() => {});
+                loginService.logOutUser().subscribe(() => {
+                });
+            }else{
+                router.goToLogin();
             }
         });
     }
