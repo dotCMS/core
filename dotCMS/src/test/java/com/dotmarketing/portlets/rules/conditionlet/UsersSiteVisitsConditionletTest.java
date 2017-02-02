@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.util.CookieUtil;
@@ -24,7 +24,7 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
 /**
  * Created by freddyrodriguez on 10/3/16.
  */
-public class UsersSiteVisitsConditionletTest extends TestBase {
+public class UsersSiteVisitsConditionletTest extends UnitTestBase {
 
     private HttpServletRequest request;
     private HttpServletResponse response;

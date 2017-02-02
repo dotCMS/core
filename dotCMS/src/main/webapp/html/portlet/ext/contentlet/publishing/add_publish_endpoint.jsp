@@ -94,8 +94,8 @@
 		if(sending=='false'){
 			dojo.style("addressFromSpan", "display", "none");
 			dojo.style("addressToSpan", "display", "");
-			dojo.style("portRow", "display", "table-row");
-			dojo.style("sendGroupRow", "display", "table-row");
+			dojo.style("portRow", "display", "block");
+			dojo.style("sendGroupRow", "display", "block");
 		}
 		else{
 
@@ -112,125 +112,106 @@
 
 </script>
 
-<style>
-	.myTable {margin:20px;padding:10px;}
-	.myTable tr td{padding:5px;vertical-align: top;}
-	#addressRow {}
-	#portRow {display:none;}
 
-</style>
+<div dojoType="dijit.form.Form"  name="formSaveEndpoint"  id="formSaveEndpoint" onsubmit="return false;">
+	<input type="hidden" name="identifier" value="<%=UtilMethods.webifyString(String.valueOf(currentEndpoint.getId())) %>">
+	<div class="form-horizontal">
+		<%if(currentEnvironment!=null) { %>
 
-<div style="margin:auto;">
-	<div dojoType="dijit.form.Form"  name="formSaveEndpoint"  id="formSaveEndpoint" onsubmit="return false;">
-		<input type="hidden" name="identifier" value="<%=UtilMethods.webifyString(String.valueOf(currentEndpoint.getId())) %>">
-		<table class="myTable" border=0 style="margin: auto" align="center">
-			<%if(currentEnvironment!=null) { %>
-
-			<tr id="sendGroupRow">
-				<td align="right">
-					<%= LanguageUtil.get(pageContext, "publisher_Environment") %>:
-				</td>
-				<td>
+		<div id="sendGroupRow">
+			<dl>
+				<dt><%= LanguageUtil.get(pageContext, "publisher_Environment") %>:</dt>
+				<dd>
 					<%=currentEnvironment.getName() %>
 					<input type="hidden" id="environmentId" name="environmentId" value="<%=currentEnvironment.getId() %>">
-				</td>
-			</tr>
+				</dd>
+			</dl>
+		</div>
 
-			<%} %>
-			<tr>
-				<td align="right" width="40%">
-					<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Server_Name") %>:
-				</td>
-				<td>
-					<input type="text" dojoType="dijit.form.ValidationTextBox"
-							  name="serverName"
-							  id="serverName"
-							  style="width:300px;"
-							  value="<%=UtilMethods.webifyString(String.valueOf(currentEndpoint.getServerName())) %>"
-							  promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_ServerName_Prompt_Message") %>"
-							  />
-				</td>
-			</tr>
+		<%} %>
+		<dl>
+			<dt><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Server_Name") %>:</dt>
+			<dd>
+				<input type="text" dojoType="dijit.form.ValidationTextBox"
+						  name="serverName"
+						  id="serverName"
+						  style="width:400px;"
+						  value="<%=UtilMethods.webifyString(String.valueOf(currentEndpoint.getServerName())) %>"
+						  promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_ServerName_Prompt_Message") %>"
+						  />
+				<input type="hidden" name="sending" id="sending" value="<%=isSender%>">
+			</dd>
+		</dl>
 
-
-
-			<tr>
-				<td align="center" colspan=2>
-					<input type="hidden" name="sending" id="sending" value="<%=isSender%>">
-				</td>
-			</tr>
-
-
-			<tr id="addressRow">
-				<td align="right">
+		<div id="addressRow">
+		
+			<dl>
+				<dt>
 					<span id="addressToSpan">
 						<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Address_To") %>:
 					</span>
 					<span id="addressFromSpan" style="display:none;">
 						<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Address_From") %>:
 					</span>
-				</td>
-				<td>
+				</dt>
+				<dd>
 					<input type="text" dojoType="dijit.form.ValidationTextBox"
-						   name="address"
-						   id="address"
-						   style="width:300px"
-						   value="<%=UtilMethods.webifyString(currentEndpoint.getAddress()) %>"
-						   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Address_Prompt_Message") %>"
-						   />
-						   <div id="addressHelpText" class="small">e.g. 10.0.1.10 or server2.myhost.com</div>
-				</td>
-			</tr>
+					   name="address"
+					   id="address"
+					   style="width:400px"
+					   value="<%=UtilMethods.webifyString(currentEndpoint.getAddress()) %>"
+					   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Address_Prompt_Message") %>"
+					   />
+				   <div id="addressHelpText" class="hint-text">e.g. 10.0.1.10 or server2.myhost.com</div>
+				</dd>
+			</dl>
+		</div>
 
-
-			<tr id="portRow">
-				<td align="right"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Port") %>:</td>
-				<td nowrap="nowrap">
+		<div id="portRow">
+			<dl>
+				<dt><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Port") %>:</dt>
+				<dd>
 
 					<input type="text" dojoType="dijit.form.ValidationTextBox"
 						   name="port" id="port" style="width:50px"
 						   value="<%=UtilMethods.webifyString(currentEndpoint.getPort()) %>"
 						   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Prompt_Message") %>" regExp="^[0-9]+$" invalidMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Invalid_Message") %>" />
-					&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
-					<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Protocol") %>:
-
-
+				</dd>
+			</dl>
+			<dl>
+				<dt><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Protocol") %>:</dt>
+				<dd>
 					<select dojoType="dijit.form.Select" name="protocol" id="protocol" style="width:100px;">
 						<option value="http" <%=("http".equals(currentEndpoint.getProtocol())) ? "selected=true" : "" %>>http</option>
 						<option value="https" <%=("https".equals(currentEndpoint.getProtocol())) ? "selected=true" : "" %>>https</option>
 					</select>
+				</dd>
+			</dl>
+		</div>
 
-				</td>
-			</tr>
-
-			<tr id="authKeyRow">
-				<td align="right">
-					<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key") %>:
-				</td>
-				<td>
+		<div id="authKeyRow">
+			<dl>
+				<dt><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key") %>:</dt>
+				<dd>
 					<textarea dojoType="dijit.form.SimpleTextarea" name="authKey" id="authKey" style="width:400px;height:105px;"><%=( currentEndpoint.getAuthKey() != null && currentEndpoint.getAuthKey().length() > 0) ? PublicEncryptionFactory.decryptString( currentEndpoint.getAuthKey().toString())  : "" %></textarea>
-				</td>
-			</tr>
+				</dd>
+			</dl>
+		</div>
 
-			<tr>
-				<td align="right">
-					<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Enabled") %>:
-				</td>
-				<td>
-					<input dojoType="dijit.form.CheckBox" type="checkbox" name="enabled" <%=(currentEndpoint.isEnabled()) ? "checked=true" : "" %> />
-				</td>
-			</tr>
-		</table>
+		<dl>
+			<dt></dt>
+			<dd>
+				<div class="checkbox">
+					<input dojoType="dijit.form.CheckBox" type="checkbox" name="enabled" id="enabled" <%=(currentEndpoint.isEnabled()) ? "checked=true" : "" %> />
+					<label for="enabled"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Enabled") %></label>
+				</div>
 
-		<table align="center">
-			<tr>
-				<td colspan="2" class="buttonRow" style="text-align: center;white-space: nowrap;">
-					<button dojoType="dijit.form.Button" type="submit" id="save" iconClass="saveIcon"  onclick="saveEndpoint()"><%= LanguageUtil.get(pageContext, "Save") %></button>
-					&nbsp;
-					<button dojoType="dijit.form.Button" onClick="backToEndpointsList(true)" id="closeSave" iconClass="cancelIcon"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
+			</dd>
+		</dl>
+	</div>
 
-			    </td>
-		    </tr>
-	   </table>
+	<div class="buttonRow">
+		<button dojoType="dijit.form.Button" type="submit" id="save" iconClass="saveIcon"  onclick="saveEndpoint()"><%= LanguageUtil.get(pageContext, "Save") %></button>
+		<button dojoType="dijit.form.Button" onClick="backToEndpointsList(true)" id="closeSave" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
 	</div>
 </div>

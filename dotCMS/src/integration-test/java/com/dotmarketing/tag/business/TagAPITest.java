@@ -9,7 +9,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.Date;
 import java.util.List;
 
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
 
 import org.junit.BeforeClass;
@@ -40,7 +40,7 @@ import com.liferay.portal.model.User;
  * @since 2/1/2016
  * @version 1.0
  */
-public class TagAPITest extends TestBase {
+public class TagAPITest extends IntegrationTestBase {
 
 	private static HostAPI hostAPI;
 	private static UserAPI userAPI;

@@ -52,7 +52,6 @@ List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketin
 	#dijit_layout__Splitter_0{border:1px #eeeeee solid;}
 	#assetListHead{border-bottom: 1px solid silver;margin-bottom:10px;}
 	#assetListHead span{display:block;padding:5px 8px;font-size:85%;font-weight:bold;}
-	.leftContentPane{ width:25%; }
 </style>
 
 <script>
@@ -66,7 +65,7 @@ List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketin
 	    var viewport_height = viewport.h;
 
 	    var e =  dojo.byId("borderContainer");
-	    dojo.style(e, "height", viewport_height -150 + "px");
+	    dojo.style(e, "height", viewport_height + "px");
 
 	    var bc = dijit.byId('borderContainer');
 	    if(bc != undefined){
@@ -105,13 +104,10 @@ List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketin
 		
 	}
 </script>
-
-<div id="addNewDropDownButtonDiv" class="buttonBoxRightTopPadding">
-</div>
 	
-<div class="buttonBoxLeft">
+<!-- <div class="buttonBoxLeft">
 	<b><%= LanguageUtil.get(pageContext, "Sites-and-Folders") %></b>
-</div>
+</div> -->
 
 <%if(UtilMethods.isSet(languages) && languages.size()>1) {%>
 	<script>
@@ -124,61 +120,65 @@ List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketin
 
 
 <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer" class="shadowBox headerBox" style="white-space: nowrap">
-	<div dojoType="dijit.layout.ContentPane" splitter="true" region="leading" style="margin-top:37px; overflow: auto;" class="leftContentPane" id="leftContentPane">
-
+	<div dojoType="dijit.layout.ContentPane" splitter="true" region="leading" style="width: 200px; overflow: auto;" class="portlet-sidebar-wrapper" id="leftContentPane">
 	<!-- Browser Tree - Left Hand Side -->
-		<div id="assetTreeWrapper" style="padding:8px 0 0 0;">
+		<div id="assetTreeWrapper">
 			<ul id="TreeUL"> </ul>
-			<span class="shimIcon"></span>
 		</div>
 	<!-- End of Browser Tree - Left Hand Side -->
 
 	</div>
 
      <div dojoType="dijit.layout.ContentPane" splitter="true" style="margin:4px 0px 43px 6px" region="center" class="rightContentPane" id="rightContentPane">
-     	<div id="combo_zone2" >
-			<input id="language_id" />
-		</div>
-		<%@include file="../contentlet/languages_select_inc.jsp" %>
-	  	
-		<table class="browserTable" id="assetListBodyTD">
-			<thead id="assetListHead">
-				<tr>
-					<th>
-						<a href="javascript: changeContentSort('name');" style="text-decoration: underline"><%= LanguageUtil.get(pageContext, "Name") %></a>
-					</th>
-					<th><a href="javascript: changeContentSort('sortOrder');" style="text-decoration: underline"><%= LanguageUtil.get(pageContext, "Menu") %></a></th>
-					<th><%= LanguageUtil.get(pageContext, "Status") %></th>
-					<th></th>
-					<th><a href="javascript: changeContentSort('modUser');" style="text-decoration: underline"><%= LanguageUtil.get(pageContext, "Mod-User") %></a></th>
-					<th><a href="javascript: changeContentSort('modDate');" style="text-decoration: underline"><%= LanguageUtil.get(pageContext, "Mod-Date") %></a></th>
-				</tr>
-			</thead>
 
-			<tbody id="assetListBody"></tbody>
-
-
-		<!-- The trash can -->
-			<tr>
-				<td colspan="6" style="height:100px;vertical-align: bottom;">
-					<div style="text-align: right;vertical-align: bottom" id="trash-DIV">
-						<a id="trash-TreeREF" style="text-decoration: none; color: black;" href="javascript: ;">
-							<span class="trashIcon" id="Trash-TreeFolderIMG"></span>
-							<span id="trashLabel"><%= LanguageUtil.get(pageContext, "Show-Archived") %></span> &nbsp;&nbsp;
-						</a>
+     	<div class="portlet-main">
+			<!-- START Toolbar -->
+			<div class="portlet-toolbar">
+				<div class="portlet-toolbar__actions-primary">
+					<div id="combo_zone2" >
+						<input id="language_id" />
 					</div>
-				</td>
-			</tr>
-		<!--  End of the trash can -->
+					<%@include file="../contentlet/languages_select_inc.jsp" %>
+				</div>
+				<div class="portlet-toolbar__info">
+					<!-- The trash can -->
+						<div  id="trash-DIV">
+							<a id="trash-TreeREF" href="javascript: ;">
+								<span class="trashIcon" id="Trash-TreeFolderIMG"></span>
+								<span id="trashLabel"><%= LanguageUtil.get(pageContext, "Show-Archived") %></span> &nbsp;&nbsp;
+							</a>
+						</div>
+					<!--  End of the trash can -->
+				</div>
+		    	<div class="portlet-toolbar__actions-secondary">
+		    		<div id="addNewDropDownButtonDiv"></div>   	
+		    	</div>
+		   </div>
+		   <!-- END Toolbar -->
+		
+			<table class="browserTable" id="assetListBodyTD">
+				<thead id="assetListHead">
+					<tr>
+						<th>
+							<a href="javascript: changeContentSort('name');" style="text-decoration: underline"><%= LanguageUtil.get(pageContext, "Name") %></a>
+						</th>
+						<th><a href="javascript: changeContentSort('sortOrder');" style="text-decoration: underline"><%= LanguageUtil.get(pageContext, "Menu") %></a></th>
+						<th><%= LanguageUtil.get(pageContext, "Status") %></th>
+						<th></th>
+						<th><a href="javascript: changeContentSort('modUser');" style="text-decoration: underline"><%= LanguageUtil.get(pageContext, "Mod-User") %></a></th>
+						<th><a href="javascript: changeContentSort('modDate');" style="text-decoration: underline"><%= LanguageUtil.get(pageContext, "Mod-Date") %></a></th>
+					</tr>
+				</thead>
+				<tbody id="assetListBody"></tbody>
+			</table>
 
-		</table>
-
-		<div id="loadingContentListing" name="loadingContentListing" align="center" style="">
-			<br />
-			<br />
-			<font class="bg" size="2"> <b><%= LanguageUtil.get(pageContext, "Loading") %></b> <br />
-			<img src="/html/images/icons/processing.gif" /></font> <br />
-			<br />
+			<div id="loadingContentListing" name="loadingContentListing" align="center" style="">
+				<br />
+				<br />
+				<font class="bg" size="2"> <b><%= LanguageUtil.get(pageContext, "Loading") %></b> <br />
+				<img src="/html/images/icons/processing.gif" /></font> <br />
+				<br />
+			</div>
 		</div>
 	</div>
 </div>
@@ -187,7 +187,7 @@ List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketin
 
 <div id="statusDiv" align="left" style="width: 100%; display: none; height: 100px; overflow: auto;"></div>
 
-<div id="popups"></div>
+<div id="popups" class="site-browser__context-menues"></div>
 
 
 <script type="text/javascript">

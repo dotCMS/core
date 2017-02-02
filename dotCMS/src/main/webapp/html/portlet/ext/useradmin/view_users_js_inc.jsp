@@ -1,4 +1,7 @@
 
+<%@page import="com.dotmarketing.business.Layout"%>
+<%@page import="com.liferay.portal.util.WebKeys"%>
+<%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 
 <script type="text/javascript" src="/dwr/interface/UserAjax.js"></script>
@@ -257,7 +260,7 @@
 		dojo.byId('loadingUserProfile').style.display = 'none';
 		var deletebutton = dijit.byId('deleteButton');
 		if(deleteButton != null){
-			deleteButton.parentNode.show();
+			deleteButton.parentNode.parentNode.show();
 		}
 		
 		initStructures();
@@ -298,7 +301,6 @@
 				loadMarketingInfo(userId);
 				break;
 		}
-		resizeRoleBrowser();
 	}
 
 	function userRoleCallback(userRole) {
@@ -341,8 +343,7 @@
 		var deletebutton = dijit.byId('deleteButton');
 		if(deleteButton != null){
 			//to avoid the display of a square when the delete button is hide
-			deleteButton.parentNode.hide();
-			
+			deleteButton.parentNode.parentNode.hide();
 		}
 	}
 
@@ -1517,13 +1518,6 @@
 
 	function updateUserCategoriesCallback(){
 		showDotCMSSystemMessage(userCategoriesSavedMsg);
-	}
-
-	function addUserProxyEntity(inode)
-	{
-   		var url = '<liferay:actionURL portletName="EXT_6"><liferay:param name="struts_action" value="/ext/entities/edit_entity" /></liferay:actionURL>';
-   		url += '&inode=' + inode;
-		window.location.href = url;
 	}
 
 	function containsCategory(categories, id) {

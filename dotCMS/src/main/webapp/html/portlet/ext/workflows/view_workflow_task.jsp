@@ -224,8 +224,8 @@
 %>
 <!-- START Task Overview -->
 
-
-<table class="listingTable">
+<div class="view-workflow">
+	<table class="listingTable">
 	<tr>
 		<th style="text-align:left;">
 			<div style="display:inline-block;">
@@ -391,7 +391,7 @@
 						<th><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Comments")) %></th>
 						<th>
 							<% if (!step.isResolved()) { %>
-								<div dojoType="dijit.form.DropDownButton" iconClass="plusIcon">
+								<div dojoType="dijit.form.DropDownButton" iconClass="plusIcon" class="view-workflow__add-comment">
 									<span><%= LanguageUtil.get(pageContext, "Add-a-Comment") %></span>
 									<div dojoType="dijit.TooltipDialog" id="dialog1" title="Login Form" execute="addComment();">
 										<form id="commentFormlet" method="post" action="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
@@ -592,3 +592,4 @@
 	<input name="wfNeverExpire" id="wfNeverExpire" type="hidden" value="">
 	<input name="whereToSend" id="whereToSend" type="hidden" value="">
 </form>
+</div>

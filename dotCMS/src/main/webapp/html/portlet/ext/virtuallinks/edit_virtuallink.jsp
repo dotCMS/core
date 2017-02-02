@@ -95,9 +95,9 @@
 dojo.require('dotcms.dijit.FileBrowserDialog');
 
 function submitfm(form) {
-	form.<portlet:namespace />cmd.value = '<%=Constants.ADD%>';
+	form.cmd.value = '<%=Constants.ADD%>';
 	form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/virtuallinks/edit_virtuallink" /></portlet:actionURL>';
-	form.<portlet:namespace />redirect.value = '<portlet:renderURL><portlet:param name="struts_action" value="/ext/virtuallinks/view_virtuallinks" /></portlet:renderURL>';
+	form.redirect.value = '<portlet:renderURL><portlet:param name="struts_action" value="/ext/virtuallinks/view_virtuallinks" /></portlet:renderURL>';
 	submitForm(form);
 }
 
@@ -107,8 +107,8 @@ function cancelEdit() {
 
 function deleteVirtualLink(form) {
 	if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.virtuallink.confirm.delete")) %>')){
-		form.<portlet:namespace />cmd.value = '<%=Constants.DELETE%>';
-		form.<portlet:namespace />redirect.value = '<portlet:renderURL><portlet:param name="struts_action" value="/ext/virtuallinks/view_virtuallinks" /></portlet:renderURL>';
+		form.cmd.value = '<%=Constants.DELETE%>';
+		form.redirect.value = '<portlet:renderURL><portlet:param name="struts_action" value="/ext/virtuallinks/view_virtuallinks" /></portlet:renderURL>';
 		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/virtuallinks/edit_virtuallink" /></portlet:actionURL>';
 		submitForm(form);
 	}
@@ -128,11 +128,11 @@ function pageSelected(page) {
 </script>
 
 <div class="portlet-main">
-	<div class="form-horizontal content-type__properties">
+	<div class="form-horizontal">
 		
 		<html:form action="/ext/virtuallinks/edit_virtuallink" styleId="fm">
-		<input name="<portlet:namespace /><%= Constants.CMD %>" type="hidden" value="">
-		<input name="<portlet:namespace />redirect" type="hidden" value="">
+		<input name="<%= Constants.CMD %>" type="hidden" value="">
+		<input name="redirect" type="hidden" value="">
 		<input name="su" type="hidden" value="add">
 		<input type="hidden" name="inode" value="<%=vl.getInode()%>">
 		

@@ -1,30 +1,13 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
-
-import com.dotcms.api.system.event.Payload;
-import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
-import com.dotcms.api.system.event.Visibility;
-import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.SQLQueryFactory;
 import com.dotmarketing.cache.FieldsCache;
@@ -54,10 +37,13 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.language.LanguageException;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+
+import java.io.Serializable;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author jtesser
@@ -734,9 +720,6 @@ public class HostAPIImpl implements HostAPI {
 		APILocator.getContentletAPI().archive(c, user, respectFrontendRoles);
 		host.setModDate(new Date ());
 		hostCache.clearAliasCache();
-
-		systemEventsAPI.pushAsync(SystemEventType.ARCHIVE_SITE, new Payload(c, Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
 	public void unarchive(Host host, User user, boolean respectFrontendRoles)
@@ -749,9 +732,6 @@ public class HostAPIImpl implements HostAPI {
 		APILocator.getContentletAPI().unarchive(c, user, respectFrontendRoles);
 		host.setModDate(new Date ());
 		hostCache.clearAliasCache();
-
-		systemEventsAPI.pushAsync(SystemEventType.UN_ARCHIVE_SITE, new Payload(c, Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
 	private synchronized Host createDefaultHost() throws DotDataException,
@@ -1018,5 +998,41 @@ public class HostAPIImpl implements HostAPI {
 
 		return hosts;
 
+	}
+	
+	public PaginatedArrayList<Host> search(String filter, boolean showArchived, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		try {
+			Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
+			String condition="";
+			
+			if(showArchived){
+				condition=" +deleted:true";
+			}else {
+				condition=" +deleted:false";
+			}
+			
+			if(UtilMethods.isSet(filter)){
+				condition += " +Host.hostName:"+filter.trim()+"*";
+			}
+			if(!showSystemHost){
+				condition += " +Host.isSystemHost:false";
+			}
+			PaginatedArrayList<Contentlet> list = (PaginatedArrayList<Contentlet>)APILocator.getContentletAPI().search("+structureInode:" + st.getInode() + condition, limit, offset, "Host.hostName", user, respectFrontendRoles);
+			
+			return convertToHostPaginatedArrayList(list);
+		} catch (Exception e) {
+			Logger.error(HostAPIImpl.class, e.getMessage(), e);
+			throw new DotRuntimeException(e.getMessage(), e);
+		}
+	}
+	
+	private PaginatedArrayList<Host> convertToHostPaginatedArrayList(PaginatedArrayList<Contentlet> list) {
+		
+		PaginatedArrayList<Host> hosts = new PaginatedArrayList<Host>();
+		hosts.addAll(list.stream().map( content -> new Host(content)).collect(Collectors.toList()));
+		hosts.setQuery(list.getQuery());
+		hosts.setTotalResults(list.getTotalResults());
+		
+		return hosts;
 	}
 }

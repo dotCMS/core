@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.translate.TranslationService;
 import com.dotcms.translate.TranslationUtil;
 import com.dotcms.translate.TranslationUtilTest;
@@ -44,7 +44,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class TranslationActionletTest extends TestBase {
+public class TranslationActionletTest extends UnitTestBase {
 
     private Contentlet spanishTranslatedContent = mock(Contentlet.class);
     private Contentlet frenchTranslatedContent = mock(Contentlet.class);

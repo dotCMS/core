@@ -37,6 +37,7 @@ import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -503,27 +504,41 @@ public class WebAssetFactory {
 
 		boolean localTransaction = false;
 		try {
-			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-				// sets new working to live
-		        APILocator.getVersionableAPI().setLive(workingwebasset);
-				if(isNewVersion){
-				   workingwebasset.setModDate(new java.util.Date());
-				   workingwebasset.setModUser(user.getUserId());
-				}
 
-				// persists the webasset
-				HibernateUtil.saveOrUpdate(workingwebasset);
-		}catch(Exception e){
-			Logger.error(WebAssetFactory.class, e.getMessage(), e);
-			if(localTransaction){
-				HibernateUtil.rollbackTransaction();
+			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+
+			// sets new working to live
+			APILocator.getVersionableAPI().setLive(workingwebasset);
+
+
+			if(isNewVersion){
+
+			   workingwebasset.setModDate(new java.util.Date());
+			   workingwebasset.setModUser(user.getUserId());
 			}
-		}
-		finally{
-			if(localTransaction){
+
+			// persists the webasset
+			HibernateUtil.merge(workingwebasset);
+
+			if(localTransaction) {
+
 				HibernateUtil.commitTransaction();
 			}
+		} catch(Exception e){
+
+			Logger.error(WebAssetFactory.class, e.getMessage(), e);
+
+			if(localTransaction){
+
+				HibernateUtil.rollbackTransaction();
+			}
+		} finally {
+
+			if(localTransaction) {
+				DbConnectionFactory.closeConnection();
+			}
 		}
+
 		Logger.debug(WebAssetFactory.class, "HibernateUtil.saveOrUpdate(workingwebasset)");
 
 

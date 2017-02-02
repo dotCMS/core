@@ -7,14 +7,14 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 
 /**
  * ReflectionUtils Test
  * @author jsanca
  */
 
-public class ReflectionUtilsTest extends TestBase {
+public class ReflectionUtilsTest extends UnitTestBase {
 
 
 

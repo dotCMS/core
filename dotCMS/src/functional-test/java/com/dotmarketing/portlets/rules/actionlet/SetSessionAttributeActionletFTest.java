@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.TestBase;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -36,7 +36,7 @@ import static org.junit.Assert.assertNotSame;
  *
  */
 
-public class SetSessionAttributeActionletFTest extends TestBase {
+public class SetSessionAttributeActionletFTest extends IntegrationTestBase {
 
     private HttpServletRequest request;
     String ruleId;

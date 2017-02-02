@@ -6,7 +6,7 @@ import static org.mockito.Mockito.when;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.cms.login.LoginService;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
@@ -37,7 +37,7 @@ import java.util.Map;
  * @since Jul 29, 2016
  *
  */
-public class AppContextInitResourceTest extends TestBase {
+public class AppContextInitResourceTest extends UnitTestBase {
 
 	@Test
 	public void testVerifyConfigurationData() throws DotSecurityException, DotDataException, IllegalAccessException,
@@ -52,7 +52,7 @@ public class AppContextInitResourceTest extends TestBase {
 		MenuResource menuResource = mock(MenuResource.class);
 		ConfigurationHelper configurationHelper = mock(ConfigurationHelper.class);
 
-		when(menuResource.getMenus( MenuResource.App.CORE_WEB.name(), mockHttpRequest )).thenReturn(
+		when(menuResource.getMenus( mockHttpRequest )).thenReturn(
 				Response.ok(new ResponseEntityView(menuData)).build() );
 
 		when(configurationHelper.getConfigProperties( mockHttpRequest )).thenReturn(configData);

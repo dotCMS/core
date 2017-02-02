@@ -58,7 +58,7 @@ function deletePushHistory() {
 
 <div class="portlet-toolbar">
 	<div class="portlet-toolbar__actions-primary">
-		<h2><%= LanguageUtil.get(pageContext, "publisher_push_history") %></h2>
+		<h3><%= LanguageUtil.get(pageContext, "publisher_push_history") %></h3>
 	</div>
 
 	<div class="portlet-toolbar__actions-secondary">
@@ -70,19 +70,16 @@ function deletePushHistory() {
 
 <table class="listingTable">
 	<tr>
-		<th width="45%"><%= LanguageUtil.get(pageContext, "publisher_pushed_by") %></th>
-		<th width="45%"><%= LanguageUtil.get(pageContext, "publisher_push_date") %></th>
+		<th width="20%"><%= LanguageUtil.get(pageContext, "publisher_pushed_by") %></th>
+		<th width="20%" style="text-align: center"><%= LanguageUtil.get(pageContext, "publisher_push_date") %></th>
 		<th width="20%"><%= LanguageUtil.get(pageContext, "publisher_Environment") %></th>
-		<th width="10%" nowrap><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></th>
+		<th width="40%" nowrap style="text-align: center"><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></th>
 	</tr>
 <%
 	for(PushedAsset pushedAsset: pushedAssets) {
-
 		Environment env = APILocator.getEnvironmentAPI().findEnvironmentById(pushedAsset.getEnvironmentId());
 		Bundle bundle = APILocator.getBundleAPI().getBundleById(pushedAsset.getBundleId());
 		User owner = APILocator.getUserAPI().loadUserById(bundle.getOwner());
-
-
 %>
 	<tr  >
 		<td><%= owner.getFullName() %></td>

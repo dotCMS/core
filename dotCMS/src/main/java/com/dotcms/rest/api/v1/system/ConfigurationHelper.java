@@ -16,6 +16,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.rest.api.v1.system.websocket.SystemEventsWebSocketEndPoint;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -36,6 +37,7 @@ import com.liferay.util.LocaleUtil;
 public class ConfigurationHelper implements Serializable {
 
 	public static final String EDIT_CONTENT_STRUCTURES_PER_COLUMN = "EDIT_CONTENT_STRUCTURES_PER_COLUMN";
+	public static final String DEFAULT_REST_PAGE_COUNT = "DEFAULT_REST_PAGE_COUNT";
 	public static final String I18N_MESSAGES_MAP = "i18nMessagesMap";
 	public static ConfigurationHelper INSTANCE = new ConfigurationHelper();
 
@@ -67,11 +69,13 @@ public class ConfigurationHelper implements Serializable {
 				Config.getAsString(DOTCMS_WEBSOCKET_BASEURL, () -> getHostname(request)),
 				DOTCMS_WEBSOCKET_ENDPOINTS,
 				map(WEBSOCKET_SYSTEMEVENTS_ENDPOINT,
-						Config.getStringProperty(WEBSOCKET_SYSTEMEVENTS_ENDPOINT, "/api/v1/system/events")),
+						Config.getStringProperty(WEBSOCKET_SYSTEMEVENTS_ENDPOINT, SystemEventsWebSocketEndPoint.API_WS_V1_SYSTEM_EVENTS)),
 				EDIT_CONTENT_STRUCTURES_PER_COLUMN,
 				Config.getIntProperty(EDIT_CONTENT_STRUCTURES_PER_COLUMN, 15),
 				DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT,
 				Config.getIntProperty(DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT, 1000),
+				DEFAULT_REST_PAGE_COUNT,
+				Config.getIntProperty(DEFAULT_REST_PAGE_COUNT, 20),
 				I18N_MESSAGES_MAP,
 				mapEntries(
 						message("notifications_title", locale), // Notifications

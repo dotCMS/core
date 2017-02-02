@@ -34,7 +34,7 @@
 		return;
 	}
 	try {
-		if (!com.dotmarketing.business.APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", uu)) {
+		if (!com.dotmarketing.business.APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", uu)) {
 			response.sendError(403);
 			return;
 		}

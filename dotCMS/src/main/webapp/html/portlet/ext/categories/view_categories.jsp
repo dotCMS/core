@@ -47,24 +47,7 @@ filter: alpha(opacity: 0);
 opacity: 0;
 -moz-opacity: 0;
 z-index:4;
-}	
-
-.permissionWrapper{background:none;padding:0;margin:0 auto;width:90%;}
-
-.permissionTable{width:100%;margin:0;}
-.permissionTable td, .permissionTable th{font-size:88%;width:10%;text-align:center;vertical-align:middle;font-weight:bold;padding:3px 0 0 0;}
-.permissionTable th.permissionType {width:40%;padding: 0 0 0 30px;font-weight:normal;text-align:left;}
-.permissionTable th.permissionTitle {padding: 0 0 0 10px;font-weight:bold;}
-
-.accordionEntry{width:100%;margin:0;visibility:hidden}
-.accordionEntry td, .accordionEntry th{font-size:88%;width:10%;text-align:center;vertical-align:middle;font-weight:bold;padding:3px 0 0 0;}
-.accordionEntry th.permissionType {width:40%;padding: 0 0 0 30px;font-weight:normal;text-align:left;}
-.accordionEntry th.permissionTitle {padding: 0 0 0 10px;font-weight:bold;}
-
-.dotCMSRolesFilteringSelect{width:200px;overflow:hidden;display:inline;}
-#assetPermissionsMessageWrapper{padding-top: 15px;color: red;text-align: center;font-weight: bolder;}
-
-td {font-size: 100%;}
+}
 
 </style>
 <script type="text/javascript" src="/dwr/interface/CategoryAjax.js"></script>
@@ -798,46 +781,38 @@ td {font-size: 100%;}
 <liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext,\"view-categories\") %>" />
 
 
-<div class="portlet-main">
-	
-	<div class="portlet-toolbar">
-    	<div class="portlet-toolbar__actions-primary">
-    		Breadcrumbs go here!
-    	</div>
-    	<div class="portlet-toolbar__actions-secondary">
-			<!-- START Actions -->
-			<div id="oneandtwo" data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
-	            <span></span>
+<div class="portlet-main view-categories">
 
-	            <div data-dojo-type="dijit/Menu" class="contentlet-menu-actions" id="oneandtwothree">
-	                <div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: showAddCategory">
-	                    <%= LanguageUtil.get(pageContext, "Add") %>
-	                </div>
-	                <div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: deleteCategories">
-	                    <%= LanguageUtil.get(pageContext, "delete") %>
-	                </div>
-	                <div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: showImportCategories">
-	                	<%= LanguageUtil.get(pageContext, "import") %>
-	                </div>
-	                <div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: exportCategories">
-	                    <%= LanguageUtil.get(pageContext, "export") %>
-	                </div>
-					<% if ( enterprise ) { %>
-                        <% if ( sendingEndpoints ) { %>
-                            <div data-dojo-type="dijit/MenuItem" onClick="remoteSyncronization();">
-                            	<%= LanguageUtil.get(pageContext,"Remote-Syncronization") %>
-                            </div>
-                        <%}%>
-                        <div data-dojo-type="dijit/MenuItem" onClick="addToBundle();">
-                        	<%= LanguageUtil.get(pageContext,"Add-To-Bundle") %>
-                        </div>
-                    <%}%>
-	            </div>
-	        </div>
-	    	<!-- END Actions -->
+	<!-- START Actions -->
+	<div id="oneandtwo" data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
+		<span></span>
 
-	    </div>
+		<div data-dojo-type="dijit/Menu" class="contentlet-menu-actions" id="oneandtwothree">
+			<div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: showAddCategory">
+				<%= LanguageUtil.get(pageContext, "Add") %>
+			</div>
+			<div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: deleteCategories">
+				<%= LanguageUtil.get(pageContext, "delete") %>
+			</div>
+			<div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: showImportCategories">
+				<%= LanguageUtil.get(pageContext, "import") %>
+			</div>
+			<div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: exportCategories">
+				<%= LanguageUtil.get(pageContext, "export") %>
+			</div>
+			<% if ( enterprise ) { %>
+				<% if ( sendingEndpoints ) { %>
+					<div data-dojo-type="dijit/MenuItem" onClick="remoteSyncronization();">
+						<%= LanguageUtil.get(pageContext,"Remote-Syncronization") %>
+					</div>
+				<%}%>
+				<div data-dojo-type="dijit/MenuItem" onClick="addToBundle();">
+					<%= LanguageUtil.get(pageContext,"Add-To-Bundle") %>
+				</div>
+			<%}%>
+		</div>
 	</div>
+	<!-- END Actions -->
 
 
 	
@@ -848,7 +823,7 @@ td {font-size: 100%;}
 			<div id="TabOne" dojoType="dijit.layout.ContentPane"  title="<%=LanguageUtil.get(pageContext, "children")%>">
 
 				<div class="inline-form" style="width:300px">
-					<input  name="catFilter" id="catFilter" onkeyup="doSearch();" type="text" dojoType="dijit.form.TextBox" onblur="alterFocus(document.activeElement, this);" placeholder="<%= LanguageUtil.get(pageContext, "message.filter.categories") %>">
+					<input  name="catFilter" id="catFilter" onkeyup="doSearch();" type="text" dojoType="dijit.form.TextBox" placeholder="<%= LanguageUtil.get(pageContext, "message.filter.categories") %>">
 					<button dojoType="dijit.form.Button" onclick="clearCatFilter()" type="button"><%= LanguageUtil.get(pageContext, "Clear") %></button>
 				</div>
 				<div id="warningDiv" style="text-align: center; height: 10px; margin-top: 15px; color: red; font-size: 11px; "></div>
@@ -947,7 +922,7 @@ td {font-size: 100%;}
 <div id="add_category_dialog"  dojoType="dijit.Dialog" style="display:none;" draggable="true" title="<%= LanguageUtil.get(pageContext, "add-category") %>" >
 	<div dojoType="dijit.layout.ContentPane">
 		<span id="savedMessage" style="color:red; font-size:11px;"></span>
-		<form id="addCatPropertiesForm" dojoType="dijit.form.Form">
+		<form id="addCatPropertiesForm" dojoType="dijit.form.Form" style="max-width: 260px; max-height: 300px;">
 			<div class="form-inline">
 				<dl>
 					<dt><span id="VariableIdTitle"><%= LanguageUtil.get(pageContext, "Variable-ID") %>:</span></dt>

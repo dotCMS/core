@@ -1,4 +1,5 @@
 
+<%@page import="com.dotmarketing.util.PortletID"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Field"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
@@ -64,7 +65,6 @@
 <div class="fieldWrapper">
 
 	<div class="fieldName" id="<%=field.getVelocityVarName()%>_tag">
-
 		<% if (hint != null) {%>
 			<a href="#" id="tip-<%=field.getVelocityVarName()%>"><span class="hintIcon"></span></a>
 			<span dojoType="dijit.Tooltip" connectId="tip-<%=field.getVelocityVarName()%>" position="above" style="width:100px;">
@@ -166,7 +166,7 @@
         });
 </script>
 	<div id="aceTextArea_<%=field.getVelocityVarName()%>" class="classAce"></div>
-    <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> dojoType="dijit.form.SimpleTextarea"  <%=isWidget?"style=\"overflow:auto;width:682px;min-height:362px;max-height: 400px\"":"style=\"overflow:auto;width:450px;min-height:100px;max-height: 600px\""%>
+    <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> dojoType="dijit.form.SimpleTextarea"  <%=isWidget?"style=\"overflow:auto;width:682px;min-height:362px;max-height: 400px\"":"style=\"overflow:auto;width:600px;min-height:100px;max-height: 600px\""%>
         name="<%=field.getFieldContentlet()%>"
         id="<%=field.getVelocityVarName()%>" class="editTextAreaField"><%= UtilMethods.htmlifyString(textValue) %></textarea>
 <%
@@ -333,8 +333,11 @@
             name="<%=field.getFieldContentlet()%>"
             value="<%= dateValue!=null ? df.format(dateValue) : "" %>" />
 
-        <%if (field.getFieldType().equals(Field.FieldType.DATE.toString())
-                    || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {%>
+        <%if (field.getFieldType().equals(Field.FieldType.DATE.toString()) || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {%>
+
+            <%if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {%>
+                <div class="inline-form">
+            <% }%>
 
              <input type="text"
                 value="<%= dateValue!=null ? df2.format(dateValue) : "" %>"
@@ -346,8 +349,7 @@
 
         <% }
 
-        if (field.getFieldType().equals(Field.FieldType.TIME.toString())
-            || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
+        if (field.getFieldType().equals(Field.FieldType.TIME.toString()) || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
 
             String hour=null;
             String min=null;
@@ -363,6 +365,10 @@
                 onChange="updateDate('<%=field.getVelocityVarName()%>');"
                 dojoType="dijit.form.TimeTextBox" style="width: 120px;"
                 <%=field.isReadOnly()?"disabled=\"disabled\"":""%>/>
+
+            <%if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {%>
+                </div>
+            <% }%>
         <% }
 
             if (field.getFieldType().equals(Field.FieldType.DATE.toString()) || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
@@ -371,10 +377,16 @@
 	       		    String expireDateVar = contentletForm.getStructure().getExpireDateVar();
 	                if (field.getVelocityVarName().equals(expireDateVar)) {
 	                	 if (UtilMethods.isSet( value )) {%>
-	                     &nbsp;&nbsp;<input type="checkbox" onclick="toggleExpire('<%=field.getVelocityVarName()%>')" dojoType="dijit.form.CheckBox"  name="fieldNeverExpire" id="fieldNeverExpire" > <label for="fieldNeverExpire"><%= LanguageUtil.get(pageContext, "never") %></label>
-	                 <%} else {%>
-	                     &nbsp;&nbsp;<input type="checkbox" onclick="toggleExpire('<%=field.getVelocityVarName()%>')" dojoType="dijit.form.CheckBox"  checked ="true" name="fieldNeverExpire"  id="fieldNeverExpire" > <label for="fieldNeverExpire"><%= LanguageUtil.get(pageContext, "never") %></label>
-	                 <%}%>
+                            <div class="checkbox">
+                                <input type="checkbox" onclick="toggleExpire('<%=field.getVelocityVarName()%>')" dojoType="dijit.form.CheckBox"  name="fieldNeverExpire" id="fieldNeverExpire">
+                                <label for="fieldNeverExpire"><%= LanguageUtil.get(pageContext, "never") %></label>
+                            </div>
+	                    <%} else {%>
+                            <div class="checkbox">
+                                <input type="checkbox" onclick="toggleExpire('<%=field.getVelocityVarName()%>')" dojoType="dijit.form.CheckBox"  checked ="true" name="fieldNeverExpire"  id="fieldNeverExpire">
+                                <label for="fieldNeverExpire"><%= LanguageUtil.get(pageContext, "never") %></label>
+                            </div>
+	                    <%}%>
                     <script type="text/javascript">
                     function toggleExpire(velocityVarName) {
                         var never = dijit.byId("fieldNeverExpire").getValue();
@@ -974,8 +986,8 @@
   List<Layout> layoutListForLicenseManager=APILocator.getLayoutAPI().findAllLayouts();
   for (Layout layoutForLicenseManager:layoutListForLicenseManager) {
       List<String> portletIdsForLicenseManager=layoutForLicenseManager.getPortletIds();
-      if (portletIdsForLicenseManager.contains("9")) {
-          licenseURL = "/c/portal/layout?p_l_id=" + layoutForLicenseManager.getId() +"&p_p_id=9&p_p_action=0&tab=licenseTab";
+      if (portletIdsForLicenseManager.contains(PortletID.CONFIGURATION)) {
+          licenseURL = "/c/portal/layout?p_l_id=" + layoutForLicenseManager.getId() +"&p_p_id="+PortletID.CONFIGURATION+"&p_p_action=0&tab=licenseTab";
           break;
       }
   }

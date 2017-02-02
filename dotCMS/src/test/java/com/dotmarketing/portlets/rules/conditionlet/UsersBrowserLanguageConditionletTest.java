@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -21,7 +21,7 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
  * @author Jonathan Gamba
  *         Date: 1/12/16
  */
-public class UsersBrowserLanguageConditionletTest extends TestBase {
+public class UsersBrowserLanguageConditionletTest extends UnitTestBase {
 
     private HttpServletRequest request;
     private HttpServletResponse response;

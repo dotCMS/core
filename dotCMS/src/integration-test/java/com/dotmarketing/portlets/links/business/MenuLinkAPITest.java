@@ -3,7 +3,7 @@ package com.dotmarketing.portlets.links.business;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -22,7 +22,7 @@ import com.liferay.portal.model.User;
 
 import static org.junit.Assert.*;
 
-public class MenuLinkAPITest extends TestBase {
+public class MenuLinkAPITest extends IntegrationTestBase {
     static PermissionAPI pAPI;
     static FolderAPI fAPI;
     static MenuLinkAPI mAPI;

@@ -1,7 +1,7 @@
 package com.dotmarketing.business;
 
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -70,7 +70,7 @@ import static org.junit.Assert.assertTrue;
  *
  */
 
-public class UserAPITest extends TestBase {
+public class UserAPITest extends IntegrationTestBase {
 
 	protected static UserAPI userAPI;
 	protected static RoleAPI roleAPI;
@@ -172,6 +172,7 @@ public class UserAPITest extends TestBase {
 			APILocator.getPermissionAPI().permissionIndividually(parentPermissionable, host, systemUser, false);
 		}
 
+		// NOTE: Method "assignPermissions" is deprecated in favor of "save", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "save"
 		APILocator.getPermissionAPI().assignPermissions(permissionsToSave, host, systemUser, false);
 
 		/**
@@ -199,6 +200,7 @@ public class UserAPITest extends TestBase {
 		p1.setInode(pageStructure.getInode());
 		permissions.add(p1);
 
+		// NOTE: Method "assignPermissions" is deprecated in favor of "save", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "save"
 		perAPI.assignPermissions(permissions, pageStructure, systemUser, false);
 
 		/**

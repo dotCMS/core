@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.authentication;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.cms.login.LoginService;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
@@ -19,7 +19,7 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class LogoutResourceTest extends TestBase {
+public class LogoutResourceTest extends UnitTestBase {
 
 
     public LogoutResourceTest() {

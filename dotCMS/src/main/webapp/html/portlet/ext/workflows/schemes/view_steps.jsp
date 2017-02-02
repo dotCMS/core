@@ -69,29 +69,29 @@
 
 </script>
 
+<div class="portlet-main">
+	<!-- START Toolbar -->
+	<div class="portlet-toolbar">
+		<div class="portlet-toolbar__actions-primary">
+			<strong><%=LanguageUtil.get(pageContext, "Workflow-Scheme")%></strong>
+		</div>
 
-<!-- START Listing Results -->
-<table class="listingTable showPointer" style="width:95%"  onClick="schemeAdmin.showAddEdit('<%=scheme.getId()%>');">
+    	<div class="portlet-toolbar__actions-secondary">
+    		<button dojoType="dijit.form.Button" iconClass="editIcon">
+				<%=LanguageUtil.get(pageContext, "Edit-Workflow-Scheme")%>
+			</button>
+		</div>
+	</div>
+	<!-- END Toolbar -->
+		
+	<table class="listingTable showPointer" onClick="schemeAdmin.showAddEdit('<%=scheme.getId()%>');">
 		<input type="hidden" name="cmd" value="save">
 		<input type="hidden" name="schemeId" value="<%=UtilMethods.webifyString(scheme.getId())%>">
 		<tr>
-
-			<th colspan="2" class="showPointer"><%=LanguageUtil.get(pageContext, "Workflow-Scheme")%>
-			
-				<div style="float:right;">
-				<button dojoType="dijit.form.Button"
-				iconClass="editIcon">
-				<%=LanguageUtil.get(pageContext, "Edit-Workflow-Scheme")%>
-				</button>
-				</div>
-
-		</th>
-		</tr>
-		<tr>
-			<td style="width:150px;"><%=LanguageUtil.get(pageContext, "Name")%>:</td>
-			<td>
-				<b><%=UtilMethods.webifyString(scheme.getName())%></b>
-			</td>
+			<th style="width:150px;"><%=LanguageUtil.get(pageContext, "Name")%>:</th>
+			<th>
+				<%=UtilMethods.webifyString(scheme.getName())%>
+			</th>
 		</tr>
 		<tr>
 			<td><%=LanguageUtil.get(pageContext, "Description")%>:</td>
@@ -120,44 +120,49 @@
 			</tr>
 		<%} %>
 		
-</table>
-
-<div class="yui-g portlet-toolbar topspacing">
-	<form id="fm" method="post">
-		<div class="yui-u first" style="white-space: nowrap"></div>
-		<div class="yui-u" style="text-align: right;">
-		 	<div id="dropdownButtonContainer"></div>
-				<script>
-		            dojo.addOnLoad(function() {
-		                var dialog = new dijit.TooltipDialog({
-		                    content: '<div style="padding:10px;"><%=LanguageUtil.get(pageContext, "Name")%>:&nbsp;<input type="text" name="stepName" id="stepName" dojoType="dijit.form.ValidationTextBox"  required="true" value="" maxlength="255">&nbsp;<button dojoType="dijit.form.Button" onClick="stepAdmin.addStep()" iconClass="addIcon" id="Save-new-step"><%=LanguageUtil.get(pageContext, "Add")%></button></div>',
-		                    onKeyPress:function(e){
-		                    	if(e.keyCode==13){
-		                    		stepAdmin.addStep();
-		                    	}
-	                    	}
-		                });
-	
-		                var button = new dijit.form.DropDownButton({
-		                    label: "<%=LanguageUtil.get(pageContext, "Add-Workflow-Step")%>",
-		                    dropDown: dialog,
-		                    iconClass:"addIcon",
-		                    onClick:function(){
-		                    	stepAdmin.schemeId = '<%=schemeId%>';
-		                    	
-		                    },
-		                    
-		                    
-		                });
-		                dojo.byId("dropdownButtonContainer").appendChild(button.domNode);
-		              
-		            });
-				</script>
-		</div>
-	</form>
+	</table>
 </div>
 
+<div class="portlet-main">
+	<!-- START Toolbar -->
+	<div class="portlet-toolbar">
+		<div class="portlet-toolbar__actions-primary"></div>
 
+    	<div class="portlet-toolbar__actions-secondary">
+    		<form id="fm" method="post">
+	    		<div id="dropdownButtonContainer"></div>
+					<script>
+			            dojo.addOnLoad(function() {
+			                var dialog = new dijit.TooltipDialog({
+			                    content: '<div class="inline-form"><%=LanguageUtil.get(pageContext, "Name")%>:&nbsp;<input type="text" name="stepName" id="stepName" dojoType="dijit.form.ValidationTextBox"  required="true" value="" maxlength="255">&nbsp;<button dojoType="dijit.form.Button" onClick="stepAdmin.addStep()" iconClass="addIcon" id="Save-new-step"><%=LanguageUtil.get(pageContext, "Add")%></button></div>',
+			                    onKeyPress:function(e){
+			                    	if(e.keyCode==13){
+			                    		stepAdmin.addStep();
+			                    	}
+		                    	}
+			                });
+		
+			                var button = new dijit.form.DropDownButton({
+			                    label: "<%=LanguageUtil.get(pageContext, "Add-Workflow-Step")%>",
+			                    dropDown: dialog,
+			                    iconClass:"addIcon",
+			                    onClick:function(){
+			                    	stepAdmin.schemeId = '<%=schemeId%>';
+			                    	
+			                    },
+			                    
+			                    
+			                });
+			                dojo.byId("dropdownButtonContainer").appendChild(button.domNode);
+			              
+			            });
+					</script>
+				</div>
+			</form>
+    	</div>
+   </div>
+   <!-- END Toolbar -->
+</div>
 
 
 <div id="wfStepsBoundingBoxMain" >

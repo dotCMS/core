@@ -182,14 +182,16 @@ public abstract class PermissionFactory {
 	 * @throws DotDataException 
 	 * @since 1.0
 	 */
-	abstract protected Permission savePermission(Permission p, Permissionable permissionable) throws DotDataException;
+	abstract protected Permission savePermission(Permission permission, Permissionable permissionable) throws DotDataException;
 
 	/**
 	 * Assigns a set of permissions to a given asset, any permissions already assigned to the asset are either updated or removed to match the provided list
 	 * @param permissions
 	 * @param permissionable
 	 * @throws DotDataException
+	 * @deprecated Use savePermission(permission) instead.
 	 */
+    @Deprecated
 	abstract void assignPermissions(List<Permission> permissions, Permissionable permissionable) throws DotDataException;
 	
 	/**

@@ -54,51 +54,91 @@ function cancelEdit(form) {
 	self.location = '<portlet:renderURL><portlet:param name="struts_action" value="/ext/languages_manager/view_languages_manager" /></portlet:renderURL>';
 }
 
+dojo.ready(function() {
+	var fieldWidth = "300px";
+	new dijit.form.TextBox({
+		name: "languageCode",
+		style: "width: " + fieldWidth
+	}, "languageCode");
+
+	new dijit.form.TextBox({
+		name: "countryCode",
+		style: "width: " + fieldWidth
+	}, "countryCode");
+
+	new dijit.form.TextBox({
+		name: "language",
+		style: "width: " + fieldWidth
+	}, "language");
+
+	new dijit.form.TextBox({
+		name: "country",
+		style: "width: " + fieldWidth
+	}, "country");
+})
+
 </script>
 
-<div class="shadowBoxLine">
-  <dl> 
-    
-    <html:form action="/ext/languages_manager/edit_language" styleId="fm">
-    <input name="<portlet:namespace /><%= Constants.CMD %>" type="hidden" value="">
-    <input name="<portlet:namespace />redirect" type="hidden" value="">
-    <html:hidden  property="id" value="<%=String.valueOf(languageId)%>" />
-    <%if(languageId > 0){ %>
-	    <dt><%= LanguageUtil.get(pageContext, "Language-Id") %>:</dt>
-	    <dd><%=languageId %> </dd>
-	    <dt><%= LanguageUtil.get(pageContext, "Use") %>:</dt>
-	    <dd>http://yoursite.com/?language_id=<%=languageId %></dd>
-    <%} %>
-    <dt><%= LanguageUtil.get(pageContext, "Language-Code") %>:</dt>
-    <dd><html:text size="30" property="languageCode" maxlength="2" /></dd>
-    
-    <dt><%= LanguageUtil.get(pageContext, "Country-Code") %>:</dt>
-    <dd><html:text size="30" property="countryCode" maxlength="2"/></dd>
-    
-    <dt><%= LanguageUtil.get(pageContext, "Language") %>:</dt>
-    <dd><html:text size="30" property="language" /> <%= LanguageUtil.get(pageContext, "descriptive") %></dd>
-    
-    <dt><%= LanguageUtil.get(pageContext, "Country") %>:</dt>
-    <dd><html:text size="30" property="country" /> <%= LanguageUtil.get(pageContext, "descriptive") %></dd>
+<div class="portlet-main">
 
-    <dt>&nbsp;</dt>    
-    <dd>
-		<%if (language.getId() != 0){%>
-        <button dojoType="dijit.form.Button" onClick="deleteLanguage(document.getElementById('fm'))" iconClass="deleteIcon">
-           <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete")) %>
-        </button> 
-        <%}%>
-        
-        <button dojoType="dijit.form.Button" onClick="cancelEdit()" iconClass="cancelIcon" >
-            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
-        </button>
-        
-        <button dojoType="dijit.form.Button" onClick="saveLanguage(document.getElementById('fm'))" iconClass="saveIcon">
-           <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
-        </button>
-    </dd>
-
-  </dl>
-    </html:form>
+	<div class="form-horizontal">
+	  
+	    
+	    <html:form action="/ext/languages_manager/edit_language" styleId="fm">
+	    <input name="<portlet:namespace /><%= Constants.CMD %>" type="hidden" value="">
+	    <input name="<portlet:namespace />redirect" type="hidden" value="">
+	    <html:hidden  property="id" value="<%=String.valueOf(languageId)%>" />
+	    
+	    <%if(languageId > 0){ %>
+		    <dl> 
+			    <dt><%= LanguageUtil.get(pageContext, "Language-Id") %>:</dt>
+			    <dd><%=languageId %> </dd>
+			</dl>
+			<dl> 
+			    <dt><%= LanguageUtil.get(pageContext, "Use") %>:</dt>
+			    <dd>http://yoursite.com/?language_id=<%=languageId %></dd>
+			</dl>
+	    <%} %>
+	    <dl>
+		    <dt><%= LanguageUtil.get(pageContext, "Language-Code") %>:</dt>
+		    <dd><html:text size="30" property="languageCode" maxlength="2" styleId="languageCode" /></dd>
+	    </dl>
+		<dl>
+		    <dt><%= LanguageUtil.get(pageContext, "Country-Code") %>:</dt>
+		    <dd><html:text size="30" property="countryCode" maxlength="2" styleId="countryCode" /></dd>
+	    </dl>
+		<dl>
+		    <dt><%= LanguageUtil.get(pageContext, "Language") %>:</dt>
+		    <dd>
+				<html:text size="30" property="language" styleId="language" />
+				<div class="hint-text"><%= LanguageUtil.get(pageContext, "descriptive") %></div>
+			</dd>
+	    </dl>
+		<dl>
+		    <dt><%= LanguageUtil.get(pageContext, "Country") %>:</dt>
+		    <dd>
+				<html:text size="30" property="country" styleId="country" />
+				<div class="hint-text"><%= LanguageUtil.get(pageContext, "descriptive") %></div>
+			</dd>
+		</dl>
+	 
+	    <div class="buttonRow">
+	    	<button dojoType="dijit.form.Button" onClick="saveLanguage(document.getElementById('fm'))" iconClass="saveIcon">
+	           <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
+	        </button>
+	        
+			<%if (language.getId() != 0){%>
+		        <button dojoType="dijit.form.Button" onClick="deleteLanguage(document.getElementById('fm'))" class="dijitButtonDanger">
+		           <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete")) %>
+		        </button> 
+	        <%}%>
+	        
+	        <button dojoType="dijit.form.Button" onClick="cancelEdit()" class="dijitButtonFlat" >
+	            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+	        </button>
+	    </div>
+	
+	    </html:form>
+	</div>
 </div>
 </liferay:box>

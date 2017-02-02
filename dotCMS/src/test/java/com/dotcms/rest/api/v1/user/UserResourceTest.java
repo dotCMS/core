@@ -20,7 +20,7 @@ import javax.servlet.http.HttpSession;
 
 import org.junit.Test;
 
-import com.dotcms.TestBase;
+import com.dotcms.UnitTestBase;
 import com.dotcms.api.system.user.UserService;
 import com.dotcms.cms.login.LoginService;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -30,7 +30,6 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
-import com.dotcms.rest.api.v1.site.SiteBrowserResource;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
@@ -49,7 +48,7 @@ import com.liferay.portal.model.User;
  * {@link SiteBrowserResource} test
  * @author jsanca
  */
-public class UserResourceTest extends TestBase {
+public class UserResourceTest extends UnitTestBase {
 
     @Test
     public void testUpdateUserNullValues() throws JSONException, DotSecurityException, DotDataException {

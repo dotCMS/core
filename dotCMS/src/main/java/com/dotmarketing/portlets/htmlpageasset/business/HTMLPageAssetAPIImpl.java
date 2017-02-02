@@ -520,6 +520,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             permissionAPI.removePermissions(ccworking);
             if(perms!=null) {
                 permissionAPI.permissionIndividually(ccworking.getParentPermissionable(), ccworking, user, respectFrontEndPermissions);
+
+                // NOTE: Method "assignPermissions" is deprecated in favor of "save", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "save"
                 permissionAPI.assignPermissions(perms, ccworking, user, respectFrontEndPermissions);
             }
 

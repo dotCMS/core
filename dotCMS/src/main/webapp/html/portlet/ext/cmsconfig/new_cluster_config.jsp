@@ -101,12 +101,18 @@
                 dojo.addClass('row-' + row, "active");
                 this.lastRow=row;
 
+				// Set Container Height
+				var x = window.innerHeight - 140;
+				dojo.style("container", "height", x + "px");
+
+
                 // Build the action Panel
                 var panelDiv = dojo.byId("actionPanelContainer");
                 var hanger = dojo.byId("actionPanelContent");
                 if(!hanger){
                     return;
                 }
+
                 if (panelDiv) {
                     dojo.destroy("panelDiv")
                 }
@@ -222,9 +228,8 @@
 
                 dojo.removeClass("actionPanel", "hideMe");
 
-                //dojo.parser.parse("actionPanel");
                 dojo.style("actionPanel", "width", dojo.position("actionPanelTableHeader",true).w -1 +this.ff + "px");
-                
+
             },
 
             /**
@@ -264,16 +269,9 @@
                 var panelPage = dojo.position(document.getElementById("actionPanel").parentNode,true);
                 var panelMinHeight = document.getElementById("actionPanel").parentNode.style.minHeight;
                 dojo.style("actionPanel", "width", tableHeader.w -1 + "px");
-                if(panelPage.h < panelMinHeight){
-                    dojo.style("actionPanel", "height", panelMinHeight - tableHeader.h + "px");
-                }
-                else{
-                    dojo.style("actionPanel", "height", panelPage.h - tableHeader.h + "px");
-                }
                 require(["dojo/window"], function(win){
-                       var vs = win.getBox();
-                        dojo.style("actionPanelContent", "height", panelPage.h - tableHeader.h + "px");
-                    });
+                    dojo.style("actionPanelContent", "height", panelPage.h + "px");
+                });
                 actionPanelTable.placeActionPanel();
             }
         });
@@ -289,7 +287,7 @@
                 sync: true,
                 load : function(data) {
                     nodeList = data;
-                    var nodesTableHTML = "<table class='listingTable actionTable'> "
+                    var nodesTableHTML = "<table class='listingTable actionTable network__listing'> "
                         + "<tr>"
                             + "<th width='7%'>&nbsp;</th>"
                             + "<th width='7%'>&nbsp;</th>"
@@ -302,7 +300,7 @@
                             <!-- /Add these up to 100% -->
 
                             <%-- the width of the inner div is the only thing you have to set to change the width --%>
-                            + "<th id='actionPanelTableHeader'><div style='width:400px;'></div></th>"
+                            + "<th id='actionPanelTableHeader' network-action__header><div style='width:400px;'></div></th>"
                         + "</tr>";
 
                         dojo.forEach(nodeList, function(item, index){
@@ -323,13 +321,13 @@
 
                             nodesTableHTML += ""
                             + "<tr id='row-"+item.serverId+"' onclick='javascript:actionPanelTable.toggle(\""+item.serverId+"\");'>"
-                                + "<td align='center'><img src='/html/images/skin/icon-server.png'></td>"
-                                + "<td align='center' style='color:#8c9ca9;'>" + (item.myself?"<i class='fa fa-user fa-3x'></i>":"")+"</td>"
+                                + "<td align='center'><img src='/html/images/skin/icon-server.png' class='icon network__listing-icon' /></td>"
+                                + "<td align='center' style='color:#8c9ca9;'>" + (item.myself?"<i class='userIcon'></i>":"")+"</td>"
                                 + "<td>" + item.displayServerId + "</td>"
                                 + "<td>" + item.friendlyName + "</td>"
                                 + "<td align='left'>"+item.ipAddress+"</td>"
                                 + "<td align='left'>"+item.contacted+"</td>"
-                                + "<td align='center'><i class='fa fa-circle fa-2x "+item.status+"'></i></td>"
+                                + "<td align='center'><i class='statusIcon " + item.status + "'></i></td>"
                                 + deleteServer
                                 + "<td id='td-"+index+"'></td>"
                             + "</tr>";
@@ -344,7 +342,7 @@
                         dojo.empty(dojo.byId("container"));
                         dojo.place(nodesTable, dojo.byId("container"));
 
-                        var actionPanelDiv = dojo.create("div", { id: "actionPanel", class: "hideMe" });
+                        var actionPanelDiv = dojo.create("div", { id: "actionPanel", class: "network-action hideMe" });
                         var arrowDiv = dojo.create("div", { id: "arrow", innerHtml: "<img src='/html/images/skin/arrow.png'/>" });
                         var actionPanelContentDiv = dojo.create("div", { id: "actionPanelContent", style: "overflow:auto" });
 
@@ -364,7 +362,6 @@
 
         require(["dojo/ready"], function(ready){
               ready(function(){
-
                   renderNodesStatus();
 
                  /**
@@ -409,10 +406,6 @@
                 }
             });
         }
-
-        function showCacheDialog(){
-           
-        }
         
 </script>
 
@@ -420,13 +413,9 @@
     <div id="myCacheDialogName"></div>
 </div>
 
-<div id="doc3" style="min-height: 600px">
-
-    <div class="actionPannelPage" id="container" style="min-height: 600px">
-        <div id="actionPanel" class="hideMe" style="height: 600px">
-            <div id="arrow"><img src='/html/images/skin/arrow.png'/></div>
-            <div id="actionPanelContent" style="overflow:auto;"></div>
-        </div>
+<div id="container">
+    <div id="actionPanel" class="network-action hideMe">
+        <div id="arrow"><img src='/html/images/skin/arrow.png'/></div>
+        <div id="actionPanelContent" style="overflow:auto;"></div>
     </div>
-
 </div>

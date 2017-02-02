@@ -2,28 +2,22 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil" %>
 <div id="weeklyView" style="display: none;">
 
-	<div class="yui-gb" id="monthControls" style="padding: 8px 5px;">
-		<div class="yui-u first">
-			<button dojoType="dijit.form.Button" onClick="previousWeek()" >
-				<span class="arrowLeftIcon"></span>
-			</button>
-			<button dojoType="dijit.form.Button" onClick="nextWeek()" >
-				<span class="arrowRightIcon"></span>
-			</button>
-			<button dojoType="dijit.form.Button" onClick="setTodayView()" >
-	    		<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Today")) %>
-			</button>
+	<div class="portlet-toolbar">
+		<div class="portlet-toolbar__actions-primary">
+			<div class="inline-form">
+				<button dojoType="dijit.form.Button" onClick="previousWeek()" iconClass="arrowLeftIcon"></button>
+				<button dojoType="dijit.form.Button" onClick="nextWeek()" iconClass="arrowRightIcon"></button>
+				<button dojoType="dijit.form.Button" onClick="setTodayView()" >
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Today")) %>
+				</button>
+			</div>
 		</div>
-		<div class="yui-u"style=" text-align:center;padding-top:5px;">
-			<span id="monthWeeklyViewName" class="monthName"></span>
-		</div>
-	    <div class="yui-u">
-	    	&nbsp;
-		</div> 
+		<div class="portlet-toolbar__info" id="monthWeeklyViewName"></div>
+		<div class="portlet-toolbar__actions-secondary"></div>
 	</div>
 
 	<div id="weekWrapper" style="overflow-y:auto;overflow-x:hidden;">
-		<table class="listingTable">
+		<table class="listingTable" style="height: 100%;">
 			<thead>
 				<tr>
 					<th width="14%"><%= LanguageUtil.get(pageContext, "SUN") %></th>
@@ -147,7 +141,7 @@
 					(selectedDate.getMonth() != currentDate.getMonth()?'notInMonth ':'') +
 					(currentDayOfWeek == 6 || currentDayOfWeek == 7?'weekendDay ':'') + 
 					(currentDayOfWeek == 6?'lastWeekDay':'') + '">' +
-				'	<div class="dayNumber" style="margin:-26px 3px 15px 0;"><a href="javascript: setDayView('+currentDate.getFullYear()+','+currentDate.getMonth()+','+currentDate.getDate()+');">' + currentDate.format('j') + '</a></div>';
+				'	<div class="dayNumber" style="margin:-30px 10px 25px 0;"><a href="javascript: setDayView('+currentDate.getFullYear()+','+currentDate.getMonth()+','+currentDate.getDate()+');">' + currentDate.format('j') + '</a></div>';
 
 				
 		// START ALL DAY LOOP	

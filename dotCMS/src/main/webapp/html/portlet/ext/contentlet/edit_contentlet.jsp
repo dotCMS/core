@@ -161,7 +161,7 @@
 
 	boolean canEditAsset = conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
 	final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
-    boolean canSeeRules = layoutAPI.doesUserHaveAccessToPortlet("RULES_ENGINE_PORTLET", user)
+    boolean canSeeRules = layoutAPI.doesUserHaveAccessToPortlet("rules", user)
             && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user)
                && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "RULES: " + PermissionAPI.PERMISSION_USE, user);
 	boolean contentEditable = (UtilMethods.isSet(contentlet.getInode())?(Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE):false);
@@ -258,7 +258,7 @@ var editButtonRow="editContentletButtonRow";
 		</script>
 	<%} %>
 	<!--  START TABS -->
-	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer" class="content-edit-main">
+	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer" class="content-edit__main">
 		<!--  IF THE FIRST FIELD IS A TAB-->
 		<% if(fields != null &&
 			fields.size()>0 &&
@@ -272,7 +272,7 @@ var editButtonRow="editContentletButtonRow";
 		<%}%>
 
         <!-- START EDIT CONTENT FORM -->
-        <div>
+        <div class="content-edit__form">
             <% if(widgetUsageField != null && UtilMethods.isSet(widgetUsageField.getValues())){ %>
                 <div class="fieldWrapper">
                     <div class="fieldName">
@@ -473,11 +473,11 @@ var editButtonRow="editContentletButtonRow";
 		 		request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, fatty);
 		}%>
 
-		<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "History") %>" onShow="refreshVersionCp();">
-			<div id="contentletVersionsDiv" style="height:100%;">
+		<div id="versions" class="history" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "History") %>" onShow="refreshVersionCp();">
+			<div id="contentletVersionsDiv" style="height:100%;" class="content-edit__history-version">
 			</div>
-
-			<div>
+			<hr class="history__divider">
+			<div class="history__status">
 			<%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
 			</div>
 		</div>
@@ -492,7 +492,7 @@ var editButtonRow="editContentletButtonRow";
 	</div>
 
 		<!-- START CONTENT ACTIONS -->
-		<div class="content-edit-sidebar" id="editContentletButtonRow">
+		<div class="content-edit__sidebar" id="editContentletButtonRow">
 			<%if (InodeUtils.isSet(structure.getInode())) {%>
 			<%--If the user has permissions to publish--%>
 			<%--A special case happens when the contentlet is new and CMS owner has permissions to publish --%>
@@ -570,7 +570,7 @@ var editButtonRow="editContentletButtonRow";
 	}
 </script>
 
-<div id="saveContentErrors" style="display: none;" dojoType="dijit.Dialog">
+<div id="saveContentErrors" style="display: none;" dojoType="dijit.Dialog" class="content-edit__dialog-error">
 	<div dojoType="dijit.layout.ContentPane" id="exceptionData" hasShadow="true"></div>
 	<div class="formRow" style="text-align:center">
 		<button dojoType="dijit.form.Button"  onClick="dijit.byId('saveContentErrors').hide()" type="button"><%= LanguageUtil.get(pageContext, "close") %></button>

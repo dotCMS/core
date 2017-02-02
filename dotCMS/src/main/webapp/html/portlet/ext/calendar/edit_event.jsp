@@ -147,37 +147,20 @@ var editButtonRow="editEventButtonRow";
 	<div dojoAttachPoint="cmsFileBrowserImage" currentView="thumbnails" jsId="cmsFileBrowserImage" onFileSelected="addFileImageCallback" mimeTypes="image" dojoType="dotcms.dijit.FileBrowserDialog"></div>
 	<div dojoAttachPoint="cmsFileBrowserFile" currentView="list" jsId="cmsFileBrowserFile" onFileSelected="addFileCallback" dojoType="dotcms.dijit.FileBrowserDialog"></div>
 
-	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer">
+	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer" class="content-edit__main">
 
-	<!--  Contentlet structure fields -->
-	<% if(fields != null && fields.size()>0 &&  fields.get(0) != null && fields.get(0).getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())){
-			Field f0 = fields.get(0);
-			fields.remove(0);
-	%>
-		<div id="<%=f0.getFieldContentlet()%>" style="padding:0;" dojoType="dijit.layout.ContentPane" title="<%=f0.getFieldName()%>" onShow="showEditButtonsRow()" >
-	<% } else { %>
-		<div id="properties" style="padding:0;"  dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Content") %>" onShow="showEditButtonsRow()" >
-	<% } %>
-
-    <!--  action buttons -->
-	<% if (InodeUtils.isSet(structure.getInode())) { %>
-
-		<!-- START Left Column -->
-		<div class="buttonRow-left lineRight" id="editEventButtonRow">
-			<div class="gradient2">
-				<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_basic_properties.jsp" />
-			</div>
-			<div class="gradient title"><%=LanguageUtil.get(pageContext, "Actions") %></div>
-			<div id="contentletActionsHanger">
-				<%@include file="/html/portlet/ext/contentlet/contentlet_actions_inc.jsp" %>
-			</div>
-
-		</div>
-	<% } %>
+		<!--  Contentlet structure fields -->
+		<% if(fields != null && fields.size()>0 &&  fields.get(0) != null && fields.get(0).getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())){
+				Field f0 = fields.get(0);
+				fields.remove(0);
+		%>
+			<div id="<%=f0.getFieldContentlet()%>" dojoType="dijit.layout.ContentPane" title="<%=f0.getFieldName()%>">
+		<% } else { %>
+			<div id="properties" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Content") %>">
+		<% } %>
 
 		<!-- START Right Column -->
-		<div class="wrapperRight" >
-			<div style="height:20px;"></div>
+		<div class="content-edit__form">
 		<%
 		/*### DRAW THE DYNAMIC FIELDS ###*/
 
@@ -203,7 +186,7 @@ var editButtonRow="editEventButtonRow";
     			tabDividerOpen = true;%>
 					</div>
 				</div>
-				<div id="<%=f.getFieldContentlet()%>" dojoType="dijit.layout.ContentPane" title="<%=f.getFieldName()%>" onShow="showEditButtonsRow()" >
+				<div id="<%=f.getFieldContentlet()%>" dojoType="dijit.layout.ContentPane" title="<%=f.getFieldName()%>">
 					<div class="wrapperRight" style="height:400px;">
 						<div style="height:20px;"></div>
 			<% } else if(f.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString())) {
@@ -294,7 +277,7 @@ var editButtonRow="editEventButtonRow";
 
 	<!-- Contentlet categories Tab -->
 	<% if(categoriesTabFieldExists){ %>
-		<div id="categories" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Categories") %>" onShow="hideEditButtonsRow()" >
+		<div id="categories" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Categories") %>">
 			<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_categories.jsp" />
 		</div>
 	<% } %>
@@ -303,7 +286,7 @@ var editButtonRow="editEventButtonRow";
 	<!-- Relationships Tab -->
     <% if(relationshipRecords != null && relationshipRecords.size() > 0 && !relationshipsTabFieldExists){
         relationshipsTabFieldExists = true;%>
-		<div id="relationships" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Relationships") %>" onShow="hideEditButtonsRow()" >
+		<div id="relationships" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Relationships") %>">
 			<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp" />
 		</div>
 	<% } %>
@@ -311,7 +294,7 @@ var editButtonRow="editEventButtonRow";
 
 	<!-- Permissions Tab -->
 	<% if(!permissionsTabFieldExists && canEditAsset){ %>
-		<div id="permissions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>" onShow="hideEditButtonsRow()" >
+		<div id="permissions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>">
 			<%
 				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentlet);
 				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT_BASE, structure);
@@ -322,19 +305,34 @@ var editButtonRow="editEventButtonRow";
 	<!-- END Permissions Tab -->
 
 	<!-- Versions Tab -->
-	<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Versions") %>" onShow="hideEditButtonsRow()">
+	<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Versions") %>">
 		<%@include file="/html/portlet/ext/common/edit_versions_inc.jsp" %>
 	</div>
 	<!-- END Versions Tab -->
 
 	<!-- References Tab -->
 	<%if(references != null && references.size() > 0){ %>
-		<div id="references" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "References") %>" onShow="hideEditButtonsRow()" >
+		<div id="references" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "References") %>">
 			<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_references.jsp" />
 		</div>
 	<%}%>
 	<!-- END References Tab -->
 </div>
+
+<!--  action buttons -->
+<% if (InodeUtils.isSet(structure.getInode())) { %>
+	<!-- START Left Column -->
+	<div class="content-edit__sidebar" id="editEventButtonRow">
+		<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_basic_properties.jsp" />
+
+		<div class="content-edit-actions">
+			<%--<h3><%=LanguageUtil.get(pageContext, "Actions") %></h3>--%>
+			<div id="contentletActionsHanger">
+				<%@ include file="/html/portlet/ext/contentlet/contentlet_actions_inc.jsp" %>
+			</div>
+		</div>
+	</div>
+<% } %>
 
 	<%@include file="/html/portlet/ext/contentlet/edit_contentlet_js_inc.jsp" %>
 
@@ -426,10 +424,6 @@ var editButtonRow="editEventButtonRow";
 	    	.toString(), params)+"&inode=&lang="+ contentletForm.getLanguageId()+ "&reuseLastLang=true&populateaccept=true&reUseInode="+reUseInode;
 
 	    	%>
-
-
-
-
 
 		<script type="text/javascript">
 			 function runpopulate(){

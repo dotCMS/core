@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.util.PortletID"%>
 <%@ include file="/html/portlet/ext/dashboard/init.jsp" %>
 
 <%@page import="java.util.List"%>
@@ -34,18 +35,18 @@ try {
 	 for(Layout layoutObj:layoutList) {
 		List<String> portletIdsForLayout=layoutObj.getPortletIds();
 		for(String portletId : portletIdsForLayout){
-		if (portletId.equals("EXT_13")) {
-			templateURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_13&p_p_action=1";
-		}else if (portletId.equals("EXT_12")) {
-			containerURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_12&p_p_action=1";
+		if (portletId.equals(PortletID.TEMPLATES)) {
+			templateURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.TEMPLATES+"&p_p_action=1";
+		}else if (portletId.equals(PortletID.CONTAINERS)) {
+			containerURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.CONTAINERS+"&p_p_action=1";
 		}else if (portletId.equals("EXT_1")) {
 			linkURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_1&p_p_action=1";
-		}else if (portletId.equals("EXT_15")) {
-			pagesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_15&p_p_action=1";
-		}else if (portletId.equals("EXT_3")) {
-			filesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_3&p_p_action=1";
-		}else if (portletId.equals("EXT_11")) {
-			contentURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_11&p_p_action=1";
+		}else if (portletId.equals(PortletID.HTML_PAGES)) {
+			pagesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.HTML_PAGES+"&p_p_action=1";
+		}else if (portletId.equals(PortletID.FILES_LEGACY)) {
+			filesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.FILES_LEGACY+"&p_p_action=1";
+		}else if (portletId.equals(PortletID.CONTENT)) {
+			contentURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.CONTENT+"&p_p_action=1";
 		}
 	  }
 	}
@@ -198,35 +199,35 @@ try {
 
 
    	 function editContent(contInode,structureInode){
-   	     var URL = '<%=contentURL%>&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_EXT_11_cmd=edit&_EXT_11_selectedStructure={stInode}&host_id={host_id}&inode={inode}&referer=<%=referer%>';
+   	     var URL = '<%=contentURL%>&p_p_state=maximized&p_p_mode=view&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=edit&_content_selectedStructure={stInode}&host_id={host_id}&inode={inode}&referer=<%=referer%>';
    	     var hostId = dijit.byId("dahboardHostSelectorWorkStream").value;
  	     var href = dojo.replace(URL, { stInode:structureInode, inode: contInode, host_id: hostId })
    		 window.location=href;	
    	   }
 
        function editHtmlPage(contInode){
-      	     var URL = '<%=pagesURL%>&p_p_state=maximized&p_p_mode=view&_EXT_15_struts_action=%2Fext%2Fhtmlpages%2Fedit_htmlpage&_EXT_15_cmd=edit&host_id={host_id}&inode={inode}&referer=<%=referer%>';	   	     	        
+      	     var URL = '<%=pagesURL%>&p_p_state=maximized&p_p_mode=view&_html-pages_struts_action=%2Fext%2Fhtmlpages%2Fedit_htmlpage&_html-pages_cmd=edit&host_id={host_id}&inode={inode}&referer=<%=referer%>';	   	     	        
       	     var hostId = dijit.byId("dahboardHostSelectorWorkStream").value;
       	     var href = dojo.replace(URL, {inode: contInode, host_id: hostId})
       		 window.location=href;	
       	}
 
        function editFile(contInode){
-    	     var URL = '<%=filesURL%>&p_p_state=maximized&p_p_mode=view&_EXT_3_struts_action=%2Fext%2Ffiles%2Fedit_file&_EXT_3_cmd=edit&host_id={host_id}&inode={inode}&referer=<%=referer%>';	   	     	              	     	        
+    	     var URL = '<%=filesURL%>&p_p_state=maximized&p_p_mode=view&_files-legacy_struts_action=%2Fext%2Ffiles%2Fedit_file&_files-legacy_cmd=edit&host_id={host_id}&inode={inode}&referer=<%=referer%>';	   	     	              	     	        
     	     var hostId = dijit.byId("dahboardHostSelectorWorkStream").value;
     	     var href = dojo.replace(URL, {inode: contInode, host_id: hostId})
     		 window.location=href;	
     	}
 
        function editTemplate(contInode){
-  	     var URL = '<%=templateURL%>&p_p_state=maximized&p_p_mode=view&_EXT_13_struts_action=%2Fext%2Ftemplates%2Fedit_template&_EXT_13_cmd=edit&host_id={host_id}&inode={inode}&referer=<%=referer%>';	   	     	              	     	           	     	        
+  	     var URL = '<%=templateURL%>&p_p_state=maximized&p_p_mode=view&_templates_struts_action=%2Fext%2Ftemplates%2Fedit_template&_templates_cmd=edit&host_id={host_id}&inode={inode}&referer=<%=referer%>';	   	     	              	     	           	     	        
   	     var hostId = dijit.byId("dahboardHostSelectorWorkStream").value;
    	     var href = dojo.replace(URL, {inode: contInode, host_id: hostId})
   		 window.location=href;	
      	}
 
        function editContainer(contInode){
-    	     var URL = '<%=containerURL%>&p_p_state=maximized&p_p_mode=view&_EXT_12_struts_action=%2Fext%2Fcontainers%2Fedit_container&_EXT_12_cmd=edit&host_id={host_id}&inode={inode}&referer=<%=referer%>';	   	     	              	     	           	     	        	  	     	        
+    	     var URL = '<%=containerURL%>&p_p_state=maximized&p_p_mode=view&_containers_struts_action=%2Fext%2Fcontainers%2Fedit_container&_containers_cmd=edit&host_id={host_id}&inode={inode}&referer=<%=referer%>';	   	     	              	     	           	     	        	  	     	        
     	     var hostId = dijit.byId("dahboardHostSelectorWorkStream").value;
     	     var href = dojo.replace(URL, {inode: contInode, host_id: hostId})
     		 window.location=href;	
