@@ -39,6 +39,7 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 	private final UserAPI userAPI;
 	private final SystemEventProcessorFactory systemEventProcessorFactory;
     private final PayloadVerifierFactory payloadVerifierFactory;
+    private final static ForbiddenCloseCode FORBIDDEN_CLOSE_CODE = new ForbiddenCloseCode();
 
 	public SystemEventsWebSocketEndPoint() {
 
@@ -90,7 +91,7 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 				if (session.isOpen()) {
 
 					session.getAsyncRemote().sendObject(forbiddenException);
-					session.close(new CloseReason(new ForbiddenCloseCode(),
+					session.close(new CloseReason(FORBIDDEN_CLOSE_CODE ,
 							"A web socket connection requires a previous web session created"));
 				}
 				throw forbiddenException;
