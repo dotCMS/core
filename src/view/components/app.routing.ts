@@ -90,16 +90,6 @@ const appRoutes: Routes = [
         path: 'c',
     },
     {
-        children: [
-            {
-                component: LogOutContainer,
-                path: ''
-            }
-        ],
-        component: LoginPageComponent,
-        path: 'public/logout',
-    },
-    {
         canActivate: [RoutingPublicAuthService],
         children: [
             {
