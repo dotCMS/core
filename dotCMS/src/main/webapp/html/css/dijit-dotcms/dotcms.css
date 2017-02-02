@@ -4772,7 +4772,6 @@ div#_dotHelpMenu {
 .toggleOpenIcon,
 .trashIcon,
 .unarchiveIcon,
-.unlockIcon,
 .unpublishIcon,
 .uploadIcon,
 .windowsIcon,
@@ -6516,6 +6515,10 @@ a.category_higlighted, a.tag_higlighted {
   margin-top: 16px;
 }
 
+.license-manager__upload-button {
+  float: right;
+}
+
 .view-roles,
 .view-roles .portlet-sidebar {
   height: 100%;
@@ -7425,12 +7428,12 @@ Resize Handle
   height: 100%;
 }
 
-#cell-actions, .listingTable .listingTable__actions, .content-type__cell-actions, .job-scheduler__host-list-actions {
+#cell-actions, .listingTable .listingTable__actions, .content-type__cell-actions, .job-scheduler__host-list-actions, .license-manager__listing-action {
   text-align: center;
   width: 65px;
   white-space: nowrap;
 }
-#cell-actions a, .listingTable .listingTable__actions a, .content-type__cell-actions a, .job-scheduler__host-list-actions a {
+#cell-actions a, .listingTable .listingTable__actions a, .content-type__cell-actions a, .job-scheduler__host-list-actions a, .license-manager__listing-action a {
   display: inline-block;
   margin: 0 4px;
   text-decoration: none;
