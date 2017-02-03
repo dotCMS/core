@@ -83,35 +83,42 @@
 	   	    });
 	    },
 	
-	    doCodeRequest : function () {
-	    	
-	    	if(dijit.byId("license_type").getValue()==undefined || dijit.byId("license_type").getValue()=="--"){
-	    		//console.log("code request: " + dijit.byId("license_type").getValue());
-	    		dojo.byId("licenseCode").value="";
-	    		return;
-	    	}
-	    	if(dijit.byId("license_level").getValue() == "100"){
-	    		//console.log("code request: " + dijit.byId("license_level").getValue());
-	    		dojo.byId("licenseCode").value="";
-	    		return;
-	    	}
-	    	
-	    	var data = {"licenseLevel":dijit.byId("license_level").getValue(),"licenseType":dijit.byId("license_type").getValue()};
-	   	    dojo.xhrPost({
-	   	        url: "/api/license/requestCode/",
-	   	        handleAs: "text",
-	   	        postData: data,
-	   	        load: function(code) {
-
-					dojo.byId("licenseCode").value=code;
-					//dijit.byId("getLicenseCodeDia").show();
-					
-					
-	   	        }
-	
-	   	    });
-	   	
-	    },
+        doCodeRequest : function () {
+            
+            if(dijit.byId("license_type").getValue()==undefined || dijit.byId("license_type").getValue()=="--"){
+                //console.log("code request: " + dijit.byId("license_type").getValue());
+                dojo.byId("licenseCode").value="";
+                return;
+            }
+            if(dijit.byId("license_level").getValue() == "100"){
+                //console.log("code request: " + dijit.byId("license_level").getValue());
+                dojo.byId("licenseCode").value="";
+                return;
+            }
+            
+            var xhrArgs = {
+                    url: "/api/license/requestCode/licenseType/"+ dijit.byId("license_type").getValue() 
+                    + '/licenseLevel/' + dijit.byId("license_level").getValue(),
+                    handleAs: "json",
+                    load: function (data) {
+                        var isError = false;
+                        if (data.success == false || data.success == "false") {
+                            isError = true;
+                        }
+                        if(isError){
+                            showDotCMSSystemMessage("There was an error generating the Request Code. Please try again",true);
+                        }else{
+                            var requestCode = data.requestCode;
+                            dojo.byId("licenseCode").value=requestCode;
+                        }
+                    },
+                    error: function (error) {
+                        showDotCMSSystemMessage("ERROR:" + error,true);
+                        console.log(error);
+                    }
+                };
+                dojo.xhrPost(xhrArgs);
+        },
 
 	    showCurrentCustomer : function(){
 	    	//console.log("showing");
@@ -196,43 +203,40 @@
 	   		
 	   	},
 	   	
-	    	
-	   	
-	    doLicensePaste :function () {
+        doLicensePaste :function () {
 
-	   		
-	    	var data;
+            var data;
 
-	   		if(dojo.byId("licenseCodePasteField").value==undefined || dojo.byId("licenseCodePasteField").value.length>0){
-	   			 data = {"licenseText":dojo.byId("licenseCodePasteField").value};
-	   		}
-	   		else{
-	   			console.log("test");
-	   			 data = {"licenseText":dojo.byId("licenseCodePasteFieldTwo").value};
-	   		}
-	   	 		
-	   		
-	   		
-	   	    dojo.xhrPost({
-	   	        url: "/api/license/applyLicense/",
-	   	        handleAs: "text",
-	   	        postData: data,
-	   	        load: function(message) {
-	   	        	
-	   	        	if(! message ){
-	   	        		licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-applied")) %>');
-	   	        	}
-	   	        	else{
-	   	        		showDotCMSSystemMessage("ERROR: " + message,true);
-	   	        		console.log("message:" + message);
-	   	        	}
-	   	        },
-	   	     	error: function(error){
-	   	     		
-	   	     	
-	   	     	}
-	   	    });
-	   	},
+            if(dojo.byId("licenseCodePasteField").value==undefined || dojo.byId("licenseCodePasteField").value.length>0){
+                 data = dojo.byId("licenseCodePasteField").value;
+            }
+            else{
+                console.log("test");
+                 data = dojo.byId("licenseCodePasteFieldTwo").value;
+            }
+
+            dojo.xhrPost({
+                url: "/api/license/applyLicense/",
+                handleAs: "json",
+                content: {
+                    'licenseText':data
+                },
+                load: function(message) {
+                    
+                    if(! message ){
+                        licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-applied")) %>');
+                    }
+                    else{
+                        showDotCMSSystemMessage("ERROR: " + message,true);
+                        console.log("message:" + message);
+                    }
+                },
+                error: function(error){
+                    
+                
+                }
+            });
+        },
 
 		 levelName : function(level) {
 		    switch(level) {
