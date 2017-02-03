@@ -276,7 +276,7 @@ public class LicenseResource {
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
     public Response requestLicense(@Context HttpServletRequest request, 
             @PathParam ("params") String params ) {
-        InitDataObject initData = webResource.init(params, true, request, true, "9");
+        InitDataObject initData = webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
         
         Map<String, String> paramsMap = initData.getParamsMap();
         
@@ -336,7 +336,7 @@ public class LicenseResource {
             @PathParam("params") String params, 
             @FormParam ("licenseText") String licenseText) {
 
-        InitDataObject initData = webResource.init(params, true, request, true, "9");
+        InitDataObject initData = webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
         
         Map<String, String> paramsMap = initData.getParamsMap();
         StringBuilder responseMessage = new StringBuilder();
