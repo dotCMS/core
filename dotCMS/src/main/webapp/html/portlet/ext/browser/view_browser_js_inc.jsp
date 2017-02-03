@@ -29,7 +29,7 @@ if(session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED)!= null)
 <script src="/html/js/scriptaculous/scriptaculous.js" type="text/javascript"></script>
 
 <% // Include javascript method to upload multiple files %>
-<%@ include file="/html/portlet/ext/files/upload_multiple_js_inc.jsp" %>
+<%@ include file="/html/portlet/ext/fileupload/upload_multiple_js_inc.jsp" %>
 <script language="JavaScript">
 
 dojo.require("dotcms.dojo.data.StructureReadStore");
