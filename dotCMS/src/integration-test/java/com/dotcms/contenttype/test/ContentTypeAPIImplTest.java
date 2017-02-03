@@ -98,7 +98,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	public void testFindAll() throws Exception {
 		List<ContentType> types = contentTypeApi.findAll();
 		assertThat("findAll sort by Name has same size as find all",
-				contentTypeApi.search("0=0", "name desc", 1000, 0).size() == types.size());
+				contentTypeApi.search("0=0", "name desc", -1, 0).size() == types.size());
 	}
 
 	@Test
@@ -252,7 +252,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 		int totalCount = contentTypeApi.count();
 
-		List<ContentType> types = contentTypeApi.search(null, BaseContentType.ANY, "name", 100, 0);
+		List<ContentType> types = contentTypeApi.search(null, BaseContentType.ANY, "name", -1, 0);
 		assertThat("we have at least 40 content types", types.size() > 20);
 		types = contentTypeApi.search(null, BaseContentType.ANY, "name", 5, 0);
 		assertThat("limit works and we have max five content types", types.size() < 6);
@@ -262,14 +262,14 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		}
 
 		for (int i = 0; i < BaseContentType.values().length; i++) {
-			types = contentTypeApi.search(null, BaseContentType.getBaseContentType(i), "name", 1000, 0);
+			types = contentTypeApi.search(null, BaseContentType.getBaseContentType(i), "name", -1, 0);
 			assertThat("we have content types of" + BaseContentType.getBaseContentType(i), types.size() > 0);
 			int count = contentTypeApi.count(null, BaseContentType.getBaseContentType(i));
 			assertThat("Count works as well", types.size() == count);
 		}
 
 		for (int i = 0; i < searchTerms.length; i++) {
-			types = contentTypeApi.search(searchTerms[i], BaseContentType.ANY, "mod_date desc", 1000, 0);
+			types = contentTypeApi.search(searchTerms[i], BaseContentType.ANY, "mod_date desc", -1, 0);
 			assertThat("we can search content types:" + searchTerms[i], types.size() > 0);
 			int count = contentTypeApi.count(searchTerms[i], BaseContentType.ANY);
 			assertThat("Count works as well", types.size() == count);
@@ -361,7 +361,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 	private void testDeleting() throws Exception {
 		List<ContentType> types =
-				contentTypeApi.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", 500, 0);
+				contentTypeApi.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", -1, 0);
 		assertThat(types + " search is working", types.size() > 0);
 		for (ContentType type : types) {
 			delete(type);
@@ -371,7 +371,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 	private void testUpdating() throws Exception {
 		List<ContentType> types =
-				contentTypeApi.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", 500, 0);
+				contentTypeApi.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", -1, 0);
 		assertThat(types + " search is working", types.size() > 0);
 		for (ContentType type : types) {
 			ContentType testing = contentTypeApi.find(type.id());

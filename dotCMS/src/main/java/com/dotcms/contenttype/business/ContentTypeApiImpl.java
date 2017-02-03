@@ -162,7 +162,7 @@ public class ContentTypeApiImpl implements ContentTypeApi {
   @Override
   public List<ContentType> search(String condition) throws DotDataException {
     try {
-      return perms.filterCollection(this.fac.search(condition, "mod_date", 10000, 0), PermissionAPI.PERMISSION_READ,
+      return perms.filterCollection(this.fac.search(condition, "mod_date", -1, 0), PermissionAPI.PERMISSION_READ,
           respectFrontendRoles, user);
     } catch (DotSecurityException e) {
       throw new DotStateException(e);
@@ -184,7 +184,7 @@ public class ContentTypeApiImpl implements ContentTypeApi {
   @Override
   public int count(String condition, BaseContentType base) throws DotDataException {
     try {
-      return perms.filterCollection(this.fac.search(condition, base, "mod_date", 1000, 0),
+      return perms.filterCollection(this.fac.search(condition, base, "mod_date", -1, 0),
           PermissionAPI.PERMISSION_READ, true, user).size();
     } catch (DotSecurityException e) {
       throw new DotStateException(e);
@@ -353,7 +353,7 @@ public class ContentTypeApiImpl implements ContentTypeApi {
   @Override
   public void moveToSystemFolder(Folder folder) throws DotDataException {
 
-    List<ContentType> types = search("folder='" + folder.getIdentifier() + "'", "mod_date", 10000, 0);
+    List<ContentType> types = search("folder='" + folder.getIdentifier() + "'", "mod_date", -1, 0);
 
     for (ContentType type : types) {
       ContentTypeBuilder builder = ContentTypeBuilder.builder(type);
