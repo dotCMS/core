@@ -245,10 +245,10 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
 		List<ContentType> types=contentTypeFactory.search(null, BaseContentType.ANY, "name", -1,0);
 		assertThat("we have at least 40 content types", types.size() > 20);
-		types = contentTypeFactory.search(null, BaseContentType.ANY, "name", -1, 0);
+		types = contentTypeFactory.search(null, BaseContentType.ANY, "name", 5, 0);
 		assertThat("limit works and we have max five content types", types.size() < 6);
 		for (int x = 0; x < totalCount; x = x + 5) {
-			types = contentTypeFactory.search(null, BaseContentType.ANY, "name",  -1, x);
+			types = contentTypeFactory.search(null, BaseContentType.ANY, "name",  5, x);
 			assertThat("we have max five content types", types.size() < 6);
 		}
 

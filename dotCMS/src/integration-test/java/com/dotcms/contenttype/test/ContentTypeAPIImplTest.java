@@ -254,10 +254,10 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 		List<ContentType> types = contentTypeApi.search(null, BaseContentType.ANY, "name", -1, 0);
 		assertThat("we have at least 40 content types", types.size() > 20);
-		types = contentTypeApi.search(null, BaseContentType.ANY, "name", -1, 0);
+		types = contentTypeApi.search(null, BaseContentType.ANY, "name", 5, 0);
 		assertThat("limit works and we have max five content types", types.size() < 6);
 		for (int x = 0; x < totalCount; x = x + 5) {
-			types = contentTypeApi.search(null, BaseContentType.ANY, "name asc", -1, 0);
+			types = contentTypeApi.search(null, BaseContentType.ANY, "name asc", 5, 0);
 			assertThat("we have max five content types", types.size() < 6);
 		}
 
