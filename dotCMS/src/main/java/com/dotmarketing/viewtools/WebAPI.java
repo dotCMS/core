@@ -1001,17 +1001,6 @@ public class WebAPI implements ViewTool {
 		}
 	}
 
-	/**
-	 * Convert a rss feed to a html list
-	 * @param	uri String with rss feed uri
-	 * @return	String with the html code
-	 */
-	public static String RSSParse(String uri)
-	{
-		String ingesterName = "RSSIngester";
-		return RSSWebAPI.RSSParse(uri,ingesterName, null);
-	}
-
 	@Deprecated
 	public boolean doesUserHasPermissionOverFile (long fileInode, int permission) throws DotDataException  {
 		return doesUserHasPermissionOverFile (String.valueOf(fileInode),permission);
