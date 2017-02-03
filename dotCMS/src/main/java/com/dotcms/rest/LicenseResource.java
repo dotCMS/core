@@ -119,9 +119,9 @@ public class LicenseResource {
             if(UtilMethods.isSet(id)) {
                 LicenseUtil.deleteLicense(id);
                 
-        			//waiting 10seconds just in case the user is only changing the server license
-                	// if not the try to remove it
-        		//TODO
+                    //waiting 10seconds just in case the user is only changing the server license
+                    // if not the try to remove it
+                //TODO
             }
             else {
                 return Response.status(Response.Status.BAD_REQUEST)
@@ -193,64 +193,64 @@ public class LicenseResource {
         try {
             //If we are removing a remote Server we need to create a ServerAction.
             if(UtilMethods.isSet(remoteServerId) && !remoteServerId.equals("undefined")){
-            	ResetLicenseServerAction resetLicenseServerAction = new ResetLicenseServerAction();
-            	Long timeoutSeconds = new Long(1);
-            	
-            	ServerActionBean resetLicenseServerActionBean = 
-            			resetLicenseServerAction.getNewServerAction(localServerId, remoteServerId, timeoutSeconds);
-            	
-            	resetLicenseServerActionBean = APILocator.getServerActionAPI()
-            			.saveServerActionBean(resetLicenseServerActionBean);
-            	
-            	//Waits for 3 seconds in order all the servers respond.
-    			int maxWaitTime = 
-    					timeoutSeconds.intValue() * 1000 + Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP", 2000) ;
-    			int passedWaitTime = 0;
-    			
-    			//Trying to NOT wait whole 3 secons for returning the info.
-    			while (passedWaitTime <= maxWaitTime){
-    				try {
-    				    Thread.sleep(10);
-    				    passedWaitTime += 10;
-    				    
-    				    resetLicenseServerActionBean = 
-    				    		APILocator.getServerActionAPI().findServerActionBean(resetLicenseServerActionBean.getId());
-    				    
-    				    //No need to wait if we have all Action results. 
-    				    if(resetLicenseServerActionBean != null && resetLicenseServerActionBean.isCompleted()){
-    				    	passedWaitTime = maxWaitTime + 1;
-    				    }
-    				    
-    				} catch(InterruptedException ex) {
-    				    Thread.currentThread().interrupt();
-    				    passedWaitTime = maxWaitTime + 1;
-    				}
-    			}
-    			
-    			//If we reach the timeout and the server didn't respond.
-    			//We assume the server is down and remove the license from the table.
-    			if(!resetLicenseServerActionBean.isCompleted()){
-    				
-    				resetLicenseServerActionBean.setCompleted(true);
-    				resetLicenseServerActionBean.setFailed(true);
-    				resetLicenseServerActionBean
-    					.setResponse(new com.dotmarketing.util.json.JSONObject()
-							.put(ServerAction.ERROR_STATE, "Server did NOT respond on time"));
-    				APILocator.getServerActionAPI().saveServerActionBean(resetLicenseServerActionBean);
-				LicenseUtil.freeLicenseOnRepo(serial, remoteServerId);
-    			
-    			//If it was completed but we got some error, we need to alert it.
-    			} else if(resetLicenseServerActionBean.isCompleted() 
-    					&& resetLicenseServerActionBean.isFailed()){
-    				
-    				throw new Exception(resetLicenseServerActionBean.getResponse().getString(ServerAction.ERROR_STATE));
-    			}
-            	
+                ResetLicenseServerAction resetLicenseServerAction = new ResetLicenseServerAction();
+                Long timeoutSeconds = new Long(1);
+                
+                ServerActionBean resetLicenseServerActionBean = 
+                        resetLicenseServerAction.getNewServerAction(localServerId, remoteServerId, timeoutSeconds);
+                
+                resetLicenseServerActionBean = APILocator.getServerActionAPI()
+                        .saveServerActionBean(resetLicenseServerActionBean);
+                
+                //Waits for 3 seconds in order all the servers respond.
+                int maxWaitTime = 
+                        timeoutSeconds.intValue() * 1000 + Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP", 2000) ;
+                int passedWaitTime = 0;
+                
+                //Trying to NOT wait whole 3 secons for returning the info.
+                while (passedWaitTime <= maxWaitTime){
+                    try {
+                        Thread.sleep(10);
+                        passedWaitTime += 10;
+                        
+                        resetLicenseServerActionBean = 
+                                APILocator.getServerActionAPI().findServerActionBean(resetLicenseServerActionBean.getId());
+                        
+                        //No need to wait if we have all Action results. 
+                        if(resetLicenseServerActionBean != null && resetLicenseServerActionBean.isCompleted()){
+                            passedWaitTime = maxWaitTime + 1;
+                        }
+                        
+                    } catch(InterruptedException ex) {
+                        Thread.currentThread().interrupt();
+                        passedWaitTime = maxWaitTime + 1;
+                    }
+                }
+                
+                //If we reach the timeout and the server didn't respond.
+                //We assume the server is down and remove the license from the table.
+                if(!resetLicenseServerActionBean.isCompleted()){
+                    
+                    resetLicenseServerActionBean.setCompleted(true);
+                    resetLicenseServerActionBean.setFailed(true);
+                    resetLicenseServerActionBean
+                        .setResponse(new com.dotmarketing.util.json.JSONObject()
+                            .put(ServerAction.ERROR_STATE, "Server did NOT respond on time"));
+                    APILocator.getServerActionAPI().saveServerActionBean(resetLicenseServerActionBean);
+                LicenseUtil.freeLicenseOnRepo(serial, remoteServerId);
+                
+                //If it was completed but we got some error, we need to alert it.
+                } else if(resetLicenseServerActionBean.isCompleted() 
+                        && resetLicenseServerActionBean.isFailed()){
+                    
+                    throw new Exception(resetLicenseServerActionBean.getResponse().getString(ServerAction.ERROR_STATE));
+                }
+                
             //If the server we are removing license is local.
             } else {
-            	HibernateUtil.startTransaction();
-            	LicenseUtil.freeLicenseOnRepo();
-            	HibernateUtil.commitTransaction();
+                HibernateUtil.startTransaction();
+                LicenseUtil.freeLicenseOnRepo();
+                HibernateUtil.commitTransaction();
             }
             
             AdminLogger.log(LicenseResource.class, "freeLicense", "License From Repo Freed", initData.getUser());
@@ -258,9 +258,9 @@ public class LicenseResource {
         } catch(Exception exception) {
             Logger.error(this, "can't free license ",exception);
             try {
-            	if(HibernateUtil.getSession().isOpen()){
-            		HibernateUtil.rollbackTransaction();
-            	}
+                if(HibernateUtil.getSession().isOpen()){
+                    HibernateUtil.rollbackTransaction();
+                }
             } catch (DotHibernateException dotHibernateException) {
                 Logger.warn(this, "can't rollback", dotHibernateException);
             }
@@ -272,30 +272,16 @@ public class LicenseResource {
     
     @POST
     @Path("/requestCode/{params:.*}")
-    @Produces(MediaType.APPLICATION_JSON)
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
     public Response requestLicense(@Context HttpServletRequest request, 
-            @PathParam ("params") String params ) {
-        InitDataObject initData = webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
-        
-        Map<String, String> paramsMap = initData.getParamsMap();
-        
-        StringBuilder responseMessage = new StringBuilder();
-        
-        //Validate the parameters
-        String licenseType = paramsMap.get( "licensetype" );
-        String licenseLevel = paramsMap.get( "licenselevel" );
-        
-        if ( !UtilMethods.isSet( licenseType ) ) {
-            return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( responseMessage.append( "Error: " ).append( "'licenseType'" ).append( " is a required param." )).build();
-        }
-
-        if ( !UtilMethods.isSet( licenseLevel ) ) {
-            return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( responseMessage.append( "Error: " ).append( "'licenseLevel'" ).append( " is a required param." )).build();
-        }
-        
+            @FormParam ("licenseLevel") String licenseLevel,
+            @FormParam ("licenseType") String licenseType) {
+        InitDataObject initData = webResource.init("", true, request, true, PortletID.CONFIGURATION.toString());
         try {
 
+            
+            
+            
             HttpSession session = request.getSession();
             session.setAttribute( "iwantTo", "request_code" );
             session.setAttribute( "license_type", licenseType );
@@ -309,45 +295,27 @@ public class LicenseResource {
             }
 
             LicenseUtil.processForm( request );
-            
-            JSONObject jsonResponse = new JSONObject();
-            
-            if(UtilMethods.isSet(request.getAttribute("requestCode"))){
-                jsonResponse.put("success", true );
-                jsonResponse.put("requestCode", request.getAttribute("requestCode"));
-            } else {
-                jsonResponse.put("success", false );
-            }
-            
-            return Response.ok(jsonResponse.toString(), MediaType.APPLICATION_JSON_TYPE).build();
+            return Response.ok(request.getAttribute("requestCode"), MediaType.APPLICATION_JSON_TYPE).build();
         }
         catch(Exception ex) {
             Logger.error(this, "can't request license ",ex);
 
             return Response.serverError().build();
-        }  
+        }
+        
     }
     
     @POST
     @Path("/applyLicense/{params:.*}")
-    @Produces (MediaType.APPLICATION_JSON)
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
-    public Response applyLicense(@Context HttpServletRequest request, 
-            @PathParam("params") String params, 
+    public Response applyLicense(@Context HttpServletRequest request, @PathParam("params") String params,
+
             @FormParam ("licenseText") String licenseText) {
 
         InitDataObject initData = webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
-        
-        Map<String, String> paramsMap = initData.getParamsMap();
-        StringBuilder responseMessage = new StringBuilder();
-        
-        //Validate the parameters
-        if ( !UtilMethods.isSet( licenseText ) ) {
-            return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( responseMessage.append( "Error: " ).append( "'licenseText'" ).append( " is a required param." )).build();
-        }
-        
         try {
             HttpSession session = request.getSession();
+
 
             session.setAttribute( "applyForm", Boolean.TRUE );
             session.setAttribute( "iwantTo", "paste_license" );
@@ -371,15 +339,16 @@ public class LicenseResource {
     
     @POST
     @Path("/resetLicense/{params:.*}")
-    @Produces(MediaType.APPLICATION_JSON)
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
     public Response resetLicense(@Context HttpServletRequest request, @PathParam("params") String params) {
 
         InitDataObject initData = webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
         try {
-        	freeLicense(request, params);
-
-	        HttpSession session = request.getSession();
+            freeLicense(request, params);
+            
+            
+            
+            HttpSession session = request.getSession();
 
             session.setAttribute( "applyForm", Boolean.TRUE );
             session.setAttribute( "iwantTo", "paste_license" );
@@ -388,7 +357,7 @@ public class LicenseResource {
 
 
             String error = LicenseUtil.processForm( request );
-        	return Response.ok("", MediaType.APPLICATION_JSON_TYPE).build();
+            return Response.ok("", MediaType.APPLICATION_JSON_TYPE).build();
         }
         catch(Exception ex) {
             Logger.error(this, "can't request license ",ex);
@@ -397,4 +366,10 @@ public class LicenseResource {
         }
         
     }
+    
+    
+    
+    
+    
+    
 }
