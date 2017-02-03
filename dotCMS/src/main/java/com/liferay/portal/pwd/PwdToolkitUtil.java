@@ -23,7 +23,7 @@
 package com.liferay.portal.pwd;
 
 import com.liferay.portal.util.PropsUtil;
-import com.liferay.portlet.words.util.WordsUtil;
+
 import com.liferay.util.InstancePool;
 
 /**
@@ -67,9 +67,6 @@ public class PwdToolkitUtil {
 	private boolean _validate(String password) {
 		boolean validPassword = _toolkit.validate(password);
 
-		if (validPassword && !_toolkit.allowDictionaryWord()) {
-			validPassword = !WordsUtil.isDictionaryWord(password);
-		}
 
 		return validPassword;
 	}

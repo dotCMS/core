@@ -11,7 +11,7 @@ public class BadRequestException extends HttpStatusCodeException {
     private static final String ERROR_KEY = "dotcms.api.error.bad_request";
 
     public BadRequestException(String message) {
-        this(null, message, null);
+        this(null, message, new String[0]);
     }
 
     public BadRequestException(String message, String... messageArgs) {

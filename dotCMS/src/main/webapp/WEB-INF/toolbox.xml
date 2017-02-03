@@ -99,11 +99,6 @@
 	<!-- Velocity View Tools End -->
 	<!-- Dotmarketing View Tools Start -->
 	<tool>
-		<key>rssapi</key>
-		<scope>application</scope>
-		<class>com.dotmarketing.viewtools.RSSWebAPI</class>
-	</tool>
-	<tool>
 		<key>webapi</key>
 		<scope>request</scope>
 		<class>com.dotmarketing.viewtools.WebAPI</class>
@@ -112,11 +107,6 @@
 		<key>velutil</key>
 		<scope>request</scope>
 		<class>com.dotmarketing.viewtools.VelocityWebUtil</class>
-	</tool>
-	<tool>
-		<key>googleapi</key>
-		<scope>application</scope>
-		<class>com.dotmarketing.viewtools.GoogleMiniApi</class>
 	</tool>
 	<tool>
 		<key>commentsapi</key>
@@ -154,11 +144,6 @@
 		<class>com.dotmarketing.viewtools.StructuresWebAPI</class>
 	</tool>
 	<tool>
-		<key>pageAPI</key>
-		<scope>request</scope>
-		<class>com.dotmarketing.viewtools.HTMLPageWebAPI</class>
-	</tool>
-	<tool>
 		<key>containerAPI</key>
 		<scope>request</scope>
 		<class>com.dotmarketing.viewtools.ContainerWebAPI</class>
@@ -167,11 +152,6 @@
 		<key>folderAPI</key>
 		<scope>application</scope>
 		<class>com.dotmarketing.viewtools.FolderWebAPI</class>
-	</tool>
-	<tool>
-		<key>sitemapapi</key>
-		<scope>application</scope>
-		<class>com.dotmarketing.viewtools.SiteMapWebAPI</class>
 	</tool>
 	<tool>
 		<key>macro</key>
@@ -213,7 +193,6 @@
 		<scope>application</scope>
 		<class>com.dotmarketing.viewtools.StringsWebApi</class>
 	</tool>
-
 	<tool>
 		<key>calendar</key>
 		<scope>request</scope>
@@ -265,7 +244,6 @@
 		<scope>request</scope>
 		<class>com.dotmarketing.viewtools.XsltTool</class>
 	</tool>
-
 	<tool>
 		<key>sitesearch</key>
 		<scope>request</scope>
@@ -331,7 +309,6 @@
 		<scope>request</scope>
 		<class>com.dotmarketing.viewtools.ESContentTool</class>
 	</tool>
-
 	<tool>
 		<key>sql</key>
 		<scope>request</scope>

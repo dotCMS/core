@@ -49,7 +49,7 @@ public abstract class WebDotcmsException extends RuntimeException{
                 message = LanguageUtil.get(user, propertiesKey);
             }
 
-            return MessageFormat.format(message, arguments);
+            return MessageFormat.format(message, (Object[]) arguments);
         } catch (LanguageException e) {
             Logger.error(WebDotcmsException.class, e.getMessage(), e);
             throw new RuntimeException(e);

@@ -31,7 +31,7 @@ import com.dotcms.repackage.javax.portlet.PreferencesValidator;
 import javax.servlet.ServletContext;
 
 import com.liferay.portal.job.Scheduler;
-import com.liferay.util.lucene.Indexer;
+
 
 /**
  * <a href="PortletContextWrapper.java.html"><b><i>View Source</i></b></a>
@@ -45,7 +45,7 @@ public class PortletContextWrapper {
 	public PortletContextWrapper(String portletName,
 								 ServletContext	servletContext,
 								 Portlet portletInstance,
-								 Indexer indexerInstance,
+
 								 Scheduler schedulerInstance,
 								 PreferencesValidator prefsValidator,
 								 Map resourceBundles,
@@ -54,7 +54,7 @@ public class PortletContextWrapper {
 		_portletName = portletName;
 		_servletContext = servletContext;
 		_portletInstance = portletInstance;
-		_indexerInstance = indexerInstance;
+
 		_schedulerInstance = schedulerInstance;
 		_prefsValidator = prefsValidator;
 		_resourceBundles = resourceBundles;
@@ -77,9 +77,6 @@ public class PortletContextWrapper {
 		_portletInstance = null;
 	}
 
-	public Indexer getIndexerInstance() {
-		return _indexerInstance;
-	}
 
 	public Scheduler getSchedulerInstance() {
 		return _schedulerInstance;
@@ -108,7 +105,7 @@ public class PortletContextWrapper {
 	private String _portletName;
 	private ServletContext _servletContext;
 	private Portlet _portletInstance;
-	private Indexer _indexerInstance;
+
 	private Scheduler _schedulerInstance;
 	private PreferencesValidator _prefsValidator;
 	private Map _resourceBundles;

@@ -22,7 +22,6 @@
     <create creator="new" javascript="CMSMaintenanceAjax" scope="request">
       <param name="class" value="com.dotmarketing.portlets.cmsmaintenance.ajax.CMSMaintenanceAjax"/>
     </create>
-
     <create creator="new" javascript="UserAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.user.ajax.UserAjax"/>
     </create>
@@ -32,7 +31,6 @@
     <create creator="new" javascript="CampaignsAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.campaigns.ajax.CampaignsAjax"/>
     </create>
-
     <create creator="new" javascript="CalendarAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.calendar.ajax.CalendarAjax"/>
     </create>
