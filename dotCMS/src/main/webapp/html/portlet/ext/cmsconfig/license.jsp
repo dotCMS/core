@@ -69,19 +69,33 @@
 
 	    isCommunity		:"<%=isCommunity%>",
 	    
-	    requestTrial : function(){
-	    	var data = {"licenseLevel":"400","licenseType":"trial"};
-	   		
-	   	    dojo.xhrPost({
-	   	        url: "/api/license/requestCode/",
-	   	        handleAs: "text",
-	   	        postData: data,
-	   	        load: function(code) {
-					dojo.byId("trialLicenseRequestCode").value=code;
-					dojo.byId("trialLicenseForm").submit();
-	   	        }
-	   	    });
-	    },
+        requestTrial : function(){
+            var data = {"licenseLevel":"400","licenseType":"trial"};
+            
+            var xhrArgs = {
+                    url: "/api/license/requestCode/licenseType/"+ data.licenseType 
+                    + '/licenseLevel/' + data.licenseLevel,
+                    handleAs: "json",
+                    load: function (data) {
+                        var isError = false;
+                        if (data.success == false || data.success == "false") {
+                            isError = true;
+                        }
+                        if(isError){
+                            showDotCMSSystemMessage("There was an error generating the Request Code. Please try again",true);
+                        }else{
+                            var requestCode = data.requestCode;
+                            dojo.byId("trialLicenseRequestCode").value=requestCode;
+                            dojo.byId("trialLicenseForm").submit();
+                        }
+                    },
+                    error: function (error) {
+                        showDotCMSSystemMessage("ERROR:" + error,true);
+                        console.log(error);
+                    }
+                };
+                dojo.xhrPost(xhrArgs);
+        },
 	
         doCodeRequest : function () {
             
