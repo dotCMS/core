@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+
+<pipeline-definitions>
+	<pipeline match="simple/*.dox">
+		<transform type="html">
+			<param name="path" value="/stxx/{1}.xsl" />
+			<param name="render" value="server" />
+		</transform>
+	</pipeline>
+</pipeline-definitions>
