@@ -96,7 +96,7 @@ export class LoginService {
             url: this.urls.getAuth
         }).pluck('entity').map(auth => {
 
-            if (auth) {
+            if (auth.user) {
 
                 this.setAuth(auth);
                 // on authentication, we have to connect to the websocket
