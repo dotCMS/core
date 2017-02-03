@@ -59,8 +59,6 @@ import com.dotmarketing.portlets.calendar.business.EventAPI;
 import com.dotmarketing.portlets.calendar.business.EventAPIImpl;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.business.CategoryAPIImpl;
-import com.dotmarketing.portlets.chains.business.ChainAPI;
-import com.dotmarketing.portlets.chains.business.ChainAPIImpl;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.business.ContainerAPIImpl;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -340,14 +338,7 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 
-	/**
-	 * Creates a single instance of the {@link ChainAPI} class.
-	 * 
-	 * @return The {@link ChainAPI} class.
-	 */
-	public static ChainAPI getChainAPI(){
-		return (ChainAPI) getInstance(APIIndex.CHAIN_API);
-	}
+
 
 	/**
 	 * Creates a single instance of the {@link PluginAPI} class.
@@ -863,7 +854,6 @@ enum APIIndex
 		case PORTLET_API: return new PortletAPIImpl();
 		case WIDGET_API: return new WidgetAPIImpl();
 		case CALENDAR_REMINDER_API: return new CalendarReminderAPIImpl();
-		case CHAIN_API: return new ChainAPIImpl();
 		case PLUGIN_API: return new PluginAPIImpl();
 		case LANGUAGE_API: return new LanguageAPIImpl();
 		case DISTRIBUTED_JOURNAL_API : return new DistributedJournalAPIImpl<String>();
