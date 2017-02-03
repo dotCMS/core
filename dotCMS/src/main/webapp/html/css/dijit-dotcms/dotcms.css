@@ -59,7 +59,7 @@ html, body {
   width: 0;
 }
 
-#font-icon-base, #dijit-icon, .dijitIcon, .actionIcon, .addIcon, .androidIcon, .appleIcon, .appMonitorIcon, .archiveIcon, .archivedIcon, .arrowLeftIcon, .arrowRightIcon, .assignWorkflowIcon, .backupIcon, .bgIcon, .browseIcon, .bugIcon, .bundleIcon, .calClockIcon, .calDayIcon, .calListIcon, .calMonthIcon, .calWeekIcon, .cancelIcon, .cancelWorkflowIcon, .cartIcon, .checkBoxIcon, .chevronIcon, .chevronExpandIcon, .closeIcon, .colorIcon, .contentIcon, .copyIcon, .cutIcon, .deleteIcon, .deleteWorkflowIcon, .detailViewIcon, .docConvertIcon, .docCopyIcon, .docNumIcon, .docTextIcon, .documentIcon, .downloadIcon, .dropIcon, .editIcon, .editScriptIcon, .encryptIcon, .exclamation-redIcon, .exclamationIcon, .femaleIcon, .fileIcon, .fileMultiIcon, .fileNewIcon, .fixIcon, .folderIcon, .folderAddIcon, .folderCopyIcon, .folderDeleteIcon, .folderEditIcon, .folderFilesIcon, .folderGlobeIcon, .folderOpenIcon, .folderSelectedIcon, .formIcon, .formNewIcon, .gearIcon, .gearMinusIcon, .gearPencilIcon, .gearPlusIcon, .greyDotIcon, .helpIcon, .hideIcon, .hintIcon, .hostIcon, .hostArchivedIcon, .hostDefaultIcon, .hostStoppedIcon, .hourGlassIcon, .imageNewIcon, .infoIcon, .keyIcon, .keyvalueIcon, .linkAddIcon, .listViewIcon, .liveIcon, .lockIcon, .loginIcon, .loginAsIcon, .mailListIcon, .mapPinIcon, .minusIcon, .mobileIcon, .movePageIcon, .multiSelectIcon, .newPageIcon, .newTaskIcon, .newWorkflowIcon, .nextIcon, .pageIcon, .pagePropIcon, .pasteIcon, .personaIcon, .plusIcon, .previewIcon, .previousIcon, .propertyIcon, .publishIcon, .queryIcon, .radioIcon, .reindexIcon, .rememberIcon, .reopenWorkflowIcon, .reorderIcon, .repeatIcon, .republishIcon, .requiredIcon, .resetIcon, .resolveIcon, .resolveWorkflowIcon, .rServerIcon, .saveIcon, .saveAssignIcon, .scrollPaneIcon, .searchIcon, .selectIcon, .shrinkIcon, .spellIcon, .splitterIcon, .sServerIcon, .statisticsIcon, .stopIcon, .tabIcon, .tagIcon, .textFieldIcon, .thumbnailViewIcon, .toggleCloseIcon, .toggleOpenIcon, .trashIcon, .uknIcon, .unarchiveIcon, .unlockIcon, .unpublishIcon, .uploadIcon, .userIcon, .vtlIcon, .windowsIcon, .workflowIcon, .workingIcon, .workStreamIcon, .wysiwygIcon, .asfIcon, .aviIcon, .movIcon, .mp4Icon, .mpgIcon, .oggIcon, .ogvIcon, .rmIcon, .vobIcon, .csvIcon, .numbersIcon, .wksIcon, .xlsIcon, .xlsxIcon, .bmpIcon, .imageIcon, .jpegIcon, .jpgIcon, .pctIcon, .pngIcon, .gifIcon, .svgIcon, .pdfIcon, .keynoteIcon, .pptIcon, .pptxIcon, .docIcon, .docxIcon, .aacIcon, .aifIcon, .iffIcon, .m3uIcon, .midIcon, .mp3Icon, .mpaIcon, .raIcon, .wavIcon, .wmaIcon, .tagLink.persona:before, .dijitIconCopy {
+#font-icon-base, #dijit-icon, .dijitIcon, .uknIcon, .actionIcon, .addIcon, .androidIcon, .appleIcon, .appMonitorIcon, .archiveIcon, .archivedIcon, .arrowLeftIcon, .arrowRightIcon, .assignWorkflowIcon, .backupIcon, .bgIcon, .browseIcon, .bugIcon, .bundleIcon, .calClockIcon, .calDayIcon, .calListIcon, .calMonthIcon, .calWeekIcon, .cancelIcon, .cancelWorkflowIcon, .cartIcon, .checkBoxIcon, .chevronIcon, .chevronExpandIcon, .closeIcon, .colorIcon, .contentIcon, .copyIcon, .cutIcon, .deleteIcon, .deleteWorkflowIcon, .detailViewIcon, .docConvertIcon, .docCopyIcon, .docNumIcon, .docTextIcon, .documentIcon, .downloadIcon, .dropIcon, .editIcon, .editScriptIcon, .encryptIcon, .exclamation-redIcon, .exclamationIcon, .femaleIcon, .fileIcon, .fileMultiIcon, .fileNewIcon, .fixIcon, .folderIcon, .folderAddIcon, .folderCopyIcon, .folderDeleteIcon, .folderEditIcon, .folderFilesIcon, .folderGlobeIcon, .folderOpenIcon, .folderSelectedIcon, .formIcon, .formNewIcon, .gearIcon, .gearMinusIcon, .gearPencilIcon, .gearPlusIcon, .greyDotIcon, .helpIcon, .hideIcon, .hintIcon, .hostIcon, .hostArchivedIcon, .hostDefaultIcon, .hostStoppedIcon, .hourGlassIcon, .imageNewIcon, .infoIcon, .keyIcon, .keyvalueIcon, .licenseIcon, .linkAddIcon, .listViewIcon, .liveIcon, .lockIcon, .loginIcon, .loginAsIcon, .mailListIcon, .mapPinIcon, .minusIcon, .mobileIcon, .movePageIcon, .multiSelectIcon, .newPageIcon, .newTaskIcon, .newWorkflowIcon, .nextIcon, .pageIcon, .pagePropIcon, .pasteIcon, .personaIcon, .plusIcon, .previewIcon, .previousIcon, .propertyIcon, .publishIcon, .queryIcon, .radioIcon, .reindexIcon, .rememberIcon, .reopenWorkflowIcon, .reorderIcon, .repeatIcon, .republishIcon, .requiredIcon, .resetIcon, .resolveIcon, .resolveWorkflowIcon, .rServerIcon, .saveIcon, .statusIcon, .saveAssignIcon, .scrollPaneIcon, .searchIcon, .selectIcon, .shrinkIcon, .spellIcon, .splitterIcon, .sServerIcon, .statisticsIcon, .stopIcon, .tabIcon, .tagIcon, .textFieldIcon, .thumbnailViewIcon, .toggleCloseIcon, .toggleOpenIcon, .trashIcon, .unarchiveIcon, .unlockIcon, .unpublishIcon, .uploadIcon, .userIcon, .vtlIcon, .windowsIcon, .workflowIcon, .workingIcon, .workStreamIcon, .wysiwygIcon, .asfIcon, .aviIcon, .movIcon, .mp4Icon, .mpgIcon, .oggIcon, .ogvIcon, .rmIcon, .vobIcon, .csvIcon, .numbersIcon, .wksIcon, .xlsIcon, .xlsxIcon, .bmpIcon, .imageIcon, .jpegIcon, .jpgIcon, .pctIcon, .pngIcon, .gifIcon, .svgIcon, .pdfIcon, .keynoteIcon, .pptIcon, .pptxIcon, .docIcon, .docxIcon, .aacIcon, .aifIcon, .iffIcon, .m3uIcon, .midIcon, .mp3Icon, .mpaIcon, .raIcon, .wavIcon, .wmaIcon, .tagLink.persona:before, .dijitIconCopy {
   font: normal normal normal 14px/1 FontAwesome;
   text-rendering: auto;
   -webkit-font-smoothing: antialiased;
@@ -67,7 +67,7 @@ html, body {
   transform: translate(0, 0);
 }
 
-#dijit-icon, .dijitIcon, .actionIcon, .addIcon, .androidIcon, .appleIcon, .appMonitorIcon, .archiveIcon, .archivedIcon, .arrowLeftIcon, .arrowRightIcon, .assignWorkflowIcon, .backupIcon, .bgIcon, .browseIcon, .bugIcon, .bundleIcon, .calClockIcon, .calDayIcon, .calListIcon, .calMonthIcon, .calWeekIcon, .cancelIcon, .cancelWorkflowIcon, .cartIcon, .checkBoxIcon, .chevronIcon, .chevronExpandIcon, .closeIcon, .colorIcon, .contentIcon, .copyIcon, .cutIcon, .deleteIcon, .deleteWorkflowIcon, .detailViewIcon, .docConvertIcon, .docCopyIcon, .docNumIcon, .docTextIcon, .documentIcon, .downloadIcon, .dropIcon, .editIcon, .editScriptIcon, .encryptIcon, .exclamation-redIcon, .exclamationIcon, .femaleIcon, .fileIcon, .fileMultiIcon, .fileNewIcon, .fixIcon, .folderIcon, .folderAddIcon, .folderCopyIcon, .folderDeleteIcon, .folderEditIcon, .folderFilesIcon, .folderGlobeIcon, .folderOpenIcon, .folderSelectedIcon, .formIcon, .formNewIcon, .gearIcon, .gearMinusIcon, .gearPencilIcon, .gearPlusIcon, .greyDotIcon, .helpIcon, .hideIcon, .hintIcon, .hostIcon, .hostArchivedIcon, .hostDefaultIcon, .hostStoppedIcon, .hourGlassIcon, .imageNewIcon, .infoIcon, .keyIcon, .keyvalueIcon, .linkAddIcon, .listViewIcon, .liveIcon, .lockIcon, .loginIcon, .loginAsIcon, .mailListIcon, .mapPinIcon, .minusIcon, .mobileIcon, .movePageIcon, .multiSelectIcon, .newPageIcon, .newTaskIcon, .newWorkflowIcon, .nextIcon, .pageIcon, .pagePropIcon, .pasteIcon, .personaIcon, .plusIcon, .previewIcon, .previousIcon, .propertyIcon, .publishIcon, .queryIcon, .radioIcon, .reindexIcon, .rememberIcon, .reopenWorkflowIcon, .reorderIcon, .repeatIcon, .republishIcon, .requiredIcon, .resetIcon, .resolveIcon, .resolveWorkflowIcon, .rServerIcon, .saveIcon, .saveAssignIcon, .scrollPaneIcon, .searchIcon, .selectIcon, .shrinkIcon, .spellIcon, .splitterIcon, .sServerIcon, .statisticsIcon, .stopIcon, .tabIcon, .tagIcon, .textFieldIcon, .thumbnailViewIcon, .toggleCloseIcon, .toggleOpenIcon, .trashIcon, .uknIcon, .unarchiveIcon, .unlockIcon, .unpublishIcon, .uploadIcon, .userIcon, .vtlIcon, .windowsIcon, .workflowIcon, .workingIcon, .workStreamIcon, .wysiwygIcon, .asfIcon, .aviIcon, .movIcon, .mp4Icon, .mpgIcon, .oggIcon, .ogvIcon, .rmIcon, .vobIcon, .csvIcon, .numbersIcon, .wksIcon, .xlsIcon, .xlsxIcon, .bmpIcon, .imageIcon, .jpegIcon, .jpgIcon, .pctIcon, .pngIcon, .gifIcon, .svgIcon, .pdfIcon, .keynoteIcon, .pptIcon, .pptxIcon, .docIcon, .docxIcon, .aacIcon, .aifIcon, .iffIcon, .m3uIcon, .midIcon, .mp3Icon, .mpaIcon, .raIcon, .wavIcon, .wmaIcon, .tagLink.persona:before {
+#dijit-icon, .dijitIcon, .uknIcon, .actionIcon, .addIcon, .androidIcon, .appleIcon, .appMonitorIcon, .archiveIcon, .archivedIcon, .arrowLeftIcon, .arrowRightIcon, .assignWorkflowIcon, .backupIcon, .bgIcon, .browseIcon, .bugIcon, .bundleIcon, .calClockIcon, .calDayIcon, .calListIcon, .calMonthIcon, .calWeekIcon, .cancelIcon, .cancelWorkflowIcon, .cartIcon, .checkBoxIcon, .chevronIcon, .chevronExpandIcon, .closeIcon, .colorIcon, .contentIcon, .copyIcon, .cutIcon, .deleteIcon, .deleteWorkflowIcon, .detailViewIcon, .docConvertIcon, .docCopyIcon, .docNumIcon, .docTextIcon, .documentIcon, .downloadIcon, .dropIcon, .editIcon, .editScriptIcon, .encryptIcon, .exclamation-redIcon, .exclamationIcon, .femaleIcon, .fileIcon, .fileMultiIcon, .fileNewIcon, .fixIcon, .folderIcon, .folderAddIcon, .folderCopyIcon, .folderDeleteIcon, .folderEditIcon, .folderFilesIcon, .folderGlobeIcon, .folderOpenIcon, .folderSelectedIcon, .formIcon, .formNewIcon, .gearIcon, .gearMinusIcon, .gearPencilIcon, .gearPlusIcon, .greyDotIcon, .helpIcon, .hideIcon, .hintIcon, .hostIcon, .hostArchivedIcon, .hostDefaultIcon, .hostStoppedIcon, .hourGlassIcon, .imageNewIcon, .infoIcon, .keyIcon, .keyvalueIcon, .licenseIcon, .linkAddIcon, .listViewIcon, .liveIcon, .lockIcon, .loginIcon, .loginAsIcon, .mailListIcon, .mapPinIcon, .minusIcon, .mobileIcon, .movePageIcon, .multiSelectIcon, .newPageIcon, .newTaskIcon, .newWorkflowIcon, .nextIcon, .pageIcon, .pagePropIcon, .pasteIcon, .personaIcon, .plusIcon, .previewIcon, .previousIcon, .propertyIcon, .publishIcon, .queryIcon, .radioIcon, .reindexIcon, .rememberIcon, .reopenWorkflowIcon, .reorderIcon, .repeatIcon, .republishIcon, .requiredIcon, .resetIcon, .resolveIcon, .resolveWorkflowIcon, .rServerIcon, .saveIcon, .statusIcon, .saveAssignIcon, .scrollPaneIcon, .searchIcon, .selectIcon, .shrinkIcon, .spellIcon, .splitterIcon, .sServerIcon, .statisticsIcon, .stopIcon, .tabIcon, .tagIcon, .textFieldIcon, .thumbnailViewIcon, .toggleCloseIcon, .toggleOpenIcon, .trashIcon, .unarchiveIcon, .unlockIcon, .unpublishIcon, .uploadIcon, .userIcon, .vtlIcon, .windowsIcon, .workflowIcon, .workingIcon, .workStreamIcon, .wysiwygIcon, .asfIcon, .aviIcon, .movIcon, .mp4Icon, .mpgIcon, .oggIcon, .ogvIcon, .rmIcon, .vobIcon, .csvIcon, .numbersIcon, .wksIcon, .xlsIcon, .xlsxIcon, .bmpIcon, .imageIcon, .jpegIcon, .jpgIcon, .pctIcon, .pngIcon, .gifIcon, .svgIcon, .pdfIcon, .keynoteIcon, .pptIcon, .pptxIcon, .docIcon, .docxIcon, .aacIcon, .aifIcon, .iffIcon, .m3uIcon, .midIcon, .mp3Icon, .mpaIcon, .raIcon, .wavIcon, .wmaIcon, .tagLink.persona:before {
   display: inline-block;
   height: 16px;
   line-height: 16px;
@@ -927,6 +927,11 @@ html, body {
   border: solid 1px #C5C5C5;
   padding: 0 0 0 8px;
 }
+.dijitComboBox input {
+  height: auto;
+  line-height: 30px;
+  padding: 0;
+}
 .dijitComboBox .dijitArrowButton {
   height: 30px;
   width: 32px;
@@ -1402,7 +1407,7 @@ html, body {
   height: 42px;
   background-color: #fff;
   color: #161616;
-  padding: 0 16px;
+  padding: 0 24px;
   position: relative;
   border-width: 5px 1px 0 0;
   border-style: solid;
@@ -1418,7 +1423,7 @@ html, body {
   padding-right: 32px;
 }
 .dijitTabPaneWrapper .dijitContentPane {
-  padding: 16px;
+  padding: 24px;
 }
 .dijitTabChecked, .dijitTabChecked.dijitTabCheckedHover {
   background-color: #fff;
@@ -1590,7 +1595,7 @@ html, body {
 }
 .dijitTabContainerNested .dijitTabContainerTop-container {
   border: none;
-  padding: 0 16px;
+  padding: 0 24px;
 }
 
 .dijitTooltipContainer {
@@ -2702,11 +2707,11 @@ acronym {
 }
 
 hr {
-  background-color: #ccc;
+  background-color: #ECEDEE;
   height: 1px;
-  color: #ccc;
+  color: #ECEDEE;
   border: 0;
-  margin: 10px 0;
+  margin: 24px 0;
 }
 
 .formRow {
@@ -3115,15 +3120,31 @@ select[multiple]:hover {
 .listingTable {
   border-bottom: 1px solid #ECEDEE;
   border-collapse: collapse;
-  margin: 0 auto;
+  margin: 0 auto 16px auto;
   width: 100%;
+}
+.listingTable table,
+.listingTable table tr,
+.listingTable table tr:hover,
+.listingTable table td {
+  background: none !important;
+}
+.listingTable tr:nth-child(even) {
+  background-color: #FAFAFA;
+}
+.listingTable tr {
+  transition: background-color 0.1s;
 }
 .listingTable tr .selected {
   background-color: #E0E9F6;
 }
+.listingTable tr:hover {
+  background-color: rgba(14, 128, 203, 0.05);
+}
 .listingTable th, .listingTable td {
-  padding: 8px;
+  padding: 10px 8px;
   border-bottom: 1px solid #ECEDEE;
+  vertical-align: middle;
 }
 .listingTable th:first-child, .listingTable td:first-child {
   padding-left: 24px;
@@ -3134,6 +3155,10 @@ select[multiple]:hover {
 .listingTable th {
   font-weight: bold;
   background-color: #FAFAFA;
+}
+.listingTable td a {
+  color: #161616;
+  text-decoration: none;
 }
 .listingTable td table td:first-child, .listingTable td table td:last-child {
   padding: 0;
@@ -3527,7 +3552,7 @@ tr.pop_divider {
 }
 
 /* NAV MENU ICONS 2.0 */
-#menu ul.dropdown li.dotCMS_EXT_SITESEARCH a span {
+#menu ul.dropdown li.dotCMS_site-search a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -60px;
 }
 
@@ -3539,27 +3564,27 @@ tr.pop_divider {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -300px;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_HOSTADMIN a span {
+#menu ul.dropdown li.dotCMS_sites a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -320px;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_15 a span {
+#menu ul.dropdown li.dotCMS_html-pages a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -400px;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_USER_ADMIN a span {
+#menu ul.dropdown li.dotCMS_users a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -440px;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_ROLE_ADMIN a span {
+#menu ul.dropdown li.dotCMS_roles a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -460px;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_21 a span {
+#menu ul.dropdown li.dotCMS_workflow a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -500px;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_SCHEDULER a span,
+#menu ul.dropdown li.dotCMS_jobs a span,
 .clockIcon {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -620px;
   width: 18px;
@@ -3568,11 +3593,11 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_18 a span {
+#menu ul.dropdown li.dotCMS_links a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -660px;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_3 a span {
+#menu ul.dropdown li.dotCMS_files-legacy a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -840px;
 }
 
@@ -3589,7 +3614,7 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_4 a span,
+#menu ul.dropdown li.dotCMS_categories a span,
 .nodeInsertIcon {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1020px;
   width: 18px;
@@ -3598,19 +3623,19 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_CMS_MAINTENANCE a span {
+#menu ul.dropdown li.dotCMS_maintenance a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1060px;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_LANG a span {
+#menu ul.dropdown li.dotCMS_languages a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1160px;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_CALENDAR a span {
+#menu ul.dropdown li.dotCMS_calendar a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1120px;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_LUCENE_TOOL a span {
+#menu ul.dropdown li.dotCMS_query-tool a span {
   background: url("http://localhost:8080/html/images/icons/lucene.png") no-repeat;
 }
 
@@ -3622,7 +3647,7 @@ tr.pop_divider {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1200px;
 }
 
-#menu ul.dropdown li.dotCMS_9 a span {
+#menu ul.dropdown li.dotCMS_configuration a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -200px;
   width: 18px;
   height: 18px;
@@ -3630,8 +3655,7 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_12 a span,
-.container {
+#menu ul.dropdown li.dotCMS_containers a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1220px;
   width: 18px;
   height: 18px;
@@ -3639,8 +3663,7 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_13 a span,
-.templateIcon {
+#menu ul.dropdown li.dotCMS_templates a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1220px;
   width: 18px;
   height: 18px;
@@ -3661,11 +3684,11 @@ tr.pop_divider {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1240px;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_REPORTMANAGER a span {
+#menu ul.dropdown li.dotCMS_reports a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1260px;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_VIRTUAL_LINKS a span,
+#menu ul.dropdown li.dotCMS_vanity-urls a span,
 .vlinksIcon {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1260px;
   width: 18px;
@@ -3674,7 +3697,7 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_BROWSER a span,
+#menu ul.dropdown li.dotCMS_site-browser a span,
 .bowserIcon {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1280px;
   width: 18px;
@@ -3683,7 +3706,7 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_11 a span {
+#menu ul.dropdown li.dotCMS_content a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1280px;
   width: 18px;
   height: 18px;
@@ -3695,11 +3718,11 @@ tr.pop_divider {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1300px;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_DASHBOARD a span {
+#menu ul.dropdown li.dotCMS_dashboard a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1300px;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_STRUCTURE a span,
+#menu ul.dropdown li.dotCMS_content-types a span,
 .structureIcon {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1320px;
   width: 18px;
@@ -3708,7 +3731,7 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_FORM_HANDLER a span,
+#menu ul.dropdown li.dotCMS_forms a span,
 .formIcon {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1320px;
   width: 18px;
@@ -3721,11 +3744,11 @@ tr.pop_divider {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1340px;
 }
 
-#menu ul.dropdown li.dotCMS_WORKFLOW_SCHEMES a span {
+#menu ul.dropdown li.dotCMS_workflow-schemes a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -520px;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_TAG_MANAGER a span {
+#menu ul.dropdown li.dotCMS_tags a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1300px;
   width: 18px;
   height: 18px;
@@ -3733,8 +3756,8 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-/*#menu ul.dropdown li.dotCMS_OSGI_MANAGER a span{background: url(/html/images/icons/osgi.png) no-repeat;width:18px;height:18px;display:inline-block;vertical-align:top;}*/
-#menu ul.dropdown li.dotCMS_OSGI_MANAGER a span {
+/*#menu ul.dropdown li.dotCMS_dynamic-plugins a span{background: url(/html/images/icons/osgi.png) no-repeat;width:18px;height:18px;display:inline-block;vertical-align:top;}*/
+#menu ul.dropdown li.dotCMS_dynamic-plugins a span {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1860px;
   width: 18px;
   height: 18px;
@@ -3742,7 +3765,7 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-#menu ul.dropdown li.dotCMS_TIMEMACHINE a span,
+#menu ul.dropdown li.dotCMS_time-machine a span,
 .clockIcon {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1760px;
   width: 18px;
@@ -3751,7 +3774,7 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_BROKEN_LINKS a span,
+#menu ul.dropdown li.dotCMS_link-checker a span,
 .linkCheckIcon {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1760px;
   width: 18px;
@@ -3760,7 +3783,7 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-#menu ul.dropdown li.dotCMS_ES_SEARCH_PORTLET a span,
+#menu ul.dropdown li.dotCMS_es-search a span,
 .elasticsearchIcon {
   background: url("http://localhost:8080/html/images/icons/elasticsearch.png") no-repeat;
   width: 18px;
@@ -3770,8 +3793,7 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-#menu ul.dropdown li.dotCMS_EXT_CONTENT_PUBLISHING_TOOL a span,
-.sServerIcon,
+#menu ul.dropdown li.dotCMS_publishing-queue a span
 .pushIcon {
   background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1880px;
   width: 18px;
@@ -3816,54 +3838,6 @@ tr.pop_divider {
   position: absolute;
 }
 
-#actionPanel {
-  position: fixed;
-  border: 1px solid #D0D0D0;
-  background: #fff;
-  bottom: 0;
-  top: 0;
-  right: 0;
-  z-index: 0;
-}
-
-#actionPanelContainer {
-  background: #fff;
-}
-
-#actionPanelTableHeader {
-  padding: 0px;
-  margin: 0px;
-}
-
-.actionPanelContent {
-  margin: 15px 20px;
-  padding: 0 0 20px 0;
-  font-size: 88%;
-}
-
-.actionPanelContent h2 {
-  font-size: 14px;
-  font-weight: bold;
-}
-
-.actionPanelContent table td {
-  padding: 2px 5px;
-}
-
-.actionPanelContent table tr {
-  word-wrap: break-word;
-}
-
-.actionPanelContent hr {
-  border-bottom: 1px solid #D0D0D0;
-  margin: 15px 0;
-}
-
-.actionPanelContent .bigBtn {
-  width: 200px;
-  padding: 8px 0;
-}
-
 .green {
   color: #6BAF73;
 }
@@ -3897,27 +3871,6 @@ tr.pop_divider {
 }
 
 /* ====================== BROWSER, HMTL, LINKS, FILES, TEMPLATES, CONTAINERS  (all POP UPs) ================= */
-div.contextPopupMenuBox,
-.contextMenuBox {
-  z-index: 10000;
-  width: 190px;
-  display: block;
-  border-top: 1px solid #437AAD;
-  border-bottom: 1px solid #437AAD;
-  padding: 0px 0px 0px 0px;
-}
-
-div.contextPopupMenuBox a {
-  line-height: 18px;
-  padding: 3px 0;
-  height: 21px;
-  vertical-align: middle;
-}
-
-div.contextPopupMenuBox span {
-  margin: 0 8px 0 8px;
-}
-
 table.sTypeTd {
   vertical-align: top;
 }
@@ -4143,21 +4096,6 @@ table.sTypeTable.sTypeItem {
   position: absolute;
   visibility: hidden;
   background: url("http://localhost:8080/html/js/dotcms-utils/overlay.png");
-}
-
-/* permission hacks */
-.permissionTableTitle td {
-  text-align: center;
-  width: 12%;
-  font-size: 11px;
-  line-height: 22px;
-}
-
-.permissionTable th.permissionTitle {
-  padding: 0 0 0 10px;
-  font-weight: bold;
-  line-height: 22px;
-  font-size: 11px;
 }
 
 /* Host folders selector */
@@ -4750,8 +4688,6 @@ div#_dotHelpMenu {
 .encryptIcon,
 .exclamationIcon,
 .exclamation-redIcon,
-.femaleIcon,
-.fileIcon,
 .fileMultiIcon,
 .fileNewIcon,
 .fixIcon,
@@ -4772,16 +4708,11 @@ div#_dotHelpMenu {
 .helpIcon,
 .hideIcon,
 .hintIcon,
-.hostIcon,
-.hostArchivedIcon,
-.hostDefaultIcon,
-.hostStoppedIcon,
 .hourGlassIcon,
 .imageNewIcon,
 .infoIcon,
 .keyIcon,
 .keyvalueIcon,
-.linkIcon,
 .linkAddIcon,
 .listViewIcon,
 .loginIcon,
@@ -4815,7 +4746,6 @@ div#_dotHelpMenu {
 .resetIcon,
 .resolveIcon,
 .resolveWorkflowIcon,
-.rServerIcon,
 .saveIcon,
 .saveAssignIcon,
 .scrollPaneIcon,
@@ -4824,7 +4754,6 @@ div#_dotHelpMenu {
 .shrinkIcon,
 .spellIcon,
 .splitterIcon,
-.sServerIcon,
 .statisticsIcon,
 .stopIcon,
 .tabIcon,
@@ -4837,7 +4766,6 @@ div#_dotHelpMenu {
 .unlockIcon,
 .unpublishIcon,
 .uploadIcon,
-.userIcon,
 .windowsIcon,
 .workflowIcon,
 .workStreamIcon,
@@ -4857,6 +4785,10 @@ div#_dotHelpMenu {
 .toggleCloseIcon,
 .toggleOpenIcon {
   display: inline;
+}
+
+.uknIcon:before {
+  content: "";
 }
 
 .actionIcon:before {
@@ -5044,11 +4976,11 @@ div#_dotHelpMenu {
 }
 
 .femaleIcon:before {
-  content: "";
+  content: "";
 }
 
 .fileIcon:before {
-  content: "";
+  content: "";
 }
 
 .fileMultiIcon:before {
@@ -5144,15 +5076,15 @@ div#_dotHelpMenu {
 }
 
 .hostArchivedIcon:before {
-  content: "";
+  content: "";
 }
 
 .hostDefaultIcon:before {
-  content: "";
+  content: "";
 }
 
 .hostStoppedIcon:before {
-  content: "";
+  content: "";
 }
 
 .hourGlassIcon:before {
@@ -5173,6 +5105,10 @@ div#_dotHelpMenu {
 
 .keyvalueIcon:before {
   content: "";
+}
+
+.licenseIcon:before {
+  content: "";
 }
 
 .linkAddIcon:before {
@@ -5240,7 +5176,7 @@ div#_dotHelpMenu {
 }
 
 .pageIcon:before {
-  content: "";
+  content: "";
 }
 
 .pagePropIcon:before {
@@ -5324,11 +5260,15 @@ div#_dotHelpMenu {
 }
 
 .rServerIcon:before {
-  content: "";
+  content: "";
 }
 
 .saveIcon:before {
   content: "";
+}
+
+.statusIcon:before {
+  content: "";
 }
 
 .saveAssignIcon:before {
@@ -5360,7 +5300,7 @@ div#_dotHelpMenu {
 }
 
 .sServerIcon:before {
-  content: "";
+  content: "";
 }
 
 .statisticsIcon:before {
@@ -5399,10 +5339,6 @@ div#_dotHelpMenu {
   content: "";
 }
 
-.uknIcon:before {
-  content: "";
-}
-
 .unarchiveIcon:before {
   content: "";
 }
@@ -5420,7 +5356,7 @@ div#_dotHelpMenu {
 }
 
 .userIcon:before {
-  content: "";
+  content: "";
 }
 
 .vtlIcon:before {
@@ -5628,6 +5564,18 @@ div#_dotHelpMenu {
 
 .archivedIcon {
   color: #CB3927;
+}
+
+.hostArchivedIcon {
+  color: #CB3927;
+}
+
+.hostDefaultIcon {
+  color: #0E80CB;
+}
+
+.hostStoppedIcon {
+  color: #C5C5C5;
 }
 
 .filter-tasks-frm {
@@ -6012,7 +5960,7 @@ dd .buttonCaption {
 }
 #form-horizontal-flexbox dt, .form-horizontal dt {
   line-height: 1;
-  padding: 8px 16px 0;
+  padding: 9px 16px 0;
   text-align: right;
   width: 150px;
 }
@@ -6047,10 +5995,22 @@ dd .buttonCaption {
 
 .buttonRow {
   text-align: center;
+  margin: 8px 0;
 }
 .buttonRow .dijitButton,
 .buttonRow .fakeDojoButton {
   margin: 0 4px;
+}
+
+.who-can-use {
+  border: solid 1px #C5C5C5;
+  height: 90px;
+  margin-top: 8px;
+  padding: 8px;
+}
+
+.who-can-use__list td {
+  padding: 4px;
 }
 
 .calendar-events .portlet-sidebar .listingTable {
@@ -6416,7 +6376,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .content-edit__dialog-error {
-  background: #ffffff;
+  background: #fff;
   padding: 0px;
   border: 0px;
   width: 300px;
@@ -6424,6 +6384,10 @@ a.category_higlighted, a.tag_higlighted {
 .content-edit__dialog-error .dijitDialogTitleBar {
   height: 0;
   z-index: 1;
+}
+
+.content-edit__history-version .dijitContentPane {
+  padding: 0px;
 }
 
 .advanced-search-button {
@@ -6483,6 +6447,57 @@ a.category_higlighted, a.tag_higlighted {
   background-color: rgba(14, 128, 203, 0.1);
 }
 
+.network__listing .icon {
+  width: 14px;
+}
+
+.network-action {
+  background: #fff;
+  border: 1px solid #ECEDEE;
+  bottom: 0;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 0;
+}
+
+.network-action__header {
+  padding: 0px;
+}
+
+.network-action__title {
+  background-color: #0E80CB;
+  color: #fff;
+  margin: -16px -16px 16px;
+  height: 39px;
+  line-height: 39px;
+  padding: 0 16px;
+}
+
+.network-action__content {
+  margin: 16px;
+}
+
+.network-action__list {
+  margin-bottom: 32px;
+  width: 100%;
+}
+.network-action__list th, .network-action__list td {
+  padding: 4px;
+}
+.network-action__list tr:first-child td:first-child {
+  width: 16px;
+}
+
+.network-action__btn-refresh {
+  display: block;
+  text-align: center;
+}
+
+.job-scheduler__host-list {
+  margin-top: 16px;
+}
+
 .view-roles,
 .view-roles .portlet-sidebar {
   height: 100%;
@@ -6490,6 +6505,7 @@ a.category_higlighted, a.tag_higlighted {
 
 .view-roles .dijitTabPaneWrapper .dijitContentPane {
   box-sizing: content-box;
+  overflow: auto;
 }
 .view-roles .portlet-main {
   height: 100%;
@@ -6527,6 +6543,24 @@ a.category_higlighted, a.tag_higlighted {
 
 .view-roles__user-grid {
   margin-bottom: 8px;
+}
+
+.view-roles__portlets-list {
+  margin: 0;
+  max-height: 200px;
+  overflow: auto;
+}
+.view-roles__portlets-list ul {
+  margin: 0;
+}
+
+.view-roles__portlets-list-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: solid 1px #ECEDEE;
+  align-items: center;
+  padding-right: 2px;
 }
 
 .nameText {
@@ -6632,22 +6666,6 @@ a.category_higlighted, a.tag_higlighted {
   justify-content: flex-end;
 }
 
-.view-users__section-break {
-  background-color: #FAFAFA;
-  border: solid 1px #ECEDEE;
-  padding: 8px;
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-.view-users__section-break .radio, .view-users__section-break .checkbox {
-  margin: 0;
-}
-
-.view-users__section-content {
-  margin-bottom: 16px;
-}
-
 .view-users__section-content-cols {
   display: flex;
   justify-content: space-around;
@@ -6664,6 +6682,19 @@ a.category_higlighted, a.tag_higlighted {
 .view-workflow .dijitDropDownActionButton,
 .view-workflow .view-workflow__add-comment {
   float: right;
+}
+
+.portlet-sidebar .portlet-sidebar__input-spacer {
+  height: 6px;
+}
+
+.portlet-sidebar .dijitCheckBox {
+  position: relative;
+  bottom: 2px;
+}
+
+.dijitContentPane .buttonRow {
+  margin-bottom: 15px;
 }
 
 .view-categories .dijitDropDownActionButton {
@@ -6708,12 +6739,23 @@ a.category_higlighted, a.tag_higlighted {
   padding: 0;
 }
 
-/* PORTLET STYLES 2.0 */
-.portlet .dijitTabPaneWrapper .dijitContentPane .dijitContentPane {
-  padding: 0;
+.design-template__sidebar-wrapper {
+  height: 100%;
+  min-height: 617px;
+  position: absolute;
+  top: 0px;
+  left: 0px;
 }
+.design-template__sidebar-wrapper .portlet-sidebar {
+  width: 220px;
+}
+
+/* PORTLET STYLES 2.0 */
 .portlet-main {
   padding: 16px 0;
+}
+.portlet-main .dijitTabPaneWrapper .dijitContentPane .dijitContentPane {
+  padding: 0;
 }
 .portlet-sidebar {
   padding: 16px 16px 0;
@@ -6795,11 +6837,55 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .callOutBox2 {
-  background-color: #f0f0f0;
+  background-color: #ECEDEE;
   border-radius: 2px;
-  border: 1px solid #d0d0d0;
+  border: 1px solid #C5C5C5;
   padding: 8px;
   text-align: center;
+}
+.callOutBox2 h3 {
+  margin-bottom: 16px;
+}
+.callOutBox2 p:last-child {
+  margin-bottom: 0;
+}
+
+.context-menu {
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ECEDEE;
+  min-width: 190px;
+}
+.context-menu .pop_divider {
+  border-bottom: 1px solid #ECEDEE;
+  background-color: #fff;
+}
+
+.context-menu__item {
+  color: #5B5B5B;
+  cursor: pointer;
+  display: block;
+  font-size: 13px;
+  height: 32px;
+  line-height: 32px;
+  padding: 0px 24px;
+  position: relative;
+  text-decoration: none;
+}
+.context-menu__item:hover {
+  background-color: #FAFAFA;
+}
+.context-menu__item .arrowRightIcon {
+  font-size: 12px;
+  margin-top: -6px;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+}
+
+.edit-mode__side-nav .dijitTab {
+  padding: 0 16px;
 }
 
 .file-selector-tree .dijitDialogPaneContent {
@@ -6875,50 +6961,26 @@ a.category_higlighted, a.tag_higlighted {
   margin: 0 4px;
 }
 
+.host-list__item a {
+  color: #161616;
+  text-decoration: none;
+}
+.host-list__item .hostArchivedIcon + a {
+  color: #CB3927;
+}
+.host-list__item .hostDefaultIcon + a {
+  color: #0E80CB;
+}
+.host-list__item .hostStoppedIcon + a {
+  color: #C5C5C5;
+}
+
 .permission__host-selector {
   justify-content: flex-end;
 }
 
 #rolePermissionsAccordion .dijitAccordionContainer-child {
   overflow-y: hidden !important;
-}
-
-.permissionLabelTable, .permissionTable {
-  width: 100%;
-}
-
-.permissionTableWrapper {
-  padding: 0 0 0 3px;
-}
-
-.permissionLabelsWrapper {
-  padding: 15px 15px 10px 9px;
-}
-
-.permissionTable td,
-.permissionTableTitle td {
-  padding: 4px 0;
-  width: 12%;
-  text-align: center;
-}
-.permissionTable td.permissionType,
-.permissionTableTitle td.permissionType {
-  width: 28%;
-  text-align: right;
-  padding: 3px 35px 3px 0;
-}
-
-.permissionTableTitle {
-  width: 100%;
-  margin: 0;
-}
-.permissionTableTitle td.folderName {
-  vertical-align: middle;
-  width: 28%;
-  text-align: left;
-}
-.permissionTableTitle td.folderName img {
-  vertical-align: middle;
 }
 
 .hostSelectorButton {
@@ -6951,13 +7013,84 @@ a.category_higlighted, a.tag_higlighted {
   text-align: center;
 }
 
-#permissionsTab {
-  margin-bottom: 5px;
-}
-
 #rolePermissionsMsg {
   color: #E84048;
   text-align: center;
+}
+
+.permissions__bar-user-role {
+  background-color: #FAFAFA;
+  border-radius: 2px;
+  border: solid 1px #ECEDEE;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 8px;
+}
+.permissions__bar-user-role .femaleIcon,
+.permissions__bar-user-role .userIcon {
+  margin-right: 8px;
+}
+.permissions__bar-user-role .inline-form {
+  margin-right: 32px;
+}
+
+.permissions__bar-user-role-actions,
+.permissions__bar-user-role-main {
+  align-items: center;
+  display: flex;
+}
+
+.permissions__button-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+.permissions__button-row .checkbox {
+  margin-left: 16px;
+}
+
+.permissionWrapper {
+  background: none;
+  padding: 0;
+  margin: 0 auto;
+  width: 90%;
+}
+.permissionWrapper .dijitAccordionTitle {
+  padding: 0;
+}
+
+.permissionTable,
+.accordionEntry {
+  width: 100%;
+}
+.permissionTable td, .permissionTable th,
+.accordionEntry td,
+.accordionEntry th {
+  width: 10%;
+  text-align: center;
+}
+.permissionTable th,
+.accordionEntry th {
+  font-weight: bold;
+}
+.permissionTable th.permissionType,
+.accordionEntry th.permissionType {
+  width: 40%;
+  font-weight: normal;
+  padding-left: 8px;
+  text-align: left;
+}
+.permissionTable th.permissionTitle,
+.accordionEntry th.permissionTitle {
+  font-weight: bold;
+}
+
+#assetPermissionsMessageWrapper {
+  padding-top: 15px;
+  color: red;
+  text-align: center;
+  font-weight: bolder;
 }
 
 .related-content-dialog {
@@ -6982,6 +7115,51 @@ a.category_higlighted, a.tag_higlighted {
 
 .related-content-form {
   width: 900px;
+}
+
+.context-menu {
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ECEDEE;
+  min-width: 190px;
+}
+.context-menu .pop_divider {
+  border-bottom: 1px solid #ECEDEE;
+  background-color: #fff;
+}
+
+.context-menu__item {
+  color: #5B5B5B;
+  cursor: pointer;
+  display: block;
+  font-size: 13px;
+  height: 32px;
+  line-height: 32px;
+  padding: 0px 24px;
+  position: relative;
+  text-decoration: none;
+}
+.context-menu__item:hover {
+  background-color: #FAFAFA;
+}
+.context-menu__item .arrowRightIcon {
+  font-size: 12px;
+  margin-top: -6px;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+}
+
+.history .contentIdentifier {
+  font-weight: bold;
+}
+.history .history__divider {
+  background-color: #ECEDEE;
+  margin: 24px 0;
+}
+.history .history__status {
+  overflow: hidden;
 }
 
 #iFrameWrapper {
@@ -7253,12 +7431,12 @@ Resize Handle
   height: 100%;
 }
 
-#cell-actions, .listingTable .listingTable__actions, .content-type__cell-actions {
+#cell-actions, .listingTable .listingTable__actions, .content-type__cell-actions, .job-scheduler__host-list-actions {
   text-align: center;
   width: 65px;
   white-space: nowrap;
 }
-#cell-actions a, .listingTable .listingTable__actions a, .content-type__cell-actions a {
+#cell-actions a, .listingTable .listingTable__actions a, .content-type__cell-actions a, .job-scheduler__host-list-actions a {
   display: inline-block;
   margin: 0 4px;
   text-decoration: none;

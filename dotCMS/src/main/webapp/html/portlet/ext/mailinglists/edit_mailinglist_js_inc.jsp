@@ -657,7 +657,7 @@ function getRecordHTMLRow (record, rowClass) {
 	if(record.hasPermissionToWrite) {
 
 		<%
-		com.liferay.portlet.PortletURLImpl portletURLImpl = new com.liferay.portlet.PortletURLImpl(request,"EXT_USER_ADMIN", layoutId, false);			
+		com.liferay.portlet.PortletURLImpl portletURLImpl = new com.liferay.portlet.PortletURLImpl(request,"users", layoutId, false);			
 		String linkHREF = portletURLImpl.toString() + "&dm_rlout=1";
 	    %>	
 		html += '<td valign="top" align="center">';

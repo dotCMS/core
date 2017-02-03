@@ -27,7 +27,7 @@ abstract class OSGIBaseAJAX extends AjaxAction {
 		Class partypes[] = new Class[] { HttpServletRequest.class, HttpServletResponse.class };
 		Object arglist[] = new Object[] { request, response };
 		try {
-		    if(getUser()==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("OSGI_MANAGER", getUser())){
+		    if(getUser()==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("dynamic-plugins", getUser())){
 				response.sendError(401);
 				return;
 			}

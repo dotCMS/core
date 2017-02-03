@@ -45,7 +45,7 @@ public class EnvironmentAjaxAction extends AjaxAction {
 
 		try{
 			// Check permissions if the user has access to the CMS Maintenance Portlet
-			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", user)) {
+			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)) {
 				String userName = map.get("u") !=null
 					? map.get("u")
 						: map.get("user") !=null
@@ -66,7 +66,7 @@ public class EnvironmentAjaxAction extends AjaxAction {
 				    setUser(request);
 	                user = getUser();
 				}
-				if(user==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CONTENT_PUBLISHING_TOOL", user)){
+				if(user==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("publishing-queue", user)){
 					response.sendError(401);
 					return;
 				}

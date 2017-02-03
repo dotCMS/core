@@ -13,7 +13,7 @@
 <%
 try {
 	user = com.liferay.portal.util.PortalUtil.getUser(request);
-	if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", user)){
+	if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)){
 		throw new DotSecurityException("Invalid user accessing cachestats_guava.jsp - is user '" + user + "' logged in?");
 	}
 } catch (Exception e) {

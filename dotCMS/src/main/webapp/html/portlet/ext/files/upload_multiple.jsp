@@ -138,9 +138,9 @@ if(request.getParameter(WebKeys.IN_FRAME)!=null){
 	             
 					<input type="hidden" name="selectedStructure" value="<%=selectedStructure%>">
 					<input type="hidden" name="cmd" value="<%=Constants.ADD%>">
-					<input type="hidden" name="<portlet:namespace />subcmd" value="">
-					<input type="hidden" name="<portlet:namespace />redirect" value="<portlet:renderURL><portlet:param name="struts_action" value="/ext/files/view_files" /></portlet:renderURL>">
-			 		<input type="hidden" name="<portlet:namespace />categories" value="">
+					<input type="hidden" name="subcmd" value="">
+					<input type="hidden" name="redirect" value="<portlet:renderURL><portlet:param name="struts_action" value="/ext/files/view_files" /></portlet:renderURL>">
+			 		<input type="hidden" name="categories" value="">
 					<html:hidden property="maxSize" />
 					<html:hidden property="maxWidth" />
 					<html:hidden property="maxHeight" />
@@ -150,7 +150,7 @@ if(request.getParameter(WebKeys.IN_FRAME)!=null){
 
                     <% if ( request.getHeader( "User-Agent" ).contains( "MSIE" ) ) { %>
                         <input type="hidden" name="p_p_action" value="1">
-                        <input type="hidden" name="p_p_id" value="EXT_BROWSER">
+                        <input type="hidden" name="p_p_id" value="<%=PortletID.SITE_BROWSER%>">
                         <input type="hidden" name="p_p_state" value="maximized">
                         <input type="hidden" name="p_p_mode" value="view">
                         <input type="hidden" name="struts_action" value="/ext/files/upload_multiple">
@@ -176,7 +176,7 @@ if(request.getParameter(WebKeys.IN_FRAME)!=null){
                      </div>
 
 					    <div style="margin-left:200px;">
-							<input name="<portlet:namespace />uploadedFile" multiple="true" type="file" id="uploader"
+							<input name="uploadedFile" multiple="true" type="file" id="uploader"
    									dojoType="dojox.form.Uploader" label="<%= LanguageUtil.get(pageContext, "Select-file(s)-to-upload") %>" >
    						</div>
 				        <div id="files" dojoType="dojox.form.uploader.FileList" uploaderId="uploader" 

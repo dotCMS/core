@@ -61,6 +61,21 @@ import com.dotmarketing.util.UtilMethods;
 public class DotInitScheduler {
 
 	private static final String DOTCMS_JOB_GROUP_NAME = "dotcms_jobs";
+	public static final String SCHEDULER_COREPOOLSIZE = "SCHEDULER_CORE_POOL_SIZE";
+
+	private static ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = null;
+
+	private static ScheduledThreadPoolExecutor getScheduledThreadPoolExecutor() {
+
+		if (null == scheduledThreadPoolExecutor) {
+
+			final int corePoolSize = Config.getIntProperty(SCHEDULER_COREPOOLSIZE, 10);
+
+			scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(corePoolSize);
+		}
+
+		return scheduledThreadPoolExecutor;
+	}
 
 	/**
 	 * Configures and initializes every system Job to run on dotCMS.
@@ -754,7 +769,7 @@ public class DotInitScheduler {
             String jobGroup = DOTCMS_JOB_GROUP_NAME;
             String triggerName = "trigger23";
             String triggerGroup = "group23";
-            if(Config.getBooleanProperty("ENABLE_REMOVE_INACTIVE_CLUSTER_SERVER", true)) {
+            if(Config.getBooleanProperty("ENABLE_REMOVE_INACTIVE_CLUSTER_SERVER", true) &&  Config.getBooleanProperty( "ENABLE_SERVER_HEARTBEAT", true )) {
 				try {
 					isNew = false;
 					
@@ -777,10 +792,14 @@ public class DotInitScheduler {
 						sched.scheduleJob(trigger);
 					else
 						sched.rescheduleJob(triggerName, triggerGroup, trigger);
+
+					Logger.info(DotInitScheduler.class, "DeleteInactiveClusterServersJob on");
 				} catch (Exception e) {
 					Logger.error(DotInitScheduler.class, e.getMessage(),e);
 				}
 			} else {
+				Logger.info(DotInitScheduler.class, "DeleteInactiveClusterServersJob off");
+
 				if ((job = sched.getJobDetail(jobName, jobGroup)) != null) {
 					sched.deleteJob(jobName, jobGroup);
 				}
@@ -902,46 +921,10 @@ public class DotInitScheduler {
             }
 
 			// Enabling the System Events Job
-            String SEjobName = "SystemEventsJob";
-            String SEtriggerName = "trigger27";
-            String SEtriggerGroup = "group27";
-
-			if (Config.getBooleanProperty("ENABLE_SYSTEM_EVENTS", true)) {
-				JobBuilder systemEventsJob = new JobBuilder().setJobClass(SystemEventsJob.class)
-						.setJobName(SEjobName)
-						.setJobGroup(DOTCMS_JOB_GROUP_NAME)
-						.setTriggerName(SEtriggerName)
-						.setTriggerGroup(SEtriggerGroup)
-						.setCronExpressionProp("SYSTEM_EVENTS_CRON_EXPRESSION")
-						.setCronExpressionPropDefault("0/5 * * * * ?")
-						.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
-				scheduleJob(systemEventsJob);
-			} else {
-                if ((sched.getJobDetail(SEjobName, DOTCMS_JOB_GROUP_NAME)) != null) {
-                    sched.deleteJob(SEjobName, DOTCMS_JOB_GROUP_NAME);
-                }
-            }
+            addSystemEventsJob();
 
 			// Enabling the Delete Old System Events Job
-            String DOSEjobName = "DeleteOldSystemEventsJob";
-            String DOSEtriggerName = "trigger28";
-            String DOSEtriggerGroup = "group28";
-
-			if (Config.getBooleanProperty("ENABLE_DELETE_OLD_SYSTEM_EVENTS", true)) {
-				JobBuilder deleteOldSystemEventsJob = new JobBuilder().setJobClass(DeleteOldSystemEventsJob.class)
-						.setJobName(DOSEjobName)
-						.setJobGroup(DOTCMS_JOB_GROUP_NAME)
-						.setTriggerName(DOSEtriggerName)
-						.setTriggerGroup(DOSEtriggerGroup)
-						.setCronExpressionProp("DELETE_OLD_SYSTEM_EVENTS_CRON_EXPRESSION")
-						.setCronExpressionPropDefault("0 0 0 1/3 * ? *")
-						.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
-				scheduleJob(deleteOldSystemEventsJob);
-			} else {
-                if ((sched.getJobDetail(DOSEjobName, DOTCMS_JOB_GROUP_NAME)) != null) {
-                    sched.deleteJob(DOSEjobName, DOTCMS_JOB_GROUP_NAME);
-                }
-            }
+			addDeleteOldSystemEvents(sched);
 
             //Starting the sequential and standard Schedulers
 	        QuartzUtils.startSchedulers();
@@ -950,6 +933,45 @@ public class DotInitScheduler {
 			throw e;
 		}
 	}
+
+	private static void addDeleteOldSystemEvents(final Scheduler sched) throws SchedulerException {
+		String DOSEjobName = "DeleteOldSystemEventsJob";
+		String DOSEtriggerName = "trigger28";
+		String DOSEtriggerGroup = "group28";
+
+		if (Config.getBooleanProperty("ENABLE_DELETE_OLD_SYSTEM_EVENTS", true)) {
+
+			JobBuilder deleteOldSystemEventsJob = new JobBuilder().setJobClass(DeleteOldSystemEventsJob.class)
+					.setJobName(DOSEjobName)
+					.setJobGroup(DOTCMS_JOB_GROUP_NAME)
+					.setTriggerName(DOSEtriggerName)
+					.setTriggerGroup(DOSEtriggerGroup)
+					.setCronExpressionProp("DELETE_OLD_SYSTEM_EVENTS_CRON_EXPRESSION")
+					.setCronExpressionPropDefault("0 0 0 1/3 * ? *")
+					.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+			scheduleJob(deleteOldSystemEventsJob);
+		} else {
+
+			if ((sched.getJobDetail(DOSEjobName, DOTCMS_JOB_GROUP_NAME)) != null) {
+				sched.deleteJob(DOSEjobName, DOTCMS_JOB_GROUP_NAME);
+			}
+		}
+	} // addDeleteOldSystemEvents.
+
+	private static void addSystemEventsJob () {
+
+		if (Config.getBooleanProperty("ENABLE_SYSTEM_EVENTS", true)) {
+			try {
+
+				final int initialDelay = Config.getIntProperty("SYSTEM_EVENTS_INITIAL_DELAY", 0);
+				final int delaySeconds = Config.getIntProperty("SYSTEM_EVENTS_DELAY_SECONDS", 5); // runs every 5 seconds.
+				getScheduledThreadPoolExecutor().scheduleWithFixedDelay(new SystemEventsJob(), initialDelay, delaySeconds, TimeUnit.SECONDS);
+			} catch (Exception e) {
+
+				Logger.info(DotInitScheduler.class, e.toString());
+			}
+		}
+	} // addSystemEventsJob.
 
 	/**
 	 * Creates a Quartz Job and schedules it for execution. If the Job has

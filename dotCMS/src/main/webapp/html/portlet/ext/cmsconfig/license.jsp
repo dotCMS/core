@@ -2,7 +2,7 @@
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.liferay.portal.struts.MultiMessageResources"%>
 <%@ include file="/html/portlet/ext/cmsconfig/init.jsp" %>
-<% request.setAttribute("requiredPortletAccess", "9"); %>
+<% request.setAttribute("requiredPortletAccess", PortletID.CONFIGURATION.toString()); %>
 <%@ include file="/html/common/uservalidation.jsp"%>
 
 <%@page import="com.dotmarketing.business.APILocator"%>
@@ -16,7 +16,7 @@
 <%@page import="java.text.SimpleDateFormat"%>
 
 <%
-    String licenseTab = "/c/portal/layout?p_l_id=" + layoutId + "&p_p_id=9&tab=licenseTab";
+    String licenseTab = "/c/portal/layout?p_l_id=" + layoutId + "&p_p_id="+PortletID.CONFIGURATION+"&tab=licenseTab";
 
     String error=null;
     String message=null;

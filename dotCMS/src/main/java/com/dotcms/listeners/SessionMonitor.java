@@ -116,7 +116,8 @@ public class SessionMonitor implements ServletRequestListener,
                 Logger.debug(this, "Triggering a session destroyed event");
 
                 this.systemEventsAPI.push(new SystemEvent
-                        (SystemEventType.SESSION_DESTROYED, new Payload(new Date(), Visibility.USER, userId)));
+                        (SystemEventType.SESSION_DESTROYED, new Payload(
+                                new Long(System.currentTimeMillis()), Visibility.USER, userId)));
             } catch (DotDataException e) {
 
                 Logger.debug(this, "Could not sent the session destroyed event" + e.getMessage(), e);

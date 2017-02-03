@@ -53,7 +53,7 @@ public class ESIndexResource {
 
     protected InitDataObject auth(String params,HttpServletRequest request) throws DotSecurityException, DotDataException {
         InitDataObject init= webResource.init(params, true, request, true, null);
-        if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", init.getUser()))
+        if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", init.getUser()))
             throw new DotSecurityException("unauthorized");
         return init;
     }

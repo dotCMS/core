@@ -65,92 +65,85 @@
 <div class="contentIdentifier">
 	<%= LanguageUtil.get(pageContext, "Identifier") %> : <%=(ident!=null?ident.getId():"") %>
 </div>
-<table class="listingTable">
-	<tr>
-		<th width="5%" nowrap><%= LanguageUtil.get(pageContext, "Status") %></th>
-		<th width="10%" nowrap><%= LanguageUtil.get(pageContext, "Action") %></th>
-		<% if(isContentlet){ %>
-			<th style="min-width:120px;" nowrap>&nbsp;</th>
-		<% } %>
-		<th width="45%"><%= LanguageUtil.get(pageContext, "Title") %></th>
-		<th width="20%"><%= LanguageUtil.get(pageContext, "Author") %></th>
-		<th width="20%" style="text-align:center;"><%= LanguageUtil.get(pageContext, "Modified-Date") %></th>
-		<th width="20%" style="text-align:center;"><%= LanguageUtil.get(pageContext, "Inode") %></th>
-	</tr>
-<%
-	Iterator<Versionable> versionsIt = versions.iterator();
-	int kmod = 0;
-	boolean isAlreadyLocked = false;
-	while (versionsIt.hasNext()) {
-		Versionable ver = versionsIt.next();
-		boolean working = ver.isWorking();
-		boolean live = ver.isLive();
-		Language langV = APILocator.getLanguageAPI().getDefaultLanguage();
-		if(isContentlet){
-			langV = APILocator.getLanguageAPI().getLanguage(((Contentlet)ver).getLanguageId());
-		}
-		String vinode = ver.getInode();
-		String title = ver.getTitle();
-		String modUser = ver.getModUser();
-		Date modDate = ver.getModDate();
-		String statusIcon = com.dotmarketing.util.UtilHTML.getVersionStatusIcons(ver);
-		String str_style = "";
-		if ((kmod % 2) == 0) {
-			str_style = "class='alternate_1'";
-		}
-		else{
-			str_style = "class='alternate_2'";
-		}
-		kmod++;
-
-%>
-	<tr  <%=str_style%>>
-		<td nowrap="nowrap" width="50" align="center">
-		<%=statusIcon%>
-		</td>
-		<td nowrap="nowrap">
-		<% if (!working) {  %>
-			<% if(canEdit) {  %>
-				<% if (!live) { %>
-					<a  href="javascript: deleteVersion('<%= vinode%>');"><%= LanguageUtil.get(pageContext, "Delete") %></a> -
-				<% } %>
-				<a  href="javascript: selectVersion('<%= vinode %>');"><%= LanguageUtil.get(pageContext, "Bring-Back") %></a>
+<div class="history__status">
+	<table class="listingTable">
+		<tr>
+			<th width="5%" nowrap><%= LanguageUtil.get(pageContext, "Status") %></th>
+			<th width="10%" nowrap><%= LanguageUtil.get(pageContext, "Action") %></th>
+			<% if(isContentlet){ %>
+				<th style="min-width:120px;" nowrap>&nbsp;</th>
 			<% } %>
-		<% } else { %>
-			<%= LanguageUtil.get(pageContext, "Working-Version") %>
-		<% } %>
-		</td>
-		<% if(isContentlet){ %>
-			<td> <img src="/html/images/languages/<%=langV.getLanguageCode()+"_"+langV.getCountryCode() %>.gif"/>&nbsp;<%=langV.getLanguage()+"&nbsp;("+langV.getCountryCode()+")" %></td>
-		<% } %>
-		<td><a  href="javascript: editVersion ('<%= vinode %>');"><%= title %></a></td>
-<%
-	String modUserName = "";
-	if(UtilMethods.isSet(modUser)){
-		try{
-			modUserName = APILocator.getUserAPI().loadUserById(modUser,APILocator.getUserAPI().getSystemUser(),false) != null ? APILocator.getUserAPI().loadUserById(modUser,APILocator.getUserAPI().getSystemUser(),false).getFullName(): "";
-		}catch(Exception e){Logger.debug(this,"No User Found");}
-	}
-%>
-		 <td><%= modUserName %></td>
-		<!-- DOTCMS-3813  -->
-		<!-- }  -->
+			<th width="45%"><%= LanguageUtil.get(pageContext, "Title") %></th>
+			<th width="20%"><%= LanguageUtil.get(pageContext, "Author") %></th>
+			<th width="20%" style="text-align:center;"><%= LanguageUtil.get(pageContext, "Modified-Date") %></th>
+			<th width="20%" style="text-align:center;"><%= LanguageUtil.get(pageContext, "Inode") %></th>
+		</tr>
+	<%
+		Iterator<Versionable> versionsIt = versions.iterator();
+		boolean isAlreadyLocked = false;
+		while (versionsIt.hasNext()) {
+			Versionable ver = versionsIt.next();
+			boolean working = ver.isWorking();
+			boolean live = ver.isLive();
+			Language langV = APILocator.getLanguageAPI().getDefaultLanguage();
+			if(isContentlet){
+				langV = APILocator.getLanguageAPI().getLanguage(((Contentlet)ver).getLanguageId());
+			}
+			String vinode = ver.getInode();
+			String title = ver.getTitle();
+			String modUser = ver.getModUser();
+			Date modDate = ver.getModDate();
+			String statusIcon = com.dotmarketing.util.UtilHTML.getVersionStatusIcons(ver);
 
-		<!-- Timezone
-		<%= Calendar.getInstance().getTimeZone().getID() %>
-		 -->
-		<td nowrap="nowrap" style="text-align:center;"><%= UtilMethods.dateToHTMLDate(modDate) %> - <%= UtilMethods.dateToHTMLTime(modDate) %></td>
-		<td nowrap="nowrap"><%= vinode %></td>
-	</tr>
-<% } if (versions.size() == 0) { %>
-	<tr>
-		<td colspan="5">
-			<div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "No-Versions-Found") %></div>
-		</td>
-	</tr>
-<% } %>
+	%>
+		<tr>
+			<td nowrap="nowrap" width="50" align="center">
+			<%=statusIcon%>
+			</td>
+			<td nowrap="nowrap">
+			<% if (!working) {  %>
+				<% if(canEdit) {  %>
+					<% if (!live) { %>
+						<a  href="javascript: deleteVersion('<%= vinode%>');"><%= LanguageUtil.get(pageContext, "Delete") %></a> -
+					<% } %>
+					<a  href="javascript: selectVersion('<%= vinode %>');"><%= LanguageUtil.get(pageContext, "Bring-Back") %></a>
+				<% } %>
+			<% } else { %>
+				<%= LanguageUtil.get(pageContext, "Working-Version") %>
+			<% } %>
+			</td>
+			<% if(isContentlet){ %>
+				<td> <img src="/html/images/languages/<%=langV.getLanguageCode()+"_"+langV.getCountryCode() %>.gif"/>&nbsp;<%=langV.getLanguage()+"&nbsp;("+langV.getCountryCode()+")" %></td>
+			<% } %>
+			<td><a  href="javascript: editVersion ('<%= vinode %>');"><%= title %></a></td>
+	<%
+		String modUserName = "";
+		if(UtilMethods.isSet(modUser)){
+			try{
+				modUserName = APILocator.getUserAPI().loadUserById(modUser,APILocator.getUserAPI().getSystemUser(),false) != null ? APILocator.getUserAPI().loadUserById(modUser,APILocator.getUserAPI().getSystemUser(),false).getFullName(): "";
+			}catch(Exception e){Logger.debug(this,"No User Found");}
+		}
+	%>
+			<td><%= modUserName %></td>
+			<!-- DOTCMS-3813  -->
+			<!-- }  -->
 
-</table>
-<br/>
+			<!-- Timezone
+			<%= Calendar.getInstance().getTimeZone().getID() %>
+			-->
+			<td nowrap="nowrap" style="text-align:center;"><%= UtilMethods.dateToHTMLDate(modDate) %> - <%= UtilMethods.dateToHTMLTime(modDate) %></td>
+			<td nowrap="nowrap"><%= vinode %></td>
+		</tr>
+	<% } if (versions.size() == 0) { %>
+		<tr>
+			<td colspan="5">
+				<div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "No-Versions-Found") %></div>
+			</td>
+		</tr>
+	<% } %>
+
+	</table>
+</div>
+<hr class="history__divider">
 <%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
 

@@ -394,312 +394,290 @@
 	
 			<%-- Start Template Controls --%>
 	
-			<div class="buttonRow-left lineRight" id="editContentletButtonRow" style="height: 100%; min-height: 617px;position:absolute;top:0px;left:0px;">
-			<%
-				if(null!=parameters) { // retrieve the parameters for auto-populate the fields
-			%>
-				<div class="gradient2">
-	
-	
-	
-					<div class="fieldWrapperSide">
-						<div class="leftProperties">
-							<dl>
+			<div class="portlet-sidebar-wrapper design-template__sidebar-wrapper" id="editContentletButtonRow">
+				<%
+					if(null!=parameters) { // retrieve the parameters for auto-populate the fields
+				%>
+					<div class="portlet-sidebar">
+
+						<div class="fieldWrapperSide">
+							<dl class="vertical">
 								<dt><%=LanguageUtil.get(pageContext, "Theme")%>:</dt>
 								<dd><div id="themeDiv" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" style="vertical-align:middle;" themesOnly=true value="<%=UtilMethods.webifyString(template.getTheme())%>" displayedValue="<%=UtilMethods.webifyString(template.getThemeName())%>"></div>
 								</dd>
 							</dl>
 						</div>
-					</div>
-	
-					<input type="hidden" name="theme" id="theme">
-					<input type="hidden" name="themeName" id="themeName">
-	
-					<div class="clear"></div>
-	
-					<div class="hidden">
-						<div class="leftProperties">
-							<dl>
-								<dt><%=LanguageUtil.get(pageContext, "width") %>:</dt>
-								<dd>
-									<select id="pageWidth" dojoType="dijit.form.FilteringSelect" name="pageWidth" onchange="javascript: addPageWidth(this.value)">
-	                                    <option value="resp-template" <%if(parameters.getPageWidth().equals("resp-template")) {%>selected="selected"<%}%>>Responsive</option>
-	                                    <option value="doc4-template" <%if(parameters.getPageWidth().equals("doc4-template")) {%>selected="selected"<%}%>>975px</option>
-					                    <option value="doc3-template" <%if(parameters.getPageWidth().equals("doc3-template")) {%>selected="selected"<%}%>>100%</option>
-									</select>
-								</dd>
-							</dl>
+		
+						<input type="hidden" name="theme" id="theme">
+						<input type="hidden" name="themeName" id="themeName">
+		
+						<div class="clear"></div>
+		
+						<div class="hidden">
+								<dl class="vertical">
+									<dt><%=LanguageUtil.get(pageContext, "width") %>:</dt>
+									<dd>
+										<select id="pageWidth" dojoType="dijit.form.FilteringSelect" name="pageWidth" onchange="javascript: addPageWidth(this.value)">
+											<option value="resp-template" <%if(parameters.getPageWidth().equals("resp-template")) {%>selected="selected"<%}%>>Responsive</option>
+											<option value="doc4-template" <%if(parameters.getPageWidth().equals("doc4-template")) {%>selected="selected"<%}%>>975px</option>
+											<option value="doc3-template" <%if(parameters.getPageWidth().equals("doc3-template")) {%>selected="selected"<%}%>>100%</option>
+										</select>
+									</dd>
+								</dl>
 						</div>
-					</div>
-	
-					<div class="fieldWrapperSide">
-						<div class="leftProperties">
-							<dl>
-								<dt><%=LanguageUtil.get(pageContext, "sidebar")%>:</dt>
-								<dd>
-	                                <select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: if(this.value!=''){addLayout(this.value)}">
-										<option value="none" <%if(parameters.getLayout().equals("none")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "none")%></option>
-										<option value="yui-t1-template" <%if(parameters.getLayout().equals("yui-t1-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-20-left")%></option>
-										<option value="yui-t2-template" <%if(parameters.getLayout().equals("yui-t2-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-30-left")%></option>
-										<option value="yui-t3-template" <%if(parameters.getLayout().equals("yui-t3-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-40-left")%></option>
-										<option value="yui-t4-template" <%if(parameters.getLayout().equals("yui-t4-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-20-right")%></option>
-										<option value="yui-t5-template" <%if(parameters.getLayout().equals("yui-t5-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-30-right")%></option>
-										<option value="yui-t6-template" <%if(parameters.getLayout().equals("yui-t6-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-40-right")%></option>
-									</select>
-								</dd>
-							</dl>
-						</div>
-					</div>
-					<div class="clear"></div>
-					<div class="fieldWrapperSide">
-						<div class="leftProperties">
-							<dl>
-								<dt><%=LanguageUtil.get(pageContext, "Header")%>:</dt>
-								<dd>
-									<input style="float: left; margin-right: 10px" type="checkbox" dojoType="dijit.form.CheckBox" name="headerCheck" id="headerCheck" onclick="javascript: addHeader(this.checked)" <%if(parameters.isHeader()) {%>checked="checked"<%}%>/>
-								</dd>
-							</dl>
-							<div class="clear"></div>
-						    <dl>
-								<dt><%=LanguageUtil.get(pageContext, "Footer")%>:</dt>
-								<dd>
-									<input style="float: left; margin-right: 10px" type="checkbox" dojoType="dijit.form.CheckBox" name="footerCheck" id="footerCheck" onclick="javascript: addFooter(this.checked)" <%if(parameters.isFooter()) {%>checked="checked"<%}%>/>
-								</dd>
-							</dl>
+		
+						<div class="fieldWrapperSide">
+								<dl class="vertical">
+									<dt><%=LanguageUtil.get(pageContext, "sidebar")%>:</dt>
+									<dd>
+										<select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: if(this.value!=''){addLayout(this.value)}">
+											<option value="none" <%if(parameters.getLayout().equals("none")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "none")%></option>
+											<option value="yui-t1-template" <%if(parameters.getLayout().equals("yui-t1-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-20-left")%></option>
+											<option value="yui-t2-template" <%if(parameters.getLayout().equals("yui-t2-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-30-left")%></option>
+											<option value="yui-t3-template" <%if(parameters.getLayout().equals("yui-t3-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-40-left")%></option>
+											<option value="yui-t4-template" <%if(parameters.getLayout().equals("yui-t4-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-20-right")%></option>
+											<option value="yui-t5-template" <%if(parameters.getLayout().equals("yui-t5-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-30-right")%></option>
+											<option value="yui-t6-template" <%if(parameters.getLayout().equals("yui-t6-template")) {%>selected="selected"<%}%>><%=LanguageUtil.get(pageContext, "layout-40-right")%></option>
+										</select>
+									</dd>
+								</dl>
 						</div>
 						<div class="clear"></div>
-					</div>
-	
-	
-					<div class="gradient title"><%=LanguageUtil.get(pageContext, "body-rows")%></div>
-					<div class="fieldWrapperSide">
-						<div class="leftProperties">
-							<dl>
-								<dt id="tableContainer">
-									<table id="splitBodyTable" cellspacing="4" cellpadding="2">
-										<%
-											for(TemplateLayoutRow sb : parameters.getBody().getRows()){
-										%>
-									        <tr id="_selectRow<%=sb.getIdentifier()%>" class="spaceUnder">
-										        <td style="width: 16px;">
-										        	<% if(sb.getIdentifier()>0) { %>
-										        		<img src="/html/images/icons/cross.png" alt="delete" title="delete row" style="cursor: pointer;" onclick="javascript: deleteRow('splitBodyTable','<%=sb.getId()+sb.getIdentifier()%>','splitBody<%=sb.getIdentifier()%>',<%=sb.getIdentifier()%>)"/>
-										        	<% }else{ %>
-										        		&nbsp;&nbsp;
-										        	<% } %></td>
-										        <td>
-													<select name="<%=sb.getId()+sb.getIdentifier()%>" dojoType="dijit.form.FilteringSelect" onchange="javascript: if(this.value!=''){addGrid(this.value, 'splitBody<%=sb.getIdentifier()%>',<%=sb.getIdentifier()%>)}">
-														<option value="1" <%if(sb.getValue().equals("")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-1-column-100") %></option>
-														<option value="yui-g-template" <%if(sb.getValue().equals("yui-g-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-5050") %></option>
-														<option value="yui-gc-template" <%if(sb.getValue().equals("yui-gc-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-6633") %></option>
-														<option value="yui-gd-template" <%if(sb.getValue().equals("yui-gd-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-3366") %></option>
-														<option value="yui-ge-template" <%if(sb.getValue().equals("yui-ge-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-7525") %></option>
-														<option value="yui-gf-template" <%if(sb.getValue().equals("yui-gf-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-2575") %></option>
-														<option value="yui-gb-template" <%if(sb.getValue().equals("yui-gb-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-3-column-333333") %></option>
-														<option value="yui-js-template" <%if(sb.getValue().equals("yui-js-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-4-column-25252525") %></option>
-													</select>
-										        </td>
-											</tr>
-										<%
-											}
-										%>
-									</table>
-								</dt>
-							</dl>
-							<div class="buttonRow" style="text-align: center">
-								<button id="addRow" dojoType="dijit.form.Button" onClick="javascript: addRow('splitBodyTable','select_splitBody','splitBody')" iconClass="plusIcon" type="button">
-									<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-row")) %>
-								</button>
+						<div class="checkbox">
+							<input style="float: left; margin-right: 10px" type="checkbox" dojoType="dijit.form.CheckBox" name="headerCheck" id="headerCheck" onclick="javascript: addHeader(this.checked)" <%if(parameters.isHeader()) {%>checked="checked"<%}%>/>
+							<label for="">
+								<%=LanguageUtil.get(pageContext, "Header")%>
+							</label>
+						</div>
+						<div class="clear"></div>
+						<div class="checkbox">
+							<input style="float: left; margin-right: 10px" type="checkbox" dojoType="dijit.form.CheckBox" name="footerCheck" id="footerCheck" onclick="javascript: addFooter(this.checked)" <%if(parameters.isFooter()) {%>checked="checked"<%}%>/>
+							<label for="">
+								<%=LanguageUtil.get(pageContext, "Footer")%>
+							</label>
+						</div>
+						<div class="clear"></div>
+		
+						<div class="gradient title"><%=LanguageUtil.get(pageContext, "body-rows")%></div>
+						<div class="fieldWrapperSide">
+								<dl class="vertical">
+									<dt id="tableContainer">
+										<table id="splitBodyTable" cellspacing="4" cellpadding="2">
+											<%
+												for(TemplateLayoutRow sb : parameters.getBody().getRows()){
+											%>
+												<tr id="_selectRow<%=sb.getIdentifier()%>" class="spaceUnder">
+													<td style="width: 16px;">
+														<% if(sb.getIdentifier()>0) { %>
+															<img src="/html/images/icons/cross.png" alt="delete" title="delete row" style="cursor: pointer;" onclick="javascript: deleteRow('splitBodyTable','<%=sb.getId()+sb.getIdentifier()%>','splitBody<%=sb.getIdentifier()%>',<%=sb.getIdentifier()%>)"/>
+														<% }else{ %>
+															&nbsp;&nbsp;
+														<% } %></td>
+													<td>
+														<select name="<%=sb.getId()+sb.getIdentifier()%>" dojoType="dijit.form.FilteringSelect" onchange="javascript: if(this.value!=''){addGrid(this.value, 'splitBody<%=sb.getIdentifier()%>',<%=sb.getIdentifier()%>)}">
+															<option value="1" <%if(sb.getValue().equals("")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-1-column-100") %></option>
+															<option value="yui-g-template" <%if(sb.getValue().equals("yui-g-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-5050") %></option>
+															<option value="yui-gc-template" <%if(sb.getValue().equals("yui-gc-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-6633") %></option>
+															<option value="yui-gd-template" <%if(sb.getValue().equals("yui-gd-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-3366") %></option>
+															<option value="yui-ge-template" <%if(sb.getValue().equals("yui-ge-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-7525") %></option>
+															<option value="yui-gf-template" <%if(sb.getValue().equals("yui-gf-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-2-column-2575") %></option>
+															<option value="yui-gb-template" <%if(sb.getValue().equals("yui-gb-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-3-column-333333") %></option>
+															<option value="yui-js-template" <%if(sb.getValue().equals("yui-js-template")) { %>selected="selected"<%}%>><%= LanguageUtil.get(pageContext, "body-rows-4-column-25252525") %></option>
+														</select>
+													</td>
+												</tr>
+											<%
+												}
+											%>
+										</table>
+									</dt>
+								</dl>
+								<dl class="vertical">
+									<dd>
+										<div class="buttonRow" style="text-align: center">
+											<button id="addRow" dojoType="dijit.form.Button" onClick="javascript: addRow('splitBodyTable','select_splitBody','splitBody')" iconClass="plusIcon" type="button">
+												<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-row")) %>
+											</button>
+										</div>
+									</dd>
+								</dl>
+							<div class="clear"></div>
+						</div>
+		
+		
+						<!--<div class="gradient title"><%=LanguageUtil.get(pageContext, "Actions") %></div>-->
+						<div class="content-edit-actions">
+							<div id="contentletActionsHanger">
+								<% if (!InodeUtils.isSet(template.getInode()) || template.isLive() || template.isWorking()) { %>
+									<% if ( canUserWriteToTemplate ) { %>
+									<a onClick="submitfm(document.getElementById('fm'),'')">
+										<span class="saveIcon"></span>
+											<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
+									</a>
+									<% } %>
+								<%
+								if ( canUserPublishTemplate ) { %>
+									<a onClick="submitfm(document.getElementById('fm'),'publish')">
+										<span class="publishIcon"></span>
+											<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
+									</a>
+								<% } %>
+			
+								<% } else if (InodeUtils.isSet(template.getInode())) { %>
+									<a onClick="selectTemplateVersion(<%=template.getInode()%>, '<%=referer%>')">
+										<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bring-back-this-version")) %>
+									</a>
+								<% } %>
+			
+								<% if (InodeUtils.isSet(template.getInode()) && template.isDeleted()) {%>
+									<a onClick="submitfmDelete()">
+										<span class="deleteIcon"></span>
+											<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete-template")) %>
+									</a>
+								<% } %>
+									<a onClick="cancelEdit()">
+										<span class="cancelIcon"></span>
+											<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+									</a>
 							</div>
 						</div>
-						<div class="clear"></div>
 					</div>
-	
-	
-					<div class="gradient title"><%=LanguageUtil.get(pageContext, "Actions") %></div>
-					<div id="contentletActionsHanger">
-						<% if (!InodeUtils.isSet(template.getInode()) || template.isLive() || template.isWorking()) { %>
-							<% if ( canUserWriteToTemplate ) { %>
-							<a onClick="submitfm(document.getElementById('fm'),'')">
-								<span class="saveIcon"></span>
-									<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
-							</a>
-							<% } %>
-						<%
-						if ( canUserPublishTemplate ) { %>
-							<a onClick="submitfm(document.getElementById('fm'),'publish')">
-								<span class="publishIcon"></span>
-									<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
-							</a>
-						<% } %>
-	
-						<% } else if (InodeUtils.isSet(template.getInode())) { %>
-							<a onClick="selectTemplateVersion(<%=template.getInode()%>, '<%=referer%>')">
-								<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bring-back-this-version")) %>
-							</a>
-						<% } %>
-	
-						<% if (InodeUtils.isSet(template.getInode()) && template.isDeleted()) {%>
-							<a onClick="submitfmDelete()">
-								<span class="deleteIcon"></span>
-									<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete-template")) %>
-							</a>
-						<% } %>
-							<a onClick="cancelEdit()">
-								<span class="cancelIcon"></span>
-									<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
-							</a>
-					</div>
-				</div>
-			<%
-				} else {
-			%>
-				<div class="gradient2">
-					<div class="fieldWrapperSide">
-						<div class="leftProperties">
-							<dl>
+				<%
+					} else {
+				%>
+					<div class="portlet-sidebar">
+						<div class="fieldWrapperSide">
+							<dl class="vertical">
 								<dt><%= LanguageUtil.get(pageContext, "Theme") %>:</dt>
 								<dd><div id="themeDiv" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" style="vertical-align:middle;" themesOnly=true></div>
 								</dd>
 							</dl>
 						</div>
-					</div>
-					<input type="hidden" name="theme" id="theme">
-					<input type="hidden" name="themeName" id="themeName">
-	
-					<div class="clear"></div>
-	
-					<div class="hidden">
-						<div class="leftProperties">
-							<dl>
-								<dt><%=LanguageUtil.get(pageContext, "width") %>:</dt>
-								<dd><select id="pageWidth" dojoType="dijit.form.FilteringSelect" name="pageWidth" onchange="javascript: addPageWidth(this.value)">
-										<%--<option value="doc-template">750px</option>--%>
-										<%--<option value="doc2-template">950px</option>--%>
-	                                    <option value="resp-template" selected="selected">Responsive</option>
-	                                    <option value="doc4-template">975px</option>
-	                                    <option value="doc3-template">100%</option>
-	
-									</select>
-								</dd>
-							</dl>
-						</div>
-					</div>
-	
-					<div class="clear"></div>
-	
-					<div class="fieldWrapperSide">
-						<div class="leftProperties">
-							<dl>
-								<dt><%=LanguageUtil.get(pageContext, "sidebar") %>:</dt>
-								<dd>
-	                                <select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: if(this.value!=''){addLayout(this.value)}">
-										<option value="none" selected="selected"><%=LanguageUtil.get(pageContext, "none")%></option>
-	                                    <option value="yui-t1-template"><%= LanguageUtil.get(pageContext, "layout-20-left") %></option>
-										<option value="yui-t2-template"><%= LanguageUtil.get(pageContext, "layout-30-left") %></option>
-	                                    <option value="yui-t3-template"><%= LanguageUtil.get(pageContext, "layout-40-left") %></option>
-										<option value="yui-t4-template"><%= LanguageUtil.get(pageContext, "layout-20-right") %></option>
-										<option value="yui-t5-template"><%= LanguageUtil.get(pageContext, "layout-30-right") %></option>
-	                                    <option value="yui-t6-template"><%= LanguageUtil.get(pageContext, "layout-40-right") %></option>
-									</select>
-								</dd>
-							</dl>
-						</div>
-					</div>
-	
-					<div class="clear"></div>
-	
-					<div class="fieldWrapperSide">
-						<div class="leftProperties">
-							<dl>
-								<dt><%=LanguageUtil.get(pageContext, "Header") %>:</dt>
-								<dd>
-									<input style="float: left; margin-right: 10px" type="checkbox" dojoType="dijit.form.CheckBox" name="headerCheck" id="headerCheck" onclick="javascript: addHeader(this.checked)" checked="checked"/>
-								</dd>
-							</dl>
-							<div class="clear"></div>
-						    <dl>
-								<dt><%=LanguageUtil.get(pageContext, "Footer") %>:</dt>
-								<dd>
-									<input style="float: left; margin-right: 10px" type="checkbox" dojoType="dijit.form.CheckBox" name="footerCheck" id="footerCheck" onclick="javascript: addFooter(this.checked)" checked="checked"/>
-								</dd>
-							</dl>
-						</div>
+						<input type="hidden" name="theme" id="theme">
+						<input type="hidden" name="themeName" id="themeName">
+		
 						<div class="clear"></div>
-					</div>
-	
-					<div class="gradient title"><%=LanguageUtil.get(pageContext, "body-rows") %></div>
-					<div class="fieldWrapperSide">
-						<div class="leftProperties">
-							<dl>
-								<dt id="tableContainer">
-									<table id="splitBodyTable" cellspacing="4" cellpadding="2">
-								        <tr id="_selectRow0" class="spaceUnder">
-									        <td style="width: 16px;">&nbsp;&nbsp;</td>
-									        <td>
-												<select name="select_splitBody0" dojoType="dijit.form.FilteringSelect" onchange="javascript: if(this.value!=''){addGrid(this.value, 'splitBody0',0)}">
-													<option value="1" selected="selected"><%= LanguageUtil.get(pageContext, "body-rows-1-column-100") %></option>
-													<option value="yui-g-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-5050") %></option>
-													<option value="yui-gc-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-6633") %></option>
-													<option value="yui-gd-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-3366") %></option>
-													<option value="yui-ge-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-7525") %></option>
-													<option value="yui-gf-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-2575") %></option>
-													<option value="yui-gb-template"><%= LanguageUtil.get(pageContext, "body-rows-3-column-333333") %></option>
-													<option value="yui-js-template"><%= LanguageUtil.get(pageContext, "body-rows-4-column-25252525") %></option>
-	
-												</select>
-									        </td>
-										</tr>
-									</table>
-								</dt>
-							</dl>
-							<div class="buttonRow" style="text-align: center">
-								<button id="addRow" dojoType="dijit.form.Button" onClick="javascript: addRow('splitBodyTable','select_splitBody','splitBody')" iconClass="plusIcon" type="button">
-									<%=LanguageUtil.get(pageContext, "add-row") %>
-								</button>
+		
+						<div class="hidden">
+							<div class="fieldWrapperSide">
+								<dl class="vertical">
+									<dt><%=LanguageUtil.get(pageContext, "width") %>:</dt>
+									<dd>
+										<select id="pageWidth" dojoType="dijit.form.FilteringSelect" name="pageWidth" onchange="javascript: addPageWidth(this.value)">
+											<%--<option value="doc-template">750px</option>--%>
+											<%--<option value="doc2-template">950px</option>--%>
+											<option value="resp-template" selected="selected">Responsive</option>
+											<option value="doc4-template">975px</option>
+											<option value="doc3-template">100%</option>
+										</select>
+									</dd>
+								</dl>
 							</div>
 						</div>
+		
 						<div class="clear"></div>
+		
+						<div class="fieldWrapperSide">
+							<dl class="vertical">
+								<dt><%=LanguageUtil.get(pageContext, "sidebar") %>:</dt>
+								<dd>
+									<select id="layout" dojoType="dijit.form.FilteringSelect" name="layout" onchange="javascript: if(this.value!=''){addLayout(this.value)}">
+										<option value="none" selected="selected"><%=LanguageUtil.get(pageContext, "none")%></option>
+										<option value="yui-t1-template"><%= LanguageUtil.get(pageContext, "layout-20-left") %></option>
+										<option value="yui-t2-template"><%= LanguageUtil.get(pageContext, "layout-30-left") %></option>
+										<option value="yui-t3-template"><%= LanguageUtil.get(pageContext, "layout-40-left") %></option>
+										<option value="yui-t4-template"><%= LanguageUtil.get(pageContext, "layout-20-right") %></option>
+										<option value="yui-t5-template"><%= LanguageUtil.get(pageContext, "layout-30-right") %></option>
+										<option value="yui-t6-template"><%= LanguageUtil.get(pageContext, "layout-40-right") %></option>
+									</select>
+								</dd>
+							</dl>
+						</div>
+		
+						<div class="clear"></div>
+
+						<div class="checkbox">
+							<input style="float: left; margin-right: 10px" type="checkbox" dojoType="dijit.form.CheckBox" name="headerCheck" id="headerCheck" onclick="javascript: addHeader(this.checked)" checked="checked"/>
+							<label for=""><%=LanguageUtil.get(pageContext, "Header") %></label>
+						</div>
+						<div class="clear"></div>
+						<div class="checkbox">
+							<input style="float: left; margin-right: 10px" type="checkbox" dojoType="dijit.form.CheckBox" name="footerCheck" id="footerCheck" onclick="javascript: addFooter(this.checked)" checked="checked"/>
+							<label for=""><%=LanguageUtil.get(pageContext, "Footer") %></label>
+						</div>
+		
+		
+						<div class="gradient title"><%=LanguageUtil.get(pageContext, "body-rows") %></div>
+						<div class="fieldWrapperSide">
+								<dl class="vertical">
+									<dt id="tableContainer">
+										<table id="splitBodyTable" cellspacing="4" cellpadding="2">
+											<tr id="_selectRow0" class="spaceUnder">
+												<td style="width: 16px;">&nbsp;&nbsp;</td>
+												<td>
+													<select name="select_splitBody0" dojoType="dijit.form.FilteringSelect" onchange="javascript: if(this.value!=''){addGrid(this.value, 'splitBody0',0)}">
+														<option value="1" selected="selected"><%= LanguageUtil.get(pageContext, "body-rows-1-column-100") %></option>
+														<option value="yui-g-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-5050") %></option>
+														<option value="yui-gc-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-6633") %></option>
+														<option value="yui-gd-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-3366") %></option>
+														<option value="yui-ge-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-7525") %></option>
+														<option value="yui-gf-template"><%= LanguageUtil.get(pageContext, "body-rows-2-column-2575") %></option>
+														<option value="yui-gb-template"><%= LanguageUtil.get(pageContext, "body-rows-3-column-333333") %></option>
+														<option value="yui-js-template"><%= LanguageUtil.get(pageContext, "body-rows-4-column-25252525") %></option>
+		
+													</select>
+												</td>
+											</tr>
+										</table>
+									</dt>
+								</dl>
+								<div class="buttonRow" style="text-align: center">
+									<button id="addRow" dojoType="dijit.form.Button" onClick="javascript: addRow('splitBodyTable','select_splitBody','splitBody')" iconClass="plusIcon" type="button">
+										<%=LanguageUtil.get(pageContext, "add-row") %>
+									</button>
+								</div>
+							<div class="clear"></div>
+						</div>
+		
+						<div class="content-edit-actions">
+							<div id="contentletActionsHanger">
+								<% if (!InodeUtils.isSet(template.getInode()) || template.isLive() || template.isWorking()) { %>
+									<% if ( canUserWriteToTemplate ) { %>
+									<a onClick="submitfm(document.getElementById('fm'),'')">
+										<span class="saveIcon"></span>
+											<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
+									</a>
+									<% } %>
+								<%
+								if ( canUserPublishTemplate ) { %>
+									<a onClick="submitfm(document.getElementById('fm'),'publish')">
+										<span class="publishIcon"></span>
+											<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
+									</a>
+								<% } %>
+			
+								<% } else if (InodeUtils.isSet(template.getInode())) { %>
+									<a onClick="selectTemplateVersion(<%=template.getInode()%>, '<%=referer%>')">
+										<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bring-back-this-version")) %>
+									</a>
+								<% } %>
+			
+								<% if (InodeUtils.isSet(template.getInode()) && template.isDeleted()) {%>
+									<a onClick="submitfmDelete()">
+										<span class="deleteIcon"></span>
+											<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete-template")) %>
+									</a>
+								<% } %>
+									<a onClick="cancelEdit()">
+										<span class="cancelIcon"></span>
+											<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+									</a>
+							</div>
+						</div>
 					</div>
-	
-					<div class="gradient title"><%=LanguageUtil.get(pageContext, "Actions") %></div>
-					<div id="contentletActionsHanger">
-						<% if (!InodeUtils.isSet(template.getInode()) || template.isLive() || template.isWorking()) { %>
-							<% if ( canUserWriteToTemplate ) { %>
-							<a onClick="submitfm(document.getElementById('fm'),'')">
-								<span class="saveIcon"></span>
-									<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
-							</a>
-							<% } %>
-						<%
-						if ( canUserPublishTemplate ) { %>
-							<a onClick="submitfm(document.getElementById('fm'),'publish')">
-								<span class="publishIcon"></span>
-									<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
-							</a>
-						<% } %>
-	
-						<% } else if (InodeUtils.isSet(template.getInode())) { %>
-							<a onClick="selectTemplateVersion(<%=template.getInode()%>, '<%=referer%>')">
-								<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bring-back-this-version")) %>
-							</a>
-						<% } %>
-	
-						<% if (InodeUtils.isSet(template.getInode()) && template.isDeleted()) {%>
-							<a onClick="submitfmDelete()">
-								<span class="deleteIcon"></span>
-									<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete-template")) %>
-							</a>
-						<% } %>
-							<a onClick="cancelEdit()">
-								<span class="cancelIcon"></span>
-									<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
-							</a>
-					</div>
-				</div>
-			<%
-				}
-			%>
+				<%
+					}
+				%>
 				<div class="clear"></div>
 			</div>
 			<div class="clear"></div>
@@ -714,7 +692,7 @@
 				<input tabindex="1" data-dojo-type="dijit/form/TextBox" name="title" id="titleField"
 	                   placeHolder="Template Title"
 	                   required="true"
-	                   maxlength="255" style="color:black;font-size:120%;padding:10px;border:1px solid #eee;min-width:450px;"
+	                   maxlength="255" style="color:black;font-size:120%;border:1px solid #eee;min-width:450px;"
 	                   value="<%= UtilMethods.webifyString(template.getTitle())%>"><br>
 				<%--<span class="caption" style="font-style: italic;font-size:87%;padding-left:10px;"><%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Title"))%></span>--%>
 	
@@ -727,16 +705,21 @@
 	
 	
 		<div id="properties" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Properties") %>">
-			<dl>
-				<%if(id!=null) {%>
-					<dt><%= LanguageUtil.get(pageContext, "Identity") %>:</dt>
-					<dd><%= id.getId() %></dd>
-				<%}%>
+			<div class="form-horizontal">
+				<dl>
+					<%if(id!=null) {%>
+						<dt><%= LanguageUtil.get(pageContext, "Identity") %>:</dt>
+						<dd><%= id.getId() %></dd>
+					<%}%>
+				</dl>
 				<% if(host != null) { %>
+				<dl>
 					<html:hidden property="hostId" value="<%=hostId%>" styleId="hostId"/>
 					<dt><%= LanguageUtil.get(pageContext, "Host") %>:</dt>
 					<dd><%= host.getHostname() %></dd>
+				</dl>
 				<%	} else { %>
+				<dl>
 					<dt><%= LanguageUtil.get(pageContext, "Host") %>:</dt>
 					<dd>
 						<select id="hostId" name="hostId" dojoType="dijit.form.FilteringSelect" value="<%=hostId%>">
@@ -745,23 +728,28 @@
 						<% } %>1
 						</select>
 					</dd>
+				</dl>
 				<% } %>
-	
+				<dl>
 					<dt><%= LanguageUtil.get(pageContext, "Description") %>:</dt>
 					<dd><input type="text" dojoType="dijit.form.TextBox" style="width:350px" name="friendlyName" id="friendlyNameField" value="<%= UtilMethods.isSet(template.getFriendlyName()) ? template.getFriendlyName() : "" %>" /></dd>
-	
+				</dl>
+				<dl>
 					<dt><%= LanguageUtil.get(pageContext, "Screen-Capture-Image") %>:</dt>
 					<dd>
 						<input type="text" name="image" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="thumbnails" mimeTypes="image"
 							value="<%= UtilMethods.isSet(form.getImage())?form.getImage():"" %>" showThumbnail="true" />
 					</dd>
+				</dl>
+				<dl>
 					<dd>
 		    			<html:textarea style="display: none" property="body" styleId="bodyField"></html:textarea>
 					</dd>
 					<dd>
 		    			<html:textarea style="display: none" property="drawedBody" styleId="drawedBodyField"></html:textarea>
 					</dd>
-			</dl>
+				</dl>
+			</div>
 		</div>
 	
 	    <div id="previewThemeTab"
@@ -831,7 +819,7 @@
 		<!-- Versions Tab -->
 			<%if(template != null && InodeUtils.isSet(template.getInode())){ %>
 				<% request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, template); %>
-				<div id="fileVersionTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "History") %>" >
+				<div id="fileVersionTab" class="history" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "History") %>" >
 					<%@ include file="/html/portlet/ext/common/edit_versions_inc.jsp" %>
 				</div>
 			<%} %>

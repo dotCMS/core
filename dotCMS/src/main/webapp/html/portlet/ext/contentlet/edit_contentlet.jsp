@@ -161,7 +161,7 @@
 
 	boolean canEditAsset = conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
 	final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
-    boolean canSeeRules = layoutAPI.doesUserHaveAccessToPortlet("RULES_ENGINE_PORTLET", user)
+    boolean canSeeRules = layoutAPI.doesUserHaveAccessToPortlet("rules", user)
             && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user)
                && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "RULES: " + PermissionAPI.PERMISSION_USE, user);
 	boolean contentEditable = (UtilMethods.isSet(contentlet.getInode())?(Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE):false);
@@ -473,11 +473,11 @@ var editButtonRow="editContentletButtonRow";
 		 		request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, fatty);
 		}%>
 
-		<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "History") %>" onShow="refreshVersionCp();">
-			<div id="contentletVersionsDiv" style="height:100%;">
+		<div id="versions" class="history" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "History") %>" onShow="refreshVersionCp();">
+			<div id="contentletVersionsDiv" style="height:100%;" class="content-edit__history-version">
 			</div>
-
-			<div>
+			<hr class="history__divider">
+			<div class="history__status">
 			<%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
 			</div>
 		</div>

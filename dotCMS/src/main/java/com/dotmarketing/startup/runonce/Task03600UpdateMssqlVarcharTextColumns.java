@@ -21,7 +21,7 @@ import com.dotmarketing.startup.AbstractJDBCStartupTask;
  * @since Nov 10, 2016
  *
  */
-public class Task03730UpdateMssqlVarcharTextColumns extends AbstractJDBCStartupTask {
+public class Task03600UpdateMssqlVarcharTextColumns extends AbstractJDBCStartupTask {
 
 	@Override
 	public boolean forceRun() {
@@ -988,7 +988,7 @@ public class Task03730UpdateMssqlVarcharTextColumns extends AbstractJDBCStartupT
 				+ "ALTER TABLE cluster_server_uptime ALTER COLUMN id NVARCHAR(36) NOT NULL;"
 				+ "ALTER TABLE cluster_server_uptime ALTER COLUMN server_id NVARCHAR(36) NOT NULL;"
 				
-				+ "ALTER TABLE notification ALTER COLUMN group_id NVARCHAR(36) NOT NULL;"
+				+ "ALTER TABLE notification ALTER COLUMN id NVARCHAR(36) NOT NULL;"
 				+ "ALTER TABLE notification ALTER COLUMN message NVARCHAR(MAX) NOT NULL;"
 				+ "ALTER TABLE notification ALTER COLUMN notification_type NVARCHAR(100);"
 				+ "ALTER TABLE notification ALTER COLUMN notification_level NVARCHAR(100);"
@@ -1033,14 +1033,6 @@ public class Task03730UpdateMssqlVarcharTextColumns extends AbstractJDBCStartupT
 				+ "ALTER TABLE fileassets_ir ALTER COLUMN remote_identifier NVARCHAR(36);"
 				+ "ALTER TABLE fileassets_ir ALTER COLUMN endpoint_id NVARCHAR(36) NOT NULL;"
 				
-				+ "ALTER TABLE cms_roles_ir ALTER COLUMN name NVARCHAR(1000);"
-				+ "ALTER TABLE cms_roles_ir ALTER COLUMN role_key NVARCHAR(255);"
-				+ "ALTER TABLE cms_roles_ir ALTER COLUMN local_role_id NVARCHAR(36) NOT NULL;"
-				+ "ALTER TABLE cms_roles_ir ALTER COLUMN remote_role_id NVARCHAR(36);"
-				+ "ALTER TABLE cms_roles_ir ALTER COLUMN local_role_fqn NVARCHAR(1000);"
-				+ "ALTER TABLE cms_roles_ir ALTER COLUMN remote_role_fqn NVARCHAR(1000);"
-				+ "ALTER TABLE cms_roles_ir ALTER COLUMN endpoint_id NVARCHAR(36) NOT NULL;"
-				
 				+ "ALTER TABLE cluster_server_action ALTER COLUMN server_action_id NVARCHAR(36) NOT NULL;"
 				+ "ALTER TABLE cluster_server_action ALTER COLUMN originator_id NVARCHAR(36) NOT NULL;"
 				+ "ALTER TABLE cluster_server_action ALTER COLUMN server_id NVARCHAR(36) NOT NULL;"
@@ -1075,11 +1067,7 @@ public class Task03730UpdateMssqlVarcharTextColumns extends AbstractJDBCStartupT
 				+ "ALTER TABLE rule_action_pars ALTER COLUMN id NVARCHAR(36) NOT NULL;"
 				+ "ALTER TABLE rule_action_pars ALTER COLUMN rule_action_id NVARCHAR(36);"
 				+ "ALTER TABLE rule_action_pars ALTER COLUMN paramkey NVARCHAR(255) NOT NULL;"
-				+ "ALTER TABLE rule_action_pars ALTER COLUMN value NVARCHAR(MAX);"
-				
-				+ "ALTER TABLE system_event ALTER COLUMN identifier NVARCHAR(36) NOT NULL;"
-				+ "ALTER TABLE system_event ALTER COLUMN event_type NVARCHAR(50) NOT NULL;"
-				+ "ALTER TABLE system_event ALTER COLUMN payload NVARCHAR(MAX) NOT NULL;";
+				+ "ALTER TABLE rule_action_pars ALTER COLUMN value NVARCHAR(MAX);";
 	}
 
 	@Override
@@ -1241,7 +1229,6 @@ public class Task03730UpdateMssqlVarcharTextColumns extends AbstractJDBCStartupT
 		tableList.add("schemes_ir");
 		tableList.add("htmlpages_ir");
 		tableList.add("fileassets_ir");
-		tableList.add("cms_roles_ir");
 		tableList.add("cluster_server_action");
 		tableList.add("dot_rule");
 		tableList.add("rule_condition_group");
@@ -1249,7 +1236,6 @@ public class Task03730UpdateMssqlVarcharTextColumns extends AbstractJDBCStartupT
 		tableList.add("rule_condition_value");
 		tableList.add("rule_action");
 		tableList.add("rule_action_pars");
-		tableList.add("system_event");
 		return tableList;
 	}
 

@@ -14,7 +14,7 @@
 	   <%
 	    String uri = (String) request.getAttribute("uri");
 	   %>
-		<h2><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.TIMEMACHINE")%></h2>
+		<h2><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.time-machine")%></h2>
 		<p><%= LanguageUtil.format(pageContext, "TIMEMACHINE-404", uri, false) %></p>
 	</div>
 </div>

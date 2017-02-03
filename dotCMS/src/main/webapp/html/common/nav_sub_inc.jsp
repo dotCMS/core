@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.util.PortletID"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.liferay.portal.util.PortalUtil"%>
@@ -27,8 +28,8 @@
             layoutListForLicenseManager=APILocator.getLayoutAPI().loadLayoutsForUser(user);
             for (Layout layoutForLicenseManager:layoutListForLicenseManager) {
                 List<String> portletIdsForLicenseManager=layoutForLicenseManager.getPortletIds();
-                if (portletIdsForLicenseManager.contains("9")) {
-                    licenseURL = "/c/portal/layout?p_l_id=" + layoutForLicenseManager.getId() +"&p_p_id=9&p_p_action=0&tab=licenseTab";
+                if (portletIdsForLicenseManager.contains(PortletID.CONFIGURATION)) {
+                    licenseURL = "/c/portal/layout?p_l_id=" + layoutForLicenseManager.getId() +"&p_p_id="+PortletID.CONFIGURATION+"&p_p_action=0&tab=licenseTab";
                     licenseMessage = LanguageUtil.get(pageContext, "Try-Enterprise-Now") + "!" ;
                     break;
                 }
@@ -97,12 +98,12 @@
         for (int i = 0; i < userLayouts.size(); i++) {
             java.util.List<String> portletids = userLayouts.get(i).getPortletIds();
             for (int j = 0; j < portletids.size(); j++) {
-                if (portletids.get(j).equals("EXT_ROLE_ADMIN") && !hasRolesPortlet) {
+                if (portletids.get(j).equals("roles") && !hasRolesPortlet) {
                     hasRolesPortlet = true;
 
                 }
 
-                if (portletids.get(j).equals("9") && !hasLicenseManagerPortlet) {
+                if (portletids.get(j).equals(PortletID.CONFIGURATION.toString()) && !hasLicenseManagerPortlet) {
                     hasLicenseManagerPortlet = true;
                 }
             }
@@ -119,7 +120,7 @@
          String ticket = "";
         if(!hasRolesPortlet){
           String roleAdminPortletId = "";
-          portlet = APILocator.getPortletAPI().findPortlet("EXT_ROLE_ADMIN");
+          portlet = APILocator.getPortletAPI().findPortlet("roles");
             if(portlet!=null){
                 roleAdminPortletId = portlet.getPortletId();
             }
@@ -145,7 +146,7 @@
 
         if(!hasLicenseManagerPortlet){
             String licenseManagerPortletId = "";
-            portlet = APILocator.getPortletAPI().findPortlet("9");
+            portlet = APILocator.getPortletAPI().findPortlet(PortletID.CONFIGURATION.toString());
                 if(portlet!=null){
                     licenseManagerPortletId = portlet.getPortletId();
                 }

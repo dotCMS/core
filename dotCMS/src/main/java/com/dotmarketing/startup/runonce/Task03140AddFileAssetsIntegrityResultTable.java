@@ -2,7 +2,6 @@ package com.dotmarketing.startup.runonce;
 
 import java.util.List;
 
-import com.dotcms.integritycheckers.IntegrityType;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
@@ -22,9 +21,8 @@ public class Task03140AddFileAssetsIntegrityResultTable extends AbstractJDBCStar
             : DbConnectionFactory.isOracle() ? " language_id number(19,0) " : DbConnectionFactory
                     .isMsSql() ? " language_id numeric(19,0) " : "";
 
-    private final String NON_ORACLE_SQL = new StringBuilder("create table ")
-            .append(IntegrityType.FILEASSETS.getResultsTableName())
-            .append(" (").append(IntegrityType.FILEASSETS.getFirstDisplayColumnLabel())
+    private final String NON_ORACLE_SQL = new StringBuilder("create table fileassets_ir")
+            .append(" (file_name")
             .append(" varchar(255), local_working_inode varchar(36), local_live_inode varchar(36), ")
             .append("remote_working_inode varchar(36), remote_live_inode varchar(36), ")
             .append("local_identifier varchar(36), remote_identifier varchar(36), endpoint_id varchar(36), ")
@@ -37,7 +35,7 @@ public class Task03140AddFileAssetsIntegrityResultTable extends AbstractJDBCStar
     public boolean forceRun() {
         try {
             DotConnect dc = new DotConnect();
-            dc.setSQL("SELECT * FROM " + IntegrityType.FILEASSETS.getResultsTableName());
+            dc.setSQL("SELECT * FROM fileassets_ir");
             dc.loadResult();
             return false;
         } catch (Exception ex) {

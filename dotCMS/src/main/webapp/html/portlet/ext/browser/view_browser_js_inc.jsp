@@ -1838,7 +1838,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
         var pageAssetDialog = new dijit.Dialog({
             id   : "addPageAssetDialog",
             title: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "addpage.dialog")) %>",
-            style: "width: 420px; height:130px; overflow: auto"
+            style: "width: 311px; height:160px; overflow: auto"
         });
         var dialogHtml = getHTMLPageAssetDialogHtml();
 
@@ -1860,8 +1860,10 @@ dojo.require("dotcms.dojo.push.PushHandler");
         return "<div>"+
                 "<div style='margin:8px 5px;'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "select.the.type.of.htmlpage.you.wish.to.upload")) %>:</div>" +
                 "<span dojoType='dotcms.dojo.data.StructureReadStore' jsId='pageAssetStructureStore' dojoId='pageAssetStructureStoreDojo' structureType='<%=Structure.STRUCTURE_TYPE_HTMLPAGE %>'></span>"+
+                "<div class='inline-form'>"+
                 "<select id='defaultPageType' name='defaultPageType' dojoType='dijit.form.FilteringSelect' style='width:200px;' store='pageAssetStructureStore' searchDelay='300' pageSize='15' autoComplete='false' ignoreCase='true' labelAttr='name' searchAttr='name'  value='${stInode}' invalidMessage='<%=LanguageUtil.get(pageContext, "Invalid-option-selected")%>'></select>"+
                 "<button dojoType='dijit.form.Button' iconClass='addIcon' id='selectedPageAssetButton' onclick='getSelectedpageAsset(\"${folderInode}\");'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "modes.Select")) %></button>" +
+                "</div>"+
                 "</div>";
     }
     
@@ -1882,9 +1884,13 @@ dojo.require("dotcms.dojo.push.PushHandler");
 
     function getSelectedfileAsset(folderInode, isMultiple){
         var selected = dijit.byId('defaultFileType');
-        if(!selected){
+
+        if(!selected || (selected + '').trim().length == 0){
+
             showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Please-select-a-valid-file-asset-type")) %>');
+            return;
         }
+
         if(!isMultiple){
             var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + selected +'&folder='+folderInode+'&referer=' + escape(refererVar);
             if(inFrame){

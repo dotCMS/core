@@ -167,10 +167,5 @@ THIS FILE AND ITS INCLUDES
 
 </head>
 
-<%if(UtilMethods.isSet(request.getParameter(WebKeys.POPUP)) || UtilMethods.isSet(request.getAttribute(WebKeys.POPUP)) || (UtilMethods.isSet(request.getParameter(WebKeys.IN_FRAME)) && "true".equals((String) request.getParameter(WebKeys.IN_FRAME)))|| (UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (boolean)request.getSession().getAttribute(WebKeys.IN_FRAME))){ %>
-	<body class="dotcms" style="background:white url()">
-<%}else{ %>
-	<body class="dotcms" style="visibility:hidden">
-		<div class="imageBG"></div>
-		<div class="bannerBG"></div>
-<%} %>
+<body class="dotcms" style="visibility:hidden;background:white url()">
+

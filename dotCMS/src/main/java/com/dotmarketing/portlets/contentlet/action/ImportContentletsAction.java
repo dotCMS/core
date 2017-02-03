@@ -1,9 +1,6 @@
 package com.dotmarketing.portlets.contentlet.action;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
@@ -51,11 +48,11 @@ import com.liferay.util.servlet.UploadPortletRequest;
 public class ImportContentletsAction extends DotPortletAction {
 
 
-	
 	private final static String languageCodeHeader = "languageCode";
 	private final static String countryCodeHeader = "countryCode";
+	public static final String ENCODE_TYPE = "encodeType";
 
-	
+
 	/**
 	 * @param permissionAPI the permissionAPI to set
 	 */
@@ -97,19 +94,7 @@ public class ImportContentletsAction extends DotPortletAction {
 				byte[] bytes = FileUtil.getBytes(uploadReq.getFile("file"));
 				
 				File file = uploadReq.getFile("file");
-				String encodeType=null;
-			    byte[] buf = new byte[4096];
-			    java.io.FileInputStream fis = new java.io.FileInputStream(file);
-			    UniversalDetector detector = new UniversalDetector(null);
-			    int nread;
-			    while ((nread = fis.read(buf)) > 0 && !detector.isDone()) {
-			      detector.handleData(buf, 0, nread);
-			    }
-			    detector.dataEnd();
-			    encodeType = detector.getDetectedCharset();
-			    session.setAttribute("encodeType", encodeType);	
-			    detector.reset();
-			    fis.close();
+				this.detectEncodeType(session, file);
 
 				ImportContentletsForm importContentletsForm = (ImportContentletsForm) form;
 				if(importContentletsForm.getStructure().isEmpty()){
@@ -212,7 +197,7 @@ public class ImportContentletsAction extends DotPortletAction {
 							byte[] bytes = (byte[]) httpReq.getSession().getAttribute("file_to_import");
 							File file= (File)httpReq.getSession().getAttribute("csvFile");
 							ImportContentletsForm importContentletsForm = (ImportContentletsForm) form;
-							String eCode = (String) httpReq.getSession().getAttribute("encodeType");	
+							String eCode = (String) httpReq.getSession().getAttribute(ENCODE_TYPE);
 							if (importContentletsForm.getLanguage() == -1)
 								reader = new InputStreamReader(new ByteArrayInputStream(bytes), Charset.forName("UTF-8"));
 							else if(eCode != null)
@@ -305,6 +290,26 @@ public class ImportContentletsAction extends DotPortletAction {
 		}
 
 	}
+
+	private void detectEncodeType(final HttpSession session, final File file) throws IOException {
+
+		String encodeType=null;
+
+		if (null != file && file.exists()) {
+            byte[] buf = new byte[4096];
+            FileInputStream fis = new FileInputStream(file);
+            UniversalDetector detector = new UniversalDetector(null);
+            int nread;
+            while ((nread = fis.read(buf)) > 0 && !detector.isDone()) {
+                detector.handleData(buf, 0, nread);
+            }
+            detector.dataEnd();
+            encodeType = detector.getDetectedCharset();
+            session.setAttribute(ENCODE_TYPE, encodeType);
+            detector.reset();
+            fis.close();
+        }
+	} // detectEncodeType.
 
 	// /// ************** ALL METHODS HERE *************************** ////////
 	private void _downloadCSVTemplate(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form) throws Exception {

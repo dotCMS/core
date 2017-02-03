@@ -91,7 +91,7 @@ ant.lifecycleLogLevel = "INFO"
 ext {
     // Open the Git repository in the current directory.
 
-    dotcmsReleaseVersion='3.7.0'
+    dotcmsReleaseVersion='4.0'
     dotcmsReleaseBuild = ''
     dotcmsReleaseName='dotCMS Platform'
     dotcmsReleaseCodename='Panther'
@@ -103,8 +103,12 @@ ext {
     dotcmsHome = serverFolder + webAppRootFolder
 
     if (project.gradle.startParameter.taskNames.contains('deployWarTomcat') || project.gradle.startParameter.taskNames.contains('createDist')){
-        git = org.ajoberstar.grgit.Grgit.open(file('..'))
-        dotcmsReleaseBuild = git.head().abbreviatedId // abbreviatedId of head() method.
+        try {
+            git = org.ajoberstar.grgit.Grgit.open(file('..'))
+            dotcmsReleaseBuild = git.head().abbreviatedId // abbreviatedId of head() method.
+        } catch (Exception exception) {
+            //Do nothing, this will fail only if git is not installed on this machine
+        }
     }
 }
 
@@ -166,7 +170,7 @@ war {
     }
 
     from (zipTree(configurations.coreWeb.files.toArray()[0])) {
-        into rulesEngineFolder
+        into angularFolder
     }
 }
 war.finalizedBy 'undeployPlugins'

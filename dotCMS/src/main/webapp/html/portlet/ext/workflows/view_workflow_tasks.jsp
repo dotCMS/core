@@ -44,7 +44,7 @@
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.liferay.portal.NoSuchRoleException"%>
 <%@page import="com.dotmarketing.business.Role"%>
-<%request.setAttribute("requiredPortletAccess", "EXT_21"); %>
+<%request.setAttribute("requiredPortletAccess", "workflow"); %>
 <%@ include file="/html/common/uservalidation.jsp"%>
 <style type="text/css">
 	@import "/html/portlet/ext/workflows/schemes/workflow.css";
@@ -487,7 +487,7 @@ bottom="/html/common/box_bottom.jsp">
 
 
 <!-- START Button Row -->
-<!-- <%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_21")%> -->
+<!-- <%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.workflow")%> -->
 
 <!-- END Button Row -->
 
@@ -547,6 +547,7 @@ bottom="/html/common/box_bottom.jsp">
 					<dt><label><%=LanguageUtil.get(pageContext, "Show")%>:</label></dt>
 					<dd>
 						<input dojoType="dijit.form.CheckBox" <%if(searcher.isOpen()){%> checked='checked' <%}%> type="checkbox" name="open" value="true" id="showOpen" onclick="doFilter()" /> <label for="showOpen"><%=LanguageUtil.get(pageContext, "open-tasks")%></label><br/>
+						<div class="portlet-sidebar__input-spacer"></div>
 						<input dojoType="dijit.form.CheckBox" <%if(searcher.isClosed()){%> checked='checked' <%}%> type="checkbox" name="closed" value="true" id="showClosed"  onclick="doFilter()"  /> <label for="showClosed"><%=LanguageUtil.get(pageContext, "resolved-tasks")%></label><br/>
 					</dd>
 					<div class="clear"></div>

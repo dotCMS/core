@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.util.PortletID"%>
 <%@page import="com.dotmarketing.portlets.personas.business.PersonaAPI"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@page import="com.liferay.util.Validator"%>
@@ -33,13 +34,13 @@ Object c = LicenseUtil.getLevel();
 		<div class="subNavCrumbTrail">
 			<ul id="subNavCrumbUl">
 				<li class="lastCrumb">
-					<a href="#" ><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.PERSONAS_PORTLET")%></a>
+					<a href="#" ><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.personas")%></a>
 				</li>
 
 			</ul>
 			<div class="clear"></div>
 		</div>
-		<jsp:include page="/WEB-INF/jsp/personas_portlet/not_licensed.jsp"></jsp:include>
+		<jsp:include page="/WEB-INF/jsp/personas/not_licensed.jsp"></jsp:include>
 
 	</div>
 <%return;}%>
@@ -92,7 +93,7 @@ Object c = LicenseUtil.getLevel();
 
     function getSelectedPersona() {
 		var selected = dijit.byId('defaultPersonaType');
-		window.location = "/c/portal/layout?p_l_id=71b8a1ca-37b6-4b6e-a43b-c7482f28db6c&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=new&selectedStructure=" + selected + "&_EXT_11_referer=%23%2Fapi%2Fportlet%2FPERSONAS_PORTLET%2F%3Fr%3D57220346";
+		window.location = "/c/portal/layout?p_l_id=71b8a1ca-37b6-4b6e-a43b-c7482f28db6c&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&p_p_mode=view&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/edit_contentlet&_<%=PortletID.CONTENT%>_cmd=new&selectedStructure=" + selected + "&_<%=PortletID.CONTENT%>_referer=%23%2Fapi%2Fportlet%2FPERSONAS_PORTLET%2F%3Fr%3D57220346";
 	}
 
 </script>
