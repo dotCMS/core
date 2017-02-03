@@ -371,15 +371,14 @@ public class LicenseResource {
     
     @POST
     @Path("/resetLicense/{params:.*}")
+    @Produces(MediaType.APPLICATION_JSON)
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
     public Response resetLicense(@Context HttpServletRequest request, @PathParam("params") String params) {
 
         InitDataObject initData = webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
         try {
         	freeLicense(request, params);
-        	
-        	
-        	
+
 	        HttpSession session = request.getSession();
 
             session.setAttribute( "applyForm", Boolean.TRUE );
@@ -398,10 +397,4 @@ public class LicenseResource {
         }
         
     }
-    
-    
-    
-    
-    
-    
 }

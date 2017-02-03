@@ -161,14 +161,14 @@
 	    },
 	    
 	    
-	    
 	    resetLicense :function () {
 
-	    	var data = {"licenseText":"reset"};
 	   	    dojo.xhrPost({
 	   	        url: "/api/license/resetLicense/",
-	   	        handleAs: "text",
-	   	        postData: data,
+	   	        handleAs: "json",
+	   	        content:{
+                    'licenseText':'reset'
+                },
 	   	        load: function(message) {
 	   	        	//licenseAdmin.refreshLayout();
 	   	        },
