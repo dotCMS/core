@@ -89,7 +89,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   @Override
   public List<ContentType> findUrlMapped() throws DotDataException {
-    return dbSearch(" url_map_pattern is not null ", BaseContentType.ANY.getType(), "mod_date", 10000, 0);
+    return dbSearch(" url_map_pattern is not null ", BaseContentType.ANY.getType(), "mod_date", -1, 0);
   }
 
   @Override

@@ -243,7 +243,7 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
 		int totalCount = contentTypeFactory.searchCount(null);
 
-		List<ContentType> types=contentTypeFactory.search(null, BaseContentType.ANY, "name", 100,0);
+		List<ContentType> types=contentTypeFactory.search(null, BaseContentType.ANY, "name", -1,0);
 		assertThat("we have at least 40 content types", types.size() > 20);
 		types = contentTypeFactory.search(null, BaseContentType.ANY, "name", 5, 0);
 		assertThat("limit works and we have max five content types", types.size() < 6);
@@ -253,14 +253,14 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 		}
 
 		for (int i = 0; i < BaseContentType.values().length; i++) {
-			types = contentTypeFactory.search(null, BaseContentType.getBaseContentType(i), "name", 1000, 0);
+			types = contentTypeFactory.search(null, BaseContentType.getBaseContentType(i), "name", -1, 0);
 			assertThat("we have content types of" + BaseContentType.getBaseContentType(i), types.size() > 0);
 			int count = contentTypeFactory.searchCount(null,  BaseContentType.getBaseContentType(i));
 			assertThat("Count works as well", types.size() == count);
 		}
 
 		for (int i = 0; i < searchTerms.length; i++) {
-			types = contentTypeFactory.search(searchTerms[i], BaseContentType.ANY, "mod_date desc", 1000, 0);
+			types = contentTypeFactory.search(searchTerms[i], BaseContentType.ANY, "mod_date desc", -1, 0);
 			assertThat("we can search content types:" + searchTerms[i], types.size() > 0);
 			int count = contentTypeFactory.searchCount(searchTerms[i],  BaseContentType.ANY);
 			assertThat("Count works as well", types.size() == count);
@@ -309,7 +309,7 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 	@Test
 	public void searchCount() throws DotDataException {
 		String query = " velocity_var_name like '%content%'";
-		List<ContentType> types = contentTypeFactory.search(query, 10000);
+		List<ContentType> types = contentTypeFactory.search(query, -1);
 
 		int count= contentTypeFactory.searchCount(query,BaseContentType.ANY);
 		assertThat("we have the right content types:", types.size() == count);
@@ -330,7 +330,7 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 	}
 
 	private void testDeleting() throws Exception{
-		List<ContentType> types = contentTypeFactory.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", 500, 0);
+		List<ContentType> types = contentTypeFactory.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", -1, 0);
 		assertThat(types +" search is working", types.size() > 0);
 		for(ContentType type : types){
 			delete(type);
@@ -339,7 +339,7 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 	}
 
 	private void testUpdating() throws Exception {
-		List<ContentType> types = contentTypeFactory.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", 500, 0);
+		List<ContentType> types = contentTypeFactory.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", -1, 0);
 		assertThat(types +" search is working", types.size() > 0);
 		for(ContentType type : types){
 			ContentType testing = contentTypeFactory.find(type.id());
