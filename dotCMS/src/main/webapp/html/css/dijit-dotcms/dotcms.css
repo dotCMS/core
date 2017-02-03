@@ -5599,40 +5599,38 @@ Styles for commons fields along the backend
 
 */
 .glossaryTermPopup {
-  background-color: #FAFAFA;
   -moz-border-radius: 2px;
   -webkit-border-radius: 2px;
   border-radius: 2px;
+  background-color: #FAFAFA;
   padding: 4px 8px;
   border: solid 1px #ECEDEE;
   position: absolute;
 }
 
 .fileAjaxUploader {
+  align-items: center;
   display: flex;
-  flex-direction: column;
-  margin-top: 16px;
-  width: 336px;
+  margin: 8px 0;
 }
 .fileAjaxUploaderActions {
   display: flex;
-  justify-content: center;
 }
-.fileAjaxUploaderFileName, .fileAjaxUploaderForm, .fileAjaxUploaderStatus {
-  margin-bottom: 16px;
+.fileAjaxUploaderActions div:first-child {
+  margin-right: 8px;
 }
 .fileAjaxUploaderFileName {
-  text-align: center;
+  margin-right: 16px;
 }
 .fileAjaxUploaderStatus {
   display: flex;
+  align-items: center;
 }
 .fileAjaxUploaderStatusMsg {
-  align-self: center;
-  margin-left: 16px;
+  margin-left: 8px;
 }
 .fileAjaxUploader .dijitProgressBar {
-  width: 100%;
+  width: 150px;
 }
 
 .catPreview {
@@ -5821,6 +5819,14 @@ Styles for commons fields along the backend
   vertical-align: middle;
 }
 
+.field__editable-content {
+  display: flex;
+  align-items: center;
+}
+.field__editable-content a {
+  margin-right: 16px;
+}
+
 /*
 ------------ FORMS ------------
 - Extract from: base.css
@@ -5845,7 +5851,6 @@ Styles for commons fields along the backend
 
 #inline-form, .fileSelectorControls, .inline-form {
   display: flex;
-  justify-content: center;
   align-items: center;
 }
 #inline-form > label, .fileSelectorControls > label, .inline-form > label, #inline-form > div, .fileSelectorControls > div, .inline-form > div {
@@ -7168,7 +7173,7 @@ a.category_higlighted, a.tag_higlighted {
   position: absolute;
   left: 0px;
   right: 0px;
-  top: 26px;
+  top: 49px;
   bottom: 0px;
 }
 
@@ -7358,30 +7363,36 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .thumbnailDiv {
-  cursor: pointer;
-  padding: 16px;
   border: solid 2px #ECEDEE;
-  min-width: 120px;
+  box-sizing: content-box;
+  cursor: pointer;
   min-height: 120px;
+  min-width: 120px;
+  padding: 16px;
+  position: relative;
 }
 .thumbnailDivHover {
   border: solid 2px #C5C5C5;
+  box-sizing: content-box;
+  padding: 16px;
+  position: relative;
+}
+.thumbnailDivHover .editImageText {
+  opacity: 1;
 }
 
 .editImageText {
-  cursor: pointer;
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-  opacity: .50;
   background: white;
-  border: 1px solid gray;
-  padding: 3px;
-  width: 80px;
-  height: 50px;
-  text-align: center;
-  border-radius: 3px;
-  -moz-border-radius: 3px;
+  border-radius: 2px;
+  border: 1px solid #8A8A8A;
+  bottom: 8px;
+  cursor: pointer;
+  opacity: .50;
+  padding: 0 8px;
+  height: 32px;
+  line-height: 30px;
+  position: absolute;
+  right: 8px;
 }
 
 /*********
@@ -7444,7 +7455,7 @@ Resize Handle
   text-decoration: none;
 }
 
-.noDijitDialogTitleBar .dijitDialogTitleBar {
+.noDijitDialogTitleBar .dijitDialogTitleBarlow {
   border: none;
   background: none;
   height: 18px;
