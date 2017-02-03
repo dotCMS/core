@@ -182,48 +182,5 @@
 	</class>
 
 
-	<class name="com.liferay.portlet.polls.ejb.PollsChoiceHBM" table="PollsChoice">
-		<!--<cache usage="read-write" />-->
-		<composite-id name="primaryKey" class="com.liferay.portlet.polls.ejb.PollsChoicePK">
-			<key-property name="questionId" />
-			<key-property name="choiceId" />
-		</composite-id>
-		<property name="description" />
-	</class>
-	<class name="com.liferay.portlet.polls.ejb.PollsDisplayHBM" table="PollsDisplay">
-		<!--<cache usage="read-write" />-->
-		<composite-id name="primaryKey" class="com.liferay.portlet.polls.ejb.PollsDisplayPK">
-			<key-property name="userId" />
-			<key-property name="portletId" />
-		</composite-id>
-		<property name="questionId" />
-	</class>
-	<class name="com.liferay.portlet.polls.ejb.PollsQuestionHBM" table="PollsQuestion">
-		<!--<cache usage="read-write" />-->
-		<id name="questionId" type="java.lang.String">
-			<generator class="assigned" />
-		</id>
-		<property name="portletId" />
-		<property name="groupId" />
-		<property name="companyId" />
-		<property name="userId" />
-		<property name="userName" />
-		<property name="createDate" />
-		<property name="modifiedDate" />
-		<property name="title" />
-		<property name="description" />
-		<property name="expirationDate" />
-		<property name="lastVoteDate" />
-	</class>
-	<class name="com.liferay.portlet.polls.ejb.PollsVoteHBM" table="PollsVote">
-		<!--<cache usage="read-write" />-->
-		<composite-id name="primaryKey" class="com.liferay.portlet.polls.ejb.PollsVotePK">
-			<key-property name="questionId" />
-			<key-property name="userId" />
-		</composite-id>
-		<property name="choiceId" />
-		<property name="voteDate" />
-	</class>
-
 	
 </hibernate-mapping>

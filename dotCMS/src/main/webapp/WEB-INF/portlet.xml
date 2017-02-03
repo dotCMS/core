@@ -2,13 +2,15 @@
 
 <portlet-app>
 
+
+
 	<portlet>
-		<portlet-name>my-account</portlet-name>
-		<display-name>My Account</display-name>
+		<portlet-name>files-legacy</portlet-name>
+		<display-name>File Manager</display-name>
 		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
 		<init-param>
 			<name>view-action</name>
-			<value>/my_account/view</value>
+			<value>/ext/files/view_files</value>
 		</init-param>
 		<expiration-cache>0</expiration-cache>
 		<supports>
@@ -16,16 +18,12 @@
 		</supports>
 		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
 		<security-role-ref>
-			<role-name>Guest</role-name>
+			<role-name>CMS Administrator</role-name>
 		</security-role-ref>
 		<security-role-ref>
-			<role-name>Power User</role-name>
-		</security-role-ref>
-		<security-role-ref>
-			<role-name>User</role-name>
+			<role-name>CMS User</role-name>
 		</security-role-ref>
 	</portlet>
-	
 	
 	<portlet>
 		<portlet-name>categories</portlet-name>
@@ -173,6 +171,26 @@
 		</security-role-ref>
 	</portlet>
 
+	<portlet>
+		<portlet-name>html-pages</portlet-name>
+		<display-name>HTML Pages Manager</display-name>
+		<portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+		<init-param>
+			<name>view-action</name>
+			<value>/ext/htmlpages/view_htmlpages</value>
+		</init-param>
+		<expiration-cache>0</expiration-cache>
+		<supports>
+			<mime-type>text/html</mime-type>
+		</supports>
+		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+		<security-role-ref>
+			<role-name>CMS Administrator</role-name>
+		</security-role-ref>
+		<security-role-ref>
+			<role-name>CMS User</role-name>
+		</security-role-ref>
+	</portlet>
 
 	<portlet>
 		<portlet-name>director</portlet-name>
@@ -741,13 +759,7 @@
 		<display-name>Rules Editor</display-name>
 		<portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
 	</portlet>
-	
-	<portlet>
-		<portlet-name>personas</portlet-name>
-		<display-name>Personas</display-name>
-		<portlet-class>com.dotcms.rest.personas.PersonasResourcePortlet</portlet-class>
 
-	</portlet>
 
 	<custom-window-state>
 		<window-state>exclusive</window-state>

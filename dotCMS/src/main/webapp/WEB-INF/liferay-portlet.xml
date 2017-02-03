@@ -2,10 +2,9 @@
 <!DOCTYPE portlets>
 
 <portlets>
-	<portlet id="my-account" struts-path="my_account" />
-	<portlet id="configuration"/>
 
-
+<portlet id="configuration"/>
+	
 	<portlet id="EXT_1" struts-path="ext/inodes" narrow="true" />
 	<portlet id="EXT_2" struts-path="ext/banners" />
 	<portlet id="files-legacy" struts-path="ext/files" narrow="true"/>
@@ -51,6 +50,5 @@
 	<portlet id="link-checker" struts-path="ext/brokenlinks" narrow="true" />
     <portlet id="time-machine" />
     <portlet id="es-search" />
-    <portlet id="personas" />
-	<custom-user-attribute name="user.name.random" custom-class="com.liferay.portlet.CustomUserAttributes" />
+
 </portlets>

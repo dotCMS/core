@@ -1,0 +1,71 @@
+<%@ taglib prefix="logic" uri="/WEB-INF/tld/struts-logic.tld" %>
+<% request.setAttribute("files",versions); %>
+<% String toHere = CTX_PATH + "/ext/files/upload_file?cmd=fileversions&inode=" + request.getParameter("inode") + "&parent=" + request.getParameter("parent") + "&referer=" + referer; %>
+	<script>
+	    function deleteFileVersion(x){
+	        if(confirm("Are you sure you would like to delete this file version?")){
+	        	window.location="<%= CTX_PATH %>/ext/files/upload_file?cmd=deleteversion&inode=" + x + "&referer=<%= java.net.URLEncoder.encode(toHere) %>";
+	        }
+	    }
+	    function doSubmit() {
+	    	form = document.getElementById("fileForm");
+	    	form.action = "<%=CTX_PATH%>/ext/files/upload_file";
+	    	submitForm(form);
+	    }
+		function viewFile(objId,fileExt) {
+			var fileInodePath = objId;
+			if (fileInodePath.length==1) {
+				fileInodePath = fileInodePath + '0';		
+			}
+			fileInodePath = fileInodePath.substring(0,1) + '/' + fileInodePath.substring(1,2);
+			window.open('/portal/assets/' + fileInodePath + '/' + objId + '.' + fileExt,'fileWin','toolbar=no');
+		}
+		function selectFileVersion(objId) {
+	        if(confirm("Are you sure you would like to replace your working version with this file version?")){
+		        form = document.getElementById("fm");
+		        form.action="";
+				form.inode_version.value=objId;
+		        form.cmd.value="getversionback";
+		        submitForm(fm);
+		    }
+		}
+	</script>
+
+<liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
+	
+	<table cellspacing="1" width="90%" cellpadding="3" align="center" class="adminTable">
+		<TR class="beta">
+			<TD>&nbsp;</TD>
+			<TD>&nbsp;</TD>
+			<TD width=40%><B><font class="beta" size="2">Title</font></b></TD>
+			<TD width=25%><B><font class="beta" size="2">Mod. Date</font></b></TD>
+			<TD width=25%><B><font class="beta" size="2">Mod. User</font></b></TD>
+		</TR>
+		<%int x=1;%>
+		<form action="/ext/files/upload_file" method="POST" id="fileForm">
+		<input type="hidden" name="referer" value="<%= java.net.URLEncoder.encode(referer) %>">
+		<input type="hidden" name="count" value="<%=versions.size()%>">
+		<logic:iterate name="files" id="f" type="com.dotmarketing.portlets.files.model.File">
+			<%com.liferay.portal.model.User modUser = com.liferay.portal.ejb.UserLocalManagerUtil.getUserById(f.getModUser());%>
+			<TR>
+				<input type="hidden" name="inode<%=(x-1)%>" value="<%=f.getInode()%>">
+				<TD nowrap align=center><font class="gamma" size="2">
+				<a class="gamma" href="javascript: deleteFileVersion('<%=f.getInode()%>');">del</a></font></TD>
+				<TD nowrap align=center><font class="gamma" size="2">
+				<a class="gamma" href="javascript: selectFileVersion('<%=f.getInode()%>');">select</a></font></TD>
+				<TD nowrap>
+				<font class="gamma" size="2">
+					<a class="gamma" href="javascript:viewFile('<%=f.getInode()%>','<%=com.dotmarketing.util.UtilMethods.getFileExtension(f.getFileName())%>');"><img src="/icon?i=<%=f.getFileName()%>" width="16" height="16" align=absmiddle border="0" vspace=1 hspace=1></a>
+					<a class="gamma" href="javascript:viewFile('<%=f.getInode()%>','<%=com.dotmarketing.util.UtilMethods.getFileExtension(f.getFileName())%>');"><%=f.getTitle()%></a></TD>				
+				<td align=center><font class="gamma" size="2"><%= com.dotmarketing.util.UtilMethods.dateToHTMLDate(f.getModDate()) %></font></td>
+				<td align=center><font class="gamma" size="2">
+				<a class="gamma" href="mailto:<%= modUser.getEmailAddress() %>">
+				<%= modUser.getFirstName() %> <%= modUser.getLastName() %></a></font></td>
+			</TR>
+		</logic:iterate>
+		</form>
+		<tr height="100%">
+			<td colspan=4>&nbsp;</td>
+		</tr>
+	</TABLE>
+</liferay:box>

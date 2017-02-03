@@ -35,6 +35,27 @@
 			<property column="mod_date" length="23" name="modDate" type="java.util.Date" />
 		</joined-subclass>
 
+		<joined-subclass name="com.dotmarketing.portlets.files.model.File" table="file_asset">
+			<key column="inode" />
+			<property column="file_name" length="255" name="fileName" type="string" />
+			<property column="file_size" length="4" name="size" type="integer" />
+			<property column="width" length="4" name="width" type="integer" />
+			<property column="height" length="4" name="height" type="integer" />
+			<property column="mime_type" length="255" name="mimeType" type="string" />
+			<property column="author" length="255" name="author" type="string" />
+			<property column="publish_date" length="23" name="publishDate" type="java.util.Date" />
+			<!-- attributes from Web Asset , All Assets should have this -->
+			<property column="show_on_menu" name="showOnMenu" type="boolean" />
+			<property column="title" length="255" name="title" type="string" />
+			<property column="friendly_name" length="255" name="friendlyName" type="string" />
+			<property column="mod_date" length="23" name="modDate" type="java.util.Date" />
+			<property column="mod_user" name="modUser" length="100" type="string">
+				<column name="mod_user" index="idx_file_1" />
+			</property>
+			<property column="sort_order" length="4" name="sortOrder" type="integer" />
+			<property column="identifier" length="36" name="identifier" type="string" />
+			<!-- attributes from Web Asset - All Assets should have this -->
+		</joined-subclass>
 
 		<joined-subclass name="com.dotmarketing.portlets.contentlet.business.Contentlet" table="contentlet">
 			<key column="inode" />
@@ -276,6 +297,30 @@
 			<property column="theme" name="theme" length="255" type="string" />
 		</joined-subclass>
 
+		<joined-subclass name="com.dotmarketing.portlets.htmlpages.model.HTMLPage" table="htmlpage">
+			<key column="inode" />
+			<!-- Web Asset properties -->
+			<property column="show_on_menu" name="showOnMenu" type="boolean" />
+			<property column="title" length="255" name="title" type="string" />
+			<property column="mod_date" length="23" name="modDate" type="java.util.Date" />
+			<property column="mod_user" name="modUser" length="100" type="string">
+				<column name="mod_user" index="idx_htmlpage_1" />
+			</property>
+			<property column="sort_order" length="4" name="sortOrder" type="integer" />
+			<property column="friendly_name" name="friendlyName" length="255" type="string" />
+			<!-- Web Asset properties -->
+			<property column="metadata" name="metadata" type="string" length="123456789" />
+			<property column="start_date" name="startDate" type="java.util.Date" />
+			<property column="end_date" name="endDate" type="java.util.Date" />
+			<property column="page_url" name="pageUrl" type="string" length="255" />
+			<property column="https_required" name="httpsRequired" type="boolean" />
+			<property column="redirect" name="redirect" type="string" length="255" />
+			<property column="identifier" length="36" name="identifier" type="string" />
+			<property column="seo_description" name="seoDescription" type="string" length="123456789" />
+			<property column="seo_keywords" name="seoKeywords" type="string" length="123456789" />
+			<property column="cache_ttl" name="cacheTTL" type="long" />
+			<property column="template_id" length="36" name="templateId" type="string" />
+		</joined-subclass>
 
 		<joined-subclass name="com.dotmarketing.portlets.links.model.Link" table="links">
 			<key column="inode" />
@@ -796,6 +841,21 @@
 		<property column="categories" length="255" name="categories" type="string" />
 	</class>
 
+	<class name="com.dotmarketing.beans.Rating" table="content_rating">
+	  <id name="id" column="id" type="long" unsaved-value="0">
+			<!-- generator class="sequence">
+				<param name="sequence">content_rating_sequence</param>
+			</generator -->
+			<generator class="native"/>
+	  </id>
+	  	<property column="rating" name="rating" type="float" />
+	  	<property column="user_id" name="userId" length="255" type="string" />
+	  	<property column="session_id" name="sessionId" length="255" type="string" />
+	  	<property column="identifier" name="identifier" length="36" type="string" />
+	  	<property column="rating_date" name="ratingDate" type="java.util.Date" />
+	  	<property column="user_ip" name="userIP" length="255" type="string" />
+	  	<property column="long_live_cookie_id" name="longLiveCookiesId" length="255" type="string" />
+	</class>
 
 	<class name="com.dotmarketing.tag.model.Tag" table="tag">
 		<id name="tagId" column="tag_id" length="100" type="string">
@@ -817,6 +877,12 @@
 		<property name="modDate" column="mod_date" type="java.util.Date" />
 	</class>
 
+	<class name="com.dotmarketing.beans.ChallengeQuestion" table="challenge_question">
+		<id name="challengeQuestionId" column="cquestionid" type="long">
+			<generator class="assigned" />
+		</id>
+		<property name="challengeQuestionText" column="cqtext" type="string" />
+	</class>
 	<class name="com.dotmarketing.beans.UsersToDelete" table="users_to_delete">
 		<id name="id" column="id" type="long">
 			<generator class="native"/>
@@ -826,7 +892,13 @@
 		</id>
 		<property name="userId" column="user_id" type="string" />
 	</class>
-
+	<class name="com.dotmarketing.portlets.calendar.model.CalendarReminder" table="calendar_reminder">
+    	<composite-id>
+        	<key-property name="userId" column="user_id" type="string"/>
+        	<key-property name="eventId" column="event_id" type="string" length="36" />
+        	<key-property name="sendDate" column="send_date" type="java.util.Date"/>
+    	</composite-id>
+	</class>
 
 	<!-- Mapping for Plugin Tables -->
 
