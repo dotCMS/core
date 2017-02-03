@@ -127,7 +127,7 @@
                 dojo.byId("addressRow").hide();
             }
         } else {
-            if (changedType || !isPlatformLicenseLevel()) {
+            if (changedType) {
                 if(dijit.byId("address")){
                     dijit.byId("address").set("value", "");
                 }
