@@ -116,26 +116,27 @@
 		}
 	}
 
-	function setAddressRow(changedType) {
+    function setAddressRow(changedType) {
 
-		if (currentProtocol === "awss3" && isPlatformLicenseLevel()) {
+        if (currentProtocol === "awss3" && isPlatformLicenseLevel()) {
 
-			if (changedType) {
-				dijit.byId("address").set("value", "s3.aws.amazon.com");
-				dijit.byId("port").set("value", "80");
+            if (changedType) {
+                dijit.byId("address").set("value", "s3.aws.amazon.com");
+                dijit.byId("port").set("value", "80");
 
-				dojo.byId("addressRow").hide();
-			}
-		} else {
-
-			if (changedType || !isPlatformLicenseLevel()) {
-				dijit.byId("address").set("value", "");
-				dijit.byId("port").set("value", "");
-
-				dojo.byId("addressRow").show();
-			}
-		}
-	}
+                dojo.byId("addressRow").hide();
+            }
+        } else {
+            if (changedType) {
+                if(dijit.byId("address")){
+                    dijit.byId("address").set("value", "");
+                }
+                if(dojo.byId("addressRow")){
+                    dojo.byId("addressRow").show();
+                }
+            }
+        }
+    }
 
 	function setAuthPropertiesRow(changedType) {
 
@@ -158,10 +159,11 @@
 			dojo.style("authKeyHttpSpan", "display", "");
 			dojo.style("authKeyAwsS3Span", "display", "none");
 
-			if (changedType || !isPlatformLicenseLevel()) {
-
-				dijit.byId("authKey").set("value", "");
-			}
+            if (changedType || !isPlatformLicenseLevel()) {
+                if(dijit.byId("authKey")){
+                    dijit.byId("authKey").set("value", "");
+                }
+            }
 		}
 
 		if (changedType) {
