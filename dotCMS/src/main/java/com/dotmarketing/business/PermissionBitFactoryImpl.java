@@ -1040,7 +1040,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                 "			select inode_id from permission where inode_id = identifier.id and " +
                 "			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
                 "		) " +
-                "	) ids " +
+                "	) ids  " +
                 "where identifier.id = ids.id "+
                 "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
         :
