@@ -10,7 +10,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.cache.FieldsCache;
@@ -36,7 +36,7 @@ import com.liferay.portal.model.User;
  * @since May 14, 2012
  *
  */
-public class PermissionAPIIntegrationTest extends TestBase {
+public class PermissionAPIIntegrationTest extends IntegrationTestBase {
 
     private static PermissionAPI perm;
     private static Host host;
