@@ -501,7 +501,6 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 		}
 
 		var url = this.addAFileIFrame.contentWindow.location.href;
-
 		if(url.indexOf('blank.jsp') >= 0) {
 			this.addFileDialog.hide();
 			this.addingAFile = false;
