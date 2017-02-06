@@ -228,7 +228,22 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
         "		 identifier.id not in (select asset_id from permission_reference where " +
         "			permission_type = '" + Template.class.getCanonicalName() + "')) x where ident.id = x.id"
         :
-        DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
+        DbConnectionFactory.isH2() ?
+        "insert into permission_reference (asset_id, reference_id, permission_type) " +
+        "select ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
+        "	from identifier ident, " + 
+        "		(" + selectChildrenTemplateSQL + 
+        "		and identifier.id not in (" + 
+        "			select inode_id " + 
+        "				from permission " +
+        "				where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') " + 
+        "				and identifier.id not in (" + 
+        "					select asset_id " + 
+        "						from permission_reference " + 
+        "						where permission_type = '" + Template.class.getCanonicalName() + "')) ids" +
+        "	where ident.id = ids.id"
+        :
+        DbConnectionFactory.isMsSql() ?
         "insert into permission_reference (asset_id, reference_id, permission_type) " +
         "select ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
         "	from identifier ident, " + 
@@ -330,7 +345,21 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             "		 identifier.id not in (select asset_id from permission_reference where " +
             "			permission_type = '" + Container.class.getCanonicalName() + "')) x where ident.id = x.id"
         :
-        DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
+        DbConnectionFactory.isH2() ?
+            "insert into permission_reference (asset_id, reference_id, permission_type) " +
+            "select ident.id, ?, '" + Container.class.getCanonicalName() + "'" +
+            "	from identifier ident, " +
+            "		(" + selectChildrenContainerSQL +
+            "			and identifier.id not in (" + 
+            "				select inode_id from permission " +
+            "					where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') " + 
+            "					and identifier.id not in (" +
+            "						select asset_id " + 
+            "							from permission_reference " + 
+            "							where permission_type = '" + Container.class.getCanonicalName() + "')) ids " + 
+            "	where ident.id = ids.id"
+        :
+        DbConnectionFactory.isMsSql()?
             "insert into permission_reference (asset_id, reference_id, permission_type) " +
             "select ident.id, ?, '" + Container.class.getCanonicalName() + "'" +
             "	from identifier ident, " +
@@ -597,7 +626,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                 "	) all_ids where identifier.id = all_ids.li_id " +
                 "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
         :
-        DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
+        DbConnectionFactory.isH2() ?
                 "insert into permission_reference (asset_id, reference_id, permission_type) " +
                 "select identifier.id, ?, '" + IHTMLPage.class.getCanonicalName() + "' " +
                 "	from identifier, " +
@@ -614,6 +643,30 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                 "			select inode_id " + 
                 "				from permission " + 
                 "				where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+                "		) " +
+                "	) ids " +
+                "	where identifier.id = ids.id " +
+                "	and not exists (SELECT asset_id " + 
+                "		from permission_reference " + 
+                "		where asset_id = identifier.id)"
+        :
+        DbConnectionFactory.isMsSql() ?
+                "insert into permission_reference (asset_id, reference_id, permission_type) " +
+                "select identifier.id, ?, '" + IHTMLPage.class.getCanonicalName() + "' " +
+                "	from identifier, " +
+                "		(" + selectChildrenHTMLPageSQL + " and" +
+                "		not exists (" +
+                "			select asset_id from " + 
+                "				permission_reference " +
+                "				join folder ref_folder on (reference_id = ref_folder.inode)" +
+                "               join identifier on (ref_folder.identifier=identifier.id) " +
+                "				where asset_id = li.id and "+dotFolderPath+"(parent_path,asset_name) like ? " + 
+                "				and permission_type = '" + IHTMLPage.class.getCanonicalName() + "'" +
+                "		) and " +
+                "		not exists (" +
+                "			select inode_id " + 
+                "				from permission " + 
+                "				where inode_id = li.id and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
                 "		) " +
                 "	) ids " +
                 "	where identifier.id = ids.id " +
@@ -765,7 +818,32 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                 "	WHERE identifier.id = t1.i_id " +
                 "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
         :
-        DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
+        DbConnectionFactory.isH2() ?
+                "insert into permission_reference (asset_id, reference_id, permission_type) " +
+                "select  identifier.id, ?, '" + File.class.getCanonicalName() + "' " +
+                "	from identifier, " + 
+                "		(" + selectChildrenFileSQL + " and" +
+                "		identifier.id not in (" +
+                "			select asset_id " +
+                "				from permission_reference " +
+                "				join folder ref_folder on (reference_id = ref_folder.inode)" +
+                "              	join identifier ii on (ii.id=ref_folder.identifier) " +
+                "				where "+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? " + 
+                "				and permission_type = '" + File.class.getCanonicalName() + "'" +
+                "		) and " +
+                "		identifier.id not in (" +
+                "			select inode_id " + 
+                "				from permission where " +
+                "				permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+                "		) " +
+                "	) ids " +
+                "	where identifier.id = ids.id " +
+                "	and not exists (" +
+                "		SELECT asset_id " + 
+                "		from permission_reference " + 
+                "		where asset_id = identifier.id)"
+        :
+        DbConnectionFactory.isMsSql()?
                 "insert into permission_reference (asset_id, reference_id, permission_type) " +
                 "select  identifier.id, ?, '" + File.class.getCanonicalName() + "' " +
                 "	from identifier, " + 
@@ -931,7 +1009,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                 "	) x where identifier.id = x.id " +
                 "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
         :
-        DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
+        DbConnectionFactory.isH2() ?
                 "insert into permission_reference (asset_id, reference_id, permission_type) " +
                 "select identifier.id, ?, '" + Link.class.getCanonicalName() + "' " +
                 "	from identifier where identifier.id in (" +
@@ -946,6 +1024,24 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                 "			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
                 "		) " +
                 "	) " +
+                "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+        :
+        DbConnectionFactory.isMsSql() ?
+                "insert into permission_reference (asset_id, reference_id, permission_type) " +
+                "select identifier.id, ?, '" + Link.class.getCanonicalName() + "' " +
+                "	from identifier, (" +
+                "		" + selectChildrenLinkSQL + " and" +
+                "		not exists (" +
+                "			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+                "            join identifier ii on (ii.id=ref_folder.identifier) where asset_id = identifier.id and " +
+                "			"+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + Link.class.getCanonicalName() + "'" +
+                "		) and " +
+                "		not exists (" +
+                "			select inode_id from permission where inode_id = identifier.id and " +
+                "			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+                "		) " +
+                "	) ids " +
+                "where identifier.id = ids.id "+
                 "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
         :
         DbConnectionFactory.isOracle() ?
@@ -1131,7 +1227,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                 "WHERE identifier.id = x.id " +
                 "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
         :
-        DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
+        DbConnectionFactory.isH2() ?
                 "insert into permission_reference (asset_id, reference_id, permission_type) " +
                 "select identifier.id, ?, '" + Contentlet.class.getCanonicalName() + "' " +
                 "	from identifier where identifier.id in (" +
@@ -1146,6 +1242,24 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                 "			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
                 "		) " +
                 "	) " +
+                "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+        :
+        DbConnectionFactory.isMsSql() ?
+                "insert into permission_reference (asset_id, reference_id, permission_type) " +
+                "select identifier.id, ?, '" + Contentlet.class.getCanonicalName() + "' " +
+                "	from identifier, (" +
+                "		" + selectChildrenContentByPathSQL + " and" +
+                "		identifier.id not in (" +
+                "			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+                "                                join identifier on (identifier.id=ref_folder.identifier) " +
+                "			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + Contentlet.class.getCanonicalName() + "'" +
+                "		) and " +
+                "		identifier.id not in (" +
+                "			select inode_id from permission where " +
+                "			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+                "		) " +
+                "	) ids " +
+                "where identifier.id = ids.id " +
                 "and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
         :
         DbConnectionFactory.isOracle()?
