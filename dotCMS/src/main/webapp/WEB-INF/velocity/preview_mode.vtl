@@ -20,16 +20,17 @@
 			    		console.log("frames:" + win.frames[i].name);
 			    	}
 			    }
-			
-				var win = this.window;
-				while (win.frameMain == undefined && win.frameMenu==undefined && win != window.top && win.name !="detailFrame"){
-					//listFrames(win);
-					win=win.parent;
-				}
-				
-				console.log("winner:" + win.name);
-				
-				win.location.replace("${_baseURI}#if($UtilMethods.isSet($queryString))?${queryString}#end");
+
+				#set($url=${_baseURI})
+
+				#if($UtilMethods.isSet($queryString))
+				    #set($url="${url}?${queryString}&fromAngular=true")
+				#else
+				    #set($url="${url}?fromAngular=true")
+				#end
+
+				this.window.parent.location.replace("${url}");
+
 			</script>
 		</head>
 		<body style="background:white url()"></body>

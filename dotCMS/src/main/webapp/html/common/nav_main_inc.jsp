@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.util.PortletID"%>
 <%@page import="com.dotcms.spring.portlet.PortletController"%>
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotcms.rest.BaseRestPortlet"%>
@@ -69,7 +70,7 @@ var portletTabMap = {}; // this holds a Map of portletId, tabId, used when refre
                                                         String linkName = LanguageUtil.get(pageContext,"com.dotcms.repackage.javax.portlet.title." + portletIDs.get(i));
 
 
-                                                        if("configuration".equals(portletIDs.get(i))){
+                                                        if(PortletID.CONFIGURATION.toString().equals(portletIDs.get(i))){
                                                                 request.setAttribute("licenseManagerPortletUrl", linkHREF + "&tab=licenseTab");
                                                         }
                                                         try{

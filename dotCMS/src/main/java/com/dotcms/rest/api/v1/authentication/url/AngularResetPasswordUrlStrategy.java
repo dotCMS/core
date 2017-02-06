@@ -7,6 +7,7 @@ import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.PortletURLUtil;
 import com.liferay.portal.model.User;
 
 import java.util.Map;
@@ -21,7 +22,7 @@ public class AngularResetPasswordUrlStrategy implements UrlStrategy {
     private final JsonWebTokenService jsonWebTokenService;
     private final long jwtMillis = Config.getIntProperty("RECOVER_PASSWORD_TOKEN_TTL_MINS", 20) * DateUtil.MINUTE_MILLIS;
 
-    private static final String HTML_NG_RESET_PASSWORD_TRUE_USER_ID_0_TOKEN_1 = "/dotAdmin/#/public/resetPassword/{0}";
+    private static final String HTML_NG_RESET_PASSWORD_TRUE_USER_ID_0_TOKEN_1 = "/" + PortletURLUtil.URL_ADMIN_PREFIX + "/#/public/resetPassword/{0}";
 
     public AngularResetPasswordUrlStrategy() {
         this(JsonWebTokenFactory.getInstance().getJsonWebTokenService());

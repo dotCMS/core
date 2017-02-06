@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.util.PortletID"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotmarketing.util.URLEncoder"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
@@ -26,7 +27,7 @@ if(APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCM
 	userIsAdmin=true;
 }
 
-String referer = new URLEncoder().encode("/c/portal/layout?p_l_id=" + layoutId + "&p_p_id=publishing-queue&");%>
+String referer = new URLEncoder().encode("/c/portal/layout?p_l_id=" + layoutId + "&p_p_id="+PortletID.PUBLISHING_QUEUE+"&");%>
 <%	if(LicenseUtil.getLevel()<300){ %>
 <%@ include file="/html/portlet/ext/contentlet/publishing/not_licensed.jsp" %>
 <%return;} %>

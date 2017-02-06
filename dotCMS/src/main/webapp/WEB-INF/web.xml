@@ -86,7 +86,6 @@
     </filter>
 	<!--END DOTMARKETING FILTERS-->
 	
-	
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN FILTERS -->
  	<!-- END FILTERS -->
@@ -148,8 +147,6 @@
 		<url-pattern>/c/*</url-pattern>
 	</filter-mapping>
 	<!--END DOTMARKETING FILTER-MAPPINGS-->
-	
-	
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN LISTENERS -->
     <!-- END LISTENERS -->
@@ -356,7 +353,6 @@
     	<servlet-name>CSSPreProcessServlet</servlet-name>
     	<servlet-class>com.dotcms.csspreproc.CSSPreProcessServlet</servlet-class>
     </servlet>
-    
     <!-- REST -->
     <servlet>
 		<servlet-name>RESTAPI</servlet-name>

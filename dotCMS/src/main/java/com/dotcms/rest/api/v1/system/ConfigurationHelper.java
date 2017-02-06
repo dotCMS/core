@@ -16,6 +16,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.rest.api.v1.system.websocket.SystemEventsWebSocketEndPoint;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -68,7 +69,7 @@ public class ConfigurationHelper implements Serializable {
 				Config.getAsString(DOTCMS_WEBSOCKET_BASEURL, () -> getHostname(request)),
 				DOTCMS_WEBSOCKET_ENDPOINTS,
 				map(WEBSOCKET_SYSTEMEVENTS_ENDPOINT,
-						Config.getStringProperty(WEBSOCKET_SYSTEMEVENTS_ENDPOINT, "/api/v1/system/events")),
+						Config.getStringProperty(WEBSOCKET_SYSTEMEVENTS_ENDPOINT, SystemEventsWebSocketEndPoint.API_WS_V1_SYSTEM_EVENTS)),
 				EDIT_CONTENT_STRUCTURES_PER_COLUMN,
 				Config.getIntProperty(EDIT_CONTENT_STRUCTURES_PER_COLUMN, 15),
 				DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT,

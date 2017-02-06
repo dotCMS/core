@@ -1,4 +1,4 @@
-.browserTable{font-size:85%;width:100%;margin-bottom:20px;}
+.browserTable{font-size:100%;width:100%;margin-bottom:20px;}
 .browserTable th{font-weight:bold;padding:7px 8px;}
 .browserTable td{padding:6px 10px;border-top: 1px dotted silver;cursor: pointer;white-space: nowrap;}
 .browserTable td a{text-decoration: none; color: black;}
@@ -23,13 +23,13 @@
 /* end if scrolling */
 
 ul, li {list-style: none;padding: 0;margin: 0;}
-#TreeUL{font-size:85%;color: black;}
+#TreeUL{font-size:100%;color: black;}
 #TreeUL li li {padding: 10px 0 0 20px;}
 #TreeUL img {border: 0;vertical-align: middle;}
 #TreeUL a {cursor: pointer;color: black;}
 #TreeUL span {cursor: pointer;}
 .folderSelected {font-weight: bold;}
-.nameChangeText {font-size:85%;}
+.nameChangeText {font-size:100%;}
 #popups{white-space:nowrap;}
 	
 /*Context menues */
@@ -45,7 +45,7 @@ div.contextPopupMenuBox{
 		-webkit-box-shadow: 2px 3px 3px rgba(0,0,0,0.3);
 	}
 
-div.contextPopupMenuBox a{font-size: 85%; line-height: 13px; display: block; padding: 4px 12px; width: 100%; text-decoration: none; cursor: pointer;}
+div.contextPopupMenuBox a{font-size: 100%; line-height: 13px; display: block; padding: 4px 12px; width: 100%; text-decoration: none; cursor: pointer;}
 div.contextPopupMenuBox a:hover{background-color: #C1D9EE;}
 div.contextPopupMenuBox a img{display: none;}
 

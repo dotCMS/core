@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.util.PortletID"%>
 <%@page import="com.liferay.util.Xss"%>
 <%@page import="java.util.List"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
@@ -110,7 +111,7 @@ if(query == null){
 
 Layout layout = (Layout) request.getAttribute(WebKeys.LAYOUT);
 
-String referer = new URLEncoder().encode("/c/portal/layout?p_l_id=" + layout.getId() + "&p_p_id=query-tool&");
+String referer = new URLEncoder().encode("/c/portal/layout?p_l_id=" + layout.getId() + "&p_p_id="+PortletID.QUERY_TOOL+"&");
 
 query = Xss.strip(query);
 %>
@@ -246,7 +247,7 @@ query = Xss.strip(query);
 								<th><strong><%= counter %>.</th>
 								<th><strong><%= LanguageUtil.get(pageContext, "Title") %></strong></th>
 								<th>
-									<a href="/c/portal/layout?p_l_id=<%=layout.getId() %>&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=/ext/contentlet/edit_contentlet&_content_cmd=edit&inode=<%=c.getInode() %>&referer=<%=referer %>">
+									<a href="/c/portal/layout?p_l_id=<%=layout.getId() %>&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&p_p_mode=view&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/edit_contentlet&_<%=PortletID.CONTENT%>_cmd=edit&inode=<%=c.getInode() %>&referer=<%=referer %>">
 										<%=c.getTitle() %>
 									</a>
 								</th>

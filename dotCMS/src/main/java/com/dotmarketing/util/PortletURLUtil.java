@@ -12,6 +12,7 @@ import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import javax.servlet.http.HttpServletRequest;
 
+
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -21,11 +22,16 @@ import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portlet.PortletConfigImpl;
 import com.liferay.util.Validator;
 
+
 /**
  * @author Maria
  * 
  */
 public class PortletURLUtil {
+
+	public static String URL_ADMIN_PREFIX = Config.getStringProperty("URL_ADMIN_ANGULAR_PREFIX", "dotAdmin");
+	public static String ROOT_URL = String.format("/%s/#/c", URL_ADMIN_PREFIX);
+	private final URLEncoder ENCODER = new URLEncoder();
 
 	public static String getActionURL(ActionRequest req, String _windowState, Map _params) {
 
@@ -160,10 +166,31 @@ public class PortletURLUtil {
 		}
 		//return portletURL.toString();
 		return sb.toString();
-		
-		
 	}
-	
-	
-	
+
+	public String getPortletUrl(PortletID portletID){
+		return getPortletUrl(portletID, null);
+	}
+
+	public String getPortletUrl(PortletID portletID, Map<String, String> parameters){
+
+		StringBuilder buffer = new StringBuilder();
+
+		if ( parameters != null) {
+			buffer.append("?");
+
+			for (Map.Entry<String, String> parametersEntry : parameters.entrySet()) {
+
+				if (buffer.length() > 1) {
+					buffer.append("&");
+				}
+
+				buffer.append(parametersEntry.getKey())
+						.append("=")
+						.append(ENCODER.encode(parametersEntry.getValue()));
+			}
+		}
+
+		return ROOT_URL + "/" + portletID.toString() + buffer.toString();
+	}
 }
