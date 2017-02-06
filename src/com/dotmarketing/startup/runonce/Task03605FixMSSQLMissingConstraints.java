@@ -6,19 +6,13 @@ import java.util.List;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 
 /**
- * This update task will update every <code>VARCHAR</code> and <code>TEXT</code>
- * column types to <code>NVARCHAR</code> and <code>NVARCHAR(MAX)</code>
- * respectively.
+ * This update task will update the length of some columns and create the constraints that 
+ * were failing in 3.7.
  * <p>
- * Currently, all parameterized DB queries cannot use the indexes on the text
- * fields because the indexes are for ASCII text. SQL Server JDBC Drivers are
- * passing query parameters as UTF-8, which forces a whole table scan for all
- * tables: inode, tree, identifier tables, etc. This makes SQL Server operations
- * slow. In its current state, it is incapable of serving UTF-8 content.
  * 
- * @author Jose Castro
- * @version 3.7
- * @since Nov 10, 2016
+ * @author Erick Gonzalez
+ * @version 3.7.1
+ * @since Feb 3, 2017
  *
  */
 public class Task03605FixMSSQLMissingConstraints extends AbstractJDBCStartupTask {
