@@ -127,15 +127,15 @@ function validate() {
 <input name="wfConId" id="wfConId" type="hidden" value="<%=inode%>">
 
 <% if(mustShow){ %>
-	<div id="wfDivWrapperForDojo" class="content-search__assign-workflow-form">
-		<dl class="vertical">
+	<div id="wfDivWrapperForDojo" class="form-horizontal content-search__assign-workflow-form">
+		<dl>
 			<dt>
 				<label for=""><%= LanguageUtil.get(pageContext, "Perform-Workflow") %>:</label>
 			</dt>
 			<dd><%=action.getName() %></dd>
 		</dl>
 		<%if(action.isCommentable()){ %>
-			<dl class="vertical">
+			<dl>
 				<dt>
 					<label for=""><%= LanguageUtil.get(pageContext, "Comments") %>:</label>
 				</dt>
@@ -144,14 +144,14 @@ function validate() {
 				</dd>
 			</dl>
 		<%}else{ %>
-		<dl class="vertical">
+		<dl>
 			<dt>
 				<label for=""><%= LanguageUtil.get(pageContext, "Comments") %>:</label>
 			</dt>
 			<dd><%= LanguageUtil.get(pageContext, "None") %></dd>
 		</dl>
 		<%} %>
-		<dl class="vertical">
+		<dl>
 			<dt>
 				<label for=""><%= LanguageUtil.get(pageContext, "Assignee") %>:</label>
 			</dt>
@@ -171,7 +171,7 @@ function validate() {
 			String hour = (cal.get(GregorianCalendar.HOUR_OF_DAY) < 10) ? "0"+cal.get(GregorianCalendar.HOUR_OF_DAY) : ""+cal.get(GregorianCalendar.HOUR_OF_DAY);
 			String min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCalendar.MINUTE) : ""+cal.get(GregorianCalendar.MINUTE);
 		%>
-		<dl class="vertical">
+		<dl>
 			<dt>
 				<label for=""><%= LanguageUtil.get(pageContext, "Publish") %>:</label>
 			</dt>
@@ -192,7 +192,7 @@ function validate() {
 				<input type="checkbox" data-dojo-type="dijit/form/CheckBox"  name="forcePush" id="forcePush" value="true"><label for="forcePush"><%= LanguageUtil.get(pageContext, "publisher_dialog_force-push") %></label>
 			</dd>
 		</dl>
-		<dl class="vertical">
+		<dl>
 			<dt>
 				<label for=""><%= LanguageUtil.get(pageContext, "publisher_Expire") %>:</label>
 			</dt>
@@ -217,7 +217,7 @@ function validate() {
 				<input type="checkbox" onclick="toggleExpire()" dojoType="dijit.form.CheckBox" value="true" name="wfNeverExpire" checked="true" id="wfNeverExpire" > <label for="wfNeverExpire"><%= LanguageUtil.get(pageContext, "publisher_Never_Expire") %></label>
 			</dd>
 		</dl>
-		<dl class="vertical">
+		<dl>
 			<dt>
 				<label for=""><%=LanguageUtil.get(pageContext, "publisher_dialog_choose_environment")%>:</label>
 			</dt>
@@ -247,7 +247,7 @@ function validate() {
 					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
 				</button>
 			<% } %>
-			<button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="dijit.byId('contentletWfDialog').hide()" type="button">
+			<button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="dijit.byId('contentletWfDialog').hide()" type="button" class="dijitButtonFlat">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
 				</button>
 		</div>

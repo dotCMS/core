@@ -343,8 +343,7 @@
                 onChange="updateDate('<%=field.getVelocityVarName()%>');"
                 dojoType="dijit.form.DateTextBox"
                 name="<%=field.getFieldContentlet()%>Date"
-                id="<%=field.getVelocityVarName()%>Date"
-                style="width:120px;">
+                id="<%=field.getVelocityVarName()%>Date">
 
         <% }
 
@@ -362,7 +361,7 @@
                 name="<%=field.getFieldContentlet()%>Time"
                 value='<%=cal!=null ? "T"+hour+":"+min+":00" : ""%>'
                 onChange="updateDate('<%=field.getVelocityVarName()%>');"
-                dojoType="dijit.form.TimeTextBox" style="width: 120px;"
+                dojoType="dijit.form.TimeTextBox" 
                 <%=field.isReadOnly()?"disabled=\"disabled\"":""%>/>
 
             <%if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {%>

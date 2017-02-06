@@ -90,7 +90,7 @@
 		if ((fieldInode == "<%=fields[i]%>") && fieldIndexed) {
 			if (dijit.byId(fieldInode + 'Field'))
 				dijit.byId(fieldInode + 'Field').destroy();
-			return "<div><input checked type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" id=\"" + fieldInode + "Field\" name=\"fields\" value=\"" + fieldInode + "\" "+disableField+" /> "  + fieldName + "</div>";
+			return "<div class='checkbox'><input checked type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" id=\"" + fieldInode + "Field\" name=\"fields\" value=\"" + fieldInode + "\" "+disableField+" /> "  + fieldName + "</div>";
 		}
 		<%
 
@@ -98,7 +98,7 @@
 		%>
 		if (dijit.byId(fieldInode + 'Field'))
 			dijit.byId(fieldInode + 'Field').destroy()
-		return "<div style='margin:2px 0px;'><input type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" id=\"" + fieldInode + "Field\" name=\"fields\" value=\"" + fieldInode + "\" "+disableField+" /> <label>" +  fieldName + "</label></div>";
+		return "<div class='checkbox'><input type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" id=\"" + fieldInode + "Field\" name=\"fields\" value=\"" + fieldInode + "\" "+disableField+" /> <label>" +  fieldName + "</label></div>";
 	}
 
 	function submitForm () {
