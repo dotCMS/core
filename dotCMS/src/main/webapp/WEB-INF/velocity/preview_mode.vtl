@@ -26,7 +26,7 @@
 				#if($UtilMethods.isSet($queryString))
 				    #set($url="${url}?${queryString}&fa=true")
 				#else
-				    #set($url="${url}?fa=true")
+				    #set($url="${url}?container=true")
 				#end
 
                 if ( this.window.parent !== top ){
