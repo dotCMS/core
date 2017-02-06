@@ -24,7 +24,7 @@
 				#set($url=${_baseURI})
 
 				#if($UtilMethods.isSet($queryString))
-				    #set($url="${url}?${queryString}&fa=true")
+				    #set($url="${url}?${queryString}&container=true")
 				#else
 				    #set($url="${url}?container=true")
 				#end
