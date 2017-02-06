@@ -1,7 +1,5 @@
 package com.dotcms.system;
 
-import java.util.Enumeration;
-
 /**
  * It is intended to be a global context
  */

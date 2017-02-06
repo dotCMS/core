@@ -4,10 +4,10 @@ import java.io.Serializable;
 
 import org.quartz.JobExecutionContext;
 
-import com.dotcms.job.JobDelegate;
+import com.dotcms.util.Delegate;
 
 /**
- * Contains the basic information required for a {@link JobDelegate} to perform
+ * Contains the basic information required for a {@link Delegate} to perform
  * its purpose. The Quartz Job will include as much useful data as possible in
  * order to send it to the respective delegate and assist it.
  * 
