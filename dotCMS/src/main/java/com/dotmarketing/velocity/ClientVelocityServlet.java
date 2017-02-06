@@ -62,13 +62,13 @@ public class ClientVelocityServlet extends VelocityServlet {
      */
     private boolean notRedirect(HttpServletRequest req) {
         String refererValue = req.getHeader(Constants.REFERER_URL_HTTP_HEADER);
-        boolean faParameter = Boolean.parseBoolean(req.getParameter("container"));
+        boolean containerParameter = Boolean.parseBoolean(req.getParameter("container"));
 
         return (refererValue != null && (refererValue.contains( "host_id=" )
                     || refererValue.contains( "container=true" )
                     || refererValue.contains(PortletURLUtil.URL_ADMIN_PREFIX )
                     || refererValue.contains( "p_p_id=" + PortletID.SITE_BROWSER )))
-                || faParameter;
+                || containerParameter;
     }
 
     //EACH CLIENT MAY HAVE ITS OWN VARIABLES
