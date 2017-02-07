@@ -168,12 +168,12 @@
 	// maybe due recent dojo upgrade
 	function createHints(item) {
 	    new dijit.Tooltip({
-           connectId: "cascadePermissionsHintHook-"+item.id,
-           label: item.cascadePermissionsHint
+			connectId: "cascadePermissionsHintHook-" + item.id,
+			label: item.cascadePermissionsHint,
         });
         new dijit.Tooltip({
-           connectId: "inheritPermissionsHintHook-"+item.id,
-           label: permissionBreakInheritanceWarnIcon
+			connectId: "inheritPermissionsHintHook-" + item.id,
+			label: permissionBreakInheritanceWarnIcon,
         });
 	}
 

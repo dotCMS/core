@@ -215,7 +215,7 @@ List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketin
 
 </script>
 
-<div dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "Upload-file(s)")%>" id="addFileDialog" style="width: 700px; height: 430px;"
+<div dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "Upload-file(s)")%>" id="addFileDialog" style="width: 700px; height: 474px;"
 		onLoad="removeAddlStyleRef();">
 
 </div>

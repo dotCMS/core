@@ -91,7 +91,7 @@
 		<% } %>
 	</div>
 
-	<div class="fieldValue" id="<%=field.getVelocityVarName()%>_field">
+	<div class="fieldValue field__<%=field.getFieldType()%>" id="<%=field.getVelocityVarName()%>_field">
 <%
     //TEXT kind of field rendering
     if (field.getFieldType().equals(Field.FieldType.TEXT.toString())) {
@@ -344,8 +344,7 @@
                 onChange="updateDate('<%=field.getVelocityVarName()%>');"
                 dojoType="dijit.form.DateTextBox"
                 name="<%=field.getFieldContentlet()%>Date"
-                id="<%=field.getVelocityVarName()%>Date"
-                style="width:120px;">
+                id="<%=field.getVelocityVarName()%>Date">
 
         <% }
 
@@ -363,7 +362,7 @@
                 name="<%=field.getFieldContentlet()%>Time"
                 value='<%=cal!=null ? "T"+hour+":"+min+":00" : ""%>'
                 onChange="updateDate('<%=field.getVelocityVarName()%>');"
-                dojoType="dijit.form.TimeTextBox" style="width: 120px;"
+                dojoType="dijit.form.TimeTextBox" 
                 <%=field.isReadOnly()?"disabled=\"disabled\"":""%>/>
 
             <%if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {%>
@@ -463,7 +462,7 @@
                 <%int imageEditors=0; %>
                 <!--  If you are not enterprise -->
                 <%if(LicenseUtil.getLevel() < 199 ){ %>
-                <div id="thumbnailParent<%=field.getVelocityVarName()%>" class="field-binary">
+                <div id="thumbnailParent<%=field.getVelocityVarName()%>">
                     <%
                         String src = null;
                         if(!fileName.toLowerCase().endsWith("svg")){
@@ -540,8 +539,8 @@
                 if(UtilMethods.isSet(value) && structure.getStructureType()==com.dotmarketing.portlets.structure.model.Structure.STRUCTURE_TYPE_FILEASSET && field.getVelocityVarName().equals(FileAssetAPI.BINARY_FIELD)){ %>
 
                       <%if(canUserWriteToContentlet){%>
-						<div class="clear"></div>
-						<div id="<%=field.getVelocityVarName()%>dt"><%= LanguageUtil.get(pageContext, "Resource-Link") %>:
+						<div id="<%=field.getVelocityVarName()%>dt" class="field__editable-content">
+                            <%= LanguageUtil.get(pageContext, "Resource-Link") %>:
 
 
 						  <%
