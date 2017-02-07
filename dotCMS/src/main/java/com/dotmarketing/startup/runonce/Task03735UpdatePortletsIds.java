@@ -37,14 +37,14 @@ public class Task03735UpdatePortletsIds implements StartupTask {
 		getPortletIds();
 		DotConnect dc=new DotConnect();
 		for(String key : portletIds.keySet()){
-			dc.setSQL("update cms_layouts_portlets set portlet_id= ? where portlet_id= ?;");
+			dc.setSQL("update cms_layouts_portlets set portlet_id= ? where portlet_id= ?");
 			dc.addParam(key);
 			dc.addParam(portletIds.get(key));
 			dc.loadResult();
 		}	
 		
 		//remove deleted portlets
-		dc.setSQL("delete from cms_layouts_portlets where portlet_id in ('EXT_3','EXT_ECO_ORDER','25','EXT_16','EXT_19','EXT_5','EXT_6','EXT_8','EXT_COMMUNICATIONS_MANAGER','EXT_CONTENTRATINGS','EXT_FACILITY','EXT_ORG','EXT_USERFILTER','EXT_USERMANAGER','EXT_USER_ACCOUNT_NOTES','REST_EXAMPLE_PORTLET','EXT_PRODUCT','EXT_USER_CLICKS','EXT_USER_COMMENTS','NetworkPortlet');");
+		dc.setSQL("delete from cms_layouts_portlets where portlet_id in ('EXT_3','EXT_ECO_ORDER','25','EXT_16','EXT_19','EXT_5','EXT_6','EXT_8','EXT_COMMUNICATIONS_MANAGER','EXT_CONTENTRATINGS','EXT_FACILITY','EXT_ORG','EXT_USERFILTER','EXT_USERMANAGER','EXT_USER_ACCOUNT_NOTES','REST_EXAMPLE_PORTLET','EXT_PRODUCT','EXT_USER_CLICKS','EXT_USER_COMMENTS','NetworkPortlet')");
 		dc.loadResult();
 	}
 
