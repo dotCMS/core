@@ -128,21 +128,22 @@
 
 </script>
 
-<div dojoType="dijit.Dialog" id="editTextDialog" style="top:5%;left:5%;right:5%;bottom:5%;padding-top:15px; height: 80%" onCancel="javascript:editTextManager.close();">
- 	<h3><%= LanguageUtil.get(pageContext, "text-editor") %></h3>
-	<form name="fm" id="fm" method="post" action="" style="height: 100%">
+<div dojoType="dijit.Dialog" id="editTextDialog" onCancel="javascript:editTextManager.close();" title="<%= LanguageUtil.get(pageContext, "text-editor") %>">
+	<form name="fm" id="fm" method="post" action="" >
 		<input type="hidden" name="inode" value="<%= request.getParameter("inode") %>">
 		<input type="hidden" name="<portlet:namespace />referer" value="<%= request.getParameter("referer") %>">
 		<input type="hidden" name="<portlet:namespace />cmd" value="">
 
-		<div id="editor" style="padding-bottom: 5px; height: 75%"></div>
+		<div id="editor" style="width: 800px; height: 400px"></div>
         <div class="editor-options">
-            <input id="wrapEditor" name="wrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onChange="handleWrapMode" />
-            <label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
+			<div class="checkbox">
+            	<input id="wrapEditor" name="wrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onChange="handleWrapMode" />
+            	<label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
+			</div>
         </div>
 		<div class="buttonRow">
-	           <button id="editTextButton" dojoType="dijit.form.Button" iconClass="saveIcon" onClick="javascript:saveText();"><%= LanguageUtil.get(pageContext, "Save") %></button>&nbsp; &nbsp;
-	           <button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="javascript:editTextManager.close();"><%= LanguageUtil.get(pageContext, "Cancel") %></button>&nbsp; &nbsp;
+		   <button id="editTextButton" dojoType="dijit.form.Button" onClick="javascript:saveText();"><%= LanguageUtil.get(pageContext, "Save") %></button>&nbsp; &nbsp;
+		   <button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="javascript:editTextManager.close();"><%= LanguageUtil.get(pageContext, "Cancel") %></button>&nbsp; &nbsp;
 		</div>
 	</form>
 

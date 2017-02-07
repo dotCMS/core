@@ -22,7 +22,7 @@
 			</button>
 		</div>
 		<div dojoAttachPoint="fileUploadRemoveButton" style="display: none;">
-			<button dojoType="dijit.form.Button" dojoAttachEvent="onClick:_remove" iconClass="deleteIcon" class="dijitButtonFlat">
+			<button dojoType="dijit.form.Button" dojoAttachEvent="onClick:_remove" iconClass="deleteIcon" class="dijitButtonDanger">
 				<%= LanguageUtil.get(pageContext, "remove")%>
 			</button>
 		</div>

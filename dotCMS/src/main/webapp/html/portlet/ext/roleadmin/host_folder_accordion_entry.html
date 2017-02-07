@@ -239,11 +239,16 @@
         </table>
     </div>
     <div class="permissionsActions">
-        <input type="checkbox" dojoType="dijit.form.CheckBox" id="cascadeChangesCheckbox-${id}" ${disabledPermissions} /> ${cascadeChanges}
-        <a href="javascript: ;" id="cascadePermissionsHintHook-${id}">?</a>
-        <button dojoType="dijit.form.Button" type="button" class="applyChangesButton" id="applyChangesButton-${id}" onClick="applyPermissionChanges('${id}')" ${disabledPermissions}>
-            ${applyChanges}
-        </button>
-        <a href="javascript: ;" id="inheritPermissionsHintHook-${id}" style="display: none;"><span class="exclamationIcon"></span></a>
+        <div class="inline-form">
+            <div class="checkbox">
+                <input type="checkbox" dojoType="dijit.form.CheckBox" id="cascadeChangesCheckbox-${id}" ${disabledPermissions} />
+                <label for="cascadeChangesCheckbox-${id}">${cascadeChanges}</label>
+            </div>
+            <a href="javascript: ;" id="cascadePermissionsHintHook-${id}">?</a>
+            <button dojoType="dijit.form.Button" type="button" class="applyChangesButton" id="applyChangesButton-${id}" onClick="applyPermissionChanges('${id}')" ${disabledPermissions}>
+                ${applyChanges}
+            </button>
+            <a href="javascript: ;" id="inheritPermissionsHintHook-${id}" style="display: none;"><span class="exclamationIcon"></span></a>
+        </div>
     </div>
 </div>
