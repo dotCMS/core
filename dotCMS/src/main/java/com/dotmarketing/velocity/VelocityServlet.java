@@ -572,7 +572,7 @@ public abstract class VelocityServlet extends HttpServlet {
     		String urlMap = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
     		String queryString = request.getQueryString();
     		String persona = null;
-    		Optional<Visitor> v = APILocator.getVisitorAPI().getVisitor(request, false);
+    		Optional<Visitor> v = visitorAPI.getVisitor(request, false);
     		if(v.isPresent() && v.get().getPersona() !=null){
     			persona=v.get().getPersona().getKeyTag();
     		}
