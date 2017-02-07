@@ -27,7 +27,7 @@ dependencies {
 
 	//Compile against dotCMS 3.1
     compile fileTree(dir: configurations.resourcesLibsFolder, include: '*.jar')
-    compile(group: 'com.dotcms', name: 'dotcms', version: '3.6.1') {
+    compile(group: 'com.dotcms', name: 'dotcms', version: '3.7.1') {
         transitive = true
     }
     providedCompile "javax.servlet:servlet-api:2.5"
