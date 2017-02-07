@@ -96,7 +96,7 @@ export class IframeLegacyComponent extends SiteChangeListener {
         this.loadingInProgress = true;
 
         urlWithParameters += urlWithParameters.indexOf('?') === -1 ? '?' : '&';
-        urlWithParameters += urlWithParameters.indexOf('in_frame') === -1 ? 'in_frame=true&frame=detailFrame&fromAngular=true' : '';
+        urlWithParameters += urlWithParameters.indexOf('in_frame') === -1 ? 'in_frame=true&frame=detailFrame&container=true' : '';
 
         return this.sanitizer.bypassSecurityTrustResourceUrl(urlWithParameters);
     }
