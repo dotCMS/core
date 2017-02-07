@@ -2,7 +2,6 @@
     .ui-autocomplete-dropdown.ui-state-default {
         box-shadow: none;
         background: none;
-        right: 0;
     }
 
     input.ui-corner-all {
@@ -20,6 +19,8 @@
 
     .ui-autocomplete-list-item {
         margin: 0;
+        overflow-wrap: break-word;
         padding: $basic-padding;
+        word-wrap: break-word;
     }
 }
