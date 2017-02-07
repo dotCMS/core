@@ -9,6 +9,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
@@ -59,7 +64,8 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
 	private VersionableAPI vapi;
 	private FileFactory ffac;
 	private FileCache fcache;
-	
+	private SystemEventsAPI systemEventsAPI;
+
 	public FileAPIImpl() {
 		permissionAPI = APILocator.getPermissionAPI();
 		ffac = FactoryLocator.getFileFactory();
@@ -67,6 +73,7 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
 		folderAPI = APILocator.getFolderAPI();
 		vapi = APILocator.getVersionableAPI();
 		fcache = CacheLocator.getFileCache();
+		systemEventsAPI = APILocator.getSystemEventsAPI();
 	}
 
 	public File copy(File source, Folder destination, boolean forceOverwrite, User user, boolean respectFrontendRoles)
@@ -587,11 +594,17 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
             throw new DotSecurityException( WebKeys.USER_PERMISSIONS_EXCEPTION );
         }
 
+		File result = null;
+
         if ( parent != null ) {
-            return ffac.copyFile( file, parent );
+			result = ffac.copyFile( file, parent );
         } else {
-            return ffac.copyFile( file, host );
+			result = ffac.copyFile( file, host );
         }
+
+		systemEventsAPI.pushAsync(SystemEventType.COPY_FILE_ASSET, new Payload(file, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		return result;
     }
 
 	public boolean renameFile(File file, String newName, User user, boolean respectFrontendRoles) throws DotStateException,
@@ -604,7 +617,12 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
 			throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
 		}
 
-		return ffac.renameFile(file, newName);
+		boolean b = ffac.renameFile(file, newName);
+
+		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FILE_ASSET, new Payload(file, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+
+		return b;
 	}
 
 	public boolean moveFile(File file, Folder parent, User user, boolean respectFrontendRoles) throws DotStateException, DotDataException, DotSecurityException {
@@ -629,10 +647,10 @@ public class FileAPIImpl extends BaseWebAssetAPI implements FileAPI {
             throw new DotSecurityException( WebKeys.USER_PERMISSIONS_EXCEPTION );
         }
 
-        if ( parent != null ) {
-            return ffac.moveFile(file, parent);
-        } else {
-            return ffac.moveFile( file, host );
+		if ( parent != null ) {
+			return ffac.moveFile(file, parent);
+		} else {
+			return ffac.moveFile( file, host );
         }
 	}
 

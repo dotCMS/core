@@ -1,3 +1,4 @@
+
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
 <%@page import="com.dotcms.repackage.com.google.common.cache.Cache"%>
@@ -12,7 +13,7 @@
 <%
 try {
 	user = com.liferay.portal.util.PortalUtil.getUser(request);
-	if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", user)){
+	if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)){
 		throw new DotSecurityException("Invalid user accessing cachestats_guava.jsp - is user '" + user + "' logged in?");
 	}
 } catch (Exception e) {
@@ -87,14 +88,23 @@ MemoryMeter meter = new MemoryMeter();
 				}
 
 				boolean hasLoad = false;
-				CacheStats cacheStats = null;
-				if ( s.get("CacheStats") != null ) {
-					cacheStats = (CacheStats) s.get("CacheStats");
+				Object myStats = (Object) s.get("CacheStats");
+				if(myStats==null)continue;
+				CacheStats cacheStats = new CacheStats(0, 0, 0, 0, 0, 0);
+				if ( myStats instanceof CacheStats) {
+				    cacheStats = (CacheStats) myStats;
 					hasLoad = (cacheStats.loadCount() > 0);
 				}
-				Cache cache = null;
+				else if(myStats instanceof com.github.benmanes.caffeine.cache.stats.CacheStats){
+				    com.github.benmanes.caffeine.cache.stats.CacheStats cs=(com.github.benmanes.caffeine.cache.stats.CacheStats) myStats;
+				    cacheStats = new CacheStats(cs.hitCount(), cs.missCount(), cs.loadSuccessCount(), cs.loadFailureCount(), cs.totalLoadTime(), cs.evictionCount());
+				    hasLoad = true;
+				   
+				}
+				
+				Object cache = null;
 				if ( s.get("cache") != null ) {
-					cache = (Cache) s.get("cache");
+					cache =  s.get("cache");
 				}
 
 				String name = ((String) s.get("name")).toLowerCase();
@@ -181,7 +191,7 @@ MemoryMeter meter = new MemoryMeter();
 						<td <%=isDefault ? "style='color:silver;'":"" %>><%=configuredSizeStr%></td>
 		                <td <%=isDefault ? "style='color:silver;'":"" %>><%=memory%></td>
 		                <td <%=isDefault ? "style='color:silver;'":"" %>><%=disk%></td>
-		                <td <%=isDefault ? "style='color:silver;'":"" %>><%if(hasLoad){%><%= nf.format(cacheStats.loadCount()) %><%}else{%>-<%}%></td>
+		                <td <%=isDefault ? "style='color:silver;'":"" %>><%if(hasLoad){%><%= nf.format(cacheStats.hitCount() + cacheStats.missCount()) %><%}else{%>-<%}%></td>
 		                <td <%=isDefault ? "style='color:silver;'":"" %>><%if(hasLoad){%><%= nf.format(cacheStats.hitRate() * 100) %>%<%}else{%>-<%}%>  </td>
 		                <td <%=isDefault ? "style='color:silver;'":"" %>><%if(hasLoad){%><%= nf.format(cacheStats.averageLoadPenalty()/1000000) %> ms<%}else{%>-<%}%></td>
 		                <td <%=isDefault ? "style='color:silver;'":"" %>><%if(hasLoad){%><%= cacheStats.evictionCount() %><%}else{%>-<%}%></td>

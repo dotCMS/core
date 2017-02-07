@@ -1,7 +1,10 @@
 package com.dotcms.publisher.endpoint.business;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
+
+import com.dotcms.util.IntegrationTestInitService;
 
 import static com.dotcms.repackage.org.jgroups.util.Util.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -9,11 +12,15 @@ import static org.junit.Assert.assertTrue;
 
 public class PublishingEndPointFactoryImplTest {
 
-    private PublishingEndPointFactoryImpl publishingEndPointFactory;
+    private static PublishingEndPointFactoryImpl publishingEndPointFactory;
 
-    @Before
-    public void setup() {
-        publishingEndPointFactory = new PublishingEndPointFactoryImpl();
+    @BeforeClass
+    public static void setup() throws Exception {
+       
+    	//Setting web app environment
+       IntegrationTestInitService.getInstance().init();
+       
+       publishingEndPointFactory = new PublishingEndPointFactoryImpl();
     }
 
 

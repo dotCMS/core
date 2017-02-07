@@ -12,6 +12,11 @@ import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 
+import com.dotcms.api.system.event.*;
+import com.dotcms.repackage.org.exolab.castor.types.Date;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 
 /**
@@ -22,6 +27,20 @@ import com.dotmarketing.util.WebKeys;
  */
 public class SessionMonitor implements ServletRequestListener,
         HttpSessionAttributeListener, HttpSessionListener {
+
+
+    private final SystemEventsAPI systemEventsAPI;
+
+    public SessionMonitor() {
+
+        this (APILocator.getSystemEventsAPI());
+    }
+
+    public SessionMonitor(final SystemEventsAPI systemEventsAPI) {
+
+        this.systemEventsAPI = systemEventsAPI;
+    }
+
     
     // this will hold all logged in users
     private Map<String, String> sysUsers = new ConcurrentHashMap<String, String>();
@@ -67,7 +86,21 @@ public class SessionMonitor implements ServletRequestListener,
     public void attributeReplaced(HttpSessionBindingEvent event) {
     }
     
-    public void sessionCreated(HttpSessionEvent event) {
+    public void sessionCreated(final HttpSessionEvent event) {
+
+        /*final String userId = (String) event.getSession().getAttribute("USER_ID");
+        if (userId != null) {
+            try {
+
+                Logger.debug(this, "Triggering a session created event");
+
+                this.systemEventsAPI.push(new SystemEvent
+                        (SystemEventType.SESSION_CREATED, new Payload(new Date())));
+            } catch (DotDataException e) {
+
+                Logger.debug(this, "Could not sent the session created event" + e.getMessage(), e);
+            }
+        }*/
     }
     
     public void sessionDestroyed(HttpSessionEvent event) {
@@ -77,6 +110,18 @@ public class SessionMonitor implements ServletRequestListener,
             sysUsers.remove(id);
             userSessions.remove(id);
             sysUsersAddress.remove(id);
+
+            try {
+
+                Logger.debug(this, "Triggering a session destroyed event");
+
+                this.systemEventsAPI.push(new SystemEvent
+                        (SystemEventType.SESSION_DESTROYED, new Payload(
+                                new Long(System.currentTimeMillis()), Visibility.USER, userId)));
+            } catch (DotDataException e) {
+
+                Logger.debug(this, "Could not sent the session destroyed event" + e.getMessage(), e);
+            }
         }
     }
     

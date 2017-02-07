@@ -65,14 +65,14 @@ try {
 	 for(Layout layoutObj:layoutList) {
 		List<String> portletIdsForLayout=layoutObj.getPortletIds();
 		for(String portletId : portletIdsForLayout){
-		if (portletId.equals("EXT_USER_ADMIN")) {
-			userURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_USER_ADMIN&p_p_action=0";
-		}else if (portletId.equals("EXT_15")) {
-			pagesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_15&p_p_action=0";
-		}else if (portletId.equals("EXT_3")) {
-			filesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_3&p_p_action=0";
-		}else if (portletId.equals("EXT_11")) {
-			contentURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_11";
+		if (portletId.equals(PortletID.USERS)) {
+			userURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.USERS+"&p_p_action=0";
+		}else if (portletId.equals(PortletID.HTML_PAGES)) {
+			pagesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.HTML_PAGES+"&p_p_action=0";
+		}else if (portletId.equals(PortletID.FILES_LEGACY)) {
+			filesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.FILES_LEGACY+"&p_p_action=0";
+		}else if (portletId.equals(PortletID.CONTENT)) {
+			contentURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.CONTENT;
 		}
 	  }
 	}
@@ -789,7 +789,7 @@ try {
 	}
 
 	function editContent(contInode,structureInode){
-		 var URL = '<%=contentURL%>&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_EXT_11_cmd=edit&_EXT_11_selectedStructure={stInode}&inode={inode}&referer=<%=referer%>';
+		 var URL = '<%=contentURL%>&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=edit&_content_selectedStructure={stInode}&inode={inode}&referer=<%=referer%>';
 	     var href = dojo.replace(URL, { stInode:structureInode, inode: contInode})
 		 window.location=href;	
 	}
@@ -835,353 +835,361 @@ try {
 </script>
 
 <style>
-	.listingTable{margin-bottom:10px;}
+	.noChart{min-height: 200px;}
 	.urlWrapper{position:relative;}
 	.urlWrapper span{display:block;position:absolute;top:-9px;left:0;width:95%;overflow:hidden;white-space:nowrap;cursor:pointer;}
 </style>
 <% if(LicenseUtil.getLevel() > 199){ %>	
+
 <form id="fm" method="post">
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 <liferay:param name="box_title" value='<%= LanguageUtil.get(pageContext, "view-dashboard") %>' />
-
 <input name="<portlet:namespace />referer" type="hidden" value="<%=referer%>">
-
-<div class="buttonBoxRight" id="viewControle">
-	<button id="dayButton" iconClass="calDayIcon" dojoType="dijit.form.Button"  onClick="setStatsView('day');"><%=LanguageUtil.get(pageContext, "Day")%></button>
-	<button id="weekButton" iconClass="calWeekIcon" dojoType="dijit.form.Button"  onClick="setStatsView('week');"><%=LanguageUtil.get(pageContext, "Week")%></button>
-	<button id="monthButton" iconClass="calMonthIcon" dojoType="dijit.form.Button"  onClick="setStatsView('month');"><%=LanguageUtil.get(pageContext, "Month")%></button> 
-</div>
-			
-
-			
-<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
-
-<!-- Statistics Tabs -->
-<div id="hostStatisticsTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Statistics") %>">
-	<div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer" style="height:1000px;">
 	
-	<!-- START Left Column Stats -->
-		<div dojoType="dijit.layout.ContentPane" splitter="true" region="center">
-		
-		
-			<div style="margin:0 10px 0 0;">
-			<div class="dijitLayoutContainer roundBox" style="margin-bottom:10px;">
-					<div style="float:right">
-						<button id="workstreamBtn" iconClass="workStreamIcon" dojoType="dijit.form.Button"  onclick="viewWorkStream('<%=content.getIdentifier()%>');">
-							<%=LanguageUtil.get(pageContext, "Work-Stream")%>
-						</button> 
-					</div>
-				<div style="margin:5px 10px 15px 10px;"><b><%=content.get("title") %></b></div>
+<div class="portlet-main">
+	
+	<!-- START TOOL BAR -->
+	<div class="portlet-toolbar">
+		<div class="portlet-toolbar__actions-primary"></div>
+		<div class="portlet-toolbar__info"></div>
+        <div class="portlet-toolbar__actions-secondary">
+        	<button id="workstreamBtn" iconClass="workStreamIcon" dojoType="dijit.form.Button"  onclick="viewWorkStream('<%=content.getIdentifier()%>');">
+				<%=LanguageUtil.get(pageContext, "Work-Stream")%>
+			</button>
+        </div>
+	</div>
+	<!-- END TOOL BAR -->
+	
+	<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
 
-				<!-- Graph -->
-				<div id="lineWrapper" style="border:0px solid #ccc;margin-bottom:10px;"></div> 
+		<!-- Statistics Tabs -->
+		<div id="hostStatisticsTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Statistics") %>">
+			<div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer" style="height:1000px;">
+			
+			<!-- START Left Column Stats -->
+				<div dojoType="dijit.layout.ContentPane" splitter="true" region="center">
 				
-				<!-- Overview -->
-				<div class="yui-gb">
-					<div class="yui-u first">
-						<table class="listingTable">
-							<tr>
-								<td width="15%" bgcolor="#ECECEC"><span><b><%= LanguageUtil.get(pageContext, "Visits") %></b></span></td>
-								<td width="15%" id="visits"> </td>
-							</tr>
-							<tr>
-								<td bgcolor="#ECECEC"><span><b><%= LanguageUtil.get(pageContext, "Page-Views") %></b></span></td>
-								<td id="pageViews"> </td>
-							</tr>
-						</table>
-					</div>
-					<div class="yui-u">
-						<table class="listingTable">
-							<tr>	
-								<td width="15%" bgcolor="#ECECEC"><span><b><%= LanguageUtil.get(pageContext, "Unique-Visitors") %></b></span></td>
-								<td width="15%" id="uniqueVisitors"> </td>
-							</tr>
-							<tr>
-								<td bgcolor="#ECECEC"><span><b><%= LanguageUtil.get(pageContext, "New-Visits") %></b></span></td>
-								<td id="newVisits"> </td>
-							</tr>
-						</table>
-					</div>
-					<div class="yui-u">
-						<table class="listingTable">
-							<tr>	
-								<td width="15%" bgcolor="#ECECEC"><span><b><%= LanguageUtil.get(pageContext, "Bounce-Rate") %></b></span></td>
-								<td width="15%" id="bounceRate"> </td>
-							</tr>
-							<tr>
-								<td bgcolor="#ECECEC"><span><b><%= LanguageUtil.get(pageContext, "Time-on-Site") %></b></span></td>
-								<td id="timeOnSite"> </td>
-							</tr>
-						</table>
-					</div>
+				
+				<!-- START Stats -->	
+					<div class="dijitLayoutContainer roundBox">
+						<div style="float:right">
+					<div id="viewControle">
+						<button id="dayButton" iconClass="calDayIcon" dojoType="dijit.form.Button"  onClick="setStatsView('day');"><%=LanguageUtil.get(pageContext, "Day")%></button>
+						<button id="weekButton" iconClass="calWeekIcon" dojoType="dijit.form.Button"  onClick="setStatsView('week');"><%=LanguageUtil.get(pageContext, "Week")%></button>
+						<button id="monthButton" iconClass="calMonthIcon" dojoType="dijit.form.Button"  onClick="setStatsView('month');"><%=LanguageUtil.get(pageContext, "Month")%></button> 
+					</div> 
 				</div>
-
-					<div class="yui-g" style="margin-top:15px;">
-						<div class="yui-u first">
-							
-							<!-- Top Pages -->
-							<table class="listingTable">
-								<thead>
+						<div style="margin:5px 10px 15px 10px;"><b><%=content.get("title") %></b></div>
+		
+						<!-- Graph -->
+						<div id="lineWrapper" style="border:0px solid #ccc;margin-bottom:10px;"></div> 
+						
+						<!-- Overview -->
+						<div class="yui-gb">
+							<div class="yui-u first">
+								<table class="listingTable">
 									<tr>
-										<th nowrap colspan="2"><b><%= LanguageUtil.get(pageContext, "Top-Pages") %> </b>&nbsp; <b><a href="javascript:viewTopPages(1, '');"><%= LanguageUtil.get(pageContext, "view") %></a></b></th>
+										<td width="15%" bgcolor="#ECECEC"><span><b><%= LanguageUtil.get(pageContext, "Visits") %></b></span></td>
+										<td width="15%" id="visits"> </td>
 									</tr>
-								</thead>   
-								<tbody id="topPages"></tbody>
-							</table>
-							
-							<!-- Top Content -->
+									<tr>
+										<td bgcolor="#ECECEC"><span><b><%= LanguageUtil.get(pageContext, "Page-Views") %></b></span></td>
+										<td id="pageViews"> </td>
+									</tr>
+								</table>
+							</div>
+							<div class="yui-u">
+								<table class="listingTable">
+									<tr>	
+										<td width="15%" bgcolor="#ECECEC"><span><b><%= LanguageUtil.get(pageContext, "Unique-Visitors") %></b></span></td>
+										<td width="15%" id="uniqueVisitors"> </td>
+									</tr>
+									<tr>
+										<td bgcolor="#ECECEC"><span><b><%= LanguageUtil.get(pageContext, "New-Visits") %></b></span></td>
+										<td id="newVisits"> </td>
+									</tr>
+								</table>
+							</div>
+							<div class="yui-u">
+								<table class="listingTable">
+									<tr>	
+										<td width="15%" bgcolor="#ECECEC"><span><b><%= LanguageUtil.get(pageContext, "Bounce-Rate") %></b></span></td>
+										<td width="15%" id="bounceRate"> </td>
+									</tr>
+									<tr>
+										<td bgcolor="#ECECEC"><span><b><%= LanguageUtil.get(pageContext, "Time-on-Site") %></b></span></td>
+										<td id="timeOnSite"> </td>
+									</tr>
+								</table>
+							</div>
+						</div>
+		
+							<div class="yui-g" style="margin-top:15px;">
+								<div class="yui-u first">
+									
+									<!-- Top Pages -->
+									<table class="listingTable">
+										<thead>
+											<tr>
+												<th nowrap colspan="2"><b><%= LanguageUtil.get(pageContext, "Top-Pages") %> </b>&nbsp; <b><a href="javascript:viewTopPages(1, '');"><%= LanguageUtil.get(pageContext, "view") %></a></b></th>
+											</tr>
+										</thead>   
+										<tbody id="topPages"></tbody>
+									</table>
+									
+									<!-- Top Content -->
+									<table class="listingTable" style="margin-top:15px;">
+										<thead>
+											<tr>
+												<th nowrap colspan="2"><b><%= LanguageUtil.get(pageContext, "Top-Content") %></b>&nbsp; <b><a href="javascript:viewTopContent(1, '');"><%= LanguageUtil.get(pageContext, "view") %></a></b></th>
+											</tr>
+										</thead>   
+										<tbody id="topContent"></tbody>
+									</table>
+									
+								</div>
+								<div class="yui-u" id="topReferersDiv">
+									
+									<!-- Top Referers -->
+									<table class="listingTable">
+										<thead>
+											<tr>
+												<th nowrap colspan="2"><b><%= LanguageUtil.get(pageContext, "Top-Referers") %></b>&nbsp; <b><a href="javascript:viewTopReferers(1,'');"><%= LanguageUtil.get(pageContext, "view") %></a></b></th>
+											</tr>
+										</thead>   
+										<tbody id="topReferers"></tbody>
+									</table>
+									
+								</div>
+							</div>
+		
+						
 							<table class="listingTable" style="margin-top:15px;">
 								<thead>
 									<tr>
-										<th nowrap colspan="2"><b><%= LanguageUtil.get(pageContext, "Top-Content") %></b>&nbsp; <b><a href="javascript:viewTopContent(1, '');"><%= LanguageUtil.get(pageContext, "view") %></a></b></th>
+										<th nowrap width="50%"><b><%= LanguageUtil.get(pageContext, "404") %>&nbsp; <a href="javascript:view404(1,'');"><%= LanguageUtil.get(pageContext, "view") %></a></th>
+										<th nowrap width="50%"><%= LanguageUtil.get(pageContext, "Referer") %> </th>
+										<th nowrap align="right" width="150">
+											<input type="checkbox" dojoType="dijit.form.CheckBox" name="showIgnoredCheckbox" id="showIgnoredCheckbox" onchange="refresh404List();">
+											<%= LanguageUtil.get(pageContext, "Show-Ignored") %>
+										</th>
 									</tr>
-								</thead>   
-								<tbody id="topContent"></tbody>
+								</thead> 
+								<tbody id="summary404s"></tbody>
 							</table>
-							
 						</div>
-						<div class="yui-u" id="topReferersDiv">
-							
-							<!-- Top Referers -->
-							<table class="listingTable">
-								<thead>
-									<tr>
-										<th nowrap colspan="2"><b><%= LanguageUtil.get(pageContext, "Top-Referers") %></b>&nbsp; <b><a href="javascript:viewTopReferers(1,'');"><%= LanguageUtil.get(pageContext, "view") %></a></b></th>
-									</tr>
-								</thead>   
-								<tbody id="topReferers"></tbody>
-							</table>
-							
-						</div>
-					</div>
-
-				
-					<table class="listingTable" style="margin-top:15px;">
-						<thead>
-							<tr>
-								<th nowrap width="50%"><b><%= LanguageUtil.get(pageContext, "404") %>&nbsp; <a href="javascript:view404(1,'');"><%= LanguageUtil.get(pageContext, "view") %></a></th>
-								<th nowrap width="50%"><%= LanguageUtil.get(pageContext, "Referer") %> </th>
-								<th nowrap align="right" width="150">
-									<input type="checkbox" dojoType="dijit.form.CheckBox" name="showIgnoredCheckbox" id="showIgnoredCheckbox" onchange="refresh404List();">
-									<%= LanguageUtil.get(pageContext, "Show-Ignored") %>
-								</th>
-							</tr>
-						</thead> 
-						<tbody id="summary404s"></tbody>
-					</table>
 				</div>
-				
-			</div>
-		</div>
-	<!-- END Left Column Stats -->
-	
-	
-	<!-- START Right Column stats -->
-		<div dojoType="dijit.layout.ContentPane" splitter="false" region="right" style="width: 200px;overflow:auto;">
+			<!-- END Left Column Stats -->
 			
-			<div id="rightColumnDiv">
-				<div class="dijitLayoutContainer roundBox">
-					<div style="margin:5px 10px 15px 10px;"><b><%=LanguageUtil.get(pageContext, "Numbers")%></b></div>
-					<div class="siteOverview">
-						<span><%= numberFormat.format(totalPages) %></span>
-						<a href="javascript:viewPages();"><%=LanguageUtil.get(pageContext, "Pages")%></a>
-					</div>
-					<div class="siteOverview">
-						<span><%= numberFormat.format(totalFiles) %></span>
-						<a href="javascript:viewFiles();"><%=LanguageUtil.get(pageContext, "Files")%></a>
-					</div>
-					<div class="siteOverview">
-						<span><%= numberFormat.format(totalContent) %></span>
-						<a href="javascript:viewContent();"><%=LanguageUtil.get(pageContext, "Content-Items")%></a>
-					</div>
-					<div class="siteOverview">	
-						<span><%= numberFormat.format(userCount) %></span>
-						<a href="javascript:viewUsers();"><%=LanguageUtil.get(pageContext, "Users")%></a>
-					</div>
-
-				</div>
-				<div class="dijitLayoutContainer roundBox" style="margin-top:20px;">
-					<div style="margin:5px 10px 15px 10px;"><b><%= LanguageUtil.get(pageContext, "Referers") %></b></div>
-					<div id="pieWrapper"></div>
-					<div id="pieChartLegend" class="chartLegend"></div>
-				</div>
-			</div>
-		</div>
-	<!-- END Right Column stats -->
-	
-	</div>	
-</div>
-<!-- Statistics Tabs -->
-	
-<div id="listingWrapper" dojoType="dijit.Dialog" style="display:none;height:430px;width:700px;vertical-align: middle;overflow: hidden;padding-top:15px\9;" draggable="true" >
-	<div style="margin:-34px 0 15px 0;">
-		<span id="listTitle"></span>
-	</div>
-	<div style="height:340px;width:660px;overflow-x:hidden;overflow-y:auto;">
-		<table class="listingTable">
-			<thead id="listingTableHeader"></thead> 
-			<tbody id="summaryList"></tbody>
-		</table>
-	</div>
-	<div id="footer" style="text-align:center;"></div>
-</div>  
-
-
-<!-- Properties Tabs -->
-<div id="hostPropertiesTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Properties") %>">
- <% if(content != null){ %>
-      <%@ include file="/html/portlet/ext/dashboard/host_properties_tab_inc.jsp" %>
- <%} %>	
-</div>
-<!-- Properties Tabs -->
-
-<!-- Related content tabs -->
-     <% if(!relationships.isEmpty()){
-    	Structure structure = null;
-    	boolean isParent = false;
-    	ContentletAPI contentletService = APILocator.getContentletAPI();
-    	Contentlet cont = content;
-    	com.dotmarketing.portlets.structure.model.ContentletRelationships cRelationships = contentletService.getAllRelationships(cont); 
-    	List<com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords> relationshipRecords = cRelationships.getRelationshipsRecords();
-        for(Relationship rel : relationships){
-        	  if(rel.getChildStructure().getInode().equals(cont.getStructure().getInode())){
-	        		structure = rel.getParentStructure();
-	        		isParent = true;
-	        	}else if(rel.getParentStructure().getInode().equals(cont.getStructure().getInode())){
-	        		structure = rel.getChildStructure();
-	        		isParent = false;
-	        	}
-			  
-        	
-
-			boolean noRecords = true;
-			int nFields = 3;
-			if(!relationshipRecords.isEmpty()){%>
-			<%for(com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords contRecords : relationshipRecords){%>
-			<% if(contRecords.getRelationship().equals(rel)){ %>
-			<%if(!contRecords.getRecords().isEmpty()){ 
-			  noRecords = false;
-			  if(contRecords.getRecords().size()==1){
-				 content = contRecords.getRecords().get(0); 
-				 if(content != null){ 			 
-				 %>
-				    <div id="relationship<%= rel.getInode()%>" dojoType="dijit.layout.ContentPane" title="<%= content.getStructure().getName() %>">
-        	          <div>
-                      <%@ include file="/html/portlet/ext/dashboard/rel_content_properties_tab_inc.jsp" %>
-                <%} 	
-				  
-			  }else{
-				  if(UtilMethods.isSet(structure.getName())){%>
-        	
-        	 <div id="relationship<%= rel.getInode()%>" dojoType="dijit.layout.ContentPane" title="<%= structure.getName() %>">
-        	 <div>
-        	   <table style="width: 100%;" class="listingTable" >
-				 <thead>
-					<tr class="beta">
-					<% 
-						if(langs.size() > 1) {
-					%>
-						<th width="20"><B><font class="beta" size="2"><%= LanguageUtil.get(pageContext, "Language") %></font></B></th>
-						<th width="20"><B><font class="beta" size="2"></font></B></th>
-					<% 
-						}
-			           boolean indexed = false;
-			           boolean hasListedFields = false;
-			           List<Field> targetFields = structure.getFields();
-			           for (Field f : targetFields) {
-				         if (f.isListed()) {
-				    	   hasListedFields = true;
-					       indexed = true;
-					       nFields++;
-	                 %>
-						<th colspan="<%= nFields %>"><B><font class="beta" size="2"><%= f.getFieldName() %> </font></B>
-						</th>
-	                 <%
-				      }
-			       }
+			
+			<!-- START Right Column stats -->
+				<div dojoType="dijit.layout.ContentPane" splitter="false" region="right" style="width: 200px;overflow:auto;">
+					
+					<div id="rightColumnDiv">
+						<div class="dijitLayoutContainer roundBox">
+							<div style="margin:5px 10px 15px 10px;"><b><%=LanguageUtil.get(pageContext, "Numbers")%></b></div>
+							<div class="siteOverview">
+								<span><%= numberFormat.format(totalPages) %></span>
+								<a href="javascript:viewPages();"><%=LanguageUtil.get(pageContext, "Pages")%></a>
+							</div>
+							<div class="siteOverview">
+								<span><%= numberFormat.format(totalFiles) %></span>
+								<a href="javascript:viewFiles();"><%=LanguageUtil.get(pageContext, "Files")%></a>
+							</div>
+							<div class="siteOverview">
+								<span><%= numberFormat.format(totalContent) %></span>
+								<a href="javascript:viewContent();"><%=LanguageUtil.get(pageContext, "Content-Items")%></a>
+							</div>
+							<div class="siteOverview">	
+								<span><%= numberFormat.format(userCount) %></span>
+								<a href="javascript:viewUsers();"><%=LanguageUtil.get(pageContext, "Users")%></a>
+							</div>
 		
-			       if (!indexed) {%>
-						<th><B><font class="beta" size="2"> <%= LanguageUtil.get(pageContext, "No-Searchable-Fields-Found-Showing-the-Identity-Number") %> </font></B></th>
-	              <%}%>
-						
-				</tr>
-			</thead>
-			<tbody id="<%= rel.getInode()%>Table">
-			<%for(Contentlet con : contRecords.getRecords()){ %>
-			<% Language language = langAPI.getLanguage(cont.getLanguageId()); %>
-			 <tr> 
-			   <td>
-			     <img style="vertical-align: middle;" src="/html/images/languages/<%= langAPI.getLanguageCodeAndCountry(con.getLanguageId(),null) %>.gif" alt="'<%= language.getLanguage() %>'">
-			   </td>
-			   <td>
-			    <%if(con.isLive()){ %>
-			       <span class="liveIcon"></span>
-			    <%}else if(con.isArchived()){ %>
-			       <span class="archivedIcon"></span>
-			    <%}else if(con.isWorking()){ %>
-			      <span class="workingIcon"></span>
-			    <%} %>
-			   </td>
-				<%  
-				   int nFields2= 3;
-				   boolean isFirst = true;
-				   for (Field f : targetFields) {
-					String fieldValue = "";
-					if (f.isListed()) {
-						nFields2++;
-						String fieldName = f.getFieldName();
-						ContentletAPI rconAPI = APILocator.getContentletAPI(); 
-					    Object fieldValueObj = rconAPI.getFieldValue(con, f);
-						if (fieldValueObj != null) {
-							if (fieldValueObj instanceof java.util.Date) {
-								 fieldValue = modDateFormat.format(fieldValueObj);
-							} else if (fieldValueObj instanceof java.sql.Timestamp){
-								 java.util.Date fieldDate = new java.util.Date(((java.sql.Timestamp)fieldValueObj).getTime());
-								 fieldValue = modDateFormat.format(fieldDate);
-							} else {
-								 fieldValue = fieldValueObj.toString();
-								}
-							}
-						fieldValue = fieldValue.replaceAll("'","\\\\'").replaceAll("\n","").replaceAll("\r","").trim();
-						%>
-						<%if(isFirst){ %>
-						   <td colspan="<%= nFields2 %>">
-				              <a href="javascript:editContent('<%= con.getInode()%>','<%= con.getStructure().getInode() %>')"><%= fieldValue %></a>
-				           </td>	
-						<%}else{ %>
-						   <td colspan="<%= nFields2 %>">
-				              <%= fieldValue %>
-				           </td>	
-						<%} %>
-				     
-				    <% isFirst = false;  
-				    }%>			
-				<%
-				 } %>
-		    </tr>
-			<% } }
-			   }
-			  }
-			 } %>
-			</tbody>
-			<%} %>
-			<% if(noRecords){ %>
-			 <div id="relationship<%= rel.getInode()%>" dojoType="dijit.layout.ContentPane" title="<%= structure.getName() %>">
-        	 <div>
-			<tbody id="<%= rel.getInode()%>TableNoResults">
-			   <tr class="alternate_1">
-				  <td colspan="<%= nFields %>" align="center"><div class="noResultsMessage"><b><%= LanguageUtil.get(pageContext, "No-Related-Content") %></b></div></td>
-			   </tr>
-			</tbody>
-			<%} %>
-		</table>
+						</div>
+						<div class="dijitLayoutContainer roundBox" style="margin-top:20px;">
+							<div style="margin:5px 10px 15px 10px;"><b><%= LanguageUtil.get(pageContext, "Referers") %></b></div>
+							<div id="pieWrapper"></div>
+							<div id="pieChartLegend" class="chartLegend"></div>
+						</div>
+					</div>
+				</div>
+			<!-- END Right Column stats -->
+			
+			</div>	
 		</div>
-      </div>
-     <%  } 
-        }
-      } %>
-<!-- Related content tabs -->
+		<!-- Statistics Tabs -->
+	
+		<div id="listingWrapper" dojoType="dijit.Dialog" style="display:none;height:430px;width:700px;vertical-align: middle;overflow: hidden;padding-top:15px\9;" draggable="true" >
+			<div style="margin:-34px 0 15px 0;">
+				<span id="listTitle"></span>
+			</div>
+			<div style="height:340px;width:660px;overflow-x:hidden;overflow-y:auto;">
+				<table class="listingTable">
+					<thead id="listingTableHeader"></thead> 
+					<tbody id="summaryList"></tbody>
+				</table>
+			</div>
+			<div id="footer" style="text-align:center;"></div>
+		</div>  
 
+
+	<!-- Properties Tabs -->
+	<div id="hostPropertiesTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Properties") %>">
+		<% if(content != null){ %>
+			<%@ include file="/html/portlet/ext/dashboard/host_properties_tab_inc.jsp" %>
+		<%} %>
+	</div>
+	<!-- Properties Tabs -->
+	
+	<!-- Related content tabs -->
+	     <% if(!relationships.isEmpty()){
+	    	Structure structure = null;
+	    	boolean isParent = false;
+	    	ContentletAPI contentletService = APILocator.getContentletAPI();
+	    	Contentlet cont = content;
+	    	com.dotmarketing.portlets.structure.model.ContentletRelationships cRelationships = contentletService.getAllRelationships(cont); 
+	    	List<com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords> relationshipRecords = cRelationships.getRelationshipsRecords();
+	        for(Relationship rel : relationships){
+	        	  if(rel.getChildStructure().getInode().equals(cont.getStructure().getInode())){
+		        		structure = rel.getParentStructure();
+		        		isParent = true;
+		        	}else if(rel.getParentStructure().getInode().equals(cont.getStructure().getInode())){
+		        		structure = rel.getChildStructure();
+		        		isParent = false;
+		        	}
+				  
+	        	
+	
+				boolean noRecords = true;
+				int nFields = 3;
+				if(!relationshipRecords.isEmpty()){%>
+				<%for(com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords contRecords : relationshipRecords){%>
+				<% if(contRecords.getRelationship().equals(rel)){ %>
+				<%if(!contRecords.getRecords().isEmpty()){ 
+				  noRecords = false;
+				  if(contRecords.getRecords().size()==1){
+					 content = contRecords.getRecords().get(0); 
+					 if(content != null){ 			 
+					 %>
+					    <div id="relationship<%= rel.getInode()%>" dojoType="dijit.layout.ContentPane" title="<%= content.getStructure().getName() %>">
+	        	          <div>
+	                      <%@ include file="/html/portlet/ext/dashboard/rel_content_properties_tab_inc.jsp" %>
+	                <%} 	
+					  
+				  }else{
+					  if(UtilMethods.isSet(structure.getName())){%>
+	        	
+	        	 <div id="relationship<%= rel.getInode()%>" dojoType="dijit.layout.ContentPane" title="<%= structure.getName() %>">
+	        	 <div>
+	        	   <table style="width: 100%;" class="listingTable" >
+					 <thead>
+						<tr class="beta">
+						<% 
+							if(langs.size() > 1) {
+						%>
+							<th width="20"><B><font class="beta" size="2"><%= LanguageUtil.get(pageContext, "Language") %></font></B></th>
+							<th width="20"><B><font class="beta" size="2"></font></B></th>
+						<% 
+							}
+				           boolean indexed = false;
+				           boolean hasListedFields = false;
+				           List<Field> targetFields = structure.getFields();
+				           for (Field f : targetFields) {
+					         if (f.isListed()) {
+					    	   hasListedFields = true;
+						       indexed = true;
+						       nFields++;
+		                 %>
+							<th colspan="<%= nFields %>"><B><font class="beta" size="2"><%= f.getFieldName() %> </font></B>
+							</th>
+		                 <%
+					      }
+				       }
+			
+				       if (!indexed) {%>
+							<th><B><font class="beta" size="2"> <%= LanguageUtil.get(pageContext, "No-Searchable-Fields-Found-Showing-the-Identity-Number") %> </font></B></th>
+		              <%}%>
+							
+					</tr>
+				</thead>
+				<tbody id="<%= rel.getInode()%>Table">
+				<%for(Contentlet con : contRecords.getRecords()){ %>
+				<% Language language = langAPI.getLanguage(cont.getLanguageId()); %>
+				 <tr> 
+				   <td>
+				     <img style="vertical-align: middle;" src="/html/images/languages/<%= langAPI.getLanguageCodeAndCountry(con.getLanguageId(),null) %>.gif" alt="'<%= language.getLanguage() %>'">
+				   </td>
+				   <td>
+				    <%if(con.isLive()){ %>
+				       <span class="liveIcon"></span>
+				    <%}else if(con.isArchived()){ %>
+				       <span class="archivedIcon"></span>
+				    <%}else if(con.isWorking()){ %>
+				      <span class="workingIcon"></span>
+				    <%} %>
+				   </td>
+					<%  
+					   int nFields2= 3;
+					   boolean isFirst = true;
+					   for (Field f : targetFields) {
+						String fieldValue = "";
+						if (f.isListed()) {
+							nFields2++;
+							String fieldName = f.getFieldName();
+							ContentletAPI rconAPI = APILocator.getContentletAPI(); 
+						    Object fieldValueObj = rconAPI.getFieldValue(con, f);
+							if (fieldValueObj != null) {
+								if (fieldValueObj instanceof java.util.Date) {
+									 fieldValue = modDateFormat.format(fieldValueObj);
+								} else if (fieldValueObj instanceof java.sql.Timestamp){
+									 java.util.Date fieldDate = new java.util.Date(((java.sql.Timestamp)fieldValueObj).getTime());
+									 fieldValue = modDateFormat.format(fieldDate);
+								} else {
+									 fieldValue = fieldValueObj.toString();
+									}
+								}
+							fieldValue = fieldValue.replaceAll("'","\\\\'").replaceAll("\n","").replaceAll("\r","").trim();
+							%>
+							<%if(isFirst){ %>
+							   <td colspan="<%= nFields2 %>">
+					              <a href="javascript:editContent('<%= con.getInode()%>','<%= con.getStructure().getInode() %>')"><%= fieldValue %></a>
+					           </td>	
+							<%}else{ %>
+							   <td colspan="<%= nFields2 %>">
+					              <%= fieldValue %>
+					           </td>	
+							<%} %>
+					     
+					    <% isFirst = false;  
+					    }%>			
+					<%
+					 } %>
+			    </tr>
+				<% } }
+				   }
+				  }
+				 } %>
+				</tbody>
+				<%} %>
+				<% if(noRecords){ %>
+				 <div id="relationship<%= rel.getInode()%>" dojoType="dijit.layout.ContentPane" title="<%= structure.getName() %>">
+	        	 <div>
+				<tbody id="<%= rel.getInode()%>TableNoResults">
+				   <tr class="alternate_1">
+					  <td colspan="<%= nFields %>" align="center"><div class="noResultsMessage"><b><%= LanguageUtil.get(pageContext, "No-Related-Content") %></b></div></td>
+				   </tr>
+				</tbody>
+				<%} %>
+			</table>
+			</div>
+	      </div>
+	     <%  } 
+	        }
+	      } %>
+	<!-- Related content tabs -->
+	
+	</div>
+	
 </div>
 
 

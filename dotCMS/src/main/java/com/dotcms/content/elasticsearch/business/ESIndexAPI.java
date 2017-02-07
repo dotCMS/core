@@ -1,5 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.util.DotPreconditions.checkArgument;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 import java.io.BufferedReader;
@@ -8,8 +9,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -17,24 +22,27 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.ZipException;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotcms.repackage.org.python.modules.synchronize;
-
-import org.elasticsearch.common.collect.ImmutableOpenMap;
-import org.elasticsearch.common.hppc.cursors.ObjectCursor;
-import com.dotmarketing.util.*;
 import org.apache.tools.zip.ZipEntry;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterIndexHealth;
+import org.elasticsearch.action.admin.cluster.repositories.delete.DeleteRepositoryResponse;
+import org.elasticsearch.action.admin.cluster.repositories.put.PutRepositoryResponse;
+import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
+import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsRequest;
+import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsResponse;
+import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotRequest;
+import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotResponse;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.close.CloseIndexRequest;
@@ -63,16 +71,34 @@ import org.elasticsearch.cluster.metadata.AliasMetaData;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.IndexMetaData.State;
 import org.elasticsearch.cluster.metadata.MetaData;
+import org.elasticsearch.cluster.metadata.RepositoryMetaData;
+import org.elasticsearch.common.collect.ImmutableList;
+import org.elasticsearch.common.collect.ImmutableOpenMap;
+import org.elasticsearch.common.hppc.cursors.ObjectCursor;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.snapshots.SnapshotInfo;
 
-import com.dotcms.cluster.bean.Server;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
+import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.ZipUtil;
 
 public class ESIndexAPI {
 
@@ -81,8 +107,12 @@ public class ESIndexAPI {
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
     private  final int DEFAULT_HEARTBEAT_TIMEOUT = 1800; // 1800 seconds = 30 mins
 
-	private  ESClient esclient = new ESClient();
-	private  ESContentletIndexAPI iapi = new ESContentletIndexAPI();
+    public static final String BACKUP_REPOSITORY = "backup";
+    private final String REPOSITORY_PATH = "es.path.repo";
+
+	final private ESClient esclient;
+	final private ESContentletIndexAPI iapi;
+	final private ESIndexHelper esIndexHelper;
 
 	public enum Status { ACTIVE("active"), INACTIVE("inactive"), PROCESSING("processing");
 		private final String status;
@@ -95,6 +125,19 @@ public class ESIndexAPI {
 			return status;
 		}
 	};
+
+	public ESIndexAPI(){
+		this.esclient = new ESClient();
+		this.iapi = new ESContentletIndexAPI();
+		this.esIndexHelper = ESIndexHelper.INSTANCE;
+	}
+
+	@VisibleForTesting
+	protected ESIndexAPI(ESClient esclient, ESContentletIndexAPI iapi, ESIndexHelper esIndexHelper){
+		this.esclient = esclient;
+		this.iapi = iapi;
+		this.esIndexHelper = esIndexHelper;
+	}
 
     /**
      * returns all indicies and status
@@ -346,6 +389,21 @@ public class ESIndexAPI {
 		Client client = esclient.getClient();
 		Map<String, IndexStatus> indices = client.admin().indices().status(new IndicesStatusRequest()).actionGet().getIndices();
 		return indices.keySet();
+	}
+
+	/**
+	 * Returns close status of an index
+	 * @return
+	 */
+	public boolean isIndexClosed(String index) {
+		Client client = esclient.getClient();
+		ImmutableOpenMap<String,IndexMetaData> indices = client.admin().cluster()
+			    .prepareState().get().getState()
+			    .getMetaData().getIndices();
+		IndexMetaData indexMetaData = indices.get(index);
+		if(indexMetaData != null)
+			return indexMetaData.getState() == State.CLOSE;
+		return true;
 	}
 
 	/**
@@ -694,7 +752,7 @@ public class ESIndexAPI {
     public Map<String,String> getIndexAlias(String[] indexNames) {
         Map<String,String> alias=new HashMap<String,String>();
         try{
-            Client client=new ESClient().getClient();
+            Client client = esclient.getClient();
             ClusterStateRequest clusterStateRequest = Requests.clusterStateRequest()
                     .routingTable(true)
                     .nodes( true )
@@ -771,4 +829,366 @@ public class ESIndexAPI {
 		else return Status.INACTIVE;
 
     }
+
+	/**
+	 * Creates a snapshot zip file using the index and creating a repository on
+	 * the es.path.repo location. This file structure will remain on the file system.
+	 * The snapshot name is usually the same as the index name.
+	 *
+	 * @param repositoryName
+	 *            repository name
+	 * @param snapshotName
+	 *            snapshot name
+	 * @param indexName
+	 *            index name
+	 * @return
+	 *            zip file with the repository and snapshot
+	 * @throws IllegalArgumentException
+	 *            for invalid repository and snapshot names
+	 * @throws IOException
+	 *            for problems writing the files to the repository path
+	 */
+	public File createSnapshot(String repositoryName, String snapshotName, String indexName)
+			throws IOException, IllegalArgumentException, DotStateException, ElasticsearchException {
+		checkArgument(snapshotName!=null,"There is no valid snapshot name.");
+		checkArgument(indexName!=null,"There is no valid index name.");
+		Client client = esclient.getClient();
+		String fileName = indexName + "_" + DateUtil.format(new Date(), "yyyy-MM-dd_hh-mm-ss");
+		File toFile = null;
+		// creates specific backup path (if it shouldn't exist)
+		toFile = new File(
+				Config.getStringProperty(REPOSITORY_PATH, ConfigUtils.getBackupPath() + File.separator + "backup_repo"));
+		if (!toFile.exists()) {
+			toFile.mkdirs();
+		}
+		// initial repository under the complete path
+		createRepository(toFile.getAbsolutePath(), repositoryName, true);
+		// if the snapshot exists on the repository
+		if (isSnapshotExist(repositoryName, snapshotName)) {
+			Logger.warn(this.getClass(), snapshotName + " snapshot already exists");
+		} else {
+			CreateSnapshotResponse response = client.admin().cluster()
+					.prepareCreateSnapshot(repositoryName, snapshotName).setWaitForCompletion(true)
+					.setIndices(indexName).get();
+			if (response.status().equals(RestStatus.OK)) {
+				Logger.debug(this.getClass(), "Snapshot was created:" + snapshotName);
+			} else {
+				Logger.error(this.getClass(), response.status().toString());
+				throw new ElasticsearchException("Could not create snapshot");
+			}
+		}
+		// this will be the zip file using the same name of the directory path
+
+		File toZipFile = new File(toFile.getParent() + File.separator + fileName + ".zip");
+		try (ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(toZipFile))) {
+			ZipUtil.zipDirectory(toFile.getAbsolutePath(), zipOut);
+			return toZipFile;
+		}
+	}
+
+	/**
+	 * Restores snapshot validating that such snapshot name exists on the
+	 * repository
+	 *
+	 * @param repositoryName
+	 *            Repository name
+	 * @param snapshotName
+	 *            Snapshot name, most exists on the repository
+	 * @return Is true if the snapshot was restored
+	 * @throws InterruptedException
+	 *             if the current thread was interrupted while waiting
+	 * @throws ExecutionException
+	 *             if the computation threw an exception
+	 */
+	private boolean restoreSnapshot(String repositoryName, String snapshotName)
+			throws InterruptedException, ExecutionException {
+		Client client = esclient.getClient();
+		if (isRepositoryExist(repositoryName) && isSnapshotExist(repositoryName, snapshotName)) {
+			GetSnapshotsRequest getSnapshotsRequest = new GetSnapshotsRequest(repositoryName);
+			GetSnapshotsResponse getSnapshotsResponse = client.admin().cluster().getSnapshots(getSnapshotsRequest).get();
+			final ImmutableList<SnapshotInfo> snapshots = getSnapshotsResponse.getSnapshots();
+			for(SnapshotInfo snapshot: snapshots){
+				ImmutableList<String> indices = snapshot.indices();
+				for(String index: indices){
+					if(!isIndexClosed(index)){
+						throw new ElasticsearchException("Index \"" + index + "\"is not closed and can not be restored");
+					}
+				}
+			}
+			RestoreSnapshotRequest restoreSnapshotRequest = new RestoreSnapshotRequest(repositoryName, snapshotName).waitForCompletion(true);
+			RestoreSnapshotResponse response = client.admin().cluster().restoreSnapshot(restoreSnapshotRequest).get();
+			if (response.status() != RestStatus.OK) {
+				Logger.error(this.getClass(),
+						"Problems restoring snapshot " + snapshotName + " with status: " + response.status().name());
+			} else {
+				Logger.debug(this.getClass(), "Snapshot was restored.");
+				return true;
+			}
+		}
+		return false;
+	}
+
+
+	/**
+	 * Uploads and restore a snapshot by using a zipped repository from a input
+	 * stream as source. The file name most comply to the format
+	 * <index_name>.zip as the <index_name> will be used to identify the index
+	 * name to be restored. The zip file contains the repository information,
+	 * this includes the snapshot name. The index name is used to restore the
+	 * snapshot, a repository might contain several snapshot thus the need to
+	 * identify a snapshot by index name.  The repository is deleted after the
+	 * restore is done.
+	 *
+	 * @param inputFile
+	 *            stream with the zipped repository file
+	 * @param indexName
+	 *            index to be restore
+	 * @return true if the snapshot was restored
+	 * @throws InterruptedException
+	 *             if the current thread was interrupted while waiting
+	 * @throws ExecutionException
+	 *             if the computation threw an exception
+	 * @throws ZipException
+	 * 			   for problems during the zip extraction process
+	 * @throws IOException
+	 *             for problems writing the temporal zip file or the temporal zip contents
+	 */
+	public boolean uploadSnapshot(InputStream inputFile)
+			throws InterruptedException, ExecutionException, ZipException, IOException {
+		return uploadSnapshot(inputFile, true);
+	}
+
+	/**
+	 * Uploads and restore a snapshot by using a zipped repository from a input
+	 * stream as source. The file name most comply to the format
+	 * <index_name>.zip as the <index_name> will be used to identify the index
+	 * name to be restored. The zip file contains the repository information,
+	 * this includes the snapshot name. The index name is used to restore the
+	 * snapshot, a repository might contain several snapshot thus the need to
+	 * identify a snapshot by index name.
+	 *
+	 * @param inputFile
+	 *            stream with the zipped repository file
+	 * @param snapshotName
+	 *            index to be restored
+	 * @param cleanRepository
+	 * 	          defines if the respository should be deleted after the restore.
+	 *
+	 * @return true if the snapshot was restored
+	 * @throws InterruptedException
+	 *             if the current thread was interrupted while waiting
+	 * @throws ExecutionException
+	 *             if the computation threw an exception
+	 * @throws ZipException
+	 * 			   for problems during the zip extraction process
+	 * @throws IOException
+	 *             for problems writing the temporal zip file or the temporal zip contents
+	 */
+	public boolean uploadSnapshot(InputStream inputFile, boolean cleanRepository)
+			throws InterruptedException, ExecutionException, ZipException, IOException {
+		File outFile = null;
+		AdminLogger.log(this.getClass(), "uploadSnapshot", "Trying to restore snapshot index");
+		// creates specific backup path (if it shouldn't exist)
+		File toDirectory = new File(
+				Config.getStringProperty(REPOSITORY_PATH, ConfigUtils.getBackupPath() + File.separator + "backup_repo"));
+		if (!toDirectory.exists()) {
+			toDirectory.mkdirs();
+		}
+		// zip file extraction
+		outFile = File.createTempFile("snapshot", null, toDirectory.getParentFile());
+		//File outFile = new File(toDirectory.getParent() + File.separator + snapshotName);
+		FileUtils.copyStreamToFile(outFile, inputFile, null);
+		ZipFile zipIn = new ZipFile(outFile);
+		boolean response = uploadSnapshot(zipIn, toDirectory.getAbsolutePath(), cleanRepository);		
+		return response;		
+	}
+
+	/**
+	 * Uploads and restore a snapshot using a zipped repository file and the
+	 * index name to restore from the repository.
+	 *
+	 * @param zip
+	 *            zip file containing the repository file structure
+	 * @param toDirectory
+	 *            place to extract the zip file
+	 * @param snapshotName
+	 *            index to be restored, most exists on the repository
+	 * @return true if the snapshot was restored
+	 * @throws InterruptedException
+	 *             if the current thread was interrupted while waiting
+	 * @throws ExecutionException
+	 *             if the computation threw an exception
+	 * @throws ZipException
+	 * 			   for problems during the zip extraction process
+	 * @throws IOException
+	 *             for problems writing the temporal zip file or the temporal zip contents
+	 */
+	public boolean uploadSnapshot(ZipFile zip, String toDirectory, boolean cleanRepository)
+			throws InterruptedException, ExecutionException, ZipException, IOException {
+		ZipUtil.extract(zip, new File(toDirectory));
+		File zipDirectory = null;
+		try{
+			zipDirectory = new File(toDirectory);
+			String snapshotName = esIndexHelper.findSnapshotName(zipDirectory);
+			if (snapshotName == null) {
+				Logger.error(this.getClass(), "No snapshot file on the zip.");
+				throw new ElasticsearchException("No snapshot file on the zip.");
+			}
+			if (!isRepositoryExist(BACKUP_REPOSITORY)) {
+				// initial repository under the complete path
+				createRepository(toDirectory, BACKUP_REPOSITORY, true);
+			}
+			return restoreSnapshot(BACKUP_REPOSITORY, snapshotName);
+		}finally{
+			File tempZip = new File(zip.getName());
+			if(zip!=null && tempZip.exists()){
+				tempZip.delete();
+			}
+			if(cleanRepository){
+				deleteRepository(BACKUP_REPOSITORY);
+			}
+		}
+	}
+
+	/**
+	 * Validates if a repository name exists on the ES client, using the data
+	 * directory and the path.repo
+	 *
+	 * @param client
+	 *            ES client
+	 * @param repositoryName
+	 *            valid not null repository name
+	 * @return true if the repository exists
+	 */
+	private boolean isRepositoryExist(String repositoryName) {
+		boolean result = false;
+		Client client = esclient.getClient();
+		ImmutableList<RepositoryMetaData> repositories = client.admin().cluster().prepareGetRepositories().get()
+				.repositories();
+		if (repositories.size() > 0) {
+			for (RepositoryMetaData repo : repositories) {
+				result = repo.name().equals(repositoryName);
+				if (result){
+					break;
+				}
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Creates a new repository for snapshots.  The snapshot name is usually the index name.
+	 *
+	 * @param path
+	 *            path to repository, this should be within the repo.path
+	 *            location
+	 * @param repositoryName
+	 *            repository name, if empty "_all" in used by ES
+	 * @param compress
+	 *            if the repository should be compressed
+	 * @throws IllegalArgumentException
+	 *            if the path to the repository doesn't exists
+	 * @return
+	 *            true if the repository was created
+	 */
+	private boolean createRepository(String path, String repositoryName, boolean compress)
+			throws IllegalArgumentException, DotStateException {
+		boolean result = false;
+		Path directory = Paths.get(path);
+		if (!Files.exists(directory)) {
+			throw new IllegalArgumentException("Invalid path to repository while creating the repository.");
+		}
+		Client client = esclient.getClient();
+		if (!isRepositoryExist(repositoryName)) {
+			Settings settings = ImmutableSettings.settingsBuilder().put("location", path).put("compress", compress)
+					.build();
+			PutRepositoryResponse response = client.admin().cluster().preparePutRepository(repositoryName).setType("fs").setSettings(settings).get();
+			if(result = response.isAcknowledged()){
+				Logger.debug(this.getClass(), "Repository was created.");
+			}else{
+				//throw new DotStateException("Error creating respository on [" + path + "] named " + repositoryName);
+				throw new DotIndexRepositoryException("Error creating respository on [" + path + "] named " + repositoryName,"error.creating.index.repository",path,repositoryName);
+			}
+		} else {
+			Logger.warn(this.getClass(), repositoryName + " repository already exists");
+		}
+		return result;
+	}
+
+	/**
+	 * Validates if a snapshot exist in a given repository usually the index name
+	 *
+	 * @param repositoryName
+	 *            this repository should exists
+	 * @param snapshotName
+	 *            snapshot name
+	 * @return true is the snapshot exists
+	 */
+	private boolean isSnapshotExist(String repositoryName, String snapshotName) {
+		boolean result = false;
+		Client client = esclient.getClient();
+		ImmutableList<SnapshotInfo> snapshotInfo = client.admin().cluster().prepareGetSnapshots(repositoryName).get()
+				.getSnapshots();
+		if (snapshotInfo.size() > 0) {
+			for (SnapshotInfo snapshot : snapshotInfo){
+				result = snapshot.name().equals(snapshotName);
+				if(result){
+					break;
+				}
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Deletes repository deleting the file system structure as well, beware
+	 * various snapshot might be stored on the repository, this can not be
+	 * undone.
+	 *
+	 * @param repositoryName repository name
+	 * @return true if the repository is deleted
+	 */
+	public boolean deleteRepository(String repositoryName) {
+		return deleteRepository(repositoryName, true);
+	}
+
+	/**
+	 * Deletes repository, by setting cleanUp to true the repository will be
+	 * removed from file system, beware various snapshot might be stored on the
+	 * repository, this can not be undone.
+	 *
+	 * @param repositoryName repository name
+	 * @param cleanUp true to remove files from file system after deleting the repository
+	 *        reference.
+	 * @return true if the repository is deleted
+	 */
+	public boolean deleteRepository(String repositoryName, boolean cleanUp) {
+
+		boolean result = false;
+		Client client = esclient.getClient();
+		if (isRepositoryExist(repositoryName)) {
+			try {
+				DeleteRepositoryResponse response = client.admin().cluster().prepareDeleteRepository(repositoryName)
+						.execute().actionGet();
+				if (response.isAcknowledged()) {
+					Logger.info(this.getClass(), repositoryName + " repository has been deleted.");
+					result = true;
+				}
+			} catch (Exception e) {
+				Logger.error(this.getClass(), e.getMessage());
+			}
+			if (cleanUp) {
+				File toDelete = new File(Config.getStringProperty(REPOSITORY_PATH,
+						ConfigUtils.getBackupPath() + File.separator + "backup_repo"));
+				try {
+					FileUtil.deleteDir(toDelete.getAbsolutePath());
+				} catch (IOException e) {
+					Logger.error(this.getClass(), "The files on " + toDelete.getAbsolutePath() + " were not deleted.");
+				}
+			} else {
+				Logger.warn(this.getClass(), "No files were deleted");
+			}
+		}
+		return result;
+	}
 }

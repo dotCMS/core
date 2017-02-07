@@ -1,6 +1,7 @@
 package com.dotmarketing.business;
 
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -17,7 +18,7 @@ import static org.junit.Assert.*;
  * @author Jonathan Gamba
  *         Date: 6/20/13
  */
-public class RoleAPITest extends TestBase {
+public class RoleAPITest extends IntegrationTestBase {
 
     private static DotCacheAdministrator cache;
     private static User systemUser;
@@ -30,7 +31,10 @@ public class RoleAPITest extends TestBase {
     private String rootRolesGroup = "dotCMSRootRolesCache";
 
     @BeforeClass
-    public static void prepare () throws DotSecurityException, DotDataException {
+    public static void prepare () throws Exception {
+    	
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
 
         cache = CacheLocator.getCacheAdministrator();
 

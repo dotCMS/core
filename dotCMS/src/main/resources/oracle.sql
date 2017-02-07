@@ -136,6 +136,7 @@ create table User_ (
 	userId varchar2(100) not null primary key,
 	companyId varchar2(100) not null,
 	createDate date null,
+	mod_date   date null,
 	password_ nclob null,
 	passwordEncrypted number(1, 0),
 	passwordExpirationDate date null,
@@ -174,8 +175,8 @@ create table User_ (
 	failedLoginAttempts number(30,0),
 	agreedToTermsOfUse number(1, 0),
 	active_ number(1, 0),
-    delete_in_progress number(1,0) default 0,
-    delete_date DATE
+	delete_in_progress number(1,0) default 0,
+	delete_date DATE
 );
 
 create table UserTracker (
@@ -2483,14 +2484,14 @@ alter table broken_link add CONSTRAINT fk_brokenl_field
 CREATE SEQUENCE PUBLISHING_QUEUE_SEQ START WITH 1 INCREMENT BY 1;
 
 CREATE TABLE publishing_queue (
-  id INTEGER PRIMARY KEY NOT NULL,
-  operation number(19,0),
-  asset VARCHAR2(2000) NOT NULL,
-  language_id number(19,0) NOT NULL,
-  entered_date TIMESTAMP,
-  publish_date TIMESTAMP,
-  type VARCHAR2(256),
-  bundle_id VARCHAR2(256)
+    id INTEGER PRIMARY KEY NOT NULL,
+    operation NUMBER(19,0),
+    asset VARCHAR2(2000) NOT NULL,
+    language_id NUMBER(19,0) NOT NULL,
+    entered_date TIMESTAMP,
+    publish_date TIMESTAMP,
+    type VARCHAR2(256),
+    bundle_id VARCHAR2(256)
 );
 
 CREATE OR REPLACE TRIGGER PUBLISHING_QUEUE_TRIGGER before
@@ -2551,6 +2552,8 @@ create table publishing_bundle(
 	  owner varchar2(100)
 );
 
+ALTER TABLE publishing_bundle ADD CONSTRAINT FK_publishing_bundle_owner FOREIGN KEY (owner) REFERENCES user_(userid);
+
 create table publishing_bundle_environment(
 	id varchar2(36) NOT NULL primary key,
 	bundle_id varchar2(36) NOT NULL,
@@ -2584,9 +2587,18 @@ CREATE TABLE cluster_server_uptime(id varchar2(36) NOT NULL,server_id varchar2(3
 ALTER TABLE cluster_server_uptime add constraint fk_cluster_server_id foreign key (server_id) REFERENCES cluster_server(server_id);
 
 -- Notifications Table
-create table notification(id varchar2(36) NOT NULL,message nclob NOT NULL, notification_type varchar2(100), notification_level varchar2(100), user_id varchar2(255) NOT NULL, time_sent TIMESTAMP NOT NULL, was_read number(1,0) default 0, PRIMARY KEY (id));
-create index idx_not_user ON notification (user_id);
-create index idx_not_read ON notification (was_read);
+CREATE TABLE notification (
+    group_id VARCHAR2(36) NOT NULL,
+    user_id VARCHAR2(255) NOT NULL,
+    message NCLOB NOT NULL,
+    notification_type VARCHAR2(100),
+    notification_level VARCHAR2(100),
+    time_sent TIMESTAMP NOT NULL,
+    was_read NUMBER(1, 0)
+);
+ALTER TABLE notification ADD CONSTRAINT PK_notification PRIMARY KEY (group_id, user_id);
+ALTER TABLE notification MODIFY was_read DEFAULT 0;
+CREATE INDEX idx_not_read ON notification (was_read);
 
 -- indices for version_info tables on version_ts
 create index idx_contentlet_vi_version_ts on contentlet_version_info(version_ts);
@@ -2610,6 +2622,14 @@ create table structures_ir(velocity_name varchar2(255), local_inode varchar2(36)
 create table schemes_ir(name varchar2(255), local_inode varchar2(36), remote_inode varchar2(36), endpoint_id varchar2(36), PRIMARY KEY (local_inode, endpoint_id));
 create table htmlpages_ir(html_page varchar2(255), local_working_inode varchar2(36), local_live_inode varchar2(36), remote_working_inode varchar2(36), remote_live_inode varchar2(36),local_identifier varchar2(36), remote_identifier varchar2(36), endpoint_id varchar2(36), language_id number(19,0), PRIMARY KEY (local_working_inode, language_id, endpoint_id));
 create table fileassets_ir(file_name varchar2(255), local_working_inode varchar2(36), local_live_inode varchar2(36), remote_working_inode varchar2(36), remote_live_inode varchar2(36),local_identifier varchar2(36), remote_identifier varchar2(36), endpoint_id varchar2(36), language_id number(19,0), PRIMARY KEY (local_working_inode, language_id, endpoint_id));
+create table cms_roles_ir(name varchar2(1000), role_key varchar2(255), local_role_id varchar2(36), remote_role_id varchar2(36), local_role_fqn varchar2(1000), remote_role_fqn varchar2(1000), endpoint_id varchar2(36), PRIMARY KEY (local_role_id, endpoint_id));
+
+alter table folders_ir add constraint FK_folder_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
+alter table structures_ir add constraint FK_structure_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
+alter table schemes_ir add constraint FK_scheme_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
+alter table htmlpages_ir add constraint FK_page_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
+alter table fileassets_ir add constraint FK_file_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
+alter table cms_roles_ir add constraint FK_cms_roles_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
 
 ---Server Action
 create table cluster_server_action(
@@ -2633,3 +2653,12 @@ create table rule_condition_value (id varchar2(36) primary key,condition_id varc
 create table rule_action (id varchar2(36) primary key,rule_id varchar2(36) references dot_rule(id),priority number(10,0) default 0,actionlet nclob not null,mod_date timestamp);
 create table rule_action_pars(id varchar2(36) primary key,rule_action_id varchar2(36) references rule_action(id), paramkey varchar2(255) not null,value nclob);
 create index idx_rules_fire_on on dot_rule (fire_on);
+
+CREATE TABLE system_event (
+	identifier VARCHAR(36) NOT NULL,
+	event_type VARCHAR(50) NOT NULL,
+	payload NCLOB NOT NULL,
+	created NUMBER(19, 0) NOT NULL
+);
+ALTER TABLE system_event ADD CONSTRAINT PK_system_event PRIMARY KEY (identifier);
+CREATE INDEX idx_system_event ON system_event (created);

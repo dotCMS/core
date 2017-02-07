@@ -578,43 +578,11 @@ dojo.require("dojox.layout.ContentPane");
   	  	refreshActionPanel(data["contentletInode"]);
 
 	}
-	function hideEditButtonsRow() {
-		dojo.style(editButtonRow, { display: 'none' });
-	}
-
-	function showEditButtonsRow() {
-		if( typeof changesMadeToPermissions!= "undefined"){
-			if(changesMadeToPermissions == true){
-				dijit.byId('applyPermissionsChangesDialog').show();
-			}
-		}
-		dojo.style(editButtonRow, { display: '' });
-		changesMadeToPermissions = false;
-	}
-
-	function  resizeBrowser(){
-        var viewport = dijit.getViewport();
-        var viewport_height = viewport.h;
-
-        var  e =  dojo.byId(editButtonRow);
-		dojo.style(e, "height", viewport_height - 185 + "px");
-
-		dojo.query(".wrapperRight").forEach(function(node, index, arr){
-		 	dojo.style(node, "height", viewport_height - 185 + "px");
-		});
-
-    }
-
-    dojo.addOnLoad(resizeBrowser);
-    dojo.connect(window, "onresize", this, "resizeBrowser");
 
     function refreshVersionCp(){
     	var x = dijit.byId("versions");
     	var y =Math.floor(Math.random()*1123213213);
-
-
-
-
+	
     	var myCp = dijit.byId("contentletVersionsCp");
 		if (myCp) {
 			myCp.attr("href", "/html/portlet/ext/contentlet/contentlet_versions_inc.jsp?contentletId=" +contentAdmin.contentletIdentifier + "&r=" + y);
@@ -654,7 +622,7 @@ dojo.require("dojox.layout.ContentPane");
 		myCp = new dojox.layout.ContentPane({
 			id : "contentletRulezDivCp",
 			style: "height:100%",
-			href:  "/api/portlet/RULES_ENGINE_PORTLET/include?id=" +contentAdmin.contentletIdentifier + "&r=" + y+"&hideRulePushOptions="+hideRulePushOptions
+			href:  "/api/portlet/rules/include?id=" +contentAdmin.contentletIdentifier + "&r=" + y+"&hideRulePushOptions="+hideRulePushOptions
 		}).placeAt("contentletRulezDiv");
 
 

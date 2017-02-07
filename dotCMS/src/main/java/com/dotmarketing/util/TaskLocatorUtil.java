@@ -2,17 +2,36 @@ package com.dotmarketing.util;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
-import com.dotmarketing.fixtask.tasks.*;
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotmarketing.fixtask.tasks.FixTask00001CheckAssetsMissingIdentifiers;
+import com.dotmarketing.fixtask.tasks.FixTask00003CheckContainersInconsistencies;
+import com.dotmarketing.fixtask.tasks.FixTask00004CheckFileAssetsInconsistencies;
+import com.dotmarketing.fixtask.tasks.FixTask00005CheckHTMLPagesInconsistencies;
+import com.dotmarketing.fixtask.tasks.FixTask00006CheckLinksInconsistencies;
+import com.dotmarketing.fixtask.tasks.FixTask00007CheckTemplatesInconsistencies;
+import com.dotmarketing.fixtask.tasks.FixTask00008CheckTreeInconsistencies;
+import com.dotmarketing.fixtask.tasks.FixTask00009CheckContentletsInexistentInodes;
+import com.dotmarketing.fixtask.tasks.FixTask00011RenameHostInFieldVariableName;
+import com.dotmarketing.fixtask.tasks.FixTask00012UpdateAssetsHosts;
+import com.dotmarketing.fixtask.tasks.FixTask00015FixAssetTypesInIdentifiers;
+import com.dotmarketing.fixtask.tasks.FixTask00020DeleteOrphanedIdentifiers;
+import com.dotmarketing.fixtask.tasks.FixTask00030DeleteOrphanedAssets;
+import com.dotmarketing.fixtask.tasks.FixTask00040CheckFileAssetsMimeType;
+import com.dotmarketing.fixtask.tasks.FixTask00050FixInodesWithoutContentlets;
+import com.dotmarketing.fixtask.tasks.FixTask00060FixAssetType;
+import com.dotmarketing.fixtask.tasks.FixTask00070FixVersionInfo;
+import com.dotmarketing.fixtask.tasks.FixTask00080DeleteOrphanedContentTypeFields;
+import com.dotmarketing.fixtask.tasks.FixTask00090RecreateMissingFoldersInParentPath;
 import com.dotmarketing.startup.runalways.Task00001LoadSchema;
-import com.dotmarketing.startup.runalways.Task00009ClusterInitialize;
-import com.dotmarketing.startup.runalways.Task00010CheckAnonymousUser;
 import com.dotmarketing.startup.runalways.Task00003CreateSystemRoles;
 import com.dotmarketing.startup.runalways.Task00004LoadStarter;
 import com.dotmarketing.startup.runalways.Task00005LoadFixassets;
 import com.dotmarketing.startup.runalways.Task00006CreateSystemLayout;
 import com.dotmarketing.startup.runalways.Task00007RemoveSitesearchQuartzJob;
-
+import com.dotmarketing.startup.runalways.Task00009ClusterInitialize;
+import com.dotmarketing.startup.runalways.Task00010CheckAnonymousUser;
 import com.dotmarketing.startup.runonce.*;
 
 /**
@@ -28,34 +47,66 @@ import com.dotmarketing.startup.runonce.*;
  */
 public class TaskLocatorUtil {
 
+	private static List<Class<?>> userfixTasks = new CopyOnWriteArrayList<>();
+
 	/**
 	 * Returns the list of tasks that are run to solve internal conflicts
 	 * related to data inconsistency.
 	 * 
 	 * @return The list of Fix Tasks.
 	 */
+    private static List<Class<?>> systemfixTasks = ImmutableList.of(
+            FixTask00001CheckAssetsMissingIdentifiers.class,
+            FixTask00003CheckContainersInconsistencies.class,
+            FixTask00004CheckFileAssetsInconsistencies.class,
+            FixTask00005CheckHTMLPagesInconsistencies.class,
+            FixTask00006CheckLinksInconsistencies.class,
+            FixTask00007CheckTemplatesInconsistencies.class,
+            FixTask00008CheckTreeInconsistencies.class,
+            FixTask00009CheckContentletsInexistentInodes.class,
+            FixTask00011RenameHostInFieldVariableName.class,
+            FixTask00012UpdateAssetsHosts.class,
+            FixTask00015FixAssetTypesInIdentifiers.class,
+            FixTask00020DeleteOrphanedIdentifiers.class,
+            FixTask00030DeleteOrphanedAssets.class,
+            FixTask00040CheckFileAssetsMimeType.class,
+            FixTask00050FixInodesWithoutContentlets.class,
+            FixTask00060FixAssetType.class,
+            FixTask00070FixVersionInfo.class,
+            FixTask00080DeleteOrphanedContentTypeFields.class,
+            FixTask00090RecreateMissingFoldersInParentPath.class
+        );
+
+	/**
+	 * Adds a dotCMS fix task to the main fix task list.
+	 *
+	 * @param clazz
+	 *            - The new fix task class.
+	 */
+    public static void addFixTask(Class<?> clazz){
+        userfixTasks.add(clazz);
+    }
+
+	/**
+	 * Removes the specified fix task from the main list.
+	 *
+	 * @param clazz
+	 *            - The fix task to remove.
+	 */
+    public static void removeFixTask(Class<?> clazz){
+        userfixTasks.remove(clazz);
+    }
+
+	/**
+	 * Returns the list of fix task classes for the current dotCMS instance.
+	 *
+	 * @return The list of fix tasks.
+	 */
 	public static List<Class<?>> getFixTaskClasses() {
-		List<Class<?>> ret = new ArrayList<Class<?>>();
-		ret.add(FixTask00001CheckAssetsMissingIdentifiers.class);
-		ret.add(FixTask00003CheckContainersInconsistencies.class);
-		ret.add(FixTask00004CheckFileAssetsInconsistencies.class);
-		ret.add(FixTask00005CheckHTMLPagesInconsistencies.class);
-		ret.add(FixTask00006CheckLinksInconsistencies.class);
-		ret.add(FixTask00007CheckTemplatesInconsistencies.class);
-		ret.add(FixTask00008CheckTreeInconsistencies.class);
-		ret.add(FixTask00009CheckContentletsInexistentInodes.class);
-		ret.add(FixTask00011RenameHostInFieldVariableName.class);
-		ret.add(FixTask00012UpdateAssetsHosts.class);
-		ret.add(FixTask00015FixAssetTypesInIdentifiers.class);
-		ret.add(FixTask00020DeleteOrphanedIdentifiers.class);
-		ret.add(FixTask00030DeleteOrphanedAssets.class);
-		ret.add(FixTask00040CheckFileAssetsMimeType.class);
-		ret.add(FixTask00050FixInodesWithoutContentlets.class);
-		ret.add(FixTask00060FixAssetType.class);
-		ret.add(FixTask00070FixVersionInfo.class);
-		ret.add(FixTask00080DeleteOrphanedContentTypeFields.class);
-		ret.add(FixTask00090RecreateMissingFoldersInParentPath.class);
-		return ret;
+	    List<Class<?>> l = new ArrayList<>();
+		l.addAll(systemfixTasks);
+		l.addAll(userfixTasks);
+	    return l;
 	}
 
 	/**
@@ -168,6 +219,14 @@ public class TaskLocatorUtil {
 		ret.add(Task03560TemplateLayoutCanonicalName.class);
 		ret.add(Task03565FixContainerVersionsCheck.class);
 		ret.add(Task03600UpdateMssqlVarcharTextColumns.class);
+        ret.add(Task03700ModificationDateColumnAddedToUserTable.class);
+        ret.add(Task03705AddingSystemEventTable.class);
+        ret.add(Task03710AddFKForIntegrityCheckerTables.class);
+        ret.add(Task03715AddFKForPublishingBundleTable.class);
+        ret.add(Task03720AddRolesIntegrityCheckerTable.class);
+        ret.add(Task03725NewNotificationTable.class);
+        ret.add(Task03735UpdatePortletsIds.class);
+
         return ret;
     }
 

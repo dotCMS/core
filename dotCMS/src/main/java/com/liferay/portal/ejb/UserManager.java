@@ -22,6 +22,11 @@
 
 package com.liferay.portal.ejb;
 
+import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
+import com.dotmarketing.business.DotInvalidPasswordException;
+import com.dotmarketing.business.NoSuchUserException;
+import com.dotmarketing.exception.DotSecurityException;
+
 import java.util.Locale;
 
 /**
@@ -126,7 +131,7 @@ public interface UserManager {
 			com.liferay.portal.SystemException, java.rmi.RemoteException;
 
 	public void sendPassword(java.lang.String companyId,
-		java.lang.String emailAddress,Locale locale)
+		java.lang.String emailAddress,Locale locale, boolean fromAngular)
 		throws com.liferay.portal.PortalException, 
 			com.liferay.portal.SystemException, java.rmi.RemoteException;
 
@@ -177,4 +182,7 @@ public interface UserManager {
 	public boolean hasAdmin(java.lang.String userId)
 		throws com.liferay.portal.PortalException, 
 			com.liferay.portal.SystemException, java.rmi.RemoteException;
+
+	public void resetPassword(String userId, String token, String newPassword) throws NoSuchUserException,
+			DotSecurityException, DotInvalidTokenException, DotInvalidPasswordException;
 }

@@ -97,7 +97,7 @@ public class LiveCache {
     		    //Add the entry to the cache
     			cache.put(getPrimaryGroup() + hostId + ":" + uri,uri, getPrimaryGroup() + "_" + hostId);
 
-    			if(uri.endsWith(CMSFilter.CMS_INDEX_PAGE))
+    			if(uri.endsWith("/" + CMSFilter.CMS_INDEX_PAGE))
     			{
     			    //Add the entry to the cache
     			    Logger.debug(LiveCache.class, "Mapping: " + uri.substring(0,uri.lastIndexOf("/" + CMSFilter.CMS_INDEX_PAGE)) + " to " + uri);

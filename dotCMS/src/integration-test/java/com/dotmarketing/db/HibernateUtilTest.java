@@ -5,6 +5,8 @@ import java.util.List;
 
 import junit.framework.Assert;
 import com.dotcms.repackage.net.sf.hibernate.Session;
+import com.dotcms.util.IntegrationTestInitService;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -26,6 +28,8 @@ public class HibernateUtilTest {
     
     @BeforeClass
     public static void init() throws Exception {
+    	 //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
         user = APILocator.getUserAPI().getSystemUser();
         host = APILocator.getHostAPI().findDefaultHost(user, false);
     }

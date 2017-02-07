@@ -1,4 +1,7 @@
 
+<%@page import="com.dotmarketing.business.Layout"%>
+<%@page import="com.liferay.portal.util.WebKeys"%>
+<%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 
 <script type="text/javascript" src="/dwr/interface/UserAjax.js"></script>
@@ -76,46 +79,14 @@
 	//General initialization
 
 
-	//Layout Initialization
-	function  resizeRoleBrowser(){
-	    var viewport = dijit.getViewport();
-	    var viewport_height = viewport.h;
 
-		var  e =  dojo.byId("borderContainer");
-		if(e){
-		   dojo.style(e, "height", viewport_height -150+"px");
-		}
-		var bc = dijit.byId('borderContainer');
-	    if(bc != undefined){
-	    	bc.resize();
-	    }
-
-
-		var  d =  dijit.byId("userTabsContainer");
-		if(d){
-			try{
-		       d.resize();
-			}catch(x){
-				//http://jira.dotmarketing.net/browse/DOTCMS-5151
-			}
-		}
-
-		var  e =  dojo.byId("userTabsContainer");
-        if(e){
-       	  dojo.style(e, "height", viewport_height -155+"px");
-        }
-
-
-	}
 	// need the timeout for back buttons
 
-	//dojo.addOnLoad(resizeRoleBrowser);
 	dojo.addOnLoad(function () {
 		dojo.byId('userProfileTabs').style.display = 'none';
 		dwr.util.useLoadingMessage("<%=LanguageUtil.get(pageContext, "Loading")%>....");
 	});
 
-	dojo.connect(window, "onresize", this, "resizeRoleBrowser");
 
 	//Users list functions
 
@@ -289,7 +260,7 @@
 		dojo.byId('loadingUserProfile').style.display = 'none';
 		var deletebutton = dijit.byId('deleteButton');
 		if(deleteButton != null){
-			deleteButton.parentNode.show();
+			deleteButton.parentNode.parentNode.show();
 		}
 		
 		initStructures();
@@ -330,7 +301,6 @@
 				loadMarketingInfo(userId);
 				break;
 		}
-		resizeRoleBrowser();
 	}
 
 	function userRoleCallback(userRole) {
@@ -373,10 +343,8 @@
 		var deletebutton = dijit.byId('deleteButton');
 		if(deleteButton != null){
 			//to avoid the display of a square when the delete button is hide
-			deleteButton.parentNode.hide();
-			
+			deleteButton.parentNode.parentNode.hide();
 		}
-		resizeRoleBrowser();
 	}
 
 	//Handler from when the user info has changed
@@ -1550,13 +1518,6 @@
 
 	function updateUserCategoriesCallback(){
 		showDotCMSSystemMessage(userCategoriesSavedMsg);
-	}
-
-	function addUserProxyEntity(inode)
-	{
-   		var url = '<liferay:actionURL portletName="EXT_6"><liferay:param name="struts_action" value="/ext/entities/edit_entity" /></liferay:actionURL>';
-   		url += '&inode=' + inode;
-		window.location.href = url;
 	}
 
 	function containsCategory(categories, id) {

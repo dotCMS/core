@@ -5,12 +5,15 @@ import com.dotcms.repackage.javax.ws.rs.client.ClientBuilder;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import junit.framework.Assert;
 import com.dotcms.repackage.org.glassfish.jersey.jackson.JacksonFeature;
+
+import org.junit.Ignore;
 import org.junit.Test;
 import com.dotcms.rest.api.FunctionalTestConfig;
 
 /**
  * @author Geoff M. Granum
  */
+
 public class I8NResourceFTest {
 
     private final FunctionalTestConfig config;
@@ -19,6 +22,7 @@ public class I8NResourceFTest {
         config = new FunctionalTestConfig();
     }
 
+    @Ignore
     @Test
     public void testCanGetResource() throws Exception {
 

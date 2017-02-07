@@ -1,6 +1,6 @@
-package com.dotmarketing.util;
+package com.dotcms.util;
 
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import org.junit.BeforeClass;
@@ -17,6 +17,7 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.ImportUtil;
 import com.liferay.portal.model.User;
 
 import java.io.*;
@@ -31,14 +32,16 @@ import static org.junit.Assert.*;
  * @author Jonathan Gamba
  *         Date: 3/10/14
  */
-public class ImportUtilTest extends TestBase {
+public class ImportUtilTest extends IntegrationTestBase {
 
     private static User user;
     private static Host defaultHost;
     private static Language defaultLanguage;
 
     @BeforeClass
-    public static void prepare () throws DotDataException, DotSecurityException {
+    public static void prepare () throws Exception {
+    	//Setting web app environment
+        IntegrationTestInitService.getInstance().init();
         user = APILocator.getUserAPI().getSystemUser();
         defaultHost = APILocator.getHostAPI().findDefaultHost( user, false );
         defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();

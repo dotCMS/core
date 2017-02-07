@@ -2,7 +2,11 @@ package com.dotmarketing.portlets.virtuallinks.factories;
 
 import static org.junit.Assert.assertTrue;
 
-import com.dotcms.TestBase;
+import org.junit.BeforeClass;
+
+import com.dotcms.IntegrationTestBase;
+import com.dotcms.util.IntegrationTestInitService;
+
 import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -18,7 +22,14 @@ import com.liferay.portal.model.User;
  * @since 8/24/15
  *
  */
-public class VirtualLinkFactoryTest extends TestBase{
+public class VirtualLinkFactoryTest extends IntegrationTestBase{
+	
+    @BeforeClass
+    public static void prepare () throws Exception {
+    	
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+    }
 
 	/**
 	 * Testing {@link VirtualLinkFactory#getVirtualLinkByURL(String)}

@@ -82,7 +82,7 @@ function viewFormsList()
 		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title." + portletId1), crumbTrailReferer));
 		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "import-contentlet"), null));
 
-	} else if (portlet1.getPortletId().equals("EXT_FORM_HANDLER")) {
+	} else if (portlet1.getPortletId().equals("forms")) {
 		
 		cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title." + portletId1), "javascript: viewFormsList();"));
 

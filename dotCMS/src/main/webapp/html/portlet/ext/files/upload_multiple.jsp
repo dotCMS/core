@@ -20,7 +20,8 @@
 <%
 //gets referer
 String referer = (request.getParameter("referer") != null ) ? request.getParameter("referer") : "" ;
-String selectedStructure = (request.getParameter("selectedStructure") != null ) ? request.getParameter("selectedStructure") : CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode();
+String selectedStructure = (request.getParameter("selectedStructure") != null &&  request.getParameter("selectedStructure").trim().length() > 0)
+		? request.getParameter("selectedStructure") : CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode();
 
 Structure s = StructureFactory.getStructureByInode(selectedStructure);
 WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(s);
@@ -70,7 +71,7 @@ boolean canUserWriteToFile = ownerHasWritePermission || hasAdminRole || perAPI.d
 boolean canUserPublishFile = ownerHasPubPermission || hasAdminRole || perAPI.doesUserHavePermission(file, PermissionAPI.PERMISSION_PUBLISH, user, false) || perAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT, user, false);
 
 boolean inFrame = false;
-if(request.getParameter("in_frame")!=null){
+if(request.getParameter(WebKeys.IN_FRAME)!=null){
 	inFrame = true;
 }
 %>
@@ -137,9 +138,9 @@ if(request.getParameter("in_frame")!=null){
 	             
 					<input type="hidden" name="selectedStructure" value="<%=selectedStructure%>">
 					<input type="hidden" name="cmd" value="<%=Constants.ADD%>">
-					<input type="hidden" name="<portlet:namespace />subcmd" value="">
-					<input type="hidden" name="<portlet:namespace />redirect" value="<portlet:renderURL><portlet:param name="struts_action" value="/ext/files/view_files" /></portlet:renderURL>">
-			 		<input type="hidden" name="<portlet:namespace />categories" value="">
+					<input type="hidden" name="subcmd" value="">
+					<input type="hidden" name="redirect" value="<portlet:renderURL><portlet:param name="struts_action" value="/ext/files/view_files" /></portlet:renderURL>">
+			 		<input type="hidden" name="categories" value="">
 					<html:hidden property="maxSize" />
 					<html:hidden property="maxWidth" />
 					<html:hidden property="maxHeight" />
@@ -149,7 +150,7 @@ if(request.getParameter("in_frame")!=null){
 
                     <% if ( request.getHeader( "User-Agent" ).contains( "MSIE" ) ) { %>
                         <input type="hidden" name="p_p_action" value="1">
-                        <input type="hidden" name="p_p_id" value="EXT_BROWSER">
+                        <input type="hidden" name="p_p_id" value="<%=PortletID.SITE_BROWSER%>">
                         <input type="hidden" name="p_p_state" value="maximized">
                         <input type="hidden" name="p_p_mode" value="view">
                         <input type="hidden" name="struts_action" value="/ext/files/upload_multiple">
@@ -175,7 +176,7 @@ if(request.getParameter("in_frame")!=null){
                      </div>
 
 					    <div style="margin-left:200px;">
-							<input name="<portlet:namespace />uploadedFile" multiple="true" type="file" id="uploader"
+							<input name="uploadedFile" multiple="true" type="file" id="uploader"
    									dojoType="dojox.form.Uploader" label="<%= LanguageUtil.get(pageContext, "Select-file(s)-to-upload") %>" >
    						</div>
 				        <div id="files" dojoType="dojox.form.uploader.FileList" uploaderId="uploader" 

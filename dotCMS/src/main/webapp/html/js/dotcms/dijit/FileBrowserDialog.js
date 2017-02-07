@@ -72,7 +72,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 	widgetsInTemplate: true,
 	style: "width: 1000px; height: 500px;",
 	currentView: 'details',
-	title: 'Select a file',
+	title: '<%= LanguageUtil.get(pageContext, "Select-a-file")%>',
 	onlyFiles: false,
 	mimeTypes: new Array(),
 	fileExtensions: new Array(),
@@ -331,8 +331,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 		this._hide(this.loadingContentWrapper);
 
 		var dimensions = dojo.coords(this.tablesContentPane.domNode);
-		dojo.style(this.foldersTreeWrapper, { height: (dimensions.h - 36) + "px", overflow: 'auto' });
-		dojo.style(this.tablesWrapper, { height: (dimensions.h - 85) + "px", overflow: 'auto' });
+		// resultsSummary
 
 
 		var startFileIndex = this._totalResults == 0?0:this._currentOffset + 1;

@@ -7,6 +7,7 @@
 <%@page import="com.dotmarketing.portlets.structure.model.Field" %>
 <%@page import="com.dotmarketing.util.InodeUtils" %>
 <%@page import="com.dotmarketing.cache.FieldsCache" %>
+<%@page import="com.dotmarketing.util.PortletID"%>
 <%@ include file="/html/common/init.jsp" %>
 
 
@@ -33,7 +34,7 @@ String contentLayout="";
 List<Layout> list=APILocator.getLayoutAPI().loadLayoutsForUser(user);
 for(Layout ll : list) {
     for(String pid : ll.getPortletIds())
-        if(pid.equals("EXT_11"))
+        if(pid.equals("content"))
             contentLayout=ll.getId();
 }
 
@@ -114,14 +115,14 @@ function loadTable() {
 	var currentUser="<%=user.getUserId()%>";
 	var lid="<%=contentLayout%>";
 	var lidBL="<%=layout.getId()%>";
-	var baseUrl="/c/portal/layout?p_l_id="+lid+"&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_EXT_11_cmd=edit";
-	var referrer="/c/portal/layout?p_l_id="+lidBL+"&p_p_id=EXT_BROKEN_LINKS&p_p_action=0&pageNumber="+dojo.byId('currentPage').textContent;
+	var baseUrl="/c/portal/layout?p_l_id="+lid+"&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&p_p_mode=view&_<%=PortletID.CONTENT%>_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_<%=PortletID.CONTENT%>_cmd=edit";
+	var referrer="/c/portal/layout?p_l_id="+lidBL+"&p_p_id=<%=PortletID.LINK_CHECKER%>&p_p_action=0&pageNumber="+dojo.byId('currentPage').textContent;
 	dojo.empty('table_body');
 	var pageSize=25;
 	var page=(parseInt(dojo.byId('currentPage').textContent)-1)*pageSize;
 	var id = dojo.byId('currentPage');
     if(typeof id.textContent == "undefined"){
-            referrer="/c/portal/layout?p_l_id="+lidBL+"&p_p_id=EXT_BROKEN_LINKS&p_p_action=0&pageNumber="+dojo.byId('currentPage').innerText;
+            referrer="/c/portal/layout?p_l_id="+lidBL+"&p_p_id=<%=PortletID.LINK_CHECKER%>&p_p_action=0&pageNumber="+dojo.byId('currentPage').innerText;
             page=(parseInt(dojo.byId('currentPage').innerText)-1)*pageSize;
     }
 	dojo.xhr('GET',{
@@ -196,34 +197,43 @@ dojo.ready(function(){
 
 </script>
 
-<div class="portlet-wrapper">
+<div class="portlet-main">
     
-    <div class="subNavCrumbTrail">
-        <ul id="subNavCrumbUl">        
-            <li>
-                <%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_BROKEN_LINKS")%>
-            </li>
-            <li class="lastCrumb"><span><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_BROKEN_LINKS_VIEW")%></span></li>
-        </ul>
-        <div class="clear"></div>
-    </div>
+    <!--
+    	<div class="subNavCrumbTrail">
+	        <ul id="subNavCrumbUl">        
+	            <li>
+	                <%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.link-checker")%>
+	            </li>
+	            <li class="lastCrumb"><span><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_BROKEN_LINKS_VIEW")%></span></li>
+	        </ul>
+	        <div class="clear"></div>
+	    </div>
+	-->
     
     <div id="brokenLinkMain">
         <div id="borderContainer" dojoType="dijit.layout.BorderContainer" style="width:100%;background-image:none;">
-            <div dojoType="dijit.layout.ContentPane" region="top" style="padding:8px;">
-					<%=LanguageUtil.get(pageContext, "Structure")%>:
-					<div id="structureSelect"></div>
-					
-                <button id="refreshBtn" type="button" dojoType="dijit.form.Button" onClick="loadTable()">
-                   <span class="reindexIcon"></span>
-                   <%=LanguageUtil.get(pageContext,"Refresh")%>
-                </button>
-                <div style="float:right;">
-                <button id="runBtn" type="button" dojoType="dijit.form.Button" onClick="runNow()">
-                   <span class="linkCheckIcon"></span>
-                   <%=LanguageUtil.get(pageContext,"BROKEN_LINKS_RUNNOW")%>
-                </button>
-                </div>
+            <div dojoType="dijit.layout.ContentPane" region="top">
+            	<!-- START Toolbar -->
+				<div class="portlet-toolbar">
+					<div class="portlet-toolbar__actions-primary">
+						<!-- <%=LanguageUtil.get(pageContext, "Structure")%>:-->
+						<div id="structureSelect"></div>
+						<button id="refreshBtn" type="button" dojoType="dijit.form.Button" onClick="loadTable()">
+		                   <span class="reindexIcon"></span>
+		                   <%=LanguageUtil.get(pageContext,"Refresh")%>
+		                </button>
+					</div>
+					<div class="portlet-toolbar__info">
+						
+					</div>
+			    	<div class="portlet-toolbar__actions-secondary">
+			    		<button id="runBtn" type="button" dojoType="dijit.form.Button" onClick="runNow()">
+		                   <%=LanguageUtil.get(pageContext,"BROKEN_LINKS_RUNNOW")%>
+		                </button>
+			    	</div>
+			   </div>
+			   <!-- END Toolbar -->
             </div>
             <div dojoType="dijit.layout.ContentPane" region="center">
                 <table id="links_table" class="listingTable">

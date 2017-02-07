@@ -9,7 +9,9 @@ import static org.junit.Assert.assertTrue;
 import java.util.Date;
 import java.util.List;
 
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
+import com.dotcms.util.IntegrationTestInitService;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotmarketing.beans.Host;
@@ -38,14 +40,14 @@ import com.liferay.portal.model.User;
  * @since 2/1/2016
  * @version 1.0
  */
-public class TagAPITest extends TestBase {
+public class TagAPITest extends IntegrationTestBase {
 
-	private static HostAPI hostAPI = APILocator.getHostAPI();
-	private static UserAPI userAPI = APILocator.getUserAPI();
-	private static TagAPI tagAPI = APILocator.getTagAPI();
-	private static ContentletAPI conAPI =APILocator.getContentletAPI();
-	private static LanguageAPI langAPI =APILocator.getLanguageAPI();
-	private static StructureAPI structureAPI =APILocator.getStructureAPI();
+	private static HostAPI hostAPI;
+	private static UserAPI userAPI;
+	private static TagAPI tagAPI;
+	private static ContentletAPI conAPI;
+	private static LanguageAPI langAPI;
+	private static StructureAPI structureAPI;
 
 	//need to add cache validation
 	private TagCache tagCache = CacheLocator.getTagCache();
@@ -64,7 +66,17 @@ public class TagAPITest extends TestBase {
 	private static String  WIKI_TAG_VARNAME="tag";
 
 	@BeforeClass
-	public static void prepare () throws DotSecurityException, DotDataException {
+	public static void prepare () throws Exception {
+		//Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+		
+        hostAPI = APILocator.getHostAPI();
+        userAPI = APILocator.getUserAPI();
+        tagAPI = APILocator.getTagAPI();
+        conAPI =APILocator.getContentletAPI();
+        langAPI =APILocator.getLanguageAPI();
+        structureAPI =APILocator.getStructureAPI();
+        
 		//Setting the test user
 		systemUser = userAPI.getSystemUser();
 		testUser = userAPI.loadByUserByEmail("admin@dotcms.com", systemUser, false);

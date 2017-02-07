@@ -1,4 +1,6 @@
-#rolePermissionsAccordion .dijitAccordionContainer-child{overflow-y:hidden !important;}
+#rolePermissionsAccordion .dijitAccordionContainer-child{
+	overflow-y:hidden !important;
+}
 
 .permissionLabelTable, .permissionTable  {
 	width: 100%;
@@ -15,7 +17,7 @@
 .permissionTable, .permissionLabelTable, .permissionTableTitle  {
 	margin: 0;padding:0;
 }
-.dmundra .dijitAccordionTitle{height:23px;padding:3px;}
+.dotcms .dijitAccordionTitle{height:23px;padding:3px;}
 .permissionTable tr {
 	padding: 5px 0;
 }
@@ -59,13 +61,6 @@
 
 #addHostFolderTitle {
 	padding-top: 3px;
-}
-
-#rolePermissionsHostSelectorWrapper {
-	float:right;
-	margin-top:-49px;
-	padding:10px 15px 15px 0;
-	vertical-align:middle;
 }
 
 .hostSelectorButton {

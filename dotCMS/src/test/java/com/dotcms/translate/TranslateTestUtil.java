@@ -1,5 +1,6 @@
 package com.dotcms.translate;
 
+import com.dotcms.UnitTestBase;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -7,7 +8,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import java.util.Arrays;
 import java.util.List;
 
-public class TranslateTestUtil {
+public class TranslateTestUtil extends UnitTestBase {
     static final Language english = new Language(1, "en", "US", "English", "United States");
     static final Language spanish = new Language(2, "es", "ES", "Espanol", "Espana");
     static final Language french = new Language(3, "fr", "FR", "French", "France");

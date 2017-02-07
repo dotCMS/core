@@ -3,19 +3,24 @@ package com.dotcms.content.elasticsearch.business;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.liferay.portal.model.User;
 
-public class ESIndexSpeedTest extends TestBase {
+public class ESIndexSpeedTest extends IntegrationTestBase {
 	
-	private static final ContentletAPI contAPI = APILocator.getContentletAPI();
+	private static ContentletAPI contAPI;
 	private static User user=null;
 	
 	@BeforeClass
-	public static void before() throws DotDataException {
+	public static void before() throws Exception {
+		//Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+		
+        contAPI  = APILocator.getContentletAPI();
 		user=APILocator.getUserAPI().getAnonymousUser();
 	}
 	

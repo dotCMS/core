@@ -775,15 +775,26 @@ public class IntegrityResource {
                 // Add first display column label
                 columns.add(integrityType.getFirstDisplayColumnLabel());
 
-                if(integrityType==IntegrityType.HTMLPAGES || integrityType==IntegrityType.FILEASSETS) {
-                    columns.add("local_working_inode");
-                    columns.add("remote_working_inode");
-                    columns.add("local_live_inode");
-                    columns.add("remote_live_inode");
-                    columns.add("language_id");
-                } else {
-                    columns.add("local_inode");
-                    columns.add("remote_inode");
+                switch( integrityType ) {
+                	case HTMLPAGES:
+                	case FILEASSETS:
+                        columns.add("local_working_inode");
+                        columns.add("remote_working_inode");
+                        columns.add("local_live_inode");
+                        columns.add("remote_live_inode");
+                        columns.add("language_id");
+                        break;
+                	case CMS_ROLES:
+                        columns.add("role_key");
+                        columns.add("local_role_id");
+                        columns.add("remote_role_id");
+                        columns.add("local_role_fqn");
+                        columns.add("remote_role_fqn");
+                        break;
+                    default:
+                        columns.add("local_inode");
+                        columns.add("remote_inode");
+                        break;
                 }
 
                 errorContent.put( "columns", columns.toArray() );

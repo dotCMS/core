@@ -174,6 +174,13 @@
     <listener>
     	<listener-class>com.dotcms.listeners.SessionMonitor</listener-class>
     </listener>
+     <listener>
+        <display-name>ImageIO service provider loader/unloader</display-name>
+        <listener-class>com.twelvemonkeys.servlet.image.IIOProviderContextListener</listener-class>
+    </listener>
+	<listener>
+		<listener-class>com.dotcms.listeners.RegisterMBeansListener</listener-class>
+	</listener>
 	<!-- this must be the last listener -->
 	<listener>
 	  <listener-class>com.dotmarketing.listeners.HibernateSessionsListener</listener-class>
@@ -219,7 +226,7 @@
 		<servlet-name>ShortyServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.ShortyServlet</servlet-class>
 	</servlet>
-	
+
 	<servlet>
     	<servlet-name>AjaxFileUploadServlet</servlet-name>
     	<servlet-class>com.dotmarketing.servlets.AjaxFileUploadServlet</servlet-class>
@@ -298,6 +305,11 @@
 		<load-on-startup>2</load-on-startup>
 	</servlet>
 	
+	<servlet>
+		<servlet-name>ImageServlet</servlet-name>
+		<servlet-class>com.liferay.portal.servlet.ImageServlet</servlet-class>
+		<load-on-startup>4</load-on-startup>
+	</servlet>
 	<servlet>
 		<servlet-name>WebDav</servlet-name>
 		<servlet-class>com.dotcms.repackage.com.bradmcevoy.http.MiltonServlet</servlet-class>
@@ -383,7 +395,7 @@
  	<!-- END SERVLETS -->
  	
  	
-    <!-- TEST FRAMEWORK SERVLETS -->                                                                                     
+    <!-- TEST FRAMEWORK SERVLETS -->
        <servlet>
          <servlet-name>ServletTestRunner</servlet-name>
          <servlet-class>com.dotmarketing.servlets.test.ServletTestRunner</servlet-class>
@@ -396,7 +408,7 @@
 	<!-- END OF TEST FRAMEWORK SERVLETS -->
 	
     <!-- DOTCMS SERVLET-MAPPINGS -->
-    <servlet-mapping>
+	<servlet-mapping>
         <servlet-name>proxy</servlet-name>
         <url-pattern>/app/*</url-pattern>
     </servlet-mapping>
@@ -509,6 +521,10 @@
 	<servlet-mapping>
 		<servlet-name>MainServlet</servlet-name>
 		<url-pattern>/c/*</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>ImageServlet</servlet-name>
+		<url-pattern>/image/*</url-pattern>
 	</servlet-mapping>
     <servlet-mapping>
 	    <servlet-name>BinaryExporterServlet</servlet-name>

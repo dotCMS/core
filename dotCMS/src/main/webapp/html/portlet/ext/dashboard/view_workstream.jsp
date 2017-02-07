@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.util.PortletID"%>
 <%@ include file="/html/portlet/ext/dashboard/init.jsp" %>
 
 <%@page import="java.util.List"%>
@@ -34,18 +35,18 @@ try {
 	 for(Layout layoutObj:layoutList) {
 		List<String> portletIdsForLayout=layoutObj.getPortletIds();
 		for(String portletId : portletIdsForLayout){
-		if (portletId.equals("EXT_13")) {
-			templateURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_13&p_p_action=1";
-		}else if (portletId.equals("EXT_12")) {
-			containerURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_12&p_p_action=1";
+		if (portletId.equals(PortletID.TEMPLATES)) {
+			templateURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.TEMPLATES+"&p_p_action=1";
+		}else if (portletId.equals(PortletID.CONTAINERS)) {
+			containerURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.CONTAINERS+"&p_p_action=1";
 		}else if (portletId.equals("EXT_1")) {
 			linkURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_1&p_p_action=1";
-		}else if (portletId.equals("EXT_15")) {
-			pagesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_15&p_p_action=1";
-		}else if (portletId.equals("EXT_3")) {
-			filesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_3&p_p_action=1";
-		}else if (portletId.equals("EXT_11")) {
-			contentURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_11&p_p_action=1";
+		}else if (portletId.equals(PortletID.HTML_PAGES)) {
+			pagesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.HTML_PAGES+"&p_p_action=1";
+		}else if (portletId.equals(PortletID.FILES_LEGACY)) {
+			filesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.FILES_LEGACY+"&p_p_action=1";
+		}else if (portletId.equals(PortletID.CONTENT)) {
+			contentURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.CONTENT+"&p_p_action=1";
 		}
 	  }
 	}
@@ -108,7 +109,7 @@ try {
 
  	var noRecordsTemplate = '<tr class="alternate_1" id="rowNoResults"><td colspan="5"><div class="noResultsMessage"><%= LanguageUtil.get(pageContext, "No-Records-Found") %></div></td></tr>';
  		 
- 	var workStreamsTemplate = '<tr class="${className}"><td><a href="javascript:editAsset(\'${assetType}\',\'${assetInode}\',\'${structureInode}\');">${name}</a></td>\
+ 	var workStreamsTemplate = '<tr class="${className}"><td>${name}</td>\
  		<td>${host}</td>\
  		<td>${user}</td>\
  		<td>${action}</td>\
@@ -198,35 +199,35 @@ try {
 
 
    	 function editContent(contInode,structureInode){
-   	     var URL = '<%=contentURL%>&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_EXT_11_cmd=edit&_EXT_11_selectedStructure={stInode}&host_id={host_id}&inode={inode}&referer=<%=referer%>';
+   	     var URL = '<%=contentURL%>&p_p_state=maximized&p_p_mode=view&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=edit&_content_selectedStructure={stInode}&host_id={host_id}&inode={inode}&referer=<%=referer%>';
    	     var hostId = dijit.byId("dahboardHostSelectorWorkStream").value;
  	     var href = dojo.replace(URL, { stInode:structureInode, inode: contInode, host_id: hostId })
    		 window.location=href;	
    	   }
 
        function editHtmlPage(contInode){
-      	     var URL = '<%=pagesURL%>&p_p_state=maximized&p_p_mode=view&_EXT_15_struts_action=%2Fext%2Fhtmlpages%2Fedit_htmlpage&_EXT_15_cmd=edit&host_id={host_id}&inode={inode}&referer=<%=referer%>';	   	     	        
+      	     var URL = '<%=pagesURL%>&p_p_state=maximized&p_p_mode=view&_html-pages_struts_action=%2Fext%2Fhtmlpages%2Fedit_htmlpage&_html-pages_cmd=edit&host_id={host_id}&inode={inode}&referer=<%=referer%>';	   	     	        
       	     var hostId = dijit.byId("dahboardHostSelectorWorkStream").value;
       	     var href = dojo.replace(URL, {inode: contInode, host_id: hostId})
       		 window.location=href;	
       	}
 
        function editFile(contInode){
-    	     var URL = '<%=filesURL%>&p_p_state=maximized&p_p_mode=view&_EXT_3_struts_action=%2Fext%2Ffiles%2Fedit_file&_EXT_3_cmd=edit&host_id={host_id}&inode={inode}&referer=<%=referer%>';	   	     	              	     	        
+    	     var URL = '<%=filesURL%>&p_p_state=maximized&p_p_mode=view&_files-legacy_struts_action=%2Fext%2Ffiles%2Fedit_file&_files-legacy_cmd=edit&host_id={host_id}&inode={inode}&referer=<%=referer%>';	   	     	              	     	        
     	     var hostId = dijit.byId("dahboardHostSelectorWorkStream").value;
     	     var href = dojo.replace(URL, {inode: contInode, host_id: hostId})
     		 window.location=href;	
     	}
 
        function editTemplate(contInode){
-  	     var URL = '<%=templateURL%>&p_p_state=maximized&p_p_mode=view&_EXT_13_struts_action=%2Fext%2Ftemplates%2Fedit_template&_EXT_13_cmd=edit&host_id={host_id}&inode={inode}&referer=<%=referer%>';	   	     	              	     	           	     	        
+  	     var URL = '<%=templateURL%>&p_p_state=maximized&p_p_mode=view&_templates_struts_action=%2Fext%2Ftemplates%2Fedit_template&_templates_cmd=edit&host_id={host_id}&inode={inode}&referer=<%=referer%>';	   	     	              	     	           	     	        
   	     var hostId = dijit.byId("dahboardHostSelectorWorkStream").value;
    	     var href = dojo.replace(URL, {inode: contInode, host_id: hostId})
   		 window.location=href;	
      	}
 
        function editContainer(contInode){
-    	     var URL = '<%=containerURL%>&p_p_state=maximized&p_p_mode=view&_EXT_12_struts_action=%2Fext%2Fcontainers%2Fedit_container&_EXT_12_cmd=edit&host_id={host_id}&inode={inode}&referer=<%=referer%>';	   	     	              	     	           	     	        	  	     	        
+    	     var URL = '<%=containerURL%>&p_p_state=maximized&p_p_mode=view&_containers_struts_action=%2Fext%2Fcontainers%2Fedit_container&_containers_cmd=edit&host_id={host_id}&inode={inode}&referer=<%=referer%>';	   	     	              	     	           	     	        	  	     	        
     	     var hostId = dijit.byId("dahboardHostSelectorWorkStream").value;
     	     var href = dojo.replace(URL, {inode: contInode, host_id: hostId})
     		 window.location=href;	
@@ -267,86 +268,86 @@ try {
 
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 <liferay:param name="box_title" value='<%= LanguageUtil.get(pageContext, "view-workstream") %>' />
-<% if(LicenseUtil.getLevel() > 199){ %>	
-<form id="fm" method="post">
-	<div class="portlet-toolbar" style="white-space: nowrap">
-		<span dojoType="dotcms.dojo.data.HostReadStore" jsId="HostStore"></span>
-		<span dojoType="dotcms.dojo.data.UsersReadStore" jsId="usersStore" includeRoles="false"></span>
-		<% String selectedHost =request.getParameter("hostId"); %>
-		
-		<span style="margin:0 15px 0 0;">
-			<%= LanguageUtil.get(pageContext, "Host") %>: 
-			<select id="dahboardHostSelectorWorkStream" name="dahboardHostSelectorWorkStream" dojoType="dijit.form.FilteringSelect" 
-				store="HostStore"  pageSize="30" labelAttr="hostname"  searchAttr="hostname" 
-				searchDelay="400"  <%= UtilMethods.isSet(selectedHost)?"value=\"" + selectedHost+ "\"":""  %> invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected")%>">
-			</select>
-		</span>
-
-		<span style="margin:0 15px 0 0;">
-		    <%= LanguageUtil.get(pageContext, "User") %>: 
-			<select id="dashboardUserSelector" dojoType="dijit.form.FilteringSelect" store="usersStore" 
-			        searchDelay="300" pageSize="30" labelAttr="name" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>">
-			</select>
-		</span>
-			
-		<span style="margin:0 15px 0 0;">
-			<%= LanguageUtil.get(pageContext, "From") %>: 
-	 		<input dojoType="dijit.form.DateTextBox" type="text" id="workStreamFromDate" name="workStreamFromDate" value="" style="width:110px;" iconClass="calDayIcon">
-	 
-			<%= LanguageUtil.get(pageContext, "To") %>: 
-	 		<input dojoType="dijit.form.DateTextBox" type="text" id="workStreamToDate" name="workStreamToDate" value="" style="width:110px;">
-		</span>
+<% if(LicenseUtil.getLevel() > 199){ %>
 	
+<div class="portlet-main">
+	
+	<!-- START TOOL BAR -->
+	<div class="portlet-toolbar">
+		<div class="portlet-toolbar__actions-primary">
+			<form id="fm" method="post">
+				<div class="inline-form">
+					<span dojoType="dotcms.dojo.data.HostReadStore" jsId="HostStore"></span>
+					<span dojoType="dotcms.dojo.data.UsersReadStore" jsId="usersStore" includeRoles="false"></span>
+					<% String selectedHost =request.getParameter("hostId"); %>
+					
+					<%= LanguageUtil.get(pageContext, "Host") %>: 
+					<select id="dahboardHostSelectorWorkStream" name="dahboardHostSelectorWorkStream" dojoType="dijit.form.FilteringSelect" 
+						store="HostStore"  pageSize="30" labelAttr="hostname"  searchAttr="hostname" 
+						searchDelay="400"  <%= UtilMethods.isSet(selectedHost)?"value=\"" + selectedHost+ "\"":""  %> invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected")%>">
+					</select>
+
+					<%= LanguageUtil.get(pageContext, "User") %>: 
+					<select id="dashboardUserSelector" dojoType="dijit.form.FilteringSelect" store="usersStore" 
+					        searchDelay="300" pageSize="30" labelAttr="name" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>">
+					</select>
+			
+					<%= LanguageUtil.get(pageContext, "From") %>: 
+	 				<input dojoType="dijit.form.DateTextBox" type="text" id="workStreamFromDate" name="workStreamFromDate" value="" style="width:110px;" iconClass="calDayIcon">
+	 
+					<%= LanguageUtil.get(pageContext, "To") %>: 
+	 				<input dojoType="dijit.form.DateTextBox" type="text" id="workStreamToDate" name="workStreamToDate" value="" style="width:110px;">
+
+					<button dojoType="dijit.form.Button" onClick="viewWorkStreams(1,'')" iconClass="searchIcon">
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
+					</button>
 		
-		<button dojoType="dijit.form.Button" onClick="viewWorkStreams(1,'')" iconClass="searchIcon">
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
-		</button>
-		<button dojoType="dijit.form.Button" id="clearButtonWs" onClick="clearWsSearch();" iconClass="resetIcon">
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear-Search")) %>
-		</button>            
-		
+					<button dojoType="dijit.form.Button" id="clearButtonWs" onClick="clearWsSearch();" class="dijitButtonFlat">
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear")) %>
+					</button>
+				</div>
+			</form>
+		</div>
 	</div>
-</form>
-
-
+	<!-- END TOOL BAR -->
 
 	<table class="listingTable">
 	    <thead>
-		<tr>
-		<th nowrap>
-			<a href="javascript:orderWs('name','desc');">
-			   <%= LanguageUtil.get(pageContext, "Name") %>
-			</a>
-		</th>
-		<th nowrap>
-			<a href="javascript:orderWs('hostname','desc');">
-				<%= LanguageUtil.get(pageContext, "Host") %>
-			</a>
-		</th>
-		<th nowrap>
-			<a href="javascript:orderWs('username','desc');">
-			    <%= LanguageUtil.get(pageContext, "User") %>
-			</a>
-		</th>
-		<th nowrap>
-			<a href="javascript:orderWs('action','desc');">
-			    <%= LanguageUtil.get(pageContext, "Action") %>
-			</a>
-		</th>
-		<th nowrap>
-			<a href="javascript:orderWs('analytic_summary_workstream.mod_date','desc');">
-			    <%= LanguageUtil.get(pageContext, "Date") %>
-			</a>
-		</th>
-	</tr>
-	</thead>
-    <tbody id="workStreams"></tbody>
-</table>
+			<tr>
+				<th nowrap>
+					<a href="javascript:orderWs('name','desc');">
+					   <%= LanguageUtil.get(pageContext, "Name") %>
+					</a>
+				</th>
+				<th nowrap>
+					<a href="javascript:orderWs('hostname','desc');">
+						<%= LanguageUtil.get(pageContext, "Host") %>
+					</a>
+				</th>
+				<th nowrap>
+					<a href="javascript:orderWs('username','desc');">
+					    <%= LanguageUtil.get(pageContext, "User") %>
+					</a>
+				</th>
+				<th nowrap>
+					<a href="javascript:orderWs('action','desc');">
+					    <%= LanguageUtil.get(pageContext, "Action") %>
+					</a>
+				</th>
+				<th nowrap>
+					<a href="javascript:orderWs('analytic_summary_workstream.mod_date','desc');">
+					    <%= LanguageUtil.get(pageContext, "Date") %>
+					</a>
+				</th>
+			</tr>
+		</thead>
+    	<tbody id="workStreams"></tbody>
+	</table>
 
-<br></br>
+	<div id="footer" class="yui-u" style="text-align:center;"></div>
+</div>
 
-<div id="footer" class="yui-u" style="text-align:center;"></div>
 <%}else{ %>
-<%@ include file="/html/portlet/ext/dashboard/not_licensed.jsp" %>
+	<%@ include file="/html/portlet/ext/dashboard/not_licensed.jsp" %>
 <% }%>
 </liferay:box>

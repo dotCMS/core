@@ -65,6 +65,7 @@
 
 <script language="Javascript">
 var view = "<%= java.net.URLEncoder.encode("(working=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + ")","UTF-8") %>";
+var inFrame=<%=(UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (boolean)request.getSession().getAttribute(WebKeys.IN_FRAME))?true:false%>;
 
 function resetSearch() {
 	form = document.getElementById('fm');
@@ -168,7 +169,12 @@ function handleDepResponse(data, arg1) {
 }
 
 function processDelete(inode, referer) {
-	top.location="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/containers/edit_container" /><portlet:param name="cmd" value="full_delete" /></portlet:actionURL>&inode=" + inode + '&referer=' + referer;
+	var loc="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/containers/edit_container" /><portlet:param name="cmd" value="full_delete" /></portlet:actionURL>&inode=" + inode + '&referer=' + referer;
+	if(inFrame){
+		window.location = loc;
+	}else{
+		top.location = loc;
+	}
 }
 
 </script>
@@ -180,15 +186,16 @@ function processDelete(inode, referer) {
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 <liferay:param name="box_title" value='<%= LanguageUtil.get(pageContext, "view-containers-all") %>' />
 
-
+<div class="portlet-main">
+	
 <form id="fm" method="post">
 <input type="hidden" name="resetQuery" value="">
 <input type="hidden" name="pageNumber" value="<%=pageNumber%>">
 <input type="hidden" name="host_id" id="host_id" value="<%=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)%>">
 <input type="hidden" id="showDeleted" name="showDeleted" <%= (showDeleted!=null) && (showDeleted.equals("true")) ? "value=\"true\"" : "value=\"false\"" %> >
-<div class="yui-gc portlet-toolbar">
-	<div class="yui-u first">
 
+<div class="portlet-toolbar">
+	<div class="portlet-toolbar__actions-primary">
 		<select name="structure_id" id="structure_id" autocomplete="false"  dojoType="dijit.form.FilteringSelect" onChange="submitfm()" >
 			<OPTION value=" " <%=!UtilMethods.isSet(structureId)?"selected":""%>><%= LanguageUtil.get(pageContext, "Any-Structure") %></OPTION>
 			<%
@@ -201,25 +208,50 @@ function processDelete(inode, referer) {
 			<%		}
 				} %>
 		</select>
+		
 		<input type="text" name="query" dojoType="dijit.form.TextBox" style="width:175px;" value="<%= com.dotmarketing.util.UtilMethods.isSet(query) ? query : "" %>">
+	    
 	    <button dojoType="dijit.form.Button" type="submit" onClick="submitfm()" iconClass="searchIcon">
 	        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
 	    </button>
+	    
 		<button dojoType="dijit.form.Button" onClick="resetSearch()" iconClass="resetIcon">
 	          <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reset")) %>
 	    </button>
-	</div>
-	<div class="yui-u" style="text-align:right;">
-		<input type="checkbox" dojoType="dijit.form.CheckBox"  name="showDeletedCB" id="showDeletedCB"onClick="javascript:submitfm();" <%= (showDeleted!=null) && (showDeleted.equals("true")) ? "checked" : "" %> value="true">
+	    
+	    &nbsp; &nbsp;
+	    
+	    <input type="checkbox" dojoType="dijit.form.CheckBox"  name="showDeletedCB" id="showDeletedCB"onClick="javascript:submitfm();" <%= (showDeleted!=null) && (showDeleted.equals("true")) ? "checked" : "" %> value="true">
 		<label for="showDeletedCB" style="font-size:85%;"><%= LanguageUtil.get(pageContext, "Show-Archived") %></label>
+	</div>
+	
+	<div class="portlet-toolbar__info"></div>
+	<div class="portlet-toolbar__actions-secondary">
+		<!-- START Actions -->			
+			<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
+	            <span></span>
+	
+	            <div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
+					<% if((Boolean) request.getAttribute(com.dotmarketing.util.WebKeys.CONTAINER_CAN_ADD)) { %>
+						<div data-dojo-type="dijit/MenuItem" onClick="javascript:addAsset(); return false;" iconClass="plusIcon">
+						    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-container")) %>
+						</div>
+					<% } %>
 
-		<% if((Boolean) request.getAttribute(com.dotmarketing.util.WebKeys.CONTAINER_CAN_ADD)) { %>
-		<button dojoType="dijit.form.Button" onClick="javascript:addAsset(); return false;" iconClass="plusIcon">
-		    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-container")) %>
-		</button>
-		<% } %>
+					<div data-dojo-type="dijit/MenuItem" onClick="submitfmPublish();"  disabled="true" id="publishButton" iconClass="publishIcon">
+					    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>
+					</div>
+					
+					<div data-dojo-type="dijit/MenuItem" onClick="submitfmDelete();" id="deleteButton" disabled="true" iconClass="deleteIcon">
+					    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete")) %>
+					</div>
+				</div>
+			</div>
+		<!-- END Actions -->
 	</div>
 </div>
+
+
 <script language="Javascript">
 	/**
 		focus on search box
@@ -342,6 +374,9 @@ function processDelete(inode, referer) {
 <!-- End No Results -->
 </table>
 
+</div><!-- Mian -->
+
+
 <!-- Start Pagination -->
 <div class="yui-gb buttonRow">
 	<div class="yui-u first" style="text-align:left;">
@@ -354,29 +389,29 @@ function processDelete(inode, referer) {
 
 	<div class="yui-u" style="text-align:center;">
 		<%= LanguageUtil.get(pageContext, "Viewing") %>  <%= minIndex+1 %> -
-<%
-	if (maxIndex > (minIndex + containersSize)) {
-%>
-	<%= minIndex + containersSize %>
-<%
-	} else {
-%>
-	<%= maxIndex %>
-<%
-	}
-%>
-	<%= LanguageUtil.get(pageContext, "of1") %>
-<%
-	if (100 <= containersSize) {
-%>
-	<%= LanguageUtil.get(pageContext, "hundreds") %>
-<%
-	} else {
-%>
-	<%= minIndex + containersSize %>
-<%
-	}
-%>
+		<%
+			if (maxIndex > (minIndex + containersSize)) {
+		%>
+			<%= minIndex + containersSize %>
+		<%
+			} else {
+		%>
+			<%= maxIndex %>
+		<%
+			}
+		%>
+			<%= LanguageUtil.get(pageContext, "of1") %>
+		<%
+			if (100 <= containersSize) {
+		%>
+			<%= LanguageUtil.get(pageContext, "hundreds") %>
+		<%
+			} else {
+		%>
+			<%= minIndex + containersSize %>
+		<%
+			}
+		%>
 	</div>
 
 	<div class="yui-u" style="text-align:right;">
@@ -389,16 +424,7 @@ function processDelete(inode, referer) {
 </div>
 <!-- END Pagination -->
 
-<!-- Start Buttons -->
-<div class="buttonRow">
-	<button dojoType="dijit.form.Button" onClick="submitfmPublish();"  disabled="true" id="publishButton" iconClass="publishIcon">
-	    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>
-	</button>
-	<button dojoType="dijit.form.Button" onClick="submitfmDelete();" id="deleteButton" disabled="true" iconClass="deleteIcon">
-	    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete")) %>
-	</button>
-</div>
-<!-- END Buttons -->
+
 
 </form>
 

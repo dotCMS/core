@@ -3,6 +3,7 @@ package com.dotcms.publisher.environment.business;
 import java.util.List;
 import java.util.Set;
 
+import com.dotcms.integritycheckers.IntegrityUtil;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotmarketing.beans.Permission;
@@ -63,12 +64,13 @@ public class EnvironmentAPIImpl implements EnvironmentAPI {
 			return;
 
 		// remove the endpoints of the environment
-
+		
 		List<PublishingEndPoint> endPoints = APILocator.getPublisherEndPointAPI().findSendingEndPointsByEnvironment(id);
-
-		for (PublishingEndPoint ep : endPoints) {
-			APILocator.getPublisherEndPointAPI().deleteEndPointById(ep.getId());
-		}
+        
+        for (PublishingEndPoint ep : endPoints) {
+            //Delete endpoints associated to this Environment
+            APILocator.getPublisherEndPointAPI().deleteEndPointById(ep.getId());
+        }
 
 		Environment e = findEnvironmentById(id);
 

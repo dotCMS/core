@@ -8,7 +8,7 @@
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
 <%@ page import="com.dotcms.repackage.org.osgi.framework.Bundle" %>
 <%        
-	request.setAttribute("requiredPortletAccess", "OSGI_MANAGER"); 
+	request.setAttribute("requiredPortletAccess", "dynamic-plugins"); 
 %>
 <%@ include file="/html/common/uservalidation.jsp"%>
 
@@ -38,9 +38,7 @@
 </script>
 
 <div class="buttonBoxLeft">
-	<div dojoType="dojo.data.ItemFileReadStore" jsId="test" url="/html/portlet/ext/osgi/available_bundles_json.jsp"></div>
-	<%= LanguageUtil.get(pageContext,"OSGI-AVAIL-BUNDLES") %> : <input dojoType="dijit.form.ComboBox" store="test" searchAttr="label" name="availBundlesCombo" id="availBundlesCombo">
-	<button dojoType="dijit.form.Button" type="submit" onclick="javascript:bundles.deploy()"><%=LanguageUtil.get(pageContext, "OSGI-Load-Bundle")%></button>
+	
 
 </div>
 <script language="Javascript">
@@ -58,14 +56,47 @@
 	});
 </script>
 
-<div class="buttonBoxRight">
-	<button dojoType="dijit.form.Button" onClick="javascript:dijit.byId('uploadOSGIDialog').show()" iconClass="plusIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-Upload-Bundle")%></button>
-	<button dojoType="dijit.form.Button" onClick="bundles.reboot(true);" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-restart-framework")%></button>
-	<button dojoType="dijit.form.Button" onClick="bundles.extraPackages();" iconClass="editIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-extra-packages")%></button>
-	<button dojoType="dijit.form.Button" onClick="mainAdmin.refresh();" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "Refresh")%></button>
+
+<div class="portlet-main">
+	
+	<!-- START Toolbar -->
+	<div class="portlet-toolbar">
+		<div class="portlet-toolbar__actions-primary">
+			<div dojoType="dojo.data.ItemFileReadStore" jsId="test" url="/html/portlet/ext/osgi/available_bundles_json.jsp"></div>
+				<%= LanguageUtil.get(pageContext,"OSGI-AVAIL-BUNDLES") %> : <input dojoType="dijit.form.ComboBox" store="test" searchAttr="label" name="availBundlesCombo" id="availBundlesCombo">
+			<button dojoType="dijit.form.Button" type="submit" onclick="javascript:bundles.deploy()"><%=LanguageUtil.get(pageContext, "OSGI-Load-Bundle")%></button>
+		</div>
+		<div class="portlet-toolbar__info">
+		</div>
+    	<div class="portlet-toolbar__actions-secondary">
+    		<!-- START Actions -->			
+			<button dojoType="dijit.form.Button" onClick="javascript:dijit.byId('uploadOSGIDialog').show()" iconClass="plusIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-Upload-Bundle")%></button>
+			<button dojoType="dijit.form.Button" onClick="bundles.reboot(true);" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-restart-framework")%></button>
+			<button dojoType="dijit.form.Button" onClick="bundles.extraPackages();" iconClass="editIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-extra-packages")%></button>
+			<button dojoType="dijit.form.Button" onClick="mainAdmin.refresh();" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "Refresh")%></button>
+			<!-- END Actions -->
+    	</div>
+   </div>
+   <!-- END Toolbar -->
+	
+	<table class="listingTable" style="margin:0 0 25px 0;" id="bundlesTable">
+	    <tbody id="bundlesTable-body">
+		<tr>
+			<th><%=LanguageUtil.get(pageContext, "OSGI-Name")%></th>
+			<th><%=LanguageUtil.get(pageContext, "OSGI-State")%></th>
+			<th><%=LanguageUtil.get(pageContext, "OSGI-Jar")%></th>
+			<th><%=LanguageUtil.get(pageContext, "OSGI-Actions")%></th>
+		</tr>
+	    <tr id="loading-row">
+	        <td colspan="100" align="center"><%=LanguageUtil.get(pageContext, "Loading")%>...</td>
+	    </tr>
+	    </tbody>
+	</table>
 </div>
 
-<div class="clear" style="height:40px;">&nbsp;</div>
+<div id="savingOSGIDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="OSGI" style="display: none;">
+	<div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="saveProgress" id="saveProgress"></div>
+</div>
 
 <div id="uploadOSGIDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="<%=LanguageUtil.get(pageContext, "OSGI-Upload-Bundle")%>" style="display: none;">
 	<div style="padding:30px 15px;">
@@ -89,33 +120,15 @@
                 <textarea dojoType="dijit.form.SimpleTextarea" id="packages" name="packages" style="width:350px; height: 390px!important; overflow-y: scroll!important;"></textarea>
             </div>
             <div>
-                <button style="padding-top: 10px;" dojoType="dijit.form.Button" onClick='bundles.modifyExtraPackages()' iconClass="saveIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-modify-packages")%></button>
+                <button dojoType="dijit.form.Button" onClick='bundles.modifyExtraPackages()' iconClass="saveIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-modify-packages")%></button>
             </div>
         </form>
     </div>
 </div>
 
-<table class="listingTable" style="margin:0 0 25px 0;" id="bundlesTable">
-    <tbody id="bundlesTable-body">
-	<tr>
-		<th><%=LanguageUtil.get(pageContext, "OSGI-Name")%></th>
-		<th><%=LanguageUtil.get(pageContext, "OSGI-State")%></th>
-		<th><%=LanguageUtil.get(pageContext, "OSGI-Jar")%></th>
-		<th><%=LanguageUtil.get(pageContext, "OSGI-Actions")%></th>
-	</tr>
-    <tr id="loading-row">
-        <td colspan="100" align="center"><%=LanguageUtil.get(pageContext, "Loading")%>...</td>
-    </tr>
-    </tbody>
-</table>
-
-
-<div id="savingOSGIDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="OSGI" style="display: none;">
-	<div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="saveProgress" id="saveProgress"></div>
-</div>
-
 
 <div id="popup_menus"></div>
+
 <form id="remotePublishForm">
     <input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
     <input name="remotePublishDate" id="remotePublishDate" type="hidden" value="">
@@ -128,6 +141,7 @@
 	<input name="bundleSelect" id=bundleSelect type="hidden" value="">
 	<input name="forcePush" id=forcePush type="hidden" value="">
 </form>
+
 
 <script type="application/javascript">
 

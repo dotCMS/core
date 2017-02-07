@@ -1,4 +1,5 @@
 <%@page import="com.dotmarketing.business.LayoutAPI"%>
+<%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.beans.Identifier"%>
 <%@page import="com.dotmarketing.util.PortletURLUtil"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.DotContentletStateException"%>
@@ -160,12 +161,19 @@
 
 	boolean canEditAsset = conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
 	final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
-    boolean canSeeRules = layoutAPI.doesUserHaveAccessToPortlet("RULES_ENGINE_PORTLET", user)
+    boolean canSeeRules = layoutAPI.doesUserHaveAccessToPortlet("rules", user)
             && conPerAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_USE, user)
                && conPerAPI.doesUserHavePermissions(contentlet.getParentPermissionable(), "RULES: " + PermissionAPI.PERMISSION_USE, user);
 	boolean contentEditable = (UtilMethods.isSet(contentlet.getInode())?(Boolean)request.getAttribute(com.dotmarketing.util.WebKeys.CONTENT_EDITABLE):false);
 	Integer catCounter = 0;
 
+	String targetFrame="_top";
+	boolean isAngularFrame = UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME));
+	if(isAngularFrame){
+	   targetFrame = (String)request.getSession().getAttribute(WebKeys.FRAME);
+	}
+
+	boolean isLocked=(request.getParameter("sibbling") != null) ? false : contentlet.isLocked();
 %>
 
 
@@ -180,7 +188,7 @@ var editButtonRow="editContentletButtonRow";
 <%@ include file="/html/portlet/ext/contentlet/field/edit_field_js.jsp" %>
 
 
-<html:form action="<%= formAction %>" styleId="fm" onsubmit="return false;">
+<html:form action="<%= formAction %>" styleId="fm" target="<%= targetFrame %>" onsubmit="return false;">
 	<input name="wfActionAssign" id="wfActionAssign" type="hidden" value="">
 	<input name="wfActionComments" id="wfActionComments" type="hidden" value="">
 	<input name="wfActionId" id="wfActionId" type="hidden" value="">
@@ -204,7 +212,6 @@ var editButtonRow="editContentletButtonRow";
 	<%} %>
 
 	<%if(!UtilMethods.isSet(structure.getInode())){ %>
-
 		<div dojoType="dijit.Dialog" id="selectStructureDiv" title='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %>'>
 			<table style="margin:20px">
 				<tr>
@@ -250,13 +257,8 @@ var editButtonRow="editContentletButtonRow";
 
 		</script>
 	<%} %>
-	<!--  FIRST TAB -->
-	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer" >
-
-
-
-
-
+	<!--  START TABS -->
+	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer" class="content-edit__main">
 		<!--  IF THE FIRST FIELD IS A TAB-->
 		<% if(fields != null &&
 			fields.size()>0 &&
@@ -264,172 +266,172 @@ var editButtonRow="editContentletButtonRow";
 			fields.get(0).getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())){
 				Field f0 = fields.get(0);
 				fields.remove(0);%>
-			<div id="<%=f0.getVelocityVarName()%>" style="padding:0;" dojoType="dijit.layout.ContentPane" title="<%=f0.getFieldName()%>" onShow="showEditButtonsRow()">
+			<div id="<%=f0.getVelocityVarName()%>" dojoType="dijit.layout.ContentPane" title="<%=f0.getFieldName()%>">
 		<%} else {	%>
-			<div id="properties" dojoType="dijit.layout.ContentPane" style="padding:0;" title="<%= LanguageUtil.get(pageContext, "Content") %>" onShow="showEditButtonsRow()">
+			<div id="properties" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Content") %>">
 		<%}%>
 
-		<!-- START Right Column -->
-			<div class="wrapperRight" style="position:relative;">
-					<div class="fieldWrapper">&nbsp;</div>
-					<% if(widgetUsageField != null && UtilMethods.isSet(widgetUsageField.getValues())){ %>
-						<div class="fieldWrapper">
-							<div class="fieldName">
-								<%=widgetUsageField.getFieldName()%>:
-							</div>
-							<div class="fieldValue">
-								<%
-								String textValue = widgetUsageField.getValues();
-								textValue = textValue.replaceAll("&", "&amp;");
-								textValue =  UtilMethods.htmlLineBreak(textValue);
-								%>
-								<%=textValue %>
-							</div>
-                            <div class="clear"></div>
-						</div>
-					<% } %>
+        <!-- START EDIT CONTENT FORM -->
+        <div class="content-edit__form">
+            <% if(widgetUsageField != null && UtilMethods.isSet(widgetUsageField.getValues())){ %>
+                <div class="fieldWrapper">
+                    <div class="fieldName">
+                        <%=widgetUsageField.getFieldName()%>:
+                    </div>
+                    <div class="fieldValue">
+                        <%
+                        String textValue = widgetUsageField.getValues();
+                        textValue = textValue.replaceAll("&", "&amp;");
+                        textValue =  UtilMethods.htmlLineBreak(textValue);
+                        %>
+                        <%=textValue %>
+                    </div>
+                </div>
+            <% } %>
 
-					<%-- Begin Looping over fields --%>
+            <%-- Begin Looping over fields --%>
+            <% boolean fieldSetOpen = false;
+                int fieldCounter =0;
+                for (Field f : fields) {
+                    if (fieldSetOpen &&
+                        (f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) ||
+                         f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString()) )) {
+                        fieldSetOpen = false;%>
+                    <%}%>
+                    <%if(f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString())) {%>
+                        <div class="lineDividerTitle"><%=f.getFieldName() %></div>
+                    <%}else if(f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())) {
+                        tabDividerOpen = true;%>
+                            </div>
+                        </div>
+                        <div id="<%=f.getVelocityVarName()%>" class="custom-tab" dojoType="dijit.layout.ContentPane" title="<%=f.getFieldName()%>">
+                            <div class="wrapperRight">
+                    <%}else if(f.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString()) && !categoriesTabFieldExists) {
+                        categoriesTabFieldExists = true;%>
+                        <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_categories.jsp" />
+                    <%}else if(f.getFieldType().equals(Field.FieldType.PERMISSIONS_TAB.toString()) && !permissionsTabFieldExists){
+                        permissionsTabFieldExists = true;%>
+                        <%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>
+                    <%}else if(f.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString())){%>
+                        <% if(fieldCounter==0){
+                            relationshipsTabFieldExists =  true;
+                            request.setAttribute("isRelationsihpAField",true); //DOTCMS-6893%>
+                            <jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp" />
+                        <% }
+                        counter++;
+                        %>
+                    <%}else if(f.getFieldType().equals(Field.FieldType.HIDDEN.toString())){%>
 
-					<% boolean fieldSetOpen = false;
-						int fieldCounter =0;
-						for (Field f : fields) {
-							if (fieldSetOpen &&
-								(f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) ||
-								 f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString()) )) {
-								fieldSetOpen = false;%>
-							<%}%>
-				    		<%if(f.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString())) {%>
-				    			<div class="lineDividerTitle"><%=f.getFieldName() %></div>
-							<%}else if(f.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())) {
-			    				tabDividerOpen = true;%>
-									</div>
-								</div>
-							    <div id="<%=f.getVelocityVarName()%>" class="custom-tab" style="padding:0;" dojoType="dijit.layout.ContentPane" title="<%=f.getFieldName()%>" onShow="showEditButtonsRow()">
-									<div class="wrapperRight" style="position:relative;">
-										<div class="fieldWrapper">&nbsp;</div>
-							<%}else if(f.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString()) && !categoriesTabFieldExists) {
-			   	    			categoriesTabFieldExists = true;%>
-								<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_categories.jsp" />
-			    			<%}else if(f.getFieldType().equals(Field.FieldType.PERMISSIONS_TAB.toString()) && !permissionsTabFieldExists){
-			    	  			permissionsTabFieldExists = true;%>
-								<%@ include file="/html/portlet/ext/common/edit_permissions_tab_inc.jsp" %>
-							<%}else if(f.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString())){%>
-					   			<% if(fieldCounter==0){
-									relationshipsTabFieldExists =  true;
-									request.setAttribute("isRelationsihpAField",true); //DOTCMS-6893%>
-							  		<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp" />
-				    			<% }
-				    	   		counter++;
-					   			%>
-					 		<%}else if(f.getFieldType().equals(Field.FieldType.HIDDEN.toString())){%>
+                    <%}else{
+                        request.setAttribute("field", f);
+                        Object formValue = null;
+                        if(f.getFieldType().equals(Field.FieldType.CATEGORY.toString())) {
+                            CategoryAPI catAPI = APILocator.getCategoryAPI();
+                            List<Category> formCategoryList = new ArrayList<Category>();
+                            String[] formCategories = contentletForm.getCategories();
+                            if(UtilMethods.isSet(formCategories)){
+                                for(String catId : formCategories){
+                                    formCategoryList.add(catAPI.find(catId,user,false));
+                                }
+                            }
+                            String fInode = f.getInode();
+                            try {
+                                Category category = catAPI.find(f.getValues(), user, false);
+                                if(category != null && catAPI.canUseCategory(category, user, false)) {
+                                    catCounter++;
+                                }
+                            } catch(Exception e) {
+                                Logger.debug(this, "Error in CategoryAPI", e);
+                            }
+                            formValue = (List<Category>) formCategoryList;
+                        } else {
+                            formValue = (Object) contentletForm.getFieldValueByVar(f.getVelocityVarName());
 
-							<%}else{
-								request.setAttribute("field", f);
-					    	  	Object formValue = null;
-					    	  	if(f.getFieldType().equals(Field.FieldType.CATEGORY.toString())) {
-					    			CategoryAPI catAPI = APILocator.getCategoryAPI();
-					    			List<Category> formCategoryList = new ArrayList<Category>();
-					    			String[] formCategories = contentletForm.getCategories();
-					    			if(UtilMethods.isSet(formCategories)){
-					    				for(String catId : formCategories){
-					    					formCategoryList.add(catAPI.find(catId,user,false));
-					    				}
-					    			}
-									String fInode = f.getInode();
-					    			try {
-					    				Category category = catAPI.find(f.getValues(), user, false);
-						    			if(category != null && catAPI.canUseCategory(category, user, false)) {
-						    				catCounter++;
-						    			}
-					    			} catch(Exception e) {
-					    				Logger.debug(this, "Error in CategoryAPI", e);
-					    			}
-					    			formValue = (List<Category>) formCategoryList;
-					    	  	} else {
-				    				formValue = (Object) contentletForm.getFieldValueByVar(f.getVelocityVarName());
+                            //We need to verify for the metadata field cached data
+                            if ( Contentlet.isMetadataFieldCached( contentletForm.getStructureInode(), f.getVelocityVarName(), formValue ) ) {
 
-                                    //We need to verify for the metadata field cached data
-                                    if ( Contentlet.isMetadataFieldCached( contentletForm.getStructureInode(), f.getVelocityVarName(), formValue ) ) {
+                                /*
+                                 If we populated the information using another language we should use the contentlet used
+                                 for that language in order to get the cached metadata.
+                                */
+                                if ( !InodeUtils.isSet( request.getParameter( "inode" ) )
+                                        && UtilMethods.isSet( request.getSession().getAttribute( "ContentletForm_lastLanguage" ) ) ) {
 
-                                        /*
-                                         If we populated the information using another language we should use the contentlet used
-                                         for that language in order to get the cached metadata.
-                                        */
-                                        if ( !InodeUtils.isSet( request.getParameter( "inode" ) )
-                                                && UtilMethods.isSet( request.getSession().getAttribute( "ContentletForm_lastLanguage" ) ) ) {
+                                    if ( !InodeUtils.isSet( request.getParameter( "inode" ) )
+                                            && (UtilMethods.isSet( request.getParameter( "reuseLastLang" ) )
+                                            && Boolean.parseBoolean( request.getParameter( "reuseLastLang" ) )) ) {
 
-                                            if ( !InodeUtils.isSet( request.getParameter( "inode" ) )
-                                                    && (UtilMethods.isSet( request.getParameter( "reuseLastLang" ) )
-                                                    && Boolean.parseBoolean( request.getParameter( "reuseLastLang" ) )) ) {
-
-                                                ContentletForm reusedForm = (ContentletForm) request.getSession().getAttribute( "ContentletForm_lastLanguage" );
-                                                //Load its content from cache
-                                                formValue = reusedForm.getFieldValueByVar( f.getVelocityVarName() );
-                                            }
-                                        }
-
+                                        ContentletForm reusedForm = (ContentletForm) request.getSession().getAttribute( "ContentletForm_lastLanguage" );
+                                        //Load its content from cache
+                                        formValue = reusedForm.getFieldValueByVar( f.getVelocityVarName() );
                                     }
-				    	  		}
-				    	  		request.setAttribute("value", formValue);
+                                }
 
-					    	  	if (f.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) {
-					    			List<String> disabled = contentlet.getDisabledWysiwyg();
-					    			if(InodeUtils.isSet(contentlet.getInode()) && disabled!=null && disabled.contains(f.getFieldContentlet())) {
-					    				request.setAttribute("wysiwygDisabled", true);
-					    			} else {
-					    				request.setAttribute("wysiwygDisabled", false);
-					    			}
-					    	  	}
-					    	  	//http://jira.dotmarketing.net/browse/DOTCMS-3232
-					    	  	if(f.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
-					    	  		if(InodeUtils.isSet(contentlet.getHost())) {
-										request.setAttribute("host",contentlet.getHost());
-										Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
-										Folder identFolder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), contentlet.getHost(), user, false);
-										request.setAttribute("folder", identFolder.getInode());
-					    	  		} else if(f.isRequired()) {
-					    	  			String hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
-					    	  			String folderId = (String) request.getParameter("folder");
-										request.setAttribute("host", hostId);
-										request.setAttribute("folder", folderId);
-					    	  		} else if(!f.isRequired()) {
-					    	  			String hostId = (String) APILocator.getHostAPI().findSystemHost().getIdentifier();
-										request.setAttribute("host", hostId);
-										request.setAttribute("folder", null);
-					    	  		}
-						  	    }
-					    	  	if (f.getFieldType().equals(Field.FieldType.BINARY.toString())) {
-					    	  		if(InodeUtils.isSet(contentlet.getHost())) {
-										request.setAttribute("host",contentlet.getHost());
-					    	  		} else if(f.isRequired()) {
-					    	  			String hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
-										request.setAttribute("host", hostId);
-					    	  		} else if(!f.isRequired()) {
-					    	  			String hostId = (String) APILocator.getHostAPI().findSystemHost().getIdentifier();
-										request.setAttribute("host", hostId);
-					    	  		}
-					    	  	}
-					    	  	request.setAttribute("inode",contentlet.getInode());
-							request.setAttribute("counter", catCounter.toString());
-					  	    %>
+                            }
+                        }
+                        request.setAttribute("value", formValue);
 
-						<jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
-					<%}%>
-			   	<%}%>
-			   	<div class="clear"></div>
-			</div>
-			<!-- END Right Column -->
+                        if (f.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) {
+                            List<String> disabled = contentlet.getDisabledWysiwyg();
+                            if(InodeUtils.isSet(contentlet.getInode()) && disabled!=null && disabled.contains(f.getFieldContentlet())) {
+                                request.setAttribute("wysiwygDisabled", true);
+                            } else {
+                                request.setAttribute("wysiwygDisabled", false);
+                            }
+                        }
+                        //http://jira.dotmarketing.net/browse/DOTCMS-3232
+                        if(f.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
+                            if(InodeUtils.isSet(contentlet.getHost())) {
+                                request.setAttribute("host",contentlet.getHost());
+                                Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
+                                Folder identFolder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), contentlet.getHost(), user, false);
+                                request.setAttribute("folder", identFolder.getInode());
+                            } else if(f.isRequired()) {
+                                String hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+                                String folderId = (String) request.getParameter("folder");
+                                request.setAttribute("host", hostId);
+                                request.setAttribute("folder", folderId);
+                            } else if(!f.isRequired()) {
+                                Host host = APILocator.getHostAPI().findSystemHost();
 
+                                String hostId = host.getIdentifier();
+                                if (!conPerAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user)) {
+                                    hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+                                }
+
+                                request.setAttribute("host", hostId);
+                                request.setAttribute("folder", null);
+                            }
+                        }
+                        if (f.getFieldType().equals(Field.FieldType.BINARY.toString())) {
+                            if(InodeUtils.isSet(contentlet.getHost())) {
+                                request.setAttribute("host",contentlet.getHost());
+                            } else if(f.isRequired()) {
+                                String hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+                                request.setAttribute("host", hostId);
+                            } else if(!f.isRequired()) {
+                                String hostId = (String) APILocator.getHostAPI().findSystemHost().getIdentifier();
+                                request.setAttribute("host", hostId);
+                            }
+                        }
+                        request.setAttribute("inode",contentlet.getInode());
+                    request.setAttribute("counter", catCounter.toString());
+                    %>
+
+                    <jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
+                <%}%>
+            <%}%>
+        </div>
+        <!-- END START EDIT CONTENT FORM -->
 	</div>
-	<!-- END Contentlet Properties -->
+	<!-- END TABS -->
 
 	<!-- Relationships -->
 	<% if(relationshipRecords != null && relationshipRecords.size() > 0 && !relationshipsTabFieldExists){
 		   relationshipsTabFieldExists = true;
 		   request.setAttribute("isRelationsihpAField",false); //DOTCMS-6893
 	%>
-		<div id="relationships" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Relationships") %>" onShow="hideEditButtonsRow()">
+		<div id="relationships" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Relationships") %>">
 			<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp" />
 		</div>
 	<%}%>
@@ -450,7 +452,7 @@ var editButtonRow="editContentletButtonRow";
 
 	<!-- Permissions -->
 	<%if(!permissionsTabFieldExists && canEditAsset){%>
-		<div id="permissions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>" onShow="hideEditButtonsRow()">
+		<div id="permissions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Permissions") %>">
 			<%
 				HTMLPage permParent = (HTMLPage) InodeFactory.getInode(request.getParameter("htmlpage_inode"), HTMLPage.class);
 				request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, contentlet);
@@ -471,57 +473,71 @@ var editButtonRow="editContentletButtonRow";
 		 		request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT, fatty);
 		}%>
 
-		<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "History") %>" onShow="refreshVersionCp();hideEditButtonsRow();">
-			<div id="contentletVersionsDiv" style="height:100%;">
+		<div id="versions" class="history" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "History") %>" onShow="refreshVersionCp();">
+			<div id="contentletVersionsDiv" style="height:100%;" class="content-edit__history-version">
 			</div>
-
-			<div>
+			<hr class="history__divider">
+			<div class="history__status">
 			<%@ include file="/html/portlet/ext/common/edit_publishing_status_inc.jsp"%>
 			</div>
 		</div>
 
-
-
 		<!-- References Tab -->
 		<%if(references != null && references.size() > 0){ %>
-			<div id="references" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "References") %>" onShow="hideEditButtonsRow()">
+			<div id="references" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "References") %>">
 				<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_references.jsp" />
 			</div>
 		<%}%>
-
-
-
-
-
-
 	<%}%>
 	</div>
 
+		<!-- START CONTENT ACTIONS -->
+		<div class="content-edit__sidebar" id="editContentletButtonRow">
+			<%if (InodeUtils.isSet(structure.getInode())) {%>
+			<%--If the user has permissions to publish--%>
+			<%--A special case happens when the contentlet is new and CMS owner has permissions to publish --%>
+			<%--Then the save and publish button should appear--%>
+
+			<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_basic_properties.jsp" />
+
+			<div class="content-edit-actions">
+				<%--<h3><%=LanguageUtil.get(pageContext, "Actions") %></h3>--%>
+				<div id="contentletActionsHanger">
+					<%@ include file="/html/portlet/ext/contentlet/contentlet_actions_inc.jsp" %>
+				</div>
+			</div>
+
+			<div class="content-edit-workflow">
+				<h3><%= LanguageUtil.get(pageContext, "Workflow") %></h3>
+				<table>
+					<tr>
+						<th><%= LanguageUtil.get(pageContext, "Step") %>:</th>
+						<td><%=wfStep.getName() %></td>
+					</tr>
+					<tr>
+						<th><%= LanguageUtil.get(pageContext, "Assignee") %>:</th>
+						<td><%=(wfTask == null || wfTask.isNew() || !UtilMethods.isSet(wfTask.getAssignedTo()) || APILocator.getRoleAPI().loadRoleById(wfTask.getAssignedTo()) == null) ? LanguageUtil.get(pageContext, "Nobody") : APILocator.getRoleAPI().loadRoleById(wfTask.getAssignedTo()).getName() %></td>
+					</tr>
+
+					<tr id="contentLockedInfo" <%=(!isLocked) ? "style='height:0px;'" : "" %>>
+						<%if(contentlet != null && InodeUtils.isSet(contentlet.getInode()) && isLocked){ %>
+							<th><%= LanguageUtil.get(pageContext, "Locked") %>:</th>
+							<td id="lockedTextInfoDiv">
+								<%=APILocator.getUserAPI().loadUserById(APILocator.getVersionableAPI().getLockedBy(contentlet), APILocator.getUserAPI().getSystemUser(), false).getFullName() %>
+								<span class="lockedAgo">(<%=UtilMethods.capitalize( DateUtil.prettyDateSince(APILocator.getVersionableAPI().getLockedOn(contentlet), user.getLocale())) %>)</span>
+							</td>
+						<%} %>
+					</tr>
+				</table>
+			</div>
+
+			<% } %>
+		</div>
+		<!-- END CONTENT ACTIONS -->
+
 	<%@ include file="/html/portlet/ext/contentlet/edit_contentlet_js_inc.jsp" %>
 
-
 </liferay:box>
-
-<!-- START Left Column -->
-			 <div class="buttonRow-left lineRight" id="editContentletButtonRow">
-
-				<%if (InodeUtils.isSet(structure.getInode())) {%>
-					<%--If the user has permissions to publish--%>
-					<%--A special case happens when the contentlet is new and CMS owner has permissions to publish --%>
-					<%--Then the save and publish button should appear--%>
-
-					<div class="gradient2">
-						<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_basic_properties.jsp" />
-					</div>
-
-					<div class="gradient title"><%=LanguageUtil.get(pageContext, "Actions") %></div>
-					<div id="contentletActionsHanger">
-						<%@ include file="/html/portlet/ext/contentlet/contentlet_actions_inc.jsp" %>
-					</div>
-				<% } %>
-				</div>
-
-		<!-- END Left Column -->
 
 </html:form>
 
@@ -534,9 +550,8 @@ var editButtonRow="editContentletButtonRow";
 <script type="text/javascript">
 	dojo.addOnLoad(function () {
 		dojo.style(dijit.byId('savingContentDialog').closeButtonNode, 'visibility', 'hidden');
-		document.getElementById("properties").insertBefore(document.getElementById(editButtonRow), document.getElementById("properties").firstChild);
 
-		var tab =dijit.byId("mainTabContainer");
+		var tab = dijit.byId("mainTabContainer");
  		dojo.connect(tab, 'selectChild',
  				function (evt) {
  				 	selectedTab = tab.selectedChildWidget;
@@ -545,9 +560,6 @@ var editButtonRow="editContentletButtonRow";
 					if (selectedTab.class != undefined && selectedTab.class == "custom-tab") {
 						isCustomTab = true;
 					}
-
-					if(selectedTab.id == "properties" || selectedTab.id == "MetadataTab" || isCustomTab)
- 				 		document.getElementById(selectedTab.id).insertBefore(document.getElementById(editButtonRow), document.getElementById(selectedTab.id).firstChild);
  				});
 	});
 
@@ -558,7 +570,7 @@ var editButtonRow="editContentletButtonRow";
 	}
 </script>
 
-<div id="saveContentErrors" style="display: none;" dojoType="dijit.Dialog">
+<div id="saveContentErrors" style="display: none;" dojoType="dijit.Dialog" class="content-edit__dialog-error">
 	<div dojoType="dijit.layout.ContentPane" id="exceptionData" hasShadow="true"></div>
 	<div class="formRow" style="text-align:center">
 		<button dojoType="dijit.form.Button"  onClick="dijit.byId('saveContentErrors').hide()" type="button"><%= LanguageUtil.get(pageContext, "close") %></button>

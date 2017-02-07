@@ -35,9 +35,9 @@
 			try {
 				opener.setImage('<%=myFile.getInode()%>','<%=myFile.getFileName()%>');
 			} catch (e) { }
-	<%if(request.getParameter("popup") != null) {%>
+	<%if(request.getParameter(WebKeys.POPUP) != null) {%>
 			try {
-				opener.callback<%=request.getParameter("popup")%>('<%=myFile.getInode()%>', '<%=myFile.getIdentifier()%>', '<%=myFile.getFileName()%>', '<%=myFile.getURI()%>');
+				opener.callback<%=request.getParameter(WebKeys.POPUP)%>('<%=myFile.getInode()%>', '<%=myFile.getIdentifier()%>', '<%=myFile.getFileName()%>', '<%=myFile.getURI()%>');
 			} catch (e) { }
 	<%}%>
 			window.close();
@@ -51,11 +51,11 @@
 <%
 	// variable that is set to make page a popup
 boolean popup = false;
-if(request.getParameter("popup")!=null){
+if(request.getParameter(WebKeys.POPUP)!=null){
 	popup = true;
 }
 boolean inFrame = false;
-if(request.getParameter("in_frame")!=null){
+if(request.getParameter(WebKeys.IN_FRAME)!=null){
 	inFrame = true;
 }
 //gets file object
@@ -212,7 +212,7 @@ if(com.dotmarketing.util.UtilMethods.isImage(file.getFileName())){
 		if (form.categorySelect) {
 	        for (i=0;i<form.categorySelect.options.length;i++) {
 	        	if (form.categorySelect.options[i].selected) {
-	        		form.<portlet:namespace />categories.value += form.categorySelect.options[i].value + ",";
+	        		form.categories.value += form.categorySelect.options[i].value + ",";
 	        	}
 	        }
 	    }
@@ -221,7 +221,7 @@ if(com.dotmarketing.util.UtilMethods.isImage(file.getFileName())){
 			return false;
 		}
 
-        x = document.getElementById("<portlet:namespace />uploadedFile").value.split("\\");
+        x = document.getElementById("uploadedFile").value.split("\\");
         var myFileName = x[x.length -1];
 
         while(myFileName.indexOf(" ") > -1){
@@ -255,12 +255,12 @@ if(com.dotmarketing.util.UtilMethods.isImage(file.getFileName())){
         //document.getElementById("messageDiv").style.display = "";
 
 		var referer = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/files/view_files" /></portlet:actionURL>';
-		if (form.<portlet:namespace />referer.value == '')
-			form.<portlet:namespace />referer.value=referer;
-        form.<portlet:namespace />fileName.value=fileName;
+		if (form.referer.value == '')
+			form.referer.value=referer;
+        form.fileName.value=fileName;
 		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/files/edit_file" /></portlet:actionURL>';
-        form.<portlet:namespace />subcmd.value = subcmd;
-        form.<portlet:namespace />cmd.value="<%= Constants.ADD %>";
+        form.subcmd.value = subcmd;
+        form.cmd.value="<%= Constants.ADD %>";
 
         submitForm(form);
 
@@ -314,7 +314,7 @@ if(com.dotmarketing.util.UtilMethods.isImage(file.getFileName())){
 
 	function beLazier(){
 
-			var ele = document.getElementById("<portlet:namespace />uploadedFile").value;
+			var ele = document.getElementById("uploadedFile").value;
 
 			var arr = ele.split("\\");
 			if(arr.length ==1){
@@ -440,16 +440,16 @@ function editImage(inode, callingImg){
 	<html:form action="/ext/files/edit_file" method="POST"  styleId="fm" enctype="multipart/form-data">
 		<input type="hidden" name="inode" value="<%=file.getInode()%>">
 		<input type="hidden" name="inode_version" value="<%=request.getParameter("inode_version")%>">
-		<input type="hidden" name="<portlet:namespace />cmd" value="<%=Constants.ADD%>">
-		<input type="hidden" name="<portlet:namespace />subcmd" value="">
+		<input type="hidden" name="cmd" value="<%=Constants.ADD%>">
+		<input type="hidden" name="subcmd" value="">
 		<% if (request.getParameter("child")!=null && request.getParameter("child").equals("true")) { %>
 			<input type="hidden" name="child" value="true">
 		<% } %>
 		<% if(!popup && !inFrame){ %>
-			<input type="hidden" name="<portlet:namespace />redirect" value="<portlet:renderURL><portlet:param name="struts_action" value="/ext/files/view_files" /></portlet:renderURL>">
+			<input type="hidden" name="redirect" value="<portlet:renderURL><portlet:param name="struts_action" value="/ext/files/view_files" /></portlet:renderURL>">
 		<% } %>
-		<input type="hidden" name="<portlet:namespace />fileName" value="">
-	 	<input type="hidden" name="<portlet:namespace />categories" value="">
+		<input type="hidden" name="fileName" value="">
+	 	<input type="hidden" name="categories" value="">
 		<html:hidden property="maxSize" />
 		<html:hidden property="maxWidth" />
 		<html:hidden property="maxHeight" />
@@ -458,12 +458,12 @@ function editImage(inode, callingImg){
 	 	<input type="hidden" name="_imageToolSaveFile" id="_imageToolSaveFile" value="">
 		<input type="hidden" name="userId" value="<%= user.getUserId() %>">
 		<% if(popup){ %>
-			<input name="popup" type="hidden" value="<%= request.getParameter("popup") %>">
+			<input name="popup" type="hidden" value="<%= request.getParameter(WebKeys.POPUP) %>">
 		<% } %>
 		<% if(inFrame){ %>
-			<input name="in_frame" type="hidden" value="<%= request.getParameter("in_frame") %>">
+			<input name="in_frame" type="hidden" value="<%= request.getParameter(WebKeys.IN_FRAME) %>">
 		<% } %>
-		<input name="<portlet:namespace />referer" type="hidden" value="<%= referer %>">
+		<input name="referer" type="hidden" value="<%= referer %>">
 
 
 
@@ -479,7 +479,7 @@ function editImage(inode, callingImg){
 				<%}%>
 
 				<dt><%= LanguageUtil.get(pageContext, "Upload-New-File") %>:</dt>
-				<dd><input type="file" class="form-text" style="width:350" name="<portlet:namespace />uploadedFile" id="<portlet:namespace />uploadedFile" onChange="beLazier();"></dd>
+				<dd><input type="file" class="form-text" style="width:350" name="uploadedFile" id="uploadedFile" onChange="beLazier();"></dd>
 
 
 				 <%if(InodeUtils.isSet(file.getInode())){%>
@@ -613,7 +613,7 @@ function editImage(inode, callingImg){
 						<option <%= (sdYear.equals(Integer.toString(i))) ? LanguageUtil.get(pageContext, "selected") : "" %> value="<%= i %>"><%= i %></option>
 					<% } %>
 				</select>
-				<span class="calMonthIcon" id="<portlet:namespace />calendar_input_0_button" onClick="<portlet:namespace />calendarOnClick_0('<portlet:namespace />calObj_0');"></span>-->
+				<span class="calMonthIcon" id="calendar_input_0_button" onClick="calendarOnClick_0('calObj_0');"></span>-->
 				<input type="text" dojoType="dijit.form.DateTextBox" validate='return false;' invalidMessage="" id="calendar_0" name="calendar_0" value="<%= publishDateCal.get(Calendar.YEAR) + "-" + (publishDateCal.get(Calendar.MONTH) < 9 ? "0" : "") + (publishDateCal.get(Calendar.MONTH) + 1) + "-" + (publishDateCal.get(Calendar.DAY_OF_MONTH) < 10 ? "0" : "") + publishDateCal.get(Calendar.DAY_OF_MONTH) %>" onchange="dateSelected('calendar_0');" />
 				<input type="hidden" name="calendar_0_month" id="calendar_0_month" value="<%= publishDateCal.get(Calendar.MONTH) %>" />
 				<input type="hidden" name="calendar_0_day" id="calendar_0_day" value="<%= publishDateCal.get(Calendar.DATE) %>" />

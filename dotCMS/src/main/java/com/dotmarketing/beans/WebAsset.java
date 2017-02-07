@@ -214,8 +214,15 @@ public abstract class WebAsset extends Inode implements Permissionable, Versiona
 		return owner;
 	}
 
+	/**
+	 * Returns the name.
+	 * @return String
+	 */
+	public String getName() {
+		return title;
+	}
 
-	
+
 	/**
 	 * Returns a map representation of the asset
 	 * @return the map

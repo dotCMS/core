@@ -1,23 +1,13 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
-
+import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.SQLQueryFactory;
 import com.dotmarketing.cache.FieldsCache;
@@ -47,10 +37,13 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.language.LanguageException;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+
+import java.io.Serializable;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author jtesser
@@ -62,8 +55,10 @@ public class HostAPIImpl implements HostAPI {
 	private ContentletFactory conFac = FactoryLocator.getContentletFactory();
 	private HostCache hostCache = CacheLocator.getHostCache();
 	private Host systemHost;
+	private final SystemEventsAPI systemEventsAPI;
 
 	public HostAPIImpl() {
+		this.systemEventsAPI = APILocator.getSystemEventsAPI();
 	}
 
 	/**
@@ -246,8 +241,6 @@ public class HostAPIImpl implements HostAPI {
 	}
 
 	/**
-	 *
-	 * @param hostName
 	 * @return the host with the passed in name
 	 */
 	public Host findByAlias(String alias, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -549,12 +542,19 @@ public class HostAPIImpl implements HostAPI {
 				} catch (Exception e) {
 					// send notification
 					try {
-						String errorMessage = LanguageUtil.format(user.getLocale(), "notifications_host_deletion_error",new String[]{host.getHostname()},false);
-						errorMessage += e.getMessage();
-						APILocator.getNotificationAPI().generateNotification(errorMessage, NotificationLevel.ERROR, user.getUserId());
+						final I18NMessage errorMessage = new I18NMessage("notifications_host_deletion_error",
+								host.getHostname(), e.getMessage());
 
-					} catch (LanguageException e1) {
-						Logger.error(HostAPIImpl.class, "error formating notification", e);
+						APILocator.getNotificationAPI().generateNotification(
+								new I18NMessage("notification.hostapi.delete.error.title"), // title = Host Notification
+								errorMessage,
+								null, // no actions
+								NotificationLevel.ERROR,
+								NotificationType.GENERIC,
+								user.getUserId(),
+								user.getLocale()
+						);
+
 					} catch (DotDataException e1) {
 						Logger.error(HostAPIImpl.class, "error saving Notification", e);
 					}
@@ -732,7 +732,6 @@ public class HostAPIImpl implements HostAPI {
 		APILocator.getContentletAPI().unarchive(c, user, respectFrontendRoles);
 		host.setModDate(new Date ());
 		hostCache.clearAliasCache();
-
 	}
 
 	private synchronized Host createDefaultHost() throws DotDataException,
@@ -801,6 +800,7 @@ public class HostAPIImpl implements HostAPI {
 		if(rs.isEmpty()) {
 			Host systemHost = new Host();
 			systemHost.setDefault(false);
+			systemHost.setInode("dbdec5e2-c02b-4cfb-83a9-4a4c4f3b2eb0");
 			systemHost.setHostname("system");
 			systemHost.setSystemHost(true);
 			systemHost.setHost(null);
@@ -936,12 +936,12 @@ public class HostAPIImpl implements HostAPI {
 		if(!workingHostName.equals(updatedHostName)) {
     		HibernateUtil dh = new HibernateUtil(VirtualLink.class);
     		List<VirtualLink> resultList = new ArrayList<VirtualLink>();
-    		dh.setQuery("select inode from inode in class " + VirtualLink.class.getName() + " where inode.url like ?");
-    		dh.setParam(workingHostName+":/%");
+    		dh.setQuery("select inode from inode in class " + VirtualLink.class.getName() + " where lower(inode.url) like ?");
+    		dh.setParam(workingHostName.toLowerCase()+":/%");
     		resultList = dh.list();
     		for (VirtualLink vl : resultList) {
     			String workingURL = vl.getUrl();
-    			String newURL = updatedHostName+workingURL.substring(workingHostName.length());//gives url with updatedhostname
+    			String newURL = updatedHostName.toLowerCase()+workingURL.substring(workingHostName.length());//gives url with updatedhostname
     			vl.setUrl(newURL);
     			HibernateUtil.saveOrUpdate(vl);
     			VirtualLinksCache.removePathFromCache(vl.getUrl());
@@ -998,5 +998,41 @@ public class HostAPIImpl implements HostAPI {
 
 		return hosts;
 
+	}
+	
+	public PaginatedArrayList<Host> search(String filter, boolean showArchived, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		try {
+			Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
+			String condition="";
+			
+			if(showArchived){
+				condition=" +deleted:true";
+			}else {
+				condition=" +deleted:false";
+			}
+			
+			if(UtilMethods.isSet(filter)){
+				condition += " +Host.hostName:"+filter.trim()+"*";
+			}
+			if(!showSystemHost){
+				condition += " +Host.isSystemHost:false";
+			}
+			PaginatedArrayList<Contentlet> list = (PaginatedArrayList<Contentlet>)APILocator.getContentletAPI().search("+structureInode:" + st.getInode() + condition, limit, offset, "Host.hostName", user, respectFrontendRoles);
+			
+			return convertToHostPaginatedArrayList(list);
+		} catch (Exception e) {
+			Logger.error(HostAPIImpl.class, e.getMessage(), e);
+			throw new DotRuntimeException(e.getMessage(), e);
+		}
+	}
+	
+	private PaginatedArrayList<Host> convertToHostPaginatedArrayList(PaginatedArrayList<Contentlet> list) {
+		
+		PaginatedArrayList<Host> hosts = new PaginatedArrayList<Host>();
+		hosts.addAll(list.stream().map( content -> new Host(content)).collect(Collectors.toList()));
+		hosts.setQuery(list.getQuery());
+		hosts.setTotalResults(list.getTotalResults());
+		
+		return hosts;
 	}
 }

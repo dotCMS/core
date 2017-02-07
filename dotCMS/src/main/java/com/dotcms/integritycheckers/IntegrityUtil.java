@@ -61,7 +61,6 @@ public class IntegrityUtil {
             throws DotDataException, IOException {
         File csvFile = null;
         CsvWriter writer = null;
-        PreparedStatement statement = null;
 
         try {
             final String outputFile = outputPath + File.separator + type.getDataToFixCSVName();
@@ -74,28 +73,47 @@ public class IntegrityUtil {
                         + "] does not support this method, because results table is not available.");
             }
 
-            Connection conn = DbConnectionFactory.getConnection();
-            if (type == IntegrityType.HTMLPAGES || type == IntegrityType.FILEASSETS) {
-                statement = conn
-                        .prepareStatement(new StringBuilder("select ")
-                                .append(type.getFirstDisplayColumnLabel())
-                                .append(", remote_working_inode, local_working_inode, remote_live_inode, local_live_inode, remote_identifier, local_identifier, language_id from ")
-                                .append(resultsTable).append(" where endpoint_id = ?").toString());
-            } else if (type == IntegrityType.FOLDERS) {
-                statement = conn
-                        .prepareStatement("select remote_inode, local_inode, remote_identifier, local_identifier from "
-                                + resultsTable + " where endpoint_id = ?");
-            } else {
-                statement = conn.prepareStatement("select remote_inode, local_inode from "
-                        + resultsTable + " where endpoint_id = ?");
+            StringBuilder sbSelectTempTable = new StringBuilder();
+            switch(type) {
+            	case HTMLPAGES:
+            	case FILEASSETS:
+            		sbSelectTempTable.append("select ").append(type.getFirstDisplayColumnLabel()).append(
+            			", remote_working_inode, local_working_inode, remote_live_inode, local_live_inode, remote_identifier, local_identifier, language_id from "
+            		);
+                    break;
+            	case FOLDERS:
+            		sbSelectTempTable.append(
+            			"select remote_inode, local_inode, remote_identifier, local_identifier from "
+            		);
+            		break;
+            	case CMS_ROLES:
+            		sbSelectTempTable.append(
+            			"select name, role_key, remote_role_id, local_role_id, local_role_fqn, remote_role_fqn from "
+                	);
+            		break;
+            	default:
+            		sbSelectTempTable.append("select remote_inode, local_inode from ");
+                    break;
             }
-
+            sbSelectTempTable.append(resultsTable).append(" where endpoint_id = ?");
+            
+            Connection conn = DbConnectionFactory.getConnection();
+            PreparedStatement statement = conn.prepareStatement(sbSelectTempTable.toString());
             statement.setString(1, endpointId);
             try (ResultSet rs = statement.executeQuery()) {
                 int count = 0;
 
                 while (rs.next()) {
-                    if (type == IntegrityType.HTMLPAGES || type == IntegrityType.FILEASSETS) {
+                	if (type == IntegrityType.CMS_ROLES) {
+                        writer.write(rs.getString("name"));
+                        writer.write(rs.getString("role_key"));
+
+                        writer.write(rs.getString("remote_role_id"));
+                        writer.write(rs.getString("local_role_id"));
+                        writer.write(rs.getString("remote_role_fqn"));
+                        writer.write(rs.getString("local_role_fqn"));
+
+                	} else if (type == IntegrityType.HTMLPAGES || type == IntegrityType.FILEASSETS) {
                         writer.write(rs.getString("remote_working_inode"));
                         writer.write(rs.getString("local_working_inode"));
                         writer.write(rs.getString("remote_live_inode"));
@@ -124,15 +142,14 @@ public class IntegrityUtil {
                         count = 0;
                     }
                 }
+            } finally {
+                try {
+                    statement.close();
+                } catch (Exception e) {}
             }
         } catch (SQLException e) {
             throw new DotDataException(e.getMessage(), e);
         } finally {
-            try {
-                if (statement != null)
-                    statement.close();
-            } catch (Exception e) {
-            }
             if (writer != null)
                 writer.close();
         }
@@ -173,27 +190,57 @@ public class IntegrityUtil {
     public static void unzipFile(InputStream zipFile, String outputDir) throws Exception {
         File dir = new File(outputDir);
 
-        // if file doesnt exists, then create it
+        // if file doesn't exists, then create it
         if (!dir.exists()) {
             dir.mkdir();
         }
-
-        try (ZipInputStream zin = new ZipInputStream(zipFile)) {
+        
+        ZipInputStream zin = null;
+        FileOutputStream fout = null;
+        
+        try {
+            
             ZipEntry ze = null;
+            zin = new ZipInputStream(zipFile);
             while ((ze = zin.getNextEntry()) != null) {
+                
+             // for each entry to be extracted
+                int bytesRead;
+                byte[] buf = new byte[1024];
+                
                 Logger.info(IntegrityUtil.class, "Unzipping " + ze.getName());
+         
+                fout = new FileOutputStream(outputDir + File.separator
+                        + ze.getName()); 
 
-                try (FileOutputStream fout = new FileOutputStream(outputDir + File.separator
-                        + ze.getName())) {
-                    for (int c = zin.read(); c != -1; c = zin.read()) {
-                        fout.write(c);
+                while ( (bytesRead = zin.read( buf, 0, 1024 )) > -1 )
+                    fout.write( buf, 0, bytesRead );
+                try {
+                    if ( null != fout ) {
+                        fout.close();
                     }
-                    zin.closeEntry();
+                } catch ( Exception e ) {
+                    Logger.warn( IntegrityUtil.class, "Error Closing Stream.", e );
                 }
             }
         } catch (IOException e) {
             Logger.error(IntegrityUtil.class, "Error while unzipping Integrity Data", e);
             throw new Exception("Error while unzipping Integrity Data", e);
+        } finally { // close your streams
+            if ( zin != null ) {
+                try {
+                    zin.close();
+                } catch ( IOException e ) {
+                    Logger.warn( IntegrityUtil.class, "Error Closing Stream.", e );
+                }
+            }
+            if ( fout != null ) {
+                try {
+                    fout.close();
+                } catch ( IOException e ) {
+                    Logger.warn( IntegrityUtil.class, "Error Closing Stream.", e );
+                }
+            }
         }
     }
 
@@ -230,8 +277,8 @@ public class IntegrityUtil {
                     File fileToCheckCsvFile = null;
 
                     try {
-                        fileToCheckCsvFile = integrityType.createIntegrityCheckerInstance()
-                                .generateCSVFile(outputPath);
+                        fileToCheckCsvFile = integrityType.getIntegrityChecker()
+                        		.generateCSVFile(outputPath);
 
                         addToZipFile(fileToCheckCsvFile.getAbsolutePath(), zos,
                                 integrityType.getDataToCheckCSVName());
@@ -290,14 +337,14 @@ public class IntegrityUtil {
         try {
             IntegrityType[] types = IntegrityType.values();
             for (IntegrityType integrityType : types) {
-                final String tempTableName = getTempTableName(endpointId, integrityType);
-
-                if (doesTableExist(tempTableName)) {
-                    dc.executeStatement("truncate table " + tempTableName);
-                    dc.executeStatement("drop table " + tempTableName);
-                }else if (DbConnectionFactory.isMySql()){
-                    dc.executeStatement("drop table if exists " + tempTableName);
-                }
+            	for(String tempTableName : integrityType.getIntegrityChecker().getTempTableNames(endpointId)) {
+                    if (doesTableExist(tempTableName)) {
+                        dc.executeStatement("truncate table " + tempTableName);
+                        dc.executeStatement("drop table " + tempTableName);
+                    }else if (DbConnectionFactory.isMySql()){
+                        dc.executeStatement("drop table if exists " + tempTableName);
+                    }
+            	}
             }
         } catch (SQLException e) {
             Logger.error(getClass(), "Error dropping Temp tables");
@@ -372,11 +419,10 @@ public class IntegrityUtil {
     public void generateDataToFixTable(String endpointId, IntegrityType type) throws Exception {
 
         try {
-
             CsvReader csvFile = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator
                     + endpointId + File.separator + type.getDataToFixCSVName(), '|',
                     Charset.forName("UTF-8"));
-            DotConnect dc = new DotConnect();
+
             final String resultsTable = type.getResultsTableName();
             if (!type.hasResultsTable()) {
                 throw new DotDataException("Integrity type =[" + type
@@ -384,37 +430,52 @@ public class IntegrityUtil {
             }
 
             // Create insert query for temporary table
-            StringBuilder sbInsertTempTable = new StringBuilder("insert into ")
-                    .append(resultsTable);
-            if (type == IntegrityType.FOLDERS) {
-                sbInsertTempTable
-                        .append(" (local_inode, remote_inode, local_identifier, remote_identifier, endpoint_id) values(?,?,?,?,?)");
-            } else if (type == IntegrityType.HTMLPAGES || type == IntegrityType.FILEASSETS) {
-                sbInsertTempTable
-                        .append(" (local_working_inode, remote_working_inode, local_live_inode, remote_live_inode, local_identifier, remote_identifier, ")
-                        .append(type.getFirstDisplayColumnLabel())
-                        .append(", endpoint_id, language_id) values(?,?,?,?,?,?,?,?,?)");
-            } else {
-                sbInsertTempTable.append(" (local_inode, remote_inode, endpoint_id) values(?,?,?)");
+            StringBuilder sbInsertTempTable = new StringBuilder("insert into ").append(resultsTable);
+            switch(type) {
+	        	case HTMLPAGES:
+	        	case FILEASSETS:
+	                sbInsertTempTable.append(
+	                	" (local_working_inode, remote_working_inode, local_live_inode, remote_live_inode, local_identifier, remote_identifier, "
+	                ).append(type.getFirstDisplayColumnLabel()).append(", endpoint_id, language_id) values(?,?,?,?,?,?,?,?,?)");
+	                break;
+            	case FOLDERS:
+                    sbInsertTempTable.append(" (local_inode, remote_inode, local_identifier, remote_identifier, endpoint_id) values(?,?,?,?,?)");
+                    break;
+            	case CMS_ROLES:
+            		sbInsertTempTable.append(" (name, role_key, local_role_id, remote_role_id, local_role_fqn, remote_role_fqn, endpoint_id) values(?,?,?,?,?,?,?)");
+            		break;
+                default:
+                    sbInsertTempTable.append(" (local_inode, remote_inode, endpoint_id) values(?,?,?)");
+                	break;
             }
             final String INSERT_TEMP_TABLE = sbInsertTempTable.toString();
 
+            DotConnect dc = new DotConnect();
             while (csvFile.readRecord()) { // TODO: FIX THE INDEXES FOR
                                            // HTMLPAGES
                 dc.setSQL(INSERT_TEMP_TABLE);
 
-                dc.addParam(csvFile.get(0)); // localWorkingInode
-                dc.addParam(csvFile.get(1)); // remoteWorkingInode
+                if (type == IntegrityType.CMS_ROLES) {
+	                dc.addParam(csvFile.get(0)); // name
+	                dc.addParam(csvFile.get(1)); // role_key
+	                dc.addParam(csvFile.get(2)); // local_role_id
+	                dc.addParam(csvFile.get(3)); // remote_role_id
+	                dc.addParam(csvFile.get(4)); // local_role_fqn
+	                dc.addParam(csvFile.get(5)); // remote_role_fqn
+                } else {
+	                dc.addParam(csvFile.get(0)); // localWorkingInode
+	                dc.addParam(csvFile.get(1)); // remoteWorkingInode
 
-                if (type == IntegrityType.HTMLPAGES || type == IntegrityType.FILEASSETS) {
-                    dc.addParam(csvFile.get(2)); // localLiveInode
-                    dc.addParam(csvFile.get(3)); // remoteLiveInode
-                    dc.addParam(csvFile.get(4)); // localIdentifier
-                    dc.addParam(csvFile.get(5)); // remoteIdentifier
-                    dc.addParam(csvFile.get(6)); // contentletAssetName
-                } else if (type == IntegrityType.FOLDERS) {
-                    dc.addParam(csvFile.get(2)); // localIdentifier
-                    dc.addParam(csvFile.get(3)); // remoteIdentifier
+	                if (type == IntegrityType.HTMLPAGES || type == IntegrityType.FILEASSETS) {
+	                    dc.addParam(csvFile.get(2)); // localLiveInode
+	                    dc.addParam(csvFile.get(3)); // remoteLiveInode
+	                    dc.addParam(csvFile.get(4)); // localIdentifier
+	                    dc.addParam(csvFile.get(5)); // remoteIdentifier
+	                    dc.addParam(csvFile.get(6)); // contentletAssetName
+	                } else if (type == IntegrityType.FOLDERS) {
+	                    dc.addParam(csvFile.get(2)); // localIdentifier
+	                    dc.addParam(csvFile.get(3)); // remoteIdentifier
+	                }
                 }
 
                 dc.addParam(endpointId);
@@ -431,37 +492,12 @@ public class IntegrityUtil {
         }
     }
 
-    /**
-     * Creates temporary TABLE for integrity checking purposes.
-     *
-     * @param endpointId
-     * @param type
-     * @return
-     */
-    private String getTempTableName(String endpointId, IntegrityType type) {
-
-        if (!UtilMethods.isSet(endpointId))
-            return null;
-
-        String endpointIdforDB = endpointId.replace("-", "");
-        String resultsTableName = type.name().toLowerCase() + "_temp_" + endpointIdforDB;
-
-        if (DbConnectionFactory.isOracle()) {
-            resultsTableName = resultsTableName.substring(0, 29);
-        } else if (DbConnectionFactory.isMsSql()) {
-            resultsTableName = "#" + resultsTableName;
-        }
-
-        return resultsTableName;
-    }
-
     public boolean doesIntegrityConflictsDataExist(String endpointId) throws Exception {
         boolean conflictsDataExist = false;
 
         IntegrityType[] types = IntegrityType.values();
         for (IntegrityType integrityType : types) {
-            if (integrityType.createIntegrityCheckerInstance().doesIntegrityConflictsDataExist(
-                    endpointId)) {
+            if (integrityType.getIntegrityChecker().doesIntegrityConflictsDataExist(endpointId)) {
                 conflictsDataExist = true;
                 break;
             }
@@ -513,7 +549,7 @@ public class IntegrityUtil {
 	 */
     public void fixConflicts(final String endpointId, IntegrityType type) throws DotDataException,
             DotSecurityException {
-        type.createIntegrityCheckerInstance().executeFix(endpointId);
+        type.getIntegrityChecker().executeFix(endpointId);
     }
 
     /**
@@ -526,7 +562,7 @@ public class IntegrityUtil {
      */
     public void discardConflicts(final String endpointId, IntegrityType type)
             throws DotDataException {
-        type.createIntegrityCheckerInstance().discardConflicts(endpointId);
+        type.getIntegrityChecker().discardConflicts(endpointId);
     }
 
     /**
@@ -540,7 +576,7 @@ public class IntegrityUtil {
     public void completeDiscardConflicts(final String endpointId) throws DotDataException {
         IntegrityType[] types = IntegrityType.values();
         for (IntegrityType integrityType : types) {
-            integrityType.createIntegrityCheckerInstance().discardConflicts(endpointId);
+            integrityType.getIntegrityChecker().discardConflicts(endpointId);
         }
     }
 
@@ -558,7 +594,7 @@ public class IntegrityUtil {
 
         IntegrityType[] types = IntegrityType.values();
         for (IntegrityType integrityType : types) {
-            existConflicts |= integrityType.createIntegrityCheckerInstance()
+            existConflicts |= integrityType.getIntegrityChecker()
                     .generateIntegrityResults(endpointId);
         }
 

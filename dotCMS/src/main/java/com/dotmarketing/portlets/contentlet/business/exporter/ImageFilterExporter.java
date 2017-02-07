@@ -40,25 +40,25 @@ public class ImageFilterExporter implements BinaryContentExporter {
 		try {
 
 			List<String> filters=new ArrayList<>();
-			  
+
 			if(parameters.get("filter") != null){
-				filters.addAll( Arrays.asList(parameters.get("filter")[0].split(","))); 
+				filters.addAll( Arrays.asList(parameters.get("filter")[0].split(",")));
 			}
 			else if(parameters.get("filters") != null){
-			  filters.addAll( Arrays.asList(parameters.get("filters")[0].split(","))); 
+			  filters.addAll( Arrays.asList(parameters.get("filters")[0].split(",")));
 			}
 
-			
+
 	       if(file.getAbsolutePath().toLowerCase().endsWith(".pdf")){
 	         filters.remove("PDF");
 	         filters.add(0, "PDF");
            }
-	       
+
 	       else if(filters.size()== 0 ){
 	         filters.remove("Png");
 	         filters.add(0, "Png");
 	       }
-			
+
 
            parameters.put("filter", filters.toArray(new String[filters.size()]));
            parameters.put("filters", filters.toArray(new String[filters.size()]));

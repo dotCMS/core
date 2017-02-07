@@ -521,15 +521,15 @@ public class RelationshipFactory {
 
             HibernateUtil dh = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
 
-            String sql = "SELECT {contentlet.*} from contentlet contentlet, inode contentlet_1_, tree relationshipTree, identifier iden, tree identifierTree "
+            String sql = "SELECT {contentlet.*} from contentlet contentlet, inode contentlet_1_, tree relationshipTree, identifier iden, tree identifierTree, contentlet_version_info vi "
             		+ "where (relationshipTree.child = ? or relationshipTree.parent = ?) and relationshipTree.relation_type = ? "
-            		+ "and (iden.inode = relationshipTree.parent or iden.inode = relationshipTree.child) "
-                    + "and (iden.inode = identifierTree.parent and identifierTree.child = contentlet_1_.inode) "
+            		+ "and (iden.id = relationshipTree.parent or iden.id = relationshipTree.child) "
+                    + "and (iden.id = identifierTree.parent and identifierTree.child = contentlet_1_.inode) "
                     + "and contentlet.inode = contentlet_1_.inode and contentlet.inode <> ? ";
             if(liveContent)
-            	sql += "and contentlet.live = " + DbConnectionFactory.getDBTrue();
+            	sql += "and contentlet.inode = vi.live_inode ";
             else
-            	sql += "and contentlet.working = " + DbConnectionFactory.getDBTrue();
+            	sql += "and contentlet.inode = vi.working_inode ";
 
             if(UtilMethods.isSet(sqlCondition))
             	sql += "and " + sqlCondition;

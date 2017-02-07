@@ -10,9 +10,10 @@ import org.junit.Test;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.lang.RandomStringUtils;
+import com.dotcms.util.ConfigTestHelper;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.util.ConfigTestHelper;
 
 public class TestShortyIdApi {
 
@@ -44,6 +45,27 @@ public class TestShortyIdApi {
 
             .build();
 
+    List<String[]> starterExpecteds = ImmutableList.<String[]>builder()
+            .add(new String[] {"dc4b6228-67d7-454f-bd01-f96a196922d0", "inode", "containers"})
+            .add(new String[] {"3f0255e8-b45d-46ea-8bb7-eb6597db4c1e", "identifier", "containers"})
+
+
+            .add(new String[] {"767509b1-2392-4661-a16b-e0e31ce27719", "identifier", "contentlet"})
+            .add(new String[] {"008dab22-8bc3-4eb2-93a0-79e3d5d0a4ab", "inode", "folder"})
+            .add(new String[] {"c12fe7e6-d338-49d5-973b-2d974d57015b", "identifier", "CONTENTLET"})
+            .add(new String[] {"4d7112b5-3efe-40b0-acff-912cc44b483e", "identifier", "links"})
+            .add(new String[] {"d30a0347-7473-49ab-b67d-cc7a972f4d59", "identifier", "template"})
+
+
+
+            .add(new String[] {"d8c405c7-465a-4fc0-9f52-33fc74461a28", "inode", "contentlet"})
+            .add(new String[] {"cc2cdf9c-a20d-4862-9454-2a76c1132123", "inode", "contentlet"})
+            .add(new String[] {"b76bc77a-59a7-45e4-9d8f-01d0f4a1567e", "inode", "template"})
+
+            .add(new String[] {"1049e7fe-1553-4731-bdf9-ba069f1dc08b", "inode", "folder"})
+            .add(new String[] {"b1bb57cf-6f98-486d-a3b9-83f96d3dab22", "inode", "links"})
+            .build();
+
 
     static List<String> fourOhFours = new ArrayList<>();
 
@@ -59,10 +81,8 @@ public class TestShortyIdApi {
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        new com.dotmarketing.util.TestingJndiDatasource().init();
-        ConfigTestHelper._setupFakeTestingContext();
+    	IntegrationTestInitService.getInstance().init();
         APILocator.getBundleAPI();
-        CacheLocator.init();
 
         for (int i = 0; i < 10; i++) {
             fourOhFours.add(RandomStringUtils.randomAlphanumeric(ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH));
@@ -83,13 +103,17 @@ public class TestShortyIdApi {
         // run 10 times
         for (int i = 0; i < 10; i++) {
             try {
-                for (String[] values : expecteds) {
+                for (String[] values : starterExpecteds) {
                     val = values;
                     key = val[0].substring(0, ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH);
                     shortType = ShortType.fromString(val[1]);
                     shortSubType = ShortType.fromString(val[2]);
                     Optional<ShortyId> opt = APILocator.getShortyAPI().getShorty(key);
                     shorty = opt.get();
+
+                    System.out.println(val[0] + " == " + shorty.longId);
+                    System.out.println(shortType + " == " + shorty.type);
+                    System.out.println(shortSubType + " == " + shorty.subType);
 
                     assert (shorty.longId.equals(val[0]));
                     assert (shortType == shorty.type);
@@ -250,8 +274,8 @@ public class TestShortyIdApi {
     public void testLongerShorties() {
 
         ShortyIdAPI api = APILocator.getShortyAPI();
-        for (String[] x : expecteds) {
-            String noDashes = x[0].replaceAll("-", "");
+        for (String[] expected : starterExpecteds) {
+            String noDashes = expected[0].replaceAll("-", "");
             for ( int i = ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH; i < 30; i++ ) {
                 String key = noDashes.substring(0, i);
                 Optional<ShortyId> opt = APILocator.getShortyAPI().getShorty(key);

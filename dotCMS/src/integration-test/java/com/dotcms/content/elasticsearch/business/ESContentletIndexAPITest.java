@@ -9,10 +9,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
+import com.dotcms.util.IntegrationTestInitService;
+
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
@@ -58,7 +60,7 @@ import com.liferay.portal.model.User;
  * @author Jonathan Gamba
  *         Date: 4/18/13
  */
-public class ESContentletIndexAPITest extends TestBase {
+public class ESContentletIndexAPITest extends IntegrationTestBase {
 
     private static String stemmerText;
     private static User user;
@@ -67,7 +69,9 @@ public class ESContentletIndexAPITest extends TestBase {
     private static Language defaultLanguage;
 
     @BeforeClass
-    public static void prepare () throws DotSecurityException, DotDataException {
+    public static void prepare () throws Exception {
+    	//Setting web app environment
+        IntegrationTestInitService.getInstance().init();
 
         HostAPI hostAPI = APILocator.getHostAPI();
         LanguageAPI languageAPI = APILocator.getLanguageAPI();
@@ -155,7 +159,7 @@ public class ESContentletIndexAPITest extends TestBase {
         assertTrue( foundLive );
 
         //Verify we just added two more indices
-        assertTrue( oldIndices + 2 == newIndices );
+        assertEquals( oldIndices + 2, newIndices );
 
         //***************************************************
         //Now lets delete the created indices
@@ -187,7 +191,7 @@ public class ESContentletIndexAPITest extends TestBase {
         assertFalse( foundLive );
 
         //Verify we just added two more indices
-        assertTrue( oldIndices == newIndices );
+        assertEquals( oldIndices, newIndices );
     }
 
     /**

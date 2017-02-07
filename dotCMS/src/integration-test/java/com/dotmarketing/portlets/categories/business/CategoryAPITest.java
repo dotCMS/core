@@ -1,6 +1,19 @@
 package com.dotmarketing.portlets.categories.business;
 
-import com.dotcms.TestBase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import com.dotcms.IntegrationTestBase;
+import com.dotcms.util.IntegrationTestInitService;
+
+import org.junit.BeforeClass;
+import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -18,12 +31,7 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -31,13 +39,16 @@ import static org.junit.Assert.*;
  * Created by Jonathan Gamba
  * Date: 4/8/13
  */
-public class CategoryAPITest extends TestBase {
+public class CategoryAPITest extends IntegrationTestBase {
 
     private static User user;
     private static Host defaultHost;
 
     @BeforeClass
-    public static void prepare () throws DotSecurityException, DotDataException {
+    public static void prepare () throws Exception {
+
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
 
         HostAPI hostAPI = APILocator.getHostAPI();
 
@@ -45,6 +56,7 @@ public class CategoryAPITest extends TestBase {
         user = APILocator.getUserAPI().getSystemUser();
         defaultHost = hostAPI.findDefaultHost( user, false );
     }
+
 
     /**
      * Testing {@link CategoryAPI#findTopLevelCategories(User, boolean, int, int, String, String)},

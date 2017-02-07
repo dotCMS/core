@@ -6,7 +6,13 @@ import java.util.List;
 import java.util.Map;
 
 import junit.framework.Assert;
+
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
+
+import com.dotcms.LicenseTestUtil;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -27,6 +33,12 @@ import com.liferay.portal.model.User;
  *
  */
 public class ContentletAjaxTest {
+	
+	@BeforeClass
+    public static void prepare() throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+    }
 
 	/**
 	 * Test problem on "Content Search" when switching on one language 

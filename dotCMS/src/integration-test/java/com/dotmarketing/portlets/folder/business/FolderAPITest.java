@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.folder.business;
 
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -22,6 +23,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -35,6 +37,13 @@ public class FolderAPITest {
 
 	private final String LOGO_GIF_1 = "logo.gif";
 	private final String LOGO_GIF_2 = "logo2.gif";
+	
+    @BeforeClass
+    public static void prepare () throws Exception {
+    	
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+    }
 
 	@Rule
 	public TemporaryFolder testFolder = new TemporaryFolder();

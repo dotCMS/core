@@ -1,9 +1,13 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS_NOT;
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import com.dotcms.UnitTestBase;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
+
+import eu.bitwalker.useragentutils.Browser;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,22 +17,19 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.mockito.Mockito;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS_NOT;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
-import eu.bitwalker.useragentutils.Browser;
-import com.dotmarketing.portlets.rules.model.ParameterModel;
-
-public class UsersBrowserConditionletTest {
+public class UsersBrowserConditionletTest extends UnitTestBase {
 	
 	private HttpServletRequest request;
     private HttpServletResponse response;
     private UsersBrowserConditionlet conditionlet = new UsersBrowserConditionlet();
     private Collection<String> browsers;
     
-    @BeforeMethod
+    @Before
     public void before () {
         // Mock the request
         request = Mockito.mock(HttpServletRequest.class);

@@ -10,7 +10,6 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.RE
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.STARTS_WITH;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.List;

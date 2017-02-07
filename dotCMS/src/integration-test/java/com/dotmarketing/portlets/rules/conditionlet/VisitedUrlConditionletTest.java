@@ -17,6 +17,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.util.IntegrationTestInitService;
+
 import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
@@ -42,6 +44,8 @@ public class VisitedUrlConditionletTest {
 
     @BeforeClass
     public static void prepare () throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
     }
 

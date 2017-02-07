@@ -1,5 +1,6 @@
 package com.dotcms.translate;
 
+import com.dotcms.UnitTestBase;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -14,8 +15,8 @@ import com.dotmarketing.util.json.JSONObject;
 import com.dotmarketing.viewtools.JSONTool;
 import com.liferay.portal.model.User;
 
+import org.junit.Test;
 import org.mockito.Mockito;
-import org.testng.annotations.Test;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -33,13 +34,13 @@ import static com.dotcms.translate.TranslateTestUtil.english;
 import static com.dotcms.translate.TranslateTestUtil.french;
 import static com.dotcms.translate.TranslateTestUtil.getEnglishContent;
 import static com.dotcms.translate.TranslateTestUtil.spanish;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
-import static org.testng.Assert.assertEquals;
 
-public class GoogleTranslationServiceTest {
+public class GoogleTranslationServiceTest extends UnitTestBase {
     private User testUser = new User();
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void translateContent_NullContent() throws TranslationException {
         new GoogleTranslationService("key", new JSONTool(), new ApiProvider())
             .translateContent(null, new Language(), null, testUser);
@@ -137,14 +138,14 @@ public class GoogleTranslationServiceTest {
         assertEquals(frenchVersion.getStringProperty(TEXT_AREA_VN), "French 3");
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void translateContent_nullFields() throws TranslationException, DotDataException, DotSecurityException {
         ApiProvider apiProvider = Mockito.mock(ApiProvider.class);
         TranslationService service = Mockito.spy(new GoogleTranslationService("key", null, apiProvider));
         service.translateContent(new Contentlet(), spanish, null, testUser);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void translateContent_emtpyFields() throws TranslationException, DotDataException, DotSecurityException {
         ApiProvider apiProvider = Mockito.mock(ApiProvider.class);
         TranslationService service = Mockito.spy(new GoogleTranslationService("", null, apiProvider));
@@ -201,7 +202,7 @@ public class GoogleTranslationServiceTest {
         assertEquals(translated, "Esta es una prueba en Inglés");
     }
 
-    @Test(expectedExceptions = TranslationException.class)
+    @Test(expected = TranslationException.class)
     public void testTranslateString_BadJSON() throws Exception {
         JSONObject jsonObject = new JSONObject("{invalid:invalid}");
 
@@ -212,7 +213,7 @@ public class GoogleTranslationServiceTest {
         service.translateString("whatever", english, spanish);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testTranslateString_SameLanguage() throws Exception {
         GoogleTranslationService service = new GoogleTranslationService("", null, null);
         service.translateString("whatever", english, english);

@@ -13,6 +13,14 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
+import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.util.I18NMessage;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -21,7 +29,6 @@ import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -87,6 +94,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     private UserAPI userAPI;
     private VersionableAPI versionableAPI;
     private ContentletAPI contentletAPI;
+    private SystemEventsAPI systemEventsAPI;
 
     public HTMLPageAssetAPIImpl() {
         permissionAPI = APILocator.getPermissionAPI();
@@ -95,6 +103,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         userAPI = APILocator.getUserAPI();
         versionableAPI = APILocator.getVersionableAPI();
         contentletAPI = APILocator.getContentletAPI();
+        systemEventsAPI = APILocator.getSystemEventsAPI();
     }
 
     @Override
@@ -382,11 +391,11 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         else {
             return APILocator.getFolderAPI().findFolderByPath(
                     ident.getParentPath(), APILocator.getHostAPI().find(
-                            ident.getHostId(), userAPI.getSystemUser(), false), 
+                            ident.getHostId(), userAPI.getSystemUser(), false),
                             userAPI.getSystemUser(), false);
         }
     }
-    
+
     /**
      * Migrate all Legacy Pages to Contents
      * @param user
@@ -419,14 +428,23 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     						if(migrated==elements.size() || (migrated>0 && migrated%100==0) ) {
     							HibernateUtil.commitTransaction();
-    							elements = APILocator.getHTMLPageAPI().findHtmlPages(APILocator.getUserAPI().getSystemUser(), true, null, null, null, null, null, offset+limit, limit, null);
+    							elements = htmlPageAPI.findHtmlPages(userAPI.getSystemUser(), true, null, null, null, null, null, offset+limit, limit, null);
     						}
     					}
 
     					}
 
     				//Create a new notification to inform the pages were migrated
-    				APILocator.getNotificationAPI().generateNotification( LanguageUtil.get( user.getLocale(), "htmlpages-migration-finished" ), NotificationLevel.INFO, user.getUserId() );
+                    APILocator.getNotificationAPI().generateNotification(
+                            new I18NMessage("notification.htmlpageassets.migration.info.title"), // title = HTML Pages Migration
+                            new I18NMessage( "htmlpages-migration-finished" ),
+                            null, // no actions
+                            NotificationLevel.INFO,
+                            NotificationType.GENERIC,
+                            user.getUserId(),
+                            user.getLocale()
+                    );
+
     				Logger.info(this, LanguageUtil.get( user.getLocale(), "htmlpages-were-succesfully-converted" ));
     				result = true;
     			}
@@ -461,10 +479,10 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     public HTMLPageAsset migrateLegacyPage(HTMLPage legacyPage, User user, boolean respectFrontEndPermissions) throws Exception {
         Identifier legacyident=identifierAPI.find(legacyPage);
         VersionInfo vInfo=versionableAPI.getVersionInfo(legacyident.getId());
-        
+
         HTMLPage working=(HTMLPage) versionableAPI.findWorkingVersion(legacyident, user, respectFrontEndPermissions);
         HTMLPageAsset cworking = migrateLegacyData(working, user, respectFrontEndPermissions), clive=null;
-        
+
         if(vInfo.getLiveInode()!=null && !vInfo.getLiveInode().equals(vInfo.getWorkingInode())) {
             HTMLPage live=(HTMLPage) versionableAPI.findLiveVersion(legacyident, user, respectFrontEndPermissions);
             clive = migrateLegacyData(live, user, respectFrontEndPermissions);
@@ -476,14 +494,13 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         }
         
         List<MultiTree> multiTree = MultiTreeFactory.getMultiTree(working.getIdentifier());
-        
+
         htmlPageAPI.delete(working, user, respectFrontEndPermissions);
         PageServices.invalidateAll(working);
         HibernateUtil.getSession().clear();
         CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(legacyident.getId());
-        
         // Ignore page with NULL template per https://github.com/dotCMS/core/issues/9971
-        if(clive!=null && UtilMethods.isSet(clive.getTemplateId())) {
+        if(clive!=null&& UtilMethods.isSet(clive.getTemplateId())) {
             Contentlet cclive = contentletAPI.checkin(clive, user, respectFrontEndPermissions);
             contentletAPI.publish(cclive, user, respectFrontEndPermissions);
         }
@@ -506,12 +523,12 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 permissionAPI.assignPermissions(perms, ccworking, user, respectFrontEndPermissions);
             }
 
-            return fromContentlet(ccworking);         
+            return fromContentlet(ccworking);
         }
 
         return null;
     }
-    
+
     protected HTMLPageAsset migrateLegacyData(HTMLPage legacyPage, User user, boolean respectFrontEndPermissions) throws DotStateException, DotDataException, DotSecurityException {
         Identifier legacyident=identifierAPI.find(legacyPage);
         HTMLPageAsset newpage=new HTMLPageAsset();
@@ -548,7 +565,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         String migratedPageUrl = legacyPageUrl;
 
         // Use asset-name from identifier as default migrated page-url
-        if (!StringUtils.isEmpty(legacyIdentAssetName) && !legacyIdentAssetName.equals(migratedPageUrl)) {          
+        if (!StringUtils.isEmpty(legacyIdentAssetName) && !legacyIdentAssetName.equals(migratedPageUrl)) {
             migratedPageUrl = legacyIdentAssetName;
         }
 
@@ -557,7 +574,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
         return migratedPageUrl;
     }
-    
+
     
     @Override
     public String getHostDefaultPageType(String hostId) throws DotDataException, DotSecurityException {
@@ -644,6 +661,9 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                     contentletAPI.publish(cont, user, false);
                 }
             }
+
+            systemEventsAPI.pushAsync(SystemEventType.MOVE_PAGE_ASSET, new Payload(page, Visibility.EXCLUDE_OWNER,
+                    new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
             return true;
         }

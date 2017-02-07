@@ -513,8 +513,14 @@ public class FileUtil {
 				
 				//Both files checked. 
 				if(DigestUtils.md5Hex(inputSource).equals(DigestUtils.md5Hex(inputDestination))){
-					Logger.info(FileUtil.class, "Move method: Source equal to Destination, no need to move.");
+
+                    //If both files are the same but the destination is a soft link do nothing...., we don't want to remove the original file
+                    if ( source.toPath().toRealPath().equals(destination.toPath().toRealPath())
+                            || Files.isSymbolicLink(destination.toPath()) ) {
 					return true;
+				}
+
+					return source.delete();
 				}
 			}
 		} catch (Exception e) {

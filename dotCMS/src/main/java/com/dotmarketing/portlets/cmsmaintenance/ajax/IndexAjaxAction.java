@@ -10,23 +10,27 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.zip.ZipException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.elasticsearch.snapshots.SnapshotRestoreException;
+
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.DotIndexException;
+import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESIndexHelper;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.fileupload.FileItem;
 import com.dotcms.repackage.org.apache.commons.fileupload.FileItemFactory;
 import com.dotcms.repackage.org.apache.commons.fileupload.FileUploadException;
 import com.dotcms.repackage.org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import com.dotcms.repackage.org.apache.commons.fileupload.servlet.ServletFileUpload;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import org.elasticsearch.action.admin.indices.status.IndexStatus;
-
-import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
-import com.dotcms.content.elasticsearch.business.DotIndexException;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
-import com.dotcms.rest.ESIndexResource;
+import com.dotcms.rest.api.v1.index.ESIndexResource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -42,6 +46,20 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
 public class IndexAjaxAction extends AjaxAction {
+
+	private final ESIndexHelper indexHelper;
+	private final ESIndexAPI indexAPI;
+
+	public IndexAjaxAction(){
+		this.indexHelper = ESIndexHelper.INSTANCE;
+		this.indexAPI = APILocator.getESIndexAPI();
+	}
+
+	@VisibleForTesting
+	protected IndexAjaxAction(ESIndexHelper indexHelper, ESIndexAPI indexAPI){
+		this.indexHelper = indexHelper;
+		this.indexAPI = indexAPI;
+	}
 
 	public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
@@ -64,7 +82,7 @@ public class IndexAjaxAction extends AjaxAction {
 
 		try {
 			// Check permissions if the user has access to the CMS Maintenance Portlet
-			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", user)) {
+			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)) {
 				String userName = map.get("u");
 				String password = map.get("p");
 				LoginFactory.doLogin(userName, password, false, request, response);
@@ -73,7 +91,7 @@ public class IndexAjaxAction extends AjaxAction {
 				    setUser(request);
                     user = getUser();
 				}
-				if(user==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", user)){
+				if(user==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)){
 					response.sendError(401);
 					return;
 				}
@@ -161,8 +179,8 @@ public class IndexAjaxAction extends AjaxAction {
 	public void downloadIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
 		Map<String, String> map = getURIParams();
 		response.setContentType("application/zip");
-		
-		String indexName = ESIndexResource.getIndexNameOrAlias(map,"indexName","indexAlias");
+
+		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
 		if(!UtilMethods.isSet(indexName)) return;
 		
 		File f=ESIndexResource.downloadIndex(indexName);
@@ -177,8 +195,6 @@ public class IndexAjaxAction extends AjaxAction {
 
 		f.delete();
 	}
-
-
 
 	public void createIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotIndexException {
 
@@ -203,7 +219,7 @@ public class IndexAjaxAction extends AjaxAction {
 	public void clearIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotStateException, DotDataException {
 		Map<String, String> map = getURIParams();
 
-		String indexName = ESIndexResource.getIndexNameOrAlias(map,"indexName","indexAlias");
+		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
 
 		if(UtilMethods.isSet(indexName))
 		    APILocator.getESIndexAPI().clearIndex(indexName);
@@ -212,21 +228,21 @@ public class IndexAjaxAction extends AjaxAction {
 
 	public void deleteIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		Map<String, String> map = getURIParams();
-		String indexName = ESIndexResource.getIndexNameOrAlias(map,"indexName","indexAlias");
+		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
 		if(UtilMethods.isSet(indexName))
 		    APILocator.getESIndexAPI().delete(indexName);
 	}
 
 	public void activateIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
 		Map<String, String> map = getURIParams();
-		String indexName = ESIndexResource.getIndexNameOrAlias(map,"indexName","indexAlias");
+		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
 
 		ESIndexResource.activateIndex(indexName);
 
 	}
 	public void deactivateIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
 		Map<String, String> map = getURIParams();
-		String indexName = ESIndexResource.getIndexNameOrAlias(map,"indexName","indexAlias");
+		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
 		ESIndexResource.deactivateIndex(indexName);
 	}
 
@@ -239,7 +255,7 @@ public class IndexAjaxAction extends AjaxAction {
 
 	public void updateReplicas(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
 		Map<String, String> map = getURIParams();
-		String indexName = ESIndexResource.getIndexNameOrAlias(map,"indexName","indexAlias");
+		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
 
 		int replicas = Integer.parseInt(map.get("replicas"));
 
@@ -274,7 +290,7 @@ public class IndexAjaxAction extends AjaxAction {
 
 	public void closeIndex(HttpServletRequest request, HttpServletResponse response) {
 	    Map<String, String> map = getURIParams();
-	    String indexName = ESIndexResource.getIndexNameOrAlias(map,"indexName","indexAlias");
+	    String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
 
 	    APILocator.getESIndexAPI().closeIndex(indexName);
 	}
@@ -301,7 +317,7 @@ public class IndexAjaxAction extends AjaxAction {
 
 	public void getIndexStatus(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		Map<String, String> map = getURIParams();
-		String indexName = ESIndexResource.getIndexNameOrAlias(map,"indexName","indexAlias");
+		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
 		String resp = null;
 
 		try {
@@ -315,8 +331,8 @@ public class IndexAjaxAction extends AjaxAction {
 
 	public void getIndexRecordCount(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		Map<String, String> map = getURIParams();
-		String indexName = ESIndexResource.getIndexNameOrAlias(map,"indexName","indexAlias");
-		
+		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
+
 		response.getWriter().println(ESIndexResource.indexDocumentCount(indexName));
 	}
 

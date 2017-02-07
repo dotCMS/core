@@ -6,28 +6,23 @@
 
 <div id="monthlyView" style="display:none;">
 
-	<div class="yui-gb" id="monthControls" style="padding: 8px 5px;">
-		<div class="yui-u first">
-			<button dojoType="dijit.form.Button" onClick="previousMonth()" >
-				<span class="arrowLeftIcon"></span>
-			</button>
-			<button dojoType="dijit.form.Button" onClick="nextMonth()" >
-				<span class="arrowRightIcon"></span>
-			</button>
-			<button dojoType="dijit.form.Button" onClick="setTodayView()" >
-	    		<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Today")) %>
-			</button>
+	<div class="portlet-toolbar">
+		<div class="portlet-toolbar__actions-primary">
+			<div class="inline-form">
+				<button dojoType="dijit.form.Button" onClick="previousMonth()" iconClass="arrowLeftIcon"></button>
+				<button dojoType="dijit.form.Button" onClick="nextMonth()" iconClass="arrowRightIcon"></button>
+				<button dojoType="dijit.form.Button" onClick="setTodayView()" >
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Today")) %>
+				</button>
+			</div>
 		</div>
-		<div class="yui-u"style=" text-align:center;padding-top:5px;">
-			<span id="monthMonthlyViewName" class="monthName"></span>
+		<div class="portlet-toolbar__info" id="monthMonthlyViewName">
 		</div>
-	    <div class="yui-u">
-	    	&nbsp;
-		</div> 
+		<div class="portlet-toolbar__actions-secondary"></div>
 	</div>
 	
 	<div id="monthWrapper" style="overflow-y:auto;overflow-x:hidden;">
-		<table class="listingTable">
+		<table class="listingTable" style="height: 100%;">
 			<thead> 
 				<tr>
 					<th width="14%"><%= LanguageUtil.get(pageContext, "SUN") %></th>

@@ -132,7 +132,7 @@ function relationNameChanged() {
 
 <html:form action="/ext/structure/edit_relationship" method="post" styleId="relationshipForm">
     
-    <fieldset>
+<div class="portlet-main">
  
         <html:hidden property="inode" />
         <html:hidden property="relationTypeValue" />
@@ -189,27 +189,27 @@ function relationNameChanged() {
                     <option value="<%= ((Integer)com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()).toString() %>"><%= LanguageUtil.get(pageContext, "Many-to-Many") %></option>
                 </select>
             </dd>
-    
-            <dt>&nbsp;</dt>
-            <dd>
+    	</dl>
+
+		<div class="buttonRow">
                 <%if(!disabled){%>
-                <button dojoType="dijit.form.Button" onCLick="saveRelationship();return false;" iconClass="saveIcon">
-                   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
-                </button>
-        
-                <button dojoType="dijit.form.Button" onCLick="cancel();return false;" iconClass="cancelIcon" >
-                   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
-                </button>
+	                <button dojoType="dijit.form.Button" onCLick="saveRelationship();return false;" iconClass="saveIcon">
+	                   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
+	                </button>
+	        
+	                <button dojoType="dijit.form.Button" onCLick="cancel();return false;" class="dijitButtonFlat">
+	                   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
+	                </button>
                 <%}else{ %>
                 
-                <button dojoType="dijit.form.Button" onCLick="cancel();return false;" iconClass="cancelIcon">
-                   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
-                </button>
+	                <button dojoType="dijit.form.Button" onCLick="cancel();return false;" class="dijitButtonFlat">
+	                   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
+	                </button>
                 <%} %>
-            </dd>
+            </div>
       </dl> 
- </fieldset>
-   
+
+ </div> 
    
 </html:form>
 </liferay:box>

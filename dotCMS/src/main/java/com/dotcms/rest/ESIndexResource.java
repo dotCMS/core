@@ -42,7 +42,10 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
-
+/**
+ * @deprecated As of 2016-10-12, replaced by {@link com.dotcms.rest.api.v1.index.ESIndexResource}
+ */
+@Deprecated
 @Path("/esindex")
 public class ESIndexResource {
 
@@ -50,7 +53,7 @@ public class ESIndexResource {
 
     protected InitDataObject auth(String params,HttpServletRequest request) throws DotSecurityException, DotDataException {
         InitDataObject init= webResource.init(params, true, request, true, null);
-        if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", init.getUser()))
+        if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", init.getUser()))
             throw new DotSecurityException("unauthorized");
         return init;
     }

@@ -1,5 +1,8 @@
 package com.dotcms.rest;
 
+import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
+import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
+import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Optional;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -19,33 +22,48 @@ import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.*;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.*;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
-public final class WebResource {
+public  class WebResource {
 
-    private final UserWebAPI userWebAPI;
-    private final UserAPI userAPI;
-    private final LayoutAPI layoutAPI;
+    public static final String BASIC  = "Basic ";
+    public static final String BEARER = "Bearer ";
+
+    private final UserWebAPI        userWebAPI;
+    private final UserAPI           userAPI;
+    private final LayoutAPI         layoutAPI;
+    private final JsonWebTokenAuthCredentialProcessor jsonWebTokenAuthCredentialProcessor;
 
     public WebResource() {
+
         this(new ApiProvider());
     }
 
-    public WebResource(ApiProvider apiProvider) {
-        this.userAPI = apiProvider.userAPI();
-        this.userWebAPI = apiProvider.userWebAPI();
-        this.layoutAPI = apiProvider.layoutAPI();
+    public WebResource(final ApiProvider apiProvider) {
+
+        this(apiProvider, JsonWebTokenAuthCredentialProcessorImpl.getInstance());
+    }
+
+    public WebResource(final ApiProvider apiProvider,
+                       final JsonWebTokenAuthCredentialProcessor jsonWebTokenAuthCredentialProcessor) {
+
+        this.userAPI           = apiProvider.userAPI();
+        this.userWebAPI        = apiProvider.userWebAPI();
+        this.layoutAPI         = apiProvider.layoutAPI();
+        this.jsonWebTokenAuthCredentialProcessor = jsonWebTokenAuthCredentialProcessor;
     }
 
     /**
@@ -124,7 +142,7 @@ public final class WebResource {
             params = "";
 
         Map<String, String> paramsMap = buildParamsMap(params);
-        User user = authenticate(request, paramsMap, rejectWhenNoUser);
+        User user = getCurrentUser(request, paramsMap, rejectWhenNoUser);
 
         if(UtilMethods.isSet(requiredPortlet)) {
 
@@ -144,6 +162,49 @@ public final class WebResource {
         return initData;
     }
 
+    /**
+     * Return the current login user.<br>
+     * if exist a user login by login as then return this user not the principal user
+     *
+     * @param request
+     * @param paramsMap
+     * @param rejectWhenNoUser
+     *
+     * @return the login user or the login as user if exist any
+     */
+    private User getCurrentUser(HttpServletRequest request, Map<String, String> paramsMap, boolean rejectWhenNoUser) {
+
+        User user = null;
+        HttpSession session = request.getSession();
+
+        if (this.isLoggedAsUser(session)){
+            try {
+                user = this.userAPI.loadUserById((String) session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID));
+            } catch (DotDataException|DotSecurityException e) {
+                throw new RuntimeException(e);
+            }
+        }else {
+            user = authenticate(request, paramsMap, rejectWhenNoUser);
+        }
+
+        return user;
+    }
+
+    /**
+     * Validate if the user is logged as another user
+     * 
+     * @param session http session object
+     * @return true is the user is LoggedAs another user
+     */
+    private boolean isLoggedAsUser(HttpSession session) {
+    	boolean isLoginAsUser = false;
+    	if (session != null 
+        		&& session.getAttribute(com.liferay.portal.util.WebKeys.PRINCIPAL_USER_ID) != null 
+        		&& session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID) != null){
+    		isLoginAsUser=true;
+    	}
+    	return isLoginAsUser;
+    }
 
     /**
      * Returns an authenticated {@link User}. There are five ways to get the User's credentials.
@@ -173,6 +234,10 @@ public final class WebResource {
             user = authenticateUser(userPass.get().username, userPass.get().password, request, userAPI);
         }
 
+        if(null == user) {
+            user = processAuthCredentialsFromJWT(request, this.jsonWebTokenAuthCredentialProcessor);
+        }
+
         if(user == null && !forceFrontendAuth) {
             user = getBackUserFromRequest(request, userWebAPI);
         }
@@ -181,18 +246,39 @@ public final class WebResource {
             user = getFrontEndUserFromRequest(request, userWebAPI);
         }
 
-        if(user==null && (Config.getBooleanProperty("REST_API_REJECT_WITH_NO_USER", false) || rejectWhenNoUser) ) {
+        if(user == null && (Config.getBooleanProperty("REST_API_REJECT_WITH_NO_USER", false) || rejectWhenNoUser) ) {
+
             throw new SecurityException("Invalid User", Response.Status.UNAUTHORIZED);
-        } else if(user==null) {
-            try {
-                user =APILocator.getUserAPI().getAnonymousUser();
-            } catch (DotDataException e) {
-                Logger.debug(getClass(), "Could not get Anonymous User. ");
-            }
+        } else if(user == null) {
+
+            user = this.getAnonymousUser();
         }
 
         return user;
     }
+
+    /**
+     * Get the anonymous user if it is possible, otherwise will return null.
+     * @return User
+     */
+    public User getAnonymousUser() {
+
+        User user = null;
+
+        try {
+
+            user = APILocator.getUserAPI().getAnonymousUser();
+        } catch (DotDataException e) {
+            user = null;
+            Logger.debug(getClass(), "Could not get Anonymous User. ");
+        }
+        return user;
+    } // getAnonymousUser.
+
+    private static User processAuthCredentialsFromJWT(final HttpServletRequest request, final JsonWebTokenAuthCredentialProcessor authCredentialProcessor) {
+
+        return authCredentialProcessor.processAuthCredentialsFromJWT(request);
+    } // getAuthCredentialsFromJWT.
 
 
     private static Optional<UsernamePassword> getAuthCredentialsFromMap(Map<String, String> map) {
@@ -216,8 +302,8 @@ public final class WebResource {
         // Extract authentication credentials
         String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
 
-        if(StringUtils.isNotEmpty(authentication) && authentication.startsWith("Basic ")) {
-            authentication = authentication.substring("Basic ".length());
+        if(StringUtils.isNotEmpty(authentication) && authentication.startsWith(BASIC)) {
+            authentication = authentication.substring(BASIC.length());
             // @todo ggranum: this should be a split limit 1.
             // "username:SomePass:word".split(":") ==> ["username", "SomePass", "word"]
             // "username:SomePass:word".split(":", 1) ==> ["username", "SomePass:word"]

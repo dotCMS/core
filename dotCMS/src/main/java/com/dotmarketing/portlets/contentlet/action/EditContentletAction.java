@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.contentlet.action;
 
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Writer;
 import java.net.URLDecoder;
 import java.sql.Timestamp;
 import java.text.DateFormat;
@@ -41,6 +43,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -74,6 +77,8 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
+import com.dotmarketing.tag.business.TagAPI;
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.HostUtil;
@@ -86,6 +91,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
@@ -93,6 +99,8 @@ import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.portlet.ActionResponseImpl;
 import com.liferay.util.FileUtil;
+import com.liferay.util.LocaleUtil;
+import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
 
 /**
@@ -111,6 +119,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	private ContentletAPI conAPI;
 	private FieldAPI fAPI;
 	private HostWebAPI hostWebAPI;
+	private TagAPI tagAPI;
 
 	private String currentHost;
 
@@ -123,10 +132,64 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		conAPI = APILocator.getContentletAPI();
 		fAPI = APILocator.getFieldAPI();
 		hostWebAPI = WebAPILocator.getHostWebAPI();
+		tagAPI = APILocator.getTagAPI();
 	}
 
 	private Contentlet contentletToEdit;
 
+	
+
+	
+	
+	
+	public void buildFakeAjaxResponse(ActionRequest req, ActionResponse res) throws IOException, LanguageException{
+      
+
+	  try {
+        HibernateUtil.commitTransaction();
+      } catch (DotHibernateException e) {
+        try {
+          HibernateUtil.rollbackTransaction();
+        } catch (DotHibernateException e1) { }
+      finally{
+        DbConnectionFactory.closeConnection();
+      }
+    }
+      HttpServletRequest request = ((ActionRequestImpl)req).getHttpServletRequest();
+      HttpServletResponse response = ((ActionResponseImpl)res).getHttpServletResponse();
+      User user = super._getUser((ActionRequest) req);
+      
+      Writer out = response.getWriter();
+
+      if(SessionMessages.get(req, "message") !=null){
+        String message =  (String) SessionMessages.get(req, "message");
+        out.append("<script>");
+        out.append("parent.showDotCMSSystemMessage(\"");
+        out.append(UtilMethods.javaScriptify(LanguageUtil.get(user, message)));
+        out.append("\");");
+        out.append("</script>");
+      }
+      if(SessionMessages.get(req, "error") !=null){
+        String error =  (String) SessionMessages.get(req, "error");
+        out.append("<script>");
+        out.append("parent.showDotCMSErrorMessage(\"");
+        out.append(UtilMethods.javaScriptify(LanguageUtil.get(user, error)));
+        out.append("\");");
+        out.append("</script>");
+      }
+      
+      
+      out.append("<script>parent.fakeAjaxCallback();</script>");
+      out.close();
+      return;
+	}
+	
+	
+	
+	
+	
+	
+	
 	@SuppressWarnings("unchecked")
 	public void processAction(ActionMapping mapping, ActionForm form, PortletConfig config, ActionRequest req,
 			ActionResponse res) throws Exception {
@@ -151,6 +214,13 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		
 		User user = _getUser(req);
 
+		if(user ==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("content", user)){
+		  _sendToReferral(req, res, "/api/v1/logout");
+		  return;
+		}
+		
+		
+		
 		HibernateUtil.startTransaction();
 
 		// retrieve current host
@@ -552,7 +622,11 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			if(UtilMethods.isSet(req.getParameter("selected_lang"))){
 				referer=referer+"&selected_lang="+req.getParameter("selected_lang");
 			}
-			_sendToReferral(req, res, referer);
+			
+			
+            buildFakeAjaxResponse(req, res);
+            return;
+
 
 		}
 
@@ -570,7 +644,11 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			if(UtilMethods.isSet(req.getParameter("selected_lang"))){
 				referer=referer+"&selected_lang="+req.getParameter("selected_lang");
 			}
-			 _sendToReferral(req, res, referer);
+			
+			
+			
+			buildFakeAjaxResponse(req, res);
+			return;
 		}
 		/**
 		 * If whe are going to archive a list of contentlets
@@ -584,7 +662,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				_handleException(ae, req);
 				return;
 			}
-			_sendToReferral(req, res, referer);
+            buildFakeAjaxResponse(req, res);
+            return;
 
 		}
 		/**
@@ -598,7 +677,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				_handleException(ae, req);
 				return;
 			}
-			_sendToReferral(req, res, referer);
+            buildFakeAjaxResponse(req, res);
+            return;
 
 
 		}
@@ -611,7 +691,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				_handleException(ae, req);
 				return;
 			}
-			_sendToReferral(req, res, referer);
+            buildFakeAjaxResponse(req, res);
+            return;
 
 
 		}
@@ -627,7 +708,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				_handleException(ae, req);
 				return;
 			}
-			_sendToReferral(req, res, referer);
+            buildFakeAjaxResponse(req, res);
+            return;
 
 		}
 
@@ -645,7 +727,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			if(UtilMethods.isSet(req.getParameter("selected_lang"))){
 				referer=referer+"&selected_lang="+req.getParameter("selected_lang");
 			}
-			 _sendToReferral(req, res, referer);
+            buildFakeAjaxResponse(req, res);
+            return;
 		}
 		/*
 		 * If we are copying the container, run the copy action and return to
@@ -667,7 +750,12 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			catch (Exception ae) {
 				_handleException(ae, req);
 			}
-			_sendToReferral(req, res, referer);
+			if(UtilMethods.isSet(referer)){
+				_sendToReferral(req, res, referer);
+			}else{
+				buildFakeAjaxResponse(req, res);
+			}
+	        return;
 		} else
 			Logger.debug(this, "Unspecified Action");
 		_loadForm(req, res, config, form, user, validate);
@@ -682,7 +770,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			}
 		}
 		req.setAttribute("cache_control", "0");
-		setForward(req, "portlet.ext.contentlet.edit_contentlet");
+		
+	      setForward(req, "portlet.ext.contentlet.edit_contentlet");
+
 	}
 
 	// /// ************** ALL METHODS HERE *************************** ////////
@@ -936,7 +1026,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			contentlet = conAPI.find(inodeStr, user, false);
 		}
 		req.setAttribute(WebKeys.CONTENTLET_EDIT, contentlet);
-		Structure contentType = contentlet.getStructure();
+		Structure contentType = contentlet.getStructure(); // todo
+		// : this is null, but the dialog if does not have any content type for the current user shouldn't be showed.
 
 		String selectedContentType = "";
 		if (InodeUtils.isSet(req.getParameter("selectedStructure"))) {
@@ -972,6 +1063,10 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			httpReq.getSession().setAttribute(WebKeys.CONTENTLET_LAST_SEARCH, lastSearchMap);
 		}
 
+		if (null == contentType) {
+
+			this.handleContentTypeNull((ActionRequestImpl) req, inode);
+		}
 		// Checking permissions to add new content of selected content type
 		_checkWritePermissions(contentType, user, httpReq);
 
@@ -1051,6 +1146,26 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			}
 		}
 	}
+
+	private void handleContentTypeNull(final ActionRequestImpl req, final String inode) {
+
+		Logger.info(this,
+                "The content type is null on adding new content with the inode: " + inode +
+                          ", throwing IllegalArgumentException");
+
+		final Locale locale = LocaleUtil.getLocale(req.getHttpServletRequest());
+		String message = null;
+
+		try {
+
+            message = LanguageUtil.format(locale, "edit-contentlet-content-type-null", (null == inode)?"null":inode);
+        } catch (LanguageException e) {
+
+            message = "The content type is null on adding new content with the inode: " + inode;
+        }
+
+		throw new IllegalArgumentException(message);
+	} // handleContentTypeNull.
 
 	/**
 	 * 
@@ -1647,7 +1762,11 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		} catch(DotSecurityException e) {
 			SessionMessages.add(httpReq, "error", "message.contentlet.copy.permission.error");
 			return;
-		}
+		}catch(Exception e) {
+          SessionMessages.add(httpReq, "error", e.getMessage());
+          return;
+      }
+		
 
 		// gets the session object for the messages
 		SessionMessages.add(httpReq, "message", "message.contentlet.copy");
@@ -1859,8 +1978,19 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 								if(UtilMethods.isSet(text)){
 									text=text.substring(1);
 								}
-							}else{
-
+							} else if(f.getFieldType().equals(Field.FieldType.TAG.toString())){
+							    
+							    //Get Content Tags per field's Velocity Var Name
+							    List<Tag> tags = tagAPI.getTagsByInodeAndFieldVarName(content.getInode(), f.getVelocityVarName());
+							    if(tags!= null){
+							        for(Tag t:tags){
+							            if(text.equals(StringPool.BLANK))
+							                text = t.getTagName();
+							            else
+							                text = text + "," + t.getTagName();
+							        }
+							    }
+							} else{
 								if (value instanceof Date || value instanceof Timestamp) {
 									if(f.getFieldType().equals(Field.FieldType.DATE.toString())) {
 										SimpleDateFormat formatter = new SimpleDateFormat (WebKeys.DateFormats.EXP_IMP_DATE);
@@ -1878,7 +2008,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 										text = text.substring (0, text.length()-1);
 									}
 								}
-
 							}
 							//Windows carriage return conversion
 							text = text.replaceAll("\r","");

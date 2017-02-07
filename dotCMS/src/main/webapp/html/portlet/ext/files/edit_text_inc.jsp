@@ -129,8 +129,8 @@
   	</div>
 	<form name="fm" id="fm" method="post" action="">
 		<input type="hidden" name="inode" value="<%= request.getParameter("inode") %>">
-		<input type="hidden" name="<portlet:namespace />referer" value="<%= request.getParameter("referer") %>">
-		<input type="hidden" name="<portlet:namespace />cmd" value="">
+		<input type="hidden" name="referer" value="<%= request.getParameter("referer") %>">
+		<input type="hidden" name="cmd" value="">
 		<div id="editor" style="padding-bottom: 5px\15;"></div>
 		<div class="buttonRow">
 	           <button id="editTextButton" dojoType="dijit.form.Button" iconClass="saveIcon" onClick="javascript:saveText();"><%= LanguageUtil.get(pageContext, "Save") %></button>&nbsp; &nbsp; 

@@ -28,100 +28,48 @@
 	<%}%>
 </div>
 <!-- START Button Row -->
-	<div id="inheritingFrom" class="callOutBox2" style="display: none;">
-		<div class="yui-g">
-			<div class="yui-u first" style="text-align:left;">
-				<b><%= LanguageUtil.get(pageContext, "Inheriting-Permissions-From") %>:</b>
-				<span id="inheritingFromSources"></span>
-			</div>
-			
-			<div class="yui-u" style="text-align:right;">
-				<span id="resetPermissionActions">
-					<span id="permissionIndividuallyButtonWrapper" style="display:none;">
-						<button dojoType="dijit.form.Button" onclick="permissionsIndividually()" type="button"><%= LanguageUtil.get(pageContext, "want-to-permission-individually") %></button>
-					</span>
-					<div id="resetInheritanceMess" style="display: none;"></div>
+	<div id="inheritingFrom" class="permissions__bar-user-role" style="display: none;">
+		<div class="permissions__bar-user-role-main">
+			<b><%= LanguageUtil.get(pageContext, "Inheriting-Permissions-From") %>:</b>
+			<span id="inheritingFromSources"></span>
+		</div>
+		<div class="permissions__bar-user-role-actions">
+			<span id="resetPermissionActions">
+				<span id="permissionIndividuallyButtonWrapper" style="display:none;">
+					<button dojoType="dijit.form.Button" onclick="permissionsIndividually()" type="button"><%= LanguageUtil.get(pageContext, "want-to-permission-individually") %></button>
 				</span>
-			</div>
+				<div id="resetInheritanceMess" style="display: none;"></div>
+			</span>
 		</div>
 	</div>
-	
-	<div id="permissionsTabFt" class="callOutBox2">
-		<table width="100%">
-			<tr>
-				<td nowrap="nowrap">
-					<div style="float:left;white-space:nowrap;margin:0 30px 0 0;">
-						<div style="float:left;margin:2px 5px 0 10px;">
-							<span class="femaleIcon"></span>
-						</div>
-						<div style="float:left;">
-							<select id="permissionsRoleSelector" dojoType="dotcms.dijit.form.RolesFilteringSelect" excludeRoles="<%= APILocator.getRoleAPI().loadCMSAdminRole().getId()%>"></select>
-						</div>
-						<div style="float:left;">
-							<button dojoType="dijit.form.Button" onclick="addRoleToPermissions();return false;" iconClass="plusIcon"><%= LanguageUtil.get(pageContext, "Add-Role") %></button>
-						</div>
-						<div class="clear"></div>
-					</div>
-					
-					<div style="float:left;white-space:nowrap;margin:0 30px 0 0;">
-						<div style="float:left;margin:2px 5px 0 10px;">
-							<span class="userIcon"></span>
-						</div>
-						<div style="float:left;">
-							<div dojoType="dotcms.dojo.data.UsersReadStore" jsId="usersStore" includeRoles="false"></div> 
-				   			<select id="permissionsUserSelector" name="permissionsUserSelector" dojoType="dijit.form.FilteringSelect" store="usersStore" searchDelay="300" pageSize="30" labelAttr="name" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>"></select> 
-						</div>
-						<div style="float:left;">
-							<button dojoType="dijit.form.Button" onclick="addUserToPermissions();return false;" iconClass="plusIcon"><%= LanguageUtil.get(pageContext, "Add-User") %></button>
-						</div>
-						<div class="clear"></div>
-					</div>
-				</td>
-				<td align="right" nowrap="nowrap">
-				
-					<span id="resetPermissionButtonWrapper" style="display:none;">
-						<button dojoType="dijit.form.Button" onclick="resetPermissions()" iconClass="resetIcon"><%= LanguageUtil.get(pageContext, "reset-permissions") %></button>
-					</span>
-				</td>
-			</tr>
-		</table>
+
+	<div id="permissionsTabFt" class="permissions__bar-user-role">
+		<div class="permissions__bar-user-role-main">
+			<div class="inline-form">
+				<span class="femaleIcon"></span>
+				<select id="permissionsRoleSelector" dojoType="dotcms.dijit.form.RolesFilteringSelect" excludeRoles="<%= APILocator.getRoleAPI().loadCMSAdminRole().getId()%>"></select>
+				<button dojoType="dijit.form.Button" onclick="addRoleToPermissions();return false;"><%= LanguageUtil.get(pageContext, "Add-Role") %></button>
+			</div>
+			<div class="inline-form">
+				<span class="userIcon"></span>
+				<div dojoType="dotcms.dojo.data.UsersReadStore" jsId="usersStore" includeRoles="false" style="margin: none"></div>
+				<select id="permissionsUserSelector" name="permissionsUserSelector" dojoType="dijit.form.FilteringSelect" store="usersStore" searchDelay="300" pageSize="30" labelAttr="name" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>"></select>
+				<button dojoType="dijit.form.Button" onclick="addUserToPermissions();return false;"><%= LanguageUtil.get(pageContext, "Add-User") %></button>
+			</div>
+		</div>
+		<div class="permissions__bar-user-role-actions">
+			<span id="resetPermissionButtonWrapper" style="display:none;">
+				<button dojoType="dijit.form.Button" onclick="resetPermissions()" class="dijitButtonDanger"><%= LanguageUtil.get(pageContext, "reset-permissions") %></button>
+			</span>
+		</div>
 	</div>
 <!-- END Button Row -->
-
-<style>
-.permissionWrapper{background:none;padding:0;margin:0 auto;width:90%;}
-
-.permissionTable{width:100%;margin:0;}
-.permissionTable td, .permissionTable th{font-size:88%;width:10%;text-align:center;vertical-align:middle;font-weight:bold;padding:3px 0;}
-.permissionTable th.permissionType {width:40%;padding: 0 0 0 30px;font-weight:normal;text-align:left;}
-.permissionTable th.permissionTitle {padding: 0 0 0 10px;font-weight:bold;}
-
-.accordionEntry{width:100%;margin:0;visibility:hidden}
-.accordionEntry td, .accordionEntry th{font-size:88%;width:10%;text-align:center;vertical-align:middle;font-weight:bold;padding:0;}
-.accordionEntry th.permissionType {width:40%;padding: 0 0 0 30px;font-weight:normal;text-align:left;}
-.accordionEntry th.permissionTitle {padding: 0 0 0 10px;font-weight:bold;}
-
-.dotCMSRolesFilteringSelect{width:200px;overflow:hidden;display:inline;}
-#assetPermissionsMessageWrapper{padding-top: 15px;color: red;text-align: center;font-weight: bolder;}
-</style>
-
 
 <!-- START Permission Rows -->
 	<div class="permissionWrapper">
 		<table class="permissionTable">
 		    <tr>
-		        <th class="permissionType">
-		        
-		        
-
-	
-		        
-		        
-		        
-		        
-		        
-		        
-		        </th>
+		        <th class="permissionType"></th>
 		        <th><%= LanguageUtil.get(pageContext, "View") %></th>
 		        <th><%= LanguageUtil.get(pageContext, "Add-br-children") %></th>
 		        <th><%= LanguageUtil.get(pageContext, "Edit") %></th>
@@ -138,7 +86,7 @@
 	
 	<div class="clear"></div>
 	
-	<div class="buttonRow" id="permissionsActions">
+	<div class="permissions__button-row" id="permissionsActions">
 		<button dojoType="dijit.form.Button" type="button" class="applyChangesButton" id="applyChangesButton" onClick="applyPermissionChanges('${id}')">
 			<%= LanguageUtil.get(pageContext, "Apply-Changes") %>
 		</button>

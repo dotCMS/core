@@ -32,123 +32,118 @@
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
 
 <div id="divContent<%=content.getInode()%>_pop_up"  style="text-align: left;">
-	<div class="x-dlg-bd" style="background-color: white" align="center">
+	<div class="form-horizontal">
+		<!-- LANGUAGE -->
 		<dl>
-		<%
-			Structure structure = content.getStructure(); 
-			List<Field> fields = structure.getFields();
-			int[] popupmonthIds = CalendarUtil.getMonthIds();
-			String[] popupmonths = CalendarUtil.getMonths(Locale.getDefault());
-			String[] popupDays = CalendarUtil.getDays(Locale.getDefault());
-			
-			if (fields.size() > 0)  {
-		%>
-			<!-- LANGUAGE -->
-			<dt>
-			  <B><%= LanguageUtil.get(pageContext, "Viewing-Language") %>:&nbsp;</B>
-			<dd>
-
 			<%
-							Language lang = APILocator.getLanguageAPI().getLanguage(((Contentlet) content).getLanguageId()) ;
-						%>
-			<%= lang.getCountry()%> - <%= lang.getLanguage()%>
+				Structure structure = content.getStructure();
+				List<Field> fields = structure.getFields();
+				int[] popupmonthIds = CalendarUtil.getMonthIds();
+				String[] popupmonths = CalendarUtil.getMonths(Locale.getDefault());
+				String[] popupDays = CalendarUtil.getDays(Locale.getDefault());
+
+				if (fields.size() > 0)  {
+			%>
+			<dt><label><%= LanguageUtil.get(pageContext, "Viewing-Language") %>:</label></dt>
+			<dd>
+				<% Language lang = APILocator.getLanguageAPI().getLanguage(((Contentlet) content).getLanguageId()) ;%>
+				<%= lang.getCountry()%> - <%= lang.getLanguage()%>
 			</dd>
-			</dt>
-			<!-- END LANGUAGE -->
-			<!--  HOST -->
-			<dt>
-			  <B><%= LanguageUtil.get(pageContext, "Host") %>:&nbsp;</B>
-			   <dd>
-				<%=WebAPILocator.getHostWebAPI().getCurrentHost(request).getHostname()%>
-			  </dd>
-			</dt>
-			<dt>
-			   <B><%= LanguageUtil.get(pageContext, "Status") %>:&nbsp;</B>
-			   <dd>
+		</dl>
+		<!-- END LANGUAGE -->
+
+		<!--  HOST -->
+		<dl>
+			<dt><label><%= LanguageUtil.get(pageContext, "Host") %>:</label></dt>
+			<dd><%=WebAPILocator.getHostWebAPI().getCurrentHost(request).getHostname()%></dd>
+		</dl>
+		<dl>
+			<dt><label><%= LanguageUtil.get(pageContext, "Status") %>:</label></dt>
+			<dd>
 				<%if(content.isArchived()){%><%= LanguageUtil.get(pageContext, "Archived") %><%}else if(content.isLive()){%><%=LanguageUtil.get(pageContext, "Live")%><%}else{%><%= LanguageUtil.get(pageContext, "Working1") %><% } %>
-			  </dd>
-			</dt>
-			<!--  END HOST -->
+			</dd>
+		</dl>
+		<!--  END HOST -->
 		
 		<% } 
 			for(int i = 0; i < fields.size();i++){
 				Field field = (Field) fields.get(i);
 				if(APILocator.getContentletAPI().getFieldValue(content, field)!=null){
-				 if (field.getFieldType().equals(Field.FieldType.TEXT.toString())){ %>
-					<dt>
-						<b>
-							<%=field.getFieldName()%>:
-						</b>
-						 <dd>
-						<%=(UtilMethods.isSet(APILocator.getContentletAPI().getFieldValue(content, field))
-								? UtilMethods.xmlEscape(String.valueOf(APILocator.getContentletAPI().getFieldValue(content, field)))
-										: LanguageUtil.get(pageContext, "No")+" " + field.getFieldName() +" "+ LanguageUtil.get(pageContext, "configured"))%>
-					  </dd>					
-					</dt>
-				<% }else if (field.getFieldType().equals(Field.FieldType.TEXT_AREA.toString()) || 
+					if (field.getFieldType().equals(Field.FieldType.TEXT.toString())){ %>
+						<dl>
+							<dt><label><%=field.getFieldName()%>:</label></dt>
+							<dd>
+								<%=(UtilMethods.isSet(APILocator.getContentletAPI().getFieldValue(content, field))
+										? UtilMethods.xmlEscape(String.valueOf(APILocator.getContentletAPI().getFieldValue(content, field)))
+												: LanguageUtil.get(pageContext, "No")+" " + field.getFieldName() +" "+ LanguageUtil.get(pageContext, "configured"))%>
+							</dd>
+						</dl>
+					<% }else if (field.getFieldType().equals(Field.FieldType.TEXT_AREA.toString()) ||
 						field.getFieldType().equals(Field.FieldType.WYSIWYG.toString())){ %>
-						<dt><B>
-								<%=field.getFieldName()+":&nbsp;</B> "%>
-							 <dd>	
+						<dl>
+							<dt><label><%=field.getFieldName()%>:</label></dt>
+							<dd>
 								<div style="border:1px solid gray;height: 150px; width: 400px;font-size:12px;vertical-align: top;overflow:auto;">
-							    	<%=(UtilMethods.isSet(APILocator.getContentletAPI().getFieldValue(content, field))
-							    			? UtilMethods.xmlEscape(String.valueOf(APILocator.getContentletAPI().getFieldValue(content, field))) 
-							    					: LanguageUtil.get(pageContext, "No")+" " +  field.getFieldName() + " "+ LanguageUtil.get(pageContext, "configured"))%>
+									<%=(UtilMethods.isSet(APILocator.getContentletAPI().getFieldValue(content, field))
+										? UtilMethods.xmlEscape(String.valueOf(APILocator.getContentletAPI().getFieldValue(content, field)))
+											: LanguageUtil.get(pageContext, "No")+" " +  field.getFieldName() + " "+ LanguageUtil.get(pageContext, "configured"))%>
 								</div>
-							 </dd>	
-						</dt>
-		         <% }else if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString())){ 							
-		               String originalValue = String.valueOf(APILocator.getContentletAPI().getFieldValue(content, field));
-		               String fieldName = field.getFieldContentlet();
-		               String defaultValue = field.getDefaultValue();
-		               if (defaultValue != null)
-		                 	defaultValue = defaultValue.trim();
-		               else 
-		               	defaultValue = "";
+							</dd>
+						</dl>
+					<% }else if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString())){
+						String originalValue = String.valueOf(APILocator.getContentletAPI().getFieldValue(content, field));
+						String fieldName = field.getFieldContentlet();
+						String defaultValue = field.getDefaultValue();
+
+						if (defaultValue != null)
+							defaultValue = defaultValue.trim();
+						else
+							defaultValue = "";
 		               
-		               String values = field.getValues();
-		               if (values != null)
-		               	values = values.trim();
-		               else 
-		               	values = "";
-		               String[] pairs = values.split("\r\n");
-		               %>
-		               <dt><b><%=field.getFieldName() %>:&nbsp;</B>
-		               <dd>
-		               <div>
-		               <%
-		               for(int j = 0;j < pairs.length;j++) {
-		                String pair = pairs[j];
-		                String[] tokens = pair.split("\\|");
-		                if (0 < tokens.length) {
-			                String name = tokens[0];
-							String value = (tokens.length > 1 ? tokens[1] : name);                                  
-			                String checked = "";
-			                if (UtilMethods.isSet(originalValue)){
-			                	if (originalValue.contains(value + ",")){
-									checked = "CHECKED";
-								}
-			                } else{
-			                  if (UtilMethods.isSet(defaultValue) && (defaultValue.contains("|" + value) || defaultValue.contains(value + "|") || defaultValue.equals(value))){
-			                  	checked = "CHECKED";
-			                  }
-			                }
-		               %> 
-		               <input disabled type="checkbox" name="<%=fieldName%>CheckBox" id="<%=fieldName%>CheckBox" value="<%=value%>" <%=checked%>> <%=name%> <BR>
-					<%
-							}
-						}
-					%> 
-					  
-					 </div>
-					  </dd>
-					</dt>
-					<% }else if (field.getFieldType().equals(Field.FieldType.DATE.toString()) || 
-			 											 field.getFieldType().equals(Field.FieldType.TIME.toString()) ||
-			 											 field.getFieldType().equals(Field.FieldType.DATE_TIME.toString()))
-											{ %>
-					<dt><B><%=field.getFieldName()+":&nbsp;</B> " %>				<!-- DISPLAY DATE-->
-						 <dd><%  java.util.Date startDate = new Date();
+							String values = field.getValues();
+							if (values != null)
+								values = values.trim();
+							else
+								values = "";
+							String[] pairs = values.split("\r\n");
+					%>
+						<dl>
+							<dt><label><%=field.getFieldName() %>:</label></dt>
+							<dd>
+								<div class="checkbox">
+								<% for(int j = 0;j < pairs.length;j++) {
+								String pair = pairs[j];
+								String[] tokens = pair.split("\\|");
+								if (0 < tokens.length) {
+									String name = tokens[0];
+									String value = (tokens.length > 1 ? tokens[1] : name);
+									String checked = "";
+									if (UtilMethods.isSet(originalValue)){
+										if (originalValue.contains(value + ",")){
+											checked = "CHECKED";
+										}
+									} else{
+									  if (UtilMethods.isSet(defaultValue) && (defaultValue.contains("|" + value) || defaultValue.contains(value + "|") || defaultValue.equals(value))){
+										checked = "CHECKED";
+									  }
+									}
+								%>
+		               				<input disabled type="checkbox" name="<%=fieldName%>CheckBox" id="<%=fieldName%>CheckBox" value="<%=value%>" <%=checked%>> <%=name%> <BR>
+								<%
+										}
+									}
+								%>
+					 			</div>
+							</dd>
+						</dl>
+					<% }else if (field.getFieldType().equals(Field.FieldType.DATE.toString()) ||
+						 field.getFieldType().equals(Field.FieldType.TIME.toString()) ||
+						 field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) { %>
+
+					<!-- DISPLAY DATE-->
+					<dl>
+						<dt><label><%=field.getFieldName() %>:</label></dt>
+						<dd><%  java.util.Date startDate = new Date();
 							
 							try
 							{	
@@ -231,24 +226,26 @@
 									}%>
 								</select>&nbsp;<span id="<%=field.getFieldContentlet()%>PM"><%=(sdHour > 11) ? LanguageUtil.get(pageContext, "PM") : LanguageUtil.get(pageContext, "AM")%></span>
 						<%} %>
-						 </dd>				
-		                </dt>
-					<% }else if (field.getFieldType().equals(Field.FieldType.IMAGE.toString())){ %>
-						<!-- display -->
-						<dt><B><%=field.getFieldName()+":&nbsp;</B> " %>
-						 <dd>
-						<%
-							String inode = String.valueOf(APILocator.getContentletAPI().getFieldValue(content, field));
-							if(InodeUtils.isSet(inode)){
-						%>
-						<img id="<%=field.getFieldContentlet()%>Thumbnail" src="/thumbnail?inode=<%=inode %>" width="100" height="100" border="1">
-						<%  }else{ %><%=LanguageUtil.get(pageContext, "No-Image-configured")  %><%} %>
 						</dd>
-						</dt>
+					</dl>
+					<% }else if (field.getFieldType().equals(Field.FieldType.IMAGE.toString())){ %>
+					<dl>
+						<!-- display -->
+						<dt><label><%=field.getFieldName() %>:</label></dt>
+						<dd>
+							<%
+								String inode = String.valueOf(APILocator.getContentletAPI().getFieldValue(content, field));
+								if(InodeUtils.isSet(inode)){
+							%>
+								<img id="<%=field.getFieldContentlet()%>Thumbnail" src="/thumbnail?inode=<%=inode %>" width="100" height="100" border="1">
+							<%  }else{ %><%=LanguageUtil.get(pageContext, "No-Image-configured")  %><%} %>
+						</dd>
+					</dl>
 					 <% } else if (field.getFieldType().equals(Field.FieldType.RADIO.toString())) { 
 						%>
-						<dt><B><%=field.getFieldName()+":&nbsp;</B>" %>
-						 <dd>
+					<dl>
+						<dt><label><%=field.getFieldName()+":&nbsp;</B>" %>:</label></dt>
+						<dd>
 						<%					
 							Object originalValue = String.valueOf(APILocator.getContentletAPI().getFieldValue(content, field));
 							String defaultValue = field.getDefaultValue();
@@ -278,29 +275,33 @@
 									{
 										checked = "CHECKED";
 									}
-						%> 
-							<input disabled type="radio" name="<%=radio+content.getInode()%>" value="<%=value%>" <%=checked%>> <%=name%> <BR>
+						%>
+							<div class="radio">
+								<input dojoType="dijit.form.RadioButton" disabled type="radio" name="<%=radio+content.getInode()%>" value="<%=value%>" <%=checked%>>
+								<label><%=name%></label>
+							</div>
 						<%
 								}
 							}
 						%> 
-						 </dd>
-						</dt>																
-						<%}else if (field.getFieldType().equals(Field.FieldType.SELECT.toString())){ LanguageUtil.get(pageContext, "This-is-a-select"); %>
-							<dt><B><%=field.getFieldName()+":&nbsp;</B> " %>
-							 <dd>
-							<select name="<%=field.getFieldContentlet()%>" disabled="disabled"> 										
+						</dd>
+					</dl>
+					<%}else if (field.getFieldType().equals(Field.FieldType.SELECT.toString())){ LanguageUtil.get(pageContext, "This-is-a-select"); %>
+					<dl>
+						<dt><label><%=field.getFieldName()%>:</label></dt>
+						<dd>
+							<select name="<%=field.getFieldContentlet()%>" disabled="disabled">
 							<%  String originalValue = String.valueOf(APILocator.getContentletAPI().getFieldValue(content, field));
 								String values = field.getValues();
 								if (values != null)
-			                     	values = values.trim();
-			                    else 
-			                       	values = "";
+									values = values.trim();
+								else
+									values = "";
 								String defaultValue = field.getDefaultValue();
 								if (defaultValue != null)
-			                     	defaultValue = defaultValue.trim();
-			                    else 
-			                    	defaultValue = "";
+									defaultValue = defaultValue.trim();
+								else
+									defaultValue = "";
 								String[] pairs = values.split("\r\n");
 								for(int j = 0;j < pairs.length;j++){
 									String pair = pairs[j];
@@ -310,125 +311,118 @@
 										String value = (tokens.length > 1 ? tokens[1] : name);
 										String selected = "";
 										String compareValue = (UtilMethods.isSet(originalValue) ? originalValue : defaultValue);
-										if ((UtilMethods.isSet(compareValue) && compareValue.equals(value))){													
+										if ((UtilMethods.isSet(compareValue) && compareValue.equals(value))){
 											selected = LanguageUtil.get(pageContext, "SELECTED");
-										}						
+										}
 									%>
 										<option value="<%=value%>" <%=selected%>><%=name%></option>
 								<%
 									}
 								}
 								%>
-							</select>  
-							 </dd>
-							</dt>
-						<% }else if (field.getFieldType().equals(Field.FieldType.MULTI_SELECT.toString())){
-							 String originalValue = String.valueOf(APILocator.getContentletAPI().getFieldValue(content, field));
-							 String defaultValue = field.getDefaultValue();
-							 if (defaultValue != null)
-		                     	defaultValue = defaultValue.trim();
-		                     else 
-		                      	defaultValue = "";
+							</select>
+						</dd>
+					</dl>
+					<% }else if (field.getFieldType().equals(Field.FieldType.MULTI_SELECT.toString())){
+						String originalValue = String.valueOf(APILocator.getContentletAPI().getFieldValue(content, field));
+						String defaultValue = field.getDefaultValue();
+						if (defaultValue != null)
+							defaultValue = defaultValue.trim();
+						else
+							defaultValue = "";
 							String values = field.getValues();
-							if (values != null)
-								values = values.trim();
-		                    else 
-		                    	values = "";
-		                   String[] pairs = values.split("\r\n");      
-						%>
-						<dt><B><%=field.getFieldName()+":&nbsp;</B> " %>
-						 <dd>
-							 <select multiple="true" size="<%= pairs.length %>" disabled="disabled" name="<%=field.getFieldContentlet()%>MultiSelect" style="width:200px;">
-							<% for(int j = 0;j < pairs.length;j++){
-								String pair = pairs[j];
-								String[] tokens = pair.split("\\|");
-								if (0 < tokens.length) {
-									String name = tokens[0];
-									String value = (tokens.length > 1 ? tokens[1] : name);
-									String selected = "";
-									if (UtilMethods.isSet(defaultValue) && (defaultValue.contains("|" + value) || defaultValue.contains(value + "|") || defaultValue.equals(value)))												
-									{
-										selected = LanguageUtil.get(pageContext, "SELECTED");
-									} else {
-										if (UtilMethods.isSet(originalValue) && originalValue.contains(value)){
-												selected = LanguageUtil.get(pageContext, "SELECTED");
+						if (values != null)
+							values = values.trim();
+						else
+							values = "";
+						String[] pairs = values.split("\r\n");
+					%>
+					<dl>
+						<dt><label><%=field.getFieldName() %>:</label></dt>
+						<dd>
+							<select multiple="true" size="<%= pairs.length %>" disabled="disabled" name="<%=field.getFieldContentlet()%>MultiSelect" style="width:200px;">
+								<% for(int j = 0;j < pairs.length;j++){
+									String pair = pairs[j];
+									String[] tokens = pair.split("\\|");
+									if (0 < tokens.length) {
+										String name = tokens[0];
+										String value = (tokens.length > 1 ? tokens[1] : name);
+										String selected = "";
+										if (UtilMethods.isSet(defaultValue) && (defaultValue.contains("|" + value) || defaultValue.contains(value + "|") || defaultValue.equals(value))) {
+											selected = LanguageUtil.get(pageContext, "SELECTED");
+										} else {
+											if (UtilMethods.isSet(originalValue) && originalValue.contains(value)){
+											selected = LanguageUtil.get(pageContext, "SELECTED");
 										}
 									}
-							%>
-								<option value="<%=value%>" <%=selected%>><%=name%></option>
-							<%
-								}
-							}
-							%>
-							</select> 
-							 </dd>
-							</dt>
-		              <% } else if (field.getFieldType().equals(Field.FieldType.TAG.toString())){ %>
-							<dt><B><%=field.getFieldName()+":&nbsp;</B> " %>
-							 <dd>
+									%>
+									<option value="<%=value%>" <%=selected%>><%=name%></option>
+								<%
+										}
+									}
+								%>
+							</select>
+						</dd>
+					</dl>
+					<% } else if (field.getFieldType().equals(Field.FieldType.TAG.toString())){ %>
+					<dl>
+						<dt><label><%=field.getFieldName()%>:</label></dt>
+						<dd>
 							<% String functionTag = "suggestTagsForSearch(this, '" + field.getFieldContentlet() + "suggestedTagsDiv');";%>
 							<textarea disabled="disabled" style="height: 100px; width: 250px;font-size:12px; border-color: #CCCCCC; border-style: solid; border-width: 1px; font-family: Verdana, Arial,Helvetica;vertical-align: top;"
 								name="<%=field.getFieldContentlet()%>" id="<%=field.getFieldContentlet()%>" onkeyup="<%= functionTag %>" >
 								<%=(UtilMethods.isSet(APILocator.getContentletAPI().getFieldValue(content, field))?String.valueOf(APILocator.getContentletAPI().getFieldValue(content, field)):"")%>
 							</textarea>
-							 </dd>
-							</dt>
+						</dd>
+					</dl>
 					<%}else if (field.getFieldType().equals(Field.FieldType.CATEGORY.toString())){ %>
-					       <%
-					   	    CategoryAPI categoryAPI = APILocator.getCategoryAPI();
-					     	%>
-					       <dt><B><%=field.getFieldName()+":&nbsp;</B> " %>
-					        <dd>
-					       <% 
-					     
-	                     
-					       		String[] selectedCategories = null;
-										    if(InodeUtils.isSet(content.getInode()))
-										    {										    											   										     
-										       List<com.dotmarketing.portlets.categories.model.Category> categoriesList = categoryAPI.getParents(content, user, false);
-										       selectedCategories =  new String[categoriesList.size()];
-										       int counter_k = 0;
-										       for(com.dotmarketing.portlets.categories.model.Category cat: categoriesList){
-										    	   if(cat != null)
-										    	   {
-										    	   		selectedCategories[counter_k] = cat.getInode();
-										    	   		counter_k++;
-										    	   }
-										       }
-											}else{
-									         selectedCategories = field.getDefaultValue().split("\\|");
-									         int l = 0;
-									            for(String selectedCat: selectedCategories){
-									            	com.dotmarketing.portlets.categories.model.Category selectedCategory = categoryAPI.findByName(selectedCat, user, false);
-									            	selectedCategories[l] = selectedCategory.getInode();
-									            	++l;
-									            }
-											 }
-												com.dotmarketing.portlets.categories.model.Category category = categoryAPI.find(field.getValues(), APILocator.getUserAPI().getSystemUser(), false);
-												java.util.List children = categoryAPI.getChildren(category, APILocator.getUserAPI().getSystemUser(), false);
-												if (children.size() >= 1 && categoryAPI.canUseCategory(category, user, false)) {
-													 String catOptions = com.dotmarketing.util.UtilHTML.getSelectCategories(category,1,selectedCategories, user, false); 
-													 if(catOptions.length() > 0){
-									            %>
-													<table border="0" cellpadding="0" cellspacing="0">
-													<tr>
-													 <td>
-													 <select multiple="true"  style="width:200px;" name="<%=field.getFieldContentlet()%>"  disabled>
-														<%= catOptions %>
-												     </select>
-												     </td>
-												    </tr>
-												    </table>
-														
-													<%}
-												}%>	
-										  </dd>		
-									    </dt>
-                <% }%>
-        <%}
-				}%>
-		</dl>
+					<dl>
+						<% CategoryAPI categoryAPI = APILocator.getCategoryAPI(); %>
+						<dt><label><%=field.getFieldName() %>:</label></dt>
+						<dd>
+							<%
+							String[] selectedCategories = null;
+							if(InodeUtils.isSet(content.getInode())) {
+								List<com.dotmarketing.portlets.categories.model.Category> categoriesList = categoryAPI.getParents(content, user, false);
+								selectedCategories =  new String[categoriesList.size()];
+								int counter_k = 0;
+								for(com.dotmarketing.portlets.categories.model.Category cat: categoriesList){
+									if(cat != null) {
+										selectedCategories[counter_k] = cat.getInode();
+										counter_k++;
+									}
+								}
+							}else{
+								selectedCategories = field.getDefaultValue().split("\\|");
+								int l = 0;
+								for(String selectedCat: selectedCategories){
+									com.dotmarketing.portlets.categories.model.Category selectedCategory = categoryAPI.findByName(selectedCat, user, false);
+									selectedCategories[l] = selectedCategory.getInode();
+									++l;
+								}
+							}
+							com.dotmarketing.portlets.categories.model.Category category = categoryAPI.find(field.getValues(), APILocator.getUserAPI().getSystemUser(), false);
+							java.util.List children = categoryAPI.getChildren(category, APILocator.getUserAPI().getSystemUser(), false);
+							if (children.size() >= 1 && categoryAPI.canUseCategory(category, user, false)) {
+								String catOptions = com.dotmarketing.util.UtilHTML.getSelectCategories(category,1,selectedCategories, user, false);
+								if(catOptions.length() > 0){ %>
+									<table border="0" cellpadding="0" cellspacing="0">
+										<tr>
+											<td>
+												<select multiple="true"  style="width:200px;" name="<%=field.getFieldContentlet()%>"  disabled>
+												<%= catOptions %>
+												</select>
+											</td>
+										</tr>
+									</table>
+								<%}
+							}%>
+						</dd>
+					<dl>
+				<% }%>
+		<%
+			}
+		}
+		%>
 	</div>
-
-	
 </div>

@@ -1,10 +1,6 @@
 package com.dotmarketing.portlets.categories.business;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.*;
 
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
@@ -237,7 +233,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	protected List<Category> getChildren(Categorizable parent) throws DotDataException {
+		protected List<Category> getChildren(Categorizable parent) throws DotDataException {
 
 		List<String> childrenIds = catCache.getChildren(parent);
 		List<Category> children;
@@ -462,17 +458,17 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			try {
 				conn.rollback();
 			} catch (SQLException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+				Logger.error(this, e1.getMessage(), e1);
 			}
-			e.printStackTrace();
+
+			Logger.error(this, e.getMessage(), e);
 		} finally {
 			try {
 				s.close();
 				conn.close();
 			} catch (SQLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+
+				Logger.error(this, e.getMessage(), e);
 			}
 		}
 	}
@@ -482,6 +478,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		return findTopLevelCategoriesByFilter(null, null);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	protected List<Category> findTopLevelCategoriesByFilter(String filter, String sort) throws DotDataException {
 		filter = SQLUtil.sanitizeParameter(filter);
@@ -504,8 +501,14 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		} else {
 			selectQuery += " ORDER BY category.sort_order, category.category_name";
 		}
-		List<Category> categories = new ArrayList<>();
+
+		final List<Category> categories = new ArrayList<>();
+
 		try (Connection conn = DbConnectionFactory.getConnection()) {
+
+			Logger.debug(this, "Executing the query: " + selectQuery +
+					", filter: " + filter + ", sort" + sort);
+
 			PreparedStatement stmt = conn.prepareStatement(selectQuery);
 			if (UtilMethods.isSet(filter) && !UtilMethods.isSet(sort)) {
 				stmt.setString(1, "%" + filter + "%");
@@ -521,23 +524,34 @@ public class CategoryFactoryImpl extends CategoryFactory {
 					stmt.setString(4, "category." + sort);
 				}
 			}
-			ResultSet rs = stmt.executeQuery();
+
+			final ResultSet rs = stmt.executeQuery();
+
 			while (rs.next()) {
-				Category category = new Category();
-				category.setInode(rs.getString("inode"));
-				category.setCategoryName(rs.getString("category_name"));
-				category.setKey(rs.getString("category_key"));
-				category.setSortOrder(rs.getInt("sort_order"));
-				category.setActive(DbConnectionFactory.isDBTrue(rs.getString("active")));
-				category.setKeywords(rs.getString("keywords"));
-				category.setCategoryVelocityVarName(rs.getString("category_velocity_var_name"));
-				category.setModDate(rs.getDate("mod_date"));
-				categories.add(category);
+
+				categories.add(createCategory(rs));
 			}
 		} catch (SQLException e) {
 			throw new DotDataException("An error occurred when filtering the top level categories.", e);
 		}
+
 		return categories;
+	}
+
+	private Category createCategory(final ResultSet rs) throws SQLException {
+
+		final Category category = new Category();
+
+		category.setInode(rs.getString("inode"));
+		category.setCategoryName(rs.getString("category_name"));
+		category.setKey(rs.getString("category_key"));
+		category.setSortOrder(rs.getInt("sort_order"));
+		category.setActive(DbConnectionFactory.isDBTrue(rs.getString("active")));
+		category.setKeywords(rs.getString("keywords"));
+		category.setCategoryVelocityVarName(rs.getString("category_velocity_var_name"));
+		category.setModDate(rs.getDate("mod_date"));
+
+		return category;
 	}
 
 	@Override
@@ -575,14 +589,16 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			}
 		}
 	}
-
+	@SuppressWarnings("unchecked")
 	@Override
 	protected List<Category> findChildrenByFilter(String inode, String filter, String sort) throws DotDataException {
 		inode = SQLUtil.sanitizeParameter(inode);
 		filter = SQLUtil.sanitizeParameter(filter);
 		sort = SQLUtil.sanitizeSortBy(sort);
+
 		String selectQuery = "SELECT * FROM inode, category, tree WHERE category.inode = tree.child AND tree.parent = ? "
 				+ "AND inode.inode = category.inode AND inode.type = 'category'";
+
 		if (UtilMethods.isSet(filter)) {
 			filter = filter.toLowerCase();
 			selectQuery += " AND (LOWER(category.category_name) LIKE ? OR LOWER(category.category_key) LIKE ? "
@@ -599,8 +615,13 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		} else {
 			selectQuery += " ORDER BY category.sort_order, category.category_name";
 		}
-		List<Category> children = new ArrayList<>();
+
+		final List<Category> children = new ArrayList<>();
 		try (Connection conn = DbConnectionFactory.getConnection()) {
+
+			Logger.debug(this, "Select Query: " + selectQuery +
+							", filter: " + filter + ", sort: " + sort);
+
 			PreparedStatement stmt = conn.prepareStatement(selectQuery);
 			stmt.setString(1, inode);
 			if (UtilMethods.isSet(filter) && !UtilMethods.isSet(sort)) {
@@ -617,24 +638,21 @@ public class CategoryFactoryImpl extends CategoryFactory {
 					stmt.setString(5, "category." + sort);
 				}
 			}
-			ResultSet rs = stmt.executeQuery();
+
+			final ResultSet rs = stmt.executeQuery();
 			while (rs.next()) {
-				Category category = new Category();
-				category.setInode(rs.getString("inode"));
-				category.setCategoryName(rs.getString("category_name"));
-				category.setKey(rs.getString("category_key"));
-				category.setSortOrder(rs.getInt("sort_order"));
-				category.setActive(DbConnectionFactory.isDBTrue(rs.getString("active")));
-				category.setKeywords(rs.getString("keywords"));
-				category.setCategoryVelocityVarName(rs.getString("category_velocity_var_name"));
-				category.setModDate(rs.getDate("mod_date"));
-				children.add(category);
+
+				children.add(this.createCategory(rs));
 			}
 		} catch (SQLException e) {
+
+			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException("An error occurred when filtering child categories for inode '" + inode + "'.", e);
 		}
+
 		return children;
 	}
+
 
 	@Override
 	protected void clearCache() {

@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.sites.rules;
 
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.javax.ws.rs.client.Entity;
@@ -14,7 +14,6 @@ import com.dotcms.rest.api.FunctionalTestConfig;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.rules.RuleDataGen;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
@@ -26,7 +25,7 @@ import java.util.Map;
 
 import static org.junit.Assert.*;
 
-public class ActionResourceFTest extends TestBase {
+public class ActionResourceFTest extends IntegrationTestBase {
 
     private final FunctionalTestConfig config;
     private final String actionletEndpointUrl;

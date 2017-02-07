@@ -1,10 +1,11 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.TestBase;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import org.junit.After;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -34,7 +35,8 @@ import static org.junit.Assert.assertNotSame;
  * @since 09-22-2015
  *
  */
-public class SetSessionAttributeActionletFTest extends TestBase {
+
+public class SetSessionAttributeActionletFTest extends IntegrationTestBase {
 
     private HttpServletRequest request;
     String ruleId;
@@ -131,6 +133,7 @@ public class SetSessionAttributeActionletFTest extends TestBase {
         deleteRule();
     }
 
+    @Ignore
     @Test
     public void testFireOnOncePerVisitor() throws Exception {
 

@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 /**
  * @author Geoff M. Granum
  */
+
 public class ApiRequest {
 
     private final String robotsTxtUrl;

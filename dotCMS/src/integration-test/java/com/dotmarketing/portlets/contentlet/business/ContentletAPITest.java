@@ -14,8 +14,10 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
@@ -27,8 +29,8 @@ import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.StructureDataGen;
 import com.dotcms.datagen.TemplateDataGen;
@@ -44,7 +46,6 @@ import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
@@ -73,6 +74,7 @@ import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -649,11 +651,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         for ( MultiTree multitree : multiTrees ) {
             //Get the Identifiers of the related pages
             Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find( multitree.getParent1() );
-            //Get the pages
-            HTMLPage htmlPage = ( HTMLPage ) APILocator.getVersionableAPI().findLiveVersion( htmlPageIdentifier, APILocator.getUserAPI().getSystemUser(), false );
 
             //OK..., lets try to find this page in the cache...
-            HTMLPage foundPage = ( HTMLPage ) CacheLocator.getCacheAdministrator().get( "HTMLPageCache" + htmlPage.getIdentifier(), "HTMLPageCache" );
+            HTMLPage foundPage = ( HTMLPage ) CacheLocator.getCacheAdministrator().get( "HTMLPageCache" + identifier, "HTMLPageCache" );
 
             //Validations
             assertTrue( foundPage == null || ( foundPage.getInode() == null || foundPage.getInode().equals( "" ) ) );
@@ -662,42 +662,83 @@ public class ContentletAPITest extends ContentletBaseTest {
 
     /**
      * Testing {@link ContentletAPI#cleanField(com.dotmarketing.portlets.structure.model.Structure, com.dotmarketing.portlets.structure.model.Field, com.liferay.portal.model.User, boolean)}
+     * with a binary field
      *
      * @throws DotDataException
      * @throws DotSecurityException
      * @see ContentletAPI
      * @see Contentlet
      */
-    @Ignore ( "Not Ready to Run." )
     @Test
-    public void cleanField () throws DotDataException, DotSecurityException {
+    public void cleanBinaryField() throws DotDataException, DotSecurityException {
 
         //Getting a known structure
         Structure structure = structures.iterator().next();
+
+        Long identifier = uniqueIdentifier.get(structure.getName());
 
         //Search the contentlet for this structure
         List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
         Contentlet contentlet = contentletList.iterator().next();
 
-        //Getting a know field for this structure
+        //Getting a known binary field for this structure
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
-        Field foundWysiwygField = FieldFactory.getFieldByName( structure.getName(), "JUnit Test Wysiwyg" );
+        Field foundBinaryField = FieldFactory.getFieldByName( structure.getName(), "JUnit Test Binary-" + identifier );
 
         //Getting the current value for this field
-        Object value = contentletAPI.getFieldValue( contentlet, foundWysiwygField );
+        Object value = contentletAPI.getFieldValue( contentlet, foundBinaryField );
 
         //Validations
         assertNotNull( value );
-        assertTrue( !( ( String ) value ).isEmpty() );
+        assertTrue( ((java.io.File) value).exists() );
 
-        //Set to the default value
-        contentletAPI.cleanField( structure, foundWysiwygField, user, false );
-
-        //Search for the value again
-        Object newValue = contentletAPI.getFieldValue( contentlet, foundWysiwygField );
+        //Cleaning the binary field
+        contentletAPI.cleanField( structure, foundBinaryField, user, false );
 
         //Validations
-        assertNotSame( value, newValue );
+        assertFalse( ((java.io.File) value).exists() );
+    }
+
+    /**
+     * Testing {@link ContentletAPI#cleanField(com.dotmarketing.portlets.structure.model.Structure, com.dotmarketing.portlets.structure.model.Field, com.liferay.portal.model.User, boolean)}
+     * with a tag field
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test
+    public void cleanTagField() throws DotDataException, DotSecurityException {
+
+        //Getting a known structure
+        Structure structure = structures.iterator().next();
+
+        Long identifier = uniqueIdentifier.get(structure.getName());
+
+        //Search the contentlet for this structure
+        List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
+        Contentlet contentlet = contentletList.iterator().next();
+
+        //Getting a known tag field for this structure
+        //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
+        Field foundTagField = FieldFactory.getFieldByName( structure.getName(), "JUnit Test Tag-" + identifier );
+
+        //Getting the current value for this field
+        List<Tag> value = tagAPI.getTagsByInodeAndFieldVarName(contentlet.getInode(), foundTagField.getVelocityVarName());
+
+        //Validations
+        assertNotNull( value );
+        assertFalse( value.isEmpty() );
+
+        //Cleaning the tag field
+        contentletAPI.cleanField( structure, foundTagField, user, false );
+
+        //Getting the current value for this field
+        List<Tag> value2 = tagAPI.getTagsByInodeAndFieldVarName(contentlet.getInode(), foundTagField.getVelocityVarName());
+
+        //Validations
+        assertTrue( value2.isEmpty() );        
     }
 
     /**
@@ -1603,7 +1644,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      */
     @Test
     public void deleteRelatedContent () throws DotSecurityException, DotDataException {
-    	HibernateUtil.startTransaction();
+
         //First lets create a test structure
         Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ), "junit_test_structure_" + String.valueOf( new Date().getTime() ) );
 
@@ -1629,7 +1670,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Try to find the deleted Contentlet
         List<Contentlet> foundContentlets = contentletAPI.getRelatedContent( parentContentlet, testRelationship, user, false );
-        HibernateUtil.commitTransaction();
+
         //Validations
         assertTrue( foundContentlets == null || foundContentlets.isEmpty() );
     }
@@ -1644,7 +1685,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      */
     @Test
     public void deleteRelatedContentWithParent () throws DotSecurityException, DotDataException {
-    	HibernateUtil.startTransaction();
+
         //First lets create a test structure
         Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ), "junit_test_structure_" + String.valueOf( new Date().getTime() ) );
 
@@ -1672,7 +1713,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Try to find the deleted Contentlet
         List<Contentlet> foundContentlets = contentletAPI.getRelatedContent( parentContentlet, testRelationship, user, false );
-        HibernateUtil.commitTransaction();
+
         //Validations
         assertTrue( foundContentlets == null || foundContentlets.isEmpty() );
     }
@@ -2038,6 +2079,11 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void widgetInvalidateAllLang() throws Exception {
 
+        HttpServletRequest requestProxy = new MockInternalRequest().request();
+        HttpServletResponse responseProxy = new BaseResponse().response();
+
+        initMessages();
+
         Structure sw=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("SimpleWidget");
         Language def=APILocator.getLanguageAPI().getDefaultLanguage();
         Contentlet w = new Contentlet();
@@ -2059,9 +2105,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         SimpleNode contentTester = engine.getRuntimeServices().parse(new StringReader("code:$code"), "tester1");
 
         contentTester.init(null, null);
-
-        HttpServletRequest requestProxy = new MockInternalRequest().request();
-        HttpServletResponse responseProxy = new BaseResponse().response();
 
         requestProxy.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         requestProxy.setAttribute(com.liferay.portal.util.WebKeys.USER,APILocator.getUserAPI().getSystemUser());
@@ -2105,7 +2148,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         contentletAPI.archive(w2, user, false);
         contentletAPI.delete(w2, user, false);
     }
-
     @Test
     public void testFileCopyOnSecondLanguageVersion() throws DotDataException, DotSecurityException {
 
@@ -2246,5 +2288,94 @@ public class ContentletAPITest extends ContentletBaseTest {
     	
     	fileAssetDataGen.remove(resultSpanish);
     }
+    
+    /**
+     * Deletes a list of contents
+     * @throws Exception
+     */
+    @Test
+    public void deleteMultipleContents() throws Exception { // https://github.com/dotCMS/core/issues/7678
 
+    	// languages
+    	int english = 1;
+    	int spanish = 2;
+        //Using System User.
+        User user = APILocator.getUserAPI().getSystemUser();
+        // new template
+        Template template = new TemplateDataGen().nextPersisted();
+        // new test folder
+		Folder testFolder = new FolderDataGen().nextPersisted();
+		// sample pages
+		HTMLPageAsset pageEnglish1 = new HTMLPageDataGen(testFolder, template).languageId(english).nextPersisted();
+		HTMLPageAsset pageEnglish2 = new HTMLPageDataGen(testFolder, template).languageId(english).nextPersisted();
+		contentletAPI.publish(pageEnglish1, user, false);
+		contentletAPI.publish(pageEnglish2, user, false);
+        // delete counter
+        int deleted = 0;
+        // Page list
+        List<HTMLPageAsset> liveHTMLPages = new ArrayList<HTMLPageAsset>();
+        // List of contentlets created for this test.
+        List<Contentlet> contentletsCreated = new ArrayList<Contentlet>();
+        
+        liveHTMLPages.add(pageEnglish1);
+        liveHTMLPages.add(pageEnglish2);
+               
+        //We need to create a new copy of pages for Spanish.
+        for(HTMLPageAsset liveHTMLPage : liveHTMLPages){
+            Contentlet htmlPageContentlet = APILocator.getContentletAPI().find( liveHTMLPage.getInode(), user, false );
+
+            //As a copy we need to remove this info to do a clean checkin.
+            htmlPageContentlet.getMap().remove("modDate");
+            htmlPageContentlet.getMap().remove("lastReview");
+            htmlPageContentlet.getMap().remove("owner");
+            htmlPageContentlet.getMap().remove("modUser");
+
+            htmlPageContentlet.getMap().put("inode", "");
+            htmlPageContentlet.getMap().put("languageId", new Long(spanish));
+
+            //Checkin and Publish.
+            Contentlet working = APILocator.getContentletAPI().checkin(htmlPageContentlet, user, false);
+            APILocator.getContentletAPI().publish(working, user, false);
+            APILocator.getContentletAPI().isInodeIndexed(working.getInode(), true);
+
+            contentletsCreated.add(working);
+        }
+
+        //Now remove all the pages that we created for this tests.
+        APILocator.getContentletAPI().unpublish(contentletsCreated, user, false);
+        APILocator.getContentletAPI().archive(contentletsCreated, user, false);
+        APILocator.getContentletAPI().delete(contentletsCreated, user, false);
+        
+        for(Contentlet contentlet: contentletsCreated){
+        	if(APILocator.getContentletAPI().find(contentlet.getInode(), user, false) == null){
+        		deleted++;
+        	}
+        }
+        // 2 Spanish pages created, 2 should have been deleted
+        assertEquals(2, deleted);
+        
+        List<Contentlet> liveEnglish = new ArrayList<Contentlet>();
+        for(IHTMLPage page:liveHTMLPages){
+        	liveEnglish.add(APILocator.getContentletAPI().find( page.getInode(), user, false ));
+        }
+        
+        APILocator.getContentletAPI().unpublish(liveEnglish, user, false);
+        APILocator.getContentletAPI().archive(liveEnglish, user, false);
+        APILocator.getContentletAPI().delete(liveEnglish, user, false);
+        
+        deleted = 0;
+        for(Contentlet contentlet: liveEnglish){
+        	if(APILocator.getContentletAPI().find(contentlet.getInode(), user, false) == null){
+        		deleted++;
+        	}
+        }
+        
+        // 2 English pages created, 2 should have been deleted
+        assertEquals(2, deleted);
+
+        // dispose other objects
+		FolderDataGen.remove(testFolder);
+		TemplateDataGen.remove(template);
+		
+    }
 }

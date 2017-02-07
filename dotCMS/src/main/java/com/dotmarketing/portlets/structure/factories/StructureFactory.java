@@ -1,25 +1,15 @@
 package com.dotmarketing.portlets.structure.factories;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.dotcms.api.system.event.*;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cmis.QueryResult;
+import com.dotcms.exception.BaseRuntimeInternationalizationException;
+import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.PermissionedWebAssetUtil;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
@@ -48,6 +38,12 @@ import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
+import java.io.Serializable;
+import java.util.*;
+
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+
 /**
  * Provides access to information related to Content Types and the different
  * ways it is related to other types of objects in dotCMS. The term "Structure" 
@@ -63,7 +59,9 @@ public class StructureFactory {
 	private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
 	private static HostAPI hostAPI = APILocator.getHostAPI();
-
+	private static final SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
+	private static final HttpServletRequestThreadLocal httpServletRequestThreadLocal = HttpServletRequestThreadLocal.INSTANCE;
+	private static final ContentTypeUtil contentTypeUtil = ContentTypeUtil.getInstance();
 
 	/**
 	 * @param permissionAPI the permissionAPI to set
@@ -543,6 +541,7 @@ public class StructureFactory {
 	//### CREATE AND UPDATE
 	public static void saveStructure(Structure structure) throws DotHibernateException
 	{
+		boolean isNew = !UtilMethods.isSet(structure.getInode());
 		structure.setUrlMapPattern(cleanURLMap(structure.getUrlMapPattern()));
 		Date now = new Date();
 		structure.setiDate(now);
@@ -553,6 +552,31 @@ public class StructureFactory {
 		if(UtilMethods.isSet(structure.getUrlMapPattern())) {
 		    CacheLocator.getContentTypeCache().clearURLMasterPattern();
 		}
+
+		pushSaveUpdateEvent(structure, isNew);
+	}
+
+	private static void pushSaveUpdateEvent(final Structure structure, final boolean isNew) {
+
+		final DotSubmitter dotSubmitter =
+				SystemEventsFactory.getInstance().getDotSubmitter();
+
+		final String actionUrl = isNew ? contentTypeUtil.getActionUrl(structure) : null;
+
+		dotSubmitter.execute(() -> {
+
+			final SystemEventType systemEventType = isNew ?
+					SystemEventType.SAVE_BASE_CONTENT_TYPE : SystemEventType.UPDATE_BASE_CONTENT_TYPE;
+
+			try {
+
+				ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, structure);
+				systemEventsAPI.push(systemEventType, new Payload(contentTypePayloadDataWrapper,  Visibility.PERMISSION,
+						PermissionAPI.PERMISSION_READ));
+			} catch (DotDataException e) {
+				throw new BaseRuntimeInternationalizationException( e );
+			}
+		});
 	}
 
 	public static void saveStructure(Structure structure, String existingId) throws DotHibernateException
@@ -572,12 +596,32 @@ public class StructureFactory {
 		deleteStructure(structure);
 	}
 
-	public static void deleteStructure(Structure structure) throws DotDataException
+	public static void deleteStructure(final Structure structure) throws DotDataException
 	{
+
+		final DotSubmitter dotSubmitter =
+				SystemEventsFactory.getInstance().getDotSubmitter();
 
 		WorkFlowFactory wff = FactoryLocator.getWorkFlowFactory();
 		wff.deleteSchemeForStruct(structure.getInode());
 		InodeFactory.deleteInode(structure);
+
+			if (null != dotSubmitter) {
+
+				final String actionUrl = contentTypeUtil.getActionUrl(structure);
+
+				dotSubmitter.execute(() -> {
+
+					try {
+
+						ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, structure);
+						systemEventsAPI.push(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(contentTypePayloadDataWrapper, Visibility.PERMISSION,
+								PermissionAPI.PERMISSION_READ));
+					} catch (DotDataException e) {
+						throw new BaseRuntimeInternationalizationException( e );
+					}
+				});
+			}
 	}
 
 	public static void disableDefault() throws DotHibernateException
@@ -962,6 +1006,4 @@ public class StructureFactory {
 	public static List<Structure> findStructuresUserCanUse(User user, String query, Integer structureType, int offset, int limit) throws DotDataException, DotSecurityException {
 		return PermissionedWebAssetUtil.findStructuresForLimitedUser(query, structureType, "name", offset, limit, PermissionAPI.PERMISSION_READ, user, false);
 	}
-
-
 }

@@ -2,9 +2,9 @@ package com.dotcms.rest;
 
 import static org.junit.Assert.assertNotNull;
 
-import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.repackage.javax.ws.rs.client.Client;
 import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 
@@ -13,9 +13,7 @@ import com.dotcms.repackage.org.glassfish.jersey.client.authentication.HttpAuthe
 import org.junit.Before;
 import org.junit.Test;
 
-import com.dotcms.TestBase;
 import com.dotcms.rest.config.RestServiceUtil;
-import com.dotcms.rest.exception.*;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
@@ -25,12 +23,9 @@ import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotcms.repackage.javax.ws.rs.NotAuthorizedException;
 import com.liferay.portal.model.User;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import static org.mockito.Mockito.*;
 
-public class WebResourceTest extends TestBase {
+public class WebResourceTest extends IntegrationTestBase {
 
     private Client client;
     private WebTarget webTarget;

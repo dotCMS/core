@@ -33,11 +33,13 @@ import com.dotmarketing.util.UtilMethods;
 public abstract class AbstractIntegrityChecker implements IntegrityChecker {
 
     /**
-     * @see IntegrityChecker
+     * Creates temporary TABLE for integrity checking purposes.
+     *
+     * @param endpointId
+     * @return temporal table name
      */
-    @Override
-    public String getTempTableName(final String endpointId) {
-        return getTempTableName(endpointId, getIntegrityType());
+    protected String getTempTableName(final String endpointId) {
+        return getTempTableName(endpointId, StringUtils.EMPTY);
     }
 
     /**
@@ -47,14 +49,26 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
      * @param type
      * @return temporal table name
      */
-    private String getTempTableName(String endpointId, IntegrityType type) {
+	protected String getTempTableName(String endpointId, String type) {
+		return getTempTableName(endpointId, getIntegrityType(), type);
+	}
 
-        if (!UtilMethods.isSet(endpointId)) {
+    /**
+     * Creates temporary TABLE for integrity checking purposes.
+     *
+     * @param endpointId
+     * @param type
+     * @param suffixName
+     * @return temporal table name
+     */
+    protected String getTempTableName(String endpointId, IntegrityType type, String suffixName) {
+
+    	if (!UtilMethods.isSet(endpointId)) {
             return null;
         }
 
         final String endpointIdforDB = endpointId.replace("-", "");
-        String resultsTableName = type.name().toLowerCase() + "_temp_" + endpointIdforDB;
+        String resultsTableName = type.name().toLowerCase() + "_temp"+suffixName.toLowerCase()+"_" + endpointIdforDB;
 
         if (DbConnectionFactory.isOracle()) {
             resultsTableName = resultsTableName.substring(0, 29);
@@ -63,6 +77,14 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
         }
 
         return resultsTableName;
+    }
+
+    /**
+     * @see IntegrityChecker
+     */
+    @Override
+    public String[] getTempTableNames(String endpointId) {
+    	return new String[]{ getTempTableName(endpointId) };
     }
 
     /**

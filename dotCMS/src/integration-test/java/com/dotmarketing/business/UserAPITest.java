@@ -1,15 +1,13 @@
 package com.dotmarketing.business;
 
-import com.dotcms.DwrAuthenticationUtil;
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.TestBase;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.IntegrationTestBase;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.ajax.RoleAjax;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -17,22 +15,26 @@ import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.WebAssetFactory;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -40,7 +42,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowComment;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
@@ -53,15 +54,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -73,25 +69,48 @@ import static org.junit.Assert.assertTrue;
  * @author Oswaldo Gallango
  *
  */
-public class UserAPITest extends TestBase{
+
+public class UserAPITest extends IntegrationTestBase {
+
+	protected static UserAPI userAPI;
+	protected static RoleAPI roleAPI;
+	protected static PermissionAPI perAPI;
+	protected static HostAPI hostAPI;
+	protected static TemplateAPI templateAPI;
+	protected static ContainerAPI containerAPI;
+	protected static ContentletAPI conAPI;
+	protected static LayoutAPI layoutAPI;
+	protected static VersionableAPI versionableAPI;
+	protected static HTMLPageAssetAPI htmlPageAssetAPI;
+	protected static FolderAPI folderAPI;
+	protected static IdentifierAPI identifierAPI;
+	protected static WorkflowAPI workflowAPI;
 
 	private static User systemUser;
-	private static DwrAuthenticationUtil dwrAuthentication = null;
 
 	@BeforeClass
 	public static void prepare () throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
 
 		LicenseTestUtil.getLicense();
 
+		userAPI = APILocator.getUserAPI();
+		roleAPI = APILocator.getRoleAPI();
+		perAPI = APILocator.getPermissionAPI();
+		hostAPI = APILocator.getHostAPI();
+		templateAPI = APILocator.getTemplateAPI();
+		containerAPI = APILocator.getContainerAPI();
+		conAPI = APILocator.getContentletAPI();
+		layoutAPI = APILocator.getLayoutAPI();
+		versionableAPI = APILocator.getVersionableAPI();
+		htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
+		folderAPI = APILocator.getFolderAPI();
+		identifierAPI = APILocator.getIdentifierAPI();
+		workflowAPI = APILocator.getWorkflowAPI();
+
 		//Setting the test user
 		systemUser = APILocator.getUserAPI().getSystemUser();
-
-		// User authentication through DWR is required for RoleAjax class
-		Map<String, Object> sessionAttrs = new HashMap<String, Object>();
-		sessionAttrs.put("USER_ID", "dotcms.org.1");
-		dwrAuthentication = new DwrAuthenticationUtil();
-		dwrAuthentication.setupWebContext(null, sessionAttrs);
-
 	}
 
 	/**
@@ -105,21 +124,8 @@ public class UserAPITest extends TestBase{
 	 * @throws IOException If the url is malformed or if there is an issue opening the connection stream 
 	 */
 	@Test
-	public void delete() throws DotDataException,DotSecurityException, PortalException, SystemException, WebAssetException, IOException{
+	public void delete() throws DotDataException,DotSecurityException, PortalException, SystemException, WebAssetException, IOException, Exception {
 
-		UserAPI userAPI = APILocator.getUserAPI();
-		RoleAPI roleAPI = APILocator.getRoleAPI();
-		PermissionAPI perAPI = APILocator.getPermissionAPI();
-		HostAPI hostAPI = APILocator.getHostAPI();
-		TemplateAPI templateAPI = APILocator.getTemplateAPI();
-		ContainerAPI containerAPI = APILocator.getContainerAPI();
-		ContentletAPI conAPI = APILocator.getContentletAPI();
-		LayoutAPI layoutAPI = APILocator.getLayoutAPI();
-		VersionableAPI versionableAPI = APILocator.getVersionableAPI();
-		HTMLPageAssetAPI htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
-		FolderAPI folderAPI = APILocator.getFolderAPI();
-		IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
-		WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
 		long langId =APILocator.getLanguageAPI().getDefaultLanguage().getId();
 		String id = String.valueOf( new Date().getTime());
 
@@ -146,21 +152,28 @@ public class UserAPITest extends TestBase{
 		/**
 		 * Set permission to role
 		 */
-		Map<String,String> mm=new HashMap<String,String>();
-		mm.put("individual",Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN | PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
-		mm.put("hosts", "0");
-		mm.put("structures", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH));
-		mm.put("content", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH));
-		mm.put("containers", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH));
-		mm.put("links", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH));
-		mm.put("files", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH));
-		mm.put("templates", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH));
-		mm.put("templateLayouts", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH));
-		mm.put("pages", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH));
-		mm.put("folders", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN));
-		mm.put("rules", "0");
-		mm.put("categories", "0");
-		new RoleAjax().saveRolePermission(newRole.getId(), host.getIdentifier(), mm, false);
+		List<Permission> permissionsToSave = new ArrayList<Permission>();
+		permissionsToSave.add(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN | PermissionAPI.PERMISSION_EDIT_PERMISSIONS), true));
+		permissionsToSave.add(new Permission(Host.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), 0, true));
+		permissionsToSave.add(new Permission(Folder.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN), true));
+		permissionsToSave.add(new Permission(Container.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
+		permissionsToSave.add(new Permission(Template.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
+		permissionsToSave.add(new Permission(TemplateLayout.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
+		permissionsToSave.add(new Permission(File.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
+		permissionsToSave.add(new Permission(Link.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
+		permissionsToSave.add(new Permission(Contentlet.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
+		permissionsToSave.add(new Permission(IHTMLPage.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
+		permissionsToSave.add(new Permission(Structure.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
+		permissionsToSave.add(new Permission(Category.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), 0, true));
+		permissionsToSave.add(new Permission(Rule.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), 0, true));
+
+		if ( APILocator.getPermissionAPI().isInheritingPermissions(host) ) {
+			Permissionable parentPermissionable = APILocator.getPermissionAPI().findParentPermissionable(host);
+			APILocator.getPermissionAPI().permissionIndividually(parentPermissionable, host, systemUser, false);
+		}
+
+		// NOTE: Method "assignPermissions" is deprecated in favor of "save", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "save"
+		APILocator.getPermissionAPI().assignPermissions(permissionsToSave, host, systemUser, false);
 
 		/**
 		 * Add role permission over htmlpages
@@ -187,6 +200,7 @@ public class UserAPITest extends TestBase{
 		p1.setInode(pageStructure.getInode());
 		permissions.add(p1);
 
+		// NOTE: Method "assignPermissions" is deprecated in favor of "save", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "save"
 		perAPI.assignPermissions(permissions, pageStructure, systemUser, false);
 
 		/**
@@ -223,15 +237,6 @@ public class UserAPITest extends TestBase{
 		Role replacementUserUserRole = roleAPI.loadRoleByKey(replacementUser.getUserId());
 
 		/**
-		 * Login in backed as newUser to create data
-		 */
-		dwrAuthentication.shutdownWebContext();
-		Map<String, Object> sessionAttrs = new HashMap<String, Object>();
-		sessionAttrs.put("USER_ID", newUser.getUserId());
-		dwrAuthentication = new DwrAuthenticationUtil();
-		dwrAuthentication.setupWebContext(null, sessionAttrs);
-
-		/**
 		 * Add folder
 		 */
 		Folder ftest = folderAPI.createFolders("/folderTest"+id, host, newUser, false);
@@ -241,56 +246,90 @@ public class UserAPITest extends TestBase{
 		/**
 		 * Create workflow scheme
 		 */
-		HttpServletRequest req=ServletTestRunner.localRequest.get();
 		String schemeName = "workflow-"+id;
-		String baseURL = "http://"+req.getServerName()+":"+req.getServerPort()+"/DotAjaxDirector/com.dotmarketing.portlets.workflows.business.TestableWfSchemeAjax?cmd=save&schemeId=&schemeName="+schemeName;
-		URL testUrl = new URL(baseURL);
-		IOUtils.toString(testUrl.openStream(),"UTF-8");
+
+		WorkflowScheme newScheme = new WorkflowScheme();
+		newScheme.setName(schemeName);
+		newScheme.setArchived(false);
+		newScheme.setMandatory(false);
+		workflowAPI.saveScheme(newScheme);
+
 		WorkflowScheme ws = workflowAPI.findSchemeByName(schemeName);
 		Assert.assertTrue(UtilMethods.isSet(ws));
 
 		/**
 		 * Create scheme step1
 		 */
-		baseURL = "http://"+req.getServerName()+":"+req.getServerPort()+"/DotAjaxDirector/com.dotmarketing.portlets.workflows.business.TestableWfStepAjax?cmd=add&stepName=Edit&schemeId=" +  ws.getId();
-		testUrl = new URL(baseURL);
-		IOUtils.toString(testUrl.openStream(),"UTF-8");
+		WorkflowStep workflowStep1 = new WorkflowStep();
+		workflowStep1.setMyOrder(1);
+		workflowStep1.setName("Edit");
+		workflowStep1.setSchemeId(ws.getId());
+		workflowStep1.setResolved(false);
+		workflowAPI.saveStep(workflowStep1);
+
 		List<WorkflowStep> steps = workflowAPI.findSteps(ws);
 		Assert.assertTrue(steps.size()==1);
-		WorkflowStep step1 = steps.get(0);
+		workflowStep1 = steps.get(0);
 
 		/**
 		 * Create scheme step2
 		 */
-		baseURL = "http://"+req.getServerName()+":"+req.getServerPort()+"/DotAjaxDirector/com.dotmarketing.portlets.workflows.business.TestableWfStepAjax?cmd=add&stepName=Publish&schemeId=" +  ws.getId();
-		testUrl = new URL(baseURL);
-		IOUtils.toString(testUrl.openStream(),"UTF-8");
+		WorkflowStep workflowStep2 = new WorkflowStep();
+		workflowStep2.setMyOrder(2);
+		workflowStep2.setName("Publish");
+		workflowStep2.setSchemeId(ws.getId());
+		workflowStep2.setResolved(false);
+		workflowAPI.saveStep(workflowStep2);
+
 		steps = workflowAPI.findSteps(ws);
 		Assert.assertTrue(steps.size()==2);
-		WorkflowStep step2 = steps.get(1);
+		workflowStep2 = steps.get(1);
 
 		/**
 		 * Add action to scheme step1
 		 */
-		baseURL = "http://"+req.getServerName()+":"+req.getServerPort()+"/DotAjaxDirector/com.dotmarketing.portlets.workflows.business.TestableWfActionAjax?cmd=save&stepId="+step1.getId()+"&schemeId="+UtilMethods.webifyString(ws.getId())+"&actionName=Edit&whoCanUse=";
-		baseURL+=newRole.getId()+",&actionIconSelect=workflowIcon&actionAssignable=true&actionCommentable=true&actionRequiresCheckout=false&actionRoleHierarchyForAssign=false";
-		baseURL+="&actionAssignToSelect="+newUserUserRole.getId()+"&actionNextStep="+step2.getId()+"&actionCondition=";
-		testUrl = new URL(baseURL);
-		IOUtils.toString(testUrl.openStream(),"UTF-8");
-		List<WorkflowAction> actions1= workflowAPI.findActions(step1, systemUser);
+		WorkflowAction newAction = new WorkflowAction();
+		newAction.setName("Edit");
+		newAction.setAssignable(true);
+		newAction.setCommentable(true);
+		newAction.setIcon("workflowIcon");
+		newAction.setNextStep(workflowStep2.getId());
+		newAction.setStepId(workflowStep1.getId());
+		newAction.setCondition("");
+		newAction.setRequiresCheckout(false);
+		newAction.setRoleHierarchyForAssign(false);
+		newAction.setNextAssign(newUserUserRole.getId());
+
+		List<Permission> permissionsNewAction = new ArrayList<Permission>();
+		permissionsNewAction.add(new Permission( newAction.getId(), newRole.getId(), PermissionAPI.PERMISSION_USE ));
+
+		workflowAPI.saveAction(newAction, permissionsNewAction);
+		
+		List<WorkflowAction> actions1= workflowAPI.findActions(workflowStep1, systemUser);
 		Assert.assertTrue(actions1.size()==1);
 		WorkflowAction action1 = actions1.get(0);
 
 		/**
 		 * Add action to scheme step2
 		 */
-		baseURL = "http://"+req.getServerName()+":"+req.getServerPort()+"/DotAjaxDirector/com.dotmarketing.portlets.workflows.business.TestableWfActionAjax?cmd=save&stepId="+step2.getId()+"&schemeId="+UtilMethods.webifyString(ws.getId())+"&actionName=Publish&whoCanUse=";
-		baseURL+=newRole.getId()+",&actionIconSelect=workflowIcon&actionAssignable=true&actionCommentable=true&actionRequiresCheckout=false&actionRoleHierarchyForAssign=false";
-		baseURL+="&actionAssignToSelect="+newUserUserRole.getId()+"&actionNextStep="+step2.getId()+"&actionCondition=";
+		WorkflowAction newAction2 = new WorkflowAction();
+		newAction2.setName("Publish");
+		newAction2.setAssignable(true);
+		newAction2.setCommentable(true);
+		newAction2.setIcon("workflowIcon");
+		newAction2.setNextStep(workflowStep2.getId());
+		newAction2.setStepId(workflowStep2.getId());
+		newAction2.setCondition("");
+		newAction2.setRequiresCheckout(false);
+		newAction2.setRoleHierarchyForAssign(false);
+		newAction2.setNextAssign(newUserUserRole.getId());
 
-		testUrl = new URL(baseURL);
-		IOUtils.toString(testUrl.openStream(),"UTF-8");
-		List<WorkflowAction> actions2= workflowAPI.findActions(step2, systemUser);
+		List<Permission> permissionsNewAction2 = new ArrayList<Permission>();
+		permissionsNewAction2.add(new Permission( newAction2.getId(), newRole.getId(), PermissionAPI.PERMISSION_USE ));
+
+		workflowAPI.saveAction(newAction2, permissionsNewAction2);
+
+		List<WorkflowAction> actions2= workflowAPI.findActions(workflowStep2, systemUser);
 		Assert.assertTrue(actions2.size()==1);
 		WorkflowAction action2 = actions2.get(0);
 
@@ -401,7 +440,7 @@ public class UserAPITest extends TestBase{
 		workflowAPI.fireWorkflowNoCheckin(contentAsset2, newUser);
 
 		WorkflowStep  currentStep = workflowAPI.findStepByContentlet(contentAsset2);
-		assertTrue(currentStep.getId().equals(step2.getId()));
+		assertTrue(currentStep.getId().equals(workflowStep2.getId()));
 
 		/**
 		 * Relate content to page
@@ -435,15 +474,6 @@ public class UserAPITest extends TestBase{
 		link.setUrl(myURL.toString());
 		WebAssetFactory.createAsset(link, newUser.getUserId(), ftest);
 		versionableAPI.setLive(link);
-
-		/**
-		 * login in backend as admin
-		 */
-		dwrAuthentication.shutdownWebContext();
-		sessionAttrs = new HashMap<String, Object>();
-		sessionAttrs.put("USER_ID", "dotcms.org.1");
-		dwrAuthentication = new DwrAuthenticationUtil();
-		dwrAuthentication.setupWebContext(null, sessionAttrs);
 
 		/**
 		 * validation of current user and references
@@ -536,8 +566,6 @@ public class UserAPITest extends TestBase{
 		CacheLocator.getFolderCache().removeFolder(ftest, identifierAPI.find(ftest.getIdentifier()));
 		ftest = folderAPI.findFolderByPath(ftest.getPath(), host, systemUser, false);
 		assertTrue(ftest.getOwner().equals(replacementUser.getUserId()));
-
-		dwrAuthentication.shutdownWebContext();
 	}
 
 	/**
@@ -549,10 +577,8 @@ public class UserAPITest extends TestBase{
 	public void deleteAnonymous() throws DotDataException, DotSecurityException {
 
 		UserAPI userAPI = APILocator.getUserAPI();
-		User systemUser = null;
 		User anonymousUser = null;
 
-		systemUser = userAPI.getSystemUser();
 		anonymousUser = userAPI.getAnonymousUser();
 		userAPI.delete(anonymousUser, systemUser, false);
 	}
@@ -582,7 +608,7 @@ public class UserAPITest extends TestBase{
 		assertNotNull(users);
 		assertTrue(users.size() == 1);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);}
+		userAPI.delete(user, userAPI.getDefaultUser(), systemUser, false);}
 
 	@Test
 	public void testGetUsersByNameOrEmailOrUserIDDeleted() throws DotDataException, DotSecurityException {

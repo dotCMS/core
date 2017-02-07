@@ -9,6 +9,7 @@ import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -31,7 +32,8 @@ public class LessCompilerTest {
         HttpServletRequest req=ServletTestRunner.localRequest.get();
         baseURL = "http://"+req.getServerName()+":"+req.getServerPort();
     }
-    
+
+    @Ignore
     @Test
     public void case01() throws Exception {
         final String runId =  UUIDGenerator.generateUuid() ;

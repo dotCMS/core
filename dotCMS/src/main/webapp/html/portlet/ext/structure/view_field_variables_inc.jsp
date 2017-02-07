@@ -11,7 +11,7 @@
 		//HTML Templates
 		fieldVariableRowTemplate:
 			'<tr ${str_style} id="fieldVariableRow-${rownum}"  style="" >' +
-		  	'	<td align="center">' +
+		  	'	<td class="listingTable__actions">' +
 			'		<input type="hidden" id="fieldVariableId-${rownum}" value="${id}" >' +
 			'		<input type="hidden" id="fieldVariableKey-${rownum}" value="${key}" >' +
 		 	//'		<input type="hidden" id="fieldVariableName-${rownum}" value="${name}" >' +
@@ -221,10 +221,13 @@
 </script>
 	
 <div id="viewFieldVariablesTab">
-	<div class="yui-u" style="text-align:right;margin:5px 20px 10px 0;">
-	    <button dojoType="dijit.form.Button" onClick="fieldVariablesAdmin.addNewVariable(); return false;" iconClass="plusIcon">
-	        <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-new-Field-Variable")) %>
-	    </button>
+	<div class="portlet-toolbar">
+		<div class="portlet-toolbar__info"></div>
+		<div class="portlet-toolbar__actions">
+			<button dojoType="dijit.form.Button" onClick="fieldVariablesAdmin.addNewVariable(); return false;" iconClass="plusIcon">
+				<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-new-Field-Variable")) %>
+			</button>
+		</div>
 	</div>
     <table class="listingTable">
     	<thead>
@@ -300,25 +303,24 @@
     </table>
 </div>
 
-<div id="editFieldVariable"  dojoType="dijit.Dialog" style="display: none; width: 400px;">
+<div id="editFieldVariable"  dojoType="dijit.Dialog" style="display: none; width: 400px;" title="<%= LanguageUtil.get(pageContext, "Adding-or-Editing-a-Variable")%>">
 	<input type="hidden" id="fieldVariableId" >
-	<%= LanguageUtil.get(pageContext, "Adding-or-Editing-a-Variable")%>
 	<div id="editFieldVariableErrorMessage" style="text-align: center; color: red;"></div>
-	<dl>
-		<!-- <dt><label for="name"><%= LanguageUtil.get(pageContext, "Name")%>:</label></dt>
-		<dd><input dojoType="dijit.form.TextBox" type="text" id="fieldVariableName"></dd>-->
-		
-		<dt><label for="key"><%= LanguageUtil.get(pageContext, "Key")%>:</label></dt>
-		<dd><input dojoType="dijit.form.TextBox" type="text" id="fieldVariableKey"></dd>
-
-		<dt><%= LanguageUtil.get(pageContext, "Value")%></dt>
-		<dd><textarea  style="width:200px; height: 100px;" id="fieldVariableValue" ></textarea></dd>
-	</dl>
+	<div class="form-horizontal">
+		<dl>
+			<dt><label for="key"><%= LanguageUtil.get(pageContext, "Key")%>:</label></dt>
+			<dd><input dojoType="dijit.form.TextBox" type="text" id="fieldVariableKey"></dd>
+		</dl>
+		<dl>
+			<dt><%= LanguageUtil.get(pageContext, "Value")%>:</dt>
+			<dd><textarea style="width:200px; height: 100px;" id="fieldVariableValue"></textarea></dd>
+		</dl>
+	</div>
 	<div class="buttonRow">
-		<button dojoType="dijit.form.Button" onClick="fieldVariablesAdmin.saveVariable();" iconClass="saveIcon">
+		<button dojoType="dijit.form.Button" onClick="fieldVariablesAdmin.saveVariable();">
 			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save"))%>
 		</button>
-		<button dojoType="dijit.form.Button" onClick="dijit.byId('editFieldVariable').hide();" iconClass="cancelIcon">
+		<button dojoType="dijit.form.Button" onClick="dijit.byId('editFieldVariable').hide();" class="dijitButtonFlat">
 			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel"))%>
 		</button>
 	</div>

@@ -1,27 +1,15 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.servlets.test.ServletTestRunner;
-import com.dotmarketing.util.CookieUtilTest;
-import com.dotmarketing.util.WebKeys;
-import com.liferay.util.Http;
-import org.junit.After;
+
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
-import java.net.HttpCookie;
 import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
 
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
 import static org.junit.Assert.assertEquals;
@@ -32,7 +20,7 @@ import static org.junit.Assert.assertNull;
  */
 public class UsersSiteVisitsConditionletFTest extends ConditionletFTest{
 
-    private UsersSiteVisitsUtilTest usersSiteVisitsUtilTest;
+    private UsersSiteVisitsTestUtil usersSiteVisitsTestUtil;
 
     @BeforeClass
     public static void prepare () throws Exception {
@@ -41,12 +29,12 @@ public class UsersSiteVisitsConditionletFTest extends ConditionletFTest{
 
     @Before
     public void innerInit () {
-        usersSiteVisitsUtilTest = new UsersSiteVisitsUtilTest(request);
+        usersSiteVisitsTestUtil = new UsersSiteVisitsTestUtil(request);
     }
 
     @Before
     public void cleanCookies(){
-        usersSiteVisitsUtilTest.clean();
+        usersSiteVisitsTestUtil.clean();
     }
 
     protected Condition getCondition(String id, String value) {
@@ -66,13 +54,13 @@ public class UsersSiteVisitsConditionletFTest extends ConditionletFTest{
         String value = keyAndValu[1];
 
 
-        URLConnection conn = usersSiteVisitsUtilTest.makeRequest("about-us/index");
+        URLConnection conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
 
-        conn = usersSiteVisitsUtilTest.makeRequest("about-us/index");
+        conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
 
-        conn = usersSiteVisitsUtilTest.makeNewSessionRequest("about-us/index");
+        conn = usersSiteVisitsTestUtil.makeNewSessionRequest("about-us/index");
         assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
 
     }
@@ -85,13 +73,13 @@ public class UsersSiteVisitsConditionletFTest extends ConditionletFTest{
         String value = keyAndValu[1];
 
 
-        URLConnection conn = usersSiteVisitsUtilTest.makeRequest("about-us/index");
+        URLConnection conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
         assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
 
-        conn = usersSiteVisitsUtilTest.makeRequest("about-us/index");
+        conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
         assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
 
-        conn = usersSiteVisitsUtilTest.makeNewSessionRequest("about-us/index");
+        conn = usersSiteVisitsTestUtil.makeNewSessionRequest("about-us/index");
         assertNull("Specified response header should be present in the Response.", conn.getHeaderField(randomKey));
 
     }
@@ -104,16 +92,16 @@ public class UsersSiteVisitsConditionletFTest extends ConditionletFTest{
         String value = keyAndValu[1];
 
 
-        URLConnection conn = usersSiteVisitsUtilTest.makeRequest("about-us/index");
+        URLConnection conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
 
-        conn = usersSiteVisitsUtilTest.makeNewSessionRequest("about-us/index");
+        conn = usersSiteVisitsTestUtil.makeNewSessionRequest("about-us/index");
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
 
-        conn = usersSiteVisitsUtilTest.makeRequest("about-us/index");
+        conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
 
-        conn = usersSiteVisitsUtilTest.makeNewSessionRequest("about-us/index");
+        conn = usersSiteVisitsTestUtil.makeNewSessionRequest("about-us/index");
         assertEquals("Specified response header should be NOT present in the Response.", value, conn.getHeaderField(randomKey));
 
     }
@@ -126,16 +114,16 @@ public class UsersSiteVisitsConditionletFTest extends ConditionletFTest{
         String value = keyAndValu[1];
 
 
-        URLConnection conn = usersSiteVisitsUtilTest.makeRequest("about-us/index");
+        URLConnection conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
         assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
 
-        conn = usersSiteVisitsUtilTest.makeNewSessionRequest("about-us/index");
+        conn = usersSiteVisitsTestUtil.makeNewSessionRequest("about-us/index");
         assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
 
-        conn = usersSiteVisitsUtilTest.makeRequest("about-us/index");
+        conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
         assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
 
-        conn = usersSiteVisitsUtilTest.makeNewSessionRequest("about-us/index");
+        conn = usersSiteVisitsTestUtil.makeNewSessionRequest("about-us/index");
         assertNull("Specified response header should be present in the Response.", conn.getHeaderField(randomKey));
     }
 
@@ -146,16 +134,16 @@ public class UsersSiteVisitsConditionletFTest extends ConditionletFTest{
         String randomKey = keyAndValu[0];
         String value = keyAndValu[1];
 
-        URLConnection conn = usersSiteVisitsUtilTest.makeRequest("about-us/index");
+        URLConnection conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
 
-        conn = usersSiteVisitsUtilTest.makeRequest("about-us/index");
+        conn = usersSiteVisitsTestUtil.makeRequest("about-us/index");
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
 
-        conn = usersSiteVisitsUtilTest.makeNewSessionRequest("about-us/index");
+        conn = usersSiteVisitsTestUtil.makeNewSessionRequest("about-us/index");
         assertEquals(value, conn.getHeaderField(randomKey));
 
-        conn = usersSiteVisitsUtilTest.makeNewSessionRequest("about-us/index");
+        conn = usersSiteVisitsTestUtil.makeNewSessionRequest("about-us/index");
         assertEquals(value, conn.getHeaderField(randomKey));
     }
 

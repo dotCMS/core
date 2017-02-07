@@ -1,8 +1,9 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
-import com.dotcms.visitor.domain.Visitor;
+import com.dotcms.UnitTestBase;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.visitor.business.VisitorAPI;
+import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -11,23 +12,26 @@ import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.liferay.portal.model.User;
+
+import org.junit.Test;
+
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.mockito.Mockito;
-import org.testng.annotations.Test;
 
 import static com.dotmarketing.portlets.rules.actionlet.PersonaActionlet.PERSONA_ID_KEY;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
-public class PersonaActionletTest {
+public class PersonaActionletTest extends UnitTestBase {
 
     @Test
     public void testActionletSetsPersonaOnHappyPath() throws Exception {

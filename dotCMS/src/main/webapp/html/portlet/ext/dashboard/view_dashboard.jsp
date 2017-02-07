@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.util.PortletID"%>
 <%@ include file="/html/portlet/ext/dashboard/init.jsp" %>
 <%@page import="com.dotmarketing.portlets.structure.model.Field"%>
 <%@page import="java.util.List"%>
@@ -69,8 +70,8 @@ try {
 	 for(Layout layoutObj:layoutList) {
 		List<String> portletIdsForLayout=layoutObj.getPortletIds();
 		for(String portletId : portletIdsForLayout){
-		if (portletId.equals("EXT_BROWSER")) {
-			browserURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_BROWSER&p_p_action=0";
+		if (portletId.equals(PortletID.SITE_BROWSER)) {
+			browserURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.SITE_BROWSER+"&p_p_action=0";
 			break;
 		}
 	  }
@@ -402,31 +403,42 @@ int periodData = dAPI.checkPeriodData(0,0);
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 <liferay:param name="box_title" value='<%= LanguageUtil.get(pageContext, "view-dashboard") %>' />
 
-<style>
-	.searchTable{width:100%;}
-	.searchTable td{vertical-align:top;}
-	.searchTable td.tdLabel{text-align:right;padding:2px 7px 2px 5px;width:5%;white-space:nowrap;font-weight:bold;}
-	.searchTable td.tdField{padding:2px 40px 2px 0;width:20%;}
-</style>
+
+<div class="portlet-main">
+
 <% if(LicenseUtil.getLevel() > 199){ %>		
 <form id="fm" method="post">
-<% if(periodData<=0){ %>
-<br />
-<br />
-<%} %>
+	<input type="hidden" name="pageNumber" value="<%=pageNumber%>">
+	<span dojoType="dotcms.dojo.data.HostReadStore" jsId="HostStore"></span>
 
-<input type="hidden" name="pageNumber" value="<%=pageNumber%>">
-<span dojoType="dotcms.dojo.data.HostReadStore" jsId="HostStore"></span>
-
-<div class="roundBox" style="margin:0 0 15px 0;background:#f1f1f1;">
-	<table class="searchTable">
-		<tr>
-			<td class="tdLabel"><%= LanguageUtil.get(pageContext, "Host") %>:</td>
-			<td class="tdField">
+	<div class="portlet-toolbar">
+		<div class="portlet-toolbar__actions-primary">
+			<div class="inline-form">
+				<!-- <%= LanguageUtil.get(pageContext, "Host") %>:-->
 				<select id="dahboardHostSelector" name="dahboardHostSelector" dojoType="dijit.form.FilteringSelect" 
 					store="HostStore"  pageSize="30" labelAttr="hostname"  searchAttr="hostname" 
 					searchDelay="400"  <%= UtilMethods.isSet(selectedHost)?"value=\"" + selectedHost+ "\"":""  %> invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected")%>">
 				</select>
+				<button dojoType="dijit.form.Button" type="submit" onClick="submitfm();" iconClass="searchIcon">
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
+				</button>
+				<button dojoType="dijit.form.Button" id="clearButtonHost" onClick="clearHostSearch();" class="dijitButtonFlat">
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear")) %>
+				</button>
+			</div>
+		</div>
+		<div class="portlet-toolbar__info">
+			<span id="footer" class="contentlet-results"></span>
+		</div>
+    	<div class="portlet-toolbar__actions-secondary"></div>
+       
+    </div>
+     
+	<table class="searchTable">
+		<tr>
+			<td class="tdLabel"></td>
+			<td class="tdField">
+				
 	    	</td>
 		    	
 		    <script language="Javascript">
@@ -768,17 +780,6 @@ int periodData = dAPI.checkPeriodData(0,0);
 			<% } %>
 		</tr>
 	</table>
-
-				
-	<div class="buttonRow">
-		<button dojoType="dijit.form.Button" type="submit" onClick="submitfm();" iconClass="searchIcon">
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
-		</button>
-		<button dojoType="dijit.form.Button" id="clearButtonHost" onClick="clearHostSearch();" iconClass="resetIcon">
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear-Search")) %>
-		</button>
-	</div>
-</div>
 </form>
 
 	<table class="listingTable">
@@ -805,11 +806,14 @@ int periodData = dAPI.checkPeriodData(0,0);
 		</thead>
 		<tbody id="hosts"></tbody>
 	</table>
-	<div id="footer" style="text-align:center;"></div>
+	
 	<div id="popups"></div>
 	<div id="hostContextMenues"></div>
-</div>
+	
 <%}else{ %>
-<%@ include file="/html/portlet/ext/dashboard/not_licensed.jsp" %>
+	
+	<%@ include file="/html/portlet/ext/dashboard/not_licensed.jsp" %>
+	
 <% }%>
+</div>
 </liferay:box>

@@ -1,21 +1,19 @@
 package com.dotmarketing.business;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.RoleNameException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.portlets.user.ajax.UserAjax;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.SystemProperties;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Jason Tesser
@@ -26,14 +24,22 @@ public class RoleAPIImpl implements RoleAPI {
 
 	private final String ROLENAME_REGEXP_PATTERN = GetterUtil.getString( SystemProperties.get( "RoleName.regexp.pattern" ) );
 	
-	private RoleFactory rf = FactoryLocator.getRoleFactory();
 	private Role CMS_ADMIN = null;
 	private Role CMS_ANON = null;
 	private Role CMS_OWNER = null;
 	private Role LOGGEDIN_SITE_USER = null;
-	
+
+	private final UserAPI userAPI;
+	private final RoleFactory rf;
+
 	public RoleAPIImpl()  {
-		
+		this(FactoryLocator.getRoleFactory(), APILocator.getUserAPI());
+	}
+
+	@VisibleForTesting
+	public RoleAPIImpl(RoleFactory roleFactory, UserAPI userAPI) {
+		this.rf = roleFactory;
+		this.userAPI = userAPI;
 	}
 
 	public List<Role> findAllAssignableRoles(boolean showSystemRoles) throws DotDataException {
@@ -365,6 +371,33 @@ public class RoleAPIImpl implements RoleAPI {
 		return role;
 	}
 
-
+	public boolean doesUserHaveRoles(String userId, List<String> roleIds){
+		if (!UtilMethods.isSet(userId) || roleIds == null || roleIds.size() == 0) {
+			return false;
+		}
+		User user;
+		try {
+			user = this.userAPI.loadUserById(userId, this.userAPI.getSystemUser(), false);
+		} catch (Exception e) {
+			Logger.error(this, "An error occurred when retrieving information of user ID [" + userId + "]", e);
+			return false;
+		}
+		String currentRoleId = null;
+		for (String roleId : roleIds) {
+			if (UtilMethods.isSet(roleId.trim())) {
+				currentRoleId = roleId;
+				try {
+					if (this.doesUserHaveRole(user, roleId)) {
+						return true;
+					}
+				} catch (DotDataException e) {
+					Logger.error(UserAjax.class, "An error occurred when checking role [" + currentRoleId + "] on user ID ["
+							+ userId + "]", e);
+					return false;
+				}
+			}
+		}
+		return false;
+	}
 	
 }

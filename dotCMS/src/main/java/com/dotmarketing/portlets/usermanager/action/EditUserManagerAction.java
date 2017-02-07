@@ -5,6 +5,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -610,19 +611,20 @@ public class EditUserManagerAction extends DotPortletAction{
 		if (InodeUtils.isSet(userProxyInode)) {
 
 			//adding roles to user
-			Permission permission = null;
+			List<Permission> newSetOfPermissions = new ArrayList<Permission>();
 			if (readPermissions != null) {
 				for (int n = 0; n < readPermissions.length; n++) {
-					permission = new Permission(userProxyInode, readPermissions[n],	PERMISSION_READ);
-					perAPI.save(permission, userProxy, user, false);
+					newSetOfPermissions.add(new Permission(userProxyInode, readPermissions[n],	PERMISSION_READ));
 				}
 			}
 
 			if (writePermissions != null) {
 				for (int n = 0; n < writePermissions.length; n++) {
-					permission = new Permission(userProxyInode, writePermissions[n], PERMISSION_WRITE);
-					perAPI.save(permission, userProxy, user, false);
+					newSetOfPermissions.add(new Permission(userProxyInode, writePermissions[n], PERMISSION_WRITE));
 				}
+			}
+			if(newSetOfPermissions.size() > 0){
+				perAPI.save(newSetOfPermissions, userProxy, user, false);				
 			}
 		}
 	}

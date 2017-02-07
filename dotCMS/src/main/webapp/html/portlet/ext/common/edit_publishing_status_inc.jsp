@@ -56,12 +56,12 @@ function deletePushHistory() {
 <%@page import="com.dotcms.publisher.environment.bean.Environment"%>
 
 
-<div class="yui-g portlet-toolbar" style="padding-top: 10px">
-	<div class="yui-u first" style="font-weight: bold; padding-left: 15px">
-		<%= LanguageUtil.get(pageContext, "publisher_push_history") %>
+<div class="portlet-toolbar">
+	<div class="portlet-toolbar__actions-primary">
+		<h3><%= LanguageUtil.get(pageContext, "publisher_push_history") %></h3>
 	</div>
 
-	<div class="yui-u" style="text-align:right;">
+	<div class="portlet-toolbar__actions-secondary">
 		<button dojoType="dijit.form.Button" onClick="deletePushHistory();" iconClass="deleteIcon" disabled='<%=pushedAssets.isEmpty()%>'>
 			<%= LanguageUtil.get(pageContext, "publisher_delete_asset_history") %>
 		</button>
@@ -70,19 +70,16 @@ function deletePushHistory() {
 
 <table class="listingTable">
 	<tr>
-		<th width="45%"><%= LanguageUtil.get(pageContext, "publisher_pushed_by") %></th>
-		<th width="45%"><%= LanguageUtil.get(pageContext, "publisher_push_date") %></th>
+		<th width="20%"><%= LanguageUtil.get(pageContext, "publisher_pushed_by") %></th>
+		<th width="20%" style="text-align: center"><%= LanguageUtil.get(pageContext, "publisher_push_date") %></th>
 		<th width="20%"><%= LanguageUtil.get(pageContext, "publisher_Environment") %></th>
-		<th width="10%" nowrap><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></th>
+		<th width="40%" nowrap style="text-align: center"><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></th>
 	</tr>
 <%
 	for(PushedAsset pushedAsset: pushedAssets) {
-
 		Environment env = APILocator.getEnvironmentAPI().findEnvironmentById(pushedAsset.getEnvironmentId());
 		Bundle bundle = APILocator.getBundleAPI().getBundleById(pushedAsset.getBundleId());
 		User owner = APILocator.getUserAPI().loadUserById(bundle.getOwner());
-
-
 %>
 	<tr  >
 		<td><%= owner.getFullName() %></td>

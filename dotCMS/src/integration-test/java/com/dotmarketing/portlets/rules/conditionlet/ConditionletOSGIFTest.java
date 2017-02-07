@@ -1,26 +1,41 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import com.dotcms.LicenseTestUtil;
-import junit.framework.Assert;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
+import java.util.Map;
+
+import javax.servlet.ServletContextEvent;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Mockito;
+
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.repackage.org.osgi.framework.BundleContext;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.osgi.GenericBundleActivator;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.OSGIUtil;
 
-import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 public class ConditionletOSGIFTest {
 
     @BeforeClass
     public static void prepare () throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
+        Mockito.when(Config.CONTEXT.getRealPath("/WEB-INF/felix")).thenReturn(Config.getStringProperty("context.path.felix","/WEB-INF/felix"));
+        ServletContextEvent context = new ServletContextEvent(Config.CONTEXT); 
+        OSGIUtil.getInstance().initializeFramework(context);
     }
 
     @Test
@@ -33,11 +48,11 @@ public class ConditionletOSGIFTest {
 
             conditionletActivator.start(context);
 
-            Assert.assertNotNull(APILocator.getRulesAPI().findConditionlet(UsersContinentConditionlet.class.getSimpleName()));
+            assertNotNull(APILocator.getRulesAPI().findConditionlet(UsersContinentConditionlet.class.getSimpleName()));
 
             conditionletActivator.stop(context);
 
-            Assert.assertNull(APILocator.getRulesAPI().findConditionlet(UsersContinentConditionlet.class.getSimpleName()));
+            assertNull(APILocator.getRulesAPI().findConditionlet(UsersContinentConditionlet.class.getSimpleName()));
 
         } catch(Exception e) {
             Logger.error(ConditionletOSGIFTest.class, "Error starting/stopping ConditionletActivator", e);

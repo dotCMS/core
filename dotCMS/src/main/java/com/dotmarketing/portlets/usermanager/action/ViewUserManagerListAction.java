@@ -1093,20 +1093,24 @@ public class ViewUserManagerListAction extends DotPortletAction {
                                 com.dotmarketing.business.APILocator.getUserProxyAPI().saveUserProxy(userProxy,APILocator.getUserAPI().getSystemUser(), false);
 
                                 userProxyInode = userProxy.getInode();
+                                List<Permission> newSetOfPermissions = new ArrayList<Permission>();
                                 // adding roles to user
                                 Permission permission = null;
                                 if (readPermissions != null) {
-                                    for (int n = 0; n < readPermissions.length; n++) {
-                                        permission = new Permission(userProxyInode, readPermissions[n], PERMISSION_READ);
-                                        permissionAPI.save(permission, userProxy, systemUser, false);
+                                	for (int n = 0; n < readPermissions.length; n++) {
+                                		newSetOfPermissions.add(new Permission(userProxyInode, readPermissions[n], PERMISSION_READ));
                                     }
+                                    
                                 }
 
                                 if (writePermissions != null) {
                                     for (int n = 0; n < writePermissions.length; n++) {
-                                        permission = new Permission(userProxyInode, writePermissions[n], PERMISSION_WRITE);
-                                        permissionAPI.save(permission, userProxy, systemUser, false);
+                                    	newSetOfPermissions.add(new Permission(userProxyInode, writePermissions[n], PERMISSION_WRITE));
                                     }
+                                }
+                                
+                                if(newSetOfPermissions.size() > 0) {
+                                	permissionAPI.save(permission, userProxy, systemUser, false);
                                 }
 
                                 Date today = new Date();
@@ -1204,20 +1208,23 @@ public class ViewUserManagerListAction extends DotPortletAction {
                                    String userProxyInode = userProxy.getInode();
 
                                    permissionAPI.removePermissions(userProxy);
-
+                                   List<Permission> newSetOfPermissions = new ArrayList<Permission>();
                                     // adding roles to user
                                     if (readPermissions != null) {
                                         for (int n = 0; n < readPermissions.length; n++) {
-                                            permissionAPI.save(new Permission(userProxyInode, readPermissions[n], PERMISSION_READ), userProxy, systemUser, false);
+                                        	newSetOfPermissions.add(new Permission(userProxyInode, readPermissions[n], PERMISSION_READ));
                                         }
                                     }
 
                                     if (writePermissions != null) {
                                         for (int n = 0; n < writePermissions.length; n++) {
-                                            permissionAPI.save(new Permission(userProxyInode, writePermissions[n], PERMISSION_WRITE), userProxy, systemUser, false);
+                                        	newSetOfPermissions.add(new Permission(userProxyInode, writePermissions[n], PERMISSION_WRITE));
                                         }
                                     }
-
+                                    if(newSetOfPermissions.size() > 0){
+                                    	permissionAPI.save(newSetOfPermissions, userProxy, systemUser, false);
+                                    }
+                                    
                                     Address address = null;
                                     List<Address> addresses = PublicAddressFactory.getAddressesByUserId(userDuplicated.getUserId());
                                     for (int pos = 0; pos < addresses.size(); ++pos) {

@@ -130,59 +130,86 @@ function togglePublish(){
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 <liferay:param name="box_title" value='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "view-links-all")) %>' />
 
-<!-- START Toolbar -->
-<form id="fm" method="post">
+<div class="portlet-main">
+	<!-- START Toolbar -->
+	<div class="portlet-toolbar">
+		<div class="portlet-toolbar__actions-primary">
+			<div class="inline-form">
+				<form id="fm" method="post">
 
-	<!--- Hidden fields to copy the asset to a new folder -->
-		<input type="hidden" name="parent" id="parent" value="">
-		<input type="hidden" name="selectedparent" id="selectedparent" value="">
-		<input type="hidden" name="submitParent" id="submitParent" value="">
-		<input type="hidden" name="submitLocation" id="submitLocation" value="">
-		<input type="hidden" name="actionURL" id="actionURL" value="">
-		<input type="hidden" name="pageNumber" value="<%=pageNumber%>">
-		<input type="hidden" name="showDeleted" id="showDeleted" <%= (showDeleted!=null) && (showDeleted.equals("true")) ? "value=\"true\"" : "value=\"false\"" %> >
-	<!--- Hidden fields to copy the asset to a new folder -->
-
-	<div class="yui-gc portlet-toolbar">
-		<div class="yui-u first">
-			<input type="hidden" name="resetQuery" value="">
-            <input type="hidden" name="host_id" id="host_id" value="<%=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)%>"> 
-			<input type="text"  dojoType="dijit.form.TextBox" style="width:175px;" name="query" value="<%= com.dotmarketing.util.UtilMethods.isSet(query) ? query : "" %>">
-            <button dojoType="dijit.form.Button" type="submit" onClick="submitfm()" iconClass="searchIcon">
-               <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
-            </button>
-            <button dojoType="dijit.form.Button" onClick="resetSearch()" iconClass="resetIcon">
-               <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reset")) %>
-            </button>
+				<!--- Hidden fields to copy the asset to a new folder -->
+				<input type="hidden" name="parent" id="parent" value="">
+				<input type="hidden" name="selectedparent" id="selectedparent" value="">
+				<input type="hidden" name="submitParent" id="submitParent" value="">
+				<input type="hidden" name="submitLocation" id="submitLocation" value="">
+				<input type="hidden" name="actionURL" id="actionURL" value="">
+				<input type="hidden" name="pageNumber" value="<%=pageNumber%>">
+				<input type="hidden" name="showDeleted" id="showDeleted" <%= (showDeleted!=null) && (showDeleted.equals("true")) ? "value=\"true\"" : "value=\"false\"" %> >
+				<!-- <%= LanguageUtil.get(pageContext, "Host") %>:-->
+				
+				<input type="hidden" name="resetQuery" value="">
+            	<input type="hidden" name="host_id" id="host_id" value="<%=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)%>"> 
+				<input type="text"  dojoType="dijit.form.TextBox" style="width:175px;" name="query" value="<%= com.dotmarketing.util.UtilMethods.isSet(query) ? query : "" %>">
+	            <button dojoType="dijit.form.Button" type="submit" onClick="submitfm()" iconClass="searchIcon">
+	               <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
+	            </button>
+	            <button dojoType="dijit.form.Button" onClick="resetSearch()" class="dijitButtonFlat">
+						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear")) %>
+	            </button>
+	            
+	            <input type="checkbox" dojoType="dijit.form.CheckBox" name="showDeletedCB" id="showDeletedCB"  onClick="submitfm();" <%= (showDeleted!=null) && (showDeleted.equals("true")) ? "checked" : "" %> value="true">
+				<label for="showDeletedCB"><%= LanguageUtil.get(pageContext, "Show-Archived") %></label>
+	            
+	            </form>
+			</div>
 		</div>
-		<div class="yui-u" style="text-align:right;">
-			<input type="checkbox" dojoType="dijit.form.CheckBox" name="showDeletedCB" id="showDeletedCB"  onClick="submitfm();" <%= (showDeleted!=null) && (showDeleted.equals("true")) ? "checked" : "" %> value="true">
-			<label for="showDeletedCB" style="font-size:85%;"><%= LanguageUtil.get(pageContext, "Show-Archived") %></label>
-		
-			<button dojoType="dijit.form.Button"  type="button" onClick="javascript:addAsset()" iconClass="plusIcon">
-	  		 <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-link")) %>
-	</button>
+		<div class="portlet-toolbar__info">
+			
 		</div>
-	</div>
-	<script language="Javascript">
-    /**
-        focus on search box
-    **/
-    require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
-        dojo.require('dojox.timing');
-        t = new dojox.timing.Timer(500);
-        t.onTick = function(){
-          focusUtil.focus(dom.byId("dijit_form_TextBox_0"));
-          t.stop();
-        }
-        t.start();
-    });
-    </script>
-</form>
-<!-- END Toolbar -->
+    	<div class="portlet-toolbar__actions-secondary">
+    		<!-- START Actions -->			
+			<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
+	            <span></span>
+	
+	            <div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
+	            	
+	                <div data-dojo-type="dijit/MenuItem" onClick="addAsset();">
+					 	<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-link")) %>
+					</div>
+			
+					<div data-dojo-type="dijit/MenuItem" id="publishButton" onClick="submitfmPublish()" disabled="true">
+					    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>
+					</div>
+					
+					<div data-dojo-type="dijit/MenuItem" id="deleteButton" onClick="submitfmDelete()" disabled="true">
+					    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete")) %>
+					</div>
+					
+				</div>
+			</div>
+			<!-- END Actions -->
+    	</div>
+    	
+    	<script language="Javascript">
+		    /**
+		        focus on search box
+		    **/
+		    require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+		        dojo.require('dojox.timing');
+		        t = new dojox.timing.Timer(500);
+		        t.onTick = function(){
+		          focusUtil.focus(dom.byId("dijit_form_TextBox_0"));
+		          t.stop();
+		        }
+		        t.start();
+		    });
+    	</script>
+       
+    </div>  
+	<!-- END Toolbar -->
 
-<!-- START Listing Results -->
-<form id="fm_publish" method="post">
+	<!-- START Listing Results -->
+	<form id="fm_publish" method="post">
 	<input type="hidden" name="referer" value="<%=referer%>">
 	<input type="hidden" name="cmd" value="prepublish">
 
@@ -308,64 +335,51 @@ function togglePublish(){
 	
 	</table>
 
-<!-- Start Pagination -->
-<div class="yui-gb buttonRow">
-	<div class="yui-u first" style="text-align:left;">
-		<% if (minIndex != 0) { %>
-			<button dojoType="dijit.form.Button" onClick="window.location.href = '<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/links/view_links" /><portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber - 1) %>" /><portlet:param name="orderby" value="<%= orderby %>" /><portlet:param name="fromAssetId" value="<%= ((com.dotmarketing.beans.PermissionAsset) links.get(0)).getAsset().getIdentifier() %>" /><portlet:param name="show" value="previous" /></portlet:renderURL>';" iconClass="previousIcon">
-				<%= LanguageUtil.get(pageContext, "Previous") %> 
-			</button>
-		<% } %> &nbsp;
-	</div>
-	<div class="yui-u">
-		<%= LanguageUtil.get(pageContext, "Viewing") %>  <%= minIndex+1 %> -
-<%
-	if (maxIndex > (minIndex + linksSize)) {
-%>
-	<%= minIndex + linksSize %>
-<%
-	} else {
-%>
-	<%= maxIndex %>
-<%
-	}
-%>
-	<%= LanguageUtil.get(pageContext, "of1") %>
-<%
-	if (100 <= linksSize) {
-%>
-	<%= LanguageUtil.get(pageContext, "hundreds") %>
-<%
-	} else {
-%>
-	<%= minIndex + linksSize %>
-<%
-	}
-%>
-	</div>
-	<div class="yui-u" style="text-align:right;">
-		<% if (maxIndex < (minIndex + linksSize)) { %>
-			<button dojoType="dijit.form.Button" onClick="window.location.href = '<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/links/view_links" /><portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber + 1) %>" /><portlet:param name="orderby" value="<%= orderby %>" /><portlet:param name="fromAssetId" value="<%= ((com.dotmarketing.beans.PermissionAsset) links.get(links.size() - 1)).getAsset().getIdentifier() %>" /><portlet:param name="show" value="next" /></portlet:renderURL>';" iconClass="nextIcon">
-				<%= LanguageUtil.get(pageContext, "Next") %>
-			</button>
-		<% } %>
-	</div>
+	<!-- Start Pagination -->
+		<div class="yui-gb buttonRow">
+			<div class="yui-u first" style="text-align:left;">
+				<% if (minIndex != 0) { %>
+					<button dojoType="dijit.form.Button" onClick="window.location.href = '<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/links/view_links" /><portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber - 1) %>" /><portlet:param name="orderby" value="<%= orderby %>" /><portlet:param name="fromAssetId" value="<%= ((com.dotmarketing.beans.PermissionAsset) links.get(0)).getAsset().getIdentifier() %>" /><portlet:param name="show" value="previous" /></portlet:renderURL>';" iconClass="previousIcon">
+						<%= LanguageUtil.get(pageContext, "Previous") %> 
+					</button>
+				<% } %> &nbsp;
+			</div>
+			<div class="yui-u">
+				<%= LanguageUtil.get(pageContext, "Viewing") %>  <%= minIndex+1 %> -
+				<%
+					if (maxIndex > (minIndex + linksSize)) {
+				%>
+					<%= minIndex + linksSize %>
+				<%
+					} else {
+				%>
+					<%= maxIndex %>
+				<%
+					}
+				%>
+					<%= LanguageUtil.get(pageContext, "of1") %>
+				<%
+					if (100 <= linksSize) {
+				%>
+					<%= LanguageUtil.get(pageContext, "hundreds") %>
+				<%
+					} else {
+				%>
+					<%= minIndex + linksSize %>
+				<%
+					}
+				%>			
+			</div>
+			<div class="yui-u" style="text-align:right;">
+				<% if (maxIndex < (minIndex + linksSize)) { %>
+					<button dojoType="dijit.form.Button" onClick="window.location.href = '<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/links/view_links" /><portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber + 1) %>" /><portlet:param name="orderby" value="<%= orderby %>" /><portlet:param name="fromAssetId" value="<%= ((com.dotmarketing.beans.PermissionAsset) links.get(links.size() - 1)).getAsset().getIdentifier() %>" /><portlet:param name="show" value="next" /></portlet:renderURL>';" iconClass="nextIcon">
+						<%= LanguageUtil.get(pageContext, "Next") %>
+					</button>
+				<% } %>
+			</div>
+		</div>
+	<!-- END Pagination -->
+	</form>
 </div>
-<!-- END Pagination -->
-
-
-<!-- START Buton Row -->	
-<div class="buttonRow">
-	<button dojoType="dijit.form.Button" id="publishButton" onClick="submitfmPublish()" disabled="true" iconClass="publishIcon">
-	    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>
-	</button>
-	
-	<button dojoType="dijit.form.Button" id="deleteButton" onClick="submitfmDelete()" disabled="true" iconClass="deleteIcon">
-	    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete")) %>
-	</button>
-</div>
-<!-- END Buton Row -->
-
-</form>
 </liferay:box>
 

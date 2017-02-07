@@ -62,7 +62,7 @@ import com.liferay.portal.model.User;
  *
  */
 public class PermissionAjax {
-
+		
 	/**
 	 * Retrieves a list of roles and its associated permissions for the given asset
 	 * @param assetId
@@ -278,6 +278,7 @@ public class PermissionAjax {
 			}
 
 			if(newSetOfPermissions.size() > 0) {
+				// NOTE: Method "assignPermissions" is deprecated in favor of "save", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "save"
 				permissionAPI.assignPermissions(newSetOfPermissions, asset, user, respectFrontendRoles);
 
 				if(reset && asset.isParentPermissionable()) {
@@ -285,7 +286,8 @@ public class PermissionAjax {
 				}
 			} else {
 				permissionAPI.removePermissions(asset);
-			}
+			}		
+			
 			HibernateUtil.commitTransaction();
 		} catch (Exception e) {
 		    Logger.warn(this, e.getMessage(), e);
@@ -312,7 +314,7 @@ public class PermissionAjax {
 			PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 			Permissionable asset = retrievePermissionable(assetId, languageId, user, respectFrontendRoles);
 			permissionAPI.removePermissions(asset);
-
+						
 		} catch (DotDataException e) {
 			HibernateUtil.rollbackTransaction();
 			throw e;

@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.fileassets.business;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -9,6 +11,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
+import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
@@ -52,13 +60,36 @@ import com.liferay.util.FileUtil;
  */
 public class FileAssetAPIImpl implements FileAssetAPI {
 
+	private SystemEventsAPI systemEventsAPI;
 	ContentletAPI contAPI;
 	PermissionAPI perAPI;
 
 	public FileAssetAPIImpl() {
 		contAPI = APILocator.getContentletAPI();
 		perAPI = APILocator.getPermissionAPI();
+		systemEventsAPI = APILocator.getSystemEventsAPI();
 	}
+
+	/**
+	 * This method will allow you to pass a file where the identifier is not set.  It the file exists on the set host/path
+	 * the identifier and all necessary data will be set in order to checkin as a new version of the existing file. The method will
+	 * call checkout for you so there is no need to do that work before calling this method
+	 * @param fileCon
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+
+	public FileAsset checkinFile(Contentlet fileCon, User user,boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+		boolean isExisting = false;
+		if(!UtilMethods.isSet(fileCon.getIdentifier())){
+			APILocator.getIdentifierAPI().find(fileCon.getHost(),fileCon.getFolder()))
+		}
+
+		return fromContentlet(contAPI.checkin(fileCon,user,respectFrontendRoles));
+	}
+	 */
 
 	public List<FileAsset> findFileAssetsByFolder(Folder parentFolder, User user, boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException {
@@ -401,6 +432,9 @@ public class FileAssetAPIImpl implements FileAssetAPI {
                 
                 CacheLocator.getIdentifierCache().removeFromCacheByVersionable( fileAssetCont );
 
+				this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FILE_ASSET, new Payload(fileAssetCont, Visibility.EXCLUDE_OWNER,
+						new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+
                 return true;
             }
         }
@@ -528,20 +562,59 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
     @Override
     public String getContentMetadataAsString(File metadataFile) throws Exception {
+        Logger.debug(this.getClass(), "DEBUG --> Parsing Metadata from file: " + metadataFile.getPath() );
+
+        //Check if Metadata Max Size is set (in Bytes)
+        int metadataLimitInBytes = Config.getIntProperty("META_DATA_MAX_SIZE", 5) * 1024 * 1024;
+
+        //If Max Size limit is greater than what Java allows for Int values
+        if(metadataLimitInBytes > Integer.MAX_VALUE){
+            metadataLimitInBytes = Integer.MAX_VALUE;
+        }
+
+        //Subtracting 1024 Bytes (buffer size)
+        metadataLimitInBytes = metadataLimitInBytes - 1024;
+
         String type=new Tika().detect(metadataFile);
-        
+
         InputStream input=new FileInputStream(metadataFile);
-        
+
         if(type.equals("application/x-gzip")) {
-            // gzip compression were used
+            // gzip compression was used
             input = new GZIPInputStream(input);
         }
         else if(type.equals("application/x-bzip2")) {
-            // bzip2 compression were used
+            // bzip2 compression was used
             input = new BZip2CompressorInputStream(input);
         }
-        
-        return IOUtils.toString(input);
+
+        //Depending on the max limit of the metadata file size, 
+        //we'll get as many bytes as we can so we can parse it
+        //and then they'll be added to the ContentMap
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        byte[] buf = new byte[1024];
+        int bytesRead = 0;
+        int copied = 0;
+
+        while (bytesRead < metadataLimitInBytes && (copied = input.read(buf,0,buf.length)) > -1 ) {
+            baos.write(buf,0,copied);
+            bytesRead = bytesRead + copied;
+            
+        }
+
+        InputStream limitedInput = new ByteArrayInputStream(baos.toByteArray());
+
+        //let's close the original input since it's no longer necessary to keep it open
+        if (input != null) {
+            try {
+                input.close();
+            } catch (IOException e) {
+                 Logger.error(this.getClass(), "There was a problem with parsing a file Metadata: " + e.getMessage(), e);
+            }
+       }
+
+        return IOUtils.toString(limitedInput);
     }
 
     /**

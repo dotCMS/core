@@ -3,24 +3,29 @@
  */
 package com.dotcms.publisher.endpoint.business;
 
-import java.util.*;
-
+import com.dotcms.IntegrationTestBase;
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.*;
-import com.dotmarketing.business.*;
-import com.dotcms.TestBase;
-import com.dotcms.publisher.endpoint.bean.*;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import org.junit.BeforeClass;
+import com.dotmarketing.exception.DotDataException;
+
 import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author brent griffin
  *
  */
-public class PublishingEndPointAPITest extends TestBase{
+public class PublishingEndPointAPITest extends IntegrationTestBase{
 
 	private static PublishingEndPointAPI api;
 	private static ArrayList<PublishingEndPoint> _endPoints = new ArrayList<PublishingEndPoint>();
@@ -52,7 +57,10 @@ public class PublishingEndPointAPITest extends TestBase{
 	}
 	
 	@BeforeClass
-	public static void init() {
+	public static void init() throws Exception {
+	    	//Setting web app environment
+	        IntegrationTestInitService.getInstance().init();
+		
 		api = APILocator.getPublisherEndPointAPI();
 		_endPoints.add(createPublishingEndPoint("01", "G01", "Alpha", "192.168.1.1", "81", "https", true, "AuthKey01", false));
 		_endPoints.add(createPublishingEndPoint("02", "G01", "Beta", "192.168.1.2", "82", "https", true, "AuthKey02", false));
@@ -73,7 +81,6 @@ public class PublishingEndPointAPITest extends TestBase{
 		}
 	}
 
-	
 	// There should not be any end points at the beginning of the test
 	@Test
 	public void test() throws DotDataException {
@@ -82,10 +89,14 @@ public class PublishingEndPointAPITest extends TestBase{
 			// Ensure proper starting state - no end points in database
 			{
 				List<PublishingEndPoint> savedEndPoints = api.getAllEndPoints();
-				assertTrue(savedEndPoints.size() == 0);
-				savedEndPoints = api.getEnabledReceivingEndPoints();
-				assertTrue(savedEndPoints.size() == 0);
+				if(savedEndPoints.size() > 0){
+					for(PublishingEndPoint endPoint : savedEndPoints){
+						api.deleteEndPointById(endPoint.getId());
+					}
+				}
+
 				savedEndPoints = api.getAllEndPoints();
+
 				assertTrue(savedEndPoints.size() == 0);
 				
 				// Insert test end points

@@ -1,13 +1,18 @@
 package com.dotmarketing.portlets.structure.business;
 
+
+import java.util.*;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.javax.portlet.PortletURL;
+import com.dotcms.repackage.javax.portlet.WindowState;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotmarketing.business.*;
+import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
@@ -15,8 +20,10 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.HostCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.form.business.FormAPI;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -24,8 +31,15 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.services.StructureServices;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.portlet.PortletURLImpl;
+import com.liferay.util.LocaleUtil;
+
+import javax.servlet.http.HttpServletRequest;
+
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * This API exposes useful methods to access and modify information related to
@@ -38,6 +52,13 @@ import com.liferay.portal.model.User;
  *
  */
 public class StructureAPIImpl implements StructureAPI {
+
+	private final ContentTypeCache contentTypeCache = CacheLocator.getContentTypeCache();
+
+	private static String RECENTS_STRUCTURE_QUERY = "select s.name,s.structuretype as type,structure_inode as inode,c.mod_date " +
+			"from contentlet as c,structure as s\n" +
+			"where c.structure_inode = s.inode and mod_user = ? and s.structuretype = ? " +
+			"order by c.mod_date desc;";
 
     @Override
     public void delete(Structure st, User user) throws DotSecurityException, DotDataException, DotStateException {        
@@ -176,4 +197,39 @@ public class StructureAPIImpl implements StructureAPI {
         return StructureFactory.getStructuresCount(condition);
     }
 
+	public Collection<Map<String, Object>> getRecentContentType(Structure.Type type, User user, int nRecents) throws DotDataException {
+		Collection<Map<String, Object>> recents = contentTypeCache.getRecents(type, user, nRecents);
+
+		if (recents == null) {
+			recents = getRecentsFromDataBase(type, user, nRecents);
+			contentTypeCache.addRecents(type, user, nRecents, recents);
+		}
+
+		return recents;
+	}
+
+	private Collection<Map<String, Object>> getRecentsFromDataBase(Structure.Type type, User user, int nRecents) throws DotDataException {
+		final DotConnect dc = new DotConnect();
+		dc.setSQL(RECENTS_STRUCTURE_QUERY);
+		dc.addParam(user.getUserId());
+		dc.addParam(type.getType());
+
+		List<Map<String, Object>> queryResults = dc.loadObjectResults();
+
+		Map result = new LinkedHashMap();
+
+		for (Map<String, Object> queryResult : queryResults) {
+			String inode = (String) queryResult.get("inode");
+
+			if (!result.containsKey(inode)){
+				result.put(inode, queryResult);
+			}
+
+			if (nRecents != -1 && result.size() == nRecents){
+				break;
+			}
+		}
+
+		return result.values();
+	}
 }

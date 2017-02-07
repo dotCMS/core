@@ -9,6 +9,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotmarketing.beans.Host;
@@ -32,6 +37,7 @@ import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -112,6 +118,7 @@ public class WebAssetFactory {
 	private static ContainerAPI containerAPI = APILocator.getContainerAPI();
 	private static TemplateAPI templateAPI = APILocator.getTemplateAPI();
 	private static MenuLinkAPI linksAPI = APILocator.getMenuLinkAPI();
+	private static SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
 
 	private static final int ITERATION_LIMIT = 500;
 	private final static int MAX_LIMIT_COUNT = 100;
@@ -144,6 +151,9 @@ public class WebAssetFactory {
 		webasset.setIdentifier(id.getId());
 		HibernateUtil.saveOrUpdate(webasset);
         APILocator.getVersionableAPI().setWorking(webasset);
+
+		systemEventsAPI.pushAsync(SystemEventType.SAVE_LINK, new Payload(webasset, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(userId, PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
 	public static void createAsset(WebAsset webasset, String userId, Host host) throws DotDataException, DotStateException, DotSecurityException {
@@ -162,6 +172,9 @@ public class WebAssetFactory {
 		HibernateUtil.saveOrUpdate(webasset);
 
 		APILocator.getVersionableAPI().setWorking(webasset);
+
+		systemEventsAPI.pushAsync(SystemEventType.SAVE_LINK, new Payload(webasset, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(userId, PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
 	public static void createAsset(WebAsset webasset, String userId, Inode parent, Identifier identifier) throws DotDataException, DotStateException, DotSecurityException {
@@ -491,28 +504,46 @@ public class WebAssetFactory {
 
 		boolean localTransaction = false;
 		try {
-			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-				// sets new working to live
-		        APILocator.getVersionableAPI().setLive(workingwebasset);
-				if(isNewVersion){
-				   workingwebasset.setModDate(new java.util.Date());
-				   workingwebasset.setModUser(user.getUserId());
-				}
 
-				// persists the webasset
-				HibernateUtil.saveOrUpdate(workingwebasset);
-		}catch(Exception e){
-			Logger.error(WebAssetFactory.class, e.getMessage(), e);
-			if(localTransaction){
-				HibernateUtil.rollbackTransaction();
+			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+
+			// sets new working to live
+			APILocator.getVersionableAPI().setLive(workingwebasset);
+
+
+			if(isNewVersion){
+
+			   workingwebasset.setModDate(new java.util.Date());
+			   workingwebasset.setModUser(user.getUserId());
 			}
-		}
-		finally{
-			if(localTransaction){
+
+			// persists the webasset
+			HibernateUtil.merge(workingwebasset);
+
+			if(localTransaction) {
+
 				HibernateUtil.commitTransaction();
 			}
+		} catch(Exception e){
+
+			Logger.error(WebAssetFactory.class, e.getMessage(), e);
+
+			if(localTransaction){
+
+				HibernateUtil.rollbackTransaction();
+			}
+		} finally {
+
+			if(localTransaction) {
+				DbConnectionFactory.closeConnection();
+			}
 		}
+
 		Logger.debug(WebAssetFactory.class, "HibernateUtil.saveOrUpdate(workingwebasset)");
+
+
+		systemEventsAPI.pushAsync(SystemEventType.PUBLISH_LINK, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
 		return livewebasset;
 	}
@@ -604,6 +635,9 @@ public class WebAssetFactory {
 			// persists the webasset
 			HibernateUtil.saveOrUpdate(workingwebasset);
 
+			systemEventsAPI.pushAsync(SystemEventType.ARCHIVE_LINK, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
+					new ExcludeOwnerVerifierBean(userId, PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+
 			return true;
 		}
 		return false;
@@ -632,6 +666,9 @@ public class WebAssetFactory {
 		CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
 		// gets the identifier for this asset
 		APILocator.getVersionableAPI().setDeleted(currWebAsset, false);
+
+		systemEventsAPI.pushAsync(SystemEventType.UN_ARCHIVE_SITE, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(currWebAsset.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
 	public static boolean unPublishAsset(WebAsset currWebAsset, String userId, Inode parent) throws DotStateException, DotDataException, DotSecurityException {
@@ -713,6 +750,8 @@ public class WebAssetFactory {
 
 				LiveCache.removeAssetFromCache(currWebAsset);
 
+				systemEventsAPI.pushAsync(SystemEventType.UN_PUBLISH_LINK, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
+						new ExcludeOwnerVerifierBean(currWebAsset.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 				return true;
 			} catch (Exception e) {
 				return false;
@@ -791,6 +830,10 @@ public class WebAssetFactory {
 		}
 
 		 APILocator.getVersionableAPI().setWorking(newWebAsset);
+
+		SystemEventType systemEventType = newWebAsset.getInode() == null ? SystemEventType.SAVE_LINK : SystemEventType.UPDATE_LINK;
+		systemEventsAPI.pushAsync(systemEventType, new Payload(newWebAsset, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(newWebAsset.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 
 		return newWebAsset;
 	}
@@ -1679,6 +1722,9 @@ public class WebAssetFactory {
 			APILocator.getIdentifierAPI().delete(identifier);
 			//### Delete the Identifier ###
 			returnValue = true;
+
+			systemEventsAPI.pushAsync(SystemEventType.DELETE_LINK, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
+					new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 		}
 		else
 		{

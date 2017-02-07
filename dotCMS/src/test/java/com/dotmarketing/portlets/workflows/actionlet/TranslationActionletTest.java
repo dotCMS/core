@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
+import com.dotcms.UnitTestBase;
 import com.dotcms.translate.TranslationService;
 import com.dotcms.translate.TranslationUtil;
 import com.dotcms.translate.TranslationUtilTest;
@@ -19,8 +20,8 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.liferay.portal.model.User;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,7 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.dotcms.translate.TranslateTestUtil.*;
 import static com.dotcms.translate.TranslateTestUtil.getEnglishContent;
 import static com.dotcms.translate.TranslateTestUtil.getFieldsForContent;
 import static com.dotcms.translate.TranslateTestUtil.getTranslateToAsList;
@@ -44,18 +44,18 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class TranslationActionletTest {
+public class TranslationActionletTest extends UnitTestBase {
 
     private Contentlet spanishTranslatedContent = mock(Contentlet.class);
     private Contentlet frenchTranslatedContent = mock(Contentlet.class);
 
-    @BeforeMethod
+    @Before
     public void mockContents() {
         spanishTranslatedContent = mock(Contentlet.class);
         frenchTranslatedContent = mock(Contentlet.class);
     }
 
-    @Test(expectedExceptions = WorkflowActionFailureException.class)
+    @Test(expected = WorkflowActionFailureException.class)
     public void testExecuteAction_UnpersistedContent() throws Exception {
         User systemUser = new User("systemUser");
         Contentlet unpersisted = new Contentlet();

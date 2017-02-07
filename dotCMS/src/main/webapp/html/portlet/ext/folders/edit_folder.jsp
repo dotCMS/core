@@ -43,7 +43,7 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 		this.formName = formName;
 
 		var form = document.getElementById(this.formName);
-		form.<portlet:namespace />cmd.value = '<%=com.liferay.portal.util.Constants.ADD%>';
+		form.cmd.value = '<%=com.liferay.portal.util.Constants.ADD%>';
 		val = form.title.value.replace(" ", "");
 		if(val == "" && form.showOnMenu.checked){
 			alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.folder.menu.items")) %>');
@@ -130,7 +130,7 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 
 
 <html:form action='/ext/folders/edit_folder' styleId="fm">
-<input name="<portlet:namespace /><%= Constants.CMD %>" type="hidden" value="add">
+<input name="<%= Constants.CMD %>" type="hidden" value="add">
 <html:hidden property="inode" />
 <html:hidden property="hostId" />
 <html:hidden property="path" />
@@ -196,7 +196,7 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 			<dd>
 				<input type="text" dojoType="dijit.form.TextBox"   style="width:250px" name="filesMasks"  value="<%= UtilMethods.isSet(folder.getFilesMasks()) ? UtilMethods.escapeDoubleQuotes(folder.getFilesMasks()) : "" %>" />
 				<div class="inputCaption" style="padding-left:5px;">(<%= LanguageUtil.get(pageContext, "a-comma-separated-list") %>)</div>
-			<dd>
+			</dd>
 
 			<dt><span class="required"></span> <%= LanguageUtil.get(pageContext, "Default-File-Structure-Type") %>:</dt>
 			<dd>

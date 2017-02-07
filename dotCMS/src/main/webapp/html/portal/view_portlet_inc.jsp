@@ -1,15 +1,26 @@
 <%
-boolean access = APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(portlet.getPortletId(),user);
-String licenseManagerOverrideTicket = (String)request.getParameter("licenseManagerOverrideTicket");
-String roleAdminOverrideTicket = (String)request.getParameter("roleAdminOverrideTicket");
-if(roleAdminOverrideTicket!=null){
-	if(request.getSession().getAttribute("roleAdminOverrideTicket")!=null){
-	  String overrideTicket = (String)request.getSession().getAttribute("roleAdminOverrideTicket");
-	   if(overrideTicket!=null && roleAdminOverrideTicket.equalsIgnoreCase(overrideTicket)){
-		  access = true;
-	   }
+	if (portlet == null) {
+	    //Added some debug and error handling code....
+		throw new IllegalArgumentException("Passed portlet in html/portal/view_portlet_inc.jsp is null");
 	}
-}
+
+	boolean access = false;
+	try {
+		access = APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(portlet.getPortletId(),user);
+	} catch (DotDataException e) {
+		e.printStackTrace();
+	}
+
+	String licenseManagerOverrideTicket = request.getParameter("licenseManagerOverrideTicket");
+	String roleAdminOverrideTicket = request.getParameter("roleAdminOverrideTicket");
+	if(roleAdminOverrideTicket!=null){
+		if(request.getSession().getAttribute("roleAdminOverrideTicket")!=null){
+		  String overrideTicket = (String)request.getSession().getAttribute("roleAdminOverrideTicket");
+		   if(overrideTicket!=null && roleAdminOverrideTicket.equalsIgnoreCase(overrideTicket)){
+			  access = true;
+		   }
+		}
+	}
 
 if(licenseManagerOverrideTicket!=null){
 	if(request.getSession().getAttribute("licenseManagerOverrideTicket")!=null){
@@ -143,7 +154,9 @@ boolean showPortletInactive = portlet.isShowPortletInactive();
 			}
 	%>
 		
-<%@page import="com.dotmarketing.business.APILocator"%><jsp:include page="/html/portal/portlet_error.jsp"></jsp:include>
+<%@page import="com.dotmarketing.business.APILocator"%>
+<%@ page import="com.dotmarketing.exception.DotDataException" %>
+<jsp:include page="/html/portal/portlet_error.jsp"></jsp:include>
 	<%
 		}
 		else {
@@ -204,7 +217,7 @@ if(!statePopUp || portletException){%>
 	
 </script>
 
-<%if(request.getParameter("in_frame")==null){%>
+<%if(request.getParameter(WebKeys.IN_FRAME)==null){%>
 
 <div class="helpId" id="helpId">
 	<a href="#" onclick="showHelp();" class="dotcmsHelpButton"><%=LanguageUtil.get(pageContext, "help") %></a>

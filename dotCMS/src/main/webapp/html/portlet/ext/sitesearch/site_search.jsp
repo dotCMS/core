@@ -40,7 +40,7 @@ boolean success = false;
 		<div class="subNavCrumbTrail">
 			<ul id="subNavCrumbUl">
 				<li class="lastCrumb">
-					<a href="#" ><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_SITESEARCH")%></a>
+					<a href="#" ><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.site-search")%></a>
 				</li>
 
 			</ul>
@@ -108,17 +108,13 @@ function addNewHost() {
 	
 	
 		var newRow = table.insertRow(table.rows.length);
-		if((table.rows.length%2)==0){
-	        newRow.className = "alternate_1";
-		}else{
-			newRow.className = "alternate_2";
-		}
 		newRow.id = hostId;
 		var cell0 = newRow.insertCell(0);
 		var cell1 = newRow.insertCell(1);
 		var anchor = document.createElement("a");
 		anchor.href= 'javascript:deleteHost('+'"'+ hostId +'"'+');';
 		anchor.innerHTML = '<span class="deleteIcon"></span>';
+		cell0.className = 'job-scheduler__host-list-actions';
 		cell0.appendChild(anchor);
 		cell1.innerHTML = hostName;
 		var input = document.createElement("input");
@@ -737,6 +733,8 @@ function refreshIndexStats(){
 	var y =Math.floor(Math.random()*1123213213);
 	x.attr( "href","/html/portlet/ext/sitesearch/site_search_index_stats.jsp?r=" + y  );
 	dojo.byId("crumbTitleSpan").innerHTML="<%= LanguageUtil.get(pageContext, "Indices") %>";
+
+	x.containerNode.style.height = "auto";
 }
 
 function refreshJobStats(){
@@ -744,6 +742,8 @@ function refreshJobStats(){
 	var y =Math.floor(Math.random()*1123213213);
 	x.attr( "href","/html/portlet/ext/sitesearch/site_search_job_stats.jsp?r=" + y  );
 	dojo.byId("crumbTitleSpan").innerHTML="<%= LanguageUtil.get(pageContext, "View-All-Jobs") %>";
+
+	x.containerNode.style.height = "auto";
 }
 
 var myJobName;
@@ -758,9 +758,10 @@ function refreshTestSearch(){
 	else{
 		x.attr( "href","/html/portlet/ext/sitesearch/test_site_search.jsp?testIndex=" + myIndexName +"&r=" + y  );
 	}
-	
 	dojo.byId("crumbTitleSpan").innerHTML="<%= LanguageUtil.get(pageContext, "Search") %>";
 	myIndexName=null;
+
+	x.containerNode.style.height = "auto";
 }
 
 function refreshJobSchedule(){
@@ -774,8 +775,10 @@ function refreshJobSchedule(){
 	else{
 		x.attr( "href","/html/portlet/ext/sitesearch/site_search_job_schedule.jsp?jobName=" +myJobName +"&r=" + y  );
 	}
-	dojo.byId("crumbTitleSpan").innerHTML="<%= LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_SCHEDULER") %>";
+	dojo.byId("crumbTitleSpan").innerHTML="<%= LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.jobs") %>";
 	myJobName=null;
+
+	x.containerNode.style.height = "auto";
 }
 
 function showJobsListingPane(){
@@ -818,7 +821,10 @@ function refreshAuditData(jobId,offset,limit) {
 		if(limit)
 			url+="&limit="+limit;
 	}
-	dijit.byId("auditCp").attr("href",url);
+
+	var x = dijit.byId("auditCp");
+	x.attr("href",url);
+	x.containerNode.style.height = "auto";
 }
 
 dojo.addOnLoad (function(){
@@ -843,8 +849,6 @@ dojo.addOnLoad (function(){
 			  	}
 		});
    	refreshIndexStats();
-	resizeBrowser();
-	dojo.connect(window, "onresize", "resizeBrowser");
 	enableJobsProgressUpdate();
 });
 
@@ -900,45 +904,10 @@ function jobsProgressUpdate() {
     dojo.xhrPost(xhrArgs);
 }
 
-function  resizeBrowser(){
-        var viewport = dijit.getViewport();
-        var viewport_height = viewport.h;
-        
-        var  e =  dojo.byId("indexTabCp");
-        dojo.style(e, "height", viewport_height -210+ "px");
-        
-        var  e =  dojo.byId("indexTestTabCp");
-        dojo.style(e, "height", viewport_height -210+ "px");
-        
-        var  e =  dojo.byId("jobTabCp");
-        dojo.style(e, "height", viewport_height -210+ "px")
-        
-        var  e =  dojo.byId("scheduleTabCp");
-        dojo.style(e, "height", viewport_height -210+ "px")
-        
-        var  e =  dojo.byId("indexStatsCp");
-        dojo.style(e, "height", viewport_height -250+ "px")
-        
-        var  e =  dojo.byId("auditTabCp");
-        dojo.style(e, "height", viewport_height -210+ "px")
-        
-}
-
-
-
 </script>
 
 <style type="text/css">
-	.listingTable {width: 42.5%;font-size: 100%;border-top: 1px solid #d0d0d0;}
-	.trIdxBuilding{background:#F8ECE0;}
-	.trIdxActive{background:#D8F6CE;}
-	.trIdxNothing td{color:#aaaaaa;}
-	.trIdxNothing:hover,.trIdxActive:hover,.trIdxBuilding:hover {background:#e0e9f6 !important;}
-	#restoreIndexUploader {width:200px !important;}
-	#uploadProgress {float: right;display: none;}
-	.dotForm label {position: absolute; text-align:right; width:6em;}
-	.dotForm .dotFormInput {margin-left: 7em;}
-	.listingTable td{word-wrap: break-word;}
+	
 	.highlight td {
 	    background: #94BBFF;
 	    color: white !important;
@@ -952,12 +921,12 @@ function  resizeBrowser(){
 <span dojoType="dotcms.dojo.data.HostReadStore" jsId="HostStore"></span>
 
 
-<div class="portlet-wrapper">
+<div class="portlet-main">
 
 	<div class="subNavCrumbTrail">
 		<ul id="subNavCrumbUl">
 			<li>
-				<a href="#" onclick="refreshJobsListingPane();"><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_SITESEARCH")%></a>
+				<a href="#" onclick="refreshJobsListingPane();"><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.site-search")%></a>
 			</li>
 			<li class="lastCrumb"><span id="crumbTitleSpan"></span></li>
 		</ul>
@@ -969,22 +938,22 @@ function  resizeBrowser(){
 	<div id="mainTabContainer" dolayout="false" dojoType="dijit.layout.TabContainer">
 
 		<div dojoType="dijit.layout.ContentPane" id="indexTabCp" title="<%= LanguageUtil.get(pageContext, "Indices") %>">
-			<div dojoType="dojox.layout.ContentPane" id="indexStatsCp"></div>
+			<div dojoType="dojox.layout.ContentPane" id="indexStatsCp" style="height:auto"></div>
 		</div>
 		
 		<div dojoType="dijit.layout.ContentPane" id="indexTestTabCp" title="<%= LanguageUtil.get(pageContext, "Search") %>">
 			<div dojoType="dojox.layout.ContentPane" id="indexTestCp"></div>
 		</div>
 		<div id="jobTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "View-All-Jobs") %>">
-			<div dojoType="dojox.layout.ContentPane" id="jobStatsCp"></div>
+			<div dojoType="dojox.layout.ContentPane" id="jobStatsCp" style="height:auto"></div>
 		</div>
 		
-		<div id="scheduleTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_SCHEDULER") %>">
-			<div style="overflow-y: auto;" dojoType="dojox.layout.ContentPane" id="scheduleCp"></div>
+		<div id="scheduleTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.jobs") %>">
+			<div style="overflow-y: auto;" dojoType="dojox.layout.ContentPane" id="scheduleCp" style="height:auto"></div>
 		</div>
 		
 		<div id="auditTabCp" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "sitesearch-audit-tab") %>">
-            <div style="overflow-y: auto;" dojoType="dojox.layout.ContentPane" id="auditCp"></div>
+            <div style="overflow-y: auto;" dojoType="dojox.layout.ContentPane" id="auditCp" style="height:auto"></div>
         </div>
 		
 	</div>

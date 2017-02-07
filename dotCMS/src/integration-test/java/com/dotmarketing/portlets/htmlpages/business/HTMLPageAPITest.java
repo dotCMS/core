@@ -7,13 +7,16 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
+
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -49,7 +52,15 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
-public class HTMLPageAPITest extends TestBase {
+public class HTMLPageAPITest extends IntegrationTestBase {
+	
+    @BeforeClass
+    public static void prepare () throws Exception {
+    	
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+    }
+    
     @Test
     public void saveHTMLPage() throws Exception {
     	
@@ -256,6 +267,8 @@ public class HTMLPageAPITest extends TestBase {
     				PermissionAPI.PERMISSION_READ, true));
 
     		PermissionAPI permAPI = APILocator.getPermissionAPI();
+
+    		// NOTE: Method "assignPermissions" is deprecated in favor of "save", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "save"
     		permAPI.assignPermissions(newSetOfPermissions, folderWithPerms, sysuser, false);
 
     		APILocator.getHTMLPageAPI().movePage(page, folderWithPerms, sysuser, false);

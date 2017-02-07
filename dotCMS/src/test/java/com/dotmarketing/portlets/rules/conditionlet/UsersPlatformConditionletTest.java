@@ -1,34 +1,43 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.UnitTestBase;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMultimap;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
-import eu.bitwalker.useragentutils.DeviceType;
 import com.dotcms.unittest.TestUtil;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+
+import eu.bitwalker.useragentutils.DeviceType;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.util.List;
 import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
-import static eu.bitwalker.useragentutils.DeviceType.COMPUTER;
 import static com.dotmarketing.portlets.rules.conditionlet.Conditionlet.COMPARISON_KEY;
 import static com.dotmarketing.portlets.rules.conditionlet.UsersPlatformConditionlet.PLATFORM_KEY;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.EXISTS;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
+import static eu.bitwalker.useragentutils.DeviceType.COMPUTER;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class UsersPlatformConditionletTest {
+@RunWith(DataProviderRunner.class)
+public class UsersPlatformConditionletTest extends UnitTestBase {
 
-    ImmutableMultimap<DeviceType, String> DEVICE_TYPE_TO_AGENT_STRINGS = new ImmutableMultimap.Builder<DeviceType, String>()
+    static ImmutableMultimap<DeviceType, String> DEVICE_TYPE_TO_AGENT_STRINGS = new ImmutableMultimap.Builder<DeviceType, String>()
         .putAll(
             COMPUTER,
         /*Chrome 41.0.2227.0*/
@@ -85,13 +94,13 @@ public class UsersPlatformConditionletTest {
         )
         .build();
 
-    @BeforeMethod
+    @Before
     public void setUp() throws Exception {
 
     }
 
-    @DataProvider(name = "cases")
-    public Object[][] compareCases() throws Exception {
+    @DataProvider
+    public static Object[][] cases() throws Exception {
         try {
             List<TestCase> data = Lists.newArrayList();
 
@@ -123,7 +132,8 @@ public class UsersPlatformConditionletTest {
         }
     }
 
-    @Test(dataProvider = "cases")
+    @Test
+    @UseDataProvider("cases")
     public void testComparisons(TestCase aCase) throws Exception {
         assertThat(aCase.testDescription, runCase(aCase), is(aCase.expect));
     }
@@ -137,23 +147,23 @@ public class UsersPlatformConditionletTest {
 
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testEvaluatesToFalseWhenArgumentsAreEmptyOrMissing() throws Exception {
         new TestCase("").conditionlet.instanceFrom(null);
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testCannotValidateWhenComparisonIsNull() throws Exception {
         TestCase aCase = new TestCase("Empty parameter list should throw NPE.").withComparison(null);
         new TestCase("").conditionlet.instanceFrom(aCase.params);
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testCannotValidateWhenComparisonNotSet() throws Exception {
         new TestCase("").conditionlet.instanceFrom(Maps.newHashMap());
     }
 
-    @Test(expectedExceptions = ComparisonNotSupportedException.class)
+    @Test(expected = ComparisonNotSupportedException.class)
     public void testUnsupportedComparisonThrowsException() throws Exception {
         TestCase aCase = new TestCase("Exists: Unsupported comparison should throw.")
             .withComparison(EXISTS)
@@ -162,7 +172,7 @@ public class UsersPlatformConditionletTest {
         runCase(aCase);
     }
 
-    private class TestCase {
+    private static class TestCase {
 
         public final UsersPlatformConditionlet conditionlet;
         private final HttpServletRequest request;

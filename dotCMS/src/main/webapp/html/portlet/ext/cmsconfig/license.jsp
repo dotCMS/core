@@ -2,7 +2,7 @@
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.liferay.portal.struts.MultiMessageResources"%>
 <%@ include file="/html/portlet/ext/cmsconfig/init.jsp" %>
-<% request.setAttribute("requiredPortletAccess", "9"); %>
+<% request.setAttribute("requiredPortletAccess", PortletID.CONFIGURATION.toString()); %>
 <%@ include file="/html/common/uservalidation.jsp"%>
 
 <%@page import="com.dotmarketing.business.APILocator"%>
@@ -16,7 +16,7 @@
 <%@page import="java.text.SimpleDateFormat"%>
 
 <%
-    String licenseTab = "/c/portal/layout?p_l_id=" + layoutId + "&p_p_id=9&tab=licenseTab";
+    String licenseTab = "/c/portal/layout?p_l_id=" + layoutId + "&p_p_id="+PortletID.CONFIGURATION+"&tab=licenseTab";
 
     String error=null;
     String message=null;
@@ -488,22 +488,11 @@
 	<input type="hidden" value="" name="trialLicenseRequestCode" id="trialLicenseRequestCode">
 </form>	
 
+<!-- <%= LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_LICENSE_MANAGER") %> -->
 
 
-<div class="portlet-wrapper">
-	
-
-
-	<table class="listingTable layoutTable" style="font-size:12px;margin-top:20px;">
-	   <tr>
-			<th><%= LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_LICENSE_MANAGER") %></th>
-		</tr>
-		<tr>
-			<td>
-				<div class="content-wrapper">
-					
-					<!-- CURRENT LICENSE INFO -->
-					<table border="0" width="100%" style="margin:20px 0;border:1px solid silver;border-collapse: collapse;">
+<!-- CURRENT LICENSE INFO -->
+<table class="listingTable">
 						 <tr>
 					        <th colspan="2">
 					        	<% if(!isCommunity){  %>  
@@ -583,7 +572,7 @@
 									<td><%= LicenseUtil.getDisplaySerial() %></td>
 								</tr>
 							<% } %>
-					</table>
+</table>
 
 					<div style="text-align:center;margin:30px 0;">
 						
@@ -758,10 +747,7 @@
 				</div><!-- /CONTENT WRAPPER -->
 			</td>
 		</tr>
-	</table>
-	
-	
-</div>
+</table>
 
 
 <div dojoType="dijit.Dialog" id="uploadDiaWindow" title="<%= LanguageUtil.get(pageContext, "Upload-license-pack") %>">

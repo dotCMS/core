@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.TestBase;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -9,10 +9,6 @@ import org.junit.After;
 import com.dotmarketing.portlets.rules.ApiRequest;
 import com.dotmarketing.portlets.rules.ParameterDataGen;
 import com.dotmarketing.portlets.rules.RuleDataGen;
-import com.dotmarketing.portlets.rules.conditionlet.ConditionDataGen;
-import com.dotmarketing.portlets.rules.conditionlet.ConditionGroupDataGen;
-import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.servlets.test.ServletTestRunner;
@@ -34,7 +30,7 @@ import static org.junit.Assert.assertNull;
  * @author Geoff M. Granum
  */
 
-public class SetResponseHeaderActionletFTest extends TestBase {
+public class SetResponseHeaderActionletFTest extends IntegrationTestBase {
 
     private final Random random = new Random();
     HttpServletRequest request = ServletTestRunner.localRequest.get();

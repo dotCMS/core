@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.util.SecurityLoggerServiceAPI;
+import com.dotcms.util.SecurityLoggerServiceAPIFactory;
+import com.dotmarketing.business.APILocator;
 import com.liferay.util.StringPool;
 import net.sourceforge.squirrel_sql.fw.preferences.BaseQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.preferences.IQueryTokenizerPreferenceBean;
@@ -25,18 +27,13 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringUtil;
 
-import static com.dotcms.repackage.org.python.modules.math.e;
-
+/**
+ * Util class for sanitize, tokenize, etc
+ */
 public class SQLUtil {
 
-	// this is only for unit test, must be always on true.
-	private static boolean enableLog = true;
-
-	@VisibleForTesting
-	protected static void enableLog (final boolean enable) {
-
-		enableLog = enable;
-	}
+	private static SecurityLoggerServiceAPI securityLoggerServiceAPI =
+			APILocator.getSecurityLogger();
 
 	private static final Set<String> EVIL_SQL_WORDS =  ImmutableSet.of( "select", "insert", "delete", "update", "replace", "create", "distinct", "like", "and", "or", "limit",
 			"group", "order", "as ", "count","drop", "alter","truncate", "declare", "where", "exec", "--", "procedure", "pg_", "lock",
@@ -44,7 +41,7 @@ public class SQLUtil {
 
 	private final static Set<String> ORDERBY_WHITELIST= ImmutableSet.of(
 			"title","filename", "moddate", "tagname","pageUrl",
-			"category_name","category_velocity_var_name",
+			"category_name","category_velocity_var_name","status","workflow_step.name","assigned_to",
 			"mod_date","structuretype,upper(name)","upper(name)",
 			"category_key", "page_url","name","velocity_var_name",
 			"description","category_","sort_order","hostName", "keywords",
@@ -204,15 +201,11 @@ public class SQLUtil {
 	 */
 	public static String sanitizeSortBy(String parameter){
 
-
-
-		
 		if(!UtilMethods.isSet(parameter)){//check if is not null
-			return "";
+			return StringPool.BLANK;
 		}
 
-
-		String testParam=parameter.replaceAll(" asc", "").replaceAll(" desc", "").replaceAll("-", "").toLowerCase();
+		String testParam=parameter.replaceAll(" asc", StringPool.BLANK).replaceAll(" desc", StringPool.BLANK).replaceAll("-", StringPool.BLANK).toLowerCase();
 		if(ORDERBY_WHITELIST.contains(testParam)){
 			return parameter;
 		}
@@ -221,17 +214,23 @@ public class SQLUtil {
 		Logger.error(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter, e);
 
 		SecurityLogger.logDebug(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter);
-		return "";
+		return StringPool.BLANK;
 	}
 
+	/**
+	 * Applies the sanitize to the parameter argument in order to avoid evil sql words
+	 * @param parameter String
+	 * @return String
+	 */
 	public static String sanitizeParameter(String parameter){
 
-		if(!UtilMethods.isSet(parameter)){ //check if is not null
+		if(!UtilMethods.isSet(parameter)) { //check if is not null
 
 			return StringPool.BLANK;
 		}
 
 		parameter = StringEscapeUtils.escapeSql(parameter);
+
 		final String parameterLowercase = parameter.toLowerCase();
 
 		for(String evilWord : EVIL_SQL_WORDS){
@@ -241,21 +240,19 @@ public class SQLUtil {
 			//check if the order by requested have any other command
 			if(index != -1  &&
 					(
-						(index  == 0 // if the evilWord is at the begin of the parameterLowercase AND
-								|| !isValidSQLCharacter(parameterLowercase.charAt(index - 1)) // there is not alphanumeric before parameterLowercase is invalid
-						)  &&
-						(index + evilWord.length() == parameterLowercase.length() // if the evilWord is at the end of the parameterLowercase is invalid
-								|| !isValidSQLCharacter(parameterLowercase.charAt(index + evilWord.length()))  // if there is not alphanumeric next is invalid
-						)
-					)){
+							(index  == 0 // if the evilWord is at the begin of the parameterLowercase AND
+									|| !isValidSQLCharacter(parameterLowercase.charAt(index - 1)) // there is not alphanumeric before parameterLowercase is invalid
+							)  &&
+							(index + evilWord.length() == parameterLowercase.length() // if the evilWord is at the end of the parameterLowercase is invalid
+									|| !isValidSQLCharacter(parameterLowercase.charAt(index + evilWord.length()))  // if there is not alphanumeric next is invalid
+							)
+					)) {
 
-					if (enableLog) {
-						Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + parameter);
-						Logger.error(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter, e);
-						SecurityLogger.logInfo(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter);
-					}
+				Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + parameter);
+				Logger.error(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter, e);
+				securityLoggerServiceAPI.logInfo(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter);
 
-					return StringPool.BLANK;
+				return StringPool.BLANK;
 			}
 		}
 
@@ -266,9 +263,10 @@ public class SQLUtil {
 	 * Determine if the character is a valid for sql
 	 * @param c char
 	 * @return boolean
-     */
+	 */
 	private static boolean isValidSQLCharacter (final char c) {
 
 		return Character.isLetterOrDigit(c) || '-' == c || '_' == c;
 	} // isValidSQLCharacter.
-}
+
+} // E:O:F:SQLUtil.

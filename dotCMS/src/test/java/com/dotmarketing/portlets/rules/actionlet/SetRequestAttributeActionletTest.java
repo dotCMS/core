@@ -1,23 +1,33 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
+import com.dotcms.UnitTestBase;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
-import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
+import com.dotmarketing.portlets.rules.model.RuleAction;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+
 import java.util.List;
 import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
-import org.mockito.Mockito;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import static com.dotmarketing.portlets.rules.actionlet.SetRequestAttributeActionlet.REQUEST_KEY;
 import static com.dotmarketing.portlets.rules.actionlet.SetRequestAttributeActionlet.REQUEST_VALUE;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.mock;
 
-public class SetRequestAttributeActionletTest {
+@RunWith(DataProviderRunner.class)
+public class SetRequestAttributeActionletTest extends UnitTestBase {
 
     @Test
     public void testGeneralConfiguration() throws Exception {
@@ -28,11 +38,11 @@ public class SetRequestAttributeActionletTest {
     }
 
     /**
-     * Define some test cases for validating the URL. TestNG will run each of these cases as a separate test.
+     * Define some test cases for validating the URL. JUnit will run each of these cases as a separate test.
      * This is a great way to test a large number of allowed inputs... and also helps makes your test count look amazing.
      */
-    @DataProvider(name = "cases")
-    public Object[][] noConditionCases() {
+    @DataProvider
+    public static Object[][] cases() {
 
         return new TestCase[][]{
             {new TestCase("Null key is not valid", null, "anything", false)},
@@ -43,7 +53,8 @@ public class SetRequestAttributeActionletTest {
         };
     }
 
-    @Test(dataProvider = "cases")
+    @Test
+    @UseDataProvider("cases")
     public void testValidateParameters(TestCase theCase) throws Exception {
         SetRequestAttributeActionlet actionlet = new SetRequestAttributeActionlet();
         List<ParameterModel> list = ImmutableList.of(

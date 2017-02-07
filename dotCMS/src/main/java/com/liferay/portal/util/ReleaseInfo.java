@@ -60,7 +60,7 @@ public class ReleaseInfo {
 		Properties props = new Properties();
 
 		try {
-			URL url=this.getClass().getClassLoader().getResource("com/liferay/portal/util/build.properties");
+			URL url=this.getClass().getClassLoader().getResource("release.properties");
 			props.load(url.openStream());
 		} catch (IOException e) {
 			Logger

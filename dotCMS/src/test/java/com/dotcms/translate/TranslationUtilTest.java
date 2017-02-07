@@ -1,19 +1,21 @@
 package com.dotcms.translate;
 
+import com.dotcms.UnitTestBase;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-public class TranslationUtilTest {
+
+public class TranslationUtilTest extends UnitTestBase {
 
     public static final List<String> filterTypes = Arrays
         .asList(FieldType.TEXT.toString(),FieldType.WYSIWYG.toString(),FieldType.TEXT_AREA.toString());

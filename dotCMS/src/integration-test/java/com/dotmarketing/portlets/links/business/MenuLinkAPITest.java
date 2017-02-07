@@ -3,7 +3,8 @@ package com.dotmarketing.portlets.links.business;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -21,18 +22,28 @@ import com.liferay.portal.model.User;
 
 import static org.junit.Assert.*;
 
-public class MenuLinkAPITest extends TestBase {
-    static PermissionAPI pAPI = APILocator.getPermissionAPI();
-    static FolderAPI fAPI = APILocator.getFolderAPI();
-    static MenuLinkAPI mAPI = APILocator.getMenuLinkAPI();
-    static ContentletAPI cAPI = APILocator.getContentletAPI();
-    static HostAPI hAPI = APILocator.getHostAPI();
-    static UserAPI uAPI = APILocator.getUserAPI();
+public class MenuLinkAPITest extends IntegrationTestBase {
+    static PermissionAPI pAPI;
+    static FolderAPI fAPI;
+    static MenuLinkAPI mAPI;
+    static ContentletAPI cAPI;
+    static HostAPI hAPI;
+    static UserAPI uAPI;
     static Host host=null;
     static User user=null;
     
     @BeforeClass
     public static void prepare() throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+        
+        pAPI = APILocator.getPermissionAPI();
+        fAPI = APILocator.getFolderAPI();
+        mAPI = APILocator.getMenuLinkAPI();
+        cAPI = APILocator.getContentletAPI();
+        hAPI = APILocator.getHostAPI();
+        uAPI = APILocator.getUserAPI();
+        
         user = uAPI.getSystemUser();
         host = new Host();
         host.setHostname("MenuLinkTest"+UUIDGenerator.generateUuid());

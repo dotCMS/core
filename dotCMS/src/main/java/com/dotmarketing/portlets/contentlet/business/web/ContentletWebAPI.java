@@ -1,19 +1,43 @@
 package com.dotmarketing.portlets.contentlet.business.web;
 
-import java.util.Map;
-
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
+
+import java.util.Map;
 /*
  * //http://jira.dotmarketing.net/browse/DOTCMS-2273
  * To save content via ajax.
  */
 public interface ContentletWebAPI {
 
-	String saveContent(Map<String,Object> formData, boolean isAutoSave,boolean isCheckin,User user)
-			throws Exception;
+
+
+	/**
+	 * Saves the formData info, in addition sends an event
+	 * @param formData
+	 * @param isAutoSave
+	 * @param isCheckin
+	 * @param user
+	 * @return
+     * @throws Exception
+     */
+	String saveContent(Map<String, Object> formData, boolean isAutoSave, boolean isCheckin, User user) throws Exception;
+
+	/**
+	 * Saves the formData info, in addition sends an event
+	 *
+	 * @param formData
+	 * @param isAutoSave
+	 * @param isCheckin
+	 * @param user
+	 * @param generateSystemEvent true in order to generate a system event for this save content operation
+	 * @return
+	 * @throws Exception
+	 */
+	String saveContent(Map<String, Object> formData, boolean isAutoSave, boolean isCheckin, User user,
+					   boolean generateSystemEvent) throws Exception;
+
 
     /**
      * Validates the new/modified page taken into account the following

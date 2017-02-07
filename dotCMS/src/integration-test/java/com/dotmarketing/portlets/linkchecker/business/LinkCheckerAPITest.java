@@ -9,7 +9,8 @@ import java.util.HashSet;
 import java.util.List;
 
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.portlets.HTMLPageAssetUtil;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import org.junit.BeforeClass;
@@ -49,7 +50,7 @@ import com.liferay.portal.model.User;
  * @since Nov 8, 2012
  *
  */
-public class LinkCheckerAPITest extends TestBase {
+public class LinkCheckerAPITest extends IntegrationTestBase {
 
     protected static User sysuser=null;
     protected static Structure structure=null,urlmapstructure=null;
@@ -63,6 +64,9 @@ public class LinkCheckerAPITest extends TestBase {
 
     @BeforeClass
     public static void createStructure() throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+        
         try {
         	LicenseTestUtil.getLicense();
         	

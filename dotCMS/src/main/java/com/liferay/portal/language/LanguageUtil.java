@@ -45,7 +45,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-
 import javax.servlet.jsp.PageContext;
 
 import org.apache.commons.logging.Log;
@@ -90,7 +89,7 @@ public class LanguageUtil {
 	   public static String get(String key)
 	         throws LanguageException {
 	         return get(PublicCompanyFactory.getDefaultCompany(),key);
-	      
+
 	   }
 	public static String get(Company company, String key)
 	throws LanguageException {

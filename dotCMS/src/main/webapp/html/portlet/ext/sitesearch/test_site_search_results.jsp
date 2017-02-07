@@ -53,7 +53,7 @@ String myError = (results.getError()!= null && results.getError().indexOf("neste
 
 try {
 	user = com.liferay.portal.util.PortalUtil.getUser(request);
-	if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_SITESEARCH", user)){
+	if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("site-search", user)){
 		throw new DotSecurityException("Invalid user accessing index_stats.jsp - is user '" + user + "' logged in?");
 	}
 } catch (Exception e) {
@@ -76,28 +76,24 @@ try {
 %>
 	
 
-<table style="width:98%">
-	<tr>
-		<td>
-		<%if(results == null || results.getResults() ==null || results.getResults().size() >0){ %>
-			<div style="padding:10px;">
-				<b><%= LanguageUtil.get(pageContext,"Results") %></b>: <%= results.getResults().size()%> <%= LanguageUtil.get(pageContext,"of") %> <%=results.getTotalResults() %> <%= LanguageUtil.get(pageContext,"total") %>
-			</div>
-		<%} %>
+<table class="listingTable" style="margin-bottom: 30px;">
+	<%if(results == null || results.getResults() ==null || results.getResults().size() >0){ %>
+		<tr>
+			<td><b><%= LanguageUtil.get(pageContext,"Results") %></b>:</td>
+			<td><%= results.getResults().size()%> <%= LanguageUtil.get(pageContext,"of") %> <%=results.getTotalResults() %> <%= LanguageUtil.get(pageContext,"total") %></td>
+		</tr>
+	<%} %>
 		
-		</td>
-		<td align="right">
-			<%if(UtilMethods.isSet(results.getQuery())){ %>
-				<div style="padding:10px;">
-					<b><%= LanguageUtil.get(pageContext,"Query") %></b>: <%=results.getQuery() %>
-				</div>
-			<%} %>
-		</td>
-	</tr>
+	<%if(UtilMethods.isSet(results.getQuery())){ %>
+		<tr>
+			<td><b><%= LanguageUtil.get(pageContext,"Query") %></b>:</td>
+			<td><%=results.getQuery() %></td>
+		</tr>
+	<%} %>
 </table>
 
 
-<table class="listingTable" style="width:98%">
+<table class="listingTable">
 	<thead>
 		<tr>
 			<th>Score</th>

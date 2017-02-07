@@ -9,15 +9,11 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import static com.dotcms.util.CloseUtils.*;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -494,7 +490,13 @@ public class DotConnect {
     	Connection conn = DbConnectionFactory.getConnection(dataSource);
         executeQuery(conn);
     }
-    
+
+    /*
+     * Depending on the query, this method will call the execute (for update operations: DELETE, UPDATE, INSERT)
+     * or executeQuery for Select operations.
+     * In addition will see if the configuration want's to use cache prepared statements
+     * Finally wrap the results on this.objectResults abd this.results.
+     */
     private void executeQuery(Connection conn) throws SQLException{
         ResultSet rs = null;
         ResultSetMetaData rsmd = null;
@@ -519,26 +521,26 @@ public class DotConnect {
 	        long afterQueryExecution = 0;
 	        long beforePreparation = 0;
 	        long afterPreparation = 0;
-	        if(SQL.contains("?")){
-	        	if (cachePreparedStatement) {
+	        if(SQL.contains("?")){ // if it is a prepared statement
+	        	if (cachePreparedStatement) { // if want's to use the cache map
 	        		Map<String,PreparedStatement> m = null;
 		        	Connection rconn = conn.getMetaData().getConnection();
 		        	m = stmts.get(rconn);
-		        	if(m!=null){
-		        		if (starter.toLowerCase().trim().indexOf("call")!=-1) {
+		        	if(m!=null){ // if it is in the cache.
+		        		if (starter.toLowerCase().trim().indexOf("call")!=-1) { // if it is a stored procedure
 		        		   statement = (CallableStatement)m.get(SQL);
 		        		}else{
 		        			statement = m.get(SQL);
 		        		}
-		        	}else{
+		        	}else{ // if it is not in the cache, put it there.
 		        		m = new HashMap<String, PreparedStatement>();
 		        		synchronized (stmts) {
 		        			stmts.put(rconn, m);
 		        		}
 		        	}
-		        	if(statement == null){
+		        	if(statement == null){ // if couldn't create it
 		        		beforePreparation = System.nanoTime();
-		        		if (starter.toLowerCase().trim().indexOf("call")!=-1) {
+		        		if (starter.toLowerCase().trim().indexOf("call")!=-1) { // if it is a stored procedure
 		        		  statement = (CallableStatement)conn.prepareCall(SQL);
 		        		}else{
 		        		  statement = rconn.prepareStatement(SQL);
@@ -563,7 +565,7 @@ public class DotConnect {
 		        for (int i = 0; i < paramList.size(); i++) {
 		            statement.setObject(i + 1, paramList.get(i));
 		        }
-				if (!starter.toLowerCase().trim().contains("select")) {
+				if (!starter.toLowerCase().trim().contains("select")) { // if it is NOT a read operation
 		        	beforeQueryExecution = System.nanoTime();
 		            statement.execute();
 		            rs = statement.getResultSet();
@@ -573,7 +575,7 @@ public class DotConnect {
 		            	rsmd = rs.getMetaData();
 		            	afterMetadata = System.nanoTime();
 		            }
-		        } else {
+		        } else { // if it is a SELECT
 		        	beforeQueryExecution = System.nanoTime();
 		            rs = statement.executeQuery();
 		            afterQueryExecution = System.nanoTime();
@@ -587,7 +589,7 @@ public class DotConnect {
 	        	afterPreparation = System.nanoTime();
 	        	
 	        	if (!starter.toLowerCase().trim().contains("select") && !forceQuery) {
-		        	beforeQueryExecution = System.nanoTime();
+		        	beforeQueryExecution = System.nanoTime(); // todo: shouldn't get the resultset and metadata?
 		            stmt.execute(SQL);
 		            afterQueryExecution = System.nanoTime();
 		        } else {
@@ -639,7 +641,7 @@ public class DotConnect {
 		                    	
 		                    	if(rs.getObject(x) instanceof java.sql.Clob){
 		                    		objvars.put(x, rs.getString(x));
-		                    	}else if( hasOracleDriver () && rs.getObject(x) instanceof oracle.sql.TIMESTAMP){
+		                    	}else if( DbConnectionFactory.isOracle() && rs.getObject(x) instanceof oracle.sql.TIMESTAMP){
 		                    		objvars.put(x,new Date(((oracle.sql.TIMESTAMP) rs.getObject(x)).timeValue().getTime()));
 		                    	}
 		                    	else{
@@ -651,7 +653,7 @@ public class DotConnect {
 		                        
 		                    	if(rs.getObject(x) instanceof java.sql.Clob){
 		                    		objvars.put(x, rs.getString(x));
-		                    	}else if( hasOracleDriver () && rs.getObject(x) instanceof oracle.sql.TIMESTAMP){
+		                    	}else if( DbConnectionFactory.isOracle() && rs.getObject(x) instanceof oracle.sql.TIMESTAMP){
 		                    		objvars.put(x,new Date(((oracle.sql.TIMESTAMP) rs.getObject(x)).timestampValue().getTime()));
 		                    	}
 		                    	else{
@@ -889,21 +891,6 @@ public class DotConnect {
         return (objectResults != null) ? objectResults : new ArrayList <Map<String, Object>>();
     }
 
-    /**
-     * Verify if there is present the Oracle driver
-     *
-     * @return True if present
-     */
-    private Boolean hasOracleDriver () {
-
-        try {
-            Class.forName( "oracle.sql.TIMESTAMP" );
-            return true;
-        } catch ( ClassNotFoundException e ) {
-            return false;
-        }
-    }
-
 	/**
 	 * Returns the number of records that exist in the specified table. This
 	 * method is useful given that different databases return the count value as
@@ -944,6 +931,93 @@ public class DotConnect {
             parameterPlaceholders = StringUtils.repeat(",?", numberParameters).substring(1);
         }
         return parameterPlaceholders;
+    }
+
+    /**
+     * Executes in batch transaction, with N copies of the "sql". How many times will be added to the batch will depend on the "listOfParams" size.
+     *
+     * Will returns an array with the integer result of how many rows were affected for each row updated.
+     *
+     * Pre: all {@link Params}.size() should be the same on the "listOfParams",
+     * the first param in the list will be taken as a default to set statement parameter over the rest of the
+     * params in the collection.
+     *
+     * @param sql {@link String}
+     * @param listOfParams {@link Collection} of {@link Params}
+     * @return int []
+     */
+    public int [] executeBatch (final String sql, final Collection<Params> listOfParams) throws DotDataException {
+
+        int [] results = null;
+        boolean previousAutocommit = true;
+        Connection conn = null;
+        PreparedStatement preparedStatement = null;
+
+        try {
+
+            conn = DbConnectionFactory.getConnection();
+            preparedStatement = conn.prepareStatement(sql);
+
+            previousAutocommit = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+
+            if (null != listOfParams) {
+
+                for (Params params: listOfParams) {
+
+                    if (null != params) {
+
+                        this.setParams (preparedStatement, params);
+                        preparedStatement.addBatch();
+                    }
+                }
+
+                results = preparedStatement.executeBatch();
+            }
+
+            conn.commit();
+        } catch (SQLException e) {
+
+            try {
+
+                conn.rollback();
+            } catch (SQLException e1) {
+
+                if (Logger.isErrorEnabled(this.getClass())) {
+
+                    Logger.error(this.getClass(), e.getMessage(), e);
+                }
+
+                throw new DotDataException("SQL Error doing a batch and couldn't rollback", e);
+            }
+
+            throw new DotDataException("SQL Error doing a batch", e);
+        } finally {
+
+            try {
+
+                conn.setAutoCommit(previousAutocommit);
+            } catch (SQLException e) {
+
+                if (Logger.isErrorEnabled(this.getClass())) {
+
+                    Logger.error(this.getClass(), e.getMessage(), e);
+                }
+            }
+
+            closeQuietly(preparedStatement, conn);
+        }
+
+        return results;
+    } // executeBatch.
+
+    private void setParams(final PreparedStatement preparedStatement,
+                           final Params params) throws SQLException {
+
+        for (int i = 0; i < params.size(); ++i) {
+
+            preparedStatement.setObject(i+1, params.get(i));
+        }
     }
 
 }

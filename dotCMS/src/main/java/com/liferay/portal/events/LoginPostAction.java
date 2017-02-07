@@ -23,6 +23,7 @@
 package com.liferay.portal.events;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -86,8 +87,10 @@ public class LoginPostAction extends Action {
 				}
 			}
 
-			UserTracker userTracker =
-				(UserTracker)currentUsers.get(ses.getId());
+			UserTracker userTracker = // todo: this is comming null something, ask to Jhon we it is ok to make a fix to validate the curentUsers != and return userTracker as a null
+					(null != currentUsers)?
+							(UserTracker)currentUsers.get(ses.getId()):
+							null;
 
 			if (userTracker == null) {
 				userTracker = new UserTracker(
@@ -96,6 +99,12 @@ public class LoginPostAction extends Action {
 					req.getHeader("USER-AGENT"));
 
 				userTracker.setHttpSession(ses);
+
+				if (null == currentUsers) {
+
+					currentUsers = new HashMap();
+					WebAppPool.put(companyId, WebKeys.CURRENT_USERS, currentUsers);
+				}
 
 				currentUsers.put(ses.getId(), userTracker);
 			}

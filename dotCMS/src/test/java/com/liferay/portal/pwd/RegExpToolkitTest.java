@@ -2,10 +2,12 @@ package com.liferay.portal.pwd;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import org.junit.Test;
-import com.dotcms.TestBase;
 
-public class RegExpToolkitTest extends TestBase {
+import org.junit.Test;
+
+import com.dotcms.UnitTestBase;
+
+public class RegExpToolkitTest extends UnitTestBase {
 
     RegExpToolkit toolkit = new RegExpToolkit("/((?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%]).{6,})/");
 

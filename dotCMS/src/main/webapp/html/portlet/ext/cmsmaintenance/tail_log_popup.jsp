@@ -1,5 +1,5 @@
 
-<%request.setAttribute("popup", "true"); %>
+<%request.setAttribute(WebKeys.POPUP, "true"); %>
 <%@include file="/html/common/init.jsp"%>
 <%@include file="/html/common/top_inc.jsp"%>
 

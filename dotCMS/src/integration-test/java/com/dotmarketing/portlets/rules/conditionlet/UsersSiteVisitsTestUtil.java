@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import com.dotmarketing.util.CookieUtilTest;
+import com.dotcms.util.CookieTestUtil;
 import com.dotmarketing.util.WebKeys;
 
 import javax.servlet.http.HttpServletRequest;
@@ -13,12 +13,12 @@ import java.util.List;
 /**
  * Created by freddyrodriguez on 15/3/16.
  */
-class UsersSiteVisitsUtilTest {
+class UsersSiteVisitsTestUtil {
 
     private List<HttpCookie> historyCookiesAsString;
     private HttpServletRequest request;
 
-    UsersSiteVisitsUtilTest(HttpServletRequest request){
+    UsersSiteVisitsTestUtil(HttpServletRequest request){
 
         this.request = request;
     }
@@ -40,8 +40,8 @@ class UsersSiteVisitsUtilTest {
         //Execute some requests and validate the responses
         ApiRequest apiRequest = new ApiRequest(request);
 
-        URLConnection conn = apiRequest.makeRequest(url, null, CookieUtilTest.getCookiesAsString(historyCookiesAsString));
-        List<HttpCookie> cookies = CookieUtilTest.getCookies(conn);
+        URLConnection conn = apiRequest.makeRequest(url, null, CookieTestUtil.getCookiesAsString(historyCookiesAsString));
+        List<HttpCookie> cookies = CookieTestUtil.getCookies(conn);
 
         if ( historyCookiesAsString != null && cookies != null) {
             historyCookiesAsString = joinCookies(cookies);

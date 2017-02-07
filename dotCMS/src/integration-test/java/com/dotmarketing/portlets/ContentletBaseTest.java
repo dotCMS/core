@@ -1,13 +1,11 @@
 package com.dotmarketing.portlets;
 
-import java.net.URL;
-import java.util.*;
-
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-
-import com.dotcms.TestBase;
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -51,17 +49,32 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
+
+import org.junit.BeforeClass;
+import org.mockito.Mockito;
+
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 /**
  * Created by Jonathan Gamba.
  * Date: 3/19/12
  * Time: 11:36 AM
  */
-public class ContentletBaseTest extends TestBase {
+public class ContentletBaseTest extends IntegrationTestBase {
 
     protected static ContentletAPI contentletAPI;
     protected static Host defaultHost;
@@ -69,6 +82,7 @@ public class ContentletBaseTest extends TestBase {
     protected static ContentletFactory contentletFactory;
     protected static MenuLinkAPI menuLinkAPI;
     protected static FileAPI fileAPI;
+    protected static TagAPI tagAPI;
     private static RoleAPI roleAPI;
     private static PermissionAPI permissionAPI;
     private static LanguageAPI languageAPI;
@@ -97,7 +111,10 @@ public class ContentletBaseTest extends TestBase {
             "tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim. Aliquam lorem ante, dapibus in, viverra quis, feugiat a.</p>";
 
     @BeforeClass
-    public static void prepare () throws DotSecurityException, DotDataException {
+    public static void prepare () throws Exception {
+
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
 
         //Setting the test user
         user = APILocator.getUserAPI().getSystemUser();
@@ -116,6 +133,7 @@ public class ContentletBaseTest extends TestBase {
         folderAPI = APILocator.getFolderAPI();
         menuLinkAPI = APILocator.getMenuLinkAPI();
         fileAPI = APILocator.getFileAPI();
+        tagAPI = APILocator.getTagAPI();
 
         defaultHost = hostAPI.findDefaultHost( user, false );
 
@@ -186,9 +204,11 @@ public class ContentletBaseTest extends TestBase {
         }
         newContentlet = createContentlet( testStructure2, language, true );
         contentlets.add( newContentlet );
+        
+        IntegrationTestInitService.getInstance().mockStrutsActionModule();
     }
 
-    @AfterClass
+    //@AfterClass
     public static void afterClass () throws Exception {
 
         //Delete html pages
@@ -381,6 +401,12 @@ public class ContentletBaseTest extends TestBase {
                 value = "Test Tag";
             } else if ( field.getFieldType().equals( Field.FieldType.DATE.toString() ) || field.getFieldType().equals( Field.FieldType.DATE_TIME.toString() ) ) {
                 value = new Date();
+            } else if ( field.getFieldType().equals( Field.FieldType.BINARY.toString() ) ) {
+            	try {
+                	java.io.File file = java.io.File.createTempFile("testFile"+field.getVelocityVarName(), ".txt");
+            		FileUtil.write(file, "Test Binary");
+            		value = file;
+            	} catch (Exception e){}
             }
             if ( UtilMethods.isSet( value ) ) {
                 contentletAPI.setContentletProperty( contentlet, field, value );
@@ -528,11 +554,13 @@ public class ContentletBaseTest extends TestBase {
         Collection<Permission> permissions = new ArrayList<Permission>();
         permissions.add( new Permission( "", roleAPI.loadCMSAnonymousRole().getId(), PermissionAPI.PERMISSION_READ ) );
 
-        Permission newPermission;
+        List<Permission> newSetOfPermissions = new ArrayList<Permission>();
         for ( Permission permission : permissions ) {
-            newPermission = new Permission( htmlPage.getPermissionId(), permission.getRoleId(), permission.getPermission(), true );
-            permissionAPI.save( newPermission, htmlPage, user, false );
+        	newSetOfPermissions.add(new Permission( htmlPage.getPermissionId(), permission.getRoleId(), permission.getPermission(), true ));
         }
+        if(newSetOfPermissions.size() > 0){   
+        	permissionAPI.save( newSetOfPermissions, htmlPage, user, false );
+     	}
 
         //Save the multi tree
         MultiTreeFactory.saveMultiTree( new MultiTree( htmlPage.getIdentifier(), container.getIdentifier(), contentlet.getIdentifier() ) );

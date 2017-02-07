@@ -1,20 +1,31 @@
 package com.dotmarketing.filters;
 
+import com.dotcms.LicenseTestUtil;
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.virtuallinks.factories.VirtualLinkFactory;
 import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
 import com.dotmarketing.servlets.SpeedyAssetServlet;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.velocity.ClientVelocityServlet;
 import com.dotmarketing.velocity.VelocityServlet;
+
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
-import javax.servlet.*;
-import javax.servlet.http.*;
+import static org.mockito.Matchers.startsWith;
+
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -22,7 +33,43 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CMSFilterUnitTest {
+import javax.servlet.FilterChain;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
+import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpSessionContext;
+
+public class CMSFilterTest {
+	
+	@BeforeClass
+    public static void prepare () throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+        LicenseTestUtil.getLicense();
+        Mockito.when(Config.CONTEXT.getRealPath(startsWith("/"))).thenAnswer(new Answer<String>() {
+            @Override
+            public String answer(InvocationOnMock invocation) throws Throwable {
+                return (String) invocation.getArguments()[0];
+            }
+        });
+        
+        Mockito.when(Config.CONTEXT.getResourceAsStream(startsWith("/"))).thenAnswer(new Answer<FileInputStream>() {
+            @Override
+            public FileInputStream answer(InvocationOnMock invocation) throws Throwable {
+                return new FileInputStream((String) invocation.getArguments()[0]);
+            }
+        });
+        IntegrationTestInitService.getInstance().mockStrutsActionModule();
+    }
 
 	@Test
 	public void shouldWorkVirtualLink() throws IOException {
@@ -74,10 +121,13 @@ public class CMSFilterUnitTest {
 			HibernateUtil.save(link4);
 
 			
+			link5 = VirtualLinkFactory.getVirtualLinkByURL("demo.dotcms.com:/testLink5");
+
+			link5 = new VirtualLink();
 			link5.setActive(true);
 			link5.setTitle("test link5");
-			link5.setUri("products/");
-			link5.setUrl("/testLink5/");
+			link5.setUri("/products/");
+			link5.setUrl("/testLink5");
 			HibernateUtil.save(link5);
 			
 			
@@ -166,11 +216,13 @@ public class CMSFilterUnitTest {
 				HibernateUtil.delete(link2);
 				HibernateUtil.delete(link3);
 				HibernateUtil.delete(link4);
+				HibernateUtil.delete(link5);
 				VirtualLinksCache.removePathFromCache(link1.getUrl());
 				VirtualLinksCache.removePathFromCache(link2.getUrl());
 				VirtualLinksCache.removePathFromCache(link3.getUrl());
 				VirtualLinksCache.removePathFromCache(link4.getUrl());
-
+				VirtualLinksCache.removePathFromCache(link5.getUrl());
+				
 			} catch (DotHibernateException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -178,7 +230,6 @@ public class CMSFilterUnitTest {
 
 		}
 	}
-
 
 	@Test
 	public void shouldWorkVirtualLinkCMSHomePage() throws IOException {
@@ -198,10 +249,6 @@ public class CMSFilterUnitTest {
 			cmsHomePage.setUrl("/cmsHomePage");
 			HibernateUtil.save(cmsHomePage);
 
-			
-			
-			
-			
 			CMSFilter cmsFilter = new CMSFilter();
 			HttpServletResponse res = Mockito.mock(HttpServletResponse.class);
 			MockResponseWrapper response = new MockResponseWrapper(res);
@@ -219,9 +266,6 @@ public class CMSFilterUnitTest {
 			HibernateUtil.delete(cmsHomePage);
 			VirtualLinksCache.removePathFromCache(cmsHomePage.getUrl());
 
-			
-			
-			
 			cmsHomePage = VirtualLinkFactory.getVirtualLinkByURL("demo.dotcms.com:/cmsHomePage");
 
 			cmsHomePage = new VirtualLink();
@@ -230,6 +274,8 @@ public class CMSFilterUnitTest {
 			cmsHomePage.setUri("/about-us/"+CMSFilter.CMS_INDEX_PAGE);
 			cmsHomePage.setUrl("demo.dotcms.com:/cmsHomePage");
 			HibernateUtil.save(cmsHomePage);
+			// need to remove the _NOT_FOUND_ entry for this uri created in the previous test
+			VirtualLinksCache.removePathFromCache(cmsHomePage.getUrl());
 			
 			
 			Logger.info(this.getClass(), "demo.dotcms.com:/cmsHomePage should forward to /about-us/"+CMSFilter.CMS_INDEX_PAGE);
@@ -241,18 +287,19 @@ public class CMSFilterUnitTest {
 			Logger.info(this.getClass(), "looking for /about-us"+CMSFilter.CMS_INDEX_PAGE+", got;" + request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE));
 			Assert.assertEquals("/about-us/"+CMSFilter.CMS_INDEX_PAGE, request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE));
 
-			HibernateUtil.delete(cmsHomePage);
-			VirtualLinksCache.removePathFromCache(cmsHomePage.getUrl());
-			
-		
-		
 		} catch (Exception e) {
 
 			e.printStackTrace();
 			Assert.fail();
 
 		} finally {
-
+			try {
+				HibernateUtil.delete(cmsHomePage);
+				VirtualLinksCache.removePathFromCache(cmsHomePage.getUrl());
+			} catch (DotHibernateException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 
 		}
 	}
@@ -281,6 +328,7 @@ public class CMSFilterUnitTest {
 			public void forward(ServletRequest arg0, ServletResponse arg1) throws ServletException, IOException {
 				
 				VelocityServlet servlet = new ClientVelocityServlet() ;
+				servlet.init(null);
 				servlet.service(arg0, arg1);
 			}
 		});
@@ -295,6 +343,7 @@ public class CMSFilterUnitTest {
 			public void forward(ServletRequest arg0, ServletResponse arg1) throws ServletException, IOException {
 				
 				SpeedyAssetServlet servlet = new SpeedyAssetServlet() ;
+				servlet.init(null);
 				servlet.service(arg0, arg1);
 			}
 		});
@@ -313,9 +362,7 @@ public class CMSFilterUnitTest {
 		shouldRedirect401() ;
 		shouldWorkVirtualLinkCMSHomePage();
 	}
-	
 
-	
 	@Test
 	public void shouldReturnStrutsPage() throws IOException {
 
@@ -330,8 +377,7 @@ public class CMSFilterUnitTest {
 			new CMSFilter().doFilter(request, response, chain);
 			Logger.info(this.getClass(), "looking for 200, got;" + response.getStatus());
 			Assert.assertEquals(200, response.getStatus());
-			Logger.info(this.getClass(), "looking for /application/login"+CMSFilter.CMS_INDEX_PAGE+", got;" + request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE));
-			Assert.assertEquals("/application/login/"+CMSFilter.CMS_INDEX_PAGE, request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE));
+			Mockito.verify(chain).doFilter(request, response);
 		} catch (ServletException e) {
 			Assert.fail();
 			e.printStackTrace();
@@ -399,34 +445,34 @@ public class CMSFilterUnitTest {
 	}
 
 	/*
-	 * This tests if the cms filter correctly redirects a user from /home to
-	 * /home/
+	 * This tests if the cms filter correctly redirects a user from /products to
+	 * /products/
 	 */
 	@Test
 	public void shouldRedirectToFolderIndex() throws IOException {
-		Logger.info(this.getClass(), "/home should redirect to /home/");
+		Logger.info(this.getClass(), "/products should redirect to /products/");
 
 		MockResponseWrapper response = new MockResponseWrapper(Mockito.mock(HttpServletResponse.class));
 		FilterChain chain = Mockito.mock(FilterChain.class);
-		HttpServletRequest request = getMockRequest("demo.dotcms.com", "/home");
+		HttpServletRequest request = getMockRequest("demo.dotcms.com", "/products");
 
 		try {
 			new CMSFilter().doFilter(request, response, chain);
 			
-			Assert.assertEquals("/home/", ((MockResponseWrapper) response).getRedirectLocation());
+			Assert.assertEquals("/products/", ((MockResponseWrapper) response).getRedirectLocation());
 			Assert.assertEquals(301, response.getStatus());
 		} catch (ServletException e) {
 			Assert.fail();
 		}
 		
 		
-		Logger.info(this.getClass(), "/home/ should forward to /home/"+CMSFilter.CMS_INDEX_PAGE);
-		request = getMockRequest("demo.dotcms.com", "/home/");
+		Logger.info(this.getClass(), "/home/ should forward to /products/"+CMSFilter.CMS_INDEX_PAGE);
+		request = getMockRequest("demo.dotcms.com", "/products/");
 		response = new MockResponseWrapper(Mockito.mock(HttpServletResponse.class));
 		try {
 			new CMSFilter().doFilter(request, response, chain);
-			Logger.info(this.getClass(), "looking for /home/" +CMSFilter.CMS_INDEX_PAGE+" , got;" + request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE));
-			Assert.assertEquals("/home/" + CMSFilter.CMS_INDEX_PAGE, request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE));
+			Logger.info(this.getClass(), "looking for /products/" +CMSFilter.CMS_INDEX_PAGE+" , got;" + request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE));
+			Assert.assertEquals("/products/" + CMSFilter.CMS_INDEX_PAGE, request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE));
 			Logger.info(this.getClass(), "looking for 200, got;" + response.getStatus());
 			Assert.assertEquals(200, response.getStatus());
 		} catch (ServletException e) {
@@ -463,6 +509,7 @@ public class CMSFilterUnitTest {
 		PrintWriter writer = new PrintWriter(stringWriter);
 		int status = 200;
 		String location = null;
+		Map<String,String> headers = new HashMap<String,String>();
 
 		@Override
 		public PrintWriter getWriter() throws IOException {
@@ -510,7 +557,15 @@ public class CMSFilterUnitTest {
 		}
 
 		public String getRedirectLocation() {
-			return location;
+			if(location != null && !location.isEmpty()){
+				return location;
+			}	
+			return headers.get("Location");
+		}
+		
+		@Override
+		public void setHeader(String key, String value){
+			headers.put(key, value);
 		}
 	}
 

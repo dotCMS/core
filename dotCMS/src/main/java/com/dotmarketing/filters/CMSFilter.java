@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.util.*;
@@ -34,6 +35,9 @@ import com.dotmarketing.portlets.rules.model.Rule;
 import com.liferay.util.Xss;
 
 public class CMSFilter implements Filter {
+
+	private final HttpServletRequestThreadLocal requestThreadLocal =
+			HttpServletRequestThreadLocal.INSTANCE;
 
 	public void destroy() {
 
@@ -61,9 +65,11 @@ public class CMSFilter implements Filter {
 	private static VisitorAPI visitorAPI = APILocator.getVisitorAPI();
 
 	public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
-
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) res;
+
+		// set the request in the threadlocal.
+		this.requestThreadLocal.setRequest(request);
 
 		final String uri = (request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null) ? (String) request.getAttribute(CMS_FILTER_URI_OVERRIDE)
 				: URLDecoder.decode(request.getRequestURI(), "UTF-8");
@@ -73,6 +79,7 @@ public class CMSFilter implements Filter {
 			response.sendRedirect(xssRedirect);
 			return;
 		}
+
 
 
 

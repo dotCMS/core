@@ -5,8 +5,8 @@
 <%@ include file="/html/portlet/ext/roleadmin/view_role_permissions_js_inc.jsp" %>
 
 <style type="text/css">
+	@import url("/html/js/dojo/release/dojo/dojox/grid/resources/tundraGrid.css?b=3.7.0");
 	<%@ include file="/html/portlet/ext/roleadmin/view_roles.css" %>
-	<%@ include file="/html/portlet/ext/roleadmin/view_role_permissions.css" %>
 </style>
 
 <%-- Add Role Dialog --%>
@@ -63,27 +63,27 @@
 			<dd><input id="layoutDescription" type="text" dojoType="dijit.form.TextBox" /></dd>
 			<dt><%= LanguageUtil.get(pageContext, "order") %>:</dt>
 			<dd><input id="layoutOrder" type="text" value="0" dojoType="dijit.form.ValidationTextBox" /></dd>
-			<dt><%= LanguageUtil.get(pageContext, "tools") %>:</dt>
+			<dt><%= LanguageUtil.get(pageContext, "Tools") %>:</dt>
 			<dd>
 				<select id="portletList"></select>
-				<button dojoType="dijit.form.Button" onclick="addPortletToLayoutList()" type="button" iconClass="plusIcon"><%= LanguageUtil.get(pageContext, "add") %></button>
+				<button dojoType="dijit.form.Button" onclick="addPortletToLayoutList()" type="button"><%= LanguageUtil.get(pageContext, "add") %></button>
 			</dd>
 		</dl>
 
-		<div id="portletsListWrapper" style="max-height:200px;"></div>
+		<div id="portletsListWrapper" class="view-roles__portlets-list"></div>
 
 		<div class="inputCaption" style="text-align:right">* <%= LanguageUtil.get(pageContext, "drag-a-tool-to-order-it") %></div>
 
 		<div class="buttonRow" style="margin-top:20px;">
-		    <button dojoType="dijit.form.Button" type="button" onClick="saveLayout()" iconClass="saveIcon">
+		    <button dojoType="dijit.form.Button" type="button" onClick="saveLayout()">
 		        <%= LanguageUtil.get(pageContext, "Save") %>
 		    </button>
 			<span id="deleteLayoutButtonWrapper">
-			    <button dojoType="dijit.form.Button" type="button" onClick="deleteLayout()" iconClass="deleteIcon">
+			    <button dojoType="dijit.form.Button" type="button" onClick="deleteLayout()" class="dijitButtonDanger" iconClass="deleteIcon">
 			        <%= LanguageUtil.get(pageContext, "Delete") %>
 			    </button>
 			</span>
-		    <button dojoType="dijit.form.Button" type="button" onClick="cancelEditLayout()" iconClass="cancelIcon">
+		    <button dojoType="dijit.form.Button" type="button" onClick="cancelEditLayout()" class="dijitButtonFlat">
 		        <%= LanguageUtil.get(pageContext, "Cancel") %>
 		    </button>
 		</div>
@@ -101,11 +101,6 @@
 </div>
 
 <!-- START Tool Bar -->
-<div class="buttonBoxLeft">
-	<span style="vertical-align:middle;"><%= LanguageUtil.get(pageContext, "Filter") %>:</span>
-	<input dojoType="dijit.form.TextBox" onkeyup="filterRoles()" trim="true" id="rolesFilter" >
-	<button dojoType="dijit.form.Button" onclick="clearRolesFilter()" iconClass="resetIcon" type="button"><%= LanguageUtil.get(pageContext, "Clear") %></button>
-</div>
 <script language="Javascript">
 	/**
 		focus on search box
@@ -121,142 +116,128 @@
 	});
 </script>
 
-<div class="buttonBoxRight">
-	<span id="editRoleButtonWrapper" style="display:none;">
-		<button id="editRoleButton" dojoType="dijit.form.Button" onclick="editRole()" iconClass="editIcon" type="button"><%= LanguageUtil.get(pageContext, "edit-role") %></button>
-	</span>
-	<span id="deleteRoleButtonWrapper" style="display:none;">
-		<button id="deleteRoleButton" dojoType="dijit.form.Button" onclick="deleteRole()" iconClass="deleteIcon" type="button"><%= LanguageUtil.get(pageContext, "delete-role") %></button>
-	</span>
-	<button dojoType="dijit.form.Button" type="button" iconClass="plusIcon" onclick="addNewRole()"><%= LanguageUtil.get(pageContext, "Add-Role") %></button>
-</div>
-<!-- END Tool Bar -->
-
-
-
-
-<div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer" class="shadowBox headerBox" style="white-space:nowrap;height:400px;">
-
-<!-- START Left Column -->
-	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width: 350px;margin-top:38px;" class="lineRight">
-		<div id="loadingRolesWrapper"><img src="/html/js/lightbox/images/loading.gif"></div>
-
-		<div id="rolesTreeWrapper" style="display: none;padding:10px 0 10px 10px; height:100%">
-
-
-			<div id="rolesTree" style=""></div>
-	        <ul dojoType="dijit.Menu" id="roleTreeMenu" style="display: none;">
-	            <li dojoType="dijit.MenuItem" iconClass="editIcon" id="editRoleMenu"><%= LanguageUtil.get(pageContext, "edit-role") %></li>
-	            <li dojoType="dijit.MenuItem" iconClass="lockIcon" id="lockRoleMenu"><%= LanguageUtil.get(pageContext, "lock-role") %></li>
-	            <li dojoType="dijit.MenuItem" iconClass="unlockIcon" id="unlockRoleMenu"><%= LanguageUtil.get(pageContext, "unlock-role") %></li>
-	            <li dojoType="dijit.MenuItem" iconClass="deleteIcon" id="deleteRoleMenu"><%= LanguageUtil.get(pageContext, "delete-role") %></li>
-	        </ul>
+<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"' style="position:absolute;top:16px;right:16px;z-index:9">
+	<span></span>
+	<div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
+		<div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: addNewRole">
+			<%= LanguageUtil.get(pageContext, "Add-Role") %>
 		</div>
-
-
-
-		<div id="noRolesFound" style="display: none;">
-        	<%= LanguageUtil.get(pageContext, "no-roles-found") %>
+		<div id="editRoleButtonWrapper" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: editRole, disabled: true">
+			<%= LanguageUtil.get(pageContext, "edit-role") %>
 		</div>
-
-<!-- 		<div id="treeTest"></div> -->
-
+		<div id="deleteRoleButtonWrapper" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: deleteRole, disabled: true">
+			<%= LanguageUtil.get(pageContext, "delete-role") %>
+		</div>
 	</div>
-<!-- END Left Column -->
+</div>
 
-<!-- START Right Column -->
-	<div dojoType="dijit.layout.ContentPane" splitter="true" region="center" style="overflow-y:auto;">
+<div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer" class="view-roles">
 
-		<div id="loadingRole" style="display: none;"><img src="/html/js/lightbox/images/loading.gif"></div>
+	<!-- START Left Column -->
+	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width: 260px" class="portlet-sidebar-wrapper">
+		<div class="portlet-sidebar">
+			<div id="loadingRolesWrapper"><img src="/html/images/icons/processing.gif" /></div>
 
-		<div id="roleTabs" style="">
+			<div class="inline-form view-roles__filter">
+				<label for="rolesFilter"><%= LanguageUtil.get(pageContext, "Filter") %>:</label>
+				<input dojoType="dijit.form.TextBox" onkeyup="filterRoles()" trim="true" id="rolesFilter" >
+				<button dojoType="dijit.form.Button" onclick="clearRolesFilter()" class="dijitButtonFlat" type="button"><%= LanguageUtil.get(pageContext, "Clear") %></button>
+			</div>
 
-		<!-- START TABS -->
-			<div dojoType="dijit.layout.TabContainer" id="roleTabsContainer" style="overflow:hidden">
+			<div id="rolesTreeWrapper" style="display: none;" class="view-roles__tree">
+				<div id="rolesTree" style=""></div>
+				<ul dojoType="dijit.Menu" id="roleTreeMenu" style="display: none;">
+					<li dojoType="dijit.MenuItem" id="editRoleMenu"><%= LanguageUtil.get(pageContext, "edit-role") %></li>
+					<li dojoType="dijit.MenuItem" id="lockRoleMenu"><%= LanguageUtil.get(pageContext, "lock-role") %></li>
+					<li dojoType="dijit.MenuItem" id="unlockRoleMenu"><%= LanguageUtil.get(pageContext, "unlock-role") %></li>
+					<li dojoType="dijit.MenuItem" id="deleteRoleMenu"><%= LanguageUtil.get(pageContext, "delete-role") %></li>
+				</ul>
+			</div>
 
-				<!-- START Users tab -->
-				<div style="overflow-y:auto;" dojoType="dijit.layout.ContentPane" id="usersTab" title="<%= LanguageUtil.get(pageContext, "Users") %>">
+			<div id="noRolesFound" style="display: none;">
+				<%= LanguageUtil.get(pageContext, "no-roles-found") %>
+			</div>
+		</div>
+	</div>
+	<!-- END Left Column -->
 
-					<div class="yui-g nameHeader">
-						<div class="yu-u first">
-							<div class="nameText" id="displayRoleName1"></div>
+	<!-- START Right Column -->
+	<div dojoType="dijit.layout.ContentPane" splitter="true" region="center">
+
+		<div id="loadingRole" style="display: none;"><img src="/html/images/icons/processing.gif"></div>
+
+		<div id="roleTabs" class="view-roles__tabs">
+			<!-- START TABS -->
+			<div class="portlet-main">
+				<div dojoType="dijit.layout.TabContainer" id="roleTabsContainer" class="view-roles__tabs-container">
+
+					<!-- START Users tab -->
+					<div dojoType="dijit.layout.ContentPane" id="usersTab" title="<%= LanguageUtil.get(pageContext, "Users") %>">
+
+						<div class="view-roles__heading">
+							<h3 class="nameText" id="displayRoleName1"></h3>
+							<div class="inline-form">
+								<label for><%= LanguageUtil.get(pageContext, "grant") %>:</label>
+								<span dojoType="dotcms.dojo.data.UsersReadStore" jsId="grantUsersStore" includeRoles="false"></span>
+								<select id="grantUserSelect" dojoType="dijit.form.FilteringSelect" store="grantUsersStore" searchDelay="300" pageSize="30" labelAttr="name" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>"></select>
+								<button dojoType="dijit.form.Button" onclick="grantUser()" type="button" iconClass="plusIcon"><%= LanguageUtil.get(pageContext, "grant") %></button>
+							</div>
 						</div>
-						<div class="yui-u" style="text-align:right;">
-							<span style="vertical-align:middle;"><%= LanguageUtil.get(pageContext, "grant") %>:</span>
-							<span dojoType="dotcms.dojo.data.UsersReadStore" jsId="grantUsersStore" includeRoles="false"></span>
-					   		<select id="grantUserSelect" dojoType="dijit.form.FilteringSelect" store="grantUsersStore" searchDelay="300" pageSize="30" labelAttr="name" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>"></select>
-							<button dojoType="dijit.form.Button" onclick="grantUser()" type="button" iconClass="plusIcon"><%= LanguageUtil.get(pageContext, "grant") %></button>
+
+						<div class="inline-form view-roles__user-filter">
+							<label for="userRolesFilter"><%= LanguageUtil.get(pageContext, "Filter") %>:</label>
+							<input dojoType="dijit.form.TextBox" onkeyup="filterUserRoles()" trim="true" name="userRolesFilter" id="userRolesFilter">
+							<button dojoType="dijit.form.Button" onclick="clearUserRolesFilter()" type="button" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Clear") %></button>
 						</div>
-					</div>
 
-					<div class="buttonRow" style=text-align:left;>
-						<span style="vertical-align:middle;"><%= LanguageUtil.get(pageContext, "Filter") %>:</span>
-						<input dojoType="dijit.form.TextBox" onkeyup="filterUserRoles()" trim="true" name="userRolesFilter" id="userRolesFilter">
-						<button dojoType="dijit.form.Button" onclick="clearUserRolesFilter()" iconClass="resetIcon" type="button"><%= LanguageUtil.get(pageContext, "Clear") %></button>
-					</div>
+						<div id="loadingUsersWrapper"><img src="/html/images/icons/processing.gif"></div>
 
-					<div id="loadingUsersWrapper"><img src="/html/js/lightbox/images/loading.gif"></div>
-
-					<div id="usersGridWrapper">
-						<div id="usersGrid"></div>
-						<div class="clear"></div>
-						<div id="noUsers" style="display: none;"><%= LanguageUtil.get(pageContext, "no-users-found") %></div>
-					</div>
-
-					<div class="buttonRow">
-						<button id="removeUsersButton" dojoType="dijit.form.Button" onclick="removeUsersInRole()" type="button"><%= LanguageUtil.get(pageContext, "remove") %></button>
-		       		</div>
-
-				</div>
-				<!-- END Users tab -->
-
-				<!-- START Permissions tab -->
-				<div style="overflow-y:auto;" dojoType="dijit.layout.ContentPane" id="permissionsTab" title="<%= LanguageUtil.get(pageContext, "Permissions") %>">
-
-					<div class="yui-g nameHeader">
-						<div class="yu-u first">
-							<div class="nameText" id="displayRoleName2"></div>
+						<div id="usersGridWrapper" class="view-roles__user-grid">
+							<div id="usersGrid"></div>
+							<div class="clear"></div>
+							<div id="noUsers" style="display: none;"><%= LanguageUtil.get(pageContext, "no-users-found") %></div>
 						</div>
-						<div class="yui-u" style="text-align:right;">&nbsp;</div>
-					</div>
 
-					<%@ include file="/html/portlet/ext/roleadmin/view_role_permissions_inc.jsp" %>
-
-				</div>
-				<!-- END Permissions tab -->
-
-				<!-- START CMS Tabs -->
-				<div style="overflow-y:auto;" dojoType="dijit.layout.ContentPane" id="cmsTabsTab" title="<%= LanguageUtil.get(pageContext, "CMS-Tabs") %>">
-
-					<div class="yui-g nameHeader">
-						<div class="yu-u first">
-							<div class="nameText" id="displayRoleName3"></div>
+						<div class="buttonRow">
+							<button id="removeUsersButton" dojoType="dijit.form.Button" onclick="removeUsersInRole()" type="button" class="dijitButtonDanger"><%= LanguageUtil.get(pageContext, "remove") %></button>
 						</div>
-						<div class="yui-u" style="text-align:right;">
+
+					</div>
+					<!-- END Users tab -->
+
+					<!-- START Permissions tab -->
+					<div dojoType="dijit.layout.ContentPane" id="permissionsTab" title="<%= LanguageUtil.get(pageContext, "Permissions") %>">
+						<%@ include file="/html/portlet/ext/roleadmin/view_role_permissions_inc.jsp" %>
+					</div>
+					<!-- END Permissions tab -->
+
+					<!-- START CMS Tabs -->
+					<div dojoType="dijit.layout.ContentPane" id="cmsTabsTab" title="<%= LanguageUtil.get(pageContext, "CMS-Tabs") %>">
+
+						<div class="view-roles__heading">
+							<h3 class="nameText" id="displayRoleName3"></h3>
 							<button dojoType="dijit.form.Button" onclick="createNewLayout()" type="button" iconClass="plusIcon">
 								<%= LanguageUtil.get(pageContext, "create-custom-tab") %>
 							</button>
 						</div>
-					</div>
 
-					<div id="loadingRoleLayoutsWrapper"><img src="/html/js/lightbox/images/loading.gif"></div>
+						<div id="loadingRoleLayoutsWrapper"><img src="/html/images/icons/processing.gif"></div>
 
-					<div id="roleLayoutsGridWrapper" style="overflow-y:auto;overflow-x:hidden;">
-						<div id="roleLayoutsGrid"></div>
-					</div>
+						<div id="roleLayoutsGridWrapper" style="overflow-y:auto;overflow-x:hidden;">
+							<div id="roleLayoutsGrid"></div>
+						</div>
 
-					<div class="buttonRow">
-					    <button dojoType="dijit.form.Button" id="saveRoleLayoutsButton" onClick="saveRoleLayouts()" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Save") %></button>
+						<div class="buttonRow">
+							<button dojoType="dijit.form.Button" id="saveRoleLayoutsButton" onClick="saveRoleLayouts()" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Save") %></button>
+						</div>
 					</div>
+					<!-- END CMS Tabs -->
 				</div>
-				<!-- END CMS Tabs -->
-
+				<!-- END TABS -->
 			</div>
-			<!-- END TABS -->
-
 		</div>
 
 	</div>
-<!-- END Right Column -->
+	<!-- END Right Column -->
 
 </div>

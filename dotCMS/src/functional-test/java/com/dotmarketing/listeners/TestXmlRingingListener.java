@@ -127,7 +127,9 @@ public class TestXmlRingingListener extends RunListener {
      */
     @Override
     public void testStarted ( Description description ) throws Exception {
-        this.t1 = System.currentTimeMillis();
+    	originalOut.print(description.getClassName() +" > "+ description.getMethodName());
+
+    	this.t1 = System.currentTimeMillis();
     }
 
     /**
@@ -137,6 +139,7 @@ public class TestXmlRingingListener extends RunListener {
      */
     @Override
     public void testFinished ( Description description ) throws Exception {
+    	originalOut.println( (currentFailureNode != null) ? " FAILED" : " PASSED");
 
         long time = System.currentTimeMillis() - t1;
 
@@ -205,11 +208,15 @@ public class TestXmlRingingListener extends RunListener {
 
         name = aClass.getName();
         this.fileName = "TEST-" + name + ".xml";
+        System.out.println("*** Starting XML report file: " + this.fileName);//Debug code for the catalina.out
     }
 
     public void closeFile () {
 
         try {
+
+            System.out.println("*** Closing XML report file: " + reportDirectory + File.separator + fileName);//Debug code for the catalina.out
+
             // lets write to a file
             OutputFormat outformat = OutputFormat.createPrettyPrint();
             outformat.setTrimText( false );
@@ -222,7 +229,7 @@ public class TestXmlRingingListener extends RunListener {
             writer.close();
 
         } catch ( IOException e ) {
-            throw new RuntimeException( e );
+            throw new RuntimeException("Error closing XML report file [" + reportDirectory + File.separator + fileName + "]", e);
         }
 
     }

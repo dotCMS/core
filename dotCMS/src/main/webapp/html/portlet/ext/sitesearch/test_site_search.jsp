@@ -50,7 +50,7 @@ if(testQuery != null && testIndex != null){
 
 try {
 	user = com.liferay.portal.util.PortalUtil.getUser(request);
-	if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_SITESEARCH", user)){
+	if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("site-search", user)){
 		throw new DotSecurityException("Invalid user accessing index_stats.jsp - is user '" + user + "' logged in?");
 	}
 } catch (Exception e) {
@@ -114,49 +114,30 @@ dojo.connect(dijit.byId("testQuery"), 'onkeypress', function (evt) {
 	 }
 </style>
 
-	
-	<div name="testSiteForm" dojoType="dijit.form.Form" id="testSiteForm" action="/html/portlet/ext/sitesearch/test_site_search_results.jsp" method="POST">
-		<div class="buttonRow" style="padding:20px;">
-			<select id="testIndex" name="testIndex" dojoType="dijit.form.FilteringSelect" style="width:250px;">
+<div name="testSiteForm" dojoType="dijit.form.Form" id="testSiteForm" action="/html/portlet/ext/sitesearch/test_site_search_results.jsp" method="POST">
+	<!-- START Toolbar -->
+	<div class="portlet-toolbar">
+		<div class="portlet-toolbar__actions-primary">
+			<div class="inline-form">
+				
+				<select id="testIndex" name="testIndex" dojoType="dijit.form.FilteringSelect" style="width:250px;">
 					<%for(String x : indices){ %>
 						<option value="<%=x%>" <%=(x.equals(testIndex)) ? "selected='true'": ""%>><%=alias.get(x) == null ? x:alias.get(x)%> <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().site_search)) ? "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %></option>
 					<%} %>
-			</select>
-		
-			
-			<input type="text"  dojoType="dijit.form.TextBox" style="width:300px;" name="testQuery" value="<%=UtilMethods.webifyString(testQuery) %>" id="testQuery">
-			<button dojoType="dijit.form.Button"
-				id="testIndexButton" onClick="doTestSearch();"
-				iconClass="saveIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
-			</button>
+				</select>
+				
+				<input type="text"  dojoType="dijit.form.TextBox" style="width:300px;" name="testQuery" value="<%=UtilMethods.webifyString(testQuery) %>" id="testQuery">
+				
+				<button dojoType="dijit.form.Button"
+					id="testIndexButton" onClick="doTestSearch();"
+					iconClass="saveIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
+				</button>
+				
+			</div>
 		</div>
-	</div>
-	<div dojoType="dojox.layout.ContentPane" id="siteSearchResults" >
-	
-	
-		<table class="listingTable" style="width:98%">
-			<thead>
-				<tr>
-					<th>Score</th>
-					<th>Title</th>
-					<th>Author</th>
-					<th>ContentLength</th>
-					<th>Url</th>
-					<th>Uri</th>
-					
-					<th>MimeType</th>
-					<th>FileName</th>
-					
-				</tr>
-			</thead>
-			<tr>
-				<td colspan="100" align="center">
-					<div style="padding:20px;">
-						<%= LanguageUtil.get(pageContext,"No-Results-Found") %>
-					</div>
-				</td>
-			</tr>
-			</table>
-	
-	
-	</div>
+    	<div class="portlet-toolbar__actions-secondary"></div>
+   </div>
+   <!-- END Toolbar -->
+</div>
+
+<div dojoType="dojox.layout.ContentPane" id="siteSearchResults" ></div>

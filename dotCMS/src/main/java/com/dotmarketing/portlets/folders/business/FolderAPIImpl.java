@@ -2,17 +2,14 @@ package com.dotmarketing.portlets.folders.business;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.StringTokenizer;
-import java.util.TimeZone;
+import java.util.*;
+import java.util.stream.Collectors;
 
+import com.dotcms.api.system.event.*;
+import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -50,9 +47,12 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
+import static com.dotmarketing.business.APILocator.getPermissionAPI;
+
 public class FolderAPIImpl implements FolderAPI  {
 
 	public static final String SYSTEM_FOLDER = "SYSTEM_FOLDER";
+	private final SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
 
 	/**
 	 * Will get a folder for you on a given path for a particular host
@@ -63,7 +63,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	 * @throws DotHibernateException
 	 */
 	private FolderFactory ffac = FactoryLocator.getFolderFactory();
-	private PermissionAPI papi = APILocator.getPermissionAPI();
+	private PermissionAPI papi = getPermissionAPI();
 
 
 	public Folder findFolderByPath(String path, Host host, User user, boolean respectFrontEndPermissions) throws DotStateException,
@@ -278,6 +278,9 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
 		ffac.copy(folderToCopy, newParentFolder);
+
+		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(folderToCopy, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
 
@@ -292,6 +295,9 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
 		ffac.copy(folderToCopy, newParentHost);
+
+		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(folderToCopy, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
 
@@ -317,6 +323,8 @@ public class FolderAPIImpl implements FolderAPI  {
 
 	public void delete(Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 
+		String path = StringUtils.EMPTY;
+
 		if(folder==null || !UtilMethods.isSet(folder.getInode()) ){
 			Logger.debug(getClass(), "Cannot delete null folder");
 			return;
@@ -324,13 +332,18 @@ public class FolderAPIImpl implements FolderAPI  {
 			AdminLogger.log(this.getClass(), "delete", "Deleting folder with name " + (UtilMethods.isSet(folder.getName()) ? folder.getName() + " ": "name not set "), user);
 		}
 		if (!papi.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT, user, respectFrontEndPermissions)) {
+
+			Logger.debug(getClass(), "The user: " + user.getEmailAddress() + " does not have permission for: " + folder );
 			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to edit Folder " + folder.getPath());
 		}
 
 
 		if(folder != null && FolderAPI.SYSTEM_FOLDER.equals(folder.getInode())) {
+
+			Logger.debug(getClass(), "Cannot delete null folder: " + folder.getInode());
 			throw new DotSecurityException("YOU CANNOT DELETE THE SYSTEM FOLDER");
 		}
+
 		boolean localTransaction = false;
 
 		// start transactional delete
@@ -340,8 +353,10 @@ public class FolderAPIImpl implements FolderAPI  {
 			if (localTransaction) {
 				HibernateUtil.startTransaction();
 			}
-			PermissionAPI papi = APILocator.getPermissionAPI();
+
+			PermissionAPI papi = getPermissionAPI();
 			if (!papi.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user)) {
+
 				Logger.error(this.getClass(), "User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to Folder " + folder.getPath());
 				throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" +  "does not have edit permissions on Folder " + folder.getPath());
 			}
@@ -351,7 +366,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			faker.setInode(folder.getInode());
 			faker.setIdentifier(folder.getIdentifier());
 			faker.setHostId(folder.getHostId());
-			Identifier ident=APILocator.getIdentifierAPI().find(faker.getIdentifier());
+			Identifier ident = APILocator.getIdentifierAPI().find(faker.getIdentifier());
 			
 			List<Folder> folderChildren = findSubFolders(folder, user, respectFrontEndPermissions);
 
@@ -359,18 +374,52 @@ public class FolderAPIImpl implements FolderAPI  {
 			for (Folder childFolder : folderChildren) {
 				// sub deletes use system user - if a user has rights to parent
 				// permission (checked above) they can delete to children
+				if (Logger.isDebugEnabled(getClass())) {
+					Logger.debug(getClass(), "Deleting the folder " + childFolder.getPath());
+				}
 				delete(childFolder, user, respectFrontEndPermissions);
 			}
 
 			// delete assets in this folder
+			path = folder.getPath();
+			if (Logger.isDebugEnabled(getClass())) {
+				Logger.debug(getClass(), "Deleting the folder assets " + path);
+			}
 			_deleteChildrenAssetsFromFolder(folder, user, respectFrontEndPermissions);
-			APILocator.getPermissionAPI().removePermissions(folder);
+
+			// get roles for the event.
+			final Set<Role> roles =  papi.getRolesWithPermission
+					(folder, PermissionAPI.PERMISSION_READ);
+			if (Logger.isDebugEnabled(getClass())) {
+				Logger.debug(getClass(), "Getting the folder roles for " + path +
+						" roles: " + roles.stream().map(role -> role.getName()).collect(Collectors.toList()));
+				Logger.debug(getClass(), "Removing the folder permissions for " + path);
+			}
+
+			papi.removePermissions(folder);
 
 			//http://jira.dotmarketing.net/browse/DOTCMS-6362
+			if (Logger.isDebugEnabled(getClass())) {
+				Logger.debug(getClass(), "Removing the folder references for " + path);
+			}
 			APILocator.getContentletAPIImpl().removeFolderReferences(folder);
 
 			// delete folder itself
+			if (Logger.isDebugEnabled(getClass())) {
+				Logger.debug(getClass(), "Removing the folder itself: " + path);
+			}
 			ffac.delete(folder);
+
+			// The delete folder will avoid to send the message to the current user
+			// in addition will check any match roles to propagate the event.
+			if (Logger.isDebugEnabled(getClass())) {
+				
+				Logger.debug(getClass(), "Pushing async events: " + path);
+			}
+
+			this.systemEventsAPI.pushAsync(SystemEventType.DELETE_FOLDER, new Payload(folder, Visibility.EXCLUDE_OWNER,
+					new ExcludeOwnerVerifierBean(user.getUserId(),
+							new VisibilityRoles(VisibilityRoles.Operator.OR, roles), Visibility.ROLES)));
 
 			// delete the menus using the fake proxy inode
 			if (folder.isShowOnMenu()) {
@@ -538,12 +587,14 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to add to Folder " + parentFolder.getPath());
 		}
 
+		boolean isNew = folder.getInode() == null;
 		folder.setModDate(new Date());
-
 		ffac.save(folder, existingId);
 
+		SystemEventType systemEventType = isNew ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;
+		systemEventsAPI.pushAsync(systemEventType, new Payload(folder, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
-
 
 	public void save(Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
 
@@ -779,7 +830,12 @@ public class FolderAPIImpl implements FolderAPI  {
 		if (!papi.doesUserHavePermission(newParentFolder, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to add to Folder " + newParentFolder.getName());
 		}
-		return ffac.move(folderToMove, newParentFolder);
+		boolean move = ffac.move(folderToMove, newParentFolder);
+
+		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(folderToMove, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+
+		return move;
 	}
 
 
@@ -791,7 +847,12 @@ public class FolderAPIImpl implements FolderAPI  {
 		if (!papi.doesUserHavePermission(newParentHost, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to add to Folder " + newParentHost.getHostname());
 		}
-		return ffac.move(folderToMove, newParentHost);
+		boolean move = ffac.move(folderToMove, newParentHost);
+
+		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(folderToMove, Visibility.EXCLUDE_OWNER,
+				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+
+		return move;
 	}
 
 	public List<Folder> findSubFolders(Host host, boolean showOnMenu) throws DotHibernateException{

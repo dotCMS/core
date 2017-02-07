@@ -1,27 +1,30 @@
 package com.dotcms.rest.api.v1.system.i18n;
 
-import com.beust.jcommander.internal.Maps;
+import com.dotcms.UnitTestBase;
+import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.org.json.JSONObject;
 import com.dotcms.rest.exception.InternalServerException;
 import com.dotcms.rest.exception.NotFoundException;
+
+import org.hamcrest.Matchers;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
-import org.hamcrest.Matchers;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
 
-public class I18NResourceTest {
+public class I18NResourceTest extends UnitTestBase {
 
-    @BeforeMethod
+    @Before
     public void setUp() throws Exception {
     }
 
-    @Test(expectedExceptions = NotFoundException.class)
+    @Test(expected = NotFoundException.class)
     public void testCheckHasResultThrowsExceptionWhenNoResult() throws Exception {
         I18NResource rsrc = new I18NResource();
         rsrc.checkHasResult(new I18NResource.RestResourceLookup("en", "foo"), Optional.empty(), new HashMap<>());
@@ -36,16 +39,22 @@ public class I18NResourceTest {
     @Test()
     public void testCheckHasResultDoesNotThrowForMultipleResults() throws Exception {
         I18NResource rsrc = new I18NResource();
-        rsrc.checkHasResult(new I18NResource.RestResourceLookup("en", "foo"), Optional.<String>empty(), Maps.newHashMap("a", "b", "c", "d"));
+        Map<String, String> abcdMap = Maps.newHashMap();
+        abcdMap.put("a", "b");
+        abcdMap.put("c", "d");
+        rsrc.checkHasResult(new I18NResource.RestResourceLookup("en", "foo"), Optional.<String>empty(), abcdMap);
     }
 
     @Test()
     public void testCheckHasResultDoesNotThrowForSingleAndMultipleResults() throws Exception {
         I18NResource rsrc = new I18NResource();
-        rsrc.checkHasResult(new I18NResource.RestResourceLookup("en", "foo"), Optional.of("Fake Result"), Maps.newHashMap("a", "b", "c", "d"));
+        Map<String, String> abcdMap = Maps.newHashMap();
+        abcdMap.put("a", "b");
+        abcdMap.put("c", "d");
+        rsrc.checkHasResult(new I18NResource.RestResourceLookup("en", "foo"), Optional.of("Fake Result"), abcdMap);
     }
 
-    @Test(expectedExceptions = InternalServerException.class)
+    @Test(expected = InternalServerException.class)
     public void testMessageToJsonDoesNotAllowNullRoot() throws Exception {
         I18NResource rsrc = new I18NResource();
         String[] pathKeys = {"foo"};
@@ -53,7 +62,7 @@ public class I18NResourceTest {
         rsrc.messageToJson(null, pathKeys, value);
     }
 
-    @Test(expectedExceptions = InternalServerException.class)
+    @Test(expected = InternalServerException.class)
     public void testMessageToJsonDoesNotAllowEmptyPathKeys() throws Exception {
         JSONObject root = new JSONObject();
         I18NResource rsrc = new I18NResource();

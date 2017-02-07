@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.rules.business;
 
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.util.IntegrationTestInitService;
+
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -33,6 +35,8 @@ public class RulesCacheFTest {
 
     @BeforeClass
     public static void prepare () throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
     }
 

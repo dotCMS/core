@@ -123,7 +123,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		HibernateUtil dh = new HibernateUtil(Folder.class);
 		List<Folder> list = null;
 		String query = "SELECT {folder.*} from folder folder, inode folder_1_, identifier identifier where folder.identifier = identifier.id and "
-				+ "folder_1_.type = 'folder' and folder_1_.inode = folder.inode and identifier.parent_path = ? and host_inode = ? order by name, sort_order";
+				+ "folder_1_.type = 'folder' and folder_1_.inode = folder.inode and identifier.parent_path = ? and identifier.host_inode = ? order by name, sort_order";
 
 		dh.setSQLQuery(query);
 		dh.setParam(id.getPath());
@@ -144,7 +144,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		List<Folder> folders = null;
 
 		String query = "SELECT {folder.*} from folder folder, inode folder_1_, identifier identifier where folder.identifier = identifier.id and "
-				+ "folder_1_.type = 'folder' and folder_1_.inode = folder.inode and identifier.parent_path = ? and host_inode = ? order by folder.title";
+				+ "folder_1_.type = 'folder' and folder_1_.inode = folder.inode and identifier.parent_path = ? and identifier.host_inode = ? order by lower(folder.title)";
 
 		dh.setSQLQuery(query);
 		dh.setParam(id.getPath());
@@ -164,7 +164,7 @@ public class FolderFactoryImpl extends FolderFactory {
 			condition = "show_on_menu = " + com.dotmarketing.db.DbConnectionFactory.getDBTrue();
 		}
 		dh.setSQLQuery("SELECT {folder.*} from folder folder, inode folder_1_, identifier identifier where folder.identifier = identifier.id and "
-				+ "folder_1_.type = 'folder' and folder_1_.inode = folder.inode and identifier.parent_path = ? and host_inode = ? and "
+				+ "folder_1_.type = 'folder' and folder_1_.inode = folder.inode and identifier.parent_path = ? and identifier.host_inode = ? and "
 				+ condition + " order by sort_order, name");
 		dh.setParam(id.getPath());
 		dh.setParam(id.getHostId());
@@ -1109,7 +1109,7 @@ public class FolderFactoryImpl extends FolderFactory {
 	protected List<Folder> findFoldersByHost(Host host) throws DotHibernateException {
 		HibernateUtil dh = new HibernateUtil(Folder.class);
 		dh.setSQLQuery("SELECT {folder.*} from folder folder,identifier ident, inode folder_1_ where folder_1_.inode = folder.inode "
-			    + "and folder.identifier = ident.id and ident.host_inode = ? and ident.parent_path='/' order by folder.title");
+			    + "and folder.identifier = ident.id and ident.host_inode = ? and ident.parent_path='/' order by lower(folder.title)");
 		dh.setParam(host.getIdentifier());
 		List<Folder> folderList=dh.list();
 		Collections.sort(folderList,new Comparator<Folder>() {
@@ -1124,7 +1124,7 @@ public class FolderFactoryImpl extends FolderFactory {
 	protected List<Folder> findThemesByHost(Host host) throws DotHibernateException {
 		HibernateUtil dh = new HibernateUtil(Folder.class);
 		dh.setSQLQuery("SELECT {folder.*} from folder folder,identifier ident, inode folder_1_ where folder_1_.inode = folder.inode "
-			    + "and folder.identifier = ident.id and ident.host_inode = ? and ident.parent_path='/application/themes/' order by folder.title");
+			    + "and folder.identifier = ident.id and ident.host_inode = ? and ident.parent_path='/application/themes/' order by lower(folder.title)");
 		dh.setParam(host.getIdentifier());
 		List<Folder> folderList=dh.list();
 		Collections.sort(folderList,new Comparator<Folder>() {

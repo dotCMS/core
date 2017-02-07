@@ -1,42 +1,20 @@
 package com.dotmarketing.portlets.contentlet.business.web;
 
-import java.text.DateFormat;
-import java.text.MessageFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-
+import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.commons.collections.CollectionUtils;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotLanguageException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.factories.EmailFactory;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.MultiTreeFactory;
@@ -63,19 +41,20 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PortletURLUtil;
-import com.dotmarketing.util.UtilHTML;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.servlet.SessionMessages;
+
+import javax.servlet.http.HttpServletRequest;
+import java.text.DateFormat;
+import java.text.MessageFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 /*
  *     //http://jira.dotmarketing.net/browse/DOTCMS-2273
  *     To save content via ajax.
@@ -95,6 +74,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	private static DateFormat eventRecurrenceStartDateF = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 	private static DateFormat eventRecurrenceEndDateF = new SimpleDateFormat("yyyy-MM-dd");
 
+	private final ContentletSystemEventUtil contentletSystemEventUtil;
+
 	public ContentletWebAPIImpl() {
 		catAPI = APILocator.getCategoryAPI();
 		perAPI = APILocator.getPermissionAPI();
@@ -105,14 +86,17 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		this.userAPI = APILocator.getUserAPI();
 		this.folderAPI = APILocator.getFolderAPI();
 		this.identAPI = APILocator.getIdentifierAPI();
+
+		contentletSystemEventUtil = ContentletSystemEventUtil.getInstance();
 	}
-	/*
-	 * 	(non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPI#saveContent(java.util.Map, boolean, boolean, com.liferay.portal.model.User)
-	 * This funtion works similar to EditContentletAction cmd = Constants.ADD
-	 */
+
 	public String saveContent(Map<String, Object> contentletFormData,
-			boolean isAutoSave, boolean isCheckin,User user) throws DotContentletValidationException,Exception {
+							  boolean isAutoSave, boolean isCheckin, User user) throws DotContentletValidationException, Exception {
+		return saveContent(contentletFormData, isAutoSave, isCheckin, user, false);
+	}
+
+	public String saveContent(Map<String, Object> contentletFormData,
+							  boolean isAutoSave, boolean isCheckin, User user, boolean generateSystemEvent) throws DotContentletValidationException, Exception {
 
 		HttpServletRequest req =WebContextFactory.get().getHttpServletRequest();
 
@@ -134,11 +118,12 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		}
 
 		Contentlet cont;
+		boolean isNew = isNew(contentletFormData);
 
 		try {
 			Logger.debug(this, "Calling Save Method");
 			try{
-				_saveWebAsset(contentletFormData,isAutoSave,isCheckin,user);
+				_saveWebAsset(contentletFormData,isAutoSave,isCheckin,user, generateSystemEvent);
 			}catch (DotContentletValidationException ce) {
 				if(!isAutoSave)
 				SessionMessages.add(req, "message.contentlet.save.error");
@@ -180,13 +165,19 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			throw ae;
 		}
 
-		if(autocommit)
-		    HibernateUtil.commitTransaction();
+		if(autocommit) {
+			HibernateUtil.commitTransaction();
+		}
 
 		contentletFormData.put("cache_control", "0");
 
 
 		return ((cont!=null) ? cont.getInode() : null);
+	}
+
+	private boolean isNew(Map<String, Object> contentletFormData) {
+		Contentlet currentContentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
+		return !InodeUtils.isSet(currentContentlet.getInode());
 	}
 
 	/**
@@ -313,7 +304,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	}
 
 	private void _saveWebAsset(Map<String, Object> contentletFormData,
-			boolean isAutoSave, boolean isCheckin, User user) throws Exception, DotContentletValidationException {
+							   boolean isAutoSave, boolean isCheckin, User user, boolean generateSystemEvent) throws Exception, DotContentletValidationException {
 
 		/**
 		System.out.println("----------------------------from form-------------------------");
@@ -579,7 +570,9 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			if(!isAutoSave){
 
 				currentContentlet.setInode(null);
-				currentContentlet = conAPI.checkin(currentContentlet, contRel,cats, perAPI.getPermissions(currentContentlet, false, true), user, false);
+				currentContentlet = conAPI.checkin(currentContentlet, contRel,cats,
+						perAPI.getPermissions(currentContentlet, false, true),
+						user, false, generateSystemEvent);
 
 
 			}else{

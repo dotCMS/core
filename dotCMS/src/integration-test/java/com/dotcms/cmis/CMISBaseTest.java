@@ -21,10 +21,12 @@ import com.dotcms.repackage.org.apache.chemistry.opencmis.commons.impl.dataobjec
 import com.dotcms.repackage.org.apache.chemistry.opencmis.commons.server.CallContext;
 import com.dotcms.repackage.org.apache.chemistry.opencmis.commons.server.ObjectInfoHandler;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.util.IntegrationTestInitService;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.enterprise.cmis.server.CMISManager;
 import com.dotcms.enterprise.cmis.server.CMISService;
 import com.dotcms.enterprise.cmis.utils.CMISUtils;
@@ -36,7 +38,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
-public class CMISBaseTest extends TestBase {
+public class CMISBaseTest extends IntegrationTestBase {
 
 	protected static User user;
 	protected static List<Contentlet> contentlets;
@@ -48,7 +50,10 @@ public class CMISBaseTest extends TestBase {
 	protected static CMISManager cmisManager;
 	
     @BeforeClass
-    public static void prepare () throws DotSecurityException, DotDataException {
+    public static void prepare () throws Exception {
+    	
+    	//Setting web app environment
+        IntegrationTestInitService.getInstance().init();
 
         //Setting the test user
         user = APILocator.getUserAPI().getSystemUser();

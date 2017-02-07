@@ -50,7 +50,7 @@ public class ContainerServices {
     	StringBuilder sb = new StringBuilder();
 
         boolean isDynamic = UtilMethods.isSet(container.getLuceneQuery());
-        
+
         List<ContainerStructure> csList = new ArrayList<>();
         try{
             csList = APILocator.getContainerAPI().getContainerStructures(container);
@@ -98,6 +98,8 @@ public class ContainerServices {
             String luceneQuery = container.getLuceneQuery();
             sb.append("#set ($CONTENTS_PER_PAGE = \"$CONTAINER_MAX_CONTENTLETS\")");
             sb.append("#if ($request.getParameter(\"cont_" ).append( identifier.getInode() ).append( "_per_page\"))");
+            sb.append("#set ($CONTENTS_PER_PAGE = $request.getParameter(\"cont_" ).append( identifier.getInode() ).append( "_per_page\"))");
+            sb.append("#end ");
             sb.append("#set ($CONTENTS_PER_PAGE = $request.getParameter(\"cont_" ).append( identifier.getInode() ).append( "_per_page\"))");
             sb.append("#end");
             sb.append("#set ($CURRENT_PAGE = \"1\")");
@@ -163,7 +165,8 @@ public class ContainerServices {
                		sb.append("#if($_hasPermissionToViewContent)");
                	}
 
-               	String code = "";
+
+                String code =  "";
                 
                 sb.append("#set ($structureCode" ).append(
                 		" = $containerAPI.getStructureCode(\"").append( container.getIdentifier() ).append("\", \"$ContentletStructure\"))" );
@@ -191,7 +194,8 @@ public class ContainerServices {
                 //### BODY ###
                 String endTag = "${contentletEnd}";
                 boolean containsEndTag = code.contains(endTag);
-                if(containsEndTag) {
+                if(containsEndTag)
+                {
                 	String footerString = "#if($EDIT_MODE && ${contentletId.indexOf(\".structure\")}==-1) " +
                 			"$velutil.mergeTemplate('static/preview_mode/content_controls.vtl') " +
                 			" #end " +
@@ -202,13 +206,12 @@ public class ContainerServices {
                 }
 
                 sb.append("#if($isWidget == true)");
-                sb.append("$widgetCode");
-                sb.append(" #else");
-                /*
-                      for (ContainerStructure cs : csList) {
-                        sb.append("#if($ContentletStructure ==\"" + cs.getStructureId() + "\")" );
-                        sb.append(cs.getCode());
-                        sb.append("#end");
+                	sb.append("$widgetCode");
+                sb.append(" #else ");
+/*
+                      for (ContainerStructure cs : csList) {                	sb.append("#if($ContentletStructure ==\"" + cs.getStructureId() + "\")" );
+                	sb.append(cs.getCode() );
+                	sb.append("#end");
                       }
                  */
                 for (int i=0;i<csList.size();i++) {
@@ -220,12 +223,7 @@ public class ContainerServices {
                 if(csList.size()>0){
                     sb.append("#end");
                 }
-
-
-
-
-
-                sb.append("#end");
+                sb.append(" #end ");
               //The empty div added for styling issue in Internet Explorer is closed here
                 //http://jira.dotmarketing.net/browse/DOTCMS-1974
             	sb.append("#if($EDIT_MODE)");
@@ -307,7 +305,7 @@ public class ContainerServices {
 	            tmpOut.close();
             }
         } catch (Exception e) {
-            Logger.error(ContainerServices.class, e.toString(), e);
+            Logger.error(ContentletServices.class, e.toString(), e);
         }
 
         try {

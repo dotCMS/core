@@ -11,7 +11,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.TestBase;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.repackage.com.ibm.icu.util.Calendar;
 import junit.framework.Assert;
@@ -39,7 +39,7 @@ import com.ettrema.httpclient.InternalServerError;
 import com.ettrema.httpclient.Resource;
 import com.liferay.portal.model.User;
 
-public class WebDavTest extends TestBase {
+public class WebDavTest extends IntegrationTestBase {
 	
 	@Before
 	public void before () {
@@ -238,7 +238,7 @@ public class WebDavTest extends TestBase {
 	 * https://github.com/dotCMS/dotCMS/issues/3650
 	 * @throws Exception
 	 */
-	@Test
+	@Test(expected = InternalServerError.class)
 	public void autoput_without_pub_permissions() throws Exception {
 	    User user=APILocator.getUserAPI().getSystemUser();
 	    com.dotmarketing.beans.Host demo=APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
@@ -283,12 +283,8 @@ public class WebDavTest extends TestBase {
         java.io.File tmp=java.io.File.createTempFile("filetest", ".txt");
         FileUtils.writeStringToFile(tmp, "this is a test text 888");
         
-        try{
-        	File uploaded = hh.uploadFile(tmp);
-        } catch (Exception e){
-        	//This is expected: User does not have permission to publish contentlets
-        	Assert.assertTrue(e instanceof InternalServerError);
-        }
+       
+        File uploaded = hh.uploadFile(tmp);
 
 	}
 	

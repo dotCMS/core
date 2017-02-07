@@ -189,7 +189,7 @@ button.removeFile, button.browse {
 	opacity:.9;
 }
 
-.dmundra .dijitInputField INPUT, .dmundra .dijitTextBox, .dmundra .dijitSpinner{
+.dotcms .dijitInputField INPUT, .dotcms .dijitTextBox, .dotcms .dijitSpinner{
 	padding:0 0 3px;
 }
 input.imageField , input.fileField {

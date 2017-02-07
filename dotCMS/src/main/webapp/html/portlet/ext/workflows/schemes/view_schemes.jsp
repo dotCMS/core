@@ -22,30 +22,35 @@
 %>
 
 
-
-<div class="yui-g portlet-toolbar" style="margin:0 0 5px 10px;">
+<div class="portlet-main">
+	
+	<!-- START Toolbar -->
 	<form id="fm" method="post">
-		<div class="yui-u first" style="white-space: nowrap">
-			<b><%=LanguageUtil.get(pageContext, "Workflow-Schemes")%></b>
-		</div>
-		<div class="yui-u" style="text-align: right;">
-		
-			<input type="checkbox" id="showArchivedChk" name="showArchived"
-				<%=(showArchived) ? "checked='true'" : ""%> id="system"
-				dojoType="dijit.form.CheckBox" value="1"
-				onClick="new function(){schemeAdmin.showArchived = <%=!showArchived%>;schemeAdmin.show();}" />
-			<label font-size:85%; for="showArchivedChk"><%=LanguageUtil.get(pageContext, "Show-Archived")%></label>
-
-			&nbsp;&nbsp;&nbsp;
-			<button dojoType="dijit.form.Button"
-				onClick="schemeAdmin.showAddEdit();return false;" iconClass="addIcon">
-				<%=LanguageUtil.get(pageContext, "Add-Workflow-Scheme")%>
-			</button>
-		</div>
+		<div class="portlet-toolbar">
+			<div class="portlet-toolbar__actions-primary">
+				<b><%=LanguageUtil.get(pageContext, "Workflow-Schemes")%></b>
+			</div>
+			<div class="portlet-toolbar__info">
+				<div class="inline-form">
+					<input type="checkbox" id="showArchivedChk" name="showArchived"
+					<%=(showArchived) ? "checked='true'" : ""%> id="system"
+					dojoType="dijit.form.CheckBox" value="1"
+					onClick="new function(){schemeAdmin.showArchived = <%=!showArchived%>;schemeAdmin.show();}" />
+					<label font-size:85%; for="showArchivedChk"><%=LanguageUtil.get(pageContext, "Show-Archived")%></label>
+				</div>
+			</div>
+	    	<div class="portlet-toolbar__actions-secondary">
+	    		<button dojoType="dijit.form.Button"
+					onClick="schemeAdmin.showAddEdit();return false;" iconClass="addIcon">
+					<%=LanguageUtil.get(pageContext, "Add-Workflow-Scheme")%>
+				</button>
+	    	</div>
+	   </div>
 	</form>
+   <!-- END Toolbar -->
 </div>
 
-<!-- END Toolbar -->
+
 
 <!-- START Listing Results -->
 

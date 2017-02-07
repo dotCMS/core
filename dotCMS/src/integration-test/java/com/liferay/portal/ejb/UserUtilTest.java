@@ -1,5 +1,6 @@
 package com.liferay.portal.ejb;
 
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
@@ -32,9 +33,10 @@ public class UserUtilTest {
     private static RoleAPI roleAPI;
 
     @BeforeClass
-    public static void prepare() throws DotDataException {
+    public static void prepare() throws Exception {
 
         //Setting the test user
+    	IntegrationTestInitService.getInstance().init();
         systemUser = APILocator.getUserAPI().getSystemUser();
         userAPI = APILocator.getUserAPI();
         roleAPI = APILocator.getRoleAPI();

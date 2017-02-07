@@ -1,198 +1,201 @@
 SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
 
 create table Address (
-	addressId NVARCHAR(100) not null primary key,
-	companyId NVARCHAR(100) not null,
-	userId NVARCHAR(100) not null,
-	userName NVARCHAR(100) null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	className NVARCHAR(100) null,
-	classPK NVARCHAR(100) null,
-	description NVARCHAR(100) null,
-	street1 NVARCHAR(100) null,
-	street2 NVARCHAR(100) null,
-	city NVARCHAR(100) null,
-	state NVARCHAR(100) null,
-	zip NVARCHAR(100) null,
-	country NVARCHAR(100) null,
-	phone NVARCHAR(100) null,
-	fax NVARCHAR(100) null,
-	cell NVARCHAR(100) null,
-	priority int
+    addressId NVARCHAR(100) not null primary key,
+    companyId NVARCHAR(100) not null,
+    userId NVARCHAR(100) not null,
+    userName NVARCHAR(100) null,
+    createDate datetime null,
+    modifiedDate datetime null,
+    className NVARCHAR(100) null,
+    classPK NVARCHAR(100) null,
+    description NVARCHAR(100) null,
+    street1 NVARCHAR(100) null,
+    street2 NVARCHAR(100) null,
+    city NVARCHAR(100) null,
+    state NVARCHAR(100) null,
+    zip NVARCHAR(100) null,
+    country NVARCHAR(100) null,
+    phone NVARCHAR(100) null,
+    fax NVARCHAR(100) null,
+    cell NVARCHAR(100) null,
+    priority int
 );
 
 create table AdminConfig (
-	configId NVARCHAR(100) not null primary key,
-	companyId NVARCHAR(100) not null,
-	type_ NVARCHAR(100) null,
-	name NVARCHAR(100) null,
-	config NVARCHAR(MAX) null
+    configId NVARCHAR(100) not null primary key,
+    companyId NVARCHAR(100) not null,
+    type_ NVARCHAR(100) null,
+    name NVARCHAR(100) null,
+    config NVARCHAR(MAX) null
 );
 
 create table Company (
-	companyId NVARCHAR(100) not null primary key,
-	key_ NVARCHAR(MAX) null,
-	portalURL NVARCHAR(100) not null,
-	homeURL NVARCHAR(100) not null,
-	mx NVARCHAR(100) not null,
-	name NVARCHAR(100) not null,
-	shortName NVARCHAR(100) not null,
-	type_ NVARCHAR(100) null,
-	size_ NVARCHAR(100) null,
-	street NVARCHAR(100) null,
-	city NVARCHAR(100) null,
-	state NVARCHAR(100) null,
-	zip NVARCHAR(100) null,
-	phone NVARCHAR(100) null,
-	fax NVARCHAR(100) null,
-	emailAddress NVARCHAR(100) null,
-	authType NVARCHAR(100) null,
-	autoLogin bit,
-	strangers bit
+    companyId NVARCHAR(100) not null primary key,
+    key_ NVARCHAR(MAX) null,
+    portalURL NVARCHAR(100) not null,
+    homeURL NVARCHAR(100) not null,
+    mx NVARCHAR(100) not null,
+    name NVARCHAR(100) not null,
+    shortName NVARCHAR(100) not null,
+    type_ NVARCHAR(100) null,
+    size_ NVARCHAR(100) null,
+    street NVARCHAR(100) null,
+    city NVARCHAR(100) null,
+    state NVARCHAR(100) null,
+    zip NVARCHAR(100) null,
+    phone NVARCHAR(100) null,
+    fax NVARCHAR(100) null,
+    emailAddress NVARCHAR(100) null,
+    authType NVARCHAR(100) null,
+    autoLogin bit,
+    strangers bit
 );
 
 create table Counter (
-	name NVARCHAR(100) not null primary key,
-	currentId int
+    name NVARCHAR(100) not null primary key,
+    currentId int
 );
 
 create table Image (
-	imageId NVARCHAR(200) not null primary key,
-	text_ NVARCHAR(MAX) not null
+    imageId NVARCHAR(200) not null primary key,
+    text_ NVARCHAR(MAX) not null
 );
 
 create table PasswordTracker (
-	passwordTrackerId NVARCHAR(100) not null primary key,
-	userId NVARCHAR(100) not null,
-	createDate datetime not null,
-	password_ NVARCHAR(100) not null
+    passwordTrackerId NVARCHAR(100) not null primary key,
+    userId NVARCHAR(100) not null,
+    createDate datetime not null,
+    password_ NVARCHAR(100) not null
 );
 
 create table PollsChoice (
-	choiceId NVARCHAR(100) not null,
-	questionId NVARCHAR(100) not null,
-	description NVARCHAR(1000) null,
-	primary key (choiceId, questionId)
+    choiceId NVARCHAR(100) not null,
+    questionId NVARCHAR(100) not null,
+    description NVARCHAR(1000) null,
+    primary key (choiceId, questionId)
 );
 
 create table PollsDisplay (
-	layoutId NVARCHAR(100) not null,
-	userId NVARCHAR(100) not null,
-	portletId NVARCHAR(100) not null,
-	questionId NVARCHAR(100) not null,
-	primary key (layoutId, userId, portletId)
+    layoutId NVARCHAR(100) not null,
+    userId NVARCHAR(100) not null,
+    portletId NVARCHAR(100) not null,
+    questionId NVARCHAR(100) not null,
+    primary key (layoutId, userId, portletId)
 );
 
 create table PollsQuestion (
-	questionId NVARCHAR(100) not null primary key,
-	portletId NVARCHAR(100) not null,
-	groupId NVARCHAR(100) not null,
-	companyId NVARCHAR(100) not null,
-	userId NVARCHAR(100) not null,
-	userName NVARCHAR(100) null,
-	createDate datetime null,
-	modifiedDate datetime null,
-	title NVARCHAR(100) null,
-	description NVARCHAR(1000) null,
-	expirationDate datetime null,
-	lastVoteDate datetime null
+    questionId NVARCHAR(100) not null primary key,
+    portletId NVARCHAR(100) not null,
+    groupId NVARCHAR(100) not null,
+    companyId NVARCHAR(100) not null,
+    userId NVARCHAR(100) not null,
+    userName NVARCHAR(100) null,
+    createDate datetime null,
+    modifiedDate datetime null,
+    title NVARCHAR(100) null,
+    description NVARCHAR(1000) null,
+    expirationDate datetime null,
+    lastVoteDate datetime null
 );
 
 create table PollsVote (
-	questionId NVARCHAR(100) not null,
-	userId NVARCHAR(100) not null,
-	choiceId NVARCHAR(100) not null,
-	voteDate datetime null,
-	primary key (questionId, userId)
+    questionId NVARCHAR(100) not null,
+    userId NVARCHAR(100) not null,
+    choiceId NVARCHAR(100) not null,
+    voteDate datetime null,
+    primary key (questionId, userId)
 );
 
 create table Portlet (
-	portletId NVARCHAR(100) not null,
-	groupId NVARCHAR(100) not null,
-	companyId NVARCHAR(100) not null,
-	defaultPreferences NVARCHAR(MAX) null,
-	narrow bit,
-	roles NVARCHAR(1000) null,
-	active_ bit,
-	primary key (portletId, groupId, companyId)
+    portletId NVARCHAR(100) not null,
+    groupId NVARCHAR(100) not null,
+    companyId NVARCHAR(100) not null,
+    defaultPreferences NVARCHAR(MAX) null,
+    narrow bit,
+    roles NVARCHAR(1000) null,
+    active_ bit,
+    primary key (portletId, groupId, companyId)
 );
 
 create table PortletPreferences (
-	portletId NVARCHAR(100) not null,
-	userId NVARCHAR(100) not null,
-	layoutId NVARCHAR(100) not null,
-	preferences NVARCHAR(MAX) null,
-	primary key (portletId, userId, layoutId)
+    portletId NVARCHAR(100) not null,
+    userId NVARCHAR(100) not null,
+    layoutId NVARCHAR(100) not null,
+    preferences NVARCHAR(MAX) null,
+    primary key (portletId, userId, layoutId)
 );
 
 create table Release_ (
-	releaseId NVARCHAR(100) not null primary key,
-	createDate datetime null,
-	modifiedDate datetime null,
-	buildNumber int null,
-	buildDate datetime null
+    releaseId NVARCHAR(100) not null primary key,
+    createDate datetime null,
+    modifiedDate datetime null,
+    buildNumber int null,
+    buildDate datetime null
 );
 
 create table User_ (
-	userId NVARCHAR(100) not null primary key,
-	companyId NVARCHAR(100) not null,
-	createDate datetime null,
-	password_ NVARCHAR(MAX) null,
-	passwordEncrypted bit,
-	passwordExpirationDate datetime null,
-	passwordReset bit,
-	firstName NVARCHAR(100) null,
-	middleName NVARCHAR(100) null,
-	lastName NVARCHAR(100) null,
-	nickName NVARCHAR(100) null,
-	male bit,
-	birthday datetime null,
-	emailAddress NVARCHAR(100) null,
-	smsId NVARCHAR(100) null,
-	aimId NVARCHAR(100) null,
-	icqId NVARCHAR(100) null,
-	msnId NVARCHAR(100) null,
-	ymId NVARCHAR(100) null,
-	favoriteActivity NVARCHAR(100) null,
-	favoriteBibleVerse NVARCHAR(100) null,
-	favoriteFood NVARCHAR(100) null,
-	favoriteMovie NVARCHAR(100) null,
-	favoriteMusic NVARCHAR(100) null,
-	languageId NVARCHAR(100) null,
-	timeZoneId NVARCHAR(100) null,
-	skinId NVARCHAR(100) null,
-	dottedSkins bit,
-	roundedSkins bit,
-	greeting NVARCHAR(100) null,
-	resolution NVARCHAR(100) null,
-	refreshRate NVARCHAR(100) null,
-	layoutIds NVARCHAR(100) null,
-	comments NVARCHAR(1000) null,
-	loginDate datetime null,
-	loginIP NVARCHAR(100) null,
-	lastLoginDate datetime null,
-	lastLoginIP NVARCHAR(100) null,
-	failedLoginAttempts int,
-	agreedToTermsOfUse bit,
-	active_ bit
+    userId NVARCHAR(100) not null primary key,
+    companyId NVARCHAR(100) not null,
+    createDate datetime null,
+    mod_date   datetime null,
+    password_ NVARCHAR(MAX) null,
+    passwordEncrypted bit,
+    passwordExpirationDate datetime null,
+    passwordReset bit,
+    firstName NVARCHAR(100) null,
+    middleName NVARCHAR(100) null,
+    lastName NVARCHAR(100) null,
+    nickName NVARCHAR(100) null,
+    male bit,
+    birthday datetime null,
+    emailAddress NVARCHAR(100) null,
+    smsId NVARCHAR(100) null,
+    aimId NVARCHAR(100) null,
+    icqId NVARCHAR(100) null,
+    msnId NVARCHAR(100) null,
+    ymId NVARCHAR(100) null,
+    favoriteActivity NVARCHAR(100) null,
+    favoriteBibleVerse NVARCHAR(100) null,
+    favoriteFood NVARCHAR(100) null,
+    favoriteMovie NVARCHAR(100) null,
+    favoriteMusic NVARCHAR(100) null,
+    languageId NVARCHAR(100) null,
+    timeZoneId NVARCHAR(100) null,
+    skinId NVARCHAR(100) null,
+    dottedSkins bit,
+    roundedSkins bit,
+    greeting NVARCHAR(100) null,
+    resolution NVARCHAR(100) null,
+    refreshRate NVARCHAR(100) null,
+    layoutIds NVARCHAR(100) null,
+    comments NVARCHAR(1000) null,
+    loginDate datetime null,
+    loginIP NVARCHAR(100) null,
+    lastLoginDate datetime null,
+    lastLoginIP NVARCHAR(100) null,
+    failedLoginAttempts int,
+    agreedToTermsOfUse bit,
+    active_ bit,
+    delete_in_progress TINYINT DEFAULT 0,
+    delete_date DATETIME NULL
 );
 
 create table UserTracker (
-	userTrackerId NVARCHAR(100) not null primary key,
-	companyId NVARCHAR(100) not null,
-	userId NVARCHAR(100) not null,
-	modifiedDate datetime null,
-	remoteAddr NVARCHAR(100) null,
-	remoteHost NVARCHAR(100) null,
-	userAgent NVARCHAR(100) null
+    userTrackerId NVARCHAR(100) not null primary key,
+    companyId NVARCHAR(100) not null,
+    userId NVARCHAR(100) not null,
+    modifiedDate datetime null,
+    remoteAddr NVARCHAR(100) null,
+    remoteHost NVARCHAR(100) null,
+    userAgent NVARCHAR(100) null
 );
 
 create table UserTrackerPath (
-	userTrackerPathId NVARCHAR(100) not null primary key,
-	userTrackerId NVARCHAR(100) not null,
-	path NVARCHAR(1000) not null,
-	pathDate datetime not null
+    userTrackerPathId NVARCHAR(100) not null primary key,
+    userTrackerId NVARCHAR(100) not null,
+    path NVARCHAR(1000) not null,
+    pathDate datetime not null
 );
 
 --
@@ -756,7 +759,7 @@ create table analytic_summary_pages (
 );
 create table tag (
    tag_id NVARCHAR(100) not null,
-   tagname nNVARCHAR(255) not null,
+   tagname NVARCHAR(255) not null,
    host_id NVARCHAR(255) null,
    user_id NVARCHAR(255) null,
    persona tinyint default 0,
@@ -1006,171 +1009,171 @@ create table permission (
    primary key (id),
    unique (permission_type, inode_id, roleid)
 );
-	create table contentlet (inode NVARCHAR(36) not null,
-	show_on_menu tinyint null,
-	title NVARCHAR(255) null,
-	mod_date datetime null,
-	mod_user NVARCHAR(100) null,
-	sort_order int null,
-	friendly_name NVARCHAR(255) null,
-	structure_inode NVARCHAR(36) null,
-	last_review datetime null,
-	next_review datetime null,
-	review_interval NVARCHAR(255) null,
-	disabled_wysiwyg NVARCHAR(255) null,
-	identifier NVARCHAR(36) null,
-	language_id numeric(19,0) null,
-	date1 datetime null,
-	date2 datetime null,
-	date3 datetime null,
-	date4 datetime null,
-	date5 datetime null,
-	date6 datetime null,
-	date7 datetime null,
-	date8 datetime null,
-	date9 datetime null,
-	date10 datetime null,
-	date11 datetime null,
-	date12 datetime null,
-	date13 datetime null,
-	date14 datetime null,
-	date15 datetime null,
-	date16 datetime null,
-	date17 datetime null,
-	date18 datetime null,
-	date19 datetime null,
-	date20 datetime null,
-	date21 datetime null,
-	date22 datetime null,
-	date23 datetime null,
-	date24 datetime null,
-	date25 datetime null,
-	text1 NVARCHAR(255) null,
-	text2 NVARCHAR(255) null,
-	text3 NVARCHAR(255) null,
-	text4 NVARCHAR(255) null,
-	text5 NVARCHAR(255) null,
-	text6 NVARCHAR(255) null,
-	text7 NVARCHAR(255) null,
-	text8 NVARCHAR(255) null,
-	text9 NVARCHAR(255) null,
-	text10 NVARCHAR(255) null,
-	text11 NVARCHAR(255) null,
-	text12 NVARCHAR(255) null,
-	text13 NVARCHAR(255) null,
-	text14 NVARCHAR(255) null,
-	text15 NVARCHAR(255) null,
-	text16 NVARCHAR(255) null,
-	text17 NVARCHAR(255) null,
-	text18 NVARCHAR(255) null,
-	text19 NVARCHAR(255) null,
-	text20 NVARCHAR(255) null,
-	text21 NVARCHAR(255) null,
-	text22 NVARCHAR(255) null,
-	text23 NVARCHAR(255) null,
-	text24 NVARCHAR(255) null,
-	text25 NVARCHAR(255) null,
-	text_area1 NVARCHAR(MAX) null,
-	text_area2 NVARCHAR(MAX) null,
-	text_area3 NVARCHAR(MAX) null,
-	text_area4 NVARCHAR(MAX) null,
-	text_area5 NVARCHAR(MAX) null,
-	text_area6 NVARCHAR(MAX) null,
-	text_area7 NVARCHAR(MAX) null,
-	text_area8 NVARCHAR(MAX) null,
-	text_area9 NVARCHAR(MAX) null,
-	text_area10 NVARCHAR(MAX) null,
-	text_area11 NVARCHAR(MAX) null,
-	text_area12 NVARCHAR(MAX) null,
-	text_area13 NVARCHAR(MAX) null,
-	text_area14 NVARCHAR(MAX) null,
-	text_area15 NVARCHAR(MAX) null,
-	text_area16 NVARCHAR(MAX) null,
-	text_area17 NVARCHAR(MAX) null,
-	text_area18 NVARCHAR(MAX) null,
-	text_area19 NVARCHAR(MAX) null,
-	text_area20 NVARCHAR(MAX) null,
-	text_area21 NVARCHAR(MAX) null,
-	text_area22 NVARCHAR(MAX) null,
-	text_area23 NVARCHAR(MAX) null,
-	text_area24 NVARCHAR(MAX) null,
-	text_area25 NVARCHAR(MAX) null,
-	integer1 numeric(19,0) null,
-	integer2 numeric(19,0) null,
-	integer3 numeric(19,0) null,
-	integer4 numeric(19,0) null,
-	integer5 numeric(19,0) null,
-	integer6 numeric(19,0) null,
-	integer7 numeric(19,0) null,
-	integer8 numeric(19,0) null,
-	integer9 numeric(19,0) null,
-	integer10 numeric(19,0) null,
-	integer11 numeric(19,0) null,
-	integer12 numeric(19,0) null,
-	integer13 numeric(19,0) null,
-	integer14 numeric(19,0) null,
-	integer15 numeric(19,0) null,
-	integer16 numeric(19,0) null,
-	integer17 numeric(19,0) null,
-	integer18 numeric(19,0) null,
-	integer19 numeric(19,0) null,
-	integer20 numeric(19,0) null,
-	integer21 numeric(19,0) null,
-	integer22 numeric(19,0) null,
-	integer23 numeric(19,0) null,
-	integer24 numeric(19,0) null,
-	integer25 numeric(19,0) null,
-	"float1" float null,
-	"float2" float null,
-	"float3" float null,
-	"float4" float null,
-	"float5" float null,
-	"float6" float null,
-	"float7" float null,
-	"float8" float null,
-	"float9" float null,
-	"float10" float null,
-	"float11" float null,
-	"float12" float null,
-	"float13" float null,
-	"float14" float null,
-	"float15" float null,
-	"float16" float null,
-	"float17" float null,
-	"float18" float null,
-	"float19" float null,
-	"float20" float null,
-	"float21" float null,
-	"float22" float null,
-	"float23" float null,
-	"float24" float null,
-	"float25" float null,
-	bool1 tinyint null,
-	bool2 tinyint null,
-	bool3 tinyint null,
-	bool4 tinyint null,
-	bool5 tinyint null,
-	bool6 tinyint null,
-	bool7 tinyint null,
-	bool8 tinyint null,
-	bool9 tinyint null,
-	bool10 tinyint null,
-	bool11 tinyint null,
-	bool12 tinyint null,
-	bool13 tinyint null,
-	bool14 tinyint null,
-	bool15 tinyint null,
-	bool16 tinyint null,
-	bool17 tinyint null,
-	bool18 tinyint null,
-	bool19 tinyint null,
-	bool20 tinyint null,
-	bool21 tinyint null,
-	bool22 tinyint null,
-	bool23 tinyint null,
-	bool24 tinyint null,
-	bool25 tinyint null,
-	primary key (inode));
+    create table contentlet (inode NVARCHAR(36) not null,
+    show_on_menu tinyint null,
+    title NVARCHAR(255) null,
+    mod_date datetime null,
+    mod_user NVARCHAR(100) null,
+    sort_order int null,
+    friendly_name NVARCHAR(255) null,
+    structure_inode NVARCHAR(36) null,
+    last_review datetime null,
+    next_review datetime null,
+    review_interval NVARCHAR(255) null,
+    disabled_wysiwyg NVARCHAR(255) null,
+    identifier NVARCHAR(36) null,
+    language_id numeric(19,0) null,
+    date1 datetime null,
+    date2 datetime null,
+    date3 datetime null,
+    date4 datetime null,
+    date5 datetime null,
+    date6 datetime null,
+    date7 datetime null,
+    date8 datetime null,
+    date9 datetime null,
+    date10 datetime null,
+    date11 datetime null,
+    date12 datetime null,
+    date13 datetime null,
+    date14 datetime null,
+    date15 datetime null,
+    date16 datetime null,
+    date17 datetime null,
+    date18 datetime null,
+    date19 datetime null,
+    date20 datetime null,
+    date21 datetime null,
+    date22 datetime null,
+    date23 datetime null,
+    date24 datetime null,
+    date25 datetime null,
+    text1 NVARCHAR(255) null,
+    text2 NVARCHAR(255) null,
+    text3 NVARCHAR(255) null,
+    text4 NVARCHAR(255) null,
+    text5 NVARCHAR(255) null,
+    text6 NVARCHAR(255) null,
+    text7 NVARCHAR(255) null,
+    text8 NVARCHAR(255) null,
+    text9 NVARCHAR(255) null,
+    text10 NVARCHAR(255) null,
+    text11 NVARCHAR(255) null,
+    text12 NVARCHAR(255) null,
+    text13 NVARCHAR(255) null,
+    text14 NVARCHAR(255) null,
+    text15 NVARCHAR(255) null,
+    text16 NVARCHAR(255) null,
+    text17 NVARCHAR(255) null,
+    text18 NVARCHAR(255) null,
+    text19 NVARCHAR(255) null,
+    text20 NVARCHAR(255) null,
+    text21 NVARCHAR(255) null,
+    text22 NVARCHAR(255) null,
+    text23 NVARCHAR(255) null,
+    text24 NVARCHAR(255) null,
+    text25 NVARCHAR(255) null,
+    text_area1 NVARCHAR(MAX) null,
+    text_area2 NVARCHAR(MAX) null,
+    text_area3 NVARCHAR(MAX) null,
+    text_area4 NVARCHAR(MAX) null,
+    text_area5 NVARCHAR(MAX) null,
+    text_area6 NVARCHAR(MAX) null,
+    text_area7 NVARCHAR(MAX) null,
+    text_area8 NVARCHAR(MAX) null,
+    text_area9 NVARCHAR(MAX) null,
+    text_area10 NVARCHAR(MAX) null,
+    text_area11 NVARCHAR(MAX) null,
+    text_area12 NVARCHAR(MAX) null,
+    text_area13 NVARCHAR(MAX) null,
+    text_area14 NVARCHAR(MAX) null,
+    text_area15 NVARCHAR(MAX) null,
+    text_area16 NVARCHAR(MAX) null,
+    text_area17 NVARCHAR(MAX) null,
+    text_area18 NVARCHAR(MAX) null,
+    text_area19 NVARCHAR(MAX) null,
+    text_area20 NVARCHAR(MAX) null,
+    text_area21 NVARCHAR(MAX) null,
+    text_area22 NVARCHAR(MAX) null,
+    text_area23 NVARCHAR(MAX) null,
+    text_area24 NVARCHAR(MAX) null,
+    text_area25 NVARCHAR(MAX) null,
+    integer1 numeric(19,0) null,
+    integer2 numeric(19,0) null,
+    integer3 numeric(19,0) null,
+    integer4 numeric(19,0) null,
+    integer5 numeric(19,0) null,
+    integer6 numeric(19,0) null,
+    integer7 numeric(19,0) null,
+    integer8 numeric(19,0) null,
+    integer9 numeric(19,0) null,
+    integer10 numeric(19,0) null,
+    integer11 numeric(19,0) null,
+    integer12 numeric(19,0) null,
+    integer13 numeric(19,0) null,
+    integer14 numeric(19,0) null,
+    integer15 numeric(19,0) null,
+    integer16 numeric(19,0) null,
+    integer17 numeric(19,0) null,
+    integer18 numeric(19,0) null,
+    integer19 numeric(19,0) null,
+    integer20 numeric(19,0) null,
+    integer21 numeric(19,0) null,
+    integer22 numeric(19,0) null,
+    integer23 numeric(19,0) null,
+    integer24 numeric(19,0) null,
+    integer25 numeric(19,0) null,
+    "float1" float null,
+    "float2" float null,
+    "float3" float null,
+    "float4" float null,
+    "float5" float null,
+    "float6" float null,
+    "float7" float null,
+    "float8" float null,
+    "float9" float null,
+    "float10" float null,
+    "float11" float null,
+    "float12" float null,
+    "float13" float null,
+    "float14" float null,
+    "float15" float null,
+    "float16" float null,
+    "float17" float null,
+    "float18" float null,
+    "float19" float null,
+    "float20" float null,
+    "float21" float null,
+    "float22" float null,
+    "float23" float null,
+    "float24" float null,
+    "float25" float null,
+    bool1 tinyint null,
+    bool2 tinyint null,
+    bool3 tinyint null,
+    bool4 tinyint null,
+    bool5 tinyint null,
+    bool6 tinyint null,
+    bool7 tinyint null,
+    bool8 tinyint null,
+    bool9 tinyint null,
+    bool10 tinyint null,
+    bool11 tinyint null,
+    bool12 tinyint null,
+    bool13 tinyint null,
+    bool14 tinyint null,
+    bool15 tinyint null,
+    bool16 tinyint null,
+    bool17 tinyint null,
+    bool18 tinyint null,
+    bool19 tinyint null,
+    bool20 tinyint null,
+    bool21 tinyint null,
+    bool22 tinyint null,
+    bool23 tinyint null,
+    bool24 tinyint null,
+    bool25 tinyint null,
+    primary key (inode));
 create table analytic_summary_404 (
    id numeric(19,0) identity not null,
    summary_period_id numeric(19,0) not null,
@@ -1338,7 +1341,7 @@ create table workflow_task (
 create table tag_inode (
    tag_id NVARCHAR(100) not null,
    inode NVARCHAR(100) not null,
-	 field_var_name NVARCHAR(255),
+   field_var_name NVARCHAR(255),
    mod_date datetime null,
    primary key (tag_id, inode)
 );
@@ -1929,7 +1932,7 @@ create index tag_is_persona_index on tag(persona);
 create index tag_inode_tagid on tag_inode(tag_id);
 create index tag_inode_inode on tag_inode(inode);
 CREATE TABLE dist_journal
-	   (
+       (
        id bigint NOT NULL IDENTITY (1, 1),
        object_to_index NVARCHAR(1024) NOT NULL,
        serverid NVARCHAR(64) NOT NULL,
@@ -2007,8 +2010,8 @@ while @@FETCH_STATUS <> -1
 BEGIN
  IF(@assetType <> 'content' AND (@hostInode is null OR @hostInode = ''))
  BEGIN
-	RAISERROR (N'Cannot insert/update a null or empty host inode for this kind of identifier', 10, 1)
-	ROLLBACK WORK
+    RAISERROR (N'Cannot insert/update a null or empty host inode for this kind of identifier', 10, 1)
+    ROLLBACK WORK
  END
 fetch next from cur_Inserted into @assetType,@hostInode
 END;
@@ -2047,23 +2050,23 @@ insert into dist_reindex_lock (dummy) values (1);
 insert into dist_lock (dummy) values (1);
 
 create table import_audit (
-	id bigint not null,
-	start_date datetime,
-	userid NVARCHAR(255),
-	filename NVARCHAR(512),
-	status int,
-	last_inode NVARCHAR(100),
-	records_to_import bigint,
-	serverid NVARCHAR(255),
-	primary key (id)
-	);
+    id bigint not null,
+    start_date datetime,
+    userid NVARCHAR(255),
+    filename NVARCHAR(512),
+    status int,
+    last_inode NVARCHAR(100),
+    records_to_import bigint,
+    serverid NVARCHAR(255),
+    primary key (id)
+    );
 
 alter table category alter column category_velocity_var_name NVARCHAR(255) not null;
 
 alter table import_audit add warnings NVARCHAR(MAX),
-	errors NVARCHAR(MAX),
-	results NVARCHAR(MAX),
-	messages NVARCHAR(MAX);
+    errors NVARCHAR(MAX),
+    results NVARCHAR(MAX),
+    messages NVARCHAR(MAX);
 
 alter table structure add CONSTRAINT [DF_structure_host] DEFAULT 'SYSTEM_HOST' for host;
 alter table structure add CONSTRAINT [DF_structure_folder] DEFAULT 'SYSTEM_FOLDER' for folder;
@@ -2090,12 +2093,12 @@ while @@FETCH_STATUS <> -1
 BEGIN
    IF (@newHost <> 'SYSTEM_HOST' AND @newFolder <> 'SYSTEM_FOLDER')
    BEGIN
-	  SELECT @hostInode = identifier.host_inode, @folderInode = folder.inode from folder,identifier where folder.identifier = identifier.id and folder.inode = @newFolder
+      SELECT @hostInode = identifier.host_inode, @folderInode = folder.inode from folder,identifier where folder.identifier = identifier.id and folder.inode = @newFolder
       IF (@folderInode IS NULL OR @folderInode = '' OR @newHost <> @hostInode)
       BEGIN
-	    RAISERROR (N'Cannot assign host/folder to structure, folder does not belong to given host', 10, 1)
-	    ROLLBACK WORK
-	  END
+        RAISERROR (N'Cannot assign host/folder to structure, folder does not belong to given host', 10, 1)
+        ROLLBACK WORK
+      END
   END
 fetch next from cur_Inserted into @newFolder,@newHost
 END;
@@ -2381,15 +2384,15 @@ OPEN folder_data_cursor
 FETCH NEXT FROM folder_data_cursor INTO @assetName
 while @@FETCH_STATUS <> -1
 BEGIN
-	 SET @folderPathLength = 0
+     SET @folderPathLength = 0
      SET @newFolderPath = @newPath + @assetName + '/'
      SET @folderPathLength = LEN(@newPath) + LEN(@assetName) + 1
      IF (@folderPathLength > 255)
         BEGIN
-	        SET @errorMsg = 'Folder path ' + @newPath + @assetName + '/' + ' is longer than 255 characters'
-	        RAISERROR (@errorMsg, 16, 1)
-	        ROLLBACK WORK
-	        RETURN
+            SET @errorMsg = 'Folder path ' + @newPath + @assetName + '/' + ' is longer than 255 characters'
+            RAISERROR (@errorMsg, 16, 1)
+            ROLLBACK WORK
+            RETURN
         END 
      SET @oldFolderPath = @oldPath + @assetName + '/'
      EXEC renameFolderChildren @oldFolderPath,@newFolderPath,@hostInode
@@ -2420,10 +2423,10 @@ BEGIN
   SET @folderPathLength = LEN(@newPath)
   IF (@folderPathLength > 255)
     BEGIN
-	    SET @errorMsg = 'Folder path ' + @newPath + ' is longer than 255 characters'
-	    RAISERROR (@errorMsg, 16, 1)
-	    ROLLBACK WORK
-	    RETURN
+        SET @errorMsg = 'Folder path ' + @newPath + ' is longer than 255 characters'
+        RAISERROR (@errorMsg, 16, 1)
+        ROLLBACK WORK
+        RETURN
     END 
   UPDATE identifier SET asset_name = @newName where id = @ident
   EXEC renameFolderChildren @oldPath,@newPath,@hostInode
@@ -2568,8 +2571,8 @@ create table indicies (
 );
 -- ****** Log Console Table *******
   CREATE TABLE log_mapper (
-    enabled   	 numeric(1,0) not null,
-    log_name 	 NVARCHAR(30) not null,
+    enabled      numeric(1,0) not null,
+    log_name     NVARCHAR(30) not null,
     description  NVARCHAR(50) not null,
     primary key (log_name)
   );
@@ -2598,14 +2601,16 @@ alter table broken_link add CONSTRAINT fk_brokenl_field
     FOREIGN KEY (field) REFERENCES field(inode) ON DELETE CASCADE;
 
 -- ****** Content Publishing Framework *******
-CREATE TABLE publishing_queue
-(id bigint IDENTITY (1, 1)PRIMARY KEY NOT NULL,
-operation numeric(19,0), asset NVARCHAR(2000) NOT NULL,
-language_id numeric(19,0) NOT NULL, entered_date DATETIME,
-last_try DATETIME, num_of_tries numeric(19,0) NOT NULL DEFAULT 0,
-in_error tinyint DEFAULT 0, last_results NVARCHAR(MAX),
-publish_date DATETIME, server_id NVARCHAR(256),
-type NVARCHAR(256), bundle_id NVARCHAR(256), target NVARCHAR(MAX));
+CREATE TABLE publishing_queue (
+    id BIGINT IDENTITY (1, 1) PRIMARY KEY NOT NULL,
+    operation NUMERIC(19,0),
+    asset NVARCHAR(2000) NOT NULL,
+    language_id NUMERIC(19,0) NOT NULL,
+    entered_date DATETIME,
+    publish_date DATETIME,
+    type NVARCHAR(256),
+    bundle_id NVARCHAR(256)
+);
 
 CREATE TABLE publishing_queue_audit
 (bundle_id NVARCHAR(256) PRIMARY KEY NOT NULL,
@@ -2616,20 +2621,20 @@ create_date DATETIME);
 
 -- ****** Content Publishing Framework - End Point Management *******
 CREATE TABLE publishing_end_point (
-	id NVARCHAR(36) PRIMARY KEY,
-	group_id NVARCHAR(700),
-	server_name NVARCHAR(700) unique,
-	address NVARCHAR(250),
-	port NVARCHAR(10),
-	protocol NVARCHAR(10),
-	enabled tinyint DEFAULT 0,
-	auth_key NVARCHAR(MAX),
-	sending tinyint DEFAULT 0);
+    id NVARCHAR(36) PRIMARY KEY,
+    group_id NVARCHAR(700),
+    server_name NVARCHAR(700) unique,
+    address NVARCHAR(250),
+    port NVARCHAR(10),
+    protocol NVARCHAR(10),
+    enabled tinyint DEFAULT 0,
+    auth_key NVARCHAR(MAX),
+    sending tinyint DEFAULT 0);
 
 create table publishing_environment(
-	id NVARCHAR(36) NOT NULL  primary key,
-	name NVARCHAR(255) NOT NULL unique,
-	push_to_all tinyint NOT NULL
+    id NVARCHAR(36) NOT NULL  primary key,
+    name NVARCHAR(255) NOT NULL unique,
+    push_to_all tinyint NOT NULL
 );
 
 
@@ -2652,42 +2657,31 @@ create table sitesearch_audit (
     primary key(job_id,fire_date)
 );
 
-drop table publishing_queue;
-
-CREATE TABLE publishing_queue (
-      id bigint IDENTITY (1, 1)PRIMARY KEY NOT NULL,
-      operation numeric(19,0),
-      asset NVARCHAR(2000) NOT NULL,
-      language_id numeric(19,0) NOT NULL,
-      entered_date DATETIME,
-      publish_date DATETIME,
-      type NVARCHAR(256),
-      bundle_id NVARCHAR(256)
-);
-
 create table publishing_bundle(
-	id NVARCHAR(36) NOT NULL  primary key,
-	name NVARCHAR(255) NOT NULL,
-	publish_date DATETIME,
-	expire_date DATETIME,
-	owner NVARCHAR(100)
+    id NVARCHAR(36) NOT NULL  primary key,
+    name NVARCHAR(255) NOT NULL,
+    publish_date DATETIME,
+    expire_date DATETIME,
+    owner NVARCHAR(100)
 );
+
+ALTER TABLE publishing_bundle ADD CONSTRAINT FK_publishing_bundle_owner FOREIGN KEY (owner) REFERENCES user_(userid);
 
 create table publishing_bundle_environment(
-	id NVARCHAR(36) NOT NULL primary key,
-	bundle_id NVARCHAR(36) NOT NULL,
-	environment_id NVARCHAR(36) NOT NULL
+    id NVARCHAR(36) NOT NULL primary key,
+    bundle_id NVARCHAR(36) NOT NULL,
+    environment_id NVARCHAR(36) NOT NULL
 );
 
 alter table publishing_bundle_environment add constraint FK_bundle_id foreign key (bundle_id) references publishing_bundle(id);
 alter table publishing_bundle_environment add constraint FK_environment_id foreign key (environment_id) references publishing_environment(id);
 
 create table publishing_pushed_assets(
-	bundle_id NVARCHAR(36) NOT NULL,
-	asset_id NVARCHAR(36) NOT NULL,
-	asset_type NVARCHAR(255) NOT NULL,
-	push_date DATETIME,
-	environment_id NVARCHAR(36) NOT NULL
+    bundle_id NVARCHAR(36) NOT NULL,
+    asset_id NVARCHAR(36) NOT NULL,
+    asset_type NVARCHAR(255) NOT NULL,
+    push_date DATETIME,
+    environment_id NVARCHAR(36) NOT NULL
 );
 
 CREATE INDEX idx_pushed_assets_1 ON publishing_pushed_assets (bundle_id);
@@ -2707,9 +2701,18 @@ CREATE TABLE cluster_server_uptime(id NVARCHAR(36) NOT NULL, server_id NVARCHAR(
 ALTER TABLE cluster_server_uptime add constraint fk_cluster_server_id foreign key (server_id) REFERENCES cluster_server(server_id);
 
 -- Notifications Table
-create table notification(id NVARCHAR(36) NOT NULL,message NVARCHAR(MAX) NOT NULL, notification_type NVARCHAR(100), notification_level NVARCHAR(100), user_id NVARCHAR(255) NOT NULL, time_sent DATETIME NOT NULL, was_read tinyint default 0, PRIMARY KEY (id));
-create index idx_not_user ON notification (user_id);
-create index idx_not_read ON notification (was_read);
+CREATE TABLE notification (
+    group_id NVARCHAR(36) NOT NULL,
+    user_id NVARCHAR(255) NOT NULL,
+    message NVARCHAR(MAX) NOT NULL,
+    notification_type NVARCHAR(100),
+    notification_level NVARCHAR(100),
+    time_sent DATETIME NOT NULL,
+    was_read TINYINT
+);
+ALTER TABLE notification ADD CONSTRAINT pk_notification PRIMARY KEY (group_id, user_id);
+ALTER TABLE notification ADD CONSTRAINT df_notification_was_read DEFAULT ((0)) FOR was_read;
+CREATE INDEX idx_not_read ON notification (was_read);
 
 -- indices for version_info tables on version_ts
 create index idx_contentlet_vi_version_ts on contentlet_version_info(version_ts);
@@ -2734,19 +2737,27 @@ create table structures_ir(velocity_name NVARCHAR(255), local_inode NVARCHAR(36)
 create table schemes_ir(name NVARCHAR(255), local_inode NVARCHAR(36), remote_inode NVARCHAR(36), endpoint_id NVARCHAR(36), PRIMARY KEY (local_inode, endpoint_id));
 create table htmlpages_ir(html_page NVARCHAR(255), local_working_inode NVARCHAR(36), local_live_inode NVARCHAR(36), remote_working_inode NVARCHAR(36), remote_live_inode NVARCHAR(36),local_identifier NVARCHAR(36), remote_identifier NVARCHAR(36), endpoint_id NVARCHAR(36), language_id bigint, PRIMARY KEY (local_working_inode, language_id, endpoint_id));
 create table fileassets_ir(file_name NVARCHAR(255), local_working_inode NVARCHAR(36), local_live_inode NVARCHAR(36), remote_working_inode NVARCHAR(36), remote_live_inode NVARCHAR(36),local_identifier NVARCHAR(36), remote_identifier NVARCHAR(36), endpoint_id NVARCHAR(36), language_id bigint, PRIMARY KEY (local_working_inode, language_id, endpoint_id));
+create table cms_roles_ir(name NVARCHAR(1000), role_key NVARCHAR(255), local_role_id NVARCHAR(36), remote_role_id NVARCHAR(36), local_role_fqn NVARCHAR(1000), remote_role_fqn NVARCHAR(1000), endpoint_id NVARCHAR(36), PRIMARY KEY (local_role_id, endpoint_id));
+
+alter table folders_ir add constraint FK_folder_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
+alter table structures_ir add constraint FK_structure_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
+alter table schemes_ir add constraint FK_scheme_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
+alter table htmlpages_ir add constraint FK_page_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
+alter table fileassets_ir add constraint FK_file_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
+alter table cms_roles_ir add constraint FK_cms_roles_ir_ep foreign key (endpoint_id) references publishing_end_point(id);
 
 ---Server Action
 create table cluster_server_action(
-	server_action_id NVARCHAR(36) not null, 
-	originator_id NVARCHAR(36) not null, 
-	server_id NVARCHAR(36) not null, 
-	failed bit not null, 
-	response NVARCHAR(2048), 
-	action_id NVARCHAR(1024) not null,
-	completed bit not null, 
-	entered_date datetime not null,
-	time_out_seconds bigint not null,
-	PRIMARY KEY (server_action_id)
+    server_action_id NVARCHAR(36) not null,
+    originator_id NVARCHAR(36) not null,
+    server_id NVARCHAR(36) not null,
+    failed bit not null,
+    response NVARCHAR(2048),
+    action_id NVARCHAR(1024) not null,
+    completed bit not null,
+    entered_date datetime not null,
+    time_out_seconds bigint not null,
+    PRIMARY KEY (server_action_id)
 );
 
 -- Rules Engine
@@ -2758,7 +2769,11 @@ create table rule_action (id NVARCHAR(36) primary key,rule_id NVARCHAR(36) refer
 create table rule_action_pars(id NVARCHAR(36) primary key,rule_action_id NVARCHAR(36) references rule_action(id), paramkey NVARCHAR(255) not null,value NVARCHAR(MAX));
 create index idx_rules_fire_on on dot_rule (fire_on);
 
-
--- Delete User
-ALTER TABLE user_ ADD delete_in_progress TINYINT DEFAULT 0;
-ALTER TABLE user_ ADD delete_date DATETIME NULL;
+CREATE TABLE system_event (
+    identifier NVARCHAR(36) NOT NULL,
+    event_type NVARCHAR(50) NOT NULL,
+    payload NVARCHAR(MAX) NOT NULL,
+    created BIGINT NOT NULL
+);
+ALTER TABLE system_event ADD CONSTRAINT pk_system_event PRIMARY KEY (identifier);
+CREATE INDEX idx_system_event ON system_event (created);

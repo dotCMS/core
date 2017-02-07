@@ -1,8 +1,9 @@
+<%@page import="com.liferay.portal.util.WebKeys"%>
 <%@ page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <% String view = request.getParameter("view");%>
 <% String content = request.getParameter("content");%>
-<% String popup = request.getParameter("popup"); %>
+<% String popup = request.getParameter(WebKeys.POPUP); %>
 <% String thumbs = request.getParameter("thumbs"); %>
 
 	dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");

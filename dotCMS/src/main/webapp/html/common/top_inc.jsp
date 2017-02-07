@@ -6,6 +6,7 @@ PLEASE KEEP ALL PORTAL SPECIFIC CODE, JS AND MARKUP OUT OF
 THIS FILE AND ITS INCLUDES
 
 --%>
+<%@page import="com.liferay.portal.util.WebKeys"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%
@@ -37,11 +38,8 @@ THIS FILE AND ITS INCLUDES
 	<title>dotCMS : <%= LanguageUtil.get(pageContext, "Enterprise-Web-Content-Management") %></title>
 
 	<style type="text/css">
-		@import "/html/common/css.jsp?b=<%= ReleaseInfo.getVersion() %>";
-		@import "<%=dojoPath%>/dijit/themes/dmundra/dmundra.css?b=<%= ReleaseInfo.getVersion() %>";
-		@import "<%=dojoPath%>/dijit/themes/dmundra/Grid.css?b=<%= ReleaseInfo.getVersion() %>";
-		@import "<%=dojoPath%>/dojox/widget/Calendar/Calendar.css?b=<%= ReleaseInfo.getVersion() %>";
-		@import "/html/js/dotcms/dijit/image/image_tools.css?b=<%= ReleaseInfo.getVersion() %>";
+        @import "http://demos.dojotoolkit.org/dijit/themes/dijit.css";
+        @import "/html/css/dijit-dotcms/dotcms.css?b=<%= ReleaseInfo.getVersion() %>";
 	</style>
 
 	<!--[if IE]>
@@ -147,7 +145,19 @@ THIS FILE AND ITS INCLUDES
 			mb.h=abs.h;
 			return mb;
 		};
-
+<%
+	if(UtilMethods.isSet(request.getParameter(WebKeys.IN_FRAME)) && UtilMethods.isSet(request.getParameter(WebKeys.FRAME))){
+		boolean inFrame = Boolean.valueOf(request.getParameter(WebKeys.IN_FRAME));
+		
+		if(inFrame){
+			  request.getSession().setAttribute(WebKeys.IN_FRAME,inFrame);
+	    	  request.getSession().setAttribute(WebKeys.FRAME,request.getParameter(WebKeys.FRAME));
+		}else{
+			  request.getSession().removeAttribute(WebKeys.IN_FRAME);
+	  	      request.getSession().removeAttribute(WebKeys.FRAME);
+		}
+	}
+%>
 	</script>
 	<% String dotBackImage = (!UtilMethods.isSet(company.getHomeURL()) || "localhost".equals(company.getHomeURL())) ? "/html/images/backgrounds/bg-3.jpg" : company.getHomeURL();%>
 	<style>
@@ -157,10 +167,5 @@ THIS FILE AND ITS INCLUDES
 
 </head>
 
-<%if(UtilMethods.isSet(request.getParameter("popup")) || UtilMethods.isSet(request.getAttribute("popup")) || UtilMethods.isSet(request.getParameter("in_frame"))){ %>
-	<body class="dmundra" style="background:white url()">
-<%}else{ %>
-	<body class="dmundra" style="visibility:hidden">
-		<div class="imageBG"></div>
-		<div class="bannerBG"></div>
-<%} %>
+<body class="dotcms" style="visibility:hidden;background:white url()">
+

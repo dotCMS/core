@@ -80,7 +80,7 @@ public class FixTask00015FixAssetTypesInIdentifiers implements FixTask {
 				Audit.setTableName("identifier");
 				Audit.setDatetime(new Date());
 				Audit.setRecordsAltered(total);
-				Audit.setAction("task 20: Fixed DeleteOrphanedIdentifiers");
+				Audit.setAction("task 15: Fixed FixAssetTypesInIdentifiers");
 				HibernateUtil.save(Audit);
 				HibernateUtil.commitTransaction();
 				MaintenanceUtil.flushCache();

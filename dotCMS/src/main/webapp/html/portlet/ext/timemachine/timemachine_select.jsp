@@ -16,7 +16,7 @@
 	session.removeAttribute("tm_host");
 %>
 
-<div class="portlet-wrapper">
+
 
 	<%@ include file="/html/portlet/ext/timemachine/sub_nav.jsp" %>
 
@@ -29,29 +29,6 @@
 
 
 
-
-
-<style type="text/css">
-#tools {
-    text-align:center;
-    width: 100%;
-    margin: 0;
-    display: block;
-}
-#settings {
-    float:right;
-}
-#tools table td.title {
- text-align: left;
-}
-#tools table td.input {
- text-align: left;
-}
-#tools table td {
- padding: 5px;
-}
-</style>
-
 <script type="text/javascript">
 
 
@@ -59,6 +36,9 @@ var browsingTimeMachine=false;
 
 
 dojo.require('dojo.data.ItemFileReadStore');
+
+/*
+ * 
 function resized() {
 	var viewport = dijit.getViewport();
     var viewport_height = viewport.h;
@@ -68,19 +48,18 @@ function resized() {
     var p = dojo.byId("iframeWrapper");
     dojo.style(p, "height", viewport_height -225+ "px");
     //dijit.byId("borderContainer").resize();
-}
+    
+   
+} */
 
 dojo.ready(function(){
-	dojo.connect(window,"onresize",resized);
-	resized();
+	//dojo.connect(window,"onresize",resized);
+	//resized();
 	dijit.byId('closeBtn').setDisabled(true);
-
 	toggleDatePick();
-	
 	var today = new Date();
 	var tomorrow = new Date();
 	tomorrow.setDate(today.getDate()+1);
-	
 	dijit.byId('fdate').constraints.min = tomorrow;
 });
 
@@ -109,7 +88,7 @@ function timeChange() {
     			dojo.empty('iframeWrapper');
                 dojo.create("iframe", {
                     "src": '/',
-                    "style": "border: 0; width: 100%; height: 90%;margin-top:10px"
+                    "style": "border: 0; width: 100%; height: 100%;"
                 }, dojo.byId('iframeWrapper'));
                 dijit.byId('closeBtn').setDisabled(false);
                 browsingTimeMachine=true;
@@ -230,7 +209,7 @@ function futureChange() {
 		            dojo.empty('iframeWrapper');
 		            dojo.create("iframe", {
 		                "src": '/',
-		                "style": "border: 0; width: 100%; height: 90%;margin-top:10px"
+		                "style": "border: 0; width: 100%; height: 100%;"
 		            }, dojo.byId('iframeWrapper'));
 		            dijit.byId('closeBtn').setDisabled(false);
 		
@@ -242,81 +221,97 @@ function futureChange() {
 	}
 	
 }
-
-
-
 </script>
 
-    <div id="timemachineMain">
 
-        <div id="borderContainer" style="width:100%;">
-            <div style="border:1px silver solid;padding:10px;">
-                   <table style="float:left">
-                       <tr>
-	                       <td class="title">
-	                       		Snapshot:
-	                         	<input type="radio" dojoType="dijit.form.RadioButton" name="sn" id="past" onChange="toggleDatePick()" checked='true'/><label for="past"><%= LanguageUtil.get(pageContext, "Past") %></label>&nbsp; 
-	                         	<input type="radio" dojoType="dijit.form.RadioButton" name="sn" id="future"/><label for="future"><%= LanguageUtil.get(pageContext, "Future") %></label>
-	                         	&nbsp; &nbsp; 
-	                       </td>
-	                       <td class="input">
-	                       <span id="pastPicker">
-		                       
-			                   <select id="timesel" dojoType="dijit.form.FilteringSelect"
-			                      labelAttr="pretty" searchDelay="400" searchAttr="pretty"
-			                      onFocus="timeChange()" onChange="timeChange()" pageSize="20">
-			                   </select>
+
+<div class="portlet-main">
+	<div id="timemachineMain">
+		<!-- START Toolbar -->
+		<div class="portlet-toolbar">
+			<div class="portlet-toolbar__actions-primary">
+				<div class="inline-form">
+		         	<input type="radio" dojoType="dijit.form.RadioButton" name="sn" id="past" onChange="toggleDatePick()" checked='true'/><label for="past"><%= LanguageUtil.get(pageContext, "Past") %></label>&nbsp; 
+		         	<input type="radio" dojoType="dijit.form.RadioButton" name="sn" id="future"/><label for="future"><%= LanguageUtil.get(pageContext, "Future") %></label>
+	
+		           	<span id="pastPicker">           
+		               <select id="timesel" dojoType="dijit.form.FilteringSelect"
+		                  labelAttr="pretty" searchDelay="400" searchAttr="pretty"
+		                  onFocus="timeChange()" onChange="timeChange()" pageSize="20">
+		               </select>
 		
-			                   <select id="langsel" dojoType="dijit.form.FilteringSelect"
-		                          labelAttr="pretty" searchDelay="400" searchAttr="pretty"
-		                          onChange="timeChange()" pageSize="20">
-		                       </select>
-	                       </span>
-							<span id="futurePicker">
-						
-	                          <input onchange="futureChange()" dojoType="dijit.form.DateTextBox" type="text" name="fdate" id="fdate" isDisabledDate="return showDate(x)" constraints= "{min:2012-01-13}"/>
-	                          <select id="flang" dojoType="dijit.form.FilteringSelect" onChange="futureChange()">
-	                          	<option value=""></option>
-	                            <% for(Language lang : APILocator.getLanguageAPI().getLanguages()) { %>
-	                                <option value="<%=lang.getId()%>"><%=lang.getLanguage() %>-<%=lang.getCountry() %></option>
-	                            <% } %>
-	                          </select>
-	                          </span>
-	                          
-	                       </td>
-                       </tr>
-                   </table>
-                   <script language="Javascript">
-						/**
-							focus on search box
-						**/
-						require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
-							dojo.require('dojox.timing');
-							t = new dojox.timing.Timer(500);
-							t.onTick = function(){
-							  focusUtil.focus(dom.byId("timesel"));
-							  t.stop();
-							};
-							t.start();
-						});
-					</script>
-                    <%if(APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())){ %>
-                       <span id="settings" style="float:right">
-                           <button id="settingsBtn" dojoType="dijit.form.Button" onClick="showSettings()">
-                              <%= LanguageUtil.get(pageContext, "TIMEMACHINE-SETTINGS")%>
-                           </button>
-                       </span>
-                    <%} %>
-                    
-                   <button style="float:right" id="closeBtn" dojoType="dijit.form.Button" onClick="stopBrowing()">
-                      <%= LanguageUtil.get(pageContext, "TIMEMACHINE-CLOSE_SNAP")%>
-                   </button>
-				<div class="clear"></div>
-            </div>
-            <div id="iframeWrapper"  >
-		       <div style="padding:40px;text-align:center;white-space: nowrap;line-height: 20px;"><span class="clockIcon"></span><%= LanguageUtil.get(pageContext, "TIMEMACHINE-SELECT-HOST-TIME") %></div> 
-		    </div>
-        </div>
+		               <select id="langsel" dojoType="dijit.form.FilteringSelect"
+		                  labelAttr="pretty" searchDelay="400" searchAttr="pretty"
+		                  onChange="timeChange()" pageSize="20">
+		               </select>
+		           </span>
+					<span id="futurePicker">
+						<input onchange="futureChange()" dojoType="dijit.form.DateTextBox" type="text" name="fdate" id="fdate" isDisabledDate="return showDate(x)" constraints= "{min:2012-01-13}"/>
+						<select id="flang" dojoType="dijit.form.FilteringSelect" onChange="futureChange()">
+							<option value=""></option>
+							<% for(Language lang : APILocator.getLanguageAPI().getLanguages()) { %>
+								<option value="<%=lang.getId()%>"><%=lang.getLanguage() %>-<%=lang.getCountry() %></option>
+							<% } %>
+						</select>
+					</span>
+				</div>
+			</div>
+			<div class="portlet-toolbar__info">
+				
+			</div>
+	    	<div class="portlet-toolbar__actions-secondary">
+	    		<script language="Javascript">
+					/**
+						focus on search box
+					**/
+					require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+						dojo.require('dojox.timing');
+						t = new dojox.timing.Timer(500);
+						t.onTick = function(){
+						  focusUtil.focus(dom.byId("timesel"));
+						  t.stop();
+						};
+						t.start();
+					});
+				</script>
+				<!-- START Actions -->			
+				<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"actionIcon", class:"dijitDropDownActionButton"'>
+					<span></span>
+					
+					<div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
+					
+						<%if(APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())){ %>
+			              <!-- <span id="settings" > -->
+							<div data-dojo-type="dijit/MenuItem" id="settingsBtn" onClick="showSettings()">
+								<%= LanguageUtil.get(pageContext, "TIMEMACHINE-SETTINGS")%>
+							</div>
+			              <!-- </span> -->
+			            <%} %>
+	                
+						<div data-dojo-type="dijit/MenuItem" id="closeBtn" onClick="stopBrowing()">
+							<%= LanguageUtil.get(pageContext, "TIMEMACHINE-CLOSE_SNAP")%>
+						</div>
+				
+					</div>
+				</div>
+				<!-- END Actions -->
+				
+	            
+	    	</div>
+	   </div>
+	   <!-- END Toolbar -->
+       		
+
+           
+
+        
+        <div id="iframeWrapper" style="width: 100%; position: absolute; left: 0; top: 80px; right:0; bottom:0px;border-top: 1px solid #ECEDEE;">
+	       <div style="padding:40px;text-align:center;white-space: nowrap;line-height: 20px;">
+				<span class="clockIcon"></span><%= LanguageUtil.get(pageContext, "TIMEMACHINE-SELECT-HOST-TIME") %>
+	       </div> 
+	    </div>
+	    
     </div>
 </div>
+
 

@@ -60,7 +60,6 @@
 	}
 
 	function addNewProperty() {
-
 		if(currentIndex == 0){
 			if(Ext.get('noprops') != null)
 				Ext.get('noprops').remove();
@@ -71,17 +70,17 @@
 		var buffer = '<tr class="' + alternate + '" id="row-' + currentIndex + '">';
 
 		buffer += '<td width="6%" align="center"><input type="hidden" id="' + currentLanguage + '-' + currentIndex + '-new" name="' + currentLanguage + '-' + currentIndex + '-new" value="true"/>' +
-			'<input id="' + currentLanguage + '-' + currentIndex + '-remove" ' +
+			'<input dojoType="dijit.form.CheckBox" id="' + currentLanguage + '-' + currentIndex + '-remove" ' +
 			'type="checkbox" name="' + currentLanguage + '-' + currentIndex + '-remove" value=""/></td>';
 
 		buffer += '<td width="14%"><input id="' + currentLanguage + '-' + currentIndex + '-key" onchange="keyChanged(' + currentIndex + ');refreshAddKeys(' + currentIndex + ');" ' +
-			'type="text" style="width: 96%" class="form-text" name="' + currentLanguage + '-' + currentIndex + '-key" value=""/></td>';
+			'type="text" dojoType="dijit.form.TextBox" style="width: 96%" name="' + currentLanguage + '-' + currentIndex + '-key" value=""/></td>';
 
 		buffer += '<td width="40%"><input id="' + currentLanguage + '-general-' + currentIndex + '-value"  onchange="generalValueChanged(' + currentIndex + ');refreshAddKeys(' + currentIndex + ');"  ' +
-			'type="text" style="width: 98%" class="form-text" name="' + currentLanguage + '-general-' + currentIndex + '-value" value=""/></td>';
+			'type="text" dojoType="dijit.form.TextBox" style="width: 98%" name="' + currentLanguage + '-general-' + currentIndex + '-value" value=""/></td>';
 			
 		buffer += '<td width="40%"><input id="' + currentLanguage + '-' + currentCountry + '-' + currentIndex + '-value"  onchange="languageValueChanged(' + currentIndex + ');refreshAddKeys(' + currentIndex + ');"  ' +
-			'type="text" style="width: 98%" class="form-text" name="' + currentLanguage + '-' + currentCountry + '-' + currentIndex + '-value" value=""/></td>';
+			'type="text" dojoType="dijit.form.TextBox" style="width: 98%" name="' + currentLanguage + '-' + currentCountry + '-' + currentIndex + '-value" value=""/></td>';
 
 		buffer += '</tr>';
 
@@ -89,8 +88,9 @@
 
 		Ext.get(currentLanguage + '-' + currentIndex + '-key').focus();
 
+		dojo.parser.parse([dojo.byId('propertiesTable')]);
+
 		currentIndex++;
-		
 	}
 
 	function keyChanged (id) {
@@ -284,6 +284,13 @@
 	function viewLanguageKeysCallback(data){
 		if(data.length > 0){
 
+			var widgets = dijit.findWidgets(dojo.byId('propertiesTable'));
+			if (widgets.length) {
+				dojo.forEach(widgets, function(w) {
+					w.destroyRecursive();
+				});
+			}
+
 			var counters = data[0];
 			var hasNext = counters["hasNext"];
 			var hasPrevious = counters["hasPrevious"];
@@ -318,7 +325,6 @@
 					rowCreator:function(options) {
 				    var row = document.createElement("tr");
 				    row.id = "row-"+data[options.rowIndex]['idx'];
-				    row.className = data[options.rowIndex]['alternate'];
 				    return row;
 				  },
 				  cellCreator:function(options) {
@@ -337,7 +343,9 @@
 			keysToDelete.length = 0;
 		}
 		loadProgressToggle.hide();
-	}	
+
+		dojo.parser.parse([dojo.byId('propertiesTable')]);
+	}
 
 	function showMatchingResults (num,begin,end,totalPages) {
 	    
@@ -421,78 +429,101 @@
 	
 </script>
 
-<BR>
+
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 <liferay:param name="box_title" value='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Editing-Language-Variables")) %>' />
 <html:form action="/ext/languages_manager/edit_language_keys" styleId="fm">
 	<input type="hidden" name="id" value="<%= language.getId() %>">
 	<input type="hidden" name="cmd" value="save">
-	
 	<input type="hidden" name="referer" value="<%= request.getParameter("referer") %>">
     
-<div class="yui-g buttonRow">
-	<div class="yui-u first">
-		<div id="languagesCombo" style="width:200px; height:20px;margin:0;">
-            <input id='languagesComboSelect'/>
-        </div>
-		<script type="text/javascript">
-			function updateSelectBoxImage(myselect) {
-                var imagestyle = "url('" + myselect.item.imageurl + "')";
-                var selField = dojo.query('#languagesCombo div.dijitInputField')[0];
-                dojo.style(selField, "backgroundImage", imagestyle);
-                dojo.style(selField, "backgroundRepeat", "no-repeat");
-                dojo.style(selField, "padding", "0px 0px 0px 20px");
-                dojo.style(selField, "backgroundColor", "transparent");
-                dojo.style(selField, "backgroundPosition", "3px 6px");
-            }
-
-            dojo.addOnLoad(
-              function() {
-                var storeData=<%=buff.toString()%>;
-                var langStore = new dojo.data.ItemFileReadStore({data: storeData});
-                var myselect = new dijit.form.FilteringSelect({
-                         id: "languagesComboSelect",
-                         name: "lang",
-                         value: '',
-                         required: true,
-                         store: langStore,
-                         searchAttr: "lang",
-                         labelAttr: "label",
-                         labelType: "html",
-                         onChange: function() { changeLanguage(dijit.byId("languagesComboSelect").item.id) },
-                         labelFunc: function(item, store) { return store.getValue(item, "label"); }
-                    },
-                    dojo.byId("languagesComboSelect"));
-
-                myselect.setValue('<%=language.getId()%>');
-                updateSelectBoxImage(myselect);
-                });
-		</script>
-		<div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="loadProgress" id="loadProgress"></div>
-	</div>
-	<div class="yui-u" style="text-align:right;">
-		<%= LanguageUtil.get(pageContext, "Filter") %>:
-		<input type="text" dojoType="dijit.form.TextBox" name="filter" id="filter" value="" onkeyup="filterResults()" />
-		
-		<button dojoType="dijit.form.Button" onClick="clearFilter();" iconClass="closeIcon">
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear")) %>
-		</button>
-        <script language="Javascript">
-			/**
-				focus on search box
-			**/
-			require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
-				dojo.require('dojox.timing');
-				t = new dojox.timing.Timer(500);
-				t.onTick = function(){
-				  focusUtil.focus(dom.byId("filter"));
-				  t.stop();
-				}
-				t.start();
-			});
-		</script> 
-	</div>
-</div>
+<div class="portlet-main">
+	<!-- START Toolbar -->
+	<div class="portlet-toolbar">
+		<div class="portlet-toolbar__actions-primary">
+			
+			<div id="languagesCombo" style="width:200px; ">
+	            <input type="text" id='languagesComboSelect'>
+	        </div>
+        
+			<script type="text/javascript">
+				function updateSelectBoxImage(myselect) {
+	                var imagestyle = "url('" + myselect.item.imageurl + "')";
+	                var selField = dojo.query('#languagesCombo div.dijitInputField')[0];
+	                dojo.style(selField, "backgroundImage", imagestyle);
+	                dojo.style(selField, "backgroundRepeat", "no-repeat");
+	                dojo.style(selField, "padding", "0px 0px 0px 20px");
+	                dojo.style(selField, "backgroundColor", "transparent");
+	                dojo.style(selField, "backgroundPosition", "0px 8px");
+	            }
+	
+	            dojo.addOnLoad(
+	              function() {
+	                var storeData=<%=buff.toString()%>;
+	                var langStore = new dojo.data.ItemFileReadStore({data: storeData});
+	                var myselect = new dijit.form.FilteringSelect({
+	                         id: "languagesComboSelect",
+	                         name: "lang",
+	                         value: '',
+	                         required: true,
+	                         store: langStore,
+	                         searchAttr: "lang",
+	                         labelAttr: "label",
+	                         labelType: "html",
+	                         onChange: function() { changeLanguage(dijit.byId("languagesComboSelect").item.id) },
+	                         labelFunc: function(item, store) { return store.getValue(item, "label"); }
+	                    },
+	                    dojo.byId("languagesComboSelect"));
+	
+	                myselect.setValue('<%=language.getId()%>');
+	                updateSelectBoxImage(myselect);
+	                });
+			</script>
+		</div>
+		<div class="portlet-toolbar__info">
+			<div class="inline-form">
+	    		<!-- <label><%= LanguageUtil.get(pageContext, "Filter") %>:</label> -->
+				<input type="text" dojoType="dijit.form.TextBox" name="filter" id="filter" value="" onkeyup="filterResults()" />
+			
+				<button dojoType="dijit.form.Button" onClick="clearFilter();" class="dijitButtonFlat">
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear")) %>
+				</button>
+			</div>
+	        <script language="Javascript">
+				/**
+					focus on search box
+				**/
+				require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+					dojo.require('dojox.timing');
+					t = new dojox.timing.Timer(500);
+					t.onTick = function(){
+					  focusUtil.focus(dom.byId("filter"));
+					  t.stop();
+					}
+					t.start();
+				});
+			</script> 
+			<div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="loadProgress" id="loadProgress"></div>
+		</div>
+    	<div class="portlet-toolbar__actions-secondary">
+		    <button dojoType="dijit.form.Button" onClick="addNewProperty();return false;" iconClass="plusIcon">
+		       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Property")) %>
+		    </button>
+		    
+		    <button dojoType="dijit.form.Button"  onClick="doSubmit('fm');return false;" iconClass="saveIcon">
+		       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save-Changes")) %>
+		    </button>
+		    
+		    <button dojoType="dijit.form.Button" onClick="discardChanges('fm');return false;" iconClass="cancelIcon">
+		       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reset-Changes")) %>
+		    </button>
+		    
+		    <button dojoType="dijit.form.Button" onClick="cancelEdit('fm');return false;" iconClass="cancelIcon">
+		       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel-Changes")) %>
+		    </button>
+    	</div>
+   </div>
+   <!-- END Toolbar -->
 
 <div id="borderContainer" style="overflow: auto;">
 	<table width="100%" class="listingTable">
@@ -513,6 +544,7 @@
 
 		</tbody>
 	</table>
+	
 	<!-- Start Pagination -->
 	<div class="yui-gb buttonRow">
 		<div class="yui-u first" style="text-align:left;">
@@ -537,27 +569,11 @@
 
 </div>
 
-<div class="buttonRow">
-    <button dojoType="dijit.form.Button" onClick="addNewProperty();return false;" iconClass="plusIcon">
-       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Property")) %>
-    </button>
-    
-    <button dojoType="dijit.form.Button"  onClick="doSubmit('fm');return false;" iconClass="saveIcon">
-       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save-Changes")) %>
-    </button>
-    
-    <button dojoType="dijit.form.Button" onClick="discardChanges('fm');return false;" iconClass="cancelIcon">
-       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reset-Changes")) %>
-    </button>
-    
-    <button dojoType="dijit.form.Button" onClick="cancelEdit('fm');return false;" iconClass="cancelIcon">
-       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel-Changes")) %>
-    </button>
-</div>
-
 <div id="altText" style="display: none; position: absolute; border: 1px dashed gray; background: white;"></div>
 
 </html:form>
+</div>
+
 <!-- To show lightbox effect "Saving Keys.."  -->
 <div id="savingKeysDialog" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "Saving") %> . . ." style="display: none;">
 	<div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="saveProgress" id="saveProgress"></div>

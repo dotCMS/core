@@ -15,6 +15,8 @@
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.*"%>
 
+
+
 <%boolean canReindex= APILocator.getRoleAPI().doesUserHaveRole(user,APILocator.getRoleAPI().loadRoleByKey(Role.CMS_POWER_USER))|| com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());%>
 
         dojo.require("dojox.dtl.filter.strings");
@@ -50,7 +52,7 @@
         var bindTagFieldEvent;
 
         var enterprise = <%=LicenseUtil.getLevel() > 199%>;
-
+        var formNum=100;
 		var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpointsList) && !sendingEndpointsList.isEmpty()%>;
 
         <%
@@ -77,23 +79,23 @@
         var unCheckedInodes = "";
         function updateUnCheckedList(inode,checkId){
 
-                if(document.getElementById("fullCommand").value == "true"){
-
-                        if(!document.getElementById(checkId).checked){
-
-                                unCheckedInodes = document.getElementById('allUncheckedContentsInodes').value;
-
-                                if(unCheckedInodes == "")
-                                        unCheckedInodes = inode;
-                                else
-                                        unCheckedInodes = unCheckedInodes + ","+ inode;
-
-                        }else{
-                                unCheckedInodes = unCheckedInodes.replace(inode,"-");
-                        }
-
-                        document.getElementById('allUncheckedContentsInodes').value = unCheckedInodes;
-                }
+	        if(document.getElementById("fullCommand").value == "true"){
+	
+	            if(!document.getElementById(checkId).checked){
+	
+	                    unCheckedInodes = document.getElementById('allUncheckedContentsInodes').value;
+	
+	                    if(unCheckedInodes == "")
+	                            unCheckedInodes = inode;
+	                    else
+	                            unCheckedInodes = unCheckedInodes + ","+ inode;
+	
+	            }else{
+	                    unCheckedInodes = unCheckedInodes.replace(inode,"-");
+	            }
+	
+	            document.getElementById('allUncheckedContentsInodes').value = unCheckedInodes;
+	        }
         }
 
 
@@ -150,6 +152,8 @@
 				dojo.byId("toggleDivText").innerHTML="<%= LanguageUtil.get(pageContext, "Advanced") %>";
 			}
 		}
+
+
 
 
 
@@ -287,7 +291,7 @@
               editRef = " editContentlet('" + inode + "','<%=user.getUserId()%>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ") ";
             }
 
-            var ref = "<table class='contentletInnerTable'><tr>";
+            var ref = "<div class='contentletInnerTable'><tr>";
                 if(publish == "1") {
 
 	                if(dijit.byId(checkId)){
@@ -317,7 +321,7 @@
                 ref+=   text;
                 ref+=   "</a>";
                 ref+=   "</td>";
-                ref+=   "</tr></table>";
+                ref+=   "</tr></div>";
                 return ref;
         }
 
@@ -443,7 +447,7 @@
 
 
 
-                                result = result + "<input onchange='doSearch()' type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" value=\""
+                                result += "<div class=\"checkbox\"><input onchange='doSearch()' type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" value=\""
                                                         + actual_option[1] + "\" id=\"" + selectedStruct + "." + fieldContentlet + "Field"+ counter_checkbox
                                                         + "\" name=\"" + selectedStruct + "." + fieldContentlet + "\"";
                                 for(var j = 0;j < lastChecked.length; j++){
@@ -451,7 +455,7 @@
                                                 result = result + "checked = \"checked\"";
                                         }
                                 }
-                                result = result + "><label for='"+myD+"'> " + actual_option[0] + "</label><br>\n";
+                                result = result + "><label for='"+myD+"'>" + actual_option[0] + "</label></div>";
                             checkboxesIds[counter_checkbox] = selectedStruct+"."+fieldContentlet + "Field" + counter_checkbox;
 
                             setDotFieldTypeStr = setDotFieldTypeStr
@@ -479,13 +483,13 @@
 
                        var actual_option = option[i].split("|");
                        if(actual_option.length > 1 && actual_option[1] !='' && actual_option[1].length > 0){
-                                result = result + "<input onchange='doSearch()' type=\"radio\" dojoType=\"dijit.form.RadioButton\" value=\""
+                                result = result + "<div class=\"radio\"><input onchange='doSearch()' type=\"radio\" dojoType=\"dijit.form.RadioButton\" value=\""
                                                         + actual_option[1] + "\" id=\"" + selectedStruct+"."+ fieldContentlet + "Field"+ counter_radio
                                                         + "\" name=\"" + selectedStruct+ "." + fieldContentlet + "\"";
                                         if(value == actual_option[1]){
                                         result = result + "checked = \"checked\"";
                                 }
-                                result = result + "><label for='" + myD+ "'>" + actual_option[0] + "</label><br>\n";
+                                result = result + "><label for='" + myD+ "'>" + actual_option[0] + "</label></div>";
                                 radiobuttonsIds[counter_radio] = selectedStruct+"."+fieldContentlet + "Field"+ counter_radio;
 
                                  setDotFieldTypeStr = setDotFieldTypeStr
@@ -598,7 +602,7 @@
                             "<input type=\"hidden\" value=\"" + value + "\" id=\"" + searchFieldId + "\" onchange=\"setTimeout(doSearch, 500);\" />",
                             "<input type=\"hidden\" style=\"border: solid 1px red\" id=\"" + fieldId + "Content" + "\" value=\"" + value + "\"  />",
                             "<input type=\"text\" dojoType=\"dijit.form.TextBox\" id=\"" + fieldId + "\" name=\"" + selectedStruct+"."+ fieldContentlet + "Field\" />",
-                            "<span style=\"font-size:11px; color:#999; display:block\"><%= LanguageUtil.get(pageContext, "Type-your-tag-You-can-enter-multiple-comma-separated-tags") %></span>",
+                            "<span class='hint-text'><%= LanguageUtil.get(pageContext, "Type-your-tag-You-can-enter-multiple-comma-separated-tags") %></span>",
                             "<div class=\"tagsOptions\" id=\"" + fieldId.replace(".", "") + "SuggestedTagsDiv" + "\" style=\"display:none;\"></div>",
                             "</div>"
                         ].join("");
@@ -986,32 +990,55 @@
                 }
             }
 
-                disableButtonRow();
-                var form = document.getElementById("search_form");
-                form.cmd.value = 'full_publish_list';
-                form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="full_publish_list" /></portlet:actionURL>';
-                /*if we have a date*/
-                        var dateFrom= null;
-                        var dateTo= null;
-                        if((document.getElementById("lastModDateFrom").value!="")){
-                                dateFrom = document.getElementById("lastModDateFrom").value;
-                                var dateFromsplit = dateFrom.split("/");
-                                if(dateFromsplit[0]< 10) dateFromsplit[0]= "0"+dateFromsplit[0]; if(dateFromsplit[1]< 10) dateFromsplit[1]= "0"+dateFromsplit[1];
-                                dateFrom= dateFromsplit[2]+dateFromsplit[0]+dateFromsplit[1]+"000000";
-                                form.action+= "&modDateFrom="+dateFrom;
-                        }
-
-                        if((document.getElementById("lastModDateTo").value!="")){
-                                dateTo = document.getElementById("lastModDateTo").value;
-                                var dateTosplit = dateTo.split("/");
-                                if(dateTosplit[0]< 10) dateTosplit[0]= "0"+dateTosplit[0]; if(dateTosplit[1]< 10) dateTosplit[1]= "0"+dateTosplit[1];
-                                dateTo= dateTosplit[2]+dateTosplit[0]+dateTosplit[1]+"235959";
-                                form.action+= "&modDateTo="+dateTo;
-                        }
-                form.action+= "&structure_id=<%=structure.getInode()%>";
-                form.action += "&selected_lang=" + getSelectedLanguageId();
-                submitForm(form);
+            disableButtonRow();
+            var form = copySearchForm()
+			form.cmd.value="full_publish_list";
+               
+            form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="full_publish_list" /></portlet:actionURL>';
+             /*if we have a date*/
+	             var dateFrom= null;
+	             var dateTo= null;
+	             if((document.getElementById("lastModDateFrom").value!="")){
+	                 dateFrom = document.getElementById("lastModDateFrom").value;
+	                 var dateFromsplit = dateFrom.split("/");
+	                 if(dateFromsplit[0]< 10) dateFromsplit[0]= "0"+dateFromsplit[0]; if(dateFromsplit[1]< 10) dateFromsplit[1]= "0"+dateFromsplit[1];
+	                 dateFrom= dateFromsplit[2]+dateFromsplit[0]+dateFromsplit[1]+"000000";
+	                 form.action+= "&modDateFrom="+dateFrom;
+	             }
+	
+	             if((document.getElementById("lastModDateTo").value!="")){
+	                 dateTo = document.getElementById("lastModDateTo").value;
+	                 var dateTosplit = dateTo.split("/");
+	                 if(dateTosplit[0]< 10) dateTosplit[0]= "0"+dateTosplit[0]; if(dateTosplit[1]< 10) dateTosplit[1]= "0"+dateTosplit[1];
+	                 dateTo= dateTosplit[2]+dateTosplit[0]+dateTosplit[1]+"235959";
+	                 form.action+= "&modDateTo="+dateTo;
+	             }
+             form.action+= "&structure_id=<%=structure.getInode()%>";
+             form.action += "&selected_lang=" + getSelectedLanguageId();
+             
+             form.submit();
+             
         }
+        
+
+        
+        function copySearchForm(){
+        
+        	var newForm = document.createElement("form");
+        	newForm.method="POST";
+        	newForm.target="AjaxActionJackson";
+         	var oldFormElements = document.getElementById("search_form").elements; 
+			for (i=0; i < oldFormElements.length; i++){
+			    newForm.appendChild(oldFormElements[i].cloneNode(true));
+		  	}
+		  	
+		  	//var newForm = document.getElementById("search_form").cloneNode(true);
+        	newForm.name="form" + formNum;
+        	newForm.id="form" + formNum;
+		  	return newForm;
+        }
+        
+        
 
         function pushPublishSelectedContentlets() {
 
@@ -1019,49 +1046,19 @@
 			pushHandler.showDialog(selectedInodes);
         }
 
+
+
+
         function addToBundleSelectedContentlets() {
 
             var selectedInodes = getSelectedInodes ();
 			pushHandler.showAddToBundleDialog(selectedInodes, '<%=LanguageUtil.get(pageContext, "Add-To-Bundle")%>');
         }
 
-        function getSelectedInodes () {
-
-            var selectedInodes;
-            if ( document.getElementById("fullCommand").value == "true" ) {
-
-                /*
-                 If we choose to select all the elements, not just the ones in the current page, we can't just
-                 send the selected elements as we are using pagination, we only have track of the current page, for
-                 that reason lets send the lucene query that returned the current values LESS the uncheked values.
-                */
-                var excludeInodes = "";
-                if (unCheckedInodes != undefined && unCheckedInodes != null && unCheckedInodes.length > 0) {
-
-                    var inodesToExcludeColl = unCheckedInodes.split(",");
-                    for (var i=0; i<inodesToExcludeColl.length; i++) {
-                        if (inodesToExcludeColl[i] != "" && inodesToExcludeColl[i] != " " && inodesToExcludeColl[i] != "-" ) {
-                            excludeInodes += " inode:" + inodesToExcludeColl[i];
-                        }
-                    }
-                    //excludeInodes = unCheckedInodes.replace(/,/g, " inode:");
-                    excludeInodes = " -(" + excludeInodes + ")";
-                }
-
-                selectedInodes = "query_" + queryRaw + excludeInodes;
-
-            } else {
-                selectedInodes = dojo.query("input[name='publishInode']")
-                                    .filter(function(x){return x.checked;})
-                                    .map(function(x){return x.value;});
-            }
-
-            return selectedInodes;
-        }
 
         function unPublishSelectedContentlets(){
-                disableButtonRow();
-          var form = document.getElementById("search_form");
+            disableButtonRow();
+            var form = copySearchForm()
             form.cmd.value = 'full_unpublish_list';
                 form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="full_unpublish_list" /></portlet:actionURL>';
                 /*if we have a date*/
@@ -1084,14 +1081,14 @@
                         }
                 form.action+= "&structure_id=<%=structure.getInode()%>";
                 form.action += "&selected_lang=" + getSelectedLanguageId();
-                submitForm(form);
+                form.submit();
         }
 
         function archiveSelectedContentlets(){
-                disableButtonRow();
-            var form = document.getElementById("search_form");
+            disableButtonRow();
+            var form = copySearchForm()
             form.cmd.value = 'full_archive_list';
-                form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="full_archive_list" /></portlet:actionURL>';
+            form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="full_archive_list" /></portlet:actionURL>';
 
 
           /*if we have a date*/
@@ -1113,12 +1110,12 @@
                                 form.action+= "&modDateTo="+dateTo;
                         }
             form.action+= "&structure_id=<%=structure.getInode()%>";
-                submitForm(form);
+            form.submit();
         }
 
         function reindexSelectedContentlets(){
                 disableButtonRow();
-                var form = document.getElementById("search_form");
+                var form = copySearchForm()
             form.cmd.value = 'full_reindex_list';
                 form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="full_reindex_list" /></portlet:actionURL>';
 
@@ -1142,12 +1139,13 @@
                                 form.action+= "&modDateTo="+dateTo;
                         }
             form.action+= "&structure_id=<%=structure.getInode()%>";
-                submitForm(form);
+            form.submit();
+
         }
 
         function unArchiveSelectedContentlets(){
                 disableButtonRow();
-            var form = document.getElementById("search_form");
+            var form = copySearchForm();
             form.cmd.value = 'full_unarchive_list';
                 form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="full_unarchive_list" /></portlet:actionURL>';
 
@@ -1170,13 +1168,14 @@
                                 form.action+= "&modDateTo="+dateTo;
                         }
                 form.action+= "&structure_id=<%=structure.getInode()%>";
-                submitForm(form);
+            form.submit();
+
         }
 
         function deleteSelectedContentlets(){
                 disableButtonRow();
                 if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.confirm.delete")) %>')){
-                         var form = document.getElementById("search_form");
+                var form = copySearchForm();
                 form.cmd.value = 'full_delete_list';
                         form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="full_delete_list" /></portlet:actionURL>';
 
@@ -1199,42 +1198,52 @@
                                 form.action+= "&modDateTo="+dateTo;
                         }
                         form.action+= "&structure_id=<%=structure.getInode()%>";
-                        submitForm(form);
+		            form.submit();
+
                 }
         }
 
 
+		function fakeAjaxCallback(){
+			clearAllContentsSelection();
+			refreshFakeJax();
+		}
+
+
+
+
+
 
         function structureChanged (sync) {
-                if(sync != true)
-                        async = true;
-                else
-                        async = false;
-
-                var form = document.getElementById("search_form");
-                var structureInode = dijit.byId('structure_inode').value;
-                document.getElementById("structureInode").value = structureInode;
-                hasHostFolderField = false;
-                loadingSearchFields = true;
-                setDotFieldTypeStr = "";
-
-                StructureAjax.getStructureSearchFields (structureInode,
-                        { callback:fillFields, async: async });
-                StructureAjax.getStructureCategories (structureInode,
-                        { callback:fillCategories, async: async });
-
-                dwr.util.removeAllRows("results_table");
-                hideMatchingResults ();
-                document.getElementById("nextDiv").style.display = "none";
-                document.getElementById("previousDiv").style.display = "none";
-                counter_radio = 0;
-            	counter_checkbox = 0;
-                var div = document.getElementById("matchingResultsBottomDiv")
-                div.innerHTML = "";
-
-
-
-                initAdvancedSearch();
+		    if(sync != true)
+		            async = true;
+		    else
+		            async = false;
+		
+		    var form = document.getElementById("search_form");
+		    var structureInode = dijit.byId('structure_inode').value;
+		    document.getElementById("structureInode").value = structureInode;
+		    hasHostFolderField = false;
+		    loadingSearchFields = true;
+		    setDotFieldTypeStr = "";
+		
+		    StructureAjax.getStructureSearchFields (structureInode,
+		            { callback:fillFields, async: async });
+		    StructureAjax.getStructureCategories (structureInode,
+		            { callback:fillCategories, async: async });
+		
+		    dwr.util.removeAllRows("results_table");
+		    hideMatchingResults ();
+		    document.getElementById("nextDiv").style.display = "none";
+		    document.getElementById("previousDiv").style.display = "none";
+		    counter_radio = 0;
+			counter_checkbox = 0;
+		    var div = document.getElementById("matchingResultsBottomDiv")
+		    div.innerHTML = "";
+		
+		
+		
+		    initAdvancedSearch();
         }
 
         function fieldName (field) {
@@ -1245,23 +1254,61 @@
                 if ((3 < field["fieldContentlet"].length) && (field["fieldContentlet"].substring(0, 4) == "date")) {
                         var id = field["fieldStructureInode"] + '_' + field["fieldContentlet"];
 
-                        dijit.registry.remove("tipMsg_" + id);
-                                if (dijit.byId("tipMsg_" + id)) {
-                                        dijit.byId("tipMsg_" + id).destroy();
-                                }
-                                if(field["fieldFieldType"] == 'date')
-                                        var hintLabel = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "viewcontentlets.message.date.hint")) %>';
-                                if(field["fieldFieldType"] == 'date_time')
-                                        var hintLabel = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "viewcontentlets.message.datetime.hint")) %>';
-                                else if(field["fieldFieldType"] == 'time')
-                                        var hintLabel = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "viewcontentlets.message.time.hint")) %>';
-                                return field["fieldName"] + " <a href=\"#\" id=\"hint_" + id + "\">?</a>:<div dojoType=\"dijit.Tooltip\" connectId=\"hint_" + id + "\" label=\"" + hintLabel + "\"></div>";
-                        } else {
-                                return field["fieldName"] + ":";
-                        }
+	             dijit.registry.remove("tipMsg_" + id);
+	                     if (dijit.byId("tipMsg_" + id)) {
+	                             dijit.byId("tipMsg_" + id).destroy();
+	                     }
+	                     if(field["fieldFieldType"] == 'date')
+	                             var hintLabel = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "viewcontentlets.message.date.hint")) %>';
+	                     if(field["fieldFieldType"] == 'date_time')
+	                             var hintLabel = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "viewcontentlets.message.datetime.hint")) %>';
+	                     else if(field["fieldFieldType"] == 'time')
+	                             var hintLabel = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "viewcontentlets.message.time.hint")) %>';
+	                     return field["fieldName"] + " <a href=\"#\" id=\"hint_" + id + "\">?</a>:<div dojoType=\"dijit.Tooltip\" connectId=\"hint_" + id + "\" label=\"" + hintLabel + "\"></div>";
+	             } else {
+	                     var isOneOption = field["fieldValues"].split("\r\n").length === 1;
+	                     if (type === 'checkbox' && isOneOption || type === 'radio' && isOneOption) {
+	                         return field["fieldName"];
+	                     } else {
+	                         return field["fieldName"] + ":";
+	                     }
+	             }
              }
         }
 
+        function getSelectedInodes () {
+
+            var selectedInodes;
+            if ( document.getElementById("fullCommand").value == "true" ) {
+
+                /*
+                 If we choose to select all the elements, not just the ones in the current page, we can't just
+                 send the selected elements as we are using pagination, we only have track of the current page, for
+                 that reason lets send the lucene query that returned the current values LESS the uncheked values.
+                */
+                var excludeInodes = "";
+                if (unCheckedInodes != undefined && unCheckedInodes != null && unCheckedInodes.length > 0) {
+
+                    var inodesToExcludeColl = unCheckedInodes.split(",");
+                    for (var i=0; i < inodesToExcludeColl.length; i++) {
+                        if (inodesToExcludeColl[i] != "" && inodesToExcludeColl[i] != " " && inodesToExcludeColl[i] != "-" ) {
+                            excludeInodes += " inode:" + inodesToExcludeColl[i];
+                        }
+                    }
+                    //excludeInodes = unCheckedInodes.replace(/,/g, " inode:");
+                    excludeInodes = " -(" + excludeInodes + ")";
+                }
+
+                selectedInodes = "query_" + queryRaw + excludeInodes;
+
+            } else {
+                selectedInodes = dojo.query("input[name='publishInode']")
+                                    .filter(function(x){return x.checked;})
+                                    .map(function(x){return x.value;});
+            }
+
+            return selectedInodes;
+        }
 
 
         function fillFields (data) {
@@ -1276,8 +1323,14 @@
                         if(type=='host or folder'){
                            hasHostField = true;
                         }
-                        htmlstr += "<dl>";
-                        htmlstr += "<dt>" + fieldName(data[i]) + "</dt>";
+
+                        var isOneOption = data[i]["fieldValues"].split("\r\n").length === 1;
+                        if (type === 'checkbox' && isOneOption || type === 'radio' && isOneOption) {
+                            htmlstr += "<dl class='radio-check-one-line'>";
+                        } else {
+                            htmlstr += "<dl class='vertical'>";
+                        }
+                        htmlstr += "<dt><label>" + fieldName(data[i]) + "</label></dt>";
                         htmlstr += "<dd>" + renderSearchField(data[i]) + "</dd>";
                         htmlstr += "</dl>";
                         htmlstr += "<div class='clear'></div>";
@@ -1323,7 +1376,7 @@
                                 if(dijit.byId(selectId)){
                                         dijit.byId(selectId).destroy();
                                 }
-                                var selectObj = "<select dojoType='dijit.form.MultiSelect' class='width-equals-200' multiple='true' name=\"categories\" id=\"" + selectId + "\"></select>";
+                                var selectObj = "<select dojoType='dijit.form.MultiSelect' multiple='true' name=\"categories\" id=\"" + selectId + "\"></select>";
 
                                 dojo.create("dd", { innerHTML: selectObj }, searchCategoryList);
 
@@ -1474,7 +1527,7 @@
 
                 }
 
-        for(var i=0;i < radiobuttonsIds.length ;i++ ){
+        		for(var i=0;i < radiobuttonsIds.length ;i++ ){
                         var formField = document.getElementById(radiobuttonsIds[i]);
                         if(formField != null && formField.type=='radio') {
                             var values = "";
@@ -1753,6 +1806,9 @@
                 th.innerHTML = "<a class=\"beta\" href=\"javascript: doSearch (1, 'modDate')\"><%= LanguageUtil.get(pageContext, "Last-Edit-Date") %></a>";
                 row.appendChild(th);
 
+                th = document.createElement('th');
+                row.appendChild(th);
+
                 var languageId;
                 var locale;
 
@@ -1776,8 +1832,6 @@
                 for (var i = 0; i < data.length; i++) {
                         var row = table.insertRow(table.rows.length);
 
-                        row.setAttribute("height","30");
-                        row.setAttribute("valign","top");
                         var cellData = data[i];
                         row.setAttribute("id","tr" + cellData.inode);
 
@@ -1832,6 +1886,9 @@
                         cell.style.textAlign="right";
                         cell.style.whiteSpace="nowrap";
                         cell.innerHTML = cellData["modDate"];
+
+                        var cell = row.insertCell (row.cells.length);
+                        cell.innerHTML = '<span class="dijitIcon actionIcon"></span>';
 
                         live = cellData["live"] == "true"?true:false;
                         working = cellData["working"] == "true"?true:false;
@@ -1905,15 +1962,15 @@
                           if(selectedStructureVarName == 'calendarEvent'){
                             popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"publishIcon\" onClick=\"publishEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Publish") %></div>";
                           }else{
-                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"publishIcon\" onClick=\"publishContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Publish") %></div>";
+                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"publishIcon\" onClick=\"_publishAsset('" + cellData.inode + "');\"><%=LanguageUtil.get(pageContext, "Publish") %></div>";
                           }
                         }
 
                         if (working && publish=='1' && !deleted && workflowMandatory=="false") {
 				    		if(live) {
-				    			popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"republishIcon\" onClick=\"publishContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Republish") %></div>";
+				    			popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"republishIcon\" onClick=\"_publishAsset('" + cellData.inode  + "');\"><%=LanguageUtil.get(pageContext, "Republish") %></div>";
 							} else {
-								//popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"publishIcon\" onClick=\"publishContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Publish") %></div>";
+								//popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"publishIcon\" onClick=\"_publishAsset('" + cellData.inode +  "');\"><%=LanguageUtil.get(pageContext, "Publish") %></div>";
 							}
 						}
 
@@ -1928,7 +1985,7 @@
                           if(selectedStructureVarName == 'calendarEvent'){
                                 popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unpublishIcon\" onClick=\"unpublishEvent('" + cellData.inodeOfLiveVersion + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Unpublish") %></div>";
                           }else{
-                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unpublishIcon\" onClick=\"unpublishContentlet('" + cellData.inodeOfLiveVersion + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Unpublish") %></div>";
+                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unpublishIcon\" onClick=\"_unpublishAsset('" + cellData.inodeOfLiveVersion + "');\"><%=LanguageUtil.get(pageContext, "Unpublish") %></div>";
                           }
                         }
 
@@ -1936,7 +1993,7 @@
                           if(selectedStructureVarName == 'calendarEvent'){
                                 popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unpublishIcon\" onClick=\"unpublishEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Unpublish") %></div>";
                           }else{
-                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unpublishIcon\" onClick=\"unpublishContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Unpublish") %></div>";
+                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unpublishIcon\" onClick=\"_unpublishAsset('" + cellData.inode + "');\"><%=LanguageUtil.get(pageContext, "Unpublish") %></div>";
                           }
                         }
 
@@ -1946,15 +2003,15 @@
                         if ((!live) && working && (publish=="1") && workflowMandatory=="false" && hasLiveVersion!="true") {
                            if(selectedStructureVarName == 'calendarEvent'){
                              if (!deleted){
-                                        popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"archiveIcon\" onClick=\"deleteContentlet('" + cellData.inode + "','','" + escape('<%= referer %>') + "'" + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Archive") %></div>";
+                                        popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"archiveIcon\" onClick=\"_archiveAsset('" + cellData.inode + "');\"><%=LanguageUtil.get(pageContext, "Archive") %></div>";
                                  }else{
-                                        popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unarchiveIcon\" onClick=\"unarchiveEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Un-Archive") %></div>";
+                                        popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unarchiveIcon\" onClick=\"_unArchiveAsset('" + cellData.inode + ");\"><%=LanguageUtil.get(pageContext, "Un-Archive") %></div>";
                              }
                            }else{
                                 if (!deleted){
-                                        popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"archiveIcon\" onClick=\"deleteContentlet('" + cellData.inode + "','','" + escape('<%= referer %>') + "'" + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Archive") %></div>";
+                                        popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"archiveIcon\" onClick=\"_archiveAsset('" + cellData.inode + "');\"><%=LanguageUtil.get(pageContext, "Archive") %></div>";
                                 }else{
-                                        popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unarchiveIcon\" onClick=\"unarchiveContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Un-Archive") %></div>";
+                                        popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unarchiveIcon\" onClick=\"_unArchiveAsset('" + cellData.inode + "');\"><%=LanguageUtil.get(pageContext, "Un-Archive") %></div>";
                             }
                            }
                         }
@@ -1962,7 +2019,7 @@
                           if(selectedStructureVarName == 'calendarEvent'){
                             popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"copyIcon\" onClick=\"copyEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Copy") %></div>";
                           }else{
-                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"copyIcon\" onClick=\"copyContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Copy") %></div>";
+                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"copyIcon\" onClick=\"_copyContentlet('" + cellData.inode  + "');\"><%=LanguageUtil.get(pageContext, "Copy") %></div>";
                           }
                         }
 
@@ -1970,7 +2027,7 @@
                           if(selectedStructureVarName == 'calendarEvent'){
                             popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unlockIcon\" onClick=\"unlockEvent('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Unlock") %></div>";
                           }else{
-                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unlockIcon\" onClick=\"unlockContentlet('" + cellData.inode + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Unlock") %></div>";
+                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unlockIcon\" onClick=\"_unlockAsset('" + cellData.inode + "');\"><%=LanguageUtil.get(pageContext, "Unlock") %></div>";
                           }
                         }
                         if (deleted && (write == "1"))
@@ -2201,11 +2258,14 @@
 
 
 
-
+        var exportContentButton;
         function showMatchingResults (num,begin,end,totalPages) {
-
+                        if (exportContentButton) {
+                            exportContentButton.destroyRendering();
+                        }
 
                         var div = document.getElementById("metaMatchingResultsDiv");
+
                         div.style.display='';
 
                     //Top Matching Results
@@ -2214,20 +2274,34 @@
 
                         div = document.getElementById("matchingResultsDiv")
                         var structureInode = dijit.byId('structure_inode').value;
-                        var strbuff = "<div class=\"yui-gb portlet-toolbar\"><div class=\"yui-u first\"><%= LanguageUtil.get(pageContext, "showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div><div id=\"tablemessage\" class=\"yui-u\" style=\"text-align:center;\">&nbsp</div><div class=\"yui-u\" style=\"text-align:right;\">";
-                        if(num >0 && structureInode != "_all"){
-                                strbuff+= "<a href='javascript:donwloadToExcel();'><%= LanguageUtil.get(pageContext, "Export") %></a> <a href='javascript:donwloadToExcel();'><img src='/html/images/icons/csv.png' border='0' alt='export results' align='absbottom'></a>";
+                        var strbuff = "<div id=\"tablemessage\" class=\"contentlet-selection\"></div><div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";
+                        var actionPrimaryMenu = dijit.byId('actionPrimaryMenu');
+                        var donwloadToExcelMenuItem = dijit.byId('donwloadToExcel');
+                        if (num > 0 && structureInode != "_all") {
+                            if (!donwloadToExcelMenuItem) {
+                                actionPrimaryMenu.addChild(new dijit.MenuItem({
+                                    label: "<%= LanguageUtil.get(pageContext, "Export") %>",
+                                    onClick: donwloadToExcel,
+                                    id: 'donwloadToExcel'
+                                }));
+                            }
+                        } else {
+                            if (donwloadToExcelMenuItem) {
+                                actionPrimaryMenu.removeChild(donwloadToExcelMenuItem);
+                                donwloadToExcelMenuItem.destroy();
+                            }
+
                         }
-                        strbuff+= "</div></div>";
+
                         div.innerHTML = strbuff;
                         div.style.display = "";
 
                         //Bottom Matching Results
                         var div = document.getElementById("matchingResultsBottomDiv")
-                        var strbuff = "<table border='0' width=\"100%\"><tr><td align='center' nowrap='true'><b><%= LanguageUtil.get(pageContext, "showing") %> " + begin + " - " + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num;
+                        var strbuff = "<table border='0' width=\"100%\"><tr><td align='center' nowrap='true'><b><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + " - " + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num;
                         if(num > 0)
                         {
-                                strbuff += " | <%= LanguageUtil.get(pageContext, "pages") %> ";
+                                strbuff += " | <%= LanguageUtil.get(pageContext, "Pages") %> ";
                                 for(i = 4;i >= 1;i--)
                                 {
                                         var auxPage = currentPage - i;
@@ -2364,11 +2438,14 @@
         for(i = 0;i< cbCount ;i++){
             if (cbArray[i].checked) {
                 if (showArchive) {
+                    dijit.byId('archiveDropDownButton').setAttribute("disabled", false);
                     dijit.byId('unArchiveButton').setAttribute("disabled", false);
                     dijit.byId('deleteButton').setAttribute("disabled", false);
                     dijit.byId('archiveUnlockButton').setAttribute("disabled", false);
                     <%=(canReindex?"dijit.byId('archiveReindexButton').setAttribute(\"disabled\", false);":"") %>
                 } else {
+                    dijit.byId('unArchiveDropDownButton').setAttribute("disabled", false);
+                    dijit.byId('unArchiveDropDownButton').setAttribute("disabled", false);
                     dijit.byId('archiveButton').setAttribute("disabled", false);
                     dijit.byId('publishButton').setAttribute("disabled", false);
                     <% if ( enterprise ) { %>
@@ -2391,11 +2468,13 @@
 
         // nothing selected
        	if (showArchive) {
+                    dijit.byId("archiveDropDownButton").setAttribute("disabled", true);
                     dijit.byId("unArchiveButton").setAttribute("disabled", true);
                     dijit.byId("deleteButton").setAttribute("disabled", true);
                     dijit.byId("archiveUnlockButton").setAttribute("disabled", true);
                     <%=(canReindex?"dijit.byId('archiveReindexButton').setAttribute(\"disabled\", true);":"") %>
         } else {
+                    dijit.byId('unArchiveDropDownButton').setAttribute("disabled", true);
                     dijit.byId('archiveButton').setAttribute("disabled", true);
                     dijit.byId('publishButton').setAttribute("disabled", true);
                     <% if ( enterprise ) { %>
@@ -2429,7 +2508,7 @@
 
         dojo.addOnLoad(function () {
         structureChanged(true);
-        useLoadingMessage("<i class='loadingIcon'></i> Loading");
+        //useLoadingMessage("<i class='loadingIcon'></i> Loading");
 
         //DWR sync mode doesn't work in Chrome. Forcing sync with the flag 'loadingSearchFields'
         if (dojo.isChrome) {
@@ -2457,26 +2536,9 @@
         }
     }
 
-        function  resizeBrowser(){
-                var viewport = dijit.getViewport();
-                var viewport_height = viewport.h;
-
-                var  e =  dojo.byId("borderContainer");
-                dojo.style(e, "height", viewport_height -150+ "px");
-
-                var  e =  dojo.byId("filterWrapper");
-                dojo.style(e, "height", viewport_height -195+ "px");
-
-                var  e =  dojo.byId("contentWrapper");
-                dojo.style(e, "height", viewport_height -230+ "px");
-
-                dijit.byId('borderContainer').resize()
-        }
-
-        //dojo.addOnLoad(resizeBrowser);
-        dojo.connect(window, "onresize", this, "resizeBrowser");
-
         function disableButtonRow() {
+                if(dijit.byId("archiveDropDownButton"))
+                        dijit.byId("archiveDropDownButton").setAttribute("disabled", true);
 
                 if(dijit.byId("unArchiveButton"))
                         dijit.byId("unArchiveButton").attr("disabled", true);
@@ -2489,6 +2551,9 @@
 
                 if(dijit.byId("archiveUnlockButton"))
                         dijit.byId("archiveUnlockButton").attr("disabled", true);
+
+                if(dijit.byId("unArchiveDropDownButton"))
+                        dijit.byId("unArchiveDropDownButton").attr("disabled", true);
 
                 if(dijit.byId("publishButton"))
                         dijit.byId("publishButton").attr("disabled", true);
@@ -2516,7 +2581,7 @@
 
          function unlockSelectedContentlets(){
             disableButtonRow();
-            var form = document.getElementById("search_form");
+            var form = copySearchForm()
             form.cmd.value = 'full_unlock_list';
             form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="full_unlock_list" /></portlet:actionURL>';
 
@@ -2540,7 +2605,7 @@
                                 form.action+= "&modDateTo="+dateTo;
                         }
             form.action+= "&structure_id=<%=structure.getInode()%>";
-                submitForm(form);
+            form.submit();
         }
 
         //*************************************
@@ -2692,8 +2757,104 @@
     });
 
     function fileActionCallback (response) {
-    	doSearch();
+    	refreshFakeJax();
     	showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Workflow-executed")) %>');
 	}
+
+
+	function _unpublishAsset (inode) {
+		BrowserAjax.unPublishAsset(inode, function (data) { _unpublishAssetCallback(data) } );
+	}
+	
+	function _unpublishAssetCallback (response) {
+	
+		if (!response) {
+			showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish-failed-check-you-have-the-required-permissions")) %>');
+		} else {
+		
+			refreshFakeJax();
+		}
+	}
+
+
+	function _publishAsset (inode) {
+		BrowserAjax.publishAsset(inode, function (data) { _publishAssetCallback(data) } );
+	}
+	
+	function _publishAssetCallback (response) {
+	
+		if (!response) {
+			showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publish-failed-check-you-have-the-required-permissions")) %>');
+		} else {
+			refreshFakeJax();
+
+		}
+	}
+	
+	function _archiveAsset (inode) {
+		BrowserAjax.archiveAsset(inode, function (data) { _archiveAssetCallback(data) } );
+	}
+	
+	function _archiveAssetCallback (response) {
+		if (!response) {
+			showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Failed-to-archive-check-you-have-the-required-permissions")) %>');
+		} else {
+			refreshFakeJax();
+		}
+	}
+	
+	function _unArchiveAsset (objId, referer) {
+		BrowserAjax.unArchiveAsset(objId, _unarchiveAssetCallback);
+	}
+
+	function _unarchiveAssetCallback (response) {
+		if (!response) {
+			showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Failed-to-un-archive-check-you-have-the-required-permissions")) %>');
+		} else {
+			refreshFakeJax();
+	
+		}
+	}
+	
+	function _copyContentlet (inode) {
+
+		var loc = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="copy" /></portlet:actionURL>&inode=' + inode ;
+		window.AjaxActionJackson.location = loc;
+
+	}
+
+	function _unarchiveAssetCallback (response) {
+		if (!response) {
+			showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Failed-to-un-archive-check-you-have-the-required-permissions")) %>');
+		} else {
+			refreshFakeJax();
+	
+		}
+	}
+	
+	function _unlockAsset (inode) {
+		BrowserAjax.unlockAsset(inode, function (data) { _unlockAssetCallback(data) } );
+	}
+	
+	function _unlockAssetCallback (response) {
+		if (!response) {
+			showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Failed-to-unlock-check-you-have-the-required-permissions")) %>');
+		} else {
+			refreshFakeJax();
+		}
+	}
+	
+
+	function refreshFakeJax(){
+	
+		doSearch();
+		
+		setTimeout(function(){ doSearch() }, 1000);
+
+	}
+
+
+
+
 
     var contentAdmin ;

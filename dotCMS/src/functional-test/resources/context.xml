@@ -1,4 +1,4 @@
-<Context path="" docBase="../../dotCMS" reloadable="false" crossContext="true">
+<Context path="${catalina.home}/webapps/ROOT" docBase="${catalina.home}/webapps/ROOT" reloadable="false" crossContext="true">
 
 
     <Resource name="mail/MailSession" auth="Container" type="javax.mail.Session" mail.smtp.host="localhost" />

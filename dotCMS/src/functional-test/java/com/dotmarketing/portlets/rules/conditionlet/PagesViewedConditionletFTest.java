@@ -1,10 +1,10 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.repackage.com.google.common.collect.Lists;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.servlets.test.ServletTestRunner;
@@ -14,7 +14,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.URLConnection;
-import java.util.List;
 import java.util.Random;
 import com.dotcms.visitor.domain.Visitor;
 
@@ -57,6 +56,7 @@ public class PagesViewedConditionletFTest {
         conditionletTestUtil.clear();
     }
 
+    @Ignore
     @Test
     public void testEqualsComparison () throws IOException {
 
@@ -101,6 +101,7 @@ public class PagesViewedConditionletFTest {
         assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
     }
 
+    @Ignore
     @Test
     public void testNotEqualsComparison () throws IOException {
 
@@ -151,6 +152,7 @@ public class PagesViewedConditionletFTest {
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
     }
 
+    @Ignore
     @Test
     public void testGreaterThanComparison () throws IOException {
 

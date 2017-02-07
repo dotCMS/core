@@ -3,15 +3,8 @@
  */
 package com.dotmarketing.portlets.contentlet.business;
 
-import java.io.File;
-import java.io.Serializable;
-import java.util.*;
-
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
-
-import org.elasticsearch.action.search.SearchResponse;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -36,6 +29,11 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import org.elasticsearch.action.search.SearchResponse;
+
+import java.io.File;
+import java.io.Serializable;
+import java.util.*;
 
 /**
  * @author Jason Tesser
@@ -168,6 +166,25 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 		Contentlet c = conAPI.checkin(currentContentlet, relationshipsData, cats, selectedPermissions, user, respectFrontendRoles);
 		for(ContentletAPIPostHook post : postHooks){
+			post.checkin(currentContentlet, relationshipsData, cats, selectedPermissions, user, respectFrontendRoles, c);
+		}
+		return c;
+	}
+
+	/* (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.structure.model.ContentletRelationships, java.util.List, java.util.List, com.liferay.portal.model.User, boolean, boolean)
+	 */
+	public Contentlet checkin(Contentlet currentContentlet, ContentletRelationships relationshipsData, List<Category> cats,
+							  List<Permission> selectedPermissions, User user, boolean respectFrontendRoles, boolean generateSystemEvent) throws IllegalArgumentException, DotDataException, DotSecurityException, DotContentletStateException, DotContentletValidationException {
+		for ( ContentletAPIPreHook pre : preHooks ) {
+			boolean preResult = pre.checkin(currentContentlet, relationshipsData, cats, selectedPermissions, user, respectFrontendRoles);
+			if ( !preResult ) {
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+		Contentlet c = conAPI.checkin(currentContentlet, relationshipsData, cats, selectedPermissions, user, respectFrontendRoles, generateSystemEvent);
+		for ( ContentletAPIPostHook post : postHooks ) {
 			post.checkin(currentContentlet, relationshipsData, cats, selectedPermissions, user, respectFrontendRoles, c);
 		}
 		return c;
@@ -481,15 +498,15 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	 */
 	public boolean delete(Contentlet contentlet, User user, boolean respectFrontendRoles, boolean allVersions)	throws DotDataException, DotSecurityException,DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
-			boolean preResult = pre.delete(contentlet, user, respectFrontendRoles);
+			boolean preResult = pre.delete(contentlet, user, respectFrontendRoles, allVersions);
 			if(!preResult){
 				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
 				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
 			}
 		}
-		boolean delete = conAPI.delete(contentlet, user, respectFrontendRoles);
+		boolean delete = conAPI.delete(contentlet, user, respectFrontendRoles, allVersions);
 		for(ContentletAPIPostHook post : postHooks){
-			post.delete(contentlet, user, respectFrontendRoles);
+			post.delete(contentlet, user, respectFrontendRoles, allVersions);
 		}
 
 		return delete;

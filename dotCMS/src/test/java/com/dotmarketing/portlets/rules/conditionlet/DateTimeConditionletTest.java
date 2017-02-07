@@ -1,38 +1,49 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.UnitTestBase;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
-import org.elasticsearch.common.joda.time.LocalDateTime;
 import com.dotcms.unittest.TestUtil;
 import com.dotcms.util.GeoIp2CityDbUtil;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import org.elasticsearch.common.joda.time.LocalDateTime;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import static com.dotmarketing.portlets.rules.conditionlet.Conditionlet.COMPARISON_KEY;
-import static com.dotmarketing.portlets.rules.conditionlet.DateTimeConditionlet.*;
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
+import static com.dotmarketing.portlets.rules.conditionlet.DateTimeConditionlet.DATE_TIME_1_KEY;
+import static com.dotmarketing.portlets.rules.conditionlet.DateTimeConditionlet.DATE_TIME_2_KEY;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.BETWEEN;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.EXISTS;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.GREATER_THAN;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.LESS_THAN;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class DateTimeConditionletTest {
+@RunWith(DataProviderRunner.class)
+public class DateTimeConditionletTest extends UnitTestBase {
 
     private static final String MOCK_IP_ADDRESS = "10.0.0.1";
 
-    @DataProvider(name = "cases")
-    public Object[][] compareCases() throws Exception {
+    @DataProvider
+    public static Object[][] cases() throws Exception {
         try {
             List<TestCase> data = Lists.newArrayList();
 
@@ -91,7 +102,8 @@ public class DateTimeConditionletTest {
         }
     }
 
-    @Test(dataProvider = "cases")
+    @Test
+    @UseDataProvider("cases")
     public void testComparisons(TestCase aCase) throws Exception {
         assertThat(aCase.testDescription, runCase(aCase), is(aCase.expect));
     }
@@ -100,24 +112,24 @@ public class DateTimeConditionletTest {
         return aCase.conditionlet.evaluate(aCase.request, aCase.response, aCase.conditionlet.instanceFrom(aCase.params));
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testEvaluatesToFalseWhenArgumentsAreEmptyOrMissing() throws Exception {
         new TestCase("").conditionlet.instanceFrom(null);
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testCannotValidateWhenComparisonIsNull() throws Exception {
         TestCase aCase = new TestCase("Empty parameter list should throw IAE.").withComparison(null);
         new TestCase("").conditionlet.instanceFrom(aCase.params);
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testCannotValidateWhenComparisonNotSet() throws Exception {
         new TestCase("").conditionlet.instanceFrom(Maps.newHashMap());
     }
 
 
-    @Test(expectedExceptions = ComparisonNotSupportedException.class)
+    @Test(expected = ComparisonNotSupportedException.class)
     public void testUnsupportedComparisonThrowsException() throws Exception {
         TestCase aCase = new TestCase("Exists: Unsupported comparison should throw.")
                 .withComparison(EXISTS)
@@ -127,7 +139,7 @@ public class DateTimeConditionletTest {
         runCase(aCase);
     }
 
-    private class TestCase {
+    private static class TestCase {
 
         public final DateTimeConditionlet conditionlet;
         public final GeoIp2CityDbUtil geoIp2Util = mock(GeoIp2CityDbUtil.class);

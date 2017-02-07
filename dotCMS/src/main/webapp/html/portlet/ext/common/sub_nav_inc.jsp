@@ -1,3 +1,4 @@
+<%@page import="com.liferay.portal.util.WebKeys"%>
 <%@page import="com.dotmarketing.business.Layout"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="java.util.List"%>
@@ -21,9 +22,10 @@
 
 <%
 
-	boolean inPopupIFrame = UtilMethods.isSet(ParamUtil.getString(request, "popup")) || UtilMethods.isSet(ParamUtil.getString(request, "in_frame"));
+	boolean inPopupIFrame = UtilMethods.isSet(ParamUtil.getString(request, WebKeys.POPUP)) ||(UtilMethods.isSet(ParamUtil.getString(request, WebKeys.IN_FRAME)) && "true".equals(ParamUtil.getString(request, WebKeys.IN_FRAME)));
+    boolean isAngularFrame = (UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (boolean)request.getSession().getAttribute(WebKeys.IN_FRAME)) && UtilMethods.isSet(request.getSession().getAttribute(WebKeys.FRAME)) && !UtilMethods.isSet(ParamUtil.getString(request, WebKeys.HIDE_SUBNAV));
 
-	if(!inPopupIFrame) {
+	if(!inPopupIFrame || isAngularFrame) {
 		UserAPI userAPI = APILocator.getUserAPI();
 		HostWebAPI hostApi = WebAPILocator.getHostWebAPI();
 	
@@ -76,10 +78,10 @@
 		for (int i = 0; i < layouts.length; i++) {
 			List<String> portletIDs = layouts[i].getPortletIds();
 			for (String x : portletIDs) {
-				if ("EXT_BROWSER".equals(x)) {
+				if ("site-browser".equals(x)) {
 					_browserCrumbUrl = new PortletURLImpl(request, x, layouts[i].getId(), false).toString();
 				}
-				if ("EXT_HOSTADMIN".equals(x)) {
+				if ("sites".equals(x)) {
 					canManageHosts = true;
 					_hostManagerUrl = new PortletURLImpl(request, x, layouts[i].getId(), false).toString();
 				}

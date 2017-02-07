@@ -3,6 +3,8 @@ package com.dotcms;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
+import com.dotmarketing.util.BaseMessageResources;
+
 import org.junit.After;
 
 import java.sql.SQLException;
@@ -17,7 +19,7 @@ import java.sql.SQLException;
  * {@link org.junit.After @After}, {@link org.junit.Ignore @Ignore}
  * <br>For managing the assertions use the static class {@link org.junit.Assert Assert}
  */
-public abstract class TestBase {
+public abstract class IntegrationTestBase extends BaseMessageResources {
 
     @After
     public void after () throws SQLException, DotHibernateException, HibernateException {

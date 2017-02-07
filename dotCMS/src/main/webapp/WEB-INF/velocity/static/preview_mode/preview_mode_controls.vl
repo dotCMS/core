@@ -5,6 +5,9 @@
 		#set($referer =	"$request.getAttribute('com.dotmarketing.clickstream.uri.override')?")
 	#end
 #end
+#set($isAngularFrame = $UtilMethods.isSet("$!request.getSession().getAttribute('in_frame')"))
+#set($angularFrame = "$!request.getSession().getAttribute('frame')")
+
 <script type='text/javascript' src='/html/js/messages.js'></script>
 <script type="text/javascript" src="/dwr/engine.js"></script>
 <script type="text/javascript" src="/dwr/util.js"></script>
@@ -313,14 +316,30 @@
 	dojo.connect(window, 'onresize', this, hideCurrentMenu);
 
 	function backToCMS(){
-		window.location  = "${viewFoldersURL}";
+		#if(${isAngularFrame})
+		if(window.top.${angularFrame}.src !== undefined){
+        	window.top.${angularFrame}.src = "${viewBrowserURL}";
+        }else{
+        	window.top.${angularFrame}.location = "${viewBrowserURL}";
+        }
+	    #else
+	    window.location  = "${viewFoldersURL}";
+		#end
 	}
 
 	function livePage(){
+		#if(${isAngularFrame})
+	    window.top.${angularFrame}.src  = "${VTLSERVLET_URI}?livePage=1";
+		#else
 		window.location  = "${VTLSERVLET_URI}?livePage=1";
+		#end
 	}
 	function previewPage(){
+		#if(${isAngularFrame})
+	    window.top.${angularFrame}.src  = "${VTLSERVLET_URI}?previewPage=1";
+		#else
 		window.location  = "${VTLSERVLET_URI}?previewPage=1";
+		#end
 	}
 
 	function popBrowser(x){
@@ -394,6 +413,9 @@
 		if(confirm('$languagewebapi.getFromUserLanguage("modes.Are-you-sure-you-would-like-to-publish-this-page")')){
 		form = document.getElementById('submitParent');
 	        form.cmd.value="publishHTMLPage";
+	        #if($isAngularFrame)
+	        document.getElementById('submitParent').target="_parent";
+            #end
 	        form.submit();
 		}
 	}
@@ -1023,7 +1045,7 @@
 
 </script>
 <div style="display:none">
-    <form action="${directorURL}" id="submitParent" method="post" target="_top">
+    <form action="${directorURL}" id="submitParent" method="post" #if(!$isAngularFrame) target="_top" #end >
         <input type="hidden" name="referer" id="referer" value="$referer">
         <input type="hidden" name="cmd" id="cmd" value="">
         <input type="hidden" name="container" id="container" value="">

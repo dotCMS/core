@@ -1,10 +1,12 @@
 package com.dotmarketing.business;
 
 import com.dotcms.repackage.org.apache.hadoop.util.hash.Hash;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.exception.DotDataException;
 import com.liferay.portal.model.User;
 
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -18,6 +20,12 @@ import static org.junit.Assert.assertTrue;
  * Created by Nollymar Longa on 8/8/16.
  */
 public class UserProxyFactoryTest {
+	
+	@BeforeClass
+    public static void prepare() throws Exception {
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+	}
 
     @Test
     public void testSearchUsersAndUsersProxy() throws DotDataException {
