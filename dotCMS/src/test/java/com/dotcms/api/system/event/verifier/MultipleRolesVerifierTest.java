@@ -4,7 +4,6 @@ import com.dotcms.UnitTestBase;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.VisibilityRoles;
-import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -40,13 +39,12 @@ public class MultipleRolesVerifierTest extends UnitTestBase {
         final Payload payload = new Payload(Visibility.ROLES, new VisibilityRoles(VisibilityRoles.Operator.AND, roles));
 
         final User user = new User();  user.setUserId("dotcms.1");
-        final SessionWrapper session = new SessionWrapper(null, user);
 
         when(roleAPI.doesUserHaveRole(user, simpleUserRole.getId())).thenReturn(true);
         when(roleAPI.doesUserHaveRole(user, superUserRole.getId())).thenReturn(true);
         when(roleAPI.doesUserHaveRole(user, adminUserRole.getId())).thenReturn(false);
 
-        final boolean verified = rolesVerifier.verified(payload, session);
+        final boolean verified = rolesVerifier.verified(payload, user);
 
         Assert.assertFalse(verified);
     } // verifiedAndFailTest.
@@ -66,13 +64,12 @@ public class MultipleRolesVerifierTest extends UnitTestBase {
         final Payload payload = new Payload(Visibility.ROLES, new VisibilityRoles(VisibilityRoles.Operator.AND, roles));
 
         final User user = new User();  user.setUserId("dotcms.1");
-        final SessionWrapper session = new SessionWrapper(null, user);
 
         when(roleAPI.doesUserHaveRole(user, simpleUserRole.getId())).thenReturn(true);
         when(roleAPI.doesUserHaveRole(user, superUserRole.getId())).thenReturn(true);
         when(roleAPI.doesUserHaveRole(user, adminUserRole.getId())).thenReturn(true);
 
-        final boolean verified = rolesVerifier.verified(payload, session);
+        final boolean verified = rolesVerifier.verified(payload, user);
 
         Assert.assertTrue(verified);
     } // verifiedAndSuccessTest.
@@ -92,13 +89,12 @@ public class MultipleRolesVerifierTest extends UnitTestBase {
         final Payload payload = new Payload(Visibility.ROLES, new VisibilityRoles(VisibilityRoles.Operator.OR, roles));
 
         final User user = new User();  user.setUserId("dotcms.1");
-        final SessionWrapper session = new SessionWrapper(null, user);
 
         when(roleAPI.doesUserHaveRole(user, simpleUserRole.getId())).thenReturn(false);
         when(roleAPI.doesUserHaveRole(user, superUserRole.getId())).thenReturn(false);
         when(roleAPI.doesUserHaveRole(user, adminUserRole.getId())).thenReturn(false);
 
-        final boolean verified = rolesVerifier.verified(payload, session);
+        final boolean verified = rolesVerifier.verified(payload, user);
 
         Assert.assertFalse(verified);
     } // verifiedAndFailTest.
@@ -118,13 +114,12 @@ public class MultipleRolesVerifierTest extends UnitTestBase {
         final Payload payload = new Payload(Visibility.ROLES, new VisibilityRoles(VisibilityRoles.Operator.OR, roles));
 
         final User user = new User();  user.setUserId("dotcms.1");
-        final SessionWrapper session = new SessionWrapper(null, user);
 
         when(roleAPI.doesUserHaveRole(user, simpleUserRole.getId())).thenReturn(true);
         when(roleAPI.doesUserHaveRole(user, superUserRole.getId())).thenReturn(false);
         when(roleAPI.doesUserHaveRole(user, adminUserRole.getId())).thenReturn(false);
 
-        final boolean verified = rolesVerifier.verified(payload, session);
+        final boolean verified = rolesVerifier.verified(payload, user);
 
         Assert.assertTrue(verified);
     } // verifiedOrSuccessTest.
@@ -144,13 +139,12 @@ public class MultipleRolesVerifierTest extends UnitTestBase {
         final Payload payload = new Payload(Visibility.ROLES, new VisibilityRoles(VisibilityRoles.Operator.OR, roles));
 
         final User user = new User();  user.setUserId("dotcms.1");
-        final SessionWrapper session = new SessionWrapper(null, user);
 
         when(roleAPI.doesUserHaveRole(user, simpleUserRole.getId())).thenReturn(false);
         when(roleAPI.doesUserHaveRole(user, superUserRole.getId())).thenReturn(true);
         when(roleAPI.doesUserHaveRole(user, adminUserRole.getId())).thenReturn(false);
 
-        final boolean verified = rolesVerifier.verified(payload, session);
+        final boolean verified = rolesVerifier.verified(payload, user);
 
         Assert.assertTrue(verified);
     } // verifiedOrSuccessTest.
@@ -169,13 +163,12 @@ public class MultipleRolesVerifierTest extends UnitTestBase {
         final Payload payload = new Payload(Visibility.ROLES, new VisibilityRoles(VisibilityRoles.Operator.OR, roles));
 
         final User user = new User();  user.setUserId("dotcms.1");
-        final SessionWrapper session = new SessionWrapper(null, user);
 
         when(roleAPI.doesUserHaveRole(user, simpleUserRole.getId())).thenReturn(false);
         when(roleAPI.doesUserHaveRole(user, superUserRole.getId())).thenReturn(false);
         when(roleAPI.doesUserHaveRole(user, adminUserRole.getId())).thenReturn(true);
 
-        final boolean verified = rolesVerifier.verified(payload, session);
+        final boolean verified = rolesVerifier.verified(payload, user);
 
         Assert.assertTrue(verified);
     } // verifiedOrSuccessTest.
@@ -194,13 +187,12 @@ public class MultipleRolesVerifierTest extends UnitTestBase {
         final Payload payload = new Payload(Visibility.ROLES, new VisibilityRoles(VisibilityRoles.Operator.OR, roles));
 
         final User user = new User();  user.setUserId("dotcms.1");
-        final SessionWrapper session = new SessionWrapper(null, user);
 
         when(roleAPI.doesUserHaveRole(user, simpleUserRole.getId())).thenReturn(false);
         when(roleAPI.doesUserHaveRole(user, superUserRole.getId())).thenReturn(true);
         when(roleAPI.doesUserHaveRole(user, adminUserRole.getId())).thenReturn(true);
 
-        final boolean verified = rolesVerifier.verified(payload, session);
+        final boolean verified = rolesVerifier.verified(payload, user);
 
         Assert.assertTrue(verified);
     } // verifiedOrSuccessTest.

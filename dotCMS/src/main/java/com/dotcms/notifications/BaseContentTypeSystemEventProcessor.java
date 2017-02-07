@@ -1,10 +1,12 @@
 package com.dotcms.notifications;
 
-import com.dotcms.api.system.event.*;
+import com.dotcms.api.system.event.ContentTypePayloadDataWrapper;
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEvent;
+import com.dotcms.api.system.event.SystemEventProcessor;
 import com.dotcms.rest.api.v1.content.ContentTypeView;
 import com.dotmarketing.portlets.structure.model.Structure;
-
-import javax.websocket.Session;
+import com.liferay.portal.model.User;
 
 /**
  * Decorates the {@link com.dotcms.api.system.event.SystemEventType#SAVE_BASE_CONTENT_TYPE},
@@ -16,14 +18,15 @@ import javax.websocket.Session;
 public class BaseContentTypeSystemEventProcessor  implements SystemEventProcessor {
 
   @Override
-    public SystemEvent process(SystemEvent event, Session session) {
-        Payload payload = event.getPayload();
-        ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = (ContentTypePayloadDataWrapper) payload.getRawData();
-        Structure structure = contentTypePayloadDataWrapper.getStructure();
-        ContentTypeView contentTypeView = new ContentTypeView(structure, contentTypePayloadDataWrapper.getActionUrl());
+    public SystemEvent process(final SystemEvent event, final User sessionUser) {
+
+        final Payload payload = event.getPayload();
+        final ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = (ContentTypePayloadDataWrapper) payload.getRawData();
+        final Structure structure = contentTypePayloadDataWrapper.getStructure();
+        final ContentTypeView contentTypeView = new ContentTypeView(structure, contentTypePayloadDataWrapper.getActionUrl());
 
         return new SystemEvent(event.getId(), event.getEventType(),
                 new Payload(contentTypeView, payload.getVisibility(), payload.getVisibilityValue()),
                 event.getCreationDate());
-    }
-}
+    } // process.
+} // E:O:F:BaseContentTypeSystemEventProcessor.

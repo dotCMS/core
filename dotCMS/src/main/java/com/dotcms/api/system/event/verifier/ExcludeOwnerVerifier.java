@@ -23,9 +23,9 @@ public class ExcludeOwnerVerifier implements PayloadVerifier {
     final PayloadVerifierFactory factory = PayloadVerifierFactory.getInstance();
 
     @Override
-    public boolean verified(final Payload payload, final SessionWrapper session) {
+    public boolean verified(final Payload payload, final User sessionUser) {
         ExcludeOwnerVerifierBean visibilityValue = (ExcludeOwnerVerifierBean) payload.getVisibilityValue();
-        User user = session.getUser();
+        User user = sessionUser;
 
         if (user.getUserId().equals(visibilityValue.getUserId())){
             return false;
@@ -33,7 +33,7 @@ public class ExcludeOwnerVerifier implements PayloadVerifier {
             PayloadVerifier verifier = factory.getVerifier(visibilityValue.getVisibility());
             Payload newPayload = new Payload(payload.getData(), visibilityValue.getVisibility(),
                     visibilityValue.getVisibilityValue());
-            return verifier.verified(newPayload, session);
+            return verifier.verified(newPayload, sessionUser);
         }
     }
 }

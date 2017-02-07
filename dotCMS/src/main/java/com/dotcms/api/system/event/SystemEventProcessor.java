@@ -1,8 +1,7 @@
 package com.dotcms.api.system.event;
 
-import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
+import com.liferay.portal.model.User;
 
-import javax.websocket.Session;
 import java.io.Serializable;
 
 /**
@@ -14,9 +13,9 @@ public interface SystemEventProcessor extends Serializable {
     /**
      * Process a {@link SystemEvent}
      * @param event {@link SystemEvent}
-     * @param session {@link Session}
+     * @param sessionUser {@link User}
      * @return SystemEvent
      */
-    public SystemEvent process (SystemEvent event, Session session);
+    public SystemEvent process (SystemEvent event, User sessionUser);
 
 } // E:O:F:SystemEventProcessor.

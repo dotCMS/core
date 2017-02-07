@@ -8,6 +8,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
 import java.io.Serializable;
+import java.util.Date;
 
 /**
  * Encapsulates the logic to do a long polling.
@@ -57,14 +58,14 @@ public class LongPollingService implements Serializable {
 
         try {
 
-            Logger.debug(this, "Long Polling, sleeping for: " + this.milliSecondToWait);
+            Logger.debug(this, "Long Polling, sleeping for at: " + new Date() + " for " + this.milliSecondToWait + " milliseconds.");
             Thread.sleep(this.milliSecondToWait);
-            Logger.debug(this, "Long Polling, calling the delegate.");
+            Logger.debug(this, "Long Polling, calling the delegate at: " + new Date());
             this.delegate.execute(appContext);
         } catch (InterruptedException e) {
 
             Logger.debug(this, e.getMessage(), e);
-            // todo: do something here.
+            Thread.currentThread().interrupt();
         }
     } // execute.
 

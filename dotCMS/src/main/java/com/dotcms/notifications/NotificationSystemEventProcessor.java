@@ -24,12 +24,11 @@ public class NotificationSystemEventProcessor implements SystemEventProcessor {
 
     @Override
     public SystemEvent process(final SystemEvent event,
-                               final Session session) {
+                               final User sessionUser) {
 
         final Payload payload      = event.getPayload();
         final Notification notification = (Notification) payload.getData();
-        final User user            = (session instanceof SessionWrapper)?
-                SessionWrapper.class.cast(session).getUser():null;
+        final User user         = sessionUser;
 
         final NotificationView notificationView =
                 CONVERTER.convert(new UserNotificationPair(user, notification));

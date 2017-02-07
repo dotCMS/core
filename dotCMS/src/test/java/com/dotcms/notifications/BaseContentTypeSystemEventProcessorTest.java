@@ -7,10 +7,8 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEvent;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.rest.api.v1.content.ContentTypeView;
-import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
-
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -24,13 +22,11 @@ public class BaseContentTypeSystemEventProcessorTest extends UnitTestBase {
         SystemEvent event = mock(SystemEvent.class);
         Structure structure = mock(Structure.class);
         Payload payload = mock(Payload.class);
-        SessionWrapper session = mock(SessionWrapper.class);
         User user = new User();
         SystemEventType systemEventType = SystemEventType.SAVE_BASE_CONTENT_TYPE;
 
         ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper("http://localhost:8080", structure);
 
-        when(session.getUser()).thenReturn(user);
         when(event.getId()).thenReturn("1");
         when(event.getEventType()).thenReturn(systemEventType);
         when(event.getPayload()).thenReturn(payload);
@@ -42,7 +38,7 @@ public class BaseContentTypeSystemEventProcessorTest extends UnitTestBase {
         when(structure.getInode()).thenReturn("3b276d59-46e3-4196-9169-639ddfe6677f");
 
         BaseContentTypeSystemEventProcessor baseContentTypeSystemEventProcessor = new BaseContentTypeSystemEventProcessor();
-        SystemEvent result = baseContentTypeSystemEventProcessor.process(event, session);
+        SystemEvent result = baseContentTypeSystemEventProcessor.process(event, user);
 
         assertEquals(result.getEventType(), systemEventType);
         assertEquals(result.getId(), "1");
