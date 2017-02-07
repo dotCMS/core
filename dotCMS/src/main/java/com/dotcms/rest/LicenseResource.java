@@ -319,12 +319,10 @@ public class LicenseResource {
             } else {
                 jsonResponse.put("success", false );
             }
-            
             return Response.ok(jsonResponse.toString(), MediaType.APPLICATION_JSON_TYPE).build();
         }
         catch(Exception ex) {
             Logger.error(this, "can't request license ",ex);
-
             return Response.serverError().build();
         }
         
