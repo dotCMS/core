@@ -9,6 +9,7 @@
 <%@page import="com.dotmarketing.cache.FieldsCache" %>
 <%@page import="com.dotmarketing.util.PortletID"%>
 <%@ include file="/html/common/init.jsp" %>
+<%@ page import="com.liferay.portal.language.LanguageUtil"%>
 
 
 <% if(LicenseUtil.getLevel()< 199){ %>
@@ -164,12 +165,22 @@ function loadTable() {
 						"</tr>";
 				dojo.place(dojo.toDom(row),'table_body');				
 			}
+
+			if( inode !== undefined && pageSize >= data.total ) {
+				require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+					domStyle.set(registry.byId("prevBtn").domNode, 'display', 'none');
+					domStyle.set(registry.byId("nextBtn").domNode, 'display', 'none');
+				});
+			}
+
 			if(typeof id.textContent == "undefined"){
                 dojo.byId('totalPages').innerText=Math.ceil(data.total/pageSize);
+				
         	}
-        	else
+        	else {
                 dojo.byId('totalPages').textContent=Math.ceil(data.total/pageSize);
-			disableButtons(false);
+				disableButtons(false);
+			}
 		},
 		error: function(err) {
 			console.log(err);
@@ -252,20 +263,22 @@ dojo.ready(function(){
                 </table>
             </div>
             <div dojoType="dijit.layout.ContentPane" region="bottom">
-                <span id="tools">
-                   <button id="prevBtn" type="button" dojoType="dijit.form.Button" onClick="movePage(-1)">
-	                   <span class="previousIcon"></span>
-	               </button>
-	               
-	               <span id="currentPage"><%=pageNumber %></span> / <span id="totalPages"></span>
-	               
-	               <button id="nextBtn" type="button" dojoType="dijit.form.Button" onClick="movePage(1)">
-                       <span class="nextIcon"></span>
-                   </button>
-                </span>
+                
             </div>
         </div>
     </div>
+</div>
+<div class="portlet-pagination">
+	<span id="tools">
+		<button id="prevBtn" type="button" dojoType="dijit.form.Button" onClick="movePage(-1)" style="float: left">
+			<%= LanguageUtil.get(pageContext, "Previous")%>
+		</button>
+		<span id="currentPage"><%=pageNumber %></span> / <span id="totalPages"></span>
+		
+		<button id="nextBtn" type="button" dojoType="dijit.form.Button" onClick="movePage(1)" style="float: right">
+			<%= LanguageUtil.get(pageContext, "Next")%>
+		</button>
+	</span>
 </div>
 
    <script>

@@ -127,128 +127,129 @@ function validate() {
 <input name="wfConId" id="wfConId" type="hidden" value="<%=inode%>">
 
 <% if(mustShow){ %>
-	<div id="wfDivWrapperForDojo">
-		<div style="margin:auto;width:500px;">
-			<div class="fieldWrapper">
-				<div class="fieldName"><%= LanguageUtil.get(pageContext, "Perform-Workflow") %>:</div>
-				<div class="fieldValue"><%=action.getName() %></div>
-				<div class="clear"></div>
-			</div>
-			<%if(action.isCommentable()){ %>
-				<div class="fieldWrapper">
-					<div class="fieldName"><%= LanguageUtil.get(pageContext, "Comments") %>: </div>
-					<div class="fieldValue"><textarea name="taskCommentsAux" id="taskCommentsAux" cols=40 rows=8 style="min-height:100px;" dojoType="dijit.form.Textarea"></textarea></div>
-					<div class="clear"></div>
+	<div id="wfDivWrapperForDojo" class="form-horizontal content-search__assign-workflow-form">
+		<dl>
+			<dt>
+				<label for=""><%= LanguageUtil.get(pageContext, "Perform-Workflow") %>:</label>
+			</dt>
+			<dd><%=action.getName() %></dd>
+		</dl>
+		<%if(action.isCommentable()){ %>
+			<dl>
+				<dt>
+					<label for=""><%= LanguageUtil.get(pageContext, "Comments") %>:</label>
+				</dt>
+				<dd>
+					<textarea name="taskCommentsAux" id="taskCommentsAux" cols=40 rows=8 style="min-height:100px;" dojoType="dijit.form.Textarea"></textarea>
+				</dd>
+			</dl>
+		<%}else{ %>
+		<dl>
+			<dt>
+				<label for=""><%= LanguageUtil.get(pageContext, "Comments") %>:</label>
+			</dt>
+			<dd><%= LanguageUtil.get(pageContext, "None") %></dd>
+		</dl>
+		<%} %>
+		<dl>
+			<dt>
+				<label for=""><%= LanguageUtil.get(pageContext, "Assignee") %>:</label>
+			</dt>
+			<dd>
+				<%if(action.isAssignable()){ %>
+					<select id="taskAssignmentAux" name="taskAssignmentAux" dojoType="dijit.form.FilteringSelect"
+							store="myRoleReadStore" searchDelay="300" pageSize="30" labelAttr="name"
+							invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>">
+					</select>
+				<%} else if (UtilMethods.isSet( role ) && UtilMethods.isSet( role.getId() )) { %>
+					<%=APILocator.getRoleAPI().loadCMSAnonymousRole().getId().equals(role.getId())?LanguageUtil.get(pageContext, "current-user"):role.getName()%>
+					<input type="text" dojoType="dijit.form.TextBox" style="display:none" name="taskAssignmentAux" id="taskAssignmentAux" value="<%=role.getId()%>">
+				<%} %>
+			</dd>
+		</dl>
+		<%if(hasPushPublishActionlet){
+			String hour = (cal.get(GregorianCalendar.HOUR_OF_DAY) < 10) ? "0"+cal.get(GregorianCalendar.HOUR_OF_DAY) : ""+cal.get(GregorianCalendar.HOUR_OF_DAY);
+			String min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCalendar.MINUTE) : ""+cal.get(GregorianCalendar.MINUTE);
+		%>
+		<dl>
+			<dt>
+				<label for=""><%= LanguageUtil.get(pageContext, "Publish") %>:</label>
+			</dt>
+			<dd>
+				<input
+					type="text"
+					dojoType="dijit.form.DateTextBox"
+					validate="return false;"
+					invalidMessage=""
+					id="wfPublishDateAux"
+					name="wfPublishDateAux" value="now" style="width: 110px;">
+
+
+				<input type="text" name="wfPublishTimeAux" id="wfPublishTimeAux" value="now"
+					data-dojo-type="dijit.form.TimeTextBox"
+					required="true" style="width: 100px;"/>
+
+				<input type="checkbox" data-dojo-type="dijit/form/CheckBox"  name="forcePush" id="forcePush" value="true"><label for="forcePush"><%= LanguageUtil.get(pageContext, "publisher_dialog_force-push") %></label>
+			</dd>
+		</dl>
+		<dl>
+			<dt>
+				<label for=""><%= LanguageUtil.get(pageContext, "publisher_Expire") %>:</label>
+			</dt>
+			<dd>
+				<input
+					type="text"
+					dojoType="dijit.form.DateTextBox"
+					validate="return false;"
+					id="wfExpireDateAux"
+					name="wfExpireDateAux"
+					value=""
+					style="width: 110px;">
+
+				<input 	type="text"
+						name="wfExpireTimeAux"
+						id="wfExpireTimeAux"
+						value=""
+						data-dojo-type="dijit.form.TimeTextBox"
+						style="width: 100px;"
+							/>
+
+				<input type="checkbox" onclick="toggleExpire()" dojoType="dijit.form.CheckBox" value="true" name="wfNeverExpire" checked="true" id="wfNeverExpire" > <label for="wfNeverExpire"><%= LanguageUtil.get(pageContext, "publisher_Never_Expire") %></label>
+			</dd>
+		</dl>
+		<dl>
+			<dt>
+				<label for=""><%=LanguageUtil.get(pageContext, "publisher_dialog_choose_environment")%>:</label>
+			</dt>
+			<dd>
+				<input data-dojo-type="dijit/form/FilteringSelect"
+					data-dojo-props="store:pushHandler.environmentStore, searchAttr:'name'"
+					name="environmentSelect" id="environmentSelect" />
+				<button dojoType="dijit.form.Button"
+					onClick='pushHandler.addSelectedToWhereToSend()' iconClass="addIcon">
+					<%=LanguageUtil.get(pageContext, "add")%>
+				</button>
+				<div class="wfWhoCanUseDiv">
+					<table class="listingTable" id="whereToSendTable">
+					</table>
 				</div>
-			<%}else{ %>
-				<div class="fieldWrapper">
-					<div class="fieldName"><%= LanguageUtil.get(pageContext, "Comments") %>: </div>
-					<div class="fieldValue"><%= LanguageUtil.get(pageContext, "None") %></div>
-					<div class="clear"></div>
-				</div>
-			<%} %>
-				<div class="fieldWrapper">
-					<div class="fieldName"><%= LanguageUtil.get(pageContext, "Assignee") %>: </div>
-					<div class="fieldValue">
-						<%if(action.isAssignable()){ %>
-							<select id="taskAssignmentAux" name="taskAssignmentAux" dojoType="dijit.form.FilteringSelect"
-									store="myRoleReadStore" searchDelay="300" pageSize="30" labelAttr="name"
-									invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>">
-							</select>
-						<%} else if (UtilMethods.isSet( role ) && UtilMethods.isSet( role.getId() )) { %>
-							<%=APILocator.getRoleAPI().loadCMSAnonymousRole().getId().equals(role.getId())?LanguageUtil.get(pageContext, "current-user"):role.getName()%>
-							<input type="text" dojoType="dijit.form.TextBox" style="display:none" name="taskAssignmentAux" id="taskAssignmentAux" value="<%=role.getId()%>">
-						<%} %>
-					</div>
-					<div class="clear"></div>
-				</div>
-				<%if(hasPushPublishActionlet){
-					String hour = (cal.get(GregorianCalendar.HOUR_OF_DAY) < 10) ? "0"+cal.get(GregorianCalendar.HOUR_OF_DAY) : ""+cal.get(GregorianCalendar.HOUR_OF_DAY);
-					String min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCalendar.MINUTE) : ""+cal.get(GregorianCalendar.MINUTE);
-				%>
-
-					<div class="fieldWrapper">
-						<div class="fieldName"><%= LanguageUtil.get(pageContext, "Publish") %>: </div>
-						<div class="fieldValue">
-							<input
-								type="text"
-								dojoType="dijit.form.DateTextBox"
-								validate="return false;"
-								invalidMessage=""
-								id="wfPublishDateAux"
-								name="wfPublishDateAux" value="now" style="width: 110px;">
-
-
-							<input type="text" name="wfPublishTimeAux" id="wfPublishTimeAux" value="now"
-							 	data-dojo-type="dijit.form.TimeTextBox"
-								required="true" style="width: 100px;"/>
-
-							<input type="checkbox" data-dojo-type="dijit/form/CheckBox"  name="forcePush" id="forcePush" value="true"><label for="forcePush"><%= LanguageUtil.get(pageContext, "publisher_dialog_force-push") %></label>
-
-						</div>
-						<div class="clear"></div>
-					</div>
-					<div class="fieldWrapper">
-						<div class="fieldName"><%= LanguageUtil.get(pageContext, "publisher_Expire") %>: </div>
-						<div class="fieldValue">
-							<input
-								type="text"
-								dojoType="dijit.form.DateTextBox"
-								validate="return false;"
-								id="wfExpireDateAux"
-								name="wfExpireDateAux"
-								value=""
-								style="width: 110px;">
-
-							<input 	type="text"
-									name="wfExpireTimeAux"
-									id="wfExpireTimeAux"
-									value=""
-							    	data-dojo-type="dijit.form.TimeTextBox"
-									style="width: 100px;"
-									  />
-
-							<input type="checkbox" onclick="toggleExpire()" dojoType="dijit.form.CheckBox" value="true" name="wfNeverExpire" checked="true" id="wfNeverExpire" > <label for="wfNeverExpire"><%= LanguageUtil.get(pageContext, "publisher_Never_Expire") %></label>
-						</div>
-						<div class="clear"></div>
-					</div>
-					<div class="fieldWrapper">
-						<div class="fieldName" >
-							<%=LanguageUtil.get(pageContext,
-									"publisher_dialog_choose_environment")%>:
-						</div>
-						<div class="fieldValue">
-							<input data-dojo-type="dijit/form/FilteringSelect"
-								data-dojo-props="store:pushHandler.environmentStore, searchAttr:'name'"
-								name="environmentSelect" id="environmentSelect" />
-							<button dojoType="dijit.form.Button"
-								onClick='pushHandler.addSelectedToWhereToSend()' iconClass="addIcon">
-								<%=LanguageUtil.get(pageContext, "add")%>
-							</button>
-							<div class="wfWhoCanUseDiv">
-								<table class="listingTable" id="whereToSendTable">
-								</table>
-							</div>
-							<input type="hidden" name="whereToSend" id="whereToSend" value="">
-						</div>
-						<div class="clear"></div>
-					</div>
-				<%}%>
-			<div class="buttonRow">
-                <% if(hasPushPublishActionlet){ %>
-                    <button dojoType="dijit.form.Button" iconClass="sServerIcon" onClick="validate()" type="button">
-                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_dialog_push")) %>
-                    </button>
-                <% } else { %>
-                    <button dojoType="dijit.form.Button" iconClass="saveAssignIcon" onClick="validate()" type="button">
-                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
-                    </button>
-                <% } %>
-				<button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="dijit.byId('contentletWfDialog').hide()" type="button">
-					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
-					</button>
-
-			</div>
+				<input type="hidden" name="whereToSend" id="whereToSend" value="">
+			</dd>
+		</dl>
+		<%}%>
+		<div class="buttonRow">
+			<% if(hasPushPublishActionlet){ %>
+				<button dojoType="dijit.form.Button" iconClass="sServerIcon" onClick="validate()" type="button">
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_dialog_push")) %>
+				</button>
+			<% } else { %>
+				<button dojoType="dijit.form.Button" iconClass="saveAssignIcon" onClick="validate()" type="button">
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
+				</button>
+			<% } %>
+			<button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="dijit.byId('contentletWfDialog').hide()" type="button" class="dijitButtonFlat">
+				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
+				</button>
 		</div>
 	</div>
     <script>

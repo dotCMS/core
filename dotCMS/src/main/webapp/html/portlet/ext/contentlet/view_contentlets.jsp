@@ -425,19 +425,26 @@
                 <!-- END Advanced Search-->
 
                 <div class="buttonRow">
-                    <span id="searchButton"></span>
+                    <dl class="vertical">
+                        <dd>
+                            <button dojoType="dijit.form.ComboButton" id="searchButton" optionsTitle='createOptions' onClick="doSearch();return false;" iconClass="searchIcon" title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>">
+                                <span><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %></span>
+                                <div dojoType="dijit.Menu" style="display: none;" onClick="doSearch();return false;">
+                                    <div dojoType="dijit.MenuItem"  iconClass="searchIcon" onClick="doSearch();return false;"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %></div>
+                                    <div dojoType="dijit.MenuItem" iconClass="queryIcon" onClick="showHideQuery()"><%= LanguageUtil.get(pageContext, "Show-Query")%></div>
+                                </div>
+                            </button>
+                        </dd>
+                    </dl>
 
-                    <button dojoType="dijit.form.ComboButton" id="searchButton" optionsTitle='createOptions' onClick="doSearch();return false;" iconClass="searchIcon" title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>">
-                        <span><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %></span>
-                        <div dojoType="dijit.Menu" style="display: none;" onClick="doSearch();return false;">
-                            <div dojoType="dijit.MenuItem"  iconClass="searchIcon" onClick="doSearch();return false;"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %></div>
-                            <div dojoType="dijit.MenuItem" iconClass="queryIcon" onClick="showHideQuery()"><%= LanguageUtil.get(pageContext, "Show-Query")%></div>
-                        </div>
-                    </button>
+                    <dl class="vertical">
+                        <dd>
+                            <button dojoType="dijit.form.Button" id="clearButton" onClick="clearSearch();doSearch();" iconClass="resetIcon" class="dijitButtonFlat">
+                                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear")) %>
+                            </button>
+                        </dd>
+                    </dl>
 
-                    <button dojoType="dijit.form.Button" id="clearButton" onClick="clearSearch();doSearch();" iconClass="resetIcon" class="dijitButtonFlat">
-                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear")) %>
-                    </button>
                 </div>
 
                <a href="javascript:toggleAdvancedSearchDiv()" class="advanced-search-button">
@@ -540,7 +547,7 @@
                             </div>
                         </div>
                     </div>
-                    <table id="results_table" class="listingTable"></table>
+                    <table id="results_table" class="listingTable content-search__results-list"></table>
                     <div id="results_table_popup_menus"></div>
                     <!-- END Listing Results -->
                 </div>
@@ -566,7 +573,7 @@
         <!-- END Right Column -->
 
         <!-- START Show Query -->
-        <div id="queryDiv" dojoType="dijit.Dialog" style="display: none;padding-top:15px\9;">
+        <div id="queryDiv" dojoType="dijit.Dialog" class="content-search__show-query-dialog" style="display: none;padding-top:15px\9;">
             <div id="queryResults"></div>
         </div>
         <!-- END Show Query -->
