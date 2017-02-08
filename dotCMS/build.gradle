@@ -86,6 +86,17 @@ idea {
 // Import and apply the dependencies from the dependencies scripts.
 apply from: "$rootDir/dependencies.gradle"
 
+if (gradle.startParameter.taskNames.contains("deployWarTomcatDev")) {
+    sourceSets {
+        main {
+            java {
+                srcDirs = ["src/main/java", "$enterpriseProjectHome/src", "$licenseProjectHome/src"]
+            }
+        }
+    }
+}
+
+
 ant.lifecycleLogLevel = "INFO"
 
 ext {
@@ -124,6 +135,8 @@ compileJava {
 }
 
 jar{
+    exclude 'com/dotcms/enterprise/**'
+
     if (gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
         from project.sourceSets.main.output + project.sourceSets.test.output + project.sourceSets.integrationTest.output + project.sourceSets.functionalTest.output
     }

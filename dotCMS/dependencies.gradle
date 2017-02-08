@@ -262,10 +262,11 @@ dependencies {
 	compile group: 'com.twelvemonkeys.imageio', name: 'imageio-thumbsdb', version:'3.2.1'
 	compile group: 'com.twelvemonkeys.imageio', name: 'imageio-batik', version:'3.2.1'
 	compile group: 'com.twelvemonkeys.imageio', name: 'imageio-clippath', version:'3.2.1'
-    //compile group: 'com.twelvemonkeys.servlet', name: 'servlet', version:'3.2.1'
+    compile group: 'com.twelvemonkeys.servlet', name: 'servlet', version:'3.2.1'
     compile 'com.github.ben-manes.caffeine:caffeine:2.3.3'
     compile group: 'org.apache.pdfbox', name: 'pdfbox', version: '2.0.1'
     compile group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.56'
+    compile group: 'com.beust', name: 'jcommander', version: '1.48'
 
     /**
      * Order matters here: JUNIT must come after hamcrest.
