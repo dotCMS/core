@@ -47,46 +47,6 @@
 
 %>
 
-
-<style type="text/css">
-
-	body,html{ height: 100%; }
-
-	#tailingFrame{
-		border:1px solid silver;
-		overflow: auto;
-		height:100%;
-		width:100%;
-
-	}
-	#tailContainer {
-		margin-top:10px;
-		margin-bottom:30px;
-		height:80%;
-		width:94%;
-		position: relative;
-		top: 40px;;
-	    left: 3%;
-	}
-	#headerContainer{
-		position: relative;
-		width:94%;
-	   	left: 3%;
-		border:0px solid silver;
-		padding-top:10px;
-		padding-left:10px;
-	}
-
-	#popMeUp{
-		float:right;
-	}
-
-	#logman_dia {
-	   width:640px;
-       height:480px;
-	}
-</style>
-
 <script type="text/javascript">
 
 	function reloadTail(){
@@ -125,12 +85,10 @@
 	}
 
     function checkUncheck () {
-
         var x = dijit.byId( "checkAllCkBx" ).checked;
         dojo.query( ".taskCheckBox" ).forEach( function ( node ) {
-            node.checked = x;
+            dijit.getEnclosingWidget(node).set("checked", x);
         } );
-
     }
 
 
@@ -138,7 +96,6 @@
      * Will search for all the current logs and it will populate the table with those logs details
      */
     function getCurrentLogs () {
-
         var xhrArgs = {
 
             url:"/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.LogConsoleAjaxAction/cmd/getLogs/",
@@ -231,63 +188,77 @@
                 className:"logsTableRow",
                 id:"tr-" + name
             }, tableNode );
+
+            dojo.parser.parse(tableNode);
         }
 
     };
 
+    function destroyCheckboxNodes() {
+        dojo.query(".taskCheckBox").forEach(function (node) {
+            console.log(dijit.getEnclosingWidget(node));
+            dijit.getEnclosingWidget(node).destroy();
+        });
+    }
+
+
     dojo.ready(function() {
-    	dojo.connect(dijit.byId("logman_dia"),"onShow",null,getCurrentLogs);
+        var dialog = dijit.byId("logman_dia");
+    	dojo.connect(dialog, "onShow", null, getCurrentLogs);
+    	dojo.connect(dialog, "onCancel", null, destroyCheckboxNodes);
     });
 
 </script>
 
-
-
-
-	<div id="headerContainer">
-		<%=com.liferay.portal.language.LanguageUtil.get(pageContext, "Tail")%>:
-		<select name="fileName" dojoType="dijit.form.FilteringSelect" ignoreCase="true" id="fileName" style="width:250px;" onchange="reloadTail();">
-			<option value=""></option>
-			<%for(File f: files){%>
-                <option value="<%= f.getPath().replace(logPath, "")%>"><%= f.getPath().replace(logPath, "")%></option>
-			<%} %>
-		</select>
-		&nbsp; &nbsp;
-		<%=com.liferay.portal.language.LanguageUtil.get(pageContext, "Follow") %> <input type='checkbox' id='scrollMe' dojoType="dijit.form.CheckBox" value=1 checked="true" />
-		            <button dojoType="dijit.form.Button" onClick="doPopup()"  iconClass="detailView"  value="popup" name="popup" >
+<div class="portlet-toolbar" id="headerContainer">
+    <div class="portlet-toolbar__actions-primary">
+        <div class="inline-form">
+            <label for="fileName"><%=com.liferay.portal.language.LanguageUtil.get(pageContext, "Tail")%>:</label>
+            <select name="fileName" dojoType="dijit.form.FilteringSelect" ignoreCase="true" id="fileName" style="width:250px;" onchange="reloadTail();">
+                <option value=""></option>
+                <%for(File f: files){%>
+                    <option value="<%= f.getPath().replace(logPath, "")%>"><%= f.getPath().replace(logPath, "")%></option>
+                <%} %>
+            </select>
+            <div class="checkbox">
+                <input type="checkbox" id="scrollMe" dojoType="dijit.form.CheckBox" value=1 checked="true" />
+                <label for="scrollMe">
+                    <%=com.liferay.portal.language.LanguageUtil.get(pageContext, "Follow") %>
+                </label>
+            </div>
+            <button dojoType="dijit.form.Button" onClick="doPopup()" value="popup" name="popup">
                 <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"popup") %>
             </button>
-		<div id="popMeUp">
-            <button dojoType="dijit.form.Button" onClick="doManageLogs()"  iconClass="detailView"  value="popup" name="popup" >
+        </div>
+    </div>
+    <div class="portlet-toolbar__actions-secondary">
+        <div id="popMeUp">
+            <button dojoType="dijit.form.Button" onClick="doManageLogs()"  value="popup" name="popup" >
                 <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"LOG_Manager") %>
             </button>
-		</div>
+        </div>
+    </div>
+</div>
 
-	</div>
+<div id="tailContainer" class="log-files__container">
+    <iframe id="tailingFrame" src="/html/blank.jsp" class="log-files__iframe"></iframe>
+</div>
 
-	<div id="tailContainer">
-		<iframe id="tailingFrame" src="/html/blank.jsp"></iframe>
-	</div>
-
-
-   <div id="logman_dia" dojoType="dijit.Dialog">
-        <div id="search" title="<%= com.liferay.portal.language.LanguageUtil.get(pageContext, "LOG_activity") %>" ></div>
-
-		<div style="width:620px;height:300px;">
-		    <table class="listingTable" id="logsTable" align="center">
-		        <tr id="logsTableHeader">
-		            <th width="5%"><input type="checkbox" dojotype="dijit.form.CheckBox" id="checkAllCkBx" onclick="checkUncheck()"></input></th>
-		            <th nowrap="nowrap" width="5%" style="text-align:center;">Status</th>
-		            <th nowrap="nowrap" width="32%" style="text-align:center;">Log Name</th>
-		            <th nowrap="nowrap" width="58%" style="text-align:center;">Log Description</th>
-		        </tr>
-		    </table>
-		</div>
-		<div>&nbsp;</div>
-		<div class="buttonRow">
-		    <button dojoType="dijit.form.Button" iconClass="searchIcon" name="filterButton" onClick="enableDisableLogs()"> <%= com.liferay.portal.language.LanguageUtil.get(pageContext, "LOG_button") %> </button>
-		    <button dojoType="dijit.form.Button" iconClass="resetIcon" name="refreshButton" onClick="getCurrentLogs ()"> Refresh </button>
-		</div>
-
-   </div>
+<div id="logman_dia" dojoType="dijit.Dialog">
+    <div id="search" title="<%= com.liferay.portal.language.LanguageUtil.get(pageContext, "LOG_activity") %>" ></div>
+    <div style="width:620px">
+        <table class="listingTable" id="logsTable" align="center">
+            <tr id="logsTableHeader">
+                <th width="5%"><input type="checkbox" dojotype="dijit.form.CheckBox" id="checkAllCkBx" onclick="checkUncheck()" /></th>
+                <th nowrap="nowrap" width="5%" style="text-align:center;">Status</th>
+                <th nowrap="nowrap" width="32%" style="text-align:center;">Log Name</th>
+                <th nowrap="nowrap" width="58%" style="text-align:center;">Log Description</th>
+            </tr>
+        </table>
+    </div>
+    <div class="buttonRow">
+        <button dojoType="dijit.form.Button" name="filterButton" onClick="enableDisableLogs()"><%= com.liferay.portal.language.LanguageUtil.get(pageContext, "LOG_button") %></button>
+        <button dojoType="dijit.form.Button" name="refreshButton" onClick="getCurrentLogs ()">Refresh</button>
+    </div>
+</div>
 

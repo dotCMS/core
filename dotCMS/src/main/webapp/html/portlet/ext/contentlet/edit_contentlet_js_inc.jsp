@@ -545,11 +545,21 @@ dojo.require("dojox.layout.ContentPane");
 			var errorDisplayElement = dijit.byId('saveContentErrors');
 			var exceptionData = data["saveContentErrors"];
 			var errorList = "";
-				for (var i = 0; i < exceptionData.length; i++) {
-					var error = exceptionData[i];
-					errorList = errorList+"<li>"+error+"</li>";
+			for (var i = 0; i < exceptionData.length; i++) {
+				var error = exceptionData[i];
+				if (error) {
+					errorList = errorList + "<li>" + error + "</li>";
 				}
-			dojo.byId('exceptionData').innerHTML = "<ul>"+errorList+"</ul>";
+			}
+
+			var messages;
+			if (errorList.length) {
+				messages = "<ul>" + errorList + "</ul>";
+			} else {
+				messages = "<p><%= LanguageUtil.get(pageContext, "required-fields") %></p>"
+			}
+
+			dojo.byId('exceptionData').innerHTML = messages;
 			dojo.byId("wfActionId").value=""; // hack to let the user choose save instead of wfAction
 			errorDisplayElement.show();
 			return;

@@ -3170,6 +3170,10 @@ select[multiple]:hover {
 .listingTable table td {
   background: none !important;
 }
+.listingTable td a {
+  color: #161616;
+  text-decoration: none;
+}
 .listingTable td table td:first-child, .listingTable td table td:last-child {
   padding: 0;
 }
@@ -6382,6 +6386,53 @@ a.category_higlighted, a.tag_higlighted {
   text-align: center;
 }
 
+.network__listing .icon {
+  width: 14px;
+}
+
+.network-action {
+  background: #fff;
+  border: 1px solid #ECEDEE;
+  bottom: 0;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 0;
+}
+
+.network-action__header {
+  padding: 0px;
+}
+
+.network-action__title {
+  background-color: #0E80CB;
+  color: #fff;
+  margin: -16px -16px 16px;
+  height: 39px;
+  line-height: 39px;
+  padding: 0 16px;
+}
+
+.network-action__content {
+  margin: 16px;
+}
+
+.network-action__list {
+  margin-bottom: 32px;
+  width: 100%;
+}
+.network-action__list th, .network-action__list td {
+  padding: 4px;
+}
+.network-action__list tr:first-child td:first-child {
+  width: 16px;
+}
+
+.network-action__btn-refresh {
+  display: block;
+  text-align: center;
+}
+
 .content-edit__main {
   margin: 16px 220px 0 0;
   width: auto;
@@ -6453,9 +6504,20 @@ a.category_higlighted, a.tag_higlighted {
   border: 0px;
   width: 300px;
 }
-.content-edit__dialog-error .dijitDialogTitleBar {
-  height: 0;
-  z-index: 1;
+.content-edit__dialog-error p {
+  text-align: center;
+}
+.content-edit__dialog-error ul {
+  margin: 0 0 16px;
+}
+.content-edit__dialog-error ul li {
+  list-style-position: outside;
+  list-style-type: decimal;
+  margin: 0 0 8px 16px;
+}
+
+.content-edit__dialog-error-actions {
+  text-align: center;
 }
 
 .content-edit__history-version .dijitContentPane {
@@ -6589,6 +6651,18 @@ a.category_higlighted, a.tag_higlighted {
 
 .headerBox {
   padding: 0;
+}
+
+.log-files__container {
+  width: 100%;
+  height: 500px;
+}
+
+.log-files__iframe {
+  border: 1px solid #C5C5C5;
+  overflow: auto;
+  height: 100%;
+  width: 100%;
 }
 
 .license-manager__upload-button {
@@ -6887,11 +6961,17 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .callOutBox2 {
-  background-color: #f0f0f0;
+  background-color: #ECEDEE;
   border-radius: 2px;
-  border: 1px solid #d0d0d0;
+  border: 1px solid #C5C5C5;
   padding: 8px;
   text-align: center;
+}
+.callOutBox2 h3 {
+  margin-bottom: 16px;
+}
+.callOutBox2 p:last-child {
+  margin-bottom: 0;
 }
 
 .context-menu {
@@ -7178,10 +7258,6 @@ a.category_higlighted, a.tag_higlighted {
 }
 .related-content-dialog .portlet-sidebar-wrapper {
   width: 200px;
-}
-.related-content-dialog .dijitDialogTitleBar {
-  height: 0;
-  z-index: 1;
 }
 
 .related-content-container,
