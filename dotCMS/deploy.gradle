@@ -1,4 +1,9 @@
 
+configurations {
+    compile
+    testCompile
+}
+
 def scriptDescription = """\
 
     ********************************************************
@@ -32,27 +37,27 @@ def taskDescription = """
 
          dotcms jar:
             Name convention: dotcms_version_hash.jar -> dotcms_3.0_a434224.jar
-            As snapshot: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -PincludeDependencies=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/dotcms_3.0_a434224.jar
-            As release: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -PincludeDependencies=true -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/dotcms_3.0_a434224.jar
+            As snapshot: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms -PincludeDependencies=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/dotcms_3.0_a434224.jar
+            As release: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms -PincludeDependencies=true -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/dotcms_3.0_a434224.jar
 
          Enterprise jar
             Name convention: ee_dotcmsversion.jar -> ee_3.6.jar
-            As snapshot: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/ee_3.6.jar
-            As release: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/ee_3.6.jar
+            As snapshot: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/ee_3.6.jar
+            As release: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/ee_3.6.jar
 
         Enterprise license jar
             Name convention: eelic_dotcmsversion.jar -> eelic_3.6.jar
-            As snapshot: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/eelic_3.6.jar
-            As release: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/eelic_3.6.jar
+            As snapshot: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/eelic_3.6.jar
+            As release: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/eelic_3.6.jar
 
          starter zip
             Name convention: starter_timestamp.zip -> starter_20140805.zip
-            As snapshot: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20140805.zip
-            As release: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20140805.zip
+            As snapshot: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20140805.zip
+            As release: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20140805.zip
 
          Ant Tooling jar
             Name convention: ant-tooling_version.jar -> ant-tooling_1.1.jar
-            As release: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/ant-tooling/build/libs/ant-tooling_1.1.jar
+            As release: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/ant-tooling/build/libs/ant-tooling_1.1.jar
 
     NOTE:
         For a known gradle bug we can not use the default snapshot behaviour and right now each snapshot have to be an artifact:
@@ -143,7 +148,7 @@ artifacts {
     }
 }
 
-uploadArchives() {
+uploadArchives {
 
     description = taskDescription
 
@@ -183,6 +188,17 @@ uploadArchives() {
                 pom(fileName).artifactId = artifactId
                 pom(fileName).version = version
                 pom(fileName).groupId = artifactGroupId
+
+                // Add project dependencies to generated pom.xml file (Note: scope and exclusions not yet supported)
+                pom(fileName).withXml {
+                    def dependenciesNode = asNode().appendNode('dependencies')
+                    configurations.compile.allDependencies.each {
+                        def dependencyNode = dependenciesNode.appendNode('dependency')
+                        dependencyNode.appendNode('groupId', it.group)
+                        dependencyNode.appendNode('artifactId', it.name)
+                        dependencyNode.appendNode('version', it.version)
+                    }
+                }
 
                 //Some feedback
                 println " --> Preparing to upload: " + fileName
