@@ -1915,14 +1915,17 @@ dd.leftdl {
     <!-- START Logged Users TAB -->
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     <div id="loggedusers" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "logged-users-tab-title") %>" >
-        <div class="buttonRow" style="text-align:right;width:90% !important;">
-            <button dojoType="dijit.form.Button" onClick="loadUsers()" iconClass="resetIcon">
-                <%= LanguageUtil.get(pageContext,"logged-users-reload") %>
-            </button>
-        </div>
+		<div class="portlet-toolbar">
+			<div class="portlet-toolbar__actions-primary">
+			</div>
+			<div class="portlet-toolbar__actions-secondary">
+				<button dojoType="dijit.form.Button" onClick="loadUsers()" iconClass="resetIcon">
+					<%= LanguageUtil.get(pageContext,"logged-users-reload") %>
+				</button>
+			</div>
+		</div>
 
-
-        <table class="listingTable shadowBox" style="width:90% !important;">
+        <table class="listingTable">
             <thead>
             <tr>
                 <th><%= LanguageUtil.get(pageContext,"Started") %></th>
@@ -1930,8 +1933,8 @@ dd.leftdl {
                 <th><%= LanguageUtil.get(pageContext,"user-id") %></th>
                 <th><%= LanguageUtil.get(pageContext,"Email") %></th>
                 <th><%= LanguageUtil.get(pageContext,"user-name") %></th>
-                <th style="text-align:center;">
-                	<button dojoType="dijit.form.Button" onClick="killAllSessions();" iconClass="exclamation-red" >
+                <th style="text-align:right;">
+                	<button dojoType="dijit.form.Button" onClick="killAllSessions();" class="dijitButtonDanger">
                 	<%= LanguageUtil.get(pageContext, "logged-users-tab-killsession-all") %>
                 </button>
                 </th>
