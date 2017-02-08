@@ -6591,6 +6591,18 @@ a.category_higlighted, a.tag_higlighted {
   padding: 0;
 }
 
+.log-files__container {
+  width: 100%;
+  height: 500px;
+}
+
+.log-files__iframe {
+  border: 1px solid #C5C5C5;
+  overflow: auto;
+  height: 100%;
+  width: 100%;
+}
+
 .license-manager__upload-button {
   float: right;
 }

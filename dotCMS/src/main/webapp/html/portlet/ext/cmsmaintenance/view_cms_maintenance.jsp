@@ -1803,11 +1803,7 @@ dd.leftdl {
     <!-- START Logging TAB -->
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     <div id="Logging" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Log-Files") %>" >
-        <div style="height:20px">&nbsp;</div>
-        <div style="margin-bottom:10px;height:700px;border:0px solid red">
-            <%@ include file="/html/portlet/ext/cmsmaintenance/tail_log.jsp"%>
-        </div>
-
+		<%@ include file="/html/portlet/ext/cmsmaintenance/tail_log.jsp"%>
     </div>
 
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
