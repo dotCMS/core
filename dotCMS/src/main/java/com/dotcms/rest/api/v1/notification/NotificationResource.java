@@ -30,6 +30,8 @@ import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.ConversionUtils.toLong;
 
+
+
 /**
  * Resource to handle the notification stuff.
  * - Mark as read
