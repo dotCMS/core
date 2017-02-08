@@ -756,7 +756,7 @@ create table analytic_summary_pages (
 );
 create table tag (
    tag_id NVARCHAR(100) not null,
-   tagname nNVARCHAR(255) not null,
+   tagname NVARCHAR(255) not null,
    host_id NVARCHAR(255) null,
    user_id NVARCHAR(255) null,
    persona tinyint default 0,
