@@ -30,6 +30,7 @@ import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
+import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;

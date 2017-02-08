@@ -714,20 +714,20 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 		List<String> schemaList = new ArrayList<>();
 		try {
 			// Obtain the SQL Script in accordance with the database type
- 			if (DbConnectionFactory.isPostgres()) {
- 				schemaList = SQLUtil.tokenize(getPostgresScript());
- 			} else if (DbConnectionFactory.isMySql()) {
- 				schemaList = SQLUtil.tokenize(getMySQLScript());
- 			} else if (DbConnectionFactory.isOracle()) {
- 				schemaList = SQLUtil.tokenize(getOracleScript());
- 			} else if (DbConnectionFactory.isMsSql()) {
- 				schemaList = SQLUtil.tokenize(getMSSQLScript());
- 			} else {
- 				schemaList = SQLUtil.tokenize(getH2Script());
- 			}
- 			if (schemaList.isEmpty()) {
- 				return;
- 			}
+			if (DbConnectionFactory.isPostgres()) {
+				schemaList = SQLUtil.tokenize(getPostgresScript());
+			} else if (DbConnectionFactory.isMySql()) {
+				schemaList = SQLUtil.tokenize(getMySQLScript());
+			} else if (DbConnectionFactory.isOracle()) {
+				schemaList = SQLUtil.tokenize(getOracleScript());
+			} else if (DbConnectionFactory.isMsSql()) {
+				schemaList = SQLUtil.tokenize(getMSSQLScript());
+			} else {
+				schemaList = SQLUtil.tokenize(getH2Script());
+			}
+			if (schemaList.isEmpty()) {
+				return;
+			}
 			this.primaryKeyProcessor = getPrimaryKeyProcessor();
 			this.foreignKeyProcessor = getForeignKeyProcessor();
 			this.indexProcessor = getIndexProcessor();
@@ -759,21 +759,12 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 		finally {
 		    try {
 		    	if (conn != null) {
-		        	conn.close();
-		        }
-<<<<<<< HEAD
-		    }
-		    catch(SQLException ex) {
-		        throw new DotDataException(ex.getMessage(), ex);
-		    }
-		}
-
-=======
+		    		conn.close();
+		    	}
 		    } catch(SQLException ex) {
 		        throw new DotDataException(ex.getMessage(), ex);
 		    }
 		}
->>>>>>> master-4.0
 		try {
 		    conn = DbConnectionFactory.getDataSource().getConnection();
             conn.setAutoCommit(false);
