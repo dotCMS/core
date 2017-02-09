@@ -2775,6 +2775,7 @@ hr {
 .dijitTextBox,
 .dijitSelect {
   width: 100%;
+  max-width: 900px;
 }
 
 .dijitComboBox {
@@ -5691,7 +5692,8 @@ Styles for commons fields along the backend
 }
 
 .editor-toolbar {
-  width: 600px;
+  max-width: 900px;
+  width: 100%;
 }
 
 .langVariablesField {
@@ -5707,7 +5709,8 @@ Styles for commons fields along the backend
 }
 
 .wysiwyg-wrapper {
-  width: 800px;
+  width: 100%;
+  max-width: 900px;
 }
 
 .key-value-form {
@@ -6433,6 +6436,37 @@ a.category_higlighted, a.tag_higlighted {
   text-align: center;
 }
 
+#aceTextArea {
+  position: relative;
+}
+
+.aceClass {
+  border: 1px solid #C5C5C5;
+  height: 400px;
+  text-overflow: clip;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.aceText {
+  border: 1px solid #C5C5C5;
+  max-height: 600px;
+  max-width: 900px;
+  min-height: 105px;
+  text-overflow: clip;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.widgetAceText {
+  border: 1px solid #C5C5C5;
+  max-height: 400px;
+  min-height: 362px;
+  text-overflow: clip;
+  white-space: nowrap;
+  width: 682px;
+}
+
 .content-edit__main {
   margin: 16px 220px 0 0;
   width: auto;
@@ -6972,6 +7006,28 @@ a.category_higlighted, a.tag_higlighted {
 }
 .callOutBox2 p:last-child {
   margin-bottom: 0;
+}
+
+.categories-selector__breadcrumbs,
+.categories-selector__toolbar {
+  margin-bottom: 16px;
+}
+
+.categories-selector__breadcrumbs a {
+  text-decoration: none;
+}
+.categories-selector__breadcrumbs a:last-child {
+  color: #161616;
+}
+
+.categories-selector__toolbar {
+  display: flex;
+  justify-content: space-between;
+}
+
+.categories-selector-toolbar-actions-secondary > div {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .context-menu {
