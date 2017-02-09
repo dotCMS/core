@@ -1330,12 +1330,12 @@ create table workflow_task (
    mod_date datetime null,
    due_date datetime null,
    created_by NVARCHAR(255) null,
-   assigned_to NVARCHAR(255) null,
+   assigned_to NVARCHAR(36) null,
    belongs_to NVARCHAR(255) null,
    title NVARCHAR(255) null,
    description NVARCHAR(MAX) null,
-   status NVARCHAR(255) null,
-   webasset NVARCHAR(255) null,
+   status NVARCHAR(36) null,
+   webasset NVARCHAR(36) null,
    primary key (id)
 );
 create table tag_inode (

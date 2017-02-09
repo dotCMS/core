@@ -23,7 +23,7 @@ repositories {
 }
 
 dependencies {
-    compile(group: 'com.dotcms', name: 'dotcms', version: '3.6.1') {
+    compile(group: 'com.dotcms', name: 'dotcms', version: '3.7.1') {
         transitive = true
     }
     /* Specifying an alternate configuration (see above 'configurations') keeps servlet-api.jar from being added to our own output Jar. */

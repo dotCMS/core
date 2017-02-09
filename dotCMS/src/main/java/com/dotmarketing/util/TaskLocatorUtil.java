@@ -219,6 +219,7 @@ public class TaskLocatorUtil {
 		ret.add(Task03560TemplateLayoutCanonicalName.class);
 		ret.add(Task03565FixContainerVersionsCheck.class);
 		ret.add(Task03600UpdateMssqlVarcharTextColumns.class);
+		ret.add(Task03605FixMSSQLMissingConstraints.class);
         ret.add(Task03700ModificationDateColumnAddedToUserTable.class);
         ret.add(Task03705AddingSystemEventTable.class);
         ret.add(Task03710AddFKForIntegrityCheckerTables.class);
