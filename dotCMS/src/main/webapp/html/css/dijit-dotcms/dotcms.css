@@ -6636,6 +6636,12 @@ a.category_higlighted, a.tag_higlighted {
   background-color: rgba(14, 128, 203, 0.1);
 }
 
+.content-type__url-pattern-help {
+  margin-left: 16px;
+  vertical-align: -1px;
+  cursor: pointer;
+}
+
 .design-template__sidebar-wrapper {
   height: 100%;
   min-height: 617px;
@@ -6906,6 +6912,10 @@ a.category_higlighted, a.tag_higlighted {
 
 .dijitContentPane .buttonRow {
   margin-bottom: 15px;
+}
+
+.view-actions__who-can-use .who-can-use__list {
+  min-width: 230px;
 }
 
 /* PORTLET STYLES 2.0 */
