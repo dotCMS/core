@@ -506,21 +506,31 @@
 		var prefix = '';
 		if(type) prefix = type + "-";
 
-		if(dijit.byId(prefix + 'view-permission-' + id) && dijit.byId(prefix + 'view-permission-' + id).attr('value') == 'on')
+		if(isPermissionChecked(prefix + 'view-permission-' + id))
 			permission = permission | viewPermission;
-		if(dijit.byId(prefix + 'add-children-permission-' + id) && dijit.byId(prefix + 'add-children-permission-' + id).attr('value') == 'on')
+		if(isPermissionChecked(prefix + 'add-children-permission-' + id))
 			permission = permission | addChildrenPermission;
-		if(dijit.byId(prefix + 'edit-permission-' + id) && dijit.byId(prefix + 'edit-permission-' + id).attr('value') == 'on')
+		if(isPermissionChecked(prefix + 'edit-permission-' + id))
 			permission = permission | editPermission;
-		if(dijit.byId(prefix + 'publish-permission-' + id) && dijit.byId(prefix + 'publish-permission-' + id).attr('value') == 'on')
+		if(isPermissionChecked(prefix + 'publish-permission-' + id))
 			permission = permission | publishPermission;
-		if(dijit.byId(prefix + 'edit-permissions-permission-' + id) && dijit.byId(prefix + 'edit-permissions-permission-' + id).attr('value') == 'on')
+		if(isPermissionChecked(prefix + 'edit-permissions-permission-' + id))
 			permission = permission | editPermissionsPermission;
-		if(dijit.byId(prefix + 'virtual-links-permission-' + id) && dijit.byId(prefix + 'virtual-links-permission-' + id).attr('value') == 'on')
+		if(isPermissionChecked(prefix + 'virtual-links-permission-' + id))
 			permission = permission | createVirtualLinksPermission;
 
 		return permission;
 
+	}
+
+	function isPermissionChecked(id){
+		if (dijit.byId(id) && dijit.byId(id).attr('value') == 'on'){
+			// Check if the checkbox element is visible
+			var elem = document.getElementById(id);
+			return !!( elem.offsetWidth || elem.offsetHeight || elem.getClientRects().length );
+		} else {
+			return false;
+		}
 	}
 
 	function thereIsPermissionCheckChanges(item) {
