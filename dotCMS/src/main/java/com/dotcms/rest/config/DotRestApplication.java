@@ -10,6 +10,7 @@ import com.dotcms.rest.api.v1.authentication.LogoutResource;
 import com.dotcms.rest.api.v1.browsertree.BrowserTreeResource;
 import com.dotcms.rest.api.v1.content.ContentTypeResource;
 import com.dotcms.rest.api.v1.authentication.*;
+import com.dotcms.rest.api.v1.event.EventsResource;
 import com.dotcms.rest.api.v1.languages.LanguagesResource;
 import com.dotcms.rest.api.v1.personas.PersonaResource;
 import com.dotcms.rest.api.v1.site.SiteResource;
@@ -103,6 +104,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(ResetPasswordResource.class);
 					REST_CLASSES.add(RoleResource.class);
 					REST_CLASSES.add(CreateJsonWebTokenResource.class);
+					REST_CLASSES.add(EventsResource.class);
 
 					REST_CLASSES.add(BrowserTreeResource.class);
 				}

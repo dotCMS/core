@@ -6,7 +6,7 @@ import java.util.List;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
-import com.dotcms.job.JobDelegate;
+import com.dotcms.util.Delegate;
 import com.dotcms.job.system.event.delegate.DeleteOldSystemEventsDelegate;
 import com.dotcms.job.system.event.delegate.bean.JobDelegateDataBean;
 import com.dotmarketing.quartz.DotJob;
@@ -34,13 +34,13 @@ import com.dotmarketing.quartz.DotJob;
  */
 public class DeleteOldSystemEventsJob extends DotJob {
 
-	private static List<JobDelegate<JobDelegateDataBean>> delegates;
+	private static List<Delegate<JobDelegateDataBean>> delegates;
 
 	@Override
 	public void run(JobExecutionContext jobContext) throws JobExecutionException {
-		final List<JobDelegate<JobDelegateDataBean>> delegateList = this.getDelegates();
+		final List<Delegate<JobDelegateDataBean>> delegateList = this.getDelegates();
 		if (delegateList != null && !delegateList.isEmpty()) {
-			for (JobDelegate<JobDelegateDataBean> delegate : delegateList) {
+			for (Delegate<JobDelegateDataBean> delegate : delegateList) {
 				final JobDelegateDataBean dataBean = new JobDelegateDataBean(jobContext, 0L);
 				delegate.execute(dataBean);
 			}
@@ -51,9 +51,9 @@ public class DeleteOldSystemEventsJob extends DotJob {
 	 * Returns the list of delegate classes. These classes will handle all the
 	 * business logic that this Quartz Job is triggering.
 	 * 
-	 * @return The list of {@link JobDelegate} classes.
+	 * @return The list of {@link Delegate} classes.
 	 */
-	protected List<JobDelegate<JobDelegateDataBean>> getDelegates() {
+	protected List<Delegate<JobDelegateDataBean>> getDelegates() {
 		if (delegates == null) {
 			delegates = new ArrayList<>();
 			delegates.add(new DeleteOldSystemEventsDelegate());
