@@ -166,7 +166,7 @@
         });
 </script>
 	<div id="aceTextArea_<%=field.getVelocityVarName()%>" class="classAce"></div>
-    <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> dojoType="dijit.form.SimpleTextarea"  <%=isWidget?"style=\"overflow:auto;width:682px;min-height:362px;max-height: 400px\"":"style=\"overflow:auto;width:600px;min-height:100px;max-height: 600px\""%>
+    <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> dojoType="dijit.form.SimpleTextarea"  <%=isWidget?"style=\"overflow:auto;min-height:362px;max-height: 400px\"":"style=\"overflow:auto;min-height:100px;max-height: 600px\""%>
         name="<%=field.getFieldContentlet()%>"
         id="<%=field.getVelocityVarName()%>" class="editTextAreaField"><%= UtilMethods.htmlifyString(textValue) %></textarea>
 <%

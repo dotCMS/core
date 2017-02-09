@@ -13,32 +13,6 @@
 <script type='text/javascript' src='/dwr/interface/TagAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/FileAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/TagAjax.js'></script>
-<style type="text/css">
-    #aceTextArea {
-        position: relative;
-    }
-    .aceClass {
-    	width: 100%;
-        height: 400px;
-        border:1px solid #C0C0C0;
-        text-overflow: clip;
-    	white-space: nowrap;
-    }
-    .aceText {
-    	width:600px;
-    	min-height:105px;
-    	max-height: 600px;
-        border:1px solid #C0C0C0;
-        text-overflow: clip;
-    	white-space: nowrap;
-    }
-    .widgetAceText {
-    	width:682px;min-height:362px;max-height: 400px;
-        border:1px solid #C0C0C0;
-        text-overflow: clip;
-    	white-space: nowrap;
-    }
-</style>
 
 <!-- AChecker support -->
 <script type='text/javascript' src='/dwr/interface/ACheckerDWR.js'></script>
