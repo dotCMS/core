@@ -18,6 +18,7 @@ import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONException;
@@ -72,7 +73,7 @@ public class CMSConfigResource {
                                            @FormParam ("size") String size,
                                            @FormParam ("homeURL") String homeURL ) throws IOException, JSONException {
 
-        InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, true, request, true, "configuration" );
+        InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, true, request, true, PortletID.CONFIGURATION.toString() );
 
         Map<String, String> paramsMap = initData.getParamsMap();
         paramsMap.put( "portalURL", portalURL );
@@ -148,7 +149,7 @@ public class CMSConfigResource {
                                             @FormParam ("languageId") String languageId,
                                             @FormParam ("timeZoneId") String timeZoneId ) throws IOException, JSONException {
 
-        InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, true, request, true, "configuration" );
+        InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, true, request, true, PortletID.CONFIGURATION.toString() );
 
         Map<String, String> paramsMap = initData.getParamsMap();
         paramsMap.put( "languageId", languageId );
@@ -210,7 +211,7 @@ public class CMSConfigResource {
                                               @FormParam ("user") String user, @FormParam ("password") String password,
                                               @FormParam ("authType") String authType ) throws IOException, JSONException {
 
-        InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, true, request, true, "configuration" );
+        InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, true, request, true, PortletID.CONFIGURATION.toString() );
 
         Map<String, String> paramsMap = initData.getParamsMap();
         paramsMap.put( "authType", authType );
@@ -278,7 +279,7 @@ public class CMSConfigResource {
                                       @FormDataParam ("logoFile") File logoFile,
                                       @FormDataParam ("logoFile") FormDataContentDisposition logoDetail ) throws IOException, JSONException {
 
-        InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, true, request, true , "configuration");
+        InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, true, request, true , PortletID.CONFIGURATION.toString());
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
@@ -338,7 +339,7 @@ public class CMSConfigResource {
                                         @FormParam ("type") String type,
                                         @FormParam ("callback") String callback ) throws JSONException, IOException {
 
-        InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, true, request, true, "configuration" );
+        InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, true, request, true, PortletID.CONFIGURATION.toString() );
 
         Map<String, String> paramsMap = initData.getParamsMap();
         paramsMap.put( "environment", environment );
@@ -417,7 +418,7 @@ public class CMSConfigResource {
                                      @FormParam ("type") String type,
                                      @FormParam ("callback") String callback ) throws JSONException, IOException {
 
-        InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, true, request, true , "configuration");
+        InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, true, request, true , PortletID.CONFIGURATION.toString());
 
         Map<String, String> paramsMap = initData.getParamsMap();
         paramsMap.put( "endPoint", endPoint );

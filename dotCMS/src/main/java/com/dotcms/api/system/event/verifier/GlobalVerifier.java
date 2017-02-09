@@ -2,7 +2,7 @@ package com.dotcms.api.system.event.verifier;
 
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.PayloadVerifier;
-import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
+import com.liferay.portal.model.User;
 
 /**
  * Simple {@link PayloadVerifier} used to verify GLOBAL {@link com.dotcms.api.system.event.Visibility} for notifications,
@@ -14,8 +14,7 @@ import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
 public class GlobalVerifier implements PayloadVerifier {
 
     @Override
-    public boolean verified(Payload payload, SessionWrapper session) {
+    public boolean verified(Payload payload, User sessionUser) {
         return true;
     }
-
 }

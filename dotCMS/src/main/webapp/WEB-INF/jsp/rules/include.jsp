@@ -2,6 +2,7 @@
 <%@ page import="com.dotmarketing.util.Config" %>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotcms.repackage.org.apache.struts.Globals"%>
+<%@ page import="com.dotmarketing.util.PortletURLUtil" %>
 <%@ include file="/html/common/init.jsp" %>
 
 
@@ -48,7 +49,7 @@
 
 	
   //Add param to the rules engine iframe.
-  document.getElementById("rulesIframe").src = "/dotAdmin/#/fromCore/rules?" + localeParam + "&" + siteParam + "&" + hideFireOnParam+ "&" +hideRulePushOptions;
+  document.getElementById("rulesIframe").src = "/" + <%=PortletURLUtil.URL_ADMIN_PREFIX%> + "/#/fromCore/rules?" + localeParam + "&" + siteParam + "&" + hideFireOnParam+ "&" +hideRulePushOptions;
   
 
 

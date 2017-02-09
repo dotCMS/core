@@ -3,8 +3,8 @@
  * -------------------------- */
 @font-face {
   font-family: 'FontAwesome';
-  src: url("../fonts/fontawesome-webfont.eot?v=4.4.0");
-  src: url("../fonts/fontawesome-webfont.eot?#iefix&v=4.4.0") format("embedded-opentype"), url("../fonts/fontawesome-webfont.woff2?v=4.4.0") format("woff2"), url("../fonts/fontawesome-webfont.woff?v=4.4.0") format("woff"), url("../fonts/fontawesome-webfont.ttf?v=4.4.0") format("truetype"), url("../fonts/fontawesome-webfont.svg?v=4.4.0#fontawesomeregular") format("svg");
+  src: url("../fonts/fontawesome-webfont.eot?v=4.7.0");
+  src: url("../fonts/fontawesome-webfont.eot?#iefix&v=4.7.0") format("embedded-opentype"), url("../fonts/fontawesome-webfont.woff2?v=4.7.0") format("woff2"), url("../fonts/fontawesome-webfont.woff?v=4.7.0") format("woff"), url("../fonts/fontawesome-webfont.ttf?v=4.7.0") format("truetype"), url("../fonts/fontawesome-webfont.svg?v=4.7.0#fontawesomeregular") format("svg");
   font-weight: normal;
   font-style: normal;
 }
@@ -59,7 +59,7 @@ html, body {
   width: 0;
 }
 
-#font-icon-base, #dijit-icon, .dijitIcon, .uknIcon, .actionIcon, .addIcon, .androidIcon, .appleIcon, .appMonitorIcon, .archiveIcon, .archivedIcon, .arrowLeftIcon, .arrowRightIcon, .assignWorkflowIcon, .backupIcon, .bgIcon, .browseIcon, .bugIcon, .bundleIcon, .calClockIcon, .calDayIcon, .calListIcon, .calMonthIcon, .calWeekIcon, .cancelIcon, .cancelWorkflowIcon, .cartIcon, .checkBoxIcon, .chevronIcon, .chevronExpandIcon, .closeIcon, .colorIcon, .contentIcon, .copyIcon, .cutIcon, .deleteIcon, .deleteWorkflowIcon, .detailViewIcon, .docConvertIcon, .docCopyIcon, .docNumIcon, .docTextIcon, .documentIcon, .downloadIcon, .dropIcon, .editIcon, .editScriptIcon, .encryptIcon, .exclamation-redIcon, .exclamationIcon, .femaleIcon, .fileIcon, .fileMultiIcon, .fileNewIcon, .fixIcon, .folderIcon, .folderAddIcon, .folderCopyIcon, .folderDeleteIcon, .folderEditIcon, .folderFilesIcon, .folderGlobeIcon, .folderOpenIcon, .folderSelectedIcon, .formIcon, .formNewIcon, .gearIcon, .gearMinusIcon, .gearPencilIcon, .gearPlusIcon, .greyDotIcon, .helpIcon, .hideIcon, .hintIcon, .hostIcon, .hostArchivedIcon, .hostDefaultIcon, .hostStoppedIcon, .hourGlassIcon, .imageNewIcon, .infoIcon, .keyIcon, .keyvalueIcon, .licenseIcon, .linkAddIcon, .listViewIcon, .liveIcon, .lockIcon, .loginIcon, .loginAsIcon, .mailListIcon, .mapPinIcon, .minusIcon, .mobileIcon, .movePageIcon, .multiSelectIcon, .newPageIcon, .newTaskIcon, .newWorkflowIcon, .nextIcon, .pageIcon, .pagePropIcon, .pasteIcon, .personaIcon, .plusIcon, .previewIcon, .previousIcon, .propertyIcon, .publishIcon, .queryIcon, .radioIcon, .reindexIcon, .rememberIcon, .reopenWorkflowIcon, .reorderIcon, .repeatIcon, .republishIcon, .requiredIcon, .resetIcon, .resolveIcon, .resolveWorkflowIcon, .rServerIcon, .saveIcon, .statusIcon, .saveAssignIcon, .scrollPaneIcon, .searchIcon, .selectIcon, .shrinkIcon, .spellIcon, .splitterIcon, .sServerIcon, .statisticsIcon, .stopIcon, .tabIcon, .tagIcon, .textFieldIcon, .thumbnailViewIcon, .toggleCloseIcon, .toggleOpenIcon, .trashIcon, .unarchiveIcon, .unlockIcon, .unpublishIcon, .uploadIcon, .userIcon, .vtlIcon, .windowsIcon, .workflowIcon, .workingIcon, .workStreamIcon, .wysiwygIcon, .asfIcon, .aviIcon, .movIcon, .mp4Icon, .mpgIcon, .oggIcon, .ogvIcon, .rmIcon, .vobIcon, .csvIcon, .numbersIcon, .wksIcon, .xlsIcon, .xlsxIcon, .bmpIcon, .imageIcon, .jpegIcon, .jpgIcon, .pctIcon, .pngIcon, .gifIcon, .svgIcon, .pdfIcon, .keynoteIcon, .pptIcon, .pptxIcon, .docIcon, .docxIcon, .aacIcon, .aifIcon, .iffIcon, .m3uIcon, .midIcon, .mp3Icon, .mpaIcon, .raIcon, .wavIcon, .wmaIcon, .tagLink.persona:before, .dijitIconCopy {
+#font-icon-base, #dijit-icon, .dijitIcon, .uknIcon, .actionIcon, .addIcon, .androidIcon, .appleIcon, .appMonitorIcon, .archiveIcon, .archivedIcon, .arrowLeftIcon, .arrowRightIcon, .assignWorkflowIcon, .backupIcon, .bgIcon, .browseIcon, .bugIcon, .bundleIcon, .calClockIcon, .calDayIcon, .calListIcon, .calMonthIcon, .calWeekIcon, .cancelIcon, .cancelWorkflowIcon, .cartIcon, .checkBoxIcon, .chevronIcon, .chevronExpandIcon, .closeIcon, .colorIcon, .contentIcon, .copyIcon, .cutIcon, .deleteIcon, .deleteWorkflowIcon, .detailViewIcon, .docConvertIcon, .docCopyIcon, .docNumIcon, .docTextIcon, .documentIcon, .downloadIcon, .dropIcon, .editIcon, .editScriptIcon, .encryptIcon, .exclamation-redIcon, .exclamationIcon, .femaleIcon, .fileIcon, .fileMultiIcon, .fileNewIcon, .fixIcon, .folderIcon, .folderAddIcon, .folderCopyIcon, .folderDeleteIcon, .folderEditIcon, .folderFilesIcon, .folderGlobeIcon, .folderOpenIcon, .folderSelectedIcon, .formIcon, .formNewIcon, .gearIcon, .gearMinusIcon, .gearPencilIcon, .gearPlusIcon, .greyDotIcon, .helpIcon, .hideIcon, .hintIcon, .hostIcon, .hostArchivedIcon, .hostDefaultIcon, .hostStoppedIcon, .hourGlassIcon, .imageNewIcon, .infoIcon, .keyIcon, .keyvalueIcon, .licenseIcon, .linkAddIcon, .listViewIcon, .liveIcon, .lockIcon, .loginIcon, .loginAsIcon, .mailListIcon, .mapPinIcon, .minusIcon, .mobileIcon, .movePageIcon, .multiSelectIcon, .newPageIcon, .newTaskIcon, .newWorkflowIcon, .nextIcon, .pageIcon, .pagePropIcon, .pasteIcon, .personaIcon, .plusIcon, .previewIcon, .previousIcon, .propertyIcon, .publishIcon, .queryIcon, .radioIcon, .reindexIcon, .rememberIcon, .reopenWorkflowIcon, .reorderIcon, .repeatIcon, .republishIcon, .requiredIcon, .resetIcon, .resolveIcon, .resolveWorkflowIcon, .rolesIcon, .rServerIcon, .saveIcon, .statusIcon, .saveAssignIcon, .scrollPaneIcon, .searchIcon, .selectIcon, .shrinkIcon, .spellIcon, .splitterIcon, .sServerIcon, .statisticsIcon, .stopIcon, .tabIcon, .tagIcon, .textFieldIcon, .thumbnailViewIcon, .toggleCloseIcon, .toggleOpenIcon, .trashIcon, .unarchiveIcon, .unlockIcon, .unpublishIcon, .uploadIcon, .userIcon, .vtlIcon, .windowsIcon, .workflowIcon, .workingIcon, .workStreamIcon, .wysiwygIcon, .asfIcon, .aviIcon, .movIcon, .mp4Icon, .mpgIcon, .oggIcon, .ogvIcon, .rmIcon, .vobIcon, .csvIcon, .numbersIcon, .wksIcon, .xlsIcon, .xlsxIcon, .bmpIcon, .imageIcon, .jpegIcon, .jpgIcon, .pctIcon, .pngIcon, .gifIcon, .svgIcon, .pdfIcon, .keynoteIcon, .pptIcon, .pptxIcon, .docIcon, .docxIcon, .aacIcon, .aifIcon, .iffIcon, .m3uIcon, .midIcon, .mp3Icon, .mpaIcon, .raIcon, .wavIcon, .wmaIcon, .tagLink.persona:before, .dijitIconCopy {
   font: normal normal normal 14px/1 FontAwesome;
   text-rendering: auto;
   -webkit-font-smoothing: antialiased;
@@ -67,7 +67,7 @@ html, body {
   transform: translate(0, 0);
 }
 
-#dijit-icon, .dijitIcon, .uknIcon, .actionIcon, .addIcon, .androidIcon, .appleIcon, .appMonitorIcon, .archiveIcon, .archivedIcon, .arrowLeftIcon, .arrowRightIcon, .assignWorkflowIcon, .backupIcon, .bgIcon, .browseIcon, .bugIcon, .bundleIcon, .calClockIcon, .calDayIcon, .calListIcon, .calMonthIcon, .calWeekIcon, .cancelIcon, .cancelWorkflowIcon, .cartIcon, .checkBoxIcon, .chevronIcon, .chevronExpandIcon, .closeIcon, .colorIcon, .contentIcon, .copyIcon, .cutIcon, .deleteIcon, .deleteWorkflowIcon, .detailViewIcon, .docConvertIcon, .docCopyIcon, .docNumIcon, .docTextIcon, .documentIcon, .downloadIcon, .dropIcon, .editIcon, .editScriptIcon, .encryptIcon, .exclamation-redIcon, .exclamationIcon, .femaleIcon, .fileIcon, .fileMultiIcon, .fileNewIcon, .fixIcon, .folderIcon, .folderAddIcon, .folderCopyIcon, .folderDeleteIcon, .folderEditIcon, .folderFilesIcon, .folderGlobeIcon, .folderOpenIcon, .folderSelectedIcon, .formIcon, .formNewIcon, .gearIcon, .gearMinusIcon, .gearPencilIcon, .gearPlusIcon, .greyDotIcon, .helpIcon, .hideIcon, .hintIcon, .hostIcon, .hostArchivedIcon, .hostDefaultIcon, .hostStoppedIcon, .hourGlassIcon, .imageNewIcon, .infoIcon, .keyIcon, .keyvalueIcon, .licenseIcon, .linkAddIcon, .listViewIcon, .liveIcon, .lockIcon, .loginIcon, .loginAsIcon, .mailListIcon, .mapPinIcon, .minusIcon, .mobileIcon, .movePageIcon, .multiSelectIcon, .newPageIcon, .newTaskIcon, .newWorkflowIcon, .nextIcon, .pageIcon, .pagePropIcon, .pasteIcon, .personaIcon, .plusIcon, .previewIcon, .previousIcon, .propertyIcon, .publishIcon, .queryIcon, .radioIcon, .reindexIcon, .rememberIcon, .reopenWorkflowIcon, .reorderIcon, .repeatIcon, .republishIcon, .requiredIcon, .resetIcon, .resolveIcon, .resolveWorkflowIcon, .rServerIcon, .saveIcon, .statusIcon, .saveAssignIcon, .scrollPaneIcon, .searchIcon, .selectIcon, .shrinkIcon, .spellIcon, .splitterIcon, .sServerIcon, .statisticsIcon, .stopIcon, .tabIcon, .tagIcon, .textFieldIcon, .thumbnailViewIcon, .toggleCloseIcon, .toggleOpenIcon, .trashIcon, .unarchiveIcon, .unlockIcon, .unpublishIcon, .uploadIcon, .userIcon, .vtlIcon, .windowsIcon, .workflowIcon, .workingIcon, .workStreamIcon, .wysiwygIcon, .asfIcon, .aviIcon, .movIcon, .mp4Icon, .mpgIcon, .oggIcon, .ogvIcon, .rmIcon, .vobIcon, .csvIcon, .numbersIcon, .wksIcon, .xlsIcon, .xlsxIcon, .bmpIcon, .imageIcon, .jpegIcon, .jpgIcon, .pctIcon, .pngIcon, .gifIcon, .svgIcon, .pdfIcon, .keynoteIcon, .pptIcon, .pptxIcon, .docIcon, .docxIcon, .aacIcon, .aifIcon, .iffIcon, .m3uIcon, .midIcon, .mp3Icon, .mpaIcon, .raIcon, .wavIcon, .wmaIcon, .tagLink.persona:before {
+#dijit-icon, .dijitIcon, .uknIcon, .actionIcon, .addIcon, .androidIcon, .appleIcon, .appMonitorIcon, .archiveIcon, .archivedIcon, .arrowLeftIcon, .arrowRightIcon, .assignWorkflowIcon, .backupIcon, .bgIcon, .browseIcon, .bugIcon, .bundleIcon, .calClockIcon, .calDayIcon, .calListIcon, .calMonthIcon, .calWeekIcon, .cancelIcon, .cancelWorkflowIcon, .cartIcon, .checkBoxIcon, .chevronIcon, .chevronExpandIcon, .closeIcon, .colorIcon, .contentIcon, .copyIcon, .cutIcon, .deleteIcon, .deleteWorkflowIcon, .detailViewIcon, .docConvertIcon, .docCopyIcon, .docNumIcon, .docTextIcon, .documentIcon, .downloadIcon, .dropIcon, .editIcon, .editScriptIcon, .encryptIcon, .exclamation-redIcon, .exclamationIcon, .femaleIcon, .fileIcon, .fileMultiIcon, .fileNewIcon, .fixIcon, .folderIcon, .folderAddIcon, .folderCopyIcon, .folderDeleteIcon, .folderEditIcon, .folderFilesIcon, .folderGlobeIcon, .folderOpenIcon, .folderSelectedIcon, .formIcon, .formNewIcon, .gearIcon, .gearMinusIcon, .gearPencilIcon, .gearPlusIcon, .greyDotIcon, .helpIcon, .hideIcon, .hintIcon, .hostIcon, .hostArchivedIcon, .hostDefaultIcon, .hostStoppedIcon, .hourGlassIcon, .imageNewIcon, .infoIcon, .keyIcon, .keyvalueIcon, .licenseIcon, .linkAddIcon, .listViewIcon, .liveIcon, .lockIcon, .loginIcon, .loginAsIcon, .mailListIcon, .mapPinIcon, .minusIcon, .mobileIcon, .movePageIcon, .multiSelectIcon, .newPageIcon, .newTaskIcon, .newWorkflowIcon, .nextIcon, .pageIcon, .pagePropIcon, .pasteIcon, .personaIcon, .plusIcon, .previewIcon, .previousIcon, .propertyIcon, .publishIcon, .queryIcon, .radioIcon, .reindexIcon, .rememberIcon, .reopenWorkflowIcon, .reorderIcon, .repeatIcon, .republishIcon, .requiredIcon, .resetIcon, .resolveIcon, .resolveWorkflowIcon, .rolesIcon, .rServerIcon, .saveIcon, .statusIcon, .saveAssignIcon, .scrollPaneIcon, .searchIcon, .selectIcon, .shrinkIcon, .spellIcon, .splitterIcon, .sServerIcon, .statisticsIcon, .stopIcon, .tabIcon, .tagIcon, .textFieldIcon, .thumbnailViewIcon, .toggleCloseIcon, .toggleOpenIcon, .trashIcon, .unarchiveIcon, .unlockIcon, .unpublishIcon, .uploadIcon, .userIcon, .vtlIcon, .windowsIcon, .workflowIcon, .workingIcon, .workStreamIcon, .wysiwygIcon, .asfIcon, .aviIcon, .movIcon, .mp4Icon, .mpgIcon, .oggIcon, .ogvIcon, .rmIcon, .vobIcon, .csvIcon, .numbersIcon, .wksIcon, .xlsIcon, .xlsxIcon, .bmpIcon, .imageIcon, .jpegIcon, .jpgIcon, .pctIcon, .pngIcon, .gifIcon, .svgIcon, .pdfIcon, .keynoteIcon, .pptIcon, .pptxIcon, .docIcon, .docxIcon, .aacIcon, .aifIcon, .iffIcon, .m3uIcon, .midIcon, .mp3Icon, .mpaIcon, .raIcon, .wavIcon, .wmaIcon, .tagLink.persona:before {
   display: inline-block;
   height: 16px;
   line-height: 16px;
@@ -324,7 +324,7 @@ html, body {
   border: solid 1px #C5C5C5;
   color: #161616;
   font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-  padding: 0 8px;
+  padding: 8px;
 }
 .dijitTextAreaHover {
   background-color: #fff;
@@ -860,6 +860,9 @@ html, body {
   content: "";
   height: 0;
   width: 0;
+}
+.dijitSelect .dijitArrowButtonInner {
+  width: 32px;
 }
 .dijitSelectHover {
   background-color: #fff;
@@ -1598,11 +1601,15 @@ html, body {
   padding: 0 24px;
 }
 
+.dijitTooltip {
+  max-width: 300px;
+}
 .dijitTooltipContainer {
   background: #fff;
   border: solid 1px #8A8A8A;
   color: inherit;
   font-size: inherit;
+  padding: 16px;
 }
 .dijitTooltipFocusNode {
   padding: 8px;
@@ -1631,6 +1638,11 @@ html, body {
 .dijitTreeRow {
   display: flex;
   padding: 2px 0;
+}
+.dijitTreeRow .dijitTreeIcon, .dijitTreeRow .dijitTreeExpando {
+  display: inline-block;
+  vertical-align: sub;
+  margin-right: 4px;
 }
 .dijitTreeContent {
   min-height: 18px;
@@ -1668,9 +1680,6 @@ html, body {
 .dijitTreeIcon {
   width: 16px;
   height: 16px;
-}
-.dijitTreeContent .dijitTreeIcon {
-  margin: 0;
 }
 .dijitFolderOpened {
   background: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/folderOpened.gif") no-repeat;
@@ -1770,7 +1779,7 @@ html, body {
   font-weight: bold;
 }
 .dijitCalendarHoveredDate {
-  background-color: rgba(14, 128, 203, 0.15);
+  background-color: #C5C5C5;
   color: #161616;
 }
 .dijitCalendarIncrementControl {
@@ -2008,6 +2017,10 @@ html, body {
 }
 .dijitInlineEditBoxDisplayMode.dijitOffScreen {
   display: none;
+}
+
+.dojoxUploaderFileList {
+  border: solid 1px #ECEDEE;
 }
 
 /*
@@ -3117,44 +3130,49 @@ select[multiple]:hover {
 }
 
 /* TABLE STYLES 2.0 */
-.listingTable {
+#listing-table, .dojoxUploaderFileListTable, .listingTable {
   border-bottom: 1px solid #ECEDEE;
   border-collapse: collapse;
   margin: 0 auto 16px auto;
   width: 100%;
 }
+#listing-table tr, .dojoxUploaderFileListTable tr, .listingTable tr {
+  transition: background-color 0.1s;
+}
+#listing-table tr .selected, .dojoxUploaderFileListTable tr .selected, .listingTable tr .selected {
+  background-color: #E0E9F6;
+}
+#listing-table tr:hover, .dojoxUploaderFileListTable tr:hover, .listingTable tr:hover {
+  background-color: rgba(14, 128, 203, 0.05);
+}
+#listing-table tr:nth-child(even), .dojoxUploaderFileListTable tr:nth-child(even), .listingTable tr:nth-child(even) {
+  background-color: #FAFAFA;
+}
+#listing-table th, .dojoxUploaderFileListTable th, .listingTable th, #listing-table td, .dojoxUploaderFileListTable td, .listingTable td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #ECEDEE;
+  vertical-align: middle;
+}
+#listing-table th:first-child, .dojoxUploaderFileListTable th:first-child, .listingTable th:first-child, #listing-table td:first-child, .dojoxUploaderFileListTable td:first-child, .listingTable td:first-child {
+  padding-left: 24px;
+}
+#listing-table th:last-child, .dojoxUploaderFileListTable th:last-child, .listingTable th:last-child, #listing-table td:last-child, .dojoxUploaderFileListTable td:last-child, .listingTable td:last-child {
+  padding-right: 24px;
+}
+#listing-table th, .dojoxUploaderFileListTable th, .listingTable th {
+  font-weight: bold;
+  background-color: #FAFAFA;
+}
+
 .listingTable table,
 .listingTable table tr,
 .listingTable table tr:hover,
 .listingTable table td {
   background: none !important;
 }
-.listingTable tr:nth-child(even) {
-  background-color: #FAFAFA;
-}
-.listingTable tr {
-  transition: background-color 0.1s;
-}
-.listingTable tr .selected {
-  background-color: #E0E9F6;
-}
-.listingTable tr:hover {
-  background-color: rgba(14, 128, 203, 0.05);
-}
-.listingTable th, .listingTable td {
-  padding: 10px 8px;
-  border-bottom: 1px solid #ECEDEE;
-  vertical-align: middle;
-}
-.listingTable th:first-child, .listingTable td:first-child {
-  padding-left: 24px;
-}
-.listingTable th:last-child, .listingTable td:last-child {
-  padding-right: 24px;
-}
-.listingTable th {
-  font-weight: bold;
-  background-color: #FAFAFA;
+.listingTable td a {
+  color: #161616;
+  text-decoration: none;
 }
 .listingTable td table td:first-child, .listingTable td table td:last-child {
   padding: 0;
@@ -3183,13 +3201,13 @@ select[multiple]:hover {
 .sTypeHeader {
   font-weight: bold;
   padding: 3px 10px;
-  background: #f3f3f3;
+  background: #FAFAFA;
   border-bottom: 1px solid #D0D0D0;
 }
 
 .sTypeItem a {
   display: block;
-  padding: 2px 10px;
+  padding: 4px 10px;
   text-decoration: none;
 }
 
@@ -4759,7 +4777,6 @@ div#_dotHelpMenu {
 .toggleOpenIcon,
 .trashIcon,
 .unarchiveIcon,
-.unlockIcon,
 .unpublishIcon,
 .uploadIcon,
 .windowsIcon,
@@ -5104,7 +5121,7 @@ div#_dotHelpMenu {
 }
 
 .licenseIcon:before {
-  content: "";
+  content: "";
 }
 
 .linkAddIcon:before {
@@ -5253,6 +5270,10 @@ div#_dotHelpMenu {
 
 .resolveWorkflowIcon:before {
   content: "";
+}
+
+.rolesIcon:before {
+  content: "";
 }
 
 .rServerIcon:before {
@@ -5587,40 +5608,38 @@ Styles for commons fields along the backend
 
 */
 .glossaryTermPopup {
-  background-color: #FAFAFA;
   -moz-border-radius: 2px;
   -webkit-border-radius: 2px;
   border-radius: 2px;
+  background-color: #FAFAFA;
   padding: 4px 8px;
   border: solid 1px #ECEDEE;
   position: absolute;
 }
 
 .fileAjaxUploader {
+  align-items: center;
   display: flex;
-  flex-direction: column;
-  margin-top: 16px;
-  width: 336px;
+  margin: 8px 0;
 }
 .fileAjaxUploaderActions {
   display: flex;
-  justify-content: center;
 }
-.fileAjaxUploaderFileName, .fileAjaxUploaderForm, .fileAjaxUploaderStatus {
-  margin-bottom: 16px;
+.fileAjaxUploaderActions div:first-child {
+  margin-right: 8px;
 }
 .fileAjaxUploaderFileName {
-  text-align: center;
+  margin-right: 16px;
 }
 .fileAjaxUploaderStatus {
   display: flex;
+  align-items: center;
 }
 .fileAjaxUploaderStatusMsg {
-  align-self: center;
-  margin-left: 16px;
+  margin-left: 8px;
 }
 .fileAjaxUploader .dijitProgressBar {
-  width: 100%;
+  width: 150px;
 }
 
 .catPreview {
@@ -5809,6 +5828,14 @@ Styles for commons fields along the backend
   vertical-align: middle;
 }
 
+.field__editable-content {
+  display: flex;
+  align-items: center;
+}
+.field__editable-content a {
+  margin-right: 16px;
+}
+
 /*
 ------------ FORMS ------------
 - Extract from: base.css
@@ -5832,8 +5859,8 @@ Styles for commons fields along the backend
 }
 
 #inline-form, .fileSelectorControls, .inline-form {
-  align-items: center;
   display: flex;
+  align-items: center;
 }
 #inline-form > label, .fileSelectorControls > label, .inline-form > label, #inline-form > div, .fileSelectorControls > div, .inline-form > div {
   margin-right: 8px;
@@ -5991,6 +6018,7 @@ dd .buttonCaption {
 
 .buttonRow {
   text-align: center;
+  margin: 8px 0;
 }
 .buttonRow .dijitButton,
 .buttonRow .fakeDojoButton {
@@ -6002,6 +6030,7 @@ dd .buttonCaption {
   height: 90px;
   margin-top: 8px;
   padding: 8px;
+  overflow: auto;
 }
 
 .who-can-use__list td {
@@ -6310,144 +6339,51 @@ a.category_higlighted, a.tag_higlighted {
   font-weight: bolder;
 }
 
-.content-edit__main {
-  margin: 16px 220px 0 0;
-  width: auto;
+.network__listing .icon {
+  width: 14px;
 }
 
-.content-edit__sidebar {
-  background-color: #FAFAFA;
-  border-left: solid 1px #ECEDEE;
-  height: 100%;
-  padding: 16px;
+.network-action {
+  background: #fff;
+  border: 1px solid #ECEDEE;
+  bottom: 0;
   position: fixed;
   right: 0;
   top: 0;
-  width: 220px;
+  z-index: 0;
 }
 
-.content-edit-actions,
-.content-edit-language,
-.content-edit-workflow {
-  margin-bottom: 24px;
-}
-.content-edit-actions h3,
-.content-edit-language h3,
-.content-edit-workflow h3 {
-  margin-bottom: 8px;
-}
-
-.content-edit-actions > div {
-  background-color: #fff;
-  border-radius: 2px;
-  border: solid 1px #C5C5C5;
-}
-.content-edit-actions > div a {
-  display: block;
-  padding: 8px;
-  border-bottom: solid 1px #C5C5C5;
-  cursor: pointer;
-}
-.content-edit-actions > div a:hover {
-  background-color: #ECEDEE;
-  color: #161616;
-}
-.content-edit-actions > div a:last-of-type {
-  border-bottom: none;
-}
-
-.content-edit-workflow table {
-  width: 100%;
-}
-.content-edit-workflow table td, .content-edit-workflow table th {
-  padding-bottom: 4px;
-  padding-top: 4px;
-}
-.content-edit-workflow table th {
-  padding-right: 8px;
-}
-.content-edit-workflow table tr {
-  border-bottom: solid 1px #ECEDEE;
-}
-
-.content-edit__dialog-error {
-  background: #fff;
-  padding: 0px;
-  border: 0px;
-  width: 300px;
-}
-.content-edit__dialog-error .dijitDialogTitleBar {
-  height: 0;
-  z-index: 1;
-}
-
-.content-edit__history-version .dijitContentPane {
+.network-action__header {
   padding: 0px;
 }
-.content-edit__history-version .dijitContentPane .contentIdentifier {
-  font-weight: bold;
+
+.network-action__title {
+  background-color: #0E80CB;
+  color: #fff;
+  margin: -16px -16px 16px;
+  height: 39px;
+  line-height: 39px;
+  padding: 0 16px;
 }
 
-.content-edit__divider {
-  background-color: #ECEDEE;
-  margin: 20px 0;
+.network-action__content {
+  margin: 16px;
 }
 
-.advanced-search-button {
+.network-action__list {
+  margin-bottom: 32px;
+  width: 100%;
+}
+.network-action__list th, .network-action__list td {
+  padding: 4px;
+}
+.network-action__list tr:first-child td:first-child {
+  width: 16px;
+}
+
+.network-action__btn-refresh {
   display: block;
-  background: #ECEDEE;
-  padding: 8px;
   text-align: center;
-  text-decoration: none;
-  margin: 16px -16px 0;
-}
-
-.contentlet-results {
-  color: #8A8A8A;
-}
-
-.contentlet-selection {
-  flex: 1;
-  text-align: center;
-}
-
-.contentlet-menu-actions {
-  width: 200px;
-}
-
-.edit-contentlet-portlet {
-  height: 100%;
-}
-
-.content-type__edit-field-form {
-  width: 550px;
-}
-.content-type__fields-list {
-  display: table;
-  width: 100%;
-}
-.content-type__fields-list-body {
-  display: table-row-group;
-}
-.content-type__fields-list-cell {
-  border-bottom: 1px solid #ECEDEE;
-  display: table-cell;
-  padding: 8px;
-  white-space: nowrap;
-}
-.content-type__fields-list-header, .content-type__fields-list-row {
-  display: table-row;
-}
-.content-type__fields-list-header {
-  background: #FAFAFA;
-  font-weight: bold;
-  width: 100%;
-}
-.content-type__fields-list-row {
-  transition: background-color 0.1s;
-}
-.content-type__fields-list-row:hover {
-  background-color: rgba(14, 128, 203, 0.1);
 }
 
 .network__listing .icon {
@@ -6495,6 +6431,248 @@ a.category_higlighted, a.tag_higlighted {
 .network-action__btn-refresh {
   display: block;
   text-align: center;
+}
+
+.content-edit__main {
+  margin: 16px 220px 0 0;
+  width: auto;
+}
+
+.content-edit__sidebar {
+  background-color: #FAFAFA;
+  border-left: solid 1px #ECEDEE;
+  height: 100%;
+  padding: 16px;
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: 220px;
+}
+
+.content-edit-actions,
+.content-edit-language,
+.content-edit-workflow {
+  margin-bottom: 24px;
+}
+.content-edit-actions h3,
+.content-edit-language h3,
+.content-edit-workflow h3 {
+  margin-bottom: 8px;
+}
+
+.content-edit-actions > div {
+  background-color: #fff;
+  border-radius: 2px;
+  border: solid 1px #C5C5C5;
+}
+.content-edit-actions a {
+  display: block;
+  padding: 8px;
+  border-bottom: solid 1px #C5C5C5;
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+.content-edit-actions a [class$="Icon"],
+.content-edit-actions a [class*="Icon"] {
+  display: none;
+}
+.content-edit-actions a:hover {
+  background-color: #ECEDEE;
+  color: #161616;
+}
+.content-edit-actions a:last-of-type {
+  border-bottom: none;
+}
+
+.content-edit-workflow table {
+  width: 100%;
+}
+.content-edit-workflow table td, .content-edit-workflow table th {
+  padding-bottom: 4px;
+  padding-top: 4px;
+}
+.content-edit-workflow table th {
+  padding-right: 8px;
+}
+.content-edit-workflow table tr {
+  border-bottom: solid 1px #ECEDEE;
+}
+
+.content-edit__dialog-error {
+  background: #fff;
+  padding: 0px;
+  border: 0px;
+  width: 300px;
+}
+.content-edit__dialog-error p {
+  text-align: center;
+}
+.content-edit__dialog-error ul {
+  margin: 0 0 16px;
+}
+.content-edit__dialog-error ul li {
+  list-style-position: outside;
+  list-style-type: decimal;
+  margin: 0 0 8px 16px;
+}
+
+.content-edit__dialog-error-actions {
+  text-align: center;
+}
+
+.content-edit__history-version .dijitContentPane {
+  padding: 0px;
+}
+
+.advanced-search-button {
+  display: block;
+  background: #ECEDEE;
+  padding: 8px;
+  text-align: center;
+  text-decoration: none;
+  margin: 16px -16px 0;
+}
+
+.contentlet-results {
+  color: #8A8A8A;
+}
+
+.contentlet-selection {
+  flex: 1;
+  text-align: center;
+}
+
+.contentlet-menu-actions {
+  width: 200px;
+}
+
+.edit-contentlet-portlet {
+  height: 100%;
+}
+
+.content-search__show-query-dialog .dijitDialogTitleBar {
+  height: 0px;
+  z-index: 1;
+}
+
+.content-search__key-fields {
+  margin-top: 4px;
+}
+
+.content-search__import-content-form {
+  margin-top: 24px;
+}
+
+.content-search__assign-workflow-form .dijitTextArea {
+  max-height: 100px;
+}
+
+.content-search__results-list .dijitCheckBox {
+  margin-right: 4px;
+}
+
+.content-type__edit-field-form {
+  width: 550px;
+}
+.content-type__fields-list {
+  display: table;
+  width: 100%;
+}
+.content-type__fields-list-body {
+  display: table-row-group;
+}
+.content-type__fields-list-cell {
+  border-bottom: 1px solid #ECEDEE;
+  display: table-cell;
+  padding: 8px;
+  white-space: nowrap;
+}
+.content-type__fields-list-header, .content-type__fields-list-row {
+  display: table-row;
+}
+.content-type__fields-list-header {
+  background: #FAFAFA;
+  font-weight: bold;
+  width: 100%;
+}
+.content-type__fields-list-row {
+  transition: background-color 0.1s;
+}
+.content-type__fields-list-row:hover {
+  background-color: rgba(14, 128, 203, 0.1);
+}
+
+.design-template__sidebar-wrapper {
+  height: 100%;
+  min-height: 617px;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+}
+.design-template__sidebar-wrapper .portlet-sidebar {
+  width: 220px;
+}
+
+.job-scheduler__host-list {
+  margin-top: 16px;
+}
+
+.contentIdentifier {
+  margin: 0 0 8px;
+}
+
+.formRow {
+  text-align: center;
+  padding: 10px 8px;
+}
+
+.buttonRightInBox {
+  text-align: right;
+  margin: 4px 10px 2px 0;
+  font-weight: normal;
+}
+
+.buttonRightInBoxTab {
+  position: absolute;
+  text-align: right;
+  z-index: 5;
+  top: 3px;
+  right: 15px;
+}
+
+.shadowBoxLine {
+  margin-bottom: 15px;
+  padding: 45px 5px 20px 5px;
+  border: 1px solid #ccc;
+  -moz-box-shadow: 0px 0px 5px #ccc;
+  -webkit-box-shadow: 0px 0px 5px #ccc;
+  background: transparent url("http://localhost:8080/html/images/skin/portalTab_bg.gif") repeat-x 0 0;
+}
+
+.headerBox {
+  padding: 0;
+}
+
+.log-files__container {
+  width: 100%;
+  height: 500px;
+}
+
+.log-files__iframe {
+  border: 1px solid #C5C5C5;
+  overflow: auto;
+  height: 100%;
+  width: 100%;
+}
+
+.license-manager__upload-button {
+  float: right;
+}
+
+.view-categories .dijitDropDownActionButton {
+  position: absolute;
+  right: 30px;
+  z-index: 1;
 }
 
 .view-roles,
@@ -6696,48 +6874,6 @@ a.category_higlighted, a.tag_higlighted {
   margin-bottom: 15px;
 }
 
-.view-categories .dijitDropDownActionButton {
-  position: absolute;
-  right: 30px;
-  z-index: 1;
-}
-
-.contentIdentifier {
-  margin: 0 0 8px;
-}
-
-.formRow {
-  text-align: center;
-  padding: 10px 8px;
-}
-
-.buttonRightInBox {
-  text-align: right;
-  margin: 4px 10px 2px 0;
-  font-weight: normal;
-}
-
-.buttonRightInBoxTab {
-  position: absolute;
-  text-align: right;
-  z-index: 5;
-  top: 3px;
-  right: 15px;
-}
-
-.shadowBoxLine {
-  margin-bottom: 15px;
-  padding: 45px 5px 20px 5px;
-  border: 1px solid #ccc;
-  -moz-box-shadow: 0px 0px 5px #ccc;
-  -webkit-box-shadow: 0px 0px 5px #ccc;
-  background: transparent url("http://localhost:8080/html/images/skin/portalTab_bg.gif") repeat-x 0 0;
-}
-
-.headerBox {
-  padding: 0;
-}
-
 /* PORTLET STYLES 2.0 */
 .portlet-main {
   padding: 16px 0;
@@ -6825,11 +6961,17 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .callOutBox2 {
-  background-color: #f0f0f0;
+  background-color: #ECEDEE;
   border-radius: 2px;
-  border: 1px solid #d0d0d0;
+  border: 1px solid #C5C5C5;
   padding: 8px;
   text-align: center;
+}
+.callOutBox2 h3 {
+  margin-bottom: 16px;
+}
+.callOutBox2 p:last-child {
+  margin-bottom: 0;
 }
 
 .context-menu {
@@ -6837,7 +6979,7 @@ a.category_higlighted, a.tag_higlighted {
   position: absolute;
   background: #fff;
   border: 1px solid #ECEDEE;
-  min-width: 190px;
+  min-width: 200px;
 }
 .context-menu .pop_divider {
   border-bottom: 1px solid #ECEDEE;
@@ -6961,7 +7103,11 @@ a.category_higlighted, a.tag_higlighted {
   justify-content: flex-end;
 }
 
-#rolePermissionsAccordion .dijitAccordionContainer-child {
+.permission__list .dijitAccordionTitle {
+  height: auto;
+  padding: 0;
+}
+.permission__list .dijitAccordionContainer-child {
   overflow-y: hidden !important;
 }
 
@@ -7009,8 +7155,8 @@ a.category_higlighted, a.tag_higlighted {
   margin-bottom: 16px;
   padding: 8px;
 }
-.permissions__bar-user-role .femaleIcon,
-.permissions__bar-user-role .userIcon {
+.permissions__bar-user-role [class$="Icon"],
+.permissions__bar-user-role [class*="Icon"] {
   margin-right: 8px;
 }
 .permissions__bar-user-role .inline-form {
@@ -7042,20 +7188,47 @@ a.category_higlighted, a.tag_higlighted {
   padding: 0;
 }
 
+.permissionTable .permissionType {
+  width: 20%;
+  text-align: right;
+}
+
+.permissionTableTitle .folderName {
+  padding-left: 8px;
+  text-align: left;
+  vertical-align: middle;
+  width: 20%;
+}
+.permissionTableTitle .folderName img {
+  display: inline-block;
+  margin-right: 4px;
+  vertical-align: sub;
+}
+
+.permissionTableTitle,
 .permissionTable,
 .accordionEntry {
   width: 100%;
 }
-.permissionTable td, .permissionTable th,
+.permissionTableTitle td, .permissionTableTitle th,
+.permissionTable td,
+.permissionTable th,
 .accordionEntry td,
 .accordionEntry th {
   width: 10%;
   text-align: center;
 }
+.permissionTableTitle td,
+.permissionTable td,
+.accordionEntry td {
+  padding: 4px;
+}
+.permissionTableTitle th,
 .permissionTable th,
 .accordionEntry th {
   font-weight: bold;
 }
+.permissionTableTitle th.permissionType,
 .permissionTable th.permissionType,
 .accordionEntry th.permissionType {
   width: 40%;
@@ -7063,6 +7236,7 @@ a.category_higlighted, a.tag_higlighted {
   padding-left: 8px;
   text-align: left;
 }
+.permissionTableTitle th.permissionTitle,
 .permissionTable th.permissionTitle,
 .accordionEntry th.permissionTitle {
   font-weight: bold;
@@ -7085,10 +7259,6 @@ a.category_higlighted, a.tag_higlighted {
 .related-content-dialog .portlet-sidebar-wrapper {
   width: 200px;
 }
-.related-content-dialog .dijitDialogTitleBar {
-  height: 0;
-  z-index: 1;
-}
 
 .related-content-container,
 .related-content-form {
@@ -7099,11 +7269,56 @@ a.category_higlighted, a.tag_higlighted {
   width: 900px;
 }
 
+.context-menu {
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ECEDEE;
+  min-width: 200px;
+}
+.context-menu .pop_divider {
+  border-bottom: 1px solid #ECEDEE;
+  background-color: #fff;
+}
+
+.context-menu__item {
+  color: #5B5B5B;
+  cursor: pointer;
+  display: block;
+  font-size: 13px;
+  height: 32px;
+  line-height: 32px;
+  padding: 0px 24px;
+  position: relative;
+  text-decoration: none;
+}
+.context-menu__item:hover {
+  background-color: #FAFAFA;
+}
+.context-menu__item .arrowRightIcon {
+  font-size: 12px;
+  margin-top: -6px;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+}
+
+.history .contentIdentifier {
+  font-weight: bold;
+}
+.history .history__divider {
+  background-color: #ECEDEE;
+  margin: 24px 0;
+}
+.history .history__status {
+  overflow: hidden;
+}
+
 #iFrameWrapper {
   position: absolute;
   left: 0px;
   right: 0px;
-  top: 26px;
+  top: 49px;
   bottom: 0px;
 }
 
@@ -7293,30 +7508,36 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .thumbnailDiv {
-  cursor: pointer;
-  padding: 16px;
   border: solid 2px #ECEDEE;
-  min-width: 120px;
+  box-sizing: content-box;
+  cursor: pointer;
   min-height: 120px;
+  min-width: 120px;
+  padding: 16px;
+  position: relative;
 }
 .thumbnailDivHover {
   border: solid 2px #C5C5C5;
+  box-sizing: content-box;
+  padding: 16px;
+  position: relative;
+}
+.thumbnailDivHover .editImageText {
+  opacity: 1;
 }
 
 .editImageText {
-  cursor: pointer;
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-  opacity: .50;
   background: white;
-  border: 1px solid gray;
-  padding: 3px;
-  width: 80px;
-  height: 50px;
-  text-align: center;
-  border-radius: 3px;
-  -moz-border-radius: 3px;
+  border-radius: 2px;
+  border: 1px solid #8A8A8A;
+  bottom: 8px;
+  cursor: pointer;
+  opacity: .50;
+  padding: 0 8px;
+  height: 32px;
+  line-height: 30px;
+  position: absolute;
+  right: 8px;
 }
 
 /*********
@@ -7368,15 +7589,21 @@ Resize Handle
   height: 100%;
 }
 
-#cell-actions, .listingTable .listingTable__actions, .content-type__cell-actions {
+#cell-actions, .listingTable .listingTable__actions, .content-type__cell-actions, .job-scheduler__host-list-actions, .license-manager__listing-action {
   text-align: center;
   width: 65px;
   white-space: nowrap;
 }
-#cell-actions a, .listingTable .listingTable__actions a, .content-type__cell-actions a {
+#cell-actions a, .listingTable .listingTable__actions a, .content-type__cell-actions a, .job-scheduler__host-list-actions a, .license-manager__listing-action a {
   display: inline-block;
   margin: 0 4px;
   text-decoration: none;
+}
+
+.noDijitDialogTitleBar .dijitDialogTitleBar {
+  border: none;
+  background: none;
+  height: 18px;
 }
 
 body {

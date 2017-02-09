@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.util.PortletID"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.liferay.portal.util.PortalUtil"%>
@@ -27,8 +28,8 @@
             layoutListForLicenseManager=APILocator.getLayoutAPI().loadLayoutsForUser(user);
             for (Layout layoutForLicenseManager:layoutListForLicenseManager) {
                 List<String> portletIdsForLicenseManager=layoutForLicenseManager.getPortletIds();
-                if (portletIdsForLicenseManager.contains("configuration")) {
-                    licenseURL = "/c/portal/layout?p_l_id=" + layoutForLicenseManager.getId() +"&p_p_id=9&p_p_action=0&tab=licenseTab";
+                if (portletIdsForLicenseManager.contains(PortletID.CONFIGURATION)) {
+                    licenseURL = "/c/portal/layout?p_l_id=" + layoutForLicenseManager.getId() +"&p_p_id="+PortletID.CONFIGURATION+"&p_p_action=0&tab=licenseTab";
                     licenseMessage = LanguageUtil.get(pageContext, "Try-Enterprise-Now") + "!" ;
                     break;
                 }
@@ -102,7 +103,7 @@
 
                 }
 
-                if (portletids.get(j).equals("configuration") && !hasLicenseManagerPortlet) {
+                if (portletids.get(j).equals(PortletID.CONFIGURATION.toString()) && !hasLicenseManagerPortlet) {
                     hasLicenseManagerPortlet = true;
                 }
             }
@@ -145,7 +146,7 @@
 
         if(!hasLicenseManagerPortlet){
             String licenseManagerPortletId = "";
-            portlet = APILocator.getPortletAPI().findPortlet("configuration");
+            portlet = APILocator.getPortletAPI().findPortlet(PortletID.CONFIGURATION.toString());
                 if(portlet!=null){
                     licenseManagerPortletId = portlet.getPortletId();
                 }

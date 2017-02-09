@@ -180,11 +180,11 @@
                                 <span class="deleteIcon" style="margin-right:2px; cursor: pointer" onclick="deleteAsset('<%=asset.getAsset()%>', '<%=bundle.getId()%>')"></span>&nbsp;
 
                                 <%if ( assetType.equals( "contentlet" ) ) {%>
-                                    <a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=/ext/contentlet/edit_contentlet&_content_cmd=edit&inode=<%=inode %>&referer=<%=referer %>">
+                                    <a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id="+PortletID.CONTENT+"&p_p_action=1&p_p_state=maximized&p_p_mode=view&_"+PortletID.CONTENT+"_struts_action=/ext/contentlet/edit_contentlet&_content_cmd=edit&inode=<%=inode %>&referer=<%=referer %>">
                                         <strong style="text-decoration: underline;"><%= title %></strong>  : <%=structureName %>
                                     </a>
                                 <%} else if (assetType.equals("language")) {%>
-                                    <a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=languages&p_p_action=1&p_p_state=maximized&p_p_mode=view&_languages_struts_action=/ext/languages_manager/edit_language&_languages_id=1&_languages_cmd=edit&referer=<%=referer %>">
+                                    <a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id="+PortletID.LANGUAGES+"&p_p_action=1&p_p_state=maximized&p_p_mode=view&_"+PortletID.LANGUAGES+"_struts_action=/ext/languages_manager/edit_language&_"+PortletID.LANGUAGES+"_id=1&_"+PortletID.LANGUAGES+"_cmd=edit&referer=<%=referer %>">
                                         <img src="/html/images/languages/<%= langCode %>_<%= countryCode %>.gif" border="0" />
                                         <strong style="text-decoration: underline;"><%= title %></strong>  : <%= structureName %>
                                     </a>

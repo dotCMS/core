@@ -159,200 +159,218 @@
 	
 		<!-- START PROPERTIES TAB -->
 			<div id="properties" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "properties") %>" onShow="showEditButtonsRow()">
-				<dl>
-					<%if(id!=null){%>
-						<dt><%= LanguageUtil.get(pageContext, "Identity") %>:&nbsp;</dt>
-						<dd><%= id.getId() %></dd>
-					<%}%>
-	
+				<div class="form-horizontal">
+					<dl>
+						<%if(id!=null){%>
+							<dt><%= LanguageUtil.get(pageContext, "Identity") %>:&nbsp;</dt>
+							<dd><%= id.getId() %></dd>
+						<%}%>
+					</dl>
 					<% if(host != null) { %>
+					<dl>
 						<html:hidden property="hostId" value="<%=hostId%>"/>
 						<dt><%= LanguageUtil.get(pageContext, "Host") %>:&nbsp;</dt>
 						<dd><%= host.getHostname() %></dd>
+					</dl>
 					<%	} else { %>
+					<dl>
 						<dt><%= LanguageUtil.get(pageContext, "Host") %>:&nbsp;</dt>
 						<dd>
-						<select id="hostId" name="hostId" dojoType="dijit.form.FilteringSelect" value="<%=hostId%>">
-						<% for(Host h: listHosts) { %>
-							<option value="<%=h.getIdentifier()%>"><%=host.getHostname()%></option>
-						<% } %>
-						</select>
+							<select id="hostId" name="hostId" dojoType="dijit.form.FilteringSelect" value="<%=hostId%>">
+								<% for(Host h: listHosts) { %>
+									<option value="<%=h.getIdentifier()%>"><%=host.getHostname()%></option>
+								<% } %>
+							</select>
 						</dd>
+					</dl>
 					<% } %>
-					<dt>
-						<span class="required"></span>
-						<%= LanguageUtil.get(pageContext, "Title") %>:&nbsp;
-					</dt>
-					<dd><input type="text" dojoType="dijit.form.TextBox" style="width:300" name="title" id="titleField" value="<%= form.getTitle() %>" /></dd>
-	
-					<dt><%= LanguageUtil.get(pageContext, "Description") %>:&nbsp;</dt>
-					<dd><input type="text" dojoType="dijit.form.TextBox" style="width:300" name="friendlyName" id="friendlyNameField" value="<%= form.getFriendlyName() %>" /></dd>
-	
-					<dt><%= LanguageUtil.get(pageContext, "Max-Contents") %>:&nbsp;</dt>
-					<dd><input type="text" dojoType="dijit.form.TextBox" style="width:30" maxlength="2" name="maxContentlets" id="maxContentlets" onchange="showHideCode()" value="<%= form.getMaxContentlets() %>" /></dd>
-				</dl>
-	
-				<div id="preLoopDiv">
-					<dl>
-						<dt><%= LanguageUtil.get(pageContext, "Pre-Loop") %>:</dt>
-						<dd>
-	
-							<div id="preLoopEditorArea" style="border: 0px;">
-								<div id="preLoopAceEditor" class="pShow"></div>
-								<textarea onkeydown="return catchTab(this,event)" style="display: none;" name="preLoopMask" id="preLoopMask"><%=UtilMethods.isSet(form.getPreLoop())?UtilMethods.escapeHTMLSpecialChars(form.getPreLoop()):"" %></textarea>
-								<input type="hidden" id="preLoop" name="preLoop" value=""/>
-							</div>
-	
-							<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorPreLoop" id="toggleEditorPreLoop"  onClick="aceToggler('preLoopAceEditor', 'preLoopMask');"  checked="checked"  />
-							<label for="toggleEditorPreLoop" style="margin-right: 10px;"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
-							<div id="toggleWrapEditor" style="display: inline-block">
-								<input id="preloopWrapEditor" name="preloopWrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onClick="aceWrapToggler(event);" />
-								<label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
-							</div>
-						</dd>
-					</dl>
-				</div>
-				<div id="codeDiv">
-					<dl>
-					</dl>
-				</div>
-	
-				<div id="multiCodeButtonDiv">
 					<dl>
 						<dt>
 							<span class="required"></span>
-							<%= LanguageUtil.get(pageContext, "Code-Per-Content-Type") %>:
+							<%= LanguageUtil.get(pageContext, "Title") %>:&nbsp;
 						</dt>
-						<dd>
-							<div id="structureSelecttDiv" >
-								<select dojoType="dijit.form.FilteringSelect" name="structureInode" id="structureSelect" value="<%= form.getStructureInode() %>">
-	
-			<%					List<ContainerStructure> containerStructures = form.getContainerStructures();
-								for (Structure structure: structures) {
-									boolean exists = false;
-	
-									for(ContainerStructure cs: containerStructures) {
-										if(cs.getStructureId().equals(structure.getInode())) {
-											exists = true;
-											break;
-										}
-									}
-			 %>
-									<option value="<%= structure.getInode() %>"><%= structure.getName() %></option>
-			<%				  }
-			%>
-								</select>
-								<button dojoType="dijit.form.Button"  onClick="addCodeTab()" iconClass="plusIcon" type="button">
-										<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-content-type")) %>
-								</button>
-							</div>
-						</dd>
-						<dd>
-							<div style="width:650px">
-								<div dojoType="dijit.layout.TabContainer" id="tabContainer" style="width:653px;overflow-y: hidden; " dolayout="false">
-								<style>
-								.dijitTabCloseButton {
-									width: 15px;
-									height: 15px;
-								}
-								.dijitTabCloseText {
-									display:block;
-								}
-								.dijitDisplayNone {
-									display:block !important;
-								}
-								</style>
-								<%
-								for(ContainerStructure cs: containerStructures) {
-									Structure st = CacheLocator.getContentTypeCache().getStructureByInode(cs.getStructureId());
-									String code = UtilMethods.escapeHTMLSpecialChars(cs.getCode());
-								%>
-									<div dojoType="dijit.layout.ContentPane" title="<%=st.getName()%>" selected="true" style="padding:0" id="tab_<%=st.getInode()%>" data-dojo-props="closable:true">
-										<div id="aceMaskMulti<%=st.getInode()%>" style="position: relative;" class="show"></div>
-										<textarea style="width:99%; height:300px; display: none;" onkeydown="return catchTab(this,event)" name="codeMaskMulti<%=st.getInode()%>" id="codeMaskMulti<%=st.getInode()%>"><%=UtilMethods.isSet(cs.getCode())?UtilMethods.escapeHTMLSpecialChars(cs.getCode()):"" %></textarea>
-									</div>
-									<script>
-										addStructureToList('<%=st.getInode()%>');
-	
-										var tab = dojo.byId('tab_<%=st.getInode()%>');
-										require(["dojo/on"], function(on){
-											  on(tab, "close", function(e){
-												removeStructure(structureInode);
-											  });
-										});
-									</script>
-									<%
-								}
-								%>
+						<dd><input type="text" dojoType="dijit.form.TextBox" style="width:650px" name="title" id="titleField" value="<%= form.getTitle() %>" /></dd>
+					</dl>
+					<dl>
+						<dt><%= LanguageUtil.get(pageContext, "Description") %>:&nbsp;</dt>
+						<dd><input type="text" dojoType="dijit.form.TextBox" style="width:650px" name="friendlyName" id="friendlyNameField" value="<%= form.getFriendlyName() %>" /></dd>
+					</dl>
+					<dl>
+						<dt><%= LanguageUtil.get(pageContext, "Max-Contents") %>:&nbsp;</dt>
+						<dd><input type="text" dojoType="dijit.form.TextBox" style="width:100px" maxlength="2" name="maxContentlets" id="maxContentlets" onchange="showHideCode()" value="<%= form.getMaxContentlets() %>" /></dd>
+					</dl>
+					<div id="preLoopDiv">
+						<dl>
+							<dt><%= LanguageUtil.get(pageContext, "Pre-Loop") %>:</dt>
+							<dd>
+								<div id="preLoopEditorArea" style="border: 0px;">
+									<div id="preLoopAceEditor" class="pShow"></div>
+									<textarea onkeydown="return catchTab(this,event)" style="display: none;" name="preLoopMask" id="preLoopMask"><%=UtilMethods.isSet(form.getPreLoop())?UtilMethods.escapeHTMLSpecialChars(form.getPreLoop()):"" %></textarea>
+									<input type="hidden" id="preLoop" name="preLoop" value=""/>
 								</div>
-							</div>
-							<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorCodeMultiple" id="toggleEditorCodeMultiple"  onClick="aceToggler('aceMaskMulti', 'codeMaskMulti');"  checked="checked"  />
-							<label for="toggleEditorCodeMultiple"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
-							<div id="toggleWrapEditor" style="display: inline-block">
-								<input id="multiWrapEditor" name="multiWrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onClick="aceWrapToggler(event);" />
-								<label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
-							</div>
-	
-						</dd>
-						<dd class="buttonCaption">
-							<button dojoType="dijit.form.Button"  onClick="addVariable()" iconClass="plusIcon" type="button">
-								<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-variable")) %>
-							</button>
-	
-						</dd>
-					</dl>
-	
-					<!-- will host all tabs and their content panes -->
+								<div class="checkbox">
+									<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorPreLoop" id="toggleEditorPreLoop"  onClick="aceToggler('preLoopAceEditor', 'preLoopMask');" checked="checked"  />
+									<label for="toggleEditorPreLoop" style="margin-right: 10px;"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
+								</div>
+								
+								<div id="toggleWrapEditor" class="checkbox">
+									<input id="preloopWrapEditor" name="preloopWrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onClick="aceWrapToggler(event);" />
+									<label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
+								</div>
+							</dd>
+						</dl>
+					</div>
+					<div id="codeDiv">
+						
+					</div>
+					<div id="multiCodeButtonDiv">
+						<dl>
+							<dt>
+								<span class="required"></span>
+								<%= LanguageUtil.get(pageContext, "Code-Per-Content-Type") %>:
+							</dt>
+							<dd>
+								<div id="structureSelecttDiv" >
+									<select dojoType="dijit.form.FilteringSelect" name="structureInode" id="structureSelect" value="<%= form.getStructureInode() %>">
+		
+				<%					List<ContainerStructure> containerStructures = form.getContainerStructures();
+									for (Structure structure: structures) {
+										boolean exists = false;
+		
+										for(ContainerStructure cs: containerStructures) {
+											if(cs.getStructureId().equals(structure.getInode())) {
+												exists = true;
+												break;
+											}
+										}
+				%>
+										<option value="<%= structure.getInode() %>"><%= structure.getName() %></option>
+				<%				  }
+				%>
+									</select>
+									<button dojoType="dijit.form.Button"  onClick="addCodeTab()" iconClass="plusIcon" type="button">
+											<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-content-type")) %>
+									</button>
+								</div>
+							</dd>
+						</dl>
+						<dl>
+							<dt> </dt>
+							<dd>
+								<div style="width:650px">
+									<div dojoType="dijit.layout.TabContainer" id="tabContainer" style="width:653px;overflow-y: hidden; " dolayout="false">
+									<style>
+									.dijitTabCloseButton {
+										width: 15px;
+										height: 15px;
+									}
+									.dijitTabCloseText {
+										display:block;
+									}
+									.dijitDisplayNone {
+										display:block !important;
+									}
+									</style>
+									<%
+									for(ContainerStructure cs: containerStructures) {
+										Structure st = CacheLocator.getContentTypeCache().getStructureByInode(cs.getStructureId());
+										String code = UtilMethods.escapeHTMLSpecialChars(cs.getCode());
+									%>
+										<div dojoType="dijit.layout.ContentPane" title="<%=st.getName()%>" selected="true" style="padding:0" id="tab_<%=st.getInode()%>" data-dojo-props="closable:true">
+											<div id="aceMaskMulti<%=st.getInode()%>" style="position: relative;" class="show"></div>
+											<textarea style="width:99%; height:300px; display: none;" onkeydown="return catchTab(this,event)" name="codeMaskMulti<%=st.getInode()%>" id="codeMaskMulti<%=st.getInode()%>"><%=UtilMethods.isSet(cs.getCode())?UtilMethods.escapeHTMLSpecialChars(cs.getCode()):"" %></textarea>
+										</div>
+										<script>
+											addStructureToList('<%=st.getInode()%>');
+		
+											var tab = dojo.byId('tab_<%=st.getInode()%>');
+											require(["dojo/on"], function(on){
+												on(tab, "close", function(e){
+													removeStructure(structureInode);
+												});
+											});
+										</script>
+										<%
+									}
+									%>
+									</div>
+								</div>
+								<div class="checkbox">
+									<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorCodeMultiple" id="toggleEditorCodeMultiple"  onClick="aceToggler('aceMaskMulti', 'codeMaskMulti');"  checked="checked"  />
+									<label for="toggleEditorCodeMultiple"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
+								</div>
+								<div id="toggleWrapEditor" class="checkbox">
+									<input id="multiWrapEditor" name="multiWrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onClick="aceWrapToggler(event);" />
+									<label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
+								</div>
+		
+							</dd>
+						</dl>
+						<dl>
+							<dt> </dt>
+							<dd class="buttonCaption">
+								<button dojoType="dijit.form.Button"  onClick="addVariable()" iconClass="plusIcon" type="button">
+									<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-variable")) %>
+								</button>
+		
+							</dd>
+						</dl>
+						<!-- will host all tabs and their content panes -->
+					</div>
+					<div id="codeButtonDiv">
+						<dl>
+							<dt>
+								<span class="required"></span>
+								<%= LanguageUtil.get(pageContext, "Code") %>:
+							</dt>
+							<dd>
+								<br/>
+								<div id="codeEditorArea">
+									<div id="aceEditor" class="show"></div>
+									<textarea onkeydown="return catchTab(this,event)" style="display: none;" name="codeMask" id="codeMask"><%=UtilMethods.isSet(form.getCode())?UtilMethods.escapeHTMLSpecialChars(form.getCode()):"" %></textarea>
+									<input type="hidden" name="code" id="code" value=""/>
+								</div>
+								<div class="checkbox">
+									<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorCode" id="toggleEditorCode"  onClick="aceToggler('aceEditor', 'codeMask');"  checked="checked"  />
+									<label for="toggleEditorCode"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
+								</div>
+							</dd>
+						</dl>
+					</div>
+					<div id="postLoopDiv">
+						<dl>
+							<dt><%= LanguageUtil.get(pageContext, "Post-Loop") %>:</dt>
+							<dd>
+								<br/>
+								<div id="postLoopEditorArea" style="border: 0px;">
+									<div id="postLoopAceEditor" class="pShow"></div>
+									<textarea onkeydown="return catchTab(this,event)" style="display: none;" name="postLoopMask" id="postLoopMask"><%=UtilMethods.isSet(form.getPostLoop())?UtilMethods.escapeHTMLSpecialChars(form.getPostLoop()):"" %></textarea>
+									<input type="hidden" name="postLoop" id="postLoop" value="" />
+								</div>
+								<div class="checkbox">
+									<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorPostLoop" id="toggleEditorPostLoop"  onClick="aceToggler('postLoopAceEditor', 'postLoopMask');"  checked="checked"  />
+									<label for="toggleEditorPostLoop" style="margin-right: 10px;"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
+								</div>
+								<div id="toggleWrapEditor" class="checkbox">
+									<input id="postloopWrapEditor" name="postloopWrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onClick="aceWrapToggler(event);" />
+									<label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
+								</div>
+							</dd>
+						</dl>
+					</div>
+					<div id="notesDiv">
+						<dl>
+							<dt><%= LanguageUtil.get(pageContext, "Notes") %>:</dt>
+							<dd><textarea dojoType="dijit.form.Textarea" style="width:450px; min-height:150px" maxlength="255" name="notes" id="notes"><%= UtilMethods.isSet(form.getNotes()) ? form.getNotes() : "" %></textarea></dd>
+						</dl>
+						<script type="text/javascript">
+							dojo.connect(dijit.byId('notes'), 'onkeydown', function(e) {if(dijit.byId('notes').focused) return catchTab(document.getElementById('notes'), e) });
+						</script>
+					</div>
 				</div>
+
 	
-				<div id="codeButtonDiv" >
-					<dl>
-						<dt>
-							<span class="required"></span>
-							<%= LanguageUtil.get(pageContext, "Code") %>:
-						</dt>
-						<dd>
-							<br/>
-							<div id="codeEditorArea">
-								<div id="aceEditor" class="show"></div>
-								<textarea onkeydown="return catchTab(this,event)" style="display: none;" name="codeMask" id="codeMask"><%=UtilMethods.isSet(form.getCode())?UtilMethods.escapeHTMLSpecialChars(form.getCode()):"" %></textarea>
-								<input type="hidden" name="code" id="code" value=""/>
-							</div>
-							<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorCode" id="toggleEditorCode"  onClick="aceToggler('aceEditor', 'codeMask');"  checked="checked"  />
-							<label for="toggleEditorCode"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
-						</dd>
-					</dl>
-				</div>
-	
-				<div id="postLoopDiv">
-					<dl>
-						<dt><%= LanguageUtil.get(pageContext, "Post-Loop") %>:</dt>
-						<dd>
-							<br/>
-							<div id="postLoopEditorArea" style="border: 0px;">
-								<div id="postLoopAceEditor" class="pShow"></div>
-								<textarea onkeydown="return catchTab(this,event)" style="display: none;" name="postLoopMask" id="postLoopMask"><%=UtilMethods.isSet(form.getPostLoop())?UtilMethods.escapeHTMLSpecialChars(form.getPostLoop()):"" %></textarea>
-								<input type="hidden" name="postLoop" id="postLoop" value="" />
-							</div>
-							<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorPostLoop" id="toggleEditorPostLoop"  onClick="aceToggler('postLoopAceEditor', 'postLoopMask');"  checked="checked"  />
-							<label for="toggleEditorPostLoop" style="margin-right: 10px;"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
-							<div id="toggleWrapEditor" style="display: inline-block">
-								<input id="postloopWrapEditor" name="postloopWrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onClick="aceWrapToggler(event);" />
-								<label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
-							</div>
-						</dd>
-					</dl>
-				</div>
-	
-				<div id="notesDiv">
-					<dl>
-						<dt><%= LanguageUtil.get(pageContext, "Notes") %>:</dt>
-						<dd><textarea dojoType="dijit.form.Textarea" style="width:450px; min-height:150px" maxlength="255" name="notes" id="notes"><%= UtilMethods.isSet(form.getNotes()) ? form.getNotes() : "" %></textarea></dd>
-					</dl>
-					<script type="text/javascript">
-						dojo.connect(dijit.byId('notes'), 'onkeydown', function(e) {if(dijit.byId('notes').focused) return catchTab(document.getElementById('notes'), e) });
-					</script>
-				</div>
+				
 	
 			</div>
 		<!-- END PROPERTIES TAB -->
@@ -375,7 +393,7 @@
 	
 		<!-- START Versions TAB -->
 			<%if(contentContainer != null && InodeUtils.isSet(contentContainer.getInode())){ %>
-				<div id="versions" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "History") %>" onShow="showEditButtonsRow()">
+				<div id="versions" class="history" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "History") %>" onShow="showEditButtonsRow()">
 					<%@ include file="/html/portlet/ext/common/edit_versions_inc.jsp" %>
 				</div>
 			<% } %>
@@ -411,7 +429,7 @@
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete-container")) %>
 			</button>
 		<% } %>
-		<button dojoType="dijit.form.Button" onClick="cancelEdit()" iconClass="cancelIcon" type="button">
+		<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="cancelEdit()" iconClass="cancelIcon" type="button">
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
 		</button>
 

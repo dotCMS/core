@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.util.PortletID"%>
 <%@ include file="/html/portlet/ext/dashboard/init.jsp" %>
 <%@page import="com.dotmarketing.portlets.structure.model.Field"%>
 <%@page import="java.util.List"%>
@@ -69,8 +70,8 @@ try {
 	 for(Layout layoutObj:layoutList) {
 		List<String> portletIdsForLayout=layoutObj.getPortletIds();
 		for(String portletId : portletIdsForLayout){
-		if (portletId.equals("site-browser")) {
-			browserURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=site-browser&p_p_action=0";
+		if (portletId.equals(PortletID.SITE_BROWSER)) {
+			browserURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.SITE_BROWSER+"&p_p_action=0";
 			break;
 		}
 	  }

@@ -90,7 +90,7 @@
 		if ((fieldInode == "<%=fields[i]%>") && fieldIndexed) {
 			if (dijit.byId(fieldInode + 'Field'))
 				dijit.byId(fieldInode + 'Field').destroy();
-			return "<div><input checked type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" id=\"" + fieldInode + "Field\" name=\"fields\" value=\"" + fieldInode + "\" "+disableField+" /> "  + fieldName + "</div>";
+			return "<div class='checkbox'><input checked type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" id=\"" + fieldInode + "Field\" name=\"fields\" value=\"" + fieldInode + "\" "+disableField+" /> "  + fieldName + "</div>";
 		}
 		<%
 
@@ -98,7 +98,7 @@
 		%>
 		if (dijit.byId(fieldInode + 'Field'))
 			dijit.byId(fieldInode + 'Field').destroy()
-		return "<div style='margin:2px 0px;'><input type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" id=\"" + fieldInode + "Field\" name=\"fields\" value=\"" + fieldInode + "\" "+disableField+" /> <label>" +  fieldName + "</label></div>";
+		return "<div class='checkbox'><input type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" id=\"" + fieldInode + "Field\" name=\"fields\" value=\"" + fieldInode + "\" "+disableField+" /> <label>" +  fieldName + "</label></div>";
 	}
 
 	function submitForm () {
@@ -211,77 +211,80 @@
 
 				<input type="hidden" name="cmd" value="preview" />
 				<input type="hidden" name="fileName" value="" />
-
-			     <fieldset>
-
-				<div>
-		         	<dl>
-
-			            <dt><%= LanguageUtil.get(pageContext, "Structure-to-Import") %>:</dt>
-			            <dd>
-			                <select dojoType="dijit.form.FilteringSelect" name="structure" id="structuresSelect" onchange="structureChanged()" value="<%= UtilMethods.isSet(form.getStructure()) ? form.getStructure() : "" %>" >
-			<%
-							for (Structure structure: structures) {
-			%>
-								<option <%=(selectedStructure !=null && selectedStructure.equals(structure.getInode())) ? "selected='true'" : "" %>value="<%= structure.getInode() %>"><%= structure.getName() %></option>
-			<%
-							}
-			%>
-			                </select>
-			            </dd>
-			    	</dl>
-			        <dl id="importDetails">
-
-			            <dt><%= LanguageUtil.get(pageContext, "Language-of-the-Contents-to-Import") %>:</dt>
-			            <dd>
-			                <select dojoType="dijit.form.FilteringSelect" name="language" id="languageSelect" onchange="languageChanged()" value="<%= UtilMethods.isSet(form.getLanguage()) ? form.getLanguage() : "" %>" >
-			<%
-
-							for (HashMap<String, Object> language: languagesMap) {
-			%>
-								<option value="<%= language.get("id") %>"><%= language.get("description") %></option>
-			<%
-							}
-			%>
-			                </select>
-			                <div id="multiLingualImportNotes" style="display: none">
-			                    <%= LanguageUtil.get(pageContext, "Note") %>:
-			                    <p>
-			                        <%= LanguageUtil.get(pageContext, "In-order-to-import-correctly-a-multilingual-file") %>:
-			                        <ol>
-			                            <li><%= LanguageUtil.get(pageContext, "The-CSV-file-must-saved-using--UTF-8--enconding") %></li>
-			                            <li><%= LanguageUtil.get(pageContext, "There-CSV-file-must-have-two-extra-fields") %></li>
-			                            <li><%= LanguageUtil.get(pageContext, "A-key-field-must-be-selected") %></li>
-			                        </ol>
-			                    </p>
-			                </div>
-			            </dd>
-
-			            <dt><%= LanguageUtil.get(pageContext, "Key-Fields") %>:</dt>
-			            <dd>
-			                <table>
-			                    <tbody id="import_fields_table"> </tbody>
-			                </table>
-			            </dd>
-
-			            <dt><%= LanguageUtil.get(pageContext, "File-to-Import-CSV-File-Required") %>:</dt>
-			            <dd>
-			                <input type="file" name="file" id="file" /> <br/>
-			                <a href="javascript: downloadCSVExample()"><%= LanguageUtil.get(pageContext, "Click-here-to-download-a-csv-sample-file") %></a>
-			            </dd>
-
-			            <dt>&nbsp;</dt>
-			            <dd>
-			                <button dojoType="dijit.form.Button" onclick="submitForm()" id="goToPreviewButton" iconClass="previewIcon">
-			                  <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Go-to-Preview")) %>
-			                </button>
-			            </dd>
-		       		</dl>
-			        <dl id="cantImportMessage">
-			        	<div class="warningText"><%= LanguageUtil.get(pageContext, "import-not-allowed-structure-has-madatory-scheme-no-default-action")%></div>
-		       		</dl>
-					</div>
-		    	</fieldset>
+						<div class="form-horizontal content-search__import-content-form">
+							<dl>
+								<dt><%= LanguageUtil.get(pageContext, "Structure-to-Import") %>:</dt>
+								<dd>
+									<select dojoType="dijit.form.FilteringSelect" name="structure" id="structuresSelect" onchange="structureChanged()" value="<%= UtilMethods.isSet(form.getStructure()) ? form.getStructure() : "" %>" >
+										<%
+											for (Structure structure: structures) {
+										%>
+										<option <%=(selectedStructure !=null && selectedStructure.equals(structure.getInode())) ? "selected='true'" : "" %>value="<%= structure.getInode() %>"><%= structure.getName() %></option>
+										<%
+											}
+										%>
+									</select>
+								</dd>
+							</dl>
+							<div id="importDetails">
+								<dl>
+									<dt><%= LanguageUtil.get(pageContext, "Language-of-the-Contents-to-Import") %>:</dt>
+									<dd>
+										<select dojoType="dijit.form.FilteringSelect" name="language" id="languageSelect" onchange="languageChanged()" value="<%= UtilMethods.isSet(form.getLanguage()) ? form.getLanguage() : "" %>" >
+										<%
+											for (HashMap<String, Object> language: languagesMap) {
+										%>
+											<option value="<%= language.get("id") %>"><%= language.get("description") %></option>
+										<%
+											}
+										%>
+										</select>
+										<div id="multiLingualImportNotes" style="display: none">
+											<%= LanguageUtil.get(pageContext, "Note") %>:
+											<p>
+												<%= LanguageUtil.get(pageContext, "In-order-to-import-correctly-a-multilingual-file") %>:
+												<ol>
+													<li><%= LanguageUtil.get(pageContext, "The-CSV-file-must-saved-using--UTF-8--enconding") %></li>
+													<li><%= LanguageUtil.get(pageContext, "There-CSV-file-must-have-two-extra-fields") %></li>
+													<li><%= LanguageUtil.get(pageContext, "A-key-field-must-be-selected") %></li>
+												</ol>
+											</p>
+										</div>
+									</dd>
+								</dl>
+								<dl>
+									<dt><%= LanguageUtil.get(pageContext, "Key-Fields") %>:</dt>
+									<dd>
+										<table class="content-search__key-fields">
+											<tbody id="import_fields_table"> </tbody>
+										</table>
+									</dd>
+								</dl>
+								<dl>
+									<dt><%= LanguageUtil.get(pageContext, "File-to-Import-CSV-File-Required") %>:</dt>
+									<dd>
+										<input type="file" name="file" id="file" />
+									</dd>
+								</dl>
+								<dl>
+									<dt> </dt>
+									<dd>
+										<a href="javascript: downloadCSVExample()"><%= LanguageUtil.get(pageContext, "Click-here-to-download-a-csv-sample-file") %></a>
+									</dd>
+								</dl>
+								<dl>
+									<dt>&nbsp;</dt>
+									<dd>
+										<button dojoType="dijit.form.Button" onclick="submitForm()" id="goToPreviewButton" iconClass="previewIcon">
+										<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Go-to-Preview")) %>
+										</button>
+									</dd>
+								</dl>
+							</div>
+							<dl id="cantImportMessage">
+								<div class="warningText"><%= LanguageUtil.get(pageContext, "import-not-allowed-structure-has-madatory-scheme-no-default-action")%></div>
+							</dl>
+						</div>
 			</html:form>
 
 

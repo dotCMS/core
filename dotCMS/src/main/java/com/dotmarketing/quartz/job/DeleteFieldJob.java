@@ -138,9 +138,6 @@ public class DeleteFieldJob implements Job {
             // Call the commit method to avoid a deadlock
             HibernateUtil.commitTransaction();
 
-            this.deleteFieldJobHelper.generateNotificationEndDeleting(this.notfAPI, userLocale, user.getUserId(),
-                    field.getVelocityVarName(), field.getInode(), structure.getInode());
-
             ActivityLogger.logInfo(ActivityLogger.class, "Delete Field Action", "User " + user.getUserId() + "/"
                     + user.getFirstName() + " deleted field " + field.getFieldName() + " to " + structure.getName()
                     + " Structure.");
@@ -161,6 +158,10 @@ public class DeleteFieldJob implements Job {
             // remove the file from the cache
             ContentletServices.removeContentletFile(structure);
             ContentletMapServices.removeContentletMapFile(structure);
+
+            this.deleteFieldJobHelper.generateNotificationEndDeleting(this.notfAPI, userLocale, user.getUserId(),
+                    field.getVelocityVarName(), field.getInode(), structure.getInode());
+
         } catch (Exception e) {
             try {
                 HibernateUtil.rollbackTransaction();

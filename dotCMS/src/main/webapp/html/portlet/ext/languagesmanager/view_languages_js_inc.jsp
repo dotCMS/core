@@ -33,7 +33,7 @@ function showLanguagePopUp(languageId, hrefVariables, cmsAdminUser, origReferer,
     var referer = encodeURIComponent(origReferer);
 
     if($('context_menu_popup_'+objId) == null) {
-        var divHTML = '<div id="context_menu_popup_' + objId + '" class="contextPopupMenuBox"></div>';
+        var divHTML = '<div id="context_menu_popup_' + objId + '" class="context-menu"></div>';
         new Insertion.Bottom ('popups', divHTML);
     }
 
@@ -41,30 +41,30 @@ function showLanguagePopUp(languageId, hrefVariables, cmsAdminUser, origReferer,
     var strHTML = '';
 
     // Edit variables
-    strHTML += '<a class="contextPopupMenu" href="';
+    strHTML += '<a class="context-menu__item" href="';
     strHTML += hrefVariables["editVariablesHref"];
-    strHTML += '"><span class="formNewIcon"></span><%= LanguageUtil.get(pageContext, "Edit-Variables") %></a>';
+    strHTML += '"><%= LanguageUtil.get(pageContext, "Edit-Variables") %></a>';
 
     // Edit language
-    strHTML += '<a class="contextPopupMenu" href="';
+    strHTML += '<a class="context-menu__item" href="';
     strHTML += hrefVariables["editLanguageHref"];
-    strHTML += '"><span class="editIcon"></span><%= LanguageUtil.get(pageContext, "Edit-Language") %></a>';
+    strHTML += '"><%= LanguageUtil.get(pageContext, "Edit-Language") %></a>';
 
     // Push publish & add to bundle
     if (enterprise) {
         if (sendingEndpoints) {
             var remotePublishHref = 'javascript: remotePublish(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_' + objId + '\');';
             
-            strHTML += '<a class="contextPopupMenu" href="'; strHTML += remotePublishHref; strHTML += '">';
+            strHTML += '<a class="context-menu__item" href="'; strHTML += remotePublishHref; strHTML += '">';
             remotePublishHref
-                strHTML += '<span class="sServerIcon"></span><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
+                strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
             strHTML += '</a>';
         }
 
         var bundleHref = 'javascript: addToBundle(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_' + objId + '\');';
         
-        strHTML += '<a class="contextPopupMenu" href="'; strHTML += bundleHref; strHTML += '">';
-            strHTML += '<span class="bundleIcon"></span><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
+        strHTML += '<a class="context-menu__item" href="'; strHTML += bundleHref; strHTML += '">';
+            strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-To-Bundle")) %>';
         strHTML += '</a>';
     }
 
@@ -72,8 +72,8 @@ function showLanguagePopUp(languageId, hrefVariables, cmsAdminUser, origReferer,
     var closeHref = 'javascript:hidePopUp(\'context_menu_popup_' + objId + '\');';
     
     strHTML += '<div class="pop_divider"></div>';
-    strHTML += '<a href="'; strHTML += closeHref; strHTML += '" class="contextPopupMenu">';
-        strHTML += '<span class="closeIcon"></span><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Close")) %>';
+    strHTML += '<a href="'; strHTML += closeHref; strHTML += '" class="context-menu__item">';
+        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Close")) %>';
     strHTML += '</a>';
 
     Element.update(div, strHTML);

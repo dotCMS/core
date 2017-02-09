@@ -98,9 +98,11 @@
         },
         "actionWhoCanUseSelect");
 
-		dojo.connect(dijit.byId("whoCanUseSelect"), 'onChange', function(event){
-            addSelectedToWhoCanUse();
-     	 });
+		permissionSelect.watch('displayedValue', function(property, oldValue, newValue) {
+			if (newValue) {
+				addSelectedToWhoCanUse();
+			}
+		});
 
 		whoCanUse = new Array()
 

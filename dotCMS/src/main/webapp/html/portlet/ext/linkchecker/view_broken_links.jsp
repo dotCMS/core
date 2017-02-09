@@ -7,7 +7,9 @@
 <%@page import="com.dotmarketing.portlets.structure.model.Field" %>
 <%@page import="com.dotmarketing.util.InodeUtils" %>
 <%@page import="com.dotmarketing.cache.FieldsCache" %>
+<%@page import="com.dotmarketing.util.PortletID"%>
 <%@ include file="/html/common/init.jsp" %>
+<%@ page import="com.liferay.portal.language.LanguageUtil"%>
 
 
 <% if(LicenseUtil.getLevel()< 199){ %>
@@ -114,14 +116,14 @@ function loadTable() {
 	var currentUser="<%=user.getUserId()%>";
 	var lid="<%=contentLayout%>";
 	var lidBL="<%=layout.getId()%>";
-	var baseUrl="/c/portal/layout?p_l_id="+lid+"&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=edit";
-	var referrer="/c/portal/layout?p_l_id="+lidBL+"&p_p_id=link-checker&p_p_action=0&pageNumber="+dojo.byId('currentPage').textContent;
+	var baseUrl="/c/portal/layout?p_l_id="+lid+"&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&p_p_mode=view&_<%=PortletID.CONTENT%>_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_<%=PortletID.CONTENT%>_cmd=edit";
+	var referrer="/c/portal/layout?p_l_id="+lidBL+"&p_p_id=<%=PortletID.LINK_CHECKER%>&p_p_action=0&pageNumber="+dojo.byId('currentPage').textContent;
 	dojo.empty('table_body');
 	var pageSize=25;
 	var page=(parseInt(dojo.byId('currentPage').textContent)-1)*pageSize;
 	var id = dojo.byId('currentPage');
     if(typeof id.textContent == "undefined"){
-            referrer="/c/portal/layout?p_l_id="+lidBL+"&p_p_id=link-checker&p_p_action=0&pageNumber="+dojo.byId('currentPage').innerText;
+            referrer="/c/portal/layout?p_l_id="+lidBL+"&p_p_id=<%=PortletID.LINK_CHECKER%>&p_p_action=0&pageNumber="+dojo.byId('currentPage').innerText;
             page=(parseInt(dojo.byId('currentPage').innerText)-1)*pageSize;
     }
 	dojo.xhr('GET',{
@@ -163,12 +165,22 @@ function loadTable() {
 						"</tr>";
 				dojo.place(dojo.toDom(row),'table_body');				
 			}
+
+			if( inode !== undefined && pageSize >= data.total ) {
+				require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
+					domStyle.set(registry.byId("prevBtn").domNode, 'display', 'none');
+					domStyle.set(registry.byId("nextBtn").domNode, 'display', 'none');
+				});
+			}
+
 			if(typeof id.textContent == "undefined"){
                 dojo.byId('totalPages').innerText=Math.ceil(data.total/pageSize);
+				
         	}
-        	else
+        	else {
                 dojo.byId('totalPages').textContent=Math.ceil(data.total/pageSize);
-			disableButtons(false);
+				disableButtons(false);
+			}
 		},
 		error: function(err) {
 			console.log(err);
@@ -251,20 +263,22 @@ dojo.ready(function(){
                 </table>
             </div>
             <div dojoType="dijit.layout.ContentPane" region="bottom">
-                <span id="tools">
-                   <button id="prevBtn" type="button" dojoType="dijit.form.Button" onClick="movePage(-1)">
-	                   <span class="previousIcon"></span>
-	               </button>
-	               
-	               <span id="currentPage"><%=pageNumber %></span> / <span id="totalPages"></span>
-	               
-	               <button id="nextBtn" type="button" dojoType="dijit.form.Button" onClick="movePage(1)">
-                       <span class="nextIcon"></span>
-                   </button>
-                </span>
+                
             </div>
         </div>
     </div>
+</div>
+<div class="portlet-pagination">
+	<span id="tools">
+		<button id="prevBtn" type="button" dojoType="dijit.form.Button" onClick="movePage(-1)" style="float: left">
+			<%= LanguageUtil.get(pageContext, "Previous")%>
+		</button>
+		<span id="currentPage"><%=pageNumber %></span> / <span id="totalPages"></span>
+		
+		<button id="nextBtn" type="button" dojoType="dijit.form.Button" onClick="movePage(1)" style="float: right">
+			<%= LanguageUtil.get(pageContext, "Next")%>
+		</button>
+	</span>
 </div>
 
    <script>

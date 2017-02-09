@@ -54,6 +54,29 @@ function cancelEdit(form) {
 	self.location = '<portlet:renderURL><portlet:param name="struts_action" value="/ext/languages_manager/view_languages_manager" /></portlet:renderURL>';
 }
 
+dojo.ready(function() {
+	var fieldWidth = "300px";
+	new dijit.form.TextBox({
+		name: "languageCode",
+		style: "width: " + fieldWidth
+	}, "languageCode");
+
+	new dijit.form.TextBox({
+		name: "countryCode",
+		style: "width: " + fieldWidth
+	}, "countryCode");
+
+	new dijit.form.TextBox({
+		name: "language",
+		style: "width: " + fieldWidth
+	}, "language");
+
+	new dijit.form.TextBox({
+		name: "country",
+		style: "width: " + fieldWidth
+	}, "country");
+})
+
 </script>
 
 <div class="portlet-main">
@@ -78,19 +101,25 @@ function cancelEdit(form) {
 	    <%} %>
 	    <dl>
 		    <dt><%= LanguageUtil.get(pageContext, "Language-Code") %>:</dt>
-		    <dd><html:text size="30" property="languageCode" maxlength="2" /></dd>
+		    <dd><html:text size="30" property="languageCode" maxlength="2" styleId="languageCode" /></dd>
 	    </dl>
 		<dl>
 		    <dt><%= LanguageUtil.get(pageContext, "Country-Code") %>:</dt>
-		    <dd><html:text size="30" property="countryCode" maxlength="2"/></dd>
+		    <dd><html:text size="30" property="countryCode" maxlength="2" styleId="countryCode" /></dd>
 	    </dl>
 		<dl>
 		    <dt><%= LanguageUtil.get(pageContext, "Language") %>:</dt>
-		    <dd><html:text size="30" property="language" /> <%= LanguageUtil.get(pageContext, "descriptive") %></dd>
+		    <dd>
+				<html:text size="30" property="language" styleId="language" />
+				<div class="hint-text"><%= LanguageUtil.get(pageContext, "descriptive") %></div>
+			</dd>
 	    </dl>
 		<dl>
 		    <dt><%= LanguageUtil.get(pageContext, "Country") %>:</dt>
-		    <dd><html:text size="30" property="country" /> <%= LanguageUtil.get(pageContext, "descriptive") %></dd>
+		    <dd>
+				<html:text size="30" property="country" styleId="country" />
+				<div class="hint-text"><%= LanguageUtil.get(pageContext, "descriptive") %></div>
+			</dd>
 		</dl>
 	 
 	    <div class="buttonRow">
@@ -107,8 +136,6 @@ function cancelEdit(form) {
 	        <button dojoType="dijit.form.Button" onClick="cancelEdit()" class="dijitButtonFlat" >
 	            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
 	        </button>
-	        
-	        
 	    </div>
 	
 	    </html:form>

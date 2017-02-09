@@ -11,7 +11,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.rest.api.v1.content.ContentTypeView;
-import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
 import com.liferay.portal.model.User;
 
 import org.junit.Test;
@@ -30,13 +29,11 @@ public class BaseContentTypeSystemEventProcessorTest extends UnitTestBase {
             .name("test structure")
             .variable("testtestingStructure").build();
         Payload payload = mock(Payload.class);
-        SessionWrapper session = mock(SessionWrapper.class);
         User user = new User();
         SystemEventType systemEventType = SystemEventType.SAVE_BASE_CONTENT_TYPE;
 
         ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper("http://localhost:8080", type);
 
-        when(session.getUser()).thenReturn(user);
         when(event.getId()).thenReturn("1");
         when(event.getEventType()).thenReturn(systemEventType);
         when(event.getPayload()).thenReturn(payload);
@@ -47,7 +44,7 @@ public class BaseContentTypeSystemEventProcessorTest extends UnitTestBase {
 
 
         BaseContentTypeSystemEventProcessor baseContentTypeSystemEventProcessor = new BaseContentTypeSystemEventProcessor();
-        SystemEvent result = baseContentTypeSystemEventProcessor.process(event, session);
+        SystemEvent result = baseContentTypeSystemEventProcessor.process(event, user);
 
         assertEquals(result.getEventType(), systemEventType);
         assertEquals(result.getId(), "1");

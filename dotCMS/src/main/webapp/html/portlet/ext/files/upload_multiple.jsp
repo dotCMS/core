@@ -78,41 +78,12 @@ if(request.getParameter(WebKeys.IN_FRAME)!=null){
 
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
 	<liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext, \"file-upload\") %>" />
- 	<style type="text/css">
-        	.dojoxUploaderFileListHeader{
-				width:100%;
-				text-align: left;
-          	}
-		    .dojoxUploaderIndex{
-				width:50px;
-				text-align: left;
-			}
-			.dojoxUploaderIcon{
-				width:100px;
-				text-align: left;
-			}
-			.dojoxUploaderFileName{
-				width:400px;
-				text-align: left;
-			}
-			.dojoxUploaderFileSize{
-				width:150px;
-				text-align: left;
- 			}
-			.dojoxUploaderSize{
-				width:150px;
-				text-align: left;
-				<% if(request.getHeader("User-Agent").contains("MSIE")){ %>
-					display:none; 
-				<% } %>				
-			}
-    </style>
     <body>
     
     
 	<% if(hasExplicitRequiredFields){ %>
 		
-		<div class="callOutBox" style="margin-left:40px;margin-right:40px;margin-bottom:10px" >
+		<div class="callOutBox">
 	    	<b><%= LanguageUtil.get(pageContext, "Note") %></b>: <%= LanguageUtil.get(pageContext, "Multiple-File-Upload-does-not-upload-custom-files-with-explicit-required-fields") %>
 	    </div>
 	                 
@@ -150,7 +121,7 @@ if(request.getParameter(WebKeys.IN_FRAME)!=null){
 
                     <% if ( request.getHeader( "User-Agent" ).contains( "MSIE" ) ) { %>
                         <input type="hidden" name="p_p_action" value="1">
-                        <input type="hidden" name="p_p_id" value="site-browser">
+                        <input type="hidden" name="p_p_id" value="<%=PortletID.SITE_BROWSER%>">
                         <input type="hidden" name="p_p_state" value="maximized">
                         <input type="hidden" name="p_p_mode" value="view">
                         <input type="hidden" name="struts_action" value="/ext/files/upload_multiple">
@@ -161,26 +132,22 @@ if(request.getParameter(WebKeys.IN_FRAME)!=null){
 					<input type="hidden" name="fileNames" id="fileNames" value=""/>
 					<input type="hidden" name="userId" value="<%= user.getUserId() %>">
 					<input name="referer" type="hidden" value="<%= referer %>">
-					
-                    <div style="width:100%; display:inline-block;">
-                        <div style="float:left; width:10%;line-height:30px;">
-                            <b><%= LanguageUtil.get(pageContext, "Folder") %>:</b>
-                        </div>
-                        <div style="float:left; width:90%;">
-                            <html:textarea readonly="true" rows="2" style="outline:none;resize:none;border:0px;width:99%;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;" 
-                                styleClass="form-text" property="selectedparentPath" styleId="selectedparentPath" />
-                        </div>
+
+                    <div class="inline-form">
+				 		<label><%= LanguageUtil.get(pageContext, "Folder") %>:</label>
+				 		<html:textarea readonly="true" rows="2" style="resize:none;border:0;width:100%;height:14px"
+							property="selectedparentPath" styleId="selectedparentPath" />
                     </div>
-                     <div class="callOutBox" style="margin-left:40px;margin-right:40px;margin-bottom:10px" >
+                     <div class="callOutBox">
                     	 <b><%= LanguageUtil.get(pageContext, "Note") %></b>: <%= LanguageUtil.get(pageContext, "Hold-down-ctrl-to-select-multiple-files") %>
                      </div>
 
-					    <div style="margin-left:200px;">
+					    <div class="buttonRow">
 							<input name="uploadedFile" multiple="true" type="file" id="uploader"
    									dojoType="dojox.form.Uploader" label="<%= LanguageUtil.get(pageContext, "Select-file(s)-to-upload") %>" >
    						</div>
-				        <div id="files" dojoType="dojox.form.uploader.FileList" uploaderId="uploader" 
-				        style="height:200px; border:1px solid silver; overflow-y: auto;"
+				        <div id="files" dojoType="dojox.form.uploader.FileList" uploaderId="uploader"
+				        style="height:200px; overflow-y: auto;"
 				        	<% if(request.getHeader("User-Agent").contains("MSIE")){ %>
 				        		headerFilesize="" 
 				        	<% } %>				        
@@ -219,7 +186,7 @@ if(request.getParameter(WebKeys.IN_FRAME)!=null){
 					</script>
                 </button>
                 <%if(!scheme.isMandatory()) {%>
-           		<button dojoType="dijit.form.Button" iconClass="publishIcon" id="savePublishButton" type="button">
+           		<button dojoType="dijit.form.Button" id="savePublishButton" type="button">
                 	<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
 					<script type="dojo/method" event="onClick" args="evt">
 
@@ -235,7 +202,7 @@ if(request.getParameter(WebKeys.IN_FRAME)!=null){
                 </button>
                 <%} %>
              <%} else if (canUserWriteToFile) { %>
-                <button dojoType="dijit.form.Button" onClick="doUpload('')" iconClass="saveIcon" id="saveButton">
+                <button dojoType="dijit.form.Button" onClick="doUpload('')" id="saveButton">
 					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
 					<script type="dojo/method" event="onClick" args="evt">
 
@@ -250,7 +217,7 @@ if(request.getParameter(WebKeys.IN_FRAME)!=null){
 					</script>
              	</button>
 			  <% } %>
-                <button dojoType="dijit.form.Button" iconClass="cancelIcon" type="button">
+                <button dojoType="dijit.form.Button" class="dijitButtonFlat" type="button">
                 	<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
                 	<script type="dojo/method" event="onClick" args="evt">						
                         try{

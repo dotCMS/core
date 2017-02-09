@@ -18,6 +18,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Mailer;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.language.LanguageUtil;
@@ -68,7 +69,7 @@ public class WorkflowEmailUtil {
             List<Layout> layouts = APILocator.getLayoutAPI().findAllLayouts();
             Layout layout = new Layout();
             for (Layout lout : layouts) {
-                if (lout.getPortletIds().contains("workflow")) {
+                if (lout.getPortletIds().contains(PortletID.WORKFLOW)) {
                     layout = lout;
                     break;
                 }
@@ -81,7 +82,7 @@ public class WorkflowEmailUtil {
 
             }
             link += "/c/portal/layout?p_l_id=" + layout.getId()
-                    + "&p_p_id=workflow&p_p_action=1&p_p_state=maximized&p_p_mode=view&_workflow_struts_action=/ext/workflows/edit_workflow_task&_workflow_cmd=view&_workflow_taskId="
+                    + "&p_p_id="+PortletID.WORKFLOW+"&p_p_action=1&p_p_state=maximized&p_p_mode=view&_"+PortletID.WORKFLOW+"_struts_action=/ext/workflows/edit_workflow_task&_workflow_cmd=view&_"+PortletID.WORKFLOW+"_taskId="
                     + processor.getTask().getId();
 
             HttpServletRequest requestProxy = new MockHttpRequest(host.getHostname(), null).request();

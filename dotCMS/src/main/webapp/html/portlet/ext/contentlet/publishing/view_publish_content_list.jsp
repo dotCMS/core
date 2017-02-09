@@ -187,7 +187,7 @@
 					<input dojoType="dijit.form.CheckBox" type="checkbox" class="add_to_queue" name="add_to_queue" value="<%=c.getInode()%>" id="add_to_queue_<%=c.getInode()%>" />
 				</td>
 				<td width="100%" nowrap="nowrap">
-					<a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view&_content_struts_action=/ext/contentlet/edit_contentlet&_content_cmd=edit&inode=<%=c.getInode() %>&referer=<%=referer %>">
+					<a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id="+PortletID.CONTENT+"&p_p_action=1&p_p_state=maximized&p_p_mode=view&_"+PortletID.CONTENT+"_struts_action=/ext/contentlet/edit_contentlet&_"+PortletID.CONTENT+"_cmd=edit&inode=<%=c.getInode() %>&referer=<%=referer %>">
 						<%=StringEscapeUtils.escapeHtml(c.getTitle())%>
 					</a>
 					<div style="float:right;color:silver">

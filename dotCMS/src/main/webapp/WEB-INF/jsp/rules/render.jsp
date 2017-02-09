@@ -1,7 +1,7 @@
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
-<%@ page import="com.dotmarketing.util.Config" %>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotcms.repackage.org.apache.struts.Globals"%>
+<%@ page import="com.dotmarketing.util.*" %>
 <%@ include file="/html/common/init.jsp" %>
 
 <%
@@ -69,7 +69,7 @@
   
 	
   //Add param to the rules engine iframe.
-  document.getElementById("rulesIframe").src = "/dotAdmin/#/fromCore/rules?" + localeParam + "&" + siteParam;
+  document.getElementById("rulesIframe").src = "/" + <%=com.dotmarketing.util.PortletURLUtil.URL_ADMIN_PREFIX%> + "/#/fromCore/rules?" + localeParam + "&" + siteParam;
 
 	function  resizeIframe(){
 

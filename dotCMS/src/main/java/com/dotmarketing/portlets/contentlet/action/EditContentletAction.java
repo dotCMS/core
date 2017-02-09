@@ -751,7 +751,11 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			catch (Exception ae) {
 				_handleException(ae, req);
 			}
-	        buildFakeAjaxResponse(req, res);
+			if(UtilMethods.isSet(referer)){
+				_sendToReferral(req, res, referer);
+			}else{
+				buildFakeAjaxResponse(req, res);
+			}
 	        return;
 		} else
 			Logger.debug(this, "Unspecified Action");

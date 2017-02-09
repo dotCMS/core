@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.util.PortletID"%>
 <%@page import="com.dotcms.repackage.bsh.This"%>
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@ include file="/html/portlet/ext/contentlet/init.jsp" %>
@@ -308,7 +309,7 @@
             label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Import-Content" )) %>",
                         iconClass: "uploadIcon",
                         onClick: function() {
-               	window.location='/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=content&p_p_action=1&p_p_state=maximized&_content_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById("structureInode").value;
+               	window.location='/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById("structureInode").value;
             }
         });
         menu.addChild(menuItem2);
@@ -424,19 +425,26 @@
                 <!-- END Advanced Search-->
 
                 <div class="buttonRow">
-                    <span id="searchButton"></span>
+                    <dl class="vertical">
+                        <dd>
+                            <button dojoType="dijit.form.ComboButton" id="searchButton" optionsTitle='createOptions' onClick="doSearch();return false;" iconClass="searchIcon" title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>">
+                                <span><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %></span>
+                                <div dojoType="dijit.Menu" style="display: none;" onClick="doSearch();return false;">
+                                    <div dojoType="dijit.MenuItem"  iconClass="searchIcon" onClick="doSearch();return false;"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %></div>
+                                    <div dojoType="dijit.MenuItem" iconClass="queryIcon" onClick="showHideQuery()"><%= LanguageUtil.get(pageContext, "Show-Query")%></div>
+                                </div>
+                            </button>
+                        </dd>
+                    </dl>
 
-                    <button dojoType="dijit.form.ComboButton" id="searchButton" optionsTitle='createOptions' onClick="doSearch();return false;" iconClass="searchIcon" title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>">
-                        <span><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %></span>
-                        <div dojoType="dijit.Menu" style="display: none;" onClick="doSearch();return false;">
-                            <div dojoType="dijit.MenuItem"  iconClass="searchIcon" onClick="doSearch();return false;"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %></div>
-                            <div dojoType="dijit.MenuItem" iconClass="queryIcon" onClick="showHideQuery()"><%= LanguageUtil.get(pageContext, "Show-Query")%></div>
-                        </div>
-                    </button>
+                    <dl class="vertical">
+                        <dd>
+                            <button dojoType="dijit.form.Button" id="clearButton" onClick="clearSearch();doSearch();" iconClass="resetIcon" class="dijitButtonFlat">
+                                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear")) %>
+                            </button>
+                        </dd>
+                    </dl>
 
-                    <button dojoType="dijit.form.Button" id="clearButton" onClick="clearSearch();doSearch();" iconClass="resetIcon" class="dijitButtonFlat">
-                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Clear")) %>
-                    </button>
                 </div>
 
                <a href="javascript:toggleAdvancedSearchDiv()" class="advanced-search-button">
@@ -465,7 +473,7 @@
                                 <span><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %></span>
                                 <script type="text/javascript">
                                     function importContent() {
-                                        window.location = '/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=content&p_p_action=1&p_p_state=maximized&_content_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById('structureInode').value;
+                                        window.location = '/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById('structureInode').value;
                                     }
                                 </script>
                                 <ul data-dojo-type="dijit/Menu" id="actionPrimaryMenu" style="display: none;">
@@ -539,7 +547,7 @@
                             </div>
                         </div>
                     </div>
-                    <table id="results_table" class="listingTable"></table>
+                    <table id="results_table" class="listingTable content-search__results-list"></table>
                     <div id="results_table_popup_menus"></div>
                     <!-- END Listing Results -->
                 </div>
@@ -565,7 +573,7 @@
         <!-- END Right Column -->
 
         <!-- START Show Query -->
-        <div id="queryDiv" dojoType="dijit.Dialog" style="display: none;padding-top:15px\9;">
+        <div id="queryDiv" dojoType="dijit.Dialog" class="content-search__show-query-dialog" style="display: none;padding-top:15px\9;">
             <div id="queryResults"></div>
         </div>
         <!-- END Show Query -->

@@ -286,7 +286,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.felix', version:'4.2.1_3'
     compile group: 'com.dotcms.lib', name: 'dot.osgi-resource-locator', version:'1.0.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.http.proxy', version:'2.2.0_2'
-
     compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.http.bundle', version:'2.2.0_3'
 
     compile group: 'org.apache.xmlgraphics', name: 'batik-rasterizer', version:'1.8'

@@ -65,14 +65,14 @@ try {
 	 for(Layout layoutObj:layoutList) {
 		List<String> portletIdsForLayout=layoutObj.getPortletIds();
 		for(String portletId : portletIdsForLayout){
-		if (portletId.equals("users")) {
-			userURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=users&p_p_action=0";
-		}else if (portletId.equals("html-pages")) {
-			pagesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=html-pages&p_p_action=0";
-		}else if (portletId.equals("files-legacy")) {
-			filesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=files-legacy&p_p_action=0";
-		}else if (portletId.equals("content")) {
-			contentURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=content";
+		if (portletId.equals(PortletID.USERS)) {
+			userURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.USERS+"&p_p_action=0";
+		}else if (portletId.equals(PortletID.HTML_PAGES)) {
+			pagesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.HTML_PAGES+"&p_p_action=0";
+		}else if (portletId.equals(PortletID.FILES_LEGACY)) {
+			filesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.FILES_LEGACY+"&p_p_action=0";
+		}else if (portletId.equals(PortletID.CONTENT)) {
+			contentURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.CONTENT;
 		}
 	  }
 	}

@@ -1,6 +1,7 @@
 package com.dotcms.api.system.event;
 
 import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
+import com.liferay.portal.model.User;
 
 import javax.websocket.Session;
 import java.io.Serializable;
@@ -59,7 +60,7 @@ public class SystemEventProcessorFactory implements Serializable {
     private static class DoNothingSystemEventProcessor implements SystemEventProcessor {
 
         @Override
-        public SystemEvent process(SystemEvent event, Session session) {
+        public SystemEvent process(SystemEvent event, User sessionUser) {
             return event;
         }
     }

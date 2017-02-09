@@ -60,7 +60,6 @@
 	}
 
 	function addNewProperty() {
-
 		if(currentIndex == 0){
 			if(Ext.get('noprops') != null)
 				Ext.get('noprops').remove();
@@ -71,17 +70,17 @@
 		var buffer = '<tr class="' + alternate + '" id="row-' + currentIndex + '">';
 
 		buffer += '<td width="6%" align="center"><input type="hidden" id="' + currentLanguage + '-' + currentIndex + '-new" name="' + currentLanguage + '-' + currentIndex + '-new" value="true"/>' +
-			'<input id="' + currentLanguage + '-' + currentIndex + '-remove" ' +
+			'<input dojoType="dijit.form.CheckBox" id="' + currentLanguage + '-' + currentIndex + '-remove" ' +
 			'type="checkbox" name="' + currentLanguage + '-' + currentIndex + '-remove" value=""/></td>';
 
 		buffer += '<td width="14%"><input id="' + currentLanguage + '-' + currentIndex + '-key" onchange="keyChanged(' + currentIndex + ');refreshAddKeys(' + currentIndex + ');" ' +
-			'type="text" style="width: 96%" class="form-text" name="' + currentLanguage + '-' + currentIndex + '-key" value=""/></td>';
+			'type="text" dojoType="dijit.form.TextBox" style="width: 96%" name="' + currentLanguage + '-' + currentIndex + '-key" value=""/></td>';
 
 		buffer += '<td width="40%"><input id="' + currentLanguage + '-general-' + currentIndex + '-value"  onchange="generalValueChanged(' + currentIndex + ');refreshAddKeys(' + currentIndex + ');"  ' +
-			'type="text" style="width: 98%" class="form-text" name="' + currentLanguage + '-general-' + currentIndex + '-value" value=""/></td>';
+			'type="text" dojoType="dijit.form.TextBox" style="width: 98%" name="' + currentLanguage + '-general-' + currentIndex + '-value" value=""/></td>';
 			
 		buffer += '<td width="40%"><input id="' + currentLanguage + '-' + currentCountry + '-' + currentIndex + '-value"  onchange="languageValueChanged(' + currentIndex + ');refreshAddKeys(' + currentIndex + ');"  ' +
-			'type="text" style="width: 98%" class="form-text" name="' + currentLanguage + '-' + currentCountry + '-' + currentIndex + '-value" value=""/></td>';
+			'type="text" dojoType="dijit.form.TextBox" style="width: 98%" name="' + currentLanguage + '-' + currentCountry + '-' + currentIndex + '-value" value=""/></td>';
 
 		buffer += '</tr>';
 
@@ -89,8 +88,9 @@
 
 		Ext.get(currentLanguage + '-' + currentIndex + '-key').focus();
 
+		dojo.parser.parse([dojo.byId('propertiesTable')]);
+
 		currentIndex++;
-		
 	}
 
 	function keyChanged (id) {
@@ -284,6 +284,13 @@
 	function viewLanguageKeysCallback(data){
 		if(data.length > 0){
 
+			var widgets = dijit.findWidgets(dojo.byId('propertiesTable'));
+			if (widgets.length) {
+				dojo.forEach(widgets, function(w) {
+					w.destroyRecursive();
+				});
+			}
+
 			var counters = data[0];
 			var hasNext = counters["hasNext"];
 			var hasPrevious = counters["hasPrevious"];
@@ -318,7 +325,6 @@
 					rowCreator:function(options) {
 				    var row = document.createElement("tr");
 				    row.id = "row-"+data[options.rowIndex]['idx'];
-				    row.className = data[options.rowIndex]['alternate'];
 				    return row;
 				  },
 				  cellCreator:function(options) {
@@ -337,7 +343,9 @@
 			keysToDelete.length = 0;
 		}
 		loadProgressToggle.hide();
-	}	
+
+		dojo.parser.parse([dojo.byId('propertiesTable')]);
+	}
 
 	function showMatchingResults (num,begin,end,totalPages) {
 	    

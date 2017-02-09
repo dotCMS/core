@@ -20,16 +20,21 @@
 			    		console.log("frames:" + win.frames[i].name);
 			    	}
 			    }
-			
-				var win = this.window;
-				while (win.frameMain == undefined && win.frameMenu==undefined && win != window.top && win.name !="detailFrame"){
-					//listFrames(win);
-					win=win.parent;
+
+				#set($url=${_baseURI})
+
+				#if($UtilMethods.isSet($queryString))
+				    #set($url="${url}?${queryString}&container=true")
+				#else
+				    #set($url="${url}?container=true")
+				#end
+
+                if ( this.window.parent !== top ){
+				    this.window.parent.location.replace("${url}");
+				}else{
+				    this.window.location.replace("${url}");
 				}
-				
-				console.log("winner:" + win.name);
-				
-				win.location.replace("${_baseURI}#if($UtilMethods.isSet($queryString))?${queryString}#end");
+
 			</script>
 		</head>
 		<body style="background:white url()"></body>

@@ -139,15 +139,15 @@
 		}
 	%>
 
-	<div class="yui-g portlet-toolbar" style="margin-top:25px;">
-		<div class="yui-u first">
+	<div class="portlet-toolbar">
+		<div class="portlet-toolbar__actions-primary">
 			<span class="formIcon"></span>
 			<b><%= (sortList.size()>1 && rel.isParentRequired() && !records.isHasParent()) ? "<span class=\"required\"></span>"  :
 				   (sortList.size()>1 && rel.isChildRequired() && records.isHasParent()) ? "<span class=\"required\"></span>" : ""  %>
 			   <%= targetStructure.getName() %>: </b><%=("yes".equals(isParent)) ? LanguageUtil.get(pageContext, "Child"): LanguageUtil.get(pageContext, "Parent") %>
 			(<%= rel.getRelationTypeValue() %>)
 		</div>
-		<div class="yui-u" style="text-align:right;">
+		<div class="portlet-toolbar__actions-secondary">
 			<div id="<%= relationJsName %>relateMenu"></div>
 		</div>
 	</div>
@@ -1008,7 +1008,7 @@
 
 			</script>
 
-			<div id="<%= relationJsName %>Dialog" dojoType="dotcms.dijit.form.ContentSelector" structureInode="<%= targetStructure.getInode() %>" relationJsName="<%= relationJsName %>" multiple="true" onContentSelected="callback<%= relationJsName %>" title="" counter_radio="<%= counter %>" searchCounter="<%= searchCounter %>" dialogCounter="<%= dialogCounter %>"></div>
+			<div id="<%= relationJsName %>Dialog" dojoType="dotcms.dijit.form.ContentSelector" structureInode="<%= targetStructure.getInode() %>" relationJsName="<%= relationJsName %>" multiple="true" onContentSelected="callback<%= relationJsName %>" title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>" counter_radio="<%= counter %>" searchCounter="<%= searchCounter %>" dialogCounter="<%= dialogCounter %>"></div>
 <%
             counter=counter+100;
             searchCounter+=10000;

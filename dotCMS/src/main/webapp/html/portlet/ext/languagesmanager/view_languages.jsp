@@ -100,7 +100,8 @@ var pushHandler = new dotcms.dojo.push.PushHandler('Push Publish');
 					<img
 					src="/html/images/languages/<%= strLangCode %>_<%= strCountryCode %>.gif"
 					border="0" />
-			    </a> <%= strLanguage+"&nbsp;("+strCountryCode+")&nbsp;" %>
+					<%= strLanguage+"&nbsp;("+strCountryCode+")&nbsp;" %>
+			    </a>
 			</td>
 		    <% } else { %>
 		        <td></td>
