@@ -2,16 +2,24 @@
 @import "../../../scss/mixins";
 
 .site-selector__field {
-  .ui-inputtext {
+  &.ui-inputwrapper-focus .ui-autocomplete {
+    background-color: rgba($white, 0.1);
+  }
+
+  .ui-autocomplete {
     background: none;
     border: none;
+
+    &:hover {
+      background-color: rgba($white, 0.1);
+    }
+  }
+
+  .ui-inputtext {
+    background: none;
     color: $white;
     font-size: $font-size-large;
     text-overflow: ellipsis;
-
-    &.ui-state-hover {
-      background-color: rgba($white, 0.1);
-    }
   }
   
   .fa {

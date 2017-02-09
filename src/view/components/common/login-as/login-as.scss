@@ -2,8 +2,7 @@
 @import "../../../../scss/variables";
 
 .login-as {
-    .ui-autocomplete,
-    input {
+    input[type="password"] {
         width: 100%;
     }
 }

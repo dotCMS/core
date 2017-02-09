@@ -21,7 +21,7 @@ $field-hover-arrow-color: $brand-secondary;
 
 $field-active-bgcolor: $brand-primary;
 $field-active-textcolor: $body-font-color;
-$field-active-border: solid 1px $body-font-color;
+$field-active-border: $field-hover-border;
 $field-active-arrow-color: $brand-secondary;
 
 $field-disabled-bgcolor: $white;
@@ -169,6 +169,7 @@ $buttons-map: (
     )
 );
 
+
 // CHECKBOX AND RADIO BUTTON
 $check-border-width: 1px;
 $check-radius: 2px;
@@ -184,7 +185,10 @@ $check-disabled-color: $gray-light;
 $check-disabled-label-color: $gray-light;
 
 $check-normal-bgcolor: $white;
-$check-normal-border: $check-checked-border;
+$check-normal-border: $field-normal-border;
+
+$check-hover-bgcolor: $white;
+$check-hover-border: $check-checked-border;
 
 $radio-checked-bgcolor: $white;
 $radio-checked-border: solid $check-border-width $brand-primary;
@@ -196,4 +200,7 @@ $radio-disabled-color: $gray-light;
 $radio-disabled-label-color: $gray-light;
 
 $radio-normal-bgcolor: $white;
-$radio-normal-border: solid 1px $black;
+$radio-normal-border: $field-normal-border;
+
+$radio-hover-bgcolor: $white;
+$radio-hover-border: $check-checked-border;

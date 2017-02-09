@@ -16,6 +16,7 @@ $icon-size: $check-size - $check-border-width * 2;
         color: $check-checked-color;
         font-size: $icon-size;
     }
+
     .ui-chkbox-box {
         border-radius: $check-radius;
         height: $check-size;
@@ -39,6 +40,11 @@ $icon-size: $check-size - $check-border-width * 2;
                 color: $check-disabled-color;
             }
         }
+
+        &:not(.ui-state-active, .ui-state-disabled):hover {
+            background: $check-hover-bgcolor;
+            border: $check-hover-border;
+        }
     }
 
 }
@@ -61,7 +67,7 @@ $icon-size: $check-size - $check-border-width * 2;
         width: $check-size;
 
         &.ui-state-default {
-            background: $check-normal-bgcolor;
+            background: $radio-normal-bgcolor;
             border: $radio-normal-border;
         }
 
@@ -77,6 +83,11 @@ $icon-size: $check-size - $check-border-width * 2;
             .ui-radiobutton-icon {
                 color: $radio-disabled-color;
             }
+        }
+
+        &:not(.ui-state-active, .ui-state-disabled):hover {
+            background: $radio-hover-bgcolor;
+            border: $radio-hover-border;
         }
     }
 }

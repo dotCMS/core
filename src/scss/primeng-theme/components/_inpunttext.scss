@@ -6,9 +6,13 @@
     padding: 0 $field-padding;
     transition: $field-animation-speed;
 
-    &.ui-state-hover,
-    &.ui-state-focus {
+    &:hover,
+    &:focus {
         @extend #field-hover-state;
+    }
+
+    &:disabled {
+        @extend #field-disabled-state;
     }
 }
 
@@ -27,5 +31,5 @@ p-radiobutton.ng-dirty.ng-invalid .ui-radiobutton-box,
 p-selectbutton.ng-dirty.ng-invalid .ui-button,
 p-spinner.ng-dirty.ng-invalid > .ui-inputtext,
 p-togglebutton.ng-dirty.ng-invalid .ui-button {
-    border-bottom-color: #f44336;
+    border-color: $red;
 }
