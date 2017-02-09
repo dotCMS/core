@@ -137,7 +137,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 			 }
 		} else {
 			//Object is new and a parent was provided so we check in the parent permissions
-			if(!perAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles))
+			if(!perAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, respectFrontendRoles))
 				throw new DotSecurityException("User doesn't have permission to save this category = " +
 						object.getInode() + " having as parent the category = " + parent.getInode());
 
