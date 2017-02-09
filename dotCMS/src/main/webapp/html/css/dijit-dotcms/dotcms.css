@@ -3142,10 +3142,10 @@ select[multiple]:hover {
 #listing-table tr .selected, .dojoxUploaderFileListTable tr .selected, .listingTable tr .selected {
   background-color: #E0E9F6;
 }
-#listing-table tr:hover, .dojoxUploaderFileListTable tr:hover, .listingTable tr:hover {
+#listing-table tr:not(.trIdxActive, .trIdxNothing):hover, .dojoxUploaderFileListTable tr:not(.trIdxActive, .trIdxNothing):hover, .listingTable tr:not(.trIdxActive, .trIdxNothing):hover {
   background-color: rgba(14, 128, 203, 0.05);
 }
-#listing-table tr:nth-child(even), .dojoxUploaderFileListTable tr:nth-child(even), .listingTable tr:nth-child(even) {
+#listing-table tr:not(.trIdxActive, .trIdxNothing):nth-child(even), .dojoxUploaderFileListTable tr:not(.trIdxActive, .trIdxNothing):nth-child(even), .listingTable tr:not(.trIdxActive, .trIdxNothing):nth-child(even) {
   background-color: #FAFAFA;
 }
 #listing-table th, .dojoxUploaderFileListTable th, .listingTable th, #listing-table td, .dojoxUploaderFileListTable td, .listingTable td {
