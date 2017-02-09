@@ -57,7 +57,7 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
             HibernateUtil.commitTransaction();
         }catch(Exception e){
             HibernateUtil.rollbackTransaction();
-            Logger.error(PermissionAPITest.class, e.getMessage());
+            Logger.error(PermissionAPIIntegrationTest.class, e.getMessage());
         }
  
 
@@ -80,7 +80,7 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
             HibernateUtil.commitTransaction();
         }catch(Exception e){
             HibernateUtil.rollbackTransaction();
-            Logger.error(PermissionAPITest.class, e.getMessage());
+            Logger.error(PermissionAPIIntegrationTest.class, e.getMessage());
         }       
     }
    
@@ -166,7 +166,7 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
             HibernateUtil.commitTransaction();
         }catch(Exception e){
             HibernateUtil.rollbackTransaction();
-            Logger.error(PermissionAPITest.class, e.getMessage());
+            Logger.error(PermissionAPIIntegrationTest.class, e.getMessage());
         }
     }
 }
