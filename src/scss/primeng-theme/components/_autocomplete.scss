@@ -1,11 +1,31 @@
 .ui-autocomplete {
-    .ui-autocomplete-dropdown.ui-state-default {
-        box-shadow: none;
-        background: none;
+    background-color: $white;
+    border: $field-normal-border;
+    border-radius: $border-radius;
+
+    &:hover {
+        border: $field-hover-border;
     }
 
-    input.ui-corner-all {
-        border-radius: $border-radius;
+    .ui-inputwrapper-focus & {
+        border: $field-active-border;
+    }
+
+    .ui-button.ui-autocomplete-dropdown {
+        height: $field-height;
+
+        &.ui-state-default {
+            box-shadow: none;
+            background: none;
+        }
+    }
+
+    .ui-inputtext {
+        border: none;
+
+        .ui-corner-all {
+            border-radius: $border-radius;
+        }
     }
 }
 
@@ -22,5 +42,9 @@
         overflow-wrap: break-word;
         padding: $basic-padding;
         word-wrap: break-word;
+
+        &.ui-corner-all {
+            border-radius: 0;
+        }
     }
 }

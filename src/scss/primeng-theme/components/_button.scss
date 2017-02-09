@@ -1,3 +1,10 @@
+@mixin button-state($props) {
+    background: map-get($props, background);
+    color:  map-get($props, color);
+    border: map-get($props, border);
+    box-shadow: map-get($props, shadow);
+}
+
 .ui-button {
     height: $field-height;
     margin-right: 0;
@@ -7,11 +14,14 @@
         @if ($button == "basic") {
 
             @each $label, $props in $states {
-                &.ui-state-#{$label} {
-                    background: map-get($props, background);
-                    color:  map-get($props, color);
-                    border: map-get($props, border);
-                    box-shadow: map-get($props, shadow);
+                @if ($label == "hover" or $label == "active" or $label == "disabled") {
+                    &:not(.ui-state-disabled):#{$label} {
+                        @include button-state($props)
+                    }
+                } @else {
+                    &:not(.ui-state-disabled).ui-state-#{$label} {
+                        @include button-state($props)
+                    }
                 }
             }
 
@@ -19,11 +29,14 @@
 
             &[#{$button}] {
                 @each $label, $props in $states {
-                    &.ui-state-#{$label} {
-                        background: map-get($props, background);
-                        color:  map-get($props, color);
-                        border: map-get($props, border);
-                        box-shadow: map-get($props, shadow);
+                    @if ($label == "hover" or $label == "active" or $label == "disabled") {
+                        &:#{$label} {
+                            @include button-state($props)
+                        }
+                    } @else {
+                        &.ui-state-#{$label} {
+                            @include button-state($props)
+                        }
                     }
                 }
             }
@@ -46,13 +59,13 @@
             box-shadow: none;
         }
 
-        &.ui-state-hover {
+        &:not([disabled]):hover {
             background: rgba($black, 0.1);
         }
 
-        &.ui-state-disabled {
+        &[disabled] {
             color: $body-font-color;
-            opacity: 0.5;
+            opacity: 0.25;
         }
     }
 }

@@ -61,9 +61,9 @@
                 <article>
                     <h4 class="section__subtitle">Disabled icon buttons</h4>
                     <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
-                    <button pButton iconButton disabled icon="fa-bell"></button>
-                    <button pButton iconButton disabled icon="fa-user"></button>
-                    <button pButton iconButton disabled icon="fa-plus"></button>
+                    <button pButton iconButton disabled="disabled" icon="fa-bell"></button>
+                    <button pButton iconButton disabled="disabled" icon="fa-user"></button>
+                    <button pButton iconButton disabled="disabled" icon="fa-plus"></button>
                 </article>
                 <article>
                     <h4 class="section__subtitle">Flat buttons</h4>
@@ -95,6 +95,7 @@
                 <article>
                     <h4 class="section__subtitle">Normal</h4>
                     <p-dropdown [options]="cities" [(ngModel)]="selectedCity"></p-dropdown>
+                    <p-dropdown disabled="true" [options]="cities" [(ngModel)]="selectedCity"></p-dropdown>
                 </article>
 
                 <article>

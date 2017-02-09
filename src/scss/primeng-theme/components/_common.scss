@@ -19,17 +19,33 @@ input, select, textarea, button {
 ----------------------------------*/
 
 // This will extend in all the form fields like: inputtext, dropdown, textarea and others like it.
+#field-default-state {
+    border: $field-normal-border;
+    background: $field-normal-bgcolor;
+    font-weight: normal;
+    color: $field-normal-textcolor;
+}
+
 #field-hover-state {
     border: $field-hover-border;
     background: $field-hover-bgcolor;
     color: $field-hover-textcolor;
 }
 
+#field-disabled-state {
+    background-image: none;
+    border: $field-disabled-border;
+    background: $field-disabled-bgcolor;
+    color: $field-disabled-textcolor;
+}
+
+#ui-hover-state {
+    background: $gray-lighter;
+    color: $field-hover-textcolor;
+}
+
 .ui-state-default {
-    border: $field-normal-border;
-    background: $field-normal-bgcolor;
-    font-weight: normal;
-    color: $field-normal-textcolor;
+    @extend #field-default-state;
 }
 
 .ui-state-default a {
@@ -45,8 +61,7 @@ input, select, textarea, button {
 
 .ui-state-hover,
 .ui-state-focus {
-    background: $gray-lighter;
-    color: $field-hover-textcolor;
+    @extend #ui-hover-state;
 }
 
 .ui-state-hover a {
@@ -59,7 +74,9 @@ input, select, textarea, button {
     }
 }
 
-.ui-state-active, .ui-widget-content .ui-state-active, .ui-widget-header .ui-state-active {
+.ui-state-active,
+.ui-widget-content .ui-state-active
+.ui-widget-header .ui-state-active {
     border: $field-active-border;
     background: $field-active-bgcolor;
     color: $field-active-textcolor;
@@ -85,10 +102,11 @@ input, select, textarea, button {
 .ui-state-highlight{
     .ui-widget-content &,
     .ui-widget-header & {
-        background: $gray-lighter;
+        background: $brand-primary;
+        color: $white;
 
         a {
-            color: $body-font-color;
+            color: $white;
         }
     }
 }
@@ -113,11 +131,10 @@ input, select, textarea, button {
     font-weight: normal;
 }
 
-.ui-state-disabled, .ui-widget-content .ui-state-disabled, .ui-widget-header .ui-state-disabled {
-    background-image: none;
-    border: $field-disabled-border;
-    background: $field-disabled-bgcolor;
-    color: $field-disabled-textcolor;
+.ui-state-disabled,
+.ui-widget-content .ui-state-disabled,
+.ui-widget-header .ui-state-disabled {
+    @extend #field-disabled-state;
 }
 
 /* Overlays */
