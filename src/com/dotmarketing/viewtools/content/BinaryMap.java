@@ -1,9 +1,5 @@
 package com.dotmarketing.viewtools.content;
 
-import java.io.File;
-import java.io.IOException;
-import java.awt.Dimension;
-
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -12,6 +8,10 @@ import com.dotmarketing.util.ImageUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
+
+import java.awt.*;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * A helper class to provide an object to return to the dotCMS when a content has a binary field
@@ -81,25 +81,22 @@ public class BinaryMap {
 		return rawUri;
 	}
 
-	
-	
-	
     public String getShortyUrl() {
 
       String shorty = APILocator.getShortyAPI().shortify(content.getIdentifier());
-      return "/dA/"+shorty+"/"+field.getVelocityVarName()+"/" + file.getName(); 
+      return "/dA/"+shorty+"/"+field.getVelocityVarName()+"/" + file.getName();
+    }
 
+    public String getShorty() {
+
+        return APILocator.getShortyAPI().shortify(content.getIdentifier());
     }
 	
     public String getShortyUrlInode() {
 
       String shorty = APILocator.getShortyAPI().shortify(content.getInode());
-      return "/dA/"+shorty+"/"+field.getVelocityVarName()+"/" + file.getName(); 
-
+      return "/dA/"+shorty+"/"+field.getVelocityVarName()+"/" + file.getName();
     }
-	
-	
-	
 	
 	/**
 	 * This is a convince method/helper method to build the URI for the resize exporter.  
