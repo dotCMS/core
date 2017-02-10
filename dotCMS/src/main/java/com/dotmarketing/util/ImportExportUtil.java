@@ -102,7 +102,6 @@ public class ImportExportUtil {
     private List<File> contentletsXML = new ArrayList<File>();
     private List<File> menuLinksXML = new ArrayList<File>();
     private List<File> pagesXML = new ArrayList<File>();
-    private List<File> structuresXML = new ArrayList<File>();
     private List<File> containersXML = new ArrayList<File>();
     private List<File> identifiersXML = new ArrayList<File>();
     private List<File> foldersXML = new ArrayList<File>();
@@ -262,8 +261,6 @@ public class ImportExportUtil {
                 pagesXML.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().contains("com.dotmarketing.portlets.links.model.Link_")){
                 menuLinksXML.add(new File(_importFile.getPath()));
-            }else if(_importFile.getName().contains("com.dotmarketing.portlets.structure.model.Structure_")){
-                structuresXML.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().endsWith(ContentTypeImportExportUtil.CONTENT_TYPE_FILE_EXTENSION)){
                 contentTypeJson.add(new File(_importFile.getPath()));
 
@@ -526,17 +523,9 @@ public class ImportExportUtil {
 
             HibernateUtil.closeSession();
 
-            // we need structures before contentlets
-            // but structures have references to folders and hosts identifiers
+            // we need content types before contentlets
+            // but content types have references to folders and hosts identifiers
             // so, here is the place to do it
-            for (File file : structuresXML) {
-                try {
-                    doXMLFileImport(file, out);
-                } catch (Exception e) {
-                    Logger.error(this, "Unable to load " + file.getName() + " : " + e.getMessage(), e);
-                }
-            }
-            
             for (File file : contentTypeJson) {
                 try {
                     new ContentTypeImportExportUtil().importContentTypes(file);

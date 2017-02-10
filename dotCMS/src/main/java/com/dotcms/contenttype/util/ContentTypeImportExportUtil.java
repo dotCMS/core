@@ -9,6 +9,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.dotcms.contenttype.business.ContentTypeApi;
@@ -16,18 +17,19 @@ import com.dotcms.contenttype.business.FieldApi;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.JsonHelper;
-import com.dotcms.contenttype.transform.SerialWrapper;
+import com.dotcms.contenttype.transform.field.FieldVariableTransformer;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -47,7 +49,7 @@ public class ContentTypeImportExportUtil {
     final int limit = 1000;
     public static final String CONTENT_TYPE_FILE_EXTENSION="-contenttypes.json";
 
-    public void exportContentTypes(File directory) throws IOException, DotDataException {
+    public void exportContentTypes(File directory) throws IOException, DotDataException, DotSecurityException {
 
         File parent = (directory.isDirectory()) ? directory : directory.getParentFile();
         int count = tapi.count();
@@ -80,7 +82,7 @@ public class ContentTypeImportExportUtil {
 
     }
 
-    private void streamingJsonExport(File file, int run) throws DotDataException, IOException {
+    private void streamingJsonExport(File file, int run) throws DotDataException, DotSecurityException, IOException {
         
         try (OutputStream out = new BufferedOutputStream(new FileOutputStream(file))) {
             JsonGenerator jg = mapper.getJsonFactory().createGenerator(out, JsonEncoding.UTF8);
@@ -88,17 +90,20 @@ public class ContentTypeImportExportUtil {
             for (int i = 0; i < 1000; i++) {
                 int offset = limit * i;
                 List<ContentType> exporting = tapi.search(null, "mod_date", limit, offset);
-                for (ContentType type : exporting) {
-                    mapper.writeValue(jg, new SerialWrapper<>(type, type.getClass()));
+                for (ContentType contentType : exporting) {
 
-                    for (Field field : type.fields()) {
-                        mapper.writeValue(jg, new SerialWrapper<>(field, field.getClass()));
+            		List<Field> fields = new LegacyFieldTransformer(FieldsCache.getFieldsByStructureInode(contentType.inode())).asList();
 
-                        for (FieldVariable var : field.fieldVariables()) {
-                            mapper.writeValue(jg, new SerialWrapper<>(var, var.getClass()));
-
-                        }
+            		List<FieldVariable> fieldVariables=new ArrayList<FieldVariable>();
+                    for(Field ff : fields) {
+                        fieldVariables.addAll(
+                            new FieldVariableTransformer(
+                            	APILocator.getFieldAPI().getFieldVariablesForField(ff.inode(), APILocator.getUserAPI().getSystemUser(), false)
+                            ).newFieldList()
+                        );
                     }
+
+                	mapper.writeValue(jg, new ContentTypeWrapper(contentType,fields,fieldVariables));
                 }
             }
             jg.writeEndArray();
@@ -108,49 +113,70 @@ public class ContentTypeImportExportUtil {
 
 
     private void streamingJsonImport(File file) throws DotDataException, IOException {
-        Object obj = null;
+    	ContentTypeWrapper contentTypeWrapper = null;
         try (InputStream in = new BufferedInputStream(new FileInputStream(file))) {
 
 
             JsonFactory jsonFactory = new JsonFactory();
             JsonParser parser = jsonFactory.createJsonParser(in);
-            User user = APILocator.systemUser();
             JsonToken token = parser.nextToken();
-            StringBuilder sb = new StringBuilder(token.asString());
 
-            while ((token = parser.nextToken()) != JsonToken.END_OBJECT && token != JsonToken.END_ARRAY) {
-                TreeNode node = mapper.readTree(parser);
-                String json = node.toString();
+            if (token == JsonToken.START_ARRAY) {
+                while ((token = parser.nextToken()) != JsonToken.END_ARRAY) {
+                	contentTypeWrapper = mapper.readValue(parser, ContentTypeWrapper.class);
 
-                Class clazz = JsonHelper.resolveClass(json);
-                obj = mapper.readValue(json, clazz);
-                if (obj instanceof ContentType) {
-                    tapi.save((ContentType) obj);
-                } else if (obj instanceof Field) {
-                    fapi.save((Field) obj, user);
-                } else {
-                    fapi.save((FieldVariable) obj, user);
+    	        	ContentType contentType = contentTypeWrapper.getContentType();
+    	        	List<Field> fields = contentTypeWrapper.getFields();
+    	        	List<FieldVariable> fieldVariables = contentTypeWrapper.getFieldVariables();
+
+        	    	contentType.constructWithFields(fields);
+
+        	    	tapi.save(contentType);
+
+                    for(FieldVariable fieldVariable : fieldVariables) {
+                    	fapi.save(fieldVariable, APILocator.systemUser());
+                    }
+
+                    contentTypeWrapper = null;
                 }
-                obj=null;
             }
         } catch (Exception e) {
-            throw new DotStateException("failed importing:" + obj, e);
+            throw new DotStateException("failed importing:" + contentTypeWrapper, e);
         }
     }
 
-    /*
-     * 
-     * JsonGenerator jg = mapper.getJsonFactory().createGenerator(out, JsonEncoding.UTF8);
-     * 
-     * for (int i = 0; i < 1000; i++) { int offset = limit * i; List<ContentType> exporting =
-     * APILocator.getContentTypeAPI2().find(null, "mod_date", limit, offset, "desc",
-     * APILocator.systemUser(), false); for (ContentType type : exporting) { mapper.writeValue(jg,
-     * new SerialWrapper<>(type, type.getClass())); for (Field field : type.fields()) {
-     * mapper.writeValue(jg, new SerialWrapper<>(field, field.getClass())); for (FieldVariable var :
-     * field.fieldVariables()) { mapper.writeValue(jg, new SerialWrapper<>(var, var.getClass())); }
-     * } } }
-     */
+    public static class ContentTypeWrapper {
+    	private ContentType contentType;
+    	private List<Field> fields;
+    	private List<FieldVariable> fieldVariables;
+    	
+        public ContentTypeWrapper() {}
+    	
+    	public ContentTypeWrapper(ContentType contentType, List<Field> fields, List<FieldVariable> variables) {
+    		this.contentType = contentType;
+    		this.fields = fields;
+    		this.fieldVariables = variables;
+    	}
 
+        public ContentType getContentType() {
+    		return contentType;
+    	}
+    	public void setContentType(ContentType contentType) {
+    		this.contentType = contentType;
+    	}
 
-
+    	public List<Field> getFields() {
+    		return fields;
+    	}
+    	public void setFields(List<Field> fields) {
+    		this.fields = fields;
+    	}
+    	
+    	public List<FieldVariable> getFieldVariables() {
+            return fieldVariables;
+        }
+        public void setFieldVariables(List<FieldVariable> fieldVariables) {
+            this.fieldVariables = fieldVariables;
+        }
+   }
 }

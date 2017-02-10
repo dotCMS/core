@@ -352,7 +352,7 @@ public class CMSMaintenanceAjax {
         return processStatus.buildStatusMap();
     }
 
-    public String doBackupExport(String action, boolean dataOnly) throws IOException, ServletException, DotDataException {
+    public String doBackupExport(String action, boolean dataOnly) throws IOException, ServletException, DotDataException, DotSecurityException {
     	validateUser();
 			try {
 				MaintenanceUtil.fixImagesTable();
@@ -443,7 +443,7 @@ public class CMSMaintenanceAjax {
 		 * @throws DotCacheException
 		 */
 		@SuppressWarnings("unchecked")
-		public void createXMLFiles() throws ServletException, IOException, DotDataException {
+		public void createXMLFiles() throws ServletException, IOException, DotDataException, DotSecurityException {
 			validateUser();
 			Logger.info(this, "Starting createXMLFiles()");
 
