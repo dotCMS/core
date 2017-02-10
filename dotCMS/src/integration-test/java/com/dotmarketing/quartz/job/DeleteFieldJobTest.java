@@ -28,6 +28,7 @@ import static org.junit.Assert.assertNull;
 
 public class DeleteFieldJobTest extends IntegrationTestBase {
 
+    /*
     final DeleteFieldJob instance = new DeleteFieldJob();
 
     @BeforeClass
@@ -118,6 +119,5 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
             throw new RuntimeException();
         }
     }
-
-
+    */
 }
