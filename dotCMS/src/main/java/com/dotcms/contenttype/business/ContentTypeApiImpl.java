@@ -254,15 +254,15 @@ public class ContentTypeApiImpl implements ContentTypeApi {
     // set to system folder if on system host or the host id of the folder it is on
     List<Field> fields = type.fields();
 
-    if (!UtilMethods.isSet(type.host()) || type.host().equals(Host.SYSTEM_HOST)) {
-      type = ContentTypeBuilder.builder(type).host(Host.SYSTEM_HOST).build();
-      type = ContentTypeBuilder.builder(type).folder(Folder.SYSTEM_FOLDER).build();
-    }
-    if (UtilMethods.isSet(type.folder()) && !type.folder().equals(Folder.SYSTEM_FOLDER)) {
-      type = ContentTypeBuilder.builder(type)
-          .host(APILocator.getFolderAPI().find(type.folder(), user, false).getHostId()).build();
-    } else {
-      type = ContentTypeBuilder.builder(type).folder(Folder.SYSTEM_FOLDER).build();
+    //Checks if the folder has been set, if so checks the host where that folder lives and set it.
+    if(UtilMethods.isSet(type.folder()) && !type.folder().equals(Folder.SYSTEM_FOLDER)){
+    	type = ContentTypeBuilder.builder(type)
+    	          .host(APILocator.getFolderAPI().find(type.folder(), user, false).getHostId()).build();
+    }else if(UtilMethods.isSet(type.host())){//If there is no folder set, check if the host has been set, if so set the folder to System Folder
+    		if(!type.host().equals(Host.SYSTEM_HOST) && APILocator.getHostAPI().findSystemHost().getIdentifier().equals(type.host())){//In case the SystemHost has been changed for another host
+    			type = ContentTypeBuilder.builder(type).host(Host.SYSTEM_HOST).build();
+    		}
+    	type = ContentTypeBuilder.builder(type).folder(Folder.SYSTEM_FOLDER).build();
     }
 
     if (!fields.isEmpty())
