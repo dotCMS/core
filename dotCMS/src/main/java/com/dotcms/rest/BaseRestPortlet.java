@@ -39,10 +39,7 @@ import java.io.StringWriter;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletRequestWrapper;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
@@ -264,6 +261,14 @@ public abstract class BaseRestPortlet implements Portlet, Cloneable {
 
 		public void write(byte[] b, int off, int len) throws IOException {
 			stream.write(b, off, len);
+		}
+
+		public boolean isReady() {
+			return false;
+		}
+
+		public void setWriteListener(WriteListener writeListener) {
+
 		}
 	}
 
