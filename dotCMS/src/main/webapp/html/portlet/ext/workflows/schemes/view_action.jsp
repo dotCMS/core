@@ -46,7 +46,10 @@
 
 %>
 <script type="text/javascript">
+
 	dojo.ready(function(){
+		
+		
 		actionAdmin.actionlets = new Array();
 		mainAdmin.resetCrumbTrail();
 		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Workflows")%>", "/html/portlet/ext/workflows/schemes/view_schemes.jsp");
@@ -69,7 +72,7 @@
             }
         },
         "actionWhoCanUseSelect");
-
+		
 	    <%
             String assignToLabel=null;
             if ( UtilMethods.isSet( nextAssignRole ) && UtilMethods.isSet( nextAssignRole.getId())) {
@@ -100,37 +103,7 @@
 
         },
         "actionAssignToSelect");
-
-		function setIconLabel(){
-			//alert(dijit.byId('actionIconSelect').item.value)
-			var x = dojo.attr("showIconSpan", "className",dijit.byId('actionIconSelect').item.value);
-
-			//dijit.byId('actionIconSelect').displayedValue = x;
-		}
-
-		var iconSelect = new dijit.form.FilteringSelect({
-            id: "actionIconSelect",
-            name: "actionIconSelect",
-            store: myIconStore,
-            searchAttr:"value",
-            labelAttr: "label",
-            labelType: "html",
-            searchDelay:300,
-            value:"<%=UtilMethods.webifyString(action.getIcon())%>",
-            pageSize:50,
-            onChange:actionAdmin.doChange,
-            onClick:function(){
-            	dijit.byId("actionIconSelect").displayedValue="";
-            },
-            required:false,
-            onChange:setIconLabel
-
-        },
-        "actionIconSelect");
-
-
-
-
+		
 		//assignSelect._hasBeenBlurred=false;
 
 
@@ -143,9 +116,9 @@
                 "<%=(tmpRole.getName().toLowerCase().contains("anonymous")) ? LanguageUtil.get(pageContext, "current-user") + " (" + LanguageUtil.get(pageContext, "Everyone") + ")" : tmpRole.getName()+ ((tmpRole.isSystem()) ? " (" + LanguageUtil.get(pageContext, "User") + ")" : "")%>");
             <%}
         }%>
-
+        
 		actionAdmin.refreshWhoCanUse();
-
+		
 	    // Load action classes into array
         actionClassAdmin.actionClasses = [];
         <%for(WorkflowActionClass subaction : subActions){ %>
@@ -294,16 +267,6 @@
 							</select>
 						</dd>
 					</dl>
-					<!-- <tr>
-						<td nowrap="true"><%=LanguageUtil.get(pageContext, "Icon")%>:</td>
-						<td nowrap="nowrap">
-							<div>
-								<div id="showIconSpan" class="<%=UtilMethods.webifyString(action.getIcon())%>" style="width:16px;height:16px;border:1px solid silver;padding:1px;margin-right:10px;display: inline-block;"></div>
-
-								<input id="actionIconSelect" name="actionIconSelect" />
-							</div>
-						</td>
-					</tr> -->
 					<dl>
 						<dt>
 							<label for=""><%=LanguageUtil.get(pageContext, "Custom-Code")%>:</label>
