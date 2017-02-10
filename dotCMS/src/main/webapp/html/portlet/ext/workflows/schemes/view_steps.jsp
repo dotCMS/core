@@ -77,7 +77,7 @@
 		</div>
 
     	<div class="portlet-toolbar__actions-secondary">
-    		<button dojoType="dijit.form.Button" iconClass="editIcon">
+    		<button dojoType="dijit.form.Button" iconClass="editIcon" onClick="schemeAdmin.showAddEdit('<%=scheme.getId()%>');">
 				<%=LanguageUtil.get(pageContext, "Edit-Workflow-Scheme")%>
 			</button>
 		</div>

@@ -30,7 +30,7 @@
 	
 	<div dojoAttachPoint="fileBrowser" dojoType="dotcms.dijit.FileBrowserDialog"></div>
 	
-	<div dojoType="dijit.Dialog" dojoAttachPoint="fileInfoDialog" style="width: 500px;"></div>
+	<div dojoType="dijit.Dialog" dojoAttachPoint="fileInfoDialog" style="width: 500px;" class="noDijitDialogTitleBar"></div>
 
 </div>
 
