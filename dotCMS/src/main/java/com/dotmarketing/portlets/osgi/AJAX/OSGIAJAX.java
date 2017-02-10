@@ -10,8 +10,8 @@ import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
 import com.liferay.util.FileUtil;
-import com.dotcms.repackage.org.osgi.framework.Bundle;
-import com.dotcms.repackage.org.osgi.framework.BundleException;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;

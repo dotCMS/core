@@ -171,7 +171,7 @@
 		<listener-class>com.dotmarketing.listeners.OsgiFelixListener</listener-class>
 	</listener>
     <listener>
-        <listener-class>com.dotcms.repackage.org.apache.felix.http.proxy.ProxyListener</listener-class>
+        <listener-class>org.apache.felix.http.proxy.ProxyListener</listener-class>
     </listener>
     <listener>
 		<listener-class>com.dotcms.repackage.org.apache.chemistry.opencmis.server.impl.CmisRepositoryContextListener</listener-class>

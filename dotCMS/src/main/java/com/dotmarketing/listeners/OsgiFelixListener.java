@@ -1,7 +1,7 @@
 package com.dotmarketing.listeners;
 
-import com.dotcms.repackage.org.apache.felix.http.proxy.DispatcherTracker;
-import com.dotcms.repackage.org.osgi.framework.BundleContext;
+import org.apache.felix.http.proxy.DispatcherTracker;
+import org.osgi.framework.BundleContext;
 import com.dotmarketing.osgi.OSGIProxyServlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;

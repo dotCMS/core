@@ -1,42 +1,24 @@
 package com.dotmarketing.util;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import javax.servlet.ServletContextEvent;
-
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.org.apache.felix.framework.FrameworkFactory;
-import com.dotcms.repackage.org.apache.felix.framework.util.FelixConstants;
-import com.dotcms.repackage.org.apache.felix.http.proxy.DispatcherTracker;
-import com.dotcms.repackage.org.apache.felix.main.AutoProcessor;
-import com.dotcms.repackage.org.apache.felix.main.Main;
-
-import org.apache.velocity.tools.view.PrimitiveToolboxManager;
-
-import com.dotcms.repackage.org.osgi.framework.BundleActivator;
-import com.dotcms.repackage.org.osgi.framework.BundleContext;
-import com.dotcms.repackage.org.osgi.framework.ServiceReference;
-import com.dotcms.repackage.org.osgi.framework.launch.Framework;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.osgi.OSGIProxyServlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
+import org.apache.felix.framework.FrameworkFactory;
+import org.apache.felix.framework.util.FelixConstants;
+import org.apache.felix.http.proxy.DispatcherTracker;
+import org.apache.felix.main.AutoProcessor;
+import org.apache.felix.main.Main;
+import org.apache.velocity.tools.view.PrimitiveToolboxManager;
+import org.osgi.framework.BundleActivator;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.osgi.framework.launch.Framework;
+
+import javax.servlet.ServletContextEvent;
+import java.io.*;
+import java.net.URL;
+import java.util.*;
 
 /**
  * Created by Jonathan Gamba
@@ -116,7 +98,7 @@ public class OSGIUtil {
 
         // (6) Use the specified bundle cache directory over default.
         if ( cacheDir != null ) {
-            configProps.setProperty( com.dotcms.repackage.org.osgi.framework.Constants.FRAMEWORK_STORAGE, cacheDir );
+            configProps.setProperty( org.osgi.framework.Constants.FRAMEWORK_STORAGE, cacheDir );
         }
 
         // Create host activator;
@@ -263,14 +245,14 @@ public class OSGIUtil {
                 }
             }
 
-            bob.append( "com.dotcms.repackage.org.osgi.framework," +
-                    "com.dotcms.repackage.org.osgi.framework.wiring," +
-                    "com.dotcms.repackage.org.osgi.service.packageadmin," +
-                    "com.dotcms.repackage.org.osgi.framework.startlevel," +
-                    "com.dotcms.repackage.org.osgi.service.startlevel," +
-                    "com.dotcms.repackage.org.osgi.service.url," +
-                    "com.dotcms.repackage.org.osgi.util.tracker," +
-                    "com.dotcms.repackage.org.osgi.service.http," +
+            bob.append( "org.osgi.framework," +
+                    "org.osgi.framework.wiring," +
+                    "org.osgi.service.packageadmin," +
+                    "org.osgi.framework.startlevel," +
+                    "org.osgi.service.startlevel," +
+                    "org.osgi.service.url," +
+                    "org.osgi.util.tracker," +
+                    "org.osgi.service.http," +
                     "javax.inject.Qualifier," +
                     "javax.servlet.resources," +
                     "javax.servlet;javax.servlet.http;version=2.5" );
