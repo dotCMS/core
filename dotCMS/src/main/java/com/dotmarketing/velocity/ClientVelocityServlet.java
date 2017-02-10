@@ -8,6 +8,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.util.*;
@@ -61,11 +62,13 @@ public class ClientVelocityServlet extends VelocityServlet {
      */
     private boolean notRedirect(HttpServletRequest req) {
         String refererValue = req.getHeader(Constants.REFERER_URL_HTTP_HEADER);
+        boolean containerParameter = Boolean.parseBoolean(req.getParameter("container"));
 
         return (refererValue != null && (refererValue.contains( "host_id=" )
-                    || refererValue.contains( "fromAngular=true" )
+                    || refererValue.contains( "container=true" )
                     || refererValue.contains(PortletURLUtil.URL_ADMIN_PREFIX )
-                    || refererValue.contains( "p_p_id=" + PortletID.SITE_BROWSER )));
+                    || refererValue.contains( "p_p_id=" + PortletID.SITE_BROWSER )))
+                || containerParameter;
     }
 
     //EACH CLIENT MAY HAVE ITS OWN VARIABLES

@@ -49,7 +49,7 @@
 
 	
   //Add param to the rules engine iframe.
-  document.getElementById("rulesIframe").src = "/" + <%=PortletURLUtil.URL_ADMIN_PREFIX%> + "/#/fromCore/rules?" + localeParam + "&" + siteParam + "&" + hideFireOnParam+ "&" +hideRulePushOptions;
+  document.getElementById("rulesIframe").src = "/<%=PortletURLUtil.URL_ADMIN_PREFIX%>/#/fromCore/rules?" + localeParam + "&" + siteParam + "&" + hideFireOnParam+ "&" +hideRulePushOptions;
   
 
 

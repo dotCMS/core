@@ -69,7 +69,7 @@
   
 	
   //Add param to the rules engine iframe.
-  document.getElementById("rulesIframe").src = "/" + <%=com.dotmarketing.util.PortletURLUtil.URL_ADMIN_PREFIX%> + "/#/fromCore/rules?" + localeParam + "&" + siteParam;
+  document.getElementById("rulesIframe").src = "/<%=com.dotmarketing.util.PortletURLUtil.URL_ADMIN_PREFIX%>/#/fromCore/rules?" + localeParam + "&" + siteParam;
 
 	function  resizeIframe(){
 

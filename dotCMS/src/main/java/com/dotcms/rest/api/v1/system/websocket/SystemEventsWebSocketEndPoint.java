@@ -142,6 +142,10 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 
 						session.getAsyncRemote().sendObject
 								(this.processEvent(session, event));
+					} else {
+
+						Logger.debug(this, "The event: " + event
+								+ ", has been filtered for the session: " + session.getId());
 					}
 				}
 			}
@@ -159,7 +163,10 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 		final SystemEventProcessor processor =
 				this.systemEventProcessorFactory.createProcessor(event.getEventType());
 
-		return null != processor? processor.process(event, session): event;
+		return null != processor? processor.process(event,
+													(null != session && session instanceof SessionWrapper)?
+															SessionWrapper.class.cast(session).getUser():null)
+				 			      : event;
 	} // processEvent.
 
     /**
@@ -176,7 +183,7 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
         final PayloadVerifier verifier = this.payloadVerifierFactory.getVerifier(payload);
 
         //Check if we have the "visibility" rights to use this payload
-        return (null != verifier) ? verifier.verified(payload, session) : true;
+        return (null != verifier) ? verifier.verified(payload, session.getUser()) : true;
     }
 
 	private boolean apply(final SystemEvent event,
