@@ -117,7 +117,6 @@
                     url: "/api/license/requestCode/licenseType/"+ licenseType + '/licenseLevel/' + licenseLevel,
                     handleAs: "text",
                     load: function (data) {
-                        console.log('data is '+ data)
                         var json = JSON.parse(data);
                         var isError = false;
                         if (json.success == false || json.success == "false") {
@@ -126,7 +125,6 @@
                         if(isError){
                             showDotCMSSystemMessage("There was an error generating the Request Code. Please try again", true);
                         }else{
-                            console.log(json.requestCode);
                             var requestCode = json.requestCode;
                             dojo.byId("licenseCode").value=requestCode;
                         }
