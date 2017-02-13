@@ -100,7 +100,14 @@ public class VisitorAPIImpl implements VisitorAPI {
 
     private Visitor createVisitor(HttpServletRequest request) {
 
+        Visitor visitor = new Visitor();
+        
         InetAddress ipAddress = lookupIPAddress(request);
+
+        if(Objects.isNull(ipAddress)){
+            //Exception was thrown so we return an empty, not-null visitor
+            return visitor;
+        }
 
         Language selectedLanguage = languageWebAPI.getLanguage(request);
 
@@ -112,11 +119,8 @@ public class VisitorAPIImpl implements VisitorAPI {
 
         boolean isNewVisitor = isNewVisitor(request);
 
-        LocalDateTime now = LocalDateTime.now();
-
         URI initialReferrer = lookupReferrer(request);
 
-        Visitor visitor = new Visitor();
         visitor.setIpAddress(ipAddress);
         visitor.setSelectedLanguage(selectedLanguage);
         visitor.setLocale(locale);
