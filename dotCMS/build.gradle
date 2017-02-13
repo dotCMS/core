@@ -97,6 +97,7 @@ dependencies {
     starter group: 'com.dotcms', name: 'starter', version: '20170118', ext: 'zip'
     coreWeb group: 'com.dotcms', name: 'core-web', version: '4.0.0-SNAPSHOT', ext: 'zip', changing: true
 
+    providedCompile "javax.servlet:javax.servlet-api:3.0.1"
     providedCompile fileTree("../libs/buildlibs").include('**/*.jar')
     providedCompile fileTree("../libs/buildlibs").include('jtds-*.jar', 'mail.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'sqljdbc*.jar')
 
