@@ -70,6 +70,8 @@ import com.dotmarketing.portlets.dashboard.model.DashboardSummary404;
 import com.dotmarketing.portlets.dashboard.model.DashboardUserPreferences;
 import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
+import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.tag.model.Tag;
@@ -556,7 +558,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 	 * @author Will
 	 * @throws DotDataException
 	 */
-	private void createXMLFiles() throws ServletException, IOException, DotDataException {
+	private void createXMLFiles() throws ServletException, IOException, DotDataException, DotSecurityException {
 
 //		deleteTempFiles();
 
@@ -582,6 +584,10 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			BufferedOutputStream _bout = null;
 
 			for (Class clazz : _tablesToDump) {
+			    if(clazz.equals(Structure.class) || clazz.equals(Field.class) || clazz.equals(FieldVariable.class)){
+			        continue;
+			    }
+
 				//http://jira.dotmarketing.net/browse/DOTCMS-5031
                 if(PermissionReference.class.equals(clazz)){
                 	continue;
@@ -825,10 +831,12 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			_bout.close();
 			_list = null;
 			_bout = null;
-			
-			
-			
-			File file = new File(backupTempFilePath + "/WorkflowSchemeImportExportObject.json");
+
+			//backup content types
+            File file = new File(backupTempFilePath + File.separator + "ContentTypes-" + ContentTypeImportExportUtil.CONTENT_TYPE_FILE_EXTENSION);
+            new ContentTypeImportExportUtil().exportContentTypes(file);
+
+			file = new File(backupTempFilePath + "/WorkflowSchemeImportExportObject.json");
 			WorkflowImportExportUtil.getInstance().exportWorkflows(file);
 
 			file = new File(backupTempFilePath + "/RuleImportExportObject.json");

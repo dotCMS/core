@@ -141,7 +141,7 @@ public abstract class PageContentType extends ContentType{
 		fields.add(
 				ImmutableTabDividerField.builder()
 				.name("Advanced Properties")
-				.variable("advancetab")
+				.variable("advancedtab")
 				.sortOrder(i++)
 				.build()
 		);
