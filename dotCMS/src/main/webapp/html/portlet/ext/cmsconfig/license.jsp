@@ -230,7 +230,6 @@
                  data = dojo.byId("licenseCodePasteField").value;
             }
             else{
-                console.log("test");
                  data = dojo.byId("licenseCodePasteFieldTwo").value;
             }
             
