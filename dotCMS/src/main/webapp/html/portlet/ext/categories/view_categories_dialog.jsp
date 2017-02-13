@@ -40,14 +40,6 @@
 	height: 100%;
 }
 
-#all<%=counter%> {
-	margin: 0px;
-	padding: 0px;
-	width: 100px;
-	float: right;
-	height: 0px;
-}
-
 </style>
 <script type="text/javascript" src="/dwr/interface/CategoryAjax.js"></script>
 
@@ -110,9 +102,7 @@
 			jsId : "addedGrid<%=counter%>",
 	        store: addedStore<%=counter%>,
 			autoWidth : true,
-// 			class : "blank",
 			initialWidth : '25%',
-			style: "font-family: \"lucida grande\",tahoma,verdana,arial,sans-serif;font-size: 11px; margin-top: 10px",
 			escapeHTMLInData : false,
 	        structure: addedlayout
 	    }, dojo.byId('addedHolder<%=counter%>'));
@@ -222,10 +212,8 @@
 				jsId : "grid<%=counter%>",
 				store : myStore<%=counter%>,
 				autoWidth : true,
-// 				class: "tundra",
 				initialWidth : '70%',
 				height: "90%",
-				style: "font-family: \"lucida grande\",tahoma,verdana,arial,sans-serif;font-size: 11px; margin-top: 10px",
 				autoHeight : true,
 				escapeHTMLInData : false,
 				structure : layout,
@@ -340,21 +328,27 @@
 
 <div id="categoriesDialog<%=counter%>" dojoType="dijit.Dialog" style="display:none;max-width:900px;max-height:540px;vertical-align: middle; " draggable="true"
 	title="<%= LanguageUtil.get(pageContext, "categories") %>" >
-		<div style="width:100%" id="breadCrumbs<%=counter%>">
+		<div class="categories-selector__breadcrumbs" id="breadCrumbs<%=counter%>">
 			<ul id="nav<%=counter%>" style="margin-left:0px">
 				<a id="a_null<%=counter%>" style="font-size: 12px" onfocus="return false;"  href="javascript:prepareCrumbs<%=counter%>(baseCat<%=counter%>, '<%= LanguageUtil.get(pageContext, "Top-Level") %>');"  \><%= LanguageUtil.get(pageContext, "Top-Level") %> &#62; </a>
 			</ul>
 		</div>
-		<div style="margin-top: 10px">
-				<input name="catFilter" id="catFilter<%=counter%>" dojoType="dijit.form.TextBox" placeholder="<%= LanguageUtil.get(pageContext, "message.filter.categories") %>" style="width: 138px; height: 15px" />
-				<button dojoType="dijit.form.Button" onclick="doSearch<%=counter%>();" type="button" iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "Search") %></button>
-				<button dojoType="dijit.form.Button" onclick="clearCatFilter<%=counter%>()" type="button" iconClass="resetIcon"><%= LanguageUtil.get(pageContext, "Clear") %></button>
-				<div id="all<%=counter%>" style="margin-top: 10px; margin-left: 50px; ">
-				<a href="javascript:delAll<%=counter%>()" style="font-size:11px">Delete All</a>
-		</div>
+		<div class="categories-selector__toolbar">
+			<div class="categories-selector__toolbar-actions-primary">
+				<div class="inline-form">
+					<input name="catFilter" id="catFilter<%=counter%>" dojoType="dijit.form.TextBox" placeholder="<%= LanguageUtil.get(pageContext, "message.filter.categories") %>" style="width: 265px;" />
+					<button dojoType="dijit.form.Button" onclick="doSearch<%=counter%>();" type="button"><%= LanguageUtil.get(pageContext, "Search") %></button>
+					<button dojoType="dijit.form.Button" onclick="clearCatFilter<%=counter%>()" type="button" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Clear") %></button>
+				</div>
+			</div>
+			<div class="categories-selector-toolbar-actions-secondary">
+				<div id="all<%=counter%>">
+					<button dojoType="dijit.form.Button" class="dijitButtonDanger" onclick="delAll<%=counter%>();" type="button"><%= LanguageUtil.get(pageContext, "delete-all") %></button>
+				</div>
+			</div>
 		</div>
 
-		<div id="container<%=counter%>" style="height: 340px;  overflow: auto;">
+		<div id="container<%=counter%>" style="height: 340px; overflow: auto;">
 
 			<div id="scroll<%=counter%>" style="height: 300px; margin-top: 0px">
 				<div id="catHolder<%=counter%>" ></div>

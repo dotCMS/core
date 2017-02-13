@@ -65,34 +65,26 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 
 <style>
 	.trIdxBuilding{
-	background:#F8ECE0;
+		background:#F8ECE0;
 	}
+
 	.trIdxActive{
-	background:#D8F6CE;
+		background:#D8F6CE;
 	}
+
 	.trIdxNothing td{
-	color:#aaaaaa;
-	
+		color:#aaaaaa;
 	}
-	.trIdxNothing:hover,.trIdxActive:hover,.trIdxBuilding:hover {background:#e0e9f6 !important;}
-	 #restoreIndexUploader {
-	   width:200px !important;
-	 }
-	 #uploadProgress {
-	   float: right;
-	   display: none;
-	 }
+
+	#restoreIndexUploader {
+		width:200px !important;
+	}
+
+	#uploadProgress {
+		float: right;
+		display: none;
+	}
 </style>
-
-
-
-
-
-
-
-
-
-
 
 		<div class="buttonRow" style="text-align: right;padding:20px;">
 

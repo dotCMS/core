@@ -8,12 +8,12 @@ import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.WindowState;
+
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -22,6 +22,7 @@ import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.TreeFactory;
@@ -33,11 +34,18 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.Contentlet;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
+import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.links.model.Link.LinkType;
 import com.dotmarketing.portlets.links.struts.LinkForm;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.services.ContentletServices;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -55,6 +63,15 @@ import com.liferay.util.servlet.SessionMessages;
  */
 
 public class EditLinkAction extends DotPortletAction implements DotPortletActionInterface {
+    
+    private ContentletAPI conAPI = APILocator.getContentletAPI();
+    private FolderAPI folderAPI = APILocator.getFolderAPI();
+    private HostAPI hostAPI = APILocator.getHostAPI();
+    private HTMLPageAPI htmlAPI = APILocator.getHTMLPageAPI();
+    private HTMLPageAssetAPI pageAssetAPI = APILocator.getHTMLPageAssetAPI();
+    private IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
+    private LanguageAPI langAPI = APILocator.getLanguageAPI();
+    private VersionableAPI versionableAPI = APILocator.getVersionableAPI();
 
 	public void processAction(ActionMapping mapping, ActionForm form,
 			PortletConfig config, ActionRequest req, ActionResponse res)
@@ -68,7 +85,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 
 		if ((referer != null) && (referer.length() != 0)) {
-			referer = URLDecoder.decode(referer, "UTF-8");
+			referer = URLDecoder.decode(referer, UtilMethods.getCharsetConfiguration());
 		}
 
 		Logger.debug(this, "EditLinkAction cmd=" + cmd);
@@ -151,7 +168,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 					
 					Link link=(Link) req.getAttribute(WebKeys.LINK_EDIT);
 					if(link.isLocked())
-					    APILocator.getVersionableAPI().setLocked(link, false, user);
+					    versionableAPI.setLocked(link, false, user);
 					
 					_sendToReferral(req, res, referer);
 				}
@@ -403,9 +420,6 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 	@SuppressWarnings("unchecked")
 	public void _saveWebAsset(ActionRequest req, ActionResponse res,
 			PortletConfig config, ActionForm form, User user) throws Exception {
-
-		HostAPI hostAPI = APILocator.getHostAPI();
-		IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 		
 		//wraps request to get session object
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
@@ -425,15 +439,15 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 		Link currentLink = (Link) req.getAttribute(WebKeys.LINK_EDIT);
 		
 		//parent folder or inode for this file
-		Folder parent = APILocator.getFolderAPI().find(req.getParameter("parent"), user, false);
+		Folder parent = folderAPI.find(req.getParameter("parent"), user, false);
 		//http://jira.dotmarketing.net/browse/DOTCMS-5899
 		if(UtilMethods.isSet(currentLink.getInode())){
-			Identifier id = APILocator.getIdentifierAPI().find(currentLink);
+			Identifier id = identifierAPI.find(currentLink);
 			String URI = id.getURI();
 			String uriPath = URI.substring(0,URI.lastIndexOf("/")+1);
-			if(!uriPath.equals(APILocator.getIdentifierAPI().find(parent).getPath())){
-				id.setURI(APILocator.getIdentifierAPI().find(parent).getPath()+currentLink.getProtocal() + currentLink.getUrl());
-				APILocator.getIdentifierAPI().save(id);
+			if(!uriPath.equals(identifierAPI.find(parent).getPath())){
+				id.setURI(identifierAPI.find(parent).getPath()+currentLink.getProtocal() + currentLink.getUrl());
+				identifierAPI.save(id);
 			}
 		}
 		
@@ -449,7 +463,38 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 			Identifier internalLinkIdentifier = identifierAPI.findFromInode(linkForm.getInternalLinkIdentifier());
 			//link.setLinkType(LinkType.INTERNAL.toString());
 			link.setInternalLinkIdentifier(internalLinkIdentifier.getInode());
-			link.setProtocal("http://");
+			
+			if(Identifier.ASSET_TYPE_HTML_PAGE.equalsIgnoreCase(internalLinkIdentifier.getAssetType())){
+			    //Internal Link points to a legacy page
+			    HTMLPage page = htmlAPI.loadPageByPath(internalLinkIdentifier.getId(), internalLinkIdentifier.getHostId());
+			    if(page.isHttpsRequired()){
+			        link.setProtocal("https://");
+			    } else {
+			        link.setProtocal("http://");
+			    }
+			} else if (Identifier.ASSET_TYPE_CONTENTLET.equalsIgnoreCase(internalLinkIdentifier.getAssetType())) {
+			    //Internal Link points to a Contentlet
+			    //Modal for adding internal assets to link always shows contents in default language
+			    //So we'll pull the selected assets using the default language
+			    com.dotmarketing.portlets.contentlet.model.Contentlet con = conAPI
+			            .findContentletByIdentifier(internalLinkIdentifier.getId(), true, 
+			                    langAPI.getDefaultLanguage().getId(), user, false);
+			    if(UtilMethods.isSet(con.getIdentifier()) && con.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
+			        //It's a Page Asset
+			        HTMLPageAsset page = pageAssetAPI.fromContentlet(con);
+			        if(page.isHttpsRequired()){
+			            link.setProtocal("https://");
+			        } else {
+			            link.setProtocal("http://");
+			        }        
+			    } else {
+			        //It's a different content type. Set protocal to http by default
+			        link.setProtocal("http://");
+			    }
+			} else {
+			    //It could be anything else, like a Legacy File. Fallback to http.
+			    link.setProtocal("http://");
+			}
 
 			StringBuffer myURL = new StringBuffer();
 			if(InodeUtils.isSet(internalLinkIdentifier.getHostId())) {
@@ -467,7 +512,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 		Link workingLink = null;
 		//it saves or updates the asset
 		if (InodeUtils.isSet(currentLink.getInode())) {
-			Identifier identifier = APILocator.getIdentifierAPI().find(currentLink);
+			Identifier identifier = identifierAPI.find(currentLink);
 			WebAssetFactory
 			.createAsset(link, userId, parent, identifier, false);
 
@@ -477,7 +522,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 			req.setAttribute(WebKeys.LINK_FORM_EDIT,link);
 			if (!currentLink.getTarget().equals(link.getTarget())) {
 				//create new identifier, with the URI
-				APILocator.getIdentifierAPI().updateIdentifierURI(workingLink,(Folder) parent);
+				identifierAPI.updateIdentifierURI(workingLink,(Folder) parent);
 			}
 		} else {
 			WebAssetFactory.createAsset(link, userId, parent);
@@ -594,7 +639,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 			parent = (Folder) InodeFactory.getInode(parentInode, Folder.class);
 			Logger.debug(this, "Parent Folder=" + parent.getInode());
 		} else {
-			parent = APILocator.getFolderAPI().findParentFolder(currentLink, user,false);
+			parent = folderAPI.findParentFolder(currentLink, user,false);
 			Logger.debug(this, "Parent Folder=" + parent.getInode());
 		}
 
@@ -657,7 +702,6 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 		//Rewriting the parent�s contentlets of the link
 		List<Contentlet> contentlets = (List<Contentlet>)InodeFactory.getParentsOfClass(workingLink,
 				Contentlet.class);
-		ContentletAPI conAPI = APILocator.getContentletAPI();
 
 		for( Contentlet cont : contentlets ) {
 			if (cont.isWorking()) {
@@ -681,8 +725,8 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 
 		if (parentInode != null && parentInode.length() != 0 && !parentInode.equalsIgnoreCase("")) 
 		{
-			Folder parent = APILocator.getFolderAPI().find(parentInode, user, false); 
-			Folder oldParent = APILocator.getFolderAPI().findParentFolder(webAsset, user, false);
+			Folder parent = folderAPI.find(parentInode, user, false); 
+			Folder oldParent = folderAPI.findParentFolder(webAsset, user, false);
 			super._moveWebAsset(req, res, config, form, user, Link.class,WebKeys.LINK_EDIT);			
 			RefreshMenus.deleteMenu(oldParent, parent);
 			if(oldParent.isShowOnMenu())

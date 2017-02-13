@@ -27,7 +27,7 @@
 
 		<div class="permissions__bar-user-role-main">
 			<div class="inline-form">
-				<span class="femaleIcon"></span>
+				<span class="rolesIcon"></span>
 				<select id="permissionsRoleSelector" dojoType="dotcms.dijit.form.RolesFilteringSelect" excludeRoles="<%= APILocator.getRoleAPI().loadCMSAdminRole().getId()%>"></select>
 				<button dojoType="dijit.form.Button" onclick="addRoleToPermissions();return false;"><%= LanguageUtil.get(pageContext, "Add-Role") %></button>
 			</div>

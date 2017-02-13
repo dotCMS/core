@@ -46,7 +46,10 @@
 
 %>
 <script type="text/javascript">
+
 	dojo.ready(function(){
+		
+		
 		actionAdmin.actionlets = new Array();
 		mainAdmin.resetCrumbTrail();
 		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Workflows")%>", "/html/portlet/ext/workflows/schemes/view_schemes.jsp");
@@ -69,7 +72,7 @@
             }
         },
         "actionWhoCanUseSelect");
-
+		
 	    <%
             String assignToLabel=null;
             if ( UtilMethods.isSet( nextAssignRole ) && UtilMethods.isSet( nextAssignRole.getId())) {
@@ -100,37 +103,7 @@
 
         },
         "actionAssignToSelect");
-
-		function setIconLabel(){
-			//alert(dijit.byId('actionIconSelect').item.value)
-			var x = dojo.attr("showIconSpan", "className",dijit.byId('actionIconSelect').item.value);
-
-			//dijit.byId('actionIconSelect').displayedValue = x;
-		}
-
-		var iconSelect = new dijit.form.FilteringSelect({
-            id: "actionIconSelect",
-            name: "actionIconSelect",
-            store: myIconStore,
-            searchAttr:"value",
-            labelAttr: "label",
-            labelType: "html",
-            searchDelay:300,
-            value:"<%=UtilMethods.webifyString(action.getIcon())%>",
-            pageSize:50,
-            onChange:actionAdmin.doChange,
-            onClick:function(){
-            	dijit.byId("actionIconSelect").displayedValue="";
-            },
-            required:false,
-            onChange:setIconLabel
-
-        },
-        "actionIconSelect");
-
-
-
-
+		
 		//assignSelect._hasBeenBlurred=false;
 
 
@@ -143,9 +116,9 @@
                 "<%=(tmpRole.getName().toLowerCase().contains("anonymous")) ? LanguageUtil.get(pageContext, "current-user") + " (" + LanguageUtil.get(pageContext, "Everyone") + ")" : tmpRole.getName()+ ((tmpRole.isSystem()) ? " (" + LanguageUtil.get(pageContext, "User") + ")" : "")%>");
             <%}
         }%>
-
+        
 		actionAdmin.refreshWhoCanUse();
-
+		
 	    // Load action classes into array
         actionClassAdmin.actionClasses = [];
         <%for(WorkflowActionClass subaction : subActions){ %>
@@ -158,7 +131,7 @@
 </script>
 
 
-<div class="portlet-main">
+<div class="portlet-main view-actions">
 	
 	<div dojoType="dijit.form.Form" id="addEditAction" jsId="addEditAction" encType="multipart/form-data" action="/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionAjax" method="POST">
 		<input type="hidden" name="cmd" value="save">
@@ -167,151 +140,155 @@
 		<input type="hidden" name="whoCanUse"	id="whoCanUse" value="">
 		<input type="hidden" name="actionId"	id="actionId" value="<%=UtilMethods.webifyString(action.getId())%>">
 
-		<table style="margin-bottom: 20px; border: 0; width: 100%;">
-			<tr>
-				<td width="50%" valign="top" style="padding:7px;">
-					
-					<table class="listingTable" width="100%">
-						<tr>
-							<th colspan="2">
-								<%=LanguageUtil.get(pageContext, "About-Action")%>
-							</th>
-						</tr>
-						<tr>
-							<td nowrap="nowrap"><%=LanguageUtil.get(pageContext, "Action-Name")%>:</td>
-							<td nowrap="true"><input type="text" name="actionName" id="actionName"
+		<div class="yui-g">
+			<div class="yui-u first">
+				<div class="form-horizontal">
+					<dl>
+						<dt>
+							<h3><%=LanguageUtil.get(pageContext, "About-Action")%></h3>
+						</dt>
+						<dd>
+							&nbsp;
+						</dd>
+					</dl>
+					<dl>
+						<dt>
+							<label for=""><%=LanguageUtil.get(pageContext, "Action-Name")%>:</label>
+						</dt>
+						<dd>
+							<input type="text" name="actionName" id="actionName" style="width: 250px;"
 								dojoType="dijit.form.ValidationTextBox" required="true"
 								value="<%=UtilMethods.webifyString(action.getName())%>"
-								maxlength="255" style="width:390px;font-weight:bold;border:1px solid #eeeeee" onkeypress="actionAdmin.doChange()">
-							</td>
-						</tr>
-						<%if(UtilMethods.isSet(actionId)) {%>
-							<tr>
-								<td nowrap="nowrap"><%=LanguageUtil.get(pageContext, "Action")%> <%=LanguageUtil.get(pageContext, "Id")%>:</td>
-								<td nowrap="true"><%=actionId %>
-								</td>
-							</tr>
-						<%} %>
-						<tr>
-							<td><%=LanguageUtil.get(pageContext, "Save-content")%>:</td>
-							<td>
-								<div class="inline-form">
-									<input type="checkbox" name="actionRequiresCheckout"
+								maxlength="255" onkeypress="actionAdmin.doChange()">
+						</dd>
+					</dl>
+					<%if(UtilMethods.isSet(actionId)) {%>
+						<dl>
+							<dt>
+								<label for=""><%=LanguageUtil.get(pageContext, "Action")%> <%=LanguageUtil.get(pageContext, "Id")%>:</label>
+							</dt>
+							<dd>
+								<label for=""><%=actionId %></label>
+							</dd>
+						</dl>
+					<%} %>
+					<dl>
+						<dt>
+							<label for=""><%=LanguageUtil.get(pageContext, "Save-content")%>:</label>
+						</dt>
+						<dd class="checkbox">
+							<input type="checkbox" name="actionRequiresCheckout"
 										id="actionRequiresCheckout" dojoType="dijit.form.CheckBox" value="true"
 										<%=(action.requiresCheckout()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
-									&nbsp; <%=LanguageUtil.get(pageContext, "Requires-Checkout")%>
-								</div>
-							</td>
-						</tr>
-						<tr>
-							<td style="vertical-align: top;"><%=LanguageUtil.get(pageContext, "Who-can-use-action")%>:</td>
-							<td>
-								<input id="actionWhoCanUseSelect" />
-									<button dojoType="dijit.form.Button"
-										onClick='actionAdmin.addSelectedToWhoCanUse'
-										iconClass="addIcon">
-										<%=LanguageUtil.get(pageContext, "add")%>
-									</button>
-									<div class="wfWhoCanUseDiv" style="min-height: 140px;">
-										<table class="listingTable" id="whoCanUseTbl">
-										</table>
-									</div>
-							</td>
-						</tr>
-					</table>
-					
-				</td>
-				<td valign="top" style="padding:7px;">
-					
-					<table class="listingTable" width="100%">
+							<label for=""><%=LanguageUtil.get(pageContext, "Requires-Checkout")%></label>
+						</dd>
+					</dl>
+					<dl>
+						<dt>
+							<label for=""><%=LanguageUtil.get(pageContext, "Who-can-use-action")%>:</label>
+						</dt>
+						<dd>
+							<input id="actionWhoCanUseSelect" />
+							<button dojoType="dijit.form.Button"
+								onClick='actionAdmin.addSelectedToWhoCanUse'
+								iconClass="addIcon">
+								<%=LanguageUtil.get(pageContext, "add")%>
+							</button>
+						</dd>
+					</dl>
+					<dl>
+						<dt></dt>
+						<dd>
+							<div class="who-can-use view-actions__who-can-use">
+								<table class="who-can-use__list" id="whoCanUseTbl">
+								</table>
+							</div>
+						</dd>
+					</dl>
+				</div>
+			</div>
 
-						<tr>
-							<th colspan="2">
-								<%=LanguageUtil.get(pageContext, "What-Action-Does")%>
-							</th>
-						</tr>
-
-						<tr>
-							<td nowrap="true"><%=LanguageUtil.get(pageContext, "Allow-Comments")%>:</td>
-							<td><input type="checkbox" name="actionCommentable"
+			<div class="yui-u">
+				<div class="form-horizontal">
+					<dl>
+						<dt>
+							<h3><%=LanguageUtil.get(pageContext, "What-Action-Does")%></h3>
+						</dt>
+						<dd>
+						</dd>
+					</dl>
+					<dl>
+						<dt>
+							<label for=""><%=LanguageUtil.get(pageContext, "Allow-Comments")%>:</label>
+						</dt>
+						<dd>
+							<input type="checkbox" name="actionCommentable"
 								id="actionCommentable" dojoType="dijit.form.CheckBox" value="true"
-								<%=(action.isCommentable()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()"></td>
-						</tr>
-						<tr>
-							<td nowrap="true"><%=LanguageUtil.get(pageContext, "User-Assignable")%>:</td>
-							<td><input type="checkbox" name="actionAssignable"
+								<%=(action.isCommentable()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
+						</dd>
+					</dl>
+					<dl>
+						<dt>
+							<label for=""><%=LanguageUtil.get(pageContext, "User-Assignable")%>:</label>
+						</dt>
+						<dd>
+							<input type="checkbox" name="actionAssignable"
 								id="actionAssignable" dojoType="dijit.form.CheckBox" value="true"
-								<%=(action.isAssignable()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()"></td>
-						</tr>
-						<tr>
-							<td nowrap="true" valign="top"><%=LanguageUtil.get(pageContext, "Assign-To")%>:</td>
-							<td valign="top">
-								<input id="actionAssignToSelect"  />
-								
-								<%--hideHierarchayControl --%>
-								<div class="inline-form" id="divRoleHierarchyForAssign" style="visibility:<%=hideHierarchayControl ? "hidden" : "visible" %>; margin-top: 5px;">
-									<input type="checkbox" name="actionRoleHierarchyForAssign" id="actionRoleHierarchyForAssign" dojoType="dijit.form.CheckBox" value="true"
-									<%=(action.isRoleHierarchyForAssign()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
-									<label for="actionRoleHierarchyForAssign"><%=LanguageUtil.get(pageContext, "Use-Role-Hierarchy")%></label>
-								</div>
-							</td>
-						</tr>
-						<tr>
-							<td nowrap="true"><%=LanguageUtil.get(pageContext, "Next-Step")%>:</td>
-							<td>
-								<select name="actionNextStep" id="actionNextStep"  onChange="actionAdmin.doChange()"
-									dojoType="dijit.form.FilteringSelect">
-										<%if(steps !=null){
-											for(WorkflowStep s : steps){ %>
-											<option value="<%=s.getId() %>"
-												<%=(action != null && s.getId().equals(action.getNextStep())) ? "selected='true'" : "" %>><%=s.getName() %></option>
-											<%}%>
-										<% }%>
-								</select>
-
-
-
-							</td>
-						</tr>
-						<!-- <tr>
-							<td nowrap="true"><%=LanguageUtil.get(pageContext, "Icon")%>:</td>
-							<td nowrap="nowrap">
-								<div>
-									<div id="showIconSpan" class="<%=UtilMethods.webifyString(action.getIcon())%>" style="width:16px;height:16px;border:1px solid silver;padding:1px;margin-right:10px;display: inline-block;"></div>
-
-									<input id="actionIconSelect" name="actionIconSelect" />
-								</div>
-							</td>
-						</tr> -->
-
-						<tr>
-							<td valign="top"><%=LanguageUtil.get(pageContext, "Custom-Code")%>:</td>
-
-
-							<%
+								<%=(action.isAssignable()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
+						</dd>
+					</dl>
+					<dl>
+						<dt>
+							<label for=""><%=LanguageUtil.get(pageContext, "Assign-To")%>:</label>
+						</dt>
+						<dd>
+							<input id="actionAssignToSelect"  />
+							<%--hideHierarchayControl --%>
+							<div class="inline-form" id="divRoleHierarchyForAssign" style="visibility:<%=hideHierarchayControl ? "hidden" : "visible" %>;">
+								<input type="checkbox" name="actionRoleHierarchyForAssign" id="actionRoleHierarchyForAssign" dojoType="dijit.form.CheckBox" value="true"
+								<%=(action.isRoleHierarchyForAssign()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
+								<label for="actionRoleHierarchyForAssign"><%=LanguageUtil.get(pageContext, "Use-Role-Hierarchy")%></label>
+							</div>
+						</dd>
+					</dl>
+					<dl>
+						<dt>
+							<label for=""><%=LanguageUtil.get(pageContext, "Next-Step")%>:</label>
+						</dt>
+						<dd>
+							<select name="actionNextStep" id="actionNextStep"  onChange="actionAdmin.doChange()"
+								dojoType="dijit.form.FilteringSelect">
+									<%if(steps !=null){
+										for(WorkflowStep s : steps){ %>
+										<option value="<%=s.getId() %>"
+											<%=(action != null && s.getId().equals(action.getNextStep())) ? "selected='true'" : "" %>><%=s.getName() %></option>
+										<%}%>
+									<% }%>
+							</select>
+						</dd>
+					</dl>
+					<dl>
+						<dt>
+							<label for=""><%=LanguageUtil.get(pageContext, "Custom-Code")%>:</label>
+						</dt>
+						<%
 							String textValue = action.getCondition();
-					        if(textValue != null){
-					            textValue = textValue.replaceAll("&", "&amp;");
-					            textValue = textValue.replaceAll("<", "&lt;");
-					            textValue = textValue.replaceAll(">", "&gt;");
-					        }
-					        else{
-					        	textValue="";
-					        }
-							%>
-
-
-							<td>
-								<textarea id="actionCondition" style="min-width:300px;min-height:100px;font-family: monospace;" name="actionCondition"><%=textValue %></textarea>
-							</td>
-						</tr>
-
-
-					</table>
-				
-				</td>
-			</tr>
-		</table>
+							if(textValue != null){
+								textValue = textValue.replaceAll("&", "&amp;");
+								textValue = textValue.replaceAll("<", "&lt;");
+								textValue = textValue.replaceAll(">", "&gt;");
+							}
+							else{
+								textValue="";
+							}
+						%>
+						<dd>
+							<textarea id="actionCondition" dojoType="dijit.form.Textarea" style="width:250px;min-height:100px;max-height:100px;height:100px;" name="actionCondition"><%=textValue %></textarea>
+						</dd>
+					</dl>
+				</div>	
+			</div>
+		</div>
 		
 		<div class="buttonRow">
 			<%if(action!=null && !action.isNew()) {%>

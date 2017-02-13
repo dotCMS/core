@@ -18,7 +18,7 @@
 		<div class="warningText" id="permissionsCascadeMsgText"></div>
 	</div>
 	<div class="clear"></div>
-	<div id="rolePermissionsAccordion">
+	<div id="rolePermissionsAccordion" class="permission__list">
 		<div class="permissionLabelsWrapper">
 			<table class="permissionTable">
              	<tr>

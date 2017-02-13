@@ -276,7 +276,7 @@
                         }
 
                         var serial=lic.id;
-                        var optd=dojo.create("td",{"nowrap":"true"},row);
+                        var optd=dojo.create("td",{"nowrap":"true", class: 'license-manager__listing-action'},row);
 
                         if(lic.serverid==licenseAdmin.currentServerId  ) {
                         	dojo.addClass(dojo.byId("generateCode"), "hidden");
@@ -402,7 +402,6 @@
 
 
 <style type="text/css">
-    .content-wrapper{width:80%;margin: 30px auto;}
     .blankTable,  .blankTable th, .blankTable td {
 		border: 0px solid #ffffff;
     }
@@ -483,284 +482,249 @@
 
 
 
-<form name="trialLicenseForm" id="trialLicenseForm" method="POST" target="trialRequestWindow" action="https://dotcms.com/licensing/request-a-license-3/">
-	<input type="hidden" value="" name="trialLicenseRequestCode" id="trialLicenseRequestCode">
-</form>	
+<div class="license-manager">
 
-<!-- <%= LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_LICENSE_MANAGER") %> -->
+	<form name="trialLicenseForm" id="trialLicenseForm" method="POST" target="trialRequestWindow" action="https://dotcms.com/licensing/request-a-license-3/">
+		<input type="hidden" value="" name="trialLicenseRequestCode" id="trialLicenseRequestCode">
+	</form>
+
+	<!-- <%= LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_LICENSE_MANAGER") %> -->
 
 				
-<!-- CURRENT LICENSE INFO -->
-<table class="listingTable">
-	 <tr>
-        <th colspan="2">
-        	<% if(!isCommunity){  %>  
-				<div style="float:right;font-weight:normal;">
-					    <button data-dojo-type="dijit.form.Button" onClick="licenseAdmin.resetLicense()" iconClass="resetIcon">
-					        <%= LanguageUtil.get(pageContext, "license-bad-id-button") %>
-					    </button>
-				</div>
-			<%} %>
-        	<%= LanguageUtil.get(pageContext, "license-current-info") %>
-        </th>
-    </tr>
-	<tr>
-		<td width="25%" nowrap="true">
-			<%= LanguageUtil.get(pageContext, "license-level") %>
-		</td>
-		<td>
-			<% if(isCommunity){  %> 
-				<a href="/html/blank.jsp" 
-						target="trialRequestWindow" 
-						onclick="licenseAdmin.requestTrial()" 
-						>
-					<b><%= LicenseUtil.getLevelName()  %></b>
-				</a>
-				<div style="float:right;border-bottom:2px dotted silver;">
-							<a href="/html/blank.jsp" 
-						target="trialRequestWindow" 
-						onclick="licenseAdmin.requestTrial()" 
-						style="color:#555;">
-				
-				
-					<%= LanguageUtil.get(pageContext, "request-trial-license") %>
-				</a>
-				</div></a>
-			<%}else{ %>
-				<b><%= LicenseUtil.getLevelName()  %></b>
-			<%} %>
-		</td>
-	</tr>
-	
-	<tr>
-		<td>
-			Server ID: 
-		</td>
-		<td>
-			<%= serverId %>
-		</td>
-	</tr>
-	 <% if(!isCommunity){  %> 
-			<tr>
-				<td nowrap="true"><%= LanguageUtil.get(pageContext, "license-valid-until") %></td>
-				<td>
-            			<% if(isPerpetual) { %>
-            				<%= LanguageUtil.get(pageContext, "request-license-perpetual") %>
-            			<%} else {%>
-            				<%if(expired && !isPerpetual){ %>
-            					<font color="red">
-            				<%} %>
-                			<%= expireString %>
-                			<%if(expired && !isPerpetual){ %>
-                				<%= LanguageUtil.get(pageContext, "request-license-expired") %></font>
-                			<%} %>
-           			 <%}%>
-           		</td>
-			</tr>
-			
-			<tr>
-				<td><%= LanguageUtil.get(pageContext, "licensed-to") %>:</td>
-				<td><%=  UtilMethods.isSet(LicenseUtil.getClientName()) ? LicenseUtil.getClientName() : "No License Found" %></td>
-			</tr>
-			<tr>
-				<td><%= LanguageUtil.get(pageContext, "license-type") %>:</td>
-				<td><%= LicenseUtil.getLicenseType() %></td>
-			</tr>
-			<tr>
-				<td><%= LanguageUtil.get(pageContext, "license-serial") %>:</td>
-				<td><%= LicenseUtil.getDisplaySerial() %></td>
-			</tr>
-		<% } %>
-</table>
-
-				<div style="text-align:center;margin:30px 0;">
-					
-					<a href="/html/blank.jsp" 
-						target="trialRequestWindow" 
-						onclick="licenseAdmin.requestTrial()" 
-						id="trailBtn"
-						class="btn btn-info">
-						
-						<%= LanguageUtil.get(pageContext, "request-trial-license") %>
-						
+	<!-- CURRENT LICENSE INFO -->
+	<table class="listingTable">
+		 <tr>
+			<th colspan="2">
+				<% if(!isCommunity){  %>
+					<div style="float:right;font-weight:normal;">
+						<button data-dojo-type="dijit.form.Button" onClick="licenseAdmin.resetLicense()" iconClass="resetIcon">
+							<%= LanguageUtil.get(pageContext, "license-bad-id-button") %>
+						</button>
+					</div>
+				<%} %>
+				<%= LanguageUtil.get(pageContext, "license-current-info") %>
+			</th>
+		</tr>
+		<tr>
+			<td width="25%" nowrap="true">
+				<%= LanguageUtil.get(pageContext, "license-level") %>
+			</td>
+			<td>
+				<% if(isCommunity){  %>
+					<a href="/html/blank.jsp"
+							target="trialRequestWindow"
+							onclick="licenseAdmin.requestTrial()"
+							>
+						<b><%= LicenseUtil.getLevelName()  %></b>
 					</a>
-
-							
-
-					<span id="currentCustomerToggle">
-						<a href="#" id="currentCustomerBtn" class="btn" ><%= LanguageUtil.get(pageContext, "request-license-current-customers") %></a>
-					</span>
-
-
-				</div>	
+					<div style="float:right;border-bottom:2px dotted silver;">
+								<a href="/html/blank.jsp"
+							target="trialRequestWindow"
+							onclick="licenseAdmin.requestTrial()"
+							style="color:#555;">
 
 
-				<div id="currentCustomer" <%if(isCommunity){ %>class="hidden"<%} %>>
-					
+						<%= LanguageUtil.get(pageContext, "request-trial-license") %>
+					</a>
+					</div></a>
+				<%}else{ %>
+					<b><%= LicenseUtil.getLevelName()  %></b>
+				<%} %>
+			</td>
+		</tr>
+
+		<tr>
+			<td>
+				Server ID:
+			</td>
+			<td>
+				<%= serverId %>
+			</td>
+		</tr>
+		 <% if(!isCommunity){  %>
+				<tr>
+					<td nowrap="true"><%= LanguageUtil.get(pageContext, "license-valid-until") %></td>
+					<td>
+							<% if(isPerpetual) { %>
+								<%= LanguageUtil.get(pageContext, "request-license-perpetual") %>
+							<%} else {%>
+								<%if(expired && !isPerpetual){ %>
+									<font color="red">
+								<%} %>
+								<%= expireString %>
+								<%if(expired && !isPerpetual){ %>
+									<%= LanguageUtil.get(pageContext, "request-license-expired") %></font>
+								<%} %>
+						 <%}%>
+					</td>
+				</tr>
+
+				<tr>
+					<td><%= LanguageUtil.get(pageContext, "licensed-to") %>:</td>
+					<td><%=  UtilMethods.isSet(LicenseUtil.getClientName()) ? LicenseUtil.getClientName() : "No License Found" %></td>
+				</tr>
+				<tr>
+					<td><%= LanguageUtil.get(pageContext, "license-type") %>:</td>
+					<td><%= LicenseUtil.getLicenseType() %></td>
+				</tr>
+				<tr>
+					<td><%= LanguageUtil.get(pageContext, "license-serial") %>:</td>
+					<td><%= LicenseUtil.getDisplaySerial() %></td>
+				</tr>
+			<% } %>
+	</table>
+
+	<div style="text-align:center;margin:30px 0;">
+		<a href="/html/blank.jsp"
+			target="trialRequestWindow"
+			onclick="licenseAdmin.requestTrial()"
+			id="trailBtn"
+			class="btn btn-info">
+			<%= LanguageUtil.get(pageContext, "request-trial-license") %>
+		</a>
+
+		<span id="currentCustomerToggle">
+			<a href="#" id="currentCustomerBtn" class="btn" ><%= LanguageUtil.get(pageContext, "request-license-current-customers") %></a>
+		</span>
+	</div>
 
 
-					
-				<!-- CURRENT CUSTOMERS Single License -->
-						<div class="generateCode" id="generateCode">
-							<hr>
-							<div style="padding-bottom: 10px;">
-								<h2><%= LanguageUtil.get(pageContext, "request-license-code") %></h2>
-								<p><%= LanguageUtil.get(pageContext, "request-license-steps-explaination") %></p>
-							</div>
-							
-							
-							<div class="yui-gb">
-								<div class="yui-u first">
-									<div class="stepHeader"><%= LanguageUtil.get(pageContext, "global-step1") %> <small><%= LanguageUtil.get(pageContext, "request-license-step1-words") %></small></div>
-									<div class="stepBody">
-										<p>
-											<%= LanguageUtil.get(pageContext, "request-license-generate-code") %>
-										</p>
-										<div style="height:102px;">
-											<table border="0" class="blankTable">
-												<tr>
-													<th style="text-align: right;"><label for="license_type"><%= LanguageUtil.get(pageContext, "request-license-type") %>: </label></th>
-													<td>
-														<select onchange="licenseAdmin.doCodeRequest()" style="width:120px;"  data-dojo-id="license_type" id="license_type" name="license_type" data-dojo-type="dijit.form.Select">
-										                    <option value="--"></option>
-										                    <option value="prod"><%= LanguageUtil.get(pageContext, "request-license-prod") %></option>
-										                    <option value="dev"><%= LanguageUtil.get(pageContext, "request-license-dev") %></option>
-										                </select>
-													</td>
-												</tr>
-												<tr>
-													<th style="text-align: right;"><label for="license_level"><%= LanguageUtil.get(pageContext, "request-license-level") %>: </label></th>
-													<td>
-														<select onchange="licenseAdmin.doCodeRequest()" style="width:120px;" data-dojo-id="license_level" id="license_level" name="license_level" data-dojo-type="dijit.form.Select">
-										                    <option value="100"></option>
-										                    <option value="200"><%= LanguageUtil.get(pageContext, "request-license-standard") %></option>
-										                    <option value="300"><%= LanguageUtil.get(pageContext, "request-license-professional") %></option>
-										                    <option value="400"><%= LanguageUtil.get(pageContext, "request-license-prime") %></option>
-										                </select>
-													</td>
-												</tr>
-											</table>
-										</div>
-									  </div>
-							      </div>
-						        
-						        <div class="yui-u">
-						        	<div class="stepHeader"><%= LanguageUtil.get(pageContext, "global-step2") %> <small><%= LanguageUtil.get(pageContext, "request-license-step2-words") %></small></div>
-						        	<div class="stepBody">
-						        		<div id="getMeMyLicenseCode">
-											<p><%= LanguageUtil.get(pageContext, "request-license-copy-code-to-portal") %></p>
-											<div style="word-wrap: break-word;font-family: monospace;">
-												<textarea id="licenseCode" style="width:100%;margin:auto;height:100px;font-family: monospace;border:1px solid silver;"></textarea>
-											</div>
-											<div style="text-align:center;margin-top: 15px;">
-						                		<button type="button" onclick="window.open('http://my.dotcms.com')" data-dojo-id="openPortal" id="openPortal"
-							                          data-dojo-type="dijit.form.Button" name="openPortal" iconClass="" value="openPortal">
-								                  	<%= LanguageUtil.get(pageContext, "request-license-go-to-portal") %> 
-								                </button>
-								            </div>
-										</div>
-						        	</div>
-						        </div>
-						        <div class="yui-u">
-						        	<div class="stepHeader"><%= LanguageUtil.get(pageContext, "global-step3") %> <small><%= LanguageUtil.get(pageContext, "request-license-step3-words") %></small></div>
-						        	<div class="stepBody">
-						        		<p><%= LanguageUtil.get(pageContext, "request-license-paste-code") %></p>
-						        		<textarea id="licenseCodePasteField"  name="license_text" style="width:100%;margin:auto;height:100px;font-family: monospace;border:1px solid silver;"></textarea>
-						        		<div style="padding:15px;text-align:center;">
-										 	<button type="button" onclick="licenseAdmin.doLicensePaste()" data-dojo-id="uploadButton2" id="uploadButton2" data-dojo-type="dijit.form.Button" name="upload_button2" iconClass="keyIcon" value="upload">
-										 		<%= LanguageUtil.get(pageContext, "save-license") %>
-										 	</button>
-										</div>
-						        	</div>
-						        </div>
-							</div>
-				      	</div>
-			      	
-			      		<hr>
-			           
-			<!-- LICENSE PACK -->
-						<div id="licensePack">
-							<h2><%= LanguageUtil.get(pageContext, "cluster-licenses") %></h2>	
-							<div class="yui-ge">
-								<div class="yui-u first">
-									<p>
-									<%= LanguageUtil.get(pageContext, "request-license-cluster-license-explaination") %>
-									
-									
-									
-									</p>
-								</div>
-								<div class="yui-u" style="text-align: right;">
-									<button data-dojo-type="dijit.form.Button" onClick="dijit.byId('uploadDiaWindow').show()" iconClass="uploadIcon">
-								        <%= LanguageUtil.get(pageContext, "Upload-license-pack-button") %>
-								    </button>
-						    	</div>
-						   </div>
-								
-						    <table border="0" width="100%" style="margin:0;border:1px solid silver;border-collapse: collapse;">
-						        <thead>
-						        <tr>
-						            <th>&nbsp;</th>
-				                    <th><%= LanguageUtil.get(pageContext, "license-repo-serverid") %></th>
-				                    <th><%= LanguageUtil.get(pageContext, "license-serial") %></th>
-						            <th><%= LanguageUtil.get(pageContext, "license-repo-last-ping") %></th>
-						            <th><%= LanguageUtil.get(pageContext, "license-repo-validuntil") %></th>
-						            <th><%= LanguageUtil.get(pageContext, "license-repo-level") %></th>
-						            <th><%= LanguageUtil.get(pageContext, "license-repo-type") %></th>
-						        </tr>
-						        </thead>
-						        <tbody id="repotableBody">
-									<tr>
-										<td colspan="7"><%= LanguageUtil.get(pageContext, "license-repo-type") %></td>
-									</tr>
-						        </tbody>
-						    </table>
+	<div id="currentCustomer" <%if(isCommunity){ %>class="hidden"<%} %>>
+		<!-- CURRENT CUSTOMERS Single License -->
+		<div class="generateCode" id="generateCode">
+			<hr>
+			<div style="padding-bottom: 10px;">
+				<h2><%= LanguageUtil.get(pageContext, "request-license-code") %></h2>
+				<p><%= LanguageUtil.get(pageContext, "request-license-steps-explaination") %></p>
+			</div>
+
+
+			<div class="yui-gb">
+				<div class="yui-u first">
+					<div class="stepHeader"><%= LanguageUtil.get(pageContext, "global-step1") %> <small><%= LanguageUtil.get(pageContext, "request-license-step1-words") %></small></div>
+					<div class="stepBody">
+						<p>
+							<%= LanguageUtil.get(pageContext, "request-license-generate-code") %>
+						</p>
+						<div style="height:102px;">
+							<table border="0" class="blankTable">
+								<tr>
+									<th style="text-align: right;"><label for="license_type"><%= LanguageUtil.get(pageContext, "request-license-type") %>: </label></th>
+									<td>
+										<select onchange="licenseAdmin.doCodeRequest()" style="width:120px;"  data-dojo-id="license_type" id="license_type" name="license_type" data-dojo-type="dijit.form.Select">
+											<option value="--"></option>
+											<option value="prod"><%= LanguageUtil.get(pageContext, "request-license-prod") %></option>
+											<option value="dev"><%= LanguageUtil.get(pageContext, "request-license-dev") %></option>
+										</select>
+									</td>
+								</tr>
+								<tr>
+									<th style="text-align: right;"><label for="license_level"><%= LanguageUtil.get(pageContext, "request-license-level") %>: </label></th>
+									<td>
+										<select onchange="licenseAdmin.doCodeRequest()" style="width:120px;" data-dojo-id="license_level" id="license_level" name="license_level" data-dojo-type="dijit.form.Select">
+											<option value="100"></option>
+											<option value="200"><%= LanguageUtil.get(pageContext, "request-license-standard") %></option>
+											<option value="300"><%= LanguageUtil.get(pageContext, "request-license-professional") %></option>
+											<option value="400"><%= LanguageUtil.get(pageContext, "request-license-prime") %></option>
+										</select>
+									</td>
+								</tr>
+							</table>
 						</div>
-						
-				</div><!-- /CURRENT CUSTOMER -->
+					  </div>
+				  </div>
 
-				
-	
-			<!-- PASTE YOUR LICENSE KEY -->
-				<div id="pasteTrial" <%if(!isCommunity){ %>class="hidden"<%} %>>
-				<hr>
-					<h2><%= LanguageUtil.get(pageContext, "I-already-have-a-license") %></h2>
-					<div class="alert alert-warning">
-						<div class="yui-gf">
-							<div class="yui-u first" style="font-weight: bold;text-align: justify;">
-								<%= LanguageUtil.get(pageContext, "paste-your-license") %>
+				<div class="yui-u">
+					<div class="stepHeader"><%= LanguageUtil.get(pageContext, "global-step2") %> <small><%= LanguageUtil.get(pageContext, "request-license-step2-words") %></small></div>
+					<div class="stepBody">
+						<div id="getMeMyLicenseCode">
+							<p><%= LanguageUtil.get(pageContext, "request-license-copy-code-to-portal") %></p>
+							<div style="word-wrap: break-word;font-family: monospace;">
+								<textarea id="licenseCode" style="width:100%;margin:auto;height:100px;font-family: monospace;border:1px solid silver;"></textarea>
 							</div>
-							<div class="yui-u">
-								<textarea rows="5" cols="100"  id="licenseCodePasteFieldTwo"  name="license_text_two" ></textarea>
+							<div style="text-align:center;margin-top: 15px;">
+								<button type="button" onclick="window.open('http://my.dotcms.com')" data-dojo-id="openPortal" id="openPortal"
+									  data-dojo-type="dijit.form.Button" name="openPortal" iconClass="" value="openPortal">
+									<%= LanguageUtil.get(pageContext, "request-license-go-to-portal") %>
+								</button>
 							</div>
-						</div>
-						<div style="padding:10px;text-align:center;">
-						 	<button type="button" onclick="licenseAdmin.doLicensePaste()" data-dojo-id="uploadButton" id="uploadButton" data-dojo-type="dijit.form.Button" name="upload_button" iconClass="keyIcon" value="upload">
-						 		<%= LanguageUtil.get(pageContext, "save-license") %>
-						 	</button>
 						</div>
 					</div>
 				</div>
-					
-			</div><!-- /CONTENT WRAPPER -->
-		</td>
-	</tr>
-</table>
+				<div class="yui-u">
+					<div class="stepHeader"><%= LanguageUtil.get(pageContext, "global-step3") %> <small><%= LanguageUtil.get(pageContext, "request-license-step3-words") %></small></div>
+					<div class="stepBody">
+						<p><%= LanguageUtil.get(pageContext, "request-license-paste-code") %></p>
+						<textarea id="licenseCodePasteField"  name="license_text" style="width:100%;margin:auto;height:100px;font-family: monospace;border:1px solid silver;"></textarea>
+						<div style="padding:15px;text-align:center;">
+							<button type="button" onclick="licenseAdmin.doLicensePaste()" data-dojo-id="uploadButton2" id="uploadButton2" data-dojo-type="dijit.form.Button" name="upload_button2" iconClass="keyIcon" value="upload">
+								<%= LanguageUtil.get(pageContext, "save-license") %>
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
 
+		<hr>
+			           
+		<!-- LICENSE PACK -->
+		<div id="licensePack">
+			<button data-dojo-type="dijit.form.Button" onClick="dijit.byId('uploadDiaWindow').show()" class="license-manager__upload-button">
+				<%= LanguageUtil.get(pageContext, "Upload-license-pack-button") %>
+			</button>
+
+			<h2><%= LanguageUtil.get(pageContext, "cluster-licenses") %></h2>
+			<p><%= LanguageUtil.get(pageContext, "request-license-cluster-license-explaination") %></p>
+
+			<table border="0" width="100%" class="listingTable">
+				<thead>
+				<tr>
+					<th>&nbsp;</th>
+					<th><%= LanguageUtil.get(pageContext, "license-repo-serverid") %></th>
+					<th><%= LanguageUtil.get(pageContext, "license-serial") %></th>
+					<th><%= LanguageUtil.get(pageContext, "license-repo-last-ping") %></th>
+					<th><%= LanguageUtil.get(pageContext, "license-repo-validuntil") %></th>
+					<th><%= LanguageUtil.get(pageContext, "license-repo-level") %></th>
+					<th><%= LanguageUtil.get(pageContext, "license-repo-type") %></th>
+				</tr>
+				</thead>
+				<tbody id="repotableBody">
+					<tr>
+						<td colspan="7"><%= LanguageUtil.get(pageContext, "license-repo-type") %></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div><!-- /CURRENT CUSTOMER -->
+
+	<!-- PASTE YOUR LICENSE KEY -->
+	<div id="pasteTrial" <%if(!isCommunity){ %>class="hidden"<%} %>>
+		<h2><%= LanguageUtil.get(pageContext, "I-already-have-a-license") %></h2>
+		<div class="alert alert-warning">
+			<div class="yui-gf">
+				<div class="yui-u first" style="font-weight: bold;text-align: justify;">
+					<%= LanguageUtil.get(pageContext, "paste-your-license") %>
+				</div>
+				<div class="yui-u">
+					<textarea rows="5" cols="100"  id="licenseCodePasteFieldTwo"  name="license_text_two" ></textarea>
+				</div>
+			</div>
+			<div style="padding:10px;text-align:center;">
+				<button type="button" onclick="licenseAdmin.doLicensePaste()" data-dojo-id="uploadButton" id="uploadButton" data-dojo-type="dijit.form.Button" name="upload_button" iconClass="keyIcon" value="upload">
+					<%= LanguageUtil.get(pageContext, "save-license") %>
+				</button>
+			</div>
+		</div>
+	</div>
+					
+</div><!-- /CONTENT WRAPPER -->
 
 <div dojoType="dijit.Dialog" id="uploadDiaWindow" title="<%= LanguageUtil.get(pageContext, "Upload-license-pack") %>">
-    <div style="margin:auto;width:80%;margin:30px;">
-   	
-        <form method="POST" data-dojo-type="dijit.form.Form" action="/api/license/upload/" onSubmit="return false" encType="multipart/form-data" id="uploadPackForm">
-			<div style="padding:10px;">
-				<input type="file" name="file" id="uploadPackFile" accept="application/zip"/>
-            </div>
-			<div style="padding:10px;text-align: center;">
-            	<button data-dojo-type="dijit.form.Button" name="btnSubmit" iconClass="uploadIcon" onClick="licenseAdmin.doPackUpload()"><%= LanguageUtil.get(pageContext, "Upload-license-pack-button") %></button>
-        	</div>
-        </form>
-    </div>
+	<form method="POST" data-dojo-type="dijit.form.Form" action="/api/license/upload/" onSubmit="return false" encType="multipart/form-data" id="uploadPackForm">
+		<div class="inline-form">
+			<input type="file" name="file" id="uploadPackFile" accept="application/zip"/>
+			<button data-dojo-type="dijit.form.Button" name="btnSubmit" iconClass="uploadIcon" onClick="licenseAdmin.doPackUpload()"><%= LanguageUtil.get(pageContext, "Upload-license-pack-button") %></button>
+		</div>
+	</form>
 </div>
-	
-
-
