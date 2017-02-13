@@ -35,14 +35,14 @@ import com.dotmarketing.quartz.job.ContentReindexerThread;
 import com.dotmarketing.quartz.job.ContentReviewThread;
 import com.dotmarketing.quartz.job.DeleteInactiveClusterServersJob;
 import com.dotmarketing.quartz.job.DeleteOldClickstreams;
-import com.dotmarketing.quartz.job.DeliverCampaignThread;
+
 import com.dotmarketing.quartz.job.DistReindexJournalCleanupThread;
 import com.dotmarketing.quartz.job.DistReindexJournalCleanupThread2;
 import com.dotmarketing.quartz.job.FreeServerFromClusterJob;
-import com.dotmarketing.quartz.job.PopBouncedMailThread;
+
 import com.dotmarketing.quartz.job.ServerHeartbeatJob;
 import com.dotmarketing.quartz.job.TrashCleanupJob;
-import com.dotmarketing.quartz.job.UpdateRatingThread;
+
 import com.dotmarketing.quartz.job.UsersToDeleteThread;
 import com.dotmarketing.quartz.job.WebDavCleanupJob;
 import com.dotmarketing.servlets.InitServlet;
@@ -92,75 +92,21 @@ public class DotInitScheduler {
 			Calendar calendar;
 			boolean isNew;
 
-			if(Config.getBooleanProperty("ENABLE_DELIVER_CAMPAIGN_THREAD")) {
-				try {
-					isNew = false;
 
-					try {
-						if ((job = sched.getJobDetail("DeliverCampaignJob", DOTCMS_JOB_GROUP_NAME)) == null) {
-							job = new JobDetail("DeliverCampaignJob", DOTCMS_JOB_GROUP_NAME, DeliverCampaignThread.class);
-							isNew = true;
-						}
-					} catch (SchedulerException se) {
-						sched.deleteJob("DeliverCampaignJob", DOTCMS_JOB_GROUP_NAME);
-						job = new JobDetail("DeliverCampaignJob", DOTCMS_JOB_GROUP_NAME, DeliverCampaignThread.class);
-						isNew = true;
-					}
-					calendar = GregorianCalendar.getInstance();
-					calendar.add(Calendar.SECOND, Config.getIntProperty("DELIVER_CAMPAIGN_THREAD_INIT_DELAY"));
-					trigger = new CronTrigger("trigger1", "group1", "DeliverCampaignJob", DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null, Config.getStringProperty("DELIVER_CAMPAIGN_THREAD_CRON_EXPRESSION"));
-					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
-					sched.addJob(job, true);
-
-					if (isNew)
-						sched.scheduleJob(trigger);
-					else
-						sched.rescheduleJob("trigger1", "group1", trigger);
-				} catch (Exception e) {
-					Logger.info(DotInitScheduler.class, e.toString());
-				}
-			} else {
 		        Logger.info(DotInitScheduler.class, "Deliver Campaign Cron Thread schedule disabled on this server");
 		        Logger.info(DotInitScheduler.class, "Deleting DeliverCampaignJob Job");
 				if ((job = sched.getJobDetail("DeliverCampaignJob", DOTCMS_JOB_GROUP_NAME)) != null) {
 					sched.deleteJob("DeliverCampaignJob", DOTCMS_JOB_GROUP_NAME);
+				
 				}
-			}
 
-			if(Config.getBooleanProperty("ENABLE_UPDATE_RATINGS_THREAD")) {
-				try {
-					isNew = false;
 
-					try {
-						if ((job = sched.getJobDetail("UpdateRatingJob", DOTCMS_JOB_GROUP_NAME)) == null) {
-							job = new JobDetail("UpdateRatingJob", DOTCMS_JOB_GROUP_NAME, UpdateRatingThread.class);
-							isNew = true;
-						}
-					} catch (SchedulerException se) {
-						sched.deleteJob("UpdateRatingJob", DOTCMS_JOB_GROUP_NAME);
-						job = new JobDetail("UpdateRatingJob", DOTCMS_JOB_GROUP_NAME, UpdateRatingThread.class);
-						isNew = true;
-					}
-					calendar = GregorianCalendar.getInstance();
-					calendar.add(Calendar.SECOND, Config.getIntProperty("UPDATE_RATINGS_THREAD_INIT_DELAY"));
-					trigger = new CronTrigger("trigger2", "group2", "UpdateRatingJob", DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null, Config.getStringProperty("UPDATE_RATINGS_THREAD_CRON_EXPRESSION"));
-					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
-					sched.addJob(job, true);
-
-					if (isNew)
-						sched.scheduleJob(trigger);
-					else
-						sched.rescheduleJob("trigger2", "group2", trigger);
-				} catch (Exception e) {
-					Logger.info(DotInitScheduler.class, e.toString());
-				}
-			} else {
 		        Logger.info(DotInitScheduler.class, "Update Rating Cron Thread schedule disabled on this server");
 		        Logger.info(DotInitScheduler.class, "Deleting UpdateRatingJob Job");
 				if ((job = sched.getJobDetail("UpdateRatingJob", DOTCMS_JOB_GROUP_NAME)) != null) {
 					sched.deleteJob("UpdateRatingJob", DOTCMS_JOB_GROUP_NAME);
 				}
-			}
+			
 
 			if(Config.getBooleanProperty("ENABLE_CONTENT_REVIEW_THREAD")) {
 				try {
@@ -234,41 +180,13 @@ public class DotInitScheduler {
 				}
 			}
 
-			//Bounces popper task
-			if(Config.getBooleanProperty("ENABLE_POP_BOUNCES_THREAD")) {
-				try {
-					isNew = false;
 
-					try {
-						if ((job = sched.getJobDetail("PopBouncedMailJob", DOTCMS_JOB_GROUP_NAME)) == null) {
-							job = new JobDetail("PopBouncedMailJob", DOTCMS_JOB_GROUP_NAME, PopBouncedMailThread.class);
-							isNew = true;
-						}
-					} catch (SchedulerException se) {
-						sched.deleteJob("PopBouncedMailJob", DOTCMS_JOB_GROUP_NAME);
-						job = new JobDetail("PopBouncedMailJob", DOTCMS_JOB_GROUP_NAME, PopBouncedMailThread.class);
-						isNew = true;
-					}
-					calendar = GregorianCalendar.getInstance();
-					calendar.add(Calendar.SECOND, Config.getIntProperty("EXEC_POP_BOUNCES_INIT_DELAY"));
-					trigger = new CronTrigger("trigger6", "group6", "PopBouncedMailJob", DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null, Config.getStringProperty("POP_BOUNCES_THREAD_CRON_EXPRESSION"));
-					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
-					sched.addJob(job, true);
-
-					if (isNew)
-						sched.scheduleJob(trigger);
-					else
-						sched.rescheduleJob("trigger6", "group6", trigger);
-				} catch (Exception e) {
-					Logger.info(DotInitScheduler.class, e.toString());
-				}
-			} else {
 		        Logger.info(DotInitScheduler.class, "Automatic Bounces Retrieval Cron Thread schedule disabled on this server");
 		        Logger.info(DotInitScheduler.class, "Deleting PopBouncedMailJob Job");
 		        if ((job = sched.getJobDetail("PopBouncedMailJob", DOTCMS_JOB_GROUP_NAME)) != null) {
 					sched.deleteJob("PopBouncedMailJob", DOTCMS_JOB_GROUP_NAME);
 				}
-			}
+
 
 			if(Config.getBooleanProperty("ENABLE_USERS_TO_DELETE_THREAD")) {
 				try {
