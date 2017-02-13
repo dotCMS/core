@@ -46,12 +46,12 @@
   var siteParam="realmId=<%=request.getParameter("id")%>";
   var hideFireOnParam = "hideFireOn=true"; 
   var hideRulePushOptions = "hideRulePushOptions=<%=request.getParameter("hideRulePushOptions")%>";
-
+  
 	
   //Add param to the rules engine iframe.
-  document.getElementById("rulesIframe").src = "/<%=PortletURLUtil.URL_ADMIN_PREFIX%>/#/fromCore/rules?" + localeParam + "&" + siteParam + "&" + hideFireOnParam+ "&" +hideRulePushOptions;
+  document.getElementById("rulesIframe").src = "/<%=PortletURLUtil.URL_ADMIN_PREFIX%>/index.html#/fromCore/rules?" + localeParam + "&" + siteParam + "&" + hideFireOnParam+ "&" +hideRulePushOptions;
   
-
+  
 
 	function  resizeIframe(){
 
@@ -73,8 +73,9 @@
 		// deal with style funk
 		dojo.style("subNavCrumbTrail", "margin", "0px -10px 10px -10px");
 		dojo.style("dotAjaxMainHangerDiv", "margin-top", "-9px");
-
+		
 		
 	});
 	dojo.connect(window, "onresize", this, "resizeIframe");
+	
 </script>
