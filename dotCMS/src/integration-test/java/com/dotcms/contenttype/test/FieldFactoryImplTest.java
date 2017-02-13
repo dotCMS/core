@@ -84,7 +84,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 
 
 		for (Field field : fields) {
-			List<FieldVariable> vars = FactoryLocator.getFieldFactory2().loadVariables(field);
+			List<FieldVariable> vars = FactoryLocator.getFieldFactory().loadVariables(field);
 			for(FieldVariable var : vars){
 				fieldApi.delete(var);
 			}

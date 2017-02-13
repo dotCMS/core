@@ -70,7 +70,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
 
   public ContentTypeAPIImpl(User user, boolean respectFrontendRoles) {
-    this(user, respectFrontendRoles, FactoryLocator.getContentTypeFactory2(), FactoryLocator.getFieldFactory2(),
+    this(user, respectFrontendRoles, FactoryLocator.getContentTypeFactory(), FactoryLocator.getFieldFactory(),
         APILocator.getPermissionAPI());
   }
 

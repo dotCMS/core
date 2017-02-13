@@ -49,7 +49,7 @@ public class LegacyContentTypeCacheImpl extends ContentTypeCache {
         	return new StructureTransformer(type).asStructure();
         }
         try {
-			type = FactoryLocator.getContentTypeFactory2().find(inode);
+			type = FactoryLocator.getContentTypeFactory().find(inode);
 			return new StructureTransformer(type).asStructure();
 		} catch (DotDataException e) {
 			Logger.warn(this.getClass(), "Structure with inode: '" + inode + "' not found in db");
@@ -97,7 +97,7 @@ public class LegacyContentTypeCacheImpl extends ContentTypeCache {
     	ContentType type = super.byVarOrInode(variableName);
         if (type == null) {
             try {
-				type = FactoryLocator.getContentTypeFactory2().find(variableName);
+				type = FactoryLocator.getContentTypeFactory().find(variableName);
 				return new StructureTransformer(type).asStructure();
 			} catch (Exception e) {
 				Logger.warn(this.getClass(), "Structure with var: '" + variableName + "' not found in db");
