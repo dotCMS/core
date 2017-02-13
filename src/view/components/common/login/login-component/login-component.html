@@ -11,8 +11,8 @@
     </div>
     <div class="col-sm-7">
         <div class="signin">
-            <h2 class="login__title" [innerHTML]="loginLabel"></h2>
-            <div class="error-message" [innerHTML]="message"></div>
+            <h2 class="login__title">{{loginLabel}}</h2>
+            <div class="error-message" [innerHTML]="message" *ngIf="message"></div>
             <div class="form-group">
                 <input pInputText type="text" id="login-component-login-input"
                        (keyup)="message=''"
