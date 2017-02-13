@@ -3,11 +3,9 @@ package com.dotmarketing.viewtools;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.StringTokenizer;
 
 import javax.servlet.http.HttpServletRequest;
@@ -15,7 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
-import com.dotcms.contenttype.business.ContentTypeApi;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
 
@@ -30,7 +28,6 @@ import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.model.ContentletSearch;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
@@ -40,7 +37,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.structure.factories.FieldFactory;
 
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -64,7 +60,7 @@ public class ContentsWebAPI implements ViewTool {
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
 	private LanguageAPI langAPI = APILocator.getLanguageAPI();
 	private static int MAX_LIMIT = 100;
-	private static ContentTypeApi tapi = APILocator.getContentTypeAPI2(APILocator.systemUser());
+	private static ContentTypeAPI tapi = APILocator.getContentTypeAPI(APILocator.systemUser());
 	// private HttpServletRequest request;
 	public void init(Object obj) {
 		ViewContext context = (ViewContext) obj;

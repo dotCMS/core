@@ -6,7 +6,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.contenttype.business.ContentTypeApi;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
@@ -75,7 +75,7 @@ public class ContentTypeResource implements Serializable {
     List<ContentType> retTypes = new ArrayList<>();
 
     for (ContentType type :typesToSave ) {
-      retTypes.add(APILocator.getContentTypeAPI2(user, true).save(type, type.fields()));
+      retTypes.add(APILocator.getContentTypeAPI(user, true).save(type, type.fields()));
     }
     
     return Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(retTypes).jsonArray().toString())).build();
@@ -93,7 +93,7 @@ public class ContentTypeResource implements Serializable {
     final InitDataObject initData = this.webResource.init(null, true, req, true, null);
     final User user = initData.getUser();
 
-    ContentTypeApi tapi = APILocator.getContentTypeAPI2(user, true);
+    ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
 
 
     ContentType type = null;
@@ -129,7 +129,7 @@ public class ContentTypeResource implements Serializable {
 
     final InitDataObject initData = this.webResource.init(null, false, req, false, null);
     final User user = initData.getUser();
-    ContentTypeApi tapi = APILocator.getContentTypeAPI2(user, true);
+    ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
     Response response = Response.status(404).build();
     try {
       ContentType type = tapi.find(id);

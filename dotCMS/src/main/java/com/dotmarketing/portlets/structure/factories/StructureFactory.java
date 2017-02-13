@@ -7,9 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import java.util.*;
-
-import com.dotcms.contenttype.business.ContentTypeApi;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -26,7 +24,6 @@ import com.dotmarketing.beans.Host;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionedWebAssetUtil;
 
@@ -42,14 +39,11 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.WebAssetFactory;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -76,7 +70,7 @@ public class StructureFactory {
 	private static final SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
 	private static final HttpServletRequestThreadLocal httpServletRequestThreadLocal = HttpServletRequestThreadLocal.INSTANCE;
 	private static final ContentTypeUtil contentTypeUtil = ContentTypeUtil.getInstance();
-	private static final ContentTypeApi typeAPI = APILocator.getContentTypeAPI2(APILocator.systemUser());
+	private static final ContentTypeAPI typeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
 
 	//### READ ###
 
@@ -196,7 +190,7 @@ public class StructureFactory {
 	public static List<Structure> getStructures(User user, boolean respectFrontendRoles, boolean allowedStructsOnly)
 			throws DotDataException {
 	  
-		List<ContentType> types = APILocator.getContentTypeAPI2(user, respectFrontendRoles).findAll();
+		List<ContentType> types = APILocator.getContentTypeAPI(user, respectFrontendRoles).findAll();
 		return new StructureTransformer(types).asStructureList();
 	}
 
@@ -238,7 +232,7 @@ public class StructureFactory {
 			String condition, String orderBy, int limit, int offset, String direction) throws DotStateException {
 		
 		try {
-			List<ContentType> types = APILocator.getContentTypeAPI2(user,respectFrontendRoles).search(condition, orderBy + " " + direction, limit, offset);
+			List<ContentType> types = APILocator.getContentTypeAPI(user,respectFrontendRoles).search(condition, orderBy + " " + direction, limit, offset);
 			return new StructureTransformer(types).asStructureList();
 		} catch (DotStateException | DotDataException e) {
 			throw new DotStateException(e);
@@ -287,7 +281,7 @@ public class StructureFactory {
 
 		try {
 			
-			List<Structure>  structs= new StructureTransformer(APILocator.getContentTypeAPI2(user,respectFrontendRoles).findAll()).asStructureList();
+			List<Structure>  structs= new StructureTransformer(APILocator.getContentTypeAPI(user,respectFrontendRoles).findAll()).asStructureList();
 			return APILocator.getPermissionAPI().filterCollection(structs,PermissionAPI.PERMISSION_WRITE, respectFrontendRoles, user);
 		
 		} catch (DotStateException | DotDataException | DotSecurityException e) {
@@ -311,7 +305,7 @@ public class StructureFactory {
 		String orderBy = "structuretype,upper(name)";
 		int limit = -1;
 		String condition = " structure.system= " + DbConnectionFactory.getDBFalse();
-		List<ContentType> types = APILocator.getContentTypeAPI2(user,respectFrontendRoles).search(condition, orderBy, limit, 0);
+		List<ContentType> types = APILocator.getContentTypeAPI(user,respectFrontendRoles).search(condition, orderBy, limit, 0);
 		return new StructureTransformer(types).asStructureList();
 
 	}
@@ -324,7 +318,7 @@ public class StructureFactory {
 		try{
 			String condition = " host = ?";
 			int limit = -1;
-			List<ContentType> types = APILocator.getContentTypeAPI2(user,respectFrontendRoles).search(condition, "mod_date desc", limit, 0);
+			List<ContentType> types = APILocator.getContentTypeAPI(user,respectFrontendRoles).search(condition, "mod_date desc", limit, 0);
 			return new StructureTransformer(types).asStructureList();
 		}
 		catch(Exception e){
@@ -340,7 +334,7 @@ public class StructureFactory {
 		try{
 			String condition = " structure.inode exists (select structure_id from workflow_scheme_x_structure where workflow_scheme_x_structure.scheme_id = ' "  + scheme.getId() + "')";
 			int limit = -1;
-			List<ContentType> types = APILocator.getContentTypeAPI2(user,respectFrontendRoles).search(condition, "mod_date desc", limit, 0);
+			List<ContentType> types = APILocator.getContentTypeAPI(user,respectFrontendRoles).search(condition, "mod_date desc", limit, 0);
 			return new StructureTransformer(types).asStructureList();
 		}
 		catch(Exception e){
@@ -498,9 +492,9 @@ public class StructureFactory {
      *
      * @throws com.dotmarketing.exception.DotHibernateException
      * 
-     * @deprecated Do not use this method anymore, Instead, use {@link com.dotcms.contenttype.business.ContentTypeApi.setAsDefault(ContentType)}
+     * @deprecated Do not use this method anymore, Instead, use {@link ContentTypeAPI.setAsDefault(ContentType)}
      * 
-     * @see com.dotcms.contenttype.business.ContentTypeApi.setAsDefault(ContentType)
+     * @see ContentTypeAPI.setAsDefault(ContentType)
      */
 	public static void disableDefault() throws DotHibernateException
 	{

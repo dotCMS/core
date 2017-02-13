@@ -2,23 +2,18 @@ package com.dotcms.contenttype.test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
-import com.dotcms.contenttype.business.FieldApiImpl;
-import com.dotcms.contenttype.business.FieldFactoryImpl;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.exception.OverFieldLimitException;
 import com.dotcms.contenttype.model.field.DataTypes;
@@ -207,7 +202,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 
 	@Test
 	public void testDeleteingFields() throws Exception {
-		for (ContentType type : APILocator.getContentTypeAPI2(APILocator.getUserAPI().getSystemUser(), true)
+		for (ContentType type : APILocator.getContentTypeAPI(APILocator.getUserAPI().getSystemUser(), true)
 				.findAll()) {
 			for (Field field : fieldFactory.byContentType(type)) {
 				if (field.variable().startsWith(TEST_VAR_PREFIX)) {
@@ -252,7 +247,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 	@Test
 	public void testFieldImplClasses() throws Exception {
 
-		for (Class clazz : APILocator.getFieldAPI2().fieldTypes()) {
+		for (Class clazz : APILocator.getContentTypeFieldAPI().fieldTypes()) {
 			Field newField = FieldBuilder.builder(clazz).contentTypeId("test")
 					.name("test" + clazz.getSimpleName())
 					.variable(TEST_VAR_PREFIX + clazz.getSimpleName()).build();

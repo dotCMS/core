@@ -18,7 +18,6 @@ import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
@@ -1646,7 +1645,7 @@ public class Contentlet extends WebAsset implements Serializable {
 	public Map<String, Object> getMap() throws DotRuntimeException {
 		Map<String, Object> myMap = new HashMap<String, Object>();
 		try{
-		List<Field> fields = new LegacyFieldTransformer(APILocator.getFieldAPI2().byContentTypeId(structureInode)).asOldFieldList();
+		List<Field> fields = new LegacyFieldTransformer(APILocator.getContentTypeFieldAPI().byContentTypeId(structureInode)).asOldFieldList();
 		for (Field f : fields) {
 			if(!APILocator.getFieldAPI().valueSettable(f)){
 				continue;

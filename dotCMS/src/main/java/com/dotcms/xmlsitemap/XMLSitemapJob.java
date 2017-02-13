@@ -46,7 +46,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
@@ -175,7 +174,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 	public void generateSitemapPerHost() throws DotDataException, DotSecurityException {
 
 		List<Host> hostsList = hostAPI.findAll(systemUser, false);
-		List<ContentType> types = APILocator.getContentTypeAPI2(APILocator.systemUser()).findAll() ;
+		List<ContentType> types = APILocator.getContentTypeAPI(APILocator.systemUser()).findAll() ;
 
 		for (Host host : hostsList) {
 

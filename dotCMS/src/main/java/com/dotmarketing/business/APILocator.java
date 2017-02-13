@@ -12,14 +12,13 @@ import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
-import com.dotcms.contenttype.business.ContentTypeApi;
-import com.dotcms.contenttype.business.ContentTypeApiImpl;
-import com.dotcms.contenttype.business.FieldApi;
-import com.dotcms.contenttype.business.FieldApiImpl;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.ContentTypeAPIImpl;
+import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.business.FieldAPIImpl;
 
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.company.CompanyAPIFactory;
-import com.dotcms.content.elasticsearch.business.*;
 
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.RulesAPIProxy;
@@ -65,7 +64,6 @@ import com.dotmarketing.cms.polls.business.PollsAPI;
 import com.dotmarketing.cms.polls.business.PollsAPILiferayImpl;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.business.journal.DistributedJournalAPIImpl;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.plugin.business.PluginAPIImpl;
@@ -108,8 +106,6 @@ import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.business.MenuLinkAPIImpl;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.business.PersonaAPIImpl;
-import com.dotmarketing.portlets.structure.business.FieldAPI;
-import com.dotmarketing.portlets.structure.business.FieldAPIImpl;
 import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.structure.business.StructureAPIImpl;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
@@ -312,12 +308,12 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
-	 * Creates a single instance of the {@link FieldAPI} class.
-	 * 
-	 * @return The {@link FieldAPI} class.
+	 * Creates a single instance of the {@link com.dotmarketing.portlets.structure.business.FieldAPI} class.
+	 *
+	 * @return The {@link com.dotmarketing.portlets.structure.business.FieldAPI} class.
 	 */
-	public static FieldAPI getFieldAPI(){
-		return (FieldAPI)getInstance(APIIndex.FIELD_API);
+	public static com.dotmarketing.portlets.structure.business.FieldAPI getFieldAPI(){
+		return (com.dotmarketing.portlets.structure.business.FieldAPI)getInstance(APIIndex.FIELD_API);
 	}
 
 	/**
@@ -742,36 +738,37 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
-	 * Creates a single instance of the {@link ContentTypeApi} class setup with the provided arguments
+	 * Creates a single instance of the {@link ContentTypeAPI} class setup with the provided arguments
 	 * 
 	 * @param user
-	 * 
-	 * @return The {@link ContentTypeApi} class.
+	 *
+	 * @return The {@link ContentTypeAPI} class.
 	 */
-    public static ContentTypeApi getContentTypeAPI2 (User user) {
-    	return getContentTypeAPI2(user, false);
+    public static ContentTypeAPI getContentTypeAPI(User user) {
+    	return getContentTypeAPI(user, false);
     }
 
     /**
-	 * Creates a single instance of the {@link ContentTypeApi} class setup with the provided arguments
+	 * Creates a single instance of the {@link ContentTypeAPI} class setup with the provided arguments
 	 * 
 	 * @param user
 	 * @param respectFrontendRoles
-	 * 
-	 * @return The {@link ContentTypeApi} class.
+	 *
+	 * @return The {@link ContentTypeAPI} class.
 	 */
-    public static ContentTypeApi getContentTypeAPI2 (User user, boolean respectFrontendRoles) {
-    	return getAPILocatorInstance().getContentTypeAPI2Impl(user, respectFrontendRoles);
+    public static ContentTypeAPI getContentTypeAPI(User user, boolean respectFrontendRoles) {
+    	return getAPILocatorInstance().getContentTypeAPIImpl(user, respectFrontendRoles);
 	}
 
     @VisibleForTesting
-    protected ContentTypeApi getContentTypeAPI2Impl(User user, boolean respectFrontendRoles) {
-    	return new ContentTypeApiImpl(user, respectFrontendRoles);
+    protected ContentTypeAPI getContentTypeAPIImpl(User user, boolean respectFrontendRoles) {
+    	return new ContentTypeAPIImpl(user, respectFrontendRoles);
     }
 
-    public static FieldApi getFieldAPI2() {
-		return new FieldApiImpl();
+    public static FieldAPI getContentTypeFieldAPI() {
+		return new FieldAPIImpl();
 	}
+
     public static User systemUser()  {
       try{
         return getUserAPI().getSystemUser();
@@ -940,7 +937,7 @@ enum APIIndex
 		case CONTENTLET_API_INTERCEPTER: return new ContentletAPIInterceptor();
 		case RELATIONSHIP_API: return new RelationshipAPIImpl();
 		case IDENTIFIER_API: return new IdentifierAPIImpl();
-		case FIELD_API: return new FieldAPIImpl();
+		case FIELD_API: return new com.dotmarketing.portlets.structure.business.FieldAPIImpl();
 		case PORTLET_API: return new PortletAPIImpl();
 		case WIDGET_API: return new WidgetAPIImpl();
 		case CALENDAR_REMINDER_API: return new CalendarReminderAPIImpl();

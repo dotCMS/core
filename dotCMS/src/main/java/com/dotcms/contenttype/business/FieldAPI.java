@@ -42,11 +42,11 @@ import com.liferay.portal.model.User;
  * @author Will Ezell
  *
  */
-public interface FieldApi {
+public interface FieldAPI {
 
-	static FieldApi api = new FieldApiImpl();
+	static FieldAPI api = new FieldAPIImpl();
 
-	default FieldApi instance() {
+	default FieldAPI instance() {
 		return api;
 	}
 

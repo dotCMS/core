@@ -34,7 +34,7 @@ import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
  * @author Will Ezell
  *
  */
-public interface ContentTypeApi {
+public interface ContentTypeAPI {
 
 
   /**

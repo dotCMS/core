@@ -46,7 +46,7 @@ public class ViewRelationshipsAction extends DotPortletAction {
 	              .id("all")
 	              .variable("all")
 	              .name("all").build() 
-	          : APILocator.getContentTypeAPI2(user).find(structureId);
+	          : APILocator.getContentTypeAPI(user).find(structureId);
 		List<Relationship> list = FactoryLocator.getRelationshipFactory().byContentType(type , orderBy);
 		req.setAttribute(WebKeys.Relationship.RELATIONSHIPS, list);
 	}

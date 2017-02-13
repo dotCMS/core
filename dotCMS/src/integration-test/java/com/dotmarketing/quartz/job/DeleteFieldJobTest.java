@@ -28,7 +28,7 @@ import static org.junit.Assert.assertNull;
 
 public class DeleteFieldJobTest extends IntegrationTestBase {
 
-    /*
+
     final DeleteFieldJob instance = new DeleteFieldJob();
 
     @BeforeClass
@@ -72,7 +72,7 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
             FieldFactory.saveField(textFied);
             FieldsCache.addField(textFied);
 
-            Structure stFromDB = CacheLocator.getContentTypeCache().getStructureByName("DeleteField");
+            Structure stFromDB = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("deletefield");
             List<Field> fieldsBySortOrder = stFromDB.getFieldsBySortOrder();
 
             assertEquals(2, fieldsBySortOrder.size());
@@ -96,7 +96,7 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
                     CollectionsUtils.map("structure", contentType, "field", textFied, "user", systemUser));
 
             //asserts
-            stFromDB = CacheLocator.getContentTypeCache().getStructureByName("DeleteField");
+            stFromDB = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("deletefield");
             fieldsBySortOrder = stFromDB.getFieldsBySortOrder();
             assertEquals(0, fieldsBySortOrder.size());
 
@@ -119,5 +119,5 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
             throw new RuntimeException();
         }
     }
-    */
+
 }

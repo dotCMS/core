@@ -3,7 +3,7 @@ package com.dotmarketing.portlets.structure.factories;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.dotcms.contenttype.business.FieldApi;
+import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.EmptyField;
 import com.dotcms.contenttype.model.field.FieldBuilder;
@@ -26,15 +26,15 @@ import com.dotmarketing.util.StringUtils;
 @Deprecated
 public class FieldFactory {
 
-    private static FieldApi fapi(){
-        return APILocator.getFieldAPI2();
+    private static FieldAPI fapi(){
+        return APILocator.getContentTypeFieldAPI();
     }
 	//### READ ###
 	public static Field getFieldByInode(String inode) 
 	{
 
 		try {
-            return new LegacyFieldTransformer(APILocator.getFieldAPI2().find(inode)).asOldField();
+            return new LegacyFieldTransformer(APILocator.getContentTypeFieldAPI().find(inode)).asOldField();
         } catch (DotStateException | DotDataException e) {
             return new Field();
         }
@@ -45,7 +45,7 @@ public class FieldFactory {
 	public static List<Field> getFieldsByStructure(String structureInode)
 	{
 	       try {
-	            return new LegacyFieldTransformer(APILocator.getFieldAPI2().byContentTypeId(structureInode)).asOldFieldList();
+	            return new LegacyFieldTransformer(APILocator.getContentTypeFieldAPI().byContentTypeId(structureInode)).asOldFieldList();
 	        } catch (DotStateException | DotDataException e) {
 	            return ImmutableList.of();
 	        }
@@ -117,7 +117,7 @@ public class FieldFactory {
 	    com.dotcms.contenttype.model.field.Field field = new LegacyFieldTransformer(oldField).from();
 	    try {
             return new LegacyFieldTransformer(
-            	APILocator.getFieldAPI2().save(field, APILocator.systemUser())
+            	APILocator.getContentTypeFieldAPI().save(field, APILocator.systemUser())
             ).asOldField();
         } catch (DotDataException | DotSecurityException e) {
             throw new DotHibernateException(e.getMessage(),e);

@@ -5,39 +5,25 @@ import java.util.List;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
-import com.dotcms.enterprise.ESSeachAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 
 import java.util.*;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.portlet.PortletURL;
-import com.dotcms.repackage.javax.portlet.WindowState;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.business.*;
 import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.HostCache;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.form.business.FormAPI;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -58,12 +44,12 @@ public class StructureAPIImpl implements StructureAPI {
 
 	@Override
 	public void delete(Structure st, User user) throws DotSecurityException, DotDataException, DotStateException {
-		APILocator.getContentTypeAPI2(user).delete(new StructureTransformer(st).from());
+		APILocator.getContentTypeAPI(user).delete(new StructureTransformer(st).from());
 	}
 	
 	@Override
 	public void save(Structure st, User user) throws DotSecurityException, DotDataException, DotStateException {
-		APILocator.getContentTypeAPI2(user).save(new StructureTransformer(st).from());
+		APILocator.getContentTypeAPI(user).save(new StructureTransformer(st).from());
 	}
 
 	private final ContentTypeCache contentTypeCache = CacheLocator.getContentTypeCache();
@@ -163,14 +149,14 @@ public class StructureAPIImpl implements StructureAPI {
 	@Override
 	public Structure find(String inode, User user) throws DotSecurityException, DotDataException, DotStateException {
 
-		return new StructureTransformer(APILocator.getContentTypeAPI2(user).find(inode)).asStructure();
+		return new StructureTransformer(APILocator.getContentTypeAPI(user).find(inode)).asStructure();
 
 	}
 
 	@Override
 	public List<Structure> find(User user, boolean respectFrontendRoles, boolean allowedStructsOnly) throws DotDataException {
 
-		return new StructureTransformer(APILocator.getContentTypeAPI2(user, respectFrontendRoles).findAll()).asStructureList();
+		return new StructureTransformer(APILocator.getContentTypeAPI(user, respectFrontendRoles).findAll()).asStructureList();
 
 	}
 
@@ -178,7 +164,7 @@ public class StructureAPIImpl implements StructureAPI {
 	public List<Structure> find(User user, boolean respectFrontendRoles, boolean allowedStructsOnly, String condition, String orderBy,
 			int limit, int offset, String direction) throws DotDataException {
 
-		return new StructureTransformer(APILocator.getContentTypeAPI2(user, respectFrontendRoles).search(condition, orderBy + " " + direction, limit,
+		return new StructureTransformer(APILocator.getContentTypeAPI(user, respectFrontendRoles).search(condition, orderBy + " " + direction, limit,
 				offset)).asStructureList();
 
 	}
@@ -186,7 +172,7 @@ public class StructureAPIImpl implements StructureAPI {
 	@Override
 	public Structure findByVarName(String varName, User user) throws DotSecurityException, DotDataException {
 
-		return new StructureTransformer(APILocator.getContentTypeAPI2(user).find(varName)).asStructure();
+		return new StructureTransformer(APILocator.getContentTypeAPI(user).find(varName)).asStructure();
 
 	}
 
@@ -200,7 +186,7 @@ public class StructureAPIImpl implements StructureAPI {
 	@Override
 	public int countStructures(String condition) {
 		try {
-			return APILocator.getContentTypeAPI2(APILocator.systemUser()).count(condition);
+			return APILocator.getContentTypeAPI(APILocator.systemUser()).count(condition);
 		} catch (DotDataException dde) {
 			throw new DotStateException(dde.getMessage(), dde);
 		}

@@ -2,7 +2,6 @@ package com.dotcms.contenttype.business;
 
 import java.util.List;
 
-import com.dotcms.contenttype.exception.DotDataValidationException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.CheckboxField;
@@ -32,14 +31,13 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 
 
-public class FieldApiImpl implements FieldApi {
+public class FieldAPIImpl implements FieldAPI {
 
   private List<Class> baseFieldTypes = ImmutableList.of(BinaryField.class, CategoryField.class,
       ConstantField.class, CheckboxField.class, CustomField.class, DateField.class,
@@ -53,7 +51,7 @@ public class FieldApiImpl implements FieldApi {
 
   @Override
 	public Field save(Field field, User user) throws DotDataException, DotSecurityException {
-		ContentTypeApi tapi = APILocator.getContentTypeAPI2(user );
+		ContentTypeAPI tapi = APILocator.getContentTypeAPI(user );
 		ContentType type = tapi.find(field.contentTypeId()) ;
 		APILocator.getPermissionAPI().checkPermission(type, PermissionLevel.PUBLISH, user);
 		
@@ -63,7 +61,7 @@ public class FieldApiImpl implements FieldApi {
   
   @Override
   public FieldVariable save(FieldVariable var, User user) throws DotDataException, DotSecurityException {
-      ContentTypeApi tapi = APILocator.getContentTypeAPI2(user);
+      ContentTypeAPI tapi = APILocator.getContentTypeAPI(user);
       Field field = fac.byId(var.fieldId());
 
       ContentType type = tapi.find(field.contentTypeId()) ;

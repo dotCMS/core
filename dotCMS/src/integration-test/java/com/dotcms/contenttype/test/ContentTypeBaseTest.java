@@ -6,10 +6,10 @@ import org.junit.BeforeClass;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.contenttype.business.ContentTypeApiImpl;
+import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
-import com.dotcms.contenttype.business.FieldApiImpl;
+import com.dotcms.contenttype.business.FieldAPIImpl;
 import com.dotcms.contenttype.business.FieldFactoryImpl;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
@@ -23,9 +23,9 @@ public class ContentTypeBaseTest extends IntegrationTestBase {
 
 	protected static User user;
 	protected static ContentTypeFactory contentTypeFactory;
-	protected static ContentTypeApiImpl contentTypeApi;
+	protected static ContentTypeAPIImpl contentTypeApi;
 	protected static FieldFactoryImpl fieldFactory;
-	protected static FieldApiImpl fieldApi;
+	protected static FieldAPIImpl fieldApi;
 
 	@BeforeClass
 	public static void prepare () throws Exception {
@@ -33,10 +33,10 @@ public class ContentTypeBaseTest extends IntegrationTestBase {
 		IntegrationTestInitService.getInstance().init();
 
 		user = APILocator.systemUser();
-		contentTypeApi = (ContentTypeApiImpl) APILocator.getContentTypeAPI2(user);
+		contentTypeApi = (ContentTypeAPIImpl) APILocator.getContentTypeAPI(user);
 		contentTypeFactory = new ContentTypeFactoryImpl();
 		fieldFactory = new FieldFactoryImpl();
-		fieldApi = new FieldApiImpl();
+		fieldApi = new FieldAPIImpl();
 
 
 		HttpServletRequest pageRequest = new MockSessionRequest(

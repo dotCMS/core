@@ -11,8 +11,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 
-import com.dotcms.contenttype.business.ContentTypeApi;
-import com.dotcms.contenttype.business.FieldApi;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -42,8 +42,8 @@ public class ContentTypeImportExportUtil {
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .enable(SerializationFeature.INDENT_OUTPUT);
 
-    ContentTypeApi tapi = APILocator.getContentTypeAPI2(APILocator.systemUser(), true);
-    FieldApi fapi = APILocator.getFieldAPI2();
+    ContentTypeAPI tapi = APILocator.getContentTypeAPI(APILocator.systemUser(), true);
+    FieldAPI fapi = APILocator.getContentTypeFieldAPI();
     final int limit = 1000;
     public static final String CONTENT_TYPE_FILE_EXTENSION="-contenttypes.json";
 

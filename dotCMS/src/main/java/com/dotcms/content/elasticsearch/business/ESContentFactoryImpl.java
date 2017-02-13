@@ -2368,9 +2368,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                         .append(" != ");
             }
         //https://github.com/dotCMS/core/issues/10245
-        }else if(!field.getFieldContentlet().startsWith("system_field")){
-            update.append(field.getFieldContentlet()).append(" = ");
-        } else {
+        }else {
             whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ");
             if(DbConnectionFactory.isMsSql() && field.getFieldContentlet().contains("text_area")) {
                 whereField.append(" DATALENGTH (").append(field.getFieldContentlet()).append(")");
