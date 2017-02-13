@@ -23,30 +23,30 @@
 @import "<%=dojoPath%>/dojox/grid/enhanced/resources/claro/EnhancedGrid.css?b=<%= ReleaseInfo.getVersion() %>";
 @import "<%=dojoPath%>/dojox/grid/resources/tundraGrid.css?b=<%= ReleaseInfo.getVersion() %>";
 div.fakefile {
-position: absolute;
-text-align: left;
-z-index: 1;
-margin-left: 20px;
-width: 9px;
-margin-top: -22px;
--moz-opacity: 0;
-right: 80px;
-top: 77%;
+	position: absolute;
+	text-align: left;
+	z-index: 1;
+	margin-left: 20px;
+	width: 9px;
+	margin-top: -22px;
+	-moz-opacity: 0;
+	right: 80px;
+	top: 77%;
 }
 
 .fakefile input.upload {
-position: absolute;
-top: 0;
-right: 5px;
-left: 1px;
-padding: 0;
-font-size: 15px;
-cursor: pointer;
-width: 90px;
-filter: alpha(opacity: 0);
-opacity: 0;
--moz-opacity: 0;
-z-index:4;
+	position: absolute;
+	top: 0;
+	right: 5px;
+	left: 1px;
+	padding: 0;
+	font-size: 15px;
+	cursor: pointer;
+	width: 90px;
+	filter: alpha(opacity: 0);
+	opacity: 0;
+	-moz-opacity: 0;
+	z-index:4;
 }
 
 </style>
@@ -108,10 +108,7 @@ z-index:4;
 
 
 	var fixFocus = function() {
-
-
 		var toBlur = document.activeElement;
-
 		if(toBlur.id!="addCatName" &&
 				toBlur.id!="addCatKey" &&
 				toBlur.id!="addCatKeywords" &&
@@ -119,7 +116,6 @@ z-index:4;
 			toBlur.blur();
 			this.focus();
 		}
-
 	};
 
 	// format the sort column of the grid to be a NumberTextBox
@@ -128,7 +124,7 @@ z-index:4;
 		var sort_order = grid.store.getValue(grid.getItem(index), 'sort_order');
 
 		return new dijit.form.ValidationTextBox({
-			style : "width:60%; font-size: 13px; height: 25px",
+			style : "width: 80%; margin: 0 10%",
 			value : sort_order,
 			name: inode,
 			maxLength: 15,
@@ -253,16 +249,11 @@ z-index:4;
 	                }
 				dojo.byId("warningDiv").innerHTML = html;
 			} else if(selectedItems.length==1){
-				dojo.byId("warningDiv").innerHTML = '<br><br>';
+				dojo.byId("warningDiv").innerHTML = '';
 			} else {
-				dojo.byId("warningDiv").innerHTML = '<br><br>';
+				dojo.byId("warningDiv").innerHTML = '';
 			}
 		});
-
-
-
-
-
 	});
 
 	function selectAllCategories() {
@@ -277,7 +268,7 @@ z-index:4;
 
 	function clearAllCategoriesSelection() {
 		grid.selection.clear();
-		dojo.byId("warningDiv").innerHTML = '<br><br>';
+		dojo.byId("warningDiv").innerHTML = '';
 	    document.getElementById("fullCommand").value = "false";
 	}
 
@@ -560,14 +551,14 @@ z-index:4;
     			CategoryAjax.deleteCategories(currentInodeOrIdentifier, {
 					callback:function(result) {
 						if(result==0) {
-							dojo.byId("warningDiv").innerHTML = '<br><br>';
+							dojo.byId("warningDiv").innerHTML = '';
 						} else if(result==1) {
 							dojo.byId("warningDiv").innerHTML = '<%= LanguageUtil.get(pageContext, "message.category.delete.failed.has.dependencies") %>';
 							var t = new dojox.timing.Timer();
 							t.setInterval(5000);
 							t.onTick = function() {
 								t.stop();
-								dojo.byId("warningDiv").innerHTML = '<br><br>';
+								dojo.byId("warningDiv").innerHTML = '';
                             };
 					        t.start();
 						}
@@ -592,18 +583,18 @@ z-index:4;
     			CategoryAjax.deleteSelectedCategories(inodes, {
 					callback:function(result) {
 						if(result==0) {
-							dojo.byId("warningDiv").innerHTML = '<br><br>';
+							dojo.byId("warningDiv").innerHTML = '';
 						} else if(result==1) { // has dependencies
 							dojo.byId("warningDiv").innerHTML = '<%= LanguageUtil.get(pageContext, "message.category.delete.failed.has.dependencies") %>';
 							var t = new dojox.timing.Timer();
 							t.setInterval(5000);
 							t.onTick = function() {
-								dojo.byId("warningDiv").innerHTML = '<br><br>';
+								dojo.byId("warningDiv").innerHTML = '';
 								t.stop();
 					        }
 					        t.start();
 						} else if (result==2) {
-							dojo.byId("warningDiv").innerHTML = '<br><br>';
+							dojo.byId("warningDiv").innerHTML = '';
 						}
 
 						grid.selection.clear();
@@ -691,15 +682,14 @@ z-index:4;
 		}
 
 		CategoryAjax.importCategories(currentInodeOrIdentifier, filter, file, exportType, function(result) {
-
 			if(result==0) {
-				dojo.byId("warningDiv").innerHTML = '<br><br>';
+				dojo.byId("warningDiv").innerHTML = '';
 			}  else if (result==1) {
 				dojo.byId("warningDiv").innerHTML = '<%= LanguageUtil.get(pageContext, "message.category.delete.failed.has.dependencies") %>';
 				var t = new dojox.timing.Timer();
 				t.setInterval(5000);
 				t.onTick = function() {
-					dojo.byId("warningDiv").innerHTML = '<br><br>';
+					dojo.byId("warningDiv").innerHTML = '';
 					t.stop();
 		        }
 		        t.start();
@@ -821,17 +811,24 @@ z-index:4;
 			
 			<!-- START Children Tab -->
 			<div id="TabOne" dojoType="dijit.layout.ContentPane"  title="<%=LanguageUtil.get(pageContext, "children")%>">
-
-				<div class="inline-form" style="width:300px">
-					<input  name="catFilter" id="catFilter" onkeyup="doSearch();" type="text" dojoType="dijit.form.TextBox" placeholder="<%= LanguageUtil.get(pageContext, "message.filter.categories") %>">
-					<button dojoType="dijit.form.Button" onclick="clearCatFilter()" type="button"><%= LanguageUtil.get(pageContext, "Clear") %></button>
+				<div class="portlet-toolbar">
+					<div class="portlet-toolbar__actions-primary">
+						<%@ include file="/html/portlet/ext/common/sub_nav_inc.jsp" %>
+					</div>
+					<div class="portlet-toolbar__info">
+						<div id="warningDiv" style="color: red;"></div>
+					</div>
+					<div class="portlet-toolbar__actions-secondary">
+						<div class="inline-form">
+							<input  name="catFilter" id="catFilter" onkeyup="doSearch();" type="text" dojoType="dijit.form.TextBox" placeholder="<%= LanguageUtil.get(pageContext, "message.filter.categories") %>">
+							<button dojoType="dijit.form.Button" onclick="clearCatFilter()" type="button"><%= LanguageUtil.get(pageContext, "Clear") %></button>
+						</div>
+					</div>
 				</div>
-				<div id="warningDiv" style="text-align: center; height: 10px; margin-top: 15px; color: red; font-size: 11px; "></div>
-
                                         
 				<div id="catHolder" style="text-align: center; " class="claro"></div>
 				
-				<div style="text-align: right; margin: 20px 15px">
+				<div style="text-align: right; margin: 16px 0">
 					<button dojoType="dijit.form.Button" type="button" onClick="doSearch(true);" iconClass="resetIcon"><%= LanguageUtil.get(pageContext,"Reorder") %></button>
 				</div>
 				<input type="hidden" name="fullCommand" id="fullCommand" value="">
@@ -913,20 +910,20 @@ z-index:4;
 		}
 		t.start();
 	});
-</script>
 
+</script>
 
 </liferay:box>
 
 <!-- START Add Category pop up -->
-<div id="add_category_dialog"  dojoType="dijit.Dialog" style="display:none;" draggable="true" title="<%= LanguageUtil.get(pageContext, "add-category") %>" >
+<div id="add_category_dialog"  dojoType="dijit.Dialog" style="display:none;width:300px" draggable="true" title="<%= LanguageUtil.get(pageContext, "add-category") %>" >
 	<div dojoType="dijit.layout.ContentPane">
 		<span id="savedMessage" style="color:red; font-size:11px;"></span>
 		<form id="addCatPropertiesForm" dojoType="dijit.form.Form" style="max-width: 260px; max-height: 300px;">
 			<div class="form-inline">
 				<dl>
 					<dt><span id="VariableIdTitle"><%= LanguageUtil.get(pageContext, "Variable-ID") %>:</span></dt>
-					<dd><input id="addCatVelVarName" readonly="true" style="width:250px;border:0;" /></dd>
+					<dd><input id="addCatVelVarName" readonly="true" style="width:100%;" class="input-text-naked" /></dd>
 				</dl>
 				<dl>
 					<dt><%= LanguageUtil.get(pageContext, "Name") %>:</dt>
@@ -938,7 +935,7 @@ z-index:4;
 				</dl>
 				<dl>
 					<dt><%= LanguageUtil.get(pageContext, "keywords") %>:</dt>
-					<dd><textarea dojoType="dijit.form.Textarea" id="addCatKeywords" tabindex="3" style="height:100px"></textarea></dd>
+					<dd><textarea dojoType="dijit.form.Textarea" id="addCatKeywords" tabindex="3" style="min-height:100px; max-height:100px"></textarea></dd>
 				</dl>
 			</div>
 			<div class="buttonRow">

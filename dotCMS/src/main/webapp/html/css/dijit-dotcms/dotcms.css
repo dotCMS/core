@@ -236,7 +236,7 @@ html, body {
   background-color: #fff;
 }
 .dijitTextBoxFocused .dijitInputInner {
-  color: #5B5B5B;
+  color: #161616;
 }
 .dijitTextBoxFocused .dijitArrowButton {
   background-color: #fff;
@@ -334,7 +334,7 @@ html, body {
 .dijitTextAreaFocused {
   border: solid 1px #CB3927;
   background-color: #fff;
-  color: #5B5B5B;
+  color: #161616;
 }
 .dijitTextAreaDisabled {
   border: solid 1px #E3E4E6;
@@ -4618,11 +4618,7 @@ div#_dotHelpMenu {
 
 /* CRUMBTRAIL STYLES 2.0 */
 .subNavCrumbTrail {
-  display: none !important;
-  height: 27px;
-  overflow: hidden;
-  border-bottom: 1px solid #ddd;
-  background: url("http://localhost:8080/html/images/skin/skin-sprite.png") repeat-x 0 -329px;
+  display: none;
 }
 .subNavCrumbTrail ul {
   margin: 0;
@@ -4630,26 +4626,34 @@ div#_dotHelpMenu {
   list-style: none;
 }
 .subNavCrumbTrail li {
-  font-size: 85%;
+  display: inline;
   margin: 0;
   list-style: none;
-  float: left;
-  padding: 5px 10px 6px 25px;
-  line-height: 16px;
-  background: url("http://localhost:8080/html/images/skin/skin-sprite.png") no-repeat 0 -390px;
+  position: relative;
+  padding-right: 16px;
 }
-.subNavCrumbTrail .lastCrumb {
-  background: url("http://localhost:8080/html/images/skin/skin-sprite.png") no-repeat 0 -360px;
+.subNavCrumbTrail li:after {
+  display: inline-block;
+  font: normal normal normal 14px/1 FontAwesome;
+  font-size: inherit;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  content: "";
+  color: #C5C5C5;
+  font-size: 9px;
+  position: absolute;
+  right: 5px;
+  top: 5px;
+}
+.subNavCrumbTrail li.lastCrumb {
+  padding-right: 0;
+}
+.subNavCrumbTrail li.lastCrumb:after {
+  display: none;
 }
 .subNavCrumbTrail a {
   text-decoration: none;
-}
-.subNavCrumbTrail a:hover {
-  color: #cc0000;
-}
-
-.lastCrumb span {
-  font-weight: bold;
 }
 
 #selectHostDiv {
@@ -5645,26 +5649,27 @@ Styles for commons fields along the backend
 
 .catPreview {
   background-color: #fff;
-  border: solid 1px #C5C5C5;
   border-radius: 2px;
-  min-height: 41px;
+  border: solid 1px #C5C5C5;
   margin-top: 8px;
-  padding: 3px 5px;
+  max-width: 900px;
+  min-height: 38px;
+  padding: 4px;
 }
 .catPreview li {
-  background-color: #ECEDEE;
-  border-radius: 7px;
+  background: #FAFAFA;
+  border-radius: 2px;
   border: solid 1px #C5C5C5;
   display: inline-block;
   font-size: 12px;
   margin: 2px 5px 2px 0px;
-  padding: 3px 25px 4px 5px;
+  padding: 4px 8px 4px 4px;
   position: relative;
   text-decoration: none;
-  vertical-align: middle;
 }
 .catPreview a {
-  text-decoration: none;
+  display: inline-block;
+  vertical-align: sub;
 }
 .catPreview a:hover {
   color: #cc0000;
@@ -5784,7 +5789,7 @@ Styles for commons fields along the backend
 
 .tagLink {
   background: #FAFAFA;
-  border-radius: 7px;
+  border-radius: 2px;
   border: solid 1px #C5C5C5;
   display: inline-block;
   font-size: 12px;
@@ -6714,6 +6719,12 @@ a.category_higlighted, a.tag_higlighted {
   right: 30px;
   z-index: 1;
 }
+.view-categories .subNavCrumbTrail {
+  display: block;
+}
+.view-categories .subNavCrumbTrail #selectHostDiv {
+  display: none;
+}
 
 .view-roles,
 .view-roles .portlet-sidebar {
@@ -6961,7 +6972,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 .portlet-toolbar__info {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   flex: 1;
   margin: 0 18px;
   align-items: center;
@@ -7670,6 +7681,14 @@ Resize Handle
   border: none;
   background: none;
   height: 18px;
+}
+
+.input-text-naked {
+  border: none;
+  color: #161616;
+  font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  font-size: 13px;
+  line-height: 32px;
 }
 
 body {
