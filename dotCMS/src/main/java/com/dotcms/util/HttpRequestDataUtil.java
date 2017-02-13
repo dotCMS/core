@@ -100,7 +100,7 @@ public class HttpRequestDataUtil {
 		}
 		if (UtilMethods.isSet(ip)) {
 		    //If X-Forwarded-For has multiple addresses, let's grab the first one only
-		    if(ip.indexOf(',') < -1){
+		    if(ip.indexOf(',') > -1){
 		        String[] ipAddresses = ip.split(",");
 		        ip = ipAddresses[0];
 		    }
