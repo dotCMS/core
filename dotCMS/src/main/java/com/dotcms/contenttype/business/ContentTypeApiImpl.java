@@ -259,9 +259,6 @@ public class ContentTypeApiImpl implements ContentTypeApi {
     	type = ContentTypeBuilder.builder(type)
     	          .host(APILocator.getFolderAPI().find(type.folder(), user, false).getHostId()).build();
     }else if(UtilMethods.isSet(type.host())){//If there is no folder set, check if the host has been set, if so set the folder to System Folder
-    		if(APILocator.getHostAPI().findSystemHost().getIdentifier().equals(type.host())){
-    			type = ContentTypeBuilder.builder(type).host(Host.SYSTEM_HOST).build();
-    		}
     	type = ContentTypeBuilder.builder(type).folder(Folder.SYSTEM_FOLDER).build();
     }
 
