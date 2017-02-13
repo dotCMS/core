@@ -56,7 +56,7 @@ ol.wfStepsList li:first-child{border-top:1px dashed #ccc;}
 	cursor: pointer;
 }
 .wfXBox{
-	width:20px;border-right:1px solid silver;text-align: center;cursor:pointer;
+	width:20px;text-align: center;cursor:pointer;
 }
 
   .container {
@@ -118,11 +118,7 @@ ol.wfStepsList li:first-child{border-top:1px dashed #ccc;}
 	min-height:40px;
 	max-height:120px;	
 }
-#stepEditDia{
-	height:250px;
-	width:380px;
-	margin:auto;
-}
+
 #stepEditDia .escalation-row {
 	display: none;
 }
@@ -132,11 +128,7 @@ ol.wfStepsList li:first-child{border-top:1px dashed #ccc;}
 	height:300px;
 	
 }
-#wfEditSchemeDia{
-	width:550px;
-	height:330px;
-	margin:auto;
-}
+
 #contentletWfCP{
 	width:500px;
 	height:300px;

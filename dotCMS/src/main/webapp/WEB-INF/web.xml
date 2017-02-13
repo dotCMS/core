@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
-<web-app xmlns="http://java.sun.com/xml/ns/j2ee"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd"
-    version="2.4">
+<web-app xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
+                      http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+		 version="3.0" metadata-complete="true">
     <display-name>dotCMS</display-name>
 	<!-- Don't ever delete the following comment tags, it will break the build -->
 	<!-- BEGIN JSPS --> <!-- END JSPS -->
@@ -21,21 +21,25 @@
 	<filter>
 		<filter-name>CookiesFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.CookiesFilter</filter-class>
+		<async-supported>true</async-supported>
 	</filter>
 	
 	<filter>
 		<filter-name>ThreadNameFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.ThreadNameFilter</filter-class>
+		<async-supported>true</async-supported>
 	</filter>
 	
 	<filter>
 		<filter-name>CharsetEncodingFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.CharsetEncodingFilter</filter-class>
+		<async-supported>true</async-supported>
 	</filter>
 	
 	<filter>
 	    <filter-name>TimeMachineFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.TimeMachineFilter</filter-class>
+		<async-supported>true</async-supported>
 	</filter>
 	
 	<filter>
@@ -46,16 +50,19 @@
 	<filter>
 		<filter-name>URLMapFilter</filter-name>
 		<filter-class>com.dotmarketing.cms.urlmap.filters.URLMapFilter</filter-class>
+		<async-supported>true</async-supported>
 	</filter>
 
 	<filter>
 		<filter-name>CMSFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.CMSFilter</filter-class>
+		<async-supported>true</async-supported>
 	</filter>
 	
 	<filter>
 		<filter-name>AutoLoginFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.AutoLoginFilter</filter-class>
+		<async-supported>true</async-supported>
 	</filter>
 	
 	<filter>
@@ -74,6 +81,7 @@
     <filter>
         <filter-name>UrlRewriteFilter</filter-name>
         <filter-class>com.dotmarketing.filters.DotUrlRewriteFilter</filter-class>
+		<async-supported>true</async-supported>
     </filter>
 	<!--END DOTMARKETING FILTERS-->
 	
@@ -351,6 +359,7 @@
 			<param-value>txt : text/plain, xml : application/xml, json : application/json, js : application/javascript</param-value>
 		</init-param>
 		<load-on-startup>1</load-on-startup>
+		<async-supported>true</async-supported>
 	</servlet>
 	
     <servlet>

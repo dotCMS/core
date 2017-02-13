@@ -2,7 +2,7 @@ package com.dotcms.job.system.event;
 
 import java.io.Serializable;
 
-import com.dotcms.job.JobDelegate;
+import com.dotcms.util.Delegate;
 import com.dotcms.job.system.event.delegate.bean.JobDelegateDataBean;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -25,7 +25,7 @@ import com.dotmarketing.util.Logger;
  *
  */
 @SuppressWarnings("serial")
-public abstract class AbstractJobDelegate implements JobDelegate<JobDelegateDataBean>, Serializable {
+public abstract class AbstractJobDelegate implements Delegate<JobDelegateDataBean>, Serializable {
 
 	@Override
 	public void execute(JobDelegateDataBean data) {

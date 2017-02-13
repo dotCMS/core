@@ -103,13 +103,10 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
     setDivHover:function(){
         dojo.attr(this.thumbnailDiv, "class", "thumbnailDivHover");
-        dojo.style(this.editFileWindow, "opacity", "1");
-        dojo.style(this.editFileWindow, "color", "black");
 
     },
     setDivOut:function(){
         dojo.attr(this.thumbnailDiv, "class", "thumbnailDiv");
-        dojo.style(this.editFileWindow, "opacity", ".4");
     },
 
 

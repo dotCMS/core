@@ -570,10 +570,10 @@ var editButtonRow="editContentletButtonRow";
 	}
 </script>
 
-<div id="saveContentErrors" style="display: none;" dojoType="dijit.Dialog" class="content-edit__dialog-error">
+<div id="saveContentErrors" style="display: none;" dojoType="dijit.Dialog" class="content-edit__dialog-error" title="<%= LanguageUtil.get(pageContext, "error") %>">
 	<div dojoType="dijit.layout.ContentPane" id="exceptionData" hasShadow="true"></div>
-	<div class="formRow" style="text-align:center">
-		<button dojoType="dijit.form.Button"  onClick="dijit.byId('saveContentErrors').hide()" type="button"><%= LanguageUtil.get(pageContext, "close") %></button>
+	<div class="content-edit__dialog-error-actions">
+		<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="dijit.byId('saveContentErrors').hide()" type="button"><%= LanguageUtil.get(pageContext, "close") %></button>
 	</div>
 </div>
 

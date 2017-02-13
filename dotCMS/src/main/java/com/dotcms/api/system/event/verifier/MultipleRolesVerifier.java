@@ -5,7 +5,6 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.PayloadVerifier;
 import com.dotcms.api.system.event.VisibilityRoles;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -36,10 +35,10 @@ public class MultipleRolesVerifier implements PayloadVerifier {
     }
 
     @Override
-    public boolean verified(final Payload payload, final SessionWrapper session) {
+    public boolean verified(final Payload payload, final User sessionUser) {
         try {
 
-            return this.checkRoles(SessionWrapper.class.cast(session).getUser(),
+            return this.checkRoles(sessionUser,
                     (VisibilityRoles)payload.getVisibilityValue());
         } catch (DotDataException e) {
             throw new VerifierException(e);
@@ -85,4 +84,4 @@ public class MultipleRolesVerifier implements PayloadVerifier {
         return verified;
     }
 
-} // E:O:F:RolesVerifier.
+} // E:O:F:MultipleRolesVerifier.
