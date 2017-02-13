@@ -6874,6 +6874,7 @@ a.category_higlighted, a.tag_higlighted {
   border-radius: 2px;
   border: solid 1px #C5C5C5;
   height: 150px;
+  overflow: auto;
 }
 .view-users__roles-container-item select[multiple] {
   border: none;
@@ -6894,6 +6895,40 @@ a.category_higlighted, a.tag_higlighted {
   font-weight: normal;
   margin-bottom: 24px;
   padding-bottom: 8px;
+}
+
+.view-users .view-users__users-list {
+  font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+}
+.view-users .view-users__users-list.dojoxGrid {
+  background-color: transparent;
+}
+.view-users .view-users__users-list .dojoxGridRow {
+  border: 0px;
+  background-color: #fff;
+}
+.view-users .view-users__users-list .dojoxGridRow:nth-child(even) {
+  background-color: #ECEDEE;
+}
+.view-users .view-users__users-list .dojoxGridRow table .dojoxGridCell {
+  border: 0px;
+  padding: 8px 4px;
+}
+.view-users .view-users__users-list .dojoxGridHeader {
+  background-color: #ECEDEE;
+}
+.view-users .view-users__users-list .dojoxGridHeader .dojoxGridCell {
+  border: 0px solid;
+  background: none;
+  padding: 8px 4px;
+  text-align: center;
+  font-weight: bold;
+}
+.view-users .view-users__users-list .dojoxGridRowOver {
+  border: 0px;
+}
+.view-users .view-users__users-list .dojoxGridCellOver {
+  border: 0px;
 }
 
 .view-workflow .dijitDropDownActionButton,
