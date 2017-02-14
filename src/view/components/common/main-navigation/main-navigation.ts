@@ -13,14 +13,6 @@ import {RoutingService, Menu} from '../../../../api/services/routing-service';
 export class MainNavigation {
 
     private menuItems: Menu[];
-    private menuIcons = {
-        'Home': 'home',
-        'Site Browser': 'sitemap',
-        'Content': 'folder-open',
-        'Marketing': 'shopping-cart',
-        'Content Types': 'file-text',
-        'System': 'cog',
-    };
 
     constructor(private routingService: RoutingService) {
         if (routingService.menus) {
