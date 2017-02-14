@@ -1,8 +1,9 @@
-import {CoreWebService} from "../core-web-service";
-import {RequestMethod} from "@angular/http";
-import {Injectable} from "@angular/core";
-import {Observable, Observer} from "rxjs/Rx";
-import {LoggerService} from "../logger.service";
+import {CoreWebService} from '../core-web-service';
+import {RequestMethod} from '@angular/http';
+import {Injectable} from '@angular/core';
+import {Observable, Observer} from 'rxjs/Rx';
+import {LoggerService} from '../logger.service';
+import {Menu} from '../routing-service';
 
 /**
  * Created by josecastro on 7/29/16.
@@ -14,15 +15,27 @@ import {LoggerService} from "../logger.service";
 const DEFAULT_REST_PAGE_COUNT = 'DEFAULT_REST_PAGE_COUNT';
 const DOTCMS_WEBSOCKET_RECONNECT_TIME = 'dotcms.websocket.reconnect.time';
 const DOTCMS_WEBSOCKET_ENDPOINTS = 'dotcms.websocket.endpoints';
-const WEBSOCKET_SYSTEMEVENTS_ENDPOINT ='websocket.systemevents.endpoint';
+const WEBSOCKET_SYSTEMEVENTS_ENDPOINT = 'websocket.systemevents.endpoint';
 const DOTCMS_WEBSOCKET_BASEURL = 'dotcms.websocket.baseurl';
 const DOTCMS_WEBSOCKET_PROTOCOL = 'dotcms.websocket.protocol';
+const DOTCMS_DISABLE_WEBSOCKET_PROTOCOL = 'dotcms.websocket.disable';
+
+export interface ConfigParams {
+    defaultRestPageCount: number;
+    disabledWebsockets: string;
+    websocketReconnectTime: number;
+    websocketEndpoints: string;
+    websocketsSystemEventsEndpoint: string;
+    websocketBaseURL: string;
+    websocketProtocol: string;
+    menu: Menu[];
+}
 
 @Injectable()
 export class DotcmsConfig {
 
     private waiting: Observer[] = [];
-    private configParams: any;
+    private configParams: ConfigParams;
     private configUrl: string;
 
     /**
@@ -35,10 +48,10 @@ export class DotcmsConfig {
         this.loadConfig();
     }
 
-    getConfig(): Observable<DotcmsConfig> {
+    getConfig(): Observable<ConfigParams> {
         return Observable.create( obs => {
             if (this.configParams) {
-                obs.next(this);
+                obs.next(this.configParams);
             } else {
                 this.waiting.push(obs);
             }
@@ -47,71 +60,31 @@ export class DotcmsConfig {
 
     loadConfig(): void {
 
-        this.loggerService.debug("Loading configuration on: " + this.configUrl);
+        this.loggerService.debug('Loading configuration on: ', this.configUrl);
 
         this.coreWebService.requestView({
             method: RequestMethod.Get,
             url: this.configUrl
         }).pluck('entity').subscribe(res => {
 
-            this.loggerService.debug("Configuration Loaded!");
+            this.loggerService.debug('Configuration Loaded!', res);
 
-            this.configParams = res;
-            this.waiting.forEach(obs => obs.next(this));
+            this.configParams = {
+                defaultRestPageCount: res.config[DEFAULT_REST_PAGE_COUNT],
+                disabledWebsockets: res.config[DOTCMS_DISABLE_WEBSOCKET_PROTOCOL],
+                menu: res.menu,
+                websocketBaseURL: res.config[DOTCMS_WEBSOCKET_BASEURL],
+                websocketEndpoints: res.config[DOTCMS_WEBSOCKET_ENDPOINTS],
+                websocketProtocol: res.config[DOTCMS_WEBSOCKET_PROTOCOL],
+                websocketReconnectTime: res.config[DOTCMS_WEBSOCKET_RECONNECT_TIME],
+                websocketsSystemEventsEndpoint: res.config[DOTCMS_WEBSOCKET_ENDPOINTS][WEBSOCKET_SYSTEMEVENTS_ENDPOINT],
+            };
+
+            this.loggerService.debug('this.configParams', this.configParams);
+
+            this.waiting.forEach(obs => obs.next(this.configParams));
             this.waiting = null;
             return res;
         });
-    }
-
-    /**
-     * Returns the specified protocol for Websocket connections. Defaults to "ws".
-     *
-     * @returns {String} The Websocket protocol.
-     */
-    getWebsocketProtocol(): String {
-        return this.configParams.config[DOTCMS_WEBSOCKET_PROTOCOL];
-    }
-
-    /**
-     * Returns the base URL (domain name) used by clients to connect to the server
-     * end-point that will receive and handle connection requests.
-     *
-     * @returns {String} The Websocket base URL.
-     */
-    getWebsocketBaseUrl(): String {
-        return this.configParams.config[DOTCMS_WEBSOCKET_BASEURL];
-    }
-
-    /**
-     * Returns the URL to the System Events end-point that clients will use to get
-     * notifications on events created by dotCMS or custom code.
-     *
-     * @returns {String} The System Events end-point URL.
-     */
-    getSystemEventsEndpoint(): String {
-        return this.configParams.config[DOTCMS_WEBSOCKET_ENDPOINTS][WEBSOCKET_SYSTEMEVENTS_ENDPOINT];
-    }
-
-    getTimeToWaitToReconnect(): number {
-        return this.configParams.config[DOTCMS_WEBSOCKET_RECONNECT_TIME];
-    }
-
-    /**
-     * Returns the elements that make up the main navigation menu in the back-end. The
-     * items in the menu depend on the roles and permissions of the logged-in user.
-     *
-     * @returns {Array<any>} The menu items and sub-items.
-     */
-    getNavigationMenu(): Array<any> {
-        return this.configParams.menu;
-    }
-
-    /**
-     * Returns the default rest page count to display.
-     *
-     * @returns <number> The max number of sites to display after a search.
-     */
-    getDefaultRestPageCount(): number {
-        return this.configParams.config[DEFAULT_REST_PAGE_COUNT];
     }
 }

@@ -11,12 +11,8 @@ export class DotRouterService {
         this.router.navigate(['/c']);
     }
 
-    public goToLogin(parameters: any): void {
+    public goToLogin(parameters?: any): void {
         this.router.navigate(['/public/login'], parameters);
-    }
-
-    public goToLogin(): void {
-        this.router.navigate(['/public/login']);
     }
 
     public goToURL(url: string): void {

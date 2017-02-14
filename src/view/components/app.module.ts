@@ -183,6 +183,7 @@ import {LoggerService} from '../../api/services/logger.service';
 import {LogOutContainer} from './common/login/login-component/log-out-container';
 import {Config} from '../../api/util/config';
 import {StringUtils} from '../../api/util/string.utils';
+import {ProtocolFactory} from '../../api/services/protocol/socket-factory';
 
 const NGFACES_MODULES = [
     InputTextModule,
@@ -237,7 +238,8 @@ const NGFACES_MODULES = [
         StringFormat,
         UserModel,
         ...RULES_ENGINE_SERVICES,
-        {provide: LocationStrategy, useClass: HashLocationStrategy}
+        {provide: LocationStrategy, useClass: HashLocationStrategy},
+        ProtocolFactory
     ]
 })
 export class AppModule {

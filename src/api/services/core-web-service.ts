@@ -1,4 +1,4 @@
-import {Http, Response, Request, Headers, RequestOptionsArgs} from '@angular/http'
+import {Http, Response, Request, Headers, RequestOptionsArgs} from '@angular/http';
 import {Observable} from 'rxjs/Rx';
 import {Injectable} from '@angular/core';
 import {Subject} from 'rxjs/Subject';
@@ -118,6 +118,7 @@ export class CoreWebService {
   private getRequestOpts(options: any): Request {
     let headers: Headers = this._apiRoot.getDefaultRequestHeaders();
     let tempHeaders = options.headers ? options.headers : {'Content-Type': 'application/json'};
+
     Object.keys(tempHeaders).forEach((key) => {
       headers.set(key, tempHeaders[key]);
     });
@@ -128,7 +129,7 @@ export class CoreWebService {
 
     options.headers = headers;
 
-    if (!options.url.startsWith('http://')) {
+    if (options.url.indexOf('://') === -1) {
       options.url = `${this._apiRoot.baseUrl}api/${options.url}`;
     }
 
