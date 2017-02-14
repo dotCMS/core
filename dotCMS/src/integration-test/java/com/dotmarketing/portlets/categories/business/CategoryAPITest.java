@@ -46,7 +46,7 @@ public class CategoryAPITest extends IntegrationTestBase {
 
     @BeforeClass
     public static void prepare () throws Exception {
-    	
+
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 

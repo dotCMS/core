@@ -19,6 +19,8 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
@@ -26,6 +28,11 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 
 import java.util.*;
+
+import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import org.quartz.SimpleTrigger;
+import org.quartz.Trigger;
 
 /**
  * Provides utility methods to interact with asset information added to the
@@ -265,7 +272,8 @@ public class PublisherAPIImpl extends PublisherAPI{
                   throw new DotPublisherException( "Unable to add element " + idToProcess + " to publish queue table: " + e.getMessage(), e );
               }
           }
-
+    	firePublisherQueueNow();
+    	  
         //Preparing and returning the response status object
         resultMap.put( "errorMessages", errorsList );
         resultMap.put( "errors", errorsList.size() );
@@ -273,7 +281,29 @@ public class PublisherAPIImpl extends PublisherAPI{
         resultMap.put( "total", identifiers != null ? identifiers.size() : 0 );
         return resultMap;
     }
-
+    
+    public void firePublisherQueueNow(){
+      //SCHEDULE PUBLISH QUEUE JOB for NOW
+      try {
+        Scheduler sched = QuartzUtils.getStandardScheduler();
+        JobDetail job = sched.getJobDetail("PublishQueueJob"  , "dotcms_jobs");
+        if(job==null) return;
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.SECOND, Config.getIntProperty("PUSH_PUBLISHING_FIRING_DELAY_SEC", 2));
+        Trigger trigger = new SimpleTrigger("PublishQueueJob"+ System.currentTimeMillis(),calendar.getTime() );
+        trigger.setJobName(job.getName());
+        trigger.setJobGroup(job.getGroup());
+        trigger.setJobDataMap(job.getJobDataMap());
+        sched.scheduleJob(trigger);
+        // quartz will throw this error if it is already running
+      } catch (org.quartz.ObjectAlreadyExistsException e) {
+          Logger.debug(this.getClass(), e.getMessage(),e);
+      }
+      catch (Exception e) {
+          Logger.error(this.getClass(), e.getMessage(),e);
+      }
+   } 
+    
 	private Collection<String> getAssets(String bundleId) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		dc.setSQL( SELECT_ASSET );

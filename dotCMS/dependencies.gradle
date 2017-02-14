@@ -84,6 +84,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jackson-jaxrs-json-provider', version:'2.6.0-rc1_2'
     compile group: 'com.dotcms.lib', name: 'dot.jackson-jaxrs-base', version:'2.6.0-rc1_2'
     compile group: 'com.dotcms.lib', name: 'dot.jackson-module-jaxb-annotations', version:'2.6.0-rc2_2'
+
     compile group: 'com.dotcms.lib', name: 'dot.jamm', version:'0.2.5_2'
     compile group: 'com.dotcms.lib', name: 'dot.jasperreports', version:'3.5.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.javacsv', version:'ukv_2'
@@ -261,8 +262,11 @@ dependencies {
 	compile group: 'com.twelvemonkeys.imageio', name: 'imageio-thumbsdb', version:'3.2.1'
 	compile group: 'com.twelvemonkeys.imageio', name: 'imageio-batik', version:'3.2.1'
 	compile group: 'com.twelvemonkeys.imageio', name: 'imageio-clippath', version:'3.2.1'
-	compile group: 'com.twelvemonkeys.servlet', name: 'servlet', version:'3.2.1'
+    compile group: 'com.twelvemonkeys.servlet', name: 'servlet', version:'3.2.1'
     compile 'com.github.ben-manes.caffeine:caffeine:2.3.3'
+    compile group: 'org.apache.pdfbox', name: 'pdfbox', version: '2.0.1'
+    compile group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.56'
+    compile group: 'com.beust', name: 'jcommander', version: '1.48'
 
     /**
      * Order matters here: JUNIT must come after hamcrest.
@@ -289,6 +293,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.http.bundle', version:'2.2.0_3'
 
     compile group: 'org.apache.xmlgraphics', name: 'batik-rasterizer', version:'1.8'
+    compile group: 'com.amazonaws', name: 'aws-java-sdk', version:'1.11.66'
     compile group: 'org.apache.xmlgraphics', name: 'batik-anim', version:'1.8'
     compile group: 'org.apache.xmlgraphics', name: 'xmlgraphics-commons', version:'1.5'
     compile group: 'javax.websocket', name: 'javax.websocket-api', version:'1.1'

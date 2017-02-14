@@ -193,7 +193,7 @@ public class VersionableAPIImpl implements VersionableAPI {
     }
 
     public boolean isLocked(Versionable ver) throws DotDataException, DotStateException, DotSecurityException {
-        if(!UtilMethods.isSet(ver) || !InodeUtils.isSet(ver.getVersionId())) {
+        if(!UtilMethods.isSet(ver) || !InodeUtils.isSet(ver.getVersionId())){
             return false;
         }
         Identifier ident = APILocator.getIdentifierAPI().find(ver.getVersionId());

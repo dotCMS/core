@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <project name="dotcms-tests" default="test-dotcms" basedir=".">
-	<!-- include ant-contrib -->
+    <!-- include ant-contrib -->
     <taskdef resource="net/sf/antcontrib/antlib.xml"/>
 
     <taskdef resource="cactus.tasks">
@@ -13,8 +13,8 @@
             <pathelement location="dotserver/tomcat/webapps/ROOT/WEB-INF/lib/dot.tika-app-1.3_3.jar"/>
         </classpath>
     </taskdef>
-    
-    <path id="files-classpath">      
+
+    <path id="files-classpath">
         <fileset dir="dotserver/tomcat/lib">
             <include name="*.jar" />
         </fileset>

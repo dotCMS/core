@@ -175,8 +175,8 @@ create table User_ (
 	failedLoginAttempts integer,
 	agreedToTermsOfUse bool,
 	active_ bool,
-	delete_in_progress BOOLEAN DEFAULT FALSE,
-	delete_date TIMESTAMP
+  delete_in_progress BOOLEAN DEFAULT FALSE,
+  delete_date TIMESTAMP
 );
 
 create table UserTracker (

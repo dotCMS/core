@@ -458,24 +458,24 @@ public class BrowserAPI {
 					fileAsset.getParent() != null ? fileAsset
 							.getParent() : "");
 			fileMap.put("isContentlet", false);
-            // END GRAZIANO issue-12-dnd-template
-            Language lang = null;
-            
-            if (contentlet != null) {
-                fileMap.put("identifier", contentlet.getIdentifier());
-                fileMap.put("inode", contentlet.getInode());
-                fileMap.put("isLocked", contentlet.isLocked());
-                fileMap.put("isContentlet", true);
-                lang = langAPI.getLanguage(contentlet.getLanguageId());
-            }
-            else{
-                //This is a Legacy File. Add the default Language to FileMap
-                lang = langAPI.getDefaultLanguage();
-            }
-            //Add Language Attributes to FileMap, required in Website Browser
-            fileMap.put("languageId", lang.getId());
-            fileMap.put("languageCode", lang.getLanguageCode());
-            fileMap.put("countryCode", lang.getCountryCode());
+			// END GRAZIANO issue-12-dnd-template
+			Language lang = null;
+
+			if (contentlet != null) {
+			    fileMap.put("identifier", contentlet.getIdentifier());
+			    fileMap.put("inode", contentlet.getInode());
+			    fileMap.put("isLocked", contentlet.isLocked());
+			    fileMap.put("isContentlet", true);
+			    lang = langAPI.getLanguage(contentlet.getLanguageId());
+			}
+			else{
+			    //This is a Legacy File. Add the default Language to FileMap
+			    lang = langAPI.getDefaultLanguage();
+			}
+			//Add Language Attributes to FileMap, required in Website Browser
+			fileMap.put("languageId", lang.getId());
+			fileMap.put("languageCode", lang.getLanguageCode());
+			fileMap.put("countryCode", lang.getCountryCode());
 
             fileMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(file));
 

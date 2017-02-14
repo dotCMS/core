@@ -1,6 +1,5 @@
 package com.dotcms.publishing;
 
-import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 
@@ -24,61 +23,63 @@ public class PublisherAPIImpl implements PublisherAPI {
 
         try {
 
-            List<Publisher> pubs = new ArrayList<Publisher>();
-            List<Class> bundlers = new ArrayList<Class>();
             List<IBundler> confBundlers = new ArrayList<IBundler>();
 
             // init publishers
             for ( Class<Publisher> c : config.getPublishers() ) {
+                // Process config
                 Publisher p = c.newInstance();
                 config = p.init( config );
-                pubs.add( p );
-                // get bundlers
-                for ( Class clazz : p.getBundlers() ) {
-                    if ( !bundlers.contains( clazz ) ) {
-                        bundlers.add( clazz );
-                    }
-                }
-            }
 
-            if ( config.isIncremental() && config.getEndDate() == null && config.getStartDate() == null ) {
-                // if its incremental and start/end dates aren't se we take it from latest bundle
-                if ( BundlerUtil.bundleExists( config ) ) {
-                    PublisherConfig p = BundlerUtil.readBundleXml( config );
-                    if ( p.getEndDate() != null ) {
-                        config.setStartDate( p.getEndDate() );
-                        config.setEndDate( new Date() );
+                if ( config.isIncremental() && config.getEndDate() == null && config.getStartDate() == null ) {
+                    // if its incremental and start/end dates aren't se we take it from latest bundle
+                    if ( BundlerUtil.bundleExists( config ) ) {
+                        PublisherConfig pc = BundlerUtil.readBundleXml( config );
+                        if ( pc.getEndDate() != null ) {
+                            config.setStartDate( pc.getEndDate() );
+                            config.setEndDate( new Date() );
+                        } else {
+                            config.setStartDate( null );
+                            config.setEndDate( new Date() );
+                        }
                     } else {
                         config.setStartDate( null );
                         config.setEndDate( new Date() );
                     }
-                } else {
-                    config.setStartDate( null );
-                    config.setEndDate( new Date() );
                 }
-            }
 
-            // Run bundlers
-            File bundleRoot = BundlerUtil.getBundleRoot( config );
+                // Run bundlers
+                File bundleRoot = BundlerUtil.getBundleRoot( config );
 
-            BundlerUtil.writeBundleXML( config );
-            for ( Class<IBundler> c : bundlers ) {
+                if (config.isStatic()) {
+                    //If static we just want to save the things that we need,
+                    // at this point only the id, static and operation.
+                	PublisherConfig pcClone = new PublisherConfig();
+                	pcClone.setId(config.getId());
+                	pcClone.setStatic(true);
+                	pcClone.setOperation(config.getOperation());
+                    BundlerUtil.writeBundleXML( pcClone );
+                } else {
+                    BundlerUtil.writeBundleXML( config );
+                }
 
-                IBundler bundler = c.newInstance();
-                confBundlers.add( bundler );
-                bundler.setConfig( config );
-                BundlerStatus bs = new BundlerStatus( bundler.getClass().getName() );
-                status.addToBs( bs );
-                //Generate the bundler
-                bundler.generate( bundleRoot, bs );
+                for ( Class<IBundler> clazz : p.getBundlers() ) {
+                    IBundler bundler = clazz.newInstance();
+                    confBundlers.add( bundler );
+                    bundler.setConfig( config );
+                    bundler.setPublisher(p);
+                    BundlerStatus bs = new BundlerStatus( bundler.getClass().getName() );
+                    status.addToBs( bs );
+                    //Generate the bundler
+                    Logger.info(this, "Start of Bundler: " + clazz.getSimpleName());
+                    bundler.generate( bundleRoot, bs );
+                    Logger.info(this, "End of Bundler: " + clazz.getSimpleName());
+                }
+
+                p.process( status );
             }
 
             config.setBundlers( confBundlers );
-
-            // run publishers
-            for ( Publisher p : pubs ) {
-                p.process( status );
-            }
 
             PushPublishLogger.log( this.getClass(), "Completed Publishing Task", config.getId() );
         } catch ( Exception e ) {

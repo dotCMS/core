@@ -1330,12 +1330,12 @@ create table workflow_task (
    mod_date datetime null,
    due_date datetime null,
    created_by NVARCHAR(255) null,
-   assigned_to NVARCHAR(255) null,
+   assigned_to NVARCHAR(36) null,
    belongs_to NVARCHAR(255) null,
    title NVARCHAR(255) null,
    description NVARCHAR(MAX) null,
-   status NVARCHAR(255) null,
-   webasset NVARCHAR(255) null,
+   status NVARCHAR(36) null,
+   webasset NVARCHAR(36) null,
    primary key (id)
 );
 create table tag_inode (
@@ -2748,13 +2748,13 @@ alter table cms_roles_ir add constraint FK_cms_roles_ir_ep foreign key (endpoint
 
 ---Server Action
 create table cluster_server_action(
-    server_action_id NVARCHAR(36) not null, 
-    originator_id NVARCHAR(36) not null, 
-    server_id NVARCHAR(36) not null, 
-    failed bit not null, 
-    response NVARCHAR(2048), 
+    server_action_id NVARCHAR(36) not null,
+    originator_id NVARCHAR(36) not null,
+    server_id NVARCHAR(36) not null,
+    failed bit not null,
+    response NVARCHAR(2048),
     action_id NVARCHAR(1024) not null,
-    completed bit not null, 
+    completed bit not null,
     entered_date datetime not null,
     time_out_seconds bigint not null,
     PRIMARY KEY (server_action_id)
