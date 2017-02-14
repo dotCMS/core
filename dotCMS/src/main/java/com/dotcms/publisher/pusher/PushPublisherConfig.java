@@ -22,12 +22,7 @@ import com.dotmarketing.portlets.rules.model.Rule;
  */
 public class PushPublisherConfig extends PublisherConfig {
 
-	public static enum Operation {
-		PUBLISH,
-		UNPUBLISH
-	}
-
-	public static enum AssetTypes {
+	public enum AssetTypes {
 		TEMPLATES,
 		HTMLPAGES,
 		CONTAINERS,
@@ -40,7 +35,6 @@ public class PushPublisherConfig extends PublisherConfig {
 		RULES
 	}
 
-	private Operation operation;
 	private List<PublishingEndPoint> endpoints;
 	private boolean downloading = false;
 
@@ -58,27 +52,6 @@ public class PushPublisherConfig extends PublisherConfig {
 		this.switchIndexWhenDone = switchIndexWhenDone;
 	}
 
-	private enum MyConfig {
-		RUN_NOW,INDEX_NAME
-	}
-
-	public boolean runNow(){
-		return this.get(MyConfig.RUN_NOW.toString()) !=null && new Boolean((String) this.get(MyConfig.RUN_NOW.toString()));
-	}
-
-    /**
-     * Returns the type of operation we will apply to the bundle (PUBLISH/UNPUBLISH).
-     *
-     * @return
-     */
-    public Operation getOperation() {
-		return operation;
-	}
-
-	public void setOperation(Operation operation) {
-		this.operation = operation;
-	}
-
 	public List<PublishingEndPoint> getEndpoints() {
 		return endpoints;
 	}
@@ -87,24 +60,12 @@ public class PushPublisherConfig extends PublisherConfig {
 		this.endpoints = endpoints;
 	}
 
-	public void setRunNow(boolean once){
-		this.put(MyConfig.RUN_NOW.toString(), once);
-	}
-
 	public String getIndexName(){
 		return (String) this.get(MyConfig.INDEX_NAME.toString());
 	}
 
 	public void setIndexName(String name){
 		this.put(MyConfig.INDEX_NAME.toString(), name);
-	}
-
-	@SuppressWarnings("rawtypes")
-	@Override
-	public List<Class> getPublishers(){
-		List<Class> clazz = new ArrayList<Class>();
-		clazz.add(PushPublisher.class);
-		return clazz;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -161,15 +122,6 @@ public class PushPublisherConfig extends PublisherConfig {
 		return (Set<String>) get(AssetTypes.WORKFLOWS.name());
 	}
 
-	@SuppressWarnings("unchecked")
-	public Set<String> getLanguages() {
-		if(get(AssetTypes.LANGUAGES.name()) == null){
-			Set<String> languagesToBuild =   new HashSet<String>();
-			put(AssetTypes.LANGUAGES.name(), languagesToBuild);
-		}
-		return (Set<String>) get(AssetTypes.LANGUAGES.name());
-	}
-
 	/**
 	 * Gets the list of {@link Rule} objects that will be pushed to the
 	 * destination end-point.
@@ -218,9 +170,7 @@ public class PushPublisherConfig extends PublisherConfig {
 		put(AssetTypes.WORKFLOWS.name(), workflows);
 	}
 
-	public void setLanguages(Set<String> languages) {
-		put(AssetTypes.LANGUAGES.name(), languages);
-	}
+
 
 	/**
 	 * Sets the list of {@link Rule} objects that will be pushed to the

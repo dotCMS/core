@@ -37,7 +37,7 @@ public class CSSPreProcessServlet extends HttpServlet {
     private static final long serialVersionUID = -3315180323197314439L;
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         
         try {
             Host host = WebAPILocator.getHostWebAPI().getCurrentHost(req);

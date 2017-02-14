@@ -9,8 +9,8 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.dotcms.publisher.environment.business.EnvironmentAPI"%>
 <%@ page import="com.dotcms.publisher.environment.bean.Environment"%>
-<%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
+<%@ page import="com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher" %>
 
 <%	if( LicenseUtil.getLevel()<300){ %>
 <%@ include file="/html/portlet/ext/cmsconfig/publishing/not_licensed.jsp" %>
@@ -495,7 +495,7 @@ function getIntegrityResult(identifier) {
           	// Getting the fileassets data
             var fileAssetsData = data.fileassets;
             populateTabContent(fileAssetsData, "fileAssets");
-            
+
           	// Getting the roles data
             var cmsRolesData = data.cms_roles;
             populateTabContent(cmsRolesData, "cms_roles");
@@ -867,51 +867,51 @@ function deleteEnvPushHistory(envId) {
 </div>
 
 <table  class="listingTable">
-    <tr>
+        <tr>
         <th colspan="2" nowrap="nowrap">
-            <%= LanguageUtil.get(pageContext, "publisher_Environment_Name") %>
-        </th>
-        <th nowrap="nowrap" width="100%" >
-            <%= LanguageUtil.get(pageContext, "Servers") %>
-        </th>
-        <th nowrap="nowrap">
-            <%= LanguageUtil.get(pageContext, "publisher_Environment_Push_Mode") %>
-        </th>
-        <th nowrap="nowrap">
-            <%= LanguageUtil.get(pageContext, "Actions") %>
-        </th>
-    </tr>
+                <%= LanguageUtil.get(pageContext, "publisher_Environment_Name") %>
+            </th>
+            <th nowrap="nowrap" width="100%" >
+                <%= LanguageUtil.get(pageContext, "publisher_Endpoints") %>
+            </th>
+            <th nowrap="nowrap">
+                <%= LanguageUtil.get(pageContext, "publisher_Environment_Push_Mode") %>
+            </th>
+            <th nowrap="nowrap">
+                <%= LanguageUtil.get(pageContext, "Actions") %>
+            </th>
+        </tr>
 
-    <%
-        boolean hasEnvironments = false;
-        for(Environment environment : environments){
-            hasEnvironments=true;%>
+        <%
+            boolean hasEnvironments = false;
+            for(Environment environment : environments){
+                hasEnvironments=true;%>
 
     <tr>
         <td class="listingTable__actions">
-            <a style="cursor: pointer" onclick="deleteEnvironment('<%=environment.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Environment") %>">
-                <span class="deleteIcon"></span></a>&nbsp;
-            <a style="cursor: pointer" onclick="goToEditEnvironment('<%=environment.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Environment_Title") %>">
-                <span class="editIcon"></span></a>
-        </td>
-        <td valign="top" nowrap="nowrap" style="cursor: pointer" onclick="goToEditEnvironment('<%=environment.getId()%>')">
-            <b><%=environment.getName()%></b>
-        </td>
+                <a style="cursor: pointer" onclick="deleteEnvironment('<%=environment.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Environment") %>">
+                    <span class="deleteIcon"></span></a>&nbsp;
+                <a style="cursor: pointer" onclick="goToEditEnvironment('<%=environment.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Environment_Title") %>">
+                    <span class="editIcon"></span></a>
+            </td>
+            <td valign="top" nowrap="nowrap" style="cursor: pointer" onclick="goToEditEnvironment('<%=environment.getId()%>')">
+                <b><%=environment.getName()%></b>
+            </td>
         <td valign="top">
 
-            <%
-                List<PublishingEndPoint> environmentEndPoints = pepAPI.findSendingEndPointsByEnvironment(environment.getId());
-                boolean hasRow = false;
-                int i = 0;
-                for(PublishingEndPoint endpoint : environmentEndPoints){
-                    if(endpoint.isSending()){
-                        continue;
-                    }
-                    hasRow=true;%>
+                <%
+                    List<PublishingEndPoint> environmentEndPoints = pepAPI.findSendingEndPointsByEnvironment(environment.getId());
+                    boolean hasRow = false;
+                    int i = 0;
+                    for(PublishingEndPoint endpoint : environmentEndPoints){
+                        if(endpoint.isSending()){
+                            continue;
+                        }
+                        hasRow=true;%>
                 <div style="padding:10px 8px; margin: -10px 0; border-left:1px solid #ECEDEE;border-right:1px solid #ECEDEE;">
                     <div class="buttonsGroup">
 
-                        <%if(environment.getPushToAll() || i == 0){%>
+                        <%if((environment.getPushToAll() || i == 0) && !"awss3".equalsIgnoreCase(endpoint.getProtocol())){%>
                         <div class="integrityCheckActionsGroup" style="float:right; display:inline-flex;" id="group-<%=endpoint.getId()%>">
                             <button dojoType="dijit.form.Button" onClick="checkIntegrity('<%=endpoint.getId()%>');" id="checkIntegrityButton<%=endpoint.getId()%>" iconClass="dropIcon" style="display: none;">
                                 <%= LanguageUtil.get( pageContext, "CheckIntegrity" ) %>
@@ -941,48 +941,76 @@ function deleteEnvPushHistory(envId) {
                         </div>
                         <div>
                             <%=("https".equals(endpoint.getProtocol())) ? "<span class='encryptIcon'></span>": "<span class='shimIcon'></span>" %>
-                            <i style="color:#888;"><%=endpoint.getProtocol()%>://<%=endpoint.getAddress()%>:<%=endpoint.getPort()%></i>
+                            <%if (!"awss3".equalsIgnoreCase(endpoint.getProtocol())){%>
+                            	<i style="color:#888;"><%=endpoint.getProtocol()%>://<%=endpoint.getAddress()%>:<%=endpoint.getPort()%></i>
+	                        <%} else {
+	                        	String endpointString = "aws-s3";
+								try {
+									java.util.Properties props = new java.util.Properties();
+									props.load(
+										new java.io.StringReader(
+											com.dotmarketing.cms.factories.PublicEncryptionFactory.decryptString(
+												endpoint.getAuthKey().toString()
+											)
+										)
+									);
+
+									String bucketID = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_BUCKET_ID);
+									if (com.dotmarketing.util.UtilMethods.isSet(bucketID)) {
+
+										endpointString += "://" + bucketID;
+
+										String bucketPrefix = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_BUCKET_ROOT_PREFIX);
+										if (com.dotmarketing.util.UtilMethods.isSet(bucketPrefix)) {
+
+											endpointString += "/" + bucketPrefix;
+										}
+									}
+								} catch (Exception ex) {}
+	                		%>
+                            	<i style="color:#888;"><%=endpointString%></i>
+	                        <%}%>
                         </div>
                     </div>
                 </div>
-            <%
-                    i++;
-                }%>
+                <%
+                        i++;
+                    }%>
 
-            <%if(!hasRow){ %>
-            <div  style="padding:5px;">
-                <%= LanguageUtil.get(pageContext, "publisher_No_Servers") %> <a style="text-decoration: underline;" href="javascript:goToAddEndpoint('<%=environment.getId()%>', 'false');"><%= LanguageUtil.get(pageContext, "publisher_add_one_now") %></a>
-            </div>
-            <%}%>
+                <%if(!hasRow){ %>
+                <div  style="padding:5px;">
+                    <%= LanguageUtil.get(pageContext, "publisher_No_Servers") %> <a style="text-decoration: underline;" href="javascript:goToAddEndpoint('<%=environment.getId()%>', 'false');"><%= LanguageUtil.get(pageContext, "publisher_add_one_now") %></a>
+                </div>
+                <%}%>
 
-        </td>
-        <td align="center" valign="top" nowrap="nowrap">
-            <%if(environment.getPushToAll()){%>
-            <%= LanguageUtil.get(pageContext, "publisher_Environments_Push_To_All") %>
-            <%}else{ %>
-            <%= LanguageUtil.get(pageContext, "publisher_Environments_Push_To_One") %>
-            <%} %>
-        </td>
+            </td>
+            <td align="center" valign="top" nowrap="nowrap">
+                <%if(environment.getPushToAll()){%>
+                <%= LanguageUtil.get(pageContext, "publisher_Environments_Push_To_All") %>
+                <%}else{ %>
+                <%= LanguageUtil.get(pageContext, "publisher_Environments_Push_To_One") %>
+                <%} %>
+            </td>
         <td valign="top" nowrap="nowrap" style=" border-left:1px solid #ECEDEE">
             <button dojoType="dijit.form.Button" onClick="goToAddEndpoint('<%=environment.getId()%>', 'false');">
-                <%= LanguageUtil.get(pageContext, "publisher_Add_Endpoint") %>
-            </button>
+                    <%= LanguageUtil.get(pageContext, "publisher_Add_Endpoint") %>
+                </button>
             <button dojoType="dijit.form.Button" onClick="deleteEnvPushHistory('<%=environment.getId()%>');" class="dijitButtonFlat">
-                <%= LanguageUtil.get(pageContext, "publisher_delete_asset_history") %>
-            </button>
-        </td>
+                    <%= LanguageUtil.get(pageContext, "publisher_delete_asset_history") %>
+                </button>
+            </td>
 
-    </tr>
+        </tr>
 
-    <%}%>
+        <%}%>
 
-    <%if(!hasEnvironments){ %>
-    <tr>
-        <td colspan="100" align="center">
-            <%= LanguageUtil.get(pageContext, "publisher_no_environments") %><a href="javascript:goToAddEnvironment();"> <%= LanguageUtil.get(pageContext, "publisher_add_one_now") %></a>
-        </td>
-    </tr>
-    <%}%>
+        <%if(!hasEnvironments){ %>
+        <tr>
+            <td colspan="100" align="center">
+                <%= LanguageUtil.get(pageContext, "publisher_no_environments") %><a href="javascript:goToAddEnvironment();"> <%= LanguageUtil.get(pageContext, "publisher_add_one_now") %></a>
+            </td>
+        </tr>
+        <%}%>
 
 </table>
 
@@ -999,52 +1027,52 @@ function deleteEnvPushHistory(envId) {
     </div>
     <div class="portlet-toolbar__actions-primary">
         <button dojoType="dijit.form.Button" onClick="goToAddEndpoint(null, 'true');" iconClass="plusIcon">
-            <%= LanguageUtil.get(pageContext, "publisher_Add_Endpoint") %>
+            <%= LanguageUtil.get(pageContext, "publisher_Add_Server") %>
         </button>
     </div>
 </div>
 
 <table class="listingTable">
-    <tr>
-        <th style="width:40px"></th>
-        <th><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Server_Name") %></th>
+        <tr>
+            <th style="width:40px"></th>
+            <th><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Server_Name") %></th>
 
-    </tr>
-    <%
-        boolean hasRow = false;
-        for(PublishingEndPoint endpoint : endpoints){
-            if(!endpoint.isSending()){
-                continue;
-            }
-            hasRow=true;%>
-    <tr <%=(!endpoint.isEnabled()?" style='color:silver;'":"")%>>
+        </tr>
+        <%
+            boolean hasRow = false;
+            for(PublishingEndPoint endpoint : endpoints){
+                if(!endpoint.isSending()){
+                    continue;
+                }
+                hasRow=true;%>
+        <tr <%=(!endpoint.isEnabled()?" style='color:silver;'":"")%>>
         <td class="listingTable__actions">
-            <a style="cursor: pointer" onclick="deleteEndpoint('<%=endpoint.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>">
-                <span class="deleteIcon"></span></a>&nbsp;
-            <a style="cursor: pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>', null, 'true')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Endpoint_Title") %>">
-                <span class="editIcon"></span></a>
-        </td>
+                <a style="cursor: pointer" onclick="deleteEndpoint('<%=endpoint.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>">
+                    <span class="deleteIcon"></span></a>&nbsp;
+                <a style="cursor: pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>', null, 'true')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Endpoint_Title") %>">
+                    <span class="editIcon"></span></a>
+            </td>
 
-        <td style="cursor: pointer" width="100%" onclick="goToEditEndpoint('<%=endpoint.getId()%>', null, 'true')">
-            <b><%=(endpoint.isEnabled()?"<span class='liveIcon'></span>":"<span class='greyDotIcon' style='opacity:.4'></span>")%><%=endpoint.getServerName()%></b>
-            <br>
+            <td style="cursor: pointer" width="100%" onclick="goToEditEndpoint('<%=endpoint.getId()%>', null, 'true')">
+                <b><%=(endpoint.isEnabled()?"<span class='liveIcon'></span>":"<span class='greyDotIcon' style='opacity:.4'></span>")%><%=endpoint.getServerName()%></b>
+                <br>
             <i></span><%=endpoint.getAddress()%></i>
-        </td>
+            </td>
 
 
 
-    </tr>
-    <%}%>
+        </tr>
+        <%}%>
 
-    <%if(!hasRow){ %>
+        <%if(!hasRow){ %>
 
-    <tr>
-        <td colspan="100" align="center">
-            <%= LanguageUtil.get(pageContext, "publisher_no_servers_set_up") %><a href="javascript:goToAddEndpoint(null, 'true');"> <%= LanguageUtil.get(pageContext, "publisher_add_one_now") %></a>
-        </td>
+        <tr>
+            <td colspan="100" align="center">
+                <%= LanguageUtil.get(pageContext, "publisher_no_servers_set_up") %><a href="javascript:goToAddEndpoint(null, 'true');"> <%= LanguageUtil.get(pageContext, "publisher_add_one_now") %></a>
+            </td>
 
-    </tr>
-    <%}%>
+        </tr>
+        <%}%>
 </table>
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
 <%--END OF END POINTS--%>

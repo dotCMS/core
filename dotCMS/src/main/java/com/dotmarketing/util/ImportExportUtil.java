@@ -32,9 +32,7 @@ import java.util.zip.ZipFile;
 
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister;
-
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
@@ -61,6 +59,7 @@ import com.liferay.portal.model.PortletPreferences;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 
 
 /**
@@ -116,6 +115,8 @@ public class ImportExportUtil {
     private List<File> tagFiles = new ArrayList<File>();
     private File workflowSchemaFile = null;
     private File ruleFile = null;
+    
+    private static final String CHARSET = UtilMethods.getCharsetConfiguration();
 
     public ImportExportUtil() {
         MaintenanceUtil.flushCache();
@@ -356,10 +357,10 @@ public class ImportExportUtil {
                 return;
             }
 
-            _xstream = new XStream();
+            _xstream = new XStream(new DomDriver(CHARSET));
 
             try{
-                charStream = new InputStreamReader(new FileInputStream(file), "UTF-8");
+                charStream = new InputStreamReader(new FileInputStream(file), CHARSET);
             }catch (UnsupportedEncodingException uet) {
                 Logger.error(this, "Reader doesn't not recoginize Encoding type: ", uet);
             }
@@ -455,7 +456,7 @@ public class ImportExportUtil {
              */
 
             final List<Identifier> folderIdents=new ArrayList<Identifier>();
-            final XStream xstream = new XStream();
+            final XStream xstream = new XStream(new DomDriver(CHARSET));
 
             // collecting all folder identifiers
             for(File ff : identifiersXML) {
@@ -1145,12 +1146,12 @@ public class ImportExportUtil {
                     return;
                 }
             }
-            _xstream = new XStream();
+            _xstream = new XStream(new DomDriver(CHARSET));
             out.println("Importing:\t" + _className);
             Logger.info(this, "Importing:\t" + _className);
 
             try{
-                charStream = new InputStreamReader(new FileInputStream(f), "UTF-8");
+                charStream = new InputStreamReader(new FileInputStream(f), CHARSET);
             }catch (UnsupportedEncodingException uet) {
                 Logger.error(this, "Reader doesn't not recoginize Encoding type: ", uet);
             }

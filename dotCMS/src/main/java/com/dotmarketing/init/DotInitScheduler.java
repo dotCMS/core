@@ -769,7 +769,8 @@ public class DotInitScheduler {
             String jobGroup = DOTCMS_JOB_GROUP_NAME;
             String triggerName = "trigger23";
             String triggerGroup = "group23";
-            if(Config.getBooleanProperty("ENABLE_REMOVE_INACTIVE_CLUSTER_SERVER", true) &&  Config.getBooleanProperty( "ENABLE_SERVER_HEARTBEAT", true )) {
+            if(Config.getBooleanProperty("ENABLE_REMOVE_INACTIVE_CLUSTER_SERVER", true)&& Config
+				.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", true)) {
 				try {
 					isNew = false;
 					

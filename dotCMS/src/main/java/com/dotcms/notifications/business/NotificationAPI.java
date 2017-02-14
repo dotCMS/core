@@ -26,7 +26,7 @@ import java.util.Locale;
  * as usual and are able to receive alerts indicating, for example, if the
  * process they executed finished correctly or failed to finish due to any
  * error.
- * 
+ *
  * @author Daniel Silva
  * @version 3.0, 3.7
  * @since Feb 3, 2014
@@ -34,25 +34,25 @@ import java.util.Locale;
  */
 public interface NotificationAPI extends Serializable {
 
-	/**
-	 * Sends an information message to the Notification queue.
-	 * 
-	 * @param message
-	 *            - The message that will be displayed to the user.
-	 * @param userId
-	 *            - The ID of the user that triggered this notification.
-	 */
-	void info(String message, String userId);
+    /**
+     * Sends an information message to the Notification queue.
+     *
+     * @param message
+     *            - The message that will be displayed to the user.
+     * @param userId
+     *            - The ID of the user that triggered this notification.
+     */
+    void info(String message, String userId);
 
-	/**
-	 * Sends an error message to the Notification queue.
-	 * 
-	 * @param message
-	 *            - The message that will be displayed to the user.
-	 * @param userId
-	 *            - The ID of the user that triggered this notification.
-	 */
-	void error(String message, String userId);
+    /**
+     * Sends an error message to the Notification queue.
+     *
+     * @param message
+     *            - The message that will be displayed to the user.
+     * @param userId
+     *            - The ID of the user that triggered this notification.
+     */
+    void error(String message, String userId);
 
     /**
      * Sends a customized message to the Notification queue.
@@ -152,154 +152,154 @@ public interface NotificationAPI extends Serializable {
                               NotificationLevel level, NotificationType type, Visibility visibility, String visibilityId,
                               String userId, Locale locale) throws DotDataException;
 
-	/**
-	 * Returns a notification based on its group and user id.
-	 *
-	 * @param userId The user id of the owner of the notification
-	 * @param groupId The group id of the notification. Multiple notifications can share the same group id, that's why
-	 *            the notification key is the group id and the user id.
-	 *            <br>
-	 *            Multiple notifications with the same group id exists when an Event notification with for example
-	 *            Visibility.ROLE is created, in that case a notification is created for each user on that role sharing
-	 *            the same group id but just one event will handle the whole notification group.
-	 * @return The {@link Notification} object.
-	 * @throws DotDataException
-	 *             An error occurred when finding the notification from the
-	 *             database.
-	 */
-	Notification findNotification(String userId, String groupId) throws DotDataException;
+    /**
+     * Returns a notification based on its group and user id.
+     *
+     * @param userId The user id of the owner of the notification
+     * @param groupId The group id of the notification. Multiple notifications can share the same group id, that's why
+     *            the notification key is the group id and the user id.
+     *            <br>
+     *            Multiple notifications with the same group id exists when an Event notification with for example
+     *            Visibility.ROLE is created, in that case a notification is created for each user on that role sharing
+     *            the same group id but just one event will handle the whole notification group.
+     * @return The {@link Notification} object.
+     * @throws DotDataException
+     *             An error occurred when finding the notification from the
+     *             database.
+     */
+    Notification findNotification(String userId, String groupId) throws DotDataException;
 
-	/**
-	 * Deletes a notification based on its group and user id.
-	 *
-	 * @param userId The user id of the owner of the notification
-	 * @param groupId The group id of the notification. Multiple notifications can share the same group id, that's why
-	 *            the notification key is the group id and the user id.
-	 *            <br>
-	 *            Multiple notifications with the same group id exists when an Event notification with for example
-	 *            Visibility.ROLE is created, in that case a notification is created for each user on that role sharing
-	 *            the same group id but just one event will handle the whole notification group.
-	 * @throws DotDataException
-	 *             An error occurred when deleting the notification in the
-	 *             database.
-	 */
-	void deleteNotification(String userId, String groupId) throws DotDataException;
+    /**
+     * Deletes a notification based on its group and user id.
+     *
+     * @param userId The user id of the owner of the notification
+     * @param groupId The group id of the notification. Multiple notifications can share the same group id, that's why
+     *            the notification key is the group id and the user id.
+     *            <br>
+     *            Multiple notifications with the same group id exists when an Event notification with for example
+     *            Visibility.ROLE is created, in that case a notification is created for each user on that role sharing
+     *            the same group id but just one event will handle the whole notification group.
+     * @throws DotDataException
+     *             An error occurred when deleting the notification in the
+     *             database.
+     */
+    void deleteNotification(String userId, String groupId) throws DotDataException;
 
-	/**
-	 * Deletes a group of notifications based on its user id and groups id.
-	 *
-	 * @param userId The user id of the owner of the notification
-	 * @param groupId The group ids of the notifications. Multiple notifications can share the same group id, that's why
-	 *            the notification key is the group id and the user id.
-	 *            <br>
-	 *            Multiple notifications with the same group id exists when an Event notification with for example
-	 *            Visibility.ROLE is created, in that case a notification is created for each user on that role sharing
-	 *            the same group id but just one event will handle the whole notification group.
-	 * @throws DotDataException
-	 *             An error occurred when deleting the notification in the
-	 *             database.
-	 */
-	void deleteNotifications(String userId, String... groupId) throws DotDataException;
+    /**
+     * Deletes a group of notifications based on its user id and groups id.
+     *
+     * @param userId The user id of the owner of the notification
+     * @param groupId The group ids of the notifications. Multiple notifications can share the same group id, that's why
+     *            the notification key is the group id and the user id.
+     *            <br>
+     *            Multiple notifications with the same group id exists when an Event notification with for example
+     *            Visibility.ROLE is created, in that case a notification is created for each user on that role sharing
+     *            the same group id but just one event will handle the whole notification group.
+     * @throws DotDataException
+     *             An error occurred when deleting the notification in the
+     *             database.
+     */
+    void deleteNotifications(String userId, String... groupId) throws DotDataException;
 
-	/**
-	 * Deletes all the notifications associated to a specific user ID.
-	 * 
-	 * @param userId
-	 *            - The ID of the user.
-	 * @throws DotDataException
-	 *             An error occurred when deleting the notifications in the
-	 *             database.
-	 */
-	void deleteNotifications(String userId) throws DotDataException;
+    /**
+     * Deletes all the notifications associated to a specific user ID.
+     *
+     * @param userId
+     *            - The ID of the user.
+     * @throws DotDataException
+     *             An error occurred when deleting the notifications in the
+     *             database.
+     */
+    void deleteNotifications(String userId) throws DotDataException;
 
-	/**
-	 * Returns a paginated result of all the notifications according to the
-	 * specified filters.
-	 * 
-	 * @param offset
-	 *            - The row number to read notifications from.
-	 * @param limit
-	 *            - The limit of rows to include in the result.
-	 * @return The list of {@link Notification} objects in the paginated result.
-	 * @throws DotDataException
-	 *             An error occurred when retrieving the notifications from the
-	 *             database.
-	 */
-	List<Notification> getNotifications(long offset, long limit) throws DotDataException;
+    /**
+     * Returns a paginated result of all the notifications according to the
+     * specified filters.
+     *
+     * @param offset
+     *            - The row number to read notifications from.
+     * @param limit
+     *            - The limit of rows to include in the result.
+     * @return The list of {@link Notification} objects in the paginated result.
+     * @throws DotDataException
+     *             An error occurred when retrieving the notifications from the
+     *             database.
+     */
+    List<Notification> getNotifications(long offset, long limit) throws DotDataException;
 
-	/**
-	 * Returns the number of notifications associated to a specific user ID.
-	 * 
-	 * @param userId
-	 *            - The ID of the user.
-	 * @return The number of notifications for a user.
-	 * @throws DotDataException
-	 *             An error occurred when retrieving the number of notifications
-	 *             from the database.
-	 */
-	Long getNotificationsCount(String userId) throws DotDataException;
+    /**
+     * Returns the number of notifications associated to a specific user ID.
+     *
+     * @param userId
+     *            - The ID of the user.
+     * @return The number of notifications for a user.
+     * @throws DotDataException
+     *             An error occurred when retrieving the number of notifications
+     *             from the database.
+     */
+    Long getNotificationsCount(String userId) throws DotDataException;
 
-	/**
-	 * Returns the total number of notifications.
-	 * 
-	 * @return The total number of notifications.
-	 * @throws DotDataException
-	 *             An error occurred when retrieving the number of all
-	 *             notifications from the database.
-	 */
-	Long getNotificationsCount() throws DotDataException;
+    /**
+     * Returns the total number of notifications.
+     *
+     * @return The total number of notifications.
+     * @throws DotDataException
+     *             An error occurred when retrieving the number of all
+     *             notifications from the database.
+     */
+    Long getNotificationsCount() throws DotDataException;
 
-	/**
-	 * Returns all notifications associated to a user ID.
-	 * 
-	 * @param userId
-	 *            - The ID of the user.
-	 * @return The list of {@link Notification} objects associated to a user.
-	 * @throws DotDataException
-	 *             An error occurred when retrieving the user notifications from
-	 *             the database.
-	 */
-	List<Notification> getAllNotifications(String userId) throws DotDataException;
+    /**
+     * Returns all notifications associated to a user ID.
+     *
+     * @param userId
+     *            - The ID of the user.
+     * @return The list of {@link Notification} objects associated to a user.
+     * @throws DotDataException
+     *             An error occurred when retrieving the user notifications from
+     *             the database.
+     */
+    List<Notification> getAllNotifications(String userId) throws DotDataException;
 
-	/**
-	 * Returns a paginated result of all notifications associated to a user ID.
-	 * 
-	 * @param userId
-	 *            - The ID of the user.
-	 * @param offset
-	 *            - The row number to read notifications from.
-	 * @param limit
-	 *            - The limit of rows to include in the result.
-	 * @return The list of paginated {@link Notification} objects associated to
-	 *         a user.
-	 * @throws DotDataException
-	 *             An error occurred when retrieving the user notifications from
-	 *             the database.
-	 */
-	List<Notification> getNotifications(String userId, long offset, long limit) throws DotDataException;
+    /**
+     * Returns a paginated result of all notifications associated to a user ID.
+     *
+     * @param userId
+     *            - The ID of the user.
+     * @param offset
+     *            - The row number to read notifications from.
+     * @param limit
+     *            - The limit of rows to include in the result.
+     * @return The list of paginated {@link Notification} objects associated to
+     *         a user.
+     * @throws DotDataException
+     *             An error occurred when retrieving the user notifications from
+     *             the database.
+     */
+    List<Notification> getNotifications(String userId, long offset, long limit) throws DotDataException;
 
 
-	/**
-	 * Returns the number of new notifications for a specific user ID.
-	 * 
-	 * @param userId
-	 *            - The ID of the user.
-	 * @return The number of new notifications.
-	 * @throws DotDataException
-	 *             An error occurred when retrieving the number of new
-	 *             notifications from the database.
-	 */
-	Long getNewNotificationsCount(String userId) throws DotDataException;
+    /**
+     * Returns the number of new notifications for a specific user ID.
+     *
+     * @param userId
+     *            - The ID of the user.
+     * @return The number of new notifications.
+     * @throws DotDataException
+     *             An error occurred when retrieving the number of new
+     *             notifications from the database.
+     */
+    Long getNewNotificationsCount(String userId) throws DotDataException;
 
-	/**
-	 * Marks all the notifications of a user as "read".
-	 * 
-	 * @param userId
-	 *            - The ID of the user.
-	 * @throws DotDataException
-	 *             An error occurred when updating the user notifications from
-	 *             the database.
-	 */
-	void markNotificationsAsRead(String userId) throws DotDataException;
+    /**
+     * Marks all the notifications of a user as "read".
+     *
+     * @param userId
+     *            - The ID of the user.
+     * @throws DotDataException
+     *             An error occurred when updating the user notifications from
+     *             the database.
+     */
+    void markNotificationsAsRead(String userId) throws DotDataException;
 
 }

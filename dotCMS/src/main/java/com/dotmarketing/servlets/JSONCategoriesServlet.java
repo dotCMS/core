@@ -50,7 +50,7 @@ public class JSONCategoriesServlet extends HttpServlet implements Servlet {
 		try {
 
 			final boolean isAuthenticationNeeded = Config.getBooleanProperty
-					(JSON_CATEGORIES_SERVLET_AUTHENTICATION_NEEDED, true);
+								(JSON_CATEGORIES_SERVLET_AUTHENTICATION_NEEDED, true);
 			if ((user = uWebAPI.getLoggedInUser(request)) == null && isAuthenticationNeeded) {
 
 				response.sendError(HttpServletResponse.SC_UNAUTHORIZED);

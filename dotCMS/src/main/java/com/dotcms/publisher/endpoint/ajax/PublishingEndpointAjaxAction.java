@@ -1,17 +1,21 @@
 package com.dotcms.publisher.endpoint.ajax;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.Properties;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Configuration;
+import com.dotcms.enterprise.publishing.staticpublishing.AWSS3EndPointPublisher;
+import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -116,6 +120,14 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
     			return;
         	}
 
+
+        	String protocol = request.getParameter("protocol");
+        	String authKey = request.getParameter("authKey");
+        	if (AWSS3Publisher.PROTOCOL_AWS_S3.equalsIgnoreCase(protocol)) {
+        		validatePublishingEndPointAWSS3(authKey);
+        	}
+
+
         	PublishingEndPoint endpoint = new PublishingEndPoint();
         	endpoint.setServerName(new StringBuilder(serverName));
         	endpoint.setAddress(request.getParameter("address"));
@@ -154,6 +166,13 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
         	}
 
 
+        	String protocol = request.getParameter("protocol");
+        	String authKey = request.getParameter("authKey");
+        	if (AWSS3Publisher.PROTOCOL_AWS_S3.equalsIgnoreCase(protocol)) {
+        		validatePublishingEndPointAWSS3(authKey);
+        	}
+
+
 			PublishingEndPoint endpoint = new PublishingEndPoint();
 	        endpoint.setId(id);
 			endpoint.setServerName(new StringBuilder(request.getParameter("serverName")));
@@ -172,6 +191,45 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 			Logger.info(getClass(), "Error editing EndPoint. Error Message: " +  e.getMessage());
 			response.getWriter().println("FAILURE: " + e.getMessage());
 		}
+	}
 
+	private void validatePublishingEndPointAWSS3(String authKey) throws DotDataException, LanguageException {
+
+		// Parse AWS S3 properties
+		Properties props = new Properties();
+		try {
+			props.load( new StringReader( authKey ) );
+		} catch (IOException e) {
+			throw new DotDataException(
+				LanguageUtil.get( getUser(), "publisher_Endpoint_awss3_authKey_format_invalid" )
+			);
+		}
+
+
+		// Validate provision of all mandatory AWS S3 properties
+		String token = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_TOKEN);
+		String secret = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_SECRET);
+		String bucketID = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_BUCKET_ID);
+		String bucketValidationName = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_BUCKET_VALIDATION_NAME);
+
+		if (!UtilMethods.isSet(token)
+			|| !UtilMethods.isSet(secret)
+			|| !UtilMethods.isSet(bucketID)) {
+
+			throw new DotDataException(
+				LanguageUtil.get( getUser(), "publisher_Endpoint_awss3_authKey_missing_properties" )
+			);
+		}
+
+
+		// Validate correctness of AWS S3 connection properties
+		AWSS3Configuration awss3Config =
+			new AWSS3Configuration.Builder().accessKey(token).secretKey(secret).build();
+
+		if (! new AWSS3EndPointPublisher(awss3Config).canConnectSuccessfully(bucketValidationName)) {
+			throw new DotDataException(
+				LanguageUtil.get( getUser(), "publisher_Endpoint_awss3_authKey_properties_invalid" )
+			);
+		}
 	}
 }

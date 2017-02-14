@@ -25,11 +25,9 @@ package com.liferay.portal.language;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.taglib.TagUtils;
 import com.dotcms.repackage.org.apache.struts.util.MessageResources;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.util.Logger;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.MultiMessageResources;
@@ -40,6 +38,7 @@ import com.liferay.util.GetterUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
 import com.liferay.util.Time;
+
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,6 +48,7 @@ import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -88,8 +88,8 @@ public class LanguageUtil {
 	public static String get(Locale locale, String key) throws LanguageException {
 		return get(PublicCompanyFactory.getDefaultCompanyId(), locale, key);
 	}
-	
-	
+
+
 	/**
 	 * gets the key in the language set in the defaultCompany
 	 * @param key
@@ -120,7 +120,7 @@ public class LanguageUtil {
 			MessageFormat.format(i18nMessage, arguments):
 				i18nMessage;
 	} // get
-	
+
 	public static String get(Company company, String key)
 	throws LanguageException {
 		if(company ==null){

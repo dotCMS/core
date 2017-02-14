@@ -7,8 +7,11 @@ import com.dotcms.repackage.org.apache.commons.fileupload.FileUploadException;
 import com.dotcms.repackage.org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import com.dotcms.repackage.org.apache.commons.fileupload.servlet.ServletFileUpload;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotmarketing.servlets.taillog.TailLogServlet;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
+import com.dotmarketing.util.SecurityLogger;
 import com.liferay.util.FileUtil;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
@@ -19,7 +22,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 
 public class OSGIAJAX extends OSGIBaseAJAX {
-
+    final String FELIX_BASE_FOLDER = com.dotmarketing.util.Config.getStringProperty("FELIX_BASE_FOLDER", "/WEB-INF/felix");
     @Override
     public void action ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
     }
@@ -44,8 +47,13 @@ public class OSGIAJAX extends OSGIBaseAJAX {
         }
 
         //Then move the bundle from the load folder to the undeployed folder
+
         File from = new File( FileUtil.getRealPath( "/WEB-INF/felix/load/" + jar ) );
         File to = new File( FileUtil.getRealPath( "/WEB-INF/felix/undeployed/" + jar ) );
+
+        if(to.exists()) {
+            to.delete();
+        }
 
         Boolean success = FileUtil.move( from, to );
         if ( success ) {
@@ -60,8 +68,8 @@ public class OSGIAJAX extends OSGIBaseAJAX {
     public void deploy ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
 
         String jar = request.getParameter( "jar" );
-        File from = new File( FileUtil.getRealPath( "/WEB-INF/felix/undeployed/" + jar ) );
-        File to = new File( FileUtil.getRealPath( "/WEB-INF/felix/load/" + jar ) );
+        File from = new File( FileUtil.getRealPath( FELIX_BASE_FOLDER + "/undeployed/" + jar ) );
+        File to = new File( FileUtil.getRealPath( FELIX_BASE_FOLDER + "/load/" + jar ) );
 
         Boolean success = from.renameTo( to );
         if ( success ) {
@@ -126,8 +134,25 @@ public class OSGIAJAX extends OSGIBaseAJAX {
                         break;
                     }
 
-                    File to = new File(FileUtil.getRealPath( "/WEB-INF/felix/load/" + fname ) );
-                    FileOutputStream out = new FileOutputStream( to );
+
+
+                    File felixFolder  = (FELIX_BASE_FOLDER.startsWith("/WEB-INF")) ?
+                        new File(Config.CONTEXT.getRealPath(FELIX_BASE_FOLDER)) : 
+                        new File(com.dotmarketing.util.FileUtil.getAbsolutlePath(FELIX_BASE_FOLDER));
+                    File osgiJar = new File(FileUtil.getRealPath( FELIX_BASE_FOLDER + "/load/" + fname ) );
+
+
+                    if ( !felixFolder.exists() 
+                            ||   !osgiJar.getCanonicalPath().startsWith(felixFolder.getCanonicalPath())) {
+                        response.sendError(403);
+                        SecurityLogger.logInfo(this.getClass(),  "Invalid OSGI Upload request:" + osgiJar.getCanonicalPath() + " from:" +request.getRemoteHost() + " " );
+                        return;
+                    }
+                    
+                    
+                    
+
+                    FileOutputStream out = new FileOutputStream( osgiJar );
                     IOUtils.copyLarge( in, out );
                     IOUtils.closeQuietly( out );
                     IOUtils.closeQuietly( in );

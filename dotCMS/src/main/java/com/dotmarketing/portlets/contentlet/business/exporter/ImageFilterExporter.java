@@ -9,6 +9,7 @@ import java.util.Map;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.image.filter.ImageFilter;
+import com.dotmarketing.image.filter.PDFImageFilter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporterException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -28,6 +29,9 @@ import com.dotmarketing.util.Logger;
 public class ImageFilterExporter implements BinaryContentExporter {
 
 	
+	/* (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.BinaryContentExporter#exportContent(java.io.File, java.util.Map)
+	 */
 	public BinaryContentExporterData exportContent(File file, Map<String, String[]> parameters) throws BinaryContentExporterException {
 
 
@@ -35,25 +39,30 @@ public class ImageFilterExporter implements BinaryContentExporter {
 		
 		try {
 
-			String[] filter=new String[0];
+			List<String> filters=new ArrayList<>();
+
 			if(parameters.get("filter") != null){
-				filter= parameters.get("filter")[0].split(","); 
+				filters.addAll( Arrays.asList(parameters.get("filter")[0].split(",")));
 			}
 			else if(parameters.get("filters") != null){
-				filter= parameters.get("filters")[0].split(","); 
+			  filters.addAll( Arrays.asList(parameters.get("filters")[0].split(",")));
 			}
 
-			if(filter!=null || filter.length==0 || !"Png".equalsIgnoreCase(filter[0])){
-				List<String> newFilters = new ArrayList<String>();
-				newFilters.add(0, "Png");
-				newFilters.addAll(Arrays.asList(filter));
-				filter =newFilters.toArray(new String[newFilters.size()]);
-				parameters.replace("filter", filter);
-				parameters.replace("filters", filter);
-				
-			}
 
-			for(String s : filter){
+	       if(file.getAbsolutePath().toLowerCase().endsWith(".pdf")){
+	         filters.remove("PDF");
+	         filters.add(0, "PDF");
+           }
+
+	       else if(filters.size()== 0 ){
+	         filters.remove("Png");
+	         filters.add(0, "Png");
+	       }
+
+
+           parameters.put("filter", filters.toArray(new String[filters.size()]));
+           parameters.put("filters", filters.toArray(new String[filters.size()]));
+			for(String s : filters){
 				String clazz =null;
 				try {
 					clazz ="com.dotmarketing.image.filter." + s + "ImageFilter";
@@ -68,7 +77,7 @@ public class ImageFilterExporter implements BinaryContentExporter {
 					Logger.error(ImageFilterExporter.class, "IllegalAccessException : " +  clazz );
 				}
 				catch (Exception e) {
-					Logger.error(ImageFilterExporter.class, "Exception in " +  clazz + " :" + e.getMessage() );
+					Logger.error(ImageFilterExporter.class, "Exception in " +  clazz + " :" + e.getMessage() + e.getStackTrace()[0] );
 				}
 			}
 
