@@ -291,7 +291,7 @@
               editRef = " editContentlet('" + inode + "','<%=user.getUserId()%>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ") ";
             }
 
-            var ref = "<div class='contentletInnerTable'><tr>";
+            var ref = "<div class='content-search__result-item'><tr>";
                 if(publish == "1") {
 
 	                if(dijit.byId(checkId)){
@@ -1871,8 +1871,6 @@
                                 else{
                                     var value = cellData[header["fieldVelocityVarName"]];
                                 }
-                                cell.setAttribute("class","titleCellDiv");
-                                cell.setAttribute("className","titleCellDiv");
                                 if (value != null){
                                 	cell.innerHTML = value;
                                 }
