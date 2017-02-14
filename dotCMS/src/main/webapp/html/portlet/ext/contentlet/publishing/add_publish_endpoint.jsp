@@ -51,7 +51,7 @@
 		else{
 			dijit.byId("port").setAttribute('required',false);
 		}
-
+		
 		if (form.validate()) {
 
 			dijit.byId("save").setAttribute('disabled',true);
@@ -76,7 +76,7 @@
 				},
 				error: function(error){
 					dijit.byId("save").setAttribute('disabled',false);
-
+					
 					alert(error);
 				}
 			}
@@ -104,7 +104,7 @@
 		if(sending=='false'){
 			dojo.style("addressFromSpan", "display", "none");
 			dojo.style("addressToSpan", "display", "");
-
+			
 			dojo.style("sendGroupRow", "display", "table-row");
 		}
 		else{
@@ -175,7 +175,7 @@
 	function onChangeProtocolTypeSelectCheck() {
 		currentProtocol = dijit.byId("protocol").value;
 
-		setAddressRow(true);
+		setAddressRow(true);		
 		setAuthPropertiesRow(true);
 	}
 
@@ -195,7 +195,7 @@
 		<% } %>
 
 		if (currentProtocol === "awss3" && isPlatformLicenseLevel()) {
-			dojo.byId("addressRow").hide();
+			dojo.byId("addressRow").hide();				
 		}
 
 		setAddressRow(false);
@@ -266,7 +266,7 @@
 			</tr>
 
 
-
+			
 
 
 			<tr id="addressRow">
@@ -280,38 +280,22 @@
 				</td>
 				<td nowrap="nowrap">
 					<input type="text" dojoType="dijit.form.ValidationTextBox"
-					   name="address"
-					   id="address"
-					   style="width:400px"
-					   value="<%=UtilMethods.webifyString(currentEndpoint.getAddress()) %>"
-					   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Address_Prompt_Message") %>"
-					   />
-				   <div id="addressHelpText" class="hint-text">e.g. 10.0.1.10 or server2.myhost.com</div>
-				</dd>
-			</dl>
-		</div>
-
-		<div id="portRow">
-			<dl>
-				<dt><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Port") %>:</dt>
-				<dd>
-
-					<input type="text" dojoType="dijit.form.ValidationTextBox"
-						   name="port" id="port" style="width:100px"
-						   value="<%=UtilMethods.webifyString(currentEndpoint.getPort()) %>"
-						   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Prompt_Message") %>" regExp="^[0-9]+$" invalidMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Invalid_Message") %>" />
-				</dd>
-			</dl>
-			<dl>
-				<dt><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Protocol") %>:</dt>
-				<dd>
-					<select dojoType="dijit.form.Select" name="protocol" id="protocol" style="width:100px;">
-						<option value="http" <%=("http".equals(currentEndpoint.getProtocol())) ? "selected=true" : "" %>>http</option>
-						<option value="https" <%=("https".equals(currentEndpoint.getProtocol())) ? "selected=true" : "" %>>https</option>
-					</select>
-				</dd>
-			</dl>
-		</div>
+						   name="address"
+						   id="address"
+						   style="width:300px"
+						   value="<%=UtilMethods.webifyString(currentEndpoint.getAddress()) %>"
+						   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Address_Prompt_Message") %>"
+					/>
+					<span id="portSpan">
+						<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Port") %>:
+						<input type="text" dojoType="dijit.form.ValidationTextBox"
+							   name="port" id="port" style="width:50px"
+							   value="<%=UtilMethods.webifyString(currentEndpoint.getPort()) %>"
+							   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Prompt_Message") %>" regExp="^[0-9]+$" invalidMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Invalid_Message") %>" />
+					</span>
+					<div id="addressHelpText" class="small">e.g. 10.0.1.10 or server2.myhost.com</div>
+				</td>
+			</tr>
 
 			<tr id="authPropertiesRow">
 				<td align="right">
