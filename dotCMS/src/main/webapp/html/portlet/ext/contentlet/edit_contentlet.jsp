@@ -29,7 +29,6 @@
 <!DOCTYPE html>
 <script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
 
-<%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp" %>
 
 <style>
 .dijitTree {
