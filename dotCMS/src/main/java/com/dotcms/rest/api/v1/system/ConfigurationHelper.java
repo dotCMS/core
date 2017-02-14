@@ -35,6 +35,8 @@ public class ConfigurationHelper implements Serializable {
 	public static final String EDIT_CONTENT_STRUCTURES_PER_COLUMN = "EDIT_CONTENT_STRUCTURES_PER_COLUMN";
 	public static final String DEFAULT_REST_PAGE_COUNT = "DEFAULT_REST_PAGE_COUNT";
 	public static final String I18N_MESSAGES_MAP = "i18nMessagesMap";
+	public static final String WEB_SOCKET_SECURE_PROTOCOL = "wss";
+	public static final String WEB_SOCKET_PROTOCOL = "ws";
 	public static ConfigurationHelper INSTANCE = new ConfigurationHelper();
 
 	/**
@@ -60,7 +62,7 @@ public class ConfigurationHelper implements Serializable {
 
 		return map(
 				DOTCMS_WEBSOCKET_PROTOCOL,
-				Config.getStringProperty(DOTCMS_WEBSOCKET_PROTOCOL, "ws"),
+				Config.getAsString(DOTCMS_WEBSOCKET_PROTOCOL, () -> getWebSocketProtocol(request)),
 				DOTCMS_WEBSOCKET_BASEURL,
 				Config.getAsString(DOTCMS_WEBSOCKET_BASEURL, () -> getHostname(request)),
 				DOTCMS_WEBSOCKET_ENDPOINTS,
@@ -82,6 +84,11 @@ public class ConfigurationHelper implements Serializable {
 						this.getRelativeTimeEntry(locale)
 				)
 				);
+	}
+
+	private String getWebSocketProtocol (final HttpServletRequest request) {
+
+		return request.isSecure()? WEB_SOCKET_SECURE_PROTOCOL : WEB_SOCKET_PROTOCOL;
 	}
 
 	/**

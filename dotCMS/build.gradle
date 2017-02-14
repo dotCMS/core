@@ -83,6 +83,29 @@ idea {
     }
 }
 
+dependencies {
+    /*****  Felix libs need to be placed in the WEB-INF/felix/bundle directory. This was previously handled using a pre-build copy task.  *****/
+    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.bundlerepository', version:'1.6.6_3'
+    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.fileinstall', version:'3.1.10_3'
+    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.command', version:'0.12.0_3'
+    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.runtime', version:'0.10.0_3'
+    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.shell', version:'0.10.0_3'
+
+    /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
+    compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
+
+    starter group: 'com.dotcms', name: 'starter', version: '20170118', ext: 'zip'
+    coreWeb group: 'com.dotcms', name: 'core-web', version: '4.0.0-SNAPSHOT', ext: 'zip', changing: true
+
+    providedCompile fileTree("../libs/buildlibs").include('**/*.jar')
+    providedCompile fileTree("../libs/buildlibs").include('jtds-*.jar', 'mail.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'sqljdbc*.jar')
+
+    individualTestCompile sourceSets.test.output
+    integrationTestCompile sourceSets.test.output
+    functionalTestCompile sourceSets.test.output
+    functionalTestCompile sourceSets.integrationTest.output
+}
+
 // Import and apply the dependencies from the dependencies scripts.
 apply from: "$rootDir/dependencies.gradle"
 
@@ -91,7 +114,7 @@ ant.lifecycleLogLevel = "INFO"
 ext {
     // Open the Git repository in the current directory.
 
-    dotcmsReleaseVersion='4.0'
+    dotcmsReleaseVersion="$dotcmsReleaseVersion"
     dotcmsReleaseBuild = ''
     dotcmsReleaseName='dotCMS Platform'
     dotcmsReleaseCodename='Panther'

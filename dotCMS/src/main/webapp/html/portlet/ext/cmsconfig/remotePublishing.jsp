@@ -55,7 +55,7 @@ function goToEditEnvironment(identifier){
     var dialog = new dijit.Dialog({
         id: 'addEnvironment',
         title: "<%= LanguageUtil.get(pageContext, "publisher_Edit_Environment_Title")%>",
-        style: "width: 400px; height: 280px;",
+        style: "width: 400px; height: 375px;",
         content: new dojox.layout.ContentPane({
             href: "/html/portlet/ext/contentlet/publishing/add_publish_environment.jsp?op=edit&id="+identifier+"&random="+y
         }),
@@ -772,19 +772,12 @@ function refreshWhoCanUse() {
 }
 
 function addSelectedToWhoCanUse() {
-
     var select = dijit.byId("whoCanUseSelect");
-
     var user = select.getValue();
     var userName = select.attr('displayedValue');
 
-    if(user=='0') return;
-
     addToWhoCanUse(user, userName);
     refreshWhoCanUse();
-
-    select.set('value', '0');
-
 }
 
 function addToWhoCanUse(myId, myName) {
@@ -840,7 +833,12 @@ function deleteEnvPushHistory(envId) {
         handleAs : "json",
         sync: false,
         load : function(data) {
-            alert('<%= LanguageUtil.get(pageContext, "publisher_Environments_deleted_assets-history") %>');
+            var confirmDialog  =new dijit.Dialog({
+                id: "deleteHistory",
+                class: "noDijitDialogTitleBar",
+                content: "<span style=\"display:block;text-align:center\"><%= LanguageUtil.get(pageContext, "publisher_Environments_deleted_assets-history") %>.<br /><br /><button data-dojo-type=\"dijit/form/Button\" type=\"submit\" id=\"ok\"><%= LanguageUtil.get(pageContext, "ok") %></button></span>"
+            });
+            confirmDialog.show();
         },
         error : function(error) {
             targetNode.innerHTML = "An unexpected error occurred: " + error;
@@ -925,7 +923,7 @@ function deleteEnvPushHistory(envId) {
                                 <font class="bg" size="2"> <b><%= LanguageUtil.get( pageContext, "Loading" ) %></b> <br />
                                     <img src="/html/images/icons/processing.gif" /></font>
                             </div>
-                            <button dojoType="dijit.form.Button" onClick="cancelIntegrityCheck('<%=endpoint.getId()%>');" id="cancelCheckIntegrityButton<%=endpoint.getId()%>" iconClass="stopIcon" style="padding-left:10px; padding-top:5px; display:none;">
+                            <button dojoType="dijit.form.Button" onClick="cancelIntegrityCheck('<%=endpoint.getId()%>');" id="cancelCheckIntegrityButton<%=endpoint.getId()%>" iconClass="stopIcon" style="margin-left:10px; display:none;">
                                 <%= LanguageUtil.get( pageContext, "cancel" ) %>
                             </button>
                             <button dojoType="dijit.form.Button" onclick="deleteEndpoint('<%=endpoint.getId()%>', true)" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>" iconClass="deleteIcon" class="dijitButtonDanger" style="margin-left: 8px">

@@ -34,4 +34,3 @@
 
 %>
 
-<%@ include file="/html/portlet/ext/common/sub_nav_inc.jsp" %>

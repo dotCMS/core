@@ -32,81 +32,92 @@
 	<input type="hidden" name="cmd" value="save">
 	<input type="hidden" name="schemeId" value="<%=UtilMethods.webifyString(scheme.getId())%>">
 	<!-- START Listing Results -->
-	<table class="listingTable">
-			<tr>
-				<td align="right" width="40%"><%=LanguageUtil.get(pageContext, "Name")%>:</td>
-				<td><input type="text" name="schemeName" id="schemeName"
+	<div class="form-horizontal">
+		<dl>
+			<dt>
+				<label for=""><%=LanguageUtil.get(pageContext, "Name")%>:</label>
+			</dt>
+			<dd>
+				<input type="text" name="schemeName" id="schemeName"
 					dojoType="dijit.form.ValidationTextBox"  required="true" 
 					value="<%=UtilMethods.webifyString(scheme.getName())%>"
-					maxlength="255">
-				</td>
-			</tr>
-			<tr>
-				<td align="right"><%=LanguageUtil.get(pageContext, "Description")%>:</td>
-				<td><input type="textarea" name="schemeDescription"
+					maxlength="255" style="width:250px">
+			</dd>
+		</dl>
+		<dl>
+			<dt>
+				<label for=""><%=LanguageUtil.get(pageContext, "Description")%>:</label>
+			</dt>
+			<dd>
+				<input type="textarea" name="schemeDescription"
 					id="schemeDescription" dojoType="dijit.form.Textarea"
-					value="<%=UtilMethods.webifyString(scheme.getDescription())%>">
-				</td>
-			</tr>
-			<tr>
-				<td align="right"><%=LanguageUtil.get(pageContext, "Archived")%>:</td>
-				<td><input type="checkbox" name="schemeArchived"
+					value="<%=UtilMethods.webifyString(scheme.getDescription())%>" style="width:250px; height:100px;min-height:100px;max-height:100px;">
+			</dd>
+		</dl>
+		<dl>
+			<dt>
+				<label for=""><%=LanguageUtil.get(pageContext, "Archived")%>:</label>
+			</dt>
+			<dd>
+				<input type="checkbox" name="schemeArchived"
 					id="schemeArchived" dojoType="dijit.form.CheckBox" value="true"
 					<%=(scheme.isArchived()) ? "checked='true'" : ""%>>
-				</td>
-			</tr>
-			<%if(firstStep !=null){ %>
-				<tr>
-					<td align="right"><%=LanguageUtil.get(pageContext, "Initial-Step")%>:</td>
-					<td>
-						<%if(firstStep !=null){ %>
-							<%=firstStep.getName() %>
-						<%}else{ %>
-							<%=LanguageUtil.get(pageContext, "Save-Scheme-First") %>
-						<%} %>
-					</td>
-				</tr>
-			<%} %>
-			<tr>
-				<td align="right"><%=LanguageUtil.get(pageContext, "Mandatory")%>:</td>
-				<td>
+			</dd>
+		</dl>
+		<%if(firstStep !=null){ %>
+			<dl>
+				<dt>
+					<label for=""><%=LanguageUtil.get(pageContext, "Initial-Step")%>:</label>
+				</dt>
+				<dd>
 					<%if(firstStep !=null){ %>
-						<input type="checkbox" name="schemeMandatory"
-						id="schemeMandatory" dojoType="dijit.form.CheckBox" value="true"
-						<%=(firstStep !=null) ? "disabled ='false'" : "disabled ='true'"%> onClick="schemeAdmin.toggleInitialAction"
-						<%=(scheme.isMandatory()) ? "checked='true'" : ""%>>
+						<%=firstStep.getName() %>
 					<%}else{ %>
-							<%=LanguageUtil.get(pageContext, "Add-Workflow-Step") %>
-					<%} %>	
-				</td>
-			</tr>
+						<%=LanguageUtil.get(pageContext, "Save-Scheme-First") %>
+					<%} %>
+				</dd>
+			</dl>
+		<%} %>
+		<dl>
+			<dt>
+				<label for=""><%=LanguageUtil.get(pageContext, "Mandatory")%>:</label>
+			</dt>
+			<dd>
+				<%if(firstStep !=null){ %>
+					<input type="checkbox" name="schemeMandatory"
+					id="schemeMandatory" dojoType="dijit.form.CheckBox" value="true"
+					<%=(firstStep !=null) ? "disabled ='false'" : "disabled ='true'"%> onClick="schemeAdmin.toggleInitialAction"
+					<%=(scheme.isMandatory()) ? "checked='true'" : ""%>>
+				<%}else{ %>
+						<%=LanguageUtil.get(pageContext, "Add-Workflow-Step") %>
+				<%} %>	
+			</dd>
+		</dl>
+		<%if(firstStep !=null){ %>
+			<dl <%=(!scheme.isMandatory()) ? "style='display:none;'" : ""%> id="forceInitialAction">
+				<dt>
+					<label for=""><%=LanguageUtil.get(pageContext, "Default-Initial-Action")%>:</label>
+				</dt>
+				<dd>
+					<%if(!actions.isEmpty()) {%>
+						<select name="schemeEntryAction" dojoType="dijit.form.FilteringSelect" style="width:250px;">
+							<option value=""><%=LanguageUtil.get(pageContext, "None") %></option>
+							<%for(WorkflowAction action : actions){ %>
+								<option value="<%=action.getId()%>" <%=(!action.isNew() && action.getId().equals(scheme.getEntryActionId())) ? "selected='true'" :"" %>><%=action.getName() %></option>
+							<%} %>
+						</select>
+					<%}else{ %>
+						<%=LanguageUtil.get(pageContext, "Create-Actions-First") %>
+					<%} %>
+				</dd>
+			</dl>
+		<%} %>
+	</div>
 			
-			
-			<%if(firstStep !=null){ %>
-				<tr <%=(!scheme.isMandatory()) ? "style='display:none;'" : ""%> id="forceInitialAction">
-					<td nowrap="true" align="right"><%=LanguageUtil.get(pageContext, "Default-Initial-Action")%>:</td>
-					<td>
-						<%if(!actions.isEmpty()) {%>
-							<select name="schemeEntryAction" dojoType="dijit.form.FilteringSelect" style="width:250px;">
-								<option value=""><%=LanguageUtil.get(pageContext, "None") %></option>
-								<%for(WorkflowAction action : actions){ %>
-									<option value="<%=action.getId()%>" <%=(!action.isNew() && action.getId().equals(scheme.getEntryActionId())) ? "selected='true'" :"" %>><%=action.getName() %></option>
-								<%} %>
-							</select>
-						<%}else{ %>
-							<%=LanguageUtil.get(pageContext, "Create-Actions-First") %>
-						<%} %>
-					</td>
-				</tr>
-			<%} %>
-			
-	</table>
-			
-	<div class="buttonRow" style="margin-bottom: 50px;">
+	<div class="buttonRow" style="margin-top: 20px;">
 		<button dojoType="dijit.form.Button" onClick='schemeAdmin.saveAddEdit()' iconClass="saveIcon" type="button">
 			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save"))%>
-		</button> &nbsp; &nbsp;
-
+		</button>
 		<button dojoType="dijit.form.Button"
 			onClick='schemeAdmin.hideAddEdit()' class="dijitButtonFlat" type="button">
 			<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel"))%>

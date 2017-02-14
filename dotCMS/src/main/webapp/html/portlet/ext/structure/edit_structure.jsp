@@ -798,7 +798,7 @@ function disableFormFields(){
 								<dt><%= LanguageUtil.get(pageContext, "URL-Map-Pattern") %>:</dt>
 								<dd>
 									<input type="text" dojoType="dijit.form.TextBox" name="urlMapPattern" id="urlMapPattern" style="width:250px" value="<%= UtilMethods.isSet(form.getUrlMapPattern()) ? form.getUrlMapPattern() : "" %>" />
-									<span id="multiHintHook" style="cursor:pointer;">?</span>
+									<span id="multiHintHook" class="content-type__url-pattern-help">?</span>
 									<span dojoType="dijit.Tooltip" connectId="multiHintHook" id="multiHint" class="fieldHint">
 										<%= LanguageUtil.get(pageContext, "URL-Map-Pattern-hint1") %>
 									</span>

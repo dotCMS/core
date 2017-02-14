@@ -173,7 +173,7 @@
 				<dd>
 
 					<input type="text" dojoType="dijit.form.ValidationTextBox"
-						   name="port" id="port" style="width:50px"
+						   name="port" id="port" style="width:100px"
 						   value="<%=UtilMethods.webifyString(currentEndpoint.getPort()) %>"
 						   promptMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Prompt_Message") %>" regExp="^[0-9]+$" invalidMessage="<%= LanguageUtil.get(pageContext, "publisher_Endpoint_Validation_Port_Invalid_Message") %>" />
 				</dd>

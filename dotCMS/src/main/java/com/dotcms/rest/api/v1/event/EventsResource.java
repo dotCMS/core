@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
  * This resource is an alternative fallback to get events when the websockets @{@link com.dotcms.rest.api.v1.system.websocket.SystemEventsWebSocketEndPoint}
  * is not able to be called by any reason.
  * The @{@link EventsResource} use the long polling approach to get all the events, the call basically will wait for N seconds
- * (use the property events.longpolling.seconds, on the dotmarketing-config-ext.properties to custom the seconds, by default it is 15 seconds)
+ * (use the property system.events.longpolling.seconds, on the dotmarketing-config-ext.properties to custom the seconds, by default it is 15 seconds)
  *
  * @author jsanca
  * @version 3.7
@@ -63,7 +63,7 @@ public class EventsResource implements Serializable {
      */
     public EventsResource() {
         this(new WebResource(),
-                Config.getLongProperty(SYSTEM_EVENT_LONGPOLLING_DEFAULTMILLIS, 15000)*2/1000,
+                Config.getLongProperty(SYSTEM_EVENT_LONGPOLLING_DEFAULTMILLIS, 15000)*2/1000, // the timeout for a asyn response will be the double of the long polling and in seconds.
                 new LongPollingService
                 (Config.getLongProperty(SYSTEM_EVENT_LONGPOLLING_DEFAULTMILLIS, 15000),
                         new SystemEventsDelegate()),
@@ -82,15 +82,6 @@ public class EventsResource implements Serializable {
         this.marshalUtils                 = marshalUtils;
     }
 
-    @GET
-    @Path("/hello")
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response echo(@Context final HttpServletRequest request) {
-
-        return Response.ok(new ResponseEntityView("Hello"))
-                .build(); // 200
-    }
 
     @GET
     @Path("/syncevents")
@@ -109,7 +100,7 @@ public class EventsResource implements Serializable {
             if (null != initData.getUser()) {
 
                 Logger.debug(this, "Getting syncr system events with a lastcallback as: " + lastCallback);
-                appContext.setAttribute(SystemEventsDelegate.LAST_CALLBACK, lastCallback);
+                appContext.setAttribute(SystemEventsDelegate.LAST_CALLBACK, (null != lastCallback)?lastCallback:System.currentTimeMillis());
                 appContext.setAttribute(SystemEventsDelegate.DO_MARSHALL,   false);
                 appContext.setAttribute(SystemEventsDelegate.USER,   initData.getUser());
 
@@ -144,12 +135,15 @@ public class EventsResource implements Serializable {
 
             if (null != initData.getUser()) {
 
+                Logger.debug(this, "Getting asyncr system events with a lastcallback as: " + lastCallback);
                 asyncResponse.setTimeoutHandler(new EventTimeoutHandler(initData.getUser().getLocale()));
                 asyncResponse.setTimeout(this.timeoutSeconds, TimeUnit.SECONDS);
 
                 Logger.debug(this, "Getting syncr system events with a lastcallback as: " + lastCallback);
                 appContext.setAttribute(SystemEventsDelegate.LAST_CALLBACK, lastCallback != null ? lastCallback :
                         System.currentTimeMillis());
+
+                appContext.setAttribute(SystemEventsDelegate.LAST_CALLBACK, (null != lastCallback)?lastCallback:System.currentTimeMillis());
                 appContext.setAttribute(SystemEventsDelegate.RESPONSE, asyncResponse);
                 appContext.setAttribute(SystemEventsDelegate.USER,   initData.getUser());
 
@@ -157,6 +151,7 @@ public class EventsResource implements Serializable {
             }
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 
+            Logger.error(this, e.getMessage(), e);
             response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
             asyncResponse.resume(response);
         }
@@ -182,6 +177,7 @@ public class EventsResource implements Serializable {
                 message = "Operation time out.";
             }
 
+            Logger.debug(this, "Operation time out for a asyn response on Events long polling");
             final Response response = Response.status(Response.Status.SERVICE_UNAVAILABLE).entity(
                     new ResponseEntityView(Arrays.asList(new ErrorEntity("operation-timeout", message)))).build();
 
