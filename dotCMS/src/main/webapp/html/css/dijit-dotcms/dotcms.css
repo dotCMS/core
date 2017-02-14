@@ -6786,6 +6786,45 @@ a.category_higlighted, a.tag_higlighted {
   font-weight: normal;
 }
 
+.view-roles .view-roles__user-grid .dojoxGridHeader, .view-roles .view-roles__cms-tabs .dojoxGridHeader {
+  background-color: #FAFAFA;
+  font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  border-bottom: 1px solid #ebebeb;
+}
+.view-roles .view-roles__user-grid .dojoxGridHeader .dojoxGridArrowButtonChar, .view-roles .view-roles__cms-tabs .dojoxGridHeader .dojoxGridArrowButtonChar {
+  float: left;
+}
+.view-roles .view-roles__user-grid .dojoxGridHeader .dojoxGridCell, .view-roles .view-roles__cms-tabs .dojoxGridHeader .dojoxGridCell {
+  border: 0px solid;
+  background: none;
+  padding: 8px 4px;
+  font-weight: bold;
+}
+.view-roles .view-roles__user-grid .dojoxGridRowSelected, .view-roles .view-roles__cms-tabs .dojoxGridRowSelected {
+  background-color: transparent;
+}
+.view-roles .view-roles__user-grid .dojoxGridRow table .dojoxGridCell, .view-roles .view-roles__cms-tabs .dojoxGridRow table .dojoxGridCell {
+  font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  border: 0px;
+  padding: 8px 4px;
+}
+.view-roles .view-roles__user-grid .dojoxGrid, .view-roles .view-roles__cms-tabs .dojoxGrid {
+  background-color: transparent;
+}
+.view-roles .view-roles__user-grid .dojoxGridRowOver, .view-roles .view-roles__cms-tabs .dojoxGridRowOver {
+  border: 0px;
+  background-color: transparent;
+}
+.view-roles .view-roles__user-grid .dojoxGridCellOver, .view-roles .view-roles__cms-tabs .dojoxGridCellOver {
+  border: 0px;
+}
+.view-roles .view-roles__user-grid .dojoxGridRowOdd, .view-roles .view-roles__cms-tabs .dojoxGridRowOdd {
+  background-color: #ECEDEE;
+}
+.view-roles .view-roles__user-grid .dojoxGridRow, .view-roles .view-roles__cms-tabs .dojoxGridRow {
+  border-bottom: 1px solid #ebebeb;
+}
+
 .view-users .dijitDropDownActionButton {
   z-index: 2;
 }
