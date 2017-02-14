@@ -6546,7 +6546,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 .content-edit__dialog-error ul li {
   list-style-position: outside;
-  list-style-type: decimal;
+  list-style-type: disc;
   margin: 0 0 8px 16px;
 }
 
