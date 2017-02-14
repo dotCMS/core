@@ -4,11 +4,7 @@ import static com.dotcms.util.CollectionsUtils.entry;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.CollectionsUtils.mapEntries;
 import static com.dotcms.util.HttpRequestDataUtil.getHostname;
-import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_ENDPOINTS;
-import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_BASEURL;
-import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_PROTOCOL;
-import static com.dotmarketing.util.WebKeys.WEBSOCKET_SYSTEMEVENTS_ENDPOINT;
-import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT;
+import static com.dotmarketing.util.WebKeys.*;
 
 import java.io.Serializable;
 import java.util.Locale;
@@ -76,6 +72,8 @@ public class ConfigurationHelper implements Serializable {
 				Config.getIntProperty(DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT, 1000),
 				DEFAULT_REST_PAGE_COUNT,
 				Config.getIntProperty(DEFAULT_REST_PAGE_COUNT, 20),
+				DOTCMS_DISABLE_WEBSOCKET_PROTOCOL,
+				Boolean.valueOf( Config.getBooleanProperty(DOTCMS_DISABLE_WEBSOCKET_PROTOCOL, false) ),
 				I18N_MESSAGES_MAP,
 				mapEntries(
 						message("notifications_title", locale), // Notifications

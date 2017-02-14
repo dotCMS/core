@@ -148,7 +148,8 @@ public class EventsResource implements Serializable {
                 asyncResponse.setTimeout(this.timeoutSeconds, TimeUnit.SECONDS);
 
                 Logger.debug(this, "Getting syncr system events with a lastcallback as: " + lastCallback);
-                appContext.setAttribute(SystemEventsDelegate.LAST_CALLBACK, lastCallback);
+                appContext.setAttribute(SystemEventsDelegate.LAST_CALLBACK, lastCallback != null ? lastCallback :
+                        System.currentTimeMillis());
                 appContext.setAttribute(SystemEventsDelegate.RESPONSE, asyncResponse);
                 appContext.setAttribute(SystemEventsDelegate.USER,   initData.getUser());
 

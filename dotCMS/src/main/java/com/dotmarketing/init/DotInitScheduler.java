@@ -50,6 +50,8 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
+import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_WEBSOCKET_PROTOCOL;
+
 /**
  * Initializes all dotCMS startup jobs.
  *
@@ -920,8 +922,10 @@ public class DotInitScheduler {
                 }
             }
 
-			// Enabling the System Events Job
-            addSystemEventsJob();
+			if ( !Config.getBooleanProperty(DOTCMS_DISABLE_WEBSOCKET_PROTOCOL, false) ) {
+				// Enabling the System Events Job
+				addSystemEventsJob();
+			}
 
 			// Enabling the Delete Old System Events Job
 			addDeleteOldSystemEvents(sched);
