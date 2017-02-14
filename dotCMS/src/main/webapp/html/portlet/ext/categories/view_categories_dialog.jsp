@@ -79,7 +79,7 @@
 
 		var deleteFormatter = function(value, index) {
 			var inode = addedGrid<%=counter%>.store.getValue(addedGrid<%=counter%>.getItem(index), 'id');
-			return "<div style='width:100%;height:20px;cursor:link;' onclick=\"javascript:delCat<%=counter%>('"+inode+"');\">&nbsp;<span class='deleteIcon'></span>&nbsp" + value  + "</div>";
+			return "<div style='width:100%;height:20px;cursor:pointer;' onclick=\"javascript:delCat<%=counter%>('"+inode+"');\">&nbsp;<span class='deleteIcon'></span>&nbsp" + value  + "</div>";
 		}
 
 		var addedlayout = [
@@ -160,7 +160,7 @@
 	/*  CATEGORIES GRID FUNCTIONS */
 
 	var addFormatter<%=counter%> = function(value, index) {
-		return "<div style='text-align:center;width:100%;cursor:link;' onclick=\"javascript:drillDown<%=counter%>("+index+");\"><span class='toggleOpenIcon'></span></div>";
+		return "<div style='text-align:center;width:100%;cursor:pointer;' onclick=\"javascript:drillDown<%=counter%>("+index+");\"><span class='toggleOpenIcon'></span></div>";
 	};
 
 
@@ -170,7 +170,7 @@
 			value="&nbsp;";
 		}
 		
-		return "<div style='width:100%;cursor:link;' onclick=\"addCat<%=counter%>("+index+")\" >"+value+"</div>";
+		return "<div style='width:100%;cursor:pointer;' onclick=\"addCat<%=counter%>("+index+")\" >"+value+"</div>";
 	};
 
 	function createStore<%=counter%>(params) {
@@ -273,7 +273,7 @@
 	}
 
 	function manageBreadCrumbs<%=counter%>(inode, name) {
-		dojo.place("<a style=\"font-size: 12px\" id=\"a_"+inode+"\" href=\"javascript:prepareCrumbs<%=counter%>('"+inode+"', '"+name+"');  \">"+name+" &#62; </a>", "nav<%=counter%>", "last");
+		dojo.place(" <a style=\"\" id=\"a_"+inode+"\" href=\"javascript:prepareCrumbs<%=counter%>('"+inode+"', '"+name+"');  \"> &#62; "+name+"</a>", "nav<%=counter%>", "last");
 	}
 
 	function prepareCrumbs<%=counter%>(inode, name) {
@@ -329,8 +329,8 @@
 <div id="categoriesDialog<%=counter%>" dojoType="dijit.Dialog" style="display:none;max-width:900px;max-height:540px;vertical-align: middle; " draggable="true"
 	title="<%= LanguageUtil.get(pageContext, "categories") %>" >
 		<div class="categories-selector__breadcrumbs" id="breadCrumbs<%=counter%>">
-			<ul id="nav<%=counter%>" style="margin-left:0px">
-				<a id="a_null<%=counter%>" style="font-size: 12px" onfocus="return false;"  href="javascript:prepareCrumbs<%=counter%>(baseCat<%=counter%>, '<%= LanguageUtil.get(pageContext, "Top-Level") %>');"  \><%= LanguageUtil.get(pageContext, "Top-Level") %> &#62; </a>
+			<ul id="nav<%=counter%>" style="margin-left:0px;">
+				<a id="a_null<%=counter%>" style="" onfocus="return false;"  href="javascript:prepareCrumbs<%=counter%>(baseCat<%=counter%>, '<%= LanguageUtil.get(pageContext, "Top-Level") %>');"  \><%= LanguageUtil.get(pageContext, "Top-Level") %></a>
 			</ul>
 		</div>
 		<div class="categories-selector__toolbar">
