@@ -64,12 +64,12 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
             //Add fileds
             Field floatFied = new Field("float",Field.FieldType.TEXT,Field.DataType.FLOAT,contentType,true,true,true,1,"", "", "", false, false, true);
             floatFied.setVelocityVarName("float");
-            FieldFactory.saveField(floatFied);
+            floatFied = FieldFactory.saveField(floatFied);
             FieldsCache.addField(floatFied);
 
             Field textFied = new Field("text",Field.FieldType.TEXT,Field.DataType.TEXT,contentType,true,true,true,1,"", "", "", false, false, true);
             textFied.setVelocityVarName("text");
-            FieldFactory.saveField(textFied);
+            textFied = FieldFactory.saveField(textFied);
             FieldsCache.addField(textFied);
 
             Structure stFromDB = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("deletefield");
