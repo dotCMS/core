@@ -540,54 +540,67 @@ td {font-size: 100%;}
 </script>
  <%-- Add Tag Dialog --%>
 
-<div id="addTagDialog" title="<%= LanguageUtil.get(pageContext, "edit-tag") %>" dojoType="dijit.Dialog" style="display: none;width:500px">
+<div id="addTagDialog" title="<%= LanguageUtil.get(pageContext, "edit-tag") %>" dojoType="dijit.Dialog" style="display: none;">
     <form id="newTagForm" dojoType="dijit.form.Form" class="roleForm">
-        <div style="text-align: center">
-                <span  id="savedMessage" style="color:red; font-size:11px; font-family: verdana; " >
-                </span>
+        <div class="form-horizontal">
+            <dl>
+                <dt>
+                    <label for=""><%= LanguageUtil.get(pageContext, "tag") %>:</label>
+                </dt>
+                <dd>
+                    <input id="tagName" type="text" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" style="width: 200px" />
+                </dd>
+            </dl>
+            <dl>
+                <dt>
+                    <label for=""><%= LanguageUtil.get(pageContext, "Host") %>:</label>
+                </dt>
+                <dd>
+                    <input id="tagId" type="hidden" value=" " />
+                    <input id="userId" type="hidden" value=" " />
+                    <input id="tagStorage" type="hidden" value=" "/>
+                    <select id="tagStorage_dropDown" name="tagStorage_dropDown" dojoType="dijit.form.FilteringSelect" autocomplete="true" invalidMessage="Required." onChange="verifyHiddenFields()" style="width: 200px">
+                    <option value="SYSTEM_HOST"><%= LanguageUtil.get(pageContext, "tag-all-hosts") %></option>
+                    <%for (Host h: allHosts){
+                        if (!h.getIdentifier().equals(Host.SYSTEM_HOST) && h.isLive()) {
+                            %><option value="<%= h.getIdentifier() %> "><%= h.getHostname() %></option><%
+                        }
+                    }
+                    %>
 
-                <ul id="addTagErrorMessagesList" style="color:red; font-size:11px; font-family: verdana; " ></ul>
+                    </select>
+
+                    <script type="text/javascript">
+                        dojo.addOnLoad(verifyHiddenFields);
+            
+                        function verifyHiddenFields() {
+                            var txtIndexObj = document.getElementById('tagStorage');
+                            txtIndexObj.value = dijit.byId('tagStorage_dropDown').get('value');
+                        }
+                    </script>
+                </dd>
+            </dl>
+            <dl>
+                <dt></dt>
+                <dd>
+                    <div style="text-align: center">
+                            <span  id="savedMessage" style="color:red; font-size:11px; font-family: verdana; " >
+                            </span>
+
+                            <ul id="addTagErrorMessagesList" style="color:red; font-size:11px; font-family: verdana; " ></ul>
+                    </div>
+                </dd>
+            </dl>
         </div>
-        <dl>
-            <dt></dt>
-
-            <dt><%= LanguageUtil.get(pageContext, "tag") %>:</dt>
-            <dd><input id="tagName" type="text" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
-            <dt><%= LanguageUtil.get(pageContext, "Host") %>:</dt>
-            <dd>
-            <input id="tagId" type="hidden" value=" " />
-            <input id="userId" type="hidden" value=" " />
-            <input id="tagStorage" type="hidden" value=" "/>
-            <select id="tagStorage_dropDown" name="tagStorage_dropDown" dojoType="dijit.form.FilteringSelect" autocomplete="true" invalidMessage="Required." onChange="verifyHiddenFields()">
-            <option value="SYSTEM_HOST"><%= LanguageUtil.get(pageContext, "tag-all-hosts") %></option>
-            <%for (Host h: allHosts){
-                if (!h.getIdentifier().equals(Host.SYSTEM_HOST) && h.isLive()) {
-                    %><option value="<%= h.getIdentifier() %> "><%= h.getHostname() %></option><%
-                }
-            }
-            %>
-
-            </select>
-
-            <script type="text/javascript">
-                dojo.addOnLoad(verifyHiddenFields);
-    
-                function verifyHiddenFields() {
-                    var txtIndexObj = document.getElementById('tagStorage');
-                    txtIndexObj.value = dijit.byId('tagStorage_dropDown').get('value');
-                }
-            </script>
-            </dd>
-        </dl>
 
         <div class="buttonRow">
-            <button dojoType="dijit.form.Button" type="button" iconClass="cancelIcon" onClick="cancelAddNewTag()" id="cancelAddOrEdit">
+            <button dojoType="dijit.form.Button" type="button" onClick="cancelAddNewTag()" id="cancelAddOrEdit" class="dijitButtonFlat">
                 <%= LanguageUtil.get(pageContext, "Cancel") %>
             </button>
-            <button dojoType="dijit.form.Button" type="button" iconClass="saveIcon" onClick="saveTag()" id="saveButton">
+            <button dojoType="dijit.form.Button" type="button" onClick="saveTag()" id="saveButton">
                 <%= LanguageUtil.get(pageContext, "Save") %>
             </button>
-            <button dojoType="dijit.form.Button" type="button" iconClass="deleteIcon" onClick="deleteTag()" id="deleteButton">
+            <button dojoType="dijit.form.Button" type="button" onClick="deleteTag()" id="deleteButton" class="dijitButtonDanger">
                 <%= LanguageUtil.get(pageContext, "Delete") %>
             </button>
         </div>
