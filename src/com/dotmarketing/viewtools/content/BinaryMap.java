@@ -83,8 +83,12 @@ public class BinaryMap {
 
     public String getShortyUrl() {
 
-      String shorty = APILocator.getShortyAPI().shortify(content.getIdentifier());
-      return "/dA/"+shorty+"/"+field.getVelocityVarName()+"/" + file.getName();
+        if (file != null && file.exists()) {
+            String shorty = APILocator.getShortyAPI().shortify(content.getIdentifier());
+            return "/dA/"+shorty+"/"+field.getVelocityVarName()+"/" + file.getName();
+        } else {
+	        return null;
+        }
     }
 
     public String getShorty() {
@@ -94,8 +98,12 @@ public class BinaryMap {
 	
     public String getShortyUrlInode() {
 
-      String shorty = APILocator.getShortyAPI().shortify(content.getInode());
-      return "/dA/"+shorty+"/"+field.getVelocityVarName()+"/" + file.getName();
+        if (file != null && file.exists()) {
+            String shorty = APILocator.getShortyAPI().shortify(content.getInode());
+            return "/dA/"+shorty+"/"+field.getVelocityVarName()+"/" + file.getName();
+        } else {
+            return null;
+        }
     }
 	
 	/**
