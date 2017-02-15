@@ -4,18 +4,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.List;
 import java.util.UUID;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.dotcms.contenttype.business.ContentTypeFactory;
-import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
 import com.dotcms.contenttype.business.FieldFactoryImpl;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.DataTypes;
@@ -464,7 +460,7 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 		String TEST_VAR_PREFIX = "testField";
 
 		int numFields = 0;
-		for(Class clazz : APILocator.getFieldAPI2().fieldTypes()){
+		for(Class clazz : APILocator.getContentTypeFieldAPI().fieldTypes()){
 			Field fakeField = FieldBuilder.builder(clazz).name("fake").variable("fake").contentTypeId(type.id()).build();
 			boolean save = true;
 			if(fakeField instanceof OnePerContentType){
@@ -483,7 +479,7 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 						.contentTypeId(type.id())
 						.dataType(dt)
 						.build();
-				APILocator.getFieldAPI2().save(savedField, APILocator.systemUser());
+				APILocator.getContentTypeFieldAPI().save(savedField, APILocator.systemUser());
 				numFields++;
 			}
 		}

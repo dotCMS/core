@@ -3,14 +3,12 @@ package com.dotmarketing.portlets.structure.action;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
 import java.net.URLDecoder;
-import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.contenttype.business.ContentTypeApiImpl;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -29,7 +27,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PublishStateException;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -47,7 +44,6 @@ import com.dotmarketing.portlets.widget.business.WidgetAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.services.StructureServices;
 import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -55,7 +51,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
 import com.liferay.portal.util.Constants;
@@ -181,7 +176,7 @@ public class EditStructureAction extends DotPortletAction {
 		ContentType type;
 		Structure struc = new Structure();
 		try{
-			type= APILocator.getContentTypeAPI2(user).find(inodeString);
+			type= APILocator.getContentTypeAPI(user).find(inodeString);
 			struc = new StructureTransformer(type).asStructure();
 		}
 		catch(NotFoundInDbException nodb){
@@ -194,7 +189,7 @@ public class EditStructureAction extends DotPortletAction {
 			if(type.baseType() == BaseContentType.WIDGET
 					&& type.variable().equalsIgnoreCase(FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME)){
 						type = ContentTypeBuilder.builder(type).fixed(true).build();
-						APILocator.getContentTypeAPI2(user).save(type);
+						APILocator.getContentTypeAPI(user).save(type);
 			}
 		}
 
@@ -358,13 +353,13 @@ public class EditStructureAction extends DotPortletAction {
 
 			if (newStructure) {
 				String structureVelocityName = VelocityUtil.convertToVelocityVariable(structure.getName(), true);
-				structureVelocityName = APILocator.getContentTypeAPI2(APILocator.systemUser()).suggestVelocityVar(structureVelocityName);
+				structureVelocityName = APILocator.getContentTypeAPI(APILocator.systemUser()).suggestVelocityVar(structureVelocityName);
 				structure.setVelocityVarName(structureVelocityName);
 			}
 
 
 			// If there is no default structure this would be it
-			Structure defaultStructure = new StructureTransformer(APILocator.getContentTypeAPI2(user).findDefault()).asStructure();
+			Structure defaultStructure = new StructureTransformer(APILocator.getContentTypeAPI(user).findDefault()).asStructure();
 			if (!InodeUtils.isSet(defaultStructure.getInode())) {
 				structure.setDefaultStructure(true);
 			}
@@ -541,7 +536,7 @@ public class EditStructureAction extends DotPortletAction {
 			Structure structure = (Structure) req.getAttribute(WebKeys.Structure.STRUCTURE);
 
 			User user = _getUser(req);
-			APILocator.getContentTypeAPI2(user).setAsDefault(new StructureTransformer(structure).from());
+			APILocator.getContentTypeAPI(user).setAsDefault(new StructureTransformer(structure).from());
 			String message = "message.structure.defaultstructure";
 			SessionMessages.add(req, "message", message);
 		} catch (Exception ex) {

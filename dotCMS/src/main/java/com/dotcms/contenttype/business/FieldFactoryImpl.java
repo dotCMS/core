@@ -108,7 +108,7 @@ public class FieldFactoryImpl implements FieldFactory {
     Field f = byId(fieldVar.fieldId());
     ContentType t;
     try {
-      t = APILocator.getContentTypeAPI2(APILocator.systemUser()).find(f.contentTypeId());
+      t = APILocator.getContentTypeAPI(APILocator.systemUser()).find(f.contentTypeId());
       if (t != null) {
         CacheLocator.getContentTypeCache2().remove(t);
       }
@@ -145,7 +145,7 @@ public class FieldFactoryImpl implements FieldFactory {
 
 
     // we only validate new fields
-    if (throwAwayField.modDate().after(FieldApi.VALIDATE_AFTER)) {
+    if (throwAwayField.modDate().after(FieldAPI.VALIDATE_AFTER)) {
       if (!throwAwayField.acceptedDataTypes().contains(throwAwayField.dataType())
           && (throwAwayField.acceptedDataTypes().size() > 0
               && throwAwayField.acceptedDataTypes().get(0) != DataTypes.SYSTEM)) {

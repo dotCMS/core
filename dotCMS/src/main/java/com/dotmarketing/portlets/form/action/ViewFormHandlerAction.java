@@ -18,10 +18,8 @@ import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.portal.struts.DotPortletAction;
-import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -132,7 +130,7 @@ public class ViewFormHandlerAction extends DotPortletAction {
 			}
             structures = APILocator.getStructureAPI().find(user, false, false, queryCondition, orderby, limit, offset, direction);
 
-			count = APILocator.getContentTypeAPI2(user).count(queryCondition);
+			count = APILocator.getContentTypeAPI(user).count(queryCondition);
 			req.setAttribute(countWebKey, new Integer(count));
 			req.setAttribute(viewWebKey, structures);
 		} catch (Exception e) {

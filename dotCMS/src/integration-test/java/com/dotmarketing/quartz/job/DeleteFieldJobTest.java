@@ -28,7 +28,7 @@ import static org.junit.Assert.assertNull;
 
 public class DeleteFieldJobTest extends IntegrationTestBase {
 
-    /*
+
     final DeleteFieldJob instance = new DeleteFieldJob();
 
     @BeforeClass
@@ -64,15 +64,15 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
             //Add fileds
             Field floatFied = new Field("float",Field.FieldType.TEXT,Field.DataType.FLOAT,contentType,true,true,true,1,"", "", "", false, false, true);
             floatFied.setVelocityVarName("float");
-            FieldFactory.saveField(floatFied);
+            floatFied = FieldFactory.saveField(floatFied);
             FieldsCache.addField(floatFied);
 
             Field textFied = new Field("text",Field.FieldType.TEXT,Field.DataType.TEXT,contentType,true,true,true,1,"", "", "", false, false, true);
             textFied.setVelocityVarName("text");
-            FieldFactory.saveField(textFied);
+            textFied = FieldFactory.saveField(textFied);
             FieldsCache.addField(textFied);
 
-            Structure stFromDB = CacheLocator.getContentTypeCache().getStructureByName("DeleteField");
+            Structure stFromDB = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("deletefield");
             List<Field> fieldsBySortOrder = stFromDB.getFieldsBySortOrder();
 
             assertEquals(2, fieldsBySortOrder.size());
@@ -96,7 +96,7 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
                     CollectionsUtils.map("structure", contentType, "field", textFied, "user", systemUser));
 
             //asserts
-            stFromDB = CacheLocator.getContentTypeCache().getStructureByName("DeleteField");
+            stFromDB = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("deletefield");
             fieldsBySortOrder = stFromDB.getFieldsBySortOrder();
             assertEquals(0, fieldsBySortOrder.size());
 
@@ -119,5 +119,5 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
             throw new RuntimeException();
         }
     }
-    */
+
 }

@@ -16,7 +16,6 @@ import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -24,12 +23,10 @@ import com.dotcms.exception.BaseRuntimeInternationalizationException;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.util.ContentTypeUtil;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
@@ -50,7 +47,7 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 
-public class ContentTypeApiImpl implements ContentTypeApi {
+public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   final ContentTypeFactory fac;
   final FieldFactory ffac;
@@ -60,8 +57,8 @@ public class ContentTypeApiImpl implements ContentTypeApi {
 
 
 
-  public ContentTypeApiImpl(User user, boolean respectFrontendRoles, ContentTypeFactory fac, FieldFactory ffac,
-      PermissionAPI perms) {
+  public ContentTypeAPIImpl(User user, boolean respectFrontendRoles, ContentTypeFactory fac, FieldFactory ffac,
+                            PermissionAPI perms) {
     super();
     this.fac = fac;
     this.ffac = ffac;
@@ -72,8 +69,8 @@ public class ContentTypeApiImpl implements ContentTypeApi {
 
 
 
-  public ContentTypeApiImpl(User user, boolean respectFrontendRoles) {
-    this(user, respectFrontendRoles, FactoryLocator.getContentTypeFactory2(), FactoryLocator.getFieldFactory2(),
+  public ContentTypeAPIImpl(User user, boolean respectFrontendRoles) {
+    this(user, respectFrontendRoles, FactoryLocator.getContentTypeFactory(), FactoryLocator.getFieldFactory(),
         APILocator.getPermissionAPI());
   }
 

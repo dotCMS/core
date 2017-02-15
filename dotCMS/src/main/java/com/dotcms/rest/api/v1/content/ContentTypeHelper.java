@@ -3,32 +3,20 @@ package com.dotcms.rest.api.v1.content;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.portlet.PortletURL;
-import com.dotcms.repackage.javax.portlet.WindowState;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotcms.repackage.org.apache.poi.openxml4j.opc.ContentTypes;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.Layout;
-import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.business.StructureAPI;
-import com.dotmarketing.portlets.structure.factories.StructureFactory;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.liferay.portlet.PortletURLImpl;
 import com.liferay.util.LocaleUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.imap;
 import static com.dotcms.util.CollectionsUtils.list;
@@ -82,7 +70,7 @@ public class ContentTypeHelper implements Serializable {
         final InitDataObject initData = this.webResource.init(null, true, request, true, null); // should logged in
         final User user = initData.getUser();
 
-        List<ContentType> types = APILocator.getContentTypeAPI2(user,true).findAll();
+        List<ContentType> types = APILocator.getContentTypeAPI(user,true).findAll();
         List<BaseContentTypesView> result = list();
 
 
@@ -119,7 +107,7 @@ public class ContentTypeHelper implements Serializable {
         Locale locale = LocaleUtil.getLocale(request);
         
         List<ContentTypeView> recentsContent = new ArrayList<>();
-        List<ContentType> types = APILocator.getContentTypeAPI2(user).recentlyUsed(baseType,  -1);
+        List<ContentType> types = APILocator.getContentTypeAPI(user).recentlyUsed(baseType,  -1);
         for(ContentType type : types){
             recentsContent.add(  new ContentTypeView(type,contentTypeUtil.getActionUrl(request, type.inode(), user)));
         }

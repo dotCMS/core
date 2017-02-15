@@ -172,7 +172,7 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     if (innerFields == null) {
       try {
 
-        innerFields = APILocator.getFieldAPI2().byContentTypeId(this.id());
+        innerFields = APILocator.getContentTypeFieldAPI().byContentTypeId(this.id());
       } catch (DotDataException e) {
         throw new DotStateException("unable to load fields:" + e.getMessage(), e);
       }

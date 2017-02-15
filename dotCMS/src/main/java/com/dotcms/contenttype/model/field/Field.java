@@ -174,7 +174,7 @@ public abstract class Field implements FieldIf, Serializable {
     if (innerFieldVariables == null) {
       try {
         //System.err.println("loading field.variables:" + this.variable() + ":"+ System.identityHashCode(this));
-        innerFieldVariables = FactoryLocator.getFieldFactory2().loadVariables(this);
+        innerFieldVariables = FactoryLocator.getFieldFactory().loadVariables(this);
       } catch (DotDataException e) {
         throw new DotStateException("unable to load field variables:" + e.getMessage(), e);
       }

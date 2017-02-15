@@ -27,7 +27,7 @@ public class FieldsCache {
     }
     public static List<Field> getFieldsByStructureInode(String inode){
         try {
-            return new LegacyFieldTransformer(APILocator.getContentTypeAPI2(APILocator.getUserAPI().getSystemUser(), true).find(inode).fields()).asOldFieldList();
+            return new LegacyFieldTransformer(APILocator.getContentTypeAPI(APILocator.getUserAPI().getSystemUser(), true).find(inode).fields()).asOldFieldList();
         } catch (DotStateException | DotDataException | DotSecurityException e) {
             throw new DotStateException(e);
         }
@@ -55,7 +55,7 @@ public class FieldsCache {
     @SuppressWarnings("unchecked")
 	public static List<Field> getFieldsByStructureVariableName(String velocityVarName){
         try {
-            return new LegacyFieldTransformer(APILocator.getContentTypeAPI2(APILocator.getUserAPI().getSystemUser(), true).find(velocityVarName).fields()).asOldFieldList();
+            return new LegacyFieldTransformer(APILocator.getContentTypeAPI(APILocator.getUserAPI().getSystemUser(), true).find(velocityVarName).fields()).asOldFieldList();
         } catch (DotStateException | DotDataException | DotSecurityException e) {
             throw new DotStateException(e);
         }
@@ -114,7 +114,7 @@ public class FieldsCache {
     
 	public static Field getField(String id) {
         try {
-            return new LegacyFieldTransformer(APILocator.getFieldAPI2().find(id)).asOldField();
+            return new LegacyFieldTransformer(APILocator.getContentTypeFieldAPI().find(id)).asOldField();
         } catch (DotStateException | DotDataException e) {
             throw new DotStateException(e);
         }
@@ -127,7 +127,7 @@ public class FieldsCache {
 	public static List<FieldVariable> getFieldVariables(Field field) {
         try {
             return new FieldVariableTransformer(
-                    APILocator.getFieldAPI2().loadVariables(
+                    APILocator.getContentTypeFieldAPI().loadVariables(
                             new LegacyFieldTransformer(field).from()
                             )
                     ).oldFieldList();

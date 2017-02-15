@@ -313,10 +313,10 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     	dbInsert(retType);
 
     	if (isNew) {
-    		if (ContentTypeApi.reservedStructureNames.contains(retType.name().toLowerCase())) {
+    		if (ContentTypeAPI.reservedStructureNames.contains(retType.name().toLowerCase())) {
     			throw new DotDataException("cannot save a structure with name:" + retType.name());
     		}
-    		if (ContentTypeApi.reservedStructureVars.contains(retType.variable().toLowerCase())) {
+    		if (ContentTypeAPI.reservedStructureVars.contains(retType.variable().toLowerCase())) {
     			throw new DotDataException("cannot save a structure with name:" + retType.name());
     		}
     	}
@@ -330,7 +330,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
     // set up default fields
     List<Field> fields = (saveType.fields().isEmpty() && !existsInDb) ? retType.requiredFields() : saveType.fields();
-    FieldApi fapi = new FieldApiImpl().instance();
+    FieldAPI fapi = new FieldAPIImpl().instance();
     for (Field f : fields) {
       f = FieldBuilder.builder(f).contentTypeId(retType.id()).build();
       try {
@@ -416,7 +416,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
 
     // deleting fields
-    APILocator.getFieldAPI2().deleteFieldsByContentType(type);
+    APILocator.getContentTypeFieldAPI().deleteFieldsByContentType(type);
 
     // make sure folders don't refer to this structure as default fileasset structure
 

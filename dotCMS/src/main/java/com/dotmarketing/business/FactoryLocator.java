@@ -240,10 +240,10 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     public static PersonaFactory getPersonaFactory(){
         return (PersonaFactory) getInstance(FactoryIndex.PERSONA_FACTORY);
     }
-    public static ContentTypeFactory getContentTypeFactory2(){
+    public static ContentTypeFactory getContentTypeFactory(){
         return (ContentTypeFactory)  new ContentTypeFactoryImpl();
     }
-    public static FieldFactory getFieldFactory2(){
+    public static FieldFactory getFieldFactory(){
         return (FieldFactory)  new FieldFactoryImpl();
     }
     private static Object getInstance(FactoryIndex index) {

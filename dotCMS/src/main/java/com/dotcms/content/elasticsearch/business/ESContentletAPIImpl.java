@@ -37,7 +37,6 @@ import org.springframework.beans.BeanUtils;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.notifications.bean.NotificationLevel;
-import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.repackage.com.google.common.collect.Lists;
@@ -4768,7 +4767,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         List<com.dotcms.contenttype.model.field.Field> fields;
         try {
-            fields = APILocator.getContentTypeAPI2(APILocator.systemUser()).find(query.getFromClause()).fields();
+            fields = APILocator.getContentTypeAPI(APILocator.systemUser()).find(query.getFromClause()).fields();
         } catch (DotSecurityException e) {
            throw new DotStateException(e);
         }

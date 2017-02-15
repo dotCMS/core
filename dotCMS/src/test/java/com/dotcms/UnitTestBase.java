@@ -4,7 +4,7 @@ import static org.mockito.Mockito.mock;
 
 import org.junit.BeforeClass;
 
-import com.dotcms.contenttype.business.ContentTypeApi;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -14,11 +14,11 @@ import com.liferay.portal.model.User;
 
 public abstract class UnitTestBase extends BaseMessageResources {
 
-	protected static ContentTypeApi contentTypeAPI = mock(ContentTypeApi.class);
+	protected static ContentTypeAPI contentTypeAPI = mock(ContentTypeAPI.class);
 
 	public static class MyAPILocator extends APILocator {		
 		@Override
-		protected ContentTypeApi getContentTypeAPI2Impl(User user, boolean respectFrontendRoles) {
+		protected ContentTypeAPI getContentTypeAPIImpl(User user, boolean respectFrontendRoles) {
 			return contentTypeAPI;
 		}
 	}
