@@ -1,8 +1,12 @@
 package com.dotmarketing.osgi;
 
+import com.dotcms.repackage.com.httpbridge.webproxy.ui.HttpService;
+import com.dotmarketing.util.Logger;
+import org.apache.felix.http.api.ExtHttpService;
 import org.apache.felix.http.proxy.DispatcherTracker;
 import org.osgi.framework.BundleContext;
 import com.dotmarketing.util.WebKeys;
+import org.osgi.framework.ServiceReference;
 
 import java.io.IOException;
 
@@ -41,6 +45,7 @@ public class OSGIProxyServlet extends HttpServlet {
         if (System.getProperty(WebKeys.OSGI_ENABLED) != null) {
             bundleContext = getBundleContext();
             tracker = new DispatcherTracker(bundleContext, null, servletConfig);
+
             tracker.open();
 
         }

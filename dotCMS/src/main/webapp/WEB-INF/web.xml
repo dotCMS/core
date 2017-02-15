@@ -234,7 +234,6 @@
 		<servlet-name>ShortyServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.ShortyServlet</servlet-class>
 	</servlet>
-
 	<servlet>
     	<servlet-name>AjaxFileUploadServlet</servlet-name>
     	<servlet-class>com.dotmarketing.servlets.AjaxFileUploadServlet</servlet-class>
