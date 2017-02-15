@@ -9898,6 +9898,10 @@ a.category_higlighted, a.tag_higlighted {
 .context-menu__item:hover {
   background-color: #FAFAFA;
 }
+.context-menu__item [class$="Icon"],
+.context-menu__item [class*="Icon"] {
+  display: none;
+}
 .context-menu__item .arrowRightIcon {
   font-size: 12px;
   margin-top: -6px;
@@ -10192,6 +10196,10 @@ a.category_higlighted, a.tag_higlighted {
 }
 .context-menu__item:hover {
   background-color: #FAFAFA;
+}
+.context-menu__item [class$="Icon"],
+.context-menu__item [class*="Icon"] {
+  display: none;
 }
 .context-menu__item .arrowRightIcon {
   font-size: 12px;
