@@ -353,7 +353,7 @@ public class SpeedyAssetServlet extends HttpServlet {
         	 * without having to hit cache or db
         	 */
 
-			final String referrer = "/contentAsset/raw-data/" + inode + "/fileAsset/?byInode=true";
+			String referrer = "/contentAsset/raw-data/" + inode + "/fileAsset/?byInode=true";
 
             if (!canRead) {
             	if(user == null){

@@ -42,7 +42,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testInvalidSelectSanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("select");
 
         assertNotNull(s);
@@ -52,7 +52,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testInvalidSelect2SanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("select*");
 
         assertNotNull(s);
@@ -62,7 +62,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testInvalidSelect3SanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("selecbox select");
 
         assertNotNull(s);
@@ -72,7 +72,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testInvalidSelect4SanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("select all");
 
         assertNotNull(s);
@@ -82,7 +82,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testInvalidSelect5SanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("select ");
 
         assertNotNull(s);
@@ -92,7 +92,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testInvalidSelect6SanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter(" select ");
 
         assertNotNull(s);
@@ -102,7 +102,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testInvalidSelect7SanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter(" select");
 
         assertNotNull(s);
@@ -112,7 +112,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testInvalidSelect8SanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("xxx select xxx");
 
         assertNotNull(s);
@@ -123,7 +123,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testValidSelectBoxSanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("selectBox");
 
         assertNotNull(s);
@@ -133,7 +133,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testValidSelectBox2SanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("xxx selectBox xxx");
 
         assertNotNull(s);
@@ -143,7 +143,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testValidSelect3SanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("xxx select1 xxx");
 
         assertNotNull(s);
@@ -248,7 +248,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testValidTableSelectSanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("tableselect");
 
         assertNotNull(s);
@@ -262,7 +262,7 @@ public class SQLUtilTest  extends UnitTestBase {
                 "group", "order", "as ", "count","drop", "alter","truncate", "declare", "where", "exec", "--", "procedure", "pg_", "lock",
                 "unlock","write", "engine", "null","not ","mode", "set ",";"};
 
-        
+
         for (String evilWord : evilWords) {
 
             final String s = SQLUtil.sanitizeParameter("xxx" + evilWord + "xxxx");
@@ -277,7 +277,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testValidExploit1SanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter(exploit1);
 
         assertNotNull(s);
@@ -287,7 +287,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testExploit2SanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("q=') or 1=1");
 
         assertNotNull(s);
@@ -297,7 +297,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testExploit3SanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("\\\\') rlike (select/*/sleep(1))#");
 
         assertNotNull(s);
@@ -312,7 +312,7 @@ public class SQLUtilTest  extends UnitTestBase {
                 "group", "order", "as ", "count","drop", "alter","truncate", "declare", "where", "exec", "--", "procedure", "pg_", "lock",
                 "unlock","write", "engine", "null","not ","mode", "set ",";"};
 
-        
+
         for (String evilWord : evilWords) {
 
             final String s = SQLUtil.sanitizeParameter(evilWord);
@@ -329,7 +329,7 @@ public class SQLUtilTest  extends UnitTestBase {
                 "group", "order", "as ", "count","drop", "alter","truncate", "declare", "where", "exec", "--", "procedure", "pg_", "lock",
                 "unlock","write", "engine", "null","not ","mode", "set ",";"};
 
-        
+
         for (String evilWord : evilWords) {
 
             final String s = SQLUtil.sanitizeParameter("xxx " + evilWord);
@@ -347,7 +347,7 @@ public class SQLUtilTest  extends UnitTestBase {
                 "group", "order", "as ", "count","drop", "alter","truncate", "declare", "where", "exec", "--", "procedure", "pg_", "lock",
                 "unlock","write", "engine", "null","not ","mode", "set ",";"};
 
-        
+
         for (String evilWord : evilWords) {
 
             final String s = SQLUtil.sanitizeParameter(evilWord + " xxxx");
@@ -365,7 +365,7 @@ public class SQLUtilTest  extends UnitTestBase {
                 "group", "order", "as ", "count","drop", "alter","truncate", "declare", "where", "exec", "--", "procedure", "pg_", "lock",
                 "unlock","write", "engine", "null","not ","mode", "set ",";"};
 
-        
+
         for (String evilWord : evilWords) {
 
             final String s = SQLUtil.sanitizeParameter("xxx " + evilWord + " xxxx");
@@ -378,7 +378,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testInvalidInsertSanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("xxx insert xxx");
 
         assertNotNull(s);
@@ -389,7 +389,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testValidInsertSanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("xxx inserta xxx");
 
         assertNotNull(s);
@@ -399,7 +399,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testInvalidDeleteSanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("xxx delete xxx");
 
         assertNotNull(s);
@@ -410,7 +410,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testValidDeleteSanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("xxx deletee xxx");
 
         assertNotNull(s);
@@ -420,7 +420,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testInvalidUpdateSanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("xxx update xxx");
 
         assertNotNull(s);
@@ -430,7 +430,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testInvalidUpdate2SanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("xxx update/**/ xxx");
 
         assertNotNull(s);
@@ -441,7 +441,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testValidUpdateSanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("xxx updated xxx");
 
         assertNotNull(s);
@@ -451,7 +451,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testValidUpdate2SanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("xxx update1 xxx");
 
         assertNotNull(s);
@@ -461,7 +461,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testInvalidLikeSanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("xxx like%crack% xxx");
 
         assertNotNull(s);
@@ -471,7 +471,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testInvalidLike2SanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("xxx like xxx");
 
         assertNotNull(s);
@@ -481,7 +481,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testInvalidLike3SanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("xxx like %crack% xxx");
 
         assertNotNull(s);
@@ -492,7 +492,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testValidLikeSanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("xxx liked xxx");
 
         assertNotNull(s);
@@ -502,7 +502,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testValidLike2SanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("xxx nlike xxx");
 
         assertNotNull(s);
@@ -512,7 +512,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testInvalidOrSanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("xxx or/**/ xxx");
 
         assertNotNull(s);
@@ -522,7 +522,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testInvalidOr2SanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("xxx or xxx");
 
         assertNotNull(s);
@@ -533,7 +533,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testValidOrSanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("xxx orx xxx");
 
         assertNotNull(s);
@@ -543,7 +543,7 @@ public class SQLUtilTest  extends UnitTestBase {
     @Test()
     public void testValidOr2SanitizeParameter() throws Exception {
 
-        
+
         final String s = SQLUtil.sanitizeParameter("xxx nor xxx");
 
         assertNotNull(s);

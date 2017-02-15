@@ -85,6 +85,7 @@
     </filter>
 	<!--END DOTMARKETING FILTERS-->
 	
+	
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN FILTERS -->
  	<!-- END FILTERS -->
@@ -142,6 +143,8 @@
 		<url-pattern>/c/*</url-pattern>
 	</filter-mapping>
 	<!--END DOTMARKETING FILTER-MAPPINGS-->
+	
+	
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN LISTENERS -->
     <!-- END LISTENERS -->
@@ -215,9 +218,10 @@
 		<servlet-class>com.dotmarketing.servlets.SpeedyAssetServlet</servlet-class>
 	</servlet>
 	<servlet>
-		<servlet-name>SpeedyAssetServlet2</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.SpeedyAssetServlet2</servlet-class>
+		<servlet-name>ShortyServlet</servlet-name>
+		<servlet-class>com.dotmarketing.servlets.ShortyServlet</servlet-class>
 	</servlet>
+
 	<servlet>
     	<servlet-name>AjaxFileUploadServlet</servlet-name>
     	<servlet-class>com.dotmarketing.servlets.AjaxFileUploadServlet</servlet-class>
@@ -348,6 +352,7 @@
     	<servlet-name>CSSPreProcessServlet</servlet-name>
     	<servlet-class>com.dotcms.csspreproc.CSSPreProcessServlet</servlet-class>
     </servlet>
+    
     <!-- REST -->
     <servlet>
 		<servlet-name>RESTAPI</servlet-name>
@@ -386,7 +391,7 @@
  	<!-- END SERVLETS -->
  	
  	
-    <!-- TEST FRAMEWORK SERVLETS -->                                                                                        
+    <!-- TEST FRAMEWORK SERVLETS -->
        <servlet>
          <servlet-name>ServletTestRunner</servlet-name>
          <servlet-class>com.dotmarketing.servlets.test.ServletTestRunner</servlet-class>
@@ -496,7 +501,7 @@
 		<url-pattern>/dotAsset/*</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>
-		<servlet-name>SpeedyAssetServlet2</servlet-name>
+		<servlet-name>ShortyServlet</servlet-name>
 		<url-pattern>/dA/*</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>

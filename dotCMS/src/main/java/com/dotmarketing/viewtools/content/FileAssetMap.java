@@ -22,7 +22,7 @@ public class FileAssetMap extends FileAsset {
 
     /**
      * Create a new instance of FileAssetMap using a contentlet
-     * @param contentlet
+     * @param c
      * @return FileAssetMap new instance
      * @throws Exception
      */
@@ -36,4 +36,25 @@ public class FileAssetMap extends FileAsset {
 
         return fam;
     }
+    
+    
+    
+    
+    public String getShortyUrl() {
+
+      String shorty = APILocator.getShortyAPI().shortify(getIdentifier());
+      return "/dA/"+shorty+"/" + getFileAsset().getName();
+    }
+
+    public String getShorty() {
+
+        return APILocator.getShortyAPI().shortify(getIdentifier());
+    }
+    
+    public String getShortyUrlInode() {
+
+      String shorty = APILocator.getShortyAPI().shortify(getInode());
+      return "/dA/"+shorty+"/" + getFileAsset().getName();
+    }
+    
 }

@@ -1403,4 +1403,9 @@
 // 		},3000);
 
 	}
+	
+	function updateIcon(fontAwesomeClass){
+		var icon = document.getElementById('tabIcon');
+		icon.className ='fa '+fontAwesomeClass;
+	}
 </script>

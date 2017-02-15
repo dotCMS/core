@@ -50,6 +50,8 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
+import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_WEBSOCKET_PROTOCOL;
+
 /**
  * Initializes all dotCMS startup jobs.
  *
@@ -687,7 +689,8 @@ public class DotInitScheduler {
             String jobGroup = DOTCMS_JOB_GROUP_NAME;
             String triggerName = "trigger23";
             String triggerGroup = "group23";
-            if(Config.getBooleanProperty("ENABLE_REMOVE_INACTIVE_CLUSTER_SERVER", true) &&  Config.getBooleanProperty( "ENABLE_SERVER_HEARTBEAT", true )) {
+            if(Config.getBooleanProperty("ENABLE_REMOVE_INACTIVE_CLUSTER_SERVER", true)&& Config
+				.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", true)) {
 				try {
 					isNew = false;
 					
@@ -838,8 +841,10 @@ public class DotInitScheduler {
                 }
             }
 
-			// Enabling the System Events Job
-            addSystemEventsJob();
+			if ( !Config.getBooleanProperty(DOTCMS_DISABLE_WEBSOCKET_PROTOCOL, false) ) {
+				// Enabling the System Events Job
+				addSystemEventsJob();
+			}
 
 			// Enabling the Delete Old System Events Job
 			addDeleteOldSystemEvents(sched);
