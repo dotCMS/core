@@ -48,7 +48,7 @@ export class Accordion {
     styleUrls: ['accordion-group.css']
 })
 export class AccordionGroup implements OnDestroy {
-    private _isOpen:boolean = false;
+    @Input('open') _isOpen:boolean = false;
 
     @Input() heading: string;
     @Input() icon: string;
@@ -64,8 +64,12 @@ export class AccordionGroup implements OnDestroy {
         this.accordion.addGroup(this);
     }
 
-    get isOpen() {
+    get isOpen(): boolean {
         return this._isOpen;
+    }
+
+    open(): void {
+        this._isOpen = true;
     }
 
     toggleOpen(event: MouseEvent): void {
@@ -73,7 +77,7 @@ export class AccordionGroup implements OnDestroy {
         this.isOpen = !this.isOpen;
     }
 
-    ngOnDestroy() {
+    ngOnDestroy(): void {
         this.accordion.removeGroup(this);
     }
 

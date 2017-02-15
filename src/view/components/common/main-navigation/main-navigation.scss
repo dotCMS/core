@@ -49,4 +49,10 @@ accordion {
             }
         }
     }
+
+    .main-nav__submenu--active {
+        font-weight: bold;
+        font-style: oblique;
+        color: black !important;
+    }
 }
