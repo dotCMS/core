@@ -1,1 +1,3 @@
-<%response.sendRedirect("/dotAdmin/");%>
+<script>
+    top.location = '/dotAdmin/';
+</script>
