@@ -42,8 +42,15 @@ public class FileAssetMap extends FileAsset {
     
     public String getShortyUrl() {
 
-      String shorty = APILocator.getShortyAPI().shortify(getIdentifier());
-      return "/dA/"+shorty+"/" + getFileAsset().getName();
+        if (getFileAsset() != null
+            && getFileAsset().exists()
+            && getFileAsset().getName() != null) {
+
+            String shorty = APILocator.getShortyAPI().shortify(getIdentifier());
+            return "/dA/"+shorty+"/" + getFileAsset().getName();
+        } else {
+            return null;
+        }
     }
 
     public String getShorty() {
@@ -53,8 +60,15 @@ public class FileAssetMap extends FileAsset {
     
     public String getShortyUrlInode() {
 
-      String shorty = APILocator.getShortyAPI().shortify(getInode());
-      return "/dA/"+shorty+"/" + getFileAsset().getName();
+        if (getFileAsset() != null
+            && getFileAsset().exists()
+            && getFileAsset().getName() != null) {
+
+            String shorty = APILocator.getShortyAPI().shortify(getInode());
+            return "/dA/"+shorty+"/" + getFileAsset().getName();
+        } else {
+            return null;
+        }
     }
     
 }
