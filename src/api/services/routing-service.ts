@@ -18,7 +18,7 @@ export class RoutingService {
     private _currentPortletId: string;
 
     private _portletUrlSource$ = new Subject<string>();
-
+    private _currentPortlet$ = new Subject<string>();
 
     // TODO: I think we should be able to remove the routing injection
     constructor(loginService: LoginService, private router: DotRouterService,
@@ -66,8 +66,8 @@ export class RoutingService {
     public isPortlet(url: string): boolean {
         let urlSplit = url.split('/');
         let id = urlSplit[urlSplit.length - 1];
-        if(id.indexOf('?') >= 0){
-            id = id.substr(0, id.indexOf('?'))
+        if (id.indexOf('?') >= 0) {
+            id = id.substr(0, id.indexOf('?'));
         }
         return this.portlets.has(id);
     }
@@ -75,10 +75,15 @@ export class RoutingService {
     public setCurrentPortlet(url: string): void {
         let urlSplit = url.split('/');
         let id = urlSplit[urlSplit.length - 1];
-        if(id.indexOf('?') >= 0){
-            id = id.substr(0, id.indexOf('?'))
+        if (id.indexOf('?') >= 0) {
+            id = id.substr(0, id.indexOf('?'));
         }
         this._currentPortletId = id;
+        this._currentPortlet$.next(id);
+    }
+
+    get currentPortlet$(): Observable<string> {
+        return this._currentPortlet$;
     }
 
     public setMenus(menus: Menu[]): void {
@@ -88,7 +93,8 @@ export class RoutingService {
             this.portlets = new Map();
 
             for (let i = 0; i < this.menus.length; i++) {
-                let menu = this.menus[i];
+                let menu = this.menus[i]
+
                 for (let k = 0; k < menu.menuItems.length; k++) {
                     let subMenuItem = menu.menuItems[k];
                     if (subMenuItem.angular) {
@@ -135,4 +141,5 @@ export interface MenuItem {
     id: string;
     name: string;
     url: string;
+    menuLink: string;
 }
