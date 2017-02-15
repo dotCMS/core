@@ -37,8 +37,7 @@ export class MainNavigation {
      * Change or refresh the portlets from the main menu
      * @param menuItem portlet url
      */
-    public gotToPage(menuItem: MenuItem): void {
-        let link = menuItem.menuLink;
+    public gotToPage(link: string): void {
         this.routingService.changeRefreshPortlet(link);
     }
 
