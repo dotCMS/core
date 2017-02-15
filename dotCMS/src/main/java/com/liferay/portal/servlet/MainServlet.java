@@ -39,6 +39,7 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
 
 import com.dotcms.config.DotInitializationService;
+import com.dotmarketing.util.PortletURLUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -468,6 +469,11 @@ public class MainServlet extends ActionServlet {
 			completeURL = completeURL.substring(completeURL.indexOf("://") + 3, completeURL.length());
 
 			completeURL = completeURL.substring(completeURL.indexOf("/"), completeURL.length());
+
+			if (completeURL.equals("/c")){
+				res.sendRedirect("/" + PortletURLUtil.URL_ADMIN_PREFIX);
+				return;
+			}
 		}
 
 		req.setAttribute(WebKeys.CURRENT_URL, completeURL);
