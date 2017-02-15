@@ -9430,8 +9430,14 @@ a.category_higlighted, a.tag_higlighted {
   max-height: 100px;
 }
 
-.content-search__results-list .dijitCheckBox {
-  margin-right: 4px;
+.content-search__result-item {
+  padding-left: 20px;
+  position: relative;
+}
+.content-search__result-item .dijitCheckBox {
+  position: absolute;
+  left: 0;
+  top: 3px;
 }
 
 .content-type__edit-field-form {
@@ -9463,12 +9469,6 @@ a.category_higlighted, a.tag_higlighted {
 }
 .content-type__fields-list-row:hover {
   background-color: rgba(14, 128, 203, 0.1);
-}
-
-.content-type__url-pattern-help {
-  margin-left: 16px;
-  vertical-align: -1px;
-  cursor: pointer;
 }
 
 .design-template__sidebar-wrapper {
@@ -9747,10 +9747,6 @@ a.category_higlighted, a.tag_higlighted {
 
 .dijitContentPane .buttonRow {
   margin-bottom: 15px;
-}
-
-.view-actions__who-can-use .who-can-use__list {
-  min-width: 230px;
 }
 
 /* PORTLET STYLES 2.0 */
