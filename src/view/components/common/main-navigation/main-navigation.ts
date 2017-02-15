@@ -12,14 +12,6 @@ import {RoutingService, Menu, MenuItem} from '../../../../api/services/routing-s
 export class MainNavigation {
 
     private menuItems: Menu[];
-    private menuIcons = {
-        'Home': 'home',
-        'Site Browser': 'sitemap',
-        'Content': 'folder-open',
-        'Marketing': 'shopping-cart',
-        'Content Types': 'file-text',
-        'System': 'cog',
-    };
 
     private menuItemIdActive: string;
     private menuActiveTabName: string;

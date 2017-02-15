@@ -1,7 +1,5 @@
 import {Injectable} from '@angular/core';
 import {Logger} from 'angular2-logger/core';
-import {CONSTANTS} from '../../view/constants';
-import {DotcmsConfig} from './system/dotcms-config';
 import {Config} from '../util/config';
 import {StringUtils} from '../util/string.utils';
 
