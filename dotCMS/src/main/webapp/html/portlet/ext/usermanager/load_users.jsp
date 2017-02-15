@@ -180,53 +180,6 @@
 			</dd>
 		</dl>
 
-		<%
-			boolean isMailingListAdmin = com.dotmarketing.portlets.mailinglists.factories.MailingListFactory.isMailingListAdmin(user);
-
-			List mailingList = null;
-			List roles = com.dotmarketing.business.APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
-			Iterator rolesIt = roles.iterator();
-
-			if (isMailingListAdmin)
-				mailingList = com.dotmarketing.portlets.mailinglists.factories.MailingListFactory.getAllMailingLists();
-			else {
-				mailingList = com.dotmarketing.portlets.mailinglists.factories.MailingListFactory.getMailingListsByUser(user);
-				mailingList.add(com.dotmarketing.portlets.mailinglists.factories.MailingListFactory.getUnsubscribersMailingList());
-			}
-			if (0 < mailingList.size()) {
-				Iterator it = mailingList.iterator ();
-		%>
-		<dl>
-			<dt><%= LanguageUtil.get(pageContext, "Save-or-append-your-users-to-a-Mailing-List") %>:</dt>
-			<dd>
-				<input type="radio" dojoType="dijit.form.RadioButton" value="<%= com.liferay.portal.util.Constants.ADD %>" name="actionList" checked="checked" onclick="enableDisable('create');" />
-				<%= LanguageUtil.get(pageContext, "New-Mailing-List-Title") %>:
-				<input type="text" dojoType="dijit.form.TextBox" name="usermanagerListTitle" id="usermanagerListTitle" tabindex="1" value="" size="20" class="form-text" />
-			</dd>
-
-			<dd>
-				<input type="radio" dojoType="dijit.form.RadioButton" value="<%= com.liferay.portal.util.Constants.SAVE %>" name="actionList" onclick="enableDisable('append');" />
-				<%= LanguageUtil.get(pageContext, "Existing-Mailing-List") %>:
-				<select dojoType="dijit.form.FilteringSelect" id="usermanagerListInode" name="usermanagerListInode" disabled>
-					<option value=""></option>
-					<% while (it.hasNext()) {
-						com.dotmarketing.portlets.mailinglists.model.MailingList list = (com.dotmarketing.portlets.mailinglists.model.MailingList)it.next();
-					%>
-						<option value="<%=list.getInode()%>">
-							<%=list.getTitle().equals("Do Not Send List")?LanguageUtil.get(pageContext, "message.mailinglists.do_not_send_list_title"):list.getTitle() %>
-						</option>
-					<% } %>
-				</select>
-			</dd>
-
-			<dt>&nbsp;</dt>
-			<dd>
-				<input type="checkbox" dojoType="dijit.form.CheckBox" name="allowPublicToSubscribe" />
-				<label for="allowPublicToSubscribe"><%= LanguageUtil.get(pageContext, "Allow-Public-to-Subscribe") %></label>
-			</dd>
-		</dl>
-	<% } %>
-
 	</div>
 	<!-- END Main Tab -->
 

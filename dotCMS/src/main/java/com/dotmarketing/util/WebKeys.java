@@ -691,6 +691,7 @@ public final class WebKeys {
 	public static final String DOTCMS_WEBSOCKET_BASEURL = "dotcms.websocket.baseurl";
 	public static final String DOTCMS_WEBSOCKET_ENDPOINTS = "dotcms.websocket.endpoints";
     public static final String DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT = "dotcms.websocket.reconnect.time";
+    public static final String DOTCMS_DISABLE_WEBSOCKET_PROTOCOL = "dotcms.websocket.disable";
 
 	// System Events
 	public static final String WEBSOCKET_SYSTEMEVENTS_ENDPOINT = "websocket.systemevents.endpoint";

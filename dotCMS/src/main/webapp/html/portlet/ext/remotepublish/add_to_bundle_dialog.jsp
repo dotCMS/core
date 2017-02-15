@@ -14,7 +14,7 @@ String inode=request.getParameter( "inode" );// DOTCMS-7085
 <!--  DOTCMS-7085 -->
 <input name="assetIdentifier" id="assetIdentifier" type="hidden" value="<%=inode%>">
 
-<div style="width:430px;" dojoType="dijit.form.Form" id="addToBundleForm">
+<div dojoType="dijit.form.Form" id="addToBundleForm">
 
 		 <%--DATE FILTERING BOX--%>
         <div class="fieldWrapper" id="filterTimeDiv_atb" style="display: none;">
@@ -47,10 +47,10 @@ String inode=request.getParameter( "inode" );// DOTCMS-7085
             <div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="saveAddBundleProgress" id="saveAddBundleProgress"></div>
         </div>
 		<div class="buttonRow">
-			<button dojoType="dijit.form.Button" iconClass="addIcon" onClick="pushHandler.addToBundle()" type="button" id="addToBundleSaveButton">
+			<button dojoType="dijit.form.Button" onClick="pushHandler.addToBundle()" type="button" id="addToBundleSaveButton">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add")) %>
 			</button>
-			<button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="dijit.byId('addToBundleDia').hide()" type="button">
+			<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="dijit.byId('addToBundleDia').hide()" type="button">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
 			</button>
 		</div>
