@@ -1,7 +1,7 @@
 <accordion>
     <nav>
         <template ngFor let-menu [ngForOf]="menuItems">
-            <accordion-group [heading]="menu.tabName" [icon]="menuIcons[menu.tabName]">
+            <accordion-group [heading]="menu.tabName" [icon]="menu.tabIcon">
                 <div class="main-nav__submenu">
                     <template ngFor let-menuItem [ngForOf]="menu.menuItems">
                         <a (click)="gotToPage(menuItem.menuLink)" [routerLink]="[menuItem.menuLink]" *ngIf="menuItem.url && !menuItem.angular && !menuItem.ajax">
