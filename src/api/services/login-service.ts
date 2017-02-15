@@ -50,8 +50,8 @@ export class LoginService {
         // when the session is expired/destroyed
         dotcmsEventsService.subscribeTo('SESSION_DESTROYED').pluck('data').subscribe( date => {
 
-            this.loggerService.debug("Processing session destroyed: " + date);
-            this.loggerService.debug("User Logged In Date: " + this.auth.user.loggedInDate);
+            this.loggerService.debug('Processing session destroyed: ', date);
+            this.loggerService.debug('User Logged In Date: ', this.auth.user.loggedInDate);
             // if the destroyed event happens after the logged in date, so proceed!
             if (this.auth.user.loggedInDate && date && Number(date) > Number(this.auth.user.loggedInDate)) {
 
@@ -97,10 +97,7 @@ export class LoginService {
         }).pluck('entity').map(auth => {
 
             if (auth.user) {
-
                 this.setAuth(auth);
-                // on authentication, we have to connect to the websocket
-                this.dotcmsEventsService.connectWithSocket();
             }
             return auth;
         });
@@ -231,11 +228,6 @@ export class LoginService {
 
             this.setAuth(auth);
 
-            if (response.entity) {
-                // on login, we have to connect to the websocket
-                this.dotcmsEventsService.connectWithSocket();
-            }
-
             return response.entity;
         });
     }
@@ -276,7 +268,7 @@ export class LoginService {
             this.setAuth(nullAuth);
 
             // on logout close the websocket
-            this.dotcmsEventsService.close();
+            this.dotcmsEventsService.destroy();
 
             this.loggerService.debug("Navigating to Public Login");
 
@@ -327,6 +319,9 @@ export class LoginService {
         // When not logged user we need to fire the observable chain
         if (!auth.user) {
             this._logout$.next();
+        }else{
+            // on authentication, we have to connect to the websocket
+            this.dotcmsEventsService.connectWithSocket();
         }
     }
 

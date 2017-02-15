@@ -1,8 +1,6 @@
 import {Injectable} from '@angular/core';
 import {CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot} from '@angular/router';
-import _ from 'lodash';
 import {Observable} from 'rxjs/Rx';
-import {DotcmsConfig} from './system/dotcms-config';
 import {LoginService} from './login-service';
 import {DotRouterService} from './dot-router-service';
 

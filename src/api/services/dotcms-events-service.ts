@@ -1,87 +1,31 @@
 import {DotcmsConfig} from './system/dotcms-config';
 import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs/Rx';
-import {$WebSocket} from './websockets-service';
+import {WebSocketProtocol} from './protocol/websockets-protocol';
 import {LoggerService} from './logger.service';
 import {Subject} from 'rxjs/Subject';
+import {Socket, Url} from './socket';
+import {Protocol} from './protocol/protocol';
+import {HelloMessage} from './protocol/HelloMessage';
+import {ProtocolFactory} from './protocol/socket-factory';
+import {CoreWebService} from "./core-web-service";
+import {RequestMethod, Http} from '@angular/http';
 
 @Injectable()
 export class DotcmsEventsService {
 
-    ws: $WebSocket;
-
-    private baseUrl: String;
-    private protocol: String;
-    private endPoint: String;
-
-    private closedOnLogout: boolean = false;
-
+    private socket: Protocol;
     private subjects: Subject<any>[] = [];
-    private timeWaitToReconnect: number;
 
-    /**
-     * Initializes this service with the configuration properties that are
-     * necessary for opening the Websocket with the System Events end-point.
-     *
-     * @param dotcmsConfig - The dotCMS configuration properties that include
-     *                        the Websocket parameters.
-     */
-    constructor(private dotcmsConfig: DotcmsConfig, private loggerService: LoggerService) {
+    constructor(socketFactory: ProtocolFactory, private loggerService: LoggerService) {
 
-        this.dotcmsConfig.getConfig().subscribe(dotcmsConfig => {
+        socketFactory.socket$.subscribe( socket => {
+            this.socket = socket;
 
-            this.protocol = dotcmsConfig.getWebsocketProtocol();
-            this.baseUrl = dotcmsConfig.getWebsocketBaseUrl();
-            this.endPoint = dotcmsConfig.getSystemEventsEndpoint();
-            this.timeWaitToReconnect = dotcmsConfig.getTimeToWaitToReconnect();
-        });
-    }
+            socket.message$().subscribe(
+                data => {
+                    this.loggerService.debug('new event:', data);
 
-    /**
-     * Close the socket
-     */
-    close(): void {
-
-        // On logout, meaning no authenticated user lets try to close the socket
-        if (this.ws) {
-
-            /*
-             We need to turn on this closedOnLogout flag in order to avoid reconnections as we explicitly
-             closed the socket
-             */
-            this.closedOnLogout = true;
-            this.ws.close(true);
-        }
-    }
-
-    /**
-     * Opens the Websocket connection with the System Events end-point.
-     */
-    connectWithSocket(): void {
-        if (!this.ws && this.protocol && this.baseUrl && this.endPoint) {
-
-            this.loggerService.debug('Creating a new Web Socket connection', this.protocol, this.baseUrl, this.endPoint);
-
-            this.ws = new $WebSocket(`${this.protocol}://${this.baseUrl}${this.endPoint}`);
-            this.ws.connect();
-
-            this.ws.onClose(() => {
-
-                if (this.closedOnLogout) { // We explicitly closed the socket
-
-                    // If we closed the socket for a logout we need to reset the closedOnLogout flag
-                    this.closedOnLogout = false;
-                    this.ws = null; // Cleaning up the socket as we explicitly closed the socket
-
-                } else { // Something happened and we need to try a reconnection
-                    setTimeout(this.reconnect.bind(this), this.timeWaitToReconnect);
-                }
-            });
-
-            this.ws.getDataStream().subscribe(
-                res => {
-                    let data = (JSON.parse(res.data));
-               
                     if (!this.subjects[data.event]) {
                         this.subjects[data.event] = new Subject();
                     }
@@ -94,7 +38,22 @@ export class DotcmsEventsService {
                     this.loggerService.debug('Completed');
                 }
             );
-        }
+        });
+    }
+
+    /**
+     * Close the socket
+     */
+    destroy(): void {
+        this.socket.destroy();
+    }
+
+    /**
+     * Opens the Websocket connection with the System Events end-point.
+     */
+    connectWithSocket(): void {
+        this.loggerService.debug('Connecting with socket');
+        this.socket.start();
     }
 
     /**
@@ -124,11 +83,6 @@ export class DotcmsEventsService {
         })));
 
         return subject.asObservable();
-    }
-
-    private reconnect(): void {
-        this.ws = null;
-        this.connectWithSocket();
     }
 }
 

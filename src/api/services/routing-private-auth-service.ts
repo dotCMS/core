@@ -18,7 +18,7 @@ export class RoutingPrivateAuthService implements CanActivate {
             this.loginService.isLogin$.subscribe(isLogin => {
 
                 if (isLogin) {
-                    this.dotcmsConfig.getConfig().subscribe( dotcmsConfig => {
+                    this.dotcmsConfig.getConfig().subscribe( configParams => {
                         this.checkAccess(state.url).subscribe(checkAccess => {
                             if (!checkAccess) {
                                 this.router.goToMain();
