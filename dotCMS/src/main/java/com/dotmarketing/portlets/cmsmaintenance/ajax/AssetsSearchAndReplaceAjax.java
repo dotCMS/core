@@ -122,7 +122,7 @@ public class AssetsSearchAndReplaceAjax extends AjaxAction{
 
 		java.io.File fileData = null;
 		if(generateNewAssetVersion){
-			fileData =  new java.io.File(APILocator.getFileAPI().getRealAssetPath() + java.io.File.separator + file.getInode().charAt(0)
+			fileData =  new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + java.io.File.separator + file.getInode().charAt(0)
 					+ java.io.File.separator + file.getInode().charAt(1) + java.io.File.separator + file.getInode()
 					+ java.io.File.separator + APILocator.getFileAssetAPI().BINARY_FIELD + java.io.File.separator + WebKeys.TEMP_FILE_PREFIX + file.getFileAsset().getName());
 		}else{

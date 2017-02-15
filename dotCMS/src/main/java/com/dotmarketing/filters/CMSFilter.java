@@ -303,7 +303,7 @@ public class CMSFilter implements Filter {
 
 
 	public void init(FilterConfig config) throws ServletException {
-		this.ASSET_PATH = APILocator.getFileAPI().getRelativeAssetsRootPath();
+		this.ASSET_PATH = APILocator.getFileAssetAPI().getRealAssetsRootPath();
 	}
 	@Deprecated
 	private static Set<String> excludeList = null;

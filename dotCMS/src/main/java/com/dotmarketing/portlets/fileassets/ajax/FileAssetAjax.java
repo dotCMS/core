@@ -16,7 +16,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
@@ -25,11 +24,9 @@ import com.liferay.portal.model.User;
 
 public class FileAssetAjax {
 
-	protected FileAPI fileAPI;
 	protected UserWebAPI userAPI;
 
 	public FileAssetAjax() {
-		fileAPI = APILocator.getFileAPI();
 		userAPI = WebAPILocator.getUserWebAPI();
 	}
 
@@ -86,22 +83,6 @@ public class FileAssetAjax {
 		}finally {
 			if (fos != null)
 				fos.close();
-		}
-	}
-
-	public void removeTempFile(String contInode)throws PortalException, SystemException,
-	DotDataException, DotSecurityException, IOException{
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest req = ctx.getHttpServletRequest();
-		User user = userAPI.getLoggedInUser(req);
-		boolean respectFrontendRoles = userAPI.isLoggedToFrontend(req);
-		Contentlet cont  = APILocator.getContentletAPI().find(contInode, user, respectFrontendRoles);
-		FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(cont);
-		java.io.File tempFile = new java.io.File(APILocator.getFileAPI().getRealAssetPath() + java.io.File.separator + contInode.charAt(0)
-				+ java.io.File.separator + contInode.charAt(1) + java.io.File.separator + contInode
-				+ java.io.File.separator + APILocator.getFileAssetAPI().BINARY_FIELD + java.io.File.separator + WebKeys.TEMP_FILE_PREFIX + fa.getFileAsset().getName());
-		if(tempFile.exists()){
-			tempFile.delete();
 		}
 	}
 

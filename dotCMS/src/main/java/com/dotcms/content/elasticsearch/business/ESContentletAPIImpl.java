@@ -2920,7 +2920,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 String oldInode = workingContentlet.getInode();
 
 
-                java.io.File newDir = new java.io.File(APILocator.getFileAPI().getRealAssetPath() + java.io.File.separator
+                java.io.File newDir = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + java.io.File.separator
                 		+ newInode.charAt(0)
                         + java.io.File.separator
                         + newInode.charAt(1) + java.io.File.separator + newInode);
@@ -2928,7 +2928,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 java.io.File oldDir = null;
                 if(UtilMethods.isSet(oldInode)) {
-                	oldDir = new java.io.File(APILocator.getFileAPI().getRealAssetPath()
+                	oldDir = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
             			+ java.io.File.separator + oldInode.charAt(0)
             			+ java.io.File.separator + oldInode.charAt(1)
             			+ java.io.File.separator + oldInode);
@@ -4593,7 +4593,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	private String getContentletAssetPath(Contentlet con, Field field) {
 		String inode = con.getInode();
 
-		String result = APILocator.getFileAPI().getRealAssetPath()
+		String result = APILocator.getFileAssetAPI().getRealAssetsRootPath()
 		                            + java.io.File.separator
 		                            + inode.charAt(0)
 		                            + java.io.File.separator
@@ -4610,7 +4610,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	private String getContentletCacheAssetPath(Contentlet con, Field field) {
 		String inode = con.getInode();
 
-        String result = APILocator.getFileAPI().getRealAssetPath()
+        String result = APILocator.getFileAssetAPI().getRealAssetsRootPath()
                 + java.io.File.separator
                 + "cache"
                 + java.io.File.separator
@@ -4641,7 +4641,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         java.io.File binaryFile = null ;
         /*** THIS LOGIC IS DUPED IN THE CONTENTLET POJO.  IF YOU CHANGE HERE, CHANGE THERE **/
         try{
-        java.io.File binaryFilefolder = new java.io.File(APILocator.getFileAPI().getRealAssetPath()
+        java.io.File binaryFilefolder = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
                 + java.io.File.separator
                 + contentletInode.charAt(0)
                 + java.io.File.separator

@@ -22,8 +22,6 @@ import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.files.business.FileAPI;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
@@ -575,13 +573,6 @@ public class HostAPIImpl implements HostAPI {
 			public void deleteHost() throws Exception {
 				if(host != null){
 					hostCache.remove(host);
-				}
-
-				// Remove Old 1.9 Files
-				FileAPI fileAPI = APILocator.getFileAPI();
-				List<File> files = fileAPI.findFiles(user, true, null, host.getIdentifier(), null, null, null, 0, -1, null);
-				for (File file : files) {
-					fileAPI.delete(file, user, respectFrontendRoles);
 				}
 
 				DotConnect dc = new DotConnect();

@@ -22,6 +22,7 @@ import com.dotcms.repackage.com.bradmcevoy.http.Request;
 import com.dotcms.repackage.com.bradmcevoy.http.Resource;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -141,13 +142,9 @@ public class LanguageFileResourceImpl implements FileResource, LockableResource 
 
 
 	public String getContentType(String accepts) {
-//		String s = MimeUtil.getMimeType(file.getAbsolutePath());
-//		s = MimeUtil.getPreferedMimeType(accepts,s);
-//		return s;
-		
 		String mimeType = Config.CONTEXT.getMimeType(file.getName());
 		if (!UtilMethods.isSet(mimeType)) {
-			mimeType = com.dotmarketing.portlets.files.model.File.UNKNOWN_MIME_TYPE;
+			mimeType = FileAsset.UNKNOWN_MIME_TYPE;
 		}
 		
 		return mimeType;

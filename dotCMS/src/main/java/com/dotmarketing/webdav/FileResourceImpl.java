@@ -6,8 +6,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Date;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import com.dotcms.repackage.com.bradmcevoy.http.Auth;
 import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
@@ -25,15 +23,13 @@ import com.dotcms.repackage.com.bradmcevoy.http.Request.Method;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.Versionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.files.business.FileAPI;
-import com.dotmarketing.portlets.files.model.File;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -42,7 +38,7 @@ public class FileResourceImpl implements FileResource, LockableResource {
 
 	private static final FileAPI fileAPI = APILocator.getFileAPI();
 	private DotWebdavHelper dotDavHelper;
-	private IFileAsset file = new File();
+	private IFileAsset file = new FileAsset();
 	String path;
 	private boolean isAutoPub = false;
 	private PermissionAPI perAPI;
@@ -118,11 +114,8 @@ public class FileResourceImpl implements FileResource, LockableResource {
 	public Long getContentLength() {
 		java.io.File workingFile;
 		try {
-			if(file instanceof Contentlet){
-				workingFile = ((Contentlet)file).getBinary(FileAssetAPI.BINARY_FIELD);
-			}else{
-				workingFile = APILocator.getFileAPI().getAssetIOFile((File)file);
-			}
+			workingFile = ((Contentlet)file).getBinary(FileAssetAPI.BINARY_FIELD);
+
 		} catch (IOException e) {
 			Logger.error(this, e.getMessage(), e);
 			return new Long(0);
@@ -167,11 +160,7 @@ public class FileResourceImpl implements FileResource, LockableResource {
 	public void sendContent(OutputStream out, Range arg1, Map<String, String> arg2, String arg3) throws IOException {
 		java.io.File f;
 		try {
-			if(file instanceof Contentlet){
-				f = ((Contentlet)file).getBinary(FileAssetAPI.BINARY_FIELD);
-			}else{
-				f = APILocator.getFileAPI().getAssetIOFile((File)file);
-			}
+			f = ((Contentlet)file).getBinary(FileAssetAPI.BINARY_FIELD);
 		} catch (IOException e) {
 			Logger.error(this, e.getMessage(), e);
 			return;
@@ -236,7 +225,7 @@ public class FileResourceImpl implements FileResource, LockableResource {
 		return file;
 	}
 
-	public void setFile(File file) {
+	public void setFile(FileAsset file) {
 		this.file = file;
 	}
 

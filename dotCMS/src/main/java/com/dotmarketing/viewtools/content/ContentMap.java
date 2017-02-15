@@ -24,8 +24,6 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
-import com.dotmarketing.portlets.files.business.FileAPI;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.KeyValueFieldUtil;
@@ -35,7 +33,6 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.velocity.VelocityServlet;
 import com.dotmarketing.viewtools.ContentsWebAPI;
 import com.liferay.portal.model.User;
 
@@ -53,7 +50,6 @@ import com.liferay.portal.model.User;
  */
 public class ContentMap {
 
-	private static final FileAPI fileAPI = APILocator.getFileAPI();
 	private Contentlet content;
 	private ContentletAPI conAPI;
 	private PermissionAPI perAPI;
@@ -145,26 +141,13 @@ public class ContentMap {
 							return null;
 						}
 						Identifier i = APILocator.getIdentifierAPI().find(fid);
-						IFileAsset file = null;
-						String p = "";
-						if (EDIT_OR_PREVIEW_MODE){
-							p = WorkingCache.getPathFromCache(i.getURI(),InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier(), content.getLanguageId());
-						}else{
-							p = LiveCache.getPathFromCache(i.getURI(),InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier(), content.getLanguageId());
-						}
-						p = p.substring(5, p.lastIndexOf("."));
+
 						if(i!=null && InodeUtils.isSet(i.getId()) && i.getAssetType().equals("contentlet")){
 							return i.getPath();
 						}
-						file = fileAPI.find(p,user,false);
-						if(file != null && UtilMethods.isSet(file.getInode())){
-							return ((File)file).getURI();
-						}else{
-							return null;
-						}
-					}else{
-						return null;
 					}
+					return null;
+
 				}else{
 					return content.getMap().get(fieldVariableName);
 				}
@@ -196,8 +179,6 @@ public class ContentMap {
 
                             return fam;
 						}
-					}else{
-						file = fileAPI.find(p,user,true);
 					}
 				}else{
 					String p = LiveCache.getPathFromCache(i.getURI(),InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier(), content.getLanguageId());
@@ -211,8 +192,6 @@ public class ContentMap {
 
 						    return fam;
 						}
-					}else{
-						file = fileAPI.find(p,user,true);
 					}
 				}
 				if(file != null && UtilMethods.isSet(file.getInode())){

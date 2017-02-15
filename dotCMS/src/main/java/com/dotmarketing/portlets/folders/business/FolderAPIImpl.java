@@ -482,19 +482,6 @@ public class FolderAPIImpl implements FolderAPI  {
 				APILocator.getHTMLPageAPI().delete((HTMLPage) page, user, false);
 			}
 
-			/************ Files *****************/
-			HibernateUtil.getSession().clear();
-			List<File> files = getFiles(folder, user, respectFrontEndPermissions);
-			for (File file : files) {
-			    HibernateUtil.getSession().clear();
-				APILocator.getFileAPI().delete((File) file, user, false);
-			}
-			/************ Structures *****************/
-			List<Structure> structures = getStructures(folder, user, respectFrontEndPermissions);
-			for (Structure struc : structures) {
-
-				// APILocator.getFileAPI().delete((File) file, sys, false);
-			}
 			/************ Links *****************/
 			HibernateUtil.getSession().clear();
 			List<Link> links = getLinks(folder, user, respectFrontEndPermissions);

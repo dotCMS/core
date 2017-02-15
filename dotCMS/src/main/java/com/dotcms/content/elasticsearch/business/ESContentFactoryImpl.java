@@ -647,7 +647,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         int deleted=before - after;
 
         // deleting orphan binary files
-        java.io.File assets=new java.io.File(APILocator.getFileAPI().getRealAssetsRootPath());
+        java.io.File assets=new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath());
         for(java.io.File ff1 : assets.listFiles())
             if(ff1.isDirectory() && ff1.getName().length()==1 && ff1.getName().matches("^[a-f0-9]$"))
                 for(java.io.File ff2 : ff1.listFiles())

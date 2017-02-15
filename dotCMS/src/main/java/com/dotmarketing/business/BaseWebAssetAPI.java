@@ -320,23 +320,6 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 
 				VirtualLinksCache.removePathFromCache(((Link)currWebAsset).getUrl());
 			}
-			else if(currWebAsset instanceof File)
-			{
-
-				VersionInfo vi = APILocator.getVersionableAPI().getVersionInfo(currWebAsset.getIdentifier());
-
-				if(!UtilMethods.isSet(vi)) {
-					auxVersionInfo = getVersionInfo(currWebAsset, identifier,
-							webAssetList, "file_asset");
-				}
-
-				APILocator.getFileAPI().invalidateCache((File)currWebAsset);
-				if(RefreshMenus.shouldRefreshMenus((File)currWebAsset)){
-					RefreshMenus.deleteMenu(currWebAsset);
-					Identifier ident=APILocator.getIdentifierAPI().find(currWebAsset);
-					CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
-				}
-			}
 
 			if(auxVersionInfo==null || !UtilMethods.isSet(auxVersionInfo.getIdentifier())) { // null auxVersionInfo  indicates everything goes fine
 				APILocator.getVersionableAPI().deleteVersionInfo(currWebAsset.getVersionId());

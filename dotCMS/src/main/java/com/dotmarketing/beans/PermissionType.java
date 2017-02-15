@@ -20,7 +20,6 @@ public enum PermissionType {
     TEMPLATE_LAYOUT(TemplateLayout.class.getCanonicalName(), ApplyTo.ONLY_HOST),
     CONTAINER(Container.class.getCanonicalName(), ApplyTo.ONLY_HOST),
     FOLDER(Folder.class.getCanonicalName()),
-    FILE(File.class.getCanonicalName()),
     IHTMLPAGE(IHTMLPage.class.getCanonicalName()),
     LINK(Link.class.getCanonicalName()),
     CONTENTLET(Contentlet.class.getCanonicalName()),

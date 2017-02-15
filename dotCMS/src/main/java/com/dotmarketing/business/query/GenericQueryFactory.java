@@ -56,7 +56,6 @@ public abstract class GenericQueryFactory {
 	
 	public enum BuilderType {
 		CONTENTLET("CONTENTLET"),
-		FILE_ASSET("FILE_ASSET"),
 		FOLDER("FOLDER"),
 		HTMLPAGE("HTMLPAGE"),
 		STRUCTURE("STRUCTURE"),
@@ -304,9 +303,6 @@ public abstract class GenericQueryFactory {
 			}
 			else if (builderType.equals(BuilderType.FOLDER)){
 				return APILocator.getFolderAPI().DBSearch(query, APILocator.getUserAPI().getSystemUser(), false);
-			}
-			else if (builderType.equals(BuilderType.FILE_ASSET)){
-				return APILocator.getFileAPI().DBSearch(query, APILocator.getUserAPI().getSystemUser(), false);
 			}
 			else if (builderType.equals(BuilderType.MENU_LINK)){
 				return LinkFactory.DBSearch(query, APILocator.getUserAPI().getSystemUser(), false);

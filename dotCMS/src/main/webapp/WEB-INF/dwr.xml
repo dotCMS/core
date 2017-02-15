@@ -61,9 +61,6 @@
     <create creator="new" javascript="HostVariableAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.hostvariable.ajax.HostVariableAjax"/>
     </create>
-    <create creator="new" javascript="FileAjax" scope="application">
-      <param name="class" value="com.dotmarketing.portlets.files.ajax.FileAjax"/>
-    </create>
     <create creator="new" javascript="ContainerAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.containers.ajax.ContainerAjax"/>
     </create>

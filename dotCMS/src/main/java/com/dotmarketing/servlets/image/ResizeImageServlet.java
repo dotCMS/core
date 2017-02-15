@@ -30,8 +30,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
@@ -50,7 +48,6 @@ import com.liferay.portal.model.User;
  *
  */
 public class ResizeImageServlet extends HttpServlet {
-    private static final FileAPI fileAPI = APILocator.getFileAPI();
 	/**
      * serialVersionUID
      */
@@ -281,14 +278,6 @@ public class ResizeImageServlet extends HttpServlet {
         				contAssetPath += java.io.File.separator;
         			}
         			ext = fa.getExtension();
-            	}else if(InodeUtils.isSet(identifier.getId())){
-                    file = fileAPI.find(inode,user,true);
-                    isSet =InodeUtils.isSet(file.getInode());
-                    fileName = file.getFileName();
-                    inodeOrId = inode;
-                    imgWidth = file.getWidth();
-                    imgLength = file.getHeight();
-                    ext = file.getExtension();
             	}
 
 
@@ -367,7 +356,7 @@ public class ResizeImageServlet extends HttpServlet {
                     String suffix = ext;
 
                     // gets the real path to the assets directory
-                    String filePath = fileAPI.getRealAssetsRootPath();
+                    String filePath = APILocator.getFileAssetAPI().getRealAssetsRootPath();
 
                     // creates the path where to save the working file based on
                     // the inode
@@ -498,7 +487,7 @@ public class ResizeImageServlet extends HttpServlet {
                     // set the content type and get the output stream
                     response.setContentType("image/jpeg");
                     // Construct the image
-                    String path = fileAPI.getRealAssetsRootPath() + java.io.File.separator + ".." + java.io.File.separator + "html" + java.io.File.separator + "js" + java.io.File.separator +
+                    String path = APILocator.getFileAssetAPI().getRealAssetsRootPath() + java.io.File.separator + ".." + java.io.File.separator + "html" + java.io.File.separator + "js" + java.io.File.separator +
                     		"editor" + java.io.File.separator + "images" + java.io.File.separator + "spacer.gif";
                     java.io.File f = new java.io.File(path);
 

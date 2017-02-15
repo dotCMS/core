@@ -19,7 +19,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.files.business.FileAPI;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -36,7 +36,7 @@ import com.liferay.util.FileUtil;
  */
 public class MaintenanceUtil {
 
-	private static final FileAPI fileAPI = APILocator.getFileAPI();
+	private static final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
 
 	/**
 	 * Use to delete the velocity static store
@@ -636,7 +636,7 @@ public class MaintenanceUtil {
 				continue;
 			}
 			try{
-				f = new File(fileAPI.getRealAssetPath(result.get("inode").toString(), UtilMethods.getFileExtension(result.get("file_name").toString())));
+				f = new File(fileAssetAPI.getRealAssetPath(result.get("inode").toString(), UtilMethods.getFileExtension(result.get("file_name").toString())));
 			}catch (Exception e) {
 				hasErrors = true;
 				Logger.error(MaintenanceUtil.class, "Unable to load the file with inode " + result.get("inode").toString() + " : " + e.getMessage(),e);

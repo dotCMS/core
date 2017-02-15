@@ -1,5 +1,26 @@
 package com.dotmarketing.servlets.image;
 
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.util.SecurityUtils;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.servlets.AjaxFileUploadListener;
+import com.dotmarketing.servlets.AjaxFileUploadListener.FileUploadStats;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,32 +31,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.util.SecurityUtils;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cache.WorkingCache;
-import com.dotmarketing.cms.factories.PublicEncryptionFactory;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.files.business.FileAPI;
-import com.dotmarketing.portlets.files.model.File;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.servlets.AjaxFileUploadListener;
-import com.dotmarketing.servlets.AjaxFileUploadListener.FileUploadStats;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Constants;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.model.User;
-import com.liferay.util.FileUtil;
 
 /**
  * This servlet resize an image proportionally without placing that image into a
@@ -214,9 +209,7 @@ public class ImageToolAjaxServlet extends HttpServlet {
 			java.io.File temp = java.io.File.createTempFile(saveAsIOFile.getName(),UtilMethods.getFileExtension(saveAsIOFile.getName()));
 			temp.deleteOnExit();
 			FileUtil.copyFile(saveAsIOFile, temp);
-			
-			
-			FileAPI fAPI = APILocator.getFileAPI();
+
 			user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
 			Identifier ident = APILocator.getIdentifierAPI().findFromInode(inode);
 		    if(ident!=null && InodeUtils.isSet(ident.getId()) && ident.getAssetType().equals("contentlet")){
@@ -237,31 +230,6 @@ public class ImageToolAjaxServlet extends HttpServlet {
 					APILocator.getContentletAPI().checkin(fileAsset, user,false);
 		    	}
 		    	
-		    }else{
-		    	File src = fAPI.get(inode,user, false );
-		    	Identifier fileId = APILocator.getIdentifierAPI().find(src.getIdentifier());
-				Host h = APILocator.getHostAPI().find(fileId.getHostId(), user, false);
-				Folder folder = APILocator.getFileAPI().getFileFolder(src, h, user, false);
-				File copiedFile = new File();
-				copiedFile.setFileName(fileName);
-				copiedFile.setAuthor(user.getFullName());
-				copiedFile.setModUser(user.getUserId());
-				copiedFile.setFriendlyName(src.getFriendlyName());
-				copiedFile.setMimeType(APILocator.getFileAPI().getMimeType(fileName));
-				String x = WorkingCache.getPathFromCache(APILocator.getIdentifierAPI().find(folder).getPath() + fileName, h);
-
-				
-				
-				if(UtilMethods.isSet(x)){
-					response.getWriter().println("failure.  fileAlreadyExists");
-					
-					return;
-				}
-				
-
-
-				fAPI.saveFile(copiedFile, temp, folder, user, false);
-
 		    }
 		
 	

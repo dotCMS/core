@@ -27,6 +27,9 @@ import com.liferay.portal.model.User;
 public class FileAsset extends Contentlet implements IFileAsset {
 
 	String metaData;
+
+	public static final String UNKNOWN_MIME_TYPE = "unknown";
+
 	public FileAsset() {
 		super();
 
@@ -128,10 +131,10 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	}
 
 	public String getMimeType() {
-		String mimeType = APILocator.getFileAPI().getMimeType(getFileName());
+		String mimeType = APILocator.getFileAssetAPI().getMimeType(getFileName());
 
 
-		if (mimeType == null || "unknown".equals(mimeType)){
+		if (mimeType == null || UNKNOWN_MIME_TYPE.equals(mimeType)){
 			mimeType = "application/octet-stream";
 		}
 

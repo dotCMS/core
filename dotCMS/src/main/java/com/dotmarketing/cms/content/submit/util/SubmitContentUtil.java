@@ -219,39 +219,6 @@ public class SubmitContentUtil {
 
 	}
 
-	public static FileAsset saveTempFile(User user, Host host, java.io.File uploadedFile, String folderPath, String title) throws Exception {
-
-		Folder folder = APILocator.getFolderAPI().findFolderByPath(folderPath, host,user,false);
-
-		byte[] bytes = FileUtil.getBytes(uploadedFile);
-
-		if (bytes!=null) {
-
-			String name = UtilMethods.getFileName(title);
-			int counter = 1;
-			while(APILocator.getFileAPI().fileNameExists(folder, name)) {
-				name = name + counter;
-				counter++;
-			}
-
-			Contentlet cont = new Contentlet();
-			cont.setStructureInode(folder.getDefaultFileType());
-			cont.setStringProperty(FileAssetAPI.TITLE_FIELD, UtilMethods.getFileName(name));
-			cont.setFolder(folder.getInode());
-			cont.setHost(host.getIdentifier());
-			cont.setBinary(FileAssetAPI.BINARY_FIELD, uploadedFile);
-			APILocator.getContentletAPI().checkin(cont, user,false);
-			APILocator.getVersionableAPI().setLive(cont);
-			return APILocator.getFileAssetAPI().fromContentlet(cont);
-
-
-		}
-
-		return null;
-
-	}
-
-
 	/**
 	 * Set the field value, to a content according the content structure
 	 * @param structure The content structure

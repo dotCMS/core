@@ -7,7 +7,6 @@
 <%@page import="com.dotmarketing.factories.InodeFactory"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.business.Role"%>
-<%@page import="com.dotmarketing.portlets.files.business.FileAPI"%>
 <%@page import="com.dotmarketing.portlets.folders.business.FolderAPI"%>
 <%@page import="com.dotmarketing.portlets.files.struts.FileForm"%>
 <%@ include file="/html/portlet/ext/files/init.jsp" %>
@@ -21,7 +20,6 @@
 <%
 	session.removeAttribute(com.dotmarketing.util.WebKeys.IMAGE_TOOL_SAVE_FILES);
 	PermissionAPI perAPI = APILocator.getPermissionAPI();
-	FileAPI fileAPI = APILocator.getFileAPI();
 	FolderAPI folderAPI = APILocator.getFolderAPI();
 	int showDim = 300;
 	if(request.getAttribute("fileInode") != null){

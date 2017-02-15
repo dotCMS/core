@@ -1,25 +1,9 @@
 package com.dotmarketing.webdav;
 
 
-import static org.junit.Assert.assertEquals;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.enterprise.PasswordFactoryProxy;
-import com.dotcms.repackage.com.ibm.icu.util.Calendar;
-import junit.framework.Assert;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-
-import org.junit.Before;
-import org.junit.Test;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -38,6 +22,19 @@ import com.ettrema.httpclient.Host;
 import com.ettrema.httpclient.InternalServerError;
 import com.ettrema.httpclient.Resource;
 import com.liferay.portal.model.User;
+
+import junit.framework.Assert;
+
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.io.FileWriter;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import static org.junit.Assert.assertEquals;
 
 public class WebDavTest extends IntegrationTestBase {
 	
@@ -91,57 +88,7 @@ public class WebDavTest extends IntegrationTestBase {
 	    assertEquals("text1",sw1.toString());
 	    assertEquals("text2",sw2.toString());
 	}
-	
-	@Test
-	public void legacyFiles() throws Exception {
-	    // prepare folder
-	    User user=APILocator.getUserAPI().getSystemUser();
-	    com.dotmarketing.beans.Host host=APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
-	    com.dotmarketing.portlets.folders.model.Folder ff;
-	    ff=APILocator.getFolderAPI().createFolders("/wt/webdav_test_"+UUIDGenerator.generateUuid(), host, user, false);
-	    
-	    // file data in tmp folder
-	    java.io.File tmp=new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()+java.io.File.separator+"wt");
-	    if(!tmp.exists()) tmp.mkdirs();
-	    java.io.File data=new java.io.File(tmp,
-	            "test-"+UUIDGenerator.generateUuid()+".txt");
-	    
-	    FileWriter fw=new FileWriter(data,true);
-	    fw.write("file content"); fw.close();
-	    
-	    // legacy file creation
-	    com.dotmarketing.portlets.files.model.File file;
-	    file = new com.dotmarketing.portlets.files.model.File();
-	    file.setFileName("legacy.txt");
-	    file.setFriendlyName("legacy.txt");
-	    file.setMimeType("text/plain");
-	    file.setTitle("legacy.txt");
-	    file.setSize((int)data.length());
-	    file.setModUser(user.getUserId());
-	    file.setModDate(Calendar.getInstance().getTime());
-	    file = APILocator.getFileAPI().saveFile(file, data, ff, user, false);
-	    
-	    // webdav connection
-	    final HttpServletRequest req=ServletTestRunner.localRequest.get();
-        Host hh=new Host(req.getServerName(),"/webdav/autopub",req.getServerPort(),"admin@dotcms.com","admin",null,null);
-        
-        Folder demo=(Folder)hh.child("demo.dotcms.com");
-        Folder wt=(Folder)((Folder)demo.child("wt")).child(ff.getName());
-        File wtFile=(File)wt.child("legacy.txt");
-        final String newContent="new File content";
-        wtFile.setContent(new ByteArrayInputStream(newContent.getBytes()), (long)newContent.getBytes().length);
-        
-        file = APILocator.getFileAPI().getWorkingFileById(file.getIdentifier(), user, false);
-        
-        // the file should have the new content
-        Assert.assertEquals(newContent, IOUtils.toString(new FileReader(APILocator.getFileAPI().getAssetIOFile(file))));
-        
-        // testing that webdav returns the same
-        ByteArrayOutputStream out=new ByteArrayOutputStream();
-        wtFile.download(out, null);
-        Assert.assertEquals(newContent,new String(out.toByteArray()));
-	}
-	
+
 	/**
 	 * https://github.com/dotCMS/dotCMS/issues/3656
 	 * @throws Exception

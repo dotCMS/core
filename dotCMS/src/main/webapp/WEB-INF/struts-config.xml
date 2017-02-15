@@ -555,19 +555,6 @@
       <!-- Folder Management -->
 
       <!-- File Management -->
-      <action path="/ext/files/edit_file" type="com.dotmarketing.portlets.files.action.EditFileAction" name="FileForm" scope="request" input="portlet.ext.files.edit_file" validate="false">
-         <forward name="portlet.ext.files.edit_file" path="portlet.ext.files.edit_file"></forward>
-      </action>
-      <action path="/ext/files/edit_file_popup" type="com.dotmarketing.portlets.files.action.EditFileAction" name="FileForm" scope="request" input="portlet.ext.files.edit_file_popup" validate="false">
-         <forward name="portlet.ext.files.edit_file_popup" path="portlet.ext.files.edit_file_popup"></forward>
-      </action>
-      <action path="/ext/files/view_files" type="com.dotmarketing.portlets.files.action.ViewFilesAction">
-         <forward name="portlet.ext.files.view_files" path="portlet.ext.files.view_files" />
-         <forward name="portlet.ext.files.view" path="portlet.ext.files.view" />
-      </action>
-      <action path="/ext/files/publish_files" type="com.dotmarketing.portlets.files.action.PublishFilesAction">
-         <forward name="portlet.ext.files.publish_files" path="portlet.ext.files.publish_files" />
-      </action>
       <action path="/ext/files/upload_multiple" type="com.dotmarketing.portlets.files.action.UploadMultipleFilesAction" name="FileForm" scope="request" input="portlet.ext.files.upload_multiple" validate="false">
          <forward name="portlet.ext.files.upload_multiple" path="portlet.ext.files.upload_multiple"></forward>
       </action>

@@ -92,7 +92,7 @@ public class ServerAPIImpl implements ServerAPI {
 
 		//First We need to check if the heartbeat job is enable.
 		if ( Config.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", true) ) {
-			String realPath = APILocator.getFileAPI().getRealAssetPath()
+			String realPath = APILocator.getFileAssetAPI().getRealAssetsRootPath()
 					+ java.io.File.separator
 					+ "server"
 					+ java.io.File.separator

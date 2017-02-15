@@ -9,11 +9,8 @@
 <%@ page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.dotmarketing.beans.Host" %>
-<%@ page import="com.dotmarketing.portlets.files.model.File"%>
 <%@ page import="com.dotmarketing.business.APILocator"%>
 <%@ page import="com.dotmarketing.business.PermissionAPI"%>
-<%@ page import="com.dotmarketing.business.Role"%>
-<%@page import="com.dotmarketing.portlets.files.business.FileAPI"%>
 <%@page import="com.dotmarketing.portlets.folders.business.FolderAPI"%>
 <%@ page import="com.dotmarketing.util.*" %>
 
@@ -41,7 +38,6 @@ for (Field field : fields) {
 
 
 PermissionAPI perAPI = APILocator.getPermissionAPI();
-FileAPI fileAPI = APILocator.getFileAPI();
 FolderAPI folderAPI = APILocator.getFolderAPI();
 com.dotmarketing.portlets.files.model.File file;
 if (request.getAttribute(com.dotmarketing.util.WebKeys.FILE_EDIT)!=null) {

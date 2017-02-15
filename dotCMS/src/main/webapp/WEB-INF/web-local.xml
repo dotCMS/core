@@ -1843,11 +1843,6 @@ description, distributable, and context-param elements.
     </servlet-mapping>
 
     <servlet-mapping>
-        <servlet-name>org.apache.jsp.migrate_005ffile_005fassets_005fto_005fcontentlets_jsp</servlet-name>
-        <url-pattern>/migrate_file_assets_to_contentlets.jsp</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
         <servlet-name>org.apache.jsp.testcluster_jsp</servlet-name>
         <url-pattern>/testcluster.jsp</url-pattern>
     </servlet-mapping>
@@ -3368,11 +3363,6 @@ description, distributable, and context-param elements.
     </servlet-mapping>
 
     <servlet-mapping>
-        <servlet-name>org.apache.jsp.html.scripts.migrate_005ffile_005fassets_005fto_005fcontentlets_jsp</servlet-name>
-        <url-pattern>/html/scripts/migrate_file_assets_to_contentlets.jsp</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
         <servlet-name>org.apache.jsp.html.scripts.language_005fcompare_jsp</servlet-name>
         <url-pattern>/html/scripts/language_compare.jsp</url-pattern>
     </servlet-mapping>
@@ -4040,10 +4030,6 @@ env-entry, and ejb-ref elements should follow this fragment.
 	<servlet>
 		<servlet-name>CategoriesServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.JSONCategoriesServlet</servlet-class>
-	</servlet>
-	<servlet>
-		<servlet-name>ThumbnailServlet</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.image.ThumbnailImage</servlet-class>
 	</servlet>
 	<servlet>
 		<servlet-name>XSPFServlet</servlet-name>

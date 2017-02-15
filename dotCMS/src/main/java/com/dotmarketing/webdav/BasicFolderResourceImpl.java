@@ -65,13 +65,7 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
             path = path + "/";
         }
         if(!dotDavHelper.isTempResource(newName)){
-            
-            try {
-                dotDavHelper.createResource(path + newName, isAutoPub, user);
-            } catch (Exception e) {
-                Logger.error(FolderResourceImpl.class,e.getMessage(),e);
-                throw new DotRuntimeException(e.getMessage(), e);
-            }
+
             try {
             	IFileAsset f = null;
             	dotDavHelper.setResourceContent(path + newName, in, contentType, null, java.util.Calendar.getInstance().getTime(), user, isAutoPub);

@@ -33,7 +33,7 @@ public class FileServlet extends HttpServlet {
 		boolean preview = (request.getAttribute(WebKeys.PREVIEW_MODE_COOKIE) != null && request.getAttribute(WebKeys.ADMIN_MODE_COOKIE) != null);
 
 		//try to get the file from the cache using the URI
-		com.dotmarketing.portlets.files.model.File _file = null ; //FileFactory.getCachedFile(request.getRequestURI(), live);
+		com.dotmarketing.portlets.files.model.File _file = null;
 
 		if (_file != null && (InodeUtils.isSet(_file.getInode()))) {
 			response.setContentType(_file.getMimeType());

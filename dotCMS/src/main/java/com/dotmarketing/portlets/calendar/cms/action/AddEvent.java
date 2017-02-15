@@ -346,10 +346,6 @@ public class AddEvent extends DispatchAction
             String ext = UtilMethods.getFileExtension(filename);
             String tempName = filename;
             int counter = 1;
-    		while(APILocator.getFileAPI().fileNameExists(folder, tempName)) {
-    			tempName = name + counter + "." + ext;
-    			counter++;
-    		}
     		while(APILocator.getFileAssetAPI().fileNameExists(host, folder, tempName, "")) {
     			tempName = name + counter + "." + ext;
     			counter++;

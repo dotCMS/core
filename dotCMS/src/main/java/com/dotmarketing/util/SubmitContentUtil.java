@@ -46,7 +46,6 @@ public class SubmitContentUtil {
 	private static ContentletAPI conAPI = APILocator.getContentletAPI();
 	@SuppressWarnings("unchecked")
 	private static PermissionAPI perAPI = APILocator.getPermissionAPI();
-	private static RelationshipAPI relAPI = APILocator.getRelationshipAPI();
 	private static final String ROOT_FILE_FOLDER = "/submitted_content/";
 	private static LanguageAPI langAPI = APILocator.getLanguageAPI();
 
@@ -155,10 +154,6 @@ public class SubmitContentUtil {
 
 			String name = UtilMethods.getFileName(title);
 			int counter = 1;
-			while(fileAPI.fileNameExists(folder, name)) {
-				name = name + counter;
-				counter++;
-			}
 			while(APILocator.getFileAssetAPI().fileNameExists(host,folder, name, "")) {
 				name = name + counter;
 				counter++;

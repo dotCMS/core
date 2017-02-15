@@ -105,7 +105,7 @@ public class CMISBaseTest extends IntegrationTestBase {
         ContentStreamImpl contentStream = new ContentStreamImpl();
         contentStream.setFileName(fileName + new java.util.Date().getTime());
         contentStream.setLength(BigInteger.valueOf(resourceFile.length()));
-        contentStream.setMimeType(APILocator.getFileAPI().getMimeType(fileName));
+        contentStream.setMimeType(APILocator.getFileAssetAPI().getMimeType(fileName));
         contentStream.setStream(new FileInputStream(resourceFile));
                 
         PropertiesImpl result = new PropertiesImpl();
