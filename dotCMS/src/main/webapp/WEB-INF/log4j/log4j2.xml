@@ -3,22 +3,22 @@
 
    <Properties>
     <Property name="DOTCMS_LOG_FILE">${sys:DOTCMS_LOGGING_HOME}/dotcms.log</Property>
-    <Property name="DOTCMS_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/$${date:yyyy-MM}/dotcms-%d{MM-dd-yyyy}-%i.log.gz</Property>
+    <Property name="DOTCMS_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/archive/dotcms-%i.log.gz</Property>
     <Property name="SECURITY_LOG_FILE">${sys:DOTCMS_LOGGING_HOME}/dotcms-security.log</Property>
-    <Property name="SECURITY_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/$${date:yyyy-MM}/dotcms-security-%d{MM-dd-yyyy}-%i.log.gz</Property>
+    <Property name="SECURITY_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/archive/dotcms-security-%i.log.gz</Property>
     <Property name="SITESEARCH_LOG_FILE">${sys:DOTCMS_LOGGING_HOME}/dotcms-sitesearch.log</Property>
-    <Property name="SITESEARCH_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/$${date:yyyy-MM}/dotcms-sitesearch-%d{MM-dd-yyyy}-%i.log.gz</Property>
+    <Property name="SITESEARCH_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/archive/dotcms-sitesearch-%i.log.gz</Property>
     <Property name="AUDIT_LOG_FILE">${sys:DOTCMS_LOGGING_HOME}/dotcms-adminaudit.log</Property>
-    <Property name="AUDIT_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/$${date:yyyy-MM}/dotcms-adminaudit-%d{MM-dd-yyyy}-%i.log.gz</Property>
+    <Property name="AUDIT_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/archive/dotcms-adminaudit-%i.log.gz</Property>
     <Property name="USERACTIVITY_LOG_FILE">${sys:DOTCMS_LOGGING_HOME}/dotcms-userActivity.log</Property>
-    <Property name="USERACTIVITY_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/$${date:yyyy-MM}/dotcms-userActivity-%d{MM-dd-yyyy}-%i.log.gz</Property>
+    <Property name="USERACTIVITY_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/archive/dotcms-userActivity-%i.log.gz</Property>
     <Property name="TEST_LOG_FILE">${sys:DOTCMS_LOGGING_HOME}/dotcms-test.log</Property>
-    <Property name="TEST_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/$${date:yyyy-MM}/dotcms-test-%d{MM-dd-yyyy}-%i.log.gz</Property>
+    <Property name="TEST_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/archive/dotcms-test-%i.log.gz</Property>
     <Property name="PUSHPUBLISH_LOG_FILE">${sys:DOTCMS_LOGGING_HOME}/dotcms-pushpublish.log</Property>
-    <Property name="PUSHPUBLISH_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/$${date:yyyy-MM}/dotcms-pushpublish-%d{MM-dd-yyyy}-%i.log.gz</Property>
+    <Property name="PUSHPUBLISH_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/archive/dotcms-pushpublish-%i{BundleId}.log.gz</Property>
     <Property name="VELOCITY_LOG_FILE">${sys:DOTCMS_LOGGING_HOME}/dotcms-velocity.log</Property>
-    <Property name="VELOCITY_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/$${date:yyyy-MM}/dotcms-velocity-%d{MM-dd-yyyy}-%i.log.gz</Property>
-    <Property name="PATTERN">%-5level %d [%t] %c:%M(%L): %m%n</Property>
+    <Property name="VELOCITY_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/archive/dotcms-velocity-%i.log.gz</Property>
+    <Property name="PATTERN">%-5level %d %c:%M(%L): %m%n</Property>
     <Property name="CONSOLE_PATTERN">%-5level %d %c:%M(%L): %m%n</Property>
     <Property name="MESSAGE_PATTERN">[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m%n</Property>
   </Properties>
@@ -132,69 +132,79 @@
     </Appenders>
     <Loggers>
         <Root level="INFO">
-            <AppenderRef ref="CONSOLE"/>
+            <AppenderRef ref="generic"/>
         </Root>
-        <!--
-        <Logger name="com.dotcms.repackage.org.directwebremoting" level="warn">
-            <AppenderRef ref="CONSOLE"/>
+        <Logger name="com.dotcms.repackage.org.directwebremoting" level="warn" additivity="false">
+            <AppenderRef ref="generic"/>
         </Logger>
-        <Logger name="com.dotmarketing.portlets.contentlet.business.ReindexThread" level="debug">
-            <AppenderRef ref="CONSOLE"/>
+        <Logger name="com.dotmarketing.portlets.contentlet.business.ReindexThread" level="debug" additivity="false">
+            <AppenderRef ref="generic"/>
         </Logger>
-        <Logger name="com.dotcms.repackage.com.bradmcevoy.http" level="info">
-            <AppenderRef ref="CONSOLE"/>
+        <Logger name="com.dotcms.repackage.com.bradmcevoy.http" level="info" additivity="false">
+            <AppenderRef ref="generic"/>
         </Logger>
-        <Logger name="org.apache.tomcat.util.http.Parameters" level="fatal">
-            <AppenderRef ref="CONSOLE"/>
+        <Logger name="org.apache.tomcat.util.http.Parameters" level="fatal" additivity="false">
+            <AppenderRef ref="generic"/>
         </Logger>
-        <Logger name="com.dotcms.repackage.com.sun.jersey.spi.container.servlet.WebComponent" level="error">
-            <AppenderRef ref="CONSOLE"/>
+        <Logger name="com.dotcms.repackage.com.sun.jersey.spi.container.servlet.WebComponent" level="error" additivity="false">
+            <AppenderRef ref="generic"/>
         </Logger>
-        <Logger name="com.dotcms.repackage.org.directwebremoting.impl.DefaultConverterManager" level="fatal">
-            <AppenderRef ref="CONSOLE"/>
+        <Logger name="com.dotcms.repackage.org.directwebremoting.impl.DefaultConverterManager" level="fatal" additivity="false">
+            <AppenderRef ref="generic"/>
         </Logger>
-        <Logger name="com.liferay.portal.action.LoginAction" level="info">
-            <AppenderRef ref="CONSOLE"/>
+        <Logger name="com.liferay.portal.action.LoginAction" level="info" additivity="false">
+            <AppenderRef ref="security"/>
         </Logger>
-        <Logger name="com.liferay.portal.action.LogoutAction" level="info">
-            <AppenderRef ref="CONSOLE"/>
+        <Logger name="com.dotcms.cms.login" level="info" additivity="false">
+            <AppenderRef ref="security"/>
         </Logger>
-        <Logger name="com.liferay.portal.action.LoginAsAction" level="info">
-            <AppenderRef ref="CONSOLE"/>
+        <Logger name="com.dotcms.rest.api.v1.authentication" level="info" additivity="false">
+            <AppenderRef ref="security"/>
         </Logger>
-        <Logger name="com.liferay.portal.action.LogoutAsAction" level="info">
-            <AppenderRef ref="CONSOLE"/>
+        <Logger name="com.liferay.portal.action.LogoutAction" level="info" additivity="false">
+            <AppenderRef ref="security"/>
         </Logger>
-        <Logger name="com.dotmarketing.util.SecurityLogger" level="info">
-            <AppenderRef ref="CONSOLE"/>
+        <Logger name="com.dotcms.rest.api.v1.authentication.LogoutResource" level="info" additivity="false">
+            <AppenderRef ref="security"/>
         </Logger>
-        <Logger name="org.apache.nutch" level="info">
-            <AppenderRef ref="CONSOLE"/>
+        <Logger name="com.dotcms.rest.api.v1.user.UserResource" level="info" additivity="false">
+            <AppenderRef ref="security"/>
         </Logger>
-        <Logger name="com.dotcms.repackage.org.apache.hadoop" level="info">
+        <Logger name="com.liferay.portal.action.LoginAsAction" level="info" additivity="false">
+            <AppenderRef ref="security"/>
+        </Logger>
+        <Logger name="com.liferay.portal.action.LogoutAsAction" level="info" additivity="false">
+            <AppenderRef ref="security"/>
+        </Logger>
+        <Logger name="com.dotmarketing.util.SecurityLogger" level="info" additivity="false">
+            <AppenderRef ref="security"/>
+        </Logger>
+        <Logger name="org.apache.nutch" level="info" additivity="false">
             <AppenderRef ref="sitesearch"/>
         </Logger>
-        <Logger name="com.dotmarketing.util.AdminLogger" level="info">
-            <AppenderRef ref="CONSOLE"/>
+        <Logger name="com.dotcms.repackage.org.apache.hadoop" level="info" additivity="false">
+            <AppenderRef ref="sitesearch"/>
         </Logger>
-        <Logger name="com.dotmarketing.util.ActivityLogger" level="info">
-            <AppenderRef ref="CONSOLE"/>
+        <Logger name="com.dotmarketing.util.AdminLogger" level="info" additivity="false">
+            <AppenderRef ref="adminaudit"/>
         </Logger>
-        <Logger name="com.dotmarketing.util.PushPublishLogger" level="info">
-            <AppenderRef ref="CONSOLE"/>
+        <Logger name="com.dotmarketing.util.ActivityLogger" level="info" additivity="false">
+            <AppenderRef ref="useractivity"/>
         </Logger>
-        <Logger name="com.dotmarketing.servlets.test.ServletTestRunner" level="info">
-            <AppenderRef ref="CONSOLE"/>
+        <Logger name="com.dotmarketing.util.PushPublishLogger" level="info" additivity="false">
+            <AppenderRef ref="pushpublish"/>
         </Logger>
-        <Logger name="com.dotmarketing.velocity.VelocityServlet" level="info">
-            <AppenderRef ref="CONSOLE"/>
+        <Logger name="com.dotmarketing.servlets.test.ServletTestRunner" level="info" additivity="false">
+            <AppenderRef ref="test"/>
         </Logger>
-        <Logger name="com.dotmarketing.viewtools" level="info">
-            <AppenderRef ref="CONSOLE"/>
+        <Logger name="com.dotmarketing.velocity.VelocityServlet" level="info" additivity="false">
+            <AppenderRef ref="velocity"/>
         </Logger>
-        <Logger name="org.apache.velocity" level="warn">
-            <AppenderRef ref="CONSOLE"/>
+        <Logger name="com.dotmarketing.viewtools" level="info" additivity="false">
+            <AppenderRef ref="velocity"/>
         </Logger>
-        -->
+        <Logger name="org.apache.velocity" level="warn" additivity="false">
+            <AppenderRef ref="velocity"/>
+        </Logger>
     </Loggers>
 </Configuration>
