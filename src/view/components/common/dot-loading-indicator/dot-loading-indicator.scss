@@ -54,6 +54,7 @@ $border-size: $size / 5;
     position: absolute;
     right: 0;
     top: 0;
+    overflow: hidden;
 
     .loader {
         position: absolute;
