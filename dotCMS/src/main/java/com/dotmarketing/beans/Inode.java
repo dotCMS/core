@@ -55,7 +55,6 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
         RELATIONSHIP("relationship", null),
         LINKS("links", "link_version_info"),
         CATEGORY("category", null),
-        MAILING_LIST("mailing_list", null),
         FIELD("field", null),
 		FILE_ASSET("file_asset", "fileasset_version_info");
 

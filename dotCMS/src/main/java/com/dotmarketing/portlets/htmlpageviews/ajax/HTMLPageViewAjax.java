@@ -26,8 +26,6 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.htmlpageviews.factories.HTMLPageViewFactory;
 import com.dotmarketing.portlets.htmlpageviews.factories.HTMLPageViewFactory.StatisticBetweenDates;
-import com.dotmarketing.portlets.mailinglists.factories.MailingListFactory;
-import com.dotmarketing.portlets.mailinglists.model.MailingList;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -185,20 +183,9 @@ public class HTMLPageViewAjax {
 
     public Map<String, Object> createMailingList(String pageIdentifier, Date startDate, Date endDate, String mailingListTitle, boolean allowPublicToSubscribe) throws Exception {
 
-    	UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
-        WebContext ctx = WebContextFactory.get();
-        User user = userWebAPI.getLoggedInUser(ctx.getHttpServletRequest());
-        
-        //Saving mailing list
-        MailingList ml = new MailingList();
-        ml.setTitle(mailingListTitle);
-        ml.setPublicList(allowPublicToSubscribe);
-        ml.setUserId(user.getUserId());
-        HibernateUtil.saveOrUpdate(ml);
-        
-        addToMailingList(pageIdentifier, startDate, endDate, ml.getInode());
-        
-        return ml.getMap();
+      
+      return null;
+
         
     }
     
@@ -207,7 +194,7 @@ public class HTMLPageViewAjax {
     	UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
         WebContext ctx = WebContextFactory.get();
         User user = userWebAPI.getLoggedInUser(ctx.getHttpServletRequest());
-    	MailingList ml = (MailingList) InodeFactory.getInode(mailingListInode, MailingList.class);
+
     	
         //Adding subscribers
         HTMLPage htmlPage = APILocator.getHTMLPageAPI().loadWorkingPageById(pageIdentifier, user, false);
@@ -217,11 +204,10 @@ public class HTMLPageViewAjax {
                 String userId = (String) userCounts.get("user_id");
                 User webUser = APILocator.getUserAPI().loadUserById(userId,APILocator.getUserAPI().getSystemUser(),false);
                 UserProxy s = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(webUser,APILocator.getUserAPI().getSystemUser(), false);
-                MailingListFactory.addMailingSubscriber(ml, s, false);
             }
         }
         
-        return ml.getMap();
+        return null;
 
     }
 
@@ -230,7 +216,7 @@ public class HTMLPageViewAjax {
     	UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
         WebContext ctx = WebContextFactory.get();
         User user = userWebAPI.getLoggedInUser(ctx.getHttpServletRequest());
-    	MailingList ml = (MailingList) InodeFactory.getInode(mailingListInode, MailingList.class);
+ 
 
         //Removing subscribers
         HTMLPage htmlPage = APILocator.getHTMLPageAPI().loadWorkingPageById(pageIdentifier, user, false);
@@ -241,12 +227,12 @@ public class HTMLPageViewAjax {
                 User webUser = APILocator.getUserAPI().loadUserById(userId,APILocator.getUserAPI().getSystemUser(),false);
                 UserProxy s = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(webUser,APILocator.getUserAPI().getSystemUser(), false);
                 if (InodeUtils.isSet(s.getInode())) {
-                	MailingListFactory.deleteUserFromMailingList(ml, s);
+
                 }
             }
         }
 
-        return ml.getMap();
+        return null;
         
     }
     
