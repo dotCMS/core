@@ -9430,8 +9430,14 @@ a.category_higlighted, a.tag_higlighted {
   max-height: 100px;
 }
 
-.content-search__results-list .dijitCheckBox {
-  margin-right: 4px;
+.content-search__result-item {
+  padding-left: 20px;
+  position: relative;
+}
+.content-search__result-item .dijitCheckBox {
+  position: absolute;
+  left: 0;
+  top: 3px;
 }
 
 .content-type__edit-field-form {
@@ -9902,6 +9908,10 @@ a.category_higlighted, a.tag_higlighted {
 .context-menu__item:hover {
   background-color: #FAFAFA;
 }
+.context-menu__item [class$="Icon"],
+.context-menu__item [class*="Icon"] {
+  display: none;
+}
 .context-menu__item .arrowRightIcon {
   font-size: 12px;
   margin-top: -6px;
@@ -10196,6 +10206,10 @@ a.category_higlighted, a.tag_higlighted {
 }
 .context-menu__item:hover {
   background-color: #FAFAFA;
+}
+.context-menu__item [class$="Icon"],
+.context-menu__item [class*="Icon"] {
+  display: none;
 }
 .context-menu__item .arrowRightIcon {
   font-size: 12px;
