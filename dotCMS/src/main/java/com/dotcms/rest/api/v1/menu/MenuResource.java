@@ -7,6 +7,7 @@ import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -97,7 +98,7 @@ public class MenuResource implements Serializable {
 
 				Layout layout = layouts.get( layoutIndex );
 				String tabName = LanguageUtil.get(user, layout.getName());
-				String tabDescription = LanguageUtil.get(user, layout.getDescription());
+				String tabIcon = StringEscapeUtils.escapeHtml(StringEscapeUtils.escapeJavaScript(LanguageUtil.get(user, layout.getDescription())));
 				List<String> portletIds = layout.getPortletIds();
 
 				if (null != portletIds && portletIds.size() > 0) {
@@ -107,7 +108,7 @@ public class MenuResource implements Serializable {
 					menuContext.setLayoutIndex(layoutIndex);
 
 					final String url = this.menuHelper.getUrl(menuContext);
-					final Menu menu = new Menu(tabName, tabDescription, url);
+					final Menu menu = new Menu(tabName, tabIcon, url);
 
 					final List<MenuItem> menuItems = this.menuHelper.getMenuItems(menuContext);
 

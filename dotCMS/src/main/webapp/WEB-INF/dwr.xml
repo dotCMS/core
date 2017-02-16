@@ -22,27 +22,13 @@
     <create creator="new" javascript="CMSMaintenanceAjax" scope="request">
       <param name="class" value="com.dotmarketing.portlets.cmsmaintenance.ajax.CMSMaintenanceAjax"/>
     </create>
-    <create creator="new" javascript="AlertMessagesWebAPI" scope="application">
-      <param name="class" value="com.dotmarketing.util.AlertMessagesWebAPI"/>
-    </create>
     <create creator="new" javascript="UserAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.user.ajax.UserAjax"/>
     </create>
     <create creator="new" javascript="RoleAjax" scope="application">
       <param name="class" value="com.dotmarketing.business.ajax.RoleAjax"/>
     </create>
-    <create creator="new" javascript="CampaignsAjax" scope="application">
-      <param name="class" value="com.dotmarketing.portlets.campaigns.ajax.CampaignsAjax"/>
-    </create>
-    <create creator="new" javascript="MailingListAjax" scope="application">
-      <param name="class" value="com.dotmarketing.portlets.mailinglists.ajax.MailingListAjax"/>
-    </create>
-    <create creator="new" javascript="RatingAjax" scope="application">
-      <param name="class" value="com.dotmarketing.cms.rating.ajax.RatingAjax"/>
-    </create>
-    <create creator="new" javascript="PollsAjax" scope="application">
-      <param name="class" value="com.dotmarketing.cms.polls.ajax.PollsAjax"/>
-    </create>
+
     <create creator="new" javascript="CalendarAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.calendar.ajax.CalendarAjax"/>
     </create>
@@ -111,11 +97,9 @@
 	<!-- BEGIN PLUGINS -->
 	<!-- END PLUGINS -->
 	<convert converter="bean" match="com.dotmarketing.beans.Inode"/>
-	<convert converter="bean" match="com.dotmarketing.cms.polls.ajax.PollsAjax$VoteAnswer"/>
 	<convert converter="bean" match="com.dotmarketing.portlets.categories.model.Category"/>
 	<convert converter="bean" match="com.dotmarketing.tag.model.Tag"/>
 	<convert converter="bean" match="com.dotmarketing.tag.model.TagInode"/>
-	<convert converter="bean" match="com.dotmarketing.portlets.communications.model.Communication"/>
 	<convert converter="bean" match="com.dotmarketing.portlets.languagesmanager.model.LanguageKey"/>
 	<convert converter="bean" match="com.dotmarketing.portlets.htmlpageviews.factories.HTMLPageViewFactory$StatisticBetweenDates"/>
 	<convert converter="bean" match="com.dotmarketing.portlets.dashboard.model.DashboardSummaryVisits"/>

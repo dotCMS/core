@@ -53,10 +53,8 @@
 <%@ page import="com.liferay.portal.events.StartupAction" %>
 <%@ page import="com.liferay.portal.servlet.PortalSessionContext" %>
 <%@ page import="com.liferay.portal.util.UserTrackerModifiedDateComparator" %>
-<%@ page import="com.liferay.portlet.admin.action.CreateUserAction" %>
 <%@ page import="com.liferay.portlet.admin.action.DeleteUserAction" %>
 <%@ page import="com.liferay.portlet.admin.action.UpdateUserConfigAction" %>
-<%@ page import="com.liferay.portlet.myaccount.action.UploadPortraitAction" %>
 
 <%@ page import="com.dotcms.repackage.org.apache.logging.log4j.Level" %>
 <%@ page import="com.dotcms.repackage.org.apache.logging.log4j.core.Logger" %>

@@ -7517,10 +7517,17 @@ div#_dotHelpMenu {
   position: absolute;
   right: 5px;
   top: 5px;
+<<<<<<< HEAD
 }
 .subNavCrumbTrail li.lastCrumb {
   padding-right: 0;
 }
+=======
+}
+.subNavCrumbTrail li.lastCrumb {
+  padding-right: 0;
+}
+>>>>>>> 5325b12b03a7a74ca87563d6ba6833b8113cde57
 .subNavCrumbTrail li.lastCrumb:after {
   display: none;
 }
@@ -9521,12 +9528,6 @@ a.category_higlighted, a.tag_higlighted {
   background-color: rgba(14, 128, 203, 0.1);
 }
 
-.content-type__url-pattern-help {
-  margin-left: 16px;
-  vertical-align: -1px;
-  cursor: pointer;
-}
-
 .design-template__sidebar-wrapper {
   height: 100%;
   min-height: 617px;
@@ -9816,6 +9817,7 @@ a.category_higlighted, a.tag_higlighted {
   margin-bottom: 15px;
 }
 
+<<<<<<< HEAD
 .view-actions__who-can-use .who-can-use__list {
   min-width: 230px;
 }
@@ -9825,6 +9827,8 @@ a.category_higlighted, a.tag_higlighted {
   padding-left: 24px;
 }
 
+=======
+>>>>>>> 5325b12b03a7a74ca87563d6ba6833b8113cde57
 /* PORTLET STYLES 2.0 */
 .portlet-main {
   padding: 16px 0;
@@ -9973,6 +9977,10 @@ a.category_higlighted, a.tag_higlighted {
 }
 .context-menu__item:hover {
   background-color: #FAFAFA;
+}
+.context-menu__item [class$="Icon"],
+.context-menu__item [class*="Icon"] {
+  display: none;
 }
 .context-menu__item .arrowRightIcon {
   font-size: 12px;
@@ -10268,6 +10276,10 @@ a.category_higlighted, a.tag_higlighted {
 }
 .context-menu__item:hover {
   background-color: #FAFAFA;
+}
+.context-menu__item [class$="Icon"],
+.context-menu__item [class*="Icon"] {
+  display: none;
 }
 .context-menu__item .arrowRightIcon {
   font-size: 12px;

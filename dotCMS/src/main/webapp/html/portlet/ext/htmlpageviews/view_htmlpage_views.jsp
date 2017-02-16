@@ -1,6 +1,5 @@
 <%@ include file="/html/portlet/ext/htmlpageviews/init.jsp" %>
 <%@ page import="com.dotmarketing.util.Config" %>
-<%@ page import="com.dotmarketing.portlets.mailinglists.model.*" %>
 <%@ page import="com.dotmarketing.beans.Host" %>
 <%@ page import="com.dotmarketing.portlets.contentlet.model.Contentlet" %>
 <%@ page import="com.dotmarketing.factories.InodeFactory" %>
@@ -16,8 +15,6 @@
 	com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage myHTMLPage = (com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage) request.getAttribute("htmlPage");
 	Host host = APILocator.getHostAPI().findParentHost(myHTMLPage, APILocator.getUserAPI().getSystemUser(), false);
 	String pageUrl = request.getParameter("pageURL");
-	//Mailing list parameters
-	List mailingLists = (List)request.getAttribute(com.dotmarketing.util.WebKeys.MAILING_LIST_VIEW);
 %>
 
 <script type='text/javascript' src='/dwr/interface/HTMLPageViewAjax.js'></script>
@@ -479,11 +476,6 @@
 	function failedToSaveNewMailingList(error, exception) {
 		dijit.byId('mailingListPopup').hide();
 		showDotCMSErrorMessage('<%= LanguageUtil.get(pageContext, "Error-saving-mailing") %>');
-	}	
-
-	function goToMailingList() {
-		var url = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/mailinglists/edit_mailinglist" /><portlet:param name="<%= Constants.CMD %>" value="<%= Constants.EDIT %>" /></portlet:actionURL>&inode=' + mailingList.inode;
-		window.location = url;
 	}
 
 	function closeFinishedDialog() {
@@ -725,44 +717,12 @@
 		</dd>
 	</dl>
 	</form>
-	
-	
-	<hr style="margin:20px 10px;" />
-		
-	<p style="color:#990000;margin:20px 0 0 10px;font-weight:bold;">Modify an existing mailing list from the list of page visitors.</p>
-	<form id="modifyMailingListForm" dojoType="dijit.form.Form">
-	<dl>
-		<dt><%= LanguageUtil.get(pageContext, "Modify-Existing-List") %>:</dt>
-		<dd>
-			<select id="mailingListInode" dojoType="dijit.form.FilteringSelect" required="true" invalidMessage="<%= LanguageUtil.get(pageContext, "Required") %>" style="width:175px;">
-				<option value=""></option>
-				<% 
-					Iterator it = mailingLists.iterator ();
-					while (it.hasNext()) { 
-						MailingList list = (MailingList)it.next();
-				%>
-					<option value="<%=list.getInode()%>"><%=list.getTitle().equals("Do Not Send List")? LanguageUtil.get(pageContext, "message.mailinglists.do_not_send_list_title"): list.getTitle() %></option>
-				<% } %>
-			</select>
-		</dd>
-		<dd>
-			<button dojoType="dijit.form.Button" onClick="removeFromMailingList()" iconClass="deleteIcon">
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remove-From-List")) %>
-			</button>
-			
-			<button dojoType="dijit.form.Button" onClick="addToMailingList()" iconClass="plusIcon">
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Append-To-List")) %>
-			</button>
-		</dd>
-	</dl>
-	</form>
 
 </div>
 
 <div id="saveFinishedDialog" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "Saved") %>" style="display: none;">
 	<div></div>
 	<div class="buttonRow">
-		<button dojoType="dijit.form.Button" type="button" onclick="goToMailingList()"><%= LanguageUtil.get(pageContext, "Go-To-Mailing-List") %></button>
 		<button dojoType="dijit.form.Button" type="button" onclick="closeFinishedDialog()"><%= LanguageUtil.get(pageContext, "Go-Back-To-This-Page") %></button>
 	</div>	
 </div>

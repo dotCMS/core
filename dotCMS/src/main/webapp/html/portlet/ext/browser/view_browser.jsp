@@ -129,7 +129,7 @@ List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketin
 
 	</div>
 
-     <div dojoType="dijit.layout.ContentPane" splitter="true" style="margin:4px 0px 43px 6px" region="center" class="rightContentPane" id="rightContentPane">
+     <div dojoType="dijit.layout.ContentPane" splitter="true" region="center" class="rightContentPane" id="rightContentPane">
 
      	<div class="portlet-main">
 			<!-- START Toolbar -->
@@ -187,7 +187,7 @@ List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketin
 
 <div id="statusDiv" align="left" style="width: 100%; display: none; height: 100px; overflow: auto;"></div>
 
-<div id="popups" class="site-browser__context-menues"></div>
+<div id="popups" class="context-menus"></div>
 
 
 <script type="text/javascript">
@@ -217,7 +217,6 @@ List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketin
 
 <div dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "Upload-file(s)")%>" id="addFileDialog" style="width: 700px; height: 474px;"
 		onLoad="removeAddlStyleRef();">
-
 </div>
 
 <form id="remotePublishForm">

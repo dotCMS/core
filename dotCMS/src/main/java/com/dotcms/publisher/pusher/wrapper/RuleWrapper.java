@@ -1,6 +1,6 @@
 package com.dotcms.publisher.pusher.wrapper;
 
-import com.dotcms.publisher.pusher.PushPublisherConfig.Operation;
+import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotmarketing.portlets.rules.model.Rule;
 
 /**

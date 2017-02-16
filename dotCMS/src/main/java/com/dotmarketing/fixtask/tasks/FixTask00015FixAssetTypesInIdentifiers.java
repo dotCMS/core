@@ -66,7 +66,11 @@ public class FixTask00015FixAssetTypesInIdentifiers implements FixTask {
 
 						dc.setSQL(identifiersToUpdate);
 
-						dc.loadResult();
+						try {
+							dc.loadResult();
+						} catch (DotDataException e) {
+							Logger.error(this,e.getMessage(), e);
+						}
 					}
 				}
 

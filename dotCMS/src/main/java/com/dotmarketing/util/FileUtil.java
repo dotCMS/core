@@ -1,6 +1,7 @@
 package com.dotmarketing.util;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -184,6 +185,19 @@ public class FileUtil {
 		   }
 		});
 	}
+
+    public static FileFilter getOnlyFolderFileFilter() {
+        return new FileFilter() {
+            @Override
+            public boolean accept(File pathname) {
+                if ( pathname.isDirectory() ){
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        };
+    }
 }
 
 final class PNGFileNameFilter implements FilenameFilter {

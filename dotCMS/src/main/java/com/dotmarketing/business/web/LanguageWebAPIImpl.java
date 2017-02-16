@@ -18,11 +18,11 @@ import com.liferay.portal.struts.MultiMessageResourcesFactory;
 
 /**
  * Implement LanguageWebAPI methods to manage language cache and language struts
- * 
+ *
  * @author Oswaldo
  * @author David H Torres
  * @version 1.9
- * 
+ *
  */
 public class LanguageWebAPIImpl implements LanguageWebAPI {
 
@@ -34,7 +34,7 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
     private static final String HTMLPAGE_CURRENT_LANGUAGE = WebKeys.HTMLPAGE_LANGUAGE + ".current";
     /**
      * Clear the language cache and struts cache
-     * 
+     *
      * @throws DotRuntimeException
      */
     public void clearCache() throws DotRuntimeException {
@@ -51,36 +51,36 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
     private Language currentLanguage(HttpServletRequest httpRequest) {
         HttpSession sessionOpt = httpRequest.getSession(false);
         Language lang = null;
-      
-            try{
-                if(sessionOpt !=null){
-                    if(sessionOpt.getAttribute("tm_lang")!=null){
-                        lang = langAPI.getLanguage((String) sessionOpt.getAttribute("tm_lang"));
-                    }else{
-                        lang= langAPI.getLanguage((String) sessionOpt.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
-                    }
-                }
-                else if(UtilMethods.isSet(httpRequest.getAttribute(HTMLPAGE_CURRENT_LANGUAGE))){
-                    lang= langAPI.getLanguage((String) httpRequest.getAttribute(HTMLPAGE_CURRENT_LANGUAGE));
-                }
-                if(lang==null) {
-                    lang =langAPI.getDefaultLanguage();
+
+        try{
+            if(sessionOpt !=null){
+                if(sessionOpt.getAttribute("tm_lang")!=null){
+                    lang = langAPI.getLanguage((String) sessionOpt.getAttribute("tm_lang"));
+                }else{
+                    lang= langAPI.getLanguage((String) sessionOpt.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
                 }
             }
-            catch(Exception e){
+            else if(UtilMethods.isSet(httpRequest.getAttribute(HTMLPAGE_CURRENT_LANGUAGE))){
+                lang= langAPI.getLanguage((String) httpRequest.getAttribute(HTMLPAGE_CURRENT_LANGUAGE));
+            }
+            if(lang==null) {
                 lang =langAPI.getDefaultLanguage();
             }
+        }
+        catch(Exception e){
+            lang =langAPI.getDefaultLanguage();
+        }
 
-        
-        
+
+
         return lang;
     }
-    
+
 
     @Override
     public void checkSessionLocale(HttpServletRequest httpRequest) {
         getLanguage(httpRequest);
-        
+
     }
 
     private Language futureLanguage(HttpServletRequest httpRequest,Language currentLang) {
@@ -103,10 +103,10 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
                 futureLang=currentLang;
             }
         }
-        
+
         return futureLang;
     }
-        
+
     /**
      * Here is the order in which langauges should be checked:
      * first,      is there a parameter passed, if so use it
@@ -121,7 +121,7 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
         Locale locale = new Locale(future.getLanguageCode(), future.getCountryCode());
         HttpSession sessionOpt = httpRequest.getSession(false);
         httpRequest.setAttribute(HTMLPAGE_CURRENT_LANGUAGE, String.valueOf(future.getId()));
-        
+
         httpRequest.setAttribute(WebKeys.LOCALE, locale);
 
         // if someone is changing langauges, we need a session
@@ -138,13 +138,13 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
                     httpRequest.setAttribute(WebKeys.Globals_FRONTEND_LOCALE_KEY, locale);
                 }
                 sessionOpt.setAttribute(WebKeys.LOCALE, locale);
-                }
+            }
         }
         return future;
 
     }
-    
-    
-    
+
+
+
 
 }

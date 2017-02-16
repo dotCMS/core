@@ -1,30 +1,21 @@
 package com.dotcms.publishing;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.common.model.ContentletSearch;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.publishing.bundlers.FileAssetBundler;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
@@ -40,21 +31,23 @@ public class BundlerUtil {
 		if(config.getId() ==null){
 			throw new DotStateException("publishing config.id is null.  Please set an id before publishing (it will be the folder name under which the bundle will be created)");
 		}
-		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId()+ File.separator + "bundle.xml";
 
+		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getName();
+		bundlePath += File.separator + "bundle.xml";
 
 		return new File(bundlePath).exists();
 	}
 
-	/**
-	 * This method takes a config and will create the bundle directory and
-	 * write the bundle.xml file to it
-	 * @param name Name of bundle
-	 */
-	public static File getBundleRoot(String name) {
+    public static File getBundleRoot(String name) {
+        return getBundleRoot(name, true);
+    }
+
+	public static File getBundleRoot(String name, boolean createDir) {
 		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + name;
 		File dir = new File(bundlePath);
-		dir.mkdirs();
+		if (createDir){
+            dir.mkdirs();
+        }
 		return dir;
 	}
 
@@ -64,7 +57,7 @@ public class BundlerUtil {
 	 * @param config Config with the id of bundle
 	 */
 	public static File getBundleRoot(PublisherConfig config){
-		return getBundleRoot(config.getId());
+		return getBundleRoot(config.getName());
 	}
 
 	/**
@@ -73,10 +66,11 @@ public class BundlerUtil {
 	 */
 	public static void writeBundleXML(PublisherConfig config){
 		getBundleRoot(config);
-		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId();
+
+		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getName();
+
 		File xml = new File(bundlePath + File.separator + "bundle.xml");
 		objectToXML(config, xml);
-
 	}
 
     /**
@@ -87,7 +81,9 @@ public class BundlerUtil {
      */
     public static PublisherConfig readBundleXml(PublisherConfig config){
 		getBundleRoot(config);
-		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId();
+
+		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getName();
+
 		File xml = new File(bundlePath + File.separator + "bundle.xml");
 		if(xml.exists()){
 			return (PublisherConfig) xmlToObject(xml);

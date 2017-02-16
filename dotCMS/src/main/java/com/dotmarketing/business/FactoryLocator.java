@@ -33,8 +33,6 @@ import com.dotmarketing.portlets.calendar.business.EventFactory;
 import com.dotmarketing.portlets.calendar.business.EventFactoryImpl;
 import com.dotmarketing.portlets.categories.business.CategoryFactory;
 import com.dotmarketing.portlets.categories.business.CategoryFactoryImpl;
-import com.dotmarketing.portlets.chains.business.ChainFactory;
-import com.dotmarketing.portlets.chains.business.ChainFactoryImpl;
 import com.dotmarketing.portlets.containers.business.ContainerFactory;
 import com.dotmarketing.portlets.containers.business.ContainerFactoryImpl;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
@@ -102,9 +100,6 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     	return (ContentletFactory)getInstance(FactoryIndex.CONTENTLET_FACTORY);
     }
 
-    public static ChainFactory getChainFactory(){
-    	return (ChainFactory)getInstance(FactoryIndex.CHAIN_FACTORY);
-    }
 
     public static PluginFactory getPluginFactory(){
     	return (PluginFactory)getInstance(FactoryIndex.PLUGIN_FACTORY);
@@ -312,7 +307,6 @@ enum FactoryIndex
             case CATEGORY_FACTORY: return new CategoryFactoryImpl();
             case CONTENTLET_FACTORY: return new ESContentFactoryImpl();
             case PLUGIN_FACTORY: return new PluginFactoryDBImpl();
-            case CHAIN_FACTORY: return new ChainFactoryImpl();
             case LANGUAGE_FACTORY: return new LanguageFactoryImpl();
             case DISTRIBUTED_JOURNAL_FACTORY: return new ESDistributedJournalFactoryImpl<String>("0");
             case USER_FACTORY : return new UserFactoryLiferayImpl();
