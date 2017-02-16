@@ -12,7 +12,7 @@
 %>
 
 <%if(inPortal ) {%>
-    <div class="portlet-wrapper" >
+    <div class="portlet-wrapper">
         <% if (Validator.isNotNull(tilesPortletSubNav) ) {%>
             <liferay:include page="<%= Constants.TEXT_HTML_DIR + tilesPortletSubNav %>" flush="true" />
         <%}%>

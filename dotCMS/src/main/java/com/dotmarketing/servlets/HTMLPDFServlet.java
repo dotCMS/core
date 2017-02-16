@@ -54,7 +54,6 @@ import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.VirtualLinksCache;
-import com.dotmarketing.cms.wiki.utils.WikiUtils;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -69,6 +68,7 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
@@ -349,7 +349,8 @@ public class HTMLPDFServlet extends VelocityServlet {
 				// the
 				// second
 				// /
-				String title = WikiUtils.normalizeTitle(wikiName);
+				String title = StringUtils.sanitizeCamelCase(wikiName);
+				
 				if (wiki != null) {
 					String struct = wiki.split("\\|")[0];
 					String field = wiki.split("\\|")[1];

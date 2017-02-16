@@ -94,14 +94,6 @@ public class HibernateConfiguration extends SessionConfiguration {
 				liferayTable.setName("usertrackerpath");
 				liferayTable  = cfg.getClassMapping(com.liferay.portlet.admin.ejb.AdminConfigHBM.class).getTable();
 				liferayTable.setName("adminconfig");
-				liferayTable  = cfg.getClassMapping(com.liferay.portlet.polls.ejb.PollsChoiceHBM.class).getTable();
-				liferayTable.setName("pollschoice");
-				liferayTable  = cfg.getClassMapping(com.liferay.portlet.polls.ejb.PollsDisplayHBM.class).getTable();
-				liferayTable.setName("pollsdisplay");
-				liferayTable  = cfg.getClassMapping(com.liferay.portlet.polls.ejb.PollsQuestionHBM.class).getTable();
-				liferayTable.setName("pollsquestion");
-				liferayTable  = cfg.getClassMapping(com.liferay.portlet.polls.ejb.PollsVoteHBM.class).getTable();
-				liferayTable.setName("pollsvote");
 				liferayTable  = cfg.getClassMapping(com.dotcms.repackage.com.liferay.counter.ejb.CounterHBM.class).getTable();
 				liferayTable.setName("counter");
 			}

@@ -391,7 +391,7 @@ public class SystemEventsFactory implements Serializable {
 		@Override
 		public Collection<SystemEventDTO> getEventsSince(final long fromDate) throws DotDataException {
 			final DotConnect dc = new DotConnect();
-			dc.setSQL("SELECT identifier, event_type, payload, created FROM system_event WHERE created >= ?");
+			dc.setSQL("SELECT identifier, event_type, payload, created FROM system_event WHERE created >= ? order by created");
 			dc.addParam(fromDate);
 			final List<Map<String, Object>> systemEvents = dc.loadObjectResults();
 			return this.conversionUtils.convert(systemEvents, (Map<String, Object> record) -> {
