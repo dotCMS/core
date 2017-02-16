@@ -54,7 +54,6 @@
 
 <style type="text/css">
 @import "<%=dojoPath%>/dojox/grid/enhanced/resources/claro/EnhancedGrid.css?b=<%= ReleaseInfo.getVersion() %>";
-@import "<%=dojoPath%>/dojox/grid/resources/tundraGrid.css?b=<%= ReleaseInfo.getVersion() %>";
 .permissionWrapper{background:none;padding:0;margin:0 auto;width:90%;}
 
 .permissionTable{width:100%;margin:0;}
@@ -168,12 +167,10 @@ td {font-size: 100%;}
             id : "tagsEnhancedGrid",
             rowsPerPage : 25,
             store: tagStore,
-            rowSelector: '20px',
             autoWidth : true,
             initialWidth : '100%',
             autoHeight : true,
             escapeHTMLInData : false,
-            'class': "tundra",
             structure: layout,
             dnd: true,
             plugins:{
@@ -185,7 +182,7 @@ td {font-size: 100%;}
                     gotoButton : true,
                     maxPageStep : 7,
                     position : "bottom",
-                    defaultPage: 1, defaultPageSize: 100
+                    defaultPage: 1, defaultPageSize: 25
                 },
                 search : true,
                 indirectSelection: { headerSelector: true }
@@ -460,7 +457,7 @@ td {font-size: 100%;}
 
 <jsp:include page="/html/portlet/ext/browser/sub_nav.jsp"></jsp:include>
 
-<div class="portlet-main">
+<div class="portlet-main tag-manager">
 	<div class="portlet-toolbar">
 		<div class="portlet-toolbar__actions-primary">
 			<!-- Start Filter -->
@@ -515,7 +512,7 @@ td {font-size: 100%;}
 	<div id="loadingTagsWrapper" style="text-align:center"><img src="/html/js/lightbox/images/loading.gif"></div>
 
     <div id="tagsGridWrapper" style="overflow-y:auto;overflow-x:hidden;">
-        <div id="tagsGrid"></div>
+        <div id="tagsGrid" class="tag-manager__tags-list"></div>
     </div>
 </div>
 

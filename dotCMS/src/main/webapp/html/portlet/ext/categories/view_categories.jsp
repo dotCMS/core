@@ -21,7 +21,6 @@
 
 <style type="text/css">
 @import "<%=dojoPath%>/dojox/grid/enhanced/resources/claro/EnhancedGrid.css?b=<%= ReleaseInfo.getVersion() %>";
-@import "<%=dojoPath%>/dojox/grid/resources/tundraGrid.css?b=<%= ReleaseInfo.getVersion() %>";
 div.fakefile {
 position: absolute;
 text-align: left;
@@ -211,8 +210,7 @@ z-index:4;
 				}
 			}, dojo.byId('catHolder'));
 
-			dojo.addClass(dojo.byId("catHolder"), "tundra");
-
+			dojo.query("#catHolder").addClass('view-categories__categories-list');
     }
 
 
