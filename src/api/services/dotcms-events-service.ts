@@ -38,6 +38,9 @@ export class DotcmsEventsService {
                     this.loggerService.debug('Completed');
                 }
             );
+
+            this.loggerService.debug('Connecting with socket');
+            socket.start();
         });
     }
 
@@ -46,14 +49,6 @@ export class DotcmsEventsService {
      */
     destroy(): void {
         this.socket.destroy();
-    }
-
-    /**
-     * Opens the Websocket connection with the System Events end-point.
-     */
-    connectWithSocket(): void {
-        this.loggerService.debug('Connecting with socket');
-        this.socket.start();
     }
 
     /**

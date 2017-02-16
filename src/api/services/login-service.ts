@@ -319,9 +319,6 @@ export class LoginService {
         // When not logged user we need to fire the observable chain
         if (!auth.user) {
             this._logout$.next();
-        }else{
-            // on authentication, we have to connect to the websocket
-            this.dotcmsEventsService.connectWithSocket();
         }
     }
 
