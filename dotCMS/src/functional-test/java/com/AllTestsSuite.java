@@ -74,7 +74,8 @@ import org.junit.runners.Suite;
     //PersonaActionletFTest.class, //Needs Enterprise License.
     SetResponseHeaderActionletFTest.class, //Needs Enterprise License.
     SetSessionAttributeActionletFTest.class, //Needs Enterprise License.
-    VisitorsTagsActionletFTest.class, //Needs Enterprise License.
+    //Ignored VisitorsTagsActionletFTest, see: https://github.com/dotCMS/core/issues/10746
+    //VisitorsTagsActionletFTest.class, //Needs Enterprise License.
 
     //Rules.
     RulesAPIFTest.class, //Needs Enterprise License.
