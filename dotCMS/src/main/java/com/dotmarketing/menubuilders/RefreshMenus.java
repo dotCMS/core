@@ -13,7 +13,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 
 @Deprecated
 public class RefreshMenus {

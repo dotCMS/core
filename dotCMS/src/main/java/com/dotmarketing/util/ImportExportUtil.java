@@ -98,7 +98,6 @@ public class ImportExportUtil {
     private List<File> permissionXMLs = new ArrayList<File>();
     private List<File> contentletsXML = new ArrayList<File>();
     private List<File> menuLinksXML = new ArrayList<File>();
-    private List<File> pagesXML = new ArrayList<File>();
     private List<File> structuresXML = new ArrayList<File>();
     private List<File> containersXML = new ArrayList<File>();
     private List<File> identifiersXML = new ArrayList<File>();
@@ -257,8 +256,6 @@ public class ImportExportUtil {
                 containersXML.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().contains("com.dotmarketing.portlets.files.model.File_")){
                 filesXML.add(new File(_importFile.getPath()));
-            }else if(_importFile.getName().contains("com.dotmarketing.portlets.htmlpages.model.HTMLPage_")){
-                pagesXML.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().contains("com.dotmarketing.portlets.links.model.Link_")){
                 menuLinksXML.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().contains("com.dotmarketing.portlets.structure.model.Structure_")){
@@ -573,18 +570,6 @@ public class ImportExportUtil {
             } catch (DotHibernateException e) {
                 Logger.error(this, "Unable to close Session : " + e.getMessage(), e);
             }
-            try{
-                doXMLFileImport(file, out);
-            } catch (Exception e) {
-                Logger.error(this, "Unable to load " + file.getName() + " : " + e.getMessage(), e);
-            }
-        }
-        for (File file : pagesXML) {
-            try{
-				HibernateUtil.closeSession();
-			} catch (DotHibernateException e) {
-				Logger.error(this, "Unable to close Session : " + e.getMessage(), e);
-			}
             try{
                 doXMLFileImport(file, out);
             } catch (Exception e) {

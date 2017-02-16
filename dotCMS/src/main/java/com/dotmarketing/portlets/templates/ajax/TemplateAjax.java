@@ -13,6 +13,8 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.model.File;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.factories.TemplateFactory;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -28,7 +30,6 @@ import com.liferay.portal.model.User;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
@@ -289,10 +290,10 @@ public class TemplateAjax {
 		User user = userWebAPI.getLoggedInUser(req);
 		boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(req);
 		Template template = templateAPI.find(templateInode, user, respectFrontendRoles);
-		List<HTMLPage> pages= templateAPI.getPagesUsingTemplate(template, user, respectFrontendRoles);
-		for(HTMLPage page : pages) {
+		List<HTMLPageAsset> pages= templateAPI.getPagesUsingTemplate(template, user, respectFrontendRoles);
+		for(HTMLPageAsset page : pages) {
 			try{
-				WebAssetFactory.deleteAssetVersion(page);
+				APILocator.getContentletAPI().delete(page, user, false);
 			}catch(Exception e){
 				e.printStackTrace();
 			}

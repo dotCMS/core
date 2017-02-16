@@ -2,7 +2,6 @@
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI"%>
-<%@page import="com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI"%>
 <%@page import="java.util.TimeZone"%>
 <%@page import="java.util.Date"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>

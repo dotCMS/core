@@ -38,8 +38,6 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.links.model.Link;
@@ -67,7 +65,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
     private ContentletAPI conAPI = APILocator.getContentletAPI();
     private FolderAPI folderAPI = APILocator.getFolderAPI();
     private HostAPI hostAPI = APILocator.getHostAPI();
-    private HTMLPageAPI htmlAPI = APILocator.getHTMLPageAPI();
+    //private HTMLPageAPI htmlAPI = APILocator.getHTMLPageAPI();
     private HTMLPageAssetAPI pageAssetAPI = APILocator.getHTMLPageAssetAPI();
     private IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
     private LanguageAPI langAPI = APILocator.getLanguageAPI();
@@ -464,15 +462,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 			//link.setLinkType(LinkType.INTERNAL.toString());
 			link.setInternalLinkIdentifier(internalLinkIdentifier.getInode());
 			
-			if(Identifier.ASSET_TYPE_HTML_PAGE.equalsIgnoreCase(internalLinkIdentifier.getAssetType())){
-			    //Internal Link points to a legacy page
-			    HTMLPage page = htmlAPI.loadPageByPath(internalLinkIdentifier.getId(), internalLinkIdentifier.getHostId());
-			    if(page.isHttpsRequired()){
-			        link.setProtocal("https://");
-			    } else {
-			        link.setProtocal("http://");
-			    }
-			} else if (Identifier.ASSET_TYPE_CONTENTLET.equalsIgnoreCase(internalLinkIdentifier.getAssetType())) {
+			if (Identifier.ASSET_TYPE_CONTENTLET.equalsIgnoreCase(internalLinkIdentifier.getAssetType())) {
 			    //Internal Link points to a Contentlet
 			    //Modal for adding internal assets to link always shows contents in default language
 			    //So we'll pull the selected assets using the default language

@@ -14,7 +14,6 @@
 <%@page import="com.dotmarketing.portlets.fileassets.business.IFileAsset"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.portlets.containers.model.Container"%>
-<%@page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage"%>
 <%@page import="com.dotmarketing.portlets.links.model.Link"%>
 <%@page import="com.dotmarketing.portlets.templates.model.Template"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>

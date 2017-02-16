@@ -11,8 +11,8 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI.TemplateContainersReMap.ContainerRemapTuple;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -127,7 +127,7 @@ public interface TemplateAPI {
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	List<HTMLPage> getPagesUsingTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	List<HTMLPageAsset> getPagesUsingTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 
 	/**

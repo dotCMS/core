@@ -6,7 +6,6 @@
 <%@ page import="com.dotmarketing.portlets.folders.model.Folder" %>
 <%@ page import="com.dotmarketing.portlets.folders.business.FolderFactory" %>
 <%@ page import="com.dotmarketing.portlets.files.model.File" %>
-<%@ page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage" %>
 <%@ page import="com.dotmarketing.portlets.links.model.Link" %>
 <%@ page import="com.dotmarketing.business.PermissionAPI" %>
 <%@ page import="com.dotmarketing.business.web.UserWebAPI" %>

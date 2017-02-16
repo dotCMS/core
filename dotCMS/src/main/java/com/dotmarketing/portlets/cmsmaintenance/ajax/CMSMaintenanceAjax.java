@@ -62,7 +62,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.dashboard.model.DashboardSummary404;
 import com.dotmarketing.portlets.dashboard.model.DashboardUserPreferences;
 import com.dotmarketing.portlets.files.model.FileAssetVersionInfo;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPageVersionInfo;
 import com.dotmarketing.portlets.links.model.LinkVersionInfo;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
@@ -297,26 +296,6 @@ public class CMSMaintenanceAjax {
 
 		return result;
 	}
-	
-	public boolean migrateHTMLPagesToContent() throws PortalException, SystemException, DotDataException,DotSecurityException {
-
-		validateUser();
-		
-		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-		
-		boolean result = true;
-
-		try {
-			
-			result = APILocator.getHTMLPageAssetAPI().migrateAllLegacyPages(com.liferay.portal.util.PortalUtil.getUser(req), false);
-			
-		} catch(Exception e) {
-			Logger.error(getClass(), e.getMessage(), e);
-			result = false;
-		}
-		
-		return result;
-	}
 
     public int removeOldVersions(String date) throws ParseException, SQLException, DotDataException {
         	Date assetsOlderThan = new SimpleDateFormat("MM/dd/yyyy").parse(date);
@@ -519,9 +498,6 @@ public class CMSMaintenanceAjax {
 	                    }
 	                    else if(ContainerVersionInfo.class.equals(clazz)){
 	                    	_dh.setSQLQuery("SELECT {container_version_info.*} from container_version_info container_version_info, identifier where identifier.id = container_version_info.identifier order by container_version_info.identifier ");
-	                    }
-	                    else if(HTMLPageVersionInfo.class.equals(clazz)){
-	                    	_dh.setSQLQuery("SELECT {htmlpage_version_info.*} from htmlpage_version_info htmlpage_version_info, identifier where identifier.id = htmlpage_version_info.identifier order by htmlpage_version_info.identifier ");
 	                    }
 	                    else if(LinkVersionInfo.class.equals(clazz)){
 	                    	_dh.setSQLQuery("SELECT {link_version_info.*} from link_version_info link_version_info, identifier where identifier.id = link_version_info.identifier order by link_version_info.identifier ");

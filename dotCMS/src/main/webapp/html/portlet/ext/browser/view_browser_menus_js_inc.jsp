@@ -16,7 +16,6 @@
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.business.Permissionable"%>
 <%@page import="com.dotmarketing.factories.InodeFactory"%>
-<%@page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage"%>
 <%@page import="com.dotmarketing.business.Role"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@page import="com.dotmarketing.portlets.contentlet.struts.ContentletForm"%>

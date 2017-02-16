@@ -33,8 +33,9 @@ import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI.TemplateContainersReMap.ContainerRemapTuple;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.PageServices;
 import com.dotmarketing.util.InodeUtils;
@@ -176,7 +177,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	}
 
 
-	public List<HTMLPage> getPagesUsingTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+	public List<HTMLPageAsset> getPagesUsingTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
 		if (!permissionAPI.doesUserHavePermission(template, PermissionAPI.PERMISSION_READ, user,
 				respectFrontendRoles)) {
@@ -490,7 +491,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		String result = null;
 		Template template = (Template) InodeFactory.getInode(templateInode, Template.class);
 		// checking if there are pages using this template
-		List<HTMLPage> pages=APILocator.getTemplateAPI().getPagesUsingTemplate(template, user, respectFrontendRoles);
+		List<HTMLPageAsset> pages=APILocator.getTemplateAPI().getPagesUsingTemplate(template, user, respectFrontendRoles);
 
 		if(pages.size()>0) {
 			StringBuilder names=new StringBuilder();
@@ -531,8 +532,8 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
      */
     public void invalidateTemplatePages(String templateInode, User user, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException{
     	Template template = find(templateInode, user, respectFrontEndRoles);
-  		List<HTMLPage> pagesForThisTemplate = APILocator.getTemplateAPI().getPagesUsingTemplate(template, APILocator.getUserAPI().getSystemUser(), false);
-  		for (HTMLPage page : pagesForThisTemplate) {
+  		List<HTMLPageAsset> pagesForThisTemplate = APILocator.getTemplateAPI().getPagesUsingTemplate(template, APILocator.getUserAPI().getSystemUser(), false);
+  		for (HTMLPageAsset page : pagesForThisTemplate) {
   			//writes the page to a file
   			PageServices.invalidateLive(page);
   		}

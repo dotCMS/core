@@ -32,7 +32,8 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
@@ -317,18 +318,18 @@ public class TemplateFactoryImpl implements TemplateFactory {
 
 	}
 	@Override
-	public List<HTMLPage> getPagesUsingTemplate(Template template) throws DotDataException {
-		HibernateUtil hu = new HibernateUtil(HTMLPage.class);
+	public List<HTMLPageAsset> getPagesUsingTemplate(Template template) throws DotDataException {
+		HibernateUtil hu = new HibernateUtil(HTMLPageAsset.class);
 		hu.setSQLQuery(workingVersionPagesUsingTemplateSQL);
 		hu.setParam(template.getIdentifier());
-		List<HTMLPage> workingPages = new ArrayList<HTMLPage>(new HashSet<HTMLPage>(hu.list()));
+		List<HTMLPageAsset> workingPages = new ArrayList<HTMLPageAsset>(new HashSet<HTMLPageAsset>(hu.list()));
 		if(workingPages.size() > 0){
 			return workingPages;
 		}else{
-			HibernateUtil hu1 = new HibernateUtil(HTMLPage.class);
+			HibernateUtil hu1 = new HibernateUtil(HTMLPageAsset.class);
 			hu1.setSQLQuery(nonWorkingVersionPagesUsingTemplateSQL);
 			hu1.setParam(template.getIdentifier());
-			List<HTMLPage> nonWorkingPages = new ArrayList<HTMLPage>(new HashSet<HTMLPage>(hu1.list()));
+			List<HTMLPageAsset> nonWorkingPages = new ArrayList<HTMLPageAsset>(new HashSet<HTMLPageAsset>(hu1.list()));
 			return nonWorkingPages;	
 		}
 	}

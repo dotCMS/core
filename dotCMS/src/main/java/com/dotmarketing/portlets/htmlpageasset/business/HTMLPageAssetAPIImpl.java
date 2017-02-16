@@ -62,8 +62,6 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetValidationExceptio
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -90,7 +88,6 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     private PermissionAPI permissionAPI;
     private IdentifierAPI identifierAPI;
-    private HTMLPageAPI htmlPageAPI;
     private UserAPI userAPI;
     private VersionableAPI versionableAPI;
     private ContentletAPI contentletAPI;
@@ -99,7 +96,6 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     public HTMLPageAssetAPIImpl() {
         permissionAPI = APILocator.getPermissionAPI();
         identifierAPI = APILocator.getIdentifierAPI();
-        htmlPageAPI = APILocator.getHTMLPageAPI();
         userAPI = APILocator.getUserAPI();
         versionableAPI = APILocator.getVersionableAPI();
         contentletAPI = APILocator.getContentletAPI();
@@ -282,9 +278,9 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
                 Contentlet c = contentletAPI.find(live?cinfo.getLiveInode():cinfo.getWorkingInode(), userAPI.getSystemUser(), false);
 
-                if(c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
+                /*if(c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
                     return fromContentlet(c);
-                }
+                }*/
 
             } catch (Exception e) {
                 Logger.error(this.getClass(), "Unable to find" + uri);
@@ -403,6 +399,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
      * @return Boolean
      * @throws Exception
      */
+    /*
     @Override
     public boolean migrateAllLegacyPages(final User user, boolean respectFrontEndPermissions) throws Exception {
     			boolean result = false;
@@ -474,7 +471,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     			}
     	return result;
     }
-    
+    */
+    /*
     @Override
     public HTMLPageAsset migrateLegacyPage(HTMLPage legacyPage, User user, boolean respectFrontEndPermissions) throws Exception {
         Identifier legacyident=identifierAPI.find(legacyPage);
@@ -528,7 +526,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
         return null;
     }
-
+    */
+/*
     protected HTMLPageAsset migrateLegacyData(HTMLPage legacyPage, User user, boolean respectFrontEndPermissions) throws DotStateException, DotDataException, DotSecurityException {
         Identifier legacyident=identifierAPI.find(legacyPage);
         HTMLPageAsset newpage=new HTMLPageAsset();
@@ -560,7 +559,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
         return newpage;
     }
-
+    */
+/*
     private String migratePageUrl(String legacyIdentAssetName, String legacyPageUrl) {
         String migratedPageUrl = legacyPageUrl;
 
@@ -574,6 +574,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
         return migratedPageUrl;
     }
+    */
 
     
     @Override

@@ -11,7 +11,6 @@
 <%@page import="com.dotcms.repackage.javax.portlet.WindowState"%>
 <%@page import="com.dotmarketing.beans.WebAsset"%>
 <%@page import="java.util.ArrayList"%>
-<%@page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.portlets.files.model.File"%>
 <%@page import="com.dotmarketing.portlets.containers.model.Container"%>
@@ -30,7 +29,6 @@
 <%@page import="java.util.Locale"%>
 <%@page import="java.text.SimpleDateFormat"%>
 <%@page import="com.dotmarketing.beans.WebAsset"%>
-<%@page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage"%>
 <%@page import="com.dotmarketing.factories.InodeFactory"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.portlets.files.model.File"%>

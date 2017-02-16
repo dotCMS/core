@@ -23,7 +23,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.htmlpageviews.factories.HTMLPageViewFactory;
 import com.dotmarketing.portlets.htmlpageviews.factories.HTMLPageViewFactory.StatisticBetweenDates;
 import com.dotmarketing.util.InodeUtils;
@@ -194,18 +193,6 @@ public class HTMLPageViewAjax {
     	UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
         WebContext ctx = WebContextFactory.get();
         User user = userWebAPI.getLoggedInUser(ctx.getHttpServletRequest());
-
-    	
-        //Adding subscribers
-        HTMLPage htmlPage = APILocator.getHTMLPageAPI().loadWorkingPageById(pageIdentifier, user, false);
-        List<Map<String, String>> users = retrieveUsers(htmlPage, startDate, endDate, user);
-        for (Map<String, String> userCounts : users) {
-            if (userCounts.get("user_id") != null) {
-                String userId = (String) userCounts.get("user_id");
-                User webUser = APILocator.getUserAPI().loadUserById(userId,APILocator.getUserAPI().getSystemUser(),false);
-                UserProxy s = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(webUser,APILocator.getUserAPI().getSystemUser(), false);
-            }
-        }
         
         return null;
 
@@ -216,33 +203,9 @@ public class HTMLPageViewAjax {
     	UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
         WebContext ctx = WebContextFactory.get();
         User user = userWebAPI.getLoggedInUser(ctx.getHttpServletRequest());
- 
-
-        //Removing subscribers
-        HTMLPage htmlPage = APILocator.getHTMLPageAPI().loadWorkingPageById(pageIdentifier, user, false);
-        List<Map<String, String>> users = retrieveUsers(htmlPage, startDate, endDate, user);
-        for (Map<String, String> userCounts : users) {
-            if (userCounts.get("user_id") != null) {
-                String userId = (String) userCounts.get("user_id");
-                User webUser = APILocator.getUserAPI().loadUserById(userId,APILocator.getUserAPI().getSystemUser(),false);
-                UserProxy s = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(webUser,APILocator.getUserAPI().getSystemUser(), false);
-                if (InodeUtils.isSet(s.getInode())) {
-
-                }
-            }
-        }
 
         return null;
         
-    }
-    
-    private List<Map<String, String>> retrieveUsers(HTMLPage htmlPage, Date startDate, Date endDate, User user) throws DotDataException, DotSecurityException, PortalException, SystemException {
-
-        Host host = APILocator.getHostAPI().findParentHost(htmlPage, user, false);
-        String hostId = host.getIdentifier();
-        String uri = APILocator.getIdentifierAPI().find(htmlPage).getURI();
-        return HTMLPageViewFactory.getAllUsers(uri, startDate, endDate, hostId);
-
     }
     
 	private java.util.HashMap<String, Integer> _countNumEachLongFromList(java.util.List<String> inodesList) {

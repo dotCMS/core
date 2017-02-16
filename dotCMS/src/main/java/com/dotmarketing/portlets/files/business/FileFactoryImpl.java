@@ -47,7 +47,6 @@ import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.files.model.FileAssetVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageFactoryImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -290,7 +289,7 @@ public class FileFactoryImpl implements com.dotmarketing.portlets.files.business
             for (Map<String,Object> row : dc.loadObjectResults())
                 ret.add((String)row.get("pident"));
         } catch (DotDataException e) {
-            Logger.error(HTMLPageFactoryImpl.class,e.getMessage(),e);
+            Logger.error(FileFactoryImpl.class,e.getMessage(),e);
         }
         
         return new ArrayList<String>(ret);
