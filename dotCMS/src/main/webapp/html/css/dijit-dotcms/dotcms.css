@@ -4841,6 +4841,56 @@ html, body {
   display: none;
 }
 
+.dojoxGrid {
+  background-color: #fff !important;
+}
+.dojoxGrid .dojoxGridMasterHeader .dojoxGridHeader {
+  background-color: #FAFAFA;
+}
+.dojoxGrid .dojoxGridMasterHeader .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell {
+  background: none;
+  border: 0px;
+  font-weight: bold;
+}
+.dojoxGrid .dojoxGridMasterHeader .dojoxGridHeader .dojoxGridRowTable {
+  border-bottom: 1px solid #ECEDEE;
+}
+.dojoxGrid .dojoxGridMasterHeader .dojoxGridHeader .dojoxGridArrowButtonChar {
+  float: left;
+}
+.dojoxGrid .dojoxGridMasterView .dojoxGridRowbar {
+  background: none;
+  border: 0px;
+}
+.dojoxGrid .dojoxGridMasterView .dojoxGridRowbar .dojoxGridRowbarInner {
+  border: 0px;
+}
+.dojoxGrid .dojoxGridMasterView .dojoxGridRow {
+  background-color: #fff;
+  border-bottom: 1px solid #ECEDEE;
+}
+.dojoxGrid .dojoxGridMasterView .dojoxGridRow.dojoxGridRowOdd {
+  background-color: #FAFAFA;
+}
+.dojoxGrid .dojoxGridMasterView .dojoxGridRow.dojoxGridRowOver .dojoxGridCell {
+  color: #161616;
+}
+.dojoxGrid .dojoxGridMasterView .dojoxGridRow .dojoxGridRowTable .dojoxGridCell {
+  background: none;
+  border: 0px;
+}
+.dojoxGrid .dojoxGridRow .dojoxGridRowTable .dojoxGridCell, .dojoxGrid .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell {
+  font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  padding: 10px 8px;
+}
+.dojoxGrid .dojoxGridPaginator {
+  background-color: #ECEDEE;
+  border: 0px;
+}
+.dojoxGrid .dojoxGridPaginator td {
+  padding: 8px 8px;
+}
+
 .dojoxUploaderFileList {
   border: solid 1px #ECEDEE;
 }
@@ -9375,7 +9425,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 .content-edit__dialog-error ul li {
   list-style-position: outside;
-  list-style-type: decimal;
+  list-style-type: disc;
   margin: 0 0 8px 16px;
 }
 
@@ -9469,6 +9519,12 @@ a.category_higlighted, a.tag_higlighted {
 }
 .content-type__fields-list-row:hover {
   background-color: rgba(14, 128, 203, 0.1);
+}
+
+.content-type__url-pattern-help {
+  margin-left: 16px;
+  vertical-align: -1px;
+  cursor: pointer;
 }
 
 .design-template__sidebar-wrapper {
@@ -9708,7 +9764,8 @@ a.category_higlighted, a.tag_higlighted {
 .view-users__roles-container-item {
   border-radius: 2px;
   border: solid 1px #C5C5C5;
-  height: 150px;
+  height: 300px;
+  overflow: auto;
 }
 .view-users__roles-container-item select[multiple] {
   border: none;
@@ -9731,6 +9788,16 @@ a.category_higlighted, a.tag_higlighted {
   padding-bottom: 8px;
 }
 
+.view-users .view-users__users-list .dojoxGridRow:nth-child(even) {
+  background-color: #ECEDEE;
+}
+.view-users .view-users__users-list .dojoxGridHeader {
+  background-color: #ECEDEE;
+}
+.view-users .view-users__users-list .dojoxGridRow .dojoxGridRowTable .dojoxGridCell, .view-users .view-users__users-list .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell {
+  padding: 8px;
+}
+
 .view-workflow .dijitDropDownActionButton,
 .view-workflow .view-workflow__add-comment {
   float: right;
@@ -9747,6 +9814,15 @@ a.category_higlighted, a.tag_higlighted {
 
 .dijitContentPane .buttonRow {
   margin-bottom: 15px;
+}
+
+.view-actions__who-can-use .who-can-use__list {
+  min-width: 230px;
+}
+
+.tag-manager__tags-list .dojoxGridRow .dojoxGridRowTable .dojoxGridCell:first-child, .tag-manager__tags-list .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell:first-child {
+  width: 40px !important;
+  padding-left: 24px;
 }
 
 /* PORTLET STYLES 2.0 */
@@ -9897,10 +9973,6 @@ a.category_higlighted, a.tag_higlighted {
 }
 .context-menu__item:hover {
   background-color: #FAFAFA;
-}
-.context-menu__item [class$="Icon"],
-.context-menu__item [class*="Icon"] {
-  display: none;
 }
 .context-menu__item .arrowRightIcon {
   font-size: 12px;
@@ -10196,10 +10268,6 @@ a.category_higlighted, a.tag_higlighted {
 }
 .context-menu__item:hover {
   background-color: #FAFAFA;
-}
-.context-menu__item [class$="Icon"],
-.context-menu__item [class*="Icon"] {
-  display: none;
 }
 .context-menu__item .arrowRightIcon {
   font-size: 12px;
