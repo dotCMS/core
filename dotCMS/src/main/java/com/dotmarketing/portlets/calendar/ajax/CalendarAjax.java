@@ -639,7 +639,7 @@ public class CalendarAjax {
 				if(UtilMethods.isSet(binaryFileValue) && !binaryFileValue.equals("---removed---")){
 					binaryFileValue = ContentletUtil.sanitizeFileName(binaryFileValue);
 			
-					File binaryFile = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+					File binaryFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
 							+ File.separator + user.getUserId() + File.separator + elementName
 							+ File.separator + binaryFileValue);
 					if(binaryFile.exists())

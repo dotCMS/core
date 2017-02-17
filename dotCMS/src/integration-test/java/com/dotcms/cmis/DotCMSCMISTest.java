@@ -66,7 +66,7 @@ public class DotCMSCMISTest extends CMISBaseTest {
         final String title = "cmis-file-"+UUIDGenerator.generateUuid()+".txt";
         cont.setStringProperty("title", title);
         cont.setStringProperty("fileName", title);
-        File tmp=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()+File.separator+"cmis");
+        File tmp=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()+File.separator+"cmis");
         if(!tmp.isDirectory()) tmp.mkdirs();
         File file=new File(tmp,title);
         file.createNewFile();

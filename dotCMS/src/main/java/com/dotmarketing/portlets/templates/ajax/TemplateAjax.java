@@ -227,14 +227,6 @@ public class TemplateAjax {
 					toReturn.put("identifier", imageContentlet.getIdentifier());
 					toReturn.put("extension", com.dotmarketing.util.UtilMethods.getFileExtension(imageContentlet.getTitle()));
 				}
-			} else {
-				File imgFile = TemplateFactory.getImageFile(template);
-				if(imgFile!=null){
-					toReturn.put("inode", imgFile.getInode());
-					toReturn.put("name", imgFile.getFileName());
-					toReturn.put("identifier", imgFile.getIdentifier());
-					toReturn.put("extension", com.dotmarketing.util.UtilMethods.getFileExtension(imgFile.getFileName()));
-				}
 			}
 		}
 		return toReturn;

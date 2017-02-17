@@ -7,7 +7,6 @@ import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -341,8 +340,6 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
                 Identifier ident=APILocator.getIdentifierAPI().find(permissionId);
                 if(Identifier.ASSET_TYPE_CONTENTLET.equalsIgnoreCase(ident.getAssetType()))
                     return APILocator.getContentletAPI().findContentletByIdentifier(permissionId, true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), sysuser, false).getParentPermissionable();
-                else
-                    return APILocator.getFileAPI().getWorkingFileById(permissionId, sysuser, false).getParentPermissionable();
             }
             return null;
         } catch (DotSecurityException e) {
@@ -367,8 +364,6 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
             return Link.class.getCanonicalName();
         if(type.equals("folder"))
             return Folder.class.getCanonicalName();
-        if(type.equals("file"))
-            return File.class.getCanonicalName();
         throw new IllegalStateException("unknow internal type "+type); // we shouldn't reach this point
     }
 

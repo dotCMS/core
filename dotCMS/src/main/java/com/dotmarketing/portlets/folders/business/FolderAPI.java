@@ -16,7 +16,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
@@ -276,34 +275,6 @@ import com.liferay.portal.model.User;
 
     public List<Link> getLinks ( Host host, boolean working, boolean deleted, User user, boolean respectFrontEndPermissions ) throws DotStateException,
             DotDataException, DotSecurityException;
-
-
-	/**
-	 * Gets a list of  'working' File under given folder
-	 *
-	 * @param parent
-	 * @param user
-	 * @param respectFrontEndPermissions
-	 * @return
-	 * @throws DotStateException
-	 * @throws DotDataException
-	 */
-	public abstract List<File> getFiles(Folder parent, User user, boolean respectFrontEndPermissions) throws DotStateException,
-			DotDataException, DotSecurityException;
-
-	/**
-	 * Gets a list of  'working' File under given folder
-	 *
-	 * @param parent
-	 * @param user
-	 * @param respectFrontEndPermissions
-	 * @param condition
-	 * @return
-	 * @throws DotStateException
-	 * @throws DotDataException
-	 */
-	public abstract List<File> getFiles(Folder parent, User user, boolean respectFrontEndPermissions, ChildrenCondition cond) throws DotStateException,
-			DotDataException, DotSecurityException;
 
 
 	/**
@@ -575,17 +546,6 @@ import com.liferay.portal.model.User;
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public abstract List<File> getWorkingFiles(Folder parent,User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
-
-	/**
-	 *
-	 * @param parent
-	 * @param user
-	 * @param respectFrontEndPermissions
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
 	public abstract List<Contentlet> getWorkingContent(Folder parent,User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
 
 	/**
@@ -621,38 +581,6 @@ import com.liferay.portal.model.User;
 	 * @throws DotSecurityException
 	 */
 	public abstract List<Link> getLiveLinks(Folder parent,User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
-
-	/**
-	 *
-	 * @param parent
-	 * @param user
-	 * @param respectFrontEndPermissions
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	public abstract List<File> getLiveFiles(Folder parent,User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
-	/**
-	 * returns child files sorted by title
-	 * @param parent
-	 * @param user
-	 * @param respectFrontEndPermissions
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	public abstract List<File> getLiveFilesSortTitle(Folder parent,User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
-	/**
-	 * returns child files sorted by title
-	 * @param parent
-	 * @param user
-	 * @param respectFrontEndPermissions
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	public abstract List<File> getLiveFilesSortOrder(Folder parent,User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
-
 
 	/**
 	 *

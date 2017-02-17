@@ -1264,7 +1264,7 @@ public class ContentletAjax {
 					if(UtilMethods.isSet(binaryContentlet) && UtilMethods.isSet(binaryContentlet.getInode())){
 						try {
 							elementValue = binaryContentlet.getBinary(FileAssetAPI.BINARY_FIELD);
-							binaryFile = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+							binaryFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
 									+ File.separator + user.getUserId() + File.separator + "binary1"
 									+ File.separator + ((File)elementValue).getName());
 							if(binaryFile.exists())
@@ -1272,7 +1272,7 @@ public class ContentletAjax {
 						} catch (IOException e) {}
 					}else{
 						binaryFileValue = ContentletUtil.sanitizeFileName(binaryFileValue);
-						binaryFile = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+						binaryFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
 								+ File.separator + user.getUserId() + File.separator + elementName
 								+ File.separator + binaryFileValue);
 						if(binaryFile.exists()) {
@@ -1280,7 +1280,7 @@ public class ContentletAjax {
 	    					    // https://github.com/dotCMS/dotCMS/issues/35
 	    					    // making a copy just in case the transaction fails so
 	    					    // we can have the file for possible next attempts
-	                            File acopyFolder=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+	                            File acopyFolder=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
 	                                    + File.separator + user.getUserId() + File.separator + elementName
 	                                    + File.separator + UUIDGenerator.generateUuid());
 	                            if(!acopyFolder.exists())
@@ -1428,7 +1428,7 @@ public class ContentletAjax {
 			if(contentlet!=null) {
 			    for(Field ff : FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode())) {
 			        if(ff.getFieldType().equals(FieldType.BINARY.toString())) {
-			            File tmp=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+			            File tmp=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
 			                    +File.separator+user.getUserId()+File.separator+ff.getFieldContentlet());
 			            FileUtil.deltree(tmp);
 			        }
@@ -2068,7 +2068,7 @@ public class ContentletAjax {
 					File binaryFile = null;
 					if(UtilMethods.isSet(fileName)){
 						fileName = ContentletUtil.sanitizeFileName(fileName);
-						binaryFile = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+						binaryFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
 								+ File.separator + user.getUserId() + File.separator + FieldsCache.getField(fieldInode).getFieldContentlet()
 								+ File.separator + fileName.trim());
 						}
@@ -2087,7 +2087,7 @@ public class ContentletAjax {
 		if(newCont !=null ) {
 		    Field field = FieldsCache.getField(fieldInode);
 	        if(field.getFieldType().equals(FieldType.BINARY.toString())) {
-	            File tmp=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+	            File tmp=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
 	                    +File.separator+user.getUserId()+File.separator+field.getFieldContentlet());
 	            FileUtil.deltree(tmp);
 	        }

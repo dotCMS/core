@@ -376,10 +376,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return wfac.findWorkFlowTaskById(id);
 	}
 
-	public List<IFileAsset> findWorkflowTaskFiles(WorkflowTask task) throws DotDataException {
-		return wfac.findWorkflowTaskFiles(task);
-	}
-
 	public List<IFileAsset> findWorkflowTaskFilesAsContent(WorkflowTask task, User user) throws DotDataException {
 		List<Contentlet> contents =  wfac.findWorkflowTaskFilesAsContent(task, user);
 		return APILocator.getFileAssetAPI().fromContentletsI(contents);

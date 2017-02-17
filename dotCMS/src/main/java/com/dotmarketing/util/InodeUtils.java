@@ -7,15 +7,12 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.factories.InodeFactory;
-
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.report.model.Report;
-import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -110,8 +107,6 @@ public class InodeUtils {
 			return Structure.class;
 		} else if (type.equals("workflow_task")) {
 			return WorkflowTask.class;
-		} else if (type.equals("file_asset")) {
-			return com.dotmarketing.portlets.files.model.File.class;
 		} else if (type.equals("relationship")) {
 			return Relationship.class;
 

@@ -167,14 +167,6 @@ public abstract class ContentletFactory {
 	protected abstract List<Contentlet> getContentletsByIdentifier(String identifier, Boolean live) throws DotDataException, DotSecurityException;
 
 	/**
-	 * Gets all related files
-	 * @param contentlet
-	 * @return
-	 * @throws DotDataException
-	 */
-	protected abstract List<File> getRelatedFiles(Contentlet contentlet) throws DotDataException;
-	
-	/**
 	 * Gets a file with a specific relationship type to the passed in contentlet
 	 * @param contentlet
 	 * @param relationshipType

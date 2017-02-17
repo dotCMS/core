@@ -458,9 +458,6 @@ public class OrderMenuAction extends DotPortletAction {
 					if(o instanceof Folder && !((Folder)(o)).isShowOnMenu()){
 						o = null;
 					}
-					if((o instanceof File && !((File)(o)).isShowOnMenu())){
-						o = null;
-					}
 					if((o instanceof Link && !((Link)(o)).isShowOnMenu())){
 						o = null;
 					}

@@ -29,14 +29,13 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
-import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 public class FileResourceImpl implements FileResource, LockableResource {
 
-	private static final FileAPI fileAPI = APILocator.getFileAPI();
+	private static final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
 	private DotWebdavHelper dotDavHelper;
 	private IFileAsset file = new FileAsset();
 	String path;
@@ -124,7 +123,7 @@ public class FileResourceImpl implements FileResource, LockableResource {
 	}
 
 	public String getContentType(String accepts) {
-		return fileAPI.getMimeType(file.getFileName());
+		return fileAssetAPI.getMimeType(file.getFileName());
 	}
 
 	public Date getModifiedDate() {

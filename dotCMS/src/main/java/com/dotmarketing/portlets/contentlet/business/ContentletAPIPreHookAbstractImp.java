@@ -326,10 +326,6 @@ public class ContentletAPIPreHookAbstractImp implements ContentletAPIPreHook {
 		return true;
 	}
 
-	public boolean getReferencingContentlet(File file, boolean live, User user, boolean respectFrontendRoles) {
-		return true;
-	}
-
 	public boolean getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles) {
 		return true;
 	}
@@ -440,10 +436,6 @@ public class ContentletAPIPreHookAbstractImp implements ContentletAPIPreHook {
 	}
 
 	public boolean refreshContentUnderHost(Host host) throws DotReindexStateException {
-		return true;
-	}
-
-	public boolean refreshReferencingContentlets(File file, boolean live) {
 		return true;
 	}
 

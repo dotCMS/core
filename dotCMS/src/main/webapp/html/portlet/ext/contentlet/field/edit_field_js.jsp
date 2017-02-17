@@ -3,8 +3,6 @@
 <%@page import="com.dotcms.repackage.javax.portlet.WindowState"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@page import="com.dotmarketing.portlets.files.model.File"%>
-<%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.liferay.portal.model.User"%>
 
 <script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>

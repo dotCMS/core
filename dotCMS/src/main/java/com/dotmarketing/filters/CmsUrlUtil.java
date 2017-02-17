@@ -220,26 +220,6 @@ public class CmsUrlUtil {
 			} catch (Exception e) {
 				Logger.warn(this, "Unable to find file asset contentlet with identifier " + ident.getId(), e);
 			}
-
-			if (ident.getAssetType().equals("file_asset")) {
-				com.dotmarketing.portlets.files.model.File f = new com.dotmarketing.portlets.files.model.File();
-				(f).setIdentifier(ident.getInode());
-				try {
-					return APILocator.getPermissionAPI().doesUserHavePermission(f, PermissionAPI.PERMISSION_READ, user, true);
-				} catch (DotDataException e) {
-					Logger.warn(this, "Unable to find file asset contentlet with identifier " + ident.getId(), e);
-				}
-
-			}
-			if (ident.getAssetType().equals("htmlpage")) {
-				com.dotmarketing.portlets.files.model.File f = new com.dotmarketing.portlets.files.model.File();
-				(f).setIdentifier(ident.getInode());
-				try {
-					return APILocator.getPermissionAPI().doesUserHavePermission(f, PermissionAPI.PERMISSION_READ, user, true);
-				} catch (DotDataException e) {
-					Logger.warn(this, "Unable to find file asset contentlet with identifier " + ident.getId(), e);
-				}
-			}
 		}
 
 		return false;

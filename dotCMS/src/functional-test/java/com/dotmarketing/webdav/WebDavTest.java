@@ -56,10 +56,10 @@ public class WebDavTest extends IntegrationTestBase {
 		Folder ff2=webdavtest.createFolder("ff2");
 	    
 		java.io.File tmpDir1=new java.io.File(
-	    		APILocator.getFileAPI().getRealAssetPathTmpBinary()+java.io.File.separator+"webdavtest_1_"+System.currentTimeMillis());
+	    		APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()+java.io.File.separator+"webdavtest_1_"+System.currentTimeMillis());
 	    tmpDir1.mkdirs();
 	    java.io.File tmpDir2=new java.io.File(
-	    		APILocator.getFileAPI().getRealAssetPathTmpBinary()+java.io.File.separator+"webdavtest_2_"+System.currentTimeMillis());
+	    		APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()+java.io.File.separator+"webdavtest_2_"+System.currentTimeMillis());
 	    tmpDir2.mkdirs();
 	    java.io.File f1=new java.io.File(tmpDir1,"test.txt");
 	    java.io.File f2=new java.io.File(tmpDir2,"test.txt");

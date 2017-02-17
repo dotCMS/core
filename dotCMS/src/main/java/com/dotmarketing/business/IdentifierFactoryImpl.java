@@ -112,9 +112,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		identifier.setURI(folderId.getPath() + identifier.getInode());
 		if (webasset instanceof HTMLPage) {
 			identifier.setURI(folderId.getPath() + ((HTMLPage) webasset).getPageUrl());
-		} else if (webasset instanceof File) {
-			identifier.setURI(folderId.getPath() + ((File) webasset).getFileName());
-		}else if (webasset instanceof Contentlet){
+		} else if (webasset instanceof Contentlet){
 			Contentlet c =(Contentlet) webasset;
 			if ( c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET ) {
 				FileAsset fa = APILocator.getFileAssetAPI().fromContentlet( c );

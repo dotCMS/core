@@ -601,8 +601,6 @@ public class DotCMSMacroWebAPI implements ViewTool {
 		}
         List<IFileAsset> fileList = new ArrayList<IFileAsset>();
 		try {
-			boolean live = true;
-			fileList.addAll(APILocator.getFolderAPI().getLiveFilesSortTitle(folder, null, true));
 			fileList.addAll(APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, "", true, APILocator.getUserAPI().getSystemUser(), false));
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage());

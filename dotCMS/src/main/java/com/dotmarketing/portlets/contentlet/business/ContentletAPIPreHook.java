@@ -574,24 +574,6 @@ public interface ContentletAPIPreHook {
 	public boolean getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles);
 
 	/**
-	 * Gets all contents referenced by a given file asset
-	 * @param file asset.
-	 * @param live contentlets or not.
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return List of contentlets. Null if no related contentlets found.
-	 */
-	public boolean getReferencingContentlet(File file, boolean live, User user, boolean respectFrontendRoles);
-	
-	/**
-	 * Refreshes (regenerates) all content files referenced by a given file asset
-	 * @param file asset
-	 * @param live contentlets or not
-	 * @return 
-	 */
-	public boolean refreshReferencingContentlets(File file, boolean live);
-
-	/**
 	 * 
 	 * @param contentlet
 	 * @param user

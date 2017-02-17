@@ -1072,28 +1072,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected List<File> getRelatedFiles(Contentlet contentlet) throws DotDataException {
-	    HibernateUtil dh = new HibernateUtil(File.class);
-
-        File f = new File();
-        String tableName = f.getType();
-
-        String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
-        + tableName + "_1_ where tree.parent = ? and tree.child = " + tableName + ".inode and " + tableName
-        + "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type ='"+tableName+"'";
-
-        Logger.debug(this, "HibernateUtilSQL:getRelatedFiles\n " + sql);
-
-        dh.setSQLQuery(sql);
-
-        Logger.debug(this, "inode:  " + contentlet.getInode() + "\n");
-
-        dh.setParam(contentlet.getInode());
-
-        return dh.list();
-	}
-
-	@Override
 	protected Identifier getRelatedIdentifier(Contentlet contentlet, String relationshipType) throws DotDataException {
 	    String tableName;
         try {

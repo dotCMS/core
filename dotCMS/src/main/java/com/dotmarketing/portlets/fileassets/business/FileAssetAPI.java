@@ -295,4 +295,6 @@ public interface FileAssetAPI {
     public void cleanThumbnailsFromFileAsset(IFileAsset fileAsset);
 
 	public String getMimeType (String filename);
+
+	public String getRealAssetPathTmpBinary();
 }

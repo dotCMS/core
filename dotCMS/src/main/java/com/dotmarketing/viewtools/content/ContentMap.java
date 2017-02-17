@@ -87,7 +87,7 @@ public class ContentMap {
 	 * It is not a bad performance but certainly slower then not displaying the category fields. Searching for categories doesn't effect the speed at all
 	 * it is only displaying them that will. The value returned to Velocity are the actual Category Objects. You get an ArrayList of them<br/>
 	 * <br/>
-	 * FILE/IMAGE FIELDS: You can get File/Image fields as well. $con.myimage or $con.myfile. It will return a FileMap object which wraps the actual File object from dotCMS.It adds the uri as a variable.
+	 * FILE/IMAGE FIELDS: You can get File/Image fields as well. $con.myimage or $con.myfile. It will return a FileAssetMap object which wraps the actual File object from dotCMS.It adds the uri as a variable.
 	 * All the objects have toString implemented on them which means you can spit it out in velocity and see what it available to you.<br/>
 	 * <br/>
 	 * BINARY FIELDS : You can also get at binary field types. $mycon.myBinaryField This return the BinaryMap object to you.<br/>
@@ -193,15 +193,6 @@ public class ContentMap {
 						    return fam;
 						}
 					}
-				}
-				if(file != null && UtilMethods.isSet(file.getInode())){
-				    FileMap fm = FileMap.of(file);
-				    // Store file map into fieldValueMap
-                    addFieldValue(f, fm);
-
-                    return FileMap.of(file);
-				}else{
-					return null;
 				}
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.BINARY.toString())){
                 // Check if fileAsset or binaryMap is in fieldValueMap hashmap
@@ -410,7 +401,7 @@ public class ContentMap {
      * object
      * 
      * @param field
-     * @returns field value object (FileMap, FileAssetMap or BinaryMap)
+     * @returns field value object (FileAssetMap or BinaryMap)
      */
     private Object retriveFieldValue(Field field) {
         if (fieldValueMap == null) {

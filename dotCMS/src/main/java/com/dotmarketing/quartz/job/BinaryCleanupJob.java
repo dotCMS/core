@@ -89,7 +89,7 @@ public class BinaryCleanupJob implements Job {
 	}
 
 	private File getTempBinaryDir() throws IOException{
-		String binaryPath = APILocator.getFileAPI().getRealAssetPathTmpBinary();
+		String binaryPath = APILocator.getFileAssetAPI().getRealAssetPathTmpBinary();
 		return new File(binaryPath);
 	}
 }

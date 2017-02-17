@@ -1,7 +1,5 @@
 <%@ include file="/html/portlet/ext/contentlet/init.jsp" %>
-<%@ page import="com.dotmarketing.util.Config" %>
 <%@ page import="com.dotmarketing.portlets.links.model.Link" %>
-<%@ page import="com.dotmarketing.portlets.files.model.File" %>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 
 <%
@@ -91,9 +89,6 @@ function cancel() {
 											}
 											else if (webasset instanceof Link) {
 												title = ((Link)webasset).getProtocal() + ((Link)webasset).getUrl();
-											}
-											if (webasset instanceof File) {
-												title = ((File)webasset).getFileName();
 											}
 										%>
 										<%=title%>

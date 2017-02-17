@@ -5,34 +5,12 @@
 <%@page import="java.util.List"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.*"%>
-<%@page import="com.dotmarketing.cms.factories.*"%>
-<%@page import="com.dotmarketing.portlets.files.model.*"%>
 <%@page import="com.dotmarketing.beans.WebAsset"%>
-<%@page import="com.dotmarketing.beans.Inode"%>
-<%@page import="com.dotmarketing.factories.InodeFactory"%>
-<%@page import="com.dotmarketing.portlets.files.model.File"%>
 <%@page import="com.dotmarketing.portlets.fileassets.business.IFileAsset"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
-<%@page import="com.dotmarketing.portlets.containers.model.Container"%>
-<%@page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage"%>
-<%@page import="com.dotmarketing.portlets.links.model.Link"%>
-<%@page import="com.dotmarketing.portlets.templates.model.Template"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
-<%@page import="com.dotmarketing.portlets.structure.model.Field"%>
-<%@page import="com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils"%>
-<%@page import="com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils"%>
-<%@page import="com.dotmarketing.util.Parameter"%>
-<%@page import="java.util.Calendar"%>
-<%@page import="java.util.Date"%>
-<%@page import="java.util.GregorianCalendar"%>
-<%@page import="com.liferay.util.cal.CalendarUtil"%>
-<%@page import="java.util.Locale"%>
-<%@page import="java.text.SimpleDateFormat"%>
-<%@page import="java.util.ArrayList"%>
-<%@page import="com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
-<%@ page import="com.dotmarketing.util.Config" %>
 <%@page import="com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet"%>
 <%@ page import="com.dotmarketing.portlets.languagesmanager.model.Language" %>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
@@ -64,11 +42,7 @@
 	List<WorkflowComment> comments = APILocator.getWorkflowAPI().findWorkFlowComments(task);
 	List<WorkflowHistory> history = APILocator.getWorkflowAPI().findWorkflowHistory(task);
 	Collections.reverse(history);
-// 	List<File> files = APILocator.getWorkflowAPI().findWorkflowTaskFiles(task);
-	List<IFileAsset> files = APILocator.getWorkflowAPI().findWorkflowTaskFiles(task); // old files
-	List<IFileAsset> filesAsContent = APILocator.getWorkflowAPI().findWorkflowTaskFilesAsContent(task, user); // new files
-
-	files.addAll(filesAsContent);
+	List<IFileAsset> files = APILocator.getWorkflowAPI().findWorkflowTaskFilesAsContent(task, user); // new files
 
 	java.util.Map params = new java.util.HashMap();
 	params.put("struts_action",new String[] {"/ext/workflows/edit_workflow_task"});

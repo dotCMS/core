@@ -182,12 +182,6 @@ public class ContentletAPIPostHookAbstractImp implements ContentletAPIPostHook {
 	public void getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles,List<Contentlet> returnValue) {
 	}
 
-	public void getReferencingContentlet(File file, boolean live, User user, boolean respectFrontendRoles,List<Contentlet> returnValue) {
-	}
-	
-	public void refreshReferencingContentlets(File file, boolean live) {
-	}
-
 	public void unlock(Contentlet contentlet, User user, boolean respectFrontendRoles) {
 	}
 
@@ -204,9 +198,6 @@ public class ContentletAPIPostHookAbstractImp implements ContentletAPIPostHook {
 	}
 	
 	public void reIndexForServerNode() {
-	} 
-	
-	public void getRelatedFiles(Contentlet contentlet, User user, boolean respectFrontendRoles,List<File> returnValue) {
 	}
 	
 	public void getRelatedIdentifier(Contentlet contentlet, String relationshipType, User user, boolean respectFrontendRoles,Identifier returnValue) {

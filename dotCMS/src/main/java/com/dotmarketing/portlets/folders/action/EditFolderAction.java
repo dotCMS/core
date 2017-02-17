@@ -506,31 +506,6 @@ public class EditFolderAction extends DotPortletAction {
 			APILocator.getIdentifierAPI().delete(identifier);
 		}
 
-		List<File> files = fapi.getFiles(folder,APILocator.getUserAPI().getDefaultUser(),false);
-		for (File file: files) {
-			Identifier identifier = APILocator.getIdentifierAPI().find(file);
-
-            if(!InodeUtils.isSet(identifier.getInode())) {
-                Logger.warn(FolderFactory.class, "_deleteChildrenAssetsFromFolder: file inode = " + ((File)file).getInode() +  " doesn't have a valid identifier associated.");
-                continue;
-            }
-
-            perAPI.removePermissions((File)file);
-
-            List<Versionable> versions = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getDefaultUser(),false);
-            
-            for (Versionable versionV : versions) {
-            	File version = (File) versionV;
-	            //assets cache
-	            if (version.isLive()) 
-	                LiveCache.removeAssetFromCache(version);
-	            if (version.isWorking()) 
-	            	WorkingCache.removeAssetFromCache(version);
-	
-				InodeFactory.deleteInode(version);
-            }
-            APILocator.getIdentifierAPI().delete(identifier);
-		}
 		List<Link> links = fapi.getLinks(folder,APILocator.getUserAPI().getSystemUser(),false);
 		for (Link link: links) {		
 			if (link.isWorking()) {

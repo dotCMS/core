@@ -416,7 +416,6 @@ public class DotWebdavHelper {
             //Search for child files
             List<Versionable> filesListSubChildren = new ArrayList<Versionable>();
             try {
-                filesListSubChildren.addAll( folderAPI.getWorkingFiles( parentFolder, user, false ) );
                 filesListSubChildren.addAll( APILocator.getFileAssetAPI().findFileAssetsByFolder( parentFolder, user, false ) );
             } catch ( Exception e2 ) {
                 Logger.error( this, "Could not load files : ", e2 );
@@ -831,7 +830,7 @@ public class DotWebdavHelper {
      */
 	private File createFileInTemporalFolder(Field fieldVar, final String userId, final String fileName) {
         final String folderPath = new StringBuilder()
-                .append(APILocator.getFileAPI().getRealAssetPathTmpBinary())
+                .append(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary())
                 .append(File.separator).append(userId).append(File.separator)
                 .append(fieldVar.getFieldContentlet()).toString();
 
@@ -975,7 +974,7 @@ public class DotWebdavHelper {
 					    Contentlet newversion = conAPI.checkout(toContentlet.getInode(), user, false);
 
 					    // get a copy in a tmp folder to avoid filename change
-					    File tmpDir=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+					    File tmpDir=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
                                 +File.separator+UUIDGenerator.generateUuid());
 					    File tmp=new File(tmpDir, toContentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName());
 					    FileUtil.copyFile(origin.getBinary(FileAssetAPI.BINARY_FIELD), tmp);
@@ -1397,7 +1396,6 @@ public class DotWebdavHelper {
 							// pages = (ArrayList<HTMLPage>)
 							// InodeFactory.getChildrenClassByCondition(folder,HTMLPage.class,
 							// conditionAsset);
-							files.addAll(folderAPI.getWorkingFiles(folder, user,false));
 							if(folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)){
 								files.addAll(APILocator.getFileAssetAPI().findFileAssetsByHost(APILocator.getHostAPI().find(folder.getHostId(), user,false), user,false));
 							}else{

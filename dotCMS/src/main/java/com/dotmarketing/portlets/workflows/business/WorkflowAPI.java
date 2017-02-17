@@ -98,15 +98,6 @@ public interface WorkflowAPI {
 	public void deleteWorkflowHistory(WorkflowHistory history) throws DotDataException;
 
 	/**
-	 * finds files associated with a workflow item
-	 *
-	 * @param task
-	 * @return
-	 * @throws DotDataException
-	 */
-	public List<IFileAsset> findWorkflowTaskFiles(WorkflowTask task) throws DotDataException;
-
-	/**
 	/**
 	 * finds files associated with a workflow item
 	 *

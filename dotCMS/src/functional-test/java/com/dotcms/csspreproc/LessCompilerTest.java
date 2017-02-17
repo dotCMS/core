@@ -37,7 +37,7 @@ public class LessCompilerTest {
     @Test
     public void case01() throws Exception {
         final String runId =  UUIDGenerator.generateUuid() ;
-        final File tmpDir = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + 
+        final File tmpDir = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() +
                 File.separator + runId + File.separator + "less01"); 
         tmpDir.mkdirs();
         
@@ -134,23 +134,23 @@ public class LessCompilerTest {
         Folder ff=APILocator.getFolderAPI().createFolders("/less", host, user, false);
         
 
-        File file1=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "file1.less"); 
+        File file1=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "file1.less");
         FileUtils.writeStringToFile(file1, "@file1: 2;");
         Contentlet fileAsset1=newFile(file1, ff, host);
         
-        File file2=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "file2.less");
+        File file2=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "file2.less");
         FileUtils.writeStringToFile(file2, "@file2: 4;");
         Contentlet fileAsset2=newFile(file2, f1, defaultHost);
         
-        File file3=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "file3.less");
+        File file3=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "file3.less");
         FileUtils.writeStringToFile(file3, "@file3: 8;");
         Contentlet fileAsset3=newFile(file3, f4, defaultHost);
         
-        File file4=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "file4.less");
+        File file4=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "file4.less");
         FileUtils.writeStringToFile(file4, "@file4: 16;");
         Contentlet fileAsset4=newFile(file4, f3, defaultHost);
         
-        File file5=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "file5.less");
+        File file5=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "file5.less");
         FileUtils.writeStringToFile(file5, "@import \"//"+host.getHostname()+"/less/file1\"; \r\n"+
                                            "@import \"/"+runId+"/a/file2\"; \r\n"+
                                            "@import \"../file3\"; \r\n"+

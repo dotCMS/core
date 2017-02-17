@@ -58,7 +58,6 @@ import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -499,7 +498,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         contentletAPI.isInodeIndexed(host2.getInode());
         
         
-        java.io.File bin=new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator 
+        java.io.File bin=new java.io.File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + java.io.File.separator
                 + UUIDGenerator.generateUuid() + java.io.File.separator + "hello.txt");
         bin.getParentFile().mkdirs();
         
@@ -954,132 +953,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
 
 
-    }
-
-    /**
-     * Testing {@link ContentletAPI#addFileToContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, String, String, com.liferay.portal.model.User, boolean)}
-     *
-     * @throws Exception
-     * @see ContentletAPI
-     * @see Contentlet
-     */
-    @Ignore ( "Not Ready to Run." )
-    @Test
-    public void addFileToContentlet () throws Exception {
-
-        File testFile = null;
-        try {
-        	HibernateUtil.startTransaction();
-            String RELATION_TYPE = new File().getType();
-
-            //Getting a known structure
-            Structure structure = structures.iterator().next();
-
-            //Search the contentlets for this structure
-            List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
-            Contentlet contentlet = contentletList.iterator().next();
-
-            //Creating the test file
-            testFile = createFile( ContentletAPITest.class.getResource( "test_files/test.txt" ), "test.txt" );
-
-            /*//Gettting the related files to this contentlet
-            List<File> files = contentletAPI.getRelatedFiles( contentlet, user, false );//TODO: This method is not working but we are not testing it on this call....
-            if ( files == null ) {
-                files = new ArrayList<File>();
-            }
-            int initialSize = files.size();*/
-
-            //Adding the file to the contentlet
-            contentletAPI.addFileToContentlet( contentlet, testFile.getInode(), RELATION_TYPE, user, false );
-
-            //Gettting the related files to this contentlet
-            //List<File> finalFiles = contentletAPI.getRelatedFiles( contentlet, user, false );//TODO: This method is not working but we are not testing it on this call....
-
-            //Get the contentlet Identifier to gather the menu links
-            Identifier fileIdentifier = APILocator.getIdentifierAPI().find( testFile );
-
-            //Verify if the relation was created
-            Tree tree = TreeFactory.getTree( contentlet.getInode(), fileIdentifier.getId(), RELATION_TYPE );
-
-            //Validations
-            assertNotNull( tree );
-            assertNotNull( tree.getParent() );
-            assertNotNull( tree.getChild() );
-            assertEquals( tree.getParent(), contentlet.getInode() );
-            assertEquals( tree.getChild(), fileIdentifier.getInode() );
-            assertEquals( tree.getRelationType(), RELATION_TYPE );
-
-            //Validations
-            /*assertNotNull( finalFiles );
-            assertTrue( !finalFiles.isEmpty() );
-            assertNotSame( initialSize, finalFiles.size() );*/
-        } finally {
-            fileAPI.delete( testFile, user, false );
-            HibernateUtil.commitTransaction();
-        }
-    }
-
-    /**
-     * Testing {@link ContentletAPI#addImageToContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, String, String, com.liferay.portal.model.User, boolean)}
-     *
-     * @throws Exception
-     * @see ContentletAPI
-     * @see Contentlet
-     */
-    @Ignore ( "Not Ready to Run." )
-    @Test
-    public void addImageToContentlet () throws Exception {
-
-        File testFile = null;
-        try {
-        	HibernateUtil.startTransaction();
-            String RELATION_TYPE = new File().getType();
-
-            //Getting a known structure
-            Structure structure = structures.iterator().next();
-
-            //Search the contentlets for this structure
-            List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
-            Contentlet contentlet = contentletList.iterator().next();
-
-            //Creating the test file
-            testFile = createFile( ContentletAPITest.class.getResource( "test_files/test.gif" ), "test.gif" );
-
-            /*//Gettting the related files to this contentlet
-            List<File> files = contentletAPI.getRelatedFiles( contentlet, user, false );//TODO: This method is not working but we are not testing it on this call....
-            if ( files == null ) {
-                files = new ArrayList<File>();
-            }
-            int initialSize = files.size();*/
-
-            //Adding the file to the contentlet
-            contentletAPI.addImageToContentlet( contentlet, testFile.getInode(), RELATION_TYPE, user, false );
-
-            //Gettting the related files to this contentlet
-            //List<File> finalFiles = contentletAPI.getRelatedFiles( contentlet, user, false );//TODO: This method is not working but we are not testing it on this call....
-
-            //Get the contentlet Identifier to gather the menu links
-            Identifier fileIdentifier = APILocator.getIdentifierAPI().find( testFile );
-
-            //Verify if the relation was created
-            Tree tree = TreeFactory.getTree( contentlet.getInode(), fileIdentifier.getId(), RELATION_TYPE );
-
-            //Validations
-            assertNotNull( tree );
-            assertNotNull( tree.getParent() );
-            assertNotNull( tree.getChild() );
-            assertEquals( tree.getParent(), contentlet.getInode() );
-            assertEquals( tree.getChild(), fileIdentifier.getId() );
-            assertEquals( tree.getRelationType(), RELATION_TYPE );
-
-            /*//Validations
-            assertNotNull( finalFiles );
-            assertTrue( !finalFiles.isEmpty() );
-            assertNotSame( initialSize, finalFiles.size() );*/
-        } finally {
-            fileAPI.delete( testFile, user, false );
-            HibernateUtil.commitTransaction();
-        }
     }
 
     /**

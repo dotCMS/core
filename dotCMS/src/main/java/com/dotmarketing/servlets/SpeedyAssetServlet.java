@@ -1,19 +1,5 @@
 package com.dotmarketing.servlets;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.StringTokenizer;
-import java.util.regex.Pattern;
-
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -27,11 +13,9 @@ import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
@@ -39,6 +23,18 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.StringTokenizer;
+import java.util.regex.Pattern;
+
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 public class SpeedyAssetServlet extends HttpServlet {
 
@@ -286,7 +282,7 @@ public class SpeedyAssetServlet extends HttpServlet {
 
 			} else{
 				relativePath = request.getParameter("path");
-				f = new File(APILocator.getFileAPI().getRealAssetsRootPath() + relativePath);
+				f = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + relativePath);
 				if(!f.exists() || !f.canRead()) {
 					Logger.warn(this, "Invalid path passed: path = " + relativePath + ", file doesn't exists.");
 					//Invalid path given
@@ -304,45 +300,21 @@ public class SpeedyAssetServlet extends HttpServlet {
 
 			String inode = null;
 
-			IFileAsset file = null;
-			Identifier identifier = null;
 			boolean canRead = false;
-			if(UtilMethods.isSet(relativePath) && relativePath.contains("fileAsset")){
+			if((UtilMethods.isSet(relativePath) && relativePath.contains("fileAsset")) || (UtilMethods.isSet(uri) && uri.contains("fileAsset"))){
 				String[] splits = relativePath.split(Pattern.quote(File.separator));
 				if(splits.length>0){
 					inode = splits[3];
-					Contentlet cont =  null;
+					Contentlet cont;
 					try{
 						cont = APILocator.getContentletAPI().find(inode, user, true);
-						file = APILocator.getFileAssetAPI().fromContentlet(cont);
-						identifier = APILocator.getIdentifierAPI().find(cont);
+						APILocator.getFileAssetAPI().fromContentlet(cont);
+						APILocator.getIdentifierAPI().find(cont);
 						canRead = true;
 					}catch(Exception e){	
 						Logger.warn(this, "Unable to find file asset contentlet with inode " + inode, e);
 					}
 				}
-			}else if(UtilMethods.isSet(uri) && uri.contains("fileAsset")){
-				String[] splits = uri.split(Pattern.quote(File.separator));
-				if(splits.length>0){
-					inode = splits[3];
-					Contentlet cont =  null;
-					try{
-						cont = APILocator.getContentletAPI().find(inode, user, true);
-						file = APILocator.getFileAssetAPI().fromContentlet(cont);
-						identifier = APILocator.getIdentifierAPI().find(cont);
-						canRead = true;
-					}catch(Exception e){	
-						Logger.warn(this, "Unable to find file asset contentlet with inode " + inode, e);
-					}
-				}
-			}else{
-			
-				inode = UtilMethods.getFileName(f.getName());
-				file = APILocator.getFileAPI().find(inode, user, true);
-				identifier = APILocator.getIdentifierAPI().find((com.dotmarketing.portlets.files.model.File)file);
-				com.dotmarketing.portlets.files.model.File fProxy = new com.dotmarketing.portlets.files.model.File();
-	            fProxy.setIdentifier(identifier.getInode());
-	            canRead = permissionAPI.doesUserHavePermission(fProxy, PERMISSION_READ, user, true);
 			}
 			
 			

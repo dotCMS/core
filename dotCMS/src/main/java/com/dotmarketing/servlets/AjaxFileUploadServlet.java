@@ -78,7 +78,7 @@ public class AjaxFileUploadServlet extends HttpServlet {
 			String fieldName = request.getParameter("fieldName");
 			String fileName = request.getParameter("fileName");
 
-			File tempUserFolder = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + userId + File.separator + fieldName);
+			File tempUserFolder = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + userId + File.separator + fieldName);
 
 			File file = new File(tempUserFolder.getAbsolutePath() + File.separator + fileName);
 
@@ -162,7 +162,7 @@ public class AjaxFileUploadServlet extends HttpServlet {
 					}
 					fileName = ContentletUtil.sanitizeFileName(fileName);
 
-					File tempUserFolder = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + userId +
+					File tempUserFolder = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + userId +
 							File.separator + fieldName);
 
 					if(!isValidPath(tempUserFolder.getCanonicalPath())) {
@@ -205,7 +205,7 @@ public class AjaxFileUploadServlet extends HttpServlet {
 
 	private static boolean isValidPath(String path) throws IOException {
 		Path child = Paths.get(path).toAbsolutePath();
-		String tempBinaryPath = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()).getCanonicalPath();
+		String tempBinaryPath = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()).getCanonicalPath();
 		Path parent = Paths.get(tempBinaryPath).toAbsolutePath();
 
 		return child.startsWith(parent);

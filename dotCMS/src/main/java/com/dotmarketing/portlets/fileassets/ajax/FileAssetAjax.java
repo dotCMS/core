@@ -64,7 +64,7 @@ public class FileAssetAjax {
 		Contentlet cont  = APILocator.getContentletAPI().find(contentletInode, user, respectFrontendRoles);
 		FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(cont);
 
-		java.io.File tempDir =  new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + contentletInode.charAt(0)
+		java.io.File tempDir =  new java.io.File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + java.io.File.separator + contentletInode.charAt(0)
 					+ java.io.File.separator + contentletInode.charAt(1) + java.io.File.separator + contentletInode
 					+ java.io.File.separator + APILocator.getFileAssetAPI().BINARY_FIELD);
 

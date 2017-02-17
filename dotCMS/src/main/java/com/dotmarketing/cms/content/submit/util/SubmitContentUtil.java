@@ -187,11 +187,7 @@ public class SubmitContentUtil {
 			String name = UtilMethods.getFileName(title);
 			int counter = 1;
 			String fileName = name + "." + UtilMethods.getFileExtension(title);
-			while(APILocator.getFileAPI().fileNameExists(folder,fileName)) {
-			    newFileName  = name +"("+ counter+")";
-				fileName = newFileName + "." + UtilMethods.getFileExtension(title);
-				counter++;
-			}
+
 			while(APILocator.getFileAssetAPI().fileNameExists(host,folder, name, "")) {
 				newFileName  = name +"("+ counter+")";
 				fileName = newFileName + "." + UtilMethods.getFileExtension(title);

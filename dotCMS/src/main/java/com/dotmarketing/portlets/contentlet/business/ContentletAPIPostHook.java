@@ -578,23 +578,6 @@ public interface ContentletAPIPostHook {
 	 * @param returnValue - value returned by primary API Method */
 	public void getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles,List<Contentlet> returnValue);
 
-	/**
-	 * Gets all contents referenced by a given file asset
-	 * @param file asset.
-	 * @param live contentlets or not.
-	 * @param user
-	 * @param respectFrontendRoles
-	 * List of contentlets. Null if no related contentlets found.
-	 * @param returnValue - value returned by primary API Method 
-	 */
-	public void getReferencingContentlet(File file, boolean live, User user, boolean respectFrontendRoles,List<Contentlet> returnValue);
-	
-	/**
-	 * Refreshes (regenerates) all content files referenced by a given file asset
-	 * @param file asset
-	 * @param live contentlets or not 
-	 */
-	public void refreshReferencingContentlets(File file, boolean live);
 
 	/**
 	 * 
@@ -633,16 +616,7 @@ public interface ContentletAPIPostHook {
 	 * Used to reindex content for the specific server the code executes on at runtime in a cluster
 	 */
 	public void reIndexForServerNode(); 
-	
-	/**
-	 * Get all the files relates to the contentlet
-	 * @param contentlet
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @param returnValue - value returned by primary API Method 
-	 */
-	public void getRelatedFiles(Contentlet contentlet, User user, boolean respectFrontendRoles,List<File> returnValue);
-	
+
 	/**
 	 * Gets a file with a specific relationship type to the passed in contentlet
 	 * @param contentlet

@@ -64,7 +64,6 @@ import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -1107,27 +1106,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				} else if (typeField.startsWith("text")) {
 				    contentlet.setStringProperty(field.getVelocityVarName(), defaultValue);
 				}
-
- 				if (field.getFieldType().equals(Field.FieldType.IMAGE.toString())
-						|| field.getFieldType().equals(Field.FieldType.FILE.toString())) {
-					try {
-					    String value=contentlet.getStringProperty(field.getVelocityVarName());
-						Identifier id = APILocator.getIdentifierAPI().find((String) value);
-						if (InodeUtils.isSet(id.getInode())) {
-							if (field.getFieldType().equals(Field.FieldType.IMAGE.toString())) {
-								File inodeAux = (File) APILocator.getVersionableAPI().findWorkingVersion(id,  APILocator.getUserAPI().getSystemUser(), false);
-								value = inodeAux.getInode();
-							} else if (field.getFieldType().equals(Field.FieldType.FILE.toString())) {
-								File inodeAux = (File) APILocator.getVersionableAPI().findWorkingVersion(id,  APILocator.getUserAPI().getSystemUser(), false);
-								value = inodeAux.getInode();
-							}
-							contentlet.setStringProperty(field.getVelocityVarName(), value);
-						}
-					} catch (Exception ex) {
-						Logger.debug(this, ex.toString());
-					}
-				}
-
 			}
 		}
 
@@ -1203,7 +1181,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 						httpReq.getSession().setAttribute(field.getFieldContentlet() + "-sibling", sib+","+field.getVelocityVarName());
 						java.io.File inputFile = APILocator.getContentletAPI().getBinaryFile(sib, field.getVelocityVarName(), user);
 						if(inputFile != null){
-							java.io.File acopyFolder=new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+							java.io.File acopyFolder=new java.io.File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
 									+ java.io.File.separator + user.getUserId() + java.io.File.separator + field.getFieldContentlet()
 	                                + java.io.File.separator + UUIDGenerator.generateUuid());
 							
@@ -1212,7 +1190,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							
 							String shortFileName = FileUtil.getShortFileName(inputFile.getAbsolutePath());
 							
-							java.io.File binaryFile = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+							java.io.File binaryFile = new java.io.File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
 									+ java.io.File.separator + user.getUserId() + java.io.File.separator + field.getFieldContentlet()
 									+ java.io.File.separator + shortFileName.trim());
 							

@@ -43,7 +43,6 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -652,9 +651,6 @@ public class ImportUtil {
                             }
                         }
 
-                        //Find the file in dotCMS
-                        File dotCMSFile = null;
-
                         Identifier id = APILocator.getIdentifierAPI().find(fileHost, filePath);
                         if(id!=null && InodeUtils.isSet(id.getId()) && id.getAssetType().equals("contentlet")){
                             Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
@@ -666,28 +662,8 @@ public class ImportUtil {
                                 results.get("warnings").add(localLineMessage + lineNumber + ". " + noFileMessage + ": " + fileHost.getHostname() + ":" + filePath);
                                 valueObj = null;
                             }
-                        }else{
-                            try
-                            {
-                                dotCMSFile = APILocator.getFileAPI().getFileByURI(filePath, fileHost, true, user, false);
-
-                            }catch(Exception ex)
-                            {
-                                //File doesn't exist below I check this
-                            }
-                            if(UtilMethods.isSet(dotCMSFile) && UtilMethods.isSet(dotCMSFile.getIdentifier()))
-                            {
-                                valueObj = dotCMSFile.getIdentifier();
-                            }
-                            else
-                            {
-                                //Add Warning the File doesn't exist
-                                String localLineMessage = LanguageUtil.get(user, "Line--");
-                                String noFileMessage = LanguageUtil.get(user, "The-file-has-not-been-found");
-                                results.get("warnings").add(localLineMessage + lineNumber + ". " + noFileMessage + ": " + fileHost.getHostname() + ":" + filePath);
-                                valueObj = null;
-                            }
-                        }	}
+                        }
+                    }
                 }
                 else {
                     valueObj = Config.getBooleanProperty("CONTENT_ESCAPE_HTML_TEXT",true) ? UtilMethods.escapeUnicodeCharsForHTML(value) : value;

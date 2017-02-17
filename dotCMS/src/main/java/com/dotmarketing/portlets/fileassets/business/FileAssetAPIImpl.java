@@ -703,4 +703,16 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		return mimeType;
 	}
 
+	public String getRealAssetPathTmpBinary() {
+		String assetpath=getRealAssetsRootPath();
+		java.io.File adir=new java.io.File(assetpath);
+		if(!adir.isDirectory())
+			adir.mkdir();
+		String path=assetpath+java.io.File.separator+"tmp_upload";
+		java.io.File dir=new java.io.File(path);
+		if(!dir.isDirectory())
+			dir.mkdir();
+		return path;
+	}
+
 }

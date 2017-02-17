@@ -496,10 +496,6 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			p = new Permission(Folder.class.getCanonicalName(), permissionable.getPermissionId(), cmsAnonymousRole.getId(), PermissionAPI.PERMISSION_READ, true);
 			permissionFactory.savePermission(p, permissionable);
 
-			//Default files permissions
-			p = new Permission(File.class.getCanonicalName(), permissionable.getPermissionId(), cmsAnonymousRole.getId(), PermissionAPI.PERMISSION_READ, true);
-			permissionFactory.savePermission(p, permissionable);
-
 			//Default links permissions
 			p = new Permission(Link.class.getCanonicalName(), permissionable.getPermissionId(), cmsAnonymousRole.getId(), PermissionAPI.PERMISSION_READ, true);
 			permissionFactory.savePermission(p, permissionable);

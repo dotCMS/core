@@ -4,15 +4,11 @@
 <%@page import="com.dotmarketing.portlets.folders.model.Folder"%>
 <%@page import="com.dotmarketing.portlets.containers.model.Container"%>
 <%@page import="com.dotmarketing.portlets.templates.model.Template"%>
-<%@page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage"%>
-<%@page import="com.dotmarketing.portlets.files.model.File"%>
 <%@page import="com.dotmarketing.portlets.links.model.Link"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.business.Permissionable"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="com.dotmarketing.beans.Inode"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
-<%@page import="com.dotmarketing.business.Versionable"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.business.CacheLocator"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
@@ -117,7 +113,6 @@
 	var templateClassName = '<%= Template.class.getCanonicalName() %>'
 	var templateLayoutClassName = '<%= TemplateLayout.class.getCanonicalName() %>'
 	var pageClassName = '<%= IHTMLPage.class.getCanonicalName() %>'
-	var fileClassName = '<%= File.class.getCanonicalName() %>'
 	var linkClassName = '<%= Link.class.getCanonicalName() %>'
 	var contentClassName = '<%= Contentlet.class.getCanonicalName() %>';
 	var structureClassName = '<%= Structure.class.getCanonicalName() %>';
@@ -904,7 +899,6 @@
 		fillTemplatePermissionOptions(role, permissions, templateClassName, 'templates');
 		fillTemplatePermissionOptions(role, permissions, templateLayoutClassName, 'templateLayouts');
 		fillTemplatePermissionOptions(role, permissions, pageClassName, 'pages');
-		fillTemplatePermissionOptions(role, permissions, fileClassName, 'files');
 		fillTemplatePermissionOptions(role, permissions, linkClassName, 'links');
 		fillTemplatePermissionOptions(role, permissions, contentClassName, 'content');
 		fillTemplatePermissionOptions(role, permissions, structureClassName, 'structure');

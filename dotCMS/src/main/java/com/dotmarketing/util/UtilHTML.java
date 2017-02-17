@@ -21,7 +21,6 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
@@ -218,8 +217,6 @@ public class UtilHTML {
 			imgSrc = "/html/images/icons/layout-header-3-mix.png";
 		} else if (webasset instanceof Link) {
 			imgSrc = "/html/images/icons/chain.png";
-		} else if (webasset instanceof File) {
-			imgSrc = "/icon?i=" + ((File) webasset).getFileName();
 		} else if (webasset instanceof com.dotmarketing.portlets.htmlpages.model.HTMLPage) {
 			imgSrc = "/html/images/icons/blog-blue.png";
 		}

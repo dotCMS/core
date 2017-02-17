@@ -37,7 +37,6 @@ import com.dotmarketing.exception.UserLastNameException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.quartz.job.DeleteUserJob;
@@ -468,8 +467,7 @@ public class UserAjax {
 					String permType = p.getType();
 					permType = permType.equals(Folder.class.getCanonicalName())?"folderModifiable":
 						 permType.equals(Template.class.getCanonicalName())?"templateModifiable":
-						 permType.equals(Container.class.getCanonicalName())?"containerModifiable":
-						 permType.equals(File.class.getCanonicalName())?"fileModifiable":"";
+						 permType.equals(Container.class.getCanonicalName())?"containerModifiable":"";
 
 					Boolean hasPerm = userPerms.get(permType)!=null?userPerms.get(permType):false;
 

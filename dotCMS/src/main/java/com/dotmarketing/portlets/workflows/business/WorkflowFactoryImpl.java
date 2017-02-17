@@ -589,19 +589,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	@SuppressWarnings("unchecked")
-	public List<IFileAsset> findWorkflowTaskFiles(WorkflowTask task) throws DotDataException {
-		final HibernateUtil hu = new HibernateUtil(File.class);
-		hu.setSQLQuery("select {file_asset.*} from file_asset,inode file_asset_1_,workflow_task,workflowtask_files tf"
-
-				+ " where tf.file_inode = file_asset.inode and file_asset.inode = file_asset_1_.inode "
-				+ " and workflow_task.id = tf.workflowtask_id and workflow_task." +
-				"id = ? ");
-
-		hu.setParam(task.getId());
-		return (List<IFileAsset>) hu.list();
-	}
-
-	@SuppressWarnings("unchecked")
 	public List<Contentlet> findWorkflowTaskFilesAsContent(WorkflowTask task, User user) throws DotDataException {
 		final HibernateUtil hu = new HibernateUtil(WorkFlowTaskFiles.class);
 		hu.setQuery("from workflow_task_files in class com.dotmarketing.portlets.workflows.model.WorkFlowTaskFiles where workflowtask_id = ?");

@@ -175,21 +175,6 @@ public class PublishFactory {
 			}
 		}
 
-		if (webAsset instanceof com.dotmarketing.portlets.files.model.File) 
-		{
-			// publishing a file
-			LiveCache.removeAssetFromCache((WebAsset)webAsset);
-			LiveCache.addToLiveAssetToCache((WebAsset) webAsset);
-			WorkingCache.removeAssetFromCache((WebAsset)webAsset);
-			WorkingCache.addToWorkingAssetToCache((WebAsset) webAsset);
-			if(RefreshMenus.shouldRefreshMenus((com.dotmarketing.portlets.files.model.File)webAsset)){
-				com.dotmarketing.menubuilders.RefreshMenus.deleteMenu((WebAsset)webAsset);
-				Identifier ident=APILocator.getIdentifierAPI().find(webAsset);
-				CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
-			}
-
-		}
-
 		if (webAsset instanceof Container) {
 
 			//saves to live folder under velocity
@@ -244,8 +229,6 @@ public class PublishFactory {
 			java.util.List linksListSubChildren = APILocator.getFolderAPI().getWorkingLinks(parentFolder, user, false);
 			//gets all html pages for this folder
 			java.util.List htmlPagesSubListChildren = APILocator.getFolderAPI().getWorkingHTMLPages(parentFolder,user,false);
-			//gets all files for this folder
-			java.util.List filesListSubChildren = APILocator.getFolderAPI().getWorkingFiles(parentFolder,user,false);
 			//gets all templates for this folder
 			//java.util.List templatesListSubChildren = APILocator.getFolderAPI().getWorkingChildren(parentFolder,Template.class);
 			//gets all containers for this folder
@@ -256,7 +239,6 @@ public class PublishFactory {
 			elements.addAll(foldersListSubChildren);
 			elements.addAll(linksListSubChildren);
 			elements.addAll(htmlPagesSubListChildren);
-			elements.addAll(filesListSubChildren);
 			//elements.addAll(templatesListSubChildren);
 			//elements.addAll(containersListSubChildren);
 
@@ -439,8 +421,6 @@ public class PublishFactory {
 			java.util.List linksListSubChildren = APILocator.getFolderAPI().getWorkingLinks(parentFolder,user,false);
 			//gets all html pages for this folder
 			java.util.List htmlPagesSubListChildren = APILocator.getFolderAPI().getWorkingHTMLPages(parentFolder,user,false);
-			//gets all files for this folder
-			java.util.List filesListSubChildren = APILocator.getFolderAPI().getWorkingFiles(parentFolder,user,false);
 			//gets all templates for this folder
 			//java.util.List templatesListSubChildren = APILocator.getFolderAPI().getWorkingChildren(parentFolder,Template.class);
 			//gets all containers for this folder
@@ -451,7 +431,6 @@ public class PublishFactory {
 			elements.addAll(foldersListSubChildren);
 			elements.addAll(linksListSubChildren);
 			elements.addAll(htmlPagesSubListChildren);
-			elements.addAll(filesListSubChildren);
 			//elements.addAll(templatesListSubChildren);
 			//elements.addAll(containersListSubChildren);
 
