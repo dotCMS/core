@@ -7,7 +7,7 @@ import com.dotcms.enterprise.publishing.remote.handler.ContainerHandler;
 import com.dotcms.enterprise.publishing.remote.handler.ContentHandler;
 import com.dotcms.enterprise.publishing.remote.handler.ContentWorkflowHandler;
 import com.dotcms.enterprise.publishing.remote.handler.FolderHandler;
-import com.dotcms.enterprise.publishing.remote.handler.HTMLPageHandler;
+//import com.dotcms.enterprise.publishing.remote.handler.HTMLPageHandler;
 import com.dotcms.enterprise.publishing.remote.handler.HostHandler;
 import com.dotcms.enterprise.publishing.remote.handler.LanguageHandler;
 import com.dotcms.enterprise.publishing.remote.handler.LanguageVariablesHandler;
@@ -103,7 +103,7 @@ public class BundlePublisher extends Publisher {
         }
         handlers.add(new ContainerHandler(config));
         handlers.add(new TemplateHandler(config));
-        handlers.add(new HTMLPageHandler(config));
+        //handlers.add(new HTMLPageHandler(config));
         handlers.add(new LanguageHandler(config));
         handlers.add(new LanguageVariablesHandler(config));
         handlers.add(new ContentHandler(config));
