@@ -2,6 +2,7 @@ package com.dotmarketing.business;
 
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.StructureDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.repackage.com.ibm.icu.util.Calendar;
@@ -14,7 +15,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -51,7 +52,7 @@ public class VersionableAPITest {
         host = APILocator.getHostAPI().findDefaultHost(user, false);
 	}
 	
-	private HTMLPage createHTMLPage() throws Exception{
+	private HTMLPageAsset createHTMLPage() throws Exception{
 		//Create HTMLPage
 		String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
 				
@@ -59,11 +60,12 @@ public class VersionableAPITest {
 		        
 		Folder folder = APILocator.getFolderAPI().createFolders("/testingVersionable", host, user, false);
 				
-		HTMLPage page=new HTMLPage();
+		/*HTMLPage page=new HTMLPage();
 		page.setPageUrl("testpage"+ext);
 		page.setFriendlyName("testpage"+ext);
 		page.setTitle("testpage"+ext);
-		page=APILocator.getHTMLPageAPI().saveHTMLPage(page, template, folder, user, false);
+		page=APILocator.getHTMLPageAPI().saveHTMLPage(page, template, folder, user, false);*/
+		HTMLPageAsset page = new HTMLPageDataGen(folder,template).nextPersisted();
 		
 		return page;
 	}
@@ -99,7 +101,7 @@ public class VersionableAPITest {
 
 	@Test
 	public void testFindWorkingVersionHTMLPage() throws Exception{
-		HTMLPage page = createHTMLPage();
+		HTMLPageAsset page = createHTMLPage();
         
         //Call Versionable
         Versionable verAPI = APILocator.getVersionableAPI().findWorkingVersion(page.getIdentifier(), user, false);
@@ -109,9 +111,12 @@ public class VersionableAPITest {
         assertEquals(verAPI.getInode(),page.getInode());
         
         //Delete Template, Folder, HTMLPage
-        Folder folder = APILocator.getHTMLPageAPI().getParentFolder(page);
-        Template template = APILocator.getHTMLPageAPI().getTemplateForWorkingHTMLPage(page);
-        APILocator.getHTMLPageAPI().delete(page, user, false);
+        //Folder folder = APILocator.getHTMLPageAPI().getParentFolder(page);
+        Folder folder = APILocator.getHTMLPageAssetAPI().getParentFolder(page);
+        //Template template = APILocator.getHTMLPageAPI().getTemplateForWorkingHTMLPage(page);
+        Template template = APILocator.getHTMLPageAssetAPI().getTemplate(page, false);
+        //APILocator.getHTMLPageAPI().delete(page, user, false);
+        HTMLPageDataGen.remove(page);
         APILocator.getFolderAPI().delete(folder, user, false);
         APILocator.getTemplateAPI().delete(template, user, false);
 	}
@@ -179,7 +184,7 @@ public class VersionableAPITest {
 	
 	@Test
 	public void testFindLiveVersionHTMLPage() throws Exception{
-		HTMLPage page = createHTMLPage();
+		HTMLPageAsset page = createHTMLPage();
         
         APILocator.getVersionableAPI().setLive(page);
         
@@ -191,9 +196,12 @@ public class VersionableAPITest {
         assertEquals(verAPI.getInode(),page.getInode());
         
         //Delete Template, Folder, HTMLPage
-        Folder folder = APILocator.getHTMLPageAPI().getParentFolder(page);
+        /*Folder folder = APILocator.getHTMLPageAPI().getParentFolder(page);
         Template template = APILocator.getHTMLPageAPI().getTemplateForWorkingHTMLPage(page);
-        APILocator.getHTMLPageAPI().delete(page, user, false);
+        APILocator.getHTMLPageAPI().delete(page, user, false);*/
+        Folder folder = APILocator.getHTMLPageAssetAPI().getParentFolder(page);
+        Template template = APILocator.getHTMLPageAssetAPI().getTemplate(page, false);
+        HTMLPageDataGen.remove(page);
         APILocator.getFolderAPI().delete(folder, user, false);
         APILocator.getTemplateAPI().delete(template, user, false);
 	}

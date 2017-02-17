@@ -65,7 +65,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.servlets.test.ServletTestRunner;
@@ -356,7 +355,7 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 		 * Creating second test page
 		 */
 		
-		HTMLPage newHtmlPage2 = new HTMLPage();
+		/*HTMLPage newHtmlPage2 = new HTMLPage();
 		newHtmlPage2.setParent(folder.getInode());
 		newHtmlPage2.setPageUrl("test2."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html"));
 		newHtmlPage2.setTitle("test2");
@@ -376,9 +375,9 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 		APILocator.getVersionableAPI().setLive(newHtmlPage2);
 
 		WebAssetFactory.publishAsset(newHtmlPage2);
-		HTMLPage workinghtmlPageAsset2 = null;
+		//HTMLPage workinghtmlPageAsset2 = null;
 		workinghtmlPageAsset2 = newHtmlPage2;
-		HibernateUtil.flush();		
+		HibernateUtil.flush();	*/	
 		
 		/*
 		 * Create test contentlet
@@ -425,7 +424,7 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 		/*
 		 * Relating content to archived page
 		 */
-		htmlPageIdentifier = APILocator.getIdentifierAPI().find(workinghtmlPageAsset2);
+		//htmlPageIdentifier = APILocator.getIdentifierAPI().find(workinghtmlPageAsset2);
 		multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,contenletIdentifier);
 		contentletCount = MultiTreeFactory.getMultiTree(workinghtmlPageAsset.getInode()).size();
 
@@ -439,14 +438,14 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 		 * Archiving second page
 		 */
 		
-		WebAssetFactory.unPublishAsset(workinghtmlPageAsset2, systemUser.getUserId(), folder);
-		WebAssetFactory.archiveAsset(workinghtmlPageAsset2);
+		//WebAssetFactory.unPublishAsset(workinghtmlPageAsset2, systemUser.getUserId(), folder);
+		//WebAssetFactory.archiveAsset(workinghtmlPageAsset2);
 		
 		/*
 		 * Validations
 		 */
 		assertTrue(workinghtmlPageAsset.isLive());
-		assertTrue(workinghtmlPageAsset2.isArchived());
+		//assertTrue(workinghtmlPageAsset2.isArchived());
 		List<Map<String,Object>> references = APILocator.getContentletAPI().getContentletReferences(contentlet, systemUser, false);
 		assertTrue(references.size() == 2);
 
@@ -570,7 +569,7 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
     		APILocator.getContentletAPI().unpublish(workinghtmlPageAsset, systemUser,false);
     		APILocator.getContentletAPI().archive(workinghtmlPageAsset,systemUser,false);
     		APILocator.getContentletAPI().delete(workinghtmlPageAsset, systemUser, true);
-    		APILocator.getHTMLPageAPI().delete(workinghtmlPageAsset2, systemUser, true);
+    		//APILocator.getHTMLPageAPI().delete(workinghtmlPageAsset2, systemUser, true);
     		APILocator.getFolderAPI().delete(folder, systemUser, false);
         	HibernateUtil.commitTransaction();
         }catch(Exception e){
@@ -580,7 +579,7 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 		
 	
 		Assert.assertEquals(0,MultiTreeFactory.getMultiTree(workinghtmlPageAsset.getInode()).size());
-		Assert.assertEquals(0,MultiTreeFactory.getMultiTree(workinghtmlPageAsset2.getInode()).size());
+		//Assert.assertEquals(0,MultiTreeFactory.getMultiTree(workinghtmlPageAsset2.getInode()).size());
 		Assert.assertEquals(0,MultiTreeFactory.getMultiTreeByChild(contentlet.getIdentifier()).size());
 
 		folder = APILocator.getFolderAPI().findFolderByPath(folderPath, host, systemUser, false);

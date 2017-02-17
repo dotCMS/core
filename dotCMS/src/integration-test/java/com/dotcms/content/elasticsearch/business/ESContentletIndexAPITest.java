@@ -11,6 +11,7 @@ import java.util.List;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
 import com.dotcms.util.IntegrationTestInitService;
@@ -42,7 +43,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
@@ -478,7 +479,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
         //Creating a test contentlet
         Contentlet testContentlet = loadTestContentlet( testStructure );
         //Creating a test html page
-        HTMLPage testHtmlPage = loadHtmlPage( testContentlet );
+        HTMLPageAsset testHtmlPage = loadHtmlPage( testContentlet );
 
         //*****************************************************************
         //Build a site search result in order to add it to the index
@@ -682,7 +683,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    private HTMLPage loadHtmlPage ( Contentlet contentlet ) throws DotSecurityException, DotDataException {
+    private HTMLPageAsset loadHtmlPage ( Contentlet contentlet ) throws DotSecurityException, DotDataException {
 
         Structure structure = contentlet.getStructure();
 
@@ -715,15 +716,18 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
         template = APILocator.getTemplateAPI().saveTemplate( template, defaultHost, user, false );
 
         //Create the html page
-        String pageUrl = "testpage_" + new Date().getTime();
-        Folder homeFolder = APILocator.getFolderAPI().createFolders( "/home/", defaultHost, user, false );
+        /*String pageUrl = "testpage_" + new Date().getTime();
+        
         HTMLPage htmlPage = new HTMLPage();
         htmlPage.setPageUrl( pageUrl );
         htmlPage.setFriendlyName( pageUrl );
         htmlPage.setTitle( pageUrl );
         htmlPage = APILocator.getHTMLPageAPI().saveHTMLPage( htmlPage, template, homeFolder, user, false );
         //Make it live
-        APILocator.getVersionableAPI().setLive( htmlPage );
+        APILocator.getVersionableAPI().setLive( htmlPage );*/
+        Folder homeFolder = APILocator.getFolderAPI().createFolders( "/home/", defaultHost, user, false );
+        HTMLPageAsset htmlPage = new HTMLPageDataGen(homeFolder, template).languageId(1)
+				.nextPersisted();
 
         MultiTree multiTree = new MultiTree();
         multiTree.setParent1( htmlPage.getIdentifier() );
