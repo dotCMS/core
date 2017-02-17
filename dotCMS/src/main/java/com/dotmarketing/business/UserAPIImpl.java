@@ -463,8 +463,6 @@ public class UserAPIImpl implements UserAPI {
 
 			Logger.info(this, msg);
 
-			notfAPI.info(msg, user.getUserId());
-
 		} catch (LanguageException e) {
 			Logger.error(this, "Error logging info of Delete user operation. User: " + userToDeleteStr);
 		}
