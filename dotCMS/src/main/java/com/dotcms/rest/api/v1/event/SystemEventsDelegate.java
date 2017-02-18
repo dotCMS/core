@@ -83,7 +83,7 @@ public class SystemEventsDelegate implements Delegate<AppContext> {
             }
         }
 
-        if (null != newEvents && !newEvents.isEmpty()) {
+        if (null != newEvents) {
 
             this.processEventsResults(context, newEvents);
         }

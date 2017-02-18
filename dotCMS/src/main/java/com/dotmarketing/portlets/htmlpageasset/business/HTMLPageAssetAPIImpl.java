@@ -97,12 +97,12 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     private SystemEventsAPI systemEventsAPI;
 
     public HTMLPageAssetAPIImpl() {
-    	permissionAPI = APILocator.getPermissionAPI();
-    	identifierAPI = APILocator.getIdentifierAPI();
-    	htmlPageAPI = APILocator.getHTMLPageAPI();
-    	userAPI = APILocator.getUserAPI();
-    	versionableAPI = APILocator.getVersionableAPI();
-    	contentletAPI = APILocator.getContentletAPI();
+        permissionAPI = APILocator.getPermissionAPI();
+        identifierAPI = APILocator.getIdentifierAPI();
+        htmlPageAPI = APILocator.getHTMLPageAPI();
+        userAPI = APILocator.getUserAPI();
+        versionableAPI = APILocator.getVersionableAPI();
+        contentletAPI = APILocator.getContentletAPI();
         systemEventsAPI = APILocator.getSystemEventsAPI();
     }
 
@@ -391,7 +391,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         else {
             return APILocator.getFolderAPI().findFolderByPath(
                     ident.getParentPath(), APILocator.getHostAPI().find(
-                            ident.getHostId(), userAPI.getSystemUser(), false), 
+                            ident.getHostId(), userAPI.getSystemUser(), false),
                             userAPI.getSystemUser(), false);
         }
     }
@@ -474,7 +474,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     			}
     	return result;
     }
-
+    
     @Override
     public HTMLPageAsset migrateLegacyPage(HTMLPage legacyPage, User user, boolean respectFrontEndPermissions) throws Exception {
         Identifier legacyident=identifierAPI.find(legacyPage);
@@ -482,25 +482,25 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
         HTMLPage working=(HTMLPage) versionableAPI.findWorkingVersion(legacyident, user, respectFrontEndPermissions);
         HTMLPageAsset cworking = migrateLegacyData(working, user, respectFrontEndPermissions), clive=null;
+
         if(vInfo.getLiveInode()!=null && !vInfo.getLiveInode().equals(vInfo.getWorkingInode())) {
             HTMLPage live=(HTMLPage) versionableAPI.findLiveVersion(legacyident, user, respectFrontEndPermissions);
             clive = migrateLegacyData(live, user, respectFrontEndPermissions);
         }
-
+        
         List<Permission> perms=null;
         if(!permissionAPI.isInheritingPermissions(legacyPage)) {
             perms = permissionAPI.getPermissions(legacyPage, true, true, true);
         }
-
+        
         List<MultiTree> multiTree = MultiTreeFactory.getMultiTree(working.getIdentifier());
 
         htmlPageAPI.delete(working, user, respectFrontEndPermissions);
         PageServices.invalidateAll(working);
         HibernateUtil.getSession().clear();
         CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(legacyident.getId());
-
         // Ignore page with NULL template per https://github.com/dotCMS/core/issues/9971
-        if(clive!=null && UtilMethods.isSet(clive.getTemplateId())) {
+        if(clive!=null&& UtilMethods.isSet(clive.getTemplateId())) {
             Contentlet cclive = contentletAPI.checkin(clive, user, respectFrontEndPermissions);
             contentletAPI.publish(cclive, user, respectFrontEndPermissions);
         }
@@ -520,12 +520,10 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             permissionAPI.removePermissions(ccworking);
             if(perms!=null) {
                 permissionAPI.permissionIndividually(ccworking.getParentPermissionable(), ccworking, user, respectFrontEndPermissions);
-
-                // NOTE: Method "assignPermissions" is deprecated in favor of "save", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "save"
                 permissionAPI.assignPermissions(perms, ccworking, user, respectFrontEndPermissions);
             }
 
-            return fromContentlet(ccworking);        	
+            return fromContentlet(ccworking);
         }
 
         return null;
@@ -564,22 +562,23 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     }
 
     private String migratePageUrl(String legacyIdentAssetName, String legacyPageUrl) {
-    	String migratedPageUrl = legacyPageUrl;
+        String migratedPageUrl = legacyPageUrl;
 
-    	// Use asset-name from identifier as default migrated page-url
-    	if (!StringUtils.isEmpty(legacyIdentAssetName) && !legacyIdentAssetName.equals(migratedPageUrl)) {    		
-    		migratedPageUrl = legacyIdentAssetName;
-    	}
+        // Use asset-name from identifier as default migrated page-url
+        if (!StringUtils.isEmpty(legacyIdentAssetName) && !legacyIdentAssetName.equals(migratedPageUrl)) {
+            migratedPageUrl = legacyIdentAssetName;
+        }
 
-    	// Replace invalid character sequences on migrated page-url
-    	migratedPageUrl = UtilMethods.getValidFileName(migratedPageUrl.replaceAll("\\.+", "."));
+        // Replace invalid character sequences on migrated page-url
+        migratedPageUrl = UtilMethods.getValidFileName(migratedPageUrl.replaceAll("\\.+", "."));
 
-    	return migratedPageUrl;
+        return migratedPageUrl;
     }
 
+    
     @Override
     public String getHostDefaultPageType(String hostId) throws DotDataException, DotSecurityException {
-        return getHostDefaultPageType(APILocator.getHostAPI().find(hostId, userAPI.getSystemUser(), false));
+        return getHostDefaultPageType(APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(), false));
     }
     
     @Override

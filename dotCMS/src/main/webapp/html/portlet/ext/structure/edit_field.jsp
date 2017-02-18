@@ -449,39 +449,39 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 
 
 	dojo.addOnLoad(
-		function() {
-			var myselect = new dijit.form.FilteringSelect({
-				id: "elementSelectBox",
-				name: "fieldType",
-				value: '',
-				required: true,
-				store: myStore,
-				searchAttr: "displayName",
-				labelAttr: "label",
-				labelType: "html",
+			function() {
+				var myselect = new dijit.form.FilteringSelect({
+					 id: "elementSelectBox",
+					 name: "fieldType",
+					 value: '',
+					 required: true,
+					 store: myStore,
+					 searchAttr: "displayName",
+					 labelAttr: "label",
+					 labelType: "html",
 				style: "min-width:250px",
-				onChange: elementTypeChange,
-				labelFunc: myLabelFunc
-			},
-			dojo.byId("elementSelectBox"));
+					 onChange: elementTypeChange,
+					 labelFunc: myLabelFunc
+				},
+				dojo.byId("elementSelectBox"));
 
-			typeChangeonload();
-			disableSelect();
-			//setSearchable();
-			//ifRequiredChecked();
-			//ifRequiredCBChecked();
-			ifUniqueChecked();
-			ifUserSearchableChecked();
-			ifShowInListingChecked();
-			//setInitialValues();
-			//ifRequiredCBChecked;
+				typeChangeonload();
+				disableSelect();
+				//setSearchable();
+				//ifRequiredChecked();
+				//ifRequiredCBChecked();
+				ifUniqueChecked();
+				ifUserSearchableChecked();
+				ifShowInListingChecked();
+				//setInitialValues();
+				//ifRequiredCBChecked;
 
-			var form=document.getElementById("field");
-			dojo.place("<input type=\"hidden\" id=\"requiredId\" value=\"" + dijit.byId("requiredCB").attr('value') + "\"/>", dojo.body(), 'last');
-			//http://jira.dotmarketing.net/browse/DOTCMS-5022
-			dijit.byId("saveButton").attr('iconClass', 'saveIcon');
-			dijit.byId("cancelButton").attr('iconClass', 'cancelIcon');
-		}
+				var form=document.getElementById("field");
+				dojo.place("<input type=\"hidden\" id=\"requiredId\" value=\"" + dijit.byId("requiredCB").attr('value') + "\"/>", dojo.body(), 'last');
+				//http://jira.dotmarketing.net/browse/DOTCMS-5022
+				dijit.byId("saveButton").attr('iconClass', 'saveIcon');
+				dijit.byId("cancelButton").attr('iconClass', 'cancelIcon');
+			}
 	);
 
 	function editFieldVariables(){
@@ -524,7 +524,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 
 		<!-- START Tab1 -->
 		<div id="TabOne" dojoType="dijit.layout.ContentPane" title="Overview" >
-			<%-- Hint Box  --%>
+	<%-- Hint Box  --%>
 			<div class="hintBox" id="values_eg" style="display:none"></div>
 
 			<div class="form-horizontal content-type__edit-field-form">
@@ -572,192 +572,192 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 				<!-- START Field Options -->
 				<div id="elementFormTable">
 					<dl <%if(!UtilMethods.isSet(fieldForm.getVelocityVarName())){%> style="display:none"<%}%>>
-						<dt>
+		<dt>
 							<span id="VariableIdTitle">
-								<%= LanguageUtil.get(pageContext, "Variable-ID") %>:
-							</span>
-						</dt>
+				<%= LanguageUtil.get(pageContext, "Variable-ID") %>:
+			</span>
+		</dt>
 						<dd>
 							<html:text property="velocityVarName" readonly="true" style="border:0" />
-						</dd>
+		</dd>
 					</dl>
 					<dl>
-						<dt>
-							<div id="displayType">
-								<span class="required"></span>  <%= LanguageUtil.get(pageContext, "message.field.fieldType") %>:
-							</div>
-						</dt>
-						<dd>
-							<div id="elementSelect">
-								<input id="elementSelectBox" />
-							</div>
-						</dd>
-					</dl>
+		<dt>
+			<div id="displayType">
+				<span class="required"></span>  <%= LanguageUtil.get(pageContext, "message.field.fieldType") %>:
+			</div>
+		</dt>
+		<dd>
+			<div id="elementSelect">
+				<input id="elementSelectBox" />
+			</div>
+		</dd>
+	</dl>
 				</div>
 
-				<dl id="labelRow" style="display:none">
-					<dt>
-						<span class="required"></span>  <%= LanguageUtil.get(pageContext, "Label") %>:
-					</dt>
-					<dd>
-						<% if(fixed) { %>
-							<input type="text" dojoType="dijit.form.TextBox" name="fieldName" readonly="readonly" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getFieldName()) ? UtilMethods.webifyString(fieldForm.getFieldName()) : "" %>" />
-						<% } else { %>
-							<input type="text" dojoType="dijit.form.TextBox" name="fieldName" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getFieldName()) ? UtilMethods.webifyString(fieldForm.getFieldName()) : "" %>" />
-						<% }  %>
-					</dd>
-				</dl>
+	<dl id="labelRow" style="display:none">
+		<dt>
+			<span class="required"></span>  <%= LanguageUtil.get(pageContext, "Label") %>:
+		</dt>
+		<dd>
+			<% if(fixed) { %>
+			<input type="text" dojoType="dijit.form.TextBox" name="fieldName" readonly="readonly" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getFieldName()) ? UtilMethods.webifyString(fieldForm.getFieldName()) : "" %>" />
+			<% } else { %>
+			<input type="text" dojoType="dijit.form.TextBox" name="fieldName" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getFieldName()) ? UtilMethods.webifyString(fieldForm.getFieldName()) : "" %>" />
+			<% }  %>
+		</dd>
+	</dl>
 
-				<dl id="dataTypeRow" style="display:none">
-					<dt>
-						<span id="req_data_type" class="required"></span> <%= LanguageUtil.get(pageContext, "Data-Type") %>:
-					</dt>
-					<dd>
+	<dl id="dataTypeRow" style="display:none">
+		<dt>
+			<span id="req_data_type" class="required"></span> <%= LanguageUtil.get(pageContext, "Data-Type") %>:
+		</dt>
+		<dd>
 						<div class="radio" id="radioText">
-							<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypetext" <%=fixed?"readonly=\"readonly\"":"" %> value="text" onclick="setUniqueDataType('text');" <% if(fieldForm.getDataType().equals(Field.DataType.TEXT.toString())){ %> checked="checked" <% } %>/>
-							<label for="dataTypetext"><%= LanguageUtil.get(pageContext, "Text") %></label> &nbsp;
+				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypetext" <%=fixed?"readonly=\"readonly\"":"" %> value="text" onclick="setUniqueDataType('text');" <% if(fieldForm.getDataType().equals(Field.DataType.TEXT.toString())){ %> checked="checked" <% } %>/>
+				<label for="dataTypetext"><%= LanguageUtil.get(pageContext, "Text") %></label> &nbsp;
 						</div>
 						<div class="radio" id="radioBool">
-							<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypebool" <%=fixed?"readonly=\"readonly\"":"" %> value="bool" onclick="setUniqueDataType('bool');" <% if(fieldForm.getDataType().equals(Field.DataType.BOOL.toString())){ %> checked="checked" <% } %>/>
-							<label for="dataTypebool"><%= LanguageUtil.get(pageContext, "True-False") %></label> &nbsp;
+				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypebool" <%=fixed?"readonly=\"readonly\"":"" %> value="bool" onclick="setUniqueDataType('bool');" <% if(fieldForm.getDataType().equals(Field.DataType.BOOL.toString())){ %> checked="checked" <% } %>/>
+				<label for="dataTypebool"><%= LanguageUtil.get(pageContext, "True-False") %></label> &nbsp;
 						</div>
 						<div class="radio" id="radioDate">
-							<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypedate" <%=fixed?"readonly=\"readonly\"":"" %> value="date" onclick="setUniqueDataType('date');" <% if(fieldForm.getDataType().equals(Field.DataType.DATE.toString())){ %> checked="checked" <% } %>/>
-							<label for="dataTypedate"><%= LanguageUtil.get(pageContext, "Date") %></label> &nbsp;
+				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypedate" <%=fixed?"readonly=\"readonly\"":"" %> value="date" onclick="setUniqueDataType('date');" <% if(fieldForm.getDataType().equals(Field.DataType.DATE.toString())){ %> checked="checked" <% } %>/>
+				<label for="dataTypedate"><%= LanguageUtil.get(pageContext, "Date") %></label> &nbsp;
 						</div>
 						<div class="radio" id="radioDecimal">
-							<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypefloat" <%=fixed?"readonly=\"readonly\"":"" %> value="float" onclick="setUniqueDataType('float');" <% if(fieldForm.getDataType().equals(Field.DataType.FLOAT.toString())){ %> checked="checked" <% } %>/>
-							<label for="dataTypefloat"><%= LanguageUtil.get(pageContext, "Decimal") %></label> &nbsp;
+				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypefloat" <%=fixed?"readonly=\"readonly\"":"" %> value="float" onclick="setUniqueDataType('float');" <% if(fieldForm.getDataType().equals(Field.DataType.FLOAT.toString())){ %> checked="checked" <% } %>/>
+				<label for="dataTypefloat"><%= LanguageUtil.get(pageContext, "Decimal") %></label> &nbsp;
 						</div>
 						<div class="radio" id="radioNumber">
-							<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypeinteger" <%=fixed?"readonly=\"readonly\"":"" %> value="integer" onclick="setUniqueDataType('integer');" <% if(fieldForm.getDataType().equals(Field.DataType.INTEGER.toString())){ %> checked="checked" <% } %>/>
-							<label for="dataTypeinteger"><%= LanguageUtil.get(pageContext, "Whole-Number") %></label> &nbsp;
+				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypeinteger" <%=fixed?"readonly=\"readonly\"":"" %> value="integer" onclick="setUniqueDataType('integer');" <% if(fieldForm.getDataType().equals(Field.DataType.INTEGER.toString())){ %> checked="checked" <% } %>/>
+				<label for="dataTypeinteger"><%= LanguageUtil.get(pageContext, "Whole-Number") %></label> &nbsp;
 						</div>
 						<div class="radio" id="radioBlockText">
-							<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypetext_area" <%=fixed?"readonly=\"readonly\"":"" %> value="text_area" onclick="setUniqueDataType('textarea');" <% if(fieldForm.getDataType().equals(Field.DataType.LONG_TEXT.toString())){ %> checked="checked" <% } %>/>
-							<label for="dataTypetext_area"><%= LanguageUtil.get(pageContext, "Large-Block-of-Text") %></label>
+				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypetext_area" <%=fixed?"readonly=\"readonly\"":"" %> value="text_area" onclick="setUniqueDataType('textarea');" <% if(fieldForm.getDataType().equals(Field.DataType.LONG_TEXT.toString())){ %> checked="checked" <% } %>/>
+				<label for="dataTypetext_area"><%= LanguageUtil.get(pageContext, "Large-Block-of-Text") %></label>
 						</div>
 						<div class="radio" id="radioSectionDivider">
-							<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypesection_divider" <%=fixed?"readonly=\"readonly\"":"" %> value="section_divider" onclick="setUniqueDataType('divider');" <% if(fieldForm.getDataType().equals(Field.DataType.SECTION_DIVIDER.toString())){ %> checked="checked" <% } %>/>
-							<label for="dataTypesection_divider"><%= LanguageUtil.get(pageContext, "Section-Divider") %></label> &nbsp;
+				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypesection_divider" <%=fixed?"readonly=\"readonly\"":"" %> value="section_divider" onclick="setUniqueDataType('divider');" <% if(fieldForm.getDataType().equals(Field.DataType.SECTION_DIVIDER.toString())){ %> checked="checked" <% } %>/>
+				<label for="dataTypesection_divider"><%= LanguageUtil.get(pageContext, "Section-Divider") %></label> &nbsp;
 						</div>
 						<div class="radio" id="radioSystemField">
-							<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypesystem_field" <%=fixed?"readonly=\"readonly\"":"" %> value="system_field" onclick="setUniqueDataType('system');" />
-							<label for="dataTypesystem_field"><%= LanguageUtil.get(pageContext, "System-Field") %></label> &nbsp;
+				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypesystem_field" <%=fixed?"readonly=\"readonly\"":"" %> value="system_field" onclick="setUniqueDataType('system');" />
+				<label for="dataTypesystem_field"><%= LanguageUtil.get(pageContext, "System-Field") %></label> &nbsp;
 						</div>
 						<div class="radio" id="radioBinary">
-							<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypebinary" <%=fixed?"readonly=\"readonly\"":"" %> value="binary" onclick="setUniqueDataType('binary');" <% if(fieldForm.getDataType().equals(Field.DataType.BINARY.toString())){ %> checked="checked" <% } %>/>
-							<label for="dataTypebinary"><%= LanguageUtil.get(pageContext, "Binary") %></label>
+				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypebinary" <%=fixed?"readonly=\"readonly\"":"" %> value="binary" onclick="setUniqueDataType('binary');" <% if(fieldForm.getDataType().equals(Field.DataType.BINARY.toString())){ %> checked="checked" <% } %>/>
+				<label for="dataTypebinary"><%= LanguageUtil.get(pageContext, "Binary") %></label>
 						</div>
-					</dd>
-				</dl>
+		</dd>
+	</dl>
 
-				<dl id="valueRow" style="display:none">
-					<dt id="valueRowLabel">
-						<span class="required"></span> &nbsp;<%= LanguageUtil.get(pageContext, "Value") %>:
-					</dt>
-					<dd>
-						<div id="valueRow_inner" class="esEditorWrapper">
-							<div id="esEditor"><%=UtilMethods.htmlifyString(textArea)%></div>
-						</div>
-						<textarea class="hidden" dojoType="dijit.form.Textarea" name="values" id="textAreaValues"><%=UtilMethods.htmlifyString(textArea)%></textarea>
+	<dl id="valueRow" style="display:none">
+		<dt id="valueRowLabel">
+			<span class="required"></span> &nbsp;<%= LanguageUtil.get(pageContext, "Value") %>:
+		</dt>
+		<dd>
+			<div id="valueRow_inner" class="esEditorWrapper">
+				<div id="esEditor"><%=UtilMethods.htmlifyString(textArea)%></div>
+			</div>
+			<textarea class="hidden" dojoType="dijit.form.Textarea" name="values" id="textAreaValues"><%=UtilMethods.htmlifyString(textArea)%></textarea>
 						<div class="checkbox">
 							<input id="wrapEditor" name="wrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onChange="handleWrapMode" />
 							<label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
 						</div>
-					</dd>
-				</dl>
+		</dd>
+	</dl>
 
-				<dl id="categoryRow" style="display:none">
-					<dt id="valueRowLabel">
-						<span class="required"></span> &nbsp;<%= LanguageUtil.get(pageContext, "Category") %>:
-					</dt>
-					<dd>
+	<dl id="categoryRow" style="display:none">
+		<dt id="valueRowLabel">
+			<span class="required"></span> &nbsp;<%= LanguageUtil.get(pageContext, "Category") %>:
+		</dt>
+		<dd>
 						<select dojoType="dijit.form.FilteringSelect" name="categories" id="categories" style="min-width: 250px">
-							<%
-							List<Category> cats = catAPI.findTopLevelCategories(user, false);
-							String selectedCategory = fieldForm.getValues();
-								for (Category category : cats) {
-									if (catAPI.canUseCategory(category, user, false)) {%>
-									 <%if(selectedCategory != null && selectedCategory.trim().equalsIgnoreCase(category.getInode())){ %>
-										<option selected value="<%=category.getInode()%>"><%=category.getCategoryName()%></option>
-									<%}else{%>
-										<option value="<%=category.getInode()%>"><%=category.getCategoryName()%></option>
-									<%}
-									}
-								}
-							%>
-						</select>
-					</dd>
-				</dl>
+				<%
+				List<Category> cats = catAPI.findTopLevelCategories(user, false);
+				String selectedCategory = fieldForm.getValues();
+					for (Category category : cats) {
+						if (catAPI.canUseCategory(category, user, false)) {%>
+						 <%if(selectedCategory != null && selectedCategory.trim().equalsIgnoreCase(category.getInode())){ %>
+							<option selected value="<%=category.getInode()%>"><%=category.getCategoryName()%></option>
+						<%}else{%>
+							<option value="<%=category.getInode()%>"><%=category.getCategoryName()%></option>
+						<%}
+						}
+					}
+				%>
+			</select>
+		</dd>
+	</dl>
 
-				<dl style="display:none;">
-					<dt>&nbsp;</dt>
-					<dd><div id="structureCode"></div>&nbsp;</dd>
-				</dl>
+	<dl style="display:none;">
+		<dt>&nbsp;</dt>
+		<dd><div id="structureCode"></div>&nbsp;</dd>
+	</dl>
 
-				<dl id="validationRow" style="display:none">
-					<dt><%= LanguageUtil.get(pageContext, "Validation-RegEx") %>:</dt>
-					<dd>
+	<dl id="validationRow" style="display:none">
+		<dt><%= LanguageUtil.get(pageContext, "Validation-RegEx") %>:</dt>
+		<dd>
 						<div class="inline-form">
-							<input type="text" dojoType="dijit.form.TextBox" name="regexCheck" id="regexCheck" style="width:250px" readonly="<%=fieldForm.isFixed() || fieldForm.isReadOnly()%>" value="<%= UtilMethods.isSet(fieldForm.getRegexCheck()) ? UtilMethods.webifyString(fieldForm.getRegexCheck()) : "" %>" />
+			<input type="text" dojoType="dijit.form.TextBox" name="regexCheck" id="regexCheck" style="width:250px" readonly="<%=fieldForm.isFixed() || fieldForm.isReadOnly()%>" value="<%= UtilMethods.isSet(fieldForm.getRegexCheck()) ? UtilMethods.webifyString(fieldForm.getRegexCheck()) : "" %>" />
 							<select dojoType="dijit.form.FilteringSelect" name="validation" id="validation" onchange="fillRegexp(this)" style="width:140px">
 								<option value=""><%= LanguageUtil.get(pageContext, "Select-validation") %></option>
-								<option value="^([a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,4})$" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("^([a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,4})$")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "Email") %></option>
-								<option value="[0-9]*" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("[0-9]*")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "Numbers-only") %></option>
-								<option value="[a-zA-Z\s]*" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("[a-zA-Z\\s]*")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "Letters-only") %></option>
-								<option value="[0-9a-zA-Z\s]*" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("[0-9a-zA-Z\\s]*")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "Alphanumeric") %></option>
-								<option value="(^\d{5}$)|(^\d{5}-\d{4}$)" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("(^\\d{5}$)|(^\\d{5}-\\d{4}$)")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "US-Zip-Code") %></option>
-								<option value="^\(?[1-9]\d{2}[\)\-]\s?\d{3}\-\d{4}$" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("^\\(?[1-9]\\d{2}[\\)\\-]\\s?\\d{3}\\-\\d{4}$")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "US-Phone") %></option>
-								<option value="^((http|ftp|https):\/\/w{3}[\d]*.|(http|ftp|https):\/\/|w{3}[\d]*.)([\w\d\._\-#\(\)\[\]\,;:]+@[\w\d\._\-#\(\)\[\]\,;:])?([a-z0-9]+.)*[a-z\-0-9]+.([a-z]{2,3})?[a-z]{2,6}(:[0-9]+)?(\/[\/a-zA-Z0-9\._\-,\%\s]+)*(\/|\?[a-z0-9=%&\.\-,#]+)?$" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("^((http|ftp|https):\\/\\/w{3}[\\d]*.|(http|ftp|https):\\/\\/|w{3}[\\d]*.)([\\w\\d\\._\\-#\\(\\)\\[\\]\\,;:]+@[\\w\\d\\._\\-#\\(\\)\\[\\]\\,;:])?([a-z0-9]+.)*[a-z\\-0-9]+.([a-z]{2,3})?[a-z]{2,6}(:[0-9]+)?(\\/[\\/a-zA-Z0-9\\._\\-,\\%\\s]+)*(\\/|\\?[a-z0-9=%&\\.\\-,#]+)?$")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "URL-Pattern") %></option>
-								<option value="[^(<[.\n]+>)]*" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("[^(<[.\\n]+>)]*")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "No-HTML") %></option>
-							</select>
+				<option value="^([a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,4})$" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("^([a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,4})$")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "Email") %></option>
+				<option value="[0-9]*" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("[0-9]*")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "Numbers-only") %></option>
+				<option value="[a-zA-Z\s]*" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("[a-zA-Z\\s]*")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "Letters-only") %></option>
+				<option value="[0-9a-zA-Z\s]*" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("[0-9a-zA-Z\\s]*")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "Alphanumeric") %></option>
+				<option value="(^\d{5}$)|(^\d{5}-\d{4}$)" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("(^\\d{5}$)|(^\\d{5}-\\d{4}$)")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "US-Zip-Code") %></option>
+				<option value="^\(?[1-9]\d{2}[\)\-]\s?\d{3}\-\d{4}$" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("^\\(?[1-9]\\d{2}[\\)\\-]\\s?\\d{3}\\-\\d{4}$")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "US-Phone") %></option>
+				<option value="^((http|ftp|https):\/\/w{3}[\d]*.|(http|ftp|https):\/\/|w{3}[\d]*.)([\w\d\._\-#\(\)\[\]\,;:]+@[\w\d\._\-#\(\)\[\]\,;:])?([a-z0-9]+.)*[a-z\-0-9]+.([a-z]{2,3})?[a-z]{2,6}(:[0-9]+)?(\/[\/a-zA-Z0-9\._\-,\%\s]+)*(\/|\?[a-z0-9=%&\.\-,#]+)?$" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("^((http|ftp|https):\\/\\/w{3}[\\d]*.|(http|ftp|https):\\/\\/|w{3}[\\d]*.)([\\w\\d\\._\\-#\\(\\)\\[\\]\\,;:]+@[\\w\\d\\._\\-#\\(\\)\\[\\]\\,;:])?([a-z0-9]+.)*[a-z\\-0-9]+.([a-z]{2,3})?[a-z]{2,6}(:[0-9]+)?(\\/[\\/a-zA-Z0-9\\._\\-,\\%\\s]+)*(\\/|\\?[a-z0-9=%&\\.\\-,#]+)?$")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "URL-Pattern") %></option>
+				<option value="[^(<[.\n]+>)]*" <%if(UtilMethods.isSet(fieldForm.getRegexCheck()) && fieldForm.getRegexCheck().equals("[^(<[.\\n]+>)]*")){%>selected<%}%>><%= LanguageUtil.get(pageContext, "No-HTML") %></option>
+			</select>
 						</div>
-					</dd>
-				</dl>
+		</dd>
+	</dl>
 
-				<dl id="defaultText" style="display:none">
-					<dt><span id="defaultText" ><%= LanguageUtil.get(pageContext, "Default-Value") %>:</span></dt>
-					<dd><input type="text" dojoType="dijit.form.TextBox" name="defaultValue" style="width:250px" onblur="validateCategories(this);" value="<%= UtilMethods.isSet(fieldForm.getDefaultValue()) ? UtilMethods.webifyString(fieldForm.getDefaultValue()) : "" %>" /></span></dd>
-				</dl>
+	<dl id="defaultText" style="display:none">
+		<dt><span id="defaultText" ><%= LanguageUtil.get(pageContext, "Default-Value") %>:</span></dt>
+		<dd><input type="text" dojoType="dijit.form.TextBox" name="defaultValue" style="width:250px" onblur="validateCategories(this);" value="<%= UtilMethods.isSet(fieldForm.getDefaultValue()) ? UtilMethods.webifyString(fieldForm.getDefaultValue()) : "" %>" /></span></dd>
+	</dl>
 
-				<dl id="hintText" style="display:none">
-					<dt><%= LanguageUtil.get(pageContext, "Hint") %>:</dt>
-					<dd><input type="text" dojoType="dijit.form.TextBox" name="hint" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getHint()) ? UtilMethods.webifyString(fieldForm.getHint()) : "" %>" /></dd>
-				</dl>
-				<!-- END Field Options -->
+	<dl id="hintText" style="display:none">
+		<dt><%= LanguageUtil.get(pageContext, "Hint") %>:</dt>
+		<dd><input type="text" dojoType="dijit.form.TextBox" name="hint" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getHint()) ? UtilMethods.webifyString(fieldForm.getHint()) : "" %>" /></dd>
+	</dl>
+	<!-- END Field Options -->
 
-				<!-- START Check Boxes -->
+	<!-- START Check Boxes -->
 				<dl>
-					<dt>&nbsp;</dt>
-					<dd>
+		<dt>&nbsp;</dt>
+		<dd>
 						<div class="checkbox" id="required" style="display:none">
-							<input type="checkbox" dojoType="dijit.form.CheckBox" name="required" id="requiredCB" <%=fixed?"readonly=\"readonly\"":"" %> onClick="writeRequired();" <% if(fieldForm.isRequired()){ %> checked="checked" <% } %> />
-							<label for="requiredCB"><%= LanguageUtil.get(pageContext, "Required") %></label>
+			<input type="checkbox" dojoType="dijit.form.CheckBox" name="required" id="requiredCB" <%=fixed?"readonly=\"readonly\"":"" %> onClick="writeRequired();" <% if(fieldForm.isRequired()){ %> checked="checked" <% } %> />
+			<label for="requiredCB"><%= LanguageUtil.get(pageContext, "Required") %></label>
 						</div>
 
 						<div class="checkbox" id="userSearchable" style="display:none">
-							<input type="checkbox" dojoType="dijit.form.CheckBox" name="searchable" id="searchableCB" onClick="setSearchable();" <% if(fieldForm.isSearchable()){ %> checked="checked" <% } %> />
-							<label for="searchableCB"><%= LanguageUtil.get(pageContext, "User-Searchable") %></label>
+			<input type="checkbox" dojoType="dijit.form.CheckBox" name="searchable" id="searchableCB" onClick="setSearchable();" <% if(fieldForm.isSearchable()){ %> checked="checked" <% } %> />
+			<label for="searchableCB"><%= LanguageUtil.get(pageContext, "User-Searchable") %></label>
 						</div>
 
 						<div class="checkbox" id="indexed" style="display:none">
-							<input type="checkbox" dojoType="dijit.form.CheckBox" name="indexed" id="indexedCB" <%=fixed?"readonly=\"readonly\"":"" %> <% if(fieldForm.isIndexed()){ %> checked="checked" <% } %> />
-							<label for="indexedCB"><%= LanguageUtil.get(pageContext, "System-Indexed") %></label>
+			<input type="checkbox" dojoType="dijit.form.CheckBox" name="indexed" id="indexedCB" <%=fixed?"readonly=\"readonly\"":"" %> <% if(fieldForm.isIndexed()){ %> checked="checked" <% } %> />
+			<label for="indexedCB"><%= LanguageUtil.get(pageContext, "System-Indexed") %></label>
 						</div>
 
 						<div class="checkbox" id="listed" style="display:none">
-							<input type="checkbox" dojoType="dijit.form.CheckBox" name="listed" id="listedCB" onClick="setShowInListing();" <% if(fieldForm.isListed()){ %> checked="checked" <% } %> />
-							<label for="listedCB"><%= LanguageUtil.get(pageContext, "Show-in-listing") %></label>
+			<input type="checkbox" dojoType="dijit.form.CheckBox" name="listed" id="listedCB" onClick="setShowInListing();" <% if(fieldForm.isListed()){ %> checked="checked" <% } %> />
+			<label for="listedCB"><%= LanguageUtil.get(pageContext, "Show-in-listing") %></label>
 						</div>
 
 						<div class="checkbox" id="unique" style="display:none">
-							<input type="checkbox" dojoType="dijit.form.CheckBox" name="unique" id="uniqueCB" <%=fixed?"readonly=\"readonly\"":"" %> onclick="setUnique();" <% if(fieldForm.isUnique()){ %> checked="checked" <% } %> />
-							<label for="uniqueCB"><%= LanguageUtil.get(pageContext, "Unique") %></label>
+			<input type="checkbox" dojoType="dijit.form.CheckBox" name="unique" id="uniqueCB" <%=fixed?"readonly=\"readonly\"":"" %> onclick="setUnique();" <% if(fieldForm.isUnique()){ %> checked="checked" <% } %> />
+			<label for="uniqueCB"><%= LanguageUtil.get(pageContext, "Unique") %></label>
 						</div>
-					</dd>
-				</dl>
-				<!-- END Check Boxes -->
+		</dd>
+	</dl>
+	<!-- END Check Boxes -->
 			</div>
 
 		</div>
@@ -765,7 +765,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 
 		<!-- START Tab2 -->
 		<div id="TabTwo" dojoType="dijit.layout.ContentPane" onShow='javascript:editFieldVariables();' title="Field Variables">
-			<%@ include file="/html/portlet/ext/structure/view_field_variables_inc.jsp" %>
+	<%@ include file="/html/portlet/ext/structure/view_field_variables_inc.jsp" %>
 		</div>
 		<!-- END Tab2 -->
 
@@ -774,11 +774,11 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 	<!-- START Button Row -->
 	<div class="buttonRow content-type-button-row">
 		<button id="saveButton" dojoType="dijit.form.Button" type="button" onClick="addNewField();">
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save-Field")) %>
-		</button>
+	   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save-Field")) %>
+	</button>
 		<button id="cancelButton" dojoType="dijit.form.Button" type="button" onClick="cancel" class="dijitButtonFlat">
-			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
-		</button>
+	   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
+	</button>
 	</div>
 	<!-- END Button Row -->
 </div>

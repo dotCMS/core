@@ -1,6 +1,7 @@
 package com.dotcms.publishing;
 
 import com.dotcms.publisher.business.PublishQueueElement;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -10,14 +11,27 @@ import com.liferay.portal.model.User;
 
 import java.util.*;
 
-public class PublisherConfig implements Map<String, Object> {
+public class PublisherConfig implements Map<String, Object>, Cloneable {
 
-	private enum Config {
-		START_DATE, END_DATE, HOSTS, FOLDERS, STRUCTURES, INCLUDE_PATTERN, 
+	static public String STATIC_SUFFIX = "-static";
+
+	public enum Config {
+		START_DATE, END_DATE, HOSTS, HOST_SET, LANGUAGES, FOLDERS, STRUCTURES, INCLUDE_PATTERN,
 		EXCLUDE_PATTERN, LANGUAGE, USER, PUBLISHER, MAKE_BUNDLE, LUCENE_QUERY, 
 		THREADS, ID, TIMESTAMP, BUNDLERS, INCREMENTAL, NOT_NEW_NOT_INCREMENTAL, DESTINATION_BUNDLE,
 		UPDATED_HTML_PAGE_IDS, LUCENE_QUERIES, ENDPOINT, GROUP_ID, ASSETS, FOLDERS_PENDING_DEFAULT
 	}
+
+	public enum Operation {
+		PUBLISH,
+		UNPUBLISH
+	}
+
+	public enum MyConfig {
+		RUN_NOW,INDEX_NAME
+	}
+
+	private Operation operation;
 
 	public void PublisherConfig(Map<String, Object> map){
 		params = map;
@@ -25,6 +39,7 @@ public class PublisherConfig implements Map<String, Object> {
 	
 	Map<String, Object> params;
 	private boolean liveOnly = true;
+	private boolean isStatic = false;
 
 	@SuppressWarnings("unchecked")
 	public Set<String> getFolders() {
@@ -93,15 +108,15 @@ public class PublisherConfig implements Map<String, Object> {
 
     @SuppressWarnings("unchecked")
 	public Set<String> getHostSet() {
-		if(get(Config.HOSTS.name()) == null){
+		if(get(Config.HOST_SET.name()) == null){
 			Set<String> hostsToBuild =   new HashSet<String>();
-			params.put(Config.HOSTS.name(), hostsToBuild);
+			params.put(Config.HOST_SET.name(), hostsToBuild);
 		}
-		return (Set<String>) params.get(Config.HOSTS.name());
+		return (Set<String>) params.get(Config.HOST_SET.name());
 	}
 
 	public void setHostSet(Set<String> hosts) {
-		params.put(Config.HOSTS.name(), hosts);
+		params.put(Config.HOST_SET.name(), hosts);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -344,6 +359,32 @@ public class PublisherConfig implements Map<String, Object> {
 		params.put(Config.ID.name(), id);
 	}
 
+	public boolean isStatic() {
+		return isStatic;
+	}
+
+	/**
+	 * Specifies if the configuration wants the bundler to manage each dependency. For example to check the
+	 * Force Push feature as part of the bundle process.
+	 */
+	public boolean shouldManageDependencies(){
+		return isStatic();
+	}
+
+	public void setStatic(boolean isStatic) {
+		this.isStatic = isStatic;
+	}
+
+	public String getName(){
+		String result = getId();
+
+		if (isStatic()){
+			result += STATIC_SUFFIX;
+		}
+
+		return result;
+	}
+
 	public String getDestinationBundle() {
 		return (String) params.get(Config.DESTINATION_BUNDLE.name());
 	}
@@ -428,5 +469,44 @@ public class PublisherConfig implements Map<String, Object> {
 		} else {
 			params.remove(Config.NOT_NEW_NOT_INCREMENTAL.name());
 		}
+	}
+
+	public Set<String> getLanguages() {
+		if(get(Config.LANGUAGES.name()) == null){
+			Set<String> languagesToBuild =   new HashSet<>();
+			put(Config.LANGUAGES.name(), languagesToBuild);
+		}
+		return (Set<String>) get(Config.LANGUAGES.name());
+	}
+
+	public void setLanguages(Set<String> languages) {
+		put(Config.LANGUAGES.name(), languages);
+	}
+
+	/**
+	 * Returns the type of operation we will apply to the bundle (PUBLISH/UNPUBLISH).
+	 *
+	 * @return
+	 */
+	public Operation getOperation() {
+		return operation;
+	}
+
+	public void setOperation(Operation operation) {
+		this.operation = operation;
+	}
+
+	public boolean runNow(){
+		return this.get(PushPublisherConfig.MyConfig.RUN_NOW.toString()) !=null && new Boolean((String) this.get(
+			PushPublisherConfig.MyConfig.RUN_NOW.toString()));
+	}
+
+	public void setRunNow(boolean once){
+		this.put(MyConfig.RUN_NOW.toString(), once);
+	}
+
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		return super.clone();
 	}
 }

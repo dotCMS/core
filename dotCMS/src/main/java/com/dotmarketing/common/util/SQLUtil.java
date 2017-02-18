@@ -224,7 +224,7 @@ public class SQLUtil {
 	 */
 	public static String sanitizeParameter(String parameter){
 
-		if(!UtilMethods.isSet(parameter)) {//check if is not null
+		if(!UtilMethods.isSet(parameter)) { //check if is not null
 
 			return StringPool.BLANK;
 		}

@@ -94,7 +94,7 @@ dependencies {
     /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
     compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
-    starter group: 'com.dotcms', name: 'starter', version: '20170118', ext: 'zip'
+    starter group: 'com.dotcms', name: 'starter', version: '20170216', ext: 'zip'
     coreWeb group: 'com.dotcms', name: 'core-web', version: '4.0.0-SNAPSHOT', ext: 'zip', changing: true
 
     providedCompile fileTree("../libs/buildlibs").include('**/*.jar')
@@ -108,6 +108,17 @@ dependencies {
 
 // Import and apply the dependencies from the dependencies scripts.
 apply from: "$rootDir/dependencies.gradle"
+
+if (gradle.startParameter.taskNames.contains("deployWarTomcatDev")) {
+    sourceSets {
+        main {
+            java {
+                srcDirs = ["src/main/java", "$enterpriseProjectHome/src", "$licenseProjectHome/src"]
+            }
+        }
+    }
+}
+
 
 ant.lifecycleLogLevel = "INFO"
 
@@ -147,14 +158,16 @@ compileJava {
 }
 
 jar{
+    exclude 'com/dotcms/enterprise/**'
+
     if (gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
         from project.sourceSets.main.output + project.sourceSets.test.output + project.sourceSets.integrationTest.output + project.sourceSets.functionalTest.output
     }
 }
 
 task copyTestRuntimeLibs(type: Copy) {
-	into "build/libs/test"
-	from configurations.testCompile - configurations.compile
+    into "build/libs/test"
+    from configurations.testCompile - configurations.compile
 }
 
 // Expand the release properties.
@@ -200,11 +213,11 @@ war.finalizedBy 'undeployPlugins'
 
 integrationTest{
     doFirst
-    {
-        if (project.hasProperty('databaseType')){
-            systemProperty "databaseType", "$databaseType"
-        }
-    }
+            {
+                if (project.hasProperty('databaseType')){
+                    systemProperty "databaseType", "$databaseType"
+                }
+            }
 }
 
 // Delete ROOT under tomcat8/webapps
@@ -472,14 +485,14 @@ task deployPlugins(dependsOn: ['buildPlugins']) << {
     }
 
     ant.taskdef(
-        name: 'pluginDeployTask', 
-        classname: 'com.dotmarketing.plugin.ant.DeployTask', 
-        classpath: configurations.compile.asPath)
+            name: 'pluginDeployTask',
+            classname: 'com.dotmarketing.plugin.ant.DeployTask',
+            classpath: configurations.compile.asPath)
 
     ant.pluginDeployTask(
-        distributionPath: '../', 
-        dotcmsHome: "$webAppFolder",
-        plugins: "$webAppFolder/WEB-INF/lib")
+            distributionPath: '../',
+            dotcmsHome: "$webAppFolder",
+            plugins: "$webAppFolder/WEB-INF/lib")
 }
 deployPlugins.group='dotCMS Development'
 deployPlugins.description='Builds and deploys all the plugins under /plugins folder.'
@@ -498,13 +511,13 @@ task undeployPlugins << {
 
 
     ant.taskdef(
-        name: 'pluginUndeployTask', 
-        classname: 'com.dotmarketing.plugin.ant.UndeployTask', 
-        classpath: configurations.compile.asPath)
+            name: 'pluginUndeployTask',
+            classname: 'com.dotmarketing.plugin.ant.UndeployTask',
+            classpath: configurations.compile.asPath)
     ant.pluginUndeployTask(
-        distributionPath: '../', 
-        dotcmsHome: "$webAppFolder",
-        plugins: "$webAppFolder/WEB-INF/lib")
+            distributionPath: '../',
+            dotcmsHome: "$webAppFolder",
+            plugins: "$webAppFolder/WEB-INF/lib")
 
     delete fileTree("$webAppFolder/WEB-INF/lib") {
         include '**/plugin-*.jar'
@@ -625,7 +638,7 @@ task generateMoveCleanEnterpriseTomcat << {
                 dotcmsReleaseVersion
         ]
     }
-    
+
     delete fileTree("$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"){
         include "ee-*", "ee_*"
     }
@@ -707,4 +720,3 @@ class DeployWarTomcatTask extends DefaultTask{
 
     }
 }
-

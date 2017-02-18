@@ -126,9 +126,9 @@ public class BundlePublisher extends Publisher {
      * @throws DotPublishingException An error occurred when handling the contents of this bundle.
      */
     @Override
-    public PublisherConfig process(final PublishStatus status) throws DotPublishingException {
-        if (LicenseUtil.getLevel() < 300) {
-            throw new RuntimeException("need an enterprise licence to run this");
+    public PublisherConfig process ( final PublishStatus status ) throws DotPublishingException {
+        if ( LicenseUtil.getLevel() < 300 ) {
+            throw new RuntimeException( "need an enterprise license to run this" );
         }
 
         String bundleName = config.getId();

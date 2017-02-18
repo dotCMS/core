@@ -2,71 +2,9 @@
 <!DOCTYPE portlets>
 
 <portlets>
-	<!-- portlet id="1" struts-path="mail" scheduler-class="com.liferay.portlet.mail.job.Scheduler" preferences-sharing-type="user" /-->
-	<portlet id="my-account" struts-path="my_account" />
-	<!-- portlet id="3" struts-path="search" narrow="true" / -->
-	<!--portlet id="4" struts-path="weather" narrow="true" /-->
-	<!--portlet id="5" struts-path="news" /-->
-	<!--portlet id="6" struts-path="reverend_fun" narrow="true" /-->
-	<!--portlet id="7" struts-path="bible_gateway" /-->
-	<!-- portlet id="8" struts-path="calendar" scheduler-class="com.liferay.portlet.calendar.job.Scheduler" preferences-sharing-type="user" show-portlet-access-denied="true" show-portlet-inactive="true" ns-4-compatible="false" /-->
-	<portlet id="configuration"/>
-	<!--portlet id="10" struts-path="address_book" /-->
-	<!--portlet id="11" struts-path="directory" /-->
-	<!--portlet id="12" struts-path="stocks" narrow="true" /-->
-	<!--portlet id="13" struts-path="calculator" narrow="true" /-->
-	<!--portlet id="14" struts-path="games" narrow="true" / -->
-	<!--portlet id="15" struts-path="journal" indexer-class="com.liferay.portlet.journal.util.Indexer" scheduler-class="com.liferay.portlet.journal.job.Scheduler" /-->
-	<!--portlet id="16" struts-path="currency_converter" /-->
-	<!--portlet id="17" struts-path="csz_search" narrow="true" /-->
-	<!--portlet id="18" struts-path="maps" narrow="true" /-->
-	<!--portlet id="19" struts-path="message_boards" indexer-class="com.liferay.portlet.messageboards.util.Indexer" preferences-sharing-type="user" /-->
-	<!--portlet id="20" struts-path="document_library" indexer-class="com.liferay.portlet.documentlibrary.util.Indexer" ns-4-compatible="false" /-->
-	<!--portlet id="21" struts-path="random_bible_verse" preferences-sharing-type="user" narrow="true" /-->
-	<!--portlet id="22" struts-path="instant_messenger" narrow="true" include="false" / -->
-	<!--portlet id="23" struts-path="dictionary" narrow="true" / -->
-	<!--portlet id="24" struts-path="sms" / -->
-	<!--portlet id="26" struts-path="translator" / -->
-	<!--portlet id="27" struts-path="unit_converter" narrow="true" / -->
-	<!--portlet id="28" struts-path="bookmarks" preferences-sharing-type="user" ns-4-compatible="false" /-->
-	<!--portlet id="29" struts-path="bible_journal" preferences-sharing-type="user" narrow="true" /-->
-	<!--portlet id="30" struts-path="network" scheduler-class="com.liferay.portlet.network.job.Scheduler" preferences-sharing-type="user" narrow="true" /-->
-	<!--portlet id="31" struts-path="image_gallery" /-->
-	<!--portlet id="32" struts-path="today_in_christian_history" narrow="true" /-->
-	<!--portlet id="33" struts-path="blogs" indexer-class="com.liferay.portlet.blogs.util.Indexer" ns-4-compatible="false" /-->
-	<!--portlet id="34" struts-path="shopping" preferences-sharing-type="user" /-->
-	<!--portlet id="35" struts-path="google" preferences-sharing-type="user" narrow="true" /-->
-	<!--portlet id="36" struts-path="wiki" indexer-class="com.liferay.portlet.wiki.util.Indexer" narrow="true" /-->
-	<!--portlet id="37" struts-path="words" narrow="true" /-->
-	<!--portlet id="38" struts-path="jcvs" narrow="true" /-->
-	<!--portlet id="39" struts-path="rss" /-->
-	<!--portlet id="40" struts-path="project" /-->
-	<!--portlet id="41" struts-path="tasks" narrow="true" /-->
-	<!--portlet id="42" struts-path="meeting_rooms" narrow="true" include="false" /-->
-	<!--portlet id="43" struts-path="skills" narrow="true" include="false" /-->
-	<!--portlet id="44" struts-path="stand_to_reason" narrow="true" /-->
-	<!--portlet id="45" struts-path="westminster_catechism" narrow="true" /-->
-	<!--portlet id="46" struts-path="gospel_for_asia" ns-4-compatible="false" /-->
-	<!--portlet id="47" struts-path="hello_world" narrow="true" /-->
-	<!--portlet id="48" struts-path="iframe" ns-4-compatible="false" /-->
-	<!--portlet id="49" struts-path="chemistry" narrow="true" /-->
-	<!--portlet id="50" struts-path="hello_velocity" narrow="true" /-->
-	<!--portlet id="51" struts-path="global_prayer_digest" ns-4-compatible="false" /-->
-	<!--portlet id="52" struts-path="chat" /-->
-	<!--portlet id="53" struts-path="company_news" indexer-class="com.liferay.portlet.journal.util.ChildIndexer" /-->
-	<!--portlet id="54" struts-path="wiki_display" /-->
-	<!--portlet id="55" struts-path="wiki_display_2" /-->
-	<!--portlet id="56" struts-path="wiki_display_3" /-->
-	<!--portlet id="57" struts-path="wiki_display_4" /-->
-	<!--portlet id="58" struts-path="wiki_display_5" /-->
-	<!--portlet id="64" struts-path="recent_documents" narrow="true" ns-4-compatible="false" /-->
-	<!--portlet id="65" struts-path="analog_clock" narrow="true" /-->
-	<!--portlet id="66" struts-path="httpbridge" /-->
-	<!--portlet id="67" struts-path="amazon_rankings" narrow="true" /-->
-	<!--portlet id="68" struts-path="wsrp" use-default-template="true" /-->
-	<!--portlet id="69" struts-path="hello_laszlo" narrow="true" /-->
-	<!-- Custom Portlets -->
 
+<portlet id="configuration"/>
+	
 	<portlet id="EXT_1" struts-path="ext/inodes" narrow="true" />
 	<portlet id="EXT_2" struts-path="ext/banners" />
 	<portlet id="files-legacy" struts-path="ext/files" narrow="true"/>
@@ -112,6 +50,5 @@
 	<portlet id="link-checker" struts-path="ext/brokenlinks" narrow="true" />
     <portlet id="time-machine" />
     <portlet id="es-search" />
-    <portlet id="personas" />
-	<custom-user-attribute name="user.name.random" custom-class="com.liferay.portlet.CustomUserAttributes" />
+
 </portlets>

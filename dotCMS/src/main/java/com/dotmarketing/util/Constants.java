@@ -126,6 +126,7 @@ public final class Constants {
     public static String USER_AGENT_DOTCMS_HTMLPAGEDIFF = "DOTCMS-HTMLPAGEDIFF";
     public static String USER_AGENT_DOTCMS_SITESEARCH = "DOTCMS-SITESEARCH";
     public static String USER_AGENT_DOTCMS_TIMEMACHINE = "DOTCMS-TIMEMACHINE";
+    public static String USER_AGENT_DOTCMS_PUSH_PUBLISH = "DOTCMS-PUSHPUBLISH";
 
 	//Http headres
 	public static String ORIGINAL_REQUEST_URL_HTTP_HEADER = "javax.servlet.forward.request_uri";

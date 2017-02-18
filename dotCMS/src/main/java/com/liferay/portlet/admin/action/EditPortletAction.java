@@ -49,7 +49,6 @@ import com.liferay.portlet.PortletPreferencesSerializer;
 import com.liferay.util.InstancePool;
 import com.liferay.util.ParamUtil;
 import com.liferay.util.Validator;
-import com.liferay.util.lucene.Indexer;
 import com.liferay.util.servlet.SessionErrors;
 import com.liferay.util.servlet.SessionMessages;
 
@@ -202,12 +201,7 @@ public class EditPortletAction extends PortletAction {
 		Portlet portlet =
 			PortletManagerUtil.getPortletById(companyId, portletId);
 
-		if (Validator.isNotNull(portlet.getIndexerClass())) {
-			Indexer indexer =
-				(Indexer)InstancePool.get(portlet.getIndexerClass());
 
-			indexer.reIndex(new String[] {companyId});
-		}
 
 		// Session messages
 

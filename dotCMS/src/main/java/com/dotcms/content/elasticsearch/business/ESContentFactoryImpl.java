@@ -1419,12 +1419,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
                                 + " has finished successfully.",
                             userToReplace.getUserId() + "/" + userToReplace.getFullName()));
 
-                        String reindexMsg = MessageFormat.format(LanguageUtil.get(user,
-                            "com.dotmarketing.business.UserAPI.delete.reindex"),
-                            userToReplace.getUserId() + "/" + userToReplace.getFullName());
-
-                        notAPI.info(reindexMsg, user.getUserId());
-
                     } catch (Exception e) {
                         Logger.error(this.getClass(),e.getMessage(),e);
                         notAPI.error(String.format("Unable to Reindex updated related content for deleted user '%s'. "

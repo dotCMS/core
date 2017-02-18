@@ -194,7 +194,6 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
               widgetId:"imgDialog",
               draggable:false,
               refocus:false
-
           });
 
         dojo.style(this.imageEditor.closeButtonNode, "visibility", "hidden");

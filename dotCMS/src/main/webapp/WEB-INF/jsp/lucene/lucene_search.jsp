@@ -124,14 +124,14 @@ query = Xss.strip(query);
 	<!-- START Left Column -->
 	<div dojoType="dijit.layout.ContentPane" id="filterWrapper" splitter="false" region="leading" style="width: 400px;" class="portlet-sidebar-wrapper" >
 	    <div class="portlet-sidebar">
-		
+
 			<div id="advancedSearch">
 				<form name="query" action="<%= submitURL %>" method="post">
 					<dl class="vertical">
-							
+
 						<dt><label><%= LanguageUtil.get(pageContext, "Lucene-Query") %> :</label></dt>
 						<dd><textarea dojoType="dijit.form.Textarea" name="query" style="width:365px;min-height: 150px;" id="query" type="text"><%=UtilMethods.htmlifyString(query)%></textarea></dd>
-			
+
 						<dt><label><%= LanguageUtil.get(pageContext, "Offset") %> : </label></dt>
 						<dd><input name="offset" id="offset" dojoType="dijit.form.NumberTextBox" type="text" value="<%=offset%>" size="10" /></dd>
 				
@@ -147,11 +147,11 @@ query = Xss.strip(query);
 					<div class="inline-form">
 						<input name="reindexResults" id="reindexResults" dojoType="dijit.form.CheckBox" type="checkbox"  value="true" <% if(!userIsAdmin){ %> disabled="disabled" <% } %>/>
 						<label><%= LanguageUtil.get(pageContext, "Reindex-selected-contents") %></label>
-					</div>	
+					</div>
 						<div class="buttonRow">
 							<button type="submit" id="submitButton" dojoType="dijit.form.Button" value="Submit"><%= LanguageUtil.get(pageContext, "Submit") %></button>
 					</div>
-					
+
 			        <script language="Javascript">
 						/**
 							focus on search box
@@ -170,18 +170,18 @@ query = Xss.strip(query);
 			</div>
 		</div>
 	</div>
-	
+
 	<div dojoType="dijit.layout.ContentPane" splitter="true" region="center" class="portlet-content-search" id="contentWrapper" style="overflow-y:auto; overflow-x:auto;">
 		<div class="portlet-main" style="margin: 35px 20px;">
-	
+
 			<%if(UtilMethods.isSet(nastyError)){%>
 				<dl>
 					<dt style='color:red;'><%= LanguageUtil.get(pageContext, "Query-Error") %> : </dt>
 					<dd><%=nastyError %></dd>
 				</dl>
-				
+
 			<%}else if(iresults != null){%>
-			
+
 			<table class="listingTable">
 				<tr>
 					<td><strong><%= LanguageUtil.get(pageContext, "The-total-results-are") %> :</strong> <%=iresults == null ? "0" : iresults.size()%></td>
@@ -231,10 +231,10 @@ query = Xss.strip(query);
 						<td><%= r.getIdentifier() %></td>
 						<td><%= r.getScore() %></td>
 					</tr>
-				<% } %>	
+				<% } %>
 			</table>
 			-->
-			
+
 			<div id="results" style="margin-top: 30px;">
 				<table class="listingTable">
 					<!--<tr>
@@ -273,7 +273,7 @@ query = Xss.strip(query);
 									<div style="padding-bottom: 25px;"><%= UtilMethods.makeHtmlSafe(ContentletUtil.getContentPrintableMap(user, c).toString()) %></div>
 								</td>
 							</tr> -->
-							
+
 							<%	counter++;%>
 						<%}%>
 					<% }else{ %>

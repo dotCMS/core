@@ -8,7 +8,7 @@ import java.util.List;
 public class Menu {
 
     private String tabName;
-    private String tabDescription;
+    private String tabIcon;
     private List<MenuItem> menuItems;
     private String url;
 
@@ -18,9 +18,9 @@ public class Menu {
      * @param tabDescription Description of the tab
      * @param url 
      */
-    public Menu(String tabName, String tabDescription, String url) {
+    public Menu(String tabName, String tabIcon, String url) {
         this.tabName = tabName;
-        this.tabDescription = tabDescription;
+        this.tabIcon = tabIcon;
         this.url = url;
     }
 
@@ -33,11 +33,11 @@ public class Menu {
     }
 
     /**
-     * Get the Tab Description
-     * @return the tab description
+     * Get the Tab Icon
+     * @return the tab icon
      */
-    public String getTabDescription() {
-        return tabDescription;
+    public String getTabIcon() {
+        return tabIcon;
     }
 
     /**

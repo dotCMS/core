@@ -13,13 +13,13 @@
 <%@page import="com.dotmarketing.business.CacheLocator"%>
 
 <%
-Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStructureByName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
+    Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStructureByName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
 
 
-String selectedLang=String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId());
-if(session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED)!= null){
-    selectedLang = (String) session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED);
-}
+    String selectedLang=String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+    if(session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED)!= null){
+        selectedLang = (String) session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED);
+    }
 
 
 %>
@@ -29,135 +29,135 @@ if(session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED)!= null)
 <script src="/html/js/scriptaculous/scriptaculous.js" type="text/javascript"></script>
 
 <% // Include javascript method to upload multiple files %>
-<%@ include file="/html/portlet/ext/files/upload_multiple_js_inc.jsp" %>
+<%@ include file="/html/portlet/ext/fileupload/upload_multiple_js_inc.jsp" %>
 <script language="JavaScript">
 
-dojo.require("dotcms.dojo.data.StructureReadStore");
-dojo.require("dotcms.dojo.push.PushHandler");
-     //Global Variables
-     var openFolders = new Array ();
+    dojo.require("dotcms.dojo.data.StructureReadStore");
+    dojo.require("dotcms.dojo.push.PushHandler");
+    //Global Variables
+    var openFolders = new Array ();
 
-     var selectedContent;
-     var lastNameDivClicked;
-     var lastShowOnMenuClicked;
+    var selectedContent;
+    var lastNameDivClicked;
+    var lastShowOnMenuClicked;
 
-     //Change name variables
-     var changingNameTo;
-     var lastName;
-     var changingNameExt;
+    //Change name variables
+    var changingNameTo;
+    var lastName;
+    var changingNameExt;
 
-     //Change name variables
-     var changingShowOnMenuTo;
-     var lastShowOnMenu;
+    //Change name variables
+    var changingShowOnMenuTo;
+    var lastShowOnMenu;
 
-     //Tree objects
-     var inodes = new Array ();
+    //Tree objects
+    var inodes = new Array ();
 
-     //ContentObject
-     var contentInodes = new Array ();
-     var contentDraggables = new Array ();
+    //ContentObject
+    var contentInodes = new Array ();
+    var contentDraggables = new Array ();
 
-     //State variables
-     var selectedFolder = "";
-     var lastSelectedFolder = "";
-     var activeHost = "";
-     var lastActiveHost = "";
-     var showArchived = false;
-     var doubleClicked = false;
-     var actionLoading = false;
-     var markedForCopy = "";
-     var markedForCut = "";
+    //State variables
+    var selectedFolder = "";
+    var lastSelectedFolder = "";
+    var activeHost = "";
+    var lastActiveHost = "";
+    var showArchived = false;
+    var doubleClicked = false;
+    var actionLoading = false;
+    var markedForCopy = "";
+    var markedForCut = "";
 
-     //Images
-     var selectedFolderImg = "folderSelectedIcon";
-     var noSelectedFolderImg = "folderIcon";
-     var worldImgOnImg = 'hostIcon'
-     var worldImgOffImg = 'hostStoppedIcon'
-     var worldAniIMG = 'hourglassIcon';
-     var plusSignIMG = 'toggleOpenIcon';
-     var lessSignIMG = 'toggleCloseIcon';
-     var folderAniIMG = 'folderIcon';
-     var shimIMG = 'shimIconSmall';
-     var trashIMG = 'trah';
+    //Images
+    var selectedFolderImg = "folderSelectedIcon";
+    var noSelectedFolderImg = "folderIcon";
+    var worldImgOnImg = 'hostIcon'
+    var worldImgOffImg = 'hostStoppedIcon'
+    var worldAniIMG = 'hourglassIcon';
+    var plusSignIMG = 'toggleOpenIcon';
+    var lessSignIMG = 'toggleCloseIcon';
+    var folderAniIMG = 'folderIcon';
+    var shimIMG = 'shimIconSmall';
+    var trashIMG = 'trah';
 
-     var dragging = false;
+    var dragging = false;
 
-     //Events Handlers
+    //Events Handlers
 
-     var myHost = '<%= (myHost != null) ? myHost.getHostname() :""%>';
-     var myHostId = '<%= (myHost != null) ? myHost.getIdentifier() : "" %>';
-     
-     var selectedLang = '<%= selectedLang %>';
+    var myHost = '<%= (myHost != null) ? myHost.getHostname() :""%>';
+    var myHostId = '<%= (myHost != null) ? myHost.getIdentifier() : "" %>';
+
+    var selectedLang = '<%= selectedLang %>';
 
 
-         
-         
+
+
     //Dragging Events
 
-     var AssetsDragObserver = Class.create();
+    var AssetsDragObserver = Class.create();
 
-     AssetsDragObserver.prototype = {
-       initialize: function() {
-       },
+    AssetsDragObserver.prototype = {
+        initialize: function() {
+        },
 
-       onDrag: function(eventName, draggable, e) {
-         var element = draggable.element;
-         if (e.ctrlKey)
-            element.style.cursor='url(/portal/images/icons/copy_asset.ico), default';
-         else
-            element.style.cursor='default';
-       },
+        onDrag: function(eventName, draggable, e) {
+            var element = draggable.element;
+            if (e.ctrlKey)
+                element.style.cursor='url(/portal/images/icons/copy_asset.ico), default';
+            else
+                element.style.cursor='default';
+        },
 
-       onStart: function(eventName, draggable, e) {
-         showDebugMessage('start dragging');
-         var element = draggable.element;
-         var handle = draggable.handle;
-         dragging = true;
-         if (changingNameTo != null) {
-            var ext = '';
-            if (changingNameExt != null && changingNameExt != '')
-                ext = '.' + changingNameExt;
-            var elems = handle.getElementsByTagName("span");
-            if (elems.length > 0) {
-                elems[0].innerHTML = lastName + ext;
+        onStart: function(eventName, draggable, e) {
+            showDebugMessage('start dragging');
+            var element = draggable.element;
+            var handle = draggable.handle;
+            dragging = true;
+            if (changingNameTo != null) {
+                var ext = '';
+                if (changingNameExt != null && changingNameExt != '')
+                    ext = '.' + changingNameExt;
+                var elems = handle.getElementsByTagName("span");
+                if (elems.length > 0) {
+                    elems[0].innerHTML = lastName + ext;
+                }
+                $(changingNameTo + '-NameSPAN').innerHTML = lastName + ext;
+                changingNameTo = null;
             }
-            $(changingNameTo + '-NameSPAN').innerHTML = lastName + ext;
-            changingNameTo = null;
-         }
-       },
+        },
 
-       onEnd: function(eventName, draggable, e) {
-         showDebugMessage('end dragging');
-         var element = draggable.element;
-         element.style.cursor='default';
-         setTimeout('disablingDragging()', 500);
-       }
-     };
+        onEnd: function(eventName, draggable, e) {
+            showDebugMessage('end dragging');
+            var element = draggable.element;
+            element.style.cursor='default';
+            setTimeout('disablingDragging()', 500);
+        }
+    };
 
-     function disablingDragging () {
-         dragging = false;
-     }
+    function disablingDragging () {
+        dragging = false;
+    }
 
-     Draggables.addObserver(new AssetsDragObserver());
+    Draggables.addObserver(new AssetsDragObserver());
 
 
 
-     //----------------------------------
-     //Tree Event Handlers
+    //----------------------------------
+    //Tree Event Handlers
 
-     function getRootFiles(e){
-         var inode = null;
-         try{
-             inode = getInodeFromID(Event.element(e).id);
-         }catch(e){}
-         if(inode==null || inode===''){
-             inode = activeHost;
-         }
-         treeFolderSelected(inode);
-     }
+    function getRootFiles(e){
+        var inode = null;
+        try{
+            inode = getInodeFromID(Event.element(e).id);
+        }catch(e){}
+        if(inode==null || inode===''){
+            inode = activeHost;
+        }
+        treeFolderSelected(inode);
+    }
 
 
-     function treeHostRefMouseUp(e) {
+    function treeHostRefMouseUp(e) {
         var inode = getInodeFromID(Event.element(e).id);
         if(isRightClick(e)) {
             showDebugMessage('treeHostRefMouseUp: <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "right-click-over-host")) %>: ' + inode);
@@ -168,9 +168,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
             treeHostSelected(inode, e);
             return;
         }
-     }
+    }
 
-     function treeFolderRefMouseUp(e) {
+    function treeFolderRefMouseUp(e) {
         var inode = getInodeFromID(Event.element(e).id);
         if(isRightClick(e)) {
             showDebugMessage('treeFolderRefMouseUp: <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "right-click-over-folder")) %>: ' + inode);
@@ -181,9 +181,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
             treeFolderSelected(inode);
             return;
         }
-     }
+    }
 
-     function treeFolderSignRefMouseUp(e) {
+    function treeFolderSignRefMouseUp(e) {
         var inode = getInodeFromID(Event.element(e).id);
         if(isRightClick(e)) {
             showDebugMessage('treeFolderSignRefMouseUp: <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "right-click-over-folder-sign")) %>: ' + inode);
@@ -192,9 +192,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
             treeFolderSignSelected(inode, e);
             return;
         }
-     }
+    }
 
-     function trashRefMouseUp (e) {
+    function trashRefMouseUp (e) {
         if(isRightClick(e)) {
             showDebugMessage('trashRefMouseUp: <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "rigth-click-over-trash")) %>');
         } else {
@@ -202,9 +202,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
             trashSelected(e);
             return;
         }
-     }
+    }
 
-     function contentAreaRefMouseUp(e) {
+    function contentAreaRefMouseUp(e) {
         if(isRightClick(e)) {
             showDebugMessage('contentAreaRefMouseUp: <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "right-click-over-content-area")) %>');
         } else {
@@ -213,9 +213,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
             //executeChangeShowOnMenu();
         }
         return false;
-     }
+    }
 
-     function droppedOnTrash(draggableElem, droppableElem, e) {
+    function droppedOnTrash(draggableElem, droppableElem, e) {
         showDebugMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Dragged-to-trash")) %>: ' + droppableElem + ", <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "the-element")) %>: " + draggableElem + ", <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ctrl-pressed")) %>: " + e.ctrlKey);
         var inode = inodes[draggableElem];
         if (inode.type != 'folder' && !inode.deleted) {
@@ -241,12 +241,12 @@ dojo.require("dotcms.dojo.push.PushHandler");
         } else {
             showDebugMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Asset-already-archived")) %>');
         }
-     }
+    }
 
 
-     //Content Section Event Handlers
-     function nameChangeKeyHandler(e) {
-         var inode = getInodeFromID(Event.element(e).id);
+    //Content Section Event Handlers
+    function nameChangeKeyHandler(e) {
+        var inode = getInodeFromID(Event.element(e).id);
         if (document.layers)
             Key = e.which;
         else
@@ -258,7 +258,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
             cancelChangeName ();
     }
 
-     function showOnMenuKeyHandler(e) {
+    function showOnMenuKeyHandler(e) {
         var inode = getInodeFromID(Event.element(e).id);
         if (document.layers)
             Key = e.which;
@@ -272,8 +272,8 @@ dojo.require("dotcms.dojo.push.PushHandler");
             cancelChangeContentShowOnMenu ();
     }
 
-     function contentNameDIVClicked(e)
-     {
+    function contentNameDIVClicked(e)
+    {
         var inode = getInodeFromID(Event.element(e).id);
         showDebugMessage('contentDIVClicked: inode = ' + inode +
             ', selectedContent = ' + selectedContent);
@@ -281,11 +281,11 @@ dojo.require("dotcms.dojo.push.PushHandler");
             setTimeout('enableChangeContentName ("' + inode + '")', 500);
         }
         return false;
-     }
+    }
 
-     function contentShowOnMenuClicked(e)
-     {
-         var inode = getInodeFromID(Event.element(e).id);
+    function contentShowOnMenuClicked(e)
+    {
+        var inode = getInodeFromID(Event.element(e).id);
         showDebugMessage('contentShowOnMenuClicked: inode = ' + inode +
             ', selectedContent = ' + selectedContent);
         if(inode == selectedContent) {
@@ -298,9 +298,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
                 ', changingShowOnMenuTo = ' + changingShowOnMenuTo);
             executeChangeShowOnMenu();
         }
-     }
+    }
 
-     function contentTRMouseUp(e) {
+    function contentTRMouseUp(e) {
         var inode = getInodeFromID(Event.element(e).id);
         showDebugMessage('contentTRMouseUp: inode = ' + inode);
         if(isRightClick(e)) {
@@ -324,7 +324,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
                     var tr = selectedContent + "-TR";
                     if ($(tr) != null) {
                         removeClass(tr, 'contentRowSelected');
-                     }
+                    }
                 }
                 var tr = inode + "-TR";
                 if (hasClass(tr, 'contentRowRoller'))
@@ -344,9 +344,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
             }
         }
         return false;
-     }
+    }
 
-     function contentTRDoubleClicked(e) {
+    function contentTRDoubleClicked(e) {
 
         doubleClicked = true;
 
@@ -363,7 +363,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
             if(inodes[inode].isContent){
                 editFileAsset(inode, inodes[inode].fileAssetType);
             }else{
-              editFile(inode,referer);
+                editFile(inode,referer);
             }
         }
         if (inodes[inode].type == 'links') {
@@ -373,30 +373,30 @@ dojo.require("dotcms.dojo.push.PushHandler");
             previewHTMLPage(inode,referer);
         }
         return;
-     }
+    }
 
-     function contentTRRightClicked(inode, e) {
+    function contentTRRightClicked(inode, e) {
         showDebugMessage('contentTRRightClicked: <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Right-click-over")) %>: ' + inode);
-     }
+    }
 
-     function mouseOverContent(e) {
+    function mouseOverContent(e) {
         var inode = getInodeFromID(Event.element(e).id);
         if(selectedContent == null || inode != selectedContent) {
             var tr = inode + "-TR";
             addClass(tr, 'contentRowRoller');
         }
-     }
+    }
 
-     function mouseOutContent(e) {
+    function mouseOutContent(e) {
         var inode = getInodeFromID(Event.element(e).id);
         if(selectedContent == null || inode != selectedContent) {
             var tr = inode + "-TR";
             if (hasClass(tr, 'contentRowRoller'))
                 removeClass(tr, 'contentRowRoller');
         }
-     }
+    }
 
-     function droppedOnFolder(draggable, droppable, e) {
+    function droppedOnFolder(draggable, droppable, e) {
 
         var draggableElem = getInodeFromID(draggable.id);
         var droppableElem = getInodeFromID(droppable.id);
@@ -406,7 +406,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
         if (droppableElem != selectedFolder) {
             if (!e.ctrlKey) {
                 $(draggableElem + "-TR").style.display = "none";
-             }
+            }
 
             var asset = inodes[draggableElem];
             if (asset.type == 'folder') {
@@ -461,10 +461,10 @@ dojo.require("dotcms.dojo.push.PushHandler");
                     }
                 }
             }
-         }
-     }
+        }
+    }
 
-     function droppedOnHost(draggable, droppable, e) {
+    function droppedOnHost(draggable, droppable, e) {
 
         var draggableElem = getInodeFromID(draggable.id);
         var droppableElem = getInodeFromID(droppable.id);
@@ -495,15 +495,15 @@ dojo.require("dotcms.dojo.push.PushHandler");
         selectedFolder = "";
         treeFolderSelected(folder);
         return false;
-     }
+    }
 
-     //Actions
+    //Actions
 
 
-     //---------------------------------------------------
-     //Tree Actions
+    //---------------------------------------------------
+    //Tree Actions
 
-     function initializeTree (data) {
+    function initializeTree (data) {
         //Emptying the assets rigth hand side listing
         DWRUtil.removeAllOptions('TreeUL');
 
@@ -531,12 +531,12 @@ dojo.require("dotcms.dojo.push.PushHandler");
             }
 
             Element.update(hostLI,
-            '   <div style="font-weight: bold;padding: 10px 8px 10px 15px;font-size: 13px;background:#eee;">\n' +
-            '       <a onmouseover="this.className=\'underline\'" onmouseout="this.className=\'\'" id="' + hostId + '-TreeREF">\n' +
-            '           ' + host.hostname + '\n' +
-            '       </a>\n' +
-            '   </div>\n' +
-            '   <ul id="' + host.identifier + '-TreeChildrenUL"></ul>\n');
+                '   <div style="font-weight: bold;padding: 10px 8px 10px 15px;font-size: 13px;background:#eee;">\n' +
+                '       <a onmouseover="this.className=\'underline\'" onmouseout="this.className=\'\'" id="' + hostId + '-TreeREF">\n' +
+                '           ' + host.hostname + '\n' +
+                '       </a>\n' +
+                '   </div>\n' +
+                '   <ul id="' + host.identifier + '-TreeChildrenUL"></ul>\n');
             $('TreeUL').appendChild(hostLI);
 
             Event.observe(hostId + '-TreeREF', 'mouseup', treeHostRefMouseUp);
@@ -573,9 +573,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
         }
 
         renderAddNewDropDownButton(activeHost, selectedFolder, referer);
-     }
+    }
 
-     function addChildFolder (parent, folder) {
+    function addChildFolder (parent, folder) {
 
         var folderName = folder.name;
 
@@ -651,9 +651,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
         }
         inodes[folder.inode] = folder;
 
-     }
+    }
 
-     function treeHostSelected(inode, e) {
+    function treeHostSelected(inode, e) {
         if(activeHost != inode) {
             if(isInodeSet(inode) && $(inode + '-TreeHostIMG') != null) {
                 $(inode + '-TreeHostIMG').className = worldAniIMG;
@@ -662,9 +662,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
             activeHost = inode;
             BrowserAjax.openHostTree(inode, function (data) { openHostTreeCallBack(inode, data) } );
         }
-     }
+    }
 
-     function openHostTreeCallBack (hostId, data) {
+    function openHostTreeCallBack (hostId, data) {
         if (hostId == activeHost) {
             cleanContentSide();
             if(isInodeSet(lastActiveHost) && $(lastActiveHost + '-TreeHostIMG') != null) {
@@ -681,12 +681,12 @@ dojo.require("dotcms.dojo.push.PushHandler");
             }
             else
             {
-                    Element.hide($('loadingContentListing'));
+                Element.hide($('loadingContentListing'));
             }
         }
-     }
+    }
 
-     function trashSelected (e) {
+    function trashSelected (e) {
         showDebugMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "trash-left-clicked")) %>');
         showArchived = !showArchived;
         if (showArchived)
@@ -701,14 +701,14 @@ dojo.require("dotcms.dojo.push.PushHandler");
             Element.show('loadingContentListing');
             BrowserAjax.openFolderContent (selectedFolder, '', showArchived, selectedLang, selectFolderContentCallBack);
         }
-     }
+    }
 
-     //Left click over folder left hand side
-     function treeFolderSelected(inode, lang) {
+    //Left click over folder left hand side
+    function treeFolderSelected(inode, lang) {
 
         if (selectedFolder == inode && selectedLang == lang)
             return;
-        
+
         if(!lang)
             lang = selectedLang;
 
@@ -720,8 +720,8 @@ dojo.require("dotcms.dojo.push.PushHandler");
 
         selectedFolder = inode;
         if(inode && inode!=activeHost){
-          $(inode + '-TreeFolderIMG').className = selectedFolderImg;
-          $(inode + '-TreeREF').className = 'folderSelected';
+            $(inode + '-TreeFolderIMG').className = selectedFolderImg;
+            $(inode + '-TreeREF').className = 'folderSelected';
         }
 
         //Emptying the assets rigth hand side listing
@@ -738,9 +738,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
             treeFolderSignSelected(inode);
         }
 
-     }
+    }
 
-     function cleanContentSide () {
+    function cleanContentSide () {
         for (var i = 0; i < contentInodes.length; i++) {
             var asset = contentInodes[i];
 
@@ -750,12 +750,12 @@ dojo.require("dotcms.dojo.push.PushHandler");
 
             if($(asset.inode + '-DIV') != null)
             {
-            Event.stopObserving(asset.inode + '-DIV', 'mouseup', contentNameDIVClicked);
-            Event.stopObserving(asset.inode + '-ShowOnMenuSPAN', 'click', contentShowOnMenuClicked);
-            Event.stopObserving(asset.inode + '-TR', 'mouseup', contentTRMouseUp);
-            Event.stopObserving(asset.inode + '-TR', 'dblclick', contentTRDoubleClicked);
-            Event.stopObserving(asset.inode + '-TR', 'mouseout', mouseOutContent);
-            Event.stopObserving(asset.inode + '-TR', 'mouseover', mouseOverContent);
+                Event.stopObserving(asset.inode + '-DIV', 'mouseup', contentNameDIVClicked);
+                Event.stopObserving(asset.inode + '-ShowOnMenuSPAN', 'click', contentShowOnMenuClicked);
+                Event.stopObserving(asset.inode + '-TR', 'mouseup', contentTRMouseUp);
+                Event.stopObserving(asset.inode + '-TR', 'dblclick', contentTRDoubleClicked);
+                Event.stopObserving(asset.inode + '-TR', 'mouseout', mouseOutContent);
+                Event.stopObserving(asset.inode + '-TR', 'mouseover', mouseOverContent);
             }
 
             if (write) {
@@ -774,10 +774,10 @@ dojo.require("dotcms.dojo.push.PushHandler");
         contentInodes = new Array();
 
         contentDraggables = new Array();
-     }
+    }
 
-     //AJAX callback to load the left hand side of the browser
-     function selectFolderContentCallBack (content) {
+    //AJAX callback to load the left hand side of the browser
+    function selectFolderContentCallBack (content) {
 
 
         var subFoldersCount = 0;
@@ -805,14 +805,14 @@ dojo.require("dotcms.dojo.push.PushHandler");
                     order = "&nbsp;&nbsp;&nbsp;";
 
                 var html = '<tr id="' + asset.inode + '-TR">\n' +
-                           '    <td class="nameTD" id="' + asset.inode + '-NameTD">\n' +
-                           '    <a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
-                           '        <span class="folderIcon" id="' + asset.inode + '-ContentIcon"></span>\n' +
-                           '        &nbsp;<span id="' + asset.inode + '-NameSPAN">' + shortenString(asset.name, 30) + '</span>\n' +
-                           '    </a>\n' +
-                           '    </td>\n' +
-                           '    <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
-                           '        <span id="' + asset.inode + '-ShowOnMenuSPAN"';
+                    '    <td class="nameTD" id="' + asset.inode + '-NameTD">\n' +
+                    '    <a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
+                    '        <span class="folderIcon" id="' + asset.inode + '-ContentIcon"></span>\n' +
+                    '        &nbsp;<span id="' + asset.inode + '-NameSPAN">' + shortenString(asset.name, 30) + '</span>\n' +
+                    '    </a>\n' +
+                    '    </td>\n' +
+                    '    <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
+                    '        <span id="' + asset.inode + '-ShowOnMenuSPAN"';
                 if (asset.showOnMenu) {
                     html = html + '>';
                 }
@@ -820,35 +820,35 @@ dojo.require("dotcms.dojo.push.PushHandler");
                     html = html + ' style= "color: #C6C7C8;">';
                 }
                 html = html + order + '</span>\n' +
-                            '   </td>\n' +
-                            '   <td class="statusTD" id="' + asset.inode + '-StatusTD"></td>\n' +
-                            '   <td class="descriptionTD" id="' + asset.inode + '-DescTD"></td>\n' +
-                            '   <td class="modUserTD" id="' + asset.inode + '-ModUserTD"></td>\n' +
-                            '   <td class="modDateTD" id="' + asset.inode + '-ModDateTD"></td>\n' +
-                            '</tr>\n';
+                    '   </td>\n' +
+                    '   <td class="statusTD" id="' + asset.inode + '-StatusTD"></td>\n' +
+                    '   <td class="descriptionTD" id="' + asset.inode + '-DescTD"></td>\n' +
+                    '   <td class="modUserTD" id="' + asset.inode + '-ModUserTD"></td>\n' +
+                    '   <td class="modDateTD" id="' + asset.inode + '-ModDateTD"></td>\n' +
+                    '</tr>\n';
 
-                 new Insertion.Bottom(table, html);
+                new Insertion.Bottom(table, html);
 
-                 //Attaching events
-                 Event.observe(asset.inode + '-DIV', 'mouseup', contentNameDIVClicked);
-                 Event.observe(asset.inode + '-ShowOnMenuSPAN', 'click', contentShowOnMenuClicked);
-                 Event.observe(asset.inode + '-TR', 'mouseup', contentTRMouseUp);
-                 Event.observe(asset.inode + '-TR', 'dblclick', contentTRDoubleClicked);
-                 Event.observe(asset.inode + '-TR', 'mouseout', mouseOutContent);
-                 Event.observe(asset.inode + '-TR', 'mouseover', mouseOverContent);
+                //Attaching events
+                Event.observe(asset.inode + '-DIV', 'mouseup', contentNameDIVClicked);
+                Event.observe(asset.inode + '-ShowOnMenuSPAN', 'click', contentShowOnMenuClicked);
+                Event.observe(asset.inode + '-TR', 'mouseup', contentTRMouseUp);
+                Event.observe(asset.inode + '-TR', 'dblclick', contentTRDoubleClicked);
+                Event.observe(asset.inode + '-TR', 'mouseout', mouseOutContent);
+                Event.observe(asset.inode + '-TR', 'mouseover', mouseOverContent);
 
-                 if (publish) {
+                if (publish) {
                     var draggable = new Draggable(asset.inode + '-DIV', { ghosting:true, revert:true, zindex: 1000 });
                     contentDraggables[contentDraggables.length] = draggable;
-                 }
+                }
 
-                 if (write) {
-                     Droppables.add(asset.inode + '-DIV',
+                if (write) {
+                    Droppables.add(asset.inode + '-DIV',
                         {
                             hoverclass: 'boldunderline',
                             onDrop: droppedOnFolder
                         });
-                 }
+                }
 
             } else {
                 var name = asset.title;
@@ -878,31 +878,31 @@ dojo.require("dotcms.dojo.push.PushHandler");
                 var modUserName = shortenString(asset.modUserName, 20);
                 //Show Language Icon for Contents (Pages, Files)
                 var languageHTML = ((asset.type=='htmlpage' || asset.type=='file_asset') && asset.isContentlet && multipleLanguages)
-                    ?"<img src=\"/html/images/languages/"+asset.languageCode+ "_" +asset.countryCode + 
-                            ".gif\" width=\"16px\" height=\"11px\" style='margin-top:4px;float:left;' /><span id='"+asset.inode+"-LangSPAN'>&nbsp;("+asset.languageCode+ "_" +asset.countryCode+")</span>":""; 
+                    ?"<img src=\"/html/images/languages/"+asset.languageCode+ "_" +asset.countryCode +
+                    ".gif\" width=\"16px\" height=\"11px\" style='margin-top:4px;float:left;' /><span id='"+asset.inode+"-LangSPAN'>&nbsp;("+asset.languageCode+ "_" +asset.countryCode+")</span>":"";
                 if(asset.type == 'file_asset'){
-                var html =  '<tr id="' + asset.inode + '-TR">\n' +
-                            '   <td class="nameTD" id="' + asset.inode + '-NameTD">' +
-                                    '<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
-                                    '<span class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
-                                    '&nbsp;<span id="' + asset.inode + '-NameSPAN" >' + name + '</span>' +
-                                    '</a>' +
-                            '   </td>\n' +
-                            '   <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
-                            '       <span id="' + asset.inode + '-ShowOnMenuSPAN"';
+                    var html =  '<tr id="' + asset.inode + '-TR">\n' +
+                        '   <td class="nameTD" id="' + asset.inode + '-NameTD">' +
+                        '<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
+                        '<span class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
+                        '&nbsp;<span id="' + asset.inode + '-NameSPAN" >' + name + '</span>' +
+                        '</a>' +
+                        '   </td>\n' +
+                        '   <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
+                        '       <span id="' + asset.inode + '-ShowOnMenuSPAN"';
                 }else{
                     var html =  '<tr id="' + asset.inode + '-TR">\n' +
-                    '   <td class="nameTD" id="' + asset.inode + '-NameTD">' +
-                            '<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
-                            '<span class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
-                            '&nbsp;<span id="' + asset.inode + '-NameSPAN" >' + name + '</span>' +
-                            '</a>' +
-                    '   </td>\n' +
-                    '   <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
-                    '       <span id="' + asset.inode + '-ShowOnMenuSPAN"';
+                        '   <td class="nameTD" id="' + asset.inode + '-NameTD">' +
+                        '<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
+                        '<span class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
+                        '&nbsp;<span id="' + asset.inode + '-NameSPAN" >' + name + '</span>' +
+                        '</a>' +
+                        '   </td>\n' +
+                        '   <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
+                        '       <span id="' + asset.inode + '-ShowOnMenuSPAN"';
                 }
-                            
-                            
+
+
                 if (asset.showOnMenu || asset.showOnMenu == 'true') {
                     html = html + '>';
                 }
@@ -910,37 +910,37 @@ dojo.require("dotcms.dojo.push.PushHandler");
                     html = html + ' style= "color: #C6C7C8;">';
                 }
                 html = html + order + '</span>\n' +
-                            '   </td>\n' +
-                            '   <td class="statusTD" id="' + asset.inode + '-StatusTD">\n' +
-                            getStatusHTML (asset) +
-                            '   </td>\n' +
-                            '   <td style="padding:0px" class="descriptionTD" id="' + asset.inode + '-DescriptionTD">' +
-                                    '<table style="width:100%;">' +
-                                            '<tr style="height:15px">' +
-                                            '<td style="padding:0px; border-top:0px; width:60px;">'+ languageHTML +
-                                            '</td>' +
-                                            '<td style="text-align:left; border-top:0px">'+title+'</td>' +
-                                        ' </tr>' +
-                                    '</table>' + 
-                                '</td>\n' +
-                            '   <td class="modUserTD" id="' + asset.inode + '-ModUserTD">' + modUserName + '</td>\n' +
-                            '   <td class="modDateTD" id="' + asset.inode + '-ModDateTD">' + assetPrettyDate + '</td>\n' +
-                            '</tr>\n';
+                    '   </td>\n' +
+                    '   <td class="statusTD" id="' + asset.inode + '-StatusTD">\n' +
+                    getStatusHTML (asset) +
+                    '   </td>\n' +
+                    '   <td style="padding:0px" class="descriptionTD" id="' + asset.inode + '-DescriptionTD">' +
+                    '<table style="width:100%;">' +
+                    '<tr style="height:15px">' +
+                    '<td style="padding:0px; border-top:0px; width:60px;">'+ languageHTML +
+                    '</td>' +
+                    '<td style="text-align:left; border-top:0px">'+title+'</td>' +
+                    ' </tr>' +
+                    '</table>' +
+                    '</td>\n' +
+                    '   <td class="modUserTD" id="' + asset.inode + '-ModUserTD">' + modUserName + '</td>\n' +
+                    '   <td class="modDateTD" id="' + asset.inode + '-ModDateTD">' + assetPrettyDate + '</td>\n' +
+                    '</tr>\n';
 
-                 new Insertion.Bottom('assetListBody', html);
+                new Insertion.Bottom('assetListBody', html);
 
-                 //Attaching events
-                 Event.observe(asset.inode + '-DIV', 'mouseup', contentNameDIVClicked);
-                 Event.observe(asset.inode + '-ShowOnMenuSPAN', 'click', contentShowOnMenuClicked);
-                 Event.observe(asset.inode + '-TR', 'mouseup', contentTRMouseUp);
-                 Event.observe(asset.inode + '-TR', 'dblclick', contentTRDoubleClicked);
-                 Event.observe(asset.inode + '-TR', 'mouseout', mouseOutContent);
-                 Event.observe(asset.inode + '-TR', 'mouseover', mouseOverContent);
+                //Attaching events
+                Event.observe(asset.inode + '-DIV', 'mouseup', contentNameDIVClicked);
+                Event.observe(asset.inode + '-ShowOnMenuSPAN', 'click', contentShowOnMenuClicked);
+                Event.observe(asset.inode + '-TR', 'mouseup', contentTRMouseUp);
+                Event.observe(asset.inode + '-TR', 'dblclick', contentTRDoubleClicked);
+                Event.observe(asset.inode + '-TR', 'mouseout', mouseOutContent);
+                Event.observe(asset.inode + '-TR', 'mouseover', mouseOverContent);
 
-                 if((!asset.live && write) || (asset.live && publish)) {
+                if((!asset.live && write) || (asset.live && publish)) {
                     var draggable = new Draggable(asset.inode + '-DIV', { ghosting:true, revert:true, zindex: 1000 });
                     contentDraggables[contentDraggables.length] = draggable;
-                 }
+                }
             }
         }
 
@@ -952,12 +952,12 @@ dojo.require("dotcms.dojo.push.PushHandler");
             var signIMG = shimIMG;
         }
         try{
-          $(selectedFolder + '-TreeSignIMG').className = signIMG;
+            $(selectedFolder + '-TreeSignIMG').className = signIMG;
         }catch(e){}
         renderAddNewDropDownButton(activeHost, selectedFolder, referer);
-     }
+    }
 
-     function getStatusHTML (asset) {
+    function getStatusHTML (asset) {
         var html =  '<table class="browserTableStatus"><tr>';
 
         if(!asset.live && asset.working) {
@@ -981,9 +981,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
 
         html += "</tr></table>";
         return html;
-     }
+    }
 
-     function getPrettyDate (date) {
+    function getPrettyDate (date) {
 
         var localOffset = date.getTimezoneOffset();
         <%
@@ -1021,9 +1021,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
         str += ':'+minutes+':'+seconds+ ' ' + ampm;
 
         return str;
-     }
+    }
 
-     function treeFolderSignSelected(inode, e) {
+    function treeFolderSignSelected(inode, e) {
         if(openFolders.contains(inode)) {
             var signImgId = inode + '-TreeSignIMG';
 
@@ -1035,14 +1035,14 @@ dojo.require("dotcms.dojo.push.PushHandler");
             BrowserAjax.closeFolderTree(inode, function (data) { } );
         } else {
             if(inode!=activeHost){
-              var imgId = inode + '-TreeFolderIMG';
-              $(imgId).className = folderAniIMG;
-              BrowserAjax.openFolderTree (inode, function (data) { openTreeFolderCallBack(inode, data); } );
+                var imgId = inode + '-TreeFolderIMG';
+                $(imgId).className = folderAniIMG;
+                BrowserAjax.openFolderTree (inode, function (data) { openTreeFolderCallBack(inode, data); } );
             }
         }
-     }
+    }
 
-     function openTreeFolderCallBack (parent, data) {
+    function openTreeFolderCallBack (parent, data) {
         var signImgId = parent + '-TreeSignIMG';
         var imgId = parent + '-TreeFolderIMG';
 
@@ -1062,13 +1062,13 @@ dojo.require("dotcms.dojo.push.PushHandler");
         }
 
         openFolders.add(parent);
-     }
+    }
 
 
-     // ----------------------------------------------
-     //Content Section Actions
+    // ----------------------------------------------
+    //Content Section Actions
 
-     function openFolder (inode, e) {
+    function openFolder (inode, e) {
         var folder = inodes[inode];
         if (!openFolders.contains(folder.parent)) {
             var imgId = folder.parent + '-TreeFolderIMG';
@@ -1081,9 +1081,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
             BrowserAjax.openFolderTree (folder.parent, params);
         }
         treeFolderSelected(inode);
-     }
+    }
 
-     function reloadContent () {
+    function reloadContent () {
         //Emptying the assets rigth hand side listing
         cleanContentSide();
 
@@ -1091,9 +1091,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
         Element.show('loadingContentListing');
 
         BrowserAjax.openFolderContent (selectedFolder, '', showArchived, selectedLang, selectFolderContentCallBack);
-     }
+    }
 
-     function changeContentSort (sortField) {
+    function changeContentSort (sortField) {
         if (selectedFolder != null && selectedFolder != '' && isInodeSet(selectedFolder)) {
             //Emptying the assets rigth hand side listing
             cleanContentSide();
@@ -1102,10 +1102,10 @@ dojo.require("dotcms.dojo.push.PushHandler");
             Element.show('loadingContentListing');
 
             BrowserAjax.openFolderContent (selectedFolder, sortField, showArchived, selectedLang, selectFolderContentCallBack);
-         }
-     }
+        }
+    }
 
-     function blurChangeNameTextField(e) {
+    function blurChangeNameTextField(e) {
         var target = Event.element (e);
         if (e.explicitOriginalTarget)
             target = e.explicitOriginalTarget;
@@ -1116,9 +1116,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
             executeChangeName();
         }
         return false;
-     }
+    }
 
-     function enableChangeContentName (inode) {
+    function enableChangeContentName (inode) {
         if (changingNameTo != inode && !dragging && !doubleClicked) {
             showDebugMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Enabling-name-edit-on")) %>: ' + changingNameTo);
             executeChangeName (changingNameTo);
@@ -1157,9 +1157,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
         }
         if(!dragging && !doubleClicked)
             changingNameTo = inode;
-     }
+    }
 
-     function executeChangeName () {
+    function executeChangeName () {
         showDebugMessage('executeChangeName: ' + changingNameTo);
         if (changingNameTo != null) {
 
@@ -1200,9 +1200,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
 
             changingNameTo = null;
         }
-     }
+    }
 
-     function cancelChangeName () {
+    function cancelChangeName () {
         var fullName = "";
         if (changingNameExt == null || changingNameExt == "")
             fullName = shortenString(lastName, 30) + "";
@@ -1215,9 +1215,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
             Element.update(changingNameTo + '-TreeFolderName', fullName);
 
         changingNameTo = null;
-     }
+    }
 
-     function executeChangeNameCallBack (data) {
+    function executeChangeNameCallBack (data) {
 
         var inode = data.inode;
         var lastName = data.lastName;
@@ -1234,13 +1234,13 @@ dojo.require("dotcms.dojo.push.PushHandler");
             else
                 fullName = shortenString(newName, 30) + "." + ext;
             showDotCMSSystemMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Name-changed")) %>");
-            
+
             //Emptying the assets rigth hand side listing
             cleanContentSide();
 
             //Showing the loading message
             Element.show('loadingContentListing');
-            
+
             setTimeout('reloadContent()',1000);
             if(data.assetType == "folder"){
                 setTimeout(function(){
@@ -1250,16 +1250,16 @@ dojo.require("dotcms.dojo.push.PushHandler");
         } else {
             var asset = inodes[inode];
             if (asset.type == 'folder') {
-                    inodes[inode].name = lastName;
+                inodes[inode].name = lastName;
             }
             if (asset.type == 'file_asset') {
-                    inodes[inode].fileName = lastName + "." + ext;
+                inodes[inode].fileName = lastName + "." + ext;
             }
             if (asset.type == 'links') {
-                    inodes[inode].title = lastName;
+                inodes[inode].title = lastName;
             }
             if (asset.type == 'htmlpage') {
-                    inodes[inode].pageUrl = lastName + "." + ext;
+                inodes[inode].pageUrl = lastName + "." + ext;
             }
             if (ext == null || ext == "")
                 fullName = shortenString(lastName, 30) + "";
@@ -1268,10 +1268,10 @@ dojo.require("dotcms.dojo.push.PushHandler");
             showDotCMSErrorMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Name-change-failed")) %> " + data.errorReason);
         }
 
-        
-     }
 
-     function enableChangeContentShowOnMenu (inode) {
+    }
+
+    function enableChangeContentShowOnMenu (inode) {
         if (changingShowOnMenuTo != inode) {
             executeChangeShowOnMenu (changingShowOnMenuTo);
             var currentValue = $(inode + '-ShowOnMenuSPAN').innerHTML.replace(/\s/g,'').replace(/&nbsp;/g,'');
@@ -1288,20 +1288,20 @@ dojo.require("dotcms.dojo.push.PushHandler");
         }
         changingShowOnMenuTo = inode;
         showDebugMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Enabling-show-on-menu-edit-on")) %>: ' + inode);
-     }
+    }
 
-     function cancelChangeContentShowOnMenu () {
+    function cancelChangeContentShowOnMenu () {
 
         if ($(changingShowOnMenuTo + '-ShowOnMenuSPAN') != null) {
             var value = lastShowOnMenu;
             if (value == '') value = '&nbsp;&nbsp;&nbsp;';
             $(changingShowOnMenuTo + '-ShowOnMenuSPAN').innerHTML = value;
-         }
+        }
 
         changingShowOnMenuTo = null;
-     }
+    }
 
-     function executeChangeShowOnMenu () {
+    function executeChangeShowOnMenu () {
         if (changingShowOnMenuTo != null) {
             var rawNewValue = $(changingShowOnMenuTo + '-ShowOnMenuText').value.replace(/\s/g,'');
             var newValue = rawNewValue;
@@ -1328,9 +1328,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
             changingShowOnMenuTo = null;
         }
         lastShowOnMenu = null;
-     }
+    }
 
-     function executeChangeShowOnMenuCallBack (data) {
+    function executeChangeShowOnMenuCallBack (data) {
 
         var inode = data.inode;
         var lastValue = data.lastName;
@@ -1347,7 +1347,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
             $(inode + '-ShowOnMenuSPAN').innerHTML = value;
         }
 
-     }
+    }
 
     function markForCut (objId, parentId, referer) {
         if ($(markedForCopy + '-TR') != null) {
@@ -1405,9 +1405,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
 
 
 
-   //---------------------------------------------------------------------------------------------------------
-   //Asset Actions
-   var inFrame=<%=(UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (boolean)request.getSession().getAttribute(WebKeys.IN_FRAME))?true:false%>;
+    //---------------------------------------------------------------------------------------------------------
+    //Asset Actions
+    var inFrame=<%=(UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (boolean)request.getSession().getAttribute(WebKeys.IN_FRAME))?true:false%>;
     //Host Actions
     function editHost(id, referer) {
         var loc ='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + id + '&referer=' + escape(referer);
@@ -1628,13 +1628,13 @@ dojo.require("dotcms.dojo.push.PushHandler");
     }
 
     /**
-    * Displays the Push Publish modal window.
-    *
-    * objId - The Identifier or inode of the object to push.
-    * referrer - The referrer page.
-    * isArchived - If true, only the "Remove" option in the Push Dialog 
-    *              will be displayed.
-    */
+     * Displays the Push Publish modal window.
+     *
+     * objId - The Identifier or inode of the object to push.
+     * referrer - The referrer page.
+     * isArchived - If true, only the "Remove" option in the Push Dialog
+     *              will be displayed.
+     */
     function remotePublish (objId, referrer, isArchived) {
         if (isArchived != undefined && isArchived != null) {
             pushHandler.showDialog(objId, false, isArchived);
@@ -1728,7 +1728,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
             showDotCMSSystemMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Page-unlocked")) %>');
         }
     }
-    
+
     function migratePage(objId, referer) {
         var loc ='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/director/direct" /><portlet:param name="cmd" value="migrate" /></portlet:actionURL>&htmlPage=' + objId + '&referer=' + referer;
         if(inFrame){
@@ -1776,20 +1776,20 @@ dojo.require("dotcms.dojo.push.PushHandler");
         refererVar = referer;
         var callbackArg1 = {isMultiple:isMultiple};
         var callMetaData = {
-                  callback:getFolderMapCallback,
-                  arg:callbackArg1
-                };
+            callback:getFolderMapCallback,
+            arg:callbackArg1
+        };
         BrowserAjax.getFolderMap(parentId,callMetaData);
     }
 
     function getFolderMapCallback(data,arg){
-          var folderMap = data;
-          var callbackArg2 = {isMultiple:arg.isMultiple, folderMap:folderMap};
-          var callMetaData = {
-                  callback:getStructureDetailsCallback,
-                  arg:callbackArg2
-                };
-          StructureAjax.getStructureDetails(data.defaultFileType, callMetaData);
+        var folderMap = data;
+        var callbackArg2 = {isMultiple:arg.isMultiple, folderMap:folderMap};
+        var callMetaData = {
+            callback:getStructureDetailsCallback,
+            arg:callbackArg2
+        };
+        StructureAjax.getStructureDetails(data.defaultFileType, callMetaData);
     }
 
     function getStructureDetailsCallback(data, arg){
@@ -1821,13 +1821,13 @@ dojo.require("dotcms.dojo.push.PushHandler");
     function getFileAssetDialogHtml(folderMap, fileAssetTypeMap){
 
         return "<div>"+
-                "<div style='margin:8px 5px;'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "select.the.type.of.fileasset.you.wish.to.upload")) %>:</div>" +
-                "<span dojoType='dotcms.dojo.data.StructureReadStore' jsId='fileAssetStructureStore' dojoId='fileAssetStructureStoreDojo' structureType='<%=Structure.STRUCTURE_TYPE_FILEASSET %>'></span>"+
-                "<select id='defaultFileType' name='defaultFileType' dojoType='dijit.form.FilteringSelect' style='width:200px;' store='fileAssetStructureStore' searchDelay='300' pageSize='15' autoComplete='false' ignoreCase='true' labelAttr='name' searchAttr='name'  value='${stInode}' invalidMessage='<%=LanguageUtil.get(pageContext, "Invalid-option-selected")%>'></select>"+
-                "<button dojoType='dijit.form.Button' iconClass='addIcon' id='selectedFileAssetButton' onclick='getSelectedfileAsset(\"${folderInode}\",${isMultiple});'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "modes.Select")) %></button>" +
-                "</div>";
+            "<div style='margin:8px 5px;'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "select.the.type.of.fileasset.you.wish.to.upload")) %>:</div>" +
+            "<span dojoType='dotcms.dojo.data.StructureReadStore' jsId='fileAssetStructureStore' dojoId='fileAssetStructureStoreDojo' structureType='<%=Structure.STRUCTURE_TYPE_FILEASSET %>'></span>"+
+            "<select id='defaultFileType' name='defaultFileType' dojoType='dijit.form.FilteringSelect' style='width:200px;' store='fileAssetStructureStore' searchDelay='300' pageSize='15' autoComplete='false' ignoreCase='true' labelAttr='name' searchAttr='name'  value='${stInode}' invalidMessage='<%=LanguageUtil.get(pageContext, "Invalid-option-selected")%>'></select>"+
+            "<button dojoType='dijit.form.Button' iconClass='addIcon' id='selectedFileAssetButton' onclick='getSelectedfileAsset(\"${folderInode}\",${isMultiple});'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "modes.Select")) %></button>" +
+            "</div>";
     }
-    
+
     function showPageAssetPopUp(folderMap){
         hidePopUp('context_menu_popup_'+folderMap.inode);
         var faDialog = dijit.byId("addPageAssetDialog");
@@ -1853,25 +1853,25 @@ dojo.require("dotcms.dojo.push.PushHandler");
         pageAssetDialog.attr("content", dialogHtml);
         pageAssetDialog.show();
     }
-    
+
     function getHTMLPageAssetDialogHtml(){
 
         return "<div>"+
-                "<div style='margin:8px 5px;'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "select.the.type.of.htmlpage.you.wish.to.upload")) %>:</div>" +
-                "<span dojoType='dotcms.dojo.data.StructureReadStore' jsId='pageAssetStructureStore' dojoId='pageAssetStructureStoreDojo' structureType='<%=Structure.STRUCTURE_TYPE_HTMLPAGE %>'></span>"+
-                "<div class='inline-form'>"+
-                "<select id='defaultPageType' name='defaultPageType' dojoType='dijit.form.FilteringSelect' style='width:200px;' store='pageAssetStructureStore' searchDelay='300' pageSize='15' autoComplete='false' ignoreCase='true' labelAttr='name' searchAttr='name'  value='${stInode}' invalidMessage='<%=LanguageUtil.get(pageContext, "Invalid-option-selected")%>'></select>"+
-                "<button dojoType='dijit.form.Button' iconClass='addIcon' id='selectedPageAssetButton' onclick='getSelectedpageAsset(\"${folderInode}\");'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "modes.Select")) %></button>" +
-                "</div>"+
-                "</div>";
+            "<div style='margin:8px 5px;'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "select.the.type.of.htmlpage.you.wish.to.upload")) %>:</div>" +
+            "<span dojoType='dotcms.dojo.data.StructureReadStore' jsId='pageAssetStructureStore' dojoId='pageAssetStructureStoreDojo' structureType='<%=Structure.STRUCTURE_TYPE_HTMLPAGE %>'></span>"+
+            "<div class='inline-form'>"+
+            "<select id='defaultPageType' name='defaultPageType' dojoType='dijit.form.FilteringSelect' style='width:200px;' store='pageAssetStructureStore' searchDelay='300' pageSize='15' autoComplete='false' ignoreCase='true' labelAttr='name' searchAttr='name'  value='${stInode}' invalidMessage='<%=LanguageUtil.get(pageContext, "Invalid-option-selected")%>'></select>"+
+            "<button dojoType='dijit.form.Button' iconClass='addIcon' id='selectedPageAssetButton' onclick='getSelectedpageAsset(\"${folderInode}\");'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "modes.Select")) %></button>" +
+            "</div>"+
+            "</div>";
     }
-    
+
     function getSelectedpageAsset(folderInode) {
         var selected = dijit.byId('defaultPageType');
         if(!selected){
             showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Please-select-a-valid-htmlpage-asset-type")) %>');
         }
-        
+
         var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + selected +'&folder='+folderInode+'&referer=' + escape(refererVar);
         if(inFrame){
             window.location = loc;
@@ -1945,7 +1945,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
             top.location = loc;
         }
     }
-    
+
     function editHTMLPageAsset (contInode,structureInode){
         var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&selectedStructure=' + structureInode + '&inode=' + contInode + '&referer=' + referer;
         if(inFrame){
@@ -1955,7 +1955,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
         }
     }
     function previewHTMLPageAsset(id,referer) {
-        
+
     }
 
     function publishFile (objId, referer) {
@@ -2098,7 +2098,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
         }
     }
 
-//### DELETE METHODS ###
+    //### DELETE METHODS ###
     //File
     function deleteFile(objId, referer) {
         if(confirm("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-delete-this-file-this-cannot-be-undone")) %>"))
@@ -2144,14 +2144,14 @@ dojo.require("dotcms.dojo.push.PushHandler");
     {
         var dataFromBrowser = {"objId":objId,"referer":referer};
 
-        var callMetaData = { 
-          callback:deleteHTMLPagePreCheckCallback, 
-          arg: dataFromBrowser
+        var callMetaData = {
+            callback:deleteHTMLPagePreCheckCallback,
+            arg: dataFromBrowser
         };
 
         BrowserAjax.deleteHTMLPagePreCheck(objId, callMetaData);
     }
-    
+
     function deleteHTMLPagePreCheckCallback (response, dataFromBrowser)
     {
         if (!response) {
@@ -2181,7 +2181,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
             showDotCMSSystemMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Link-deleted")) %>');
         }
     }
-//### END DELETE METHODS ###
+    //### END DELETE METHODS ###
 
 
     //link action
@@ -2320,23 +2320,23 @@ dojo.require("dotcms.dojo.push.PushHandler");
 
     //--------------------------------------------------------------
 
-     //Utility funcs
+    //Utility funcs
 
-     function getInodeFromID (id) {
+    function getInodeFromID (id) {
         // To return inode of type UUID
         if((id.length > 36)
-                && (id.charAt(8) == '-')
-                && (id.charAt(13) == '-')
-                && (id.charAt(18) == '-')
-                && (id.charAt(23) == '-')
-                && (id.charAt(36) == '-')){
+            && (id.charAt(8) == '-')
+            && (id.charAt(13) == '-')
+            && (id.charAt(18) == '-')
+            && (id.charAt(23) == '-')
+            && (id.charAt(36) == '-')){
             return  id.substring(0, 36);
         }else{// To return inode of type long
             return id.substring(0, id.indexOf('-'));
         }
-     }
+    }
 
-     Array.prototype.remove = function (element) {
+    Array.prototype.remove = function (element) {
         var result = false;
         var array = [];
         for (var i = 0; i < this.length; i++) {
@@ -2354,19 +2354,19 @@ dojo.require("dotcms.dojo.push.PushHandler");
         return result;
     };
 
-     Array.prototype.add = function (element) {
+    Array.prototype.add = function (element) {
         this[this.length] = element;
-     };
+    };
 
-     Array.prototype.contains = function (value) {
+    Array.prototype.contains = function (value) {
         for (var i = 0; i < this.length; i++) {
             if (this[i] == value)
                 return true;
         }
         return false;
-     };
+    };
 
-     function removeClass (id, className) {
+    function removeClass (id, className) {
         var actualClassName = "";
         if($(id))
             actualClassName = $(id).className;
@@ -2378,34 +2378,34 @@ dojo.require("dotcms.dojo.push.PushHandler");
                 newClassName += actualClassName.substring(actualClassName.indexOf(className) + className.length, actualClassName.length);
             $(id).className = newClassName;
         }
-     }
+    }
 
-     function addClass (id, className) {
+    function addClass (id, className) {
         if (!hasClass (id, className)) {
             var actualClassName = "";
             if($(id)){
                 actualClassName = $(id).className;
                 $(id).className = actualClassName + ' ' + className;
             }
-         }
-     }
+        }
+    }
 
-     function hasClass (id, className) {
-         var actualClassName = "";
-            if($(id))
-                actualClassName = $(id).className;
+    function hasClass (id, className) {
+        var actualClassName = "";
+        if($(id))
+            actualClassName = $(id).className;
         if (actualClassName.indexOf(className) > -1)
             return true;
         return false;
-     }
+    }
 
-     document.oncontextmenu=nothing;
+    document.oncontextmenu=nothing;
 
-     if (document.all) {
+    if (document.all) {
         document.onmousedown=nothing;
-     } else if (document.getElementById) {
+    } else if (document.getElementById) {
         document.onmouseup=nothing;
-     }
+    }
 
     function hasReadPermissions (permissions) {
         return permissions.contains("<%= PermissionAPI.PERMISSION_READ  %>");
@@ -2445,26 +2445,26 @@ dojo.require("dotcms.dojo.push.PushHandler");
             output = '';
         }
         if (output.length > size) {
-        output = output.substring(0, (size - 3)) + '...';
+            output = output.substring(0, (size - 3)) + '...';
         }
         return output;
     }
 
-     function showMessage (msg) {
+    function showMessage (msg) {
         if($('dotCMSMessages') != null)
             Element.hide('dotCMSMessages');
         Element.update('messageBox', msg);
         Element.hide('errorsTable');
         Element.show('messagesTable');
-     }
+    }
 
-     function showError (msg) {
+    function showError (msg) {
         if($('dotCMSMessages') != null)
             Element.hide('dotCMSMessages');
         Element.update('errorBox', msg);
         Element.hide('messagesTable');
         Element.show('errorsTable');
-     }
+    }
 
     //Debbugging
     var debugMessagesEnabled = false;

@@ -9,8 +9,8 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.dotcms.publisher.environment.business.EnvironmentAPI"%>
 <%@ page import="com.dotcms.publisher.environment.bean.Environment"%>
-<%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
+<%@ page import="com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher" %>
 
 <%	if( LicenseUtil.getLevel()<300){ %>
 <%@ include file="/html/portlet/ext/cmsconfig/publishing/not_licensed.jsp" %>
@@ -495,7 +495,7 @@ function getIntegrityResult(identifier) {
           	// Getting the fileassets data
             var fileAssetsData = data.fileassets;
             populateTabContent(fileAssetsData, "fileAssets");
-            
+
           	// Getting the roles data
             var cmsRolesData = data.cms_roles;
             populateTabContent(cmsRolesData, "cms_roles");
@@ -538,18 +538,20 @@ function populateTabContent(contentData, id) {
         dojo.empty(tabContentDiv);
     });
 
-    var htmlContent = "";
+    var htmlContent = [];
     contentData.forEach(function (checkedData) {
+
+        console.log(checkedData);
 
         var title = checkedData.title;
         var columns = checkedData.columns;
         var values = checkedData.values;
 
-        htmlContent += '<div class="yui-g portlet-toolbar"><div class="yui-u first">' +
-                '<span  style="line-height:20px;font-weight: bold;">' + title + '</span>' +
-                '</div><div class="yui-u" style="text-align:right;">'
-                + '<input type="radio" dojoType="dijit.form.RadioButton" checked="true" value="local"  name="whereToFixRadio_'+id+'" id="fixLocal_'+id+'" ><label for="fixLocal_'+id+'">&nbsp;<%= LanguageUtil.get(pageContext, "push_publish_integrity_fix_local") %></label>&nbsp;'
-                + '<input type="radio" dojoType="dijit.form.RadioButton" value="remote" name="whereToFixRadio_'+id+'" id="fixRemote_'+id+'" ><label for="fixRemote_'+id+'">&nbsp;<%= LanguageUtil.get(pageContext, "push_publish_integrity_fix_remote") %></label>&nbsp;'
+        htmlContent += '<div class="portlet-toolbar"><div class="portlet-toolbar__actions-primary">' +
+                '<h4>' + title + '</h4>' +
+                '</div><div class="portlet-toolbar__actions-secondary">'
+                + '<div class="inline-form"><div class="radio"><input type="radio" dojoType="dijit.form.RadioButton" checked="true" value="local"  name="whereToFixRadio_'+id+'" id="fixLocal_'+id+'" ><label for="fixLocal_'+id+'">&nbsp;<%= LanguageUtil.get(pageContext, "push_publish_integrity_fix_local") %></label></div>'
+                + '<div class="radio"><input type="radio" dojoType="dijit.form.RadioButton" value="remote" name="whereToFixRadio_'+id+'" id="fixRemote_'+id+'" ><label for="fixRemote_'+id+'">&nbsp;<%= LanguageUtil.get(pageContext, "push_publish_integrity_fix_remote") %></label></div></div>'
                 + '</div></div>';
 
         htmlContent += '<div style="height:250px; overflow:auto"><table class="listingTable"><tr>';
@@ -836,7 +838,7 @@ function deleteEnvPushHistory(envId) {
             var confirmDialog  =new dijit.Dialog({
                 id: "deleteHistory",
                 class: "noDijitDialogTitleBar",
-                content: "<span style=\"display:block;text-align:center\"><%= LanguageUtil.get(pageContext, "publisher_Environments_deleted_assets-history") %>.<br /><br /><button data-dojo-type=\"dijit/form/Button\" type=\"submit\" id=\"ok\"><%= LanguageUtil.get(pageContext, "ok") %></button></span>"
+                content: "<span style=\"display:block;text-align:center\"><%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "publisher_Environments_deleted_assets-history")) %>.<br /><br /><button data-dojo-type=\"dijit/form/Button\" type=\"submit\" id=\"ok\"><%= LanguageUtil.get(pageContext, "ok") %></button></span>"
             });
             confirmDialog.show();
         },
@@ -867,63 +869,63 @@ function deleteEnvPushHistory(envId) {
 </div>
 
 <table  class="listingTable">
-    <tr>
+        <tr>
         <th colspan="2" nowrap="nowrap">
-            <%= LanguageUtil.get(pageContext, "publisher_Environment_Name") %>
-        </th>
-        <th nowrap="nowrap" width="100%" >
-            <%= LanguageUtil.get(pageContext, "Servers") %>
-        </th>
-        <th nowrap="nowrap">
-            <%= LanguageUtil.get(pageContext, "publisher_Environment_Push_Mode") %>
-        </th>
-        <th nowrap="nowrap">
-            <%= LanguageUtil.get(pageContext, "Actions") %>
-        </th>
-    </tr>
+                <%= LanguageUtil.get(pageContext, "publisher_Environment_Name") %>
+            </th>
+            <th nowrap="nowrap" width="100%" >
+                <%= LanguageUtil.get(pageContext, "publisher_Endpoints") %>
+            </th>
+            <th nowrap="nowrap">
+                <%= LanguageUtil.get(pageContext, "publisher_Environment_Push_Mode") %>
+            </th>
+            <th nowrap="nowrap">
+                <%= LanguageUtil.get(pageContext, "Actions") %>
+            </th>
+        </tr>
 
-    <%
-        boolean hasEnvironments = false;
-        for(Environment environment : environments){
-            hasEnvironments=true;%>
+        <%
+            boolean hasEnvironments = false;
+            for(Environment environment : environments){
+                hasEnvironments=true;%>
 
     <tr>
         <td class="listingTable__actions">
-            <a style="cursor: pointer" onclick="deleteEnvironment('<%=environment.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Environment") %>">
-                <span class="deleteIcon"></span></a>&nbsp;
-            <a style="cursor: pointer" onclick="goToEditEnvironment('<%=environment.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Environment_Title") %>">
-                <span class="editIcon"></span></a>
-        </td>
-        <td valign="top" nowrap="nowrap" style="cursor: pointer" onclick="goToEditEnvironment('<%=environment.getId()%>')">
-            <b><%=environment.getName()%></b>
-        </td>
+                <a style="cursor: pointer" onclick="deleteEnvironment('<%=environment.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Environment") %>">
+                    <span class="deleteIcon"></span></a>&nbsp;
+                <a style="cursor: pointer" onclick="goToEditEnvironment('<%=environment.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Environment_Title") %>">
+                    <span class="editIcon"></span></a>
+            </td>
+            <td valign="top" nowrap="nowrap" style="cursor: pointer" onclick="goToEditEnvironment('<%=environment.getId()%>')">
+                <b><%=environment.getName()%></b>
+            </td>
         <td valign="top">
 
-            <%
-                List<PublishingEndPoint> environmentEndPoints = pepAPI.findSendingEndPointsByEnvironment(environment.getId());
-                boolean hasRow = false;
-                int i = 0;
-                for(PublishingEndPoint endpoint : environmentEndPoints){
-                    if(endpoint.isSending()){
-                        continue;
-                    }
-                    hasRow=true;%>
+                <%
+                    List<PublishingEndPoint> environmentEndPoints = pepAPI.findSendingEndPointsByEnvironment(environment.getId());
+                    boolean hasRow = false;
+                    int i = 0;
+                    for(PublishingEndPoint endpoint : environmentEndPoints){
+                        if(endpoint.isSending()){
+                            continue;
+                        }
+                        hasRow=true;%>
                 <div style="padding:10px 8px; margin: -10px 0; border-left:1px solid #ECEDEE;border-right:1px solid #ECEDEE;">
                     <div class="buttonsGroup">
 
-                        <%if(environment.getPushToAll() || i == 0){%>
+                        <%if((environment.getPushToAll() || i == 0) && !"awss3".equalsIgnoreCase(endpoint.getProtocol())){%>
                         <div class="integrityCheckActionsGroup" style="float:right; display:inline-flex;" id="group-<%=endpoint.getId()%>">
-                            <button dojoType="dijit.form.Button" onClick="checkIntegrity('<%=endpoint.getId()%>');" id="checkIntegrityButton<%=endpoint.getId()%>" iconClass="dropIcon" style="display: none;">
+                            <button dojoType="dijit.form.Button" onClick="checkIntegrity('<%=endpoint.getId()%>');" id="checkIntegrityButton<%=endpoint.getId()%>" style="display: none;">
                                 <%= LanguageUtil.get( pageContext, "CheckIntegrity" ) %>
                             </button>
-                            <button dojoType="dijit.form.Button" onClick="getIntegrityResult('<%=endpoint.getId()%>');" id="getIntegrityResultsButton<%=endpoint.getId()%>" iconClass="exclamation" style="display: none;">
+                            <button dojoType="dijit.form.Button" onClick="getIntegrityResult('<%=endpoint.getId()%>');" id="getIntegrityResultsButton<%=endpoint.getId()%>" style="display: none;">
                                 <%= LanguageUtil.get( pageContext, "Preview-Analysis-Results" ) %>
                             </button>
                             <div id="loadingContent<%=endpoint.getId()%>" class="loadingIntegrityCheck" align="center" style="display: none;">
                                 <font class="bg" size="2"> <b><%= LanguageUtil.get( pageContext, "Loading" ) %></b> <br />
                                     <img src="/html/images/icons/processing.gif" /></font>
                             </div>
-                            <button dojoType="dijit.form.Button" onClick="cancelIntegrityCheck('<%=endpoint.getId()%>');" id="cancelCheckIntegrityButton<%=endpoint.getId()%>" iconClass="stopIcon" style="margin-left:10px; display:none;">
+                            <button dojoType="dijit.form.Button" onClick="cancelIntegrityCheck('<%=endpoint.getId()%>');" id="cancelCheckIntegrityButton<%=endpoint.getId()%>" style="margin-left:10px; display:none;">
                                 <%= LanguageUtil.get( pageContext, "cancel" ) %>
                             </button>
                             <button dojoType="dijit.form.Button" onclick="deleteEndpoint('<%=endpoint.getId()%>', true)" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>" iconClass="deleteIcon" class="dijitButtonDanger" style="margin-left: 8px">
@@ -941,48 +943,76 @@ function deleteEnvPushHistory(envId) {
                         </div>
                         <div>
                             <%=("https".equals(endpoint.getProtocol())) ? "<span class='encryptIcon'></span>": "<span class='shimIcon'></span>" %>
-                            <i style="color:#888;"><%=endpoint.getProtocol()%>://<%=endpoint.getAddress()%>:<%=endpoint.getPort()%></i>
+                            <%if (!"awss3".equalsIgnoreCase(endpoint.getProtocol())){%>
+                            	<i style="color:#888;"><%=endpoint.getProtocol()%>://<%=endpoint.getAddress()%>:<%=endpoint.getPort()%></i>
+	                        <%} else {
+	                        	String endpointString = "aws-s3";
+								try {
+									java.util.Properties props = new java.util.Properties();
+									props.load(
+										new java.io.StringReader(
+											com.dotmarketing.cms.factories.PublicEncryptionFactory.decryptString(
+												endpoint.getAuthKey().toString()
+											)
+										)
+									);
+
+									String bucketID = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_BUCKET_ID);
+									if (com.dotmarketing.util.UtilMethods.isSet(bucketID)) {
+
+										endpointString += "://" + bucketID;
+
+										String bucketPrefix = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_BUCKET_ROOT_PREFIX);
+										if (com.dotmarketing.util.UtilMethods.isSet(bucketPrefix)) {
+
+											endpointString += "/" + bucketPrefix;
+										}
+									}
+								} catch (Exception ex) {}
+	                		%>
+                            	<i style="color:#888;"><%=endpointString%></i>
+	                        <%}%>
                         </div>
                     </div>
                 </div>
-            <%
-                    i++;
-                }%>
+                <%
+                        i++;
+                    }%>
 
-            <%if(!hasRow){ %>
-            <div  style="padding:5px;">
-                <%= LanguageUtil.get(pageContext, "publisher_No_Servers") %> <a style="text-decoration: underline;" href="javascript:goToAddEndpoint('<%=environment.getId()%>', 'false');"><%= LanguageUtil.get(pageContext, "publisher_add_one_now") %></a>
-            </div>
-            <%}%>
+                <%if(!hasRow){ %>
+                <div  style="padding:5px;">
+                    <%= LanguageUtil.get(pageContext, "publisher_No_Servers") %> <a style="text-decoration: underline;" href="javascript:goToAddEndpoint('<%=environment.getId()%>', 'false');"><%= LanguageUtil.get(pageContext, "publisher_add_one_now") %></a>
+                </div>
+                <%}%>
 
-        </td>
-        <td align="center" valign="top" nowrap="nowrap">
-            <%if(environment.getPushToAll()){%>
-            <%= LanguageUtil.get(pageContext, "publisher_Environments_Push_To_All") %>
-            <%}else{ %>
-            <%= LanguageUtil.get(pageContext, "publisher_Environments_Push_To_One") %>
-            <%} %>
-        </td>
+            </td>
+            <td align="center" valign="top" nowrap="nowrap">
+                <%if(environment.getPushToAll()){%>
+                <%= LanguageUtil.get(pageContext, "publisher_Environments_Push_To_All") %>
+                <%}else{ %>
+                <%= LanguageUtil.get(pageContext, "publisher_Environments_Push_To_One") %>
+                <%} %>
+            </td>
         <td valign="top" nowrap="nowrap" style=" border-left:1px solid #ECEDEE">
             <button dojoType="dijit.form.Button" onClick="goToAddEndpoint('<%=environment.getId()%>', 'false');">
-                <%= LanguageUtil.get(pageContext, "publisher_Add_Endpoint") %>
-            </button>
+                    <%= LanguageUtil.get(pageContext, "publisher_Add_Endpoint") %>
+                </button>
             <button dojoType="dijit.form.Button" onClick="deleteEnvPushHistory('<%=environment.getId()%>');" class="dijitButtonFlat">
-                <%= LanguageUtil.get(pageContext, "publisher_delete_asset_history") %>
-            </button>
-        </td>
+                    <%= LanguageUtil.get(pageContext, "publisher_delete_asset_history") %>
+                </button>
+            </td>
 
-    </tr>
+        </tr>
 
-    <%}%>
+        <%}%>
 
-    <%if(!hasEnvironments){ %>
-    <tr>
-        <td colspan="100" align="center">
-            <%= LanguageUtil.get(pageContext, "publisher_no_environments") %><a href="javascript:goToAddEnvironment();"> <%= LanguageUtil.get(pageContext, "publisher_add_one_now") %></a>
-        </td>
-    </tr>
-    <%}%>
+        <%if(!hasEnvironments){ %>
+        <tr>
+            <td colspan="100" align="center">
+                <%= LanguageUtil.get(pageContext, "publisher_no_environments") %><a href="javascript:goToAddEnvironment();"> <%= LanguageUtil.get(pageContext, "publisher_add_one_now") %></a>
+            </td>
+        </tr>
+        <%}%>
 
 </table>
 
@@ -999,52 +1029,52 @@ function deleteEnvPushHistory(envId) {
     </div>
     <div class="portlet-toolbar__actions-primary">
         <button dojoType="dijit.form.Button" onClick="goToAddEndpoint(null, 'true');" iconClass="plusIcon">
-            <%= LanguageUtil.get(pageContext, "publisher_Add_Endpoint") %>
+            <%= LanguageUtil.get(pageContext, "publisher_Add_Server") %>
         </button>
     </div>
 </div>
 
 <table class="listingTable">
-    <tr>
-        <th style="width:40px"></th>
-        <th><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Server_Name") %></th>
+        <tr>
+            <th style="width:40px"></th>
+            <th><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Server_Name") %></th>
 
-    </tr>
-    <%
-        boolean hasRow = false;
-        for(PublishingEndPoint endpoint : endpoints){
-            if(!endpoint.isSending()){
-                continue;
-            }
-            hasRow=true;%>
-    <tr <%=(!endpoint.isEnabled()?" style='color:silver;'":"")%>>
+        </tr>
+        <%
+            boolean hasRow = false;
+            for(PublishingEndPoint endpoint : endpoints){
+                if(!endpoint.isSending()){
+                    continue;
+                }
+                hasRow=true;%>
+        <tr <%=(!endpoint.isEnabled()?" style='color:silver;'":"")%>>
         <td class="listingTable__actions">
-            <a style="cursor: pointer" onclick="deleteEndpoint('<%=endpoint.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>">
-                <span class="deleteIcon"></span></a>&nbsp;
-            <a style="cursor: pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>', null, 'true')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Endpoint_Title") %>">
-                <span class="editIcon"></span></a>
-        </td>
+                <a style="cursor: pointer" onclick="deleteEndpoint('<%=endpoint.getId()%>')" title="<%= LanguageUtil.get(pageContext, "publisher_Delete_Endpoint_Title") %>">
+                    <span class="deleteIcon"></span></a>&nbsp;
+                <a style="cursor: pointer" onclick="goToEditEndpoint('<%=endpoint.getId()%>', null, 'true')" title="<%= LanguageUtil.get(pageContext, "publisher_Edit_Endpoint_Title") %>">
+                    <span class="editIcon"></span></a>
+            </td>
 
-        <td style="cursor: pointer" width="100%" onclick="goToEditEndpoint('<%=endpoint.getId()%>', null, 'true')">
-            <b><%=(endpoint.isEnabled()?"<span class='liveIcon'></span>":"<span class='greyDotIcon' style='opacity:.4'></span>")%><%=endpoint.getServerName()%></b>
-            <br>
+            <td style="cursor: pointer" width="100%" onclick="goToEditEndpoint('<%=endpoint.getId()%>', null, 'true')">
+                <b><%=(endpoint.isEnabled()?"<span class='liveIcon'></span>":"<span class='greyDotIcon' style='opacity:.4'></span>")%><%=endpoint.getServerName()%></b>
+                <br>
             <i></span><%=endpoint.getAddress()%></i>
-        </td>
+            </td>
 
 
 
-    </tr>
-    <%}%>
+        </tr>
+        <%}%>
 
-    <%if(!hasRow){ %>
+        <%if(!hasRow){ %>
 
-    <tr>
-        <td colspan="100" align="center">
-            <%= LanguageUtil.get(pageContext, "publisher_no_servers_set_up") %><a href="javascript:goToAddEndpoint(null, 'true');"> <%= LanguageUtil.get(pageContext, "publisher_add_one_now") %></a>
-        </td>
+        <tr>
+            <td colspan="100" align="center">
+                <%= LanguageUtil.get(pageContext, "publisher_no_servers_set_up") %><a href="javascript:goToAddEndpoint(null, 'true');"> <%= LanguageUtil.get(pageContext, "publisher_add_one_now") %></a>
+            </td>
 
-    </tr>
-    <%}%>
+        </tr>
+        <%}%>
 </table>
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
 <%--END OF END POINTS--%>
@@ -1058,89 +1088,88 @@ function deleteEnvPushHistory(envId) {
     #structuresTab,#foldersTab,#schemesTab,#htmlPagesTab,#fileAssetsTab,#cms_rolesTab {
         height:100%;
         min-height:250px;
-        width:800px;
     }
 </style>
 <div id="integrityResultsDialog" style="width: 1120px" dojoAttachPoint="dialog" dojoType="dijit.Dialog" onCancel="closeIntegrityResultsDialog(selectedEndpointId)" title="<%= LanguageUtil.get(pageContext, "CheckIntegrity") %>">
 
     <div id="integrityResultsTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
 
-        <div id="structuresTab" style="width: 1100px" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "structures") %>" >
+        <div id="structuresTab" style="width: 1120px" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "structures") %>" >
             <div id="structuresTabContentDiv"></div>
             <div class="buttonRow">
                 <button dojoType="dijit.form.Button" id="structuresFixButton"
-                        onClick="fixConflicts(selectedEndpointId, 'structures')" iconClass="fixIcon"><%=LanguageUtil.get(pageContext,
+                        onClick="fixConflicts(selectedEndpointId, 'structures')"><%=LanguageUtil.get(pageContext,
                         "push_publish_integrity_fix_conflicts")%></button>
                 <button dojoType="dijit.form.Button" id="structuresDiscardButton"
-                        onClick="discardConflicts(selectedEndpointId, 'structures')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
+                        onClick="discardConflicts(selectedEndpointId, 'structures')" class="dijitButtonDanger" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
                         "push_publish_integrity_discard_conflicts")%></button>
-                <button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog(selectedEndpointId)" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
+                <button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="closeIntegrityResultsDialog(selectedEndpointId)"><%= LanguageUtil.get(pageContext, "close") %></button>
             </div>
         </div>
 
-        <div id="foldersTab" style="width: 1100px" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "folders") %>" >
+        <div id="foldersTab" style="width: 1120px" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "folders") %>" >
             <div id="foldersTabContentDiv" style="height:280px">No Results</div>
             <div class="buttonRow">
                 <button dojoType="dijit.form.Button" id="foldersFixButton"
-                        onClick="fixConflicts(selectedEndpointId, 'folders')" iconClass="fixIcon"><%=LanguageUtil.get(pageContext,
+                        onClick="fixConflicts(selectedEndpointId, 'folders')"><%=LanguageUtil.get(pageContext,
                         "push_publish_integrity_fix_conflicts")%></button>
                 <button dojoType="dijit.form.Button" id="foldersDiscardButton"
-                        onClick="discardConflicts(selectedEndpointId, 'folders')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
+                        onClick="discardConflicts(selectedEndpointId, 'folders')" class="dijitButtonDanger" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
                         "push_publish_integrity_discard_conflicts")%></button>
-                <button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog(selectedEndpointId)" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
+                <button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="closeIntegrityResultsDialog(selectedEndpointId)"><%= LanguageUtil.get(pageContext, "close") %></button>
             </div>
         </div>
 
-        <div id="schemesTab" style="width: 1100px" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Workflows") %>" >
+        <div id="schemesTab" style="width: 1120px" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Workflows") %>" >
             <div id="schemesTabContentDiv"></div>
             <div class="buttonRow">
                 <button dojoType="dijit.form.Button" id="schemesFixButton"
-                        onClick="fixConflicts(selectedEndpointId, 'schemes')" iconClass="fixIcon"><%=LanguageUtil.get(pageContext,
+                        onClick="fixConflicts(selectedEndpointId, 'schemes')"><%=LanguageUtil.get(pageContext,
                         "push_publish_integrity_fix_conflicts")%></button>
                 <button dojoType="dijit.form.Button" id="schemesDiscardButton"
-                        onClick="discardConflicts(selectedEndpointId, 'schemes')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
+                        onClick="discardConflicts(selectedEndpointId, 'schemes')" class="dijitButtonDanger" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
                         "push_publish_integrity_discard_conflicts")%></button>
-                <button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog(selectedEndpointId)" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
+                <button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="closeIntegrityResultsDialog(selectedEndpointId)"><%= LanguageUtil.get(pageContext, "close") %></button>
             </div>
         </div>
         
-        <div id="htmlPagesTab" style="width: 1100px" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "htmlpages") %>" >
+        <div id="htmlPagesTab" style="width: 1120px" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "htmlpages") %>" >
             <div id="htmlPagesTabContentDiv"></div>
             <div class="buttonRow">
                 <button dojoType="dijit.form.Button" id="htmlPagesFixButton"
-                        onClick="fixConflicts(selectedEndpointId, 'htmlPages')" iconClass="fixIcon"><%=LanguageUtil.get(pageContext,
+                        onClick="fixConflicts(selectedEndpointId, 'htmlPages')"><%=LanguageUtil.get(pageContext,
                         "push_publish_integrity_fix_conflicts")%></button>
                 <button dojoType="dijit.form.Button" id="htmlPagesDiscardButton"
-                        onClick="discardConflicts(selectedEndpointId, 'htmlPages')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
+                        onClick="discardConflicts(selectedEndpointId, 'htmlPages')" class="dijitButtonDanger" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
                         "push_publish_integrity_discard_conflicts")%></button>
-                <button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog(selectedEndpointId)" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
+                <button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="closeIntegrityResultsDialog(selectedEndpointId)"><%= LanguageUtil.get(pageContext, "close") %></button>
             </div>
         </div>
         
         <!-- Content File Assets Tab -->
-        <div id="fileAssetsTab" style="width: 1100px" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "integritychecker.file-assets") %>" >
+        <div id="fileAssetsTab" style="width: 1120px" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "integritychecker.file-assets") %>" >
             <div id="fileAssetsTabContentDiv"></div>
             <div class="buttonRow">
                 <button dojoType="dijit.form.Button" id="fileAssetsFixButton"
                         onClick="fixConflicts(selectedEndpointId, 'fileAssets')" iconClass="fixIcon"><%=LanguageUtil.get(pageContext,
                         "push_publish_integrity_fix_conflicts")%></button>
                 <button dojoType="dijit.form.Button" id="fileAssetsDiscardButton"
-                        onClick="discardConflicts(selectedEndpointId, 'fileAssets')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
+                        onClick="discardConflicts(selectedEndpointId, 'fileAssets')" class="dijitButtonDanger" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
                         "push_publish_integrity_discard_conflicts")%></button>
-                <button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog(selectedEndpointId)" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
+                <button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="closeIntegrityResultsDialog(selectedEndpointId)"><%= LanguageUtil.get(pageContext, "close") %></button>
             </div>
         </div>
 
-        <div id="cms_rolesTab" style="width: 1100px" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "integritychecker.cms-roles") %>" >
+        <div id="cms_rolesTab" style="width: 1120px" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "integritychecker.cms-roles") %>" >
             <div id="cms_rolesTabContentDiv" style="height:280px">No Results</div>
             <div class="buttonRow">
                 <button dojoType="dijit.form.Button" id="cms_rolesFixButton"
-                        onClick="fixConflicts(selectedEndpointId, 'cms_roles')" iconClass="fixIcon"><%=LanguageUtil.get(pageContext,
+                        onClick="fixConflicts(selectedEndpointId, 'cms_roles')" ><%=LanguageUtil.get(pageContext,
                         "push_publish_integrity_fix_conflicts")%></button>
-                <button dojoType="dijit.form.Button" id="cms_rolesDiscardButton"
+                <button dojoType="dijit.form.Button" id="cms_rolesDiscardButton" class="dijitButtonDanger"
                         onClick="discardConflicts(selectedEndpointId, 'cms_roles')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
                         "push_publish_integrity_discard_conflicts")%></button>
-                <button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog(selectedEndpointId)" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
+                <button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="closeIntegrityResultsDialog(selectedEndpointId)" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "close") %></button>
             </div>
         </div>
 

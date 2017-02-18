@@ -137,6 +137,8 @@
                 editUser(id);
         });
 
+		dojo.query("#usersGrid").addClass('view-users__users-list');
+
         //Loading the grid for first time
         UserAjax.getUsersList(null, null, { start: 0, limit: 50 }, dojo.hitch(this, getUsersListCallback));
     });

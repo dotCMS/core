@@ -921,8 +921,8 @@
 
 		if(!dijit.byId('roleLayoutsGrid')) {
 			var gridBox = dojo.contentBox("roleLayoutsGrid");
-			var col1Width = parseInt(gridBox.w * 2 / 100);
-			var col2Width = parseInt(gridBox.w * 30 / 100);
+			var col1Width = parseInt(gridBox.w * 3 / 100);
+			var col2Width = parseInt(gridBox.w * 25 / 100);
 			var col3Width = parseInt(gridBox.w * 58 / 100);
 			var col4Width = gridBox.w - col1Width - col2Width - col3Width - 30;
 
@@ -1402,5 +1402,10 @@
 
 // 		},3000);
 
+	}
+	
+	function updateIcon(fontAwesomeClass){
+		var icon = document.getElementById('tabIcon');
+		icon.className ='fa '+fontAwesomeClass;
 	}
 </script>

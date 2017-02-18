@@ -45,8 +45,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.mailinglists.factories.MailingListFactory;
-import com.dotmarketing.portlets.mailinglists.model.MailingList;
+
 import com.dotmarketing.portlets.webforms.model.WebForm;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FormSpamFilter;
@@ -256,18 +255,7 @@ public class EmailFactory {
 
 	}
 
-	public static boolean isSubscribed(MailingList list, User s){
 
-		UserProxy up;
-		try {
-			up = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(s,APILocator.getUserAPI().getSystemUser(), false);
-		} catch (Exception e) {
-			Logger.error(EmailFactory.class, e.getMessage(), e);
-			throw new DotRuntimeException(e.getMessage(), e);
-		}	
-		return MailingListFactory.isSubscribed(list, up);
-
-	}
 
 	/**
 	 * 

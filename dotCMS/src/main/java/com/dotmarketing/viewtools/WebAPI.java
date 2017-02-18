@@ -23,7 +23,6 @@ import org.apache.velocity.tools.view.tools.ViewTool;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.Trackback;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotIdentifierStateException;
@@ -40,7 +39,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
-import com.dotmarketing.factories.TrackbackFactory;
+
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -984,18 +983,6 @@ public class WebAPI implements ViewTool {
 	}
 
 
-	/**
-	 * This method return the list of trackback ping associated to a identifier
-	 * This method is use in the trackback macro
-	 * @param id
-	 * @return List<Trackback>
-	 * @author Oswaldo Gallango
-	 * @version 1.5
-	 * @since 1.5
-	 */
-	public List<Trackback> getTrackbacksByIdentifier(String id){
-		return TrackbackFactory.getTrackbacksByAssetId (id);
-	}
 
 	/**
 	 * This Method set the HttpServletResponse status with the specified
@@ -1012,17 +999,6 @@ public class WebAPI implements ViewTool {
 		}else{
 			response.setStatus(code);
 		}
-	}
-
-	/**
-	 * Convert a rss feed to a html list
-	 * @param	uri String with rss feed uri
-	 * @return	String with the html code
-	 */
-	public static String RSSParse(String uri)
-	{
-		String ingesterName = "RSSIngester";
-		return RSSWebAPI.RSSParse(uri,ingesterName, null);
 	}
 
 	@Deprecated

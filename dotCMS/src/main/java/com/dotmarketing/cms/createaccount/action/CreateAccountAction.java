@@ -33,8 +33,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.mailinglists.factories.MailingListFactory;
-import com.dotmarketing.portlets.mailinglists.model.MailingList;
+
 import com.dotmarketing.portlets.user.factories.UserCommentsFactory;
 import com.dotmarketing.portlets.user.model.UserComment;
 import com.dotmarketing.util.Config;
@@ -298,32 +297,7 @@ public class CreateAccountAction extends DispatchAction {
 			userComments.setCommunicationId(null);
 			UserCommentsFactory.saveUserComment(userProxy.getInode(),userComments);
 		}        
-		if (form.isMailSubscription()) {
-			//Subscribe to the mailing list
-			if(UtilMethods.isSet(Config.getStringProperty("CREATE_ACCOUNT_MAILING_LIST"))){
-				List<MailingList> list = MailingListFactory.getAllMailingLists();
-				for(MailingList ml : list){
-					if(ml.getTitle().equals(Config.getStringProperty("CREATE_ACCOUNT_MAILING_LIST"))){ 
-						MailingListFactory.addMailingSubscriber(ml, userProxy, true);
-						break;
-					}
-				}
-			}else{
-				MyAccountAction.subscribeDotCMSMailingList(user);
-			}
-		}else {
-			if(UtilMethods.isSet(Config.getStringProperty("CREATE_ACCOUNT_MAILING_LIST"))){
-				List<MailingList> list = MailingListFactory.getAllMailingLists();
-				for(MailingList ml : list){
-					if(ml.getTitle().equals(Config.getStringProperty("CREATE_ACCOUNT_MAILING_LIST"))){ 
-						MailingListFactory.deleteUserFromMailingList(ml, userProxy);
-						break;
-					}
-				}
-			}else{
-				MyAccountAction.unSubsribeDotCMSMailingList(user);
-			}
-		}
+
 
 		Role defaultRole = com.dotmarketing.business.APILocator.getRoleAPI().loadRoleByKey(Config.getStringProperty("CMS_VIEWER_ROLE"));
 		String roleId = defaultRole.getId();
