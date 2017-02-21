@@ -206,11 +206,7 @@ public class WebDavTest extends IntegrationTestBase {
 	        APILocator.getPermissionAPI().save(
 	            new Permission(PermissionAPI.permissionTypes.get("FOLDERS"),demo.getIdentifier(),role.getId(),
 	            PermissionAPI.PERMISSION_CAN_ADD_CHILDREN|PermissionAPI.PERMISSION_EDIT|PermissionAPI.PERMISSION_USE),demo,user,false);
-	    
-	        APILocator.getPermissionAPI().save(
-	            new Permission(PermissionAPI.permissionTypes.get("FILES"),demo.getIdentifier(),role.getId(),
-                PermissionAPI.PERMISSION_EDIT|PermissionAPI.PERMISSION_USE),demo,user,false);
-	    
+
 	        APILocator.getPermissionAPI().save(
 	            new Permission(PermissionAPI.permissionTypes.get("CONTENTLETS"),demo.getIdentifier(),role.getId(),
                 PermissionAPI.PERMISSION_EDIT|PermissionAPI.PERMISSION_USE),demo,user,false);
