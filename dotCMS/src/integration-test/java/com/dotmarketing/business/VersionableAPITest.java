@@ -60,11 +60,6 @@ public class VersionableAPITest {
 		        
 		Folder folder = APILocator.getFolderAPI().createFolders("/testingVersionable", host, user, false);
 				
-		/*HTMLPage page=new HTMLPage();
-		page.setPageUrl("testpage"+ext);
-		page.setFriendlyName("testpage"+ext);
-		page.setTitle("testpage"+ext);
-		page=APILocator.getHTMLPageAPI().saveHTMLPage(page, template, folder, user, false);*/
 		HTMLPageAsset page = new HTMLPageDataGen(folder,template).nextPersisted();
 		
 		return page;
@@ -111,11 +106,8 @@ public class VersionableAPITest {
         assertEquals(verAPI.getInode(),page.getInode());
         
         //Delete Template, Folder, HTMLPage
-        //Folder folder = APILocator.getHTMLPageAPI().getParentFolder(page);
         Folder folder = APILocator.getHTMLPageAssetAPI().getParentFolder(page);
-        //Template template = APILocator.getHTMLPageAPI().getTemplateForWorkingHTMLPage(page);
         Template template = APILocator.getHTMLPageAssetAPI().getTemplate(page, false);
-        //APILocator.getHTMLPageAPI().delete(page, user, false);
         HTMLPageDataGen.remove(page);
         APILocator.getFolderAPI().delete(folder, user, false);
 	}
@@ -195,9 +187,6 @@ public class VersionableAPITest {
         assertEquals(verAPI.getInode(),page.getInode());
         
         //Delete Template, Folder, HTMLPage
-        /*Folder folder = APILocator.getHTMLPageAPI().getParentFolder(page);
-        Template template = APILocator.getHTMLPageAPI().getTemplateForWorkingHTMLPage(page);
-        APILocator.getHTMLPageAPI().delete(page, user, false);*/
         Folder folder = APILocator.getHTMLPageAssetAPI().getParentFolder(page);
         Template template = APILocator.getHTMLPageAssetAPI().getTemplate(page, false);
         HTMLPageDataGen.remove(page);

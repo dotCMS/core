@@ -501,25 +501,7 @@ public class PermissionAPITest extends IntegrationTestBase {
             perm.permissionIndividually(APILocator.getHostAPI().findSystemHost(), a, sysuser, false);
 
             String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
-
-            /*HTMLPage pa=new HTMLPage();
-            pa.setPageUrl("testpage"+ext);
-            pa.setFriendlyName("testpage"+ext);
-            pa.setTitle("testpage"+ext);
-            APILocator.getHTMLPageAPI().saveHTMLPage(pa, tt, a, sysuser, false);
-
-            HTMLPage pb=new HTMLPage();
-            pb.setPageUrl("testpage"+ext);
-            pb.setFriendlyName("testpage"+ext);
-            pb.setTitle("testpage"+ext);
-            APILocator.getHTMLPageAPI().saveHTMLPage(pb, tt, b, sysuser, false);
-
-            HTMLPage pc=new HTMLPage();
-            pc.setPageUrl("testpage"+ext);
-            pc.setFriendlyName("testpage"+ext);
-            pc.setTitle("testpage"+ext);
-            APILocator.getHTMLPageAPI().saveHTMLPage(pc, tt, c, sysuser, false);
-            */
+            
             HTMLPageAsset pa = new HTMLPageDataGen(a, tt).nextPersisted();
             HTMLPageAsset pb = new HTMLPageDataGen(b, tt).nextPersisted();
             HTMLPageAsset pc = new HTMLPageDataGen(c, tt).nextPersisted();
@@ -618,7 +600,6 @@ public class PermissionAPITest extends IntegrationTestBase {
         }
         finally {
             APILocator.getHostAPI().archive(hh, sysuser, false);
-            //APILocator.getHostAPI().delete(hh, sysuser, false);
         }
     }
 

@@ -76,14 +76,6 @@ public class HTMLPageAPITest extends IntegrationTestBase {
         Folder folder=APILocator.getFolderAPI().createFolders(
                 "/test_junit/test_"+UUIDGenerator.generateUuid().replaceAll("-", "_"), host, sysuser, false);
 
-        /*HTMLPage page=new HTMLPage();
-        page.setPageUrl("testpage"+ext);
-        page.setFriendlyName("testpage"+ext);
-        page.setTitle("testpage"+ext);
-        page=APILocator.getHTMLPageAPI().saveHTMLPage(page, template, folder, sysuser, false);
-        assertTrue(page!=null);
-        assertTrue(UtilMethods.isSet(page.getInode()));
-        assertTrue(UtilMethods.isSet(page.getIdentifier()));*/
         HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
         APILocator.getContentletIndexAPI().addContentToIndex(page, true, true);
         boolean isIndexed = APILocator.getContentletAPI().isInodeIndexed( page.getInode() );
@@ -98,22 +90,12 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 
         folder=APILocator.getFolderAPI().createFolders(
                 "/test_junit/test_"+UUIDGenerator.generateUuid().replaceAll("-", "_"), host, sysuser, false);
-        /*page=new HTMLPage();
-        page.setPageUrl("testpage"+ext);
-        page.setFriendlyName("testpage"+ext);
-        page.setTitle("testpage"+ext);
-        page.setInode(existingInode);
-        page.setIdentifier(existingIdentifier);
-        page=APILocator.getHTMLPageAPI().saveHTMLPage(page, template, folder, sysuser, false);*/
         page = new HTMLPageDataGen(folder, template).inode(existingInode).identifier(existingIdentifier).nextPersisted();
         APILocator.getContentletIndexAPI().addContentToIndex(page, true, true);
         isIndexed = APILocator.getContentletAPI().isInodeIndexed( page.getInode() );
         assertTrue(isIndexed);
-        //page.setIdentifier(existingIdentifier);
-        //page.setInode(existingInode);
         assertEquals(existingInode,page.getInode());
         assertEquals(existingIdentifier,page.getIdentifier());
-        //APILocator.getContentletAPI().isInodeIndexed( page.getInode() );
 
         pages = APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages(folder, sysuser, false);
         assertTrue(pages.size()==1);
@@ -126,9 +108,7 @@ public class HTMLPageAPITest extends IntegrationTestBase {
         String newInode=UUIDGenerator.generateUuid();
         page.setInode(newInode);
         page.setTitle("other title");
-        //page=APILocator.getHTMLPageAPI().saveHTMLPage(page, template, folder, sysuser, false);
         Contentlet pageContentlet = APILocator.getContentletAPI().checkin(page, sysuser, false);
-        //page = new HTMLPageDataGen(folder, template).inode(newInode).identifier(existingIdentifier).title("other title").nextPersisted();
         HibernateUtil.commitTransaction();
         assertEquals(newInode,pageContentlet.getInode());
         assertEquals(existingIdentifier,pageContentlet.getIdentifier());
@@ -169,11 +149,6 @@ public class HTMLPageAPITest extends IntegrationTestBase {
                 "/test_junit/test_"+UUIDGenerator.generateUuid().replaceAll("-", "_"), host, sysuser, false);
 
         // the page
-        /*HTMLPage page=new HTMLPage();
-        page.setPageUrl("testpage"+ext);
-        page.setFriendlyName("testpage"+ext);
-        page.setTitle("testpage"+ext);
-        page=APILocator.getHTMLPageAPI().saveHTMLPage(page, template, folder, sysuser, false);*/
         HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
 
         // associate some contentlets with the page/container
@@ -193,7 +168,6 @@ public class HTMLPageAPITest extends IntegrationTestBase {
         // let's delete
         try{
         	HibernateUtil.startTransaction();
-            //APILocator.getHTMLPageAPI().delete(page, sysuser, false);
         	HTMLPageDataGen.remove(page);
             APILocator.getTemplateAPI().delete(template, sysuser, false);
             APILocator.getContainerAPI().delete(container, sysuser, false);
@@ -254,11 +228,6 @@ public class HTMLPageAPITest extends IntegrationTestBase {
     				"/test_junit/test_"+UUIDGenerator.generateUuid().replaceAll("-", "_"), host, sysuser, false);
 
     		// the page
-    		/*page=new HTMLPage();
-    		page.setPageUrl("testpage"+ext);
-    		page.setFriendlyName("testpage"+ext);
-    		page.setTitle("testpage"+ext);
-    		page=APILocator.getHTMLPageAPI().saveHTMLPage(page, template, folder, sysuser, false);*/
     		page = new HTMLPageDataGen(folder, template).nextPersisted();
 
     		// folder with some perms, where the page gets moved to
@@ -286,7 +255,6 @@ public class HTMLPageAPITest extends IntegrationTestBase {
     		// NOTE: Method "assignPermissions" is deprecated in favor of "save", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "save"
     		permAPI.assignPermissions(newSetOfPermissions, folderWithPerms, sysuser, false);
 
-    		//APILocator.getHTMLPageAPI().movePage(page, folderWithPerms, sysuser, false);
     		APILocator.getHTMLPageAssetAPI().move(page, folderWithPerms, sysuser);
 
     		List<Permission> assetPermissions = permAPI.getPermissions(page, true);
@@ -327,8 +295,6 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 		int english = 1;
 		int spanish = 2;
 
-		//try {
-			//HibernateUtil.startTransaction();
 			Template template = new TemplateDataGen().nextPersisted();
 			Folder folder = new FolderDataGen().nextPersisted();
 			HTMLPageAsset multiLangPageEnglishVersion = new HTMLPageDataGen(folder, template).languageId(english)
@@ -344,11 +310,7 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 			// dispose other objects
 			FolderDataGen.remove(folder);
 			TemplateDataGen.remove(template);
-			//HibernateUtil.commitTransaction();
-		//} catch(Exception e) {
-			//HibernateUtil.rollbackTransaction();
-			//throw e;
-		//}
+
 	}
 
 }

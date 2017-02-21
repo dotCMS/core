@@ -120,12 +120,6 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
 
             // detail page for url mapped structure
             Folder folder=APILocator.getFolderAPI().createFolders("/detail/", host, sysuser, false);
-            /*detailPage=new HTMLPage();
-            detailPage.setFriendlyName("detail");
-            detailPage.setPageUrl("detail."+pageExt);
-            detailPage.setTitle("index page");
-            detailPage.setTemplateId(template.getIdentifier());
-            detailPage=APILocator.getHTMLPageAPI().saveHTMLPage(detailPage, template, folder, sysuser, false);*/
             detailPage = new HTMLPageDataGen(folder, template).nextPersisted();
 
             // url mapped structure

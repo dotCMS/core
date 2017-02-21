@@ -717,15 +717,6 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
         template = APILocator.getTemplateAPI().saveTemplate( template, defaultHost, user, false );
 
         //Create the html page
-        /*String pageUrl = "testpage_" + new Date().getTime();
-        
-        HTMLPage htmlPage = new HTMLPage();
-        htmlPage.setPageUrl( pageUrl );
-        htmlPage.setFriendlyName( pageUrl );
-        htmlPage.setTitle( pageUrl );
-        htmlPage = APILocator.getHTMLPageAPI().saveHTMLPage( htmlPage, template, homeFolder, user, false );
-        //Make it live
-        APILocator.getVersionableAPI().setLive( htmlPage );*/
         Folder homeFolder = APILocator.getFolderAPI().createFolders( "/home/", defaultHost, user, false );
         HTMLPageAsset htmlPage = new HTMLPageDataGen(homeFolder, template).languageId(1)
 				.nextPersisted();
