@@ -189,7 +189,7 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 	},
 
 	_checkStatus: function () {
-		FileAjax.getFileUploadStatus(this.name,{async:true, callback:dojo.hitch(this,this._statusCheckCallback)});
+		FileAssetAjax.getFileUploadStatus(this.name,{async:true, callback:dojo.hitch(this,this._statusCheckCallback)});
 	},
 
 
@@ -246,7 +246,7 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 		dojo.style(this.fileUploadForm, { display: '' });
 		dojo.style(this.fileUploadRemoveButton, { display: 'none' });
 		dojo.style(this.fileUploadInfoButton, { display: 'none' });
-		FileAjax.clearFileUploadStatus(this.name, function (data) {});
+		FileAssetAjax.clearFileUploadStatus(this.name, function (data) {});
 	},
 
 	_fileUploadFinished: function () {
@@ -254,7 +254,7 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 		dojo.style(this.fileUploadForm, { display: 'none' });
 		dojo.style(this.fileUploadStatus, { display: 'none' });
 		dojo.style(this.fileUploadRemoveButton, { display: '' });	
-		FileAjax.clearFileUploadStatus(this.name, function (data) {
+		FileAssetAjax.clearFileUploadStatus(this.name, function (data) {
 			var maxSize = document.getElementById("maxSizeFileLimit");
 			maxSize.value=data;			
 		});

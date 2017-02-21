@@ -12,7 +12,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.factories.TemplateFactory;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -26,7 +25,6 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 

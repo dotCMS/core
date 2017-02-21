@@ -381,7 +381,7 @@ dojo.require("dojox.layout.ContentPane");
 	   	var size = 0;
 	   	var maxSizeForAlert = <%= Config.getIntProperty("UPLOAD_FILE_ASSET_MAX_SIZE",30) %>
 	   	dojo.query(".fajaxUpName").forEach(function(node, index, arr){
-	   		FileAjax.getFileUploadStatus(node.id,{callback: function(fileStats) {
+	   		FileAssetAjax.getFileUploadStatus(node.id,{callback: function(fileStats) {
 	   	   		if(fileStats!=null){
 		   	   	   isAjaxFileUploading = true;
 		   	   	}

@@ -33,7 +33,6 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.business.FolderFactory;
 import com.dotmarketing.portlets.folders.model.Folder;

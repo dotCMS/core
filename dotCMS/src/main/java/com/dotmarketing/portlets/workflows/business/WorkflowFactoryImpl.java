@@ -23,8 +23,6 @@ import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.IFileAsset;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.workflows.model.WorkFlowTaskFiles;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;

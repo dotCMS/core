@@ -9,7 +9,7 @@
 <script type='text/javascript' src='/dwr/interface/CategoryAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/ContentletAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/TagAjax.js'></script>
-<script type='text/javascript' src='/dwr/interface/FileAjax.js'></script>
+<script type='text/javascript' src='/dwr/interface/FileAssetAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/TagAjax.js'></script>
 
 <!-- AChecker support -->

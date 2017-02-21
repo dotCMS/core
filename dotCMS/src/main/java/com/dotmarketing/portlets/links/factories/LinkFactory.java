@@ -38,8 +38,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;

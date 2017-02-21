@@ -94,7 +94,7 @@
 
 		save: function() {
 			var text = aceEditor.getValue();
-			FileAssetAjax.saveFileText(this.fileInode, text, {
+			FileAssetAjax.saveFileText(this.fileInode, text, null, {
 				async: false,
 				callback:function() {
 				editTextManager.close();
