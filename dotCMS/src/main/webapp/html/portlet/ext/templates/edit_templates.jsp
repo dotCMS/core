@@ -11,22 +11,13 @@
 
 <script src="/html/js/ace-builds-1.2.3/src-noconflict/ace.js" type="text/javascript"></script>
 <style type="text/css">
-    #aceEditorArea {
-        position: relative;
-    }
     .show{
-        height: 500px;
         border:1px solid #C0C0C0;
     }
     .hidden{
 		display: none;
 	}
-	.ace_scrollbar {
-    	overflow: auto;
-	}
-    .editor-options {
-        margin-top: 5px;
-    }
+
 </style>
 
 <%@page import="com.dotmarketing.portlets.contentlet.business.HostAPI"%>
@@ -271,7 +262,7 @@
 	<input name="userId" type="hidden" value="<%= user.getUserId() %>">
 	<input name="admin_l_list" type="hidden" value="">
 
-<div class="portlet-main">
+<div class="portlet-main" style="height:100vh;border:0px solid red;">
 
 <!-- START TabContainer-->
 <div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
@@ -279,12 +270,7 @@
 <!-- START Properties Tab -->
 	<div id="templatePropertiesTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Properties") %>"  onShow="showEditButtonsRow()">
 		<div class="form-horizontal">
-			<%if(id!=null) {%>
-				<div class="fieldWrapper">
-					<div class="fieldName"><%= LanguageUtil.get(pageContext, "Identity") %>:</div>
-					<div class="fieldValue"><%= id.getId() %></div>
-				</div>
-			<%}%>
+
 			<% if(host != null) { %>
 				<html:hidden property="hostId" value="<%=hostId%>" />
 				<div class="fieldWrapper">
@@ -336,9 +322,9 @@
 			<div class="fieldWrapper">
 				<div class="fieldName"></div>
 				<div class="fieldValue">
-					<div id="textEditorArea" class="dotAceEditor">
-						<div id="aceEditorArea" class="show"></div>
-						<html:textarea onkeydown="return catchTab(this,event)" style="width:600px; height:500px; font-size: 12px; display:none;" property="body" styleId="bodyField"></html:textarea>
+					<div id="textEditorArea" style="height:100%;">
+						<div id="aceEditorArea" class="show aceText"></div>
+						<html:textarea onkeydown="return catchTab(this,event)" style="display:none;"  styleClass="aceText" property="body" styleId="bodyField"></html:textarea>
 					</div>
 					<div class="editor-toolbar">
 						<div class="checkbox">
@@ -365,8 +351,10 @@
 			editor = ace.edit('aceEditorArea');
 			editor.setTheme("ace/theme/textmate");
 			editor.getSession().setMode("ace/mode/velocity");
+			editor.setAutoScrollEditorIntoView(true);
 			editor.setValue(document.getElementById('bodyField').value);
 			editor.clearSelection();
+
     	}
 
         function handleWrapMode(e) {

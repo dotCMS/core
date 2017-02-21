@@ -4234,9 +4234,9 @@ html, body {
   color: #161616;
   padding: 0 24px;
   position: relative;
-  border-width: 5px 1px 0 0;
+  border-width: 5px 1px 0 1px;
   border-style: solid;
-  border-color: #ECEDEE #ECEDEE transparent transparent;
+  border-color: #ECEDEE;
 }
 .dijitTab .tabLabel {
   line-height: 37px;
@@ -4252,9 +4252,9 @@ html, body {
 }
 .dijitTabChecked, .dijitTabChecked.dijitTabCheckedHover {
   background-color: #fff;
-  border-width: 5px 1px 0 0;
+  border-width: 5px 1px 0 1px;
   border-style: solid;
-  border-color: #0E80CB #ECEDEE transparent transparent;
+  border-color: #0E80CB #ECEDEE transparent #ECEDEE;
   height: 43px;
 }
 .dijitTabCloseIcon {
@@ -9319,31 +9319,28 @@ a.category_higlighted, a.tag_higlighted {
   position: relative;
 }
 
-.aceClass {
-  border: 1px solid #C5C5C5;
-  height: 400px;
-  text-overflow: clip;
-  white-space: nowrap;
-  width: 100%;
-}
 
 .aceText {
-  border: 1px solid #C5C5C5;
-  max-height: 600px;
-  max-width: 900px;
-  min-height: 105px;
-  text-overflow: clip;
-  white-space: nowrap;
-  width: 100%;
+	border: 1px solid #C5C5C5;
+	max-height: 600px;
+	min-height:150px;
+	max-width: 900px;
+	width: 100%;
+	text-overflow: clip;
+	white-space: nowrap;
+	font-family:Monaco,Menlo,sans-serif;
+	12px;
 }
 
 .widgetAceText {
   border: 1px solid #C5C5C5;
-  max-height: 400px;
-  min-height: 362px;
+  max-height: 600px;
+  min-height:300px;
+  max-width: 900px;
+  width: 100%;
   text-overflow: clip;
   white-space: nowrap;
-  width: 682px;
+
 }
 
 .content-edit__main {

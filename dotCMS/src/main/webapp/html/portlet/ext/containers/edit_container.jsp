@@ -404,35 +404,39 @@
 
 </div>
 
-<!-- START buttons -->
-<div class="buttonRow" id="editContainerButtonRow">
+<!-- Button Row -->
+<div class="content-edit__sidebar" id="editContainerButtonRow">
+	<div class="content-edit-actions">
+	<div id="contentletActionsHanger">
+
 
 	<% if(!InodeUtils.isSet(contentContainer.getInode())|| contentContainer.isLive() || contentContainer.isWorking() ) {
 		if( canUserWriteToContainer ) {
 		%>
-			<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'')" iconClass="saveIcon" type="button">
+			<a onClick="submitfm(document.getElementById('fm'),'')" >
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
-			</button>
+			</a>
 		<% } %>
 		<% if( canUserPublishContainer ) { %>
-			<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'publish')" iconClass="publishIcon" type="button">
+			<a onClick="submitfm(document.getElementById('fm'),'publish')">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
-			</button>
+			</a>
 		<%  } %>
 		<% } else { %>
-			<button dojoType="dijit.form.Button" onClick="selectVersion('<%=contentContainer.getInode()%>')" iconClass="resetIcon" type="button">
+			<a  onClick="selectVersion('<%=contentContainer.getInode()%>')">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bring-back-this-version")) %>
-			</button>
+			</a>
 		<% } %>
 		<% if (InodeUtils.isSet(contentContainer.getInode()) && contentContainer.isDeleted()) {%>
-			<button dojoType="dijit.form.Button" onClick="submitfmDelete()" iconClass="deleteIcon" type="button">
+			<a  onClick="submitfmDelete()">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete-container")) %>
-			</button>
+			</a>
 		<% } %>
-		<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="cancelEdit()" iconClass="cancelIcon" type="button">
+		<a class="dijitButtonFlat" onClick="cancelEdit()">
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
-		</button>
-
+		</a>
+	</div>
+	</div>
 </div>
 <!-- END buttons -->
 </html:form>
