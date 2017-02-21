@@ -7,7 +7,7 @@ import {Subject} from 'rxjs/Subject';
 import {Socket, Url} from './socket';
 import {Protocol} from './protocol/protocol';
 import {HelloMessage} from './protocol/HelloMessage';
-import {ProtocolFactory} from './protocol/socket-factory';
+import {SocketFactory} from './protocol/socket-factory';
 import {CoreWebService} from "./core-web-service";
 import {RequestMethod, Http} from '@angular/http';
 
@@ -17,7 +17,7 @@ export class DotcmsEventsService {
     private socket: Protocol;
     private subjects: Subject<any>[] = [];
 
-    constructor(socketFactory: ProtocolFactory, private loggerService: LoggerService) {
+    constructor(private socketFactory: SocketFactory, private loggerService: LoggerService) {
 
         socketFactory.socket$.subscribe( socket => {
             this.socket = socket;
@@ -49,6 +49,13 @@ export class DotcmsEventsService {
      */
     destroy(): void {
         this.socket.destroy();
+    }
+
+    /**
+     * Start the socket
+     */
+    start(): void {
+        this.socketFactory.createSocket();
     }
 
     /**
