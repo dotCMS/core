@@ -83,7 +83,7 @@ String min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCal
 			</dd>
 		</dl>
 
-		<dl id="expireTimeDiv">
+		<dl id="expireTimeDiv" style="display: none;">
 			<dt><%= LanguageUtil.get(pageContext, "publisher_Expire") %> :</dt>
 			<dd>
 			<input
