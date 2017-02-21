@@ -94,7 +94,7 @@ dependencies {
     /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
     compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
-    starter group: 'com.dotcms', name: 'starter', version: '20170118', ext: 'zip'
+    starter group: 'com.dotcms', name: 'starter', version: '20170216', ext: 'zip'
     coreWeb group: 'com.dotcms', name: 'core-web', version: '4.0.0-SNAPSHOT', ext: 'zip', changing: true
 
     providedCompile "javax.servlet:javax.servlet-api:3.1.0"

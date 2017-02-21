@@ -611,7 +611,7 @@
             };
         }
 
-		var iframe = window.frames[1];
+		var iframe = window.frames[0];
 	    dojo.setContext(iframe.window, iframe.window.document);
 
 		// get editable area
@@ -658,7 +658,7 @@
 
 	function _dotChangeEditContentEditControl(inode, fieldVar){
 
-	   	var iframe = window.frames[1];
+	   	var iframe = window.frames[0];
 	    dojo.setContext(iframe.window, iframe.window.document);
 
 		// editable area
@@ -694,10 +694,10 @@
 		var inlineRefresh = dojo.create('span', {Class:"dotInlineRefresh"}, inlineControls);
 
 		dojo.connect(inlineSave, "onclick", function(){
-			parent._dotSaveDraftContentViaAjax(inode);
+			_dotSaveDraftContentViaAjax(inode);
 		});
 		dojo.connect(inlineRefresh, "onclick", function(){
-			parent._dotRevertInlineEdit(inode, fieldVar);
+			_dotRevertInlineEdit(inode, fieldVar);
 		});
 
 		dojo.style(inlineControls, "position", "absolute");
@@ -738,7 +738,7 @@
 	function _dotSaveDraftContentViaAjax(inode){
 	    var contentData = [];
 	    var separator = 'com.dotmarketing.contentlet.form_name_value_separator';
-	    var iframe = window.frames[1];
+	    var iframe = window.frames[0];
    		dojo.setContext(iframe.window, iframe.window.document);
    		var els = dojo.query(".dotContentletInline" + inode);
 	    for (i = 0; i< els.length; i++) {
@@ -775,7 +775,7 @@
 	   }
 	   var editVar = "edit-"+data.contentletInode;
 	   var inlineVar = "inline-"+data.contentletInode;
-	   dojo.setContext(window.frames[1].window, window.frames[1].window.document);
+	   dojo.setContext(window.frames[0].window, window.frames[0].window.document);
 	   dojo.destroy(dojo.byId(inlineVar));
 
 		// Only modify varHTMLPage or varReferer when returned inode is a 
