@@ -9323,23 +9323,25 @@ a.category_higlighted, a.tag_higlighted {
 .aceText {
 	border: 1px solid #C5C5C5;
 	max-height: 600px;
-	min-height:150px;
+    min-height:300px;
 	max-width: 900px;
 	width: 100%;
 	text-overflow: clip;
 	white-space: nowrap;
 	font-family:Monaco,Menlo,sans-serif;
-	12px;
+	font-size: 12px;
 }
 
 .widgetAceText {
-  border: 1px solid #C5C5C5;
-  max-height: 600px;
-  min-height:300px;
-  max-width: 900px;
-  width: 100%;
-  text-overflow: clip;
-  white-space: nowrap;
+	border: 1px solid #C5C5C5;
+	max-height: 600px;
+	min-height:300px;
+	max-width: 900px;
+	width: 100%;
+	text-overflow: clip;
+	white-space: nowrap;
+	font-family:Monaco,Menlo,sans-serif;
+	font-size: 12px;
 
 }
 
