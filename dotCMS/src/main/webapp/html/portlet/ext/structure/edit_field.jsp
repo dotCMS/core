@@ -558,8 +558,9 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 					.esEditorWrapper {
 						border: solid 1px #C0C0C0;
 						position: relative;
-						width: 400px;
-						height: 200px;
+						min-width:  900px;
+						width:100%;
+						height: 300px;
 					}
 					.hidden {
 						display: none;
