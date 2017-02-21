@@ -198,7 +198,7 @@ war {
 
     from (configurations.compile) {
         into felixFolder
-        include '**/dot.org.apache.felix.http.bundle*.jar'
+        include '**/org.apache.felix.http.bundle*.jar'
     }
 
     from (configurations.starter) {

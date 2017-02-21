@@ -441,15 +441,19 @@ public class PortletManagerImpl
 				parentPortletsPool = _getPortletsPool(companyId, _SHARED_KEY);
 			}
 
-			Iterator itr = parentPortletsPool.values().iterator();
+			Iterator itr = null;
 
-			while (itr.hasNext()) {
-				Portlet portlet = (Portlet)((Portlet)itr.next()).clone();
+			if (null != itr) {
+				itr = parentPortletsPool.values().iterator();
 
-				portlet.setGroupId(groupId);
-				portlet.setCompanyId(companyId);
+				while (itr.hasNext()) {
+					Portlet portlet = (Portlet) ((Portlet) itr.next()).clone();
 
-				portletsPool.put(portlet.getPortletId(), portlet);
+					portlet.setGroupId(groupId);
+					portlet.setCompanyId(companyId);
+
+					portletsPool.put(portlet.getPortletId(), portlet);
+				}
 			}
 
 			itr = PortletUtil.findByG_C(groupId, companyId).iterator();

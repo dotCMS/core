@@ -3,6 +3,7 @@ package com.dotmarketing.osgi;
 import com.dotcms.repackage.com.httpbridge.webproxy.ui.HttpService;
 import com.dotmarketing.util.Logger;
 import org.apache.felix.http.api.ExtHttpService;
+import org.apache.felix.http.base.internal.DispatcherServlet;
 import org.apache.felix.http.proxy.DispatcherTracker;
 import org.osgi.framework.BundleContext;
 import com.dotmarketing.util.WebKeys;

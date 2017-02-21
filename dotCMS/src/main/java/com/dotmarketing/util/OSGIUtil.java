@@ -16,9 +16,11 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.framework.launch.Framework;
 
 import javax.servlet.ServletContextEvent;
+import javax.websocket.Session;
 import java.io.*;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Created by Jonathan Gamba
@@ -43,9 +45,11 @@ public class OSGIUtil {
     }
 
     private OSGIUtil () {
+
+
     }
 
-    private static Framework m_fwk;
+    private static Framework felixFramework;
     private ServletContextEvent servletContextEvent;
 
     public Framework initializeFramework () {
@@ -93,7 +97,7 @@ public class OSGIUtil {
 
         // (5) Use the specified auto-deploy directory over default.
         if ( bundleDir != null ) {
-            configProps.setProperty( AutoProcessor.AUTO_DEPLOY_DIR_PROPERY, bundleDir );
+            configProps.setProperty( AutoProcessor.AUTO_DEPLOY_DIR_PROPERTY, bundleDir );
         }
 
         // (6) Use the specified bundle cache directory over default.
@@ -116,22 +120,22 @@ public class OSGIUtil {
         try {
             // (8) Create an instance and initialize the framework.
             FrameworkFactory factory = getFrameworkFactory();
-            m_fwk = factory.newFramework( configProps );
-            m_fwk.init();
+            felixFramework = factory.newFramework( configProps );
+            felixFramework.init();
 
             // (9) Use the system bundle context to process the auto-deploy
             // and auto-install/auto-start properties.
-            AutoProcessor.process( configProps, m_fwk.getBundleContext() );
+            AutoProcessor.process( configProps, felixFramework.getBundleContext() );
 
             // (10) Start the framework.
-            m_fwk.start();
+            felixFramework.start();
             Logger.info( this, "osgi felix framework started" );
         } catch ( Exception ex ) {
             Logger.error( this, "Could not create framework: " + ex );
             throw new RuntimeException( ex );
         }
 
-        return m_fwk;
+        return felixFramework;
     }
 
     public void stopFramework () {
@@ -147,22 +151,24 @@ public class OSGIUtil {
                 OSGIProxyServlet.tracker = null;
             }
 
-            //Unregistering ToolBox services
-            ServiceReference toolBoxService = getBundleContext().getServiceReference( PrimitiveToolboxManager.class.getName() );
-            if ( toolBoxService != null ) {
-                bundleContext.ungetService( toolBoxService );
-            }
+            if (null != felixFramework) {
+                //Unregistering ToolBox services
+                ServiceReference toolBoxService = getBundleContext().getServiceReference(PrimitiveToolboxManager.class.getName());
+                if (toolBoxService != null) {
+                    bundleContext.ungetService(toolBoxService);
+                }
 
-            //Unregistering Workflow services
-            ServiceReference workflowService = getBundleContext().getServiceReference( WorkflowAPIOsgiService.class.getName() );
-            if ( workflowService != null ) {
-                bundleContext.ungetService( workflowService );
-            }
+                //Unregistering Workflow services
+                ServiceReference workflowService = getBundleContext().getServiceReference(WorkflowAPIOsgiService.class.getName());
+                if (workflowService != null) {
+                    bundleContext.ungetService(workflowService);
+                }
 
-            // Stop felix
-            m_fwk.stop();
-            // (11) Wait for framework to stop to exit the VM.
-            m_fwk.waitForStop( 0 );
+                // Stop felix
+                felixFramework.stop();
+                // (11) Wait for framework to stop to exit the VM.
+                felixFramework.waitForStop(0);
+            }
 
         } catch ( Exception e ) {
             Logger.warn( this, "exception while stopping felix!", e );
@@ -170,7 +176,7 @@ public class OSGIUtil {
     }
 
     public BundleContext getBundleContext () {
-        return m_fwk.getBundleContext();
+        return felixFramework.getBundleContext();
     }
 
     private static FrameworkFactory getFrameworkFactory () throws Exception {
@@ -255,7 +261,7 @@ public class OSGIUtil {
                     "org.osgi.service.http," +
                     "javax.inject.Qualifier," +
                     "javax.servlet.resources," +
-                    "javax.servlet;javax.servlet.http;version=2.5" );
+                    "javax.servlet;javax.servlet.http;version=3.1.0" );
 
         	BufferedWriter writer = null;
         	try {
