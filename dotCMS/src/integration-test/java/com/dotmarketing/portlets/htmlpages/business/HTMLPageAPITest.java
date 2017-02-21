@@ -85,8 +85,11 @@ public class HTMLPageAPITest extends IntegrationTestBase {
         assertTrue(UtilMethods.isSet(page.getInode()));
         assertTrue(UtilMethods.isSet(page.getIdentifier()));*/
         HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        APILocator.getContentletIndexAPI().addContentToIndex(page, true, true);
+        boolean isIndexed = APILocator.getContentletAPI().isInodeIndexed( page.getInode() );
+        assertTrue(isIndexed);
 
-        List<IHTMLPage> pages = APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages(folder, sysuser, false);
+        List<IHTMLPage> pages = APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages(folder, sysuser, true);
         assertTrue(pages.size()==1);
 
         // now with existing inode/identifier
@@ -102,9 +105,15 @@ public class HTMLPageAPITest extends IntegrationTestBase {
         page.setInode(existingInode);
         page.setIdentifier(existingIdentifier);
         page=APILocator.getHTMLPageAPI().saveHTMLPage(page, template, folder, sysuser, false);*/
-        page = new HTMLPageDataGen(folder, template).nextPersisted();
+        page = new HTMLPageDataGen(folder, template).inode(existingInode).identifier(existingIdentifier).nextPersisted();
+        APILocator.getContentletIndexAPI().addContentToIndex(page, true, true);
+        isIndexed = APILocator.getContentletAPI().isInodeIndexed( page.getInode() );
+        assertTrue(isIndexed);
+        //page.setIdentifier(existingIdentifier);
+        //page.setInode(existingInode);
         assertEquals(existingInode,page.getInode());
         assertEquals(existingIdentifier,page.getIdentifier());
+        //APILocator.getContentletAPI().isInodeIndexed( page.getInode() );
 
         pages = APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages(folder, sysuser, false);
         assertTrue(pages.size()==1);
@@ -118,11 +127,12 @@ public class HTMLPageAPITest extends IntegrationTestBase {
         page.setInode(newInode);
         page.setTitle("other title");
         //page=APILocator.getHTMLPageAPI().saveHTMLPage(page, template, folder, sysuser, false);
-        page = (HTMLPageAsset) APILocator.getContentletAPI().checkin(page, sysuser, false);
+        Contentlet pageContentlet = APILocator.getContentletAPI().checkin(page, sysuser, false);
+        //page = new HTMLPageDataGen(folder, template).inode(newInode).identifier(existingIdentifier).title("other title").nextPersisted();
         HibernateUtil.commitTransaction();
-        assertEquals(newInode,page.getInode());
-        assertEquals(existingIdentifier,page.getIdentifier());
-        assertEquals("other title",page.getTitle());
+        assertEquals(newInode,pageContentlet.getInode());
+        assertEquals(existingIdentifier,pageContentlet.getIdentifier());
+        assertEquals("other title",pageContentlet.getTitle());
     }
 
     @Test
@@ -317,8 +327,8 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 		int english = 1;
 		int spanish = 2;
 
-		try {
-			HibernateUtil.startTransaction();
+		//try {
+			//HibernateUtil.startTransaction();
 			Template template = new TemplateDataGen().nextPersisted();
 			Folder folder = new FolderDataGen().nextPersisted();
 			HTMLPageAsset multiLangPageEnglishVersion = new HTMLPageDataGen(folder, template).languageId(english)
@@ -334,11 +344,11 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 			// dispose other objects
 			FolderDataGen.remove(folder);
 			TemplateDataGen.remove(template);
-			HibernateUtil.commitTransaction();
-		} catch(Exception e) {
-			HibernateUtil.rollbackTransaction();
-			throw e;
-		}
+			//HibernateUtil.commitTransaction();
+		//} catch(Exception e) {
+			//HibernateUtil.rollbackTransaction();
+			//throw e;
+		//}
 	}
 
 }

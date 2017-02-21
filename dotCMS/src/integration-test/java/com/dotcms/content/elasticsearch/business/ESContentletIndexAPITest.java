@@ -42,6 +42,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -483,7 +484,7 @@ public class ESContentletIndexAPITest extends IntegrationTestBase {
 
         //*****************************************************************
         //Build a site search result in order to add it to the index
-        VersionInfo versionInfo = APILocator.getVersionableAPI().getVersionInfo( testHtmlPage.getIdentifier() );
+        ContentletVersionInfo versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(testHtmlPage.getIdentifier(), testHtmlPage.getLanguageId());
         String docId = testHtmlPage.getIdentifier() + "_" + defaultLanguage.getId();
 
         SiteSearchResult res = new SiteSearchResult( testHtmlPage.getMap() );

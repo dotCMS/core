@@ -278,9 +278,9 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
                 Contentlet c = contentletAPI.find(live?cinfo.getLiveInode():cinfo.getWorkingInode(), userAPI.getSystemUser(), false);
 
-                /*if(c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
+                if(c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
                     return fromContentlet(c);
-                }*/
+                }
 
             } catch (Exception e) {
                 Logger.error(this.getClass(), "Unable to find" + uri);

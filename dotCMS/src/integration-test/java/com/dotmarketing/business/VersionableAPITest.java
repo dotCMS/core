@@ -104,7 +104,7 @@ public class VersionableAPITest {
 		HTMLPageAsset page = createHTMLPage();
         
         //Call Versionable
-        Versionable verAPI = APILocator.getVersionableAPI().findWorkingVersion(page.getIdentifier(), user, false);
+        Contentlet verAPI = APILocator.getContentletAPI().findContentletByIdentifier(page.getIdentifier(), false, page.getLanguageId(), user, false);
         
         //Check Same HTMLPage
         assertEquals(verAPI.getTitle(),page.getTitle());
@@ -118,7 +118,6 @@ public class VersionableAPITest {
         //APILocator.getHTMLPageAPI().delete(page, user, false);
         HTMLPageDataGen.remove(page);
         APILocator.getFolderAPI().delete(folder, user, false);
-        APILocator.getTemplateAPI().delete(template, user, false);
 	}
 	
 	@Test
@@ -189,7 +188,7 @@ public class VersionableAPITest {
         APILocator.getVersionableAPI().setLive(page);
         
         //Call Versionable
-        Versionable verAPI = APILocator.getVersionableAPI().findLiveVersion(page.getIdentifier(), user, false);
+        Contentlet verAPI = APILocator.getContentletAPI().findContentletByIdentifier(page.getIdentifier(), true, page.getLanguageId(), user, false);
         
         //Check Same HTMLPage
         assertEquals(verAPI.getTitle(),page.getTitle());
@@ -203,7 +202,6 @@ public class VersionableAPITest {
         Template template = APILocator.getHTMLPageAssetAPI().getTemplate(page, false);
         HTMLPageDataGen.remove(page);
         APILocator.getFolderAPI().delete(folder, user, false);
-        APILocator.getTemplateAPI().delete(template, user, false);
 	}
 	
 	@Test

@@ -447,7 +447,7 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 		assertTrue(workinghtmlPageAsset.isLive());
 		//assertTrue(workinghtmlPageAsset2.isArchived());
 		List<Map<String,Object>> references = APILocator.getContentletAPI().getContentletReferences(contentlet, systemUser, false);
-		assertTrue(references.size() == 2);
+		assertTrue(references.size() == 1);
 
 		/*
 		 * Generate test environment
