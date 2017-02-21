@@ -838,7 +838,7 @@ function deleteEnvPushHistory(envId) {
             var confirmDialog  =new dijit.Dialog({
                 id: "deleteHistory",
                 class: "noDijitDialogTitleBar",
-                content: "<span style=\"display:block;text-align:center\"><%= LanguageUtil.get(pageContext, "publisher_Environments_deleted_assets-history") %>.<br /><br /><button data-dojo-type=\"dijit/form/Button\" type=\"submit\" id=\"ok\"><%= LanguageUtil.get(pageContext, "ok") %></button></span>"
+                content: "<span style=\"display:block;text-align:center\"><%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "publisher_Environments_deleted_assets-history")) %>.<br /><br /><button data-dojo-type=\"dijit/form/Button\" type=\"submit\" id=\"ok\"><%= LanguageUtil.get(pageContext, "ok") %></button></span>"
             });
             confirmDialog.show();
         },

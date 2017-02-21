@@ -1166,27 +1166,28 @@ public class ContentletAjax {
 	 */
 	//http://jira.dotmarketing.net/browse/DOTCMS-2273
 	public Map<String,Object> saveContent(List<String> formData, boolean isAutoSave,boolean isCheckin, boolean publish) throws LanguageException, PortalException, SystemException {
-	    try {
+	  Map<String,Object> contentletFormData = new HashMap<String,Object>();
+	  Map<String,Object> callbackData = new HashMap<String,Object>();
+	  List<String> saveContentErrors = new ArrayList<String>(); 
+	  User user = null;
+      boolean clearBinary = true;//flag to check if the binary field needs to be cleared or not
+      HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+      String newInode = "";
+
+      String referer = "";
+      String language = "";
+      String strutsAction = "";
+      String recurrenceDaysOfWeek="";
+
+	  try {
             HibernateUtil.startTransaction();
-        } catch (DotHibernateException e1) {
-            Logger.warn(this, e1.getMessage(),e1);
-        }
+
 
 	    int tempCount = 0;// To store multiple values opposite to a name. Ex: selected permissions & categories
-		String newInode = "";
 
-		String referer = "";
-		String language = "";
-		String strutsAction = "";
-		String recurrenceDaysOfWeek="";
 
-		Map<String,Object> contentletFormData = new HashMap<String,Object>();
-		Map<String,Object> callbackData = new HashMap<String,Object>();
-		List<String> saveContentErrors = new ArrayList<String>();
-		boolean clearBinary = true;//flag to check if the binary field needs to be cleared or not
 
-		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-		User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req);
+        user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req);
 
 		// get the struts_action from the form data
 		for (String element:formData) {
@@ -1338,7 +1339,7 @@ public class ContentletAjax {
 			}
 		}
 
-		try {
+
 
 			// if it is save and publish, the save event must be not generagted
 			newInode = contentletWebAPI.saveContent(contentletFormData, isAutoSave, isCheckin, user, !publish);

@@ -57,7 +57,7 @@ public class FileAssetAjax {
 	}
 
 
-	public void saveFileText(String contentletInode, String newText) throws PortalException, SystemException,
+	public void saveFileText(String contentletInode, String newText, String binField) throws PortalException, SystemException,
 	DotDataException, DotSecurityException, IOException {
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest req = ctx.getHttpServletRequest();

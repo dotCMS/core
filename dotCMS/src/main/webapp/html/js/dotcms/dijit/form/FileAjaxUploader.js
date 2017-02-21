@@ -61,11 +61,12 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 	fieldName:'fileAsset',
 	lang:'0',
 	invalidFileSelectedMessage: 'You have selected a non allowed file',
-	
+	inodeShorty:'',
+	idShorty:'',
 	fileInfoTemplate: '<div>\
 		<table class="listingTable">\
 			<tr class="alternate_1">\
-	    		<td><b>File Name</b></td>\
+	    		<td nowrap><b>File Name</b></td>\
 				<td>{fileName}</td>\
 			</tr>\
 			<tr class="alternate_2">\
@@ -165,21 +166,23 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 		dojo.style(this.fileUploadForm, { display: '' });
 		dojo.style(this.fileUploadRemoveButton, { display: 'none' });
 		dojo.style(this.fileUploadInfoButton, { display: 'none' });
+		dojo.style("fileTextEditorDiv", { display: 'none' });
+		
 		dojo.byId(this.name+"_form").reset();
 		this.onRemove(this);
 	},
 	
 	_info: function () {
-		console.log(this.fileNameDisplayField);
+		console.log(this);
 		var fileInfo = {};
 		fileInfo['fileName'] = this.fileName;
-		if(this.identifier != '0') {
-			fileInfo['path'] = location.protocol +"//"+ location.host +
-			'/contentAsset/raw-data/' + this.identifier + '/' + this.id+'?language_id='+this.lang;
-		} else {
-			fileInfo['path'] = location.protocol +"//"+ location.host +
-			'/contentAsset/raw-data/' + this.inode + '/' + this.id + "?byInode=true";
-		}
+		fileInfo['path'] = location.protocol +"//"+ location.host + '/dA/';
+		
+		fileInfo['path'] += (this.identifier != '0') ? this.idShorty : this.inodeShorty;
+		fileInfo['path'] += (this.id != 'fileAsset') ? '/' +  this.id : "";
+		fileInfo['path'] += "/" + this.fileName +'?language_id='+this.lang;
+
+
 		var html = dojo.replace(this.fileInfoTemplate, fileInfo);
 		
 		this.fileInfoDialog.title = this.fileName;

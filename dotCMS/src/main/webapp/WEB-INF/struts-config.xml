@@ -184,11 +184,6 @@
 
 		<action path="/admin/change_user_portrait" forward="portlet.admin.change_user_portrait" />
 
-		<action path="/admin/create_user" type="com.liferay.portlet.admin.action.CreateUserAction">
-			<forward name="portlet.admin.error" path="portlet.admin.error" />
-			<forward name="portlet.admin.list_users" path="portlet.admin.list_users" />
-		</action>
-
 		<action path="/admin/default_email_notification" forward="portlet.admin.default_email_notification" />
 
 		<action path="/admin/default_groups_and_roles" forward="portlet.admin.default_groups_and_roles" />
@@ -233,11 +228,6 @@
 			<forward name="portlet.admin.error" path="portlet.admin.error" />
 		</action>
 
-		<action path="/admin/upload_user_portrait" type="com.liferay.portlet.myaccount.action.UploadPortraitAction">
-			<forward name="portlet.my_account.change_portrait" path="portlet.admin.change_user_portrait" />
-			<forward name="portlet.my_account.error" path="portlet.admin.error" />
-		</action>
-
 		<action path="/google/view" forward="portlet.google.view" />
 
 		<!-- Hello Faces -->
@@ -254,11 +244,6 @@
 
 		<action path="/my_account/change_portrait" forward="portlet.my_account.change_portrait" />
 
-		<action path="/my_account/create_account" type="com.liferay.portlet.myaccount.action.CreateUserAction">
-			<forward name="portlet.admin.error" path="portal.error" />
-			<forward name="portlet.admin.list_users" path="portlet.my_account.create_account" />
-		</action>
-
 		<action path="/my_account/edit_address" type="com.liferay.portlet.myaccount.action.EditAddressAction">
 			<forward name="portlet.my_account.edit_address" path="portlet.my_account.edit_address" />
 			<forward name="portlet.my_account.error" path="portlet.my_account.error" />
@@ -270,11 +255,6 @@
 
 		<action path="/my_account/update_profile" type="com.liferay.portlet.myaccount.action.UpdateProfileAction">
 			<forward name="portlet.my_account.edit_profile" path="portlet.my_account.edit_profile" />
-			<forward name="portlet.my_account.error" path="portlet.my_account.error" />
-		</action>
-
-		<action path="/my_account/upload_portrait" type="com.liferay.portlet.myaccount.action.UploadPortraitAction">
-			<forward name="portlet.my_account.change_portrait" path="portlet.my_account.change_portrait" />
 			<forward name="portlet.my_account.error" path="portlet.my_account.error" />
 		</action>
 

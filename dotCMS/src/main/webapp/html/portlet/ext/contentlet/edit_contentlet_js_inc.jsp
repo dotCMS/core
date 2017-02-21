@@ -982,7 +982,7 @@ dojo.require("dojox.layout.ContentPane");
 					dojo.create("th", {innerHTML:'<%= LanguageUtil.get(pageContext, "Locked") %>:'}, myTR);
 					dojo.create("td", {innerHTML: who + ' : <span class="lockedAgo">(' + when + ')</span>'}, myTR);
 
-					if(dojo.byId("contentLockedInfo").getHeight() <30){
+					if(dojo.style("contentLockedInfo",'height') <30){
 						dojo.animateProperty({
 					         node: dojo.byId("contentLockedInfo"),
 					         duration: 300,
@@ -996,7 +996,7 @@ dojo.require("dojox.layout.ContentPane");
 						}).play();
 					}
 				}else {
-					if(dojo.byId("contentLockedInfo").getHeight() >29){
+					if(dojo.style("contentLockedInfo",'height') >29){
 						dojo.animateProperty({
 						         node: dojo.byId("contentLockedInfo"),
 						         duration: 300,

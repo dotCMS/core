@@ -1,3 +1,4 @@
+<%String contents =UtilMethods.htmlifyString(FileUtils.readFileToString(fa.getBinary(field.getVelocityVarName()))); %>
 
 <style type="text/css">
     #editor {
@@ -17,134 +18,98 @@
     }
 </style>
 
-<%@page import="com.liferay.portal.language.LanguageUtil"%>
-
 <script type='text/javascript' src='/dwr/interface/FileAssetAjax.js'></script>
-<script type='text/javascript' src='/html/js/scriptaculous/prototype.js'></script>
-
-
 <script language="JavaScript">
     var aceEditor;
-    var iAmOpen = false;
-    var editorText;
-    var saveOrCancel = false;
-  	function aceAreaParser(parser,file){
-
-  		if(iAmOpen){
-	    	aceEditor.getSelection().selectFileStart();
-	    	aceEditor.clearSelection();
-  			return;
-  		}
-	    aceEditor = ace.edit('editor');
+    var changed=false;
+  	function aceAreaParser(parser){
+	    aceEditor = ace.edit("<%=field.getVelocityVarName()%>_ACE");
 	    aceEditor.setTheme("ace/theme/textmate");
+	    console.log(parser);
 	    aceEditor.getSession().setMode("ace/mode/"+parser);
-  		aceEditor.setValue(file.text);
-  		editorText= aceEditor.getValue();
   		aceEditor.clearSelection();
-  		iAmOpen = true;
+  		aceEditor.on("change", function(){
+  			changed=true;
+  		});
+  		aceEditor.on("blur", function(){
+  			saveText();
+  		});
 	 }
 
      function handleWrapMode(e) {
          aceEditor.getSession().setUseWrapMode(e);
      }
 
-	dojo.declare("dotcms.file.EditTextManager", null, {
-
-		fileInode: '',
-
-		editText: function (fileInode) {
-		    this.fileInode = fileInode;
-			FileAssetAjax.getWorkingTextFile(this.fileInode, dojo.hitch(this, this.loadTextCallback));
-		},
-
-		loadTextCallback: function(file) {
-				switch(file.extension) {
-				case 'css':
-					var parser="css";
-					break;
-				case 'vtl':
-					 var parser="velocity";
-					break;
-				case 'html':
-					var parser="text";
-					break;
-				case 'htm':
-					var parser="html";
-					break;
-				case 'js':
-					var parser = "jsp";
-					break;
-				case 'xml':
-					var parser = "xml";
-					break;
-				case 'sql':
-					var parser = "sql";
-					break;
-			    case 'php':
-				    var parser = "php";
-					break;
-			}
-			aceAreaParser(parser, file);
-			dijit.byId('editTextDialog').show();
-
-			dijit.byId('editTextButton').setAttribute('disabled',false);
-
-		},
+     function loadAce(fileName) {
+				var parser = "text";
+				switch(fileName) {
+					case 'css':
+						parser="css";
+						break;
+					case 'vtl':
+						 parser="velocity";
+						break;
+					case 'html':
+						parser="text";
+						break;
+					case 'htm':
+						parser="html";
+						break;
+					case 'js':
+						parser = "jsp";
+						break;
+					case 'xml':
+						parser = "xml";
+						break;
+					case 'sql':
+						parser = "sql";
+						break;
+				    case 'php':
+					    parser = "php";
+						break;
+				}
+			aceAreaParser(parser);
+     }
 
 
-		save: function() {
-			var text = aceEditor.getValue();
-			FileAssetAjax.saveFileText(this.fileInode, text, null, {
-				async: false,
-				callback:function() {
-				editTextManager.close();
-			   }
-		     }
-		   );
-		 },
-
-		saveTextCallback: function() {
-			this.close();
-		},
-
-		close: function() {
-			if(!saveOrCancel){
-				aceEditor.setValue(editorText);
-			}
-			saveOrCancel = false;
-			dijit.byId('editTextDialog').hide();
-		}
-
-	});
-
-	var editTextManager = new dotcms.file.EditTextManager();
 	function saveText(){
-		saveOrCancel = true;
-		editorText= aceEditor.getValue();
-		dijit.byId('editTextButton').setAttribute('disabled',true);
-		editTextManager.save();
-
+		if(!changed) {
+			return;
+		}
+		var text = aceEditor.getValue();
+		
+		
+		FileAssetAjax.saveFileText(contentletInode.value, text, '<%=field.getVelocityVarName()%>', {
+			async: false,
+			callback:function(data) {
+			console.log("savedText");
+			console.log(data);
+		   }
+		});
 	}
 
 </script>
 
-<div dojoType="dijit.Dialog" id="editTextDialog" onCancel="javascript:editTextManager.close();" title="<%= LanguageUtil.get(pageContext, "text-editor") %>">
-	<form name="fm" id="fm" method="post" action="" >
-		<input type="hidden" name="inode" value="<%= request.getParameter("inode") %>">
-		<input type="hidden" name="<portlet:namespace />referer" value="<%= request.getParameter("referer") %>">
-		<input type="hidden" name="<portlet:namespace />cmd" value="">
 
-		<div id="editor" style="width: 800px; height: 400px"></div>
+<%@page import="org.apache.commons.io.FileUtils"%>
+<%@page import="java.nio.file.Paths"%>
+<%@page import="java.nio.file.Files"%>
+<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
+<%@page import="com.dotmarketing.util.UtilMethods"%>
+
+<div id="fileTextEditorDiv">
+    <div style="height:600px;width:900px;border:1px solid silver" 
+        id="<%=field.getVelocityVarName()%>_ACE"><%=contents %></div>
         <div class="editor-options">
 			<div class="checkbox">
             	<input id="wrapEditor" name="wrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onChange="handleWrapMode" />
             	<label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
 			</div>
         </div>
-		<div class="buttonRow">
-		   <button id="editTextButton" dojoType="dijit.form.Button" onClick="javascript:saveText();"><%= LanguageUtil.get(pageContext, "Save") %></button>&nbsp; &nbsp;
-		   <button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="javascript:editTextManager.close();"><%= LanguageUtil.get(pageContext, "Cancel") %></button>&nbsp; &nbsp;
-		</div>
-	</form>
-
 </div>
+
+<input type="hidden" id="<%=field.getVelocityVarName()%>_hidden_field" value="<%=contents %>">
+
+<script>
+loadAce("<%=UtilMethods.getFileExtension(fa.getBinary(field.getVelocityVarName()).getName())%>")
+</script>

@@ -230,7 +230,7 @@
 
 						<div id="loadingRoleLayoutsWrapper"><img src="/html/images/icons/processing.gif"></div>
 
-						<div id="roleLayoutsGridWrapper" style="overflow-y:auto;overflow-x:hidden;">
+						<div id="roleLayoutsGridWrapper" style="overflow-y:auto;overflow-x:hidden;" class="view-roles__cms-tabs">
 							<div id="roleLayoutsGrid"></div>
 						</div>
 
