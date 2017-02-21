@@ -1,15 +1,14 @@
 /**
  * Created by oswaldogallango on 7/11/16.
  */
-import {CoreWebService} from "../services/core-web-service";
-import {RequestMethod} from "@angular/http";
-import {Injectable} from "@angular/core";
-import {Observable} from "rxjs/Rx";
-import {Router} from "@angular/router";
-import {Subject} from "rxjs/Subject";
-import {DotcmsEventsService} from "./dotcms-events-service";
-import {LoggerService} from "./logger.service";
-
+import {CoreWebService} from '../services/core-web-service';
+import {RequestMethod} from '@angular/http';
+import {Injectable} from '@angular/core';
+import {Observable} from 'rxjs/Rx';
+import {Router} from '@angular/router';
+import {Subject} from 'rxjs/Subject';
+import {DotcmsEventsService} from './dotcms-events-service';
+import {LoggerService} from './logger.service';
 
 /**
  * This Service get the server configuration to display in the login component
@@ -296,7 +295,7 @@ export class LoginService {
      * Subscribe to ser change and call received function on change.
      * @param func function will call when user change
      */
-    public watchUser(func: Function) {
+    public watchUser(func: Function): void {
         if (this.auth) {
             func(this.auth);
         }
@@ -319,6 +318,8 @@ export class LoginService {
         // When not logged user we need to fire the observable chain
         if (!auth.user) {
             this._logout$.next();
+        }else {
+            this.dotcmsEventsService.start();
         }
     }
 
