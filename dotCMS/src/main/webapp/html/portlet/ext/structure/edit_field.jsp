@@ -504,9 +504,8 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 
 
 
-<liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
-	<html:form action="/ext/structure/edit_field" method="post" styleId="field">
-<liferay:param name="box_title" value='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Edit-Field")) %>' />
+
+<html:form action="/ext/structure/edit_field" method="post" styleId="field">
 
 		<html:hidden property="inode" />
 		<html:hidden property="structureInode" />
@@ -654,18 +653,19 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 	</dl>
 
 	<dl id="valueRow" style="display:none">
-		<dt id="valueRowLabel">
+		<dt id="valueRowLabel" style="width:150px;">
 			<span class="required"></span> &nbsp;<%= LanguageUtil.get(pageContext, "Value") %>:
+			<img src="/html/images/shim.gif" width="150" height="1">
 		</dt>
 		<dd>
 			<div id="valueRow_inner" class="esEditorWrapper">
 				<div id="esEditor"><%=UtilMethods.htmlifyString(textArea)%></div>
 			</div>
 			<textarea class="hidden" dojoType="dijit.form.Textarea" name="values" id="textAreaValues"><%=UtilMethods.htmlifyString(textArea)%></textarea>
-						<div class="checkbox">
-							<input id="wrapEditor" name="wrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onChange="handleWrapMode" />
-							<label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
-						</div>
+			<div class="checkbox">
+				<input id="wrapEditor" name="wrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onChange="handleWrapMode" />
+				<label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
+			</div>
 		</dd>
 	</dl>
 
@@ -786,4 +786,4 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 
 
 </html:form>
-</liferay:box>
+
