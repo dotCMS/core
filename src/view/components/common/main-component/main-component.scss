@@ -22,6 +22,7 @@ $sidebar-width: 190px;
   border-right: solid 1px $gray-lighter;
   height: 100%;
   position: fixed;
+  overflow: auto;
   transition: transform $basic-speed cubic-bezier(0.25, 0.8, 0.25, 1);
   width: $sidebar-width;
 
