@@ -169,7 +169,7 @@
     <textarea 
     	<%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> 
     	dojoType="dijit.form.SimpleTextarea"  
-    	<%=isWidget?"style=\"overflow:auto;height: 300px\"":"style=\"overflow:auto;min-height:100px;max-height: 600px\""%>
+    	style="overflow:auto;height: 300px"
         name="<%=field.getFieldContentlet()%>"
         
         id="<%=field.getVelocityVarName()%>" class="editTextAreaField"><%= UtilMethods.htmlifyString(textValue) %></textarea>
