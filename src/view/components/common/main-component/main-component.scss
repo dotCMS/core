@@ -37,6 +37,12 @@ $sidebar-width: 190px;
   z-index: 1;
 }
 
+.layout__toolbar-inner {
+  display: flex;
+  flex: 1;
+  justify-content: space-between;
+}
+
 .toolbar__actions,
 .toolbar__host {
   display: flex;
