@@ -102,19 +102,9 @@ public class OsgiFelixListener implements ServletContextListener {
             }
         }
 
-        this.registerQueueServices (context);
-
         System.setProperty(WebKeys.OSGI_ENABLED, "true");
     }
 
-	/**
-	 * There are components that needs to register a service to the OSGI context when it is not ready yet.
-	 * For that propor
-	 * @param context
-	 */
-	private void registerQueueServices(final ServletContextEvent context) {
 
-		Object bundleContext = context.getServletContext().getAttribute(BundleContext.class.getName());
-	}
 
 }
