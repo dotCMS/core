@@ -3,7 +3,7 @@
 <head>
   <base href="/build/">
   <meta charset="UTF-8">
-  <title>(Dev) dotCMS Core-Web</title>
+  <title>dotCMS Content Management Platform</title>
 
   <link rel="stylesheet" type="text/css" href="scss/main.css" />
 
@@ -31,7 +31,16 @@
 
 
 <body>
-<app>Loading...</app>
+<app>
+
+	<div style="position: fixed;top: 40%;left: 50%;transform: translate(-50%, -50%);vertical-align:middle;">
+		<div class="loader">
+			<i class="fa fa-circle-o-notch fa-spin" style="font-size:45px;color:#1681cb;font-weight:bold;"></i>
+			<img src="scss/img/dotCMS-logo.png" title="dotCMS loading" style="height: 50px; margin-left: 10px;vertical-align:bottom">
+		</div>
+	</div>
+
+</app>
 
 <!-- build:js thirdparty/plugins.js -->
 <script src="../node_modules/jquery/dist/jquery.min.js"></script>
