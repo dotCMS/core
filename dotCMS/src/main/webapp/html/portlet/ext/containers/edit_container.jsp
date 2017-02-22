@@ -22,13 +22,13 @@
 		position: relative;
 	}
 	.show{
-		width: 650px;
-		height: 350px;
+		width: 900px;
+		height: 400px;
 		border:1px solid #C0C0C0;
 	}
 	 .pShow{
-		width: 650px;
-		height: 150px;
+		width: 900px;
+		height: 250px;
 		border:1px solid #C0C0C0;
 	}
 	.hidden{
@@ -252,8 +252,8 @@
 						<div class="fieldWrapper">
 							<div class="fieldName"> </div>
 							<div class="fieldValue">
-								<div style="width:650px">
-									<div dojoType="dijit.layout.TabContainer" id="tabContainer" style="width:653px;overflow-y: hidden; " dolayout="false">
+								<div style="width:900px">
+									<div dojoType="dijit.layout.TabContainer" id="tabContainer" style="width:903px;overflow-y: hidden; " dolayout="false">
 									<style>
 									.dijitDisplayNone {
 										display:block !important;

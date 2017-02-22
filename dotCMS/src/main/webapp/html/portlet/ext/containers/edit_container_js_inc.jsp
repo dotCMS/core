@@ -690,9 +690,9 @@
 			name: "codeMaskMulti"+structureInode,
 			id: "codeMaskMulti"+structureInode,
 			value: "",
+
 			class: "aceText",
 			style: "display:none"
-			style: "width:99%; height:300px;display:none"
 
 		  });
 
