@@ -823,14 +823,6 @@
 			strHTML += '</a>';
 
 		}
-		
-		if(!page.isContentlet) {
-			strHTML += '<div class="pop_divider" ></div>';
-			strHTML += '<a href="javascript: migratePage(\''+objId+'\',\''+referer+'\');" class="context-menu__item">';
-			strHTML += '<span class="repeatIcon"></span>';
-			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "modes.Migrate-To-Content")) %>';
-			strHTML += '</a>';
-		}
 
 		strHTML += '<div class="pop_divider" ></div>';
 		strHTML += '<a href="javascript: hidePopUp(\'context_menu_popup_'+objId+'\');" class="context-menu__item">';

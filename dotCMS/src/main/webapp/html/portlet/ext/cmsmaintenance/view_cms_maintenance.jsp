@@ -298,24 +298,6 @@ function doDeletePushedAssetsCallback(result) {
 	}
 }
 
-function doConvertPagesToContent(){
-	  if(confirm("<%= LanguageUtil.get(pageContext,"Do-you-want-to-migrate-pages") %>")){
-			$("convertPagesMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress-migrating-pages") %></b></spanstyle>';
-			dijit.byId("convertPagesButton").attr('disabled', true);
-			CMSMaintenanceAjax.migrateHTMLPagesToContent(doConvertPagesToContentCallback);
-		}
-}
-
-function doConvertPagesToContentCallback(result) {
-
-	if(result) {
-		document.getElementById("convertPagesMessage").innerHTML='<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"htmlpages-were-succesfully-converted")) %></b></spanstyle>';
-	} else {
-		document.getElementById("convertPagesMessage").innerHTML='<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"htmlpages-could-not-be-converted")) %></b></spanstyle>';
-	}
-	dijit.byId("convertPagesButton").attr('disabled', false);
-}
-
 function doDropAssets(){
    var dateInput = dijit.byId('removeassetsdate');
 
@@ -1669,25 +1651,6 @@ dd.leftdl {
                     </td>
                     <td align="center">
                       <button dojoType="dijit.form.Button" onClick="doDeletePushedAssets();"  id="deletePushAssetsButton" iconClass="deleteIcon">
-                         <%= LanguageUtil.get(pageContext,"Execute") %>
-                      </button>
-                    </td>
-                </tr>
-
-            </table>
-            
-             <table class="listingTable">
-                <tr>
-                    <th><%= LanguageUtil.get(pageContext,"Convert-Pages-To-Content") %></th>
-                    <th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
-                </tr>
-                <tr>
-                    <td>
-                        <p><%= LanguageUtil.get(pageContext,"This-utility-will-migrate-all-htmlpages-to-content") %></p>
-                         <div align="center"  id="convertPagesMessage"></div>
-                    </td>
-                    <td align="center">
-                      <button dojoType="dijit.form.Button" onClick="doConvertPagesToContent();"  id="convertPagesButton" iconClass="repeatIcon">
                          <%= LanguageUtil.get(pageContext,"Execute") %>
                       </button>
                     </td>
