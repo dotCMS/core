@@ -67,7 +67,7 @@ public class ClientVelocityServlet extends VelocityServlet {
         return (refererValue != null && (refererValue.contains( "host_id=" )
                     || refererValue.contains( "container=true" )
                     || refererValue.contains(PortletURLUtil.URL_ADMIN_PREFIX )
-                    || refererValue.contains( "p_p_id=" + PortletID.SITE_BROWSER )))
+                    || refererValue.contains( "p_p_id" )))
                 || containerParameter;
     }
 
