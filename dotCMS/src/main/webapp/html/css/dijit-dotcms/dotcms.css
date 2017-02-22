@@ -4267,7 +4267,7 @@ html, body {
   margin-left: 0;
 }
 .dijitTabCloseIcon:before, .dijitTabCloseIcon:after {
-  background-color: #fff;
+  background-color: #161616;
   display: block;
   content: "";
   width: 1px;
@@ -4464,7 +4464,6 @@ html, body {
 .dijitTreeRow .dijitTreeIcon, .dijitTreeRow .dijitTreeExpando {
   display: inline-block;
   vertical-align: sub;
-  margin-right: 4px;
 }
 .dijitTreeContent {
   min-height: 18px;
@@ -4474,6 +4473,12 @@ html, body {
   width: 18px;
   height: 18px;
   background-repeat: no-repeat;
+}
+.dijitTreeExpando {
+  background-position: 3px 1px;
+}
+.dijitTreeExpandoLeaf {
+  background-position: 0 -2px;
 }
 .dijitTreeLabel {
   margin: 0;
@@ -9493,20 +9498,17 @@ a.category_higlighted, a.tag_higlighted {
   width: 550px;
 }
 .content-type__fields-list {
-  display: table;
   width: 100%;
 }
-.content-type__fields-list-body {
-  display: table-row-group;
-}
 .content-type__fields-list-cell {
-  border-bottom: 1px solid #ECEDEE;
-  display: table-cell;
+  flex: 1;
   padding: 8px;
   white-space: nowrap;
 }
 .content-type__fields-list-header, .content-type__fields-list-row {
-  display: table-row;
+  border-bottom: 1px solid #ECEDEE;
+  display: flex;
+  justify-content: space-between;
 }
 .content-type__fields-list-header {
   background: #FAFAFA;
@@ -9535,6 +9537,10 @@ a.category_higlighted, a.tag_higlighted {
 }
 .design-template__sidebar-wrapper .portlet-sidebar {
   width: 220px;
+}
+
+.edit-relationship .form-horizontal dt {
+  width: 250px;
 }
 
 .job-scheduler__host-list {
@@ -9653,8 +9659,10 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .view-roles__portlets-list {
-  margin: 0;
-  max-height: 200px;
+  border: solid 1px #ECEDEE;
+  border-radius: 2px;
+  margin: 0 0 8px;
+  height: 175px;
   overflow: auto;
 }
 .view-roles__portlets-list ul {
@@ -9664,10 +9672,9 @@ a.category_higlighted, a.tag_higlighted {
 .view-roles__portlets-list-item {
   display: flex;
   justify-content: space-between;
-  padding: 8px 0;
+  padding: 8px;
   border-bottom: solid 1px #ECEDEE;
   align-items: center;
-  padding-right: 2px;
 }
 
 .nameText {
@@ -9748,11 +9755,6 @@ a.category_higlighted, a.tag_higlighted {
 .view-users__roles-actions .dijitButton {
   display: block;
   margin: 8px 0;
-}
-
-.view-users__roles-to-grant .dijitTreeContainer {
-  float: none;
-  margin-top: 4px;
 }
 
 .view-users__roles-to-grant,
@@ -9972,6 +9974,10 @@ a.category_higlighted, a.tag_higlighted {
 }
 .context-menu__item:hover {
   background-color: #FAFAFA;
+}
+.context-menu__item [class$="Icon"],
+.context-menu__item [class*="Icon"] {
+  display: none;
 }
 .context-menu__item .arrowRightIcon {
   font-size: 12px;
@@ -10267,6 +10273,10 @@ a.category_higlighted, a.tag_higlighted {
 }
 .context-menu__item:hover {
   background-color: #FAFAFA;
+}
+.context-menu__item [class$="Icon"],
+.context-menu__item [class*="Icon"] {
+  display: none;
 }
 .context-menu__item .arrowRightIcon {
   font-size: 12px;

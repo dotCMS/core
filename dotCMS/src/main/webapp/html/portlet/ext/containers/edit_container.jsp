@@ -160,12 +160,7 @@
 		<!-- START PROPERTIES TAB -->
 			<div id="properties" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "properties") %>" onShow="showEditButtonsRow()">
 				<div class="form-horizontal">
-					<div class="fieldWrapper">
-						<%if(id!=null){%>
-							<div class="fieldName"><%= LanguageUtil.get(pageContext, "Identity") %>:&nbsp;</div>
-							<div class="fieldValue"><%= id.getId() %></div>
-						<%}%>
-					</div>
+
 					<% if(host != null) { %>
 					<div class="fieldWrapper">
 						<html:hidden property="hostId" value="<%=hostId%>"/>
@@ -260,13 +255,6 @@
 								<div style="width:650px">
 									<div dojoType="dijit.layout.TabContainer" id="tabContainer" style="width:653px;overflow-y: hidden; " dolayout="false">
 									<style>
-									.dijitTabCloseButton {
-										width: 15px;
-										height: 15px;
-									}
-									.dijitTabCloseText {
-										display:block;
-									}
 									.dijitDisplayNone {
 										display:block !important;
 									}

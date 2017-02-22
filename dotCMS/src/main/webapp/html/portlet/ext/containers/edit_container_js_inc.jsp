@@ -692,7 +692,8 @@
 			value: "",
 			class: "aceText",
 			style: "display:none"
-			
+			style: "width:99%; height:300px;display:none"
+
 		  });
 
 		var div = dojo.create("div",{
