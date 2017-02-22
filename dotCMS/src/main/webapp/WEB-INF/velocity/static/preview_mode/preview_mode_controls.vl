@@ -299,7 +299,7 @@
 		var menuDim = dojo.marginBox(ele);
 
 		//Repositioning it to the mouse position
-		var posx = senderCoords.x + menuFrameDim.w;
+		var posx = senderCoords.x;
 		if(posx + menuDim.w > windowDim.w - 5) posx = windowDim.w - 5 - menuDim.w;
 		var posy = senderCoords.y + senderCoords.h;
 

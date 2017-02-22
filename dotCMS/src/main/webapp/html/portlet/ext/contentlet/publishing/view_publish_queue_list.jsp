@@ -225,7 +225,7 @@
 		Bundle bundleObj = APILocator.getBundleAPI().getBundleById((String)bundle.get("bundle_id"));
 		%>
 
-	<table class="listingTable" style="margin:10px;margin-bottom:20px;">
+	<table class="listingTable" style="margin-bottom:20px;">
 		<tr>
 
 			<th style="width:30px;text-align:center;">
@@ -336,7 +336,7 @@
 	}
 }%>
 
-<table width="97%" style="margin:10px;" >
+<table width="100%">
 	<tr>
 		<%
 		if(begin > 0){ %>

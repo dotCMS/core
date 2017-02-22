@@ -224,15 +224,22 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 		dia = new dijit.Dialog({
 			id			:	this.addEditDiv,
 			title		: 	"<%=LanguageUtil.get(pageContext, "Edit-Scheme")%>",
-			});
+			draggable	:	false
+		});
 
 
+		myCp.attr("href", href);
 
 		myCp.placeAt("wfEditSchemeDia");
 
 		dia.show();
-		myCp.attr("href", href);
 
+		setTimeout(function() {
+			dia.domNode.style.top = "50%"
+			dia.domNode.style.marginTop = '-' + (parseInt(dia.domNode.offsetHeight / 2, 10) + 'px');
+			dia.domNode.style.left = "50%"
+			dia.domNode.style.marginLeft = '-' + (parseInt(dia.domNode.offsetWidth / 2, 10) + 'px');
+		}, 100)
 	},
 
 	hideAddEdit : function() {
@@ -404,8 +411,9 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 		}
 		dia = new dijit.Dialog({
 			id			:	"stepEditDia",
-			title		: 	"<%=LanguageUtil.get(pageContext, "Edit-Step")%>"
-			});
+			title		: 	"<%=LanguageUtil.get(pageContext, "Edit-Step")%>",
+			draggable	:	false
+		});
 
 		var myCp = dijit.byId("stepEditCp");
 		if (myCp) {
@@ -419,7 +427,15 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 
 		myCp.placeAt("stepEditDia");
 
+
 		dia.show();
+		setTimeout(function() {
+			dia.domNode.style.top = "50%"
+			dia.domNode.style.marginTop = '-' + (parseInt(dia.domNode.offsetHeight / 2, 10) + 'px');
+			dia.domNode.style.left = "50%"
+			dia.domNode.style.marginLeft = '-' + (parseInt(dia.domNode.offsetWidth / 2, 10) + 'px');
+		}, 100)
+
 		myCp.attr("href","/html/portlet/ext/workflows/schemes/edit_step.jsp?stepId=" + stepId);
 		setTimeout(function() {
 		    showExpirationTime();
