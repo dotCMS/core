@@ -6,6 +6,6 @@
     id="detailFrame"
     [src]="iframe"
     frameborder="0"
-    [class.iframe--loading-in-progress]="loadingInProgress"
-    (load)="checkSessionExpired($event)">
+    (load)="hideLoadingIndicator($event)"
+    [class.iframe--loading-in-progress]="loadingInProgress">
 </iframe>

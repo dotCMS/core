@@ -39,6 +39,10 @@ export class IframeLegacyComponent extends SiteChangeListener {
 
     }
 
+    hideLoadingIndicator($event): void {
+        this.loadingInProgress = false;
+    }
+
     ngOnInit(): void {
         // TODO there is a weird 4px bug here that make unnecessary scroll, need to look into it.
         this.element.nativeElement.style.height = (window.innerHeight - 64) + 'px';
@@ -46,7 +50,6 @@ export class IframeLegacyComponent extends SiteChangeListener {
 
         this.initComponent();
 
-        this.iframeElement.onload = () => this.loadingInProgress = false;
         let events: string[] = ['SAVE_FOLDER', 'UPDATE_FOLDER', 'DELETE_FOLDER', 'SAVE_PAGE_ASSET', 'UPDATE_PAGE_ASSET',
             'ARCHIVE_PAGE_ASSET', 'UN_ARCHIVE_PAGE_ASSET', 'DELETE_PAGE_ASSET', 'PUBLISH_PAGE_ASSET', 'UN_PUBLISH_PAGE_ASSET',
             'SAVE_FILE_ASSET', 'UPDATE_FILE_ASSET', 'ARCHIVE_FILE_ASSET', 'UN_ARCHIVE_FILE_ASSET', 'DELETE_FILE_ASSET',
@@ -64,7 +67,6 @@ export class IframeLegacyComponent extends SiteChangeListener {
     }
 
     initComponent(): void {
-
         this.route.params.pluck<string>('id').subscribe(id => {
             setTimeout(() => {
                     this.iframe = this.loadURL(this.routingService.getPortletURL(id));
@@ -90,7 +92,6 @@ export class IframeLegacyComponent extends SiteChangeListener {
     }
 
     loadURL(url: string): SafeResourceUrl {
-
         let urlWithParameters = url;
 
         this.loadingInProgress = true;
