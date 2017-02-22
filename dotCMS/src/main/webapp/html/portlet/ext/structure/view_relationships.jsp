@@ -79,11 +79,10 @@ function deleteRelationship(inode) {
 			{
 				Structure parentStructure = relationship.getParentStructure ();
 				Structure childStructure = relationship.getChildStructure ();
-				String classN = (i++ % 2 == 0 ? "alternate_1" : "alternate_2");
 			%>
 	
-			<tr class="<%=classN%>">
-				<td align="center">
+			<tr>
+				<td class="listingTable__actions">
 	                <a href="<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>
 	                        <portlet:param name='struts_action' value='/ext/structure/edit_relationship' />
 	                        <portlet:param name='inode' value='<%=relationship.getInode()%>' />
