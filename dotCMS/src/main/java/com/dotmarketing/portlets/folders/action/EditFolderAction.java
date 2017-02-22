@@ -477,34 +477,6 @@ public class EditFolderAction extends DotPortletAction {
 		FolderAPI fapi = APILocator.getFolderAPI();
 		
 		/****** begin *************/
-		List<IHTMLPage> htmlPages = APILocator.getHTMLPageAssetAPI().getHTMLPages(folder, true, false, APILocator.getUserAPI().getSystemUser(), false);
-		for (IHTMLPage page: htmlPages) {
-			Identifier identifier = APILocator.getIdentifierAPI().find(page);
-            if(!InodeUtils.isSet(identifier.getInode())) {
-                Logger.warn(FolderFactory.class, "_deleteChildrenAssetsFromFolder: page inode = " + ((IHTMLPage)page).getInode() +  " doesn't have a valid identifier associated.");
-                continue;
-            }
-            
-            perAPI.removePermissions((IHTMLPage)page);
-
-			List<Versionable> versions = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getDefaultUser(),false);
-
-			for (Versionable versionV : versions) {
-				IHTMLPage version = (IHTMLPage) versionV;
-				if (version.isWorking()) {
-					//updating caches
-					WorkingCache.removeAssetFromCache(version);
-					CacheLocator.getIdentifierCache().removeFromCacheByVersionable(version);
-				}
-
-				if (version.isLive()) {
-					LiveCache.removeAssetFromCache(version);
-				}
-
-				InodeFactory.deleteInode(version);
-			}
-			APILocator.getIdentifierAPI().delete(identifier);
-		}
 
 		List<File> files = fapi.getFiles(folder,APILocator.getUserAPI().getDefaultUser(),false);
 		for (File file: files) {

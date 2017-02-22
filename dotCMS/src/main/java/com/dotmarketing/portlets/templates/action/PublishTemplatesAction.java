@@ -77,9 +77,6 @@ public class PublishTemplatesAction extends DotPortletAction {
 		
 		ActionRequestImpl reqImpl = (ActionRequestImpl)req;
 
-		//creates a set of related pages for this template
-		Set relatedPages = new HashSet();
-
 		for (int i=0;i<publishInode.length;i++) {
 
 			Template template = (Template) InodeFactory.getInode(publishInode[i],Template.class);
@@ -95,20 +92,8 @@ public class PublishTemplatesAction extends DotPortletAction {
 					Logger.error(this, wax.getMessage(),wax);
 					SessionMessages.add(req, "error", "message.webasset.published.failed");
 				}
-				List<HTMLPageAsset> pagesForThisTemplate = APILocator.getTemplateAPI().getPagesUsingTemplate(template, user, false);
-				relatedPages.addAll(pagesForThisTemplate);
 			}
-		}
-		
-		Iterator iterPages = relatedPages.iterator();
-		//iterates through the children pages
-		while (iterPages.hasNext()) {
-			//writes the page to a file
-			PageServices.invalidateAll((HTMLPageAsset) iterPages.next());
-		}
-		
-		
-		
+		}		
 	}
 
 }

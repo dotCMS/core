@@ -65,7 +65,6 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
     private ContentletAPI conAPI = APILocator.getContentletAPI();
     private FolderAPI folderAPI = APILocator.getFolderAPI();
     private HostAPI hostAPI = APILocator.getHostAPI();
-    //private HTMLPageAPI htmlAPI = APILocator.getHTMLPageAPI();
     private HTMLPageAssetAPI pageAssetAPI = APILocator.getHTMLPageAssetAPI();
     private IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
     private LanguageAPI langAPI = APILocator.getLanguageAPI();

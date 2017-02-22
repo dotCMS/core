@@ -363,9 +363,6 @@ public class UserAPIImpl implements UserAPI {
 		//replace user references in htmlpages
 		logDelete(DeletionStage.BEGINNING, userToDelete, user, "HTMLPages");
 
-		//HTMLPageAPI pageAPI  = APILocator.getHTMLPageAPI();
-		//pageAPI.updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
-
 		logDelete(DeletionStage.END, userToDelete, user, "HTMLPages");
 
 		//replace user references in file_assets

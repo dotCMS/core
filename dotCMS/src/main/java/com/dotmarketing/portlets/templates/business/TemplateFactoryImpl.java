@@ -69,21 +69,6 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		"template.inode = template_1_.inode and " +
 		"template.inode=vi.working_inode ";
 
-	private final String workingVersionPagesUsingTemplateSQL =
-		"select {htmlpage.*} from htmlpage, inode htmlpage_1_, " +
-		"identifier htmlpage_identifier, htmlpage_version_info vi where " +
-		"htmlpage_identifier.id = htmlpage.identifier and " +
-		"htmlpage.template_id = ? and vi.identifier=htmlpage_identifier.id and " +
-		"htmlpage.inode = htmlpage_1_.inode and " +
-		"htmlpage.inode=vi.working_inode ";
-	
-	private final String nonWorkingVersionPagesUsingTemplateSQL =
-			"select {htmlpage.*} from htmlpage, inode htmlpage_1_, " +
-			"identifier htmlpage_identifier, htmlpage_version_info vi where " +
-			"htmlpage_identifier.id = htmlpage.identifier and " +
-			"htmlpage.template_id = ? and vi.identifier=htmlpage_identifier.id and " +
-			"htmlpage.inode = htmlpage_1_.inode";
-
 
 	@SuppressWarnings("unchecked")
 	public List<Template> findTemplatesUnder(Folder parentFolder) throws DotStateException, DotDataException {
@@ -316,22 +301,6 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		return assets;
 
 
-	}
-	@Override
-	public List<HTMLPageAsset> getPagesUsingTemplate(Template template) throws DotDataException {
-		HibernateUtil hu = new HibernateUtil(HTMLPageAsset.class);
-		hu.setSQLQuery(workingVersionPagesUsingTemplateSQL);
-		hu.setParam(template.getIdentifier());
-		List<HTMLPageAsset> workingPages = new ArrayList<HTMLPageAsset>(new HashSet<HTMLPageAsset>(hu.list()));
-		if(workingPages.size() > 0){
-			return workingPages;
-		}else{
-			HibernateUtil hu1 = new HibernateUtil(HTMLPageAsset.class);
-			hu1.setSQLQuery(nonWorkingVersionPagesUsingTemplateSQL);
-			hu1.setParam(template.getIdentifier());
-			List<HTMLPageAsset> nonWorkingPages = new ArrayList<HTMLPageAsset>(new HashSet<HTMLPageAsset>(hu1.list()));
-			return nonWorkingPages;	
-		}
 	}
 	@Override
 	public void associateContainers(List<Container> containerIdentifiers,Template template) throws DotHibernateException{

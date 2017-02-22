@@ -46,8 +46,6 @@ public interface TemplateFactory {
 	
 	public List<Template> findTemplates(User user, boolean includeArchived, Map<String,Object> params, String hostId, String inode, String identifier, String parent, int offset, int limit, String orderBy) throws DotSecurityException, DotDataException;
 	
-	public List<HTMLPageAsset> getPagesUsingTemplate(Template template) throws DotDataException;
-	
 	public void associateContainers(List<Container> containerIdentifiers,Template template) throws DotHibernateException;
 
 	public Template find(String inode) throws DotStateException, DotDataException;

@@ -176,17 +176,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		return newTemplate;
 	}
 
-
-	public List<HTMLPageAsset> getPagesUsingTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-
-		if (!permissionAPI.doesUserHavePermission(template, PermissionAPI.PERMISSION_READ, user,
-				respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to read the template file.");
-		}
-
-		return templateFactory.getPagesUsingTemplate(template);
-	}
-
 	public Template copy(Template sourceTemplate, Host destination, boolean forceOverwrite,
 			boolean copySourceContainers, User user, boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException {
@@ -486,31 +475,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		return find(info.getLiveInode(), user, respectFrontendRoles);
 	}
 
-
-	public String checkDependencies(String templateInode, User user, Boolean respectFrontendRoles) throws PortalException, SystemException, DotDataException, DotSecurityException {
-		String result = null;
-		Template template = (Template) InodeFactory.getInode(templateInode, Template.class);
-		// checking if there are pages using this template
-		List<HTMLPageAsset> pages=APILocator.getTemplateAPI().getPagesUsingTemplate(template, user, respectFrontendRoles);
-
-		if(pages.size()>0) {
-			StringBuilder names=new StringBuilder();
-			for(int i=0; i<pages.size(); i++) {
-				names.append(pages.get(i).getURI());
-				if(i <pages.size()-1){
-					names.append(", ");
-				}
-				if(pages.size()-1 == i){
-					if(!(pages.get(i).isWorking())){
-						names.append(",HTMLPAGE_NON_WORKING_VERSIONS");
-					}
-				}
-			}
-			result =  names.toString();
-		}
-		return result;
-	}
-
     @Override
     public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException {
         return deleteOldVersions(assetsOlderThan,"template");
@@ -518,25 +482,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
     public void updateThemeWithoutVersioning(String templateInode, String theme) throws DotDataException{
     	templateFactory.updateThemeWithoutVersioning(templateInode, theme);
-    }
-
-    /**
-     * Invalidate pages cache related to the specified template and also
-     * invalidates live html pages
-     *
-     * @param templateInode
-     * @param user
-     * @param respectFrontEndRoles
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
-    public void invalidateTemplatePages(String templateInode, User user, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException{
-    	Template template = find(templateInode, user, respectFrontEndRoles);
-  		List<HTMLPageAsset> pagesForThisTemplate = APILocator.getTemplateAPI().getPagesUsingTemplate(template, APILocator.getUserAPI().getSystemUser(), false);
-  		for (HTMLPageAsset page : pagesForThisTemplate) {
-  			//writes the page to a file
-  			PageServices.invalidateLive(page);
-  		}
     }
     
     /**

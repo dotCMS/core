@@ -241,13 +241,6 @@ public class TemplateAjax {
 		return toReturn;
 	}
 
-	public String checkDependencies(String templateInode) throws DotDataException, DotRuntimeException, DotSecurityException, PortalException, SystemException{
-		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-		User user = userWebAPI.getLoggedInUser(req);
-		boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(req);
-		return templateAPI.checkDependencies(templateInode, user, respectFrontendRoles);
-	}
-
     /**
      * Method that will verify if a given template title is already used by another template
      *
@@ -284,21 +277,5 @@ public class TemplateAjax {
 
         return duplicatedTitle;
     }
-    
-    public String deleteDependentNonWorkingVersions(String templateInode) throws DotDataException, DotRuntimeException, DotSecurityException, PortalException, SystemException{
-		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-		User user = userWebAPI.getLoggedInUser(req);
-		boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(req);
-		Template template = templateAPI.find(templateInode, user, respectFrontendRoles);
-		List<HTMLPageAsset> pages= templateAPI.getPagesUsingTemplate(template, user, respectFrontendRoles);
-		for(HTMLPageAsset page : pages) {
-			try{
-				APILocator.getContentletAPI().delete(page, user, false);
-			}catch(Exception e){
-				e.printStackTrace();
-			}
-		}
-		return LanguageUtil.get(user, "Success");
-	}
 
 }

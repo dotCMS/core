@@ -2448,7 +2448,6 @@ public class UtilMethods {
             /* Get the htmlpage a publish */
             String idStr = liveUrl.substring(liveUrl.indexOf("/") + 1, liveUrl.indexOf("."));
             //long idInode = Long.parseLong(idStr);
-            //HTMLPage htmlPage = (HTMLPage) APILocator.getVersionableAPI().findLiveVersion(InodeFactory.getInode(idStr, Identifier.class), HTMLPage.class);
             IHTMLPage htmlPage = (IHTMLPage) APILocator.getVersionableAPI().findLiveVersion(APILocator.getIdentifierAPI().find(idStr), APILocator.getUserAPI().getSystemUser(),false);
             if(htmlPage != null && InodeUtils.isSet(htmlPage.getInode())){
             	//PublishFactory.publishAsset(htmlPage, APILocator.getUserAPI().getSystemUser(), false);

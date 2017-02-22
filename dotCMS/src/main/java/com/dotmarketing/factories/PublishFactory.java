@@ -241,8 +241,6 @@ public class PublishFactory {
 			java.util.List foldersListSubChildren = APILocator.getFolderAPI().findSubFolders(parentFolder,APILocator.getUserAPI().getSystemUser(),false);
 			//gets all links for this folder
 			java.util.List linksListSubChildren = APILocator.getFolderAPI().getWorkingLinks(parentFolder, user, false);
-			//gets all html pages for this folder
-			//java.util.List htmlPagesSubListChildren = APILocator.getFolderAPI().getWorkingHTMLPages(parentFolder,user,false);
 			//gets all files for this folder
 			java.util.List filesListSubChildren = APILocator.getFolderAPI().getWorkingFiles(parentFolder,user,false);
 			//gets all templates for this folder
@@ -254,7 +252,6 @@ public class PublishFactory {
 			java.util.List elements = new java.util.ArrayList();
 			elements.addAll(foldersListSubChildren);
 			elements.addAll(linksListSubChildren);
-			//elements.addAll(htmlPagesSubListChildren);
 			elements.addAll(filesListSubChildren);
 			//elements.addAll(templatesListSubChildren);
 			//elements.addAll(containersListSubChildren);
@@ -417,8 +414,6 @@ public class PublishFactory {
 			java.util.List foldersListSubChildren = APILocator.getFolderAPI().findSubFolders(parentFolder,APILocator.getUserAPI().getSystemUser(),false);
 			//gets all links for this folder
 			java.util.List linksListSubChildren = APILocator.getFolderAPI().getWorkingLinks(parentFolder,user,false);
-			//gets all html pages for this folder
-			//java.util.List htmlPagesSubListChildren = APILocator.getFolderAPI().getWorkingHTMLPages(parentFolder,user,false);
 			//gets all files for this folder
 			java.util.List filesListSubChildren = APILocator.getFolderAPI().getWorkingFiles(parentFolder,user,false);
 			//gets all templates for this folder
@@ -430,7 +425,6 @@ public class PublishFactory {
 			java.util.List elements = new java.util.ArrayList();
 			elements.addAll(foldersListSubChildren);
 			elements.addAll(linksListSubChildren);
-			//elements.addAll(htmlPagesSubListChildren);
 			elements.addAll(filesListSubChildren);
 			//elements.addAll(templatesListSubChildren);
 			//elements.addAll(containersListSubChildren);
