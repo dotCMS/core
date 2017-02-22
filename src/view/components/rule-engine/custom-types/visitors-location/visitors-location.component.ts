@@ -1,7 +1,7 @@
 import {Component, Input, Output, EventEmitter, ChangeDetectionStrategy} from '@angular/core';
-import {DecimalPipe} from "@angular/common";
+import {DecimalPipe} from '@angular/common';
 import {FormControl} from '@angular/forms';
-import {GCircle} from "../../../../../api/maps/GoogleMapService";
+import {GCircle} from '../../../../../api/maps/GoogleMapService';
 
 interface Param<T> {
   key:string
@@ -92,8 +92,6 @@ const I8N_BASE:string = 'api.sites.ruleengine'
 
 })
 export class VisitorsLocationComponent {
-
-
   @Input() circle:GCircle = {center: {lat:38.89, lng: -77.04}, radius: 10000}
   @Input() comparisonValue:string
   @Input() comparisonControl:FormControl
@@ -109,7 +107,7 @@ export class VisitorsLocationComponent {
   showingMap:boolean = false
   comparisonDropdown:any
 
-  constructor(public decimalPipe:DecimalPipe) {
+  constructor(public decimalPipe: DecimalPipe) {
     console.log("VisitorsLocationComponent", "constructor")
   }
 
@@ -130,8 +128,8 @@ export class VisitorsLocationComponent {
   getLatLong():string{
     let lat = this.circle.center.lat
     let lng = this.circle.center.lng
-    let latStr = this.decimalPipe.transform(parseFloat(lat+''), ['1.6-6'])
-    let lngStr = this.decimalPipe.transform(parseFloat(lng+''), ['1.6-6'])
+    let latStr = this.decimalPipe.transform(parseFloat(lat+''), '1.6-6')
+    let lngStr = this.decimalPipe.transform(parseFloat(lng+''), '1.6-6')
     return latStr + ', ' + lngStr
   }
 

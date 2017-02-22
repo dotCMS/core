@@ -2,10 +2,10 @@ import {BrowserModule} from '@angular/platform-browser';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {HttpModule} from '@angular/http';
 import {NgModule} from '@angular/core';
-import { Logger } from "angular2-logger/core";
+import {Logger} from 'angular2-logger/core';
 
 // ROUTING
-import {LocationStrategy, HashLocationStrategy} from "@angular/common";
+import {LocationStrategy, HashLocationStrategy} from '@angular/common';
 import {routing} from './app.routing';
 
 // CUSTOM SERVICES
@@ -200,8 +200,8 @@ const NGFACES_MODULES = [
 @NgModule({
     bootstrap: [AppComponent],
     declarations: [
-        ...COMPONENTS,
         ...PIPES,
+        ...COMPONENTS,
         ...DIRECTIVES,
         ...RULES_ENGINE_COMPONENTS,
     ],
