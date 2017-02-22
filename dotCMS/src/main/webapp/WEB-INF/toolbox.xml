@@ -250,11 +250,6 @@
 		<class>com.dotmarketing.sitesearch.viewtool.SiteSearchWebAPI</class>
 	</tool>
 	<tool>
-		<key>jsp</key>
-		<scope>request</scope>
-		<class>com.dotmarketing.scripting.viewtool.JSPTool</class>
-	</tool>
-	<tool>
 		<key>mailer</key>
 		<scope>application</scope>
 		<class>com.dotmarketing.viewtools.MailerTool</class>

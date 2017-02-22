@@ -2,7 +2,6 @@
 <portlet:defineObjects />
 
 <%@ page import="com.dotmarketing.portlets.templates.factories.TemplateFactory" %>
-<%@ page import="com.dotmarketing.portlets.files.model.File" %>
 <%@ page import="com.dotmarketing.portlets.templates.model.Template" %>
 <%@ page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage" %>
 <%@ page import="com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory" %>

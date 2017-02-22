@@ -2956,19 +2956,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                		if(metadata!=null && metadata.exists())
 			                		    metadata.delete();
 
-			                		// what happens is we never clean up the temp directory
-			                		// answer: this happends --> https://github.com/dotCMS/dotCMS/issues/1071
-			                		// there is a quarz job to clean that
-			                		/*java.io.File delMe = new java.io.File(incomingFile.getParentFile().getParentFile(), oldFileName);
-			                		if(delMe.exists() && delMe.getAbsolutePath().contains(
-			                		        APILocator.getFileAPI().getRealAssetPathTmpBinary()
-											+ java.io.File.separator + user.getUserId()
-											+ java.io.File.separator  ) ){
-			                			delMe.delete();
-			                			delMe = incomingFile.getParentFile().getParentFile();
-			                			FileUtil.deltree(delMe);
-			                		}*/
-
 			                	}
 			                	else if (oldFile.exists()) {
 			                		// otherwise, we copy the files as hardlinks
