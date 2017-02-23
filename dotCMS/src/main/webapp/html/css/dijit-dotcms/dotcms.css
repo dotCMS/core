@@ -4267,7 +4267,7 @@ html, body {
   margin-left: 0;
 }
 .dijitTabCloseIcon:before, .dijitTabCloseIcon:after {
-  background-color: #161616;
+  background-color: #fff;
   display: block;
   content: "";
   width: 1px;
@@ -4464,6 +4464,7 @@ html, body {
 .dijitTreeRow .dijitTreeIcon, .dijitTreeRow .dijitTreeExpando {
   display: inline-block;
   vertical-align: sub;
+  margin-right: 4px;
 }
 .dijitTreeContent {
   min-height: 18px;
@@ -4473,12 +4474,6 @@ html, body {
   width: 18px;
   height: 18px;
   background-repeat: no-repeat;
-}
-.dijitTreeExpando {
-  background-position: 3px 1px;
-}
-.dijitTreeExpandoLeaf {
-  background-position: 0 -2px;
 }
 .dijitTreeLabel {
   margin: 0;
@@ -9439,7 +9434,7 @@ a.category_higlighted, a.tag_higlighted {
   padding: 0px;
 }
 
-.relationships-list .portlet-toolbar .required:before {
+.relationships-list .portlet-toolbar__actions-primary .required:before {
   color: #CB3927;
   content: "* ";
 }
@@ -9506,17 +9501,20 @@ a.category_higlighted, a.tag_higlighted {
   width: 550px;
 }
 .content-type__fields-list {
+  display: table;
   width: 100%;
 }
+.content-type__fields-list-body {
+  display: table-row-group;
+}
 .content-type__fields-list-cell {
-  flex: 1;
+  border-bottom: 1px solid #ECEDEE;
+  display: table-cell;
   padding: 8px;
   white-space: nowrap;
 }
 .content-type__fields-list-header, .content-type__fields-list-row {
-  border-bottom: 1px solid #ECEDEE;
-  display: flex;
-  justify-content: space-between;
+  display: table-row;
 }
 .content-type__fields-list-header {
   background: #FAFAFA;
@@ -9545,10 +9543,6 @@ a.category_higlighted, a.tag_higlighted {
 }
 .design-template__sidebar-wrapper .portlet-sidebar {
   width: 220px;
-}
-
-.edit-relationship .form-horizontal dt {
-  width: 250px;
 }
 
 .job-scheduler__host-list {
@@ -9667,10 +9661,8 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .view-roles__portlets-list {
-  border: solid 1px #ECEDEE;
-  border-radius: 2px;
-  margin: 0 0 8px;
-  height: 175px;
+  margin: 0;
+  max-height: 200px;
   overflow: auto;
 }
 .view-roles__portlets-list ul {
@@ -9680,9 +9672,10 @@ a.category_higlighted, a.tag_higlighted {
 .view-roles__portlets-list-item {
   display: flex;
   justify-content: space-between;
-  padding: 8px;
+  padding: 8px 0;
   border-bottom: solid 1px #ECEDEE;
   align-items: center;
+  padding-right: 2px;
 }
 
 .nameText {
@@ -9765,6 +9758,11 @@ a.category_higlighted, a.tag_higlighted {
   margin: 8px 0;
 }
 
+.view-users__roles-to-grant .dijitTreeContainer {
+  float: none;
+  margin-top: 4px;
+}
+
 .view-users__roles-to-grant,
 .view-users__roles-granted {
   flex: 2;
@@ -9834,13 +9832,13 @@ a.category_higlighted, a.tag_higlighted {
   padding-left: 24px;
 }
 
-.add-relationship .add-relationship__form dt {
+.add-relationship dt {
   width: 200px;
 }
-.add-relationship .add-relationship__form .dijitComboBox {
+.add-relationship .dijitComboBox {
   width: 200px;
 }
-.add-relationship .add-relationship__form .dijitTextBox {
+.add-relationship .dijitTextBox {
   width: 200px;
 }
 .add-relationship .required:before {
@@ -9996,10 +9994,6 @@ a.category_higlighted, a.tag_higlighted {
 }
 .context-menu__item:hover {
   background-color: #FAFAFA;
-}
-.context-menu__item [class$="Icon"],
-.context-menu__item [class*="Icon"] {
-  display: none;
 }
 .context-menu__item .arrowRightIcon {
   font-size: 12px;
@@ -10295,10 +10289,6 @@ a.category_higlighted, a.tag_higlighted {
 }
 .context-menu__item:hover {
   background-color: #FAFAFA;
-}
-.context-menu__item [class$="Icon"],
-.context-menu__item [class*="Icon"] {
-  display: none;
 }
 .context-menu__item .arrowRightIcon {
   font-size: 12px;

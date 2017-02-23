@@ -127,12 +127,9 @@
 		if ((rel.isChildRequired() && records.isHasParent()) || (rel.isParentRequired() && !records.isHasParent())) {
 	%>
 			<script type="text/javascript">
-			require(["dojo/ready"], function(ready){
-				ready(function(){
+				dojo.ready(function(){
 					dojo.html.set(dojo.byId("mainTabContainer_tablist_relationships"), '<span class="required"></span>&nbsp;<%= LanguageUtil.get(pageContext, "Relationships") %>');
 				});
-			});
-
 			</script>
 	<%
 		}
@@ -140,8 +137,8 @@
 
 	<div class="portlet-toolbar relationships-list">
 		<div class="portlet-toolbar__actions-primary">
-			<b><%= (sortList.size()>1 && rel.isParentRequired() && !records.isHasParent()) ? "<span class=\"required\"></span>"  :
-				   (sortList.size()>1 && rel.isChildRequired() && records.isHasParent()) ? "<span class=\"required\"></span>" : ""  %>
+			<b><%= (sortList.size()>1 && rel.isParentRequired() && !records.isHasParent()) ? "<span class='required'></span>"  :
+				   (sortList.size()>1 && rel.isChildRequired() && records.isHasParent()) ? "<span class='required'></span>" : ""  %>
 			   <%= targetStructure.getName() %>: </b><%=("yes".equals(isParent)) ? LanguageUtil.get(pageContext, "Child"): LanguageUtil.get(pageContext, "Parent") %>
 			(<%= rel.getRelationTypeValue() %>)
 		</div>
