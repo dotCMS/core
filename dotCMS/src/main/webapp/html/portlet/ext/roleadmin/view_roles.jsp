@@ -56,7 +56,7 @@
 <div id="newLayouDialog" title="<%= LanguageUtil.get(pageContext, "edit-tab") %>" dojoType="dijit.Dialog" style="display: none;width:475px;">
 	<form id="newLayoutForm" dojoType="dijit.form.Form">
 		<ul id="addLayoutErrorMessagesList"></ul>
-		<dl style="margin-bottom:20px;">
+		<dl>
 			<dt><%= LanguageUtil.get(pageContext, "Name") %>:</dt>
 			<dd><input id="layoutName" type="text" maxlength="255" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
 			<dt><a href="#" id="tip-icon"><span class="hintIcon"></span></a> <%= LanguageUtil.get(pageContext, "Icon") %>: 
@@ -81,7 +81,7 @@
 
 		<div class="inputCaption" style="text-align:right">* <%= LanguageUtil.get(pageContext, "drag-a-tool-to-order-it") %></div>
 
-		<div class="buttonRow" style="margin-top:20px;">
+		<div class="buttonRow">
 		    <button dojoType="dijit.form.Button" type="button" onClick="saveLayout()">
 		        <%= LanguageUtil.get(pageContext, "Save") %>
 		    </button>

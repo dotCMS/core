@@ -282,10 +282,9 @@
 										<dt><%= LanguageUtil.get(pageContext, "Cell") %>:</dt>
 										<dd><input id="addressCell" type="text" dojoType="dijit.form.ValidationTextBox" /></dd>
 									</dl>
-									<div class="clear"></div>
 									<div class="buttonRow">
-										<button dojoType="dijit.form.Button" type="button" onClick="saveAddress()" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Save") %></button>
-										<button dojoType="dijit.form.Button" type="button" onClick="cancelSaveAddress()" iconClass="cancelIcon"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
+										<button dojoType="dijit.form.Button" type="button" onClick="saveAddress()"><%= LanguageUtil.get(pageContext, "Save") %></button>
+										<button dojoType="dijit.form.Button" type="button" onClick="cancelSaveAddress()" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
 									</div>
 								</form>
 							</div>

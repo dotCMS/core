@@ -132,114 +132,80 @@ function relationNameChanged() {
 
 <html:form action="/ext/structure/edit_relationship" method="post" styleId="relationshipForm">
     
-<div class="portlet-main add-relationship">
+
+<div class="portlet-main edit-relationship add-relationship">
+
 	<div class="form-horizontal add-relationship__form">
-		<html:hidden property="inode" />
+ 
+        <html:hidden property="inode" />
         <html:hidden property="relationTypeValue" />
         <html:hidden property="fixed" />
         <input type="hidden" name="referer"  value="<%=referer%>" >
+        
 		<dl>
-			<dt>
-				<span class="required"></span><%= LanguageUtil.get(pageContext, "Required-Fields") %>
-			</dt>
-		</dl>
-		<dl>
-			<dt>
-				<span class="required"></span>
-				<label for=""><%= LanguageUtil.get(pageContext, "Parent-Structure") %>:</label>
+			<dt><span class="required"></span> <span class="mRed"><%= LanguageUtil.get(pageContext, "Required-Fields") %></span>
+				<%= LanguageUtil.get(pageContext, "Parent-Structure") %>:
 			</dt>
 			<dd>
 				<select dojoType="dijit.form.FilteringSelect" name="parentStructureInode" id="parentStructureInode" onchange="relationNameChanged(); structuresChanged(); "  disabled="<%=disabled%>" value="<%= UtilMethods.isSet(relationshipForm.getParentStructureInode()) ? relationshipForm.getParentStructureInode() : "" %>">
-				<%					
-					for (Structure structure: structures) {
-				%>
+				<% for (Structure structure: structures) { %>
 					<option value="<%= structure.getInode() %>"><%= structure.getName() %></option>
-				<%
-					}
-				%>
+				<% } %>
 				</select>
-                </dd>
-		</dl>
-		<dl>
-			<dt>
-				<span class="required"></span>
-				<label for=""><%= LanguageUtil.get(pageContext, "Parent-Relation-Name") %>:</label>
-			</dt>
-			<dd>
-				<input type="text" dojoType="dijit.form.TextBox" name="parentRelationName" id="parentRelationName" onkeyup="relationNameChanged()" readonly="<%=disabled%>" value="<%= UtilMethods.isSet(relationshipForm.getParentRelationName()) ? relationshipForm.getParentRelationName() : "" %>" />
 			</dd>
 		</dl>
 		<dl>
-			<dt id="parentRequiredLabel">
-				<label for=""><%= LanguageUtil.get(pageContext, "Is-a-Parent-Required") %>:</label>
-			</dt>
-			<dd>
-				<input type="checkbox" dojoType="dijit.form.CheckBox" name="parentRequired" id="parentRequired" disabled="<%=disabled%>" <%-- onclick="setRequired('parentRequired');" --%> <%= relationshipForm.isParentRequired() ? "checked" : "" %> />
-			</dd>
+			<dt><span class="required"></span> <%= LanguageUtil.get(pageContext, "Parent-Relation-Name") %>:</dt>
+			<dd><input type="text" dojoType="dijit.form.TextBox" name="parentRelationName" id="parentRelationName" onkeyup="relationNameChanged()" readonly="<%=disabled%>" value="<%= UtilMethods.isSet(relationshipForm.getParentRelationName()) ? relationshipForm.getParentRelationName() : "" %>" /></dd>
 		</dl>
 		<dl>
-			<dt>
-				<label for=""><%= LanguageUtil.get(pageContext, "Child-Structure") %>:</label>
-			</dt>
+			<dt id="parentRequiredLabel"><%= LanguageUtil.get(pageContext, "Is-a-Parent-Required") %>:</dt>
+			<dd><input type="checkbox" dojoType="dijit.form.CheckBox" name="parentRequired" id="parentRequired" disabled="<%=disabled%>" <%-- onclick="setRequired('parentRequired');" --%> <%= relationshipForm.isParentRequired() ? "checked" : "" %> /></dd>
+		</dl>
+		<dl>
+			<dt><%= LanguageUtil.get(pageContext, "Child-Structure") %>:</dt>
 			<dd>
 				<select dojoType="dijit.form.FilteringSelect" name="childStructureInode" id="childStructureInode" onchange="relationNameChanged(); structuresChanged();" disabled="<%=disabled%>" value="<%= UtilMethods.isSet(relationshipForm.getChildStructureInode()) ? relationshipForm.getChildStructureInode() : "" %>">
-	<%
-				for (Structure structure: structures) {
-	%>
+				<% for (Structure structure: structures) { %>
 					<option value="<%= structure.getInode() %>"><%= structure.getName() %></option>
-	<%
-				}
-	%>
+				<% } %>
 				</select>
-        	</dd>
-		</dl>
-		<dl>
-			<dt>
-				<span class="required"></span> 
-				<label for=""><%= LanguageUtil.get(pageContext, "Child-Relation-Name") %>:</label>
-			</dt>
-			<dd>
-				<input type="text" dojoType="dijit.form.TextBox" name="childRelationName" id="childRelationName" onkeyup="relationNameChanged()" styleClass="form-text" readonly="<%=disabled%>" value="<%= UtilMethods.isSet(relationshipForm.getChildRelationName()) ? relationshipForm.getChildRelationName() : "" %>" />
 			</dd>
 		</dl>
 		<dl>
-			<dt id="childRequiredRow">
-				<label for=""><%= LanguageUtil.get(pageContext, "Is-a-Child-Required") %>:</label>
-			</dt>
-			<dd>
-				<input type="checkbox" dojoType="dijit.form.CheckBox" name="childRequired" id="childRequired" disabled="<%=disabled%>" <%-- onclick="setRequired('childRequired');" --%> <%= relationshipForm.isChildRequired() ? "checked" : "" %> />
-			</dd>
+			<dt><span class="required"></span> <%= LanguageUtil.get(pageContext, "Child-Relation-Name") %>:</dt>
+			<dd><input type="text" dojoType="dijit.form.TextBox" name="childRelationName" id="childRelationName" onkeyup="relationNameChanged()" styleClass="form-text" readonly="<%=disabled%>" value="<%= UtilMethods.isSet(relationshipForm.getChildRelationName()) ? relationshipForm.getChildRelationName() : "" %>" /></dd>
 		</dl>
 		<dl>
-			<dt>
-				<label for=""><%= LanguageUtil.get(pageContext, "Relation") %>:</label>
-			</dt>
-			<dd>
-                <select dojoType="dijit.form.FilteringSelect" name="cardinality" id="cardinality" disabled="<%=disabled%>" value="<%= relationshipForm.getCardinality() %>">
-                    <option value="<%= ((Integer)com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()).toString() %>"><%= LanguageUtil.get(pageContext, "One-to-Many") %></option>
-                    <option value="<%= ((Integer)com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()).toString() %>"><%= LanguageUtil.get(pageContext, "Many-to-Many") %></option>
-                </select>
-            </dd>
+			<dt id="childRequiredRow"><%= LanguageUtil.get(pageContext, "Is-a-Child-Required") %>:</dt>
+			<dd><input type="checkbox" dojoType="dijit.form.CheckBox" name="childRequired" id="childRequired" disabled="<%=disabled%>" <%-- onclick="setRequired('childRequired');" --%> <%= relationshipForm.isChildRequired() ? "checked" : "" %> /></dd>
 		</dl>
+		<dl>
+			<dt><%= LanguageUtil.get(pageContext, "Relation") %>:</dt>
+			<dd>
+				<select dojoType="dijit.form.FilteringSelect" name="cardinality" id="cardinality" disabled="<%=disabled%>" value="<%= relationshipForm.getCardinality() %>">
+					<option value="<%= ((Integer)com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()).toString() %>"><%= LanguageUtil.get(pageContext, "One-to-Many") %></option>
+					<option value="<%= ((Integer)com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()).toString() %>"><%= LanguageUtil.get(pageContext, "Many-to-Many") %></option>
+				</select>
+			</dd>
+    	</dl>
 	</div>
 
-		<div class="buttonRow">
-                <%if(!disabled){%>
-	                <button dojoType="dijit.form.Button" onCLick="saveRelationship();return false;" iconClass="saveIcon">
-	                   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
-	                </button>
-	        
-	                <button dojoType="dijit.form.Button" onCLick="cancel();return false;" class="dijitButtonFlat">
-	                   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
-	                </button>
-                <%}else{ %>
-                
-	                <button dojoType="dijit.form.Button" onCLick="cancel();return false;" class="dijitButtonFlat">
-	                   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
-	                </button>
-                <%} %>
-            </div>
-      </dl> 
+	<div class="buttonRow">
+		<%if(!disabled){%>
+			<button dojoType="dijit.form.Button" onCLick="saveRelationship();return false;">
+			   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Save")) %>
+			</button>
+
+			<button dojoType="dijit.form.Button" onCLick="cancel();return false;" class="dijitButtonFlat">
+			   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
+			</button>
+		<%}else{ %>
+			<button dojoType="dijit.form.Button" onCLick="cancel();return false;" class="dijitButtonFlat">
+			   <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cancel")) %>
+			</button>
+		<%} %>
+	</div>
 
  </div> 
    
