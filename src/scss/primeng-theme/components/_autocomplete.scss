@@ -23,6 +23,10 @@
     .ui-inputtext {
         border: none;
 
+        &::-ms-clear {
+            display: none;
+        }
+
         .ui-corner-all {
             border-radius: $border-radius;
         }
