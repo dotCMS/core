@@ -17,7 +17,6 @@ import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.publishing.bundlers.FileAssetBundler;
 import com.dotcms.enterprise.publishing.bundlers.HTMLPageAsContentBundler;
-import com.dotcms.enterprise.publishing.bundlers.StaticHTMLPageBundler;
 import com.dotcms.enterprise.publishing.bundlers.URLMapBundler;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
 import com.dotcms.publishing.BundlerStatus;
@@ -195,9 +194,7 @@ public class SiteSearchJobImpl {
 
         int filesCount=0,pagesCount=0,urlmapCount=0;
         for(BundlerStatus bs : status.getBundlerStatuses()) {
-            if(bs.getBundlerClass().equals(StaticHTMLPageBundler.class.getName()))
-                pagesCount+=bs.getTotal();
-            else if(bs.getBundlerClass().equals(FileAssetBundler.class.getName()))
+            if(bs.getBundlerClass().equals(FileAssetBundler.class.getName()))
                 filesCount+=bs.getTotal();
             else if(bs.getBundlerClass().equals(URLMapBundler.class.getName()))
             	urlmapCount+=bs.getTotal();

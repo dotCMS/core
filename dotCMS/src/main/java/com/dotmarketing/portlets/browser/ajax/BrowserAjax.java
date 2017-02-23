@@ -2198,16 +2198,10 @@ public class BrowserAjax {
 		return foldersToReturn;
 	}
 
-	public void refreshIndex(File file, Folder parent, User user, Host host, Folder folder ) throws Exception {
+	public void refreshIndex(Folder parent, Host host, Folder folder ) throws Exception {
 
-		Folder srcFolder = folder;
-		if(folder == null){
-			srcFolder = APILocator.getFolderAPI().find(file.getParent(),user,false);
-
-		}
-     	// issues/1603 - refresh index for src Folder
-        if (srcFolder!=null){
-        	APILocator.getContentletAPI().refreshContentUnderFolder(srcFolder);
+        if (folder!=null){
+        	APILocator.getContentletAPI().refreshContentUnderFolder(folder);
      	}
 
         if ( parent != null ) {

@@ -14,8 +14,7 @@ public class HostCopyOptions implements Serializable {
 	private boolean copyAll = true;
 	private boolean copyTemplatesAndContainers = true;
 	private boolean copyFolders = true;
-	private boolean copyFiles = true;
-	private boolean copyPages = true;
+	private boolean copyLinks = true;
 	private boolean copyContentOnPages = true;
 	private boolean copyContentOnHost = true;
 	private boolean copyVirtualLinks = true;
@@ -25,24 +24,22 @@ public class HostCopyOptions implements Serializable {
 		this.copyAll = copyAll;
 		this.copyTemplatesAndContainers = true;
 		this.copyFolders = true;
-		this.copyFiles = true;
-		this.copyPages = true;
+		this.copyLinks = true;
 		this.copyContentOnPages = true;
 		this.copyContentOnHost = true;
 		this.copyVirtualLinks = true;
 		this.copyHostVariables = true;
 	}
 
-	public HostCopyOptions(boolean copyTemplatesAndContainers, boolean copyFolders, boolean copyFiles,
-			boolean copyPages, boolean copyContentOnPages, boolean copyContentOnHost, boolean copyVirtualLinks,
-			boolean copyHostVariables) {
+	public HostCopyOptions(boolean copyTemplatesAndContainers, boolean copyFolders,
+						   boolean copyLinks, boolean copyContentOnPages, boolean copyContentOnHost, boolean copyVirtualLinks,
+						   boolean copyHostVariables) {
 		super();
 		this.copyTemplatesAndContainers = copyTemplatesAndContainers;
 		this.copyFolders = copyFolders;
-		if(!copyFolders && (copyFiles || copyPages))
-			throw new java.lang.IllegalArgumentException("Can't have a non copy folders while having a copy files or copy pages options on");
-		this.copyFiles = copyFiles;
-		this.copyPages = copyPages;
+		if(!copyFolders && copyLinks)
+			throw new java.lang.IllegalArgumentException("Can't have a non copy folders while having copy links options on");
+		this.copyLinks = copyLinks;
 		this.copyContentOnPages = copyContentOnPages;
 		this.copyContentOnHost = copyContentOnHost;
 		this.copyVirtualLinks = copyVirtualLinks;
@@ -62,12 +59,8 @@ public class HostCopyOptions implements Serializable {
 		return copyFolders;
 	}
 
-	public boolean isCopyFiles() {
-		return copyFiles;
-	}
-
-	public boolean isCopyPages() {
-		return copyPages;
+	public boolean isCopyLinks() {
+		return copyLinks;
 	}
 
 	public boolean isCopyContentOnPages() {

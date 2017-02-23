@@ -301,10 +301,10 @@ public class CMSMaintenanceAjax {
         	return CMSMaintenanceFactory.deleteOldAssetVersions(assetsOlderThan);
     }
 
-    public Map cleanAssets (boolean files, boolean binarys) throws DotDataException {
+    public Map cleanAssets () throws DotDataException {
 
         //Create the thread to clean the assets
-        CleanAssetsThread cleanAssetsThread = CleanAssetsThread.getInstance( true , files, binarys);
+        CleanAssetsThread cleanAssetsThread = CleanAssetsThread.getInstance( true , true);
         BasicProcessStatus processStatus = cleanAssetsThread.getProcessStatus();
         cleanAssetsThread.start();
 
@@ -320,7 +320,7 @@ public class CMSMaintenanceAjax {
     public Map getCleanAssetsStatus () {
 
         //Getting the running clean assets thread
-        CleanAssetsThread cleanAssetsThread = CleanAssetsThread.getInstance( false , false, false);
+        CleanAssetsThread cleanAssetsThread = CleanAssetsThread.getInstance(false, false);
         BasicProcessStatus processStatus = cleanAssetsThread.getProcessStatus();
 
         //Return its current running status

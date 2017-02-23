@@ -174,21 +174,6 @@ public class PublishFactory {
 			}
 		}
 
-		if (webAsset instanceof com.dotmarketing.portlets.files.model.File) 
-		{
-			// publishing a file
-			LiveCache.removeAssetFromCache((WebAsset)webAsset);
-			LiveCache.addToLiveAssetToCache((WebAsset) webAsset);
-			WorkingCache.removeAssetFromCache((WebAsset)webAsset);
-			WorkingCache.addToWorkingAssetToCache((WebAsset) webAsset);
-			if(RefreshMenus.shouldRefreshMenus((com.dotmarketing.portlets.files.model.File)webAsset)){
-				com.dotmarketing.menubuilders.RefreshMenus.deleteMenu((WebAsset)webAsset);
-				Identifier ident=APILocator.getIdentifierAPI().find(webAsset);
-				CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
-			}
-
-		}
-
 		if (webAsset instanceof Container) {
 
 			//saves to live folder under velocity
