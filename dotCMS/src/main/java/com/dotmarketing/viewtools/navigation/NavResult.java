@@ -330,8 +330,6 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
                 Identifier ident=APILocator.getIdentifierAPI().find(permissionId);
                 if(Identifier.ASSET_TYPE_CONTENTLET.equalsIgnoreCase(ident.getAssetType()))
                     return APILocator.getContentletAPI().findContentletByIdentifier(permissionId, true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), sysuser, false).getParentPermissionable();
-                else
-                    return APILocator.getHTMLPageAPI().loadLivePageById(permissionId, sysuser, false).getParentPermissionable();
             }
             if(type.equals("folder"))
                 return APILocator.getFolderAPI().find(folderId, sysuser, false).getParentPermissionable();

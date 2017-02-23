@@ -138,8 +138,6 @@ function delTemplate(inode, referer) {
 			  callback:handleDepResponse,
 			  arg: inode + '|' + referer, // specify an argument to pass to the callback and exceptionHandler
 			};
-
-	TemplateAjax.checkDependencies(inode, callMetaData);
 }
 
 function handleDepResponse(data, arg1) {
@@ -187,7 +185,6 @@ function deleteDependentNonWorkingVersions(inode,referer){
 			arg: inode + '|' + referer,
 			callback:deleteCallback
 			};
-	TemplateAjax.deleteDependentNonWorkingVersions(inode, callMetaData);
 }
 
 function deleteCallback(data,arg1){

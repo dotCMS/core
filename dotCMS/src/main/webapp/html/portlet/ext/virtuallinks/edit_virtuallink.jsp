@@ -24,7 +24,7 @@
 	}
 	String uri = "";
 	if (InodeUtils.isSet(request.getParameter("htmlinode"))) {
-		com.dotmarketing.portlets.htmlpages.model.HTMLPage htmlPage = (com.dotmarketing.portlets.htmlpages.model.HTMLPage) com.dotmarketing.factories.InodeFactory.getInode(request.getParameter("htmlinode"), com.dotmarketing.portlets.htmlpages.model.HTMLPage.class);
+		com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage htmlPage = (com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage) com.dotmarketing.factories.InodeFactory.getInode(request.getParameter("htmlinode"), com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage.class);
 		if (InodeUtils.isSet(htmlPage.getInode())) {
 	com.dotmarketing.beans.Identifier i = com.dotmarketing.business.APILocator.getIdentifierAPI().find(htmlPage);
 	uri = i.getURI();

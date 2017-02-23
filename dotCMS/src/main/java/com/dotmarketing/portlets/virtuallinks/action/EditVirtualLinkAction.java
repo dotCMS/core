@@ -21,7 +21,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.virtuallinks.business.VirtualLinkAPI;
 import com.dotmarketing.portlets.virtuallinks.factories.VirtualLinkFactory;
 import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
@@ -227,7 +227,7 @@ public class EditVirtualLinkAction extends DotPortletAction {
 			String htmlPageInode = mlForm.getHtmlInode();
 			if (InodeUtils.isSet(htmlPageInode)) {
 				//it's an internal page
-				HTMLPage htmlPage = (HTMLPage) InodeFactory.getInode(htmlPageInode+"",HTMLPage.class);
+				IHTMLPage htmlPage = (IHTMLPage) InodeFactory.getInode(htmlPageInode+"",IHTMLPage.class);
 				Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
 				ml.setUri(identifier.getURI());
 			}

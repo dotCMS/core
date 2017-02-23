@@ -35,7 +35,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.rules.model.Rule;
@@ -163,26 +162,7 @@ public class DependencyManager {
 		List<PublishQueueElement> assets = config.getAssets();
 
 		for (PublishQueueElement asset : assets) {
-			if(asset.getType().equals(PusheableAsset.HTMLPAGE.getType())) {
-				try {
-					HTMLPage page = APILocator.getHTMLPageAPI().loadLivePageById(asset.getAsset(), user, false);
-
-					if(page == null) {
-						page = APILocator.getHTMLPageAPI().loadWorkingPageById(asset.getAsset(), user, false);
-					}
-					
-					if(page == null) {
-						Logger.warn(getClass(), "HTMLPage id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
-					} else {
-						htmlPages.add(asset.getAsset(), page.getModDate());
-						htmlPagesSet.add(asset.getAsset());
-					}
-					
-				} catch (Exception e) {
-					Logger.error(getClass(), "Couldn't add the HtmlPage to the Bundle. Bundle ID: " + config.getId() + ", HTMLPage ID: " + asset.getAsset(), e);
-				}
-
-			} else if(asset.getType().equals(PusheableAsset.CONTENT_TYPE.getType())) {
+			if(asset.getType().equals(PusheableAsset.CONTENT_TYPE.getType())) {
 				try {
 					Structure st = CacheLocator.getContentTypeCache().getStructureByInode(asset.getAsset());
 					
@@ -382,16 +362,7 @@ public class DependencyManager {
 								contentsSet.add(contentlet.getIdentifier());
 							}
 
-						// add htmlpages dependencies
-						} else if(InodeUtils.isSet(id.getInode()) && id.getAssetType().equals("htmlpage")) {
-							HTMLPage page = APILocator.getHTMLPageAPI().loadLivePageById(id.getId(), user, false);
-
-							if(page==null) {
-								page = APILocator.getHTMLPageAPI().loadWorkingPageById(id.getId(), user, false);
-							}
-
-							htmlPages.addOrClean(id.getId(), page.getModDate());
-							htmlPagesSet.add(id.getId());
+						
 						}
 					}
 				}
@@ -562,14 +533,6 @@ public class DependencyManager {
                 }
             }
 
-            // HTML Page dependencies
-			List<HTMLPage> pages = APILocator.getFolderAPI().getHTMLPages(f, user, false);
-
-			for (HTMLPage p : pages) {
-				htmlPages.addOrClean( p.getIdentifier(), p.getModDate());
-				htmlPagesSet.add(p.getIdentifier());
-			}
-
 			setFolderListDependencies(APILocator.getFolderAPI().findSubFolders(f, user, false));
 		}
 
@@ -641,9 +604,6 @@ public class DependencyManager {
 				// looking for working version (must exists)
 				IHTMLPage workingPage = null;
 				
-				if(iden.getAssetType().equals("htmlpage")){ 
-					workingPage = APILocator.getHTMLPageAPI().loadWorkingPageById(pageId, user, false);
-				}else{
 					Contentlet contentlet = null;
 					try{
 						contentlet = APILocator.getContentletAPI().search("+identifier:"+pageId+" +working:true", 0, 0, "moddate", user, false).get(0);
@@ -653,15 +613,12 @@ public class DependencyManager {
 					}
 					if(contentlet != null)
 						workingPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
-				}
+				
 				
 				// looking for live version (might not exists)
 				IHTMLPage livePage = null;
 				
-				if(iden.getAssetType().equals("htmlpage")){
-					livePage = APILocator.getHTMLPageAPI().loadLivePageById(pageId, user, false);
-				}else{
-					Contentlet contentlet = null;
+					contentlet = null;
 					try{
 						List<Contentlet> result = APILocator.getContentletAPI().search("+identifier:"+pageId+" +live:true", 0, 0, "moddate", user, false);
 						if(!result.isEmpty()) {
@@ -674,7 +631,7 @@ public class DependencyManager {
 					}
 					if(contentlet != null)
 						livePage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet); 
-				}
+				
 				            
 				// working template working page
 				Template workingTemplateWP = null;
@@ -728,9 +685,9 @@ public class DependencyManager {
 						// Contents dependencies
 
                         List<Contentlet> contentList = APILocator.getContentletAPI().search( "+identifier:" + contentIdentifier, 0, 0, "moddate", user, false );
-                        for ( Contentlet contentlet : contentList ) {
-                            contents.addOrClean( contentlet.getIdentifier(), contentlet.getModDate() );
-                            contentsSet.add( contentlet.getIdentifier() );
+                        for ( Contentlet contentletI : contentList ) {
+                            contents.addOrClean( contentletI.getIdentifier(), contentletI.getModDate() );
+                            contentsSet.add( contentletI.getIdentifier() );
                         }
                     }
 				}
@@ -1014,10 +971,6 @@ public class DependencyManager {
 
 					Folder contFolder=APILocator.getFolderAPI().find(con.getFolder(), user, false);
 				    List<IHTMLPage> folderHtmlPages = new ArrayList<IHTMLPage>(); 
-					folderHtmlPages.addAll(APILocator.getHTMLPageAPI().findLiveHTMLPages(
-							APILocator.getFolderAPI().find(con.getFolder(), user, false)));
-					folderHtmlPages.addAll(APILocator.getHTMLPageAPI().findWorkingHTMLPages(
-							APILocator.getFolderAPI().find(con.getFolder(), user, false)));
 					folderHtmlPages.addAll(APILocator.getHTMLPageAssetAPI().getHTMLPages(contFolder, false, false, user, false));
 					folderHtmlPages.addAll(APILocator.getHTMLPageAssetAPI().getHTMLPages(contFolder, true, false, user, false));
 
@@ -1026,11 +979,8 @@ public class DependencyManager {
 
 						Boolean mustBeIncluded;
 
-						if (htmlPage instanceof HTMLPage) {
-							mustBeIncluded = htmlPages.addOrClean(htmlPage.getIdentifier(), htmlPage.getModDate());
-						} else {
-							mustBeIncluded = contents.addOrClean(htmlPage.getIdentifier(), htmlPage.getModDate());
-						}
+						mustBeIncluded = contents.addOrClean(htmlPage.getIdentifier(), htmlPage.getModDate());
+						
 
 						if (mustBeIncluded) {
 							pagesToProcess.add(htmlPage.getIdentifier());

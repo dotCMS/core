@@ -127,7 +127,7 @@ public class FolderAPITest {
 		link.setModUser(user.getUserId());
 		IHTMLPage page = APILocator.getHTMLPageAssetAPI().getPageByPath("/about-us/locations/index", demo, langId, true);
 
-  		Identifier internalLinkIdentifier = APILocator.getIdentifierAPI().findFromInode(page.getIdentifier());
+  		Identifier internalLinkIdentifier = APILocator.getIdentifierAPI().find(page.getIdentifier());
 		link.setLinkType(Link.LinkType.INTERNAL.toString());
 		link.setInternalLinkIdentifier(internalLinkIdentifier.getId());
 		link.setProtocal("http://");

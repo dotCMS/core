@@ -43,8 +43,6 @@ import com.dotmarketing.portlets.folders.business.FolderFactory;
 import com.dotmarketing.portlets.folders.business.FolderFactoryImpl;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableFactory;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableFactoryImpl;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageFactory;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageFactoryImpl;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageFactory;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageFactoryImpl;
 import com.dotmarketing.portlets.linkchecker.business.LinkCheckerFactory;
@@ -145,10 +143,6 @@ public class FactoryLocator extends Locator<FactoryIndex>{
 
     public static FileFactory getFileFactory(){
     	return (FileFactory) getInstance(FactoryIndex.FILE_FACTORY);
-    }
-
-    public static HTMLPageFactory getHTMLPageFactory(){
-    	return (HTMLPageFactory) getInstance(FactoryIndex.HTMLPAGE_FACTORY);
     }
 
     public static MenuLinkFactory getMenuLinkFactory(){
@@ -317,7 +311,6 @@ enum FactoryIndex
             case USER_PROXY_FACTORY: return new UserProxyFactoryImpl() {};
             case ROLE_FACTORY : return new RoleFactoryImpl();
             case FILE_FACTORY : return new FileFactoryImpl();
-            case HTMLPAGE_FACTORY : return new HTMLPageFactoryImpl();
             case MENULINK_FACTORY : return new MenuLinkFactoryImpl();
             case CONTAINER_FACTORY : return new ContainerFactoryImpl();
             case VIRTUALLINK_FACTORY : return new VirtualLinkFactoryImpl();

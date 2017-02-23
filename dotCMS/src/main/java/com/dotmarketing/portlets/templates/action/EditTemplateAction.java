@@ -198,10 +198,6 @@ public class EditTemplateAction extends DotPortletAction implements
 						}
 						// edited template from the form
 						Template template = (Template) req.getAttribute(WebKeys.TEMPLATE_FORM_EDIT);
-						// call for invalidation on the live cache if the theme changed
-						if(template.isDrawed() && !template.getTheme().equals(oldTemplate.getTheme())){
-							APILocator.getTemplateAPI().invalidateTemplatePages(template.getInode(), user, false);
-						}
 					}
 					try{
                         _sendToReferral(req, res, referer);
@@ -249,13 +245,6 @@ public class EditTemplateAction extends DotPortletAction implements
 						params.put("struts_action",new String[] {"/ext/templates/view_templates"});
 						referer = PortletURLUtil.getActionURL(req,WindowState.MAXIMIZED.toString(),params);
 					}
-					// edited template from the form
-					Template template = (Template) req.getAttribute(WebKeys.TEMPLATE_FORM_EDIT);
-					// call for invalidation on the live cache if the theme changed
-					if(template.isDrawed() && !template.getTheme().equals(oldTemplate.getTheme())){
-						APILocator.getTemplateAPI().invalidateTemplatePages(template.getInode(), user, false);
-					}
-
 
 				}
 
@@ -327,7 +316,7 @@ public class EditTemplateAction extends DotPortletAction implements
 				boolean returnValue = false;
 
 				for(String inode  : inodes)	{
-					String result = APILocator.getTemplateAPI().checkDependencies(inode, user, false);
+					String result = null;
 
 					WebAsset webAsset = (WebAsset) InodeFactory.getInode(inode,Template.class);
 

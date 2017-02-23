@@ -1,7 +1,6 @@
 <%@page import="com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage"%>
 <%@page import="java.util.List"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage"%>
 <%@page import="com.dotmarketing.portlets.containers.model.Container"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 

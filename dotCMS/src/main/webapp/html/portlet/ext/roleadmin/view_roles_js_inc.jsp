@@ -9,7 +9,6 @@
 <%@page import="com.dotmarketing.portlets.folders.model.Folder"%>
 <%@page import="com.dotmarketing.portlets.containers.model.Container"%>
 <%@page import="com.dotmarketing.portlets.templates.model.Template"%>
-<%@page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage"%>
 <%@page import="com.dotmarketing.portlets.files.model.File"%>
 <%@page import="com.dotmarketing.portlets.links.model.Link"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>

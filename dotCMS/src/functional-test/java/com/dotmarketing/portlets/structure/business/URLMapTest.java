@@ -12,6 +12,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -25,6 +26,7 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.db.HibernateUtil;
@@ -34,7 +36,6 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -63,7 +64,6 @@ public class URLMapTest extends IntegrationTestBase {
 
 			user = APILocator.getUserAPI().getSystemUser();
 			Host demoHost = APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
-			//			Host demoHost=APILocator.getHostAPI().findDefaultHost(user, false);
 
 
 			HibernateUtil.startTransaction();
@@ -99,7 +99,6 @@ public class URLMapTest extends IntegrationTestBase {
 	        csList.add(cs);
 
 	        container = APILocator.getContainerAPI().save(container, csList, demoHost, user, false);
-//			WebAssetFactory.createAsset( container, user.getUserId(), demoHost );
 			APILocator.getVersionableAPI().setLive( container );
 
 
@@ -146,26 +145,7 @@ public class URLMapTest extends IntegrationTestBase {
 
 
 			// HTMLPAGE
-			HTMLPage htmlPage = new HTMLPage();
-
-			htmlPage.setEndDate( new Date() );
-			htmlPage.setFriendlyName( "newstest-detail.html" );
-			htmlPage.setIDate( new Date() );
-			htmlPage.setMetadata( "" );
-			htmlPage.setModDate( new Date() );
-			htmlPage.setModUser( user.getUserId() );
-			htmlPage.setOwner( user.getUserId() );
-			htmlPage.setPageUrl( "newstest-detail.html" );
-			htmlPage.setRedirect( "" );
-			htmlPage.setShowOnMenu( true );
-			htmlPage.setSortOrder( 2 );
-			htmlPage.setStartDate( new Date() );
-			htmlPage.setTitle( "News Test Detail" );
-			htmlPage.setType( "htmlpage" );
-			htmlPage.setWebEndDate( "" );
-			htmlPage.setWebStartDate( "" );
-
-			htmlPage = APILocator.getHTMLPageAPI().saveHTMLPage( htmlPage, template, testFolder, user, false );
+			HTMLPageAsset htmlPage = new HTMLPageDataGen(testFolder, template).nextPersisted();
 
 			PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 			RoleAPI roleAPI = APILocator.getRoleAPI();
