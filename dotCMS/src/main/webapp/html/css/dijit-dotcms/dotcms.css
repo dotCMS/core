@@ -6011,6 +6011,7 @@ select[multiple]:hover {
 #listing-table, .dojoxUploaderFileListTable, .listingTable {
   border-bottom: 1px solid #ECEDEE;
   border-collapse: collapse;
+  font-size: 13px;
   margin: 0 auto 16px auto;
   width: 100%;
 }
@@ -10229,10 +10230,6 @@ a.category_higlighted, a.tag_higlighted {
   font-weight: bolder;
 }
 
-.related-content-dialog {
-  width: 900px;
-  height: 550px;
-}
 .related-content-dialog .dijitDialogPaneContent {
   padding: 0;
 }
@@ -10247,6 +10244,7 @@ a.category_higlighted, a.tag_higlighted {
 
 .related-content-form {
   width: 900px;
+  height: 500px;
 }
 
 .context-menu {

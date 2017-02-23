@@ -368,7 +368,6 @@
 			submitParent(parameter);
 			};
 		var callback = function(containerStructureList){
-			console.log(containerStructureList);
 			//var strInode = containerStructure['inode'];
 			dojo.require("dotcms.dijit.form.ContentSelector");
 
