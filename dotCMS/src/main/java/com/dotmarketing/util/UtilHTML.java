@@ -220,8 +220,6 @@ public class UtilHTML {
 			imgSrc = "/html/images/icons/chain.png";
 		} else if (webasset instanceof File) {
 			imgSrc = "/icon?i=" + ((File) webasset).getFileName();
-		} else if (webasset instanceof com.dotmarketing.portlets.htmlpages.model.HTMLPage) {
-			imgSrc = "/html/images/icons/blog-blue.png";
 		}
 
 		return "<img src=\"" + imgSrc + "\" width=16 height=16 />";

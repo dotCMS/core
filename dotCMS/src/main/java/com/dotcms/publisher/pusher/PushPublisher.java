@@ -289,7 +289,6 @@ public class PushPublisher extends Publisher {
             list.add( FolderBundler.class );
             list.add( TemplateBundler.class );
             list.add( ContainerBundler.class );
-            list.add( HTMLPageBundler.class );
             list.add(RuleBundler.class);
             list.add( LinkBundler.class );
             if ( Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES", false) ) {
@@ -306,7 +305,6 @@ public class PushPublisher extends Publisher {
 				list.add(LanguageBundler.class);
 			} else if (buildRules) {
 				list.add(HostBundler.class);
-				list.add(HTMLPageBundler.class);
 				list.add(RuleBundler.class);
 			}
         }

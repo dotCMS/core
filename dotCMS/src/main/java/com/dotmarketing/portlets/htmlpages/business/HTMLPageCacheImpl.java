@@ -6,8 +6,9 @@ import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.util.Logger;
 
 public class HTMLPageCacheImpl extends HTMLPageCache {
@@ -64,7 +65,7 @@ public class HTMLPageCacheImpl extends HTMLPageCache {
     @Override
     public void remove(String pageIdentifier){
     	
-    	IHTMLPage page = new HTMLPage();
+    	IHTMLPage page = new HTMLPageAsset();
     	page.setIdentifier(pageIdentifier);
     	remove(page);
     }

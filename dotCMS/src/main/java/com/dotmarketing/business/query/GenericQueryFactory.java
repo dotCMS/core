@@ -296,9 +296,6 @@ public abstract class GenericQueryFactory {
 			if(builderType.equals(BuilderType.CONTENTLET)){
 				return APILocator.getContentletAPI().DBSearch(query, APILocator.getUserAPI().getSystemUser(), false);
 			}
-			else if (builderType.equals(BuilderType.HTMLPAGE)){
-				return APILocator.getHTMLPageAPI().DBSearch(query, APILocator.getUserAPI().getSystemUser(), false);
-			}
 			else if (builderType.equals(BuilderType.STRUCTURE)){
 				return StructureFactory.DBSearch(query, APILocator.getUserAPI().getSystemUser(), false);
 			}

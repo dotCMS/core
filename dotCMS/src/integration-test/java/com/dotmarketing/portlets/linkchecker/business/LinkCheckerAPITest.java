@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.portlets.HTMLPageAssetUtil;
@@ -30,7 +31,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.linkchecker.bean.InvalidLink;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -59,7 +59,7 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
     protected static Template template=null;
     protected static Container container=null;
     protected static String pageExt=null;
-    protected static HTMLPage detailPage=null;
+    protected static IHTMLPage detailPage=null;
     protected static List<HTMLPageAsset> pages=new ArrayList<>();
 
     @BeforeClass
@@ -120,12 +120,7 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
 
             // detail page for url mapped structure
             Folder folder=APILocator.getFolderAPI().createFolders("/detail/", host, sysuser, false);
-            detailPage=new HTMLPage();
-            detailPage.setFriendlyName("detail");
-            detailPage.setPageUrl("detail."+pageExt);
-            detailPage.setTitle("index page");
-            detailPage.setTemplateId(template.getIdentifier());
-            detailPage=APILocator.getHTMLPageAPI().saveHTMLPage(detailPage, template, folder, sysuser, false);
+            detailPage = new HTMLPageDataGen(folder, template).nextPersisted();
 
             // url mapped structure
             urlmapstructure=new Structure();
@@ -159,8 +154,6 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
             contentList.addAll(APILocator.getContentletAPI().findByStructure(urlmapstructure.getInode(), sysuser, false, 0, 0));
             APILocator.getContentletAPI().delete(contentList, sysuser, false);
 
-            for(HTMLPage pp : APILocator.getHTMLPageAPI().findHtmlPages(sysuser, false, null, null, null, null, template.getIdentifier(), 0, -1, null))
-            		APILocator.getHTMLPageAPI().delete((HTMLPage)pp, sysuser, false);
             for(HTMLPageAsset pp : pages){
             		APILocator.getContentletAPI().delete(pp, sysuser, false,true);
             }

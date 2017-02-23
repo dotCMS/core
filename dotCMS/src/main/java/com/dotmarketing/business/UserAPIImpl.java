@@ -18,7 +18,6 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.files.business.FileAPI;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -363,9 +362,6 @@ public class UserAPIImpl implements UserAPI {
 
 		//replace user references in htmlpages
 		logDelete(DeletionStage.BEGINNING, userToDelete, user, "HTMLPages");
-
-		HTMLPageAPI pageAPI  = APILocator.getHTMLPageAPI();
-		pageAPI.updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
 
 		logDelete(DeletionStage.END, userToDelete, user, "HTMLPages");
 

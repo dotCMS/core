@@ -80,9 +80,6 @@ import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPI;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPIImpl;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPIImpl;
 import com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPI;
@@ -429,18 +426,6 @@ public class APILocator extends Locator<APIIndex>{
 	 */
 	public static FileAPI getFileAPI(){
 		return (FileAPI) getInstance(APIIndex.FILE_API);
-	}
-
-	/**
-	 * Creates a single instance of the {@link HTMLPageAPI} class.
-	 *
-	 * @return The {@link HTMLPageAPI} class.
-	 * @deprecated This API can be used for Legacy {@link HTMLPage} objects
-	 *             ONLY. HTML Pages are now represented as content. Please refer
-	 *             to the {@link #getHTMLPageAssetAPI()}
-	 */
-	public static HTMLPageAPI getHTMLPageAPI(){
-		return (HTMLPageAPI) getInstance(APIIndex.HTMLPAGE_API);
 	}
 
 	/**
@@ -863,7 +848,6 @@ enum APIIndex
 		case HOST_VARIABLE_API : return new HostVariableAPIImpl();
 		case FORM_API: return new FormAPIImpl();
 		case FILE_API: return new FileAPIImpl();
-		case HTMLPAGE_API: return new HTMLPageAPIImpl();
 		case MENULINK_API: return new MenuLinkAPIImpl();
 		case VIRTUALLINK_API: return new VirtualLinkAPIImpl();
 		case DASHBOARD_API: return new DashboardAPIImpl();

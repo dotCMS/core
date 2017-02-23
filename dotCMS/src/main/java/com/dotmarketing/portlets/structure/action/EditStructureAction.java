@@ -35,8 +35,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.form.business.FormAPI;
-import com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -553,7 +552,7 @@ public class EditStructureAction extends DotPortletAction {
 			}
 			if (UtilMethods.isSet(structure.getDetailPage())) {
 				Identifier ident = APILocator.getIdentifierAPI().find(structure.getDetailPage());
-				HTMLPage page = HTMLPageFactory.getLiveHTMLPageByIdentifier(ident);
+				HTMLPageAsset page = (HTMLPageAsset) APILocator.getVersionableAPI().findLiveVersion(ident, APILocator.getUserAPI().getSystemUser(), false);
 				if (InodeUtils.isSet(page.getInode())) {
 					structureForm.setDetailPage(page.getIdentifier());
 				}

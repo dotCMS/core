@@ -13,7 +13,6 @@
 <%@ page import="com.dotmarketing.portlets.containers.factories.ContainerFactory" %>
 <%@ page import="com.dotmarketing.portlets.containers.model.Container" %>
 <%@ page import="com.dotmarketing.portlets.templates.model.Template" %>
-<%@ page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage" %>
 <%@ page import="com.dotmarketing.db.HibernateUtil" %>
 <%@ page import="java.io.PrintWriter" %>
 <%@ page import="java.io.StringWriter" %>
