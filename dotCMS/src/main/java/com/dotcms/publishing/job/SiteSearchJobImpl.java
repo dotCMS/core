@@ -1,23 +1,10 @@
 package com.dotcms.publishing.job;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import org.elasticsearch.ElasticsearchException;
-
-import org.quartz.JobDataMap;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.publishing.bundlers.FileAssetBundler;
 import com.dotcms.enterprise.publishing.bundlers.HTMLPageAsContentBundler;
-import com.dotcms.enterprise.publishing.bundlers.StaticHTMLPageBundler;
 import com.dotcms.enterprise.publishing.bundlers.URLMapBundler;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
 import com.dotcms.publishing.BundlerStatus;
@@ -30,13 +17,18 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.sitesearch.model.SiteSearchAudit;
-import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.AdminLogger;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
+import org.elasticsearch.ElasticsearchException;
+import org.quartz.JobDataMap;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public class SiteSearchJobImpl {
     private PublishStatus status = new PublishStatus();
@@ -195,9 +187,7 @@ public class SiteSearchJobImpl {
 
         int filesCount=0,pagesCount=0,urlmapCount=0;
         for(BundlerStatus bs : status.getBundlerStatuses()) {
-            if(bs.getBundlerClass().equals(StaticHTMLPageBundler.class.getName()))
-                pagesCount+=bs.getTotal();
-            else if(bs.getBundlerClass().equals(FileAssetBundler.class.getName()))
+            if(bs.getBundlerClass().equals(FileAssetBundler.class.getName()))
                 filesCount+=bs.getTotal();
             else if(bs.getBundlerClass().equals(URLMapBundler.class.getName()))
             	urlmapCount+=bs.getTotal();
