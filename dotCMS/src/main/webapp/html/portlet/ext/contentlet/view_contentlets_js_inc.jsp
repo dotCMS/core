@@ -1035,6 +1035,8 @@
 		  	//var newForm = document.getElementById("search_form").cloneNode(true);
         	newForm.name="form" + formNum;
         	newForm.id="form" + formNum;
+            document.body.appendChild(newForm);
+
 		  	return newForm;
         }
         
