@@ -1,14 +1,14 @@
 package com.dotmarketing.logConsole.business;
 
+import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.logConsole.model.LogMapperRow;
 import com.dotmarketing.util.Logger;
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 
 import java.lang.reflect.InvocationTargetException;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -55,19 +55,22 @@ public class ConsoleLogFactoryImpl implements ConsoleLogFactory {
         return obj;
     }
 
-    public List<LogMapperRow> findLogMapper () throws DotDataException {
+    public List<LogMapperRow> findLogMapper() throws DotDataException {
+
+        Connection con;
+        List results = null;
 
         final DotConnect db = new DotConnect();
         try {
-
-            db.setSQL( ConsoleLoggerSQL.SELECT_LOGGING_CRITERIA );
-            db.loadResult();
-
-        } catch ( final Exception e ) {
-            Logger.error( this.getClass(), e.getMessage(), e );
+            con = DbConnectionFactory.getDataSource().getConnection();
+            con.setAutoCommit(true);
+            db.setSQL(ConsoleLoggerSQL.SELECT_LOGGING_CRITERIA);
+            results = db.loadObjectResults(con);
+        } catch (final Exception e) {
+            Logger.error(this.getClass(), e.getMessage(), e);
         }
 
-        return (List<LogMapperRow>) this.convertListToObjects( db.loadObjectResults(), LogMapperRow.class );
+        return (List<LogMapperRow>) this.convertListToObjects(results, LogMapperRow.class);
     }
 
     public void updateLogMapper ( LogMapperRow r ) throws DotDataException {
