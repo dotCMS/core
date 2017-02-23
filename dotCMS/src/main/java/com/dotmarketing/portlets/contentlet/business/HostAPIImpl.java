@@ -24,8 +24,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -577,13 +575,6 @@ public class HostAPIImpl implements HostAPI {
 
 				DotConnect dc = new DotConnect();
 
-				// Remove HTML Pages
-				HTMLPageAPI htmlPageAPI = APILocator.getHTMLPageAPI();
-				List<HTMLPage> pages = htmlPageAPI.findHtmlPages(user, true, null, host.getIdentifier(), null, null, null, 0, -1, null);
-				for (HTMLPage page : pages) {
-					htmlPageAPI.delete(page, user, respectFrontendRoles);
-				}
-
 				// Remove Links
 				MenuLinkAPI linkAPI = APILocator.getMenuLinkAPI();
 				List<Link> links = linkAPI.findLinks(user, true, null, host.getIdentifier(), null, null, null, 0, -1, null);
@@ -609,15 +600,6 @@ public class HostAPIImpl implements HostAPI {
 					dc.setSQL("delete from template_containers where template_id = ?");
 					dc.addParam(template.getIdentifier());
 					dc.loadResult();
-
-					dc.setSQL("select inode, identifier from htmlpage where template_id = ?");
-					dc.addParam(template.getIdentifier());
-					List<HashMap<String, Object>> htmlpages =  dc.loadResults();
-					for (HashMap<String, Object> folderMap : htmlpages) {
-						String identifier = (String) folderMap.get("identifier");
-						HTMLPage page = htmlPageAPI.loadWorkingPageById(identifier, user, respectFrontendRoles);
-						htmlPageAPI.delete(page, user, respectFrontendRoles);
-					}
 
 					templateAPI.delete(template, user, respectFrontendRoles);
 				}

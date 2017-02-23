@@ -33,7 +33,6 @@ import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.ContainerServices;
@@ -291,17 +290,6 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 				ContainerServices.unpublishContainerFile((Container)currWebAsset);
 				CacheLocator.getContainerCache().remove(currWebAsset.getInode());
 			}
-			else if(currWebAsset instanceof HTMLPage)
-			{
-				PageServices.invalidateLive((HTMLPage)currWebAsset);
-				if(RefreshMenus.shouldRefreshMenus((HTMLPage)currWebAsset)){
-					RefreshMenus.deleteMenu(currWebAsset);
-					Identifier ident=APILocator.getIdentifierAPI().find(currWebAsset);
-					CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
-				}
-
-				CacheLocator.getHTMLPageCache().remove((HTMLPage)currWebAsset);
-			}
 			else if(currWebAsset instanceof Template)
 			{
 				TemplateServices.unpublishTemplateFile((Template)currWebAsset);
@@ -348,7 +336,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 
 			//### Get and delete the multitree entries ###
 			List<MultiTree> multiTrees = new ArrayList<MultiTree>();
-			if (currWebAsset instanceof Container || currWebAsset instanceof HTMLPage)
+			if (currWebAsset instanceof Container)
 			{
 				multiTrees = MultiTreeFactory.getMultiTree(identifier);
 			}

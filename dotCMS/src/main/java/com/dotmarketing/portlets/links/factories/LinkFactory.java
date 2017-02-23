@@ -39,7 +39,6 @@ import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -232,68 +231,10 @@ public class LinkFactory {
     		
     		return ((com.dotmarketing.portlets.links.model.Link) inode);	
     	}
-
-    	if(inode instanceof HTMLPage){
-    		return ((com.dotmarketing.portlets.links.model.Link) LinkFactory.getLinkFromHTMLPage((HTMLPage) inode, userId));	
-    	}
     	
     	return (new Link());
 
 
-    }
-    
-    public static Link getLinkFromHTMLPage(HTMLPage inHTMLPage, String userId) throws DotDataException, DotStateException, DotSecurityException{
-
-        Logger.debug(LinkFactory.class, "running getLinkFromHTMLPage(HTMLPage inHTMLPage String userId)");
-
-        com.dotmarketing.beans.Identifier identifier = APILocator.getIdentifierAPI().find(inHTMLPage);
-    	java.lang.StringBuffer url = new java.lang.StringBuffer();
-    	
-    	
-    	String protocol = null;
-    	if(inHTMLPage.isHttpsRequired()){
-    		protocol = "https://";
-    	}else{
-	    	protocol = "http://";
-    	}	
-    	
-    	Host host;
-    	User systemUser;
-		try {
-	    	 systemUser = APILocator.getUserAPI().getSystemUser();
-			host = hostAPI.findParentHost(inHTMLPage, systemUser, false);
-		} catch (DotDataException e) {
-			Logger.error(LinkFactory.class, e.getMessage(), e);
-			throw new DotRuntimeException(e.getMessage(), e);
-		} catch (DotSecurityException e) {
-			Logger.error(LinkFactory.class, e.getMessage(), e);
-			throw new DotRuntimeException(e.getMessage(), e);
-		}
-
-		url.append(host.getHostname());
-    	url.append(identifier.getURI());
-    	
-    	
-    	java.util.List linkURIs = LinkFactory.existsLink(protocol + url.toString() + "_self",host.getIdentifier());
-    	if(linkURIs.size() > 0){
-   			Identifier linkIdentifier = (Identifier) linkURIs.get(0);
-   			
-   						
-   			return ((Link) APILocator.getVersionableAPI().findWorkingVersion(linkIdentifier,systemUser,false));				
-    	}else{
-    		Link link = new Link();
-    		Folder parentFolder = APILocator.getFolderAPI().findParentFolder(inHTMLPage,systemUser,false);
-    		
-    		link.setTitle(inHTMLPage.getTitle());
-    		link.setFriendlyName(inHTMLPage.getFriendlyName());
-    		link.setProtocal(protocol);
-    		link.setUrl(url.toString());
-    		link.setTarget("_self");
-			link.setInternal(true);
-    		
- 			WebAssetFactory.createAsset(link,userId,parentFolder);
-    		return ((Link) link);	
-    	}
     }
 
     public static Link copyLink ( Link currentLink, Folder parent ) throws DotDataException, DotStateException, DotSecurityException {

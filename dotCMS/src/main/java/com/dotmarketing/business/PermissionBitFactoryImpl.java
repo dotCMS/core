@@ -30,7 +30,6 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -2975,10 +2974,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			case IHTMLPAGE:
 				Identifier identifier = APILocator.getIdentifierAPI().find( id );
 				if ( identifier != null ) {
-					if ( identifier.getAssetType().equals( Identifier.ASSET_TYPE_HTML_PAGE ) ) {
-						HTMLPageAPI pageAPI = APILocator.getHTMLPageAPI();
-						result.add(pageAPI.loadWorkingPageById( id, user, false ));
-					} else if ( identifier.getAssetType().equals( Identifier.ASSET_TYPE_CONTENTLET ) ) {
+					if ( identifier.getAssetType().equals( Identifier.ASSET_TYPE_CONTENTLET ) ) {
 						HTMLPageAssetAPI htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
 						//Get the contentlet and the HTMLPage asset object related to the given permissionable id
 						Contentlet pageWorkingVersion = APILocator.getContentletAPI().findContentletByIdentifier( id, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false );

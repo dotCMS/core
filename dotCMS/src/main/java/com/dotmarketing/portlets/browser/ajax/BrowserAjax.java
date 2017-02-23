@@ -36,8 +36,6 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.factories.LinkFactory;
@@ -604,13 +602,6 @@ public class BrowserAjax {
 			languageId = languageAPI.getDefaultLanguage().getId();
 		}
 
-		if(ident!=null && InodeUtils.isSet(ident.getId()) && ident.getAssetType().equals("htmlpage")) {
-			Map<String, Object> pageMap = APILocator.getHTMLPageAPI().loadWorkingPageById(fileId, user, respectFrontendRoles).getMap();
-			pageMap.put("mimeType", "application/dotpage");
-			pageMap.put("pageURI", ident.getURI());
-			return pageMap;
-		}
-
 		if(ident!=null && InodeUtils.isSet(ident.getId()) && ident.getAssetType().equals("contentlet")) {
 		    ContentletVersionInfo vinfo=versionAPI.getContentletVersionInfo(ident.getId(), languageId);
 
@@ -1088,9 +1079,7 @@ public class BrowserAjax {
 		User user = getUser( req );
 
 		Identifier ident = APILocator.getIdentifierAPI().findFromInode( inode );
-		IHTMLPage page = ident.getAssetType().equals( "htmlpage" ) ?
-				(IHTMLPage) InodeFactory.getInode( inode, HTMLPage.class )
-				: APILocator.getHTMLPageAssetAPI().fromContentlet( APILocator.getContentletAPI().find( inode, user, false ) );
+		IHTMLPage page = APILocator.getHTMLPageAssetAPI().fromContentlet( APILocator.getContentletAPI().find( inode, user, false ) );
 
 		String pageURL = ident.getAssetName();
 		String lastName = (pageURL.lastIndexOf( "." ) > -1) ? pageURL.substring( 0, pageURL.lastIndexOf( "." ) ) : pageURL;
@@ -1100,9 +1089,7 @@ public class BrowserAjax {
 		result.put( "newName", newName );
 		result.put( "inode", inode );
 
-		if ( ident.getAssetType().equals( "htmlpage" ) ?
-				HTMLPageFactory.renameHTMLPage( (HTMLPage) page, newName, user )
-				: APILocator.getHTMLPageAssetAPI().rename( (HTMLPageAsset) page, newName, user ) ) {
+		if ( APILocator.getHTMLPageAssetAPI().rename( (HTMLPageAsset) page, newName, user ) ) {
 			result.put( "result", 0 );
 		} else {
 			result.put( "result", 1 );
@@ -1130,9 +1117,7 @@ public class BrowserAjax {
 
         try {
             Identifier ident=APILocator.getIdentifierAPI().findFromInode(inode);
-            IHTMLPage page = ident.getAssetType().equals("htmlpage") 
-                               ? (IHTMLPage) InodeFactory.getInode(inode, HTMLPage.class)
-                               : APILocator.getHTMLPageAssetAPI().fromContentlet(
+            IHTMLPage page = APILocator.getHTMLPageAssetAPI().fromContentlet(
                                      APILocator.getContentletAPI().find(inode, user, false));
     
             // gets folder parent
@@ -1156,21 +1141,7 @@ public class BrowserAjax {
                 return result;
             }
 
-            if(ident.getAssetType().equals("htmlpage")) {
-            	HTMLPage newPage = null;
-                if ( parent != null ) {
-                	newPage=HTMLPageFactory.copyHTMLPage( (HTMLPage) page, parent );
-                } else {
-                	newPage=HTMLPageFactory.copyHTMLPage( (HTMLPage) page, host );
-                }
-                /*copy page associated contentlets*/
-                List<MultiTree> pageContents = MultiTreeFactory.getMultiTree(page.getIdentifier());
-                for(MultiTree m : pageContents){
-                   	MultiTree mt = new MultiTree(newPage.getIdentifier(), m.getParent2(), m.getChild());
-                   	MultiTreeFactory.saveMultiTree(mt);
-                }
-            }
-            else {
+
                 Contentlet cont=APILocator.getContentletAPI().find(inode, user, false);
                 Contentlet newContentlet=null;
                 if(parent!=null) {
@@ -1185,7 +1156,7 @@ public class BrowserAjax {
                    	MultiTree mt = new MultiTree(newContentlet.getIdentifier(), m.getParent2(), m.getChild());
                    	MultiTreeFactory.saveMultiTree(mt);
                 }
-            }
+
 
             result.put("status", "success");
             result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "Page-copied")));
@@ -1250,9 +1221,7 @@ public class BrowserAjax {
         User user = getUser( req );
 
         Identifier ident=APILocator.getIdentifierAPI().findFromInode(inode);
-        IHTMLPage page = ident.getAssetType().equals("htmlpage") 
-                           ? (IHTMLPage) InodeFactory.getInode(inode, HTMLPage.class)
-                           : APILocator.getHTMLPageAssetAPI().fromContentlet(
+        IHTMLPage page = APILocator.getHTMLPageAssetAPI().fromContentlet(
                                  APILocator.getContentletAPI().find(inode, user, false));
 
         // gets folder parent
@@ -1278,21 +1247,13 @@ public class BrowserAjax {
             throw new DotRuntimeException( permissionsError );
         }
 
-        if(ident.getAssetType().equals("htmlpage")) {
-            if ( parent != null ) {
-                return HTMLPageFactory.moveHTMLPage( (HTMLPage) page, parent, user );
-            } else {
-                return HTMLPageFactory.moveHTMLPage( (HTMLPage) page, host, user );
-            }
-        }
-        else {
             if ( parent != null ) {
                 return APILocator.getHTMLPageAssetAPI().move((HTMLPageAsset)page, parent, user);
             }
             else {
                 return APILocator.getHTMLPageAssetAPI().move((HTMLPageAsset)page, host, user);
             }
-        }
+
     }
 
     public Map<String, Object> renameLink (String inode, String newName) throws Exception {
@@ -1501,15 +1462,6 @@ public class BrowserAjax {
 		Inode asset = null;
 		if ( htmlPageAsset != null && InodeUtils.isSet( htmlPageAsset.getInode() ) ) {//Verify for HTMLPages as content
 			relatedAssets = PublishFactory.getUnpublishedRelatedAssetsForPage( htmlPageAsset, relatedAssets, false, user, false );
-		} else {
-
-			asset = InodeFactory.getInode( inode, Inode.class );
-
-			//Verify if it is a legacy HTMLPage and have unpublished content
-			if ( (asset != null && InodeUtils.isSet( asset.getInode() ))
-					&& asset instanceof HTMLPage ) {
-				relatedAssets = PublishFactory.getUnpublishedRelatedAssets( asset, relatedAssets, user, false );
-			}
 		}
 
 		//Only publish the content if there is not related unpublished content
@@ -1526,14 +1478,6 @@ public class BrowserAjax {
 
 				//Publish the page
 				return PublishFactory.publishHTMLPage( htmlPageAsset, req );
-			} else if ( asset != null && InodeUtils.isSet( asset.getInode() ) ) {//Publish for all the other asset types including legacy HTMLPages
-
-				if ( !permissionAPI.doesUserHavePermission( asset, PERMISSION_PUBLISH, user ) ) {
-					throw new Exception( "The user doesn't have the required permissions." );
-				}
-
-				//Publish the legacy HTMLPage
-				return PublishFactory.publishAsset( asset, req );
 			}
 
 		//} else {
@@ -2254,11 +2198,16 @@ public class BrowserAjax {
 		return foldersToReturn;
 	}
 
-	public void refreshIndex(Folder parent, Host host, Folder folder ) throws Exception {
+	public void refreshIndex(File file, Folder parent, User user, Host host, Folder folder ) throws Exception {
 
+		Folder srcFolder = folder;
+		if(folder == null){
+			srcFolder = APILocator.getFolderAPI().find(file.getParent(),user,false);
+
+		}
      	// issues/1603 - refresh index for src Folder
-        if (folder!=null){
-        	APILocator.getContentletAPI().refreshContentUnderFolder(folder);
+        if (srcFolder!=null){
+        	APILocator.getContentletAPI().refreshContentUnderFolder(srcFolder);
      	}
 
         if ( parent != null ) {

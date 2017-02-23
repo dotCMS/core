@@ -30,7 +30,6 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -399,9 +398,6 @@ public class PageServices {
 		f.delete();
 		DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
 		vc.remove(ResourceManager.RESOURCE_TEMPLATE + filePath );
-		if(htmlPage instanceof HTMLPage) {
-		    CacheLocator.getHTMLPageCache().remove((HTMLPage) htmlPage);
-		}
 	}
 
 }

@@ -68,8 +68,7 @@ import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
 import com.dotmarketing.portlets.contentlet.business.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPageVersionInfo;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.links.model.LinkVersionInfo;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
@@ -2448,10 +2447,10 @@ public class UtilMethods {
             /* Get the htmlpage a publish */
             String idStr = liveUrl.substring(liveUrl.indexOf("/") + 1, liveUrl.indexOf("."));
             //long idInode = Long.parseLong(idStr);
-            //HTMLPage htmlPage = (HTMLPage) APILocator.getVersionableAPI().findLiveVersion(InodeFactory.getInode(idStr, Identifier.class), HTMLPage.class);
-            HTMLPage htmlPage = (HTMLPage) APILocator.getVersionableAPI().findLiveVersion(APILocator.getIdentifierAPI().find(idStr), APILocator.getUserAPI().getSystemUser(),false);
+            IHTMLPage htmlPage = (IHTMLPage) APILocator.getVersionableAPI().findLiveVersion(APILocator.getIdentifierAPI().find(idStr), APILocator.getUserAPI().getSystemUser(),false);
             if(htmlPage != null && InodeUtils.isSet(htmlPage.getInode())){
-            	PublishFactory.publishAsset(htmlPage, APILocator.getUserAPI().getSystemUser(), false);
+            	//PublishFactory.publishAsset(htmlPage, APILocator.getUserAPI().getSystemUser(), false);
+            	PublishFactory.publishHTMLPage(htmlPage, null, APILocator.getUserAPI().getSystemUser(), false);
             	return getVelocityTemplate(liveUrl);
             }
 
@@ -3439,8 +3438,6 @@ public class UtilMethods {
             return ContainerVersionInfo.class;
         else if(type.equals("template"))
             return TemplateVersionInfo.class;
-        else if(type.equals("htmlpage"))
-            return HTMLPageVersionInfo.class;
         else return null;
     }
     
@@ -3453,8 +3450,6 @@ public class UtilMethods {
             return Container.class;
         else if(tableName.equals("template"))
             return com.dotmarketing.portlets.templates.model.Template.class;
-        else if(tableName.equals("htmlpage"))
-            return HTMLPage.class;
         else return null;
     }
 

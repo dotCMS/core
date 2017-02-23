@@ -2,7 +2,6 @@
 
 <%@ page import="com.dotmarketing.portlets.links.model.Link" %>
 <%@ page import="com.dotmarketing.portlets.contentlet.model.Contentlet" %>
-<%@ page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage" %>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 
 <%
@@ -80,9 +79,6 @@ function cancel() {
 											}
 											else if (webasset instanceof Link) {
 												title = ((Link)webasset).getProtocal() + ((Link)webasset).getUrl();
-											}
-											else if (webasset instanceof HTMLPage) {
-												title = ((HTMLPage)webasset).getPageUrl();
 											}
 											else {
 												title = webasset.getTitle();

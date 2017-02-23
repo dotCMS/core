@@ -65,7 +65,6 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
@@ -951,39 +950,11 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		if (currentContentlet.getInode().equalsIgnoreCase(contentlet.getInode())) {
 			String htmlpage_inode = req.getParameter("htmlpage_inode");
 			String contentcontainer_inode = req.getParameter("contentcontainer_inode");
-			HTMLPage htmlParent = (HTMLPage) InodeFactory.getInode(htmlpage_inode, HTMLPage.class);
-			Logger.debug(this, "Added Contentlet to parent=" + htmlParent.getInode());
 			Container containerParent = (Container) InodeFactory.getInode(contentcontainer_inode, Container.class);
 			Logger.debug(this, "Added Contentlet to parent=" + containerParent.getInode());
 
 			Identifier iden = APILocator.getIdentifierAPI().find(contentlet);
 
-			if (InodeUtils.isSet(htmlParent.getInode()) && InodeUtils.isSet(containerParent.getInode()) && InodeUtils.isSet(contentlet.getInode())) {
-				Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find(htmlParent);
-				Identifier containerIdentifier = APILocator.getIdentifierAPI().find(containerParent);
-				Identifier contenletIdentifier = APILocator.getIdentifierAPI().find(contentlet);
-				MultiTree multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,
-						contenletIdentifier);
-				Logger.debug(this, "Getting multitree for=" + htmlParent.getInode() + " ," + containerParent.getInode()
-						+ " ," + contentlet.getIdentifier());
-				Logger.debug(this, "Coming from multitree parent1=" + multiTree.getParent1() + " parent2="
-						+ multiTree.getParent2());
-
-				if (!InodeUtils.isSet(multiTree.getParent1()) && !InodeUtils.isSet(multiTree.getParent2()) && !InodeUtils.isSet(multiTree.getChild())) {
-
-					Logger.debug(this, "MTree is null!!! Creating new one!");
-
-					MultiTree mTree = new MultiTree(htmlPageIdentifier.getInode(), containerIdentifier.getInode(),
-							contenletIdentifier.getInode(),null,containerParent.getMaxContentlets());
-					MultiTreeFactory.saveMultiTree(mTree);
-				}
-
-				//Updating the last mod user and last mod date of the page
-				htmlParent.setModDate(new Date());
-				htmlParent.setModUser(user.getUserId());
-				HibernateUtil.saveOrUpdate(htmlParent);
-
-			}
 			SessionMessages.add(httpReq, "message", "message.contentlet.add.parents");
 		}
 	}
@@ -1660,7 +1631,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				String editorName = UtilMethods.getUserFullName(contentlet.getModUser());
 
 				for (Map<String, Object> reference : references) {
-					HTMLPage page = (HTMLPage)reference.get("page");
+					IHTMLPage page = (IHTMLPage)reference.get("page");
 					Host host = hostAPI.findParentHost(page, systemUser, false);
 					Company company = PublicCompanyFactory.getDefaultCompany();
 					User pageUser = (User)reference.get("owner");

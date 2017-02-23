@@ -22,11 +22,11 @@
 .dotContainerNotesAnchor{float:right;}
 
 .dotAddContent{float:right;}
-.dotAddContent a{display:block;height:24px;width:90px;padding: 3px 0 0 30px;font-weight:bolder;font-size:12px;text-decoration:none;text-align:left;color:#777;font-family:Arial, Helvetica, sanserif;background-image:url(/html/images/preview/containerControl.gif);background-repeat:no-repeat;}
+.dotAddContent a{display:block;height:24px;width:105px;padding: 3px 0 0 30px;font-weight:bolder;font-size:12px;text-decoration:none;text-align:left;color:#777;font-family:Arial, Helvetica, sanserif;background-image:url(/html/images/preview/containerControl.gif);background-repeat:no-repeat;}
 .dotAddContent a:hover{color:#6986ba;}
 
 .dotControls{position:absolute;background:#fbfbff;border-top: 1px solid #dbe4ed;border-right: 1px solid #9ab2ce;border-bottom: 1px solid #9ab2ce;border-left: 1px solid #dbe4ed;z-index: 400}
-.dotControlsClose a, .dotNewContent a, .dotReuseContent a, .dotAddWidget a, .dotAddForm a, .dotNewContentDisabled, .dotReuseContentDisabled, .dotAddWidgetDisabled, .dotAddFormDisabled{display:block;width:90px;line-height:25px;padding:0 0 3px 27px;text-align:left;text-decoration:none;font-family:Verdana, Arial, Helvetica, sanserif;font-size:9px;color:#666;background-repeat:no-repeat;}
+.dotControlsClose a, .dotNewContent a, .dotReuseContent a, .dotAddWidget a, .dotAddForm a, .dotNewContentDisabled, .dotReuseContentDisabled, .dotAddWidgetDisabled, .dotAddFormDisabled{display:block;width:105px;line-height:25px;padding:0 0 3px 27px;text-align:left;text-decoration:none;font-family:Verdana, Arial, Helvetica, sanserif;font-size:9px;color:#666;background-repeat:no-repeat;}
 .dotControlsClose a:hover, .dotNewContent a:hover, .dotReuseContent a:hover, .dotAddWidget a:hover, .dotAddForm a:hover{color:#666;background-color:#eee;}
 
 .dotNewContent a{background:url(/html/images/icons/card-plus.png) no-repeat 5px center;}

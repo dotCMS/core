@@ -50,8 +50,6 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -351,9 +349,6 @@ public class FolderFactoryImpl extends FolderFactory {
 			// gets all links for this folder
 			List linksListSubChildren = getChildrenClass(folder, Link.class, cond);
 
-			// gets all html pages for this folder
-			List htmlPagesSubListChildren = getChildrenClass(folder, HTMLPage.class, cond);
-
 			// gets all files for this folder
 			List filesListSubChildren = new ArrayList();
 
@@ -382,7 +377,6 @@ public class FolderFactoryImpl extends FolderFactory {
 			// gets all subitems
 			menuList.addAll(subFolders);
 			menuList.addAll(linksListSubChildren);
-			menuList.addAll(htmlPagesSubListChildren);
 			menuList.addAll(filesListSubChildren);
 
 			Comparator comparator = new AssetsComparator(orderDirection);
@@ -509,16 +503,6 @@ public class FolderFactoryImpl extends FolderFactory {
 			pagesCopied = (Map<String, IHTMLPage[]>) copiedObjects.get("HTMLPages");
 		}
 
-		List pages = getChildrenClass(source, HTMLPage.class);
-		for (HTMLPage page : (List<HTMLPage>) pages) {
-			if (page.isWorking()) {
-				HTMLPage newPage = HTMLPageFactory.copyHTMLPage(page, newFolder);
-				// Saving copied pages to update template - pages relationships
-				// later
-				pagesCopied.put(page.getInode(), new HTMLPage[] { page, newPage });
-			}
-		}
-
 		// Copying Files
 		Map<String, IFileAsset[]> filesCopied;
 		if (copiedObjects.get("Files") == null) {
@@ -638,7 +622,6 @@ public class FolderFactoryImpl extends FolderFactory {
 			return false;
 
 		List<Folder> subFolders = getSubFolders(folder);
-		List htmlPages = getChildrenClass(folder, HTMLPage.class);
 		List links = getChildrenClass(folder, Link.class);
 		List<Contentlet> contentlets = APILocator.getContentletAPI().findContentletsByFolder(folder, systemUser, false);
 
@@ -646,10 +629,6 @@ public class FolderFactoryImpl extends FolderFactory {
 		folderId.setParentPath(newParentPath);
 		folderId.setHostId(newParentHostId);
 		identAPI.save(folderId);
-
-		for (Object page : htmlPages) {
-			APILocator.getHTMLPageAPI().movePage((HTMLPage) page, folder, systemUser, false);
-		}
 
 		for (Object link : links) {
 			if (((Link) link).isWorking()) {
@@ -706,10 +685,9 @@ public class FolderFactoryImpl extends FolderFactory {
 			String newPath = APILocator.getIdentifierAPI().find(newFolder).getPath()+nextFolder.getName()+"/";
 			Folder nextNewFolder = APILocator.getFolderAPI().createFolders(newPath, destinationHost, APILocator.getUserAPI().getSystemUser(), false);
 
-			List htmlPages = getChildrenClass(nextFolder, HTMLPage.class);
 			List links = getChildrenClass(nextFolder,Link.class);
 
-			updateMovedFolderAssets(nextFolder, nextNewFolder, htmlPages, links);
+			updateMovedFolderAssets(nextFolder, nextNewFolder, links);
 			moveRecursiveFolders(nextFolder, nextNewFolder);
 		}
 	}
@@ -737,48 +715,6 @@ public class FolderFactoryImpl extends FolderFactory {
 		} catch (DotSecurityException e) {
 			Logger.error(FolderFactoryImpl.class, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
-		}
-
-		List htmlPages = getChildrenClass(theFolder,HTMLPage.class);
-		for (HTMLPage page : (List<HTMLPage>) htmlPages) {
-			Identifier identifier = APILocator.getIdentifierAPI().find(page);
-
-			if (page.isWorking()) {
-				// updating caches
-				WorkingCache.removeAssetFromCache(page);
-				CacheLocator.getIdentifierCache().removeFromCacheByVersionable(page);
-			}
-
-			if (page.isLive()) {
-				LiveCache.removeAssetFromCache(page);
-			}
-
-			if (page.isWorking()) {
-				// gets identifier for this webasset and changes the uri and
-				// persists it
-				identifier.setHostId(newHost.getIdentifier());
-				identifier.setURI(page.getURI(theFolder));
-				APILocator.getIdentifierAPI().save(identifier);
-				CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(identifier.getId());
-			}
-
-			// Add to Preview and Live Cache
-			if (page.isLive()) {
-				LiveCache.removeAssetFromCache(page);
-				LiveCache.addToLiveAssetToCache(page);
-			}
-			if (page.isWorking()) {
-				WorkingCache.removeAssetFromCache(page);
-				WorkingCache.addToWorkingAssetToCache(page);
-				CacheLocator.getIdentifierCache().removeFromCacheByVersionable(page);
-
-			}
-
-			// republishes the page to reset the VTL_SERVLETURI variable
-			if (page.isLive()) {
-				PageServices.invalidateAll(page);
-			}
-
 		}
 
 		List<FileAsset> fileAssets = APILocator.getFileAssetAPI().findFileAssetsByFolder(theFolder, APILocator.getUserAPI().getSystemUser(), false);
@@ -839,7 +775,7 @@ public class FolderFactoryImpl extends FolderFactory {
 	 * @throws DotStateException
 	 */
 	@SuppressWarnings({ "unchecked", "deprecation" })
-	private void updateMovedFolderAssets(Folder oldFolder, Folder newFolder, List<HTMLPage> htmlPages, List<Link> links)
+	private void updateMovedFolderAssets(Folder oldFolder, Folder newFolder, List<Link> links)
 			throws DotDataException, DotStateException, DotSecurityException {
 
 		User systemUser;
@@ -849,10 +785,6 @@ public class FolderFactoryImpl extends FolderFactory {
 		} catch (DotDataException e) {
 			Logger.error(FolderFactoryImpl.class, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
-		}
-
-		for (HTMLPage page : htmlPages) {
-			APILocator.getHTMLPageAPI().movePage(page, newFolder, systemUser, false);
 		}
 
 		for (Link link : links) {

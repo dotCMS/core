@@ -62,8 +62,6 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetValidationExceptio
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -90,7 +88,6 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     private PermissionAPI permissionAPI;
     private IdentifierAPI identifierAPI;
-    private HTMLPageAPI htmlPageAPI;
     private UserAPI userAPI;
     private VersionableAPI versionableAPI;
     private ContentletAPI contentletAPI;
@@ -99,7 +96,6 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     public HTMLPageAssetAPIImpl() {
         permissionAPI = APILocator.getPermissionAPI();
         identifierAPI = APILocator.getIdentifierAPI();
-        htmlPageAPI = APILocator.getHTMLPageAPI();
         userAPI = APILocator.getUserAPI();
         versionableAPI = APILocator.getVersionableAPI();
         contentletAPI = APILocator.getContentletAPI();
@@ -396,184 +392,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         }
     }
 
-    /**
-     * Migrate all Legacy Pages to Contents
-     * @param user
-     * @param respectFrontEndPermissions
-     * @return Boolean
-     * @throws Exception
-     */
-    @Override
-    public boolean migrateAllLegacyPages(final User user, boolean respectFrontEndPermissions) throws Exception {
-    			boolean result = false;
-    			//Keep temp string of URL in case it fails, so logs would say where the problem is
-    			String htmlPageURI = "";
-    			try {
-    				int offset = 0;
-    				int limit = 100;
-    				List<HTMLPage> elements = htmlPageAPI.findHtmlPages(userAPI.getSystemUser(), true, null, null, null, null, null, offset, limit, null);
-
-    				while(!elements.isEmpty()) {
-    					int migrated = 0;
-
-    					for (HTMLPage htmlPage : elements) {
-    						
-    						htmlPageURI = htmlPage.getURI();
-    						if(migrated==0)
-    							HibernateUtil.startTransaction();
-
-    						migrateLegacyPage(htmlPage, user, false);
-
-    						migrated++;
-
-    						if(migrated==elements.size() || (migrated>0 && migrated%100==0) ) {
-    							HibernateUtil.commitTransaction();
-    							elements = htmlPageAPI.findHtmlPages(userAPI.getSystemUser(), true, null, null, null, null, null, offset+limit, limit, null);
-    						}
-    					}
-
-    					}
-
-    				//Create a new notification to inform the pages were migrated
-                    APILocator.getNotificationAPI().generateNotification(
-                            new I18NMessage("notification.htmlpageassets.migration.info.title"), // title = HTML Pages Migration
-                            new I18NMessage( "htmlpages-migration-finished" ),
-                            null, // no actions
-                            NotificationLevel.INFO,
-                            NotificationType.GENERIC,
-                            user.getUserId(),
-                            user.getLocale()
-                    );
-
-    				Logger.info(this, LanguageUtil.get( user.getLocale(), "htmlpages-were-succesfully-converted" ));
-    				result = true;
-    			}
-
-    			catch(Exception ex) {
-    				try {
-    					//In case there is a problem with the Page URL
-    					if (ex instanceof FileAssetValidationException){
-    						Logger.error(this, "There was a problem migrating Pages to Contents: Please check HTMLPage: " + htmlPageURI );
-    					}
-    					//Show exception if it's caused by something else
-    					else{
-    						Logger.error(this, "There was a problem migrating Pages to Contents: " + ex.getMessage(), ex );
-    					}
-                        HibernateUtil.rollbackTransaction();
-                    } catch (DotHibernateException e1) {
-                        Logger.warn(this, e1.getMessage(),e1);
-                    }
-    				result = false;
-    			}
-    			finally {
-    				try {
-                        HibernateUtil.closeSession();
-                    } catch (DotHibernateException e) {
-                        Logger.error(LicenseUtil.class, "can't close session after adding to cluster",e);
-                    }
-    			}
-    	return result;
-    }
     
-    @Override
-    public HTMLPageAsset migrateLegacyPage(HTMLPage legacyPage, User user, boolean respectFrontEndPermissions) throws Exception {
-        Identifier legacyident=identifierAPI.find(legacyPage);
-        VersionInfo vInfo=versionableAPI.getVersionInfo(legacyident.getId());
-
-        HTMLPage working=(HTMLPage) versionableAPI.findWorkingVersion(legacyident, user, respectFrontEndPermissions);
-        HTMLPageAsset cworking = migrateLegacyData(working, user, respectFrontEndPermissions), clive=null;
-
-        if(vInfo.getLiveInode()!=null && !vInfo.getLiveInode().equals(vInfo.getWorkingInode())) {
-            HTMLPage live=(HTMLPage) versionableAPI.findLiveVersion(legacyident, user, respectFrontEndPermissions);
-            clive = migrateLegacyData(live, user, respectFrontEndPermissions);
-        }
-        
-        List<Permission> perms=null;
-        if(!permissionAPI.isInheritingPermissions(legacyPage)) {
-            perms = permissionAPI.getPermissions(legacyPage, true, true, true);
-        }
-        
-        List<MultiTree> multiTree = MultiTreeFactory.getMultiTree(working.getIdentifier());
-
-        htmlPageAPI.delete(working, user, respectFrontEndPermissions);
-        PageServices.invalidateAll(working);
-        HibernateUtil.getSession().clear();
-        CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(legacyident.getId());
-        // Ignore page with NULL template per https://github.com/dotCMS/core/issues/9971
-        if(clive!=null&& UtilMethods.isSet(clive.getTemplateId())) {
-            Contentlet cclive = contentletAPI.checkin(clive, user, respectFrontEndPermissions);
-            contentletAPI.publish(cclive, user, respectFrontEndPermissions);
-        }
-
-        // Ignore page with NULL template per https://github.com/dotCMS/core/issues/9971
-        if (UtilMethods.isSet(cworking.getTemplateId())) {
-            Contentlet ccworking = contentletAPI.checkin(cworking, user, respectFrontEndPermissions);
-
-            if(vInfo.getLiveInode()!=null && vInfo.getLiveInode().equals(ccworking.getInode())) {
-                contentletAPI.publish(ccworking, user, respectFrontEndPermissions);
-            }
-
-            for(MultiTree mt : multiTree) {
-                MultiTreeFactory.saveMultiTree(mt);
-            }
-
-            permissionAPI.removePermissions(ccworking);
-            if(perms!=null) {
-                permissionAPI.permissionIndividually(ccworking.getParentPermissionable(), ccworking, user, respectFrontEndPermissions);
-                permissionAPI.assignPermissions(perms, ccworking, user, respectFrontEndPermissions);
-            }
-
-            return fromContentlet(ccworking);
-        }
-
-        return null;
-    }
-
-    protected HTMLPageAsset migrateLegacyData(HTMLPage legacyPage, User user, boolean respectFrontEndPermissions) throws DotStateException, DotDataException, DotSecurityException {
-        Identifier legacyident=identifierAPI.find(legacyPage);
-        HTMLPageAsset newpage=new HTMLPageAsset();
-
-        newpage.setStructureInode(getHostDefaultPageType(legacyident.getHostId()));
-        newpage.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
-        newpage.setTitle(legacyPage.getTitle());
-        newpage.setFriendlyName(legacyPage.getFriendlyName());
-        newpage.setHttpsRequired(legacyPage.isHttpsRequired());
-        newpage.setTemplateId(legacyPage.getTemplateId());
-        newpage.setSeoDescription(legacyPage.getSeoDescription());
-        newpage.setSeoKeywords(legacyPage.getSeoKeywords());
-        newpage.setInode(legacyPage.getInode());
-        newpage.setIdentifier(legacyPage.getIdentifier());
-        newpage.setHost(legacyident.getHostId());
-        newpage.setFolder(APILocator.getFolderAPI().findFolderByPath(
-                legacyident.getParentPath(), legacyident.getHostId(), user, respectFrontEndPermissions).getInode());
-
-        // Rewrite page-url per https://github.com/dotCMS/core/issues/9971
-        newpage.setPageUrl(migratePageUrl(legacyident.getAssetName(), legacyPage.getPageUrl()));
-
-        newpage.setCacheTTL(legacyPage.getCacheTTL());
-        newpage.setMetadata(legacyPage.getMetadata());
-        newpage.setSortOrder(legacyPage.getSortOrder());
-        newpage.setShowOnMenu(legacyPage.isShowOnMenu());
-        newpage.setModUser(legacyPage.getModUser());
-        newpage.setModDate(legacyPage.getModDate());
-        newpage.setRedirect(legacyPage.getRedirect());
-
-        return newpage;
-    }
-
-    private String migratePageUrl(String legacyIdentAssetName, String legacyPageUrl) {
-        String migratedPageUrl = legacyPageUrl;
-
-        // Use asset-name from identifier as default migrated page-url
-        if (!StringUtils.isEmpty(legacyIdentAssetName) && !legacyIdentAssetName.equals(migratedPageUrl)) {
-            migratedPageUrl = legacyIdentAssetName;
-        }
-
-        // Replace invalid character sequences on migrated page-url
-        migratedPageUrl = UtilMethods.getValidFileName(migratedPageUrl.replaceAll("\\.+", "."));
-
-        return migratedPageUrl;
-    }
 
     
     @Override

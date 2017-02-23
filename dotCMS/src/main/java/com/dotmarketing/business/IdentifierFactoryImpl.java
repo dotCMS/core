@@ -17,7 +17,6 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
@@ -51,9 +50,6 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	protected List<Identifier> findByURIPattern(String assetType, String uri, boolean hasLive,boolean onlyDeleted, boolean include, Host host, Date startDate, Date endDate) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		StringBuilder bob = new StringBuilder("select distinct i.* from identifier i ");
-		if(assetType.equals(new HTMLPage().getType())){
-			bob.append("join " + assetType + "_version_info vi on (i.id = vi.identifier) join " + assetType + " a on (" + (hasLive ? "vi.live_inode":"vi.working_inode") + " = a.inode) ");
-		}
 		
 		if(DbConnectionFactory.isMySql()){
 			bob.append("where concat(parent_path, asset_name) ");
@@ -109,9 +105,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		Identifier folderId = find(folder);
 		ic.removeFromCacheByVersionable(webasset);
 		identifier.setURI(folderId.getPath() + identifier.getInode());
-		if (webasset instanceof HTMLPage) {
-			identifier.setURI(folderId.getPath() + ((HTMLPage) webasset).getPageUrl());
-		} else if (webasset instanceof Contentlet){
+		if (webasset instanceof Contentlet){
 			Contentlet c =(Contentlet) webasset;
 			if ( c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET ) {
 				FileAsset fa = APILocator.getFileAssetAPI().fromContentlet( c );
@@ -383,8 +377,6 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
                 identifier.setAssetType( "contentlet" );
                 identifier.setParentPath( "/" );
                 identifier.setAssetName( uri );
-            } else if ( versionable instanceof HTMLPage ) {
-                identifier.setURI( '/' + ((HTMLPage) versionable).getPageUrl() );
             } else if ( versionable instanceof Link ) {
                 identifier.setAssetName( versionable.getInode() );
                 identifier.setParentPath("/");

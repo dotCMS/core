@@ -2,6 +2,7 @@ package com.dotmarketing.business;
 
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.StructureDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.util.IntegrationTestInitService;
@@ -10,7 +11,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
@@ -38,7 +39,7 @@ public class VersionableAPITest {
         host = APILocator.getHostAPI().findDefaultHost(user, false);
 	}
 	
-	private HTMLPage createHTMLPage() throws Exception{
+	private HTMLPageAsset createHTMLPage() throws Exception{
 		//Create HTMLPage
 		String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
 				
@@ -46,32 +47,27 @@ public class VersionableAPITest {
 		        
 		Folder folder = APILocator.getFolderAPI().createFolders("/testingVersionable", host, user, false);
 				
-		HTMLPage page=new HTMLPage();
-		page.setPageUrl("testpage"+ext);
-		page.setFriendlyName("testpage"+ext);
-		page.setTitle("testpage"+ext);
-		page=APILocator.getHTMLPageAPI().saveHTMLPage(page, template, folder, user, false);
+		HTMLPageAsset page = new HTMLPageDataGen(folder,template).nextPersisted();
 		
 		return page;
 	}
 
 	@Test
 	public void testFindWorkingVersionHTMLPage() throws Exception{
-		HTMLPage page = createHTMLPage();
+		HTMLPageAsset page = createHTMLPage();
         
         //Call Versionable
-        Versionable verAPI = APILocator.getVersionableAPI().findWorkingVersion(page.getIdentifier(), user, false);
+        Contentlet verAPI = APILocator.getContentletAPI().findContentletByIdentifier(page.getIdentifier(), false, page.getLanguageId(), user, false);
         
         //Check Same HTMLPage
         assertEquals(verAPI.getTitle(),page.getTitle());
         assertEquals(verAPI.getInode(),page.getInode());
         
         //Delete Template, Folder, HTMLPage
-        Folder folder = APILocator.getHTMLPageAPI().getParentFolder(page);
-        Template template = APILocator.getHTMLPageAPI().getTemplateForWorkingHTMLPage(page);
-        APILocator.getHTMLPageAPI().delete(page, user, false);
+        Folder folder = APILocator.getHTMLPageAssetAPI().getParentFolder(page);
+        Template template = APILocator.getHTMLPageAssetAPI().getTemplate(page, false);
+        HTMLPageDataGen.remove(page);
         APILocator.getFolderAPI().delete(folder, user, false);
-        APILocator.getTemplateAPI().delete(template, user, false);
 	}
 	
 	@Test
@@ -107,7 +103,7 @@ public class VersionableAPITest {
         //Delete Template
         APILocator.getTemplateAPI().delete(template, user, false);
 	}
-	
+
 	@Test(expected = DotDataException.class)
 	public void testFindWorkingVersionContentlet() throws Exception{
 		//Create Contentlet
@@ -120,23 +116,22 @@ public class VersionableAPITest {
 	
 	@Test
 	public void testFindLiveVersionHTMLPage() throws Exception{
-		HTMLPage page = createHTMLPage();
+		HTMLPageAsset page = createHTMLPage();
         
         APILocator.getVersionableAPI().setLive(page);
         
         //Call Versionable
-        Versionable verAPI = APILocator.getVersionableAPI().findLiveVersion(page.getIdentifier(), user, false);
+        Contentlet verAPI = APILocator.getContentletAPI().findContentletByIdentifier(page.getIdentifier(), true, page.getLanguageId(), user, false);
         
         //Check Same HTMLPage
         assertEquals(verAPI.getTitle(),page.getTitle());
         assertEquals(verAPI.getInode(),page.getInode());
         
         //Delete Template, Folder, HTMLPage
-        Folder folder = APILocator.getHTMLPageAPI().getParentFolder(page);
-        Template template = APILocator.getHTMLPageAPI().getTemplateForWorkingHTMLPage(page);
-        APILocator.getHTMLPageAPI().delete(page, user, false);
+        Folder folder = APILocator.getHTMLPageAssetAPI().getParentFolder(page);
+        Template template = APILocator.getHTMLPageAssetAPI().getTemplate(page, false);
+        HTMLPageDataGen.remove(page);
         APILocator.getFolderAPI().delete(folder, user, false);
-        APILocator.getTemplateAPI().delete(template, user, false);
 	}
 	
 	@Test
@@ -175,7 +170,7 @@ public class VersionableAPITest {
         //Delete Template
         APILocator.getTemplateAPI().delete(template, user, false);
 	}
-	
+
 	@Test(expected = DotDataException.class)
 	public void testFindLiveVersionContentlet() throws Exception{
 		//Create Contentlet

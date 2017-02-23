@@ -20,7 +20,6 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.virtuallinks.factories.VirtualLinkFactory;
 import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
 import com.dotmarketing.util.InodeUtils;
@@ -88,8 +87,7 @@ public class ViewHTMLPageViewsAction extends DotPortletAction {
         	IHTMLPage myHTMLPage = null;
         	if (contentlet!=null){
         		myHTMLPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
-        	}else
-        		myHTMLPage = (IHTMLPage) InodeFactory.getInode(req.getParameter("htmlpage"), HTMLPage.class);
+        	}
             uri = APILocator.getIdentifierAPI().find(myHTMLPage).getURI();
 			host = hostAPI.findParentHost(myHTMLPage, systemUser, false);
             req.setAttribute("htmlPage", myHTMLPage);

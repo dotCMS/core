@@ -271,29 +271,23 @@ public class BrowserAPI {
 			try {
 				if (parent != null) {//For folders
 					if(!showWorking) {
-						pages.addAll(folderAPI.getLiveHTMLPages(parent, user, false));
 						pages.addAll(APILocator.getHTMLPageAssetAPI().getLiveHTMLPages(parent, user, false));
 					}
 					else {
-						pages.addAll(folderAPI.getHTMLPages(parent, true, false, user, false));
 						pages.addAll(APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages(parent, user, false));
 					}
 
 					if(showArchived) {
-						pages.addAll(folderAPI.getHTMLPages(parent, true, showArchived, user, false));
 						pages.addAll(APILocator.getHTMLPageAssetAPI().getDeletedHTMLPages(parent, user, false));
 					}
 				} else {//For hosts
                     if ( !showWorking ) {
-                        pages.addAll( folderAPI.getLiveHTMLPages( host, user, false ) );
                         pages.addAll( APILocator.getHTMLPageAssetAPI().getLiveHTMLPages( host, user, false ) );
                     } else {
-                        pages.addAll( folderAPI.getHTMLPages( host, true, false, user, false ) );
                         pages.addAll( APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages( host, user, false ) );
                     }
 
                     if ( showArchived ) {
-                        pages.addAll( folderAPI.getHTMLPages( host, true, showArchived, user, false ) );
                         pages.addAll( APILocator.getHTMLPageAssetAPI().getDeletedHTMLPages( host, user, false ) );
                     }
 				}

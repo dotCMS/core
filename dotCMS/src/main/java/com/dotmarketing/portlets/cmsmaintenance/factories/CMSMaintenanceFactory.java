@@ -68,11 +68,6 @@ public class CMSMaintenanceFactory {
 				counter  += auxCount;
 				Logger.info(CMSMaintenanceFactory.class, "Removed "+ auxCount+ " Contentlets");
 	
-				Logger.info(CMSMaintenanceFactory.class, "Removing HTML Pages");
-				auxCount = APILocator.getHTMLPageAPI().deleteOldVersions(runDate.getTime());
-				counter += auxCount;
-				Logger.info(CMSMaintenanceFactory.class, "Removed "+ auxCount+ " HTML Pages");
-	
 				Logger.info(CMSMaintenanceFactory.class, "Removing Containers");
 				auxCount = APILocator.getContainerAPI().deleteOldVersions(runDate.getTime());
 				counter += auxCount;
