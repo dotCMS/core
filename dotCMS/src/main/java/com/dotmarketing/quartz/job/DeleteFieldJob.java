@@ -178,6 +178,9 @@ public class DeleteFieldJob implements Job {
             } catch (LanguageException | DotDataException e1) {
                 Logger.error(this, e1.getMessage(), e1);
             }
+
+            throw new JobExecutionException(String.format("Unable to delete field '%s'. Field Inode: %s, Structure Inode: %s",
+                    field.getVelocityVarName(), field.getInode(), structure.getInode()), e);
         } finally {
             try {
                 HibernateUtil.closeSession();

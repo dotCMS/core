@@ -11,6 +11,7 @@ import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -21,6 +22,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.quartz.JobExecutionException;
 
+import java.util.Date;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -38,17 +40,35 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
 
     @Test
     public void deleteContentTypeField() throws DotDataException, DotSecurityException, JobExecutionException {
+
         User systemUser = APILocator.getUserAPI().getSystemUser();
         Host host = APILocator.getHostAPI().findDefaultHost(systemUser, true);
         long langId =APILocator.getLanguageAPI().getDefaultLanguage().getId();
         ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
+        Boolean boolValue = Boolean.TRUE;
+        Date dateValue = new Date();
+        Integer integerValue = 23;
+        Float floatValue = 2f;
+        String textValue = "Some content";
+        String textAreaValue = "Some content,Some content,Some content,Some content,Some content,Some content,Some content," +
+                "Some content,Some content,Some content,Some content,Some content,Some content,Some content";
+
+        String currentTime = String.valueOf(new Date().getTime());
+        String contentTypeName = "DeleteFieldContentType_" + currentTime;
+        String textAreaFieldVarName = "textAreaFieldVarName_" + currentTime;
+        String integerFieldVarName = "integerFieldVarName_" + currentTime;
+        String floatFieldVarName = "floatFieldVarName_" + currentTime;
+        String textFieldVarName = "textFieldVarName_" + currentTime;
+        String dateFieldVarName = "dateFieldVarName_" + currentTime;
+        String radioFieldVarName = "radioFieldVarName_" + currentTime;
+
         //Create content types
         Structure contentType = new Structure();
         contentType.setHost(host.getIdentifier());
         contentType.setDescription("Testing delete content types's field");
-        contentType.setName("DeleteField");
-        contentType.setVelocityVarName("deletefield");
+        contentType.setName(contentTypeName);
+        contentType.setVelocityVarName("deleteFieldVarName_" + currentTime);
         contentType.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
         contentType.setFixed(false);
         contentType.setOwner(systemUser.getUserId());
@@ -58,64 +78,128 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
         Contentlet contentlet = null;
 
         try{
+
+            //Save the test structure
             StructureFactory.saveStructure(contentType);
 
-            //Add fileds
-            Field floatFied = new Field("float",Field.FieldType.TEXT,Field.DataType.FLOAT,contentType,true,true,true,1,"", "", "", false, false, true);
-            floatFied.setVelocityVarName("float");
-            FieldFactory.saveField(floatFied);
-            FieldsCache.addField(floatFied);
+            //Adding the test fields
 
-            Field textFied = new Field("text",Field.FieldType.TEXT,Field.DataType.TEXT,contentType,true,true,true,1,"", "", "", false, false, true);
-            textFied.setVelocityVarName("text");
-            FieldFactory.saveField(textFied);
-            FieldsCache.addField(textFied);
+            Field radioField = new Field("radioField_" + currentTime, Field.FieldType.RADIO, Field.DataType.BOOL,
+                    contentType, true, true, true, 1, "", "",
+                    "", false, false, true);
+            radioField.setVelocityVarName(radioFieldVarName);
+            FieldFactory.saveField(radioField);
+            FieldsCache.addField(radioField);
 
-            Structure stFromDB = CacheLocator.getContentTypeCache().getStructureByName("DeleteField");
+            Field dateField = new Field("dateField_" + currentTime, Field.FieldType.DATE, Field.DataType.DATE,
+                    contentType, true, true, true, 1, "", "",
+                    "", false, false, true);
+            dateField.setVelocityVarName(dateFieldVarName);
+            FieldFactory.saveField(dateField);
+            FieldsCache.addField(dateField);
+
+            Field textAreaField = new Field("textAreaField_" + currentTime, Field.FieldType.TEXT_AREA, Field.DataType.LONG_TEXT,
+                    contentType, true, true, true, 1, "", "",
+                    "", false, false, true);
+            textAreaField.setVelocityVarName(textAreaFieldVarName);
+            FieldFactory.saveField(textAreaField);
+            FieldsCache.addField(textAreaField);
+
+            Field integerField = new Field("integerField_" + currentTime, Field.FieldType.TEXT, Field.DataType.INTEGER,
+                    contentType, true, true, true, 1, "", "",
+                    "", false, false, true);
+            integerField.setVelocityVarName(integerFieldVarName);
+            FieldFactory.saveField(integerField);
+            FieldsCache.addField(integerField);
+
+            Field floatField = new Field("floatField_" + currentTime, Field.FieldType.TEXT, Field.DataType.FLOAT,
+                    contentType, true, true, true, 1, "", "",
+                    "", false, false, true);
+            floatField.setVelocityVarName(floatFieldVarName);
+            FieldFactory.saveField(floatField);
+            FieldsCache.addField(floatField);
+
+            Field textField = new Field("textField_" + currentTime, Field.FieldType.TEXT, Field.DataType.TEXT,
+                    contentType, true, true, true, 1, "", "",
+                    "", false, false, true);
+            textField.setVelocityVarName(textFieldVarName);
+            FieldFactory.saveField(textField);
+            FieldsCache.addField(textField);
+
+            //Validate the fields were properly saved
+            Structure stFromDB = CacheLocator.getContentTypeCache().getStructureByName(contentTypeName);
             List<Field> fieldsBySortOrder = stFromDB.getFieldsBySortOrder();
 
-            assertEquals(2, fieldsBySortOrder.size());
+            assertEquals(6, fieldsBySortOrder.size());
 
-            //content
+            //Create a new content of the DeleteFieldContentType type
             contentlet = new Contentlet();
             contentlet.setStructureInode(contentType.getInode());
             contentlet.setHost(host.getIdentifier());
             contentlet.setLanguageId(langId);
 
-            contentletAPI.setContentletProperty( contentlet, floatFied, 2f );
-            contentletAPI.setContentletProperty( contentlet, textFied, "content" );
+            //Set the fields values
+            contentletAPI.setContentletProperty(contentlet, dateField, dateValue);
+            contentletAPI.setContentletProperty(contentlet, radioField, boolValue);
+            contentletAPI.setContentletProperty(contentlet, textAreaField, textAreaValue);
+            contentletAPI.setContentletProperty(contentlet, integerField, integerValue);
+            contentletAPI.setContentletProperty(contentlet, floatField, floatValue);
+            contentletAPI.setContentletProperty(contentlet, textField, textValue);
 
+            //Save the content
             contentlet = contentletAPI.checkin(contentlet, systemUser, true);
 
             //Delete fields
             TestJobExecutor.execute(instance,
-                    CollectionsUtils.map("structure", contentType, "field", floatFied, "user", systemUser));
+                    CollectionsUtils.map("structure", contentType, "field", dateField, "user", systemUser));
 
             TestJobExecutor.execute(instance,
-                    CollectionsUtils.map("structure", contentType, "field", textFied, "user", systemUser));
+                    CollectionsUtils.map("structure", contentType, "field", radioField, "user", systemUser));
 
-            //asserts
-            stFromDB = CacheLocator.getContentTypeCache().getStructureByName("DeleteField");
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", textAreaField, "user", systemUser));
+
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", integerField, "user", systemUser));
+
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", floatField, "user", systemUser));
+
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", textField, "user", systemUser));
+
+            //Validate we deleted those fields properly
+            stFromDB = CacheLocator.getContentTypeCache().getStructureByName(contentTypeName);
             fieldsBySortOrder = stFromDB.getFieldsBySortOrder();
             assertEquals(0, fieldsBySortOrder.size());
 
-            assertEquals(2f, contentlet.get("float"));
-            assertEquals("content", contentlet.get("text"));
-
+            //Make sure the values are not in cache
             Contentlet contentletFromDB = CacheLocator.getContentletCache().get(contentlet.getInode());
-            assertNull(contentletFromDB.get("float"));
-            assertNull("content", contentletFromDB.get("text"));
+            assertNull(contentletFromDB.get(dateFieldVarName));
+            assertNull(contentletFromDB.get(radioFieldVarName));
+            assertNull(contentletFromDB.get(textAreaFieldVarName));
+            assertNull(contentletFromDB.get(integerFieldVarName));
+            assertNull(contentletFromDB.get(floatFieldVarName));
+            assertNull(contentletFromDB.get(textFieldVarName));
         }catch(Exception e){
 
             if (contentType != null){
-                StructureFactory.deleteStructure(contentType);
+                try {
+                    StructureFactory.deleteStructure(contentType);
+                } catch (DotDataException e1) {
+                    //Do nothing....
+                }
             }
 
             if (contentlet != null) {
-                contentletAPI.delete(contentlet, systemUser, true);
+                try {
+                    contentletAPI.delete(contentlet, systemUser, true);
+                } catch (Exception e1) {
+                    //Do nothing....
+                }
             }
 
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
     }
 
