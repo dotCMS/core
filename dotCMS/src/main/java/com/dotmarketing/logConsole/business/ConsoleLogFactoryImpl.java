@@ -9,6 +9,7 @@ import com.dotmarketing.util.Logger;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +58,7 @@ public class ConsoleLogFactoryImpl implements ConsoleLogFactory {
 
     public List<LogMapperRow> findLogMapper() throws DotDataException {
 
-        Connection con;
+        Connection con = null;
         List results = null;
 
         final DotConnect db = new DotConnect();
@@ -68,6 +69,14 @@ public class ConsoleLogFactoryImpl implements ConsoleLogFactory {
             results = db.loadObjectResults(con);
         } catch (final Exception e) {
             Logger.error(this.getClass(), e.getMessage(), e);
+        } finally {
+            try {
+                if (con != null) {
+                    con.close();
+                }
+            } catch (SQLException e) {
+                Logger.error(this.getClass(), e.getMessage(), e);
+            }
         }
 
         return (List<LogMapperRow>) this.convertListToObjects(results, LogMapperRow.class);
