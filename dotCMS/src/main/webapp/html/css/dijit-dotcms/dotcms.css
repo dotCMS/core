@@ -6047,9 +6047,6 @@ select[multiple]:hover {
   color: #161616;
   text-decoration: none;
 }
-.listingTable td table td:first-child, .listingTable td table td:last-child {
-  padding: 0;
-}
 .listingTable td table tr {
   border: none;
 }
@@ -9437,6 +9434,16 @@ a.category_higlighted, a.tag_higlighted {
   padding: 0px;
 }
 
+.relationships-list .portlet-toolbar .required:before {
+  color: #CB3927;
+  content: "* ";
+}
+
+.dijitTab .required:before {
+  color: #CB3927;
+  content: "* ";
+}
+
 .advanced-search-button {
   display: block;
   background: #ECEDEE;
@@ -9823,6 +9830,20 @@ a.category_higlighted, a.tag_higlighted {
 .tag-manager__tags-list .dojoxGridRow .dojoxGridRowTable .dojoxGridCell:first-child, .tag-manager__tags-list .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell:first-child {
   width: 40px !important;
   padding-left: 24px;
+}
+
+.add-relationship .add-relationship__form dt {
+  width: 200px;
+}
+.add-relationship .add-relationship__form .dijitComboBox {
+  width: 200px;
+}
+.add-relationship .add-relationship__form .dijitTextBox {
+  width: 200px;
+}
+.add-relationship .required:before {
+  color: #CB3927;
+  content: "* ";
 }
 
 /* PORTLET STYLES 2.0 */

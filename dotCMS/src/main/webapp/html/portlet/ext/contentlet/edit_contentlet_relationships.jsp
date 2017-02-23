@@ -127,21 +127,19 @@
 		if ((rel.isChildRequired() && records.isHasParent()) || (rel.isParentRequired() && !records.isHasParent())) {
 	%>
 			<script type="text/javascript">
-				dojo.addOnLoad(
-					  function(){
-						  try{
-							  dijit.byId('relationships').attr('title','<span class="required"></span>&nbsp;<%= LanguageUtil.get(pageContext, "Relationships") %>');
-						  }catch(ex){}
-					  }
-					);
+			require(["dojo/ready"], function(ready){
+				ready(function(){
+					dojo.html.set(dojo.byId("mainTabContainer_tablist_relationships"), '<span class="required"></span>&nbsp;<%= LanguageUtil.get(pageContext, "Relationships") %>');
+				});
+			});
+
 			</script>
 	<%
 		}
 	%>
 
-	<div class="portlet-toolbar">
+	<div class="portlet-toolbar relationships-list">
 		<div class="portlet-toolbar__actions-primary">
-			<span class="formIcon"></span>
 			<b><%= (sortList.size()>1 && rel.isParentRequired() && !records.isHasParent()) ? "<span class=\"required\"></span>"  :
 				   (sortList.size()>1 && rel.isChildRequired() && records.isHasParent()) ? "<span class=\"required\"></span>" : ""  %>
 			   <%= targetStructure.getName() %>: </b><%=("yes".equals(isParent)) ? LanguageUtil.get(pageContext, "Child"): LanguageUtil.get(pageContext, "Parent") %>
@@ -156,29 +154,29 @@
 				<thead>
 					<tr class="beta">
 					<th width="20"><B><font class="beta" size="2"></font></B></th>
-	<%
-			int nFields = 3;
-			boolean indexed = false;
-			boolean hasListedFields = false;
-			List<Field> targetFields = targetStructure.getFields();
-			for (Field f : targetFields) {
-				if (f.isListed()) {
-				    	hasListedFields = true;
-					indexed = true;
-					nFields++;
-	%>
-						<th><B><font class="beta" size="2"><%= f.getFieldName() %> </font></B>
-						</th>
-	<%
-				}
-			}
+					<%
+							int nFields = 3;
+							boolean indexed = false;
+							boolean hasListedFields = false;
+							List<Field> targetFields = targetStructure.getFields();
+							for (Field f : targetFields) {
+								if (f.isListed()) {
+										hasListedFields = true;
+									indexed = true;
+									nFields++;
+					%>
+										<th><B><font class="beta" size="2"><%= f.getFieldName() %> </font></B>
+										</th>
+					<%
+								}
+							}
 
-			if (!indexed) {
-	%>
-						<th><B><font class="beta" size="2"> <%= LanguageUtil.get(pageContext, "No-Searchable-Fields-Found-Showing-the-Identity-Number") %> </font></B></th>
-	<%
-			}
-	%>
+							if (!indexed) {
+					%>
+										<th><B><font class="beta" size="2"> <%= LanguageUtil.get(pageContext, "No-Searchable-Fields-Found-Showing-the-Identity-Number") %> </font></B></th>
+					<%
+							}
+					%>
 
 					<%
 						if(langs.size() > 1) {
