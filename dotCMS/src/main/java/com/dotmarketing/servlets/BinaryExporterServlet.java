@@ -39,15 +39,11 @@ import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.image.reader.SVGImageReaderSpi;
@@ -56,7 +52,7 @@ import com.dotmarketing.portlets.contentlet.business.BinaryContentExporterExcept
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.business.FileAPI;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
@@ -93,23 +89,17 @@ import com.liferay.util.FileUtil;
  */
 public class BinaryExporterServlet extends HttpServlet {
 
-	private static final FileAPI fileAPI = APILocator.getFileAPI();
+	private static final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
 	private static final UserAPI userAPI = APILocator.getUserAPI();
 	Map<String, BinaryContentExporter> exportersByPathMapping;
-	private static String assetPath = "/assets";
-	private static String realPath = null;
+
 	private long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public void init() throws ServletException {
 		super.init();
-        if(UtilMethods.isSet(Config.getStringProperty("ASSET_REAL_PATH"))){
-            realPath = Config.getStringProperty("ASSET_REAL_PATH");
-        }
-        if(UtilMethods.isSet(Config.getStringProperty("ASSET_PATH"))){
-            assetPath = Config.getStringProperty("ASSET_PATH");
-        }
+
 		exportersByPathMapping = new HashMap<String, BinaryContentExporter>();
 
 		Iterator<String> keys = Config.getKeys();
@@ -208,23 +198,11 @@ public class BinaryExporterServlet extends HttpServlet {
 
         boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
 		ServletOutputStream out = null;
 		FileChannel from = null;
 		WritableByteChannel to = null;
 		RandomAccessFile input = null;
 		FileInputStream is = null;
-
-        
-        
         
 		try {
 			User user = userWebAPI.getLoggedInUser(req);
@@ -349,65 +327,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				}
 				downloadName = inputFile.getName();
 			}
-			else{
-				// if we are using this as a "Save as" from the image too
-				fieldVarName = WebKeys.EDITED_IMAGE_FILE_ASSET;
-				com.dotmarketing.portlets.files.model.File dotFile = null;
 
-				// get the identifier from cache
-				if(byInode) {
-					dotFile = fileAPI.find( assetInode, user, respectFrontendRoles );
-					downloadName = dotFile.getFileName();
-					//com.dotmarketing.portlets.files.model.File dotFile = APILocator.getFileAPI().get(assetIdentifier, user, respectFrontendRoles);
-					assetIdentifier = dotFile.getIdentifier();
-				}
-				Identifier id = APILocator.getIdentifierAPI().find(assetIdentifier);
-
-				// no identifier, no soup!
-				if(id == null || ! UtilMethods.isSet(id.getInode())){
-					Logger.debug(this,"Identifier: " + assetIdentifier +"not found");
-					resp.sendError(404);
-					return;
-				}
-
-				boolean hasLive = (LiveCache.getPathFromCache(id.getURI(), id.getHostId()) != null);
-				// no live version and front end, no soup
-				if(respectFrontendRoles && ! hasLive){
-					Logger.debug(this,"File :" + id.getInode() +"is not live");
-					resp.sendError(404);
-					return;
-				}
-
-				com.dotmarketing.portlets.files.model.File file = (com.dotmarketing.portlets.files.model.File)APILocator.getVersionableAPI().findLiveVersion(id, user, respectFrontendRoles);
-
-				// no permissions, no soup!
-				if(!APILocator.getPermissionAPI().doesUserHavePermission(file, PermissionAPI.PERMISSION_READ, user)){
-					Logger.debug(this,"user: " + user + " does not have read on File :" + id.getInode());
-					if(WebAPILocator.getUserWebAPI().isLoggedToFrontend(req)){
-						resp.sendError(403);
-					}else{
-						resp.sendError(401);
-					}
-					return;
-				}
-
-				if(assetInode != null){
-					inputFile = new File(fileAPI.getRealAssetPath(assetInode, UtilMethods.getFileExtension(dotFile.getFileName())));
-				}
-				else if(respectFrontendRoles){
-					if(realPath != null){
-						inputFile = new File(realPath + LiveCache.getPathFromCache(id.getURI(), id.getHostId()));
-					}else{
-						inputFile = new File(FileUtil.getRealPath(assetPath + LiveCache.getPathFromCache(id.getURI(), id.getHostId())));
-					}
-				}else{
-					if(realPath != null){
-						inputFile = new File(realPath + WorkingCache.getPathFromCache(id.getURI(), id.getHostId()));
-					}else{
-						inputFile = new File(FileUtil.getRealPath(assetPath + WorkingCache.getPathFromCache(id.getURI(), id.getHostId())));
-					}
-				}
-			}
 			//DOTCMS-5674
 			if(UtilMethods.isSet(fieldVarName)){
 				params.put("fieldVarName", new String[]{fieldVarName});
@@ -444,7 +364,7 @@ public class BinaryExporterServlet extends HttpServlet {
 			 *  Start serving the data
 			 *
 			 *******************************/
-			String mimeType = fileAPI.getMimeType(data.getDataFile().getName());
+			String mimeType = fileAssetAPI.getMimeType(data.getDataFile().getName());
 
 			if (mimeType == null) {
 				mimeType = "application/octet-stream";
@@ -568,7 +488,7 @@ public class BinaryExporterServlet extends HttpServlet {
 							// Return full file.
 							input = new RandomAccessFile(data.getDataFile(), "r");
 							SpeedyAssetServletUtil.ByteRange r = full;
-							resp.setContentType(fileAPI.getMimeType(data.getDataFile().getName()));
+							resp.setContentType(fileAssetAPI.getMimeType(data.getDataFile().getName()));
 							resp.setHeader("Content-Range", "bytes " + r.start + "-" + r.end + "/" + r.total);
 							resp.setHeader("Content-Length", String.valueOf(r.length));
 							// Copy full range.
@@ -582,7 +502,7 @@ public class BinaryExporterServlet extends HttpServlet {
 								resp.sendError(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
 								return;
 							}
-							resp.setContentType(fileAPI.getMimeType(data.getDataFile().getName()));
+							resp.setContentType(fileAssetAPI.getMimeType(data.getDataFile().getName()));
 							resp.setHeader("Content-Range", "bytes " + range.start + "-" + range.end + "/" + range.total);
 							resp.setHeader("Content-Length", String.valueOf(range.length));
 				            resp.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT); // 206.
@@ -600,7 +520,7 @@ public class BinaryExporterServlet extends HttpServlet {
 								// Add multipart boundary and header fields for every range.
 								out.println();
 								out.println("--" + SpeedyAssetServletUtil.MULTIPART_BOUNDARY);
-								out.println("Content-Type: " + fileAPI.getMimeType(data.getDataFile().getName()));
+								out.println("Content-Type: " + fileAssetAPI.getMimeType(data.getDataFile().getName()));
 								out.println("Content-Range: bytes " + r.start + "-" + r.end + "/" + r.total);
 								out.println();
 
@@ -757,13 +677,6 @@ private boolean isContent(String id, boolean byInode, long langId, boolean respe
 					return true;
 			} catch (Exception e) {
 				Logger.debug(this.getClass(), "Unable to find contentlet " + id);
-			}
-			try {
-				if(fileAPI.find(id,userAPI.getSystemUser(),false) != null){
-					return false;
-				}
-			} catch (DotHibernateException e) {
-				Logger.debug(this.getClass(), "cant find file with inode " + id);
 			}
 		}
 

@@ -356,7 +356,6 @@ public class BrowserAPI {
 		}
 
 		List<Versionable> files = new ArrayList<Versionable>();
-		PermissionAPI perAPI = APILocator.getPermissionAPI();
 		try {
 
 			if (parent == null) {
@@ -375,8 +374,7 @@ public class BrowserAPI {
 		        	cond.live = true;
 				
 		        cond.deleted = showArchived;
-					
-				files.addAll(folderAPI.getFiles(parent, userAPI.getSystemUser(), false, cond));
+
 				files.addAll(APILocator.getFileAssetAPI().findFileAssetsByFolder(parent, "", !showWorking, showWorking, user, false));
 			}
 
@@ -426,7 +424,7 @@ public class BrowserAPI {
 			WorkflowScheme wfScheme = wfdata!=null ? wfdata.wfScheme : null;
 			fileMap.put("wfMandatoryWorkflow", wfScheme!=null && wfScheme.isMandatory());
 			fileMap.put("permissions", permissions);
-			fileMap.put("mimeType", APILocator.getFileAPI()
+			fileMap.put("mimeType", APILocator.getFileAssetAPI()
 					.getMimeType(fileAsset.getFileName()));
 			fileMap.put("name",
 				UtilMethods.isSet(fileAsset.getFileName()) ? fileAsset.getFileName() : ident.getAssetName());
@@ -455,18 +453,12 @@ public class BrowserAPI {
 			// END GRAZIANO issue-12-dnd-template
 			Language lang = null;
 
-			if (contentlet != null) {
-			    fileMap.put("identifier", contentlet.getIdentifier());
-			    fileMap.put("inode", contentlet.getInode());
-			    fileMap.put("isLocked", contentlet.isLocked());
-			    fileMap.put("isContentlet", true);
-			    lang = langAPI.getLanguage(contentlet.getLanguageId());
-			}
-			else{
-			    //This is a Legacy File. Add the default Language to FileMap
-			    lang = langAPI.getDefaultLanguage();
-			}
-			//Add Language Attributes to FileMap, required in Website Browser
+			fileMap.put("identifier", contentlet.getIdentifier());
+			fileMap.put("inode", contentlet.getInode());
+			fileMap.put("isLocked", contentlet.isLocked());
+			fileMap.put("isContentlet", true);
+			lang = langAPI.getLanguage(contentlet.getLanguageId());
+
 			fileMap.put("languageId", lang.getId());
 			fileMap.put("languageCode", lang.getLanguageCode());
 			fileMap.put("countryCode", lang.getCountryCode());

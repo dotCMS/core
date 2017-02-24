@@ -1,11 +1,5 @@
 package com.dotmarketing.portlets.cmsmaintenance.factories;
 
-import java.io.IOException;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -16,6 +10,11 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This class is use to fix identifiers inconsistencies in db,
@@ -84,12 +83,6 @@ public class CMSMaintenanceFactory {
 				counter += auxCount;
 				Logger.info(CMSMaintenanceFactory.class, "Removed "+ auxCount+ " Links");
 	
-				Logger.info(CMSMaintenanceFactory.class, "Removing File Assets");
-	
-				auxCount = APILocator.getFileAPI().deleteOldVersions(runDate.getTime());
-				counter += auxCount;
-				Logger.info(CMSMaintenanceFactory.class, "Removed "+ auxCount+ " File Assets");
-	
 				Logger.info(CMSMaintenanceFactory.class, "Finished removing old asset versions, removed "+counter+" assets");
 				
 				
@@ -145,46 +138,6 @@ public class CMSMaintenanceFactory {
 		}
 		return counter;
 
-	}
-
-	/**
-	 * This method get the File date from a dotmarketing file object
-	 * @param file dotmarketing File object
-	 * @return Java io.File
-	 * @throws IOException
-	 */
-	private static java.io.File getAssetIOFile (com.dotmarketing.portlets.files.model.File file) throws IOException {
-
-		String fileName = file.getFileName();
-		String suffix = UtilMethods.getFileExtension(fileName);
-
-		String assetsPath = APILocator.getFileAPI().getRealAssetsRootPath();
-		String fileInode = file.getInode();
-
-		// creates the path where to save the working file based on the inode
-		Logger.debug(CMSMaintenanceFactory.class, "Creating path to save the working file with inode: "+ fileInode);
-		String fileFolderPath = String.valueOf(fileInode);
-		if (fileFolderPath.length() == 1) {
-			fileFolderPath = fileFolderPath + "0";
-		}
-
-		fileFolderPath = assetsPath + java.io.File.separator +
-		fileFolderPath.substring(0, 1) + java.io.File.separator +
-		fileFolderPath.substring(1, 2);
-
-		new java.io.File(fileFolderPath).mkdirs();
-
-		String filePath = fileFolderPath + java.io.File.separator +
-		fileInode + "." + suffix;
-
-		// creates the new file as
-		// inode{1}/inode{2}/inode.file_extension
-		java.io.File assetFile = new java.io.File(filePath);
-		if (!assetFile.exists())
-			Logger.debug(CMSMaintenanceFactory.class, "Creating new file in:  "+ filePath);
-			assetFile.createNewFile();
-
-		return assetFile;
 	}
 	
 }

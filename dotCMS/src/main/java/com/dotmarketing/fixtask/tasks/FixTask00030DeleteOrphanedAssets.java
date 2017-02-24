@@ -20,7 +20,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.fixtask.FixTask;
 import com.dotmarketing.portlets.cmsmaintenance.ajax.FixAssetsProcessStatus;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
@@ -134,22 +133,6 @@ public class FixTask00030DeleteOrphanedAssets implements FixTask {
 								modifiedData.addAll(assetsToDeleteResult);
 								
 								dc.setSQL(deleteLinks);
-								dc.addParam(identifierToDelete.get("id"));
-								dc.loadResult();
-								
-								assetDeleted = true;
-							}
-						} else if (inodesToDeleteResult.get(0).get("type").equals("file_asset")) {
-							Logger.debug(this, "Deleting orphan File Asset with Identifier='" + identifierToDelete.get("id") + "'");
-							
-							dc.setSQL(fileAssetsToDelete);
-							dc.addParam(identifierToDelete.get("id"));
-							assetsToDeleteResult = dc.loadResults();
-							
-							if ((assetsToDeleteResult != null) && (0 < assetsToDeleteResult.size())) {
-								modifiedData.addAll(assetsToDeleteResult);
-								
-								dc.setSQL(deleteFileAssets);
 								dc.addParam(identifierToDelete.get("id"));
 								dc.loadResult();
 								

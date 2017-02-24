@@ -35,28 +35,6 @@
 			<property column="mod_date" length="23" name="modDate" type="java.util.Date" />
 		</joined-subclass>
 
-		<joined-subclass name="com.dotmarketing.portlets.files.model.File" table="file_asset">
-			<key column="inode" />
-			<property column="file_name" length="255" name="fileName" type="string" />
-			<property column="file_size" length="4" name="size" type="integer" />
-			<property column="width" length="4" name="width" type="integer" />
-			<property column="height" length="4" name="height" type="integer" />
-			<property column="mime_type" length="255" name="mimeType" type="string" />
-			<property column="author" length="255" name="author" type="string" />
-			<property column="publish_date" length="23" name="publishDate" type="java.util.Date" />
-			<!-- attributes from Web Asset , All Assets should have this -->
-			<property column="show_on_menu" name="showOnMenu" type="boolean" />
-			<property column="title" length="255" name="title" type="string" />
-			<property column="friendly_name" length="255" name="friendlyName" type="string" />
-			<property column="mod_date" length="23" name="modDate" type="java.util.Date" />
-			<property column="mod_user" name="modUser" length="100" type="string">
-				<column name="mod_user" index="idx_file_1" />
-			</property>
-			<property column="sort_order" length="4" name="sortOrder" type="integer" />
-			<property column="identifier" length="36" name="identifier" type="string" />
-			<!-- attributes from Web Asset - All Assets should have this -->
-		</joined-subclass>
-
 		<joined-subclass name="com.dotmarketing.portlets.contentlet.business.Contentlet" table="contentlet">
 			<key column="inode" />
 			<!-- attributes from Web Asset , All Assets should have this -->
@@ -1151,17 +1129,6 @@
 	<!-- Dashboard -->
 
 	<!-- Version info for Versionable objects -->
-	<class name="com.dotmarketing.portlets.files.model.FileAssetVersionInfo" table="fileasset_version_info">
-		<id column="identifier"    name="identifier"   length="36" type="string">
-			<generator class="assigned"/>
-        </id>
-		<property column="working_inode" name="workingInode" length="36" type="string"  not-null="true" />
-		<property column="live_inode"    name="liveInode"    length="36" type="string"  not-null="false"/>
-		<property column="deleted"       name="deleted"                  type="boolean" not-null="true" />
-		<property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
-		<property column="locked_on"     name="lockedOn"                 type="java.util.Date"    not-null="true"/>
-        <property column="version_ts"     name="versionTs"  type="java.util.Date"    not-null="true"/>
-  	</class>
 	<class name="com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo" table="contentlet_version_info">
         <composite-id>
             <key-property name="identifier" type="string" column="identifier" length="36"/>

@@ -15,7 +15,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
@@ -572,24 +571,6 @@ public interface ContentletAPIPreHook {
 	 * @return
 	 */
 	public boolean getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles);
-
-	/**
-	 * Gets all contents referenced by a given file asset
-	 * @param file asset.
-	 * @param live contentlets or not.
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return List of contentlets. Null if no related contentlets found.
-	 */
-	public boolean getReferencingContentlet(File file, boolean live, User user, boolean respectFrontendRoles);
-	
-	/**
-	 * Refreshes (regenerates) all content files referenced by a given file asset
-	 * @param file asset
-	 * @param live contentlets or not
-	 * @return 
-	 */
-	public boolean refreshReferencingContentlets(File file, boolean live);
 
 	/**
 	 * 

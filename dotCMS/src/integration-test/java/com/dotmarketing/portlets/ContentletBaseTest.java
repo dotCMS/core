@@ -1,10 +1,6 @@
 package com.dotmarketing.portlets;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.apache.struts.Globals;
-import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
-import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -30,8 +26,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.business.FileAPI;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -49,15 +43,12 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
 import org.junit.BeforeClass;
-import org.mockito.Mockito;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -79,7 +70,6 @@ public class ContentletBaseTest extends IntegrationTestBase {
     protected static Folder testFolder;
     protected static ContentletFactory contentletFactory;
     protected static MenuLinkAPI menuLinkAPI;
-    protected static FileAPI fileAPI;
     protected static TagAPI tagAPI;
     private static RoleAPI roleAPI;
     private static PermissionAPI permissionAPI;
@@ -127,7 +117,6 @@ public class ContentletBaseTest extends IntegrationTestBase {
         templateAPI = APILocator.getTemplateAPI();
         folderAPI = APILocator.getFolderAPI();
         menuLinkAPI = APILocator.getMenuLinkAPI();
-        fileAPI = APILocator.getFileAPI();
         tagAPI = APILocator.getTagAPI();
 
         defaultHost = hostAPI.findDefaultHost( user, false );
@@ -535,56 +524,6 @@ public class ContentletBaseTest extends IntegrationTestBase {
         APILocator.getVersionableAPI().setLive( menuLink );*/
 
         return menuLink;
-    }
-
-    /**
-     * Creates a File object for a later use in the tests
-     *
-     * @param fileName
-     * @return savedFile
-     * @throws Exception
-     * @see File
-     */
-    protected static File createFile ( URL resource, String fileName ) throws Exception {
-
-        //Creates a temporal folder where to put the content
-        final String runId = UUIDGenerator.generateUuid();
-        final java.io.File tmpDir = new java.io.File( APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + runId );
-        tmpDir.mkdirs();
-
-        final java.io.File resourceFile = new java.io.File( tmpDir, fileName );
-        FileUtils.copyURLToFile( resource, resourceFile );
-
-        //Reading the file
-        if ( !resourceFile.exists() ) {
-            String message = "File " + fileName + " does not exist.";
-            throw new Exception( message );
-        }
-
-        //Creating a test file
-        File testFile = new File();
-        testFile.setAuthor( user.getUserId() );
-        testFile.setFileName( "junit_test_file.txt" );
-        testFile.setFriendlyName( "JUnit Test File Friendly Name" );
-        testFile.setIDate( new Date() );
-        testFile.setMaxSize( 1024 );
-        testFile.setMimeType( "text/plain" );
-        testFile.setModDate( new Date() );
-        testFile.setModUser( user.getUserId() );
-        testFile.setOwner( user.getUserId() );
-        testFile.setPublishDate( new Date() );
-        testFile.setShowOnMenu( true );
-        testFile.setSize( (int) resourceFile.length() );
-        testFile.setSortOrder( 2 );
-        testFile.setTitle( "JUnit Test File" );
-        testFile.setType( "file_asset" );
-
-        //Storing the file
-        File savedFile = fileAPI.saveFile( testFile, resourceFile, testFolder, user, false );
-        //Adding permissions
-        permissionAPI.copyPermissions( testFolder, savedFile );
-
-        return savedFile;
     }
 
     /**

@@ -9,7 +9,7 @@ import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
-import com.dotmarketing.portlets.files.model.File;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.viewtools.bean.XSLTranformationDoc;
 
@@ -56,7 +56,8 @@ public class XSLTransformationCache {
 
 				/*validate if xsl file change*/
 				Identifier xslIdentifier = APILocator.getIdentifierAPI().find(doc.getIdentifier());
-				File xslFile = (File) versionableAPI.findWorkingVersion(xslIdentifier, userAPI.getSystemUser(), false);
+				Contentlet xslFile = APILocator.getContentletAPI().findContentletByIdentifier(doc.getIdentifier(),
+					false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), userAPI.getSystemUser(), false);
 
 				/*validate time to live*/
 				long ttl = doc.getTtl() - new Date().getTime();

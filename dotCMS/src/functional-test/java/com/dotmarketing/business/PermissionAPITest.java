@@ -15,7 +15,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
@@ -511,30 +510,6 @@ public class PermissionAPITest extends IntegrationTestBase {
             fw.write("test file");
             fw.close();
 
-            File fa=new File();
-            fa.setTitle("testfile.txt");
-            fa.setFileName("testfile.txt");
-            fa.setModUser(sysuser.getUserId());
-            java.io.File fadata=java.io.File.createTempFile("tmpfile", "fdata.txt");
-            FileUtils.copyFile(fdata, fadata);
-            APILocator.getFileAPI().saveFile(fa, fadata, a, sysuser, false);
-
-            File fb=new File();
-            fb.setTitle("testfile.txt");
-            fb.setFileName("testfile.txt");
-            fb.setModUser(sysuser.getUserId());
-            java.io.File fbdata=java.io.File.createTempFile("tmpfile", "fdata.txt");
-            FileUtils.copyFile(fdata, fbdata);
-            APILocator.getFileAPI().saveFile(fb, fbdata, b, sysuser, false);
-
-            File fc=new File();
-            fc.setTitle("testfile.txt");
-            fc.setFileName("testfile.txt");
-            fc.setModUser(sysuser.getUserId());
-            java.io.File fcdata=java.io.File.createTempFile("tmpfile", "fdata.txt");
-            FileUtils.copyFile(fdata, fcdata);
-            APILocator.getFileAPI().saveFile(fc, fcdata, c, sysuser, false);
-
             String FileAssetStInode=CacheLocator.getContentTypeCache().getStructureByVelocityVarName(
                     FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode();
 
@@ -578,23 +553,20 @@ public class PermissionAPITest extends IntegrationTestBase {
             perm.getPermissions(a);   perm.getPermissions(ca);
             perm.getPermissions(b);   perm.getPermissions(cb);
             perm.getPermissions(c);   perm.getPermissions(cc);
-            perm.getPermissions(fa);  perm.getPermissions(pa);
-            perm.getPermissions(fb);  perm.getPermissions(pb);
-            perm.getPermissions(fc);  perm.getPermissions(pc);
+            perm.getPermissions(pa);
+            perm.getPermissions(pb);
+            perm.getPermissions(pc);
 
             // permission individually on folder a
             perm.permissionIndividually(perm.findParentPermissionable(a), a, sysuser, false);
 
             // everybody should be inheriting from a
-            assertTrue(perm.findParentPermissionable(fa).equals(a));
             assertTrue(perm.findParentPermissionable(pa).equals(a));
             assertTrue(perm.findParentPermissionable(ca).equals(a));
             assertTrue(perm.findParentPermissionable(b).equals(a));
-            assertTrue(perm.findParentPermissionable(fb).equals(a));
             assertTrue(perm.findParentPermissionable(pb).equals(a));
             assertTrue(perm.findParentPermissionable(cb).equals(a));
             assertTrue(perm.findParentPermissionable(c).equals(a));
-            assertTrue(perm.findParentPermissionable(fc).equals(a));
             assertTrue(perm.findParentPermissionable(pc).equals(a));
             assertTrue(perm.findParentPermissionable(cc).equals(a));
         }

@@ -17,7 +17,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -364,14 +363,6 @@ public class UserAPIImpl implements UserAPI {
 		logDelete(DeletionStage.BEGINNING, userToDelete, user, "HTMLPages");
 
 		logDelete(DeletionStage.END, userToDelete, user, "HTMLPages");
-
-		//replace user references in file_assets
-		logDelete(DeletionStage.BEGINNING, userToDelete, user, "FileAssets");
-
-		FileAPI fileAPI = APILocator.getFileAPI();
-		fileAPI.updateUserReferences(userToDelete.getUserId(), replacementUser.getUserId());
-
-		logDelete(DeletionStage.END, userToDelete, user, "FileAssets");
 
 		//replace user references in containers
 		logDelete(DeletionStage.BEGINNING, userToDelete, user, "Containers");

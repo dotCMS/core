@@ -43,7 +43,6 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
@@ -558,8 +557,6 @@ public class WebAPI implements ViewTool {
 				if(cont!=null && InodeUtils.isSet(cont.getInode())){
 					realPath = APILocator.getFileAssetAPI().getRealAssetPath(cont.getInode(), fileName, ext);
 				}
-			}else{
-				realPath = APILocator.getFileAPI().getRealAssetPath(fileName, ext);
 			}
 			return realPath;
 		}catch (Exception e) {
@@ -623,9 +620,6 @@ public class WebAPI implements ViewTool {
 				if(cont!=null && InodeUtils.isSet(cont.getInode())){
 					return cont.getInode();
 				}
-			}else{
-				File f = APILocator.getFileAPI().getFileByURI(path, host, false,backEndUser!=null?backEndUser:user, false);
-				return f.getInode();
 			}
 			return null;
 		}catch (Exception e) {
@@ -1019,16 +1013,6 @@ public class WebAPI implements ViewTool {
 		if(ident.getAssetType().equals("contentlet")){
 			try {
 				fileAsset = APILocator.getContentletAPI().find(fileInode, u, false);
-			} catch (DotSecurityException e) {
-				Logger.error(this, e.getMessage());
-				return false;
-			}
-		}else{
-			try {
-				fileAsset = APILocator.getFileAPI().find(fileInode, u, false);
-			} catch (DotStateException e) {
-				Logger.error(this, e.getMessage());
-				return false;
 			} catch (DotSecurityException e) {
 				Logger.error(this, e.getMessage());
 				return false;

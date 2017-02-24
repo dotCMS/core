@@ -1,20 +1,7 @@
-<%@page import="com.dotmarketing.beans.Permission"%>
-<%@page import="com.dotmarketing.business.PermissionAPI"%>
-<%@page import="com.dotmarketing.beans.Host"%>
-<%@page import="java.util.List"%>
-<%@page import="com.dotmarketing.business.PermissionSummary"%>
-<%@page import="com.dotmarketing.portlets.contentlet.business.HostAPI"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
-<%@page import="com.dotmarketing.portlets.folders.model.Folder"%>
-<%@page import="com.dotmarketing.portlets.containers.model.Container"%>
-<%@page import="com.dotmarketing.portlets.templates.model.Template"%>
-<%@page import="com.dotmarketing.portlets.files.model.File"%>
-<%@page import="com.dotmarketing.portlets.links.model.Link"%>
-<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.business.RoleAPI"%>
-<%@page import="com.liferay.portal.util.ReleaseInfo"%>
 
 <%
 	RoleAPI roleAPI = APILocator.getRoleAPI();

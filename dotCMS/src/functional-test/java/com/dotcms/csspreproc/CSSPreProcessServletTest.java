@@ -34,7 +34,7 @@ public class CSSPreProcessServletTest {
         Host demo = APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
         Folder folder = APILocator.getFolderAPI().createFolders("/"+UUIDGenerator.generateUuid(), demo, user, false);
         
-        File file=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + 
+        File file=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator +
                 UUIDGenerator.generateUuid() + File.separator + "hello.txt");
         file.getParentFile().mkdirs();
         FileUtils.writeStringToFile(file, "hello there!");

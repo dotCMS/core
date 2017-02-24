@@ -32,8 +32,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.files.business.FileAPI;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -88,7 +86,6 @@ public class BrowserAjax {
 	private HostAPI hostAPI = APILocator.getHostAPI();
 	private HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
 	private FolderAPI folderAPI = APILocator.getFolderAPI();
-	private FileAPI fileAPI = APILocator.getFileAPI();
 	private ContentletAPI contAPI = APILocator.getContentletAPI();
 	private LanguageAPI languageAPI = APILocator.getLanguageAPI();
 	private BrowserAPI browserAPI = new BrowserAPI();
@@ -605,15 +602,6 @@ public class BrowserAjax {
 			languageId = languageAPI.getDefaultLanguage().getId();
 		}
 
-		if(ident!=null && InodeUtils.isSet(ident.getId()) && ident.getAssetType().equals("file_asset")) {
-			File file = fileAPI.getWorkingFileById(fileId, user, respectFrontendRoles);
-			String mimeType = servletContext.getMimeType(file.getFileName().toLowerCase());
-			Map<String, Object> fileMap = file.getMap();
-			fileMap.put("mimeType", mimeType);
-			fileMap.put("path", file.getPath());
-			return fileMap;
-		}
-
 		if(ident!=null && InodeUtils.isSet(ident.getId()) && ident.getAssetType().equals("contentlet")) {
 		    ContentletVersionInfo vinfo=versionAPI.getContentletVersionInfo(ident.getId(), languageId);
 
@@ -757,7 +745,7 @@ public class BrowserAjax {
             }
 
             folderAPI.copy( folder, parentHost, user, false );
-            refreshIndex(null, null, user, parentHost, folder );
+            refreshIndex( null, parentHost, folder );
         } else {
 
             Folder parentFolder = APILocator.getFolderAPI().find( newFolder, user, false );
@@ -776,7 +764,7 @@ public class BrowserAjax {
             }
 
             folderAPI.copy( folder, parentFolder, user, false );
-            refreshIndex(null, parentFolder, user, null, folder );
+            refreshIndex(parentFolder, null, folder );
         }
 
         return true;
@@ -819,7 +807,7 @@ public class BrowserAjax {
                     //A folder with the same name already exists on the destination
                     return errorString;
                 }
-                refreshIndex(null, null, user, parentHost, folder );
+                refreshIndex(null, parentHost, folder );
             } else {
 
                 Folder parentFolder = APILocator.getFolderAPI().find( newFolder, user, false );
@@ -842,7 +830,7 @@ public class BrowserAjax {
                     return errorString;
                 }
 
-                refreshIndex(null, parentFolder, user, null, folder );
+                refreshIndex(parentFolder,null, folder );
                 APILocator.getPermissionAPI().resetPermissionReferences(folder);
             }
         } catch ( Exception e ) {
@@ -895,21 +883,6 @@ public class BrowserAjax {
     			}else{
     				result.put("result", 1);
     				result.put("errorReason", "The file is locked");
-    			}
-    		}else{
-    			File file = (File) InodeFactory.getInode(inode, File.class);
-    			result.put("lastName", file.getNameOnly());
-    			result.put("extension", file.getExtension());
-    			result.put("newName", newName);
-    			result.put("inode", inode);
-    			if (APILocator.getFileAPI().renameFile(file, newName, user, false)) {
-    				result.put("result", 0);
-    			} else {
-    				result.put("result", 1);
-    				if (file.isLocked())
-    					result.put("errorReason", "The file is locked");
-    				else
-    					result.put("errorReason", "Another file with the same name already exists on this folder");
     			}
     		}
 
@@ -985,36 +958,13 @@ public class BrowserAjax {
 				// issues/1967
 
 				Folder srcFolder = APILocator.getFolderAPI().find(cont.getFolder(),user,false);
-				refreshIndex(null, parent, user, host, srcFolder );
+				refreshIndex(parent, host, srcFolder );
 
 				result.put("status", "success");
 				result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "File-copied")));
 				return result;
 			}
 
-            File file = (File) InodeFactory.getInode( inode, File.class );
-            // CHECK THE FOLDER PATTERN		//DOTCMS-6017
-            if ( UtilMethods.isSet( file.getFileName() ) && (parent != null && !folderAPI.matchFilter( parent, file.getFileName() )) ) {
-                result.put("status", "error");
-                result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "message.file_asset.error.filename.filters")));
-                return result;
-            }
-
-            // Checking permissions
-            if ( !permissionAPI.doesUserHavePermission( file, PERMISSION_WRITE, user ) ) {
-                result.put("status", "error");
-                result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "File-failed-to-copy-check-you-have-the-required-permissions")));
-                return result;
-            }
-
-            if ( parent != null ) {
-                APILocator.getFileAPI().copyFile( file, parent, user, false );
-            } else {
-                APILocator.getFileAPI().copyFile( file, host, user, false );
-            }
-            
-            result.put("status", "success");
-            result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "File-copied")));
             return result;
 		}
         catch(Exception ex) {
@@ -1108,9 +1058,9 @@ public class BrowserAjax {
             Folder srcFolder = APILocator.getFolderAPI().find(contentlet.getFolder(),user,false);
 
             if(contentlet.getFolder().equals("SYSTEM_FOLDER")) {
-            	refreshIndex(null, null, user, APILocator.getHostAPI().find(contentlet.getHost(), user, false), srcFolder );
+            	refreshIndex(null, APILocator.getHostAPI().find(contentlet.getHost(), user, false), srcFolder );
             } else {
-            	refreshIndex(null, parent, user, host, srcFolder );
+            	refreshIndex(parent, host, srcFolder );
             }
 
             if ( parent != null ) {
@@ -1120,20 +1070,7 @@ public class BrowserAjax {
             }
         }
 
-        File file = (File) InodeFactory.getInode( inode, File.class );
-
-        // Checking permissions
-        if ( !permissionAPI.doesUserHavePermission( file, PERMISSION_WRITE, user ) ) {
-            throw new DotRuntimeException( "The user doesn't have the required permissions." );
-        }
-
-        refreshIndex(file, parent, user, host, null );
-
-        if ( parent != null ) {
-            return APILocator.getFileAPI().moveFile( file, parent, user, false );
-        } else {
-            return APILocator.getFileAPI().moveFile( file, host, user, false );
-        }
+        return false;
     }
 
 	public Map<String, Object> renameHTMLPage ( String inode, String newName ) throws Exception {
@@ -1204,7 +1141,7 @@ public class BrowserAjax {
                 return result;
             }
 
-            
+
                 Contentlet cont=APILocator.getContentletAPI().find(inode, user, false);
                 Contentlet newContentlet=null;
                 if(parent!=null) {
@@ -1219,7 +1156,7 @@ public class BrowserAjax {
                    	MultiTree mt = new MultiTree(newContentlet.getIdentifier(), m.getParent2(), m.getChild());
                    	MultiTreeFactory.saveMultiTree(mt);
                 }
-            
+
 
             result.put("status", "success");
             result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "Page-copied")));
@@ -1316,7 +1253,7 @@ public class BrowserAjax {
             else {
                 return APILocator.getHTMLPageAssetAPI().move((HTMLPageAsset)page, host, user);
             }
-        
+
     }
 
     public Map<String, Object> renameLink (String inode, String newName) throws Exception {
@@ -2261,16 +2198,10 @@ public class BrowserAjax {
 		return foldersToReturn;
 	}
 
-	public void refreshIndex(File file, Folder parent, User user, Host host, Folder folder ) throws Exception {
+	public void refreshIndex(Folder parent, Host host, Folder folder ) throws Exception {
 
-		Folder srcFolder = folder;
-		if(folder == null){
-			srcFolder = APILocator.getFolderAPI().find(file.getParent(),user,false);
-
-		}
-     	// issues/1603 - refresh index for src Folder
-        if (srcFolder!=null){
-        	APILocator.getContentletAPI().refreshContentUnderFolder(srcFolder);
+        if (folder!=null){
+        	APILocator.getContentletAPI().refreshContentUnderFolder(folder);
      	}
 
         if ( parent != null ) {

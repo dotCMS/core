@@ -1,31 +1,17 @@
 <%@ include file="/html/portlet/ext/folders/init.jsp" %>
 
-<%@ page import="com.dotmarketing.util.Config" %>
-<%@ page import="com.dotmarketing.beans.Inode" %>
-<%@ page import="com.dotmarketing.beans.WebAsset" %>
 <%@ page import="com.dotmarketing.portlets.folders.model.Folder" %>
-<%@ page import="com.dotmarketing.portlets.folders.business.FolderFactory" %>
-<%@ page import="com.dotmarketing.portlets.files.model.File" %>
-<%@ page import="com.dotmarketing.portlets.links.model.Link" %>
 <%@ page import="com.dotmarketing.business.PermissionAPI" %>
 <%@ page import="com.dotmarketing.business.web.UserWebAPI" %>
 <%@ page import="com.dotmarketing.business.APILocator" %>
 <%@ page import="com.dotmarketing.business.web.WebAPILocator" %>
-<%@ page import="com.dotmarketing.util.MenuItem" %>
 <%@ page import="com.liferay.portal.model.User" %>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@ page import="java.util.Vector" %>
 <%
 	String referer = (request.getParameter("referer") != null ) ? request.getParameter("referer") : "";
 	PermissionAPI perAPI = APILocator.getPermissionAPI();
-	//com.dotmarketing.business.UserAPI bUserAPI = APILocator.getUserAPI();
-	//User bUser = bUserAPI.
 	UserWebAPI userAPI = WebAPILocator.getUserWebAPI();
 	User backUser = userAPI.getLoggedInUser(request);
-	
-	
-	
-	
 
 	Folder parentFolder = (Folder) request.getAttribute(com.dotmarketing.util.WebKeys.MENU_MAIN_FOLDER);						
 	boolean showSaveButton = false;

@@ -68,18 +68,6 @@ public class FileUtil {
 	 * This will return the full path to the file asset as a String
 	 * 
 	 * @param inode
-	 * @return
-	 */
-	public static String getAbsoluteFileAssetPath(Inode inode) {
-		String _inode = inode.getInode();
-		return getAbsoluteFileAssetPath(_inode,
-				UtilMethods.getFileExtension(((com.dotmarketing.portlets.files.model.File) inode).getFileName()).intern());
-	}
-
-	/**
-	 * This will return the full path to the file asset as a String
-	 * 
-	 * @param inode
 	 * @param extenstion
 	 * @return
 	 */

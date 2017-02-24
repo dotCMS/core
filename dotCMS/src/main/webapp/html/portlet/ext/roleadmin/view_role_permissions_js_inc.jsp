@@ -5,7 +5,6 @@
 <%@page import="com.dotmarketing.portlets.folders.model.Folder"%>
 <%@page import="com.dotmarketing.portlets.containers.model.Container"%>
 <%@page import="com.dotmarketing.portlets.templates.model.Template"%>
-<%@page import="com.dotmarketing.portlets.files.model.File"%>
 <%@page import="com.dotmarketing.portlets.links.model.Link"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
@@ -77,7 +76,6 @@
 	var templateClassName = '<%= Template.class.getCanonicalName() %>'
 	var templateLayoutClassName = '<%= TemplateLayout.class.getCanonicalName() %>'
 	var pageClassName = '<%= IHTMLPage.class.getCanonicalName() %>'
-	var fileClassName = '<%= File.class.getCanonicalName() %>'
 	var linkClassName = '<%= Link.class.getCanonicalName() %>'
 	var structureClassName = '<%= Structure.class.getCanonicalName() %>'
 	var contentClassName = '<%= Contentlet.class.getCanonicalName() %>';
@@ -789,7 +787,6 @@
 		fillTemplatePermissionOptions(item, permissions, templateClassName, 'templates');
 		fillTemplatePermissionOptions(item, permissions, templateLayoutClassName, 'templateLayouts');
 		fillTemplatePermissionOptions(item, permissions, pageClassName, 'pages');
-		fillTemplatePermissionOptions(item, permissions, fileClassName, 'files');
 		fillTemplatePermissionOptions(item, permissions, linkClassName, 'links');
 		fillTemplatePermissionOptions(item, permissions, structureClassName, 'structures');
 		fillTemplatePermissionOptions(item, permissions, contentClassName, 'content');

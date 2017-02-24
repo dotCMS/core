@@ -254,8 +254,6 @@ public class ImportExportUtil {
                 containerStructuresXML.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().contains("com.dotmarketing.portlets.containers.model.Container_")){
                 containersXML.add(new File(_importFile.getPath()));
-            }else if(_importFile.getName().contains("com.dotmarketing.portlets.files.model.File_")){
-                filesXML.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().contains("com.dotmarketing.portlets.links.model.Link_")){
                 menuLinksXML.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().contains("com.dotmarketing.portlets.structure.model.Structure_")){

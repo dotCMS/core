@@ -21,7 +21,6 @@
       <form-bean name="FileUploadForm" type="com.dotmarketing.portlets.fileupload.struts.FileForm"></form-bean>
       <form-bean name="ContainerForm" type="com.dotmarketing.portlets.containers.struts.ContainerForm"></form-bean>
       <form-bean name="TemplateForm" type="com.dotmarketing.portlets.templates.struts.TemplateForm"></form-bean>
-      <form-bean name="HTMLPageForm" type="com.dotmarketing.portlets.htmlpages.struts.HTMLPageForm"></form-bean>
       <form-bean name="WorkflowTaskForm" type="com.dotmarketing.portlets.workflows.struts.WorkflowTaskForm"></form-bean>
 	<form-bean name="VirtualLinkForm" type="com.dotmarketing.portlets.virtuallinks.struts.VirtualLinkForm"></form-bean>
       <form-bean name="LanguageForm" type="com.dotmarketing.portlets.languagesmanager.struts.LanguageForm"></form-bean>
@@ -499,19 +498,6 @@
       <!-- Folder Management -->
 
       <!-- File Management -->
-      <action path="/ext/files/edit_file" type="com.dotmarketing.portlets.files.action.EditFileAction" name="FileForm" scope="request" input="portlet.ext.files.edit_file" validate="false">
-         <forward name="portlet.ext.files.edit_file" path="portlet.ext.files.edit_file"></forward>
-      </action>
-      <action path="/ext/files/edit_file_popup" type="com.dotmarketing.portlets.files.action.EditFileAction" name="FileForm" scope="request" input="portlet.ext.files.edit_file_popup" validate="false">
-         <forward name="portlet.ext.files.edit_file_popup" path="portlet.ext.files.edit_file_popup"></forward>
-      </action>
-      <action path="/ext/files/view_files" type="com.dotmarketing.portlets.files.action.ViewFilesAction">
-         <forward name="portlet.ext.files.view_files" path="portlet.ext.files.view_files" />
-         <forward name="portlet.ext.files.view" path="portlet.ext.files.view" />
-      </action>
-      <action path="/ext/files/publish_files" type="com.dotmarketing.portlets.files.action.PublishFilesAction">
-         <forward name="portlet.ext.files.publish_files" path="portlet.ext.files.publish_files" />
-      </action>
       <action path="/ext/files/upload_multiple" type="com.dotmarketing.portlets.files.action.UploadMultipleFilesAction" name="FileForm" scope="request" input="portlet.ext.files.upload_multiple" validate="false">
          <forward name="portlet.ext.files.upload_multiple" path="portlet.ext.files.upload_multiple"></forward>
       </action>
@@ -561,22 +547,11 @@
       <!-- Template  Management -->
 
       <!-- HMTLPage Management -->
-      <action path="/ext/htmlpages/view_htmlpages" type="com.dotmarketing.portlets.htmlpages.action.ViewHTMLPagesAction">
-         <forward name="portlet.ext.htmlpages.view_htmlpages" path="portlet.ext.htmlpages.view_htmlpages" />
-         <forward name="portlet.ext.htmlpages.view" path="portlet.ext.htmlpages.view" />
-      </action>
-      <action path="/ext/htmlpages/edit_htmlpage" type="com.dotmarketing.portlets.htmlpages.action.EditHTMLPageAction" name="HTMLPageForm" scope="request" input="portlet.ext.htmlpages.edit_htmlpage" validate="false">
-         <forward name="portlet.ext.htmlpages.edit_htmlpage" path="portlet.ext.htmlpages.edit_htmlpage"></forward>
-      </action>
       <action path="/ext/htmlpages/preview_htmlpage" type="com.dotmarketing.portlets.htmlpages.action.PreviewHTMLPageAction">
          <forward name="portlet.ext.htmlpages.preview_htmlpage" path="portlet.ext.htmlpages.preview_htmlpage"></forward>
       </action>
       <action path="/ext/htmlpages/publish_htmlpages" type="com.dotmarketing.portlets.htmlpages.action.PublishHTMLPagesAction">
          <forward name="portlet.ext.htmlpages.publish_htmlpages" path="portlet.ext.htmlpages.publish_htmlpages" />
-      </action>
-      <action path="/extranet/send_to_friend" type="com.dotmarketing.portlets.htmlpages.action.SendHTMLPageAction">
-         <forward name="portlet.ext.htmlpages.extranet.send_to_friend" path="portlet.ext.htmlpages.extranet.send_to_friend" />
-         <forward name="portlet.ext.htmlpages.extranet.send_to_friend_thanks" path="portlet.ext.htmlpages.extranet.send_to_friend_thanks" />
       </action>
       <!-- HMTLPage Management -->
 

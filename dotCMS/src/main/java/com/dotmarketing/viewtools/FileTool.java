@@ -11,8 +11,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
-import com.dotmarketing.portlets.files.business.FileAPI;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -22,7 +20,6 @@ import org.apache.velocity.tools.view.tools.ViewTool;
 
 public class FileTool implements ViewTool {
 
-	private static final FileAPI fileAPI = APILocator.getFileAPI();
 	private static final UserAPI userAPI = APILocator.getUserAPI();
 	private static final LanguageAPI languageAPI = APILocator.getLanguageAPI();
 	private static final ContentletAPI contentletAPI = APILocator.getContentletAPI();
@@ -31,10 +28,6 @@ public class FileTool implements ViewTool {
 
 	public void init(Object initData) {
 
-	}
-
-	public File getNewFile(){
-		return new File();
 	}
 
 	public IFileAsset getFile(String identifier, boolean live){
@@ -53,7 +46,7 @@ public class FileTool implements ViewTool {
 		    }
 		} catch (Exception e1) {
 			Logger.error(FileTool.class,e1.getMessage(),e1);
-			return new File();
+			return new FileAsset();
 		}
         p = p.substring(5, p.lastIndexOf("."));
         IFileAsset file = null;
@@ -68,25 +61,15 @@ public class FileTool implements ViewTool {
 				if(cont!=null && InodeUtils.isSet(cont.getInode())){
 					file = fileAssetAPI.fromContentlet(cont);
 				}
-			}else{
-				file = fileAPI.find(p, userAPI.getSystemUser(), false);
 			}
 
 		} catch (Exception e) {
 			Logger.error(FileTool.class,e.getMessage(),e);
 		}
 		if(file == null){
-			file = new File();
+			file = new FileAsset();
 		}
 		return file;
-	}
-
-	public String getURI(File file){
-		if(file != null && InodeUtils.isSet(file.getIdentifier())){
-			return UtilMethods.espaceForVelocity("/contentAsset/raw-data/" + file.getIdentifier() + "/fileAsset");
-		}else{
-			return "";
-		}
 	}
 
 	public String getURI(FileAsset file){

@@ -67,7 +67,6 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
 import com.dotmarketing.portlets.contentlet.business.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.files.model.FileAssetVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
@@ -3439,8 +3438,6 @@ public class UtilMethods {
             return ContainerVersionInfo.class;
         else if(type.equals("template"))
             return TemplateVersionInfo.class;
-        else if(type.equals("file_asset"))
-            return FileAssetVersionInfo.class;
         else return null;
     }
     
@@ -3453,8 +3450,6 @@ public class UtilMethods {
             return Container.class;
         else if(tableName.equals("template"))
             return com.dotmarketing.portlets.templates.model.Template.class;
-        else if(tableName.equals("file_asset"))
-            return com.dotmarketing.portlets.files.model.File.class;
         else return null;
     }
 

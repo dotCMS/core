@@ -36,8 +36,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.business.ContentletCacheImpl;
 import com.dotmarketing.portlets.contentlet.business.HostCache;
 import com.dotmarketing.portlets.contentlet.business.HostCacheImpl;
-import com.dotmarketing.portlets.files.business.FileCache;
-import com.dotmarketing.portlets.files.business.FileCacheImpl;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariablesCache;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariablesCacheImpl;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageCache;
@@ -214,9 +212,6 @@ public class CacheLocator extends Locator<CacheIndex>{
 		return (LayoutCache)getInstance(CacheIndex.Layout);
 	}
 
-	public static FileCache getFileCache() {
-		return (FileCache)getInstance(CacheIndex.File);
-	}
 	public static IdentifierCache getIdentifierCache() {
 		return (IdentifierCache)getInstance(CacheIndex.Identifier);
 	}
@@ -405,7 +400,6 @@ enum CacheIndex
       	case Userproxy : return new UserProxyCacheImpl();
       	case Layout : return new LayoutCacheImpl();
       	case CMSRole : return new com.dotmarketing.business.RoleCacheImpl();
-      	case File : return new FileCacheImpl();
       	case HTMLPage : return new HTMLPageCacheImpl();
       	case Menulink : return new MenuLinkCacheImpl();
       	case Container : return new ContainerCacheImpl();

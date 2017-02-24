@@ -14,7 +14,6 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -106,9 +105,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		Identifier folderId = find(folder);
 		ic.removeFromCacheByVersionable(webasset);
 		identifier.setURI(folderId.getPath() + identifier.getInode());
-		if (webasset instanceof File) {
-			identifier.setURI(folderId.getPath() + ((File) webasset).getFileName());
-		}else if (webasset instanceof Contentlet){
+		if (webasset instanceof Contentlet){
 			Contentlet c =(Contentlet) webasset;
 			if ( c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET ) {
 				FileAsset fa = APILocator.getFileAssetAPI().fromContentlet( c );

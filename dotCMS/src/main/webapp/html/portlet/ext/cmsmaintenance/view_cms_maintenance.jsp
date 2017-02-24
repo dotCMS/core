@@ -334,18 +334,7 @@ var doCleanAssets = function () {
         $("cleanAssetsMessage").innerHTML = '<span style="font-family: Arial; font-size: x-small; color: #ff0000><b><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.process.in.progress")) %></b></span>';
         dijit.byId('cleanAssetsButton').attr('disabled', true);
 
-        var files=false;
-        var binaries=false;
-        var whatclean=dijit.byId('whatClean').attr('value')
-        if(whatclean=='all') {
-        	files=true; binaries=true;
-        } else if(whatclean=='binary') {
-        	files=false; binaries=true;
-        } else if(whatclean=='file_asset') {
-        	files=true; binaries=false;
-        }
-
-        CMSMaintenanceAjax.cleanAssets(files,binaries,doCleanAssetsCallback);
+        CMSMaintenanceAjax.cleanAssets(doCleanAssetsCallback);
     }
 };
 
@@ -1597,11 +1586,6 @@ dd.leftdl {
                       <div align="center"  id="cleanAssetsMessage">&nbsp;</div>
                    </td>
                    <td align="center">
-                      <select id="whatClean" name="whatClean" dojoType="dijit.form.FilteringSelect" >
-                            <option selected="selected" value="all"><%= LanguageUtil.get(pageContext,"Clean-bin-and-file") %></option>
-                            <option value="binary"><%= LanguageUtil.get(pageContext,"Clean-only-bin") %></option>
-                            <option value="file_asset"><%= LanguageUtil.get(pageContext,"Clean-only-fileasset") %></option>
-                      </select>
                       <button dojoType="dijit.form.Button" onClick="doCleanAssets();"  id="cleanAssetsButton" iconClass="dropIcon">
                            <%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.label") %>
                       </button>

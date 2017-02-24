@@ -69,7 +69,7 @@ public class ConfigUtils {
 	}
 
 	public static String getBundlePath() {
-		String path=APILocator.getFileAPI().getRealAssetsRootPath() + File.separator + "bundles";
+		String path=APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "bundles";
 		File pathDir=new File(path);
 		if(!pathDir.exists())
 		    pathDir.mkdirs();
@@ -77,7 +77,7 @@ public class ConfigUtils {
 	}
 
 	public static String getIntegrityPath() {
-		String path=APILocator.getFileAPI().getRealAssetsRootPath() + File.separator + "integrity";
+		String path=APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "integrity";
 		File pathDir=new File(path);
 		if(!pathDir.exists())
 		    pathDir.mkdirs();
@@ -89,7 +89,7 @@ public class ConfigUtils {
 		String path = Config.getStringProperty("TIMEMACHINE_PATH", null);
 
 		if(path == null || (path != null && path.equals("null")) ){
-			path=APILocator.getFileAPI().getRealAssetsRootPath() + File.separator + "timemachine";
+			path=APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "timemachine";
 			File pathDir=new File(path);
 			if(!pathDir.exists())
 			    pathDir.mkdirs();

@@ -1668,7 +1668,7 @@ public class Contentlet extends WebAsset implements Serializable {
 					/*** THIS LOGIC IS DUPED IN THE CONTENTLETAPI.  IF YOU CHANGE HERE, CHANGE THERE **/
 					if(f.getFieldContentlet().startsWith("binary")&& value == null){
 						java.io.File binaryFile = null ;
-						java.io.File binaryFilefolder = new java.io.File(APILocator.getFileAPI().getRealAssetPath()
+						java.io.File binaryFilefolder = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
 								+ java.io.File.separator
 								+ getInode().charAt(0)
 								+ java.io.File.separator

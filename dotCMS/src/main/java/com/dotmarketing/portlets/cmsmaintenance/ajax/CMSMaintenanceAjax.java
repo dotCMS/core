@@ -61,7 +61,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.dashboard.model.DashboardSummary404;
 import com.dotmarketing.portlets.dashboard.model.DashboardUserPreferences;
-import com.dotmarketing.portlets.files.model.FileAssetVersionInfo;
 import com.dotmarketing.portlets.links.model.LinkVersionInfo;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
@@ -302,10 +301,10 @@ public class CMSMaintenanceAjax {
         	return CMSMaintenanceFactory.deleteOldAssetVersions(assetsOlderThan);
     }
 
-    public Map cleanAssets (boolean files, boolean binarys) throws DotDataException {
+    public Map cleanAssets () throws DotDataException {
 
         //Create the thread to clean the assets
-        CleanAssetsThread cleanAssetsThread = CleanAssetsThread.getInstance( true , files, binarys);
+        CleanAssetsThread cleanAssetsThread = CleanAssetsThread.getInstance( true , true);
         BasicProcessStatus processStatus = cleanAssetsThread.getProcessStatus();
         cleanAssetsThread.start();
 
@@ -321,7 +320,7 @@ public class CMSMaintenanceAjax {
     public Map getCleanAssetsStatus () {
 
         //Getting the running clean assets thread
-        CleanAssetsThread cleanAssetsThread = CleanAssetsThread.getInstance( false , false, false);
+        CleanAssetsThread cleanAssetsThread = CleanAssetsThread.getInstance(false, false);
         BasicProcessStatus processStatus = cleanAssetsThread.getProcessStatus();
 
         //Return its current running status
@@ -489,9 +488,6 @@ public class CMSMaintenanceAjax {
 	                    }
 	                    else if(TagInode.class.equals(clazz)){
 	                    	_dh.setQuery("from " + clazz.getName() + " order by inode, tag_id");
-	                    }
-	                    else if(FileAssetVersionInfo.class.equals(clazz)){
-	                    	_dh.setSQLQuery("SELECT {fileasset_version_info.*} from fileasset_version_info fileasset_version_info, identifier where identifier.id = fileasset_version_info.identifier order by fileasset_version_info.identifier ");
 	                    }
 	                    else if(TemplateVersionInfo.class.equals(clazz)){
 	                    	_dh.setSQLQuery("SELECT {template_version_info.*} from template_version_info template_version_info, identifier where identifier.id = template_version_info.identifier order by template_version_info.identifier ");

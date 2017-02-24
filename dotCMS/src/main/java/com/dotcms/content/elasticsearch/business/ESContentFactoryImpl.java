@@ -29,7 +29,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.links.model.Link;
@@ -647,7 +646,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         int deleted=before - after;
 
         // deleting orphan binary files
-        java.io.File assets=new java.io.File(APILocator.getFileAPI().getRealAssetsRootPath());
+        java.io.File assets=new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath());
         for(java.io.File ff1 : assets.listFiles())
             if(ff1.isDirectory() && ff1.getName().length()==1 && ff1.getName().matches("^[a-f0-9]$"))
                 for(java.io.File ff2 : ff1.listFiles())
@@ -1069,28 +1068,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
             result.add(content);
         }
         return result;
-	}
-
-	@Override
-	protected List<File> getRelatedFiles(Contentlet contentlet) throws DotDataException {
-	    HibernateUtil dh = new HibernateUtil(File.class);
-
-        File f = new File();
-        String tableName = f.getType();
-
-        String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
-        + tableName + "_1_ where tree.parent = ? and tree.child = " + tableName + ".inode and " + tableName
-        + "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type ='"+tableName+"'";
-
-        Logger.debug(this, "HibernateUtilSQL:getRelatedFiles\n " + sql);
-
-        dh.setSQLQuery(sql);
-
-        Logger.debug(this, "inode:  " + contentlet.getInode() + "\n");
-
-        dh.setParam(contentlet.getInode());
-
-        return dh.list();
 	}
 
 	@Override

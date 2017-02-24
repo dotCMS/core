@@ -69,9 +69,6 @@ import com.dotmarketing.portlets.dashboard.business.DashboardAPI;
 import com.dotmarketing.portlets.dashboard.business.DashboardAPIImpl;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImpl;
-import com.dotmarketing.portlets.files.business.FileAPI;
-import com.dotmarketing.portlets.files.business.FileAPIImpl;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPIImpl;
 import com.dotmarketing.portlets.form.business.FormAPI;
@@ -414,18 +411,6 @@ public class APILocator extends Locator<APIIndex>{
 	 */
 	public static HostVariableAPI getHostVariableAPI(){
 		return (HostVariableAPI) getInstance(APIIndex.HOST_VARIABLE_API);
-	}
-
-	/**
-	 * Creates a single instance of the {@link HostVariableAPI} class.
-	 *
-	 * @return The {@link HostVariableAPI} class.
-	 * @deprecated This API can be used for Legacy {@link File} objects ONLY.
-	 *             Files are now represented as content. Please refer to the
-	 *             {@link #getFileAssetAPI()}
-	 */
-	public static FileAPI getFileAPI(){
-		return (FileAPI) getInstance(APIIndex.FILE_API);
 	}
 
 	/**
@@ -847,7 +832,6 @@ enum APIIndex
 		case LAYOUT_API : return new LayoutAPIImpl();
 		case HOST_VARIABLE_API : return new HostVariableAPIImpl();
 		case FORM_API: return new FormAPIImpl();
-		case FILE_API: return new FileAPIImpl();
 		case MENULINK_API: return new MenuLinkAPIImpl();
 		case VIRTUALLINK_API: return new VirtualLinkAPIImpl();
 		case DASHBOARD_API: return new DashboardAPIImpl();

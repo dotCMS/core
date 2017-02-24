@@ -7,7 +7,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
-import com.dotcms.business.LazyFileAPIWrapper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotmarketing.beans.Identifier;
@@ -19,8 +18,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.files.business.FileAPI;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
@@ -45,25 +42,23 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	UserAPI userApi = null;
 	ContainerAPI containerApi = null;
 	TemplateAPI templateApi = null;
-	FileAPI fileApi = null;
 
 	/**
 	 * Default class constructor.
 	 */
 	public VersionableFactoryImpl() {
 		this(APILocator.getIdentifierAPI(), CacheLocator.getIdentifierCache(), APILocator.getUserAPI(),
-				APILocator.getContainerAPI(), APILocator.getTemplateAPI(), new LazyFileAPIWrapper());
+				APILocator.getContainerAPI(), APILocator.getTemplateAPI());
 	}
 
 	@VisibleForTesting
 	public VersionableFactoryImpl(IdentifierAPI identifierApi, IdentifierCache identifierCache, UserAPI userApi,
-			ContainerAPI containerApi, TemplateAPI templateApi, FileAPI fileApi) {
+			ContainerAPI containerApi, TemplateAPI templateApi) {
 		this.iapi = identifierApi;
 		this.icache = identifierCache;
 		this.userApi = userApi;
 		this.containerApi = containerApi;
 		this.templateApi = templateApi;
-		this.fileApi = fileApi;
 	}
 
 	@Override
@@ -88,8 +83,6 @@ public class VersionableFactoryImpl extends VersionableFactory {
 					ver = this.containerApi.getWorkingContainerById(id, user, true);
 				} else if (Template.class.equals(clazz)) {
 					ver = this.templateApi.find(workingInode, user, true);
-				} else if (File.class.equals(clazz)) {
-					ver = this.fileApi.find(workingInode, user, true);
 				}
 				if (ver == null) {
 					Logger.warn(this.getClass(), "Versionable object is null when finding working version '" + clazz.getName()
@@ -137,8 +130,6 @@ public class VersionableFactoryImpl extends VersionableFactory {
 							ver = this.containerApi.getLiveContainerById(id, user, true);
 						} else if (Template.class.equals(clazz)) {
 							ver = this.templateApi.find(liveInode, user, true);
-						} else if (File.class.equals(clazz)) {
-							ver = this.fileApi.find(liveInode, user, true);
 						}
 						if (ver == null) {
 							Logger.warn(this.getClass(), "Versionable object is null when finding working version '" + clazz.getName()
@@ -402,7 +393,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	 *         database query.
 	 */
 	private Set<Class<?>> getVersionableWhitelist() {
-		return set(Container.class, Template.class, File.class);
+		return set(Container.class, Template.class);
 	}
 
 }

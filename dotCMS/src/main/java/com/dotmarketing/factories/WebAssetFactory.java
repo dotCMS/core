@@ -49,8 +49,6 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.business.FileAPI;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
@@ -83,11 +81,9 @@ public class WebAssetFactory {
 
 	public enum AssetType {
 		HTMLPAGE("HTMLPAGE"),
-		FILE_ASSET("FILE_ASSET"),
 		CONTAINER("CONTAINER"),
 		TEMPLATE("TEMPLATE"),
-		LINK("LINK")
-		;
+		LINK("LINK");
 
 		private String value;
 
@@ -111,7 +107,6 @@ public class WebAssetFactory {
 
 
 	private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-	private static FileAPI fileAPI = APILocator.getFileAPI();
 	private static ContainerAPI containerAPI = APILocator.getContainerAPI();
 	private static TemplateAPI templateAPI = APILocator.getTemplateAPI();
 	private static MenuLinkAPI linksAPI = APILocator.getMenuLinkAPI();
@@ -581,13 +576,6 @@ public class WebAssetFactory {
 
 		WebAsset live = (WebAsset) APILocator.getVersionableAPI().findLiveVersion(identifier, APILocator.getUserAPI().getSystemUser(), false);
 
-		if (currWebAsset instanceof File)
-		{
-         RefreshMenus.deleteMenu(currWebAsset);
-         Identifier ident=APILocator.getIdentifierAPI().find(currWebAsset);
-         CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
-		}
-
 		User userMod = null;
 		try{
 			userMod = APILocator.getUserAPI().loadUserById(workingwebasset.getModUser(),APILocator.getUserAPI().getSystemUser(),false);
@@ -715,11 +703,7 @@ public class WebAssetFactory {
 						RefreshMenus.deleteMenu(host);
 						CacheLocator.getNavToolCache().removeNav(host.getIdentifier(), parentFolder.getInode());
 					}
-				} else if (currWebAsset instanceof File) {
-				    RefreshMenus.deleteMenu(currWebAsset);
-				    CacheLocator.getNavToolCache().removeNavByPath(identifier.getHostId(), identifier.getParentPath());
-			    }
-
+				}
 
 
 				LiveCache.removeAssetFromCache(currWebAsset);
@@ -1639,12 +1623,6 @@ public class WebAssetFactory {
 			{
 				webAssetList = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
 			}
-			else if(currWebAsset instanceof File)
-			{
-				webAssetList = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
-				RefreshMenus.deleteMenu(currWebAsset);
-				CacheLocator.getNavToolCache().removeNavByPath(identifier.getHostId(), identifier.getParentPath());
-			}
 			for(Versionable webAsset : webAssetList)
 			{
 				//Delete the permission of each version of the asset
@@ -2047,12 +2025,7 @@ public class WebAssetFactory {
 			params.put("title", query.toLowerCase().replace("\'","\\\'"));
 		}
 		try {
-		if (type.equals(AssetType.FILE_ASSET)){
-			if(UtilMethods.isSet(query)){
-				params.put("fileName", query.toLowerCase().replace("\'","\\\'"));
-			}
-			elements = fileAPI.findFiles(user, includeArchived, params, hostId, null,null, parent, offset, limit, orderBy);
-		}else if (type.equals(AssetType.CONTAINER)){
+		if (type.equals(AssetType.CONTAINER)){
 			if(APILocator.getIdentifierAPI().isIdentifier(query)){
 				params.put("identifier", query);
 			}

@@ -221,7 +221,7 @@ public class TimeMachineFilter implements Filter {
 	 */
 	private void sendFile(final File file, final ServletResponse response) {
 		final HttpServletResponse resp = (HttpServletResponse) response;
-		String mimeType = APILocator.getFileAPI().getMimeType(file.getName());
+		String mimeType = APILocator.getFileAssetAPI().getMimeType(file.getName());
 		if (mimeType == null) {
 			mimeType = "application/octet-stream";
 		}

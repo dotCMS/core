@@ -90,7 +90,7 @@ public class CMISBaseTest extends IntegrationTestBase {
 
         //Creates a temporal folder where to put the content
         final String runId = UUIDGenerator.generateUuid();
-        final java.io.File tmpDir = new java.io.File( APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + runId );
+        final java.io.File tmpDir = new java.io.File( APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + java.io.File.separator + runId );
         tmpDir.mkdirs();
 
         final java.io.File resourceFile = new java.io.File( tmpDir, fileName );
@@ -105,7 +105,7 @@ public class CMISBaseTest extends IntegrationTestBase {
         ContentStreamImpl contentStream = new ContentStreamImpl();
         contentStream.setFileName(fileName + new java.util.Date().getTime());
         contentStream.setLength(BigInteger.valueOf(resourceFile.length()));
-        contentStream.setMimeType(APILocator.getFileAPI().getMimeType(fileName));
+        contentStream.setMimeType(APILocator.getFileAssetAPI().getMimeType(fileName));
         contentStream.setStream(new FileInputStream(resourceFile));
                 
         PropertiesImpl result = new PropertiesImpl();
