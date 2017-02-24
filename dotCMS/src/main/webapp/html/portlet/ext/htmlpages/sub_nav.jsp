@@ -44,12 +44,12 @@
         
         request.setAttribute(com.dotmarketing.util.WebKeys.CMS_CRUMBTRAIL_OPTIONS, cTrail);
     } else if (portletId1.equals("html-pages")) {
-        HTMLPage htmlpage;
+        HTMLPageAsset htmlpage;
         if (request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_EDIT)!=null) {
-            htmlpage = (HTMLPage) request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_EDIT);
+            htmlpage = (HTMLPageAsset) request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_EDIT);
         }
         else {
-            htmlpage = (HTMLPage) InodeFactory.getInode(request.getParameter("inode"),HTMLPage.class);
+            htmlpage = (HTMLPageAsset) InodeFactory.getInode(request.getParameter("inode"),HTMLPageAsset.class);
         }
         java.util.Map params = new java.util.HashMap();
         params.put("struts_action", new String[] {"/ext/htmlpages/view_htmlpages"});
@@ -74,12 +74,12 @@
         
         request.setAttribute(com.dotmarketing.util.WebKeys.CMS_CRUMBTRAIL_OPTIONS, cTrail);
     } else if (portletId1.equals("site-browser")) {
-        HTMLPage htmlpage;
+    	HTMLPageAsset htmlpage;
         if (request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_EDIT)!=null) {
-            htmlpage = (HTMLPage) request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_EDIT);
+            htmlpage = (HTMLPageAsset) request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_EDIT);
         }
         else {
-            htmlpage = (HTMLPage) InodeFactory.getInode(request.getParameter("inode"),HTMLPage.class);
+            htmlpage = (HTMLPageAsset) InodeFactory.getInode(request.getParameter("inode"),HTMLPageAsset.class);
         }
         java.util.Map params = new java.util.HashMap();
         params.put("struts_action", new String[] {"/ext/browser/view_browser"});
