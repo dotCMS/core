@@ -60,9 +60,17 @@ public class MenuHelper implements Serializable {
      */
     public boolean isAngular(String portletId) throws ClassNotFoundException {
         Portlet portlet = APILocator.getPortletAPI().findPortlet(portletId);
-        String portletClass = portlet.getPortletClass();
-        Class classs = Class.forName( portletClass );
-        return PortletController.class.isAssignableFrom( classs );
+        if (null != portlet) {
+
+            String portletClass = portlet.getPortletClass();
+            Class classs = Class.forName(portletClass);
+            return PortletController.class.isAssignableFrom(classs);
+        } else {
+
+            Logger.error(this,
+                    "The request portlet does not exists, the id: " + portletId);
+        }
+        return false;
     }
 
     /**
@@ -73,9 +81,17 @@ public class MenuHelper implements Serializable {
      */
     public boolean isAjax(String portletId) throws ClassNotFoundException {
         Portlet portlet = APILocator.getPortletAPI().findPortlet(portletId);
-        String portletClass = portlet.getPortletClass();
-        Class classs = Class.forName( portletClass );
-        return BaseRestPortlet.class.isAssignableFrom( classs );
+        if (null != portlet) {
+            String portletClass = portlet.getPortletClass();
+            Class classs = Class.forName(portletClass);
+            return BaseRestPortlet.class.isAssignableFrom(classs);
+        } else {
+
+            Logger.error(this,
+                    "The request portlet does not exists, the id: " + portletId);
+        }
+
+        return false;
     }
 
     /**
@@ -87,22 +103,28 @@ public class MenuHelper implements Serializable {
     public String getUrl(MenuContext menuContext) throws ClassNotFoundException {
         Portlet portlet = APILocator.getPortletAPI().findPortlet( menuContext.getPortletId() );
 
-        String portletClass = portlet.getPortletClass();
-        Class classs = Class.forName( portletClass );
+        if (null != portlet) {
+            String portletClass = portlet.getPortletClass();
+            Class classs = Class.forName(portletClass);
 
-        Logger.debug(MenuResource.class,"### getPortletId" + menuContext.getPortletId());
-        Logger.debug(MenuResource.class,"### portletClass" + portletClass);
-        if(StrutsPortlet.class.isAssignableFrom( classs ) || JSPPortlet.class.isAssignableFrom( classs )) {
-            PortletURLImpl portletURLImpl = new PortletURLImpl(menuContext.getHttpServletRequest(),
-                    menuContext.getPortletId(), menuContext.getLayout().getId(), false);
-            return portletURLImpl.toString() + "&dm_rlout=1&r=" + System.currentTimeMillis();
-        }else if(BaseRestPortlet.class.isAssignableFrom( classs )) {
-        	PortletURLImpl portletURLImpl = new PortletURLImpl(menuContext.getHttpServletRequest(),
-                    menuContext.getPortletId(), menuContext.getLayout().getId(), false);
-            return portletURLImpl.toString() + "&dm_rlout=1&r=" + System.currentTimeMillis()
-            +"&"+WebKeys.AJAX_PORTLET+"=true";
-        }else if(PortletController.class.isAssignableFrom( classs )){
-            return "/" + menuContext.getPortletId();
+            Logger.debug(MenuResource.class, "### getPortletId" + menuContext.getPortletId());
+            Logger.debug(MenuResource.class, "### portletClass" + portletClass);
+            if (StrutsPortlet.class.isAssignableFrom(classs) || JSPPortlet.class.isAssignableFrom(classs)) {
+                PortletURLImpl portletURLImpl = new PortletURLImpl(menuContext.getHttpServletRequest(),
+                        menuContext.getPortletId(), menuContext.getLayout().getId(), false);
+                return portletURLImpl.toString() + "&dm_rlout=1&r=" + System.currentTimeMillis();
+            } else if (BaseRestPortlet.class.isAssignableFrom(classs)) {
+                PortletURLImpl portletURLImpl = new PortletURLImpl(menuContext.getHttpServletRequest(),
+                        menuContext.getPortletId(), menuContext.getLayout().getId(), false);
+                return portletURLImpl.toString() + "&dm_rlout=1&r=" + System.currentTimeMillis()
+                        + "&" + WebKeys.AJAX_PORTLET + "=true";
+            } else if (PortletController.class.isAssignableFrom(classs)) {
+                return "/" + menuContext.getPortletId();
+            }
+        } else {
+
+            Logger.error(this,
+                    "The request portlet does not exists, the id: " + menuContext.getPortletId());
         }
 
         return null;

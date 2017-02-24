@@ -18,36 +18,23 @@
 package org.apache.velocity.tools.view.servlet;
 
 
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Iterator;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.ArrayList;
-
-import javax.servlet.http.HttpSession;
-import javax.servlet.ServletContext;
-
-import com.dotcms.repackage.org.apache.commons.digester.Digester;
 import com.dotcms.repackage.org.apache.commons.digester.RuleSet;
-
+import com.dotmarketing.osgi.HostActivator;
+import com.dotmarketing.util.WebKeys;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.velocity.tools.view.DataInfo;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.apache.velocity.tools.view.ToolInfo;
 import org.apache.velocity.tools.view.XMLToolboxManager;
-import org.apache.velocity.tools.view.context.ToolboxContext;
 import org.apache.velocity.tools.view.context.ViewContext;
-import org.apache.velocity.tools.view.servlet.ServletToolboxRuleSet;
+import org.osgi.framework.BundleContext;
 
-import com.dotcms.repackage.org.osgi.framework.BundleContext;
-import com.dotmarketing.osgi.HostActivator;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.WebKeys;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpSession;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.*;
 
 
 /**

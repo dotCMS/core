@@ -4,19 +4,19 @@ import java.util.Arrays;
 
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.apache.velocity.tools.view.ToolInfo;
-import com.dotcms.repackage.org.osgi.framework.BundleActivator;
-import com.dotcms.repackage.org.osgi.framework.BundleContext;
-import com.dotcms.repackage.org.osgi.framework.ServiceEvent;
-import com.dotcms.repackage.org.osgi.framework.ServiceListener;
-import com.dotcms.repackage.org.osgi.framework.ServiceReference;
+import org.osgi.framework.BundleActivator;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceEvent;
+import org.osgi.framework.ServiceListener;
+import org.osgi.framework.ServiceReference;
 
 import com.dotmarketing.util.Logger;
 
 /**
  * @see GenericBundleActivator
- * @see GenericBundleActivator#registerViewToolService(com.dotcms.repackage.org.osgi.framework.BundleContext, org.apache.velocity.tools.view.ToolInfo)
+ * @see GenericBundleActivator#registerViewToolService(org.osgi.framework.BundleContext, org.apache.velocity.tools.view.ToolInfo)
  * @deprecated Class initially used to register ViewTool objects from and OSGI plugin, now you should use the {@link GenericBundleActivator} class instead of this class
- *             to register those ViewTool objects using the method {@link GenericBundleActivator#registerViewToolService(com.dotcms.repackage.org.osgi.framework.BundleContext, org.apache.velocity.tools.view.ToolInfo)}.
+ *             to register those ViewTool objects using the method {@link GenericBundleActivator#registerViewToolService(org.osgi.framework.BundleContext, org.apache.velocity.tools.view.ToolInfo)}.
  */
 public class AbstractViewToolActivator implements BundleActivator, ServiceListener {
 	

@@ -52,7 +52,6 @@
 		<filter-class>com.dotmarketing.cms.urlmap.filters.URLMapFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
-
 	<filter>
 		<filter-name>CMSFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.CMSFilter</filter-class>
@@ -68,6 +67,7 @@
 	<filter>
 		<filter-name>LoginRequiredFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.LoginRequiredFilter</filter-class>
+		<async-supported>true</async-supported>
 	</filter>
 	<filter>
 		<filter-name>Secure MainServlet Filter</filter-name>
@@ -133,7 +133,6 @@
 		<filter-name>AutoLoginFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-
 	<filter-mapping>
 		<filter-name>CMSFilter</filter-name>
 		<url-pattern>/*</url-pattern>
@@ -161,7 +160,7 @@
 		<listener-class>com.dotmarketing.listeners.OsgiFelixListener</listener-class>
 	</listener>
     <listener>
-        <listener-class>com.dotcms.repackage.org.apache.felix.http.proxy.ProxyListener</listener-class>
+        <listener-class>org.apache.felix.http.proxy.impl.ProxyServletContextListener</listener-class>
     </listener>
     <listener>
 		<listener-class>com.dotcms.repackage.org.apache.chemistry.opencmis.server.impl.CmisRepositoryContextListener</listener-class>
@@ -221,7 +220,6 @@
 		<servlet-name>ShortyServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.ShortyServlet</servlet-class>
 	</servlet>
-
 	<servlet>
     	<servlet-name>AjaxFileUploadServlet</servlet-name>
     	<servlet-class>com.dotmarketing.servlets.AjaxFileUploadServlet</servlet-class>
