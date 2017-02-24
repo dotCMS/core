@@ -26,6 +26,10 @@ public class ClientVelocityServlet extends VelocityServlet {
     private final PortletURLUtil PORTLET_URL_UTIL = new PortletURLUtil();
     private static String IN_FRAME_PARAMETER_NAME = "in_frame";
 
+    private String  CONTAINER_PARAMETER_NAME = "container";
+    private String  HOST_ID_PARAMETER_NAME = "host_id";
+    private String  PORTLET_ID_PARAMETER_NAME = "p_p_id";
+
     /**
      * 
      */
@@ -62,13 +66,17 @@ public class ClientVelocityServlet extends VelocityServlet {
      */
     private boolean notRedirect(HttpServletRequest req) {
         String refererValue = req.getHeader(Constants.REFERER_URL_HTTP_HEADER);
-        boolean containerParameter = Boolean.parseBoolean(req.getParameter("container"));
+        boolean containerParameter = Boolean.parseBoolean(req.getParameter(CONTAINER_PARAMETER_NAME));
+        boolean hostParameter = req.getParameter(HOST_ID_PARAMETER_NAME) != null;
+        boolean portletIdParameter = req.getParameter(PORTLET_ID_PARAMETER_NAME) != null;
 
-        return (refererValue != null && (refererValue.contains( "host_id=" )
+        return (refererValue != null && (refererValue.contains( HOST_ID_PARAMETER_NAME )
                     || refererValue.contains( "container=true" )
                     || refererValue.contains(PortletURLUtil.URL_ADMIN_PREFIX )
-                    || refererValue.contains( "p_p_id" )))
-                || containerParameter;
+                    || refererValue.contains( PORTLET_ID_PARAMETER_NAME )))
+                || containerParameter
+                || hostParameter
+                || portletIdParameter;
     }
 
     //EACH CLIENT MAY HAVE ITS OWN VARIABLES
