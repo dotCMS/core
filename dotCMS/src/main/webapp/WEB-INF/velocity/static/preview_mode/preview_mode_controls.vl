@@ -368,7 +368,6 @@
 			submitParent(parameter);
 			};
 		var callback = function(containerStructureList){
-			console.log(containerStructureList);
 			//var strInode = containerStructure['inode'];
 			dojo.require("dotcms.dijit.form.ContentSelector");
 
@@ -1045,7 +1044,7 @@
 
 </script>
 <div style="display:none">
-    <form action="${directorURL}" id="submitParent" method="post" #if(!$isAngularFrame) target="_top" #end >
+    <form action="${directorURL}" id="submitParent" method="post">
         <input type="hidden" name="referer" id="referer" value="$referer">
         <input type="hidden" name="cmd" id="cmd" value="">
         <input type="hidden" name="container" id="container" value="">

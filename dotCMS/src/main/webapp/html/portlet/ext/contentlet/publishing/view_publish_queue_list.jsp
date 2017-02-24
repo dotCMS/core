@@ -26,7 +26,6 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.dotmarketing.beans.Identifier"%>
-<%@ page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage"%>
 <%@ page import="com.dotmarketing.portlets.folders.model.Folder"%>
 <%@ page import="com.dotmarketing.portlets.templates.model.Template"%>
 <%@ page import="com.dotmarketing.portlets.containers.model.Container"%>

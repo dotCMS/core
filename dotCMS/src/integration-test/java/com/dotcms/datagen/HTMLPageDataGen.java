@@ -41,6 +41,8 @@ public class HTMLPageDataGen extends ContentletDataGen {
     private long sortOrder = 1;
     private ContentletWebAPI contentletWebAPI;
     private HTMLPageAssetAPI pageAssetAPI;
+    private String inode;
+    private String identifier;
 
     /**
      * Constructs a data-gen for building {@link HTMLPageAsset} objects.
@@ -171,6 +173,9 @@ public class HTMLPageDataGen extends ContentletDataGen {
         htmlPageAsset.setTitle(title);
         htmlPageAsset.setShowOnMenu(showOnMenu);
         htmlPageAsset.setSortOrder(sortOrder);
+        htmlPageAsset.setModUser(modUser);
+        htmlPageAsset.setInode(inode);
+        htmlPageAsset.setIdentifier(identifier);
 
         for (Map.Entry<String, Object> element : properties.entrySet()) {
             htmlPageAsset.setProperty(element.getKey(), element.getValue());
@@ -197,6 +202,18 @@ public class HTMLPageDataGen extends ContentletDataGen {
 
         Contentlet contentlet = persist(pageAsset);
         return pageAssetAPI.fromContentlet(contentlet);
+    }
+    
+    @SuppressWarnings("unused")
+    public HTMLPageDataGen inode(String inode) {
+        this.inode = inode;
+        return this;
+    }
+    
+    @SuppressWarnings("unused")
+    public HTMLPageDataGen identifier(String identifier) {
+        this.identifier = identifier;
+        return this;
     }
 
 }

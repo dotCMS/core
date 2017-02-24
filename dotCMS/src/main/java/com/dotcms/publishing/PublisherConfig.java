@@ -269,25 +269,6 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 		return (List<String>) params.get(Config.INCLUDE_PATTERN.name());
 	}
 	
-	public List<String> getUpdatedHTMLPageIds() {
-		
-		// lazy load
-		if(params.get(Config.UPDATED_HTML_PAGE_IDS.name()) ==null){
-			List<String> ids = new ArrayList<String>();
-			for(Host h : getHosts())
-			    ids.addAll(
-			        APILocator.getHTMLPageAPI().findUpdatedHTMLPageIds(h, getStartDate(), getEndDate()));
-			params.put(Config.UPDATED_HTML_PAGE_IDS.name(), ids);
-		}
-
-		return (List<String>) params.get(Config.UPDATED_HTML_PAGE_IDS.name());
-	}
-	
-	public void setUpdatedHTMLPageIds(List<String> pageIds) {
-		params.put(Config.UPDATED_HTML_PAGE_IDS.name(), pageIds);
-	}
-	
-	
 	public void setIncludePatterns(List<String> includePatterns) {
 		params.put(Config.INCLUDE_PATTERN.name(), includePatterns);
 	}

@@ -42,7 +42,6 @@ import com.dotmarketing.portlets.files.business.FileFactory;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -79,7 +78,6 @@ public class XMLSitemapJob implements Job, StatefulJob {
 	private FileAPI fileAPI = APILocator.getFileAPI();
 	private FileFactory ffac = FactoryLocator.getFileFactory();
 	private FolderAPI folderAPI = APILocator.getFolderAPI();
-	private HTMLPageAPI htmlAPI = APILocator.getHTMLPageAPI();
 	private IdentifierAPI identAPI = APILocator.getIdentifierAPI();
 	private UserAPI userAPI = APILocator.getUserAPI();
 	private HostAPI hostAPI = APILocator.getHostAPI();
@@ -233,16 +231,11 @@ public class XMLSitemapJob implements Job, StatefulJob {
 
 					//Getting the detail page, that detail page could be a HTMLPageAsset or a legacy page
 					IHTMLPage page = null;
-					try {
 						//First lets asume it is a HTMLPageAsset
 						Contentlet contentlet = APILocator.getContentletAPI().search( "+identifier:" + st.getPagedetail() + " +live:true", 0, 0, "moddate", systemUser, false ).get( 0 );
 						if ( contentlet != null ) {
 							page = APILocator.getHTMLPageAssetAPI().fromContentlet( contentlet );
 						}
-					} catch ( DotContentletStateException e ) {
-						//HTMLPageAsset not found, now lets try to find a legacy page
-						page = htmlAPI.loadLivePageById( st.getPagedetail(), systemUser, true );
-					}
 
 					if ( !UtilMethods.isSet( page ) || !UtilMethods.isSet( page.getIdentifier() ) ) {
 						Logger.error( this, "Unable to find detail page for structure [" + stVelocityVarName + "]." );

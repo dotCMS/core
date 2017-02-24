@@ -13,7 +13,6 @@ import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import com.liferay.portlet.ActionRequestImpl;
@@ -122,11 +121,6 @@ public class PublishHTMLPagesAction extends DotPortletAction {
             if ( htmlPageContentlet != null && InodeUtils.isSet( htmlPageContentlet.getInode() ) ) {
                 HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet( htmlPageContentlet );
                 relatedAssets = PublishFactory.getUnpublishedRelatedAssetsForPage( htmlPageAsset, relatedAssets, true, user, false );
-            } else {//THIS MUST BE A LEGACY HTML PAGE
-                HTMLPage htmlPage = (HTMLPage) InodeFactory.getInode( pageInode, HTMLPage.class );
-                if ( htmlPage != null && InodeUtils.isSet( htmlPage.getInode() ) ) {
-                    relatedAssets = PublishFactory.getUnpublishedRelatedAssets( htmlPage, relatedAssets, true, user, false );
-                }
             }
         }
 
@@ -170,22 +164,6 @@ public class PublishHTMLPagesAction extends DotPortletAction {
                 } catch ( WebAssetException wax ) {
                     Logger.error( this, wax.getMessage(), wax );
                     SessionMessages.add( reqImpl.getHttpServletRequest(), "error", "message.webasset.published.failed" );
-                }
-            } else {
-                HTMLPage htmlpage = (HTMLPage) InodeFactory.getInode( pageInode, HTMLPage.class );
-                if ( InodeUtils.isSet( htmlpage.getInode() ) ) {
-
-                    try {
-
-                        //Publish the content related to this page along with the page
-                        PublishFactory.publishAsset( htmlpage, reqImpl.getHttpServletRequest() );
-
-                        ActivityLogger.logInfo( PublishFactory.class, "Publishing HTMLpage action", "User " + user.getUserId() + " publishing page " + htmlpage.getURI(), HostUtil.hostNameUtil( req, _getUser( req ) ) );
-                        SessionMessages.add( reqImpl.getHttpServletRequest(), "message", "message.htmlpage_list.published" );
-                    } catch ( WebAssetException wax ) {
-                        Logger.error( this, wax.getMessage(), wax );
-                        SessionMessages.add( reqImpl.getHttpServletRequest(), "error", "message.webasset.published.failed" );
-                    }
                 }
             }
 

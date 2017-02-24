@@ -560,10 +560,16 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		if ( sqlResult != null ) {
 			category = new Category();
 
+			Object sortOrder = sqlResult.get("sort_order");
+
 			category.setInode((String) sqlResult.get("inode"));
 			category.setCategoryName((String) sqlResult.get("category_name"));
 			category.setKey((String) sqlResult.get("category_key"));
-			category.setSortOrder((Integer) sqlResult.get("sort_order"));
+			if ( sortOrder != null ) {
+				category.setSortOrder(Integer.valueOf(sortOrder.toString()));
+			} else {
+				category.setSortOrder((Integer) sortOrder);
+			}
 			category.setActive(DbConnectionFactory.isDBTrue(sqlResult.get("active").toString()));
 			category.setKeywords((String) sqlResult.get("keywords"));
 			category.setCategoryVelocityVarName((String) sqlResult.get("category_velocity_var_name"));

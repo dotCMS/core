@@ -11,6 +11,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -96,11 +97,11 @@ public class Host extends Contentlet implements Permissionable,Treeable,Parentab
 		map.put(HOST_NAME_KEY, hostname);
 	}
 
-	public String getHostThumbnail() {
-		return (String) map.get(HOST_THUMB_KEY);
+	public File getHostThumbnail() {
+		return (File) map.get(HOST_THUMB_KEY);
 	}
 
-	public void setHostThumbnail(String thumbnailInode) {
+	public void setHostThumbnail(File thumbnailInode) {
 		map.put(HOST_THUMB_KEY, thumbnailInode);
 	}
 

@@ -18,8 +18,7 @@ import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
-import com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.PageServices;
 import com.dotmarketing.util.ActivityLogger;
@@ -78,9 +77,6 @@ public class PublishTemplatesAction extends DotPortletAction {
 		
 		ActionRequestImpl reqImpl = (ActionRequestImpl)req;
 
-		//creates a set of related pages for this template
-		Set relatedPages = new HashSet();
-
 		for (int i=0;i<publishInode.length;i++) {
 
 			Template template = (Template) InodeFactory.getInode(publishInode[i],Template.class);
@@ -96,20 +92,8 @@ public class PublishTemplatesAction extends DotPortletAction {
 					Logger.error(this, wax.getMessage(),wax);
 					SessionMessages.add(req, "error", "message.webasset.published.failed");
 				}
-				List<HTMLPage> pagesForThisTemplate = APILocator.getTemplateAPI().getPagesUsingTemplate(template, user, false);
-				relatedPages.addAll(pagesForThisTemplate);
 			}
-		}
-		
-		Iterator iterPages = relatedPages.iterator();
-		//iterates through the children pages
-		while (iterPages.hasNext()) {
-			//writes the page to a file
-			PageServices.invalidateAll((HTMLPage) iterPages.next());
-		}
-		
-		
-		
+		}		
 	}
 
 }

@@ -9,14 +9,13 @@
 						<div class="portlet-sidebar">
 							<input type="hidden" name="hostField" dojoAttachPoint="hostField" value=""/>
 							<input type="hidden" name="folderField" dojoAttachPoint="folderField" value=""/>
-							<span dojoAttachPoint='structureName'></span>
 							<div class="sideMenuWrapper">
 								<input type="hidden" name="structure_inode" dojoAttachPoint="structure_inode" value="strInode">
 								<div dojoAttachPoint="structures_select"></div>
 								<div dojoAttachPoint="search_languages_table"></div>
 								<div dojoAttachPoint="search_fields_table"></div>
 								<div dojoAttachPoint="search_categories_table">
-								<dl dojoAttachPoint="search_categories_list"></dl>
+								<dl class="vertical" dojoAttachPoint="search_categories_list"></dl>
 								</div>
 								<div class="clear"></div>
 								<div class="buttonRow">
@@ -37,7 +36,7 @@
 										<button dojoType="dijit.form.Button" dojoAttachEvent='onClick:_doRelateContent' iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "Relate") %></button>
 									</div>
 								</div>
-								<table dojoAttachPoint="results_table"  class="listingTable"></table>
+								<table dojoAttachPoint="results_table" class="listingTable"></table>
 							</div>
 							<div class="portlet-pagination">
 								<div dojoAttachPoint="previousDiv" style="display: none;">

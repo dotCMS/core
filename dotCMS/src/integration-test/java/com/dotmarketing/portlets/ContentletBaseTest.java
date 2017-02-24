@@ -34,8 +34,6 @@ import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
@@ -90,13 +88,11 @@ public class ContentletBaseTest extends IntegrationTestBase {
     private static CategoryAPI categoryAPI;
     private static ContainerAPI containerAPI;
     private static TemplateAPI templateAPI;
-    private static HTMLPageAPI htmlPageAPI;
     private static FolderAPI folderAPI;
 
     protected static User user;
     protected static List<Contentlet> contentlets;
     protected static Collection<Container> containers;
-    protected static Collection<HTMLPage> htmlPages;
     protected static Collection<Structure> structures;
     protected static Collection<Template> templates;
     protected static Collection<Permission> permissions;
@@ -129,7 +125,6 @@ public class ContentletBaseTest extends IntegrationTestBase {
         categoryAPI = APILocator.getCategoryAPI();
         containerAPI = APILocator.getContainerAPI();
         templateAPI = APILocator.getTemplateAPI();
-        htmlPageAPI = APILocator.getHTMLPageAPI();
         folderAPI = APILocator.getFolderAPI();
         menuLinkAPI = APILocator.getMenuLinkAPI();
         fileAPI = APILocator.getFileAPI();
@@ -142,7 +137,6 @@ public class ContentletBaseTest extends IntegrationTestBase {
         contentlets = new ArrayList<Contentlet>();
         containers = new ArrayList<Container>();
         templates = new ArrayList<Template>();
-        htmlPages = new ArrayList<HTMLPage>();
         identifiers = new ArrayList<Identifier>();
 
         //*******************************************************************************
@@ -210,11 +204,6 @@ public class ContentletBaseTest extends IntegrationTestBase {
 
     //@AfterClass
     public static void afterClass () throws Exception {
-
-        //Delete html pages
-        for ( HTMLPage htmlPage : htmlPages ) {
-            WebAssetFactory.deleteAsset( htmlPage, user );
-        }
 
         //Delete the contentles
         for ( Contentlet contentlet : contentlets ) {
@@ -506,71 +495,8 @@ public class ContentletBaseTest extends IntegrationTestBase {
         //Saving the template
         template = templateAPI.saveTemplate( template, defaultHost, user, false );
 
-        //Create an htmlPage for this template
-        addHTMLPage( contentlet, container, template );
-
         //Adding it to the test collection
         templates.add( template );
-    }
-
-    /**
-     * Creates and add an HTMLPage to a collection for a later use in the tests
-     *
-     * @param contentlet
-     * @param container
-     * @param template
-     * @throws com.dotmarketing.exception.DotDataException
-     *
-     * @throws com.dotmarketing.exception.DotSecurityException
-     *
-     */
-    private static void addHTMLPage ( Contentlet contentlet, Container container, Template template ) throws DotSecurityException, DotDataException {
-
-        //Create the new html page
-        HTMLPage htmlPage = new HTMLPage();
-
-        htmlPage.setEndDate( new Date() );
-        htmlPage.setFriendlyName( "JUnit HTML Page Test Friendly Name" );
-        htmlPage.setHttpsRequired( true );
-        htmlPage.setIDate( new Date() );
-        htmlPage.setMetadata( "" );
-        htmlPage.setModDate( new Date() );
-        htmlPage.setModUser( user.getUserId() );
-        htmlPage.setOwner( user.getUserId() );
-        htmlPage.setPageUrl( "junit_htmlpage_test_" + contentlet.getInode() + "." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION") );
-        htmlPage.setRedirect( "" );
-        htmlPage.setShowOnMenu( true );
-        htmlPage.setSortOrder( 2 );
-        htmlPage.setStartDate( new Date() );
-        htmlPage.setTitle( "JUnit HTML Page Test" );
-        htmlPage.setType( "htmlpage" );
-        htmlPage.setWebEndDate( "" );
-        htmlPage.setWebStartDate( "" );
-
-        //Saving the htmlPage
-        htmlPage = htmlPageAPI.saveHTMLPage( htmlPage, template, testFolder, user, false );
-
-        //Creating and adding permissions
-        Collection<Permission> permissions = new ArrayList<Permission>();
-        permissions.add( new Permission( "", roleAPI.loadCMSAnonymousRole().getId(), PermissionAPI.PERMISSION_READ ) );
-
-        List<Permission> newSetOfPermissions = new ArrayList<Permission>();
-        for ( Permission permission : permissions ) {
-        	newSetOfPermissions.add(new Permission( htmlPage.getPermissionId(), permission.getRoleId(), permission.getPermission(), true ));
-        }
-        if(newSetOfPermissions.size() > 0){   
-        	permissionAPI.save( newSetOfPermissions, htmlPage, user, false );
-     	}
-
-        //Save the multi tree
-        MultiTreeFactory.saveMultiTree( new MultiTree( htmlPage.getIdentifier(), container.getIdentifier(), contentlet.getIdentifier() ) );
-
-        //Make it working and live
-        APILocator.getVersionableAPI().setWorking( htmlPage );
-        APILocator.getVersionableAPI().setLive( htmlPage );
-
-        //Adding it to the test collection
-        htmlPages.add( htmlPage );
     }
 
     /**

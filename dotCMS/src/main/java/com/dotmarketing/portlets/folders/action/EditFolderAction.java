@@ -38,7 +38,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.business.FolderFactory;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.folders.struts.FolderForm;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
@@ -477,34 +477,6 @@ public class EditFolderAction extends DotPortletAction {
 		FolderAPI fapi = APILocator.getFolderAPI();
 		
 		/****** begin *************/
-		List<HTMLPage> htmlPages = fapi.getHTMLPages(folder,APILocator.getUserAPI().getSystemUser(),false);
-		for (HTMLPage page: htmlPages) {
-			Identifier identifier = APILocator.getIdentifierAPI().find(page);
-            if(!InodeUtils.isSet(identifier.getInode())) {
-                Logger.warn(FolderFactory.class, "_deleteChildrenAssetsFromFolder: page inode = " + ((HTMLPage)page).getInode() +  " doesn't have a valid identifier associated.");
-                continue;
-            }
-            
-            perAPI.removePermissions((HTMLPage)page);
-
-			List<Versionable> versions = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getDefaultUser(),false);
-
-			for (Versionable versionV : versions) {
-				HTMLPage version = (HTMLPage) versionV;
-				if (version.isWorking()) {
-					//updating caches
-					WorkingCache.removeAssetFromCache(version);
-					CacheLocator.getIdentifierCache().removeFromCacheByVersionable(version);
-				}
-
-				if (version.isLive()) {
-					LiveCache.removeAssetFromCache(version);
-				}
-
-				InodeFactory.deleteInode(version);
-			}
-			APILocator.getIdentifierAPI().delete(identifier);
-		}
 
 		List<File> files = fapi.getFiles(folder,APILocator.getUserAPI().getDefaultUser(),false);
 		for (File file: files) {
