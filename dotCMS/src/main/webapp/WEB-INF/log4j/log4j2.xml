@@ -137,12 +137,6 @@
         <Logger name="com.dotcms.repackage.org.directwebremoting" level="warn" additivity="false">
             <AppenderRef ref="generic"/>
         </Logger>
-        <Logger name="com.dotcms.util" level="debug" additivity="false">
-            <AppenderRef ref="generic"/>
-        </Logger>
-        <Logger name="com.dotcms.rest" level="debug" additivity="false">
-            <AppenderRef ref="generic"/>
-        </Logger>
         <Logger name="com.dotmarketing.portlets.contentlet.business.ReindexThread" level="debug" additivity="false">
             <AppenderRef ref="generic"/>
         </Logger>

@@ -287,10 +287,14 @@ dependencies {
     /**
      * Order matters here: OSGI-Core must come after felix.
      */
-    compile group: 'org.apache.felix',  name: 'org.apache.felix.main', version:'5.6.1'
-    compile group: 'org.glassfish.hk2', name: 'osgi-resource-locator', version:'2.4.0'
-    compile group: 'org.apache.felix',  name: 'org.apache.felix.http.proxy', version:'3.0.2'
-    compile group: 'org.apache.felix',  name: 'org.apache.felix.http.bundle', version:'3.0.0'
+    compile group: 'org.apache.felix',  name: 'org.apache.felix.main',             version:'5.6.1'
+    compile group: 'org.glassfish.hk2', name: 'osgi-resource-locator',             version:'2.4.0'
+    compile group: 'org.apache.felix',  name: 'org.apache.felix.http.proxy',       version:'3.0.2'
+    compile group: 'org.apache.felix',  name: 'org.apache.felix.http.bundle',      version:'3.0.0'
+    compile group: 'org.apache.felix',  name: 'org.apache.felix.http.bridge',      version:'3.0.18'
+    compile group: 'org.apache.felix',  name: 'org.apache.felix.http.api',         version:'3.0.0'
+    compile group: 'org.apache.felix',  name: 'org.apache.felix.http.base',        version:'3.0.18'
+    compile group: 'org.apache.felix',  name: 'org.apache.felix.http.whiteboard',  version:'3.0.0'
     compile group: 'org.apache.felix',  name: 'org.apache.felix.http.servlet-api', version:'1.1.2'
 
 
