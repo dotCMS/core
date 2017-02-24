@@ -30,6 +30,8 @@ import {SiteService} from '../../api/services/site-service';
 import {DotRouterService} from '../../api/services/dot-router-service';
 import {StringFormat} from '../../api/util/stringFormat';
 
+import {IframeOverlayService} from '../../api/services/iframe-overlay-service';
+
 // RULES ENGINE SERVICES
 import {ActionService} from '../../api/rule-engine/Action';
 import {ConditionGroupService} from '../../api/rule-engine/ConditionGroup';
@@ -48,7 +50,7 @@ import {DropdownComponent} from './common/dropdown-component/dropdown-component'
 import {ForgotPasswordComponent} from './common/login/forgot-password-component/forgot-password-component';
 import {ForgotPasswordContainer} from './common/login/forgot-password-component/forgot-password-container';
 import {GlobalSearch} from './common/global-search/global-search';
-import {IframeLegacyComponent} from './common/iframe-legacy/Iframe-legacy-component';
+import {IframeLegacyComponent} from './common/iframe-legacy/iframe-legacy-component';
 import {LoginAsComponent} from './common/login-as/login-as';
 import {LoginComponent} from './common/login/login-component/login-component';
 import {LoginContainer} from './common/login/login-component/login-container';
@@ -237,6 +239,7 @@ const NGFACES_MODULES = [
         SiteService,
         StringFormat,
         UserModel,
+        IframeOverlayService,
         ...RULES_ENGINE_SERVICES,
         {provide: LocationStrategy, useClass: HashLocationStrategy},
         SocketFactory

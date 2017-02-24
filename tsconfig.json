@@ -77,7 +77,7 @@
     "./src/view/components/common/login/forgot-password-component/forgot-password-container.ts",
     "./src/view/components/common/login/reset-password-component/reset-password-container.ts",
     "./src/view/components/common/login/login-page-component.ts",
-    "./src/view/components/common/iframe-legacy/Iframe-legacy-component.ts",
+    "./src/view/components/common/iframe-legacy/iframe-legacy-component.ts",
     "./src/view/components/input/toggle/demo.ts",
     "./src/view/components/input/toggle/InputToggle.ts",
     "./src/view/components/rule-engine/condition-types/serverside-condition/demo.ts",

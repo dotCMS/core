@@ -1,6 +1,5 @@
-import {AppComponent} from './app';
 import {ForgotPasswordContainer} from './common/login/forgot-password-component/forgot-password-container';
-import {IframeLegacyComponent} from './common/iframe-legacy/Iframe-legacy-component';
+import {IframeLegacyComponent} from './common/iframe-legacy/iframe-legacy-component';
 import {LoginContainer} from './common/login/login-component/login-container';
 import {LoginPageComponent} from './common/login/login-page-component';
 import {MainComponent} from './common/main-component/main-component';
@@ -8,7 +7,6 @@ import {ModuleWithProviders}  from '@angular/core';
 import {PatternLibrary} from './common/pattern-library/pattern-library';
 import {ResetPasswordContainer} from './common/login/reset-password-component/reset-password-container';
 import {Routes, RouterModule} from '@angular/router';
-import {RoutingRootAuthService} from '../../api/services/routing-root-auth-service';
 import {RoutingPublicAuthService} from '../../api/services/routing-public-auth-service';
 import {RoutingPrivateAuthService} from '../../api/services/routing-private-auth-service';
 import {RuleEngineContainer} from './rule-engine/rule-engine.container';
@@ -21,25 +19,25 @@ let angularComponents: any[] = [];
 angularComponents.push({component: RuleEngineContainer, id: 'rules'});
 
 let mainComponentChildren = [
-                                {
-                                    path: '',
-                                    pathMatch: 'full',
-                                    redirectTo: (CONSTANT.ENV && CONSTANT.ENV === 'DEV') ? 'pl' : 'workflow',
-                                },
-                                {
-                                    component: PatternLibrary,
-                                    path: 'pl'
-                                },
-                                {
-                                    component: NotLicensedComponent,
-                                    path: 'notLicensed'
-                                },
-                                {
-                                    canActivate: [RoutingPrivateAuthService],
-                                    component: IframeLegacyComponent,
-                                    path: ':id',
-                                }
-                            ];
+    {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: (CONSTANT.ENV && CONSTANT.ENV === 'DEV') ? 'pl' : 'workflow',
+    },
+    {
+        component: PatternLibrary,
+        path: 'pl'
+    },
+    {
+        component: NotLicensedComponent,
+        path: 'notLicensed'
+    },
+    {
+        canActivate: [RoutingPrivateAuthService],
+        component: IframeLegacyComponent,
+        path: ':id',
+    }
+];
 
 let fromCoreChildren: any[] = [];
 let angularChildren: any[] = [
