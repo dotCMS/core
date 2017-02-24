@@ -44,12 +44,12 @@
         
         request.setAttribute(com.dotmarketing.util.WebKeys.CMS_CRUMBTRAIL_OPTIONS, cTrail);
     } else if (portletId1.equals("html-pages")) {
-        HTMLPageAsset htmlpage;
+        IHTMLPage htmlpage;
         if (request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_EDIT)!=null) {
-            htmlpage = (HTMLPageAsset) request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_EDIT);
+            htmlpage = (IHTMLPage) request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_EDIT);
         }
         else {
-            htmlpage = (HTMLPageAsset) InodeFactory.getInode(request.getParameter("inode"),HTMLPageAsset.class);
+            htmlpage = (IHTMLPage) InodeFactory.getInode(request.getParameter("inode"),IHTMLPage.class);
         }
         java.util.Map params = new java.util.HashMap();
         params.put("struts_action", new String[] {"/ext/htmlpages/view_htmlpages"});
@@ -58,9 +58,6 @@
         
 
         params = new HashMap();
-        params.put("struts_action", new String[] {"/ext/htmlpages/edit_htmlpage"});
-        params.put("cmd", new String[] {"unlock"});
-        params.put("inode", new String[] {String.valueOf(htmlpage.getInode())});
         String crumbTrailReferer = com.dotmarketing.util.PortletURLUtil.getActionURL(request, WindowState.MAXIMIZED.toString(), params);
         cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title." + portletId1), crumbTrailReferer + "&referer=" + portlet1Referer));
         
@@ -74,12 +71,12 @@
         
         request.setAttribute(com.dotmarketing.util.WebKeys.CMS_CRUMBTRAIL_OPTIONS, cTrail);
     } else if (portletId1.equals("site-browser")) {
-    	HTMLPageAsset htmlpage;
+        IHTMLPage htmlpage;
         if (request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_EDIT)!=null) {
-            htmlpage = (HTMLPageAsset) request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_EDIT);
+            htmlpage = (IHTMLPage) request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_EDIT);
         }
         else {
-            htmlpage = (HTMLPageAsset) InodeFactory.getInode(request.getParameter("inode"),HTMLPageAsset.class);
+            htmlpage = (IHTMLPage) InodeFactory.getInode(request.getParameter("inode"),IHTMLPage.class);
         }
         java.util.Map params = new java.util.HashMap();
         params.put("struts_action", new String[] {"/ext/browser/view_browser"});
@@ -88,9 +85,6 @@
         
 
         params = new HashMap();
-        params.put("struts_action", new String[] {"/ext/htmlpages/edit_htmlpage"});
-        params.put("cmd", new String[] {"unlock"});
-        params.put("inode", new String[] {String.valueOf(htmlpage.getInode())});
         String crumbTrailReferer = com.dotmarketing.util.PortletURLUtil.getActionURL(request, WindowState.MAXIMIZED.toString(), params);
         cTrail.add(new CrumbTrailEntry(LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title." + portletId1), crumbTrailReferer + "&referer=" + portlet1Referer));
         
