@@ -4234,9 +4234,9 @@ html, body {
   color: #161616;
   padding: 0 24px;
   position: relative;
-  border-width: 5px 1px 0 0;
+  border-width: 5px 1px 0 1px;
   border-style: solid;
-  border-color: #ECEDEE #ECEDEE transparent transparent;
+  border-color: #ECEDEE;
 }
 .dijitTab .tabLabel {
   line-height: 37px;
@@ -4252,9 +4252,9 @@ html, body {
 }
 .dijitTabChecked, .dijitTabChecked.dijitTabCheckedHover {
   background-color: #fff;
-  border-width: 5px 1px 0 0;
+  border-width: 5px 1px 0 1px;
   border-style: solid;
-  border-color: #0E80CB #ECEDEE transparent transparent;
+  border-color: #0E80CB #ECEDEE transparent #ECEDEE;
   height: 43px;
 }
 .dijitTabCloseIcon {
@@ -4267,7 +4267,7 @@ html, body {
   margin-left: 0;
 }
 .dijitTabCloseIcon:before, .dijitTabCloseIcon:after {
-  background-color: #fff;
+  background-color: #161616;
   display: block;
   content: "";
   width: 1px;
@@ -4464,7 +4464,6 @@ html, body {
 .dijitTreeRow .dijitTreeIcon, .dijitTreeRow .dijitTreeExpando {
   display: inline-block;
   vertical-align: sub;
-  margin-right: 4px;
 }
 .dijitTreeContent {
   min-height: 18px;
@@ -4474,6 +4473,12 @@ html, body {
   width: 18px;
   height: 18px;
   background-repeat: no-repeat;
+}
+.dijitTreeExpando {
+  background-position: 3px 1px;
+}
+.dijitTreeExpandoLeaf {
+  background-position: 0 -2px;
 }
 .dijitTreeLabel {
   margin: 0;
@@ -9312,31 +9317,29 @@ a.category_higlighted, a.tag_higlighted {
   position: relative;
 }
 
-.aceClass {
-  border: 1px solid #C5C5C5;
-  height: 400px;
-  text-overflow: clip;
-  white-space: nowrap;
-  width: 100%;
-}
-
 .aceText {
   border: 1px solid #C5C5C5;
   max-height: 600px;
   max-width: 900px;
+  width: 100%;
   min-height: 105px;
   text-overflow: clip;
   white-space: nowrap;
   width: 100%;
+  font-family: Monaco,Menlo,sans-serif;
+  font-size: 12px;
 }
 
 .widgetAceText {
   border: 1px solid #C5C5C5;
-  max-height: 400px;
-  min-height: 362px;
+  max-height: 600px;
+  min-height: 300px;
+  max-width: 900px;
+  width: 100%;
   text-overflow: clip;
   white-space: nowrap;
-  width: 682px;
+  font-family: Monaco,Menlo,sans-serif;
+  font-size: 12px;
 }
 
 .content-edit__main {
@@ -9497,20 +9500,17 @@ a.category_higlighted, a.tag_higlighted {
   width: 550px;
 }
 .content-type__fields-list {
-  display: table;
   width: 100%;
 }
-.content-type__fields-list-body {
-  display: table-row-group;
-}
 .content-type__fields-list-cell {
-  border-bottom: 1px solid #ECEDEE;
-  display: table-cell;
+  flex: 1;
   padding: 8px;
   white-space: nowrap;
 }
 .content-type__fields-list-header, .content-type__fields-list-row {
-  display: table-row;
+  border-bottom: 1px solid #ECEDEE;
+  display: flex;
+  justify-content: space-between;
 }
 .content-type__fields-list-header {
   background: #FAFAFA;
@@ -9539,6 +9539,10 @@ a.category_higlighted, a.tag_higlighted {
 }
 .design-template__sidebar-wrapper .portlet-sidebar {
   width: 220px;
+}
+
+.edit-relationship .form-horizontal dt {
+  width: 250px;
 }
 
 .job-scheduler__host-list {
@@ -9657,8 +9661,10 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .view-roles__portlets-list {
-  margin: 0;
-  max-height: 200px;
+  border: solid 1px #ECEDEE;
+  border-radius: 2px;
+  margin: 0 0 8px;
+  height: 175px;
   overflow: auto;
 }
 .view-roles__portlets-list ul {
@@ -9668,10 +9674,9 @@ a.category_higlighted, a.tag_higlighted {
 .view-roles__portlets-list-item {
   display: flex;
   justify-content: space-between;
-  padding: 8px 0;
+  padding: 8px;
   border-bottom: solid 1px #ECEDEE;
   align-items: center;
-  padding-right: 2px;
 }
 
 .nameText {
@@ -9752,11 +9757,6 @@ a.category_higlighted, a.tag_higlighted {
 .view-users__roles-actions .dijitButton {
   display: block;
   margin: 8px 0;
-}
-
-.view-users__roles-to-grant .dijitTreeContainer {
-  float: none;
-  margin-top: 4px;
 }
 
 .view-users__roles-to-grant,
@@ -9990,6 +9990,10 @@ a.category_higlighted, a.tag_higlighted {
 }
 .context-menu__item:hover {
   background-color: #FAFAFA;
+}
+.context-menu__item [class$="Icon"],
+.context-menu__item [class*="Icon"] {
+  display: none;
 }
 .context-menu__item .arrowRightIcon {
   font-size: 12px;
@@ -10282,6 +10286,10 @@ a.category_higlighted, a.tag_higlighted {
 }
 .context-menu__item:hover {
   background-color: #FAFAFA;
+}
+.context-menu__item [class$="Icon"],
+.context-menu__item [class*="Icon"] {
+  display: none;
 }
 .context-menu__item .arrowRightIcon {
   font-size: 12px;

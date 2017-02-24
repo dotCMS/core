@@ -731,7 +731,7 @@ var cmsfile=null;
 		if (dijit.byId("toggleEditor_"+textarea).checked) {
 			document.getElementById(textarea).style.display = "none";
 			if(isWidget == 'true')
-				acetId.className = aceClass.replace('classAce', 'widgetAceText');
+				acetId.className = aceClass.replace('classAce', 'aceText');
 			else
 				acetId.className = aceClass.replace('classAce', 'aceText');
 
@@ -751,7 +751,7 @@ var cmsfile=null;
 		} else {
 			var editorText = textEditor[textarea].getValue();
 			if(isWidget == 'true')
-				acetId.className = aceClass.replace('widgetAceText', 'classAce');
+				acetId.className = aceClass.replace('aceText', 'classAce');
 			else
 				acetId.className = aceClass.replace('aceText', 'classAce');
 

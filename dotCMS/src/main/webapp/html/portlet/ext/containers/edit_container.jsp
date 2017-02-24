@@ -22,13 +22,13 @@
 		position: relative;
 	}
 	.show{
-		width: 650px;
-		height: 350px;
+		width: 900px;
+		height: 400px;
 		border:1px solid #C0C0C0;
 	}
 	 .pShow{
-		width: 650px;
-		height: 150px;
+		width: 900px;
+		height: 250px;
 		border:1px solid #C0C0C0;
 	}
 	.hidden{
@@ -160,49 +160,44 @@
 		<!-- START PROPERTIES TAB -->
 			<div id="properties" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "properties") %>" onShow="showEditButtonsRow()">
 				<div class="form-horizontal">
-					<%if(id!=null){%>
-						<dl>
-							<dt><%= LanguageUtil.get(pageContext, "Identity") %>:&nbsp;</dt>
-							<dd><%= id.getId() %></dd>
-						</dl>
-					<%}%>
+
 					<% if(host != null) { %>
-					<dl>
+					<div class="fieldWrapper">
 						<html:hidden property="hostId" value="<%=hostId%>"/>
-						<dt><%= LanguageUtil.get(pageContext, "Host") %>:&nbsp;</dt>
-						<dd><%= host.getHostname() %></dd>
-					</dl>
+						<div class="fieldName"><%= LanguageUtil.get(pageContext, "Host") %>:&nbsp;</div>
+						<div class="fieldValue"><%= host.getHostname() %></div>
+					</div>
 					<%	} else { %>
-					<dl>
-						<dt><%= LanguageUtil.get(pageContext, "Host") %>:&nbsp;</dt>
-						<dd>
+					<div class="fieldWrapper">
+						<div class="fieldName"><%= LanguageUtil.get(pageContext, "Host") %>:&nbsp;</div>
+						<div class="fieldValue">
 							<select id="hostId" name="hostId" dojoType="dijit.form.FilteringSelect" value="<%=hostId%>">
 								<% for(Host h: listHosts) { %>
 									<option value="<%=h.getIdentifier()%>"><%=host.getHostname()%></option>
 								<% } %>
 							</select>
-						</dd>
-					</dl>
+						</div>
+					</div>
 					<% } %>
-					<dl>
-						<dt>
+					<div class="fieldWrapper">
+						<div class="fieldName">
 							<span class="required"></span>
 							<%= LanguageUtil.get(pageContext, "Title") %>:&nbsp;
-						</dt>
-						<dd><input type="text" dojoType="dijit.form.TextBox" style="width:650px" name="title" id="titleField" value="<%= form.getTitle() %>" /></dd>
-					</dl>
-					<dl>
-						<dt><%= LanguageUtil.get(pageContext, "Description") %>:&nbsp;</dt>
-						<dd><input type="text" dojoType="dijit.form.TextBox" style="width:650px" name="friendlyName" id="friendlyNameField" value="<%= form.getFriendlyName() %>" /></dd>
-					</dl>
-					<dl>
-						<dt><%= LanguageUtil.get(pageContext, "Max-Contents") %>:&nbsp;</dt>
-						<dd><input type="text" dojoType="dijit.form.TextBox" style="width:100px" maxlength="2" name="maxContentlets" id="maxContentlets" onchange="showHideCode()" value="<%= form.getMaxContentlets() %>" /></dd>
-					</dl>
+						</div>
+						<div class="fieldValue"><input type="text" dojoType="dijit.form.TextBox" style="width:650px" name="title" id="titleField" value="<%= form.getTitle() %>" /></div>
+					</div>
+					<div class="fieldWrapper">
+						<div class="fieldName"><%= LanguageUtil.get(pageContext, "Description") %>:&nbsp;</div>
+						<div class="fieldValue"><input type="text" dojoType="dijit.form.TextBox" style="width:650px" name="friendlyName" id="friendlyNameField" value="<%= form.getFriendlyName() %>" /></div>
+					</div>
+					<div class="fieldWrapper">
+						<div class="fieldName"><%= LanguageUtil.get(pageContext, "Max-Contents") %>:&nbsp;</div>
+						<div class="fieldValue"><input type="text" dojoType="dijit.form.TextBox" style="width:100px" maxlength="2" name="maxContentlets" id="maxContentlets" onchange="showHideCode()" value="<%= form.getMaxContentlets() %>" /></div>
+					</div>
 					<div id="preLoopDiv">
-						<dl>
-							<dt><%= LanguageUtil.get(pageContext, "Pre-Loop") %>:</dt>
-							<dd>
+						<div class="fieldWrapper">
+							<div class="fieldName"><%= LanguageUtil.get(pageContext, "Pre-Loop") %>:</div>
+							<div class="fieldValue">
 								<div id="preLoopEditorArea" style="border: 0px;">
 									<div id="preLoopAceEditor" class="pShow"></div>
 									<textarea onkeydown="return catchTab(this,event)" style="display: none;" name="preLoopMask" id="preLoopMask"><%=UtilMethods.isSet(form.getPreLoop())?UtilMethods.escapeHTMLSpecialChars(form.getPreLoop()):"" %></textarea>
@@ -217,19 +212,19 @@
 									<input id="preloopWrapEditor" name="preloopWrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onClick="aceWrapToggler(event);" />
 									<label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
 								</div>
-							</dd>
-						</dl>
+							</div>
+						</div>
 					</div>
 					<div id="codeDiv">
 						
 					</div>
 					<div id="multiCodeButtonDiv">
-						<dl>
-							<dt>
+						<div class="fieldWrapper">
+							<div class="fieldName">
 								<span class="required"></span>
 								<%= LanguageUtil.get(pageContext, "Code-Per-Content-Type") %>:
-							</dt>
-							<dd>
+							</div>
+							<div class="fieldValue">
 								<div id="structureSelecttDiv" >
 									<select dojoType="dijit.form.FilteringSelect" name="structureInode" id="structureSelect" value="<%= form.getStructureInode() %>">
 		
@@ -252,13 +247,13 @@
 											<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-content-type")) %>
 									</button>
 								</div>
-							</dd>
-						</dl>
-						<dl>
-							<dt> </dt>
-							<dd>
-								<div style="width:650px">
-									<div dojoType="dijit.layout.TabContainer" id="tabContainer" style="width:653px;overflow-y: hidden; " dolayout="false">
+							</div>
+						</div>
+						<div class="fieldWrapper">
+							<div class="fieldName"> </div>
+							<div class="fieldValue">
+								<div style="width:900px">
+									<div dojoType="dijit.layout.TabContainer" id="tabContainer" style="width:903px;overflow-y: hidden; " dolayout="false">
 									<style>
 									.dijitDisplayNone {
 										display:block !important;
@@ -287,7 +282,7 @@
 									}
 									%>
 									</div>
-								</div>
+
 								<div class="checkbox">
 									<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorCodeMultiple" id="toggleEditorCodeMultiple"  onClick="aceToggler('aceMaskMulti', 'codeMaskMulti');"  checked="checked"  />
 									<label for="toggleEditorCodeMultiple"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
@@ -297,26 +292,26 @@
 									<label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
 								</div>
 		
-							</dd>
-						</dl>
-						<dl>
-							<dt> </dt>
+							</div>
+						</div>
+						<div class="fieldWrapper">
+							<div class="fieldName"> </div>
 							<dd class="buttonCaption">
 								<button dojoType="dijit.form.Button"  onClick="addVariable()" iconClass="plusIcon" type="button">
 									<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-variable")) %>
 								</button>
 		
-							</dd>
-						</dl>
+							</div>
+						</div>
 						<!-- will host all tabs and their content panes -->
 					</div>
 					<div id="codeButtonDiv">
-						<dl>
-							<dt>
+						<div class="fieldWrapper">
+							<div class="fieldName">
 								<span class="required"></span>
 								<%= LanguageUtil.get(pageContext, "Code") %>:
-							</dt>
-							<dd>
+							</div>
+							<div class="fieldValue">
 								<br/>
 								<div id="codeEditorArea">
 									<div id="aceEditor" class="show"></div>
@@ -327,13 +322,13 @@
 									<input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditorCode" id="toggleEditorCode"  onClick="aceToggler('aceEditor', 'codeMask');"  checked="checked"  />
 									<label for="toggleEditorCode"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
 								</div>
-							</dd>
-						</dl>
+							</div>
+						</div>
 					</div>
 					<div id="postLoopDiv">
-						<dl>
-							<dt><%= LanguageUtil.get(pageContext, "Post-Loop") %>:</dt>
-							<dd>
+						<div class="fieldWrapper">
+							<div class="fieldName"><%= LanguageUtil.get(pageContext, "Post-Loop") %>:</div>
+							<div class="fieldValue">
 								<br/>
 								<div id="postLoopEditorArea" style="border: 0px;">
 									<div id="postLoopAceEditor" class="pShow"></div>
@@ -348,14 +343,14 @@
 									<input id="postloopWrapEditor" name="postloopWrapEditor" data-dojo-type="dijit/form/CheckBox" value="true" onClick="aceWrapToggler(event);" />
 									<label for="wrapEditor"><%= LanguageUtil.get(pageContext, "Wrap-Code") %></label>
 								</div>
-							</dd>
-						</dl>
+							</div>
+						</div>
 					</div>
 					<div id="notesDiv">
-						<dl>
-							<dt><%= LanguageUtil.get(pageContext, "Notes") %>:</dt>
-							<dd><textarea dojoType="dijit.form.Textarea" style="width:450px; min-height:150px" maxlength="255" name="notes" id="notes"><%= UtilMethods.isSet(form.getNotes()) ? form.getNotes() : "" %></textarea></dd>
-						</dl>
+						<div class="fieldWrapper">
+							<div class="fieldName"><%= LanguageUtil.get(pageContext, "Notes") %>:</div>
+							<div class="fieldValue"><textarea dojoType="dijit.form.Textarea" style="width:450px; min-height:150px" maxlength="255" name="notes" id="notes"><%= UtilMethods.isSet(form.getNotes()) ? form.getNotes() : "" %></textarea></div>
+						</div>
 						<script type="text/javascript">
 							dojo.connect(dijit.byId('notes'), 'onkeydown', function(e) {if(dijit.byId('notes').focused) return catchTab(document.getElementById('notes'), e) });
 						</script>
@@ -397,35 +392,39 @@
 
 </div>
 
-<!-- START buttons -->
-<div class="buttonRow" id="editContainerButtonRow">
+<!-- Button Row -->
+<div class="content-edit__sidebar" id="editContainerButtonRow">
+	<div class="content-edit-actions">
+	<div id="contentletActionsHanger">
+
 
 	<% if(!InodeUtils.isSet(contentContainer.getInode())|| contentContainer.isLive() || contentContainer.isWorking() ) {
 		if( canUserWriteToContainer ) {
 		%>
-			<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'')" iconClass="saveIcon" type="button">
+			<a onClick="submitfm(document.getElementById('fm'),'')" >
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save")) %>
-			</button>
+			</a>
 		<% } %>
 		<% if( canUserPublishContainer ) { %>
-			<button dojoType="dijit.form.Button" onClick="submitfm(document.getElementById('fm'),'publish')" iconClass="publishIcon" type="button">
+			<a onClick="submitfm(document.getElementById('fm'),'publish')">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "save-and-publish")) %>
-			</button>
+			</a>
 		<%  } %>
 		<% } else { %>
-			<button dojoType="dijit.form.Button" onClick="selectVersion('<%=contentContainer.getInode()%>')" iconClass="resetIcon" type="button">
+			<a  onClick="selectVersion('<%=contentContainer.getInode()%>')">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bring-back-this-version")) %>
-			</button>
+			</a>
 		<% } %>
 		<% if (InodeUtils.isSet(contentContainer.getInode()) && contentContainer.isDeleted()) {%>
-			<button dojoType="dijit.form.Button" onClick="submitfmDelete()" iconClass="deleteIcon" type="button">
+			<a  onClick="submitfmDelete()">
 				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete-container")) %>
-			</button>
+			</a>
 		<% } %>
-		<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="cancelEdit()" iconClass="cancelIcon" type="button">
+		<a class="dijitButtonFlat" onClick="cancelEdit()">
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
-		</button>
-
+		</a>
+	</div>
+	</div>
 </div>
 <!-- END buttons -->
 </html:form>

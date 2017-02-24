@@ -79,7 +79,7 @@
 
 		var deleteFormatter = function(value, index) {
 			var inode = addedGrid<%=counter%>.store.getValue(addedGrid<%=counter%>.getItem(index), 'id');
-			return "<a href=\"javascript:delCat<%=counter%>('"+inode+"');\"><img src='/html/images/icons/cross-small.png' /></a>";
+			return "<div style='width:100%;height:20px;cursor:pointer;' onclick=\"javascript:delCat<%=counter%>('"+inode+"');\">&nbsp;<span class='deleteIcon'></span>&nbsp" + value  + "</div>";
 		}
 
 		var addedlayout = [
@@ -89,16 +89,12 @@
 			width: '0px',
 			hidden : true
 		},
-		{
-			field : 'del',
-			name : ' ',
-			width: '20px',
-			formatter: deleteFormatter
-		},
+
 		{
 			field : 'name',
 			name : '<%= LanguageUtil.get(pageContext, "Added") %>',
-			width: 'auto'
+			width: 'auto',
+			formatter : deleteFormatter
 		}
 		];
 
@@ -164,14 +160,17 @@
 	/*  CATEGORIES GRID FUNCTIONS */
 
 	var addFormatter<%=counter%> = function(value, index) {
-
-		return "<a href=\"javascript:addCat<%=counter%>("+index+");\"><img src='/html/images/icons/plus-small.png' /></a>";
+		return "<div style='text-align:center;width:100%;cursor:pointer;' onclick=\"javascript:drillDown<%=counter%>("+index+");\"><span class='toggleOpenIcon'></span></div>";
 	};
 
 
 	/* format the name column of the grid to be an <a> element */
 	var formatHref<%=counter%> = function(value, index) {
-		return "<a href=\"javascript:drillDown<%=counter%>("+index+")\" >"+value+"</a>";
+		if(value == undefined || value==null || value=="null"){
+			value="&nbsp;";
+		}
+		
+		return "<div style='width:100%;cursor:pointer;' onclick=\"addCat<%=counter%>("+index+")\" >"+value+"</div>";
 	};
 
 	function createStore<%=counter%>(params) {
@@ -187,7 +186,7 @@
 			{
 				field : '',
 				name : ' ',
-				width : '20px',
+				width : '34px',
 				formatter : addFormatter<%=counter%>
 			},
 			{
@@ -198,11 +197,13 @@
 			}, {
 				field : 'category_key',
 				name : '<%= LanguageUtil.get(pageContext, "Key") %>',
-				width : '25%'
+				width : '25%',
+				formatter : formatHref<%=counter%>
 			}, {
 				field : 'category_velocity_var_name',
 				name : '<%= LanguageUtil.get(pageContext, "Variable") %>',
-				width : '25%'
+				width : '25%',
+				formatter : formatHref<%=counter%>
 			}
 			];
 
@@ -272,7 +273,7 @@
 	}
 
 	function manageBreadCrumbs<%=counter%>(inode, name) {
-		dojo.place("<a style=\"font-size: 12px\" id=\"a_"+inode+"\" href=\"javascript:prepareCrumbs<%=counter%>('"+inode+"', '"+name+"');  \">"+name+" &#62; </a>", "nav<%=counter%>", "last");
+		dojo.place(" <a style=\"\" id=\"a_"+inode+"\" href=\"javascript:prepareCrumbs<%=counter%>('"+inode+"', '"+name+"');  \"> &#62; "+name+"</a>", "nav<%=counter%>", "last");
 	}
 
 	function prepareCrumbs<%=counter%>(inode, name) {
@@ -319,15 +320,17 @@
 	}
 
 	function addPreview<%=counter%>(catName, inode) {
-		dojo.place("<li id='preview"+inode+"'  ><a href=\"javascript:delCat<%=counter%>('"+inode+"');\"><img src='/html/images/icons/cross-small.png' /></a>"+catName+"</li>", "previewCats<%=counter%>", "last");
+		dojo.place("<li id='preview"+inode+"'  ><a href=\"javascript:delCat<%=counter%>('"+inode+"');\"><img src='/html/images/icons/cross.png' /></a>"+catName+"</li>", "previewCats<%=counter%>", "last");
 	}
-
 </script>
-<div id="categoriesDialog<%=counter%>" dojoType="dijit.Dialog" style="display:none;width:630px;height:440px;vertical-align: middle; " draggable="true"
+
+
+
+<div id="categoriesDialog<%=counter%>" dojoType="dijit.Dialog" style="display:none;max-width:900px;max-height:540px;vertical-align: middle; " draggable="true"
 	title="<%= LanguageUtil.get(pageContext, "categories") %>" >
 		<div class="categories-selector__breadcrumbs" id="breadCrumbs<%=counter%>">
-			<ul id="nav<%=counter%>" style="margin-left:0px">
-				<a id="a_null<%=counter%>" style="font-size: 12px" onfocus="return false;"  href="javascript:prepareCrumbs<%=counter%>(baseCat<%=counter%>, '<%= LanguageUtil.get(pageContext, "Top-Level") %>');"  \><%= LanguageUtil.get(pageContext, "Top-Level") %> &#62; </a>
+			<ul id="nav<%=counter%>" style="margin-left:0px;">
+				<a id="a_null<%=counter%>" style="" onfocus="return false;"  href="javascript:prepareCrumbs<%=counter%>(baseCat<%=counter%>, '<%= LanguageUtil.get(pageContext, "Top-Level") %>');"  \><%= LanguageUtil.get(pageContext, "Top-Level") %></a>
 			</ul>
 		</div>
 		<div class="categories-selector__toolbar">

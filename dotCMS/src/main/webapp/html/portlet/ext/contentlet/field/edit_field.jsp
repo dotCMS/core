@@ -166,12 +166,14 @@
         });
 </script>
 	<div id="aceTextArea_<%=field.getVelocityVarName()%>" class="classAce"></div>
-    <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> dojoType="dijit.form.SimpleTextarea"  <%=isWidget?"style=\"overflow:auto;min-height:362px;max-height: 400px\"":"style=\"overflow:auto;min-height:100px;max-height: 600px\""%>
+    <textarea 
+    	<%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> 
+    	dojoType="dijit.form.SimpleTextarea"  
+    	style="overflow:auto;height: 300px"
         name="<%=field.getFieldContentlet()%>"
+        
         id="<%=field.getVelocityVarName()%>" class="editTextAreaField"><%= UtilMethods.htmlifyString(textValue) %></textarea>
-<%
-    if (!isReadOnly) {
- %>
+		<%if (!isReadOnly) { %>
         <div class="editor-toolbar">
             <div class="toggleEditorField checkbox">
                 <%if(toggleOn){ %>
@@ -464,8 +466,12 @@
                 <%if(LicenseUtil.getLevel() < 199 ){ %>
                 <div id="thumbnailParent<%=field.getVelocityVarName()%>">
                     <%
-                        String src = String.format("/contentAsset/image/%s/%s/?filter=Thumbnail&thumbnail_w=%d&thumbnail_h=%d&language_id=%s", contentlet.getIdentifier(), field.getVelocityVarName(), showDim, showDim, contentlet.getLanguageId());
-
+                        String src = null;
+                        if(!fileName.toLowerCase().endsWith("svg")){
+                            src = String.format("/contentAsset/image/%s/%s/?filter=Thumbnail&thumbnail_w=%d&thumbnail_h=%d&language_id=%s", contentlet.getIdentifier(), field.getVelocityVarName(), showDim, showDim, contentlet.getLanguageId());
+                        }else{
+                            src = String.format("/contentAsset/image/%s/%s", contentlet.getIdentifier(), field.getVelocityVarName());
+                        }
                     %>
                     <img src="<%=src%>"
                          class="thumbnailDiv thumbnailDiv<%=field.getVelocityVarName()%>"
@@ -515,21 +521,12 @@
             <%}
 
             }%>
-            
-
-            <div 
-            	id="<%=field.getVelocityVarName()%>" 
-            	name="<%=field.getFieldContentlet()%>" 
-            	<%= UtilMethods.isSet(fileName)?"fileName=\"" + fileName.replaceAll("\"", "\\\"") +"\"":"" %>
-               	fieldName="<%=field.getVelocityVarName()%>"
-               	inode="<%= binInode%>"
-               	lang="<%=contentlet.getLanguageId() %>"
-               	identifier="<%=contentlet.getIdentifier()%>" 
-               	inodeShorty="<%=APILocator.getShortyAPI().shortify(contentlet.getInode())%>" 
-               	idShorty="<%=APILocator.getShortyAPI().shortify(contentlet.getIdentifier())%>" 
-              	onRemove="removeThumbnail('<%=field.getVelocityVarName()%>', '<%= binInode %>')"
-               	dojoType="dotcms.dijit.form.FileAjaxUploader" 
-               	onUploadFinish="saveBinaryFileOnContent<%=field.getVelocityVarName()%>">
+            <div id="<%=field.getVelocityVarName()%>" name="<%=field.getFieldContentlet()%>" <%= UtilMethods.isSet(fileName)?"fileName=\"" + fileName.replaceAll("\"", "\\\"") +"\"":"" %>
+               fieldName="<%=field.getVelocityVarName()%>"
+               inode="<%= binInode%>"
+               lang="<%=contentlet.getLanguageId() %>"
+               identifier="<%=contentlet.getIdentifier()%>" onRemove="removeThumbnail('<%=field.getVelocityVarName()%>', '<%= binInode %>')"
+               dojoType="dotcms.dijit.form.FileAjaxUploader" onUploadFinish="saveBinaryFileOnContent<%=field.getVelocityVarName()%>">
             </div>
             <script type="text/javascript">
             function saveBinaryFileOnContent<%=field.getVelocityVarName()%>(fileName, dijitReference){
@@ -575,19 +572,15 @@
 						  String fileAssetName = fa.getFileName();
 						 %>
 
-						<div style="padding:10px;">
 							<a href="<%=resourceLink %>" target="_new"><%=resourceLinkUri %></a>
-						</div>
-						</div>
 								<% if (mimeType.indexOf("officedocument")==-1 && (mimeType.indexOf("text")!=-1 || mimeType.indexOf("javascript")!=-1
-									|| mimeType.indexOf("json")!=-1 || mimeType.indexOf("xml")!=-1 || mimeType.indexOf("php")!=-1) || fileAssetName.endsWith(".vm")) { %>
+                                        || mimeType.indexOf("xml")!=-1 || mimeType.indexOf("php")!=-1) || fileAssetName.endsWith(".vm")) { %>
 									<% if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) { %>
-
-											<%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
-										
-										
+											<button iconClass="editIcon" dojoType="dijit.form.Button" onClick="editText($('contentletInode').value)" type="button">
+												<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "edit-text")) %>
+											</button>
 									<% } %>
-							<% } %>
+							<% } %></div>
 
 					<% } %>
                <% } %>
