@@ -134,15 +134,6 @@
         <Root level="INFO">
             <AppenderRef ref="generic"/>
         </Root>
-        <Logger name="com.dotmarketing.osgi.custom.dwr" level="debug" additivity="false">
-            <AppenderRef ref="generic"/>
-        </Logger>
-        <Logger name="org.apache.felix.http.api" level="debug" additivity="false">
-            <AppenderRef ref="generic"/>
-        </Logger>
-        <Logger name="com.dotmarketing.filters" level="debug" additivity="false">
-            <AppenderRef ref="generic"/>
-        </Logger>
         <Logger name="com.dotcms.repackage.org.directwebremoting" level="warn" additivity="false">
             <AppenderRef ref="generic"/>
         </Logger>
