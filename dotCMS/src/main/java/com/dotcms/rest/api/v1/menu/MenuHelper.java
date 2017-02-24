@@ -65,6 +65,10 @@ public class MenuHelper implements Serializable {
             String portletClass = portlet.getPortletClass();
             Class classs = Class.forName(portletClass);
             return PortletController.class.isAssignableFrom(classs);
+        } else {
+
+            Logger.error(this,
+                    "The request portlet does not exists, the id: " + portletId);
         }
         return false;
     }
@@ -81,7 +85,12 @@ public class MenuHelper implements Serializable {
             String portletClass = portlet.getPortletClass();
             Class classs = Class.forName(portletClass);
             return BaseRestPortlet.class.isAssignableFrom(classs);
+        } else {
+
+            Logger.error(this,
+                    "The request portlet does not exists, the id: " + portletId);
         }
+
         return false;
     }
 
@@ -112,6 +121,10 @@ public class MenuHelper implements Serializable {
             } else if (PortletController.class.isAssignableFrom(classs)) {
                 return "/" + menuContext.getPortletId();
             }
+        } else {
+
+            Logger.error(this,
+                    "The request portlet does not exists, the id: " + menuContext.getPortletId());
         }
 
         return null;
