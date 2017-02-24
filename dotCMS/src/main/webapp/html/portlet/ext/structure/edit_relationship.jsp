@@ -132,7 +132,8 @@ function relationNameChanged() {
 
 <html:form action="/ext/structure/edit_relationship" method="post" styleId="relationshipForm">
     
-<div class="portlet-main edit-relationship">
+
+<div class="portlet-main edit-relationship add-relationship">
 
 	<div class="form-horizontal">
  
@@ -140,10 +141,14 @@ function relationNameChanged() {
         <html:hidden property="relationTypeValue" />
         <html:hidden property="fixed" />
         <input type="hidden" name="referer"  value="<%=referer%>" >
-        
 		<dl>
-			<dt><span class="required"></span> <span class="mRed"><%= LanguageUtil.get(pageContext, "Required-Fields") %></span>
-				<%= LanguageUtil.get(pageContext, "Parent-Structure") %>:
+			<dt>
+				<span class="required"></span><span class="mRed"><%= LanguageUtil.get(pageContext, "Required-Fields") %></span>
+			</dt>
+		</dl>
+		<dl>
+			<dt>
+				<span class="required"></span><%= LanguageUtil.get(pageContext, "Parent-Structure") %>:
 			</dt>
 			<dd>
 				<select dojoType="dijit.form.FilteringSelect" name="parentStructureInode" id="parentStructureInode" onchange="relationNameChanged(); structuresChanged(); "  disabled="<%=disabled%>" value="<%= UtilMethods.isSet(relationshipForm.getParentStructureInode()) ? relationshipForm.getParentStructureInode() : "" %>">
@@ -188,7 +193,6 @@ function relationNameChanged() {
 				</select>
 			</dd>
     	</dl>
-
 	</div>
 
 	<div class="buttonRow">

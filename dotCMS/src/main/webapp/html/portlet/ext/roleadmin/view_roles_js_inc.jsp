@@ -945,6 +945,7 @@
 	            },
 	            store: layoutsStore,
 	            clientSort: true,
+				autoHeight: true,
 	            structure: layoutsGridLayout
 	        },
 	        'roleLayoutsGrid');

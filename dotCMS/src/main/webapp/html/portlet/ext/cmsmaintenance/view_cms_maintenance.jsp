@@ -1510,7 +1510,7 @@ dd.leftdl {
                 <tr>
                     <td>
                         <p><%= LanguageUtil.get(pageContext,"This-utility-will-do-a-find-and-replace") %></p>
-                        <%= LanguageUtil.get(pageContext,"Please-specify-the-following-parameters-and-click-replace") %>:
+                        <%= LanguageUtil.get(pageContext,"Please-specify-the-following-parameters-and-click-replace") %>
                         <dl>
                             <dt><%= LanguageUtil.get(pageContext,"String-to-find") %>:</dt>
                             <dd><input type="text" dojoType="dijit.form.TextBox" name="searchString" id="searchString" size="50"></dd>
@@ -1665,7 +1665,7 @@ dd.leftdl {
 			               	<tr>
 			               		<td>
 			               			<%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Host") %>
-		               			    <select dojoType="dijit.form.FilteringSelect"  multiple="true" name="selectAssetHostInode" id="selectAssetHostInode" autocomplete="false"  invalidMessage="Invalid site name">
+		               			    <select dojoType="dijit.form.FilteringSelect"  multiple="true" name="selectAssetHostInode" id="selectAssetHostInode" autocomplete="false"  invalidMessage="Invalid site name" style="width: 175px;">
 										<option selected="selected" value="all"><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_All") %></option>
 										<%	String hostNames="";
 											String hostIdentifier="";
@@ -1697,7 +1697,11 @@ dd.leftdl {
 									</table>                        			
                   			    </td>
 			               		<td>
-			               			<input type="radio" onclick="enableDisableRadio(this)" checked="checked" value="assetType" dojoType="dijit.form.RadioButton" name="assetSearch" id="assetSearchType" /><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Search_by_type_of_asset") %>:<br/>
+									<div class="checkbox">
+										<input type="radio" onclick="enableDisableRadio(this)" checked="checked" value="assetType" dojoType="dijit.form.RadioButton" name="assetSearch" id="assetSearchType" />
+										<label for=""><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Search_by_type_of_asset") %>:</label>
+									</div>
+			               			<br/>
 	                                <select name="assetType" id="assetType" dojoType="dijit.form.MultiSelect" multiple="multiple" size="scrollable" class="asarMultiSelect">
 	                                <% for(String fileType : validFileExtensions.split(",")){%>
 	                                	<option value="<%=fileType%>"><%=fileType%></option>
@@ -1709,7 +1713,11 @@ dd.leftdl {
 			               	<tr>
 			               		<td>&nbsp;</td>
 			               		<td>
-			               		<input type="radio" onclick="enableDisableRadio(this)" value="assetIdentifier" dojoType="dijit.form.RadioButton" name="assetSearch" id="assetSearchIdentifier" /><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Search_by_asset_identifier") %>:<br/>
+									   <div class="checkbox">
+										   <input type="radio" onclick="enableDisableRadio(this)" value="assetIdentifier" dojoType="dijit.form.RadioButton" name="assetSearch" id="assetSearchIdentifier" />
+										   <label for=""><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Search_by_asset_identifier") %>:</label>
+									   </div>
+			               		<br/>
 	                                <input type="text" disabled="disabled" dojoType="dijit.form.Textarea" class="asarTextarea" rows="3" name="assetIdentifier" id="assetIdentifier"></br/>
 	                                <em><%=LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Search_by_asset_identifier_hint") %></em>
 	                            </td>
