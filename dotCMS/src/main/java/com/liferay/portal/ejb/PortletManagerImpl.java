@@ -441,10 +441,9 @@ public class PortletManagerImpl
 				parentPortletsPool = _getPortletsPool(companyId, _SHARED_KEY);
 			}
 
-			Iterator itr = null;
+			Iterator itr = parentPortletsPool.values().iterator();
 
 			if (null != itr) {
-				itr = parentPortletsPool.values().iterator();
 
 				while (itr.hasNext()) {
 					Portlet portlet = (Portlet) ((Portlet) itr.next()).clone();
