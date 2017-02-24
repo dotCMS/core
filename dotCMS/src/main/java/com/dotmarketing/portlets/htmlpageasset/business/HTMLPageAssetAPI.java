@@ -11,10 +11,10 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
+import com.dotmarketing.portlets.containers.model.Container;
 
 /**
  * Provides utility methods to interact with the upgraded version of HTML pages.
@@ -147,10 +147,6 @@ public interface HTMLPageAssetAPI {
 			DotSecurityException;
 
     Folder getParentFolder(IHTMLPage htmlPage) throws DotDataException, DotSecurityException;
-    
-    HTMLPageAsset migrateLegacyPage(HTMLPage legacyPage, User user, boolean respectFrontEndPermissions)  throws Exception;
-    
-    public boolean migrateAllLegacyPages(User user, boolean respectFrontEndPermissions) throws Exception;
         
     String getHostDefaultPageType(Host host);
 
@@ -189,4 +185,82 @@ public interface HTMLPageAssetAPI {
 	public String getHTML(String uri, Host host, boolean liveMode,
 			String contentId, User user, Long langId, String userAgent)
 			throws DotStateException, DotDataException, DotSecurityException;
+	
+	/**
+	 * 
+	 */
+	public static class TemplateContainersReMap {
+
+		/**
+		 * 
+		 */
+		public static class ContainerRemapTuple {
+
+			private Container sourceContainer;
+			private Container destinationContainer;
+
+			public ContainerRemapTuple(Container sourceContainer,
+					Container destinationContainer) {
+				super();
+				this.sourceContainer = sourceContainer;
+				this.destinationContainer = destinationContainer;
+			}
+
+			public Container getSourceContainer() {
+				return sourceContainer;
+			}
+
+			public void setSourceContainer(Container oldContainer) {
+				this.sourceContainer = oldContainer;
+			}
+
+			public Container getDestinationContainer() {
+				return destinationContainer;
+			}
+
+			public void setDestinationContainer(Container newContainer) {
+				this.destinationContainer = newContainer;
+			}
+
+		}
+
+		private Template sourceTemplate;
+		private Template destinationTemplate;
+		private List<ContainerRemapTuple> containersRemap;
+
+		public TemplateContainersReMap(Template sourceTemplate,
+				Template destinationTemplate,
+				List<ContainerRemapTuple> containersRemap) {
+			super();
+			this.sourceTemplate = sourceTemplate;
+			this.destinationTemplate = destinationTemplate;
+			this.containersRemap = containersRemap;
+		}
+
+		public Template getSourceTemplate() {
+			return sourceTemplate;
+		}
+
+		public void setSourceTemplate(Template oldTemplate) {
+			this.sourceTemplate = oldTemplate;
+		}
+
+		public Template getDestinationTemplate() {
+			return destinationTemplate;
+		}
+
+		public void setDestinationTemplate(Template newTemplate) {
+			this.destinationTemplate = newTemplate;
+		}
+
+		public List<ContainerRemapTuple> getContainersRemap() {
+			return containersRemap;
+		}
+
+		public void setContainersRemap(List<ContainerRemapTuple> containersReMap) {
+			this.containersRemap = containersReMap;
+		}
+
+	}
+
 }

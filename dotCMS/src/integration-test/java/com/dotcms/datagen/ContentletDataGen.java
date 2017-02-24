@@ -6,6 +6,7 @@ import java.util.Map.Entry;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -26,6 +27,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
 	protected String structureId;
 	protected Map<String, Object> properties = new HashMap<>();
 	protected long languageId;
+	protected String modUser = UserAPI.SYSTEM_USER_ID;
 
     public ContentletDataGen(String structureId) {
         this.structureId = structureId;

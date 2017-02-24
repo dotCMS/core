@@ -2291,32 +2291,36 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         if (isFloatField) {
             if (DbConnectionFactory.isMySql()) {
-                select.append("`").append(field.getFieldContentlet()).append("`");
                 whereField.append("`").append(field.getFieldContentlet()).append("` IS NOT NULL AND `")
                         .append(field.getFieldContentlet()).append("` != ");
             } else if (DbConnectionFactory.isH2()) {
-                select.append("\"").append(field.getFieldContentlet()).append("\"");
                 whereField.append("\"").append(field.getFieldContentlet()).append("\" IS NOT NULL AND \"")
                         .append(field.getFieldContentlet()).append("\" != ");
+            } else if ( DbConnectionFactory.isOracle() ) {
+                whereField.append("'").append(field.getFieldContentlet()).append("' IS NOT NULL AND '")
+                        .append(field.getFieldContentlet()).append("' != ");
             } else {
-                select.append(field.getFieldContentlet());
                 whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ").append(field.getFieldContentlet())
                         .append(" != ");
             }
         } else {
             whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ");
-            if(DbConnectionFactory.isMsSql() && field.getFieldContentlet().contains("text_area")) {
-                whereField.append(" DATALENGTH (").append(field.getFieldContentlet()).append(")");
+            if ( field.getFieldContentlet().contains("text_area") ) {
+                if ( DbConnectionFactory.isMsSql() ) {
+                    whereField.append(" DATALENGTH (").append(field.getFieldContentlet()).append(")");
+                } else if ( DbConnectionFactory.isOracle() ) {
+                    whereField.append("'").append(field.getFieldContentlet()).append("'").append(" != ");
+                } else {
+                    whereField.append(field.getFieldContentlet()).append(" != ");
+                }
             } else {
                 whereField.append(field.getFieldContentlet()).append(" != ");
             }
         }
-            
-
 
         if (DbConnectionFactory.isMySql()) {
             update.append("`").append(field.getFieldContentlet()).append("`").append(" = ");
-        }else if (DbConnectionFactory.isH2() && isFloatField) {
+        } else if ( (DbConnectionFactory.isH2() || DbConnectionFactory.isOracle()) && isFloatField ) {
             update.append("\"").append(field.getFieldContentlet()).append("\"").append(" = ");
         }else{
             update.append(field.getFieldContentlet()).append(" = ");
@@ -2329,8 +2333,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
             update.append(DbConnectionFactory.getDBDateTimeFunction());
             whereField.append(DbConnectionFactory.getDBDateTimeFunction());
         } else if (field.getFieldContentlet().contains("float")) {
-            update.append(0.0);
-            whereField.append(0.0);
+            if ( DbConnectionFactory.isOracle() ) {
+                update.append("'0.0'");// Oracle implicitly converts the character value to a NUMBER value,  implicitly converts '200' to 200:
+                whereField.append("'0.0'");
+            } else {
+                update.append(0.0);
+                whereField.append(0.0);
+            }
         } else if (field.getFieldContentlet().contains("integer")) {
             update.append(0);
             whereField.append(0);

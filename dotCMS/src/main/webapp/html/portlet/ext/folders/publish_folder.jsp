@@ -6,7 +6,6 @@
 <%@ page import="com.dotmarketing.portlets.files.model.File" %>
 <%@ page import="com.dotmarketing.portlets.containers.model.Container" %>
 <%@ page import="com.dotmarketing.portlets.contentlet.model.Contentlet" %>
-<%@ page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage" %>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 
 <%
@@ -87,9 +86,6 @@ function cancel() {
 											}
 											else if (webasset instanceof File) {
 												title = ((File)webasset).getFileName();
-											}
-											else if (webasset instanceof HTMLPage) {
-												title = ((HTMLPage)webasset).getPageUrl();
 											}
 											else {
 												title = webasset.getTitle();

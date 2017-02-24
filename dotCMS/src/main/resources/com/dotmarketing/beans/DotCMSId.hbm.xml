@@ -297,31 +297,6 @@
 			<property column="theme" name="theme" length="255" type="string" />
 		</joined-subclass>
 
-		<joined-subclass name="com.dotmarketing.portlets.htmlpages.model.HTMLPage" table="htmlpage">
-			<key column="inode" />
-			<!-- Web Asset properties -->
-			<property column="show_on_menu" name="showOnMenu" type="boolean" />
-			<property column="title" length="255" name="title" type="string" />
-			<property column="mod_date" length="23" name="modDate" type="java.util.Date" />
-			<property column="mod_user" name="modUser" length="100" type="string">
-				<column name="mod_user" index="idx_htmlpage_1" />
-			</property>
-			<property column="sort_order" length="4" name="sortOrder" type="integer" />
-			<property column="friendly_name" name="friendlyName" length="255" type="string" />
-			<!-- Web Asset properties -->
-			<property column="metadata" name="metadata" type="string" length="123456789" />
-			<property column="start_date" name="startDate" type="java.util.Date" />
-			<property column="end_date" name="endDate" type="java.util.Date" />
-			<property column="page_url" name="pageUrl" type="string" length="255" />
-			<property column="https_required" name="httpsRequired" type="boolean" />
-			<property column="redirect" name="redirect" type="string" length="255" />
-			<property column="identifier" length="36" name="identifier" type="string" />
-			<property column="seo_description" name="seoDescription" type="string" length="123456789" />
-			<property column="seo_keywords" name="seoKeywords" type="string" length="123456789" />
-			<property column="cache_ttl" name="cacheTTL" type="long" />
-			<property column="template_id" length="36" name="templateId" type="string" />
-		</joined-subclass>
-
 		<joined-subclass name="com.dotmarketing.portlets.links.model.Link" table="links">
 			<key column="inode" />
 			<!-- Web Asset properties -->
@@ -1210,17 +1185,6 @@
 
    </class>
     <class name="com.dotmarketing.portlets.templates.model.TemplateVersionInfo" table="template_version_info">
-        <id column="identifier"    name="identifier"   length="36" type="string">
-            <generator class="assigned"/>
-        </id>
-        <property column="working_inode" name="workingInode" length="36" type="string"  not-null="true" />
-        <property column="live_inode"    name="liveInode"    length="36" type="string"  not-null="false"/>
-        <property column="deleted"       name="deleted"                  type="boolean" not-null="true" />
-        <property column="locked_by"     name="lockedBy"     length="100" type="string"  not-null="false"/>
-        <property column="locked_on"     name="lockedOn"                 type="java.util.Date"    not-null="false"/>
-         <property column="version_ts"     name="versionTs"  type="java.util.Date"    not-null="true"/>
-    </class>
-    <class name="com.dotmarketing.portlets.htmlpages.model.HTMLPageVersionInfo" table="htmlpage_version_info">
         <id column="identifier"    name="identifier"   length="36" type="string">
             <generator class="assigned"/>
         </id>

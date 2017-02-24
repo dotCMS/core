@@ -1,18 +1,18 @@
 <%@ include file="/html/portlet/ext/director/init.jsp" %>
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
 <!-- JSP Imports --> 
-<%@ page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage" %>
 <%@ page import="com.dotmarketing.factories.InodeFactory" %>
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
+<%@ page import="com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage" %>
 
 
 <% 
-HTMLPage htmlPage;
+IHTMLPage htmlPage;
 if (request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_EDIT)!=null) {
-	htmlPage = (HTMLPage) request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_EDIT);
+	htmlPage = (IHTMLPage) request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_EDIT);
 }
 else {
-	htmlPage = (HTMLPage) com.dotmarketing.factories.InodeFactory.getInode(request.getParameter("inode"),HTMLPage.class);
+	htmlPage = (IHTMLPage) com.dotmarketing.factories.InodeFactory.getInode(request.getParameter("inode"),IHTMLPage.class);
 }
 String referer = (request.getParameter("referer") != null ) ? java.net.URLDecoder.decode(request.getParameter("referer"),"UTF-8") : "" ;
 

@@ -57,8 +57,6 @@ public class PublishAuditUtil {
                 sw.append( APILocator.getTemplateAPI().findWorkingTemplate( id, user, false ).getTitle() );
             } else if ( PusheableAsset.CONTAINER.getType().equals( assetType ) ) {
                 sw.append( APILocator.getContainerAPI().getWorkingContainerById( id, user, false ).getTitle() );
-            } else if ( PusheableAsset.HTMLPAGE.getType().equals( assetType ) ) {
-                sw.append( APILocator.getHTMLPageAPI().loadWorkingPageById( id, user, false ).getTitle() );
             } else if ( PusheableAsset.CATEGORY.getType().equals( assetType ) ) {
                 sw.append( APILocator.getCategoryAPI().find( id, user, false ).getCategoryName() );
             } else if ( PusheableAsset.LINK.getType().equals( assetType ) ) {
