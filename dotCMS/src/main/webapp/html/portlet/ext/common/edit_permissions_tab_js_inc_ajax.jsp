@@ -13,14 +13,6 @@
 <%@ page import="com.dotmarketing.portlets.rules.model.Rule" %>
 <%@ page import="com.dotmarketing.portlets.templates.design.bean.TemplateLayout" %>
 
-<%if(!Config.getBooleanProperty("ENABLE_LEGACY_FILE_SUPPORT",false)) {%>
-<style>
-    tr.legacy_files_row {
-        display:none !important;
-    }
-</style>
-<%}%>
-
 <script type="text/javascript" src="/dwr/interface/PermissionAjax.js"></script>
 <script type="text/javascript" src="/html/js/dotcms/dijit/form/RolesFilteringSelect.js"></script>
 <script type="text/javascript"><!--
@@ -68,7 +60,6 @@
 	var templatesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Templates")) %>';
 	var templateLayoutsWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Template-Layouts")) %>';
 	var pagesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Pages")) %>';
-	var filesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Legacy-Files")) %>';
 	var linksWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Links")) %>';
 	var contentWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Content-Files")) %>';
 	var permissionsOnChildrenMsg1 = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Permissions-on-Children1")) %>';
@@ -356,7 +347,6 @@
 				rolePermission.templatesPermission = retrievePermissionChecks(role.id, 'templates');
 				rolePermission.templateLayoutsPermission = retrievePermissionChecks(role.id, 'template-layouts');
 				rolePermission.pagesPermission = retrievePermissionChecks(role.id, 'pages');
-				rolePermission.filesPermission = retrievePermissionChecks(role.id, 'files');
 				rolePermission.linksPermission = retrievePermissionChecks(role.id, 'links');
 				rolePermission.contentPermission = retrievePermissionChecks(role.id, 'content');
 				rolePermission.structurePermission = retrievePermissionChecks(role.id, 'structure');
@@ -389,7 +379,6 @@
 		destroyCheckboxes(getPermissionCheckboxDijits('templates', role.roleId))
 		destroyCheckboxes(getPermissionCheckboxDijits('template-layouts', role.roleId))
 		destroyCheckboxes(getPermissionCheckboxDijits('pages', role.roleId))
-		destroyCheckboxes(getPermissionCheckboxDijits('files', role.roleId))
 		destroyCheckboxes(getPermissionCheckboxDijits('links', role.roleId))
 		destroyCheckboxes(getPermissionCheckboxDijits('content', role.roleId))
 		destroyCheckboxes(getPermissionCheckboxDijits('structure', role.roleId))
@@ -422,7 +411,6 @@
 					rolePermission.templatesPermission |
 					rolePermission.templateLayoutsPermission |
 					rolePermission.pagesPermission |
-					rolePermission.filesPermission |
 					rolePermission.linksPermission |
 					rolePermission.contentPermission |
 					rolePermission.structurePermission |
@@ -532,7 +520,7 @@
                 return true;
         }
 
-        types=['hosts','folders','containers','templates', 'template-layouts','pages','files','links','structure','content','categories', 'rules'];
+        types=['hosts','folders','containers','templates', 'template-layouts','pages','links','structure','content','categories', 'rules'];
 
         for(var i=0;i<types.length;i++)
             if(changedType(item,types[i]))
@@ -698,7 +686,6 @@
 			enableCheckboxes(getPermissionCheckboxDijits('templates', role.id))
 			enableCheckboxes(getPermissionCheckboxDijits('template-layouts', role.id))
 			enableCheckboxes(getPermissionCheckboxDijits('pages', role.id))
-			enableCheckboxes(getPermissionCheckboxDijits('files', role.id))
 			enableCheckboxes(getPermissionCheckboxDijits('links', role.id))
 			enableCheckboxes(getPermissionCheckboxDijits('content', role.id))
 			enableCheckboxes(getPermissionCheckboxDijits('structure', role.id))
@@ -888,7 +875,6 @@
 		role.templatesWillInherit = templatesWillInheritMsg;
 		role.templateLayoutsWillInherit = templateLayoutsWillInheritMsg;
 		role.pagesWillInherit = pagesWillInheritMsg;
-		role.filesWillInherit = filesWillInheritMsg;
 		role.linksWillInherit = linksWillInheritMsg;
 		role.contentWillInherit = contentWillInheritMsg;
 		role.permissionsOnChildren1=permissionsOnChildrenMsg1;
