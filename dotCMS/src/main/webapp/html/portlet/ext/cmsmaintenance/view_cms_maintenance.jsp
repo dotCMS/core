@@ -818,7 +818,7 @@ function getAllThreads() {
 
         },
         errorHandler:function(message) {
-            alert("Oops: " + message);
+            alert("Error: " + message);
             dojo.query('#threadProgress').style({display:"none"});
         }
     });
@@ -851,7 +851,7 @@ function getSysInfo() {
         },
         errorHandler:function(message) {
         	dojo.query('#sysInfoProgress').style({display:"none"});
-            alert("Oops: " + message);
+            alert("Error: " + message);
         }
     });
 }
