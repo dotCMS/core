@@ -1,15 +1,16 @@
 <!--TODO: make this md-toolbar a dot-component-->
 <div class="layout" [class.collapsed]="isMenuCollapsed">
     <p-toolbar class="layout__toolbar">
-        <div class="toolbar__host">
-            <button pButton iconButton icon="fa-bars" class="inverse" (click)="toggleSidenav()"></button>
-            <dot-site-selector-component></dot-site-selector-component>
-        </div>
-        <dot-global-search></dot-global-search>
-        <div class="toolbar__actions">
-            <dot-toolbar-notifications></dot-toolbar-notifications>
-            <toolbar-user></toolbar-user>
-            <toolbar-add-contentlet></toolbar-add-contentlet>
+        <div class="layout__toolbar-inner">
+            <div class="toolbar__host">
+                <button pButton iconButton icon="fa-bars" class="inverse" (click)="toggleSidenav()"></button>
+                <dot-site-selector-component></dot-site-selector-component>
+            </div>
+            <div class="toolbar__actions">
+                <dot-toolbar-notifications></dot-toolbar-notifications>
+                <toolbar-user></toolbar-user>
+                <toolbar-add-contentlet></toolbar-add-contentlet>
+            </div>
         </div>
     </p-toolbar>
     <div class="layout__sidebar">

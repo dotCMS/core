@@ -2,10 +2,10 @@ import {BrowserModule} from '@angular/platform-browser';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {HttpModule} from '@angular/http';
 import {NgModule} from '@angular/core';
-import { Logger } from "angular2-logger/core";
+import {Logger} from 'angular2-logger/core';
 
 // ROUTING
-import {LocationStrategy, HashLocationStrategy} from "@angular/common";
+import {LocationStrategy, HashLocationStrategy} from '@angular/common';
 import {routing} from './app.routing';
 
 // CUSTOM SERVICES
@@ -183,7 +183,7 @@ import {LoggerService} from '../../api/services/logger.service';
 import {LogOutContainer} from './common/login/login-component/log-out-container';
 import {Config} from '../../api/util/config';
 import {StringUtils} from '../../api/util/string.utils';
-import {ProtocolFactory} from '../../api/services/protocol/socket-factory';
+import {SocketFactory} from '../../api/services/protocol/socket-factory';
 
 const NGFACES_MODULES = [
     InputTextModule,
@@ -200,8 +200,8 @@ const NGFACES_MODULES = [
 @NgModule({
     bootstrap: [AppComponent],
     declarations: [
-        ...COMPONENTS,
         ...PIPES,
+        ...COMPONENTS,
         ...DIRECTIVES,
         ...RULES_ENGINE_COMPONENTS,
     ],
@@ -239,7 +239,7 @@ const NGFACES_MODULES = [
         UserModel,
         ...RULES_ENGINE_SERVICES,
         {provide: LocationStrategy, useClass: HashLocationStrategy},
-        ProtocolFactory
+        SocketFactory
     ]
 })
 export class AppModule {
