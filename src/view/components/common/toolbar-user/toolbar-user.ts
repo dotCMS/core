@@ -5,6 +5,7 @@ import {DropdownComponent} from '../dropdown-component/dropdown-component';
 import {LoginService, Auth} from '../../../../api/services/login-service';
 import {MessageService} from '../../../../api/services/messages-service';
 import {LoggerService} from '../../../../api/services/logger.service';
+import {IframeOverlayService} from "../../../../api/services/iframe-overlay-service";
 
 @Component({
     moduleId: __moduleName,
@@ -22,7 +23,8 @@ export class ToolbarUserComponent extends BaseComponent {
     private showMyAccount: boolean = false;
 
     constructor(private router: DotRouterService, private loginService: LoginService,
-                private messageService: MessageService, private loggerService: LoggerService) {
+                private messageService: MessageService, private loggerService: LoggerService,
+                private iframeOverlayService: IframeOverlayService) {
         super(['my-account'], messageService);
     }
 

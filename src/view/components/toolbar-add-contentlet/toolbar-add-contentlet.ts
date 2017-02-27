@@ -4,6 +4,7 @@ import {ContentletService, StructureTypeView, ContentTypeView} from '../../../ap
 import {RoutingService} from '../../../api/services/routing-service';
 import {BaseComponent} from '../common/_base/base-component';
 import {MessageService} from '../../../api/services/messages-service';
+import {IframeOverlayService} from "../../../api/services/iframe-overlay-service";
 
 @Component({
     directives: [],
@@ -63,7 +64,7 @@ export class ToolbarAddContenletComponent extends BaseComponent {
     private selectedName: string = '';
 
     constructor(private contentletService: ContentletService, private routingService: RoutingService,
-                 messageService: MessageService) {
+                 messageService: MessageService, private iframeOverlayService: IframeOverlayService) {
 
         super(['more'], messageService);
     }

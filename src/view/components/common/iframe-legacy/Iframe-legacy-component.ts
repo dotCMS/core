@@ -8,6 +8,7 @@ import {SiteService} from '../../../../api/services/site-service';
 import {DotcmsEventsService} from '../../../../api/services/dotcms-events-service';
 import {MessageService} from '../../../../api/services/messages-service';
 import {LoggerService} from '../../../../api/services/logger.service';
+import {IframeOverlayService} from '../../../../api/services/iframe-overlay-service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -20,11 +21,12 @@ export class IframeLegacyComponent extends SiteChangeListener {
     iframe: SafeResourceUrl;
     iframeElement;
     private loadingInProgress: boolean = true;
+    private showOverlay: boolean = true;
 
     constructor(private route: ActivatedRoute, private routingService: RoutingService, private siteService: SiteService,
                 private sanitizer: DomSanitizer, private element: ElementRef, private loginService: LoginService,
                 private dotcmsEventsService: DotcmsEventsService, messageService: MessageService,
-                private loggerService: LoggerService) {
+                private loggerService: LoggerService, private iframeOverlayService: IframeOverlayService) {
         super(siteService, ['ask-reload-page-message'], messageService);
 
         /**
@@ -44,6 +46,8 @@ export class IframeLegacyComponent extends SiteChangeListener {
     }
 
     ngOnInit(): void {
+        this.iframeOverlayService.overlay.subscribe(val => this.showOverlay = val);
+
         // TODO there is a weird 4px bug here that make unnecessary scroll, need to look into it.
         this.element.nativeElement.style.height = (window.innerHeight - 64) + 'px';
         this.iframeElement = this.element.nativeElement.querySelector('iframe');
@@ -64,6 +68,14 @@ export class IframeLegacyComponent extends SiteChangeListener {
                 // TODO: When we finish the migration of the site browser this event will be handle.....
             }
         });
+    }
+
+    /**
+     * Hide the loading indicator
+     * @param $event
+     */
+    hideLoadingIndicator($event): void {
+        this.loadingInProgress = false;
     }
 
     initComponent(): void {

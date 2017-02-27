@@ -1,4 +1,12 @@
-<dot-dropdown-component id="dot-toolbar-notifications" inverse="true" icon="fa-bell" (toggle)="toggleNotifications()" [disabled]="!notifications.length" alignRight="true">
+<dot-dropdown-component
+        id="dot-toolbar-notifications"
+        inverse="true"
+        icon="fa-bell"
+        (toggle)="toggleNotifications()"
+        [disabled]="!notifications.length"
+        alignRight="true"
+        (open)="iframeOverlayService.show()"
+        (close)="iframeOverlayService.hide()">
     <span *ngIf="notificationsUnreadCount" class="badge" id="dot-toolbar-notifications-badge">{{notificationsUnreadCount}}</span>
     <div class="toolbar-notifications">
         <div class="toolbar-notifications__heading">
