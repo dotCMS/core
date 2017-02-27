@@ -1,11 +1,9 @@
-import {ApiRoot} from '../persistence/ApiRoot';
 import {CoreWebService} from './core-web-service';
 import {Injectable} from '@angular/core';
 import {LoginService} from './login-service';
 import {Observable} from 'rxjs/Rx';
 import {DotcmsEventsService} from './dotcms-events-service';
-
-import {RequestMethod, Http} from '@angular/http';
+import {RequestMethod} from '@angular/http';
 import {DotRouterService} from './dot-router-service';
 import {Subject} from 'rxjs/Subject';
 
@@ -28,10 +26,7 @@ export class RoutingService {
         this.portlets = new Map();
 
         loginService.watchUser(this.loadMenus.bind(this));
-
-        dotcmsEventsService.subscribeTo('UPDATE_PORTLET_LAYOUTS').subscribe( () => {
-            this.loadMenus();
-        });
+        dotcmsEventsService.subscribeTo('UPDATE_PORTLET_LAYOUTS').subscribe(this.loadMenus.bind(this));
     }
 
     get currentPortletId(): string{
@@ -48,6 +43,10 @@ export class RoutingService {
 
     get portletUrl$(): Observable<string> {
         return this._portletUrlSource$.asObservable();
+    }
+
+    get firstPortlet(): string {
+        return this.portlets.entries().next().value[0];
     }
 
     public addPortletURL(portletId: string, url: string): void {
@@ -105,7 +104,6 @@ export class RoutingService {
                     }
                 }
             }
-
             this._menusChange$.next(this.menus);
         }
     }

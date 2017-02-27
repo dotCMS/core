@@ -23,7 +23,6 @@ import {NotLicensedService} from '../../api/services/not-licensed-service';
 
 import {RoutingPublicAuthService} from '../../api/services/routing-public-auth-service';
 import {RoutingPrivateAuthService} from '../../api/services/routing-private-auth-service';
-import {RoutingRootAuthService} from '../../api/services/routing-root-auth-service';
 
 import {RoutingService} from '../../api/services/routing-service';
 import {SiteService} from '../../api/services/site-service';
@@ -234,7 +233,6 @@ const NGFACES_MODULES = [
         NotificationsService,
         RoutingPublicAuthService,
         RoutingPrivateAuthService,
-        RoutingRootAuthService,
         RoutingService,
         SiteService,
         StringFormat,
