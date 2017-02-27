@@ -26,7 +26,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.form.business.FormAPI;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -504,9 +503,6 @@ public class ContentletMapServices {
 		String detailPageId=structure.getDetailPage();
 		try {
 			Identifier pageIdentifier=APILocator.getIdentifierAPI().find(detailPageId);
-			if (!InodeUtils.isSet(pageIdentifier.getInode()) && UtilMethods.isSet(detailPageId)) {
-				pageIdentifier=APILocator.getIdentifierAPI().find((HTMLPage) InodeFactory.getInode(detailPageId, HTMLPage.class));
-			}
 			detailPageURI=pageIdentifier.getURI();
 		} catch (Exception e) {
 			Logger.error(ContentletMapServices.class, e.getMessage());

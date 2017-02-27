@@ -113,7 +113,6 @@ public class QueryUtil {
 		}
 		String queryBuilderType = query.getBuilderType().toString();
 		if(queryBuilderType.equalsIgnoreCase(BuilderType.CONTENTLET.toString())
-				|| queryBuilderType.equalsIgnoreCase(BuilderType.FILE_ASSET.toString())
 				|| queryBuilderType.equalsIgnoreCase(BuilderType.HTMLPAGE.toString())
 				|| queryBuilderType.equalsIgnoreCase(BuilderType.MENU_LINK.toString())){		
 			bob.append(","+queryBuilderType+".identifier,inode.owner");

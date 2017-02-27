@@ -61,8 +61,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.dashboard.model.DashboardSummary404;
 import com.dotmarketing.portlets.dashboard.model.DashboardUserPreferences;
-import com.dotmarketing.portlets.files.model.FileAssetVersionInfo;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPageVersionInfo;
 import com.dotmarketing.portlets.links.model.LinkVersionInfo;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
@@ -297,36 +295,16 @@ public class CMSMaintenanceAjax {
 
 		return result;
 	}
-	
-	public boolean migrateHTMLPagesToContent() throws PortalException, SystemException, DotDataException,DotSecurityException {
-
-		validateUser();
-		
-		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-		
-		boolean result = true;
-
-		try {
-			
-			result = APILocator.getHTMLPageAssetAPI().migrateAllLegacyPages(com.liferay.portal.util.PortalUtil.getUser(req), false);
-			
-		} catch(Exception e) {
-			Logger.error(getClass(), e.getMessage(), e);
-			result = false;
-		}
-		
-		return result;
-	}
 
     public int removeOldVersions(String date) throws ParseException, SQLException, DotDataException {
         	Date assetsOlderThan = new SimpleDateFormat("MM/dd/yyyy").parse(date);
         	return CMSMaintenanceFactory.deleteOldAssetVersions(assetsOlderThan);
     }
 
-    public Map cleanAssets (boolean files, boolean binarys) throws DotDataException {
+    public Map cleanAssets () throws DotDataException {
 
         //Create the thread to clean the assets
-        CleanAssetsThread cleanAssetsThread = CleanAssetsThread.getInstance( true , files, binarys);
+        CleanAssetsThread cleanAssetsThread = CleanAssetsThread.getInstance( true , true);
         BasicProcessStatus processStatus = cleanAssetsThread.getProcessStatus();
         cleanAssetsThread.start();
 
@@ -342,7 +320,7 @@ public class CMSMaintenanceAjax {
     public Map getCleanAssetsStatus () {
 
         //Getting the running clean assets thread
-        CleanAssetsThread cleanAssetsThread = CleanAssetsThread.getInstance( false , false, false);
+        CleanAssetsThread cleanAssetsThread = CleanAssetsThread.getInstance(false, false);
         BasicProcessStatus processStatus = cleanAssetsThread.getProcessStatus();
 
         //Return its current running status
@@ -511,17 +489,11 @@ public class CMSMaintenanceAjax {
 	                    else if(TagInode.class.equals(clazz)){
 	                    	_dh.setQuery("from " + clazz.getName() + " order by inode, tag_id");
 	                    }
-	                    else if(FileAssetVersionInfo.class.equals(clazz)){
-	                    	_dh.setSQLQuery("SELECT {fileasset_version_info.*} from fileasset_version_info fileasset_version_info, identifier where identifier.id = fileasset_version_info.identifier order by fileasset_version_info.identifier ");
-	                    }
 	                    else if(TemplateVersionInfo.class.equals(clazz)){
 	                    	_dh.setSQLQuery("SELECT {template_version_info.*} from template_version_info template_version_info, identifier where identifier.id = template_version_info.identifier order by template_version_info.identifier ");
 	                    }
 	                    else if(ContainerVersionInfo.class.equals(clazz)){
 	                    	_dh.setSQLQuery("SELECT {container_version_info.*} from container_version_info container_version_info, identifier where identifier.id = container_version_info.identifier order by container_version_info.identifier ");
-	                    }
-	                    else if(HTMLPageVersionInfo.class.equals(clazz)){
-	                    	_dh.setSQLQuery("SELECT {htmlpage_version_info.*} from htmlpage_version_info htmlpage_version_info, identifier where identifier.id = htmlpage_version_info.identifier order by htmlpage_version_info.identifier ");
 	                    }
 	                    else if(LinkVersionInfo.class.equals(clazz)){
 	                    	_dh.setSQLQuery("SELECT {link_version_info.*} from link_version_info link_version_info, identifier where identifier.id = link_version_info.identifier order by link_version_info.identifier ");

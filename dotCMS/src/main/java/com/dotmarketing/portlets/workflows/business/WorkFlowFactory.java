@@ -8,7 +8,6 @@ import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
@@ -39,8 +38,6 @@ public interface WorkFlowFactory {
 	public WorkflowHistory findWorkFlowHistoryById(String id) throws DotDataException;
 
 	public List<WorkflowHistory> findWorkflowHistory(WorkflowTask task) throws DotDataException;
-
-	public List<IFileAsset> findWorkflowTaskFiles(WorkflowTask task) throws DotDataException;
 
 	public List<Contentlet> findWorkflowTaskFilesAsContent(WorkflowTask task, User user) throws DotDataException;
 

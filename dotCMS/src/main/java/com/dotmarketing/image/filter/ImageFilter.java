@@ -175,7 +175,7 @@ public abstract class ImageFilter implements ImageFilterIf {
 				catch (Exception e){
 					inode = parameters.get("assetInodeOrIdentifier")[0];
 				}
-				String realAssetPath = APILocator.getFileAPI().getRealAssetPath();
+				String realAssetPath = APILocator.getFileAssetAPI().getRealAssetsRootPath();
 				File dirs = new File(realAssetPath + File.separator + "dotGenerated" + File.separator + inode.charAt(0) + File.separator + inode.charAt(1));
 				dirs.mkdirs();
 				String fileNameNoExt = this.getUniqueFileName(file, parameters, inode);

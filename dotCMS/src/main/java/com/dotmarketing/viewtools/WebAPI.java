@@ -23,7 +23,6 @@ import org.apache.velocity.tools.view.tools.ViewTool;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.Trackback;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotIdentifierStateException;
@@ -40,11 +39,10 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
-import com.dotmarketing.factories.TrackbackFactory;
+
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
@@ -559,8 +557,6 @@ public class WebAPI implements ViewTool {
 				if(cont!=null && InodeUtils.isSet(cont.getInode())){
 					realPath = APILocator.getFileAssetAPI().getRealAssetPath(cont.getInode(), fileName, ext);
 				}
-			}else{
-				realPath = APILocator.getFileAPI().getRealAssetPath(fileName, ext);
 			}
 			return realPath;
 		}catch (Exception e) {
@@ -624,9 +620,6 @@ public class WebAPI implements ViewTool {
 				if(cont!=null && InodeUtils.isSet(cont.getInode())){
 					return cont.getInode();
 				}
-			}else{
-				File f = APILocator.getFileAPI().getFileByURI(path, host, false,backEndUser!=null?backEndUser:user, false);
-				return f.getInode();
 			}
 			return null;
 		}catch (Exception e) {
@@ -984,18 +977,6 @@ public class WebAPI implements ViewTool {
 	}
 
 
-	/**
-	 * This method return the list of trackback ping associated to a identifier
-	 * This method is use in the trackback macro
-	 * @param id
-	 * @return List<Trackback>
-	 * @author Oswaldo Gallango
-	 * @version 1.5
-	 * @since 1.5
-	 */
-	public List<Trackback> getTrackbacksByIdentifier(String id){
-		return TrackbackFactory.getTrackbacksByAssetId (id);
-	}
 
 	/**
 	 * This Method set the HttpServletResponse status with the specified
@@ -1012,17 +993,6 @@ public class WebAPI implements ViewTool {
 		}else{
 			response.setStatus(code);
 		}
-	}
-
-	/**
-	 * Convert a rss feed to a html list
-	 * @param	uri String with rss feed uri
-	 * @return	String with the html code
-	 */
-	public static String RSSParse(String uri)
-	{
-		String ingesterName = "RSSIngester";
-		return RSSWebAPI.RSSParse(uri,ingesterName, null);
 	}
 
 	@Deprecated
@@ -1043,16 +1013,6 @@ public class WebAPI implements ViewTool {
 		if(ident.getAssetType().equals("contentlet")){
 			try {
 				fileAsset = APILocator.getContentletAPI().find(fileInode, u, false);
-			} catch (DotSecurityException e) {
-				Logger.error(this, e.getMessage());
-				return false;
-			}
-		}else{
-			try {
-				fileAsset = APILocator.getFileAPI().find(fileInode, u, false);
-			} catch (DotStateException e) {
-				Logger.error(this, e.getMessage());
-				return false;
 			} catch (DotSecurityException e) {
 				Logger.error(this, e.getMessage());
 				return false;

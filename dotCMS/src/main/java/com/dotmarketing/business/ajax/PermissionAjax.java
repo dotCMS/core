@@ -37,7 +37,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
@@ -225,11 +224,7 @@ public class PermissionAjax {
 					newSetOfPermissions.add(new Permission(Container.class.getCanonicalName(), asset.getPermissionId(),
 							roleId, Integer.parseInt(containersPermission), true));
 				}
-				String filesPermission = permission.get("filesPermission");
-				if(filesPermission != null) {
-					newSetOfPermissions.add(new Permission(File.class.getCanonicalName(), asset.getPermissionId(), roleId,
-							Integer.parseInt(filesPermission), true));
-				}
+
 				String pagesPermission = permission.get("pagesPermission");
 				if(pagesPermission != null) {
 					newSetOfPermissions.add(new Permission(IHTMLPage.class.getCanonicalName(), asset.getPermissionId(), roleId,

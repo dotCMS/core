@@ -25,7 +25,8 @@ import com.dotmarketing.business.IdentifierFactory;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpageviews.factories.HTMLPageViewFactory;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -121,7 +122,7 @@ public class HTMLPageReportAction extends DotPortletAction {
         String uri = null;
         Host host = null;
         if (req.getParameter("htmlpage") != null) {
-            HTMLPage myHTMLPage = (HTMLPage) InodeFactory.getInode(req.getParameter("htmlpage"), HTMLPage.class);
+        	IHTMLPage myHTMLPage = (IHTMLPage) InodeFactory.getInode(req.getParameter("htmlpage"), IHTMLPage.class);
 			host = hostAPI.findParentHost(myHTMLPage, systemUser, false);
             uri = APILocator.getIdentifierAPI().find(myHTMLPage).getURI();
             req.setAttribute("htmlPage", myHTMLPage);
@@ -129,7 +130,7 @@ public class HTMLPageReportAction extends DotPortletAction {
             //Identifier id = (Identifier) InodeFactory.getInode(req.getParameter("pageIdentifier"), Identifier.class);
         	Identifier id = APILocator.getIdentifierAPI().find(req.getParameter("pageIdentifier"));
             uri = id.getURI();
-            HTMLPage myHTMLPage = (HTMLPage) APILocator.getVersionableAPI().findLiveVersion(id,APILocator.getUserAPI().getSystemUser(),false);
+            HTMLPageAsset myHTMLPage = (HTMLPageAsset) APILocator.getVersionableAPI().findLiveVersion(id,APILocator.getUserAPI().getSystemUser(),false);
 			host = hostAPI.findParentHost(myHTMLPage, systemUser, false);
             req.setAttribute("htmlPage", myHTMLPage);
         }

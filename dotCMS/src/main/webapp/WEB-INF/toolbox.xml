@@ -99,11 +99,6 @@
 	<!-- Velocity View Tools End -->
 	<!-- Dotmarketing View Tools Start -->
 	<tool>
-		<key>rssapi</key>
-		<scope>application</scope>
-		<class>com.dotmarketing.viewtools.RSSWebAPI</class>
-	</tool>
-	<tool>
 		<key>webapi</key>
 		<scope>request</scope>
 		<class>com.dotmarketing.viewtools.WebAPI</class>
@@ -112,11 +107,6 @@
 		<key>velutil</key>
 		<scope>request</scope>
 		<class>com.dotmarketing.viewtools.VelocityWebUtil</class>
-	</tool>
-	<tool>
-		<key>googleapi</key>
-		<scope>application</scope>
-		<class>com.dotmarketing.viewtools.GoogleMiniApi</class>
 	</tool>
 	<tool>
 		<key>commentsapi</key>
@@ -154,11 +144,6 @@
 		<class>com.dotmarketing.viewtools.StructuresWebAPI</class>
 	</tool>
 	<tool>
-		<key>pageAPI</key>
-		<scope>request</scope>
-		<class>com.dotmarketing.viewtools.HTMLPageWebAPI</class>
-	</tool>
-	<tool>
 		<key>containerAPI</key>
 		<scope>request</scope>
 		<class>com.dotmarketing.viewtools.ContainerWebAPI</class>
@@ -169,29 +154,14 @@
 		<class>com.dotmarketing.viewtools.FolderWebAPI</class>
 	</tool>
 	<tool>
-		<key>sitemapapi</key>
-		<scope>application</scope>
-		<class>com.dotmarketing.viewtools.SiteMapWebAPI</class>
-	</tool>
-	<tool>
 		<key>macro</key>
 		<scope>request</scope>
 		<class>com.dotmarketing.viewtools.DotCMSMacroWebAPI</class>
 	</tool>
 	<tool>
-		<key>video</key>
-		<scope>request</scope>
-		<class>com.dotmarketing.viewtools.VideoGalleryWebApi</class>
-	</tool>
-	<tool>
 		<key>globalvars</key>
 		<scope>request</scope>
 		<class>com.dotmarketing.viewtools.LanguageWebAPI</class>
-	</tool>
-	<tool>
-		<key>nav</key>
-		<scope>request</scope>
-		<class>com.dotmarketing.viewtools.NavigationWebAPI</class>
 	</tool>
 	<tool>
 		<key>glossary</key>
@@ -208,21 +178,6 @@
 		<scope>application</scope>
 		<class>com.dotmarketing.util.Config</class>
 	 </tool>
-	 <tool>
-		<key>rating</key>
-		<scope>request</scope>
-		<class>com.dotmarketing.viewtools.RatingWebAPI</class>
-	 </tool>
-	 <tool>
-		<key>alertMessagesWebAPI</key>
-		<scope>request</scope>
-		<class>com.dotmarketing.util.AlertMessagesWebAPI</class>
-	 </tool>
-	<tool>
-		<key>favorites</key>
-		<scope>request</scope>
-		<class>com.dotmarketing.viewtools.FavoritesWebAPI</class>
-	</tool>
 	<tool>
 		<key>tags</key>
 		<scope>request</scope>
@@ -237,16 +192,6 @@
 		<key>stringsapi</key>
 		<scope>application</scope>
 		<class>com.dotmarketing.viewtools.StringsWebApi</class>
-	</tool>
-	<tool>
-		<key>mailinglist</key>
-		<scope>request</scope>
-		<class>com.dotmarketing.viewtools.MailingListWebAPI</class>
-	</tool>
-    <tool>
-		<key>poll</key>
-		<scope>request</scope>
-		<class>com.dotmarketing.viewtools.PollsWebAPI</class>
 	</tool>
 	<tool>
 		<key>calendar</key>
@@ -300,34 +245,9 @@
 		<class>com.dotmarketing.viewtools.XsltTool</class>
 	</tool>
 	<tool>
-		<key>groovy</key>
-		<scope>request</scope>
-		<class>com.dotmarketing.scripting.viewtool.GroovyTool</class>
-	</tool>
-	<tool>
-		<key>ruby</key>
-		<scope>request</scope>
-		<class>com.dotmarketing.scripting.viewtool.RubyTool</class>
-	</tool>
-	<tool>
-		<key>python</key>
-		<scope>request</scope>
-		<class>com.dotmarketing.scripting.viewtool.PythonTool</class>
-	</tool>
-<tool>
-		<key>js</key>
-		<scope>request</scope>
-		<class>com.dotmarketing.scripting.viewtool.JSTool</class>
-	</tool>
-	<tool>
 		<key>sitesearch</key>
 		<scope>request</scope>
 		<class>com.dotmarketing.sitesearch.viewtool.SiteSearchWebAPI</class>
-	</tool>
-	<tool>
-		<key>jsp</key>
-		<scope>request</scope>
-		<class>com.dotmarketing.scripting.viewtool.JSPTool</class>
 	</tool>
 	<tool>
 		<key>mailer</key>
@@ -384,7 +304,6 @@
 		<scope>request</scope>
 		<class>com.dotmarketing.viewtools.ESContentTool</class>
 	</tool>
-
 	<tool>
 		<key>sql</key>
 		<scope>request</scope>

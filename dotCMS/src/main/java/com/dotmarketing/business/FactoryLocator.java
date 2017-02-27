@@ -33,20 +33,14 @@ import com.dotmarketing.portlets.calendar.business.EventFactory;
 import com.dotmarketing.portlets.calendar.business.EventFactoryImpl;
 import com.dotmarketing.portlets.categories.business.CategoryFactory;
 import com.dotmarketing.portlets.categories.business.CategoryFactoryImpl;
-import com.dotmarketing.portlets.chains.business.ChainFactory;
-import com.dotmarketing.portlets.chains.business.ChainFactoryImpl;
 import com.dotmarketing.portlets.containers.business.ContainerFactory;
 import com.dotmarketing.portlets.containers.business.ContainerFactoryImpl;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
 import com.dotmarketing.portlets.dashboard.business.DashboardFactory;
-import com.dotmarketing.portlets.files.business.FileFactory;
-import com.dotmarketing.portlets.files.business.FileFactoryImpl;
 import com.dotmarketing.portlets.folders.business.FolderFactory;
 import com.dotmarketing.portlets.folders.business.FolderFactoryImpl;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableFactory;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableFactoryImpl;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageFactory;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageFactoryImpl;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageFactory;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageFactoryImpl;
 import com.dotmarketing.portlets.linkchecker.business.LinkCheckerFactory;
@@ -102,9 +96,6 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     	return (ContentletFactory)getInstance(FactoryIndex.CONTENTLET_FACTORY);
     }
 
-    public static ChainFactory getChainFactory(){
-    	return (ChainFactory)getInstance(FactoryIndex.CHAIN_FACTORY);
-    }
 
     public static PluginFactory getPluginFactory(){
     	return (PluginFactory)getInstance(FactoryIndex.PLUGIN_FACTORY);
@@ -146,14 +137,6 @@ public class FactoryLocator extends Locator<FactoryIndex>{
 
     public static LayoutFactory getLayoutFactory(){
     	return (LayoutFactory) getInstance(FactoryIndex.LAYOUT_FACTORY);
-    }
-
-    public static FileFactory getFileFactory(){
-    	return (FileFactory) getInstance(FactoryIndex.FILE_FACTORY);
-    }
-
-    public static HTMLPageFactory getHTMLPageFactory(){
-    	return (HTMLPageFactory) getInstance(FactoryIndex.HTMLPAGE_FACTORY);
     }
 
     public static MenuLinkFactory getMenuLinkFactory(){
@@ -312,7 +295,6 @@ enum FactoryIndex
             case CATEGORY_FACTORY: return new CategoryFactoryImpl();
             case CONTENTLET_FACTORY: return new ESContentFactoryImpl();
             case PLUGIN_FACTORY: return new PluginFactoryDBImpl();
-            case CHAIN_FACTORY: return new ChainFactoryImpl();
             case LANGUAGE_FACTORY: return new LanguageFactoryImpl();
             case DISTRIBUTED_JOURNAL_FACTORY: return new ESDistributedJournalFactoryImpl<String>("0");
             case USER_FACTORY : return new UserFactoryLiferayImpl();
@@ -322,8 +304,6 @@ enum FactoryIndex
             case LAYOUT_FACTORY : return new LayoutFactoryImpl();
             case USER_PROXY_FACTORY: return new UserProxyFactoryImpl() {};
             case ROLE_FACTORY : return new RoleFactoryImpl();
-            case FILE_FACTORY : return new FileFactoryImpl();
-            case HTMLPAGE_FACTORY : return new HTMLPageFactoryImpl();
             case MENULINK_FACTORY : return new MenuLinkFactoryImpl();
             case CONTAINER_FACTORY : return new ContainerFactoryImpl();
             case VIRTUALLINK_FACTORY : return new VirtualLinkFactoryImpl();

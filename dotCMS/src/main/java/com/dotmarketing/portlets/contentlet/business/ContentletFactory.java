@@ -8,7 +8,6 @@ import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -166,14 +165,6 @@ public abstract class ContentletFactory {
 	 */
 	protected abstract List<Contentlet> getContentletsByIdentifier(String identifier, Boolean live) throws DotDataException, DotSecurityException;
 
-	/**
-	 * Gets all related files
-	 * @param contentlet
-	 * @return
-	 * @throws DotDataException
-	 */
-	protected abstract List<File> getRelatedFiles(Contentlet contentlet) throws DotDataException;
-	
 	/**
 	 * Gets a file with a specific relationship type to the passed in contentlet
 	 * @param contentlet

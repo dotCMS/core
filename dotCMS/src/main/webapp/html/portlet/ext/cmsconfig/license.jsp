@@ -70,17 +70,34 @@
 	    isCommunity		:"<%=isCommunity%>",
 	    
 	    requestTrial : function(){
-	    	var data = {"licenseLevel":"400","licenseType":"trial"};
+	    	var data = {"licenseLevel":"500","licenseType":"trial"};
 	   		
-	   	    dojo.xhrPost({
-	   	        url: "/api/license/requestCode/",
+	    	var xhrArgs = {
+	    		url: "/api/license/requestCode/licenseType/"+ data.licenseType +'/licenseLevel/'+ data.licenseLevel,
 	   	        handleAs: "text",
-	   	        postData: data,
-	   	        load: function(code) {
-					dojo.byId("trialLicenseRequestCode").value=code;
+	   	        load: function(data) {
+	   	        	var isError = false;
+
+	   	        	if (data.success == false || data.success == "false") {
+	   	        		isError = true;
+	   	        	}
+
+	   	        	if(isError){
+	   	        		showDotCMSSystemMessage("There was an error generating the Request Code. Please try again",true);
+	   	        	}else{
+	   	        		var requestCode = data.requestCode;
+	   	        		dojo.byId("trialLicenseRequestCode").value=requestCode;
 					dojo.byId("trialLicenseForm").submit();
 	   	        }
-	   	    });
+	   	        },
+		   	    error: function (error) {
+		   	    	showDotCMSSystemMessage("ERROR:" + error,true);
+		   	    	
+		   	    	console.log(error);
+		   	    }
+	   	    };
+	    	
+	    	dojo.xhrPost(xhrArgs);
 	    },
 	
 	    doCodeRequest : function () {
@@ -96,21 +113,38 @@
 	    		return;
 	    	}
 	    	
-	    	var data = {"licenseLevel":dijit.byId("license_level").getValue(),"licenseType":dijit.byId("license_type").getValue()};
-	   	    dojo.xhrPost({
-	   	        url: "/api/license/requestCode/",
-	   	        handleAs: "text",
-	   	        postData: data,
-	   	        load: function(code) {
 
-					dojo.byId("licenseCode").value=code;
-					//dijit.byId("getLicenseCodeDia").show();
+	    	var licenseType = dijit.byId("license_type").getValue();
+	    	var licenseLevel = dijit.byId("license_level").getValue();
 					
+	    	var xhrArgs = {
+	    		url: "/api/license/requestCode/licenseType/"+ licenseType + '/licenseLevel/' + licenseLevel,
+	    		handleAs: "text",
+	    		load: function (data) {
+	    			console.log('data is '+ data)
+	    			var json = JSON.parse(data);
+	    			
+	    			var isError = false;
 					
+	    			if (json.success == false || json.success == "false") {
+	    				isError = true;
 	   	        }
 	
-	   	    });
+	    			if(isError){
+	    				showDotCMSSystemMessage("There was an error generating the Request Code. Please try again", true);
+	    			} else {
+	    				console.log(json.requestCode);
+	    				var requestCode = json.requestCode;
+	    				dojo.byId("licenseCode").value=requestCode;
+	    			}
+	    		},
+	    		error: function (error) {
+	    			showDotCMSSystemMessage("ERROR:" + error,true);
+	    			console.log(error);
+	    		}
+	    	};
 	   	
+	    	dojo.xhrPost(xhrArgs);
 	    },
 
 	    showCurrentCustomer : function(){
@@ -204,19 +238,20 @@
 	    	var data;
 
 	   		if(dojo.byId("licenseCodePasteField").value==undefined || dojo.byId("licenseCodePasteField").value.length>0){
-	   			 data = {"licenseText":dojo.byId("licenseCodePasteField").value};
+	   			 data = dojo.byId("licenseCodePasteField").value;
 	   		}
 	   		else{
 	   			console.log("test");
-	   			 data = {"licenseText":dojo.byId("licenseCodePasteFieldTwo").value};
+	   			 data = dojo.byId("licenseCodePasteFieldTwo").value;
 	   		}
 	   	 		
 	   		
+	   		var dataEncoded = encodeURIComponent(data);
+	   		
 	   		
 	   	    dojo.xhrPost({
-	   	        url: "/api/license/applyLicense/",
+	   	        url: "/api/license/applyLicense?licenseText="+dataEncoded,
 	   	        handleAs: "text",
-	   	        postData: data,
 	   	        load: function(message) {
 	   	        	
 	   	        	if(! message ){
@@ -240,6 +275,7 @@
 		        case 200: return "Professional"; break;
 		        case 300: return "Enterprise"; break;
 		        case 400: return "Prime"; break;
+                case 500: return "Platform"; break;
 		        default: return "-";
 		    }
 		},
@@ -667,7 +703,7 @@
 		</div>
 
 		<hr>
-			           
+
 		<!-- LICENSE PACK -->
 		<div id="licensePack">
 			<button data-dojo-type="dijit.form.Button" onClick="dijit.byId('uploadDiaWindow').show()" class="license-manager__upload-button">
@@ -717,7 +753,7 @@
 			</div>
 		</div>
 	</div>
-					
+
 </div><!-- /CONTENT WRAPPER -->
 
 <div dojoType="dijit.Dialog" id="uploadDiaWindow" title="<%= LanguageUtil.get(pageContext, "Upload-license-pack") %>">

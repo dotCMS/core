@@ -52,11 +52,6 @@
 		<filter-class>com.dotmarketing.cms.urlmap.filters.URLMapFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
-	 <filter>
-		<filter-name>CacheImagesFilter</filter-name>
-		<filter-class>com.dotmarketing.filters.CacheImagesFilter</filter-class>
-	</filter>
-	
 	<filter>
 		<filter-name>CMSFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.CMSFilter</filter-class>
@@ -72,12 +67,8 @@
 	<filter>
 		<filter-name>LoginRequiredFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.LoginRequiredFilter</filter-class>
+		<async-supported>true</async-supported>
 	</filter>
-	<filter>
-		<filter-name>NoCacheFilter</filter-name>
-		<filter-class>com.dotmarketing.filters.NoCacheFilter</filter-class>
-	</filter>
-	
 	<filter>
 		<filter-name>Secure MainServlet Filter</filter-name>
 		<filter-class>com.dotcms.repackage.com.liferay.filters.secure.SecureFilter</filter-class>
@@ -93,6 +84,7 @@
 		<async-supported>true</async-supported>
     </filter>
 	<!--END DOTMARKETING FILTERS-->
+	
 	
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN FILTERS -->
@@ -142,11 +134,6 @@
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 	<filter-mapping>
-		<filter-name>NoCacheFilter</filter-name>
-		<url-pattern>/dotCMS/*</url-pattern>
-	</filter-mapping>
-	
-	<filter-mapping>
 		<filter-name>CMSFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
@@ -155,6 +142,8 @@
 		<url-pattern>/c/*</url-pattern>
 	</filter-mapping>
 	<!--END DOTMARKETING FILTER-MAPPINGS-->
+	
+	
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN LISTENERS -->
     <!-- END LISTENERS -->
@@ -171,7 +160,7 @@
 		<listener-class>com.dotmarketing.listeners.OsgiFelixListener</listener-class>
 	</listener>
     <listener>
-        <listener-class>com.dotcms.repackage.org.apache.felix.http.proxy.ProxyListener</listener-class>
+        <listener-class>org.apache.felix.http.proxy.impl.ProxyServletContextListener</listener-class>
     </listener>
     <listener>
 		<listener-class>com.dotcms.repackage.org.apache.chemistry.opencmis.server.impl.CmisRepositoryContextListener</listener-class>
@@ -228,8 +217,8 @@
 		<servlet-class>com.dotmarketing.servlets.SpeedyAssetServlet</servlet-class>
 	</servlet>
 	<servlet>
-		<servlet-name>SpeedyAssetServlet2</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.SpeedyAssetServlet2</servlet-class>
+		<servlet-name>ShortyServlet</servlet-name>
+		<servlet-class>com.dotmarketing.servlets.ShortyServlet</servlet-class>
 	</servlet>
 	<servlet>
     	<servlet-name>AjaxFileUploadServlet</servlet-name>
@@ -361,6 +350,7 @@
     	<servlet-name>CSSPreProcessServlet</servlet-name>
     	<servlet-class>com.dotcms.csspreproc.CSSPreProcessServlet</servlet-class>
     </servlet>
+    
     <!-- REST -->
     <servlet>
 		<servlet-name>RESTAPI</servlet-name>
@@ -399,7 +389,7 @@
  	<!-- END SERVLETS -->
  	
  	
-    <!-- TEST FRAMEWORK SERVLETS -->                                                                                        
+    <!-- TEST FRAMEWORK SERVLETS -->
        <servlet>
          <servlet-name>ServletTestRunner</servlet-name>
          <servlet-class>com.dotmarketing.servlets.test.ServletTestRunner</servlet-class>
@@ -509,7 +499,7 @@
 		<url-pattern>/dotAsset/*</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>
-		<servlet-name>SpeedyAssetServlet2</servlet-name>
+		<servlet-name>ShortyServlet</servlet-name>
 		<url-pattern>/dA/*</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>

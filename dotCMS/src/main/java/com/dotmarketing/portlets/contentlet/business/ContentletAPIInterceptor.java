@@ -50,39 +50,6 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		conAPI = APILocator.getContentletAPIImpl();
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#addFileToContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, java.lang.String, java.lang.String, com.liferay.portal.model.User, boolean)
-	 */
-	public void addFileToContentlet(Contentlet contentlet, String fileInode, String relationName, User user, boolean respectFrontendRoles)	throws DotSecurityException, DotDataException {
-		for(ContentletAPIPreHook pre : preHooks){
-			boolean preResult = pre.addFileToContentlet(contentlet, fileInode, relationName, user, respectFrontendRoles);
-			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
-			}
-		}
-		conAPI.addFileToContentlet(contentlet, fileInode, relationName, user, respectFrontendRoles);
-		for(ContentletAPIPostHook post : postHooks){
-			post.addFileToContentlet(contentlet, fileInode, relationName, user, respectFrontendRoles);
-		}
-	}
-
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#addImageToContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet,java.lang.String, java.lang.String, com.liferay.portal.model.User, boolean)
-	 */
-	public void addImageToContentlet(Contentlet contentlet, String imageInode, String relationName, User user, boolean respectFrontendRoles)	throws DotSecurityException, DotDataException {
-		for(ContentletAPIPreHook pre : preHooks){
-			boolean preResult = pre.addImageToContentlet(contentlet, imageInode, relationName, user, respectFrontendRoles);
-			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
-			}
-		}
-		conAPI.addImageToContentlet(contentlet, imageInode, relationName, user, respectFrontendRoles);
-		for(ContentletAPIPostHook post : postHooks){
-			post.addImageToContentlet(contentlet, imageInode, relationName, user, respectFrontendRoles);
-		}
-	}
 
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#addLinkToContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet,java.lang.String, java.lang.String, com.liferay.portal.model.User, boolean)
@@ -1189,24 +1156,6 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		List<Contentlet> c = conAPI.getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles);
 		for(ContentletAPIPostHook post : postHooks){
 			post.getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles,c);
-		}
-		return c;
-	}
-
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#getRelatedFiles(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
-	 */
-	public List<com.dotmarketing.portlets.files.model.File> getRelatedFiles(Contentlet contentlet, User user, boolean respectFrontendRoles)	throws DotDataException, DotSecurityException {
-		for(ContentletAPIPreHook pre : preHooks){
-			boolean preResult = pre.getRelatedFiles(contentlet, user, respectFrontendRoles);
-			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
-			}
-		}
-		List<com.dotmarketing.portlets.files.model.File> c = conAPI.getRelatedFiles(contentlet, user, respectFrontendRoles);
-		for(ContentletAPIPostHook post : postHooks){
-			post.getRelatedFiles(contentlet, user, respectFrontendRoles,c);
 		}
 		return c;
 	}

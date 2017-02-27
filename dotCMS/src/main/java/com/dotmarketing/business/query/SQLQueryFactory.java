@@ -66,9 +66,7 @@ public class SQLQueryFactory extends GenericQueryFactory {
         buildCriteria((CommonTree)tree.getFirstChildWithType(CmisSqlParser.WHERE), query);
         
 //        ((CommonTree)ret.getStart()).getChildren()
-        if(tableName.equalsIgnoreCase(BuilderType.FILE_ASSET.toString())){
-        	query.setBuilderType(BuilderType.FILE_ASSET);
-        }else if(tableName.equalsIgnoreCase(BuilderType.HTMLPAGE.toString())){
+        if(tableName.equalsIgnoreCase(BuilderType.HTMLPAGE.toString())){
         	query.setBuilderType(BuilderType.HTMLPAGE);
         }
         else if(tableName.equalsIgnoreCase(BuilderType.STRUCTURE.toString())){

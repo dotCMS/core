@@ -17,12 +17,10 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cms.rating.api.RatingAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -44,7 +42,6 @@ import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -102,8 +99,7 @@ public class CalendarAjax {
 			categoryMaps.add(cat.getMap());
 		}
 		eventMap.put("categories", categoryMaps);
-		eventMap.put("rating", RatingAPI.getAverageRating(ev.getIdentifier()));
-		eventMap.put("votes", RatingAPI.getRatingVotesNumber(ev.getIdentifier()));
+
 		eventMap.put("hasReadPermission", perAPI.doesUserHavePermission(ev, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles));
 		eventMap.put("hasWritePermission", perAPI.doesUserHavePermission(ev, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles));
 		eventMap.put("hasPublishPermission", perAPI.doesUserHavePermission(ev, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles));
@@ -216,8 +212,7 @@ public class CalendarAjax {
 			ev.setIdentifier(origIdent);
 			
 			eventMap.put("categories", categoryMaps);
-			eventMap.put("rating", RatingAPI.getAverageRating(ev.getIdentifier()));
-			eventMap.put("votes", RatingAPI.getRatingVotesNumber(ev.getIdentifier()));
+
 			CommentsWebAPI cAPI = new CommentsWebAPI();
 			cAPI.setUser(user);
 			cAPI.setRespectFrontendRoles(respectFrontendRoles);
@@ -644,7 +639,7 @@ public class CalendarAjax {
 				if(UtilMethods.isSet(binaryFileValue) && !binaryFileValue.equals("---removed---")){
 					binaryFileValue = ContentletUtil.sanitizeFileName(binaryFileValue);
 			
-					File binaryFile = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+					File binaryFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
 							+ File.separator + user.getUserId() + File.separator + elementName
 							+ File.separator + binaryFileValue);
 					if(binaryFile.exists())
@@ -1084,8 +1079,6 @@ public class CalendarAjax {
 							categoryMaps.add(cat.getMap());
 						}
 						eventMap.put("categories", categoryMaps);
-						eventMap.put("rating", RatingAPI.getAverageRating(newEvent.getIdentifier()));
-						eventMap.put("votes", RatingAPI.getRatingVotesNumber(newEvent.getIdentifier()));
 						eventMap.put("hasReadPermission", perAPI.doesUserHavePermission(newEvent, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles));
 						eventMap.put("hasWritePermission", perAPI.doesUserHavePermission(newEvent, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles));
 						eventMap.put("hasPublishPermission", perAPI.doesUserHavePermission(newEvent, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles));

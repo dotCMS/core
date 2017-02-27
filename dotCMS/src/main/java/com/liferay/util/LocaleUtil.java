@@ -57,249 +57,249 @@ import java.util.Locale;
  */
 public class LocaleUtil {
 
-	private static com.dotcms.util.security.Encryptor encryptor = null;
+    private static com.dotcms.util.security.Encryptor encryptor = null;
 
-	private static UserAPI userAPI = null;
+    private static UserAPI userAPI = null;
 
-	private static UserWebAPI userWebAPI = null;
+    private static UserWebAPI userWebAPI = null;
 
-	private static CompanyAPI companyAPI = null;
+    private static CompanyAPI companyAPI = null;
 
-	private static JsonWebTokenUtils jsonWebTokenUtils = null;
+    private static JsonWebTokenUtils jsonWebTokenUtils = null;
 
-	public static void setJsonWebTokenUtils(JsonWebTokenUtils jsonWebTokenUtils) {
-		LocaleUtil.jsonWebTokenUtils = jsonWebTokenUtils;
-	}
+    public static void setJsonWebTokenUtils(JsonWebTokenUtils jsonWebTokenUtils) {
+        LocaleUtil.jsonWebTokenUtils = jsonWebTokenUtils;
+    }
 
-	public static void setEncryptor(Encryptor encryptor) {
-		LocaleUtil.encryptor = encryptor;
-	}
+    public static void setEncryptor(Encryptor encryptor) {
+        LocaleUtil.encryptor = encryptor;
+    }
 
-	public static void setUserAPI(UserAPI userAPI) {
-		LocaleUtil.userAPI = userAPI;
-	}
+    public static void setUserAPI(UserAPI userAPI) {
+        LocaleUtil.userAPI = userAPI;
+    }
 
-	public static void setUserWebAPI(UserWebAPI userWebAPI) {
-		LocaleUtil.userWebAPI = userWebAPI;
-	}
+    public static void setUserWebAPI(UserWebAPI userWebAPI) {
+        LocaleUtil.userWebAPI = userWebAPI;
+    }
 
-	public static void setCompanyAPI(CompanyAPI companyAPI) {
-		LocaleUtil.companyAPI = companyAPI;
-	}
+    public static void setCompanyAPI(CompanyAPI companyAPI) {
+        LocaleUtil.companyAPI = companyAPI;
+    }
 
-	private static CompanyAPI getCompanyAPI() {
+    private static CompanyAPI getCompanyAPI() {
 
-		if (null == companyAPI) {
-			synchronized (LocaleUtil.class) {
+        if (null == companyAPI) {
+            synchronized (LocaleUtil.class) {
 
-				if (null == companyAPI) {
-					companyAPI =
-							APILocator.getCompanyAPI();
-				}
-			}
-		}
+                if (null == companyAPI) {
+                    companyAPI =
+                        APILocator.getCompanyAPI();
+                }
+            }
+        }
 
-		return companyAPI;
-	}
+        return companyAPI;
+    }
 
-	private static JsonWebTokenUtils getJsonWebTokenUtils() {
+    private static JsonWebTokenUtils getJsonWebTokenUtils() {
 
-		if (null == jsonWebTokenUtils) {
-			synchronized (LocaleUtil.class) {
+        if (null == jsonWebTokenUtils) {
+            synchronized (LocaleUtil.class) {
 
-				if (null == jsonWebTokenUtils) {
-					jsonWebTokenUtils =
-							JsonWebTokenUtils.getInstance();
-				}
-			}
-		}
+                if (null == jsonWebTokenUtils) {
+                    jsonWebTokenUtils =
+                        JsonWebTokenUtils.getInstance();
+                }
+            }
+        }
 
-		return jsonWebTokenUtils;
-	}
+        return jsonWebTokenUtils;
+    }
 
-	private static Encryptor getEncryptor() {
+    private static Encryptor getEncryptor() {
 
-		if (null == encryptor) {
-			synchronized (LocaleUtil.class) {
+        if (null == encryptor) {
+            synchronized (LocaleUtil.class) {
 
-				if (null == encryptor) {
-					encryptor =
-							EncryptorFactory.getInstance().getEncryptor();
-				}
-			}
-		}
+                if (null == encryptor) {
+                    encryptor =
+                        EncryptorFactory.getInstance().getEncryptor();
+                }
+            }
+        }
 
-		return encryptor;
-	}
+        return encryptor;
+    }
 
-	private static UserAPI getUserAPI() {
+    private static UserAPI getUserAPI() {
 
-		if (null == userAPI) {
-			synchronized (LocaleUtil.class) {
+        if (null == userAPI) {
+            synchronized (LocaleUtil.class) {
 
-				if (null == userAPI) {
-					userAPI =
-							APILocator.getUserAPI();
-				}
-			}
-		}
+                if (null == userAPI) {
+                    userAPI =
+                        APILocator.getUserAPI();
+                }
+            }
+        }
 
-		return userAPI;
-	}
+        return userAPI;
+    }
 
-	private static UserWebAPI getUserWebAPI() {
+    private static UserWebAPI getUserWebAPI() {
 
-		if (null == userWebAPI) {
-			synchronized (LocaleUtil.class) {
+        if (null == userWebAPI) {
+            synchronized (LocaleUtil.class) {
 
-				if (null == userWebAPI) {
-					userWebAPI =
-							WebAPILocator.getUserWebAPI();
-				}
-			}
-		}
-		return userWebAPI;
-	}
+                if (null == userWebAPI) {
+                    userWebAPI =
+                        WebAPILocator.getUserWebAPI();
+                }
+            }
+        }
+        return userWebAPI;
+    }
 
-	public static Locale fromLanguageId(String languageId) {
-		Locale locale = null;
+    public static Locale fromLanguageId(String languageId) {
+        Locale locale = null;
 
-		try {
-			int pos = languageId.indexOf(StringPool.UNDERLINE);
+        try {
+            int pos = languageId.indexOf(StringPool.UNDERLINE);
 
-			String languageCode = languageId.substring(0, pos);
-			String countryCode = languageId.substring(
-				pos + 1, languageId.length());
+            String languageCode = languageId.substring(0, pos);
+            String countryCode = languageId.substring(
+                pos + 1, languageId.length());
 
-			locale = new Locale(languageCode, countryCode);
-		}
-		catch (Exception e) {
-			_log.warn(languageId + " is not a valid language id");
-		}
+            locale = new Locale(languageCode, countryCode);
+        }
+        catch (Exception e) {
+            _log.warn(languageId + " is not a valid language id");
+        }
 
-		if (locale == null) {
-			locale = Locale.getDefault();
-		}
+        if (locale == null) {
+            locale = Locale.getDefault();
+        }
 
-		return locale;
-	}
+        return locale;
+    }
 
-	/**
-	 * Get Locale saved on the {@link HttpSession}  {@link Globals} LOCALE_KEY,
-	 * if the LOCALE_KEY is also null, will get the request default one.
-	 *
-	 * If country or language are not null (one of them could be null), will build a new locale.
-	 * Not any session will be created.
-	 * @param request {@link HttpServletRequest}
-	 * @return Locale
-	 */
-	public static Locale getLocale (final HttpServletRequest request) {
-
-		return getLocale (request, null, null);
-	}
-
-	/**
-	 * If exists one {@link Locale} saved in the {@link HttpSession} then return it, if not exists any {@link Locale} link
-	 * in the {@link HttpSession} and user is not null then return {@link User#getLocale()}.<br>
-	 *
-	 * If user is null and not exists any {@link Locale} in the {@link HttpSession} then return null.
-	 *
-	 * @param user
-	 * @param req
-     * @return
-	 *
-	 * @see LocaleUtil#getLocale(HttpServletRequest)
-     */
-	public static Locale getLocale (User user, final HttpServletRequest req) {
-
-		return (null != user && null == LocaleUtil.getLocale(req)) ? user.getLocale() : LocaleUtil.getLocale(req);
-	}
-
-	/**
-	 * Get Locale based on the arguments country and language, if both are null will try to get it from the {@link Globals} LOCALE_KEY,
-	 * if the LOCALE_KEY is also null, will get the request default one.
-	 *
-	 * If country or language are not null (one of them could be null), will build a new locale.
-	 * Not any session will be created.
-	 * @param request
-	 * @param country
-	 * @param language
-	 * @return Locale
-	 */
-	public static Locale getLocale (final HttpServletRequest request, final String country, final String language) {
-
-		return getLocale (request, country, language, false);
-	}
-
-	/**
-	 * Get Locale based on the arguments country and language, if both are null will try to get it from the {@link Globals} LOCALE_KEY,
-	 * if the LOCALE_KEY is also null, will get the request default one.
-	 *
-	 * If country or language are not null (one of them could be null), will build a new locale and set to the session under {@link Globals} LOCALE_KEY
-	 * @param request {@link HttpServletRequest}
-	 * @param country {@link String}
-	 * @param language {@link String}
-	 * @return Locale
-	 * @param createSession true if you want to create the session in case it is not created, false otherwise. If the session is not created, won't set the locale in the session at the end of the process.
+    /**
+     * Get Locale saved on the {@link HttpSession}  {@link Globals} LOCALE_KEY,
+     * if the LOCALE_KEY is also null, will get the request default one.
+     *
+     * If country or language are not null (one of them could be null), will build a new locale.
+     * Not any session will be created.
+     * @param request {@link HttpServletRequest}
      * @return Locale
      */
-	public static Locale getLocale (final HttpServletRequest request, final String country, final String language, final boolean createSession) {
+    public static Locale getLocale (final HttpServletRequest request) {
 
-		final HttpSession session = request.getSession(createSession);
-		Locale locale = null;
+        return getLocale (request, null, null);
+    }
 
-		try {
+    /**
+     * If exists one {@link Locale} saved in the {@link HttpSession} then return it, if not exists any {@link Locale} link
+     * in the {@link HttpSession} and user is not null then return {@link User#getLocale()}.<br>
+     *
+     * If user is null and not exists any {@link Locale} in the {@link HttpSession} then return null.
+     *
+     * @param user
+     * @param req
+     * @return
+     *
+     * @see LocaleUtil#getLocale(HttpServletRequest)
+     */
+    public static Locale getLocale (User user, final HttpServletRequest req) {
 
-			if (!UtilMethods.isSet(country) && !UtilMethods.isSet(language)) {
+        return (null != user && null == LocaleUtil.getLocale(req)) ? user.getLocale() : LocaleUtil.getLocale(req);
+    }
 
-				if (null != session && null != session.getAttribute(Globals.LOCALE_KEY)) {
+    /**
+     * Get Locale based on the arguments country and language, if both are null will try to get it from the {@link Globals} LOCALE_KEY,
+     * if the LOCALE_KEY is also null, will get the request default one.
+     *
+     * If country or language are not null (one of them could be null), will build a new locale.
+     * Not any session will be created.
+     * @param request
+     * @param country
+     * @param language
+     * @return Locale
+     */
+    public static Locale getLocale (final HttpServletRequest request, final String country, final String language) {
 
-					return (Locale) session.getAttribute(Globals.LOCALE_KEY);
-				} else {
+        return getLocale (request, country, language, false);
+    }
+
+    /**
+     * Get Locale based on the arguments country and language, if both are null will try to get it from the {@link Globals} LOCALE_KEY,
+     * if the LOCALE_KEY is also null, will get the request default one.
+     *
+     * If country or language are not null (one of them could be null), will build a new locale and set to the session under {@link Globals} LOCALE_KEY
+     * @param request {@link HttpServletRequest}
+     * @param country {@link String}
+     * @param language {@link String}
+     * @return Locale
+     * @param createSession true if you want to create the session in case it is not created, false otherwise. If the session is not created, won't set the locale in the session at the end of the process.
+     * @return Locale
+     */
+    public static Locale getLocale (final HttpServletRequest request, final String country, final String language, final boolean createSession) {
+
+        final HttpSession session = request.getSession(createSession);
+        Locale locale = null;
+
+        try {
+
+            if (!UtilMethods.isSet(country) && !UtilMethods.isSet(language)) {
+
+                if (null != session && null != session.getAttribute(Globals.LOCALE_KEY)) {
+
+                    return (Locale) session.getAttribute(Globals.LOCALE_KEY);
+                } else {
                     //Trying to find a locale if there is no session or the Globals.LOCALE_KEY is not set
                     locale = processCustomLocale(request, session);
                 }
             } else {
 
-				final Locale.Builder builder =
-						new Locale.Builder();
+                final Locale.Builder builder =
+                    new Locale.Builder();
 
-				if (UtilMethods.isSet(language)) {
+                if (UtilMethods.isSet(language)) {
 
-					builder.setLanguage(language);
-				}
+                    builder.setLanguage(language);
+                }
 
-				if (UtilMethods.isSet(country)) {
+                if (UtilMethods.isSet(country)) {
 
-					builder.setRegion(country);
-				}
+                    builder.setRegion(country);
+                }
 
-				locale = builder.build();
-			}
-		} catch (Exception e) {
+                locale = builder.build();
+            }
+        } catch (Exception e) {
 
-			if (null != session && null != session.getAttribute(Globals.LOCALE_KEY)) {
+            if (null != session && null != session.getAttribute(Globals.LOCALE_KEY)) {
 
-				locale = (Locale) session.getAttribute(Globals.LOCALE_KEY);
-			} else if (null != request.getLocale()) {
+                locale = (Locale) session.getAttribute(Globals.LOCALE_KEY);
+            } else if (null != request.getLocale()) {
 
-				locale = request.getLocale();
-			} else {
+                locale = request.getLocale();
+            } else {
 
-				locale = Locale.getDefault();
-			}
-		}
+                locale = Locale.getDefault();
+            }
+        }
 
-		if (null != locale) {
+        if (null != locale) {
 
-			if (null != session) {
+            if (null != session) {
 
-				session.setAttribute(Globals.LOCALE_KEY, locale);
-			}
-		}
+                session.setAttribute(Globals.LOCALE_KEY, locale);
+            }
+        }
 
-		return locale;
-	}
+        return locale;
+    }
 
     /**
      * Method that will try to find out what locale to use when there is not session or the Globals.LOCALE_KEY is not set.
@@ -353,16 +353,16 @@ public class LocaleUtil {
 
         Locale locale = null;
 
-		if (null != session && !getUserWebAPI().isLoggedToBackend(request)) { // if it is not already logged in.
+        if (null != session && !getUserWebAPI().isLoggedToBackend(request)) { // if it is not already logged in.
 
-			final Company company = getCompanyAPI().getCompany(request);
+            final Company company = getCompanyAPI().getCompany(request);
             final User user = (null != company) ? company.getDefaultUser() : null;
             locale = (null != session) ?
-                    (Locale) session.getAttribute(Globals.LOCALE_KEY) : null;
+                (Locale) session.getAttribute(Globals.LOCALE_KEY) : null;
 
-			if (null == locale && null != user) {
+            if (null == locale && null != user) {
 
-				locale = user.getLocale();
+                locale = user.getLocale();
             }
 
         }
@@ -370,10 +370,10 @@ public class LocaleUtil {
         return locale;
     } // processLocaleCompanySettings/
 
-	/**
-	 * Set the locale based on the Cookies under the key {@link CookieKeys}.ID to the session, if it is a valid session.
-	 * @param request {@link HttpServletRequest}
-	 * @param session {@link HttpSession}
+    /**
+     * Set the locale based on the Cookies under the key {@link CookieKeys}.ID to the session, if it is a valid session.
+     * @param request {@link HttpServletRequest}
+     * @param session {@link HttpSession}
      * @return The locale if found otherwise null
      * @throws SystemException
      * @throws PortalException
@@ -381,43 +381,43 @@ public class LocaleUtil {
      * @throws DotSecurityException
      */
     private static Locale processLocaleUserCookie(final HttpServletRequest request, final HttpSession session)
-            throws SystemException, PortalException, DotDataException, DotSecurityException {
+        throws SystemException, PortalException, DotDataException, DotSecurityException {
 
         Locale locale = null;
         String uId = null;
         String cookieValue;
 
-		if (null != session) {
+        if (null != session) {
 
-			final Cookie[] cookies =
-					request.getCookies();
+            final Cookie[] cookies =
+                request.getCookies();
 
-			if (cookies != null) {
+            if (cookies != null) {
 
-				cookieValue = CookieUtil.get
-						(request.getCookies(), CookieKeys.JWT_ACCESS_TOKEN);
+                cookieValue = CookieUtil.get
+                    (request.getCookies(), CookieKeys.JWT_ACCESS_TOKEN);
 
-				if (UtilMethods.isSet(cookieValue)) {
+                if (UtilMethods.isSet(cookieValue)) {
 
-					try {
+                    try {
 
-						uId = getJsonWebTokenUtils().getUserIdFromJsonWebToken(cookieValue);
-					} catch (Exception e) {
+                        uId = getJsonWebTokenUtils().getUserIdFromJsonWebToken(cookieValue);
+                    } catch (Exception e) {
 
-						_log.info("An invalid attempt to login as " + uId + " has been made from IP: "
-								+ request.getRemoteAddr());
-						uId = null;
-					}
-				}
-			}
+                        _log.info("An invalid attempt to login as " + uId + " has been made from IP: "
+                            + request.getRemoteAddr());
+                        uId = null;
+                    }
+                }
+            }
 
-			if (UtilMethods.isSet(uId)) {
+            if (UtilMethods.isSet(uId)) {
 
-				//DOTCMS-4943
-				final boolean respectFrontend =
-						getUserWebAPI().isLoggedToBackend(request);
-				final com.liferay.portal.model.User loggedInUser =
-						getUserAPI().loadUserById(uId, getUserAPI().getSystemUser(), respectFrontend);
+                //DOTCMS-4943
+                final boolean respectFrontend =
+                    getUserWebAPI().isLoggedToBackend(request);
+                final com.liferay.portal.model.User loggedInUser =
+                    getUserAPI().loadUserById(uId, getUserAPI().getSystemUser(), respectFrontend);
 
                 locale = loggedInUser.getLocale();
             }
@@ -426,6 +426,6 @@ public class LocaleUtil {
         return locale;
     } // processLocaleUserCookie.
 
-	private static final Log _log = LogFactory.getLog(LocaleUtil.class);
+    private static final Log _log = LogFactory.getLog(LocaleUtil.class);
 
 }

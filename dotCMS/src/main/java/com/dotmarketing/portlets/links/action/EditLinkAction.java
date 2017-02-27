@@ -2,18 +2,18 @@ package com.dotmarketing.portlets.links.action;
 
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.Iterator;
 import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.WindowState;
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -22,6 +22,7 @@ import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.TreeFactory;
@@ -33,11 +34,16 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.Contentlet;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.links.model.Link.LinkType;
 import com.dotmarketing.portlets.links.struts.LinkForm;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.services.ContentletServices;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -50,12 +56,44 @@ import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.servlet.SessionMessages;
 
 /**
- * @author if(working==false){ author="Maria Ahues"; }else{ author="Rocco
- *         Maglio";
+ * This Struts action provides users the ability to interact with Menu Links in
+ * dotCMS. This action can be triggered from the "Site Browser" page when
+ * adding, editing, or deleting a Menu Link.
+ * 
+ * @author root
+ * @version 1.0
+ * @since Mar 22, 2012
+ *
  */
-
 public class EditLinkAction extends DotPortletAction implements DotPortletActionInterface {
+    
+    private ContentletAPI conAPI = APILocator.getContentletAPI();
+    private FolderAPI folderAPI = APILocator.getFolderAPI();
+    private HostAPI hostAPI = APILocator.getHostAPI();
+    private HTMLPageAssetAPI pageAssetAPI = APILocator.getHTMLPageAssetAPI();
+    private IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
+    private LanguageAPI langAPI = APILocator.getLanguageAPI();
+    private VersionableAPI versionableAPI = APILocator.getVersionableAPI();
 
+	/**
+	 * This is the main entry point of the {@link EditLinkAction} class which
+	 * determines the command (i.e., action) that the user wants to execute.
+	 * 
+	 * @param mapping
+	 *            - Provides information related to the Struts mapping.
+	 * @param form
+	 *            - The form containing the information that the user wants to
+	 *            process.
+	 * @param config
+	 *            - The configuration parameters for the Liferay portlet that
+	 *            called this action.
+	 * @param req
+	 *            - The wrapper class for the HTTP Request object.
+	 * @param res
+	 *            - The wrapper class for the HTTP Response object.
+	 * @throws Exception
+	 *             An error occurred when processing the desired action.
+	 */
 	public void processAction(ActionMapping mapping, ActionForm form,
 			PortletConfig config, ActionRequest req, ActionResponse res)
 	throws Exception {
@@ -68,7 +106,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 
 		if ((referer != null) && (referer.length() != 0)) {
-			referer = URLDecoder.decode(referer, "UTF-8");
+			referer = URLDecoder.decode(referer, UtilMethods.getCharsetConfiguration());
 		}
 
 		Logger.debug(this, "EditLinkAction cmd=" + cmd);
@@ -127,35 +165,28 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 		}
 
 		/*
-		 * If we are updating the link, copy the information from the struts
+		 * If we are saving the link, copy the information from the struts
 		 * bean to the hbm inode and run the update action and return to the
 		 * list
 		 */
 		if ((cmd != null) && cmd.equals(Constants.ADD)) {
 			try {
-
 				if (Validator.validate(req, form, mapping)) {
-
 					Logger.debug(this, "Calling Save method");
 					_saveWebAsset(req, res, config, form, user);
-					
-					
-					String subcmd = req.getParameter("subcmd");
-
+					String subcmd = req.getParameter("_site_browser_subcmd");
 					if ((subcmd != null)
 							&& subcmd
 							.equals(com.dotmarketing.util.Constants.PUBLISH)) {
 						Logger.debug(this, "Calling Publish method");
 						_publishWebAsset(req, res, config, form, user, WebKeys.LINK_FORM_EDIT);
 					}
-					
 					Link link=(Link) req.getAttribute(WebKeys.LINK_EDIT);
-					if(link.isLocked())
-					    APILocator.getVersionableAPI().setLocked(link, false, user);
-					
+					if (link.isLocked()) {
+					    versionableAPI.setLocked(link, false, user);
+					}
 					_sendToReferral(req, res, referer);
 				}
-
 			} catch (Exception ae) {
 				_handleException(ae, req);
 				if (ae.getMessage().equals(WebKeys.USER_PERMISSIONS_EXCEPTION)) {
@@ -164,10 +195,9 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 				} 
 				return;
 			}
-
 		}
 		/*
-		 * If we are deleteing the link, run the delete action and return to the
+		 * If we are deleting the link, run the delete action and return to the
 		 * list
 		 *  
 		 */
@@ -360,9 +390,9 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 				_handleException(ae, req);
 			}
 			_sendToReferral(req, res, referer);
-		} else
+		} else {
 			Logger.debug(this, "Unspecified Action");
-
+		}
 		HibernateUtil.commitTransaction();
 
 		if ((cmd != null) && cmd.equals(Constants.ADD) ) 
@@ -375,6 +405,24 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 
 	///// ************** ALL METHODS HERE *************************** ////////
 
+	/**
+	 * Edits the Menu Link information contained in the action request.
+	 * 
+	 * @param req
+	 *            - The wrapper class for the HTTP Request object.
+	 * @param res
+	 *            - The wrapper class for the HTTP Response object.
+	 * @param config
+	 *            - The configuration parameters for the Liferay portlet that
+	 *            called this action.
+	 * @param form
+	 *            - The form containing the information that the user wants to
+	 *            process.
+	 * @param user
+	 *            - The {@link User} performing this action.
+	 * @throws Exception
+	 *             An error occurred when editing the Menu Link.
+	 */
 	public void _editWebAsset(ActionRequest req, ActionResponse res,
 			PortletConfig config, ActionForm form, User user) throws Exception {
 
@@ -400,12 +448,26 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 
 	}
 
-	@SuppressWarnings("unchecked")
+	/**
+	 * Saves the Menu Link information contained in the action request.
+	 * 
+	 * @param req
+	 *            - The wrapper class for the HTTP Request object.
+	 * @param res
+	 *            - The wrapper class for the HTTP Response object.
+	 * @param config
+	 *            - The configuration parameters for the Liferay portlet that
+	 *            called this action.
+	 * @param form
+	 *            - The form containing the information that the user wants to
+	 *            process.
+	 * @param user
+	 *            - The {@link User} performing this action.
+	 * @throws Exception
+	 *             An error occurred when saving the Menu Link.
+	 */
 	public void _saveWebAsset(ActionRequest req, ActionResponse res,
 			PortletConfig config, ActionForm form, User user) throws Exception {
-
-		HostAPI hostAPI = APILocator.getHostAPI();
-		IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 		
 		//wraps request to get session object
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
@@ -425,15 +487,15 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 		Link currentLink = (Link) req.getAttribute(WebKeys.LINK_EDIT);
 		
 		//parent folder or inode for this file
-		Folder parent = APILocator.getFolderAPI().find(req.getParameter("parent"), user, false);
+		Folder parent = folderAPI.find(req.getParameter("parent"), user, false);
 		//http://jira.dotmarketing.net/browse/DOTCMS-5899
 		if(UtilMethods.isSet(currentLink.getInode())){
-			Identifier id = APILocator.getIdentifierAPI().find(currentLink);
+			Identifier id = identifierAPI.find(currentLink);
 			String URI = id.getURI();
 			String uriPath = URI.substring(0,URI.lastIndexOf("/")+1);
-			if(!uriPath.equals(APILocator.getIdentifierAPI().find(parent).getPath())){
-				id.setURI(APILocator.getIdentifierAPI().find(parent).getPath()+currentLink.getProtocal() + currentLink.getUrl());
-				APILocator.getIdentifierAPI().save(id);
+			if(!uriPath.equals(identifierAPI.find(parent).getPath())){
+				id.setURI(identifierAPI.find(parent).getPath()+currentLink.getProtocal() + currentLink.getUrl());
+				identifierAPI.save(id);
 			}
 		}
 		
@@ -448,8 +510,31 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 
 			Identifier internalLinkIdentifier = identifierAPI.findFromInode(linkForm.getInternalLinkIdentifier());
 			//link.setLinkType(LinkType.INTERNAL.toString());
-			link.setInternalLinkIdentifier(internalLinkIdentifier.getInode());
-			link.setProtocal("http://");
+			link.setInternalLinkIdentifier(internalLinkIdentifier.getId());
+			
+			if (Identifier.ASSET_TYPE_CONTENTLET.equalsIgnoreCase(internalLinkIdentifier.getAssetType())) {
+			    //Internal Link points to a Contentlet
+			    //Modal for adding internal assets to link always shows contents in default language
+			    //So we'll pull the selected assets using the default language
+			    com.dotmarketing.portlets.contentlet.model.Contentlet con = conAPI
+			            .findContentletByIdentifier(internalLinkIdentifier.getId(), true, 
+			                    langAPI.getDefaultLanguage().getId(), user, false);
+			    if(UtilMethods.isSet(con.getIdentifier()) && con.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
+			        //It's a Page Asset
+			        IHTMLPage page = pageAssetAPI.fromContentlet(con);
+			        if(page.isHttpsRequired()){
+			            link.setProtocal("https://");
+			        } else {
+			            link.setProtocal("http://");
+			        }        
+			    } else {
+			        //It's a different content type. Set protocal to http by default
+			        link.setProtocal("http://");
+			    }
+			} else {
+			    //It could be anything else, like a Legacy File. Fallback to http.
+			    link.setProtocal("http://");
+			}
 
 			StringBuffer myURL = new StringBuffer();
 			if(InodeUtils.isSet(internalLinkIdentifier.getHostId())) {
@@ -461,13 +546,13 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 			
 		}
 		
-		if(link.getLinkType().equals(LinkType.CODE.toString()))
+		if (link.getLinkType().equals(LinkType.CODE.toString())) {
 			link.setProtocal("");		
-
+		}
 		Link workingLink = null;
 		//it saves or updates the asset
 		if (InodeUtils.isSet(currentLink.getInode())) {
-			Identifier identifier = APILocator.getIdentifierAPI().find(currentLink);
+			Identifier identifier = identifierAPI.find(currentLink);
 			WebAssetFactory
 			.createAsset(link, userId, parent, identifier, false);
 
@@ -477,7 +562,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 			req.setAttribute(WebKeys.LINK_FORM_EDIT,link);
 			if (!currentLink.getTarget().equals(link.getTarget())) {
 				//create new identifier, with the URI
-				APILocator.getIdentifierAPI().updateIdentifierURI(workingLink,(Folder) parent);
+				identifierAPI.updateIdentifierURI(workingLink,(Folder) parent);
 			}
 		} else {
 			WebAssetFactory.createAsset(link, userId, parent);
@@ -487,17 +572,13 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 
 		// Get parents of the old version so you can update the working
 		// information to this new version.
-
-
 		List<Object> parents = (List<Object>) InodeFactory.getParentsOfClass(currentLink, Category.class);
 		parents.addAll(InodeFactory.getParentsOfClass(currentLink, Contentlet.class));
-
 
 		List<Inode> children = (List<Inode>) InodeFactory.getChildrenClass(currentLink, Category.class);
 		children.addAll(InodeFactory.getChildrenClass(currentLink, Contentlet.class));
 
-
-		java.util.Iterator parentsIterator = parents.iterator();
+		Iterator<?> parentsIterator = parents.iterator();
 
 		//update parents to new version delete old versions parents if not
 		// live.
@@ -520,45 +601,6 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 					TreeFactory.saveTree(newTree);
 				}
 			}
-		
-			
-			/*if(obj instanceof Identifier){
-				Identifier parentIdentifier = (Identifier) obj;
-				parentIdentifier.addChild(workingLink);
-
-				//to keep relation types from parent only if it exists
-				Tree tree = com.dotmarketing.factories.TreeFactory.getTree(
-						parentIdentifier.getInode(), currentLink.getInode());
-				if ((tree.getRelationType() != null)
-						&& (tree.getRelationType().length() != 0)) {
-					Tree newTree = com.dotmarketing.factories.TreeFactory.getTree(
-							parentIdentifier.getInode(), workingLink.getInode());
-					newTree.setRelationType(tree.getRelationType());
-					newTree.setTreeOrder(0);
-					TreeFactory.saveTree(newTree);
-				}
-				//checks type of parent and deletes child if not live version.
-				if (!currentLink.isLive()) {
-					if (!(parentIdentifier instanceof Identifier)) {
-						parentIdentifier.deleteChild(currentLink);
-					}
-				}
-			}
-          */
-
-
-//			//Republishing parents working contentlets
-//			if (parentInode instanceof Contentlet) {
-//				Contentlet cont = (Contentlet) parentInode;
-//
-//				if (cont.isWorking()) {
-//					//calls the asset factory edit
-//					ContentletServices.writeContentletToFile(cont, true);
-//					ContentletMapServices.writeContentletMapToFile(cont, true);
-//				}
-//			}
-
-			
 		}
 		if (req.getParameter("popup") != null) {
 			req.setAttribute("inode", String.valueOf(workingLink.getInode()));
@@ -575,6 +617,24 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 		SessionMessages.add(req, "message", "message.links.save");
 	}
 
+	/**
+	 * Copies the Menu Link information contained in the action request.
+	 * 
+	 * @param req
+	 *            - The wrapper class for the HTTP Request object.
+	 * @param res
+	 *            - The wrapper class for the HTTP Response object.
+	 * @param config
+	 *            - The configuration parameters for the Liferay portlet that
+	 *            called this action.
+	 * @param form
+	 *            - The form containing the information that the user wants to
+	 *            process.
+	 * @param user
+	 *            - The {@link User} performing this action.
+	 * @throws Exception
+	 *             An error occurred when copying the Menu Link.
+	 */
 	public void _copyWebAsset(ActionRequest req, ActionResponse res,
 			PortletConfig config, ActionForm form, User user) throws Exception {
 
@@ -594,7 +654,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 			parent = (Folder) InodeFactory.getInode(parentInode, Folder.class);
 			Logger.debug(this, "Parent Folder=" + parent.getInode());
 		} else {
-			parent = APILocator.getFolderAPI().findParentFolder(currentLink, user,false);
+			parent = folderAPI.findParentFolder(currentLink, user,false);
 			Logger.debug(this, "Parent Folder=" + parent.getInode());
 		}
 
@@ -606,7 +666,25 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 		SessionMessages.add(req, "message", "message.link.copy");
 	}
 
-	@SuppressWarnings("unchecked")
+	/**
+	 * Returns the Menu Link information to a previous version.
+	 * 
+	 * @param req
+	 *            - The wrapper class for the HTTP Request object.
+	 * @param res
+	 *            - The wrapper class for the HTTP Response object.
+	 * @param config
+	 *            - The configuration parameters for the Liferay portlet that
+	 *            called this action.
+	 * @param form
+	 *            - The form containing the information that the user wants to
+	 *            process.
+	 * @param user
+	 *            - The {@link User} performing this action.
+	 * @throws Exception
+	 *             An error occurred when setting a previous version of the Menu
+	 *             Link.
+	 */
 	public void _getVersionBackWebAsset(ActionRequest req, ActionResponse res,
 			PortletConfig config, ActionForm form, User user) throws Exception {
 
@@ -619,8 +697,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 		List<Inode> parents = (List<Inode>) InodeFactory.getParentsOfClass(linkVersion, Category.class);
 		parents.addAll(InodeFactory.getParentsOfClass(linkVersion, Contentlet.class));
 
-
-		java.util.Iterator parentsIterator = parents.iterator();
+		Iterator<?> parentsIterator = parents.iterator();
 
 		//update parents to new version delete old versions parents if not
 		// live.
@@ -654,10 +731,9 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 		   }
 		}
 
-		//Rewriting the parent�s contentlets of the link
+		//Rewriting the parents contentlets of the link
 		List<Contentlet> contentlets = (List<Contentlet>)InodeFactory.getParentsOfClass(workingLink,
 				Contentlet.class);
-		ContentletAPI conAPI = APILocator.getContentletAPI();
 
 		for( Contentlet cont : contentlets ) {
 			if (cont.isWorking()) {
@@ -668,6 +744,30 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 		}
 	}
 
+	/**
+	 * Moves the Menu Link to a new location.
+	 * 
+	 * @param req
+	 *            - The wrapper class for the HTTP Request object.
+	 * @param res
+	 *            - The wrapper class for the HTTP Response object.
+	 * @param config
+	 *            - The configuration parameters for the Liferay portlet that
+	 *            called this action.
+	 * @param form
+	 *            - The form containing the information that the user wants to
+	 *            process.
+	 * @param user
+	 *            - The {@link User} performing this action.
+	 * @param webAssetClass
+	 *            - The class of the object tha is being moved, e.g.,
+	 *            {@code Link.class}.
+	 * @param webKey
+	 *            - The key used to obtain the reference to the object being
+	 *            moved.
+	 * @throws Exception
+	 *             An error occurred when moving the Menu Link.
+	 */
 	public void _moveWebAsset(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user, Class webAssetClass,
 			String webKey) throws Exception 
 			{
@@ -681,14 +781,17 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 
 		if (parentInode != null && parentInode.length() != 0 && !parentInode.equalsIgnoreCase("")) 
 		{
-			Folder parent = APILocator.getFolderAPI().find(parentInode, user, false); 
-			Folder oldParent = APILocator.getFolderAPI().findParentFolder(webAsset, user, false);
+			Folder parent = folderAPI.find(parentInode, user, false); 
+			Folder oldParent = folderAPI.findParentFolder(webAsset, user, false);
 			super._moveWebAsset(req, res, config, form, user, Link.class,WebKeys.LINK_EDIT);			
 			RefreshMenus.deleteMenu(oldParent, parent);
-			if(oldParent.isShowOnMenu())
+			if (oldParent.isShowOnMenu()) {
 			    CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
-			if(parent.isShowOnMenu())
+			}
+			if (parent.isShowOnMenu()) {
 			    CacheLocator.getNavToolCache().removeNav(parent.getHostId(), parent.getInode());
+			}
 		}
 	}
+
 }

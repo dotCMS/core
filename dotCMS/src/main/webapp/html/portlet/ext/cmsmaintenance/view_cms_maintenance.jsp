@@ -298,24 +298,6 @@ function doDeletePushedAssetsCallback(result) {
 	}
 }
 
-function doConvertPagesToContent(){
-	  if(confirm("<%= LanguageUtil.get(pageContext,"Do-you-want-to-migrate-pages") %>")){
-			$("convertPagesMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress-migrating-pages") %></b></spanstyle>';
-			dijit.byId("convertPagesButton").attr('disabled', true);
-			CMSMaintenanceAjax.migrateHTMLPagesToContent(doConvertPagesToContentCallback);
-		}
-}
-
-function doConvertPagesToContentCallback(result) {
-
-	if(result) {
-		document.getElementById("convertPagesMessage").innerHTML='<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"htmlpages-were-succesfully-converted")) %></b></spanstyle>';
-	} else {
-		document.getElementById("convertPagesMessage").innerHTML='<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"htmlpages-could-not-be-converted")) %></b></spanstyle>';
-	}
-	dijit.byId("convertPagesButton").attr('disabled', false);
-}
-
 function doDropAssets(){
    var dateInput = dijit.byId('removeassetsdate');
 
@@ -352,18 +334,7 @@ var doCleanAssets = function () {
         $("cleanAssetsMessage").innerHTML = '<span style="font-family: Arial; font-size: x-small; color: #ff0000><b><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.process.in.progress")) %></b></span>';
         dijit.byId('cleanAssetsButton').attr('disabled', true);
 
-        var files=false;
-        var binaries=false;
-        var whatclean=dijit.byId('whatClean').attr('value')
-        if(whatclean=='all') {
-        	files=true; binaries=true;
-        } else if(whatclean=='binary') {
-        	files=false; binaries=true;
-        } else if(whatclean=='file_asset') {
-        	files=true; binaries=false;
-        }
-
-        CMSMaintenanceAjax.cleanAssets(files,binaries,doCleanAssetsCallback);
+        CMSMaintenanceAjax.cleanAssets(doCleanAssetsCallback);
     }
 };
 
@@ -1539,7 +1510,7 @@ dd.leftdl {
                 <tr>
                     <td>
                         <p><%= LanguageUtil.get(pageContext,"This-utility-will-do-a-find-and-replace") %></p>
-                        <%= LanguageUtil.get(pageContext,"Please-specify-the-following-parameters-and-click-replace") %>:
+                        <%= LanguageUtil.get(pageContext,"Please-specify-the-following-parameters-and-click-replace") %>
                         <dl>
                             <dt><%= LanguageUtil.get(pageContext,"String-to-find") %>:</dt>
                             <dd><input type="text" dojoType="dijit.form.TextBox" name="searchString" id="searchString" size="50"></dd>
@@ -1615,11 +1586,6 @@ dd.leftdl {
                       <div align="center"  id="cleanAssetsMessage">&nbsp;</div>
                    </td>
                    <td align="center">
-                      <select id="whatClean" name="whatClean" dojoType="dijit.form.FilteringSelect" >
-                            <option selected="selected" value="all"><%= LanguageUtil.get(pageContext,"Clean-bin-and-file") %></option>
-                            <option value="binary"><%= LanguageUtil.get(pageContext,"Clean-only-bin") %></option>
-                            <option value="file_asset"><%= LanguageUtil.get(pageContext,"Clean-only-fileasset") %></option>
-                      </select>
                       <button dojoType="dijit.form.Button" onClick="doCleanAssets();"  id="cleanAssetsButton" iconClass="dropIcon">
                            <%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.label") %>
                       </button>
@@ -1675,25 +1641,6 @@ dd.leftdl {
                 </tr>
 
             </table>
-            
-             <table class="listingTable">
-                <tr>
-                    <th><%= LanguageUtil.get(pageContext,"Convert-Pages-To-Content") %></th>
-                    <th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
-                </tr>
-                <tr>
-                    <td>
-                        <p><%= LanguageUtil.get(pageContext,"This-utility-will-migrate-all-htmlpages-to-content") %></p>
-                         <div align="center"  id="convertPagesMessage"></div>
-                    </td>
-                    <td align="center">
-                      <button dojoType="dijit.form.Button" onClick="doConvertPagesToContent();"  id="convertPagesButton" iconClass="repeatIcon">
-                         <%= LanguageUtil.get(pageContext,"Execute") %>
-                      </button>
-                    </td>
-                </tr>
-
-            </table>
 
             <div style="height:20px">&nbsp;</div>
             <%
@@ -1718,7 +1665,7 @@ dd.leftdl {
 			               	<tr>
 			               		<td>
 			               			<%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Host") %>
-		               			    <select dojoType="dijit.form.FilteringSelect"  multiple="true" name="selectAssetHostInode" id="selectAssetHostInode" autocomplete="false"  invalidMessage="Invalid site name">
+		               			    <select dojoType="dijit.form.FilteringSelect"  multiple="true" name="selectAssetHostInode" id="selectAssetHostInode" autocomplete="false"  invalidMessage="Invalid site name" style="width: 175px;">
 										<option selected="selected" value="all"><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_All") %></option>
 										<%	String hostNames="";
 											String hostIdentifier="";
@@ -1750,7 +1697,11 @@ dd.leftdl {
 									</table>                        			
                   			    </td>
 			               		<td>
-			               			<input type="radio" onclick="enableDisableRadio(this)" checked="checked" value="assetType" dojoType="dijit.form.RadioButton" name="assetSearch" id="assetSearchType" /><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Search_by_type_of_asset") %>:<br/>
+									<div class="checkbox">
+										<input type="radio" onclick="enableDisableRadio(this)" checked="checked" value="assetType" dojoType="dijit.form.RadioButton" name="assetSearch" id="assetSearchType" />
+										<label for=""><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Search_by_type_of_asset") %>:</label>
+									</div>
+			               			<br/>
 	                                <select name="assetType" id="assetType" dojoType="dijit.form.MultiSelect" multiple="multiple" size="scrollable" class="asarMultiSelect">
 	                                <% for(String fileType : validFileExtensions.split(",")){%>
 	                                	<option value="<%=fileType%>"><%=fileType%></option>
@@ -1762,7 +1713,11 @@ dd.leftdl {
 			               	<tr>
 			               		<td>&nbsp;</td>
 			               		<td>
-			               		<input type="radio" onclick="enableDisableRadio(this)" value="assetIdentifier" dojoType="dijit.form.RadioButton" name="assetSearch" id="assetSearchIdentifier" /><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Search_by_asset_identifier") %>:<br/>
+									   <div class="checkbox">
+										   <input type="radio" onclick="enableDisableRadio(this)" value="assetIdentifier" dojoType="dijit.form.RadioButton" name="assetSearch" id="assetSearchIdentifier" />
+										   <label for=""><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Search_by_asset_identifier") %>:</label>
+									   </div>
+			               		<br/>
 	                                <input type="text" disabled="disabled" dojoType="dijit.form.Textarea" class="asarTextarea" rows="3" name="assetIdentifier" id="assetIdentifier"></br/>
 	                                <em><%=LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Search_by_asset_identifier_hint") %></em>
 	                            </td>

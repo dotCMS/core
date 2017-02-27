@@ -29,7 +29,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.links.model.Link;
@@ -647,7 +646,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         int deleted=before - after;
 
         // deleting orphan binary files
-        java.io.File assets=new java.io.File(APILocator.getFileAPI().getRealAssetsRootPath());
+        java.io.File assets=new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath());
         for(java.io.File ff1 : assets.listFiles())
             if(ff1.isDirectory() && ff1.getName().length()==1 && ff1.getName().matches("^[a-f0-9]$"))
                 for(java.io.File ff2 : ff1.listFiles())
@@ -1072,28 +1071,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected List<File> getRelatedFiles(Contentlet contentlet) throws DotDataException {
-	    HibernateUtil dh = new HibernateUtil(File.class);
-
-        File f = new File();
-        String tableName = f.getType();
-
-        String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
-        + tableName + "_1_ where tree.parent = ? and tree.child = " + tableName + ".inode and " + tableName
-        + "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type ='"+tableName+"'";
-
-        Logger.debug(this, "HibernateUtilSQL:getRelatedFiles\n " + sql);
-
-        dh.setSQLQuery(sql);
-
-        Logger.debug(this, "inode:  " + contentlet.getInode() + "\n");
-
-        dh.setParam(contentlet.getInode());
-
-        return dh.list();
-	}
-
-	@Override
 	protected Identifier getRelatedIdentifier(Contentlet contentlet, String relationshipType) throws DotDataException {
 	    String tableName;
         try {
@@ -1418,12 +1395,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
                         Logger.info(this, String.format("Reindex of updated related content after deleting user %s "
                                 + " has finished successfully.",
                             userToReplace.getUserId() + "/" + userToReplace.getFullName()));
-
-                        String reindexMsg = MessageFormat.format(LanguageUtil.get(user,
-                            "com.dotmarketing.business.UserAPI.delete.reindex"),
-                            userToReplace.getUserId() + "/" + userToReplace.getFullName());
-
-                        notAPI.info(reindexMsg, user.getUserId());
 
                     } catch (Exception e) {
                         Logger.error(this.getClass(),e.getMessage(),e);
@@ -2297,32 +2268,36 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         if (isFloatField) {
             if (DbConnectionFactory.isMySql()) {
-                select.append("`").append(field.getFieldContentlet()).append("`");
                 whereField.append("`").append(field.getFieldContentlet()).append("` IS NOT NULL AND `")
                         .append(field.getFieldContentlet()).append("` != ");
             } else if (DbConnectionFactory.isH2()) {
-                select.append("\"").append(field.getFieldContentlet()).append("\"");
                 whereField.append("\"").append(field.getFieldContentlet()).append("\" IS NOT NULL AND \"")
                         .append(field.getFieldContentlet()).append("\" != ");
+            } else if ( DbConnectionFactory.isOracle() ) {
+                whereField.append("'").append(field.getFieldContentlet()).append("' IS NOT NULL AND '")
+                        .append(field.getFieldContentlet()).append("' != ");
             } else {
-                select.append(field.getFieldContentlet());
                 whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ").append(field.getFieldContentlet())
                         .append(" != ");
             }
         } else {
             whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ");
-            if(DbConnectionFactory.isMsSql() && field.getFieldContentlet().contains("text_area")) {
-                whereField.append(" DATALENGTH (").append(field.getFieldContentlet()).append(")");
+            if ( field.getFieldContentlet().contains("text_area") ) {
+                if ( DbConnectionFactory.isMsSql() ) {
+                    whereField.append(" DATALENGTH (").append(field.getFieldContentlet()).append(")");
+                } else if ( DbConnectionFactory.isOracle() ) {
+                    whereField.append("'").append(field.getFieldContentlet()).append("'").append(" != ");
+                } else {
+                    whereField.append(field.getFieldContentlet()).append(" != ");
+                }
             } else {
                 whereField.append(field.getFieldContentlet()).append(" != ");
             }
         }
-            
-
 
         if (DbConnectionFactory.isMySql()) {
             update.append("`").append(field.getFieldContentlet()).append("`").append(" = ");
-        }else if (DbConnectionFactory.isH2() && isFloatField) {
+        } else if ( (DbConnectionFactory.isH2() || DbConnectionFactory.isOracle()) && isFloatField ) {
             update.append("\"").append(field.getFieldContentlet()).append("\"").append(" = ");
         }else{
             update.append(field.getFieldContentlet()).append(" = ");
@@ -2335,8 +2310,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
             update.append(DbConnectionFactory.getDBDateTimeFunction());
             whereField.append(DbConnectionFactory.getDBDateTimeFunction());
         } else if (field.getFieldContentlet().contains("float")) {
-            update.append(0.0);
-            whereField.append(0.0);
+            if ( DbConnectionFactory.isOracle() ) {
+                update.append("'0.0'");// Oracle implicitly converts the character value to a NUMBER value,  implicitly converts '200' to 200:
+                whereField.append("'0.0'");
+            } else {
+                update.append(0.0);
+                whereField.append(0.0);
+            }
         } else if (field.getFieldContentlet().contains("integer")) {
             update.append(0);
             whereField.append(0);

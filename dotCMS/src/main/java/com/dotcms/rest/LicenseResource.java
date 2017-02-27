@@ -6,15 +6,16 @@ import com.dotcms.enterprise.cluster.action.ServerAction;
 import com.dotcms.enterprise.cluster.action.model.ServerActionBean;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.DELETE;
-import com.dotcms.repackage.javax.ws.rs.FormParam;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.POST;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
 import com.dotcms.repackage.org.json.JSONArray;
@@ -31,8 +32,10 @@ import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+
 import java.io.InputStream;
 import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
@@ -273,15 +276,33 @@ public class LicenseResource {
     @POST
     @Path("/requestCode/{params:.*}")
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
-    public Response requestLicense(@Context HttpServletRequest request, 
-    		@FormParam ("licenseLevel") String licenseLevel,
-    		@FormParam ("licenseType") String licenseType) {
-        InitDataObject initData = webResource.init("", true, request, true, PortletID.CONFIGURATION.toString());
-        try {
+    public Response requestLicense(
+    	@Context HttpServletRequest request, @PathParam ("params") String params
+    ) {
+        InitDataObject initData = webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
 
-	        
-	        
-	        
+        Map<String, String> paramsMap = initData.getParamsMap();
+
+        //Validate the parameters
+        String licenseType = paramsMap.get( "licensetype" );
+        String licenseLevel = paramsMap.get( "licenselevel" );
+
+        StringBuilder responseMessage = new StringBuilder();
+
+        if ( !UtilMethods.isSet( licenseType ) ) {
+        	return Response.status( HttpStatus.SC_BAD_REQUEST ).entity(
+        		responseMessage.append( "Error: " ).append( "'licenseType'" ).append( " is a required param." )
+        	).build();
+        }
+
+        if ( !UtilMethods.isSet( licenseLevel ) ) {
+        	return Response.status( HttpStatus.SC_BAD_REQUEST ).entity(
+        		responseMessage.append( "Error: " ).append( "'licenseLevel'" ).append( " is a required param." )
+        	).build();
+        }
+
+
+        try {
 	        HttpSession session = request.getSession();
             session.setAttribute( "iwantTo", "request_code" );
             session.setAttribute( "license_type", licenseType );
@@ -295,7 +316,15 @@ public class LicenseResource {
             }
 
             LicenseUtil.processForm( request );
-        	return Response.ok(request.getAttribute("requestCode"), MediaType.APPLICATION_JSON_TYPE).build();
+
+            JSONObject jsonResponse = new JSONObject();
+            if(UtilMethods.isSet(request.getAttribute("requestCode"))){
+            	jsonResponse.put("success", true );
+            	jsonResponse.put("requestCode", request.getAttribute("requestCode"));
+            } else {
+            	jsonResponse.put("success", false );
+            }
+            return Response.ok(jsonResponse.toString(), MediaType.APPLICATION_JSON_TYPE).build();
         }
         catch(Exception ex) {
             Logger.error(this, "can't request license ",ex);
@@ -306,13 +335,24 @@ public class LicenseResource {
     }
     
     @POST
-    @Path("/applyLicense/{params:.*}")
+    @Path("/applyLicense")
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
-    public Response applyLicense(@Context HttpServletRequest request, @PathParam("params") String params,
-
-    		@FormParam ("licenseText") String licenseText) {
-
+    public Response applyLicense(
+    	@Context HttpServletRequest request, @PathParam("params") String params,
+    	@QueryParam("licenseText") String licenseText
+    ) {
         InitDataObject initData = webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
+
+        //Validate the parameters
+        StringBuilder responseMessage = new StringBuilder();
+
+        if ( !UtilMethods.isSet( licenseText ) ) {
+        	return Response.status( HttpStatus.SC_BAD_REQUEST ).entity(
+        		responseMessage.append( "Error: " ).append( "'licenseText'" ).append( " is a required param." )
+        	).build();
+        }
+
+
         try {
 	        HttpSession session = request.getSession();
 

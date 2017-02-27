@@ -29,11 +29,8 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -496,10 +493,6 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			p = new Permission(Folder.class.getCanonicalName(), permissionable.getPermissionId(), cmsAnonymousRole.getId(), PermissionAPI.PERMISSION_READ, true);
 			permissionFactory.savePermission(p, permissionable);
 
-			//Default files permissions
-			p = new Permission(File.class.getCanonicalName(), permissionable.getPermissionId(), cmsAnonymousRole.getId(), PermissionAPI.PERMISSION_READ, true);
-			permissionFactory.savePermission(p, permissionable);
-
 			//Default links permissions
 			p = new Permission(Link.class.getCanonicalName(), permissionable.getPermissionId(), cmsAnonymousRole.getId(), PermissionAPI.PERMISSION_READ, true);
 			permissionFactory.savePermission(p, permissionable);
@@ -878,12 +871,6 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 		if (Config.CONTEXT == null) {
 			return;
-		}
-
-		java.util.List<HTMLPage> list = HTMLPageFactory.getLiveHTMLPages();
-
-		for(IHTMLPage htmlPage : list) {
-			permissionFactory.getPermissions(htmlPage, true);
 		}
 
 		Logger.debug(PermissionBitAPIImpl.class, "\n\nFinished mapping all Permissions!!!!");

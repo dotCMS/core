@@ -60,7 +60,7 @@ import com.liferay.util.KeyValuePair;
 import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
 import com.liferay.util.Validator;
-import com.liferay.util.lucene.Indexer;
+
 
 /**
  * <a href="PortletContextListener.java.html"><b><i>View Source </i></b></a>
@@ -112,11 +112,7 @@ public class PortletContextListener implements ServletContextListener {
 					(com.dotcms.repackage.javax.portlet.Portlet)contextClassLoader.loadClass(
 						portlet.getPortletClass()).newInstance();
 
-				Indexer indexerInstance = null;
-				if (Validator.isNotNull(portlet.getIndexerClass())) {
-					indexerInstance = (Indexer)contextClassLoader.loadClass(
-						portlet.getIndexerClass()).newInstance();
-				}
+
 
 				Scheduler schedulerInstance = null;
 				if (Validator.isNotNull(portlet.getSchedulerClass())) {
@@ -192,7 +188,7 @@ public class PortletContextListener implements ServletContextListener {
 
 				PortletContextWrapper pcw = new PortletContextWrapper(
 					portlet.getPortletId(), ctx, portletInstance,
-					indexerInstance, schedulerInstance, prefsValidator,
+					schedulerInstance, prefsValidator,
 					resourceBundles, customUserAttributes);
 
 				PortletContextPool.put(portlet.getPortletId(), pcw);

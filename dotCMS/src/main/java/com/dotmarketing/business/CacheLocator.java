@@ -30,16 +30,12 @@ import com.dotmarketing.plugin.business.PluginCache;
 import com.dotmarketing.plugin.business.PluginCacheImpl;
 import com.dotmarketing.portlets.categories.business.CategoryCache;
 import com.dotmarketing.portlets.categories.business.CategoryCacheImpl;
-import com.dotmarketing.portlets.chains.business.ChainCache;
-import com.dotmarketing.portlets.chains.business.ChainCacheImpl;
 import com.dotmarketing.portlets.containers.business.ContainerCache;
 import com.dotmarketing.portlets.containers.business.ContainerCacheImpl;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.business.ContentletCacheImpl;
 import com.dotmarketing.portlets.contentlet.business.HostCache;
 import com.dotmarketing.portlets.contentlet.business.HostCacheImpl;
-import com.dotmarketing.portlets.files.business.FileCache;
-import com.dotmarketing.portlets.files.business.FileCacheImpl;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariablesCache;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariablesCacheImpl;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageCache;
@@ -187,9 +183,6 @@ public class CacheLocator extends Locator<CacheIndex>{
 		return (DotResourceCache)getInstance(CacheIndex.Velocity);
 	}
 
-	public static ChainCache getChainCache(){
-		return (ChainCache)getInstance(CacheIndex.Chain);
-	}
 
     public static LogMapperCache getLogMapperCache () {
         return ( LogMapperCache ) getInstance( CacheIndex.LogMapper );
@@ -219,9 +212,6 @@ public class CacheLocator extends Locator<CacheIndex>{
 		return (LayoutCache)getInstance(CacheIndex.Layout);
 	}
 
-	public static FileCache getFileCache() {
-		return (FileCache)getInstance(CacheIndex.File);
-	}
 	public static IdentifierCache getIdentifierCache() {
 		return (IdentifierCache)getInstance(CacheIndex.Identifier);
 	}
@@ -403,7 +393,6 @@ enum CacheIndex
       	case Contentlet: return new ContentletCacheImpl();
       	case Velocity : return new DotResourceCache();
       	case Relationship: return new RelationshipCacheImpl();
-      	case Chain : return new ChainCacheImpl();
         case LogMapper: return new LogMapperCacheImpl();
       	case Plugin : return new PluginCacheImpl();
       	case Language : return new LanguageCacheImpl();
@@ -411,7 +400,6 @@ enum CacheIndex
       	case Userproxy : return new UserProxyCacheImpl();
       	case Layout : return new LayoutCacheImpl();
       	case CMSRole : return new com.dotmarketing.business.RoleCacheImpl();
-      	case File : return new FileCacheImpl();
       	case HTMLPage : return new HTMLPageCacheImpl();
       	case Menulink : return new MenuLinkCacheImpl();
       	case Container : return new ContainerCacheImpl();

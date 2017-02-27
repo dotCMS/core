@@ -35,9 +35,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -475,26 +473,6 @@ public class FolderAPIImpl implements FolderAPI  {
 				capi.delete(c, user, false);
 			}
 
-			/************ htmlPages *****************/
-			HibernateUtil.getSession().clear();
-			List<HTMLPage> htmlPages = getHTMLPages(folder, user, respectFrontEndPermissions);
-			for (HTMLPage page : htmlPages) {
-				APILocator.getHTMLPageAPI().delete((HTMLPage) page, user, false);
-			}
-
-			/************ Files *****************/
-			HibernateUtil.getSession().clear();
-			List<File> files = getFiles(folder, user, respectFrontEndPermissions);
-			for (File file : files) {
-			    HibernateUtil.getSession().clear();
-				APILocator.getFileAPI().delete((File) file, user, false);
-			}
-			/************ Structures *****************/
-			List<Structure> structures = getStructures(folder, user, respectFrontEndPermissions);
-			for (Structure struc : structures) {
-
-				// APILocator.getFileAPI().delete((File) file, sys, false);
-			}
 			/************ Links *****************/
 			HibernateUtil.getSession().clear();
 			List<Link> links = getLinks(folder, user, respectFrontEndPermissions);
@@ -675,58 +653,6 @@ public class FolderAPIImpl implements FolderAPI  {
 		return ffac.findFoldersByHost(host);
 	}
 
-    public List<HTMLPage> getHTMLPages ( Host host, User user, boolean respectFrontEndPermissions ) throws DotStateException, DotDataException, DotSecurityException {
-
-        if ( !papi.doesUserHavePermission( host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions ) ) {
-            throw new DotSecurityException( "User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Host " + host.getHostname() );
-        }
-
-        ChildrenCondition cond = new ChildrenCondition();
-        cond.working = true;
-        cond.deleted = false;
-
-        List list = ffac.getChildrenClass( host, HTMLPage.class, cond );
-        return papi.filterCollection( list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user );
-    }
-
-	public  List<HTMLPage> getHTMLPages(Folder parent, User user, boolean respectFrontEndPermissions) throws DotStateException,
-	DotDataException, DotSecurityException{
-		if (!papi.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + parent.getPath());
-		}
-		ChildrenCondition cond = new ChildrenCondition();
-		cond.working=true;
-		cond.deleted=false;
-		List list = ffac.getChildrenClass(parent, HTMLPage.class,cond);
-		return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
-	}
-
-    public List<HTMLPage> getHTMLPages ( Host host, boolean working, boolean deleted, User user, boolean respectFrontEndPermissions ) throws DotStateException, DotDataException, DotSecurityException {
-
-        if ( !papi.doesUserHavePermission( host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions ) ) {
-            throw new DotSecurityException( "User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Host " + host.getHostname() );
-        }
-
-        ChildrenCondition cond = new ChildrenCondition();
-        cond.working = working;
-        cond.deleted = deleted;
-
-        List list = ffac.getChildrenClass( host, HTMLPage.class, cond );
-        return papi.filterCollection( list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user );
-    }
-
-    public  List<HTMLPage> getHTMLPages(Folder parent, boolean working, boolean deleted, User user, boolean respectFrontEndPermissions) throws DotStateException,
-    DotDataException, DotSecurityException{
-        if (!papi.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
-            throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + parent.getPath());
-        }
-        ChildrenCondition cond = new ChildrenCondition();
-        cond.working=working;
-        cond.deleted=deleted;
-        List list = ffac.getChildrenClass(parent, HTMLPage.class,cond);
-        return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
-    }
-
 	public  List<Link> getLinks(Folder parent, boolean working, boolean deleted, User user, boolean respectFrontEndPermissions) throws DotStateException,
     DotDataException, DotSecurityException{
         if (!papi.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
@@ -772,14 +698,6 @@ public class FolderAPIImpl implements FolderAPI  {
         return papi.filterCollection( list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user );
     }
 
-	public  List<File> getFiles(Folder parent, User user, boolean respectFrontEndPermissions) throws DotStateException,
-		DotDataException, DotSecurityException{
-		if (!papi.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + parent.getPath());
-		}
-		List list = ffac.getChildrenClass(parent, File.class);
-		return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
-	}
 	public  List<Contentlet> getContent(Folder parent, User user, boolean respectFrontEndPermissions) throws DotStateException,
 		DotDataException, DotSecurityException{
 		if (!papi.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
@@ -895,68 +813,6 @@ public class FolderAPIImpl implements FolderAPI  {
 		return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
 	}
 
-
-	public List<File> getLiveFiles(Folder parent, User user,boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
-		if (!papi.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + parent.getPath());
-		}
-		ChildrenCondition cond = new ChildrenCondition();
-		cond.live=true;
-		cond.deleted=false;
-		List list = ffac.getChildrenClass(parent, File.class, cond);
-
-		return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
-	}
-
-	public List<File> getLiveFilesSortTitle(Folder parent, User user,boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
-		if (!papi.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId( )+ " does not have permission to read Folder " + parent.getPath());
-		}
-		ChildrenCondition cond = new ChildrenCondition();
-        cond.live=true;
-        cond.deleted=false;
-		List list = ffac.getChildrenClass(parent, File.class, cond, "file_name asc");
-
-		return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
-	}
-
-	public List<File> getLiveFilesSortOrder(Folder parent, User user,boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
-		if (!papi.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + parent.getPath());
-		}
-		ChildrenCondition cond = new ChildrenCondition();
-        cond.live=true;
-        cond.deleted=false;
-		List list = ffac.getChildrenClass(parent, File.class, cond, "sort_order asc");
-
-		return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
-	}
-
-    public List<HTMLPage> getLiveHTMLPages ( Host host, User user, boolean respectFrontEndPermissions ) throws DotDataException, DotSecurityException {
-        if ( !papi.doesUserHavePermission( host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions ) ) {
-            throw new DotSecurityException( "User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Host " + host.getHostname() );
-        }
-        ChildrenCondition cond = new ChildrenCondition();
-        cond.live = true;
-        cond.deleted = false;
-        List list = ffac.getChildrenClass( host, HTMLPage.class, cond );
-
-        return papi.filterCollection( list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user );
-    }
-
-	public List<HTMLPage> getLiveHTMLPages(Folder parent, User user,boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
-		if (!papi.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + parent.getPath());
-		}
-		ChildrenCondition cond = new ChildrenCondition();
-        cond.live=true;
-        cond.deleted=false;
-		List list = ffac.getChildrenClass(parent, HTMLPage.class, cond);
-
-		return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
-	}
-
-
 	public List<Link> getLiveLinks(Folder parent, User user,boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		if (!papi.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + parent.getPath());
@@ -981,33 +837,6 @@ public class FolderAPIImpl implements FolderAPI  {
 		return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
 	}
 
-
-	public List<File> getWorkingFiles(Folder parent, User user,boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
-		if (!papi.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read  " + parent.getPath());
-		}
-		ChildrenCondition cond = new ChildrenCondition();
-        cond.working=true;
-        cond.deleted=false;
-		List list = ffac.getChildrenClass(parent, File.class, cond);
-
-		return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
-	}
-
-
-	public List<HTMLPage> getWorkingHTMLPages(Folder parent, User user,boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
-		if (!papi.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read  " + parent.getPath());
-		}
-		ChildrenCondition cond = new ChildrenCondition();
-        cond.working=true;
-        cond.deleted=false;
-		List list = ffac.getChildrenClass(parent, HTMLPage.class, cond);
-
-		return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
-	}
-
-
 	public List<Link> getWorkingLinks(Folder parent, User user,boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		if (!papi.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + parent.getPath());
@@ -1017,17 +846,6 @@ public class FolderAPIImpl implements FolderAPI  {
         //cond.deleted=false;
 		List list = ffac.getChildrenClass(parent, Link.class, cond);
 
-		return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
-	}
-
-
-	public List<File> getFiles(Folder parent, User user, boolean respectFrontEndPermissions, ChildrenCondition cond)
-	throws DotStateException, DotDataException, DotSecurityException {
-
-		if (!papi.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read " + parent.getPath());
-		}
-		List list = ffac.getChildrenClass(parent, File.class, cond, null);
 		return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
 	}
 }

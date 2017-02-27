@@ -690,7 +690,10 @@
 			name: "codeMaskMulti"+structureInode,
 			id: "codeMaskMulti"+structureInode,
 			value: "",
-			style: "width:99%; height:300px"
+
+			class: "aceText",
+			style: "display:none"
+
 		  });
 
 		var div = dojo.create("div",{

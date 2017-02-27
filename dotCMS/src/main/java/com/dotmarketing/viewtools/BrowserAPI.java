@@ -271,29 +271,23 @@ public class BrowserAPI {
 			try {
 				if (parent != null) {//For folders
 					if(!showWorking) {
-						pages.addAll(folderAPI.getLiveHTMLPages(parent, user, false));
 						pages.addAll(APILocator.getHTMLPageAssetAPI().getLiveHTMLPages(parent, user, false));
 					}
 					else {
-						pages.addAll(folderAPI.getHTMLPages(parent, true, false, user, false));
 						pages.addAll(APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages(parent, user, false));
 					}
 
 					if(showArchived) {
-						pages.addAll(folderAPI.getHTMLPages(parent, true, showArchived, user, false));
 						pages.addAll(APILocator.getHTMLPageAssetAPI().getDeletedHTMLPages(parent, user, false));
 					}
 				} else {//For hosts
                     if ( !showWorking ) {
-                        pages.addAll( folderAPI.getLiveHTMLPages( host, user, false ) );
                         pages.addAll( APILocator.getHTMLPageAssetAPI().getLiveHTMLPages( host, user, false ) );
                     } else {
-                        pages.addAll( folderAPI.getHTMLPages( host, true, false, user, false ) );
                         pages.addAll( APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages( host, user, false ) );
                     }
 
                     if ( showArchived ) {
-                        pages.addAll( folderAPI.getHTMLPages( host, true, showArchived, user, false ) );
                         pages.addAll( APILocator.getHTMLPageAssetAPI().getDeletedHTMLPages( host, user, false ) );
                     }
 				}
@@ -362,7 +356,6 @@ public class BrowserAPI {
 		}
 
 		List<Versionable> files = new ArrayList<Versionable>();
-		PermissionAPI perAPI = APILocator.getPermissionAPI();
 		try {
 
 			if (parent == null) {
@@ -381,8 +374,7 @@ public class BrowserAPI {
 		        	cond.live = true;
 				
 		        cond.deleted = showArchived;
-					
-				files.addAll(folderAPI.getFiles(parent, userAPI.getSystemUser(), false, cond));
+
 				files.addAll(APILocator.getFileAssetAPI().findFileAssetsByFolder(parent, "", !showWorking, showWorking, user, false));
 			}
 
@@ -432,7 +424,7 @@ public class BrowserAPI {
 			WorkflowScheme wfScheme = wfdata!=null ? wfdata.wfScheme : null;
 			fileMap.put("wfMandatoryWorkflow", wfScheme!=null && wfScheme.isMandatory());
 			fileMap.put("permissions", permissions);
-			fileMap.put("mimeType", APILocator.getFileAPI()
+			fileMap.put("mimeType", APILocator.getFileAssetAPI()
 					.getMimeType(fileAsset.getFileName()));
 			fileMap.put("name",
 				UtilMethods.isSet(fileAsset.getFileName()) ? fileAsset.getFileName() : ident.getAssetName());
@@ -458,24 +450,18 @@ public class BrowserAPI {
 					fileAsset.getParent() != null ? fileAsset
 							.getParent() : "");
 			fileMap.put("isContentlet", false);
-            // END GRAZIANO issue-12-dnd-template
-            Language lang = null;
-            
-            if (contentlet != null) {
-                fileMap.put("identifier", contentlet.getIdentifier());
-                fileMap.put("inode", contentlet.getInode());
-                fileMap.put("isLocked", contentlet.isLocked());
-                fileMap.put("isContentlet", true);
-                lang = langAPI.getLanguage(contentlet.getLanguageId());
-            }
-            else{
-                //This is a Legacy File. Add the default Language to FileMap
-                lang = langAPI.getDefaultLanguage();
-            }
-            //Add Language Attributes to FileMap, required in Website Browser
-            fileMap.put("languageId", lang.getId());
-            fileMap.put("languageCode", lang.getLanguageCode());
-            fileMap.put("countryCode", lang.getCountryCode());
+			// END GRAZIANO issue-12-dnd-template
+			Language lang = null;
+
+			fileMap.put("identifier", contentlet.getIdentifier());
+			fileMap.put("inode", contentlet.getInode());
+			fileMap.put("isLocked", contentlet.isLocked());
+			fileMap.put("isContentlet", true);
+			lang = langAPI.getLanguage(contentlet.getLanguageId());
+
+			fileMap.put("languageId", lang.getId());
+			fileMap.put("languageCode", lang.getLanguageCode());
+			fileMap.put("countryCode", lang.getCountryCode());
 
             fileMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(file));
 

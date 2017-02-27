@@ -1,9 +1,5 @@
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
-<%@page import="com.dotmarketing.business.web.WebAPILocator"%>
-<%@page import="com.dotmarketing.portlets.files.model.File"%>
-<%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.util.Config"%>
-<%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.util.InodeUtils"%>
 
 <%@page import="com.liferay.portal.model.User"%>

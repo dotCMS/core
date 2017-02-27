@@ -15,7 +15,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
@@ -326,10 +325,6 @@ public class ContentletAPIPreHookAbstractImp implements ContentletAPIPreHook {
 		return true;
 	}
 
-	public boolean getReferencingContentlet(File file, boolean live, User user, boolean respectFrontendRoles) {
-		return true;
-	}
-
 	public boolean getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles) {
 		return true;
 	}
@@ -440,10 +435,6 @@ public class ContentletAPIPreHookAbstractImp implements ContentletAPIPreHook {
 	}
 
 	public boolean refreshContentUnderHost(Host host) throws DotReindexStateException {
-		return true;
-	}
-
-	public boolean refreshReferencingContentlets(File file, boolean live) {
 		return true;
 	}
 

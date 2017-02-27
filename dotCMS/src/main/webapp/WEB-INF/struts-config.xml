@@ -7,30 +7,22 @@
 	<!-- Forms Beans -->
 
 	<form-beans>
-		<form-bean name="mapsMapsForm" type="com.liferay.portlet.maps.form.MapsForm" />
+
 		<!-- Forms DOTMARKETING -->
-      <form-bean name="ResumeForm" type="com.dotmarketing.portlets.jobs.struts.ResumeForm"></form-bean>
-      <form-bean name="JobsForm" type="com.dotmarketing.portlets.jobs.struts.JobsForm"></form-bean>
       <form-bean name="Inode" type="com.dotmarketing.portlets.inodes.model.Inode"></form-bean>
-      <form-bean name="BannerForm" type="com.dotmarketing.portlets.banners.struts.BannerForm"></form-bean>
       <form-bean name="FileForm" type="com.dotmarketing.portlets.files.struts.FileForm"></form-bean>
-      <form-bean name="SearchfirmForm" type="com.dotmarketing.portlets.jobs.struts.SearchfirmForm"></form-bean>
-      <form-bean name="CategoryForm" type="com.dotmarketing.portlets.categories.struts.CategoryForm"></form-bean>
-      <form-bean name="EntityForm" type="com.dotmarketing.portlets.entities.struts.EntityForm"></form-bean>
+
       <form-bean name="ContentletForm" type="com.dotmarketing.portlets.contentlet.struts.ContentletForm"></form-bean>
       <form-bean name="ImportContentletsForm" type="com.dotmarketing.portlets.contentlet.struts.ImportContentletsForm"></form-bean>
       <form-bean name="LinkForm" type="com.dotmarketing.portlets.links.struts.LinkForm"></form-bean>
-      <form-bean name="SidebarForm" type="com.dotmarketing.portlets.newsletter.struts.SidebarForm"></form-bean>
+
       <form-bean name="HostForm" type="com.dotmarketing.portlets.folders.struts.HostForm"></form-bean>
       <form-bean name="FolderForm" type="com.dotmarketing.portlets.folders.struts.FolderForm"></form-bean>
       <form-bean name="FileUploadForm" type="com.dotmarketing.portlets.fileupload.struts.FileForm"></form-bean>
       <form-bean name="ContainerForm" type="com.dotmarketing.portlets.containers.struts.ContainerForm"></form-bean>
       <form-bean name="TemplateForm" type="com.dotmarketing.portlets.templates.struts.TemplateForm"></form-bean>
-      <form-bean name="HTMLPageForm" type="com.dotmarketing.portlets.htmlpages.struts.HTMLPageForm"></form-bean>
       <form-bean name="WorkflowTaskForm" type="com.dotmarketing.portlets.workflows.struts.WorkflowTaskForm"></form-bean>
-      <form-bean name="MailingListForm" type="com.dotmarketing.portlets.mailinglists.struts.MailingListForm"></form-bean>
-      <form-bean name="CampaignForm" type="com.dotmarketing.portlets.campaigns.struts.CampaignForm"></form-bean>
-      <form-bean name="VirtualLinkForm" type="com.dotmarketing.portlets.virtuallinks.struts.VirtualLinkForm"></form-bean>
+	<form-bean name="VirtualLinkForm" type="com.dotmarketing.portlets.virtuallinks.struts.VirtualLinkForm"></form-bean>
       <form-bean name="LanguageForm" type="com.dotmarketing.portlets.languagesmanager.struts.LanguageForm"></form-bean>
       <form-bean name="EventForm" type="com.dotmarketing.portlets.events.struts.EventForm"></form-bean>
       <form-bean name="RecuranceForm" type="com.dotmarketing.portlets.events.struts.RecuranceForm"></form-bean>
@@ -44,37 +36,8 @@
       <form-bean name="UserManagerForm" type="com.dotmarketing.portlets.usermanager.struts.UserManagerForm"></form-bean>
       <form-bean name="UserProxyForm" type="com.dotmarketing.portlets.usermanager.struts.UserManagerForm"></form-bean>
 
-      <form-bean name="FacilityForm" type="com.dotmarketing.portlets.facilities.struts.FacilityForm"></form-bean>
-      <form-bean name="UserCategoriesForm" type="com.dotmarketing.portlets.user.struts.UserCategoriesForm"></form-bean>
-      <form-bean name="UserCommentsForm" type="com.dotmarketing.portlets.user.struts.UserCommentsForm"></form-bean>
-      <form-bean name="UserAdditionalInfoForm" type="com.dotmarketing.portlets.user.struts.UserAdditionalInfoForm"></form-bean>
 
-      <!--  Product Manager -->
-      <form-bean name="DotProductForm" type="com.dotmarketing.portlets.product.struts.ProductForm"></form-bean>
-      <form-bean name="DiscountCodeForm" type="com.dotmarketing.portlets.discountcode.struts.DiscountCodeForm"></form-bean>
-      <form-bean name="FormatForm" type="com.dotmarketing.portlets.product.struts.ProductFormatForm"></form-bean>
-      <form-bean name="PriceForm" type="com.dotmarketing.portlets.product.struts.ProductPriceForm"></form-bean>
-
-      <!--  Order Manager -->
-      <form-bean name="OrderForm" type="com.dotmarketing.portlets.order_manager.struts.OrderForm"></form-bean>
-      <form-bean name="OrderItemForm" type="com.dotmarketing.portlets.order_manager.struts.OrderItemForm"></form-bean>
-      <form-bean name="ViewOrdersForm" type="com.dotmarketing.portlets.order_manager.struts.ViewOrdersForm"></form-bean>
-      <form-bean name="productsForm" type="com.dotmarketing.cms.product.struts.ProductsForm"></form-bean>
-      <form-bean name="usersForm" type="com.dotmarketing.portlets.order_manager.struts.UsersForm"></form-bean>
-
-      <!--  Web Event Manager -->
-      <form-bean name="WebEventForm" type="com.dotmarketing.portlets.webevents.struts.WebEventForm"></form-bean>
-      <form-bean name="WebEventLocationForm" type="com.dotmarketing.portlets.webevents.struts.WebEventLocationForm"></form-bean>
-
-      <!--  Web Event Registration Manager -->
-      <form-bean name="WebEventAttendeeForm" type="com.dotmarketing.portlets.event_registrations.struts.WebEventAttendeeForm"></form-bean>
-      <form-bean name="WebEventRegistrationForm" type="com.dotmarketing.portlets.event_registrations.struts.WebEventRegistrationForm"></form-bean>
-      <form-bean name="ViewRegistrationsForm" type="com.dotmarketing.portlets.event_registrations.struts.ViewRegistrationsForm"></form-bean>
-
-      <!-- Comunication Manager -->
-      <form-bean name="CommunicationsForm" type="com.dotmarketing.portlets.communications.struts.CommunicationsForm"></form-bean>
-
-      <form-bean name="SchedulerForm" type="com.dotmarketing.portlets.scheduler.struts.SchedulerForm"></form-bean>
+		 <form-bean name="SchedulerForm" type="com.dotmarketing.portlets.scheduler.struts.SchedulerForm"></form-bean>
       <form-bean name="ReportForm" type="com.dotmarketing.portlets.report.struts.ReportForm"></form-bean>
 
       <!-- Events Calendar -->
@@ -220,11 +183,6 @@
 
 		<action path="/admin/change_user_portrait" forward="portlet.admin.change_user_portrait" />
 
-		<action path="/admin/create_user" type="com.liferay.portlet.admin.action.CreateUserAction">
-			<forward name="portlet.admin.error" path="portlet.admin.error" />
-			<forward name="portlet.admin.list_users" path="portlet.admin.list_users" />
-		</action>
-
 		<action path="/admin/default_email_notification" forward="portlet.admin.default_email_notification" />
 
 		<action path="/admin/default_groups_and_roles" forward="portlet.admin.default_groups_and_roles" />
@@ -269,11 +227,6 @@
 			<forward name="portlet.admin.error" path="portlet.admin.error" />
 		</action>
 
-		<action path="/admin/upload_user_portrait" type="com.liferay.portlet.myaccount.action.UploadPortraitAction">
-			<forward name="portlet.my_account.change_portrait" path="portlet.admin.change_user_portrait" />
-			<forward name="portlet.my_account.error" path="portlet.admin.error" />
-		</action>
-
 		<action path="/google/view" forward="portlet.google.view" />
 
 		<!-- Hello Faces -->
@@ -290,11 +243,6 @@
 
 		<action path="/my_account/change_portrait" forward="portlet.my_account.change_portrait" />
 
-		<action path="/my_account/create_account" type="com.liferay.portlet.myaccount.action.CreateUserAction">
-			<forward name="portlet.admin.error" path="portal.error" />
-			<forward name="portlet.admin.list_users" path="portlet.my_account.create_account" />
-		</action>
-
 		<action path="/my_account/edit_address" type="com.liferay.portlet.myaccount.action.EditAddressAction">
 			<forward name="portlet.my_account.edit_address" path="portlet.my_account.edit_address" />
 			<forward name="portlet.my_account.error" path="portlet.my_account.error" />
@@ -306,11 +254,6 @@
 
 		<action path="/my_account/update_profile" type="com.liferay.portlet.myaccount.action.UpdateProfileAction">
 			<forward name="portlet.my_account.edit_profile" path="portlet.my_account.edit_profile" />
-			<forward name="portlet.my_account.error" path="portlet.my_account.error" />
-		</action>
-
-		<action path="/my_account/upload_portrait" type="com.liferay.portlet.myaccount.action.UploadPortraitAction">
-			<forward name="portlet.my_account.change_portrait" path="portlet.my_account.change_portrait" />
 			<forward name="portlet.my_account.error" path="portlet.my_account.error" />
 		</action>
 
@@ -555,19 +498,6 @@
       <!-- Folder Management -->
 
       <!-- File Management -->
-      <action path="/ext/files/edit_file" type="com.dotmarketing.portlets.files.action.EditFileAction" name="FileForm" scope="request" input="portlet.ext.files.edit_file" validate="false">
-         <forward name="portlet.ext.files.edit_file" path="portlet.ext.files.edit_file"></forward>
-      </action>
-      <action path="/ext/files/edit_file_popup" type="com.dotmarketing.portlets.files.action.EditFileAction" name="FileForm" scope="request" input="portlet.ext.files.edit_file_popup" validate="false">
-         <forward name="portlet.ext.files.edit_file_popup" path="portlet.ext.files.edit_file_popup"></forward>
-      </action>
-      <action path="/ext/files/view_files" type="com.dotmarketing.portlets.files.action.ViewFilesAction">
-         <forward name="portlet.ext.files.view_files" path="portlet.ext.files.view_files" />
-         <forward name="portlet.ext.files.view" path="portlet.ext.files.view" />
-      </action>
-      <action path="/ext/files/publish_files" type="com.dotmarketing.portlets.files.action.PublishFilesAction">
-         <forward name="portlet.ext.files.publish_files" path="portlet.ext.files.publish_files" />
-      </action>
       <action path="/ext/files/upload_multiple" type="com.dotmarketing.portlets.files.action.UploadMultipleFilesAction" name="FileForm" scope="request" input="portlet.ext.files.upload_multiple" validate="false">
          <forward name="portlet.ext.files.upload_multiple" path="portlet.ext.files.upload_multiple"></forward>
       </action>
@@ -617,22 +547,11 @@
       <!-- Template  Management -->
 
       <!-- HMTLPage Management -->
-      <action path="/ext/htmlpages/view_htmlpages" type="com.dotmarketing.portlets.htmlpages.action.ViewHTMLPagesAction">
-         <forward name="portlet.ext.htmlpages.view_htmlpages" path="portlet.ext.htmlpages.view_htmlpages" />
-         <forward name="portlet.ext.htmlpages.view" path="portlet.ext.htmlpages.view" />
-      </action>
-      <action path="/ext/htmlpages/edit_htmlpage" type="com.dotmarketing.portlets.htmlpages.action.EditHTMLPageAction" name="HTMLPageForm" scope="request" input="portlet.ext.htmlpages.edit_htmlpage" validate="false">
-         <forward name="portlet.ext.htmlpages.edit_htmlpage" path="portlet.ext.htmlpages.edit_htmlpage"></forward>
-      </action>
       <action path="/ext/htmlpages/preview_htmlpage" type="com.dotmarketing.portlets.htmlpages.action.PreviewHTMLPageAction">
          <forward name="portlet.ext.htmlpages.preview_htmlpage" path="portlet.ext.htmlpages.preview_htmlpage"></forward>
       </action>
       <action path="/ext/htmlpages/publish_htmlpages" type="com.dotmarketing.portlets.htmlpages.action.PublishHTMLPagesAction">
          <forward name="portlet.ext.htmlpages.publish_htmlpages" path="portlet.ext.htmlpages.publish_htmlpages" />
-      </action>
-      <action path="/extranet/send_to_friend" type="com.dotmarketing.portlets.htmlpages.action.SendHTMLPageAction">
-         <forward name="portlet.ext.htmlpages.extranet.send_to_friend" path="portlet.ext.htmlpages.extranet.send_to_friend" />
-         <forward name="portlet.ext.htmlpages.extranet.send_to_friend_thanks" path="portlet.ext.htmlpages.extranet.send_to_friend_thanks" />
       </action>
       <!-- HMTLPage Management -->
 

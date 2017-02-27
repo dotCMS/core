@@ -23,6 +23,7 @@
 package com.liferay.util.servlet;
 
 import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 import java.io.IOException;
 
 /**
@@ -38,6 +39,14 @@ public class NullServletOutputStream extends ServletOutputStream {
 	}
 
 	public void write(int b) throws IOException {
+	}
+
+	public boolean isReady() {
+		return false;
+	}
+
+	public void setWriteListener(WriteListener writeListener) {
+
 	}
 
 }

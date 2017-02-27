@@ -21,6 +21,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.fixtask.FixTask;
 import com.dotmarketing.portlets.cmsmaintenance.ajax.FixAssetsProcessStatus;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
@@ -78,7 +79,7 @@ public class FixTask00040CheckFileAssetsMimeType implements FixTask {
 					 mimeType = Config.CONTEXT.getMimeType(fileWithInvalidMimeType.get("file_name"));
 					
 					 if (!UtilMethods.isSet(mimeType)) {
-						mimeType = com.dotmarketing.portlets.files.model.File.UNKNOWN_MIME_TYPE;
+						mimeType = FileAsset.UNKNOWN_MIME_TYPE;
 					 }
 					
 					 modifiedData.add(fileWithInvalidMimeType);

@@ -1166,27 +1166,28 @@ public class ContentletAjax {
 	 */
 	//http://jira.dotmarketing.net/browse/DOTCMS-2273
 	public Map<String,Object> saveContent(List<String> formData, boolean isAutoSave,boolean isCheckin, boolean publish) throws LanguageException, PortalException, SystemException {
-	    try {
+	  Map<String,Object> contentletFormData = new HashMap<String,Object>();
+	  Map<String,Object> callbackData = new HashMap<String,Object>();
+	  List<String> saveContentErrors = new ArrayList<String>(); 
+	  User user = null;
+      boolean clearBinary = true;//flag to check if the binary field needs to be cleared or not
+      HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+      String newInode = "";
+
+      String referer = "";
+      String language = "";
+      String strutsAction = "";
+      String recurrenceDaysOfWeek="";
+
+	  try {
             HibernateUtil.startTransaction();
-        } catch (DotHibernateException e1) {
-            Logger.warn(this, e1.getMessage(),e1);
-        }
+
 
 	    int tempCount = 0;// To store multiple values opposite to a name. Ex: selected permissions & categories
-		String newInode = "";
 
-		String referer = "";
-		String language = "";
-		String strutsAction = "";
-		String recurrenceDaysOfWeek="";
 
-		Map<String,Object> contentletFormData = new HashMap<String,Object>();
-		Map<String,Object> callbackData = new HashMap<String,Object>();
-		List<String> saveContentErrors = new ArrayList<String>();
-		boolean clearBinary = true;//flag to check if the binary field needs to be cleared or not
 
-		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-		User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req);
+        user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req);
 
 		// get the struts_action from the form data
 		for (String element:formData) {
@@ -1264,7 +1265,7 @@ public class ContentletAjax {
 					if(UtilMethods.isSet(binaryContentlet) && UtilMethods.isSet(binaryContentlet.getInode())){
 						try {
 							elementValue = binaryContentlet.getBinary(FileAssetAPI.BINARY_FIELD);
-							binaryFile = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+							binaryFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
 									+ File.separator + user.getUserId() + File.separator + "binary1"
 									+ File.separator + ((File)elementValue).getName());
 							if(binaryFile.exists())
@@ -1272,7 +1273,7 @@ public class ContentletAjax {
 						} catch (IOException e) {}
 					}else{
 						binaryFileValue = ContentletUtil.sanitizeFileName(binaryFileValue);
-						binaryFile = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+						binaryFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
 								+ File.separator + user.getUserId() + File.separator + elementName
 								+ File.separator + binaryFileValue);
 						if(binaryFile.exists()) {
@@ -1280,7 +1281,7 @@ public class ContentletAjax {
 	    					    // https://github.com/dotCMS/dotCMS/issues/35
 	    					    // making a copy just in case the transaction fails so
 	    					    // we can have the file for possible next attempts
-	                            File acopyFolder=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+	                            File acopyFolder=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
 	                                    + File.separator + user.getUserId() + File.separator + elementName
 	                                    + File.separator + UUIDGenerator.generateUuid());
 	                            if(!acopyFolder.exists())
@@ -1338,7 +1339,7 @@ public class ContentletAjax {
 			}
 		}
 
-		try {
+
 
 			// if it is save and publish, the save event must be not generagted
 			newInode = contentletWebAPI.saveContent(contentletFormData, isAutoSave, isCheckin, user, !publish);
@@ -1428,7 +1429,7 @@ public class ContentletAjax {
 			if(contentlet!=null) {
 			    for(Field ff : FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode())) {
 			        if(ff.getFieldType().equals(FieldType.BINARY.toString())) {
-			            File tmp=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+			            File tmp=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
 			                    +File.separator+user.getUserId()+File.separator+ff.getFieldContentlet());
 			            FileUtil.deltree(tmp);
 			        }
@@ -2068,7 +2069,7 @@ public class ContentletAjax {
 					File binaryFile = null;
 					if(UtilMethods.isSet(fileName)){
 						fileName = ContentletUtil.sanitizeFileName(fileName);
-						binaryFile = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+						binaryFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
 								+ File.separator + user.getUserId() + File.separator + FieldsCache.getField(fieldInode).getFieldContentlet()
 								+ File.separator + fileName.trim());
 						}
@@ -2087,7 +2088,7 @@ public class ContentletAjax {
 		if(newCont !=null ) {
 		    Field field = FieldsCache.getField(fieldInode);
 	        if(field.getFieldType().equals(FieldType.BINARY.toString())) {
-	            File tmp=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+	            File tmp=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
 	                    +File.separator+user.getUserId()+File.separator+field.getFieldContentlet());
 	            FileUtil.deltree(tmp);
 	        }

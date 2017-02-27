@@ -48,7 +48,7 @@ import com.dotmarketing.startup.runonce.*;
 public class TaskLocatorUtil {
 
 	private static List<Class<?>> userfixTasks = new CopyOnWriteArrayList<>();
-	
+
 	/**
 	 * Returns the list of tasks that are run to solve internal conflicts
 	 * related to data inconsistency.
@@ -79,7 +79,7 @@ public class TaskLocatorUtil {
 
 	/**
 	 * Adds a dotCMS fix task to the main fix task list.
-	 * 
+	 *
 	 * @param clazz
 	 *            - The new fix task class.
 	 */
@@ -89,17 +89,17 @@ public class TaskLocatorUtil {
 
 	/**
 	 * Removes the specified fix task from the main list.
-	 * 
+	 *
 	 * @param clazz
 	 *            - The fix task to remove.
 	 */
     public static void removeFixTask(Class<?> clazz){
         userfixTasks.remove(clazz);
-    }    
+    }
 
 	/**
 	 * Returns the list of fix task classes for the current dotCMS instance.
-	 * 
+	 *
 	 * @return The list of fix tasks.
 	 */
 	public static List<Class<?>> getFixTaskClasses() {
@@ -219,6 +219,7 @@ public class TaskLocatorUtil {
 		ret.add(Task03560TemplateLayoutCanonicalName.class);
 		ret.add(Task03565FixContainerVersionsCheck.class);
 		ret.add(Task03600UpdateMssqlVarcharTextColumns.class);
+		ret.add(Task03605FixMSSQLMissingConstraints.class);
         ret.add(Task03700ModificationDateColumnAddedToUserTable.class);
         ret.add(Task03705AddingSystemEventTable.class);
         ret.add(Task03710AddFKForIntegrityCheckerTables.class);
@@ -226,6 +227,7 @@ public class TaskLocatorUtil {
         ret.add(Task03720AddRolesIntegrityCheckerTable.class);
         ret.add(Task03725NewNotificationTable.class);
         ret.add(Task03735UpdatePortletsIds.class);
+        ret.add(Task03740UpdateLayoutIcons.class);
 
         return ret;
     }
@@ -248,6 +250,7 @@ public class TaskLocatorUtil {
 		ret.add(Task00007RemoveSitesearchQuartzJob.class);
 		ret.add(Task00009ClusterInitialize.class);
 		ret.add(Task00010CheckAnonymousUser.class);
+		
 		return ret;
 	}
 

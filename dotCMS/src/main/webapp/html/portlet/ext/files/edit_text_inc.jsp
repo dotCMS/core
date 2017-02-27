@@ -18,7 +18,7 @@
 	}
 </style>
 <script src="/html/js/ace-builds-1.2.3/src-noconflict/ace.js" type="text/javascript"></script>
-<script type='text/javascript' src='/dwr/interface/FileAjax.js'></script>
+<script type='text/javascript' src='/dwr/interface/FileAssetAjax.js'></script>
 
 <script language="JavaScript">
     var aceEditor;
@@ -49,7 +49,7 @@
 		editText: function (fileInode,fileId) {
 		    this.fileInode = fileInode;
 			this.fileId = fileId;
-			FileAjax.getWorkingTextFile(this.fileInode, dojo.hitch(this, this.loadTextCallback));
+			FileAssetAjax.getWorkingTextFile(this.fileInode, dojo.hitch(this, this.loadTextCallback));
 		},
 
 		loadTextCallback: function(file) {
@@ -87,7 +87,7 @@
 
 		save: function() {
 			var text = aceEditor.getValue();
-			FileAjax.saveFileText(this.fileId, text, {
+			FileAssetAjax.saveFileText(this.fileId, text, null, {
 				async: false,	
 				callback:function() {
 				editTextManager.close();

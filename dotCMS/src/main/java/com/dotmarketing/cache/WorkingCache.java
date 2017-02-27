@@ -86,15 +86,7 @@ public class WorkingCache {
 				Logger.debug(WorkingCache.class, "Mapping: " + uri + " to " + path);
 				cache.put(getPrimaryGroup() + hostId + "-" + uri,path, getPrimaryGroup() + "_" + hostId);
 				ret = path;
-			}else {
-				String path = APILocator.getFileAPI().getRelativeAssetPath((Inode)asset);
-				//add the entry to the cache
-				Logger.debug(WorkingCache.class, "Mapping: " + uri + " to " + path);
-				cache.put(getPrimaryGroup() + hostId + "-" + uri,path, getPrimaryGroup() + "_" + hostId);
-				ret = path;
-			}	
-
-
+			}
 		}
 		return ret;
 		

@@ -1019,7 +1019,7 @@ try {
 		</div>
 		<!-- Statistics Tabs -->
 	
-		<div id="listingWrapper" dojoType="dijit.Dialog" style="display:none;height:430px;width:700px;vertical-align: middle;overflow: hidden;padding-top:15px\9;" draggable="true" >
+		<div id="listingWrapper" dojoType="dijit.Dialog" style="display:none;height:461px;width:700px;vertical-align: middle;overflow: hidden;padding-top:15px\9;" draggable="true" >
 			<div style="margin:-34px 0 15px 0;">
 				<span id="listTitle"></span>
 			</div>

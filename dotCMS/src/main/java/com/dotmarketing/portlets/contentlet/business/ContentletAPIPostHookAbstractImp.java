@@ -12,7 +12,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
@@ -182,12 +181,6 @@ public class ContentletAPIPostHookAbstractImp implements ContentletAPIPostHook {
 	public void getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles,List<Contentlet> returnValue) {
 	}
 
-	public void getReferencingContentlet(File file, boolean live, User user, boolean respectFrontendRoles,List<Contentlet> returnValue) {
-	}
-	
-	public void refreshReferencingContentlets(File file, boolean live) {
-	}
-
 	public void unlock(Contentlet contentlet, User user, boolean respectFrontendRoles) {
 	}
 
@@ -204,9 +197,6 @@ public class ContentletAPIPostHookAbstractImp implements ContentletAPIPostHook {
 	}
 	
 	public void reIndexForServerNode() {
-	} 
-	
-	public void getRelatedFiles(Contentlet contentlet, User user, boolean respectFrontendRoles,List<File> returnValue) {
 	}
 	
 	public void getRelatedIdentifier(Contentlet contentlet, String relationshipType, User user, boolean respectFrontendRoles,Identifier returnValue) {

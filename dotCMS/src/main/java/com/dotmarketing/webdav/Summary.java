@@ -7,7 +7,6 @@ import java.util.Date;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
-import com.dotmarketing.portlets.files.model.File;
 
 public class Summary {
 	public Summary () {

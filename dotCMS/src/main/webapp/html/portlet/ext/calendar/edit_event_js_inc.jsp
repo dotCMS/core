@@ -9,7 +9,7 @@ function submitfmEvent(form, subcmd)
 	
 	var isAjaxFileUploading = false; 
    	dojo.query(".fileAjaxUploader").forEach(function(node, index, arr){
-   		FileAjax.getFileUploadStatus(node.id,{async:false, callback: function(fileStats){
+   		FileAssetAjax.getFileUploadStatus(node.id,{async:false, callback: function(fileStats){
    	   		if(fileStats!=null){
    	   		  isAjaxFileUploading = true;
    	   		}

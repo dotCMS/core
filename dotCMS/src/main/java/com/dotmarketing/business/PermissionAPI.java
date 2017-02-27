@@ -8,13 +8,11 @@ import java.util.Set;
 
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.beans.PermissionType;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
@@ -50,7 +48,6 @@ public interface PermissionAPI {
 	static Map<String, String> permissionTypes= new HashMap<String, String>(){{
 		put("HTMLPAGES", IHTMLPage.class.getCanonicalName());
 		put("CONTAINERS", Container.class.getCanonicalName());
-		put("FILES", File.class.getCanonicalName());
 		put("FOLDERS", Folder.class.getCanonicalName());
 		put("LINKS", Link.class.getCanonicalName());
 		put("TEMPLATES", Template.class.getCanonicalName());
@@ -64,7 +61,6 @@ public interface PermissionAPI {
    public enum PermissionableType {
 	   HTMLPAGES(IHTMLPage.class.getCanonicalName()),
 	   CONTAINERS(Container.class.getCanonicalName()),
-	   FILES(File.class.getCanonicalName()),
 	   FOLDERS(Folder.class.getCanonicalName()),
 	   LINKS(Link.class.getCanonicalName()),
 	   TEMPLATES(Template.class.getCanonicalName()),

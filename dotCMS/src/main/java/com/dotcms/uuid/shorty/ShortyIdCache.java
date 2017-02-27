@@ -57,12 +57,6 @@ public class ShortyIdCache implements Cachable {
 
     public void add(ShortyId shortyId) {
 
-        Optional<ShortyId> existing= get(shortyId.shortId);
-        if (existing.isPresent() && existing.get().type != ShortType.CACHE_MISS && !existing.get().equals(shortyId)) {
-            throw new ShortyException(
-                    "It seems we have a short id collision:new " + shortyId + " old: " + existing.get());
-        }
-
         cache.put(shortyId.shortId, shortyId, SHORT_CACHE);
 
 

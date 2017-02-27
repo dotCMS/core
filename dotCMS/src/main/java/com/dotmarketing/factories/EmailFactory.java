@@ -1,7 +1,5 @@
 package com.dotmarketing.factories;
 
-//import com.dotmarketing.threads.DeliverNewsletterThread;
-
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -43,10 +41,8 @@ import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.mailinglists.factories.MailingListFactory;
-import com.dotmarketing.portlets.mailinglists.model.MailingList;
+
 import com.dotmarketing.portlets.webforms.model.WebForm;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FormSpamFilter;
@@ -256,18 +252,7 @@ public class EmailFactory {
 
 	}
 
-	public static boolean isSubscribed(MailingList list, User s){
 
-		UserProxy up;
-		try {
-			up = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(s,APILocator.getUserAPI().getSystemUser(), false);
-		} catch (Exception e) {
-			Logger.error(EmailFactory.class, e.getMessage(), e);
-			throw new DotRuntimeException(e.getMessage(), e);
-		}	
-		return MailingListFactory.isSubscribed(list, up);
-
-	}
 
 	/**
 	 * 
@@ -842,7 +827,6 @@ public class EmailFactory {
 
 	private static String saveFormFile (String formInode, String formType, 
 			String fileName, File fileToSave, Host currentHost, String filesFolder) throws Exception {
-		FileAPI fileAPI=APILocator.getFileAPI();
 		String path;
 		if(filesFolder != null)
 			path = filesFolder;
@@ -851,10 +835,6 @@ public class EmailFactory {
 		Folder folder = APILocator.getFolderAPI().createFolders(path, currentHost, APILocator.getUserAPI().getSystemUser(), false);
 		String baseFilename = fileName;
 		int c = 1;
-		while(fileAPI.fileNameExists(folder, fileName)) {
-			fileName = UtilMethods.getFileName(baseFilename) + "-" + c + "." + UtilMethods.getFileExtension(baseFilename);
-			c++;
-		}
 		Host host = APILocator.getHostAPI().find(folder.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
 		while(APILocator.getFileAssetAPI().fileNameExists(host,folder, fileName, "")) {
 			fileName = UtilMethods.getFileName(baseFilename) + "-" + c + "." + UtilMethods.getFileExtension(baseFilename);

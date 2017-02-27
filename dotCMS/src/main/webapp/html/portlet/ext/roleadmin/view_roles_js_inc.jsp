@@ -1,21 +1,7 @@
-<%@page import="com.dotmarketing.beans.Permission"%>
-<%@page import="com.dotmarketing.business.PermissionAPI"%>
-<%@page import="com.dotmarketing.beans.Host"%>
-<%@page import="java.util.List"%>
-<%@page import="com.dotmarketing.business.PermissionSummary"%>
-<%@page import="com.dotmarketing.portlets.contentlet.business.HostAPI"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
-<%@page import="com.dotmarketing.portlets.folders.model.Folder"%>
-<%@page import="com.dotmarketing.portlets.containers.model.Container"%>
-<%@page import="com.dotmarketing.portlets.templates.model.Template"%>
-<%@page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage"%>
-<%@page import="com.dotmarketing.portlets.files.model.File"%>
-<%@page import="com.dotmarketing.portlets.links.model.Link"%>
-<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.business.RoleAPI"%>
-<%@page import="com.liferay.portal.util.ReleaseInfo"%>
 
 <%
 	RoleAPI roleAPI = APILocator.getRoleAPI();
@@ -921,8 +907,8 @@
 
 		if(!dijit.byId('roleLayoutsGrid')) {
 			var gridBox = dojo.contentBox("roleLayoutsGrid");
-			var col1Width = parseInt(gridBox.w * 2 / 100);
-			var col2Width = parseInt(gridBox.w * 30 / 100);
+			var col1Width = parseInt(gridBox.w * 3 / 100);
+			var col2Width = parseInt(gridBox.w * 25 / 100);
 			var col3Width = parseInt(gridBox.w * 58 / 100);
 			var col4Width = gridBox.w - col1Width - col2Width - col3Width - 30;
 
@@ -959,6 +945,7 @@
 	            },
 	            store: layoutsStore,
 	            clientSort: true,
+				autoHeight: true,
 	            structure: layoutsGridLayout
 	        },
 	        'roleLayoutsGrid');
@@ -1402,5 +1389,10 @@
 
 // 		},3000);
 
+	}
+	
+	function updateIcon(fontAwesomeClass){
+		var icon = document.getElementById('tabIcon');
+		icon.className ='fa '+fontAwesomeClass;
 	}
 </script>
