@@ -6,8 +6,6 @@ import {Protocol, Url} from './protocol';
 import {Observable} from 'rxjs/Rx';
 
 export class WebSocketProtocol extends Protocol {
-    private static sockets: WebSocket[] = [];
-
     private sendQueue = [];
 
     private readyStateConstants = {
@@ -24,13 +22,6 @@ export class WebSocketProtocol extends Protocol {
     private dataStream: Subject<any>;
     private internalConnectionState: number;
     private reconnectIfNotNormalClose: boolean;
-
-    /**
-     * Close all the Web sockets connections
-     */
-    public static closeAllSockets(): void {
-        WebSocketProtocol.sockets.forEach(ws => ws.close());
-    }
 
     constructor(private url: Url, loggerService: LoggerService, config?: WebSocketConfig, private protocols?: Array<string> ) {
         super(loggerService, config);
@@ -75,8 +66,6 @@ export class WebSocketProtocol extends Protocol {
                     this.loggerService.debug('Web EventsSocket connection error', ev);
                     this._error.next(ev);
                 };
-
-                WebSocketProtocol.sockets.push(this.socket);
             }catch (error) {
                 this.loggerService.debug('Web EventsSocket connection error', error);
                 this._error.next(error);

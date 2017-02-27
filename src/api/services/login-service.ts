@@ -53,11 +53,14 @@ export class LoginService {
             this.loggerService.debug('Processing session destroyed: ', date);
             this.loggerService.debug('User Logged In Date: ', this.auth.user.loggedInDate);
             // if the destroyed event happens after the logged in date, so proceed!
-            if (this.auth.user.loggedInDate && date && Number(date) > Number(this.auth.user.loggedInDate)) {
-
+            if (this.isLogoutAfterLastLogin(date)) {
                 this.logOutUser().subscribe(() => {});
             }
         });
+    }
+
+    private isLogoutAfterLastLogin(date): boolean {
+        return this.auth.user && this.auth.user.loggedInDate && date && Number(date) > Number(this.auth.user.loggedInDate);
     }
 
     get loginAsUsersList$(): Observable<User[]> {
