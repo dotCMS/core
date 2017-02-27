@@ -943,35 +943,7 @@ function deleteEnvPushHistory(envId) {
                         </div>
                         <div>
                             <%=("https".equals(endpoint.getProtocol())) ? "<span class='encryptIcon'></span>": "<span class='shimIcon'></span>" %>
-                            <%if (!"awss3".equalsIgnoreCase(endpoint.getProtocol())){%>
-                            	<i style="color:#888;"><%=endpoint.getProtocol()%>://<%=endpoint.getAddress()%>:<%=endpoint.getPort()%></i>
-	                        <%} else {
-	                        	String endpointString = "aws-s3";
-								try {
-									java.util.Properties props = new java.util.Properties();
-									props.load(
-										new java.io.StringReader(
-											com.dotmarketing.cms.factories.PublicEncryptionFactory.decryptString(
-												endpoint.getAuthKey().toString()
-											)
-										)
-									);
-
-									String bucketID = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_BUCKET_ID);
-									if (com.dotmarketing.util.UtilMethods.isSet(bucketID)) {
-
-										endpointString += "://" + bucketID;
-
-										String bucketPrefix = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_BUCKET_ROOT_PREFIX);
-										if (com.dotmarketing.util.UtilMethods.isSet(bucketPrefix)) {
-
-											endpointString += "/" + bucketPrefix;
-										}
-									}
-								} catch (Exception ex) {}
-	                		%>
-                            	<i style="color:#888;"><%=endpointString%></i>
-	                        <%}%>
+                            <i style="color:#888;"><%=(endpoint.getProtocol()!=null?endpoint.getProtocol():""%>://<%=endpoint.getAddress()%>:<%=(endpoint.getPort()!=null?endpoint.getPort():""%></i>
                         </div>
                     </div>
                 </div>
