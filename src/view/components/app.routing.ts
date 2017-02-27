@@ -8,12 +8,12 @@ import {PatternLibrary} from './common/pattern-library/pattern-library';
 import {ResetPasswordContainer} from './common/login/reset-password-component/reset-password-container';
 import {Routes, RouterModule} from '@angular/router';
 import {RoutingPublicAuthService} from '../../api/services/routing-public-auth-service';
-import {RoutingPrivateAuthService} from '../../api/services/routing-private-auth-service';
 import {RuleEngineContainer} from './rule-engine/rule-engine.container';
-import {CONSTANT} from '../constant';
+import {CONSTANTS} from '../constants';
 import {MainCoreComponent} from './main-core-component/MainCoreComponent';
 import {NotLicensedComponent} from './not-licensed-component/not-licensed-component';
 import {LogOutContainer} from './common/login/login-component/log-out-container';
+import {RoutingPrivateAuthService} from '../../api/services/routing-private-auth-service';
 
 let angularComponents: any[] = [];
 angularComponents.push({component: RuleEngineContainer, id: 'rules'});
@@ -22,7 +22,7 @@ let mainComponentChildren = [
     {
         path: '',
         pathMatch: 'full',
-        redirectTo: (CONSTANT.ENV && CONSTANT.ENV === 'DEV') ? 'pl' : 'workflow',
+        redirectTo: (CONSTANTS.ENV && CONSTANTS.ENV === 'DEV') ? 'pl' : 'home',
     },
     {
         component: PatternLibrary,
@@ -35,7 +35,7 @@ let mainComponentChildren = [
     {
         canActivate: [RoutingPrivateAuthService],
         component: IframeLegacyComponent,
-        path: ':id',
+        path: ':id'
     }
 ];
 
@@ -44,7 +44,7 @@ let angularChildren: any[] = [
     {
         path: '',
         pathMatch: 'full',
-        redirectTo: (CONSTANT.ENV && CONSTANT.ENV === 'DEV') ? 'c/pl' : 'c/workflow',
+        redirectTo: (CONSTANTS.ENV && CONSTANTS.ENV === 'DEV') ? 'c/pl' : 'c/home',
     },
     {
         component: PatternLibrary,

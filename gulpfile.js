@@ -75,7 +75,7 @@ var project = {
 
     gulp.src(['./src/view/' + this.configFile])
         .pipe(ts())
-        .pipe(rename('constant.js'))
+        .pipe(rename('constants.js'))
         .pipe(gulp.dest('build/view')).on('finish', cb);
   },
 
@@ -427,11 +427,12 @@ var generatePom = function(baseDeployName, groupId, artifactId, version, packagi
 
 gulp.task('set-build-target-to-prod', function(done){
   config.buildTarget = 'prod'
+  project.configFile = 'app.constant.prod.ts';
   done()
 })
 
-gulp.task('publish-snapshot', ['package'], function(done) {
-  project.publish(require('./deploy-config.js').artifactory.snapshot);
+gulp.task('publish-snapshot', ['set-build-target-to-prod', 'package'], function(done) {
+  //project.publish(require('./deploy-config.js').artifactory.snapshot);
   done();
 });
 
