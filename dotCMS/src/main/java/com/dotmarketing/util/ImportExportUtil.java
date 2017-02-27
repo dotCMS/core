@@ -105,7 +105,6 @@ public class ImportExportUtil {
     private List<File> templatesXML = new ArrayList<File>();
     private List<File> templateContainersXML = new ArrayList<File>();
     private List<File> containerStructuresXML = new ArrayList<File>();
-    private List<File> filesXML = new ArrayList<File>();
     private List<File> versionInfoFilesXML = new ArrayList<File>();
     private List<File> workFlowTaskXML = new ArrayList<File>();
     private List<File> workFlowCommentXML = new ArrayList<File>();
@@ -575,18 +574,6 @@ public class ImportExportUtil {
             }
         }
         for (File file : menuLinksXML) {
-            try{
-				HibernateUtil.closeSession();
-			} catch (DotHibernateException e) {
-				Logger.error(this, "Unable to close Session : " + e.getMessage(), e);
-			}
-            try{
-                doXMLFileImport(file, out);
-            } catch (Exception e) {
-                Logger.error(this, "Unable to load " + file.getName() + " : " + e.getMessage(), e);
-            }
-        }
-        for (File file : filesXML) {
             try{
 				HibernateUtil.closeSession();
 			} catch (DotHibernateException e) {
