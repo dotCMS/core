@@ -941,7 +941,7 @@ function deleteEnvPushHistory(envId) {
                         </div>
                         <div>
                             <%=("https".equals(endpoint.getProtocol())) ? "<span class='encryptIcon'></span>": "<span class='shimIcon'></span>" %>
-                            <i style="color:#888;"><%=endpoint.getProtocol()%>://<%=endpoint.getAddress()%>:<%=endpoint.getPort()%></i>
+                            <i style="color:#888;"><%=(endpoint.getProtocol()!=null)?endpoint.getProtocol():""%>://<%=endpoint.getAddress()%>:<%=(endpoint.getPort()!=null)?endpoint.getPort():""%></i>
                         </div>
                     </div>
                 </div>
