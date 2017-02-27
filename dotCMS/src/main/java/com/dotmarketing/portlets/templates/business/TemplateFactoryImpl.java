@@ -32,8 +32,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
@@ -349,10 +347,14 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	}
 	
 	private List<String> getContainerIds(String templateBody) {
+	    List<String> ids = new LinkedList<String>();
+	    if(!UtilMethods.isSet(templateBody)){
+	        return ids;
+	    }
 		Pattern oldContainerReferencesRegex = Pattern.compile("#parse\\s*\\(\\s*\\$container([^\\s)]+)\\s*\\)");
 		Pattern newContainerReferencesRegex = Pattern.compile("#parseContainer\\s*\\(\\s*['\"]*([^'\")]+)['\"]*\\s*\\)");
 		Matcher matcher = oldContainerReferencesRegex.matcher(templateBody);
-		List<String> ids = new LinkedList<String>();
+		
 		while(matcher.find()) {
 			String containerId = matcher.group(1).trim();
 			if(!ids.contains(containerId))
