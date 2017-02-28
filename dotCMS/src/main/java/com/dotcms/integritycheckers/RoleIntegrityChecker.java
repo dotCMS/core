@@ -267,7 +267,7 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
 		        + DbConnectionFactory.getTempKeyword()
 		        + " table "
 		        + tempTableName
-		        + " (id varchar(36) not null, role_key varchar(255) not null, role_name varchar(255) not null, "
+		        + " (id varchar(36) not null, role_key varchar(255) , role_name varchar(255) not null, "
 		        + "qualified_id varchar(1000) not null, qualified_name varchar(1000) not null, primary key (id) )"
 		        + (DbConnectionFactory.isOracle() ? " ON COMMIT PRESERVE ROWS " : "");
 
@@ -282,7 +282,7 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
 	}
 
     private void queryAndConsumeRoles(Consumer<CmsRole> consumer) throws DotDataException {
-    	String query = "select id, role_key, role_name, parent, db_fqn from cms_role order by db_fqn asc";
+    	String query = "select id, role_key, role_name, parent, db_fqn from cms_role where role_name <> '"+ RoleAPI.DEFAULT_USER_ROLE_KEY + "' order by db_fqn asc";
 
         Connection conn = DbConnectionFactory.getConnection();
         try (PreparedStatement statement = conn.prepareStatement(query)) {
