@@ -1,7 +1,6 @@
 import {Injectable} from '@angular/core';
 import {CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot} from '@angular/router';
 import {RoutingService} from './routing-service';
-import _ from 'lodash';
 import {Observable} from 'rxjs/Rx';
 import {DotcmsConfig} from './system/dotcms-config';
 import {LoginService} from './login-service';
@@ -13,18 +12,23 @@ export class RoutingPrivateAuthService implements CanActivate {
              private loginService: LoginService, private dotcmsConfig: DotcmsConfig) {}
 
     canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
-
-        return Observable.create( obs => {
+        return Observable.create(obs => {
             this.loginService.isLogin$.subscribe(isLogin => {
-
                 if (isLogin) {
-                    this.dotcmsConfig.getConfig().subscribe( configParams => {
-                        this.checkAccess(state.url).subscribe(checkAccess => {
-                            if (!checkAccess) {
-                                this.router.goToMain();
-                            }
-                            obs.next(checkAccess);
-                        });
+                    this.dotcmsConfig.getConfig().subscribe(configParams => {
+                        if (state.url.indexOf('home') > -1) {
+                            this.routingService.menusChange$.subscribe(res => {
+                                this.router.goToURL(`/c/${this.routingService.firstPortlet}`);
+                                obs.next(false);
+                            });
+                        } else {
+                            this.checkAccess(state.url).subscribe(checkAccess => {
+                                if (!checkAccess) {
+                                    this.router.goToMain();
+                                }
+                                obs.next(checkAccess);
+                            });
+                        }
                     });
                 } else {
                     this.router.goToLogin();
@@ -35,28 +39,26 @@ export class RoutingPrivateAuthService implements CanActivate {
     }
 
     private checkAccess(url: string): Observable<boolean> {
-        return Observable.create( obs => {
+        return Observable.create(obs => {
             if (this.routingService.currentMenu) {
                 obs.next(this.check(url));
             } else {
-                this.routingService.menusChange$.subscribe(() => obs.next(this.check.bind(this)(url)));
+                this.routingService.menusChange$.subscribe(() => obs.next(this.check(url)));
             }
         }).take(1);
     }
 
     private check(url: string): boolean {
         let isRouteLoaded = true;
-
         if (url !== '/c/pl') {
             isRouteLoaded = this.routingService.isPortlet(url);
 
-            if (!isRouteLoaded) {
-                this.router.goToLogin();
-            }else {
+            if (isRouteLoaded) {
                 this.routingService.setCurrentPortlet(url);
+            } else {
+                this.router.goToLogin();
             }
         }
-
         return isRouteLoaded;
     }
 }

@@ -1,4 +1,11 @@
-<dot-dropdown-component icon="fa-user" inverse="true" alignRight="true" *ngIf="auth.user" id="dot-toolbar-user">
+<dot-dropdown-component
+    icon="fa-user"
+    inverse="true"
+    alignRight="true"
+    *ngIf="auth.user"
+    id="dot-toolbar-user"
+    (open)="iframeOverlayService.show()"
+    (close)="iframeOverlayService.hide()">
     <div class="toolbar-user__content">
         <header class="toolbar-user__header">
             <h5 class="toolbar-user__user-name" id="dot-toolbar-user-name">{{auth.loginAsUser ? auth.loginAsUser.name || auth.loginAsUser.fullName : auth.user.name || auth.user.fullName}}</h5>

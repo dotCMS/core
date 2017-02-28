@@ -4,6 +4,7 @@ import {DotcmsEventsService} from '../../../../api/services/dotcms-events-servic
 import {INotification, NotificationsService} from '../../../../api/services/notifications-service';
 import {MessageService} from '../../../../api/services/messages-service';
 import {LoginService} from '../../../../api/services/login-service';
+import {IframeOverlayService} from "../../../../api/services/iframe-overlay-service";
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -21,7 +22,8 @@ export class ToolbarNotifications extends BaseComponent{
 
 
     constructor(private dotcmsEventsService: DotcmsEventsService, private notificationService: NotificationsService,
-                myElement: ElementRef, private messageService: MessageService, private loginService: LoginService) {
+                myElement: ElementRef, private messageService: MessageService, private loginService: LoginService,
+                private iframeOverlayService: IframeOverlayService) {
         super(['notifications_dismissall', 'notifications_title'], messageService);
         this.elementRef = myElement;
     }
