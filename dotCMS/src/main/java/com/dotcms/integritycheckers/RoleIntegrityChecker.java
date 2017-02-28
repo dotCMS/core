@@ -282,7 +282,7 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
 	}
 
     private void queryAndConsumeRoles(Consumer<CmsRole> consumer) throws DotDataException {
-    	String query = "select id, role_key, role_name, parent, db_fqn from cms_role where role_name <> '"+ RoleAPI.DEFAULT_USER_ROLE_KEY + "' order by db_fqn asc";
+    	String query = "select id, role_key, role_name, parent, db_fqn from cms_role where role_key <> '"+ RoleAPI.DEFAULT_USER_ROLE_KEY + "' order by db_fqn asc";
 
         Connection conn = DbConnectionFactory.getConnection();
         try (PreparedStatement statement = conn.prepareStatement(query)) {
