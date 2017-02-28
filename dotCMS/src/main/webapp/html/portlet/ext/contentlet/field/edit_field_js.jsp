@@ -144,11 +144,6 @@ var cmsfile=null;
 
 	    	//http://jira.dotmarketing.net/browse/DOTCMS-5802
 	 	    ContentletAjax.removeSiblingBinaryFromSession(x, null);
-
-	    	if(inode){
-	    	   FileAssetAjax.removeTempFile(inode, null);
-	    	}
-
 	    }
 
 
