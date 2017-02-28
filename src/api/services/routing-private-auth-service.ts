@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import {CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot} from '@angular/router';
 import {RoutingService} from './routing-service';
-import {Observable} from 'rxjs/Rx';
+import {Observable, Observer} from 'rxjs/Rx';
 import {DotcmsConfig} from './system/dotcms-config';
 import {LoginService} from './login-service';
 import {DotRouterService} from './dot-router-service';
@@ -17,10 +17,13 @@ export class RoutingPrivateAuthService implements CanActivate {
                 if (isLogin) {
                     this.dotcmsConfig.getConfig().subscribe(configParams => {
                         if (state.url.indexOf('home') > -1) {
-                            this.routingService.menusChange$.subscribe(res => {
-                                this.router.goToURL(`/c/${this.routingService.firstPortlet}`);
-                                obs.next(false);
-                            });
+                            if (this.routingService.firstPortlet) {
+                                this.goToFirstPortlet(obs);
+                            } else {
+                                this.routingService.menusChange$.subscribe(res => {
+                                    this.goToFirstPortlet(obs);
+                                });
+                            }
                         } else {
                             this.checkAccess(state.url).subscribe(checkAccess => {
                                 if (!checkAccess) {
@@ -36,6 +39,11 @@ export class RoutingPrivateAuthService implements CanActivate {
                 }
             });
         }).take(1);
+    }
+
+    private goToFirstPortlet(obs: Observer<boolean>): void {
+        this.router.goToURL(`/c/${this.routingService.firstPortlet}`);
+        obs.next(false);
     }
 
     private checkAccess(url: string): Observable<boolean> {
