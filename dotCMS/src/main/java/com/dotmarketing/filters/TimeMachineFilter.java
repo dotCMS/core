@@ -25,6 +25,8 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 
+import eu.bitwalker.useragentutils.UserAgent;
+
 /**
  * This filter takes all incoming requests related to displaying the contents of
  * a specific site in a specific language in a specific point in time inside the
@@ -106,7 +108,7 @@ public class TimeMachineFilter implements Filter {
 		    Host host=(Host) req.getSession().getAttribute("tm_host");
 			File file = getFileFromTimeMachine(host, uri, date, langid);
 			if (file.exists()) {
-				sendFile(file, response);
+				sendFile(file, request, response);
 			} else {
 				// File not found for the selected language
 				boolean useDefaultLanguage = Config.getBooleanProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", true);
@@ -120,7 +122,7 @@ public class TimeMachineFilter implements Filter {
 					file = getFileFromTimeMachine(host, uri, date, defaultLangId);
 					if (file.exists()) {
 						// It exists, so send file in the default language
-						sendFile(file, response);
+						sendFile(file, request, response);
 					} else {
 						sendError(request, response, ERROR_404, host.getHostname() + uri, HttpServletResponse.SC_BAD_REQUEST);
 					}
@@ -212,14 +214,18 @@ public class TimeMachineFilter implements Filter {
 
 	/**
 	 * Takes the contents of the file in the bundle and serves them back to the
-	 * user in the Time Machine portlet.
+	 * user in the Time Machine portlet. Keep in mind that different browsers
+	 * require specific MIME types to render a page instead of serving it for
+	 * download. This might also change in time.
 	 *
 	 * @param file
 	 *            - The {@link File} with the contents to display.
+	 * @param request
+	 *            - The {@link ServletRequest} object.
 	 * @param response
 	 *            - The HTTP Response object.
 	 */
-	private void sendFile(final File file, final ServletResponse response) {
+	private void sendFile(final File file, ServletRequest request, final ServletResponse response) {
 		final HttpServletResponse resp = (HttpServletResponse) response;
 		String mimeType = APILocator.getFileAssetAPI().getMimeType(file.getName());
 		if (mimeType == null) {
@@ -228,7 +234,14 @@ public class TimeMachineFilter implements Filter {
 		// if the file is an index page be sure to render correctly as html and not
 		// send it as a file
 		if(file.getName().equals(CMSFilter.CMS_INDEX_PAGE)){
-			mimeType = "unknown";
+			String userAgentInfo = ((HttpServletRequest) request).getHeader("User-Agent");
+			UserAgent agent = UserAgent.parseUserAgentString(userAgentInfo);
+			String browserName = agent.getBrowser() != null ? agent.getBrowser().getName() : "";
+			if (browserName.contains("Microsoft Edge")) {
+				mimeType = "application/octet-stream";
+			} else {
+				mimeType = "unknown";
+			}
 		}
 		resp.setContentType(mimeType);
 		resp.setContentLength((int) file.length());
