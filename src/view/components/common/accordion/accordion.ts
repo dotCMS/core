@@ -17,7 +17,7 @@ export class Accordion {
     closeOthers(openGroup: AccordionGroup): void {
         this.groups.forEach((group: AccordionGroup) => {
             if (group !== openGroup) {
-                group.isOpen = false;
+                //group.isOpen = false;
             }
         });
     }
