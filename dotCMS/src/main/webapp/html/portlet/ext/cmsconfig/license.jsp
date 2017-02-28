@@ -5,10 +5,7 @@
 <% request.setAttribute("requiredPortletAccess", PortletID.CONFIGURATION.toString()); %>
 <%@ include file="/html/common/uservalidation.jsp"%>
 
-<%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="java.util.Map"%>
 <%@page import="java.text.SimpleDateFormat"%>
-<%@page import="java.util.List"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="java.util.Date"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
@@ -16,8 +13,6 @@
 <%@page import="java.text.SimpleDateFormat"%>
 
 <%
-    String licenseTab = "/c/portal/layout?p_l_id=" + layoutId + "&p_p_id="+PortletID.CONFIGURATION+"&tab=licenseTab";
-
     String error=null;
     String message=null;
     String newLicenseMessage="";
@@ -183,7 +178,7 @@
 	   	        handleAs: "text",
 	   	        postData: data,
 	   	        load: function(message) {
-	   	        	//licenseAdmin.refreshLayout();
+                    licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-reset")) %>')
 	   	        },
 	   	     	error: function(error){
 	   	     		showDotCMSSystemMessage("ERROR:" + error,true);
@@ -191,8 +186,6 @@
 	   	     	
 	   	     	}
 	   	    });
-	   	 	setTimeout(licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-reset")) %>'),3000);
-	   	 
 	   	},
 	   	
 	   	
@@ -203,31 +196,8 @@
 	   		if(dijit.byId('uploadgetLicenseCodeDiaDiaWindow')){
 	   			dijit.byId('getLicenseCodeDia').hide();
 	   		}
-	   		
-	   		
-	   		
+
 	   		loadLicenseTabMessage(text);
-	   		//This code will update the license info in the top of the page
-	   		dojo.xhrGet({ // 
-	   	        url: "<%=licenseTab%>", 
-	   	        handleAs: "text",
-
-	   	        // The LOAD function will be called on a successful response.
-	   	        load: function(response, ioArgs) {
-	   	          var text = response.substring(response.indexOf('<div id="admin-site-tools-div">')+31);
-	   	          text = text.substring(0, text.indexOf("</div>"));
-	   	          dojo.byId("admin-site-tools-div").innerHTML = text; 
-	   	          return text;
-	   	        },
-
-	   	        // The ERROR function will be called in an error case.
-	   	        error: function(response, ioArgs) {
-	   	        	showDotCMSSystemMessage("ERROR HTTP status code: " + ioArgs.xhr.status,true);
-   	        		console.log("HTTP status code: ", ioArgs.xhr.status);
-   	        		return response;
-	   	          }
-	   	        });
-	   		
 	   	},
 	   	
 	    	
