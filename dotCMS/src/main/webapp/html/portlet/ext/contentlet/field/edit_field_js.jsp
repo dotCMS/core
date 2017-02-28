@@ -771,3 +771,4 @@ var cmsfile=null;
 		elementWysiwyg.value = result;
 	}
 </script>
+<jsp:include page="/html/portlet/ext/files/edit_text_inc.jsp"/>

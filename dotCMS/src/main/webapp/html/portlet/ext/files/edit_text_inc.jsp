@@ -122,7 +122,7 @@
 	
 </script>
 
-<div dojoType="dijit.Dialog" id="editTextDialog" style="height:450px;width:650px;padding-top:15px\9;" onCancel="javascript:editTextManager.close();">
+<div dojoType="dijit.Dialog" class="noDijitDialogTitleBar" id="editTextDialog" onCancel="javascript:editTextManager.close();">
 
  	<div>
 		<h3><%= LanguageUtil.get(pageContext, "text-editor") %></h3>
