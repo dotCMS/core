@@ -23,9 +23,7 @@ export class SocketFactory {
             this.dotcmsConfig.getConfig().subscribe( configParams => {
                 let url: Url = new Url(configParams.websocketProtocol, configParams.websocketBaseURL,
                     configParams.websocketsSystemEventsEndpoint);
-
-                this.loggerService.debug('is socket object created?', !this.socket);
-
+                
                 if (!this.socket) {
                     this.socket = new EventsSocket(url, configParams, this.loggerService, this.coreWebService);
                 }
