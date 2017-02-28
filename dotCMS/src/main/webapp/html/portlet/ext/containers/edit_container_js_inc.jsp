@@ -73,10 +73,12 @@
 			document.getElementById("preLoop").value = document.getElementById("preLoopMask").value;
 
 			document.getElementById("postLoop").value = document.getElementById("postLoopMask").value;
-
-			form.<portlet:namespace />cmd.value = '<%=Constants.ADD%>';
-			form.<portlet:namespace />subcmd.value = subcmd;
-			form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/containers/edit_container" /></portlet:actionURL>';
+    
+            form.subcmd.value = subcmd;
+			form.action = '<portlet:actionURL>
+		                    <portlet:param name="struts_action" value="/ext/containers/edit_container" />
+                            <portlet:param name="cmd" value="<%=Constants.ADD%>" />
+                           </portlet:actionURL>';
 			submitForm(form);
 	}
 

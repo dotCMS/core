@@ -146,11 +146,11 @@
 <liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext, \"edit-container\") %>" />
 
 <html:form action='/ext/containers/edit_container' styleId="fm">
-<input name="<portlet:namespace /><%= Constants.CMD %>" type="hidden" value="add">
-<input name="<portlet:namespace />referer" type="hidden" value="<%=referer%>">
-<input name="<portlet:namespace />redirect" type="hidden" value="<portlet:renderURL><portlet:param name="struts_action" value="/ext/containers/view_containers" /></portlet:renderURL>">
-<input name="<portlet:namespace />subcmd" type="hidden" value="">
-<input name="<portlet:namespace />inode" type="hidden" value="<%=contentContainer.getInode()%>">
+<input name="<%= Constants.CMD %>" type="hidden" value="add">
+<input name="referer" type="hidden" value="<%=referer%>">
+<input name="redirect" type="hidden" value="<portlet:renderURL><portlet:param name="struts_action" value="/ext/containers/view_containers" /></portlet:renderURL>">
+<input name="subcmd" type="hidden" value="">
+<input name="inode" type="hidden" value="<%=contentContainer.getInode()%>">
 <input name="userId" type="hidden" value="<%= user.getUserId() %>">
 
 <div class="portlet-main">
