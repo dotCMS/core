@@ -9,23 +9,30 @@ import {CoreWebService} from '../core-web-service';
 @Injectable()
 export class SocketFactory {
 
-    private _socket: Subject<Protocol> = new Subject<Protocol>();
+    private socket: Protocol;
 
     constructor(private dotcmsConfig: DotcmsConfig, private loggerService: LoggerService,
                 private coreWebService: CoreWebService) {
     }
 
-    get socket$(): Observable<Protocol> {
-        return this._socket.asObservable();
-    }
+    public createSocket(): Observable<Protocol> {
 
-    public createSocket(): void {
+        this.loggerService.debug('Creating socket object');
 
-        this.dotcmsConfig.getConfig().subscribe( configParams => {
-            let url: Url = new Url(configParams.websocketProtocol, configParams.websocketBaseURL,
-                configParams.websocketsSystemEventsEndpoint);
+        return Observable.create(observer => {
+            this.dotcmsConfig.getConfig().subscribe( configParams => {
+                let url: Url = new Url(configParams.websocketProtocol, configParams.websocketBaseURL,
+                    configParams.websocketsSystemEventsEndpoint);
 
-            this._socket.next(new EventsSocket(url, configParams, this.loggerService, this.coreWebService));
+                this.loggerService.debug('is socket object created?', !this.socket);
+
+                if (!this.socket) {
+                    this.socket = new EventsSocket(url, configParams, this.loggerService, this.coreWebService);
+                }
+
+                observer.next(this.socket);
+                observer.complete();
+            });
         });
     }
 }
