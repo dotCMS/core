@@ -1217,27 +1217,6 @@ create table category (
    mod_date datetime null,
    primary key (inode)
 );
-create table htmlpage (
-   inode NVARCHAR(36) not null,
-   show_on_menu tinyint null,
-   title NVARCHAR(255) null,
-   mod_date datetime null,
-   mod_user NVARCHAR(100) null,
-   sort_order int null,
-   friendly_name NVARCHAR(255) null,
-   metadata NVARCHAR(MAX) null,
-   start_date datetime null,
-   end_date datetime null,
-   page_url NVARCHAR(255) null,
-   https_required tinyint null,
-   redirect NVARCHAR(255) null,
-   identifier NVARCHAR(36) null,
-   seo_description NVARCHAR(MAX) null,
-   seo_keywords NVARCHAR(MAX) null,
-   cache_ttl numeric(19,0) null,
-   template_id NVARCHAR(36) null,
-   primary key (inode)
-);
 create table chain_link_code (
    id numeric(19,0) identity not null,
    class_name NVARCHAR(255) null unique,
@@ -1356,24 +1335,6 @@ create table challenge_question (
    cqtext NVARCHAR(255) null,
    primary key (cquestionid)
 );
-create table file_asset (
-   inode NVARCHAR(36) not null,
-   file_name NVARCHAR(255) null,
-   file_size int null,
-   width int null,
-   height int null,
-   mime_type NVARCHAR(255) null,
-   author NVARCHAR(255) null,
-   publish_date datetime null,
-   show_on_menu tinyint null,
-   title NVARCHAR(255) null,
-   friendly_name NVARCHAR(255) null,
-   mod_date datetime null,
-   mod_user NVARCHAR(100) null,
-   sort_order int null,
-   identifier NVARCHAR(36) null,
-   primary key (inode)
-);
 create table layouts_cms_roles (
    id NVARCHAR(36) not null,
    layout_id NVARCHAR(36) not null,
@@ -1455,16 +1416,6 @@ create table campaign (
    parent_campaign NVARCHAR(36) null,
    primary key (inode)
 );
-create table htmlpage_version_info (
-   identifier NVARCHAR(36) not null,
-   working_inode NVARCHAR(36) not null,
-   live_inode NVARCHAR(36) null,
-   deleted tinyint not null,
-   locked_by NVARCHAR(100) null,
-   locked_on datetime null,
-   version_ts datetime not null,
-   primary key (identifier)
-);
 create table workflowtask_files (
    id NVARCHAR(36) not null,
    workflowtask_id NVARCHAR(36) not null,
@@ -1512,16 +1463,6 @@ create table communication (
    modified_by NVARCHAR(255) null,
    ext_comm_id NVARCHAR(255) null,
    primary key (inode)
-);
-create table fileasset_version_info (
-   identifier NVARCHAR(36) not null,
-   working_inode NVARCHAR(36) not null,
-   live_inode NVARCHAR(36) null,
-   deleted tinyint not null,
-   locked_by NVARCHAR(100) null,
-   locked_on datetime not null,
-   version_ts datetime not null,
-   primary key (identifier)
 );
 create table workflow_history (
    id NVARCHAR(36) not null,
@@ -1825,7 +1766,6 @@ alter table report_asset add constraint fk3765ec255fb51eb foreign key (inode) re
 create index idx_category_1 on category (category_name);
 create index idx_category_2 on category (category_key);
 alter table category add constraint fk302bcfe5fb51eb foreign key (inode) references inode;
-alter table htmlpage add constraint fkebf39cba5fb51eb foreign key (inode) references inode;
 create index idx_chain_link_code_classname on chain_link_code (class_name);
 create index idx_analytic_summary_visits_2 on analytic_summary_visits (visit_time);
 create index idx_analytic_summary_visits_1 on analytic_summary_visits (host_id);
@@ -1850,7 +1790,6 @@ create index idx_workflow_3 on workflow_task (status);
 create index idx_workflow_1 on workflow_task (assigned_to);
 create index idx_click_1 on click (link);
 alter table click add constraint fk5a5c5885fb51eb foreign key (inode) references inode;
-alter table file_asset add constraint fk7ed2366d5fb51eb foreign key (inode) references inode;
 create index idx_user_clickstream_request_2 on clickstream_request (request_uri);
 create index idx_user_clickstream_request_1 on clickstream_request (clickstream_id);
 create index idx_user_clickstream_request_4 on clickstream_request (timestampper);
@@ -2036,8 +1975,6 @@ alter table layouts_cms_roles add constraint fklayouts_cms_roles2 foreign key (l
 
 ALTER TABLE dot_containers add constraint containers_identifier_fk foreign key (identifier) references identifier(id);
 ALTER TABLE template add constraint template_identifier_fk foreign key (identifier) references identifier(id);
-ALTER TABLE htmlpage add constraint htmlpage_identifier_fk foreign key (identifier) references identifier(id);
-ALTER TABLE file_asset add constraint file_identifier_fk foreign key (identifier) references identifier(id);
 ALTER TABLE contentlet add constraint content_identifier_fk foreign key (identifier) references identifier(id);
 ALTER TABLE links add constraint links_identifier_fk foreign key (identifier) references identifier(id);
 
@@ -2118,26 +2055,6 @@ OUTPUT
   INSERTED.*
 END;
 
-CREATE Trigger check_file_versions
-ON file_asset
-FOR DELETE AS
- DECLARE @totalCount int
- DECLARE @identifier NVARCHAR(100)
- DECLARE file_cur_Deleted cursor LOCAL FAST_FORWARD for
- Select identifier
-  from deleted
-  for Read Only
- open file_cur_Deleted
- fetch next from file_cur_Deleted into @identifier
- while @@FETCH_STATUS <> -1
- BEGIN
- select @totalCount = count(*) from file_asset where identifier = @identifier
- IF (@totalCount = 0)
-  BEGIN
-    DELETE from identifier where id = @identifier
-  END
-fetch next from file_cur_Deleted into @identifier
-END;
 CREATE Trigger check_content_versions
 ON contentlet
 FOR DELETE AS
@@ -2223,27 +2140,6 @@ FOR DELETE AS
 fetch next from template_cur_Deleted into @identifier
 END;
 
-CREATE Trigger check_htmlpage_versions
-ON htmlpage
-FOR DELETE AS
- DECLARE @totalCount int
- DECLARE @identifier NVARCHAR(100)
- DECLARE htmlpage_cur_Deleted cursor LOCAL FAST_FORWARD for
- Select identifier
-  from deleted
-  for Read Only
- open htmlpage_cur_Deleted
- fetch next from htmlpage_cur_Deleted into @identifier
- while @@FETCH_STATUS <> -1
- BEGIN
- select @totalCount = count(*) from htmlpage where identifier = @identifier
- IF (@totalCount = 0)
-  BEGIN
-   DELETE from identifier where id = @identifier
-  END
-fetch next from htmlpage_cur_Deleted into @identifier
-END;
-
 CREATE Trigger check_identifier_parent_path
  ON identifier
  FOR INSERT,UPDATE AS
@@ -2282,29 +2178,6 @@ CREATE INDEX idx_contentlet_identifier ON contentlet (identifier);
 
 ALTER TABLE Folder add constraint folder_identifier_fk foreign key (identifier) references identifier(id);
 --ALTER TABLE dot_containers add constraint structure_fk foreign key (structure_inode) references structure(inode);
-ALTER TABLE htmlpage add constraint template_id_fk foreign key (template_id) references identifier(id);
-
-CREATE Trigger check_template_identifier
-ON htmlpage
-FOR INSERT,UPDATE AS
-DECLARE @templateId NVARCHAR(100)
-DECLARE @tempIdentifier NVARCHAR(100)
-DECLARE htmlpage_cur_Inserted cursor LOCAL FAST_FORWARD for
- Select template_id
- from inserted
- for Read Only
-open htmlpage_cur_Inserted
-fetch next from htmlpage_cur_Inserted into @templateId
-while @@FETCH_STATUS <> -1
-BEGIN
- select @tempIdentifier = id from identifier where asset_type='template' and id = @templateId
- IF (@tempIdentifier IS NULL)
- BEGIN
-   RAISERROR (N'Template Id should be the identifier of a template', 10, 1)
-   ROLLBACK WORK
- END
-fetch next from htmlpage_cur_Inserted into @templateId
-END;
 
 CREATE Trigger folder_identifier_check
 ON folder
@@ -2328,10 +2201,8 @@ DECLARE folder_cur_Deleted cursor LOCAL FAST_FORWARD for
 END;
 
 alter table contentlet add constraint fk_user_contentlet foreign key (mod_user) references user_(userid);
-alter table htmlpage add constraint fk_user_htmlpage foreign key (mod_user) references user_(userid);
 alter table dot_containers add constraint fk_user_containers foreign key (mod_user) references user_(userid);
 alter table template add constraint fk_user_template foreign key (mod_user) references user_(userid);
-alter table file_asset add constraint fk_user_file_asset foreign key (mod_user) references user_(userid);
 alter table links add constraint fk_user_links foreign key (mod_user) references user_(userid);
 
 create index idx_template_id on template_containers(template_id);
@@ -2446,22 +2317,16 @@ END;
 alter table contentlet_version_info add constraint fk_contentlet_version_info_identifier foreign key (identifier) references identifier(id) on delete cascade;
 alter table container_version_info  add constraint fk_container_version_info_identifier  foreign key (identifier) references identifier(id);
 alter table template_version_info   add constraint fk_template_version_info_identifier   foreign key (identifier) references identifier(id);
-alter table htmlpage_version_info   add constraint fk_htmlpage_version_info_identifier   foreign key (identifier) references identifier(id);
-alter table fileasset_version_info  add constraint fk_fileasset_version_info_identifier  foreign key (identifier) references identifier(id);
 alter table link_version_info       add constraint fk_link_version_info_identifier       foreign key (identifier) references identifier(id);
 
 alter table contentlet_version_info add constraint fk_contentlet_version_info_working foreign key (working_inode) references contentlet(inode);
 alter table container_version_info  add constraint fk_container_version_info_working  foreign key (working_inode) references dot_containers(inode);
 alter table template_version_info   add constraint fk_template_version_info_working   foreign key (working_inode) references template(inode);
-alter table htmlpage_version_info   add constraint fk_htmlpage_version_info_working   foreign key (working_inode) references htmlpage(inode);
-alter table fileasset_version_info  add constraint fk_fileasset_version_info_working  foreign key (working_inode) references file_asset(inode);
 alter table link_version_info       add constraint fk_link_version_info_working       foreign key (working_inode) references links(inode);
 
 alter table contentlet_version_info add constraint fk_contentlet_version_info_live foreign key (live_inode) references contentlet(inode);
 alter table container_version_info  add constraint fk_container_version_info_live  foreign key (live_inode) references dot_containers(inode);
 alter table template_version_info   add constraint fk_template_version_info_live   foreign key (live_inode) references template(inode);
-alter table htmlpage_version_info   add constraint fk_htmlpage_version_info_live   foreign key (live_inode) references htmlpage(inode);
-alter table fileasset_version_info  add constraint fk_fileasset_version_info_live  foreign key (live_inode) references file_asset(inode);
 alter table link_version_info       add constraint fk_link_version_info_live       foreign key (live_inode) references links(inode);
 
 alter table contentlet_version_info add constraint fk_contentlet_version_info_lang foreign key (lang) references language(id);
@@ -2469,7 +2334,6 @@ alter table contentlet_version_info add constraint fk_contentlet_version_info_la
 alter table folder add constraint fk_folder_file_structure_type foreign key(default_file_type) references structure(inode);
 
 alter table workflowtask_files add constraint FK_workflow_id foreign key (workflowtask_id) references workflow_task(id);
---alter table workflowtask_files add constraint FK_task_file_inode foreign key (file_inode) references file_asset(inode);
 alter table workflow_comment add constraint workflowtask_id_comment_FK foreign key (workflowtask_id) references workflow_task(id);
 alter table workflow_history add constraint workflowtask_id_history_FK foreign key (workflowtask_id) references workflow_task(id);
 
@@ -2552,8 +2416,6 @@ alter table workflow_step add constraint fk_escalation_action foreign key (escal
 alter table contentlet_version_info add constraint FK_con_ver_lockedby foreign key (locked_by) references user_(userid);
 alter table container_version_info  add constraint FK_tainer_ver_info_lockedby  foreign key (locked_by) references user_(userid);
 alter table template_version_info   add constraint FK_temp_ver_info_lockedby   foreign key (locked_by) references user_(userid);
-alter table htmlpage_version_info   add constraint FK_page_ver_info_lockedby   foreign key (locked_by) references user_(userid);
-alter table fileasset_version_info  add constraint FK_fil_ver_info_lockedby  foreign key (locked_by) references user_(userid);
 alter table link_version_info       add constraint FK_link_ver_info_lockedby       foreign key (locked_by) references user_(userid);
 
 ALTER TABLE tag add CONSTRAINT [DF_tag_host] DEFAULT 'SYSTEM_HOST' for host_id;
@@ -2718,8 +2580,6 @@ CREATE INDEX idx_not_read ON notification (was_read);
 create index idx_contentlet_vi_version_ts on contentlet_version_info(version_ts);
 create index idx_container_vi_version_ts on container_version_info(version_ts);
 create index idx_template_vi_version_ts on template_version_info(version_ts);
-create index idx_htmlpage_vi_version_ts on htmlpage_version_info(version_ts);
-create index idx_fileasset_vi_version_ts on fileasset_version_info(version_ts);
 create index idx_link_vi_version_ts on link_version_info(version_ts);
 
 -- container multiple structures
