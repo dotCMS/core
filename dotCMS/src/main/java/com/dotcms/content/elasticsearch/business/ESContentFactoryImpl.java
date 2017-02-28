@@ -2242,6 +2242,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 for (int i = 1; rs.next(); i++) {
                     String contentInode = rs.getString("inode");
                     inodesToFlush.add(contentInode);
+                    Logger.info(this, "----------------------------------------");
+                    Logger.info(this, "contentInode value = " + contentInode);
+                    Logger.info(this, "----------------------------------------");
                     ps2.setString(1, contentInode);
                     ps2.addBatch();
 
