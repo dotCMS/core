@@ -291,10 +291,12 @@ function doDeletePushedAssets(){
 }
 
 function doDeletePushedAssetsCallback(result) {
+	var deletePushedAssetsMessage = document.getElementById("deletePushedAssetsMessage");
+	deletePushedAssetsMessage.style.display = block;
 	if(result!=null && result=="success") {
-		document.getElementById("deletePushedAssetsMessage").innerHTML='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"pushed-assets-were-succesfully-deleted")) %>';
+		deletePushedAssetsMessage.innerHTML='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"pushed-assets-were-succesfully-deleted")) %>';
 	} else {
-		document.getElementById("deletePushedAssetsMessage").innerHTML='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"push-assets-could-not-be-deleted")) %>';
+		deletePushedAssetsMessage.innerHTML='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"push-assets-could-not-be-deleted")) %>';
 	}
 }
 
@@ -350,7 +352,9 @@ function getCleanAssetsStatusCallback(status) {
 	if(!dijit.byId('cleanAssetsButton').attr('disabled') && status['running']=='false')
 		return;
 
-    document.getElementById("cleanAssetsMessage").innerHTML =
+	var cleanAssetsMessage = document.getElementById("cleanAssetsMessage");
+	cleanAssetsMessage.style.display = 'block';
+	cleanAssetsMessage.innerHTML =
      	                      '<table> <tr><td>Deleted</td><td>'+status['deleted']+'</td></tr>'+
      	                              '<tr><td>Analyzed</td><td>'+status['currentFiles']+'</td></tr>'+
      	                              '<tr><td>Total Files</td><td>'+status['totalFiles']+'</td></tr>'+
@@ -1478,24 +1482,28 @@ dd.leftdl {
                 <tr>
                     <td><%= LanguageUtil.get(pageContext,"Backup-to-Zip-file") %></td>
                     <td style="text-align:center;white-space:nowrap;">
-                        <button dojoType="dijit.form.Button" onClick="doCreateZipAjax('true');" iconClass="backupIcon">
-                           <%= LanguageUtil.get(pageContext,"Backup-Data-Only") %>
-                        </button>
-                        <button dojoType="dijit.form.Button" onClick="doCreateZipAjax('false');" iconClass="backupIcon">
-                          <%= LanguageUtil.get(pageContext,"Backup-Data/Assets") %>
-                        </button>
+						<div class="inline-form">
+							<button dojoType="dijit.form.Button" onClick="doCreateZipAjax('true');" iconClass="backupIcon">
+							   <%= LanguageUtil.get(pageContext,"Backup-Data-Only") %>
+							</button>
+							<button dojoType="dijit.form.Button" onClick="doCreateZipAjax('false');" iconClass="backupIcon">
+							  <%= LanguageUtil.get(pageContext,"Backup-Data/Assets") %>
+							</button>
+						</div>
                     </td>
                 </tr>
                 <tr>
                     <td><%= LanguageUtil.get(pageContext,"Download-Zip-file") %></td>
                     <td style="text-align:center;white-space:nowrap;">
-                        <button dojoType="dijit.form.Button" onClick="doDownloadZip('true');" iconClass="downloadIcon">
-                           <%= LanguageUtil.get(pageContext,"Download-Data-Only") %>
-                        </button>
+						<div class="inline-form">
+							<button dojoType="dijit.form.Button" onClick="doDownloadZip('true');" iconClass="downloadIcon">
+							   <%= LanguageUtil.get(pageContext,"Download-Data-Only") %>
+							</button>
 
-                        <button dojoType="dijit.form.Button" onClick="doDownloadZip('false');" iconClass="downloadIcon">
-                          <%= LanguageUtil.get(pageContext,"Download-Data/Assets") %>
-                        </button>
+							<button dojoType="dijit.form.Button" onClick="doDownloadZip('false');" iconClass="downloadIcon">
+							  <%= LanguageUtil.get(pageContext,"Download-Data/Assets") %>
+							</button>
+						</div>
                     </td>
                 </tr>
             </table>
@@ -1508,16 +1516,23 @@ dd.leftdl {
                     <th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
                 </tr>
                 <tr>
-                    <td>
+                    <td colspan="2">
                         <p><%= LanguageUtil.get(pageContext,"This-utility-will-do-a-find-and-replace") %></p>
-                        <%= LanguageUtil.get(pageContext,"Please-specify-the-following-parameters-and-click-replace") %>
-                        <dl>
-                            <dt><%= LanguageUtil.get(pageContext,"String-to-find") %>:</dt>
-                            <dd><input type="text" dojoType="dijit.form.TextBox" name="searchString" id="searchString" size="50"></dd>
-
-                            <dt><%= LanguageUtil.get(pageContext,"Replace-with") %>:</dt>
-                            <dd><input type="text" dojoType="dijit.form.TextBox" name="replaceString" id="replaceString" size="50"></dd>
-                        </dl>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<p><%= LanguageUtil.get(pageContext,"Please-specify-the-following-parameters-and-click-replace") %></p>
+						<div class="form-horizontal">
+							<dl>
+								<dt><%= LanguageUtil.get(pageContext,"String-to-find") %>:</dt>
+								<dd><input type="text" dojoType="dijit.form.TextBox" name="searchString" id="searchString" size="50"></dd>
+							</dl>
+							<dl>
+								<dt><%= LanguageUtil.get(pageContext,"Replace-with") %>:</dt>
+								<dd><input type="text" dojoType="dijit.form.TextBox" name="replaceString" id="replaceString" size="50"></dd>
+							</dl>
+						</div>
                     </td>
                     <td align="center" valing="middle">
                         <button dojoType="dijit.form.Button" onclick="doReplace();" iconClass="reorderIcon">
@@ -1561,16 +1576,19 @@ dd.leftdl {
                     <th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
                 </tr>
                 <tr>
-                    <td>
+                    <td colspan="2">
                         <p><%= LanguageUtil.get(pageContext,"This-utility-will-remove-old-versions-of-contentlets") %></p>
-                        <div align="center"  id="dropAssetsMessage">&nbsp;</div>
-                        <dl>
-                            <dt><%= LanguageUtil.get(pageContext,"Remove-assets-older-than") %>:</dt>
-                            <dd>
-                                <input type="text" name="removeassetsdate" id="removeassetsdate" constraints="{datePattern:'MM/dd/yyyy'}" invalidMessage="Invalid date."  data-dojo-type="dijit.form.DateTextBox" maxlength="10" size="8">
-                            </dd>
-                            <dd style="color:#ff0000;"><%= LanguageUtil.get(pageContext,"It's-recommended-to-have-a-fresh") %></dd>
-                        </dl>
+					</td>
+				</tr>
+				<tr>
+					<td>
+                        <div align="center" id="dropAssetsMessage"></div>
+						<div class="inline-form">
+							<label form="removeassetsdate"><%= LanguageUtil.get(pageContext,"Remove-assets-older-than") %>:</label>
+							<input type="text" name="removeassetsdate" id="removeassetsdate" constraints="{datePattern:'MM/dd/yyyy'}" invalidMessage="Invalid date."  data-dojo-type="dijit.form.DateTextBox" maxlength="10">
+						</div>
+						<br />
+						<p style="color:#ff0000;"><%= LanguageUtil.get(pageContext,"It's-recommended-to-have-a-fresh") %></p>
                     </td>
                     <td align="center">
                       <button dojoType="dijit.form.Button" onClick="doDropAssets();"  id="dropAssetsButton" iconClass="dropIcon">
@@ -1579,18 +1597,24 @@ dd.leftdl {
                     </td>
                 </tr>
 
-                <tr>
-                   <td>
-                      <p><%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.explanation") %></p>
-
-                      <div align="center"  id="cleanAssetsMessage">&nbsp;</div>
-                   </td>
-                   <td align="center">
-                      <button dojoType="dijit.form.Button" onClick="doCleanAssets();"  id="cleanAssetsButton" iconClass="dropIcon">
-                           <%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.label") %>
-                      </button>
-                   </td>
-                 </tr>
+				<tr>
+					<td>
+						<div align="center" id="cleanAssetsMessage" style="display:none"></div>
+						<p><%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.explanation") %></p>
+					</td>
+					<td align="center">
+						<div class="inline-form">
+							<select id="whatClean" name="whatClean" dojoType="dijit.form.FilteringSelect">
+								<option selected="selected" value="all"><%= LanguageUtil.get(pageContext,"Clean-bin-and-file") %></option>
+								<option value="binary"><%= LanguageUtil.get(pageContext,"Clean-only-bin") %></option>
+								<option value="file_asset"><%= LanguageUtil.get(pageContext,"Clean-only-fileasset") %></option>
+							</select>
+							<button dojoType="dijit.form.Button" onClick="doCleanAssets();"  id="cleanAssetsButton" iconClass="dropIcon">
+								<%= LanguageUtil.get(pageContext,"cms.maintenance.clean.assets.button.label") %>
+							</button>
+						</div>
+					</td>
+				</tr>
             </table>
 
             <div style="height:20px">&nbsp;</div>
@@ -1604,13 +1628,10 @@ dd.leftdl {
                     <td>
                         <p><%= LanguageUtil.get(pageContext,"This-utility-will-remove-contentlets-from-a-list-of-comma-separated-identifier") %></p>
                         <div align="center"  id="deleteContentletMessage"></div>
-                        <dl>
-                            <dt><%= LanguageUtil.get(pageContext,"Place-list-here") %>:</dt>
-                            <dd>
-                            <textarea style="width:350px" name="contentIdsList" id="contentIdsList">
-                            </textarea>
-                            </dd>
-                        </dl>
+                        <div class="inline-form">
+                            <label><%= LanguageUtil.get(pageContext,"Place-list-here") %>:</label>
+							<textarea dojoType="dijit.form.Textarea" style="width:350px; min-height:80px" name="contentIdsList" id="contentIdsList"></textarea>
+                        </div>
                     </td>
                     <td align="center">
                       <button dojoType="dijit.form.Button" onClick="doDeleteContentlets();"  id="deleteContentletButton" iconClass="deleteIcon">
@@ -1630,8 +1651,8 @@ dd.leftdl {
                 </tr>
                 <tr>
                     <td>
+						<div align="center" id="deletePushedAssetsMessage" style="display:none"></div>
                         <p><%= LanguageUtil.get(pageContext,"This-utility-will-remove-all-pushed-assets") %></p>
-                         <div align="center"  id="deletePushedAssetsMessage"></div>
                     </td>
                     <td align="center">
                       <button dojoType="dijit.form.Button" onClick="doDeletePushedAssets();"  id="deletePushAssetsButton" iconClass="deleteIcon">
@@ -1664,24 +1685,28 @@ dd.leftdl {
 		               	<table class="listingTable">
 			               	<tr>
 			               		<td>
-			               			<%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Host") %>
-		               			    <select dojoType="dijit.form.FilteringSelect"  multiple="true" name="selectAssetHostInode" id="selectAssetHostInode" autocomplete="false"  invalidMessage="Invalid site name" style="width: 175px;">
-										<option selected="selected" value="all"><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_All") %></option>
-										<%	String hostNames="";
-											String hostIdentifier="";
-											for(Host h : hosts){
-	                            			if(!h.isSystemHost()){
-	                            				hostNames=hostNames+","+h.getHostname();
-	                            				hostIdentifier=hostIdentifier+","+h.getIdentifier();
-	                            		%>
-	                                			<option value="<%=h.getIdentifier()%>"><%= h.getHostname() %></option>
-	                            		<%  }
-	                            	  	}
-										%>
-									</select>
-									<button id="addHostButton" dojoType="dijit.form.Button" type="button" iconClass="plusIcon" onclick='updateHostList("assetHost","assetHostNames","selectAssetHostInode")'><%= LanguageUtil.get(pageContext, "Add-Host") %></button>
-									<input type="hidden" name="assetHost" id="assetHost" value=""/>
-                        			<input type="hidden" name="assetHostNames" id="assetHostNames" value=""/>
+									<div class="inline-form">
+										<label><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Host") %></label>
+										<select dojoType="dijit.form.FilteringSelect"  multiple="true" name="selectAssetHostInode" id="selectAssetHostInode" autocomplete="false"  invalidMessage="Invalid site name" style="width: 175px;">
+											<option selected="selected" value="all"><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_All") %></option>
+												<%	String hostNames="";
+													String hostIdentifier="";
+													for(Host h : hosts){
+													if(!h.isSystemHost()){
+														hostNames=hostNames+","+h.getHostname();
+														hostIdentifier=hostIdentifier+","+h.getIdentifier();
+												%>
+												<option value="<%=h.getIdentifier()%>"><%= h.getHostname() %></option>
+												<%  }
+													}
+												%>
+											</select>
+										<button id="addHostButton" dojoType="dijit.form.Button" type="button" iconClass="plusIcon" onclick='updateHostList("assetHost","assetHostNames","selectAssetHostInode")'><%= LanguageUtil.get(pageContext, "Add-Host") %></button>
+										<input type="hidden" name="assetHost" id="assetHost" value=""/>
+										<input type="hidden" name="assetHostNames" id="assetHostNames" value=""/>
+									</div>
+
+
 									<br/><br/>
                         			<div name="assetHostlist" id="assetHostlist"></div>
 									<table class="listingTable" id="assetHostListTable" style="margin:10px;width:90%">
@@ -1724,18 +1749,32 @@ dd.leftdl {
 			               	</tr>
 			               	<tr>
 			               		<td>
-			               			<%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_String_to_find") %> <input type="text" dojoType="dijit.form.TextBox" name="assetSearchString" id="assetSearchString" size="50">
+									<div class="inline-form">
+										<label for="assetSearchString"><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_String_to_find") %></label>
+										<input type="text" dojoType="dijit.form.TextBox" name="assetSearchString" id="assetSearchString" />
+									</div>
 			               		</td>
 			               		<td>
-			               			<input type="checkbox" onclick="enableDisableCheckbox(this)" value="true" dojoType="dijit.form.CheckBox" name="newAssetVersion" id="newAssetVersion" /> <%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Generate_new_asset_version") %>
+									<div class="checkbox">
+			               				<input type="checkbox" onclick="enableDisableCheckbox(this)" value="true" dojoType="dijit.form.CheckBox" name="newAssetVersion" id="newAssetVersion" />
+										<label for="newAssetVersion"><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Generate_new_asset_version") %></label>
+									</div>
 			               		</td>
 			               	</tr>
 			               	<tr>
 			               		<td>
-			               			<%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Replace_with") %> <input type="text" dojoType="dijit.form.TextBox" name="assetReplaceString" id="assetReplaceString" size="50">
+									<div class="inline-form">
+										<label for="assetReplaceString">
+			               					<%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Replace_with") %>
+										</label>
+										<input type="text" dojoType="dijit.form.TextBox" name="assetReplaceString" id="assetReplaceString" />
+									</div>
 			               		</td>
 			               		<td>
-			               			<input type="checkbox" disabled="true" dojoType="dijit.form.CheckBox" name="autoPublish" id="autoPublish" /> <%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Automatically_publish_new_asset_version") %>
+									<div class="checkbox">
+										<input type="checkbox" disabled="true" dojoType="dijit.form.CheckBox" name="autoPublish" id="autoPublish" />
+										<label for="autoPublish"><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Automatically_publish_new_asset_version") %></label>
+									</div>
 			               		</td>
 			               	</tr>
 		               	</table>
@@ -1747,7 +1786,9 @@ dd.leftdl {
 					</td>
 	            </tr>
 	            <tr>
-	               	<td colspan="3"><span id="asar_message"><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Warning") %></span></td>
+	               	<td colspan="3" style="text-align:center">
+						<span id="asar_message"><%= LanguageUtil.get(pageContext,"ASSETS_SEARCH_AND_REPLACE_Warning") %></span>
+					</td>
 	            </tr>
 	        </table>
         </div>

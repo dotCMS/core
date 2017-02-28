@@ -244,7 +244,7 @@
 						<dd>
 							<input id="actionAssignToSelect"  />
 							<%--hideHierarchayControl --%>
-							<div class="inline-form" id="divRoleHierarchyForAssign" style="visibility:<%=hideHierarchayControl ? "hidden" : "visible" %>;">
+							<div class="checkbox" id="divRoleHierarchyForAssign" style="visibility:<%=hideHierarchayControl ? "hidden" : "visible" %>;">
 								<input type="checkbox" name="actionRoleHierarchyForAssign" id="actionRoleHierarchyForAssign" dojoType="dijit.form.CheckBox" value="true"
 								<%=(action.isRoleHierarchyForAssign()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
 								<label for="actionRoleHierarchyForAssign"><%=LanguageUtil.get(pageContext, "Use-Role-Hierarchy")%></label>
