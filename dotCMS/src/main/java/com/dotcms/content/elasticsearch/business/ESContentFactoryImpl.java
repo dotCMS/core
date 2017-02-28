@@ -2242,7 +2242,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 for (int i = 1; rs.next(); i++) {
                     String contentInode = rs.getString("inode");
                     inodesToFlush.add(contentInode);
-                    ps2.setObject(1, contentInode);
+                    ps2.setString(1, contentInode);
                     ps2.addBatch();
 
                     if (i % BATCH_SIZE == 0) {
