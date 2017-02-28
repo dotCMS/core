@@ -46,7 +46,8 @@ export class RoutingService {
     }
 
     get firstPortlet(): string {
-        return this.portlets.entries().next().value[0];
+        let porlets = this.portlets.entries().next().value;
+        return porlets ? porlets[0] : null;
     }
 
     public addPortletURL(portletId: string, url: string): void {
