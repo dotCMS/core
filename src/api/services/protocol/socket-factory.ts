@@ -23,7 +23,7 @@ export class SocketFactory {
             this.dotcmsConfig.getConfig().subscribe( configParams => {
                 let url: Url = new Url(configParams.websocketProtocol, configParams.websocketBaseURL,
                     configParams.websocketsSystemEventsEndpoint);
-                
+
                 if (!this.socket) {
                     this.socket = new EventsSocket(url, configParams, this.loggerService, this.coreWebService);
                 }
@@ -32,5 +32,9 @@ export class SocketFactory {
                 observer.complete();
             });
         });
+    }
+
+    public clean(): void {
+        this.socket = null;
     }
 }
