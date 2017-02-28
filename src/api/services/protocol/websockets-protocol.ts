@@ -6,8 +6,6 @@ import {Protocol, Url} from './protocol';
 import {Observable} from 'rxjs/Rx';
 
 export class WebSocketProtocol extends Protocol {
-    private static sockets: WebSocket[] = [];
-
     private sendQueue = [];
 
     private readyStateConstants = {
@@ -24,13 +22,6 @@ export class WebSocketProtocol extends Protocol {
     private dataStream: Subject<any>;
     private internalConnectionState: number;
     private reconnectIfNotNormalClose: boolean;
-
-    /**
-     * Close all the Web sockets connections
-     */
-    public static closeAllSockets(): void {
-        WebSocketProtocol.sockets.forEach(ws => ws.close());
-    }
 
     constructor(private url: Url, loggerService: LoggerService, config?: WebSocketConfig, private protocols?: Array<string> ) {
         super(loggerService, config);
@@ -51,17 +42,17 @@ export class WebSocketProtocol extends Protocol {
                 self.socket = this.protocols ? new WebSocket(this.url.url, this.protocols) : new WebSocket(this.url.url);
 
                 self.socket.onopen = (ev: Event) => {
-                    this.loggerService.debug('Web EventsSocket connection opened', ev);
+                    this.loggerService.debug('Web EventsSocket connection opened', ev, this.count);
                     this._open.next(ev);
                 };
 
                 self.socket.onmessage = (ev: MessageEvent) => {
-                    this.loggerService.debug('Message:', ev);
+                    this.loggerService.debug('Message:', ev, this.count);
                     this._message.next(JSON.parse(ev.data));
                 };
 
                 this.socket.onclose = (ev: CloseEvent) => {
-                    this.loggerService.debug('Web EventsSocket connection closed', ev);
+                    this.loggerService.debug('Web EventsSocket connection closed', ev, this.count);
                     if ((this.reconnectIfNotNormalClose && ev.code !== this.normalCloseCode) || this.reconnectableStatusCodes.indexOf(ev.code) > -1) {
                         this.loggerService.debug('Reconnecting Web EventsSocket connection');
                         this.reconnect();
@@ -72,11 +63,9 @@ export class WebSocketProtocol extends Protocol {
                 };
 
                 this.socket.onerror = (ev: ErrorEvent) => {
-                    this.loggerService.debug('Web EventsSocket connection error', ev);
+                    this.loggerService.debug('Web EventsSocket connection error', ev, this.count);
                     this._error.next(ev);
                 };
-
-                WebSocketProtocol.sockets.push(this.socket);
             }catch (error) {
                 this.loggerService.debug('Web EventsSocket connection error', error);
                 this._error.next(error);

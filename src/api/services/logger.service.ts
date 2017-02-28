@@ -11,7 +11,7 @@ import {StringUtils} from '../util/string.utils';
 @Injectable()
 export class LoggerService {
 
-    private isProduction : boolean = true;
+    private isProduction: boolean = true;
 
     constructor(private logger: Logger, private config: Config, private stringUtils : StringUtils) {
 
@@ -62,9 +62,9 @@ export class LoggerService {
         }
     }
 
-    private wrapMessage (message?: any) : string {
+    private wrapMessage (message?: any): string {
         // on prod, we do not attach the caller.
-        return this.isProduction? message :
+        return this.isProduction ? message :
                                   this.getCaller() + '>> ' + message;
     }
     private getCaller (): string {
@@ -76,7 +76,7 @@ export class LoggerService {
 
     private cleanCaller (caller: string): string {
 
-        return (caller)? caller.trim().substr(3):'unknown';
+        return (caller) ? caller.trim().substr(3) : 'unknown';
     }
 
 }

@@ -19,29 +19,6 @@ export class DotcmsEventsService {
 
     constructor(private socketFactory: SocketFactory, private loggerService: LoggerService) {
 
-        socketFactory.socket$.subscribe( socket => {
-            this.socket = socket;
-
-            socket.message$().subscribe(
-                data => {
-                    this.loggerService.debug('new event:', data);
-
-                    if (!this.subjects[data.event]) {
-                        this.subjects[data.event] = new Subject();
-                    }
-                    this.subjects[data.event].next(data.payload);
-                },
-                function (e): void {
-                    this.loggerService.debug('Error in the System Events service: ' + e.message);
-                },
-                function (): void {
-                    this.loggerService.debug('Completed');
-                }
-            );
-
-            this.loggerService.debug('Connecting with socket');
-            socket.start();
-        });
     }
 
     /**
@@ -55,7 +32,32 @@ export class DotcmsEventsService {
      * Start the socket
      */
     start(): void {
-        this.socketFactory.createSocket();
+        this.loggerService.debug('start DotcmsEventsService');
+        if (!this.socket) {
+            this.socketFactory.createSocket().subscribe(socket => {
+                this.socket = socket;
+
+                socket.message$().subscribe(
+                    data => {
+                        this.loggerService.debug('new event3:', data, socket.count);
+
+                        if (!this.subjects[data.event]) {
+                            this.subjects[data.event] = new Subject();
+                        }
+                        this.subjects[data.event].next(data.payload);
+                    },
+                    function (e): void {
+                        this.loggerService.debug('Error in the System Events service: ' + e.message);
+                    },
+                    function (): void {
+                        this.loggerService.debug('Completed');
+                    }
+                );
+
+                this.loggerService.debug('Connecting with socket');
+                socket.start();
+            });
+        }
     }
 
     /**
