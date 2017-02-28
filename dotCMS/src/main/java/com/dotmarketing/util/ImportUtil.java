@@ -1088,7 +1088,7 @@ public class ImportUtil {
                     }
 
                     for(Category cat : nonHeaderParentCats){
-                        categoriesToRetain.addAll(catAPI.getChildren(cat,false, user, false));
+                        categoriesToRetain.addAll(catAPI.getAllChildren(cat, user, false));
                     }
 
                     /*
