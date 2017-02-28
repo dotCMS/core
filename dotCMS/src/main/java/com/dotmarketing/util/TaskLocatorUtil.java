@@ -228,6 +228,7 @@ public class TaskLocatorUtil {
         ret.add(Task03725NewNotificationTable.class);
         ret.add(Task03735UpdatePortletsIds.class);
         ret.add(Task03740UpdateLayoutIcons.class);
+        ret.add(Task03745DropLegacyHTMLPageAndFileTables.class);
 
         return ret;
     }
