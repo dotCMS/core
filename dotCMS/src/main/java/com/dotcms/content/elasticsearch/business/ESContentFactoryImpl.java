@@ -2221,14 +2221,24 @@ public class ESContentFactoryImpl extends ContentletFactory {
         List<String> inodesToFlush = new ArrayList<>();
 
         Connection conn = DbConnectionFactory.getConnection();
+        
+        Logger.info(this, "========================================");
+        Logger.info(this, "========= Field Information ============");
+        Logger.info(this, "========================================");
+        Logger.info(this, "-> getFieldName = " + field.getFieldName());
+        Logger.info(this, "-> getTitle = " + field.getTitle());
+        Logger.info(this, "-> getFieldContentlet = " + field.getFieldContentlet());
+        Logger.info(this, "-> getValues = " + field.getValues());
+        Logger.info(this, "========================================");
+        PreparedStatement ps2 = null;
 
         try(PreparedStatement ps = conn.prepareStatement(queries.getSelect())) {
             ps.setObject(1, structureInode);
             final int BATCH_SIZE = 200;
 
-            try(ResultSet rs = ps.executeQuery();
-                PreparedStatement ps2 = conn.prepareCall(queries.getUpdate()))
+            try(ResultSet rs = ps.executeQuery();)
             {
+            	ps2 = conn.prepareCall(queries.getUpdate());
                 for (int i = 1; rs.next(); i++) {
                     String contentInode = rs.getString("inode");
                     inodesToFlush.add(contentInode);
@@ -2244,7 +2254,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
 
         } catch (SQLException e) {
-            throw new DotDataException(String.format("Error Clearing Field '%s' for Structure with id: %s",
+        	Logger.info(this, "**********************************");
+        	Logger.info(this, "ps2 variable = " + ps2.toString());
+        	Logger.info(this, "**********************************");
+            throw new DotDataException(String.format("Error clearing field '%s' for Content Type with ID: %s",
                     field.getVelocityVarName(), structureInode), e);
 
         }
@@ -2332,6 +2345,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         select.append(" WHERE structure_inode = ?").append(" AND (").append(whereField).append(")");
         update.append(" WHERE inode = ?");
+        
+        Logger.info(this, "++++++++++++++++++++++++++++++++++++++");
+        Logger.info(this, "update query is = " + update.toString());
+        Logger.info(this, "contains question mark? = " + (update.toString().contains("?") ? "yes" : "no"));
+        Logger.info(this, "++++++++++++++++++++++++++++++++++++++");
 
         return new Queries().setSelect(select.toString()).setUpdate(update.toString());
 
