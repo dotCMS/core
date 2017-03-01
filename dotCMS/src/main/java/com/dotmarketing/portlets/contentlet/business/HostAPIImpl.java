@@ -628,7 +628,7 @@ public class HostAPIImpl implements HostAPI {
                 dc.addParam(host.getIdentifier());
                 dc.loadResult();
 
-				String[] assets = {Inode.Type.CONTAINERS.getTableName(),"template","htmlpage","links"};
+				String[] assets = {Inode.Type.CONTAINERS.getTableName(),"template","links"};
 				for(String asset : assets) {
 				    dc.setSQL("select inode from "+asset+" where exists (select * from identifier where host_inode=? and id="+asset+".identifier)");
 	                dc.addParam(host.getIdentifier());
