@@ -26,6 +26,8 @@ export class DotcmsEventsService {
      */
     destroy(): void {
         this.socket.destroy();
+        this.socketFactory.clean();
+        this.socket = null;
     }
 
     /**
