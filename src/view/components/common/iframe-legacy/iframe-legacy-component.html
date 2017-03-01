@@ -1,12 +1,13 @@
 <dot-loading-indicator *ngIf="loadingInProgress" fullscreen="true"></dot-loading-indicator>
 <div class="iframe-overlay" *ngIf="showOverlay" (click)="iframeOverlayService.hide()"></div>
 <iframe
-    width="100%"
-    height="100%"
-    name="detailFrame"
-    id="detailFrame"
-    [src]="iframe"
     frameborder="0"
+    height="100%"
+    id="detailFrame"
+    name="detailFrame"
+    width="100%"
+    *ngIf="iframe"
+    [src]="iframe"
     (load)="hideLoadingIndicator($event)"
     [class.iframe--loading-in-progress]="loadingInProgress">
 </iframe>
