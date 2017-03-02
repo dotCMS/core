@@ -3800,10 +3800,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         }
 
-
-
-
-
         if(Structure.STRUCTURE_TYPE_HTMLPAGE == st.getStructureType()){
             if(contentlet.getHost()!=null && contentlet.getHost().equals(Host.SYSTEM_HOST) && (!UtilMethods.isSet(contentlet.getFolder()) || contentlet.getFolder().equals(FolderAPI.SYSTEM_FOLDER))){
                 DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.invalid.hostfolder");
