@@ -21,7 +21,7 @@ export class IframeLegacyComponent extends SiteChangeListener {
     iframe: SafeResourceUrl;
     iframeElement;
     private loadingInProgress: boolean = true;
-    private showOverlay: boolean = true;
+    private showOverlay: boolean = false;
 
     constructor(private route: ActivatedRoute, private routingService: RoutingService, private siteService: SiteService,
                 private sanitizer: DomSanitizer, private element: ElementRef, private loginService: LoginService,
