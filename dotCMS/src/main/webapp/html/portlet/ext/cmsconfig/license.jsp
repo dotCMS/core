@@ -455,8 +455,6 @@
     	display: inline-blcok;
     	padding: 8px 12px;
     	font-size: 1.2em;
-    	font-weight: 100;
-    	border-radius: 4px;
     	text-decoration: none;
     	margin-right: 20px;
     	-webkit-transition: background 200ms ease-in 200ms; /* property duration timing-function delay */
