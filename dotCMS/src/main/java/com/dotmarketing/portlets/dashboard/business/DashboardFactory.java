@@ -27,6 +27,51 @@ import com.liferay.portal.model.User;
 
 public abstract class DashboardFactory {
 
+    protected String getSummaryPagesQuery(){
+    	StringBuilder queryBuilder = new StringBuilder("");
+
+    	if(DbConnectionFactory.isPostgres() || DbConnectionFactory.isOracle() || DbConnectionFactory.isH2()) {
+			// Find contentlets type 'html page'
+			queryBuilder.append("SELECT COUNT(*) AS hits, contentlet_version_info.live_inode AS inode, ")
+			.append("(identifier.parent_path || identifier.asset_name) AS uri ")
+			.append("FROM clickstream_request cr ")
+			.append("JOIN contentlet ON (contentlet.identifier = cr.associated_identifier) ")
+			.append("JOIN structure ON (structure.inode = contentlet.structure_inode) ")
+			.append("JOIN identifier ON (identifier.id = contentlet.identifier) ")
+			.append("JOIN contentlet_version_info ON (contentlet_version_info.identifier = identifier.id) ")
+			.append("WHERE EXTRACT(DAY FROM cr.timestampper) = ? AND EXTRACT(MONTH FROM cr.timestampper) = ? AND EXTRACT(YEAR FROM cr.timestampper) = ? ")
+			.append("AND cr.host_id = ? AND structure.structuretype = ").append(Structure.STRUCTURE_TYPE_HTMLPAGE).append(" ")
+			.append("GROUP BY associated_identifier, (identifier.parent_path || identifier.asset_name), contentlet_version_info.live_inode");
+    	}
+    	else if(DbConnectionFactory.isMySql()) { // MySQL Query Builder
+			// Find contentlets type 'html page'
+    		queryBuilder.append("SELECT COUNT(*) AS hits, contentlet_version_info.live_inode AS inode, ")
+    		.append("CONCAT(identifier.parent_path, identifier.asset_name) AS uri ")
+    		.append("FROM clickstream_request cr ")
+    		.append("JOIN contentlet ON (contentlet.identifier = cr.associated_identifier) ")
+    		.append("JOIN structure ON (structure.inode = contentlet.structure_inode) ")
+    		.append("JOIN identifier ON (identifier.id = contentlet.identifier) ")
+    		.append("JOIN contentlet_version_info ON (contentlet_version_info.identifier = identifier.id) ")
+    		.append("WHERE DAY(cr.timestampper) = ? AND MONTH(cr.timestampper) = ? AND YEAR(cr.timestampper) = ? ")
+    		.append("AND cr.host_id = ? AND structure.structuretype = ").append(Structure.STRUCTURE_TYPE_HTMLPAGE).append(" ")
+    		.append("GROUP BY associated_identifier, CONCAT(identifier.parent_path, identifier.asset_name), contentlet_version_info.live_inode");
+    	} else if(DbConnectionFactory.isMsSql()) { // MsSQL Query Builder
+			// Find contentlets type 'html page'
+			queryBuilder.append("SELECT COUNT(*) AS hits, contentlet_version_info.live_inode AS inode, ")
+			.append("(identifier.parent_path + identifier.asset_name) AS uri ")
+			.append("FROM clickstream_request cr ")
+			.append("JOIN contentlet ON (contentlet.identifier = cr.associated_identifier) ")
+			.append("JOIN structure ON (structure.inode = contentlet.structure_inode) ")
+			.append("JOIN identifier ON (identifier.id = contentlet.identifier) ")
+			.append("JOIN contentlet_version_info ON (contentlet_version_info.identifier = identifier.id) ")
+			.append("WHERE DATEPART(DAY, cr.timestampper) = ? AND DATEPART(MONTH, cr.timestampper) = ? AND DATEPART(YEAR, cr.timestampper) = ? ")
+			.append("AND cr.host_id = ? AND structure.structuretype = ").append(Structure.STRUCTURE_TYPE_HTMLPAGE).append(" ")
+			.append("GROUP BY associated_identifier, (identifier.parent_path + identifier.asset_name), contentlet_version_info.live_inode");
+    	}
+
+    	return queryBuilder.toString();
+    };
+
 	protected String getSummaryContentQuery(){
 		return (DbConnectionFactory.isPostgres() || DbConnectionFactory.isOracle() || DbConnectionFactory.isH2()) ?
 			" select count(*) as hits, identifier.parent_path as uri ,contentlet.identifier as inode, contentlet.title as title  from clickstream_request "+
@@ -44,6 +89,43 @@ public abstract class DashboardFactory {
 							" join identifier on identifier.id = associated_identifier join multi_tree on associated_identifier = parent1 join contentlet on contentlet.identifier = multi_tree.child  "+
 							" where DATEPART(day, timestampper) = ? and DATEPART(month, timestampper) = ? and DATEPART(year, timestampper) = ? "+
 							" and host_id = ? group by associated_identifier, identifier.parent_path,contentlet.identifier,contentlet.title ":"";
+	}
+
+	protected String getWorkstreamQuery(String hostId){
+		return  " inode, asset_type, mod_user_id, host_id, mod_date,case when deleted = 1 then 'Deleted' else case when live_inode IS NOT NULL then 'Published' else 'Saved' end end as action, name from( "+
+		" select contentlet.inode as inode, case when st.structuretype="+Structure.STRUCTURE_TYPE_FILEASSET+" then 'contentlet' else 'file_asset' end as asset_type, " +
+		" mod_user as mod_user_id, identifier.host_inode as host_id, contentlet.mod_date,lang_info.live_inode,lang_info.working_inode,lang_info.deleted, coalesce(contentlet.title,contentlet.identifier) as name "+
+		" from contentlet_version_info lang_info join contentlet on (contentlet.identifier = lang_info.identifier) join identifier identifier on (identifier.id = contentlet.identifier) "+
+		" join structure st on (contentlet.structure_inode=st.inode) "+
+		" UNION ALL "+
+			" select template.inode as inode, 'template' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date, temp_info.live_inode,temp_info.working_inode,temp_info.deleted, coalesce(template.title,template.identifier) as name "+
+			" from template_version_info temp_info join template on(template.identifier = temp_info.identifier) join identifier identifier on identifier.id = template.identifier "+
+				" UNION ALL "+
+				" select " + Inode.Type.CONTAINERS.getTableName() + ".inode as inode, 'container' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date, con_info.live_inode,con_info.working_inode,con_info.deleted, coalesce(" + Inode.Type.CONTAINERS.getTableName() + ".title," + Inode.Type.CONTAINERS.getTableName() + ".identifier) as name "+
+				" from container_version_info con_info join " + Inode.Type.CONTAINERS.getTableName() + " on(" + Inode.Type.CONTAINERS.getTableName() + ".identifier = con_info.identifier) join identifier identifier on (identifier.id = " + Inode.Type.CONTAINERS.getTableName() + ".identifier) "+
+				" UNION ALL "+
+				" select links.inode as inode, 'link' as asset_type, mod_user as mod_user_id, identifier.host_inode as host_id, mod_date, links_info.live_inode,links_info.working_inode,links_info.deleted, coalesce(links.title,links.identifier) as name "+
+				" from link_version_info links_info join links on(links_info.identifier= links.identifier) join identifier identifier on (identifier.id = links.identifier) "+
+				" )assets where mod_date>(select coalesce(max(mod_date),"
+				+(DbConnectionFactory.isPostgres()||DbConnectionFactory.isH2()?"'1970-01-01 00:00:00')"
+						:(DbConnectionFactory.isOracle())?"TO_TIMESTAMP('1970-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'))"
+								:(DbConnectionFactory.isMySql())?"STR_TO_DATE('1970-01-01','%Y-%m-%d'))"
+										:(DbConnectionFactory.isMsSql())?"CAST('1970-01-01' AS DATETIME))":"")+
+										" from analytic_summary_workstream) and host_id = '"+hostId+"' order by assets.mod_date,assets.name asc ";
+	}
+
+
+	protected String getTopAssetsQuery() {
+
+		// This query counts contentlets
+		StringBuilder sbCountContentlets  = new StringBuilder("SELECT identifier.host_inode as host_inode, ")
+		.append("COUNT(contentlet.inode) AS count, 'contentlet' AS asset_type ")
+		.append("FROM contentlet_version_info contentinfo JOIN identifier ON (identifier.id = contentinfo.identifier) ")
+		.append("JOIN contentlet ON (contentlet.identifier = identifier.id) JOIN structure ON (contentlet.structure_inode = structure.inode) ")
+		.append("WHERE identifier.host_inode = ? ").append(" AND contentinfo.live_inode IS NOT NULL ")
+		.append("GROUP BY identifier.host_inode");
+
+		return sbCountContentlets.toString();
 	}
 
 	protected String  getIdentifierColumn(){
