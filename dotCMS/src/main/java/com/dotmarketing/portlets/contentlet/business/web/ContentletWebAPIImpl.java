@@ -630,7 +630,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
     @Override
 	public String validateNewContentPage(Contentlet contentPage) {
 		String parentFolderId = contentPage.getFolder();
-		String pageUrl = contentPage.getMap().get("url").toString();
+		String pageUrl = contentPage.getMap().get("url") == null ? "" : contentPage.getMap().get("url").toString();
 		String status = null;
 		try {
 			User systemUser = userAPI.getSystemUser();
