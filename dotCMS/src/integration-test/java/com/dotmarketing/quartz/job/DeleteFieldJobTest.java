@@ -1,5 +1,14 @@
 package com.dotmarketing.quartz.job;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
+import java.util.Date;
+import java.util.List;
+
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.quartz.JobExecutionException;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.CollectionsUtils;
@@ -11,22 +20,12 @@ import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.quartz.JobExecutionException;
-
-import java.util.Date;
-import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 public class DeleteFieldJobTest extends IntegrationTestBase {
 
@@ -203,5 +202,90 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
         }
     }
 
+    @Test
+    public void deleteContentTypeFieldNewTest() throws DotDataException, DotSecurityException, JobExecutionException {
+		User systemUser = APILocator.getUserAPI().getSystemUser();
+		Host site = APILocator.getHostAPI().findDefaultHost(systemUser, true);
+		long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+		ContentletAPI contentletAPI = APILocator.getContentletAPI();
+
+		String textAreaValue = "Some content,Some content,Some content,Some content,Some content,Some content,Some content";
+
+		String currentTime = String.valueOf(new Date().getTime());
+		String contentTypeName = "DeleteFieldContentType_" + currentTime;
+		String textAreaFieldVarName = "textAreaFieldVarName_" + currentTime;
+
+		// Create content type
+		Structure contentType = new Structure();
+		contentType.setHost(site.getIdentifier());
+		contentType.setDescription("Testing delete content types's field");
+		contentType.setName(contentTypeName);
+		contentType.setVelocityVarName("deleteFieldVarName_" + currentTime);
+		contentType.setStructureType(Structure.Type.CONTENT.getType());
+		contentType.setFixed(false);
+		contentType.setOwner(systemUser.getUserId());
+		contentType.setExpireDateVar("");
+		contentType.setPublishDateVar("");
+
+		Contentlet contentlet = null;
+
+		try {
+			// Save the test content type
+			StructureFactory.saveStructure(contentType);
+
+			Field textAreaField = new Field("textAreaField_" + currentTime, Field.FieldType.TEXT_AREA,
+					Field.DataType.LONG_TEXT, contentType, true, true, true, 1, "", "", "", false, false, true);
+			textAreaField.setVelocityVarName(textAreaFieldVarName);
+			FieldFactory.saveField(textAreaField);
+			FieldsCache.addField(textAreaField);
+
+			// Validate the fields were properly saved
+			Structure stFromDB = CacheLocator.getContentTypeCache().getStructureByName(contentTypeName);
+			List<Field> fieldsBySortOrder = stFromDB.getFieldsBySortOrder();
+
+			assertEquals(1, fieldsBySortOrder.size());
+
+			// Create a new content of the DeleteFieldContentType type
+			contentlet = new Contentlet();
+			contentlet.setStructureInode(contentType.getInode());
+			contentlet.setHost(site.getIdentifier());
+			contentlet.setLanguageId(langId);
+
+			// Set the fields values
+			contentletAPI.setContentletProperty(contentlet, textAreaField, textAreaValue);
+
+			// Save the content
+			contentlet = contentletAPI.checkin(contentlet, systemUser, true);
+
+			// Delete fields
+			TestJobExecutor.execute(instance,
+					CollectionsUtils.map("structure", contentType, "field", textAreaField, "user", systemUser));
+
+			// Validate we deleted those fields properly
+			stFromDB = CacheLocator.getContentTypeCache().getStructureByName(contentTypeName);
+			fieldsBySortOrder = stFromDB.getFieldsBySortOrder();
+			assertEquals(0, fieldsBySortOrder.size());
+
+			// Make sure the values are not in cache
+			Contentlet contentletFromDB = CacheLocator.getContentletCache().get(contentlet.getInode());
+			assertNull(contentletFromDB.get(textAreaFieldVarName));
+		} catch (Exception e) {
+			if (contentType != null) {
+				try {
+					StructureFactory.deleteStructure(contentType);
+				} catch (DotDataException e1) {
+					// Do nothing....
+				}
+			}
+			if (contentlet != null) {
+				try {
+					contentletAPI.delete(contentlet, systemUser, true);
+				} catch (Exception e1) {
+					// Do nothing....
+				}
+			}
+			throw new RuntimeException(e);
+		}
+    }
 
 }
