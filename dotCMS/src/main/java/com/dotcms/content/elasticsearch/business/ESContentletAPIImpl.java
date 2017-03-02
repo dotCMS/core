@@ -3799,11 +3799,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
         }
-        
-        
-        
-        
-        
+
         if(Structure.STRUCTURE_TYPE_HTMLPAGE == st.getStructureType()){
             if(contentlet.getHost()!=null && contentlet.getHost().equals(Host.SYSTEM_HOST) && (!UtilMethods.isSet(contentlet.getFolder()) || contentlet.getFolder().equals(FolderAPI.SYSTEM_FOLDER))){
                 DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.invalid.hostfolder");
@@ -3825,14 +3821,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 if(!UtilMethods.isSet(url)){
 
-                    Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
-                    if(UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getAssetName())){
+                    if (UtilMethods.isSet(contentlet.getIdentifier()) && UtilMethods.isSet(contentlet.getInode())) {
+                        Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
+                        if (UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getAssetName())) {
 
-                        url = identifier.getAssetName();
+                            url = identifier.getAssetName();
+                        }
                     }
                 }
-	
-	            if(UtilMethods.isSet(url)){
+
+                if(UtilMethods.isSet(url)){
                     contentlet.setProperty(HTMLPageAssetAPI.URL_FIELD, url);
 	        		Identifier folderId = APILocator.getIdentifierAPI().find(folder);
 	        		String path = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)?"/"+url:folderId.getPath()+url;
@@ -3842,13 +3840,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	                    cve.addBadTypeField(st.getFieldVar(HTMLPageAssetAPI.URL_FIELD));
 	                    throw cve;
 	                }
-	            }else{
-	                DotContentletValidationException cve = new FileAssetValidationException("URL is required");
-	                cve.addBadTypeField(st.getFieldVar(HTMLPageAssetAPI.URL_FIELD));
-	                throw cve;
-	            }
-	            UtilMethods.validateFileName(url);
 
+                    UtilMethods.validateFileName(url);
+	            }
       
         	}
         	catch(DotDataException | DotSecurityException | IllegalArgumentException e){
@@ -3866,7 +3860,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         
         
         
-        
+
 
         boolean hasError = false;
         DotContentletValidationException cve = new DotContentletValidationException("Contentlets' fields are not valid");
