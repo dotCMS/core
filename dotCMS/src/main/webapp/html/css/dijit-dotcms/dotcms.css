@@ -3296,18 +3296,8 @@ html, body {
 }
 
 .dijitButton .dijitButtonNode,
-.dijitToggleButton .dijitButtonNode,
-.dijitComboButton .dijitButtonNode {
-  border: none;
-}
-
-.dijitButton .dijitButtonNode,
 .dijitToggleButton .dijitButtonNode {
-  padding-left: 16px;
-}
-
-.dijitComboButton .dijitStretch {
-  padding-left: 16px;
+  padding: 0 16px;
 }
 
 .dijitButton,
@@ -3316,11 +3306,6 @@ html, body {
 .dijitDropDownButton,
 .dijitToggleButton {
   margin: 0;
-}
-
-.dijitButton,
-.dijitToggleButton {
-  padding-right: 16px;
 }
 
 .dijitButton .dijitButtonText,
@@ -3363,7 +3348,6 @@ html, body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
 }
 .dijitDropDownButton .dijitButtonNode {
-  border: none;
   padding-left: 16px;
 }
 .dijitDropDownButton .dijitArrowButtonInner {
@@ -3478,6 +3462,12 @@ html, body {
   content: "";
   height: 0;
   width: 0;
+}
+.dijitComboButton .dijitButtonNode {
+  padding-left: 16px;
+}
+.dijitComboButton .dijitButtonNode.dijitDownArrowButton {
+  padding-left: 0;
 }
 .dijitComboButtonHover {
   background-color: #FAFAFA;
@@ -6017,6 +6007,9 @@ select[multiple]:hover {
   font-size: 13px;
   margin: 0 auto 16px auto;
   width: 100%;
+}
+#listing-table p:last-child, .dojoxUploaderFileListTable p:last-child, .listingTable p:last-child {
+  margin-bottom: 0;
 }
 #listing-table tr, .dojoxUploaderFileListTable tr, .listingTable tr {
   transition: background-color 0.1s;
@@ -8743,6 +8736,10 @@ Styles for commons fields along the backend
   margin-right: 8px;
   white-space: nowrap;
 }
+#inline-form > label, .fileSelectorControls > label, .inline-form > label {
+  line-height: 32px;
+  align-self: baseline;
+}
 #inline-form > .checkbox, .fileSelectorControls > .checkbox, .inline-form > .checkbox, #inline-form > .radio, .fileSelectorControls > .radio, .inline-form > .radio {
   margin-right: 16px;
 }
@@ -8910,7 +8907,8 @@ dd .buttonCaption {
   height: 90px;
   margin-top: 8px;
   padding: 8px;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .who-can-use__list td {
