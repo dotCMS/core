@@ -5,6 +5,7 @@ import {SiteService} from '../../../api/services/site-service';
 import {MessageService} from '../../../api/services/messages-service';
 import {BaseComponent} from '../common/_base/base-component';
 import {AutoComplete} from 'primeng/primeng';
+import {IframeOverlayService} from '../../../api/services/iframe-overlay-service';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -27,7 +28,8 @@ export class SiteSelectorComponent extends BaseComponent {
 
     @ViewChild(AutoComplete) private autoCompleteComponent: AutoComplete;
 
-    constructor(private siteService: SiteService, messageService: MessageService, config: DotcmsConfig) {
+    constructor(private siteService: SiteService, messageService: MessageService, config: DotcmsConfig,
+                private iframeOverlayService: IframeOverlayService) {
         super(['updated-current-site-message', 'archived-current-site-message', 'modes.Close'], messageService);
 
         config.getConfig().subscribe(configParams => this.paginationPerPage = configParams.defaultRestPageCount);
@@ -52,6 +54,8 @@ export class SiteSelectorComponent extends BaseComponent {
         this.siteService.switchSite(option.value).subscribe(response => {
 
         });
+
+        this.iframeOverlayService.hide();
     }
 
     /**
@@ -89,6 +93,8 @@ export class SiteSelectorComponent extends BaseComponent {
      * @param event - The click event to display the dropdown options
      */
     handleSitesDropdownClick(event: {originalEvent: Event, query: string}): void {
+        this.iframeOverlayService.toggle()
+
         // TODO: get rid of this lines when this is fixed: https://github.com/primefaces/primeng/issues/745
         event.originalEvent.preventDefault();
         event.originalEvent.stopPropagation();
@@ -116,10 +122,18 @@ export class SiteSelectorComponent extends BaseComponent {
          * Call the web resource to get the subset of site results
          */
         this.siteService.paginateSites(this.paginationQuery, false, this.paginationPage, this.paginationPerPage).subscribe(response => {
+            let results = response.sites.results;
+
+            if (results.length) {
+                this.iframeOverlayService.show();
+            } else {
+                this.iframeOverlayService.hide();
+            }
+
             /*
              Include the sites results for the current pagination page
              */
-            response.sites.results.forEach(site => {
+            results.forEach(site => {
                 this.filteredSitesResults.push( {
                     label: site.hostname,
                     value: site.identifier,
