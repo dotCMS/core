@@ -412,27 +412,6 @@ public class PublisherAPIImpl extends PublisherAPI{
 		return res;
 	}
 
-	private static final String MULTI_TREE_QUERY = "select multi_tree.* from multi_tree join htmlpage_version_info on htmlpage_version_info.identifier = multi_tree.parent1 join container_version_info on container_version_info.identifier = multi_tree.parent2 join contentlet_version_info on contentlet_version_info.identifier = multi_tree.child where multi_tree.child = ? and htmlpage_version_info.deleted = ? and container_version_info.deleted = ? and contentlet_version_info.deleted = ?";
-
-	@Override
-	public List<Map<String,Object>> getContentMultiTreeMatrix(String id) throws DotPublisherException {
-		List<Map<String,Object>> res = null;
-		DotConnect dc=new DotConnect();
-		dc.setSQL(MULTI_TREE_QUERY);
-		dc.addParam(id);
-		dc.addParam(Boolean.FALSE);
-		dc.addParam(Boolean.FALSE);
-		dc.addParam(Boolean.FALSE);
-		try {
-			res = dc.loadObjectResults();
-		} catch (Exception e) {
-			Logger.error(PublisherAPIImpl.class,e.getMessage(),e);
-			throw new DotPublisherException("Unable find multi tree:" + e.getMessage(), e);
-		}
-
-		return res;
-	}
-
 	private static final String GETENTRIESBYSTATUS =
 			"SELECT a.bundle_id, p.entered_date, p.asset, a.status, p.operation "+
 			"FROM publishing_queue p, publishing_queue_audit a "+
@@ -794,61 +773,6 @@ public class PublisherAPIImpl extends PublisherAPI{
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
 			throw new DotPublisherException("Unable to delete elements :"+e.getMessage(), e);
 		}
-	}
-
-	private static final String MULTI_TREE_CONTAINER_QUERY = new StringBuilder("select multi_tree.* from multi_tree ")
-    .append("join htmlpage_version_info on htmlpage_version_info.identifier = multi_tree.parent1 ")
-    .append("join container_version_info on container_version_info.identifier = multi_tree.parent2 ")
-    .append("join contentlet_version_info on contentlet_version_info.identifier = multi_tree.child ")
-    .append("where multi_tree.parent1 = ? ")
-    .append("and (htmlpage_version_info.deleted = ? and container_version_info.deleted = ? ")
-    .append("and contentlet_version_info.deleted = ?) ")
-    .append("group by multi_tree.child, multi_tree.parent1, multi_tree.parent2, multi_tree.relation_type, multi_tree.tree_order")
-    .append(" UNION ALL ")
-    .append("select multi_tree.* from multi_tree ")
-    .append("join htmlpage_version_info on htmlpage_version_info.identifier = multi_tree.parent1 ")
-    .append("join container_version_info on container_version_info.identifier = multi_tree.parent2 ")
-    .append("join contentlet_version_info on contentlet_version_info.identifier = multi_tree.child ")
-    .append("where multi_tree.parent2 = ? ")
-    .append("and (htmlpage_version_info.deleted = ? and container_version_info.deleted = ? ")
-    .append("and contentlet_version_info.deleted = ?) ")
-    .append("group by multi_tree.child, multi_tree.parent1, multi_tree.parent2, multi_tree.relation_type, multi_tree.tree_order")
-    .append(" UNION ALL ")
-    .append("select multi_tree.* from multi_tree ")
-    .append("join htmlpage_version_info on htmlpage_version_info.identifier = multi_tree.parent1 ")
-    .append("join container_version_info on container_version_info.identifier = multi_tree.parent2 ")
-    .append("join contentlet_version_info on contentlet_version_info.identifier = multi_tree.child ")
-    .append("where multi_tree.child = ? ")
-    .append("and (htmlpage_version_info.deleted = ? and container_version_info.deleted = ? ")
-    .append("and contentlet_version_info.deleted = ?) ")
-    .append("group by multi_tree.child, multi_tree.parent1, multi_tree.parent2, multi_tree.relation_type, multi_tree.tree_order").toString();
-
-	@Override
-	public List<Map<String, Object>> getContainerMultiTreeMatrix(String id) throws DotPublisherException {
-		List<Map<String,Object>> res;
-		DotConnect dc=new DotConnect();
-		dc.setSQL(MULTI_TREE_CONTAINER_QUERY);
-		dc.addParam(id);
-		dc.addParam(Boolean.FALSE);
-		dc.addParam(Boolean.FALSE);
-		dc.addParam(Boolean.FALSE);
-		dc.addParam(id);
-		dc.addParam(Boolean.FALSE);
-		dc.addParam(Boolean.FALSE);
-		dc.addParam(Boolean.FALSE);
-		dc.addParam(id);
-		dc.addParam(Boolean.FALSE);
-		dc.addParam(Boolean.FALSE);
-		dc.addParam(Boolean.FALSE);
-
-		try {
-			res = dc.loadObjectResults();
-		} catch (Exception e) {
-			Logger.error(PublisherAPIImpl.class,e.getMessage(),e);
-			throw new DotPublisherException("Unable find multi tree:" + e.getMessage(), e);
-		}
-
-		return res;
 	}
 
 	@Override

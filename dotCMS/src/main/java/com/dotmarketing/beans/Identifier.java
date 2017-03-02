@@ -172,20 +172,12 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 				setAssetType("links");
 				setParentPath(uRI.substring(0, uRI.lastIndexOf("http://")));
 				setAssetName(uRI.substring(uRI.lastIndexOf("http://")));
-			}else{
-				setAssetType("htmlpage");
-				setParentPath(uRI.substring(0, uRI.lastIndexOf("/")+1));
-				setAssetName(uRI.substring(uRI.lastIndexOf("/")+1));
 			}
 		}else if(UtilMethods.getFileExtension(uRI)!="" && !UtilMethods.getFileExtension(uRI).equals(Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "dot"))){
 			if(uRI.contains("http://")){
 				setAssetType("links");
 				setParentPath(uRI.substring(0, uRI.lastIndexOf("http://")));
 				setAssetName(uRI.substring(uRI.lastIndexOf("http://")));
-			}else if(assetType==null || !assetType.equals("links")) {
-				setAssetType("file_asset");
-				setParentPath(uRI.substring(0, uRI.lastIndexOf("/")+1));
-				setAssetName(uRI.substring(uRI.lastIndexOf("/")+1));
 			}
 		}else{
 			setAssetType("links");

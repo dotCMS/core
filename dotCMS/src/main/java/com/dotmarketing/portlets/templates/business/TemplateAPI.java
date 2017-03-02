@@ -20,8 +20,6 @@ import com.liferay.portal.model.User;
 
 public interface TemplateAPI {
 
-	List<Template> findTemplatesUnder(Folder parentFolder) throws DotDataException;
-
 	/**
 	 *
 	 * Retrieves all non-archived templates assigned to the given host

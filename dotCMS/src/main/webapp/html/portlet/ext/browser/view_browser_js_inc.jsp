@@ -222,9 +222,6 @@
 
             var response = false;
 
-            if (inode.type == 'file_asset') {
-                response = archiveFile(draggableElem, referer);
-            }
             if (inode.type == 'links') {
                 response = archiveLink(draggableElem, referer);
             }
@@ -307,9 +304,6 @@
             if (inodes[inode].type == 'folder') {
                 showFolderPopUp(inodes[inode], cmsAdminUser, referer, e);
             }
-            if (inodes[inode].type == 'file_asset') {
-                showFilePopUp(inodes[inode], cmsAdminUser, referer, e);
-            }
             if (inodes[inode].type == 'links') {
                 showLinkPopUp(inodes[inode], cmsAdminUser, referer, e);
             }
@@ -357,13 +351,6 @@
         if (inodes[inode].type == 'folder') {
             showDebugMessage(DWRUtil.toDescriptiveString(inodes[inode], 2));
             openFolder(inode);
-        }
-        if (inodes[inode].type == 'file_asset') {
-            if(inodes[inode].isContent){
-                editFileAsset(inode, inodes[inode].fileAssetType);
-            }else{
-                editFile(inode,referer);
-            }
         }
         if (inodes[inode].type == 'links') {
             editLink(inode,referer);
@@ -414,19 +401,6 @@
                 } else {
                     if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-move-the-folder")) %>'))
                         moveFolder (draggableElem, droppableElem, referer);
-                    else {
-                        var folder = selectedFolder;
-                        selectedFolder = "";
-                        treeFolderSelected(folder);
-                    }
-                }
-            }
-            if (asset.type == 'file_asset') {
-                if (e.ctrlKey) {
-                    copyFile (draggableElem, droppableElem, referer);
-                } else {
-                    if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-move-the-file")) %>'))
-                        moveFile (draggableElem, droppableElem, referer);
                     else {
                         var folder = selectedFolder;
                         selectedFolder = "";
@@ -852,10 +826,6 @@
             } else {
                 var name = asset.title;
                 var assetIcon = '/icon?i=' + name.toLowerCase();
-                if (asset.type == 'file_asset') {
-                    name = asset.fileName;
-                    assetIcon = asset.extension + 'Icon';
-                }
                 if (asset.type == 'htmlpage') {
                     name = asset.pageUrl;
                     assetIcon = 'pageIcon';
@@ -876,30 +846,20 @@
                 var title = shortenString(asset.title, 30);
                 var modUserName = shortenString(asset.modUserName, 20);
                 //Show Language Icon for Contents (Pages, Files)
-                var languageHTML = ((asset.type=='htmlpage' || asset.type=='file_asset') && asset.isContentlet && multipleLanguages)
+                var languageHTML = ((asset.type=='htmlpage') && asset.isContentlet && multipleLanguages)
                     ?"<img src=\"/html/images/languages/"+asset.languageCode+ "_" +asset.countryCode +
                     ".gif\" width=\"16px\" height=\"11px\" style='margin-top:4px;float:left;' /><span id='"+asset.inode+"-LangSPAN'>&nbsp;("+asset.languageCode+ "_" +asset.countryCode+")</span>":"";
-                if(asset.type == 'file_asset'){
-                    var html =  '<tr id="' + asset.inode + '-TR">\n' +
-                        '   <td class="nameTD" id="' + asset.inode + '-NameTD">' +
-                        '<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
-                        '<span class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
-                        '&nbsp;<span id="' + asset.inode + '-NameSPAN" >' + name + '</span>' +
-                        '</a>' +
-                        '   </td>\n' +
-                        '   <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
-                        '       <span id="' + asset.inode + '-ShowOnMenuSPAN"';
-                }else{
-                    var html =  '<tr id="' + asset.inode + '-TR">\n' +
-                        '   <td class="nameTD" id="' + asset.inode + '-NameTD">' +
-                        '<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
-                        '<span class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
-                        '&nbsp;<span id="' + asset.inode + '-NameSPAN" >' + name + '</span>' +
-                        '</a>' +
-                        '   </td>\n' +
-                        '   <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
-                        '       <span id="' + asset.inode + '-ShowOnMenuSPAN"';
-                }
+
+                var html =  '<tr id="' + asset.inode + '-TR">\n' +
+                    '   <td class="nameTD" id="' + asset.inode + '-NameTD">' +
+                    '<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
+                    '<span class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
+                    '&nbsp;<span id="' + asset.inode + '-NameSPAN" >' + name + '</span>' +
+                    '</a>' +
+                    '   </td>\n' +
+                    '   <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
+                    '       <span id="' + asset.inode + '-ShowOnMenuSPAN"';
+
 
 
                 if (asset.showOnMenu || asset.showOnMenu == 'true') {
@@ -1131,8 +1091,6 @@
                 var currentName = inodes[inode].pageUrl;
             } else if(inodes[inode].type == 'folder') {
                 var currentName = inodes[inode].name;
-            } else if (inodes[inode].type == 'file_asset') {
-                var currentName = inodes[inode].fileName;
             } else if (inodes[inode].type == 'links') {
                 var currentName = inodes[inode].title;
             }
@@ -1179,10 +1137,7 @@
                     inodes[changingNameTo].name = newName;
                     BrowserAjax.renameFolder (changingNameTo, newName, executeChangeNameCallBack);
                 }
-                if (asset.type == 'file_asset') {
-                    inodes[changingNameTo].fileName = newName + ext;
-                    BrowserAjax.renameFile (changingNameTo, newName, executeChangeNameCallBack);
-                }
+
                 if (asset.type == 'links') {
                     inodes[changingNameTo].title = newName;
                     BrowserAjax.renameLink (changingNameTo, newName, executeChangeNameCallBack);
@@ -1250,9 +1205,6 @@
             var asset = inodes[inode];
             if (asset.type == 'folder') {
                 inodes[inode].name = lastName;
-            }
-            if (asset.type == 'file_asset') {
-                inodes[inode].fileName = lastName + "." + ext;
             }
             if (asset.type == 'links') {
                 inodes[inode].title = lastName;
@@ -1540,9 +1492,6 @@
             if (asset.type == 'folder') {
                 moveFolder (markedForCut, objId, referer);
             }
-            if (asset.type == 'file_asset') {
-                moveFile (markedForCut, objId, referer);
-            }
             if (asset.type == 'links') {
                 moveLink (markedForCut, objId, referer);
             }
@@ -1553,9 +1502,6 @@
             var asset = inodes[markedForCopy];
             if (asset.type == 'folder') {
                 copyFolder (markedForCopy, objId, referer);
-            }
-            if (asset.type == 'file_asset') {
-                copyFile (markedForCopy, objId, referer);
             }
             if (asset.type == 'links') {
                 copyLink (markedForCopy, objId, referer);

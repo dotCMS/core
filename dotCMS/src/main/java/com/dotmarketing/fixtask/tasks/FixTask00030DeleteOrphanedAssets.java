@@ -45,29 +45,18 @@ public class FixTask00030DeleteOrphanedAssets implements FixTask {
 																						 "WHERE velocity_var_name='Host'))";
 		
 		String inodesToDelete = "SELECT * FROM inode WHERE inode in(select inode from htmlpage where identifier = ? ) " +
-								"OR inode in(select inode from links where identifier = ?) " + 
-								"OR inode in(select inode from file_asset where identifier = ?)";
-		
-		String htmlPagesToDelete = "SELECT * FROM htmlpage WHERE identifier = ? ";
+								"OR inode in(select inode from links where identifier = ?) ";
+
 		String linksToDelete = "SELECT * FROM links WHERE identifier = ? ";
-		String fileAssetsToDelete = "SELECT * FROM file_asset WHERE identifier = ? ";
 		
-		String deleteTrees = "DELETE FROM tree WHERE child IN (select inode from htmlpage where identifier = ? ) " +
-							 "OR child IN(select inode from links where identifier = ?) " + 
-							 "OR child IN(select inode from file_asset where identifier = ?) " +
-							 "OR parent IN(select inode from htmlpage where identifier = ?) " +
-							 "OR parent IN(select inode from links where identifier = ?) " + 
-							 "OR parent IN(select inode from file_asset where identifier = ?)" ;
+		String deleteTrees = "DELETE FROM tree WHERE child IN (select inode from links where identifier = ?) " +
+							 "OR parent IN(select inode from links where identifier = ?) ";
 		
-		String deleteInodes = "DELETE FROM inode WHERE inode in(select inode from htmlpage where identifier = ? ) " +
-							  "OR inode in(select inode from links where identifier = ?) " + 
-							  "OR inode in(select inode from file_asset where identifier = ?)";
+		String deleteInodes = "DELETE FROM inode WHERE inode in(select inode from links where identifier = ?) ";
 		
 		String deleteIdentifier = "DELETE FROM identifier WHERE id = ?";
-		
-		String deleteHTMLPages = "DELETE FROM htmlpage WHERE identifier = ? ";
+
 		String deleteLinks = "DELETE FROM links WHERE identifier = ? ";
-		String deleteFileAssets = "DELETE FROM file_asset WHERE identifier = ? ";
 		
 		List<Map<String, Object>> returnValue = new ArrayList<Map<String, Object>>();
 		Logger.info(FixTask00030DeleteOrphanedAssets.class,"Beginning DeleteOrphanedAssets");
@@ -106,23 +95,7 @@ public class FixTask00030DeleteOrphanedAssets implements FixTask {
 					if ((inodesToDeleteResult != null) && (0 < inodesToDeleteResult.size())) {
 						modifiedData.addAll(inodesToDeleteResult);
 						
-						if (inodesToDeleteResult.get(0).get("type").equals("htmlpage")) {
-							Logger.debug(this, "Deleting orphan HTMLPage with Identifier='" + identifierToDelete.get("id") + "'");
-							
-							dc.setSQL(htmlPagesToDelete);
-							dc.addParam(identifierToDelete.get("id"));
-							assetsToDeleteResult = dc.loadResults();
-							
-							if ((assetsToDeleteResult != null) && (0 < assetsToDeleteResult.size())) {
-								modifiedData.addAll(assetsToDeleteResult);
-								
-								dc.setSQL(deleteHTMLPages);
-								dc.addParam(identifierToDelete.get("id"));
-								dc.loadResult();
-								
-								assetDeleted = true;
-							}
-						} else if (inodesToDeleteResult.get(0).get("type").equals("links")) {
+						if (inodesToDeleteResult.get(0).get("type").equals("links")) {
 							Logger.debug(this, "Deleting orphan Link with Identifier='" + identifierToDelete.get("id") + "'");
 							
 							dc.setSQL(linksToDelete);

@@ -323,7 +323,7 @@ public interface UserAPI {
 
     /**
      * Delete the specified user on the permission, users_cms_roles, cms_role, user_ tables and change the user references in the db with another replacement user
-     * on the contentlet, file_asset, containers, template, links, htmlpage, workflow_task, workflow_comment 
+     * on the contentlet, containers, template, links, htmlpage, workflow_task, workflow_comment
      * inode and version info tables. 
      * @param userToDelete User to delete 
      * @param replacementUser User to replace the db reference of the user to delete
