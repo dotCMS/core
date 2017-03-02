@@ -18,13 +18,8 @@ public enum IntegrityType {
     ),
 
     HTMLPAGES(
-    	new HtmlPageIntegrityChecker(), "push_publish_integrity_html_pages_conflicts", "html_page",
-    	"HtmlPagesToCheck.csv", "HtmlPagesToFix.csv"
-    ),
-
-    CONTENTPAGES(
-    	new ContentPageIntegrityChecker(), "push_publish_integrity_content_pages_conflicts", "html_page",
-    	"ContentPagesToCheck.csv", "ContentPagesToFix.csv", false
+    	new ContentPageIntegrityChecker(), "push_publish_integrity_html_pages_conflicts", "html_page",
+    	"ContentPagesToCheck.csv", "ContentPagesToFix.csv"
     ),
 
     FILEASSETS(

@@ -412,7 +412,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 		return res;
 	}
 
-	private static final String MULTI_TREE_QUERY = "select multi_tree.* from multi_tree join htmlpage_version_info on htmlpage_version_info.identifier = multi_tree.parent1 join container_version_info on container_version_info.identifier = multi_tree.parent2 join contentlet_version_info on contentlet_version_info.identifier = multi_tree.child where multi_tree.child = ? and htmlpage_version_info.deleted = ? and container_version_info.deleted = ? and contentlet_version_info.deleted = ?";
+	private static final String MULTI_TREE_QUERY = "select multi_tree.* from multi_tree join container_version_info on container_version_info.identifier = multi_tree.parent2 join contentlet_version_info on contentlet_version_info.identifier = multi_tree.child where multi_tree.child = ? and container_version_info.deleted = ? and contentlet_version_info.deleted = ?";
 
 	@Override
 	public List<Map<String,Object>> getContentMultiTreeMatrix(String id) throws DotPublisherException {
@@ -420,7 +420,6 @@ public class PublisherAPIImpl extends PublisherAPI{
 		DotConnect dc=new DotConnect();
 		dc.setSQL(MULTI_TREE_QUERY);
 		dc.addParam(id);
-		dc.addParam(Boolean.FALSE);
 		dc.addParam(Boolean.FALSE);
 		dc.addParam(Boolean.FALSE);
 		try {
