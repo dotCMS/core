@@ -112,7 +112,7 @@ function cancel() {
                         <button dojoType="dijit.form.Button" onClick="submitfmPublish()">
                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publish-all-related-assets"  )) %>
                         </button>
-                        <button dojoType="dijit.form.Button" onClick="cancel()">
+                        <button dojoType="dijit.form.Button" onClick="cancel()" class="dijitButtonFlat">
                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel" )) %>
                         </button>
 						</td>

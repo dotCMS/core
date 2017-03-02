@@ -203,10 +203,10 @@ function cancel() {
 <% } %>
                 
 <div class="buttonRow">
-    <button dojoType="dijit.form.Button" onClick="submitfmPublish()" iconClass="publishIcon">
+    <button dojoType="dijit.form.Button" onClick="submitfmPublish()">
         <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publish-all-related-assets")) %>
     </button>&nbsp;
-    <button dojoType="dijit.form.Button" onClick="cancel()" iconClass="cancelIcon">
+    <button dojoType="dijit.form.Button" onClick="cancel()" class="dijitButtonFlat">
         <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel")) %>
     </button>
 </div>
