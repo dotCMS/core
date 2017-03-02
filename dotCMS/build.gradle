@@ -86,10 +86,10 @@ idea {
 dependencies {
     /*****  Felix libs need to be placed in the WEB-INF/felix/bundle directory. This was previously handled using a pre-build copy task.  *****/
     felix group: 'org.apache.felix', name: 'org.apache.felix.bundlerepository', version:'2.0.8'
-    felix group: 'org.apache.felix', name: 'org.apache.felix.fileinstall',      version:'3.5.4'
-    felix group: 'org.apache.felix', name: 'org.apache.felix.gogo.command',     version:'0.16.0'
-    felix group: 'org.apache.felix', name: 'org.apache.felix.gogo.runtime',     version:'0.16.2'
-    felix group: 'org.apache.felix', name: 'org.apache.felix.gogo.shell',       version:'0.12.0'
+    felix group: 'org.apache.felix', name: 'org.apache.felix.fileinstall',      version:'3.5.8'
+    felix group: 'org.apache.felix', name: 'org.apache.felix.gogo.command',     version:'1.0.2'
+    felix group: 'org.apache.felix', name: 'org.apache.felix.gogo.runtime',     version:'1.0.2'
+    felix group: 'org.apache.felix', name: 'org.apache.felix.gogo.shell',       version:'1.0.0'
 
     /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
     compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
