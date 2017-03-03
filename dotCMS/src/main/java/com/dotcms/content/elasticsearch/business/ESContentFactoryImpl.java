@@ -2236,10 +2236,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
             ps.setObject(1, structureInode);
             final int BATCH_SIZE = 200;
 
-            try(ResultSet rs = ps.executeQuery();
-            	Connection conn2 = DbConnectionFactory.getConnection())
+            try(ResultSet rs = ps.executeQuery();)
             {
-            	ps2 = conn2.prepareCall(queries.getUpdate());
+            	ps2 = conn.prepareCall(queries.getUpdate());
                 for (int i = 1; rs.next(); i++) {
                     String contentInode = rs.getString("inode");
                     inodesToFlush.add(contentInode);
@@ -2276,7 +2275,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * @param field
      * @return
      */
-    private Queries getQueries(Field field) {
+    public Queries getQueries(Field field) {
 
         StringBuilder select = new StringBuilder("SELECT inode FROM contentlet ");
         StringBuilder update = new StringBuilder("UPDATE contentlet SET ");
@@ -2359,7 +2358,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     }
 
-    private final class Queries {
+    public final class Queries {
         private String select;
         private String update;
 
