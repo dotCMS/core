@@ -262,8 +262,9 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
 			contentlet = contentletAPI.checkin(contentlet, systemUser, true);
 
 			// Delete fields
-			//TestJobExecutor.execute(instance, CollectionsUtils.map("structure", contentType, "field", textAreaField, "user", systemUser));
-			Connection conn = DbConnectionFactory.getConnection();
+			TestJobExecutor.execute(instance,
+					CollectionsUtils.map("structure", contentType, "field", textAreaField, "user", systemUser));
+			/*Connection conn = DbConnectionFactory.getConnection();
 			Logger.info(this, "================================");
 			Logger.info(this, "======== Manual Update =========");
 			Logger.info(this, "================================");
@@ -273,7 +274,7 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
 			Logger.info(this, "-> field inode = [" + inode + "]");
 			PreparedStatement ps = conn.prepareStatement(updateQuery);
 			ps.setString(1, inode);
-			ps.executeUpdate();
+			ps.executeUpdate();*/
 
 			// Validate we deleted those fields properly
 			stFromDB = CacheLocator.getContentTypeCache().getStructureByName(contentTypeName);

@@ -2236,9 +2236,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
             ps.setObject(1, structureInode);
             final int BATCH_SIZE = 200;
 
-            try(ResultSet rs = ps.executeQuery();)
+            try(ResultSet rs = ps.executeQuery();
+            	Connection conn2 = DbConnectionFactory.getConnection())
             {
-            	ps2 = conn.prepareCall(queries.getUpdate());
+            	ps2 = conn2.prepareCall(queries.getUpdate());
                 for (int i = 1; rs.next(); i++) {
                     String contentInode = rs.getString("inode");
                     inodesToFlush.add(contentInode);
