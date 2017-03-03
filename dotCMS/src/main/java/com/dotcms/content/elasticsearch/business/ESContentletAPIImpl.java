@@ -3821,7 +3821,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 if(!UtilMethods.isSet(url)){
 
-                    if (UtilMethods.isSet(contentlet.getIdentifier()) && UtilMethods.isSet(contentlet.getInode())) {
+                    if (InodeUtils.isSet(contentlet.getVersionId()) || InodeUtils.isSet(contentlet.getInode())) {
                         Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
                         if (UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getAssetName())) {
 
@@ -3840,10 +3840,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	                    cve.addBadTypeField(st.getFieldVar(HTMLPageAssetAPI.URL_FIELD));
 	                    throw cve;
 	                }
-
                     UtilMethods.validateFileName(url);
+
 	            }
-      
+
         	}
         	catch(DotDataException | DotSecurityException | IllegalArgumentException e){
                 DotContentletValidationException cve = new FileAssetValidationException(" URL is invalid");
