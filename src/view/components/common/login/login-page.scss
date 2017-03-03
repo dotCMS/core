@@ -1,6 +1,21 @@
 @import "../../../../scss/variables";
 @import "../../../../scss/mixins";
 
+.cms-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.cms-info__message {
+  color: $gray-dark;
+  font-size: rem-cal(12px);
+}
+
+.cms-info__logo {
+  width: 200px;
+}
+
 .login {
   display: flex;
   flex-direction: column;
@@ -16,48 +31,40 @@
     overflow: inherit;
     width: 100%;
   }
+}
 
-  .cms-info {
+.login__container {
+  @include box_shadow(5);
+  background-color: $white;
+  border-radius: $border-radius;
+  padding: $basic-padding * 4 $basic-padding * 4 $basic-padding * 8;
+
+  .row {
     display: flex;
-    flex-direction: column;
-    justify-content: center;
   }
 
-  .cms-info__message {
-    color: $gray-dark;
-    font-size: rem-cal(12px);
+  &.forgot-password__container {
+    display: block;
+    margin: 0 auto;
+    padding: 30px;
+    width: 500px;
   }
+}
 
-  .cms-info__logo {
-    width: 200px;
-  }
+.login__title {
+  color: $brand-primary;
+  font-size: rem-cal(32px);
+  font-weight: 100;
+  line-height: 1em;
+  margin: 0 0 rem-cal($basic-padding * 2);
+}
 
-  .login__container {
-    @include box_shadow(5);
-    border-radius: $border-radius;
-    background-color: $white;
-    display: flex;
-    padding: $basic-padding * 4;
+.signin {
+  position: relative;
 
-    &.forgot-password__container {
-      display: block;
-      margin: 0 auto;
-      padding: 30px;
-      width: 500px;
-    }
-  }
-
-  .login__title {
-    color: $brand-primary;
-    font-size: rem-cal(24px);
-    font-weight: normal;
-    margin: 0 0 rem-cal($basic-padding * 2);
-  }
-
-  .signin {
+  @media (min-width: $screen-md-min) {
     border-left: solid 1px $gray-light;
-    padding-left: 60px;
-    position: relative;
+    padding-left: $basic-padding * 7;
 
     &:before {
       background-color: $white;
@@ -72,6 +79,5 @@
       transform: rotate(45deg);
       width: 14px;
     }
-
   }
 }

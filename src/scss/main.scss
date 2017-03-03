@@ -24,8 +24,9 @@ html, body {
 
 // For the login component user photo background
 body {
-    background-repeat: no-repeat;
     background-position: top center;
+    background-repeat: no-repeat;
+    background-size: cover;
 }
 
 p {
@@ -60,6 +61,10 @@ a {
 .form-group {
     margin: $basic-padding 0;
 
+    &:last-child {
+        margin-bottom: 0;
+    }
+
     .ui-dialog-content &:first-child {
         margin-top: 0;
     }
@@ -70,7 +75,18 @@ a {
 }
 
 .form-group__two-cols {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
+    & > *:first-child {
+        display: inline-block;
+        margin-bottom: $basic-padding;
+    }
+
+    @media (min-width: $screen-md-min) {
+        & > *:first-child {
+            margin-bottom: 0;
+        }
+
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+    }
 }
