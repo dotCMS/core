@@ -41,15 +41,11 @@ public class WebAssetMapComparator implements Comparator<Map<String, Object>> {
        	if (orderField.equals("name")) {
        		if (map1.get("type").equals("htmlpage"))
        			c1 = map1.get("pageUrl");
-       		else if (map1.get("type").equals("file_asset"))
-       			c1 = map1.get("fileName");
        		else if (map1.get("type").equals("link"))
        			c1 = map1.get("title");
 
        		if (map2.get("type").equals("htmlpage"))
        			c2 = map2.get("pageUrl");
-       		else if (map2.get("type").equals("file_asset"))
-       			c2 = map2.get("fileName");
        		else if (map2.get("type").equals("link"))
        			c2 = map2.get("title");
        	}

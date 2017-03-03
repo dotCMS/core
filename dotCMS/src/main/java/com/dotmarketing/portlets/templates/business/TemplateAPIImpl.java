@@ -72,10 +72,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		}
 	}
 
-	public List<Template> findTemplatesUnder(Folder parentFolder) throws DotDataException {
-		return FactoryLocator.getTemplateFactory().findTemplatesUnder(parentFolder);
-	}
-
 	public List<Template> findTemplatesAssignedTo(Host parentHost) throws DotDataException {
 		return FactoryLocator.getTemplateFactory().findTemplatesAssignedTo(parentHost, false);
 	}

@@ -119,9 +119,6 @@ public class CmsUrlUtil {
 		}
 		if (id == null || id.getId() == null)
 			return false;
-		if ("file_asset".equals(id.getAssetType())) {
-			return true;
-		}
 		
         if ("contentlet".equals(id.getAssetType())) {
             try {
@@ -226,7 +223,7 @@ public class CmsUrlUtil {
 	}
 	
 	public boolean amISomething(String uri, Host host, Long languageId) {
-		return (urlUtil.isFileAsset(uri, host, languageId) || urlUtil.isVanityUrl(uri, host) 
+		return (urlUtil.isVanityUrl(uri, host)
 				|| urlUtil.isPageAsset(uri, host, languageId) || urlUtil.isFolder(uri, host));
 	}
 

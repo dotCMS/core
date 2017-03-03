@@ -59,22 +59,6 @@ public class FixTask00060FixAssetType implements FixTask {
                     modifiedData.add(rr);
                 }
                 
-                // files
-                dc.setSQL("select identifier.* from file_asset join identifier on (identifier=id) where asset_type<>'file_asset'");
-                results = dc.getResults();
-                total+=results.size();
-                for(Map<String,String> rr : results) {
-                    try {
-                        dc.setSQL("update identifier set asset_type='file_asset' where id=?");
-                        dc.addParam(rr.get("id"));
-                        dc.loadResult();
-                        modifiedData.add(rr);
-                        total++;
-                    } catch(Exception ex) {
-                        Logger.warn(this, "error fixing asset_type on id="+rr.get("id"));
-                    }
-                }
-                
                 // containers
                 dc.setSQL("select identifier.* from " + Inode.Type.CONTAINERS.getTableName() + " join identifier on (identifier=id) where asset_type<>'containers'");
                 results = dc.getResults();
@@ -115,22 +99,6 @@ public class FixTask00060FixAssetType implements FixTask {
                 for(Map<String,String> rr : results) {
                     try {
                         dc.setSQL("update identifier set asset_type='links' where id=?");
-                        dc.addParam(rr.get("id"));
-                        dc.loadResult();
-                        modifiedData.add(rr);
-                        total++;
-                    } catch(Exception ex) {
-                        Logger.warn(this, "error fixing asset_type on id="+rr.get("id"));
-                    }
-                }
-                
-                // htmlpage
-                dc.setSQL("select identifier.* from htmlpage join identifier on (identifier=id) where asset_type<>'htmlpage'");
-                results = dc.getResults();
-                total+=results.size();
-                for(Map<String,String> rr : results) {
-                    try {
-                        dc.setSQL("update identifier set asset_type='htmlpage' where id=?");
                         dc.addParam(rr.get("id"));
                         dc.loadResult();
                         modifiedData.add(rr);

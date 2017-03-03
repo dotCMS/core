@@ -16,8 +16,6 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
 
 public interface TemplateFactory {
-	
-	List<Template> findTemplatesUnder(Folder parentFolder) throws DotDataException;
 
 	public List<Template> findTemplatesAssignedTo(Host parentHost, boolean includeArchived) throws DotDataException;
 		
