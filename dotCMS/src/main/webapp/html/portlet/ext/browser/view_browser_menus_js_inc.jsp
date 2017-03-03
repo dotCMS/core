@@ -178,7 +178,7 @@
                         asset = inodes[markedForCopy];
                     }
 
-                    if (asset.type == 'folder' || asset.type == 'htmlpage') {
+                    if (asset.type == 'folder' || asset.type == 'file_asset' || asset.type == 'htmlpage') {
                         Element.show(objId + '-PasteREF');
                     } else {
                         Element.hide(objId + '-PasteREF');

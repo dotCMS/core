@@ -394,6 +394,20 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
    		var assetIcon = '/icon?i=' + asset.extension;
    		var assetThumbnail = '/icon?i=' + asset.extension;
 
+   		if (asset.type == 'file_asset') {
+   			name = asset.fileName;
+            assetIcon = '/html/images/icons/' + asset.extension + '.png';
+
+   			if(asset.mimeType != null && asset.mimeType.indexOf('image/') == 0 ){
+
+				if(asset.mimeType.indexOf('image/svg') <0 && asset.mimeType.indexOf('image/x-icon')<0){
+					assetThumbnail = '/contentAsset/image/' + asset.identifier + '/fileAsset/filter/Thumbnail/thumbnail_w/100/thumbnail_h/100/r/'+asset.inode+'?language_id='+asset.languageId;
+				}
+				else{
+					assetThumbnail= '/contentAsset/image/' + asset.identifier + '/fileAsset/'+asset.inode+'?language_id='+asset.languageId;
+				}
+   			}
+   		}
    		if (asset.type == 'htmlpage') {
    			name = asset.pageUrl;
    			assetIcon = '/html/images/icons/blog-blue.png';
