@@ -18,7 +18,6 @@ import org.quartz.JobExecutionException;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
-import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.Queries;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -272,6 +271,8 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
 			// Delete fields
 			//TestJobExecutor.execute(instance,CollectionsUtils.map("structure", contentType, "field", textAreaField, "user", systemUser));
 			
+			
+			
 			// *************************
 			ContentletCache cc = CacheLocator.getContentletCache();
 			ESContentFactoryImpl esContentFactoryImpl = new ESContentFactoryImpl();
@@ -285,45 +286,61 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
 	        Logger.info(this, "========= Field Information ============");
 	        Logger.info(this, "========================================");
 	        Logger.info(this, "-> getFieldName = " + textAreaField.getFieldName());
-	        Logger.info(this, "-> getTitle = " + textAreaField.getTitle());
 	        Logger.info(this, "-> getFieldContentlet = " + textAreaField.getFieldContentlet());
-	        Logger.info(this, "-> getValues = " + textAreaField.getValues());
 	        Logger.info(this, "========================================");
-	        PreparedStatement ps2 = null;
 
-	        try(PreparedStatement ps = conn.prepareStatement(queries.getSelect())) {
-	            ps.setObject(1, structureInode);
-	            final int BATCH_SIZE = 200;
+	        List<String> contentInodes = new ArrayList<>();
+			try (PreparedStatement ps = conn.prepareStatement(queries.getSelect())) {
+				ps.setObject(1, structureInode);
+				ResultSet rs = ps.executeQuery();
+				while (rs.next()) {
+					String contentInode = rs.getString("inode");
+					contentInodes.add(contentInode);
+				}
+			} catch (SQLException e) {
+				Logger.info(this, "********************************************");
+				Logger.info(this, "********************************************");
+				Logger.info(this, "");
+				Logger.info(this, "Error retrieving the fields to delete, step #1");
+				Logger.info(this, "");
+				Logger.info(this, "********************************************");
+				Logger.info(this, "********************************************");
+				throw new DotDataException("Error retrieving the fields to delete, step #1", e);
+			} finally {
+				conn.close();
+			}
+			
+			conn = DbConnectionFactory.getConnection();
 
-	            try(ResultSet rs = ps.executeQuery();
-	            	Connection conn2 = DbConnectionFactory.getConnection())
-	            {
-	            	ps2 = conn2.prepareCall(queries.getUpdate());
-	                for (int i = 1; rs.next(); i++) {
-	                    String contentInode = rs.getString("inode");
-	                    inodesToFlush.add(contentInode);
-	                    Logger.info(this, "----------------------------------------");
-	                    Logger.info(this, "contentInode value = " + contentInode);
-	                    Logger.info(this, "----------------------------------------");
-	                    ps2.setString(1, contentInode);
-	                    ps2.addBatch();
-
-	                    if (i % BATCH_SIZE == 0) {
-	                        ps2.executeBatch();
-	                    }
-	                }
-
-	                ps2.executeBatch(); // insert remaining records
-	            }
-
-	        } catch (SQLException e) {
-	        	Logger.info(this, "**********************************");
-	        	Logger.info(this, "ps2 variable = " + ps2.toString());
-	        	Logger.info(this, "**********************************");
-	            throw new DotDataException(String.format("Error clearing field '%s' for Content Type with ID: %s",
-	            		textAreaField.getVelocityVarName(), structureInode), e);
-
-	        }
+			try (PreparedStatement ps2 = conn.prepareCall(queries.getUpdate())) {
+				final int BATCH_SIZE = 200;
+				int i = 1;
+				for (String contentInode : contentInodes) {
+					inodesToFlush.add(contentInode);
+					Logger.info(this, "========================================");
+					Logger.info(this, "-> SETTING THE PREPARED STATEMENT PARAMETER...");
+					Logger.info(this, "========================================");
+					ps2.setString(1, contentInode);
+					ps2.addBatch();
+					if (i % BATCH_SIZE == 0) {
+						ps2.executeBatch();
+					}
+					i++;
+				}
+				ps2.executeBatch(); // insert remaining records
+			} catch (SQLException e) {
+				Logger.info(this, "********************************************");
+				Logger.info(this, "********************************************");
+				Logger.info(this, "");
+				Logger.info(this, "Error retrieving the fields, step #2");
+				Logger.info(this, "");
+				Logger.info(this, "********************************************");
+				Logger.info(this, "********************************************");
+				throw new DotDataException(String.format("Error clearing field '%s' for Content Type with ID: %s",
+						textAreaField.getVelocityVarName(), structureInode), e);
+			} finally {
+				conn.close();
+			}
 
 	        for (String inodeToFlush : inodesToFlush) {
 	            cc.remove(inodeToFlush);
@@ -331,6 +348,7 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
 			// *************************
 			
 			
+	        
 			/*Connection conn = DbConnectionFactory.getConnection();
 			Logger.info(this, "================================");
 			Logger.info(this, "======== Manual Update =========");
