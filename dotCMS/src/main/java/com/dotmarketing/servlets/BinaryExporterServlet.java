@@ -213,7 +213,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				respectFrontendRoles = true;
 			}
 
-			String downloadName = null;
+			String downloadName = "file_asset";
 			long lang = WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
 
 
