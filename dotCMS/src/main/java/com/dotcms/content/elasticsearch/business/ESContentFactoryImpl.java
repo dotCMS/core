@@ -2275,7 +2275,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * @param field
      * @return
      */
-    private Queries getQueries(Field field) {
+    public Queries getQueries(Field field) {
 
         StringBuilder select = new StringBuilder("SELECT inode FROM contentlet ");
         StringBuilder update = new StringBuilder("UPDATE contentlet SET ");
@@ -2358,7 +2358,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     }
 
-    private final class Queries {
+    public final class Queries {
         private String select;
         private String update;
 
