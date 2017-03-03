@@ -148,7 +148,7 @@
 	      #end
         #set($_dotParseInode = ${webapi.getAssetInode($_dotParsePath, $_dotParseHostId)})
         #if($InodeUtils.isSet($_dotParseInode)&& ${webapi.doesUserHasPermissionOverFile($_dotParseInode, 2)})
-          <div  class="dot_parseIcon"> <a href="javascript:parent.editFile('${_dotParseInode}'); " title="$_dotParsePath"><span class="editIcon"></span></a></div>
+          <div  class="dot_parseIcon"> <a href="javascript:window.top.detailFrame.editFile('${_dotParseInode}'); " title="$_dotParsePath"><span class="editIcon"></span></a></div>
           #set ($_dotParseInode = '')
         #end
       #end
@@ -201,20 +201,20 @@
 	#if($EDIT_MODE)
 		#set($_hasPermission = $contents.doesUserHasPermission($CONTENT_INODE, 2, $EDIT_MODE))
 		#if($_hasPermission)
-			<a href="javascript:parent.editContentlet('$_containerInode', '$CONTENT_INODE'); " class="dotEditListBox">$languagewebapi.getFromUserLanguage("modes.Edit-Content")</a>
+			<a href="javascript:window.top.detailFrame.editContentlet('$_containerInode', '$CONTENT_INODE'); " class="dotEditListBox">$languagewebapi.getFromUserLanguage("modes.Edit-Content")</a>
 		#end
 	#end
 #end
 
 #macro(addContentlet $STRUCTURE_INODE $CONTENT_NAME)
 	#if($EDIT_MODE)
-	    <a href="javascript:parent.addContentletChapter('$STRUCTURE_INODE'); "><img src="/html/images/icons/page.png" alt="" width="15" height="15" border="0">$!{CONTENT_NAME}</a>
+	    <a href="javascript:window.top.detailFrame.addContentletChapter('$STRUCTURE_INODE'); "><img src="/html/images/icons/page.png" alt="" width="15" height="15" border="0">$!{CONTENT_NAME}</a>
 	#end
 #end
 
 #macro(editEvent $EVENT_INODE)
 	#if($EDIT_MODE)
-		<a href="javascript:parent.editEvent('$EVENT_INODE'); "><img src="/html/images/preview/btn_edit_active.gif" alt="" width="15" height="15" border="0"></a>
+		<a href="javascript:window.top.detailFrame.editEvent('$EVENT_INODE'); "><img src="/html/images/preview/btn_edit_active.gif" alt="" width="15" height="15" border="0"></a>
 	#end
 #end
 
@@ -263,7 +263,7 @@
 	      #end
         #set($_dotParseInode = ${webapi.getAssetInode($_dotParsePath, $_dotParseHostId)})
         #if($InodeUtils.isSet($_dotParseInode)&& ${webapi.doesUserHasPermissionOverFile($_dotParseInode, 2)})
-          <div  class="dot_parseIcon"> <a href="javascript:parent.editFile('${_dotParseInode}'); " title="$_dotParsePath"><span class="editIcon"></span></a></div>
+          <div  class="dot_parseIcon"> <a href="javascript:window.top.detailFrame.editFile('${_dotParseInode}'); " title="$_dotParsePath"><span class="editIcon"></span></a></div>
           #set ($_dotParseInode = '')
         #end
       #end

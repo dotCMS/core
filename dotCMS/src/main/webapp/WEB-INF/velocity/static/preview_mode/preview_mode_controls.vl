@@ -45,7 +45,14 @@
 	var _dotWidgetSearchString = "";
 	var _inodeCounter = 0;
 	var pushHandler = null;
+	
+	
+	
 
+
+    
+    
+    
 	function remotePublish(){
     	dojo.require("dotcms.dojo.push.PushHandler");
     	pushHandler = new dotcms.dojo.push.PushHandler('$languagewebapi.getFromUserLanguage("Remote-Publish")');
@@ -293,7 +300,7 @@
 			return;
 		}
 
-		var menuFrameDim = dojo.marginBox('frameMenu');
+
 		var senderCoords = dojo.coords (sender);
 		var windowDim = dojo.marginBox(dojo.body());
 		var menuDim = dojo.marginBox(ele);
@@ -412,9 +419,6 @@
 		if(confirm('$languagewebapi.getFromUserLanguage("modes.Are-you-sure-you-would-like-to-publish-this-page")')){
 		form = document.getElementById('submitParent');
 	        form.cmd.value="publishHTMLPage";
-	        #if($isAngularFrame)
-	        document.getElementById('submitParent').target="_parent";
-            #end
 	        form.submit();
 		}
 	}
@@ -515,6 +519,8 @@
 		#if($UtilMethods.isSet($request.getAttribute("com.dotmarketing.wiki.contentlet.url")))
 			document.getElementById('referer').value="$request.getAttribute('com.dotmarketing.wiki.contentlet.url')";
 		#end
+		
+
 		form.submit();
 	}
 
@@ -653,11 +659,20 @@
 	}
 
 
-
+	var showMeTest = false;
 
 	function _dotChangeEditContentEditControl(inode, fieldVar){
 
-	   	var iframe = window.frames[0];
+	   	var iframe =  window.frames[0];
+	   	if(iframe.previewDeviceIframe != undefined){
+	   		iframe=iframe.previewDeviceIframe;
+	   	}
+
+
+		console.log("iframe.name:" + window.name);
+	   	console.log("iframe.name:" + iframe.name);
+
+	    
 	    dojo.setContext(iframe.window, iframe.window.document);
 
 		// editable area
@@ -737,7 +752,10 @@
 	function _dotSaveDraftContentViaAjax(inode){
 	    var contentData = [];
 	    var separator = 'com.dotmarketing.contentlet.form_name_value_separator';
-	    var iframe = window.frames[0];
+	   	var iframe =  window.frames[0];
+	   	if(iframe.previewDeviceIframe != undefined){
+	   		iframe=iframe.previewDeviceIframe;
+	   	}
    		dojo.setContext(iframe.window, iframe.window.document);
    		var els = dojo.query(".dotContentletInline" + inode);
 	    for (i = 0; i< els.length; i++) {
@@ -774,7 +792,13 @@
 	   }
 	   var editVar = "edit-"+data.contentletInode;
 	   var inlineVar = "inline-"+data.contentletInode;
-	   dojo.setContext(window.frames[0].window, window.frames[0].window.document);
+	   
+	   
+	    var iframe =  window.frames[0];
+	   	if(iframe.previewDeviceIframe != undefined){
+	   		iframe=iframe.previewDeviceIframe;
+	   	}
+   		dojo.setContext(iframe.window, iframe.window.document);
 	   dojo.destroy(dojo.byId(inlineVar));
 
 		// Only modify varHTMLPage or varReferer when returned inode is a 
@@ -1040,11 +1064,17 @@
     }
     
     
+    
+    
+    
+    
+    
+    
 
 
 </script>
 <div style="display:none">
-    <form action="${directorURL}" id="submitParent" method="post">
+    <form action="${directorURL}" id="submitParent" method="post" target="parent">   
         <input type="hidden" name="referer" id="referer" value="$referer">
         <input type="hidden" name="cmd" id="cmd" value="">
         <input type="hidden" name="container" id="container" value="">
@@ -1082,6 +1112,7 @@
 <script type="text/javascript">
 	dojo.addOnLoad(function () {
 		dojo.style(dijit.byId('savingContentDialog').closeButtonNode, 'visibility', 'hidden');
+
 	});
 </script>
 
@@ -1091,8 +1122,8 @@
 		<button dojoType="dijit.form.Button"  onClick="dijit.byId('saveContentErrors').hide()" type="button">$langbackendwebapi.get("close")</button>
 	</div>
 </div>
-<div id="contentletWfDialog" style="display: none;">
 
+<div id="contentletWfDialog" style="display: none;">
 </div>
 
 
@@ -1110,3 +1141,4 @@ $session.removeAttribute("duplicatedErrorMessage")
 	});
 </script>
 
+preview-mode-contorls

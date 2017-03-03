@@ -30,13 +30,13 @@
 				#if($_isFormWidget)
 					<span class="dotEditFormDisabled">${structures.findStructure($ContentletTitle).name}</span>
 				#elseif($EDIT_CONTENT_PERMISSION && $CONTAINER_NUM_CONTENTLETS > 0)
-					<a class="dotEditWidget" href="javascript:parent.editContentlet('$CONTAINER_INODE', '$CONTENT_INODE');">$languagewebapi.getFromUserLanguage("modes.Edit-Widget")</a>
+					<a class="dotEditWidget" href="javascript:window.top.detailFrame.contentWindow.editContentlet('$CONTAINER_INODE', '$CONTENT_INODE');">$languagewebapi.getFromUserLanguage("modes.Edit-Widget")</a>
 				#else
 					<span class="dotEditWidgetDisabled">$languagewebapi.getFromUserLanguage("modes.Edit-Widget")</span>
 				#end
 		#else
 			#if($EDIT_CONTENT_PERMISSION && $CONTAINER_NUM_CONTENTLETS > 0)
-				<a class="dotEditContent" href="javascript:parent.editContentlet('$CONTAINER_INODE', '$CONTENT_INODE');">$languagewebapi.getFromUserLanguage("modes.Edit-Content")</a>
+				<a class="dotEditContent" href="javascript:window.top.detailFrame.contentWindow.editContentlet('$CONTAINER_INODE', '$CONTENT_INODE');">$languagewebapi.getFromUserLanguage("modes.Edit-Content")</a>
 			#else
 				<span class="dotEditContentDisabled">$languagewebapi.getFromUserLanguage("modes.Edit-Content")</span>
 			#end
@@ -49,10 +49,10 @@
 <!-- START REORDER BUTTON -->
 	<div class="dotMoveContent">	
 		#if($STATIC_CONTAINER && $USE_CONTAINER_PERMISSION && $ADD_CHILDREN_HTMLPAGE_PERMISSION && $CONTAINER_MAX_CONTENTLETS > 1  && $CONTAINER_NUM_CONTENTLETS > 1)
-			<a class="dotMoveContentUp" href="javascript:parent.moveUp('$CONTAINER_INODE', '$CONTENT_INODE','${STATIC_CONTAINER}');">
+			<a class="dotMoveContentUp" href="javascript:window.top.detailFrame.contentWindow.moveUp('$CONTAINER_INODE', '$CONTENT_INODE','${STATIC_CONTAINER}');">
 				<!-- $languagewebapi.getFromUserLanguage("modes.Move-Content-Up") -->
 			</a>
-			<a class="dotMoveContentDown" href="javascript:parent.moveDown('$CONTAINER_INODE', '$CONTENT_INODE','${STATIC_CONTAINER}');">
+			<a class="dotMoveContentDown" href="javascript:window.top.detailFrame.contentWindow.moveDown('$CONTAINER_INODE', '$CONTENT_INODE','${STATIC_CONTAINER}');">
 				<!-- $languagewebapi.getFromUserLanguage("modes.Move-Content-Down") -->
 			</a>
 		#else
@@ -60,7 +60,7 @@
 			<span class="dotMoveContentDownDisabled"> <!-- $languagewebapi.getFromUserLanguage("modes.Move-Content-Down") --> </span>
 		#end
 		#if($ADD_CHILDREN_HTMLPAGE_PERMISSION && $USE_CONTAINER_PERMISSION && $STATIC_CONTAINER  && $CONTAINER_NUM_CONTENTLETS > 0)
-			<a class="dotRemoveContent" href="javascript: parent.removeContentlet('$CONTAINER_INODE', '$CONTENT_INODE');">
+			<a class="dotRemoveContent" href="javascript: window.top.detailFrame.contentWindow.removeContentlet('$CONTAINER_INODE', '$CONTENT_INODE');">
 				<!-- $languagewebapi.getFromUserLanguage("modes.Remove-Content") -->
 			</a>
 		#else
