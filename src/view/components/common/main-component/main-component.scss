@@ -21,9 +21,11 @@ $sidebar-width: 190px;
   background-color: $white;
   border-right: solid 1px $gray-lighter;
   height: 100%;
+  padding-top: $toolbar-height;
   position: fixed;
   overflow: auto;
   transition: transform $basic-speed cubic-bezier(0.25, 0.8, 0.25, 1);
+  top: 0;
   width: $sidebar-width;
 
   .collapsed & {
