@@ -3,6 +3,8 @@ package com.dotmarketing.quartz.job;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.util.Date;
 import java.util.List;
 
@@ -17,6 +19,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -25,6 +28,7 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
 public class DeleteFieldJobTest extends IntegrationTestBase {
@@ -258,8 +262,18 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
 			contentlet = contentletAPI.checkin(contentlet, systemUser, true);
 
 			// Delete fields
-			TestJobExecutor.execute(instance,
-					CollectionsUtils.map("structure", contentType, "field", textAreaField, "user", systemUser));
+			//TestJobExecutor.execute(instance, CollectionsUtils.map("structure", contentType, "field", textAreaField, "user", systemUser));
+			Connection conn = DbConnectionFactory.getConnection();
+			Logger.info(this, "================================");
+			Logger.info(this, "======== Manual Update =========");
+			Logger.info(this, "================================");
+			String updateQuery = "UPDATE contentlet SET text_area1 = '' WHERE inode = ?";
+			String inode = textAreaField.getInode();
+			Logger.info(this, "-> query = [" + updateQuery + "]");
+			Logger.info(this, "-> field inode = [" + inode + "]");
+			PreparedStatement ps = conn.prepareStatement(updateQuery);
+			ps.setString(1, inode);
+			ps.executeUpdate();
 
 			// Validate we deleted those fields properly
 			stFromDB = CacheLocator.getContentTypeCache().getStructureByName(contentTypeName);
