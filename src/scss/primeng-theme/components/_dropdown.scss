@@ -50,6 +50,7 @@
     .ui-dropdown-label {
         border: 0;
         line-height: $field-height;
+        padding-right: $field-height + $basic-padding;
     }
 }
 

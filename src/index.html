@@ -1,34 +1,34 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <base href="/build/">
-  <meta charset="UTF-8">
-  <title>dotCMS Content Management Platform</title>
+    <base href="/build/">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>dotCMS Content Management Platform</title>
 
-  <link rel="stylesheet" type="text/css" href="scss/main.css" />
+    <link rel="stylesheet" type="text/css" href="scss/main.css" />
 
-  <!-- 1. Load libraries -->
-  <!-- Polyfill(s) for older browsers -->
-  <!-- build:ng thirdparty/lib.js -->
-  <script src="../node_modules/core-js/client/shim.min.js"></script>
-  <script src="../node_modules/reflect-metadata/Reflect.js"></script>
-  <script src="../node_modules/systemjs/dist/system.src.js"></script>
-  <script src="../node_modules/zone.js/dist/zone.min.js"></script>
-  <!-- endbuild -->
+    <!-- 1. Load libraries -->
+    <!-- Polyfill(s) for older browsers -->
+    <!-- build:ng thirdparty/lib.js -->
+    <script src="../node_modules/core-js/client/shim.min.js"></script>
+    <script src="../node_modules/reflect-metadata/Reflect.js"></script>
+    <script src="../node_modules/systemjs/dist/system.src.js"></script>
+    <script src="../node_modules/zone.js/dist/zone.min.js"></script>
+    <!-- endbuild -->
 
-  <!-- 2. Configure SystemJS -->
-  <script src="systemjs.config.js"></script>
-  <script>
+    <!-- 2. Configure SystemJS -->
+    <script src="systemjs.config.js"></script>
+    <script>
     System.import('view/main.js')
-            .catch(function(err) {
-                console.error("Error on Init app");
-                console.error('Name:', JSON.stringify(err.name));
-                console.error('Message:', JSON.stringify(err.message));
-                console.error(err);
-            });
-  </script>
+        .catch(function(err) {
+            console.error("Error on Init app");
+            console.error('Name:', JSON.stringify(err.name));
+            console.error('Message:', JSON.stringify(err.message));
+            console.error(err);
+        });
+    </script>
 </head>
-
 
 <body>
 <app>

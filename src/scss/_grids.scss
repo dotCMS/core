@@ -1,3 +1,12 @@
-@import "../../node_modules/bootstrap-sass/assets/stylesheets/bootstrap/variables";
+// Medium screen / desktop
+$container-desktop: (880px + $grid-gutter-width);
+$container-md: $container-desktop;
+
+// Large screen / wide desktop
+$container-large-desktop: (880px + $grid-gutter-width);
+$container-lg: $container-large-desktop;
+
 @import "../../node_modules/bootstrap-sass/assets/stylesheets/bootstrap/mixins";
 @import "../../node_modules/bootstrap-sass/assets/stylesheets/bootstrap/grid";
+@import "../../node_modules/bootstrap-sass/assets/stylesheets/bootstrap/responsive-utilities";
+
