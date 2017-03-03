@@ -1,9 +1,9 @@
 import {Injectable} from '@angular/core';
-import {Subject, Observable} from 'rxjs/Rx';
+import {BehaviorSubject, Observable} from 'rxjs/Rx';
 
 @Injectable()
 export class IframeOverlayService {
-    public $overlay: Subject<boolean> = new Subject<boolean>();
+    public $overlay: BehaviorSubject<boolean> = new BehaviorSubject<boolean>();
 
     constructor() {}
 
@@ -13,6 +13,10 @@ export class IframeOverlayService {
 
     hide(): void {
         this.$overlay.next(false);
+    }
+
+    toggle(): void {
+        this.$overlay.next(!this.$overlay.getValue());
     }
 
     get overlay(): Observable<boolean> {
