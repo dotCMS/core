@@ -211,18 +211,13 @@
     	if(_lastUrl!=newUrl){
 	    	_lastUrl=newUrl;
 	    	
-			var win = this.window;
-			
-			do {
-				listFrames(win);
-				win=win.parent;
-
-			}
-			while (win.frameMain == undefined && win.menuFrame==frameMenu && win != window.top);
+			var win = window.top.document.getElementById('detailFrame').contentDocument.getElementById("frameMain").contentWindow !=null 
+				? window.top.document.getElementById('detailFrame').contentDocument.getElementById("frameMain").contentWindow
+					: window.top.document.getElementById('detailFrame').contentDocument.getElementById("frameMain");
 	    	
 			console.log("name3:" + win.name);
 
-   			win.frameMain.location  = newUrl;
+   			win.location  = newUrl;
    	 	}
     }
     

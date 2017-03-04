@@ -11,15 +11,14 @@
 ##  this matter
 ##
 
-
 <div class="dotContainerControls">
 	<div class="dotContainerControlsAnchor">
-		<a onmouseover="this.style.color='#6986ba';" onmouseout="this.style.color='#777';" href="javascript: ;" onclick="javascript:window.top.detailFrame.contentWindow.showHideMenu('$CONTAINER_INODE', event, this);" id="controlAnchor$CONTAINER_INODE">
+		<a onmouseover="this.style.color='#6986ba';" onmouseout="this.style.color='#777';" href="javascript: ;" onclick="javascript:window.top.document.getElementById('detailFrame').contentWindow.showHideMenu('$CONTAINER_INODE', event, this);" id="controlAnchor$CONTAINER_INODE">
 			$languagewebapi.getFromUserLanguage("modes.Add-Content")
 		</a>
 	</div>
 	<div class="dotContainerNotesAnchor">
-		<a href="javascript: ;" id="containerNotes${CONTAINER_INODE}" onclick="window.top.detailFrame.contentWindow.showHideMenu('notes-${CONTAINER_INODE}', event, this);">
+		<a href="javascript: ;" id="containerNotes${CONTAINER_INODE}" onclick="window.top.document.getElementById('detailFrame').contentWindow.showHideMenu('notes-${CONTAINER_INODE}', event, this);">
 			<img src="/html/images/preview/btn_container_note.gif" alt='$languagewebapi.getFromUserLanguage.get("modes.Container-Notes")' width="27" height="24" border="0">
 		</a>
 	</div>
@@ -33,9 +32,9 @@
 			#if($ADD_CONTENT_PERMISSION)
 				'<span class="dotNewContent"><a href="javascript:addContentlet(\'$CONTAINER_INODE\');">$languagewebapi.getFromUserLanguage("modes.New-Content")</a></span>\n'+
 			#end
-			'<span class="dotReuseContent"><a href="javascript:window.top.detailFrame.contentWindow.popContentletsBrowser(\'$CONTAINER_INODE\');">$languagewebapi.getFromUserLanguage("modes.Reuse-Content")</a></span>\n'+
-			'<span class="dotAddWidget"><a href="javascript:window.top.detailFrame.contentWindow.openAddWidget(\'${CONTAINER_INODE}\')">$languagewebapi.getFromUserLanguage("modes.Add-Widget")</a></span>\n'+
-			'<span class="dotAddForm"><a href="javascript:window.top.detailFrame.contentWindow.openAddForm(\'${CONTAINER_INODE}\');">$languagewebapi.getFromUserLanguage("modes.Add-Form")</a></span>\n'+
+			'<span class="dotReuseContent"><a href="javascript:window.top.document.getElementById(\'detailFrame\').contentWindow.popContentletsBrowser(\'$CONTAINER_INODE\');">$languagewebapi.getFromUserLanguage("modes.Reuse-Content")</a></span>\n'+
+			'<span class="dotAddWidget"><a href="javascript:window.top.document.getElementById(\'detailFrame\').contentWindow.openAddWidget(\'${CONTAINER_INODE}\')">$languagewebapi.getFromUserLanguage("modes.Add-Widget")</a></span>\n'+
+			'<span class="dotAddForm"><a href="javascript:window.top.document.getElementById(\'detailFrame\').contentWindow.openAddForm(\'${CONTAINER_INODE}\');">$languagewebapi.getFromUserLanguage("modes.Add-Form")</a></span>\n'+
 		#else
 			'<span class="dotNewContentDisabled">$languagewebapi.getFromUserLanguage("modes.New-Content")</span>\n'+
 			'<span class="dotReuseContentDisabled">$languagewebapi.getFromUserLanguage("modes.Reuse-Content")</span>\n'+
@@ -43,7 +42,7 @@
 			'<span class="dotAddFormDisabled">$languagewebapi.getFromUserLanguage("modes.Add-Form")</span>\n'+
 		#end
 
-		'<span class="dotControlsClose"><a href="javascript:window.top.detailFrame.contentWindow.showHideMenu(\'$CONTAINER_INODE\');">$languagewebapi.getFromUserLanguage("modes.Close")</a></span>\n'+
+		'<span class="dotControlsClose"><a href="javascript:window.top.document.getElementById(\'detailFrame\').contentWindow.showHideMenu(\'$CONTAINER_INODE\');">$languagewebapi.getFromUserLanguage("modes.Close")</a></span>\n'+
 
 	'</div>\n' + 
 	
@@ -58,16 +57,17 @@
 			'</div>\n' +
 			'<div class="dotNoteBoxButtons">\n' +
 
-				'<a href="javascript:window.top.detailFrame.contentWindow.showHideMenu(\'notes-${CONTAINER_INODE}\'); } else {parent.showHideMenu(\'notes-${CONTAINER_INODE}\');}" class="dotNoteClose">$languagewebapi.getFromUserLanguage("modes.Close")</a>\n' +
+				'<a href="javascript:window.top.document.getElementById(\'detailFrame\').contentWindow.showHideMenu(\'notes-${CONTAINER_INODE}\');" class="dotNoteClose">$languagewebapi.getFromUserLanguage("modes.Close")</a>\n' +
 
 				#if($EDIT_CONTAINER_PERMISSION)
-					'<a href="javascript:editContainer(\'$CONTAINER_INODE\');" class="dotNoteEdit">$languagewebapi.getFromUserLanguage("modes.Edit")</a>\n' +
+					'<a href="javascript:window.top.document.getElementById(\'detailFrame\').contentWindow.editContainer(\'$CONTAINER_INODE\');" class="dotNoteEdit">$languagewebapi.getFromUserLanguage("modes.Edit")</a>\n' +
 				#end
 			'</div>\n' +
 	'</div>\n';
 
-
-	window.top.document.getElementById('detailFrame').contentDocument.getElementById("controlsdiv").innerHTML = parent.dojo.global.controlsHTML;//DOTCMS-6329
+	if(parent.dojo.global.controlsHTML!= undefined){
+		window.top.document.getElementById('detailFrame').contentDocument.getElementById("controlsdiv").innerHTML = parent.dojo.global.controlsHTML;//DOTCMS-6329
+	}
 
 
 </script>

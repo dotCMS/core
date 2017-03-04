@@ -7,6 +7,7 @@
 
 ##if have been loaded in the mainFrame
 #set($inframe=$request.getHeader("Referer"))
+
 #if($!inframe && ($inframe.contains("mainFrame=") || $inframe.contains("leftMenu=")))
 	<html>
 		<head>
@@ -43,7 +44,7 @@
 					window.top.detailFrame.location = url;
 				}
 				else{
-					console.log("2:" + url);
+					console.log("3:" + url);
 					url = encodeURIComponent(url);
 					window.top.location="/dotAdmin/#/c/site-browser?url=" + url ;
 				}
@@ -76,6 +77,35 @@
 	               isDebug: false,
 	               modulePaths: { dotcms: "/html/js/dotcms", dwr: '/dwr' }
 	       };
+	       	
+			function updateQueryStringParameter(uri, key, value) {
+				  var re = new RegExp("([?&])" + key + "=.*?(&|#|$)", "i");
+				  if (uri.match(re)) {
+				    return uri.replace(re, '$1' + key + "=" + value + '$2');
+				  } else {
+				    var hash =  '';
+				    if( uri.indexOf('#') !== -1 ){
+				        hash = uri.replace(/.*#/, '#');
+				        uri = uri.replace(/#.*/, '');
+				    }
+				    var separator = uri.indexOf('?') !== -1 ? "&" : "?";    
+				    return uri + separator + key + "=" + value + hash;
+				  }
+				}
+			
+
+				
+				
+
+				var url = "${_baseURI}?$!{queryString}";
+				url = updateQueryStringParameter(url, "ranId", Math.random() + "" )
+				url = encodeURIComponent(url);
+
+				if(window.self == window.top){
+					window.top.location="/dotAdmin/#/c/site-browser?url=" + url ;
+				}
+				window.top.history.pushState("", "Title", "/dotAdmin/#/c/site-browser?url=" + url);
+	       	
 	   	</script>
 		<script type="text/javascript" src="${dojoPath}/dojo/dojo.js"></script>
 		<script type="text/javascript" src="${dojoPath}/dojo/dot-dojo.js"></script>
@@ -112,7 +142,7 @@
 			</tr>
 		</table>
 		<div style="display:none;" class="dotClear">
-			#parse ("static/preview_mode/preview_mode_controls.vl")
+			#parse ("static/preview_mode/preview_mode_controls.vtl")
 			#parse("static/preview_mode/widget_selector.vtl")
 			#parse("static/preview_mode/form_selector.vtl")
 		</div>
