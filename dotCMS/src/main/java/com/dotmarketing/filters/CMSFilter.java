@@ -116,7 +116,11 @@ public class CMSFilter implements Filter {
 		// get the users language
 		long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 
-		if (urlUtil.isVanityUrl(uri, host)) {
+
+
+		if (urlUtil.isFileAsset(uri, host, languageId)) {
+			iAm= IAm.FILE;
+		} else if (urlUtil.isVanityUrl(uri, host)) {
 			iAm = IAm.VANITY_URL;
 		} else if (urlUtil.isPageAsset(uri, host, languageId)) {
 			iAm = IAm.PAGE;
@@ -148,7 +152,9 @@ public class CMSFilter implements Filter {
 						queryString= arr[1];
 					}
 				}
-				if (urlUtil.isPageAsset(rewrite, host, languageId)) {
+				if (urlUtil.isFileAsset(rewrite, host, languageId)) {
+					iAm= IAm.FILE;
+				} else if (urlUtil.isPageAsset(rewrite, host, languageId)) {
 					iAm = IAm.PAGE;
 				} else if (urlUtil.isFolder(rewrite, host)) {
 					iAm = IAm.FOLDER;
