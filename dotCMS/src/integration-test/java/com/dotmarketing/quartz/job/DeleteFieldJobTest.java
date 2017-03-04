@@ -312,7 +312,7 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
 			
 			conn = DbConnectionFactory.getConnection();
 
-			try (PreparedStatement ps2 = conn.prepareCall(queries.getUpdate())) {
+			try (PreparedStatement ps2 = conn.prepareStatement(queries.getUpdate())) {
 				final int BATCH_SIZE = 200;
 				int i = 1;
 				for (String contentInode : contentInodes) {
