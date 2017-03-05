@@ -324,7 +324,7 @@
 				<div class="fieldValue">
 					<div id="textEditorArea" style="height:100%;">
 						<div id="aceEditorArea" class="show aceText"></div>
-						<html:textarea onkeydown="return catchTab(this,event)" style="display:none;"  styleClass="aceText" property="body" styleId="bodyField"></html:textarea>
+						<html:textarea onkeydown="return catchTab(this,event)" style="display:none;"  styleClass="aceText aceTextTemplate" property="body" styleId="bodyField"></html:textarea>
 					</div>
 					<div class="editor-toolbar">
 						<div class="checkbox">
@@ -351,7 +351,7 @@
 			editor = ace.edit('aceEditorArea');
 			editor.setTheme("ace/theme/textmate");
 			editor.getSession().setMode("ace/mode/velocity");
-			editor.setAutoScrollEditorIntoView(true);
+			editor.setAutoScrollEditorIntoView(false);
 			editor.setValue(document.getElementById('bodyField').value);
 			editor.clearSelection();
 
