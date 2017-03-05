@@ -323,7 +323,7 @@
 				<div class="fieldName"></div>
 				<div class="fieldValue">
 					<div id="textEditorArea" style="height:100%;">
-						<div id="aceEditorArea" class="show aceText"></div>
+						<div id="aceEditorArea" class="show aceText aceTextTemplate"></div>
 						<html:textarea onkeydown="return catchTab(this,event)" style="display:none;"  styleClass="aceText aceTextTemplate" property="body" styleId="bodyField"></html:textarea>
 					</div>
 					<div class="editor-toolbar">
