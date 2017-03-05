@@ -285,12 +285,19 @@
 
 	var currentMenu;
 	function showHideMenu(x, evt, sender){
-		var iframe =  document.getElementById("frameMain");
-	   	if(iframe.contentDocument.getElementById("previewDeviceIframe") != undefined){
-	   		iframe=iframe.contentDocument.getElementById("previewDeviceIframe");
+		var frameMain =  document.getElementById("frameMain");
+		var iframe =  frameMain;
+		
+
+		var left = dojo.coords(frameMain).x;
+		var top = dojo.coords(frameMain).y;
+	   	if(frameMain.contentDocument.getElementById("previewDeviceIframe") != undefined){
+	   		iframe = frameMain.contentDocument.getElementById("previewDeviceIframe");
+	   		left += dojo.coords(iframe).x;
+	   		top += dojo.coords(iframe).y;
 	   	}
-	   	
-	   	
+
+
 
 		var ele = dojo.byId("control-" + x);
 		
@@ -307,13 +314,13 @@
 
 
 		var senderCoords = dojo.coords (sender);
-		var iframeCoords = dojo.coords (iframe);
-		var windowDim = dojo.marginBox(iframe);
+		var windowDim = dojo.marginBox(frameMain);
+
 		var menuDim = dojo.marginBox(ele);
 
 		//Repositioning it to the mouse position
-		var posx = senderCoords.x + iframeCoords.x;
-		var posy = senderCoords.y + senderCoords.h + iframeCoords.y;
+		var posx = senderCoords.x + left;
+		var posy = senderCoords.y + senderCoords.h + top;
 		if(posx + menuDim.w > windowDim.w - 5) posx = windowDim.w - 5 - menuDim.w;
 
 
