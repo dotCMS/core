@@ -16,6 +16,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -25,6 +26,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 
+import eu.bitwalker.useragentutils.Browser;
 import eu.bitwalker.useragentutils.UserAgent;
 
 /**
@@ -215,7 +217,7 @@ public class TimeMachineFilter implements Filter {
 	/**
 	 * Takes the contents of the file in the bundle and serves them back to the
 	 * user in the Time Machine portlet. Keep in mind that different browsers
-	 * require specific MIME types to render a page instead of serving it for
+	 * require specific MIME types to render a page instead of sending it for
 	 * download. This might also change in time.
 	 *
 	 * @param file
@@ -229,18 +231,16 @@ public class TimeMachineFilter implements Filter {
 		final HttpServletResponse resp = (HttpServletResponse) response;
 		String mimeType = APILocator.getFileAssetAPI().getMimeType(file.getName());
 		if (mimeType == null) {
-			mimeType = "application/octet-stream";
+			mimeType = MediaType.APPLICATION_OCTET_STREAM;
 		}
-		// if the file is an index page be sure to render correctly as html and not
-		// send it as a file
-		if(file.getName().equals(CMSFilter.CMS_INDEX_PAGE)){
+		if (mimeType.equalsIgnoreCase("unknown")) {
 			String userAgentInfo = ((HttpServletRequest) request).getHeader("User-Agent");
 			UserAgent agent = UserAgent.parseUserAgentString(userAgentInfo);
 			String browserName = agent.getBrowser() != null ? agent.getBrowser().getName() : "";
-			if (browserName.contains("Microsoft Edge")) {
-				mimeType = "application/octet-stream";
-			} else {
-				mimeType = "unknown";
+			// For Microsoft Edge, all pages MIME type must be set to 
+			// application/octet-stream 
+			if (browserName.contains(Browser.EDGE.getName())) {
+				mimeType = MediaType.APPLICATION_OCTET_STREAM;
 			}
 		}
 		resp.setContentType(mimeType);
