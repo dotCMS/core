@@ -258,16 +258,19 @@ function showTagsForSearch(result) {
 	if (result.length > 0) {
 		var tags = "";
 		var personasTags = "";
-		result.each(function(tag) {
-			var tagName = tag.tagName;
-			tagName = RTrim(tagName);
-			tagName = LTrim(tagName);
-			if (tag.persona) {
-				personasTags += "<a href=\"#\" class=\"persona\" onClick=\"useThisTagForSearch(event)\"><span class=\"personaIcon\"></span>" + tagName + "</a>";
-			} else {
-				tags += "<a href=\"#\" onClick=\"useThisTagForSearch(event)\"><span class=\"tagIcon\"></span>" + tagName + "</a>";
-			}
-		});
+        let tag = null;
+        for (let i = 0; i < result.length; ++i) {
+            tag = result[i];
+            var tagName = tag.tagName;
+            tagName = RTrim(tagName);
+            tagName = LTrim(tagName);
+            if (tag.persona) {
+                personasTags += "<a href=\"#\" class=\"persona\" onClick=\"useThisTagForSearch(event)\"><span class=\"personaIcon\"></span>" + tagName + "</a>";
+            } else {
+                tags += "<a href=\"#\" onClick=\"useThisTagForSearch(event)\"><span class=\"tagIcon\"></span>" + tagName + "</a>";
+            }
+
+        }
 
 		if (tagVelocityVarName) {
 			var tagDiv = document.getElementById(suggestedDiv);
