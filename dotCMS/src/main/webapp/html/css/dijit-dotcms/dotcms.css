@@ -3296,8 +3296,18 @@ html, body {
 }
 
 .dijitButton .dijitButtonNode,
+.dijitToggleButton .dijitButtonNode,
+.dijitComboButton .dijitButtonNode {
+  border: none;
+}
+
+.dijitButton .dijitButtonNode,
 .dijitToggleButton .dijitButtonNode {
-  padding: 0 16px;
+  padding-left: 16px;
+}
+
+.dijitComboButton .dijitStretch {
+  padding-left: 16px;
 }
 
 .dijitButton,
@@ -3306,6 +3316,11 @@ html, body {
 .dijitDropDownButton,
 .dijitToggleButton {
   margin: 0;
+}
+
+.dijitButton,
+.dijitToggleButton {
+  padding-right: 16px;
 }
 
 .dijitButton .dijitButtonText,
@@ -3348,6 +3363,7 @@ html, body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
 }
 .dijitDropDownButton .dijitButtonNode {
+  border: none;
   padding-left: 16px;
 }
 .dijitDropDownButton .dijitArrowButtonInner {
@@ -3462,12 +3478,6 @@ html, body {
   content: "";
   height: 0;
   width: 0;
-}
-.dijitComboButton .dijitButtonNode {
-  padding-left: 16px;
-}
-.dijitComboButton .dijitButtonNode.dijitDownArrowButton {
-  padding-left: 0;
 }
 .dijitComboButtonHover {
   background-color: #FAFAFA;
@@ -6007,9 +6017,6 @@ select[multiple]:hover {
   font-size: 13px;
   margin: 0 auto 16px auto;
   width: 100%;
-}
-#listing-table p:last-child, .dojoxUploaderFileListTable p:last-child, .listingTable p:last-child {
-  margin-bottom: 0;
 }
 #listing-table tr, .dojoxUploaderFileListTable tr, .listingTable tr {
   transition: background-color 0.1s;
@@ -8736,10 +8743,6 @@ Styles for commons fields along the backend
   margin-right: 8px;
   white-space: nowrap;
 }
-#inline-form > label, .fileSelectorControls > label, .inline-form > label {
-  line-height: 32px;
-  align-self: baseline;
-}
 #inline-form > .checkbox, .fileSelectorControls > .checkbox, .inline-form > .checkbox, #inline-form > .radio, .fileSelectorControls > .radio, .inline-form > .radio {
   margin-right: 16px;
 }
@@ -8907,8 +8910,7 @@ dd .buttonCaption {
   height: 90px;
   margin-top: 8px;
   padding: 8px;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: auto;
 }
 
 .who-can-use__list td {
@@ -9317,21 +9319,18 @@ a.category_higlighted, a.tag_higlighted {
 
 .aceText {
   border: 1px solid #C5C5C5;
-  max-height: 600px;
   max-width: 900px;
   width: 100%;
-  height:100%;
+  height: 100%;
   min-height: 200px;
   text-overflow: clip;
   white-space: nowrap;
-  width: 100%;
   font-family: Monaco,Menlo,sans-serif;
   font-size: 12px;
 }
 
-.aceTextTemplate, 
-.aceTall{
-	height:600px;
+.aceTextTemplate, .aceTall {
+  height: 600px;
 }
 
 .widgetAceText {
