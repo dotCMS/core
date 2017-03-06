@@ -9329,9 +9329,9 @@ a.category_higlighted, a.tag_higlighted {
   font-size: 12px;
 }
 
-.aceTextTemplate{
+.aceTextTemplate, 
+.aceTall{
 	height:600px;
-	
 }
 
 .widgetAceText {
