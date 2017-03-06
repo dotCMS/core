@@ -103,8 +103,8 @@
 				form.admin_l2.options[i].selected = true;
 			}
 		}
-		form.<portlet:namespace />cmd.value = '<%=Constants.ADD%>';
-		form.<portlet:namespace />subcmd.value = subcmd;
+		form.cmd.value = '<%=Constants.ADD%>';
+		form.subcmd.value = subcmd;
 		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/templates/edit_template" /></portlet:actionURL>';
 		submitForm(form);
 	}
@@ -255,10 +255,10 @@
 <liferay:param name="box_title" value="<%= LanguageUtil.get(pageContext, \"edit-template\") %>" />
 
 	<html:form action='/ext/templates/edit_template' styleId="fm">
-	<input name="<portlet:namespace /><%= Constants.CMD %>" type="hidden" value="add">
-	<input name="<portlet:namespace />referer" type="hidden" value="<%=referer%>">
-	<input name="<portlet:namespace />inode" type="hidden" value="<%=template.getInode()%>">
-	<input name="<portlet:namespace />subcmd" type="hidden" value="">
+	<input name="<%= Constants.CMD %>" type="hidden" value="add">
+	<input name="referer" type="hidden" value="<%=referer%>">
+	<input name="inode" type="hidden" value="<%=template.getInode()%>">
+	<input name="subcmd" type="hidden" value="">
 	<input name="userId" type="hidden" value="<%= user.getUserId() %>">
 	<input name="admin_l_list" type="hidden" value="">
 
@@ -323,8 +323,8 @@
 				<div class="fieldName"></div>
 				<div class="fieldValue">
 					<div id="textEditorArea" style="height:100%;">
-						<div id="aceEditorArea" class="show aceText"></div>
-						<html:textarea onkeydown="return catchTab(this,event)" style="display:none;"  styleClass="aceText" property="body" styleId="bodyField"></html:textarea>
+						<div id="aceEditorArea" class="show aceText aceTextTemplate"></div>
+						<html:textarea onkeydown="return catchTab(this,event)" style="display:none;"  styleClass="aceText aceTextTemplate" property="body" styleId="bodyField"></html:textarea>
 					</div>
 					<div class="editor-toolbar">
 						<div class="checkbox">
@@ -351,7 +351,7 @@
 			editor = ace.edit('aceEditorArea');
 			editor.setTheme("ace/theme/textmate");
 			editor.getSession().setMode("ace/mode/velocity");
-			editor.setAutoScrollEditorIntoView(true);
+			editor.setAutoScrollEditorIntoView(false);
 			editor.setValue(document.getElementById('bodyField').value);
 			editor.clearSelection();
 

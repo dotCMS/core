@@ -5,8 +5,7 @@
 		#set($referer =	"$request.getAttribute('com.dotmarketing.clickstream.uri.override')?")
 	#end
 #end
-#set($isAngularFrame = $UtilMethods.isSet("$!request.getSession().getAttribute('in_frame')"))
-#set($angularFrame = "$!request.getSession().getAttribute('frame')")
+
 
 <script type='text/javascript' src='/html/js/messages.js'></script>
 <script type="text/javascript" src="/dwr/engine.js"></script>
@@ -45,7 +44,14 @@
 	var _dotWidgetSearchString = "";
 	var _inodeCounter = 0;
 	var pushHandler = null;
+	
+	
+	
 
+
+    
+    
+    
 	function remotePublish(){
     	dojo.require("dotcms.dojo.push.PushHandler");
     	pushHandler = new dotcms.dojo.push.PushHandler('$languagewebapi.getFromUserLanguage("Remote-Publish")');
@@ -279,9 +285,22 @@
 
 	var currentMenu;
 	function showHideMenu(x, evt, sender){
+		var frameMain =  document.getElementById("frameMain");
+		var iframe =  frameMain;
+		
+
+		var left = dojo.coords(frameMain).x;
+		var top = dojo.coords(frameMain).y;
+	   	if(frameMain.contentDocument.getElementById("previewDeviceIframe") != undefined){
+	   		iframe = frameMain.contentDocument.getElementById("previewDeviceIframe");
+	   		left += dojo.coords(iframe).x;
+	   		top += dojo.coords(iframe).y;
+	   	}
+
+
 
 		var ele = dojo.byId("control-" + x);
-
+		
 		//Displaying the control
 		if(dojo.style(ele, 'display') == "none") {
 			hideCurrentMenu();
@@ -293,15 +312,17 @@
 			return;
 		}
 
-		var menuFrameDim = dojo.marginBox('frameMenu');
+
 		var senderCoords = dojo.coords (sender);
-		var windowDim = dojo.marginBox(dojo.body());
+		var windowDim = dojo.marginBox(frameMain);
+
 		var menuDim = dojo.marginBox(ele);
 
 		//Repositioning it to the mouse position
-		var posx = senderCoords.x;
+		var posx = senderCoords.x + left;
+		var posy = senderCoords.y + senderCoords.h + top;
 		if(posx + menuDim.w > windowDim.w - 5) posx = windowDim.w - 5 - menuDim.w;
-		var posy = senderCoords.y + senderCoords.h;
+
 
 		dojo.style(ele, { position: 'absolute', top: posy+'px', left: posx+'px' })
 
@@ -315,32 +336,6 @@
 	}
 	dojo.connect(window, 'onresize', this, hideCurrentMenu);
 
-	function backToCMS(){
-		#if(${isAngularFrame})
-		if(window.top.${angularFrame}.src !== undefined){
-        	window.top.${angularFrame}.src = "${viewBrowserURL}";
-        }else{
-        	window.top.${angularFrame}.location = "${viewBrowserURL}";
-        }
-	    #else
-	    window.location  = "${viewFoldersURL}";
-		#end
-	}
-
-	function livePage(){
-		#if(${isAngularFrame})
-	    window.top.${angularFrame}.src  = "${VTLSERVLET_URI}?livePage=1";
-		#else
-		window.location  = "${VTLSERVLET_URI}?livePage=1";
-		#end
-	}
-	function previewPage(){
-		#if(${isAngularFrame})
-	    window.top.${angularFrame}.src  = "${VTLSERVLET_URI}?previewPage=1";
-		#else
-		window.location  = "${VTLSERVLET_URI}?previewPage=1";
-		#end
-	}
 
 	function popBrowser(x){
 	 	document.getElementById('container').value=x;
@@ -390,46 +385,44 @@
 
 	function submitParent(){
 		if(newwin) newwin.close();
-		form = document.getElementById('submitParent');
+		form = document.getElementById('submitParent');{
 	        form.cmd.value="addChild";
-		form.submit();
+	    }
+		programaticallyPost()
 	}
 
 	function addPage(){
 	 	document.getElementById('htmlPage').value='0';
         document.getElementById('cmd').value="newHTMLPage";
         document.getElementById('HTMLPageType').value="${HTMLPAGE_ASSET_STRUCTURE_TYPE}";
-        document.getElementById('submitParent').submit();
+        programaticallyPost();
 	}
 
 	function editPage(){
 		form = document.getElementById('submitParent');
 	        form.cmd.value="editHTMLPage";
-	        form.submit();
+	        programaticallyPost();
 	}
 
 	function publishAll(){
 		if(confirm('$languagewebapi.getFromUserLanguage("modes.Are-you-sure-you-would-like-to-publish-this-page")')){
 		form = document.getElementById('submitParent');
 	        form.cmd.value="publishHTMLPage";
-	        #if($isAngularFrame)
-	        document.getElementById('submitParent').target="_parent";
-            #end
-	        form.submit();
+	       programaticallyPost();
 		}
 	}
 
 	function editTemplate(){
 		form = document.getElementById('submitParent');
 	        form.cmd.value="editTemplate";
-	        form.submit();
+	        programaticallyPost();
 
 	}
 
 	function makeHomePage(){
 		form = document.getElementById('submitParent');
 	        form.cmd.value="makeHomePage";
-	        form.submit();
+	        programaticallyPost();
 
 	}
 
@@ -439,7 +432,7 @@
 	 		document.getElementById('contentlet').value=y;
 			form = document.getElementById('submitParent');
 			form.cmd.value="removeChild";
-			form.submit();
+			programaticallyPost();
 		}
 	}
 	
@@ -447,7 +440,7 @@
 	 	document.getElementById('selectedStructure').value=structureInode;
 		form = document.getElementById('submitParent');
 		form.cmd.value="newedit";
-		form.submit();
+		programaticallyPost();
 	}
 
 	require(["dijit/Dialog", "dojo/domReady!"], function(Dialog){
@@ -484,27 +477,27 @@
 	 	document.getElementById('selectedStructure').value=structure;
 		form = document.getElementById('submitParent');
 		form.cmd.value="newedit";
-		form.submit();
+		programaticallyPost();
 	}
 	function addNewForm(){
 	 	document.getElementById('contentlet').value=0;
 		form = document.getElementById('submitParent');
 		form.cmd.value="createForm";
-		form.submit();
+		programaticallyPost();
 	}
 
 	function dotAddWidgetToContainer(widgetInode){
 		document.getElementById('contentlet').value=widgetInode;
 		form = document.getElementById('submitParent');
 	    form.cmd.value="addChild";
-		form.submit();
+		programaticallyPost();
 	}
 
 	function dotAddFormToContainer(formInode){
 		document.getElementById('contentlet').value=formInode;
 		form = document.getElementById('submitParent');
 	    form.cmd.value="addChild";
-		form.submit();
+		programaticallyPost();
 	}
 
 	function editContentlet(x,y){
@@ -515,14 +508,16 @@
 		#if($UtilMethods.isSet($request.getAttribute("com.dotmarketing.wiki.contentlet.url")))
 			document.getElementById('referer').value="$request.getAttribute('com.dotmarketing.wiki.contentlet.url')";
 		#end
-		form.submit();
+		
+
+		programaticallyPost();
 	}
 
 	function editEvent(x){
 	 	document.getElementById('event').value=x;
 		form = document.getElementById('submitParent');
         form.cmd.value="editEvent";
-        form.submit();
+        programaticallyPost();
 	}
 
 	function moveDown(x,y,z){
@@ -535,7 +530,7 @@
 		#if($UtilMethods.isSet($request.getAttribute("com.dotmarketing.wiki.contentlet.url")))
 			document.getElementById('referer').value="$request.getAttribute('com.dotmarketing.wiki.contentlet.url')";
 		#end
-        form.submit();
+        programaticallyPost();
 	}
 
 	function moveUp(x,y,z){
@@ -549,7 +544,7 @@
 		#if($UtilMethods.isSet($request.getAttribute("com.dotmarketing.wiki.contentlet.url")))
 			document.getElementById('referer').value="$request.getAttribute('com.dotmarketing.wiki.contentlet.url')";
 		#end
-        form.submit();
+        programaticallyPost();
 
 	}
 
@@ -557,21 +552,21 @@
 	 	document.getElementById('container').value=x;
 		form = document.getElementById('submitParent');
         form.cmd.value="editContainer";
-        form.submit();
+        programaticallyPost();
 	}
 
 	function editFile(x){
 	 	document.getElementById('file').value=x;
 		form = document.getElementById('submitParent');
         form.cmd.value="editFile";
-        form.submit();
+        programaticallyPost();
 	}
 
 	function submitMenu(formName) {
 		form = document.getElementById(formName);
 		formsubmitParent = document.getElementById("submitParent");
 		form.referer.value = formsubmitParent.referer.value;
-		form.submit();
+		programaticallyPost();
 	}
 
 	function addContentletChapter(x){
@@ -582,7 +577,7 @@
 	 	form = document.getElementById('submitParent');
 		form.cmd.value="newedit";
 		form.selectedStructure.value=x;
-		form.submit();
+		programaticallyPost();
 	}
 
 	function getPosition(who){
@@ -610,7 +605,10 @@
             };
         }
 
-		var iframe = window.frames[0];
+	   	var iframe =  window.frames[0];
+	   	if(iframe.previewDeviceIframe != undefined){
+	   		iframe=iframe.previewDeviceIframe;
+	   	}
 	    dojo.setContext(iframe.window, iframe.window.document);
 
 		// get editable area
@@ -653,11 +651,20 @@
 	}
 
 
-
+	var showMeTest = false;
 
 	function _dotChangeEditContentEditControl(inode, fieldVar){
 
-	   	var iframe = window.frames[0];
+	   	var iframe =  window.frames[0];
+	   	if(iframe.previewDeviceIframe != undefined){
+	   		iframe=iframe.previewDeviceIframe;
+	   	}
+
+
+		console.log("iframe.name:" + window.name);
+	   	console.log("iframe.name:" + iframe.name);
+
+	    
 	    dojo.setContext(iframe.window, iframe.window.document);
 
 		// editable area
@@ -737,7 +744,10 @@
 	function _dotSaveDraftContentViaAjax(inode){
 	    var contentData = [];
 	    var separator = 'com.dotmarketing.contentlet.form_name_value_separator';
-	    var iframe = window.frames[0];
+	   	var iframe =  window.frames[0];
+	   	if(iframe.previewDeviceIframe != undefined){
+	   		iframe=iframe.previewDeviceIframe;
+	   	}
    		dojo.setContext(iframe.window, iframe.window.document);
    		var els = dojo.query(".dotContentletInline" + inode);
 	    for (i = 0; i< els.length; i++) {
@@ -774,8 +784,14 @@
 	   }
 	   var editVar = "edit-"+data.contentletInode;
 	   var inlineVar = "inline-"+data.contentletInode;
-	   dojo.setContext(window.frames[0].window, window.frames[0].window.document);
-	   dojo.destroy(dojo.byId(inlineVar));
+	   
+	   
+	    var iframe =  window.frames[0];
+	   	if(iframe.previewDeviceIframe != undefined){
+	   		iframe=iframe.previewDeviceIframe;
+	   	}
+   		dojo.setContext(iframe.window, iframe.window.document);
+	    dojo.destroy(dojo.byId(inlineVar));
 
 		// Only modify varHTMLPage or varReferer when returned inode is a 
 		// HTML Page otherwise don't replace it.
@@ -1040,11 +1056,18 @@
     }
     
     
+    function programaticallyPost(){
+    	var postDoc = window.top.document.getElementById('detailFrame').contentDocument
+    	document.getElementById("submitParent").submit();
+    }
+    
+    
+    
 
 
 </script>
-<div style="display:none">
-    <form action="${directorURL}" id="submitParent" method="post">
+<div style="display:none" id="postItForm">
+    <form action="${directorURL}" id="submitParent" method="post" target="_self" style="display:none">   
         <input type="hidden" name="referer" id="referer" value="$referer">
         <input type="hidden" name="cmd" id="cmd" value="">
         <input type="hidden" name="container" id="container" value="">
@@ -1082,6 +1105,7 @@
 <script type="text/javascript">
 	dojo.addOnLoad(function () {
 		dojo.style(dijit.byId('savingContentDialog').closeButtonNode, 'visibility', 'hidden');
+
 	});
 </script>
 
@@ -1091,8 +1115,8 @@
 		<button dojoType="dijit.form.Button"  onClick="dijit.byId('saveContentErrors').hide()" type="button">$langbackendwebapi.get("close")</button>
 	</div>
 </div>
-<div id="contentletWfDialog" style="display: none;">
 
+<div id="contentletWfDialog" style="display: none;">
 </div>
 
 
@@ -1110,3 +1134,4 @@ $session.removeAttribute("duplicatedErrorMessage")
 	});
 </script>
 
+preview-mode-contorls

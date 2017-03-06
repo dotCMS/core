@@ -10,23 +10,21 @@
 ##  Also any css class reference included in your html code here needs to be carefully named check the comments on the preview.css file for instructions on
 ##  this matter
 ##
-#set($isAngularFrame = $UtilMethods.isSet("$!request.getSession().getAttribute('in_frame')"))
-#set($angularFrame = "$!request.getSession().getAttribute('frame')")
+
 <div class="dotContainerControls">
 	<div class="dotContainerControlsAnchor">
-		<a onmouseover="this.style.color='#6986ba';" onmouseout="this.style.color='#777';" href="javascript: ;" onclick="javascript:parent.showHideMenu('$CONTAINER_INODE', event, this);" id="controlAnchor$CONTAINER_INODE">
+		<a onmouseover="this.style.color='#6986ba';" onmouseout="this.style.color='#777';" href="javascript: ;" onclick="javascript:window.top.document.getElementById('detailFrame').contentWindow.showHideMenu('$CONTAINER_INODE', event, this);" id="controlAnchor$CONTAINER_INODE">
 			$languagewebapi.getFromUserLanguage("modes.Add-Content")
 		</a>
 	</div>
 	<div class="dotContainerNotesAnchor">
-		<a href="javascript: ;" id="containerNotes${CONTAINER_INODE}" onclick="javascript:parent.showHideMenu('notes-${CONTAINER_INODE}', event, this);">
+		<a href="javascript: ;" id="containerNotes${CONTAINER_INODE}" onclick="window.top.document.getElementById('detailFrame').contentWindow.showHideMenu('notes-${CONTAINER_INODE}', event, this);">
 			<img src="/html/images/preview/btn_container_note.gif" alt='$languagewebapi.getFromUserLanguage.get("modes.Container-Notes")' width="27" height="24" border="0">
 		</a>
 	</div>
 </div>
 
 <script type="text/javascript" language="javascript">
-
 	//Controls get written to the parent html document outside the client html code iframe
 	parent.dojo.global.controlsHTML +=
 	'<div style="display: none;" class="dotControls" id="control-${CONTAINER_INODE}">\n'+
@@ -34,24 +32,18 @@
 			#if($ADD_CONTENT_PERMISSION)
 				'<span class="dotNewContent"><a href="javascript:addContentlet(\'$CONTAINER_INODE\');">$languagewebapi.getFromUserLanguage("modes.New-Content")</a></span>\n'+
 			#end
-			'<span class="dotReuseContent"><a href="javascript:popContentletsBrowser(\'$CONTAINER_INODE\');">$languagewebapi.getFromUserLanguage("modes.Reuse-Content")</a></span>\n'+
-			#if($isAngularFrame)
-			'<span class="dotAddWidget"><a href="javascript:if(parent.${angularFrame}.contentWindow !== undefined){parent.${angularFrame}.contentWindow.openAddWidget(\'${CONTAINER_INODE}\');}else{ parent.${angularFrame}.openAddWidget(\'${CONTAINER_INODE}\');}">$languagewebapi.getFromUserLanguage("modes.Add-Widget")</a></span>\n'+
-			#else
-			'<span class="dotAddWidget"><a href="javascript:openAddWidget(\'${CONTAINER_INODE}\');">$languagewebapi.getFromUserLanguage("modes.Add-Widget")</a></span>\n'+
-			#end
-			'<span class="dotAddForm"><a href="javascript:openAddForm(\'${CONTAINER_INODE}\');">$languagewebapi.getFromUserLanguage("modes.Add-Form")</a></span>\n'+
+			'<span class="dotReuseContent"><a href="javascript:window.top.document.getElementById(\'detailFrame\').contentWindow.popContentletsBrowser(\'$CONTAINER_INODE\');">$languagewebapi.getFromUserLanguage("modes.Reuse-Content")</a></span>\n'+
+			'<span class="dotAddWidget"><a href="javascript:window.top.document.getElementById(\'detailFrame\').contentWindow.openAddWidget(\'${CONTAINER_INODE}\')">$languagewebapi.getFromUserLanguage("modes.Add-Widget")</a></span>\n'+
+			'<span class="dotAddForm"><a href="javascript:window.top.document.getElementById(\'detailFrame\').contentWindow.openAddForm(\'${CONTAINER_INODE}\');">$languagewebapi.getFromUserLanguage("modes.Add-Form")</a></span>\n'+
 		#else
 			'<span class="dotNewContentDisabled">$languagewebapi.getFromUserLanguage("modes.New-Content")</span>\n'+
 			'<span class="dotReuseContentDisabled">$languagewebapi.getFromUserLanguage("modes.Reuse-Content")</span>\n'+
 			'<span class="dotAddWidgetDisabled">$languagewebapi.getFromUserLanguage("modes.Add-Widget")</span>\n'+
 			'<span class="dotAddFormDisabled">$languagewebapi.getFromUserLanguage("modes.Add-Form")</span>\n'+
 		#end
-		#if($isAngularFrame)
-		'<span class="dotControlsClose"><a href="javascript:if(parent.${angularFrame}.contentWindow !== undefined){parent.${angularFrame}.contentWindow.showHideMenu(\'$CONTAINER_INODE\');}else{ parent.${angularFrame}.showHideMenu(\'$CONTAINER_INODE\');}">$languagewebapi.getFromUserLanguage("modes.Close")</a></span>\n'+
-		#else
-		'<span class="dotControlsClose"><a href="javascript:showHideMenu(\'$CONTAINER_INODE\');">$languagewebapi.getFromUserLanguage("modes.Close")</a></span>\n'+
-		#end
+
+		'<span class="dotControlsClose"><a href="javascript:window.top.document.getElementById(\'detailFrame\').contentWindow.showHideMenu(\'$CONTAINER_INODE\');">$languagewebapi.getFromUserLanguage("modes.Close")</a></span>\n'+
+
 	'</div>\n' + 
 	
 	'<div style="display: none;" class="dotNoteBox" id="control-notes-${CONTAINER_INODE}">\n' +            
@@ -64,18 +56,19 @@
           		#end
 			'</div>\n' +
 			'<div class="dotNoteBoxButtons">\n' +
-				#if($isAngularFrame)
-				'<a href="javascript:if(parent.${angularFrame}.contentWindow !== undefined){parent.${angularFrame}.contentWindow.showHideMenu(\'notes-${CONTAINER_INODE}\'); } else {parent.${angularFrame}.showHideMenu(\'notes-${CONTAINER_INODE}\');}" class="dotNoteClose">$languagewebapi.getFromUserLanguage("modes.Close")</a>\n' +
-				#else
-				'<a href="javascript:parent.showHideMenu(\'notes-${CONTAINER_INODE}\')" class="dotNoteClose">$languagewebapi.getFromUserLanguage("modes.Close")</a>\n' +
-				#end
+
+				'<a href="javascript:window.top.document.getElementById(\'detailFrame\').contentWindow.showHideMenu(\'notes-${CONTAINER_INODE}\');" class="dotNoteClose">$languagewebapi.getFromUserLanguage("modes.Close")</a>\n' +
+
 				#if($EDIT_CONTAINER_PERMISSION)
-					'<a href="javascript:editContainer(\'$CONTAINER_INODE\');" class="dotNoteEdit">$languagewebapi.getFromUserLanguage("modes.Edit")</a>\n' +
+					'<a href="javascript:window.top.document.getElementById(\'detailFrame\').contentWindow.editContainer(\'$CONTAINER_INODE\');" class="dotNoteEdit">$languagewebapi.getFromUserLanguage("modes.Edit")</a>\n' +
 				#end
 			'</div>\n' +
 	'</div>\n';
-	
-	parent.document.getElementById("controlsdiv").innerHTML = parent.dojo.global.controlsHTML;//DOTCMS-6329
+
+	if(parent.dojo.global.controlsHTML!= undefined){
+		window.top.document.getElementById('detailFrame').contentDocument.getElementById("controlsdiv").innerHTML = parent.dojo.global.controlsHTML;//DOTCMS-6329
+	}
+
 
 </script>
 
