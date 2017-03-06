@@ -52,6 +52,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.apache.struts.Globals;
 
 import com.dotmarketing.business.Role;
@@ -101,6 +102,8 @@ import com.liferay.util.servlet.UploadServletRequest;
 public class PortalUtil {
 
 	public static final String PUBLIC_PATH = "_public";
+    private static final String SEARCH_STRING = "-";
+    private static final String REPLACEMENT   = "_";
 
 	public static void clearRequestParameters(RenderRequest req) {
 
@@ -579,7 +582,10 @@ public class PortalUtil {
 	}
 
 	public static String getPortletNamespace(String portletName) {
-		return "_" + portletName + "_";
+        if (null != portletName) {
+            portletName = StringUtils.replace(portletName, SEARCH_STRING, REPLACEMENT);
+        }
+		return REPLACEMENT + portletName + REPLACEMENT;
 	}
 
 	public static PortletPreferencesPK getPortletPreferencesPK(

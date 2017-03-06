@@ -934,17 +934,26 @@ public class HostAPIImpl implements HostAPI {
     		dh.setParam(workingHostName+"/%");
     		resultList = dh.list();
     		for(Link link : resultList){
-    			String workingURL = link.getUrl();
-    			String newURL = updatedHostName+workingURL.substring(workingHostName.length());//gives url with updatedhostname
-    			link.setUrl(newURL);
-    			try {
-                    APILocator.getMenuLinkAPI().save(link, APILocator.getUserAPI().getSystemUser(), false);
-                } catch (DotSecurityException e) {
-                    throw new RuntimeException(e);
+    		    try {
+    		        //We need to ONLY update links that are INTERNALS and working/live.
+                    //https://github.com/dotCMS/core/issues/10609
+                    if ( Link.LinkType.INTERNAL.toString().equals(link.getLinkType() )
+                        && ( link.isLive() || link.isWorking() )){
+
+                        String workingURL = link.getUrl();
+                        String newURL = updatedHostName+workingURL.substring(workingHostName.length());//gives url with updatedhostname
+                        link.setUrl(newURL);
+                        try {
+                            APILocator.getMenuLinkAPI().save(link, APILocator.getUserAPI().getSystemUser(), false);
+                        } catch (DotSecurityException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                } catch (DotSecurityException e){
+    		        Logger.error(this, "Could not update Menu Link with inode" + link.getInode());
                 }
     		}
 		}
-
 	}
 
 	public List<Host> retrieveHostsPerTagStorage (String tagStorageId, User user) {
