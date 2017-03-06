@@ -100,29 +100,6 @@ public class WebAPI implements ViewTool {
 
 		perAPI = APILocator.getPermissionAPI();
 	}
-	/**
-	 * This method returns a list of the 10 HTMLPages that have most recently been published by modificatation date desc.
-	 * @return      a list of HTMLPage objects
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 * @throws SystemException
-	 * @throws PortalException
-	 * @see         HTMLPage, ViewContext
-	 */
-	public List getRecentlyPublished() throws PortalException, SystemException, DotDataException, DotSecurityException {
-		Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
-		DotConnect db = new DotConnect();
-		db.setMaxRows(10);
-		db
-		.setSQL("select parent_path ||asset_name as uri, mod_date, title from identifier, htmlpage where identifier.id = htmlpage.identifier and htmlpage.live = "
-				+ com.dotmarketing.db.DbConnectionFactory.getDBTrue()
-				+ " and show_on_menu= "
-				+ com.dotmarketing.db.DbConnectionFactory.getDBTrue()
-				+ " and host_inode= "
-				+ host.getIdentifier()
-				+ " order by mod_date desc");
-		return db.getResults();
-	}
 
 	// Utility Methods
 	public int parseInt(String num) {
