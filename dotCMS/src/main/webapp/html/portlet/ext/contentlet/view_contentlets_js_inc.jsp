@@ -1017,14 +1017,14 @@
              form.action += "&selected_lang=" + getSelectedLanguageId();
              
              form.submit();
-             
+             form.parentNode.removeChild(form);
         }
         
 
         
         function copySearchForm(){
-        
         	var newForm = document.createElement("form");
+            newForm.style = "display: none";
         	newForm.method="POST";
         	newForm.target="AjaxActionJackson";
          	var oldFormElements = document.getElementById("search_form").elements; 
@@ -1084,6 +1084,7 @@
                 form.action+= "&structure_id=<%=structure.getInode()%>";
                 form.action += "&selected_lang=" + getSelectedLanguageId();
                 form.submit();
+                form.parentNode.removeChild(form);
         }
 
         function archiveSelectedContentlets(){
@@ -1113,6 +1114,7 @@
                         }
             form.action+= "&structure_id=<%=structure.getInode()%>";
             form.submit();
+            form.parentNode.removeChild(form);
         }
 
         function reindexSelectedContentlets(){
@@ -1142,7 +1144,7 @@
                         }
             form.action+= "&structure_id=<%=structure.getInode()%>";
             form.submit();
-
+            form.parentNode.removeChild(form);
         }
 
         function unArchiveSelectedContentlets(){
@@ -1171,7 +1173,7 @@
                         }
                 form.action+= "&structure_id=<%=structure.getInode()%>";
             form.submit();
-
+            form.parentNode.removeChild(form);
         }
 
         function deleteSelectedContentlets(){
@@ -1201,7 +1203,7 @@
                         }
                         form.action+= "&structure_id=<%=structure.getInode()%>";
 		            form.submit();
-
+                    form.parentNode.removeChild(form);
                 }
         }
 
@@ -2445,7 +2447,6 @@
                     <%=(canReindex?"dijit.byId('archiveReindexButton').setAttribute(\"disabled\", false);":"") %>
                 } else {
                     dijit.byId('unArchiveDropDownButton').setAttribute("disabled", false);
-                    dijit.byId('unArchiveDropDownButton').setAttribute("disabled", false);
                     dijit.byId('archiveButton').setAttribute("disabled", false);
                     dijit.byId('publishButton').setAttribute("disabled", false);
                     <% if ( enterprise ) { %>
@@ -2606,6 +2607,7 @@
                         }
             form.action+= "&structure_id=<%=structure.getInode()%>";
             form.submit();
+            form.parentNode.removeChild(form);
         }
 
         //*************************************
