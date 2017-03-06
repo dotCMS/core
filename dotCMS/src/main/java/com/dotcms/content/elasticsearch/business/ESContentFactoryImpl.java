@@ -1,5 +1,38 @@
 package com.dotcms.content.elasticsearch.business;
 
+import java.io.Serializable;
+import java.io.StringWriter;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
+
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.count.CountRequestBuilder;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.index.query.FilterBuilders;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.QueryStringQueryBuilder;
+import org.elasticsearch.index.query.functionscore.random.RandomScoreFunctionBuilder;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.internal.InternalSearchHits;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortOrder;
+import org.springframework.util.NumberUtils;
+
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
@@ -9,7 +42,12 @@ import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.query.ComplexCriteria;
 import com.dotmarketing.business.query.Criteria;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -36,37 +74,14 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.util.*;
-import com.liferay.portal.language.LanguageUtil;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.NumberUtil;
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.RegExMatch;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.count.CountRequestBuilder;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.index.query.FilterBuilders;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.QueryStringQueryBuilder;
-import org.elasticsearch.index.query.functionscore.random.RandomScoreFunctionBuilder;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.internal.InternalSearchHits;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
-import org.springframework.util.NumberUtils;
-
-import java.io.Serializable;
-import java.io.StringWriter;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.MessageFormat;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.Calendar;
 
 /**
  * Implementation class for the {@link ContentletFactory} interface. This class
@@ -2211,10 +2226,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
 		}
 
 	/**
+	 * Finds every content in the system associated to the specified Content
+	 * Type Inode and field and removes it completely.
 	 *
 	 * @param structureInode
+	 *            - The Inode of the Content Type whose field will be deleted.
 	 * @param field
+	 *            - The {@link Field} that will be removed.
 	 * @throws DotDataException
+	 *             An error occurred when updating the contents.
 	 */
     protected void clearField(String structureInode, Field field) throws DotDataException {
         Queries queries = getQueries(field);
@@ -2222,29 +2242,16 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         Connection conn = DbConnectionFactory.getConnection();
         
-        Logger.info(this, "========================================");
-        Logger.info(this, "========= Field Information ============");
-        Logger.info(this, "========================================");
-        Logger.info(this, "-> getFieldName = " + field.getFieldName());
-        Logger.info(this, "-> getTitle = " + field.getTitle());
-        Logger.info(this, "-> getFieldContentlet = " + field.getFieldContentlet());
-        Logger.info(this, "-> getValues = " + field.getValues());
-        Logger.info(this, "========================================");
-        PreparedStatement ps2 = null;
-
         try(PreparedStatement ps = conn.prepareStatement(queries.getSelect())) {
             ps.setObject(1, structureInode);
             final int BATCH_SIZE = 200;
 
             try(ResultSet rs = ps.executeQuery();)
             {
-            	ps2 = conn.prepareCall(queries.getUpdate());
+            	PreparedStatement ps2 = conn.prepareStatement(queries.getUpdate());
                 for (int i = 1; rs.next(); i++) {
                     String contentInode = rs.getString("inode");
                     inodesToFlush.add(contentInode);
-                    Logger.info(this, "----------------------------------------");
-                    Logger.info(this, "contentInode value = " + contentInode);
-                    Logger.info(this, "----------------------------------------");
                     ps2.setString(1, contentInode);
                     ps2.addBatch();
 
@@ -2257,9 +2264,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
 
         } catch (SQLException e) {
-        	Logger.info(this, "**********************************");
-        	Logger.info(this, "ps2 variable = " + ps2.toString());
-        	Logger.info(this, "**********************************");
             throw new DotDataException(String.format("Error clearing field '%s' for Content Type with ID: %s",
                     field.getVelocityVarName(), structureInode), e);
 
