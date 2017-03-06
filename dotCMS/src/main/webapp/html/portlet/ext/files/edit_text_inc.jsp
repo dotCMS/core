@@ -31,7 +31,6 @@
 	    	aceEditor.clearSelection();
   			return;
   		}
-  		console.log("parser", parser, "file", file);
 	    aceEditor = ace.edit('editor');
 	    aceEditor.setTheme("ace/theme/textmate");
 	    aceEditor.getSession().setMode("ace/mode/"+parser);
