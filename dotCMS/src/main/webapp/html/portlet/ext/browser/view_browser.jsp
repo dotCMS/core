@@ -156,7 +156,7 @@ List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketin
 		   </div>
 		   <!-- END Toolbar -->
 		
-			<table class="browserTable" id="assetListBodyTD">
+			<table class="listingTable" id="assetListBodyTD">
 				<thead id="assetListHead">
 					<tr>
 						<th>

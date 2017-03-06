@@ -174,7 +174,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 				if (Validator.validate(req, form, mapping)) {
 					Logger.debug(this, "Calling Save method");
 					_saveWebAsset(req, res, config, form, user);
-					String subcmd = req.getParameter("_site_browser_subcmd");
+					String subcmd = req.getParameter("subcmd");
 					if ((subcmd != null)
 							&& subcmd
 							.equals(com.dotmarketing.util.Constants.PUBLISH)) {
