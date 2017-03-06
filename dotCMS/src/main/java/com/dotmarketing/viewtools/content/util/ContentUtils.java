@@ -111,7 +111,7 @@ public class ContentUtils {
 					return null;
 				}else{
 					if(l.size()>1){
-						Logger.warn(ContentUtils.class, "More then one live or working content found with identifier = " + inodeOrIdentifier);
+						Logger.warn(ContentUtils.class, "More than one live or working content found with identifier = " + inodeOrIdentifier);
 						
 						//If the list of contentlest with the same identifier is > 1
 						//try to search if there is one with the same language id.
