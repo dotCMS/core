@@ -321,6 +321,19 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
 					Logger.info(this, "-> SETTING THE PREPARED STATEMENT PARAMETER...");
 					Logger.info(this, "========================================");
 					ps2.setString(1, contentInode);
+					
+					Logger.info(this, " ");
+					Logger.info(this, " ");
+					Logger.info(this, " ");
+					Logger.info(this, "========================================");
+					Logger.info(this, " ");
+					Logger.info(this, "            IT WORKED...!!!");
+					Logger.info(this, " ");
+					Logger.info(this, "========================================");
+					Logger.info(this, " ");
+					Logger.info(this, " ");
+					Logger.info(this, " ");
+					
 					ps2.addBatch();
 					if (i % BATCH_SIZE == 0) {
 						ps2.executeBatch();
