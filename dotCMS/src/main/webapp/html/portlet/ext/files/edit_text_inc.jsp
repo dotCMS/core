@@ -31,11 +31,12 @@
 	    	aceEditor.clearSelection();
   			return;
   		}
+  		console.log("parser", parser, "file", file);
 	    aceEditor = ace.edit('editor');
 	    aceEditor.setTheme("ace/theme/textmate");
 	    aceEditor.getSession().setMode("ace/mode/"+parser);
   		aceEditor.getSession().setUseWrapMode(true);
-  		aceEditor.setValue(file.text);
+        aceEditor.setValue((file)?file.text:'');
   		editorText= aceEditor.getValue();
   		aceEditor.clearSelection();
   		iAmOpen = true;
