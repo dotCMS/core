@@ -2352,11 +2352,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         select.append(" WHERE structure_inode = ?").append(" AND (").append(whereField).append(")");
         update.append(" WHERE inode = ?");
-        
-        Logger.info(this, "++++++++++++++++++++++++++++++++++++++");
-        Logger.info(this, "update query is = " + update.toString());
-        Logger.info(this, "contains question mark? = " + (update.toString().contains("?") ? "yes" : "no"));
-        Logger.info(this, "++++++++++++++++++++++++++++++++++++++");
 
         return new Queries().setSelect(select.toString()).setUpdate(update.toString());
 
