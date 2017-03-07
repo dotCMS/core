@@ -91,6 +91,11 @@ export class IframeLegacyComponent extends SiteChangeListener {
     }
 
     changeSiteReload(): void {
+
+        if (!this.iframeElement) {
+            this.iframeElement = this.element.nativeElement.querySelector('iframe');
+        }
+
         if (this.iframeElement && this.iframeElement.contentWindow
             && this.routingService.currentPortletId !== 'sites') {
 
