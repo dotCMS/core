@@ -430,7 +430,7 @@ dojo.require("dojo.cookie");
     var minor;
 
     function whatsNew(version){
-        var href = "http://dotcms.com/dotCMSVersions#";
+        var href = "http://dotcms.com/docs/latest/change-log#release-";
         if (version=='current'){
             href+="<%= ReleaseInfo.getVersion() %>";
         }else if(version=='major'){
