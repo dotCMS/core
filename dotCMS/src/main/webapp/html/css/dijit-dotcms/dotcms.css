@@ -3034,27 +3034,27 @@ html, body {
 }
 .dijitTextBoxHover {
   background-color: #fff;
-  border: solid 1px #CB3927;
+  border: solid 1px #0E80CB;
 }
 .dijitTextBoxHover .dijitInputInner {
   color: #161616;
 }
 .dijitTextBoxHover .dijitArrowButton {
   background-color: #fff;
-  border-left: solid 1px #CB3927;
+  border-left: solid 1px #0E80CB;
 }
 .dijitTextBoxHover .dijitArrowButton:before {
-  border-top-color: #CB3927;
+  border-top-color: #0E80CB;
 }
 .dijitTextBoxHover .dijitDownArrowButtonHover {
-  background-color: rgba(203, 57, 39, 0.2);
+  background-color: rgba(14, 128, 203, 0.2);
   border-left: solid 1px #5B5B5B;
 }
 .dijitTextBoxHover .dijitDownArrowButtonHover:before {
-  border-top-color: #CB3927;
+  border-top-color: #0E80CB;
 }
 .dijitTextBoxFocused {
-  border: solid 1px #CB3927;
+  border: solid 1px #0E80CB;
   background-color: #fff;
 }
 .dijitTextBoxFocused .dijitInputInner {
@@ -3062,7 +3062,7 @@ html, body {
 }
 .dijitTextBoxFocused .dijitArrowButton {
   background-color: #fff;
-  border-left: solid 1px #CB3927;
+  border-left: solid 1px #0E80CB;
 }
 .dijitTextBoxFocused .dijitArrowButton:before {
   left: 50%;
@@ -3072,14 +3072,14 @@ html, body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #CB3927;
+  border-top: 5px solid #0E80CB;
   content: "";
   height: 0;
   width: 0;
 }
 .dijitTextBoxFocused .dijitDownArrowButtonHover {
-  background-color: #CB3927;
-  border-left: #CB3927;
+  background-color: #0E80CB;
+  border-left: #0E80CB;
 }
 .dijitTextBoxFocused .dijitDownArrowButtonHover:before {
   left: 50%;
@@ -3089,7 +3089,7 @@ html, body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #CB3927;
+  border-top: 5px solid #0E80CB;
   content: "";
   height: 0;
   width: 0;
@@ -3134,8 +3134,8 @@ html, body {
   border-top-color: #D0021B;
 }
 .dijitTextBox .dijitDownArrowButtonActive {
-  background-color: #CB3927;
-  border-left: solid 1px #CB3927;
+  background-color: #0E80CB;
+  border-left: solid 1px #0E80CB;
 }
 .dijitTextBox .dijitDownArrowButtonActive:before {
   border-top-color: #fff;
@@ -3150,11 +3150,11 @@ html, body {
 }
 .dijitTextAreaHover {
   background-color: #fff;
-  border: solid 1px #CB3927;
+  border: solid 1px #0E80CB;
   color: #161616;
 }
 .dijitTextAreaFocused {
-  border: solid 1px #CB3927;
+  border: solid 1px #0E80CB;
   background-color: #fff;
   color: #161616;
 }
@@ -3202,53 +3202,53 @@ html, body {
 }
 .dijitSpinnerHover {
   background-color: #fff;
-  border: solid 1px #CB3927;
+  border: solid 1px #0E80CB;
 }
 .dijitSpinnerHover .dijitSpinnerButtonContainer {
-  border-left: solid 1px #CB3927;
+  border-left: solid 1px #0E80CB;
 }
 .dijitSpinnerHover .dijitSpinnerButtonContainer .dijitDownArrowButton {
-  border-top: solid 1px #CB3927 !important;
+  border-top: solid 1px #0E80CB !important;
 }
 .dijitSpinnerHover .dijitArrowButton {
-  border-left: solid 1px #CB3927;
+  border-left: solid 1px #0E80CB;
 }
 .dijitSpinnerHover .dijitArrowButton:before {
-  border-top-color: #CB3927;
+  border-top-color: #0E80CB;
 }
 .dijitSpinnerHover .dijitDownArrowButtonHover,
 .dijitSpinnerHover .dijitUpArrowButtonHover {
-  background-color: rgba(203, 57, 39, 0.2);
+  background-color: rgba(14, 128, 203, 0.2);
   border-left: solid 1px #5B5B5B;
 }
 .dijitSpinnerHover .dijitDownArrowButtonHover:before,
 .dijitSpinnerHover .dijitUpArrowButtonHover:before {
-  border-top-color: #CB3927;
+  border-top-color: #0E80CB;
 }
 .dijitSpinnerFocused {
   background-color: #fff;
-  border: solid 1px #CB3927;
+  border: solid 1px #0E80CB;
 }
 .dijitSpinnerFocused .dijitSpinnerButtonContainer {
-  border-left: solid 1px #CB3927;
+  border-left: solid 1px #0E80CB;
 }
 .dijitSpinnerFocused .dijitSpinnerButtonContainer .dijitDownArrowButton {
-  border-top: solid 1px #CB3927 !important;
+  border-top: solid 1px #0E80CB !important;
 }
 .dijitSpinnerFocused .dijitArrowButton {
-  border-left: solid 1px #CB3927;
+  border-left: solid 1px #0E80CB;
 }
 .dijitSpinnerFocused .dijitArrowButton:before {
-  border-top-color: #CB3927;
+  border-top-color: #0E80CB;
 }
 .dijitSpinnerFocused .dijitDownArrowButtonHover,
 .dijitSpinnerFocused .dijitUpArrowButtonHover {
-  background-color: rgba(203, 57, 39, 0.2);
-  border-left: solid 1px #CB3927;
+  background-color: rgba(14, 128, 203, 0.2);
+  border-left: solid 1px #0E80CB;
 }
 .dijitSpinnerFocused .dijitDownArrowButtonHover:before,
 .dijitSpinnerFocused .dijitUpArrowButtonHover:before {
-  border-top-color: #CB3927;
+  border-top-color: #0E80CB;
 }
 .dijitSpinnerDisabled {
   background-color: #FAFAFA;
@@ -3287,8 +3287,8 @@ html, body {
 }
 .dijitSpinner .dijitDownArrowButtonActive,
 .dijitSpinner .dijitUpArrowButtonActive {
-  background-color: #CB3927;
-  border-left: solid 1px #CB3927;
+  background-color: #0E80CB;
+  border-left: solid 1px #0E80CB;
 }
 .dijitSpinner .dijitDownArrowButtonActive:before,
 .dijitSpinner .dijitUpArrowButtonActive:before {
@@ -3296,18 +3296,8 @@ html, body {
 }
 
 .dijitButton .dijitButtonNode,
-.dijitToggleButton .dijitButtonNode,
-.dijitComboButton .dijitButtonNode {
-  border: none;
-}
-
-.dijitButton .dijitButtonNode,
 .dijitToggleButton .dijitButtonNode {
-  padding-left: 16px;
-}
-
-.dijitComboButton .dijitStretch {
-  padding-left: 16px;
+  padding: 0 16px;
 }
 
 .dijitButton,
@@ -3316,11 +3306,6 @@ html, body {
 .dijitDropDownButton,
 .dijitToggleButton {
   margin: 0;
-}
-
-.dijitButton,
-.dijitToggleButton {
-  padding-right: 16px;
 }
 
 .dijitButton .dijitButtonText,
@@ -3363,7 +3348,6 @@ html, body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
 }
 .dijitDropDownButton .dijitButtonNode {
-  border: none;
   padding-left: 16px;
 }
 .dijitDropDownButton .dijitArrowButtonInner {
@@ -3479,6 +3463,12 @@ html, body {
   height: 0;
   width: 0;
 }
+.dijitComboButton .dijitButtonNode {
+  padding-left: 16px;
+}
+.dijitComboButton .dijitButtonNode.dijitDownArrowButton {
+  padding-left: 0;
+}
 .dijitComboButtonHover {
   background-color: #FAFAFA;
   border: solid 1px transparent;
@@ -3520,7 +3510,7 @@ html, body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #CB3927;
+  border-top: 5px solid #0E80CB;
   content: "";
   height: 0;
   width: 0;
@@ -3688,11 +3678,11 @@ html, body {
 }
 .dijitSelectHover {
   background-color: #fff;
-  border: solid 1px #CB3927;
+  border: solid 1px #0E80CB;
   color: #161616;
 }
 .dijitSelectHover .dijitArrowButton {
-  border-left: solid 1px #CB3927;
+  border-left: solid 1px #0E80CB;
   background-color: #fff;
 }
 .dijitSelectHover .dijitArrowButton:before {
@@ -3703,18 +3693,18 @@ html, body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #CB3927;
+  border-top: 5px solid #0E80CB;
   content: "";
   height: 0;
   width: 0;
 }
 .dijitSelectActive, .dijitSelectOpened {
   background-color: #fff;
-  border: solid 1px #CB3927;
+  border: solid 1px #0E80CB;
   color: #161616;
 }
 .dijitSelectActive .dijitArrowButton, .dijitSelectOpened .dijitArrowButton {
-  border-left: solid 1px #CB3927;
+  border-left: solid 1px #0E80CB;
   background-color: #fff;
 }
 .dijitSelectActive .dijitArrowButton:before, .dijitSelectOpened .dijitArrowButton:before {
@@ -3725,7 +3715,7 @@ html, body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #CB3927;
+  border-top: 5px solid #0E80CB;
   content: "";
   height: 0;
   width: 0;
@@ -3765,33 +3755,33 @@ html, body {
 }
 .dijitComboBoxHover {
   background-color: #fff;
-  border: solid 1px #CB3927;
+  border: solid 1px #0E80CB;
 }
 .dijitComboBoxHover .dijitArrowButton {
   background-color: #fff;
-  border-left: solid 1px #CB3927;
+  border-left: solid 1px #0E80CB;
 }
 .dijitComboBoxHover .dijitArrowButton:before {
-  border-top-color: #CB3927;
+  border-top-color: #0E80CB;
 }
 .dijitComboBoxHover .dijitDownArrowButtonHover {
-  background-color: rgba(203, 57, 39, 0.2);
+  background-color: rgba(14, 128, 203, 0.2);
   border-left: solid 1px #5B5B5B;
 }
 .dijitComboBoxHover .dijitDownArrowButtonHover:before {
-  border-top-color: #CB3927;
+  border-top-color: #0E80CB;
 }
 .dijitComboBoxFocused {
-  border: solid 1px #CB3927;
+  border: solid 1px #0E80CB;
   background-color: #fff;
 }
 .dijitComboBoxFocused .dijitArrowButton {
   background-color: #fff;
-  border-left: solid 1px #CB3927;
+  border-left: solid 1px #0E80CB;
 }
 .dijitComboBoxFocused .dijitDownArrowButtonHover {
-  background-color: rgba(203, 57, 39, 0.2);
-  border-left: solid 1px #CB3927;
+  background-color: rgba(14, 128, 203, 0.2);
+  border-left: solid 1px #0E80CB;
 }
 .dijitComboBoxFocused .dijitDownArrowButtonHover:before {
   left: 50%;
@@ -3801,7 +3791,7 @@ html, body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #CB3927;
+  border-top: 5px solid #0E80CB;
   content: "";
   height: 0;
   width: 0;
@@ -3833,8 +3823,8 @@ html, body {
   border-top-color: #D0021B;
 }
 .dijitComboBox .dijitDownArrowButtonActive {
-  background-color: #CB3927;
-  border-left: solid 1px #CB3927;
+  background-color: #0E80CB;
+  border-left: solid 1px #0E80CB;
 }
 .dijitComboBox .dijitDownArrowButtonActive:before {
   border-top-color: #fff;
@@ -3933,10 +3923,10 @@ html, body {
   border: solid 1px transparent;
 }
 .dijitSliderIncrementButtonActive:before {
-  border-top-color: #CB3927;
+  border-top-color: #0E80CB;
 }
 .dijitSliderDecrementButtonActive:before {
-  border-bottom-color: #CB3927;
+  border-bottom-color: #0E80CB;
 }
 .dijitSliderImageHandle {
   -moz-transition: -moz-transform, border-color, backgroun-color, 0.1s;
@@ -4354,16 +4344,16 @@ html, body {
   border-top-color: #161616;
 }
 .dijitTab.tabStripButtonActive {
-  background-color: rgba(203, 57, 39, 0.2);
+  background-color: rgba(14, 128, 203, 0.2);
 }
 .dijitTab.tabStripButtonActive .dijitTabStripSlideLeftIcon:before {
-  border-right-color: #CB3927;
+  border-right-color: #0E80CB;
 }
 .dijitTab.tabStripButtonActive .dijitTabStripSlideRightIcon:before {
-  border-left-color: #CB3927;
+  border-left-color: #0E80CB;
 }
 .dijitTab.tabStripButtonActive .dijitTabStripMenuIcon:before {
-  border-top-color: #CB3927;
+  border-top-color: #0E80CB;
 }
 .dijitTab.tabStripButtonDisabled {
   background-color: #fff;
@@ -4842,7 +4832,7 @@ html, body {
   -moz-border-radius: 2px;
   -webkit-border-radius: 2px;
   border-radius: 2px;
-  border: solid 1px solid 1px #CB3927;
+  border: solid 1px solid 1px #0E80CB;
   background: #fff;
 }
 .dijitInlineEditBoxDisplayMode.dijitOffScreen {
@@ -5668,7 +5658,7 @@ select[multiple] {
   width: 100%;
 }
 select[multiple]:hover {
-  border: solid 1px #CB3927;
+  border: solid 1px #0E80CB;
 }
 
 .fakeDojoButton {
@@ -5708,23 +5698,39 @@ select[multiple]:hover {
 }
 
 .dijitDropDownActionButton {
+  background-color: #0E80CB;
   border: none;
-  border-radius: 16px;
-  width: 32px;
+  border-radius: 20px;
+  height: 40px;
+  width: 40px;
 }
 .dijitDropDownActionButton .actionIcon {
-  line-height: 32px;
+  color: #fff;
+  line-height: 40px;
   margin: 0;
+  font-size: 16px;
 }
 .dijitDropDownActionButton .dijitButtonNode {
-  height: 32px;
-  width: 32px;
+  height: 40px;
+  width: 40px;
 }
 .dijitDropDownActionButton .dijitArrowButtonInner {
   display: none;
 }
 .dijitDropDownActionButton .dijitButtonNode {
   padding: 0;
+}
+.dijitDropDownActionButton.dijitDropDownButtonHover {
+  background-color: #fff;
+}
+.dijitDropDownActionButton.dijitDropDownButtonHover .actionIcon {
+  color: #161616;
+}
+.dijitDropDownActionButton.dijitDropDownButtonDisabled {
+  background-color: #ECEDEE;
+}
+.dijitDropDownActionButton.dijitDropDownButtonDisabled .actionIcon {
+  color: #8A8A8A;
 }
 .dijitButtonFlat {
   background-color: transparent;
@@ -6017,6 +6023,9 @@ select[multiple]:hover {
   font-size: 13px;
   margin: 0 auto 16px auto;
   width: 100%;
+}
+#listing-table p:last-child, .dojoxUploaderFileListTable p:last-child, .listingTable p:last-child {
+  margin-bottom: 0;
 }
 #listing-table tr, .dojoxUploaderFileListTable tr, .listingTable tr {
   transition: background-color 0.1s;
@@ -8743,6 +8752,10 @@ Styles for commons fields along the backend
   margin-right: 8px;
   white-space: nowrap;
 }
+#inline-form > label, .fileSelectorControls > label, .inline-form > label {
+  line-height: 32px;
+  align-self: baseline;
+}
 #inline-form > .checkbox, .fileSelectorControls > .checkbox, .inline-form > .checkbox, #inline-form > .radio, .fileSelectorControls > .radio, .inline-form > .radio {
   margin-right: 16px;
 }
@@ -8910,7 +8923,8 @@ dd .buttonCaption {
   height: 90px;
   margin-top: 8px;
   padding: 8px;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .who-can-use__list td {
