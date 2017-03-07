@@ -144,11 +144,6 @@ var cmsfile=null;
 
 	    	//http://jira.dotmarketing.net/browse/DOTCMS-5802
 	 	    ContentletAjax.removeSiblingBinaryFromSession(x, null);
-
-	    	if(inode){
-	    	   FileAssetAjax.removeTempFile(inode, null);
-	    	}
-
 	    }
 
 
@@ -303,7 +298,7 @@ var cmsfile=null;
 			disableWYSIWYG(id);
 		}
 		if(!enabledCodeAreas[id])
-			aceArea(id);
+			aceAreaById(id);
 	}
 
 	function toWYSIWYG(id) {
@@ -512,12 +507,12 @@ var cmsfile=null;
 	  }
 	}
 
-	function aceArea(textarea){
+	function aceAreaById(textarea){
 		document.getElementById(textarea).style.display = "none";
 		var id = document.getElementById(textarea).value.trim();
 		aceEditors[textarea] = document.getElementById(textarea+'aceEditor');
 		var aceClass = aceEditors[textarea].className;
-		aceEditors[textarea].className = aceClass.replace('classAce', 'aceClass');
+		aceEditors[textarea].className = aceClass.replace('classAce', 'aceText');
 		aceEditors[textarea] = ace.edit(textarea+'aceEditor');
 	    aceEditors[textarea].setTheme("ace/theme/textmate");
 	    aceEditors[textarea].getSession().setMode("ace/mode/velocity");
@@ -534,7 +529,7 @@ var cmsfile=null;
 		var editorText = aceEditors[textarea].getValue();
 	    var aceEditor = document.getElementById(textarea+'aceEditor');
 	    var aceClass = aceEditor.className;
-		aceEditor.className = aceClass.replace('aceClass', 'classAce');
+		aceEditor.className = aceClass.replace('aceText', 'classAce');
 		dojo.query('#'+textarea).style({display:''});
 		dojo.query('#'+textarea)[0].value=editorText;
 		enabledCodeAreas[textarea]=false;
@@ -771,3 +766,4 @@ var cmsfile=null;
 		elementWysiwyg.value = result;
 	}
 </script>
+<jsp:include page="/html/portlet/ext/files/edit_text_inc.jsp"/>

@@ -74,9 +74,9 @@
 
 			document.getElementById("postLoop").value = document.getElementById("postLoopMask").value;
 
-			form.<portlet:namespace />cmd.value = '<%=Constants.ADD%>';
-			form.<portlet:namespace />subcmd.value = subcmd;
-			form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/containers/edit_container" /></portlet:actionURL>';
+            form.<portlet:namespace />cmd.value = '<%=Constants.ADD%>';
+            form.<portlet:namespace />subcmd.value = subcmd;
+            form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/containers/edit_container" /></portlet:actionURL>';
 			submitForm(form);
 	}
 

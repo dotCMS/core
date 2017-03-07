@@ -179,7 +179,7 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 
         // check everything is clean up
 
-        AssetUtil.assertDeleted(pageInode, pageIdent, "htmlpage");
+        AssetUtil.assertDeleted(pageInode, pageIdent, "contentlet");
         AssetUtil.assertDeleted(templateInode, templateIdent, "template");
         AssetUtil.assertDeleted(containerInode, containerIdent, Inode.Type.CONTAINERS.getValue());
     }

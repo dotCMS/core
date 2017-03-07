@@ -122,7 +122,7 @@ public class CmsUrlUtil {
 		if ("file_asset".equals(id.getAssetType())) {
 			return true;
 		}
-		
+
         if ("contentlet".equals(id.getAssetType())) {
             try {
                 ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), languageId);
@@ -130,7 +130,7 @@ public class CmsUrlUtil {
                 if ( (cinfo == null || cinfo.getWorkingInode().equals( "NOTFOUND" )) && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
                     //Get the Default Language
                     Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
-                    //If the fallback to Default Language is set to true, let's see if the requested file is stored with Default Language 
+                    //If the fallback to Default Language is set to true, let's see if the requested file is stored with Default Language
                     cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( id.getId(), defaultLang.getId() );
                 }
 
@@ -156,10 +156,10 @@ public class CmsUrlUtil {
 		while(uri.endsWith("/") && uri.length()>1){
 			uri = uri.substring(0,uri.length()-1);
 		}
-			
+
 		if(!uri.startsWith("/"))
 			uri = "/" + uri;
-		
+
 		try {
 			id = APILocator.getIdentifierAPI().find(host, uri);
 			if (id == null || id.getId() == null) {
@@ -176,7 +176,7 @@ public class CmsUrlUtil {
 	}
 
 	public boolean isVanityUrl(String uri, Host host) {
-		
+
 		if (uri.length()>1 && uri.endsWith("/"))
             uri = uri.substring(0, uri.length() - 1);
 
@@ -224,9 +224,9 @@ public class CmsUrlUtil {
 
 		return false;
 	}
-	
+
 	public boolean amISomething(String uri, Host host, Long languageId) {
-		return (urlUtil.isFileAsset(uri, host, languageId) || urlUtil.isVanityUrl(uri, host) 
+		return (urlUtil.isFileAsset(uri, host, languageId) || urlUtil.isVanityUrl(uri, host)
 				|| urlUtil.isPageAsset(uri, host, languageId) || urlUtil.isFolder(uri, host));
 	}
 

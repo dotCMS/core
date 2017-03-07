@@ -1,5 +1,14 @@
 package com.dotmarketing.quartz.job;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
+import java.util.Date;
+import java.util.List;
+
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.quartz.JobExecutionException;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.CollectionsUtils;
@@ -11,23 +20,23 @@ import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.quartz.JobExecutionException;
 
-import java.util.Date;
-import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-
+/**
+ * This class will test routines related to deleting fields from Content Types
+ * in dotCMS. It's important to point out that real Quartz Jobs can be executed
+ * during the tests.
+ * 
+ * @author Freddy Rodriguez
+ * @version 3.7
+ * @since Feb 8, 2017
+ *
+ */
 public class DeleteFieldJobTest extends IntegrationTestBase {
 
     final DeleteFieldJob instance = new DeleteFieldJob();
@@ -202,6 +211,5 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
             throw new RuntimeException(e);
         }
     }
-
 
 }

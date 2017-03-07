@@ -9319,15 +9319,18 @@ a.category_higlighted, a.tag_higlighted {
 
 .aceText {
   border: 1px solid #C5C5C5;
-  max-height: 600px;
   max-width: 900px;
   width: 100%;
-  min-height: 105px;
+  height: 100%;
+  min-height: 200px;
   text-overflow: clip;
   white-space: nowrap;
-  width: 100%;
   font-family: Monaco,Menlo,sans-serif;
   font-size: 12px;
+}
+
+.aceTextTemplate, .aceTall {
+  height: 600px;
 }
 
 .widgetAceText {

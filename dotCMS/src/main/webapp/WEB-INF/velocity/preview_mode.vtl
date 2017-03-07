@@ -1,43 +1,61 @@
 #set($dojoPath = $webapi.getConfigVar('path.to.dojo'))
 #set($_baseURI = $request.getAttribute("javax.servlet.forward.request_uri"))
+#set($queryString = $request.queryString())
 #if(!$_baseURI) 
 	#set($_baseURI = $request.getRequestURI())
-#end
-#if($UtilMethods.isSet($request.getAttribute("com.dotmarketing.clickstream.uri.override")))
-	#set($_baseURI =	$request.getAttribute("com.dotmarketing.clickstream.uri.override"))
 #end
 
 ##if have been loaded in the mainFrame
 #set($inframe=$request.getHeader("Referer"))
+
 #if($!inframe && ($inframe.contains("mainFrame=") || $inframe.contains("leftMenu=")))
 	<html>
 		<head>
 			<script>
-			
-			    function listFrames(win){
-			    	console.log("name:" + win.name);
-			    	for(i=0;i<win.frames.length;i++){
-			    		console.log("frames:" + win.frames[i].name);
-			    	}
-			    }
-
-				#set($url=${_baseURI})
-
-				#if($UtilMethods.isSet($queryString))
-				    #set($url="${url}?${queryString}&container=true")
-				#else
-				    #set($url="${url}?container=true")
-				#end
-
-                if ( this.window.parent !== top ){
-				    this.window.parent.location.replace("${url}");
-				}else{
-				    this.window.location.replace("${url}");
+				function updateQueryStringParameter(uri, key, value) {
+				  var re = new RegExp("([?&])" + key + "=.*?(&|#|$)", "i");
+				  if (uri.match(re)) {
+				    return uri.replace(re, '$1' + key + "=" + value + '$2');
+				  } else {
+				    var hash =  '';
+				    if( uri.indexOf('#') !== -1 ){
+				        hash = uri.replace(/.*#/, '#');
+				        uri = uri.replace(/#.*/, '');
+				    }
+				    var separator = uri.indexOf('?') !== -1 ? "&" : "?";    
+				    return uri + separator + key + "=" + value + hash;
+				  }
 				}
+			
+				var url = "${_baseURI}?$!{queryString}";
+				url = updateQueryStringParameter(url, "ranId", Math.random() + "" )
+				
 
+
+				//url = encodeURIComponent(url);
+
+				if(window.top.document.getElementById('detailFrame').src != undefined){
+					console.log("1:" + url);
+					window.top.document.getElementById('detailFrame').src = url;
+	
+				}
+				else if(window.top.document.getElementById('detailFrame')  != undefined) {
+					console.log("2:" + url);
+					window.top.detailFrame.location = url;
+				}
+				else{
+					console.log("3:" + url);
+					url = encodeURIComponent(url);
+					window.top.location="/dotAdmin/#/c/site-browser?url=" + url ;
+				}
+					
 			</script>
 		</head>
-		<body style="background:white url()"></body>
+		<body style="background:white url()">
+
+		
+		
+		</body>
 	</html>
 	#stop
 #end
@@ -59,6 +77,35 @@
 	               isDebug: false,
 	               modulePaths: { dotcms: "/html/js/dotcms", dwr: '/dwr' }
 	       };
+	       	
+			function updateQueryStringParameter(uri, key, value) {
+				  var re = new RegExp("([?&])" + key + "=.*?(&|#|$)", "i");
+				  if (uri.match(re)) {
+				    return uri.replace(re, '$1' + key + "=" + value + '$2');
+				  } else {
+				    var hash =  '';
+				    if( uri.indexOf('#') !== -1 ){
+				        hash = uri.replace(/.*#/, '#');
+				        uri = uri.replace(/#.*/, '');
+				    }
+				    var separator = uri.indexOf('?') !== -1 ? "&" : "?";    
+				    return uri + separator + key + "=" + value + hash;
+				  }
+				}
+			
+
+				
+				
+
+				var url = "${_baseURI}?$!{queryString}";
+				url = updateQueryStringParameter(url, "ranId", Math.random() + "" )
+				url = encodeURIComponent(url);
+
+				if(window.self == window.top){
+					window.top.location="/dotAdmin/#/c/site-browser?url=" + url ;
+				}
+				window.top.history.pushState("", "Title", "/dotAdmin/#/c/site-browser?url=" + url);
+	       	
 	   	</script>
 		<script type="text/javascript" src="${dojoPath}/dojo/dojo.js"></script>
 		<script type="text/javascript" src="${dojoPath}/dojo/dot-dojo.js"></script>
@@ -80,11 +127,13 @@
 		</script>		
 	</head>
 	<body style="border:0;margin:0;padding:0;background:white url()">
-
 		<div id="controlsdiv" style="position:absolute; top:0; left:0; padding:0; margin:0; border:0; width:0;height: 0;z-index: 0;"></div>
 		<table style="border:0;padding:0;width:100%;overflow:hidden;" width="100%" cellspacing="0" cellpadding="0" border="0">
 			<tr>
 				<td>
+					<div>
+					
+					</div>
 					<iframe id="frameMain" name="frameMain" style="border:0;margin:0;" marginheight="0" marginwidth="0" scrolling="auto" frameborder="0" src="${_baseURI}?mainFrame=1&livePage=$livePage&com.dotmarketing.htmlpage.language=$language&language=$language&host_id=${host.identifier}&$!{queryString}"></iframe>
 				</td>
 				<td>
@@ -93,12 +142,13 @@
 			</tr>
 		</table>
 		<div style="display:none;" class="dotClear">
-			#parse ("static/preview_mode/preview_mode_controls.vl")
+			#parse ("static/preview_mode/preview_mode_controls.vtl")
 			#parse("static/preview_mode/widget_selector.vtl")
 			#parse("static/preview_mode/form_selector.vtl")
 		</div>
 	</body>
 	<script type="text/javascript">
+
 	    var mainIframe=document.getElementById('frameMain').contentWindow;
 		dojo.connect(mainIframe, 'onscroll', function(){ 
 			dojo.query(".dotControls").forEach(function(node, index, arr){

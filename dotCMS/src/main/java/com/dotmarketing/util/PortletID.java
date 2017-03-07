@@ -17,7 +17,6 @@ public enum PortletID {
     ES_SEARCH,
     EVENTS,
     EVENTS_APPROVAL,
-    FILES_LEGACY,
     FOLDERS,
     FORMS, 
     HTML_PAGES,

@@ -7,8 +7,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.fixtask.tasks.FixTask00001CheckAssetsMissingIdentifiers;
 import com.dotmarketing.fixtask.tasks.FixTask00003CheckContainersInconsistencies;
-import com.dotmarketing.fixtask.tasks.FixTask00004CheckFileAssetsInconsistencies;
-import com.dotmarketing.fixtask.tasks.FixTask00005CheckHTMLPagesInconsistencies;
 import com.dotmarketing.fixtask.tasks.FixTask00006CheckLinksInconsistencies;
 import com.dotmarketing.fixtask.tasks.FixTask00007CheckTemplatesInconsistencies;
 import com.dotmarketing.fixtask.tasks.FixTask00008CheckTreeInconsistencies;
@@ -18,7 +16,6 @@ import com.dotmarketing.fixtask.tasks.FixTask00012UpdateAssetsHosts;
 import com.dotmarketing.fixtask.tasks.FixTask00015FixAssetTypesInIdentifiers;
 import com.dotmarketing.fixtask.tasks.FixTask00020DeleteOrphanedIdentifiers;
 import com.dotmarketing.fixtask.tasks.FixTask00030DeleteOrphanedAssets;
-import com.dotmarketing.fixtask.tasks.FixTask00040CheckFileAssetsMimeType;
 import com.dotmarketing.fixtask.tasks.FixTask00050FixInodesWithoutContentlets;
 import com.dotmarketing.fixtask.tasks.FixTask00060FixAssetType;
 import com.dotmarketing.fixtask.tasks.FixTask00070FixVersionInfo;
@@ -58,8 +55,6 @@ public class TaskLocatorUtil {
     private static List<Class<?>> systemfixTasks = ImmutableList.of(
             FixTask00001CheckAssetsMissingIdentifiers.class,
             FixTask00003CheckContainersInconsistencies.class,
-            FixTask00004CheckFileAssetsInconsistencies.class,
-            FixTask00005CheckHTMLPagesInconsistencies.class,
             FixTask00006CheckLinksInconsistencies.class,
             FixTask00007CheckTemplatesInconsistencies.class,
             FixTask00008CheckTreeInconsistencies.class,
@@ -69,7 +64,6 @@ public class TaskLocatorUtil {
             FixTask00015FixAssetTypesInIdentifiers.class,
             FixTask00020DeleteOrphanedIdentifiers.class,
             FixTask00030DeleteOrphanedAssets.class,
-            FixTask00040CheckFileAssetsMimeType.class,
             FixTask00050FixInodesWithoutContentlets.class,
             FixTask00060FixAssetType.class,
             FixTask00070FixVersionInfo.class,
@@ -228,6 +222,7 @@ public class TaskLocatorUtil {
         ret.add(Task03725NewNotificationTable.class);
         ret.add(Task03735UpdatePortletsIds.class);
         ret.add(Task03740UpdateLayoutIcons.class);
+        ret.add(Task03745DropLegacyHTMLPageAndFileTables.class);
 
         return ret;
     }

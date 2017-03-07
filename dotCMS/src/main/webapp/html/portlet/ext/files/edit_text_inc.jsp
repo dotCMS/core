@@ -35,7 +35,7 @@
 	    aceEditor.setTheme("ace/theme/textmate");
 	    aceEditor.getSession().setMode("ace/mode/"+parser);
   		aceEditor.getSession().setUseWrapMode(true);
-  		aceEditor.setValue(file.text);
+        aceEditor.setValue((file)?file.text:'');
   		editorText= aceEditor.getValue();
   		aceEditor.clearSelection();
   		iAmOpen = true;
@@ -122,7 +122,7 @@
 	
 </script>
 
-<div dojoType="dijit.Dialog" id="editTextDialog" style="height:450px;width:650px;padding-top:15px\9;" onCancel="javascript:editTextManager.close();">
+<div dojoType="dijit.Dialog" class="noDijitDialogTitleBar" id="editTextDialog" onCancel="javascript:editTextManager.close();">
 
  	<div>
 		<h3><%= LanguageUtil.get(pageContext, "text-editor") %></h3>

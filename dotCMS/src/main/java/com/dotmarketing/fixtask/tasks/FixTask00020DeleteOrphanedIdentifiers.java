@@ -44,7 +44,7 @@ public class FixTask00020DeleteOrphanedIdentifiers implements FixTask{
 	private List <Map<String, String>>  modifiedData = new  ArrayList <Map<String,String>>();
 	private HashMap<String, Integer> badDataCount = new HashMap<String, Integer>();
 	private int total = 0;
-	private String assetNames[] = { "contentlet", "containers", "file_asset", "htmlpage", "links", "template" };
+	private String assetNames[] = { "contentlet", "containers", "links", "template" };
 
 
 

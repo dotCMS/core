@@ -25,7 +25,6 @@ public interface Versionable {
 	 *  Folder will return folder
 	 *  HTMLPage will return htmlpage
 	 *  Template will return template
-	 *  File will return file_asset
 	 *  Link will return links
 	 *  Container will return containers
 	 * @return

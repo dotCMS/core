@@ -29,7 +29,7 @@ public class FixTask00015FixAssetTypesInIdentifiers implements FixTask {
 
 	private HashMap<String, Integer> badDataCount = new HashMap<String, Integer>();
 	private int total = 0;
-	private String assetNames[] = { "contentlet", "containers", "file_asset", "htmlpage", "links", "template" };
+	private String assetNames[] = { "contentlet", "containers", "links", "template" };
 
 	public List<Map<String, Object>> executeFix() throws DotDataException,
 		DotRuntimeException {

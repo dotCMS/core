@@ -446,36 +446,6 @@ public class BrowserAjax {
 				}
 			}
 		}
-
-        // If any of the fallback properties, ie DEFAULT_FILE_TO_DEFAULT_LANGUAGE is false,
-        // we need to iterate over all the contents in the result list so far, and we need to remove
-        // all the contents that don't have the same language that we are passing as parameter.
-        for (Iterator<Map<String, Object>> iterator = results.iterator(); iterator.hasNext();) {
-            Map<String, Object> contentMap = iterator.next();
-
-			// if DEFAULT_FILE_TO_DEFAULT_LANGUAGE is true we need to remove all the file_asset
-			// that are not in the same language or in default language.
-			if ( Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", true) &&
-				contentMap.containsKey("type") &&
-				"file_asset".equals(contentMap.get("type")) &&
-				!contentMap.get("languageId").toString().equals(String.valueOf(languageId)) &&
-				!contentMap.get("languageId").toString().equals(String.valueOf(languageAPI.getDefaultLanguage().getId()))) {
-
-				iterator.remove();
-			}
-
-			// if DEFAULT_FILE_TO_DEFAULT_LANGUAGE is false we need to remove all the file_asset
-			// that are not in the same language (including default language).
-			if ( !Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", true) &&
-				contentMap.containsKey("type") &&
-				"file_asset".equals(contentMap.get("type")) &&
-				!contentMap.get("languageId").toString().equals(String.valueOf(languageId))) {
-
-                iterator.remove();
-            }
-            //TODO logic for DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE
-            //TODO logic for DEFAULT_PAGE_TO_DEFAULT_LANGUAGE
-        }
 	}
 
 	/**

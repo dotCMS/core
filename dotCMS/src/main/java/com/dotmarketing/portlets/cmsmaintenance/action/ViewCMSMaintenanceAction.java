@@ -489,8 +489,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			String searchString = form.getSearchString();
 			String replaceString = form.getReplaceString();
 			boolean DBerrorFound = MaintenanceUtil.DBSearchAndReplace(searchString, replaceString);
-			boolean FSErrorFound = MaintenanceUtil.textAssetsSearchAndReplace(searchString, replaceString);
-			if(DBerrorFound || FSErrorFound){
+			if(DBerrorFound){
 				message = "Search/Replace Finished with Errors.  See Log for more info";
 			}else{
 				message = "Search/Replace Finished Successful";

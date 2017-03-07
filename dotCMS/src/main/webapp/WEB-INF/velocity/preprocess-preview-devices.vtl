@@ -1,0 +1,187 @@
+#if($UtilMethods.isSet($request.getParameter("previewDevice")))
+	#set($_previewDevice = $dotcontent.find($request.getParameter("previewDevice")))
+#elseif($UtilMethods.isSet($request.getAttribute("previewAsDeviceId")))
+	#set($_previewDevice = $dotcontent.find($session.getAttribute("previewAsDeviceId")))
+#elseif($UtilMethods.isSet($session.getAttribute("previewAsDeviceId")))
+	#set($_previewDevice = $dotcontent.find($session.getAttribute("previewAsDeviceId")))
+#end
+
+
+
+#if($UtilMethods.isSet($_previewDevice.identifier))
+	#set($nuttin = $request.setAttribute("previewAsDeviceId", $_previewDevice.identifier))
+	#set($nuttin = $session.setAttribute("previewAsDeviceId", $_previewDevice.identifier))
+	#set($_url=$request.getAttribute("javax.servlet.forward.request_uri"))
+	#set($_url="$_url?render=true&")
+	#set($_query=	$request.getQueryString().replaceAll("previewDevice", "render"))
+	#set($dojoPath = $webapi.getConfigVar('path.to.dojo'))
+
+	<html>
+	<head>
+	
+	<style>
+		.device-size {
+			width: ${_previewDevice.cssWidth}px;
+			height: ${_previewDevice.cssHeight}px;
+		}
+		.device-wrapper {
+			display: table;
+			margin: auto;
+			border-radius: 10px;
+			border: 2px solid #ddd;
+			box-shadow: 6px 10px 10px rgba(0,0,0,0.1);
+			background: rgba(255,255,255,1);
+			background: -moz-linear-gradient(-45deg, rgba(255,255,255,1) 0%, rgba(240,240,240,1) 100%);
+			background: -webkit-gradient(left top, right bottom, color-stop(0%, rgba(255,255,255,1)), color-stop(100%, rgba(240,240,240,1)));
+			background: -webkit-linear-gradient(-45deg, rgba(255,255,255,1) 0%, rgba(240,240,240,1) 100%);
+			background: -o-linear-gradient(-45deg, rgba(255,255,255,1) 0%, rgba(240,240,240,1) 100%);
+			background: -ms-linear-gradient(-45deg, rgba(255,255,255,1) 0%, rgba(240,240,240,1) 100%);
+			background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(240,240,240,1) 100%);
+			filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#f0f0f0', GradientType=1 );
+		}
+		.view-row {
+			display: table-row;
+		}
+		.view-cell {
+			display: table-cell;
+		}
+		.top-left, .top-right, .bottom-left, .bottom-right{
+			width: 10px;
+		}
+		.circle-btn {
+			height: 45px;
+			width: 45px;
+			border: 1px solid #ddd;
+			background-color: #e6e6e6;
+			border-radius: 45px;
+			margin: 25px auto 35 auto;
+			background: rgba(242,239,242,1);
+			background: -moz-linear-gradient(-45deg, rgba(242,239,242,1) 0%, rgba(242,239,242,1) 9%, rgba(255,255,255,1) 76%, rgba(255,255,255,1) 100%);
+			background: -webkit-gradient(left top, right bottom, color-stop(0%, rgba(242,239,242,1)), color-stop(9%, rgba(242,239,242,1)), color-stop(76%, rgba(255,255,255,1)), color-stop(100%, rgba(255,255,255,1)));
+			background: -webkit-linear-gradient(-45deg, rgba(242,239,242,1) 0%, rgba(242,239,242,1) 9%, rgba(255,255,255,1) 76%, rgba(255,255,255,1) 100%);
+			background: -o-linear-gradient(-45deg, rgba(242,239,242,1) 0%, rgba(242,239,242,1) 9%, rgba(255,255,255,1) 76%, rgba(255,255,255,1) 100%);
+			background: -ms-linear-gradient(-45deg, rgba(242,239,242,1) 0%, rgba(242,239,242,1) 9%, rgba(255,255,255,1) 76%, rgba(255,255,255,1) 100%);
+			background: linear-gradient(135deg, rgba(242,239,242,1) 0%, rgba(242,239,242,1) 9%, rgba(255,255,255,1) 76%, rgba(255,255,255,1) 100%);
+			filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f2eff2', endColorstr='#ffffff', GradientType=1 );
+		}
+		.speaker {
+			height: 5px;
+			width: 70px;
+			border: 1px solid #ddd;
+			background-color: #e6e6e6;
+			border-radius: 3px;
+			margin: 35px auto;
+		}
+		.header {
+			background-color: #fafafa;
+			padding: 10px;
+			text-align: center;
+			font-family: arial;
+			font-size: 13px;
+			border-bottom: 1px solid #cccccc;
+		}
+		.header span {
+			font-weight: bold;
+		}
+		.sub-header {
+			background: #e6e6e6;
+			border-top: 2px solid #fff;
+			border-bottom: 1px solid #e6e6e6;
+			margin-bottom: 15px;
+			position: relative;
+			overflow: hidden;
+			height: 17px;
+		}
+		.def-size {
+			border-left: 2px solid #fff;
+			border-right: 2px solid #fff;;
+			background: #e6e6e6;
+			text-align: center;
+			font-family: arial;
+			font-size: 12px;
+			padding: 2px 0;
+			position: absolute;
+			left: 50%;
+			top: 0;
+			text-indent: -9999px;
+		}
+		.def-size:hover{
+			
+		}
+		iframe {
+			border-top: 1px solid #ccc;
+			border-right: 1px solid #e6e6e6;
+			border-bottom: 1px solid #e6e6e6;
+			border-left: 1px solid #ccc;
+		}
+		.mobile-s {width: 320px; z-index: 8; margin-left: -160px;}
+		.mobile-m {width: 375px; z-index: 7; margin-left: -188px;}
+		.mobile-l {width: 425px; z-index: 6; margin-left: -213px;}
+		.tablet {width: 768px; z-index: 5; margin-left: -384px;}
+		.laptop {width: 1024px; z-index: 4; margin-left: -512px;}
+		.laptop-l {width: 1440px; z-index: 3; margin-left: -720px;}
+		.l-4k {width: 2560px; z-index: 2; margin-left: -1258px;}
+	</style>
+	
+	<script type="text/javascript">
+	   	djConfig={
+	           parseOnLoad: true,
+	           isDebug: false,
+	           modulePaths: { dotcms: "/html/js/dotcms", dwr: '/dwr' }
+	   };
+	</script>
+	<script type="text/javascript" src="$dojoPath/dojo/dojo.js"></script>
+	<script type="text/javascript" src="$dojoPath/dojo/dot-dojo.js"></script>
+	<script type="text/javascript">
+	    dojo.require("dojo.parser");
+	    dojo.require("dijit.form.Button");
+	    dojo.require('dijit.layout.TabContainer');
+	    dojo.require('dijit.layout.ContentPane');
+	    dojo.require('dijit.form.FilteringSelect');
+	    dojo.require('dojo.data.ItemFileReadStore');
+	    dojo.require("dojo.fx");
+	
+	</script>
+	</head>
+	<html>
+	<div class="header">
+		<span class="device">${_previewDevice.name}</span>&nbsp; &nbsp; &nbsp;
+		${_previewDevice.cssWidth} &nbsp; X &nbsp; ${_previewDevice.cssHeight}
+	</div>
+	<div class="sub-header">
+		<div class="def-size mobile-s">Mobile S - 320px</div>
+		<div class="def-size mobile-m">Mobile M - 375px</div>
+		<div class="def-size mobile-l">Mobile L - 425px</div>
+		<div class="def-size tablet">Tablet - 768px</div>
+		<div class="def-size laptop">Laptop - 1024px</div>
+		<div class="def-size laptop-l">Laptop L - 1440px</div>
+		<div class="def-size l-4k">4k - 2560px</div>
+	</div>
+
+		<div class="device-wrapper">
+			<div class="view-row">
+				<div class="view-cell top-left"></div>
+				<div class="view-cell top-middle"><div class="speaker"></div></div>
+				<div class="view-cell top-right"></div>
+			</div>
+			<div class="view-row">
+				<div class="view-cell side-left"></div>
+				<div class="view-cell viewport">
+					<iframe class="device-size" id="previewDeviceIframe" name="previewDeviceIframe" src="$_url$_query"></iframe>
+				</div>
+				<div class="view-cell side-right"></div>
+			</div>
+			<div class="view-row">
+				<div class="view-cell bottom-left"></div>
+				<div class="view-cell bottom-middle"><div class="circle-btn"></div></div>
+				<div class="view-cell bottom-right"></div>
+			</div>
+		</div>
+		
+		
+		</html>
+
+#else
+	#set($nuttin = $request.removeAttribute("previewAsDeviceId"))
+	#set($nuttin = $session.removeAttribute("previewAsDeviceId"))
+#end

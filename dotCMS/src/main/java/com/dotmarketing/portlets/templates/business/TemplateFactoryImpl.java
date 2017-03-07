@@ -32,8 +32,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
@@ -46,13 +44,6 @@ import com.liferay.portal.model.User;
 
 public class TemplateFactoryImpl implements TemplateFactory {
 	static TemplateCache templateCache = CacheLocator.getTemplateCache();
-
-	private final String subTemplatesSQL =
-		"select {template.*} from template,inode template_1_, template_version_info vi where " +
-		"template_1_.inode = template.inode and vi.identifier=template.identifier and " +
-		"identifier in(select template_id from identifier,htmlpage where " +
-		"htmlpage.identifier = identifier.id and parent_path = ?) and " +
-		"template.inode=vi.working_inode ";
 
 	private final String templatesUnderHostSQL =
 		"select {template.*} from template, inode template_1_, " +
@@ -68,15 +59,6 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		"vi.identifier=template_identifier.id and template.title = ? and " +
 		"template.inode = template_1_.inode and " +
 		"template.inode=vi.working_inode ";
-
-
-	@SuppressWarnings("unchecked")
-	public List<Template> findTemplatesUnder(Folder parentFolder) throws DotStateException, DotDataException {
-		HibernateUtil hu = new HibernateUtil(Template.class);
-		hu.setSQLQuery(subTemplatesSQL);
-		hu.setParam(APILocator.getIdentifierAPI().find(parentFolder).getPath());
-		return new ArrayList<Template>(new HashSet<Template>(hu.list()));
-	}
 
 	
 	@SuppressWarnings("unchecked")
@@ -349,10 +331,14 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	}
 	
 	private List<String> getContainerIds(String templateBody) {
+	    List<String> ids = new LinkedList<String>();
+	    if(!UtilMethods.isSet(templateBody)){
+	        return ids;
+	    }
 		Pattern oldContainerReferencesRegex = Pattern.compile("#parse\\s*\\(\\s*\\$container([^\\s)]+)\\s*\\)");
 		Pattern newContainerReferencesRegex = Pattern.compile("#parseContainer\\s*\\(\\s*['\"]*([^'\")]+)['\"]*\\s*\\)");
 		Matcher matcher = oldContainerReferencesRegex.matcher(templateBody);
-		List<String> ids = new LinkedList<String>();
+		
 		while(matcher.find()) {
 			String containerId = matcher.group(1).trim();
 			if(!ids.contains(containerId))
