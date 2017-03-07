@@ -17,7 +17,7 @@
 <script language="Javascript">
 function submitfmPublish() {
     form = document.getElementById('fm');
-    form.<portlet:namespace />cmd.value = "publish";
+    form.cmd.value = "publish";
     form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/htmlpages/publish_htmlpages" /></portlet:actionURL>';
     submitForm(form);
 }
@@ -32,8 +32,7 @@ function cancel() {
 
 <form id="fm" method="post">
 <input type="hidden" name="referer" value="<%=referer%>">
-<input type="hidden" name="<portlet:namespace />cmd" value="publish">
-
+<input type="hidden" name="cmd" value="publish">
 <% 
     for (int i=0;i<publishInodes.length;i++) {
 %>
