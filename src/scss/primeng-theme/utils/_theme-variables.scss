@@ -13,16 +13,16 @@ $field-normal-textcolor: $body-font-color;
 $field-normal-border: solid $field-border-size $gray-light;
 $field-normal-arrow-color: $gray;
 
-$field-hover-border-color: $brand-secondary;
+$field-hover-border-color: $brand-primary;
 $field-hover-bgcolor: $white;
 $field-hover-textcolor: $body-font-color;
 $field-hover-border: solid $field-border-size $field-hover-border-color;
-$field-hover-arrow-color: $brand-secondary;
+$field-hover-arrow-color: $brand-primary;
 
 $field-active-bgcolor: $brand-primary;
 $field-active-textcolor: $body-font-color;
 $field-active-border: $field-hover-border;
-$field-active-arrow-color: $brand-secondary;
+$field-active-arrow-color: $brand-primary;
 
 $field-disabled-bgcolor: $white;
 $field-disabled-textcolor: $gray-light;
@@ -32,7 +32,7 @@ $field-disabled-arrow-color: $gray-light;
 $field-focused-bgcolor: $gray-lighter;
 $field-focused-textcolor: $gray-dark;
 $field-focused-border: $field-hover-border;
-$field-focused-arrow-color: $brand-secondary;
+$field-focused-arrow-color: $brand-primary;
 
 // BUTTONS
 $button-border: solid 1px transparent;
@@ -185,7 +185,7 @@ $check-disabled-color: $gray-light;
 $check-disabled-label-color: $gray-light;
 
 $check-normal-bgcolor: $white;
-$check-normal-border: $field-normal-border;
+$check-normal-border: solid $field-border-size $black;
 
 $check-hover-bgcolor: $white;
 $check-hover-border: $check-checked-border;
@@ -200,7 +200,7 @@ $radio-disabled-color: $gray-light;
 $radio-disabled-label-color: $gray-light;
 
 $radio-normal-bgcolor: $white;
-$radio-normal-border: $field-normal-border;
+$radio-normal-border: solid $field-border-size $black;
 
 $radio-hover-bgcolor: $white;
 $radio-hover-border: $check-checked-border;

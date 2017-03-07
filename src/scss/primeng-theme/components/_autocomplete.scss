@@ -5,6 +5,10 @@
 
     &:hover {
         border: $field-hover-border;
+
+        .fa {
+            color: $brand-primary;
+        }
     }
 
     .ui-inputwrapper-focus & {
