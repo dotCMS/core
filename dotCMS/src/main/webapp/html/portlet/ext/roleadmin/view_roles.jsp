@@ -57,20 +57,17 @@
 	<form id="newLayoutForm" dojoType="dijit.form.Form">
 		<ul id="addLayoutErrorMessagesList"></ul>
 		<dl>
-			<dt><%= LanguageUtil.get(pageContext, "Name") %>:</dt>
+			<dt><label for="layoutName"><%= LanguageUtil.get(pageContext, "Name") %>:</label></dt>
 			<dd><input id="layoutName" type="text" maxlength="255" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
-			<dt><a href="#" id="tip-icon"><span class="hintIcon"></span></a> <%= LanguageUtil.get(pageContext, "Icon") %>: 
-			    <span dojoType="dijit.Tooltip" connectId="tip-icon" position="above" style="width:100px;">
-					<span class="contentHint"><%= LanguageUtil.get(pageContext, "Icon-hint") %></span>
-				</span>
-			</dt>
+			<dt><label for="layoutDescription"><%= LanguageUtil.get(pageContext, "Icon") %>:</label></dt>
 			<dd style="position:relative;">
 				<input id="layoutDescription" type="text" dojoType="dijit.form.TextBox" onchange="updateIcon(this.value)"/>
 				<i id="tabIcon" class="fa" style="position:absolute;top: 8px; right:20px;" aria-hidden="true"></i>
+				<div class="hint-text"><%= LanguageUtil.get(pageContext, "Icon-hint") %></div>
 			</dd>
-			<dt><%= LanguageUtil.get(pageContext, "order") %>:</dt>
+			<dt><label for="layoutOrder"><%= LanguageUtil.get(pageContext, "order") %>:</label></dt>
 			<dd><input id="layoutOrder" type="text" value="0" dojoType="dijit.form.ValidationTextBox" /></dd>
-			<dt><%= LanguageUtil.get(pageContext, "Tools") %>:</dt>
+			<dt><label for="portletList"><%= LanguageUtil.get(pageContext, "Tools") %>:</label></dt>
 			<dd>
 				<select id="portletList"></select>
 				<button dojoType="dijit.form.Button" onclick="addPortletToLayoutList()" type="button"><%= LanguageUtil.get(pageContext, "add") %></button>
