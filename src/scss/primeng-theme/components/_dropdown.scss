@@ -7,6 +7,10 @@
         &:active {
             @extend #field-hover-state;
 
+            .fa {
+                color: $field-hover-border-color;
+            }
+
             .ui-dropdown-trigger {
                 border-color: $field-hover-border-color;
             }
@@ -36,8 +40,8 @@
             margin: 0;
         }
 
-        &.ui-state-hover,
-        &.ui-state-focus {
+        &:hover,
+        &:focus {
             background-color: $white;
             border-color: $field-hover-border-color;
 
