@@ -17,7 +17,7 @@ import static org.mockito.Mockito.when;
 public class HttpRequestDataUtilTest {
 
     @Test
-    public void testGetIpAddress() throws UnknownHostException {
+    public void test_getIpAddress_XForwardedForWithMultipleIPs_ReturnFirstHost() throws UnknownHostException {
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getHeader("X-Forwarded-For")).thenReturn("www.dotcms.com,www.google.com,www.github.com");
 
