@@ -167,7 +167,7 @@ THIS FILE AND ITS INCLUDES
 
 </head>
 <%if(UtilMethods.isSet(request.getParameter("popup")) || UtilMethods.isSet(request.getAttribute("popup")) ){%>
-<body class="dotcms" style="background:white url()">
+<body class="dotcms" style="background:white">
 <%}else{ %>
-<body class="dotcms" style="visibility:hidden;background:white url()">
+<body class="dotcms" style="visibility:hidden;background:white">
 <%} %>
