@@ -412,7 +412,6 @@ public final class WebKeys {
 
 	// CMS USER LOGIN
     public static final String CMS_USER = "cms.user";
-    public static final String CMS_USER_ID_COOKIE = "cms.user.cookie";
     public static final String CMS_PERSONALIZATION_BEAN = "cms.user.personalization";
     public static final String CMS_USER_REGISTRATIONS = "cms.user.registrations";
     public static final String CMS_CURRENT_PAGE = "cms.current.page";

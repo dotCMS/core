@@ -318,24 +318,7 @@ public class LoginFactory {
                 ses.setAttribute(WebKeys.CMS_USER, user);
 
                 //set personalization stuff on session
-
-                // set id cookie
-        		Cookie autoLoginCookie = UtilMethods.getCookie(request.getCookies(), WebKeys.CMS_USER_ID_COOKIE);
-				// todo: eventually we have to do the same thing for the json web token; keep in mind to do this in the JWTInterceptor
-        		if(autoLoginCookie == null && rememberMe) {
-        			autoLoginCookie = new Cookie(WebKeys.CMS_USER_ID_COOKIE, APILocator.getUserAPI().encryptUserId(user.getUserId()));
-        		}
-
-                if (rememberMe) {
-                	autoLoginCookie.setMaxAge(60 * 60 * 24 * 356);
-                } else if (autoLoginCookie != null) {
-                	autoLoginCookie.setMaxAge(0);
-                }
-
-                if (autoLoginCookie != null) {
-        			autoLoginCookie.setPath("/");
-                	response.addCookie(autoLoginCookie);
-                }
+				// ....
 
         		SecurityLogger.logInfo(LoginFactory.class,"User " + userName + " has sucessfully login from IP: " + request.getRemoteAddr());
 
@@ -521,12 +504,6 @@ public class LoginFactory {
         /*End of custom code*/
 
         request.getSession().invalidate();
-
-        Cookie idCookie = new Cookie(WebKeys.CMS_USER_ID_COOKIE, null);
-        idCookie.setMaxAge(0);
-        idCookie.setPath("/");
-        response.addCookie(idCookie);
-
     }
 
     /**
