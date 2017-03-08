@@ -249,4 +249,6 @@ public interface ContainerAPI {
 	 */
 	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException;
 
+	public Container find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
 }
