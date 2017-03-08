@@ -237,7 +237,7 @@
                 
 					labelAndIcon+="&nbsp; &nbsp;" + UtilMethods.javaScriptify(s.getName());
 					if(s.getStructureType() != baseType){
-					  labelAndIcon = "<div style='height:1px;margin-top:-1px;background:silver;'></div>" + labelAndIcon;
+					  labelAndIcon = "<div style='height:1px;margin:-1px -20px 0px -200px;background:silver;'></div>" + labelAndIcon;
 					  baseType = s.getStructureType();
 					}
                 %>
