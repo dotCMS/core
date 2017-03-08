@@ -61,6 +61,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
@@ -1198,21 +1199,41 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void deleteForAllVersions () throws DotSecurityException, DotDataException {
 
+        Language language = APILocator.getLanguageAPI().getDefaultLanguage();
+
         //First lets create a test structure
         Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ), "junit_test_structure_" + String.valueOf( new Date().getTime() ) );
 
         //Now a new contentlet
-        Contentlet newContentlet = createContentlet( testStructure, null, false );
+        Contentlet newContentlet = createContentlet( testStructure, language, false );
+
+        // new inode to create a new version
+        String newInode=UUIDGenerator.generateUuid();
+        newContentlet.setInode(newInode);
+
+
+        List<Language> languages = APILocator.getLanguageAPI().getLanguages();
+        for ( Language localLanguage : languages ) {
+            if ( localLanguage.getId() != language.getId() ) {
+                language = localLanguage;
+                break;
+            }
+        }
+
+        newContentlet.setLanguageId(language.getId());
+
+        newContentlet = contentletAPI.checkin(newContentlet, user, false);
 
         //Now we need to delete it
         contentletAPI.archive(newContentlet, user, false);
         contentletAPI.delete( newContentlet, user, false, true );
 
         //Try to find the deleted Contentlet
-        Contentlet foundContentlet = contentletAPI.find( newContentlet.getInode(), user, false );
+        Identifier contentletIdentifier = APILocator.getIdentifierAPI().find( newContentlet.getIdentifier() );
+        List<Contentlet> foundContentlets = contentletAPI.findAllVersions(contentletIdentifier, user, false );
 
         //Validations
-        assertTrue( foundContentlet == null || foundContentlet.getInode() == null || foundContentlet.getInode().isEmpty() );
+        assertTrue( foundContentlets == null || foundContentlets.isEmpty() );
     }
 
     /**
@@ -1488,22 +1509,52 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void deleteCollectionAllVersions () throws DotSecurityException, DotDataException {
 
+        Language language = APILocator.getLanguageAPI().getDefaultLanguage();
+
         //First lets create a test structure
         Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ), "junit_test_structure_" + String.valueOf( new Date().getTime() ) );
 
-        //Now a new contentlet
-        Contentlet newContentlet = createContentlet( testStructure, null, false );
+        //Create a new contentlet with one version
+        Contentlet newContentlet1 = createContentlet( testStructure, language, false );
+
+        //Create a new contentlet with two versions
+        Contentlet newContentlet2 = createContentlet( testStructure, language, false );
+
+        // new inode to create the second version
+        String newInode=UUIDGenerator.generateUuid();
+        newContentlet2.setInode(newInode);
+
+        List<Language> languages = APILocator.getLanguageAPI().getLanguages();
+        for ( Language localLanguage : languages ) {
+            if ( localLanguage.getId() != language.getId() ) {
+                language = localLanguage;
+                break;
+            }
+        }
+
+        newContentlet2.setLanguageId(language.getId());
+
+        newContentlet2 = contentletAPI.checkin(newContentlet2, user, false);
+
 
         //Now test this delete
         List<Contentlet> testContentlets = new ArrayList<>();
-        testContentlets.add( newContentlet );
+        testContentlets.add( newContentlet1 );
+        testContentlets.add( newContentlet2 );
         contentletAPI.delete( testContentlets, user, false, true );
 
-        //Try to find the deleted Contentlet
-        Contentlet foundContentlet = contentletAPI.find( newContentlet.getInode(), user, false );
+        //Try to find the deleted Contentlets
+        Identifier contentletIdentifier = APILocator.getIdentifierAPI().find( newContentlet1.getIdentifier() );
+        List<Contentlet> foundContentlets = contentletAPI.findAllVersions(contentletIdentifier, user, false );
 
-        //Validations
-        assertTrue( foundContentlet == null || foundContentlet.getInode() == null || foundContentlet.getInode().isEmpty() );
+        //Validations for newContentlet1
+        assertTrue( foundContentlets == null || foundContentlets.isEmpty() );
+
+        contentletIdentifier = APILocator.getIdentifierAPI().find( newContentlet2.getIdentifier() );
+        foundContentlets = contentletAPI.findAllVersions(contentletIdentifier, user, false );
+
+        //Validations for newContentlet2
+        assertTrue( foundContentlets == null || foundContentlets.isEmpty() );
     }
 
     /**
