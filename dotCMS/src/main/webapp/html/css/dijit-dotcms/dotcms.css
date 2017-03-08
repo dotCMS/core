@@ -5867,7 +5867,7 @@ select[multiple]:hover {
   top: 34px;
   width: 225px;
   font-size: 85%;
-  border: 1px solid #d0d0d0;
+  border: 1px solid #ECEDEE;
   border-top: 0;
   background: #fff;
   z-index: 9998;
@@ -5897,8 +5897,8 @@ select[multiple]:hover {
 .account-flyout .login-out {
   background: #eee;
   margin: 15px 0 0 0;
-  border-top: 1px solid #d0d0d0;
-  border-bottom: 1px solid #d0d0d0;
+  border-top: 1px solid #ECEDEE;
+  border-bottom: 1px solid #ECEDEE;
 }
 
 .account-flyout .login-out table {
@@ -6075,9 +6075,8 @@ select[multiple]:hover {
 
 /* CONTENT TYPE TABLE */
 .sTypeTable {
-  border: 1px solid #D0D0D0;
+  border: 1px solid #ECEDEE;
   border-collapse: collapse;
-  font-size: 11px;
   margin: 0 auto;
 }
 
@@ -6086,15 +6085,18 @@ select[multiple]:hover {
   min-width: 225px;
   white-space: nowrap;
   padding: 0;
-  border: 1px solid #D0D0D0;
-  padding-bottom: 20px;
+  border: 1px solid #ECEDEE;
 }
 
 .sTypeHeader {
   font-weight: bold;
   padding: 3px 10px;
   background: #FAFAFA;
-  border-bottom: 1px solid #D0D0D0;
+  border-bottom: 1px solid #ECEDEE;
+  border-top: 1px solid #ECEDEE;
+}
+.sTypeHeader:first-child {
+  border-top: 0;
 }
 
 .sTypeItem a {
@@ -6104,12 +6106,7 @@ select[multiple]:hover {
 }
 
 .sTypeItem a:hover {
-  background: #E2EBFE;
-}
-
-#sTypeFile {
-  margin-top: 20px;
-  border-top: 1px solid #D0D0D0;
+  background: rgba(14, 128, 203, 0.1);
 }
 
 /* RELATIONSHIP TABLE */
@@ -6120,7 +6117,7 @@ select[multiple]:hover {
 }
 
 .myVarTable {
-  border: 1px solid #d0d0d0;
+  border: 1px solid #ECEDEE;
   border-collapse: collapse;
   width: 100%;
 }
@@ -6781,17 +6778,10 @@ table.sTypeTd {
   vertical-align: top;
 }
 
-.sTypeHeader {
-  font-weight: bold;
-  white-space: nowrap;
-  min-width: 175;
-  border-bottom: 1px solid silver;
-}
-
 table.sTypeTable.sTypeItem {
   text-transform: uppercase;
   white-space: nowrap;
-  min-width: 175;
+  min-width: 175px;
 }
 
 /* use in hmtl, templates, etc NOT in Browser Tree pop-ups*/
