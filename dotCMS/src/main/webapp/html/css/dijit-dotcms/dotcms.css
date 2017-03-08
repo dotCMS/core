@@ -6069,6 +6069,10 @@ select[multiple]:hover {
   border: none;
 }
 
+.browserTableStatus td {
+  border: 0px;
+}
+
 /* CONTENT TYPE TABLE */
 .sTypeTable {
   border: 1px solid #ECEDEE;
@@ -10175,6 +10179,13 @@ a.category_higlighted, a.tag_higlighted {
   display: flex;
   justify-content: center;
   margin-top: 16px;
+}
+.permissions__button-row .applyChangesButton {
+  margin-right: 24px;
+}
+.permissions__button-row .reset-permissions {
+  vertical-align: middle;
+  line-height: 32px;
 }
 .permissions__button-row .checkbox {
   margin-left: 16px;

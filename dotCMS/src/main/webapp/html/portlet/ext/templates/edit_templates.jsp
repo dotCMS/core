@@ -235,6 +235,7 @@
 
 	function hideEditButtonsRow() {
 		dojo.style('editTemplateButtonRow', { display: 'none' });
+		dojo.style('mainTabContainer', { width: '100%'});
 	}
 
 	function showEditButtonsRow() {
@@ -244,6 +245,7 @@
 			}
 		}
 		dojo.style('editTemplateButtonRow', { display: '' });
+		dojo.style('mainTabContainer', { width: '80%'});
 		changesMadeToPermissions = false;
 	}
 
