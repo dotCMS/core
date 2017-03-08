@@ -10191,11 +10191,11 @@ a.category_higlighted, a.tag_higlighted {
   margin-top: 16px;
 }
 .permissions__button-row .applyChangesButton {
-  margin-right: 20px;
+  margin-right: 24px;
 }
 .permissions__button-row .reset-permissions {
   vertical-align: middle;
-  line-height: 30px;
+  line-height: 32px;
 }
 .permissions__button-row .checkbox {
   margin-left: 16px;
