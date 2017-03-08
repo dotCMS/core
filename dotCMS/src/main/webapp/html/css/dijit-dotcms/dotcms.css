@@ -9504,7 +9504,6 @@ a.category_higlighted, a.tag_higlighted {
 .content-search__result-item .dijitCheckBox {
   position: absolute;
   left: 0;
-  top: 3px;
 }
 
 .content-type__edit-field-form {

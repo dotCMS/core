@@ -374,7 +374,7 @@ div.fakefile {
         };
         for(actionButton in configJson.actionButtons){
             if(configJson.actionButtons.hasOwnProperty(actionButton)) {
-                dojo.place(new dijit.form.Button({style: "position:relative; left:40%; margin-bottom:10px",label:configJson.actionButtons[actionButton].label,
+                dojo.place(new dijit.form.Button({style: "position:relative; left:33%; margin:0 4px 10px",label:configJson.actionButtons[actionButton].label,
                 onClick:dialog.onButtonClickEvent.apply(dialog,[configJson.actionButtons[actionButton]])
                 }).domNode, dialog.containerNode,'after');
             }
