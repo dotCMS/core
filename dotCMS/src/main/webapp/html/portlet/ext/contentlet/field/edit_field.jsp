@@ -567,14 +567,17 @@
             <a href="<%=resourceLink %>" target="_new"><%=resourceLinkUri %></a>
         </div>
     </div>
-    <% if (mimeType.indexOf("officedocument")==-1 && (mimeType.indexOf("text")!=-1 || mimeType.indexOf("javascript")!=-1
-            || mimeType.indexOf("json")!=-1 || mimeType.indexOf("xml")!=-1 || mimeType.indexOf("php")!=-1) || fileAssetName.endsWith(".vm")) { %>
-    <% if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) { %>
-
-    <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
-
-
-    <% } %>
+    <% if (mimeType.indexOf("officedocument") == -1
+            && mimeType.indexOf("svg") == -1
+            && (mimeType.indexOf("text") != -1
+                || mimeType.indexOf("javascript") != -1
+                || mimeType.indexOf("json") != -1
+                || mimeType.indexOf("xml") != -1
+                || mimeType.indexOf("php") != -1)
+            || fileAssetName.endsWith(".vm")) { %>
+        <% if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) { %>
+            <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
+        <% } %>
     <% } %>
 
     <% } %>
