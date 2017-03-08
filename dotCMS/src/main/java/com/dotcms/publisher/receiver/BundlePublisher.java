@@ -48,6 +48,7 @@ import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.repackage.org.apache.commons.compress.archivers.ArchiveEntry;
+import com.dotcms.repackage.org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import com.dotcms.repackage.org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.exception.ExceptionUtils;
@@ -60,6 +61,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.FileUtil;
 
 /**
  * This publisher will be in charge of retrieving the bundle, un-zipping it, and
@@ -155,6 +157,9 @@ public class BundlePublisher extends Publisher {
         }
 
         File folderOut = new File(bundlePath + bundleFolder);
+        if(folderOut.exists()){
+          FileUtil.deltree(folderOut);
+        }
         folderOut.mkdir();
 
         // Extract file to a directory
@@ -266,7 +271,7 @@ public class BundlePublisher extends Publisher {
      * @throws DotPublisherException 
      */
     private void untar(InputStream bundle, String path, String fileName) throws DotPublishingException {
-        ArchiveEntry entry;
+      TarArchiveEntry entry;
         TarArchiveInputStream inputStream = null;
         FileOutputStream outputStream = null;
         File baseBundlePath = new File(ConfigUtils.getBundlePath());
@@ -285,7 +290,7 @@ public class BundlePublisher extends Publisher {
 
             // For each entry in the tar, extract and save the entry to the file
             // system
-            while (null != (entry = inputStream.getNextEntry())) {
+            while (null != (entry = inputStream.getNextTarEntry())) {
                 // for each entry to be extracted
                 int bytesRead;
 
@@ -298,9 +303,7 @@ public class BundlePublisher extends Publisher {
                     SecurityLogger.logInfo(this.getClass(),  "Invalid Bundle writing file outside of bundlePath"  );
                     SecurityLogger.logInfo(this.getClass(),  " Bundle path "  + baseBundlePath );
                     SecurityLogger.logInfo(this.getClass(),  " Evil File"  + fileOrDir );
-                    
-                    
-                   throw new DotPublishingException("Bundle trying to write outside of proper path:" + fileOrDir);
+                    throw new DotPublishingException("Bundle trying to write outside of proper path:" + fileOrDir);
                 }
                 
                 
@@ -310,6 +313,18 @@ public class BundlePublisher extends Publisher {
                     continue;
                 }
 
+
+                
+                // We will ignore symlinks
+                if(entry.isLink() || entry.isSymbolicLink()){
+                  SecurityLogger.logInfo(this.getClass(),  "Invalid Bundle writing symlink (or some non-file) inside a bundle"  );
+                  SecurityLogger.logInfo(this.getClass(),  " Bundle path "  + baseBundlePath );
+                  SecurityLogger.logInfo(this.getClass(),  " Evil entry"  + entry );
+                  throw new DotPublishingException("Bundle contains a symlink:" + fileOrDir);
+                }
+                
+                
+                
                 // write to file
                 byte[] buf = new byte[1024];
                 outputStream = new FileOutputStream(pathWithoutName + entry.getName());
