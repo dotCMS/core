@@ -72,16 +72,23 @@
 	   	        handleAs: "text",
 	   	        load: function(data) {
 	   	        	var isError = false;
-	   	        	var dataJSON = JSON.parse(data);
+	                var json = data;
+	                    
+	                try{
+	                    json = JSON.parse(json);
+	                } catch (e) {
+	                    console.log(e);
+	                    console.log(json)
+	                }
 
-	   	        	if (dataJSON.success == false || dataJSON.success == "false") {
+	   	        	if (json.success == false || json.success == "false") {
 	   	        		isError = true;
 	   	        	}
 
 	   	        	if(isError){
 	   	        		showDotCMSSystemMessage("There was an error generating the Request Code. Please try again.",true);
 	   	        	}else{
-	   	        		var requestCode = dataJSON.requestCode;
+	   	        		var requestCode = json.requestCode;
 	   	        		dojo.byId("trialLicenseRequestCode").value=requestCode;
 					    dojo.byId("trialLicenseForm").submit();
 	   	            }
