@@ -36,12 +36,12 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 	public void save(Container container) throws DotDataException {
 		HibernateUtil.save(container);
-		containerCache.add(container.getIdentifier(), container);
+		containerCache.remove(container.getInode());
 	}
 
 	public void save(Container container, String existingId) throws DotDataException {
 		HibernateUtil.saveWithPrimaryKey(container, existingId);
-		containerCache.add(container.getIdentifier(), container);
+		containerCache.remove(container.getInode());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -63,7 +63,31 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		hu.setSQLQuery(sql);
 		return hu.list();
 	}
+    @Override
+    @SuppressWarnings("unchecked")
+    public Container find(String inode) throws DotDataException, DotSecurityException {
+      Container container = CacheLocator.getContainerCache().get(inode);
+      //If it is not in cache.
+      if(container == null){
+          
+          //Get container from DB.
+          HibernateUtil dh = new HibernateUtil(Container.class);
+          
+          Container containerAux= (Container) dh.load(inode);
 
+          if(InodeUtils.isSet(containerAux.getInode())){
+              //container is the one we are going to return.
+              container = containerAux;
+              //Add to cache.
+              CacheLocator.getContainerCache().add(container);
+          }
+          
+      }
+      
+      return container;
+      
+      
+    }
 	public List<Container> findContainers(User user, boolean includeArchived,
 			Map<String, Object> params, String hostId,String inode, String identifier, String parent,
 			int offset, int limit, String orderBy) throws DotSecurityException,

@@ -66,5 +66,15 @@ public interface ContainerFactory {
 	 * @throws DotSecurityException 
 	 */
 	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException;
+    /**
+     * Finds a container by Inode
+     * @param inode
+     * @param user
+     * @param respectFrontendRoles
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+	Container find(String inode) throws DotDataException, DotSecurityException;
 	
 }

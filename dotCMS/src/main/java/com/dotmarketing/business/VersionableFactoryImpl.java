@@ -80,7 +80,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		if (versionableWhitelist.contains(clazz)) {
 			try {
 				if (Container.class.equals(clazz)) {
-					ver = this.containerApi.getWorkingContainerById(id, user, true);
+					ver = this.containerApi.find(workingInode, user, true);
 				} else if (Template.class.equals(clazz)) {
 					ver = this.templateApi.find(workingInode, user, true);
 				}
@@ -127,7 +127,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 				if (versionableWhitelist.contains(clazz)) {
 					try {
 						if (Container.class.equals(clazz)) {
-							ver = this.containerApi.getLiveContainerById(id, user, true);
+							ver = this.containerApi.find(liveInode, user, true);
 						} else if (Template.class.equals(clazz)) {
 							ver = this.templateApi.find(liveInode, user, true);
 						}

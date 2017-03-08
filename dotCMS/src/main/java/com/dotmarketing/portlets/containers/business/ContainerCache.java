@@ -6,13 +6,11 @@ import com.dotmarketing.portlets.containers.model.Container;
 //This interface should have default package access
 public abstract class ContainerCache implements Cachable {
 	
-	abstract protected Container add(String identifier, Container container);
-
-	abstract protected Container getWorking(String identifier);
+	public abstract Container add(Container container);
 	
-	abstract protected Container getLive(String identifier);
-
+    public abstract Container get(String inode);
+    
 	abstract public void clearCache();
 
-	abstract public void remove(String identifier);
+	abstract public void remove(String inode);
 }
