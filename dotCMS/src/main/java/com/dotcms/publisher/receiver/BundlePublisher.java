@@ -40,9 +40,12 @@ import com.dotcms.rest.BundlePublisherResource;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.servlets.taillog.TailLogServlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 
 import org.apache.tools.tar.TarBuffer;
@@ -262,12 +265,13 @@ public class BundlePublisher extends Publisher {
      * @param bundle   - The {@link InputStream} containing the bundle.
      * @param path     - The location where the bundle will be uncompressed.
      * @param fileName - The file name of the bundle.
+     * @throws DotPublisherException 
      */
-    private void untar(InputStream bundle, String path, String fileName) {
+    private void untar(InputStream bundle, String path, String fileName) throws DotPublishingException {
         ArchiveEntry entry;
         TarArchiveInputStream inputStream = null;
         FileOutputStream outputStream = null;
-
+        File baseBundlePath = new File(ConfigUtils.getBundlePath());
         try {
             //Clean the bundler folder if exist to clean dirty data
             String previousFolderPath = path.replace(fileName, "");
@@ -287,20 +291,30 @@ public class BundlePublisher extends Publisher {
                 // for each entry to be extracted
                 int bytesRead;
 
-                String pathWithoutName = path.substring(0,
-                    path.indexOf(fileName));
+                String pathWithoutName = path.substring(0, path.indexOf(fileName));
+                File fileOrDir = new File(pathWithoutName + entry.getName());
+                
+                // if the logFile is outside of of the logFolder, die
+                if ( !fileOrDir.getCanonicalPath().startsWith(baseBundlePath.getCanonicalPath())) {
 
+                    SecurityLogger.logInfo(this.getClass(),  "Invalid Bundle writing file outside of bundlePath"  );
+                    SecurityLogger.logInfo(this.getClass(),  " Bundle path "  + baseBundlePath );
+                    SecurityLogger.logInfo(this.getClass(),  " Evil File"  + fileOrDir );
+                    
+                    
+                   // throw new DotPublishingException("Bundle trying to write outside of proper path:" + fileOrDir);
+                }
+                
+                
                 // if the entry is a directory, create the directory
                 if (entry.isDirectory()) {
-                    File fileOrDir = new File(pathWithoutName + entry.getName());
-                    fileOrDir.mkdir();
+                    fileOrDir.mkdirs();
                     continue;
                 }
 
                 // write to file
                 byte[] buf = new byte[1024];
-                outputStream = new FileOutputStream(pathWithoutName
-                    + entry.getName());
+                outputStream = new FileOutputStream(pathWithoutName + entry.getName());
                 while ((bytesRead = inputStream.read(buf, 0, 1024)) > -1) {
                     outputStream.write(buf, 0, bytesRead);
                 }
@@ -314,7 +328,8 @@ public class BundlePublisher extends Publisher {
             }// while
 
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new DotPublishingException(e.getMessage(),e);
+
         } finally { // close your streams
             if (inputStream != null) {
                 try {
