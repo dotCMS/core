@@ -530,8 +530,9 @@
             }
 
             Element.update(hostLI,
-                '   <div style="font-weight: bold;padding: 10px 8px 10px 15px;font-size: 13px;background:#eee;">\n' +
+                '   <div style="font-weight: bold;padding: 10px 8px 10px 10px;font-size: 13px;background:#eee;">\n' +
                 '       <a onmouseover="this.className=\'underline\'" onmouseout="this.className=\'\'" id="' + hostId + '-TreeREF">\n' +
+                '		<i class="fa fa-globe" style="opacity:.6"></i>' +
                 '           ' + host.hostname + '\n' +
                 '       </a>\n' +
                 '   </div>\n' +
