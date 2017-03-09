@@ -126,10 +126,10 @@
 		<div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: addNewRole">
 			<%= LanguageUtil.get(pageContext, "Add-Role") %>
 		</div>
-		<div id="editRoleButtonWrapper" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: editRole, disabled: true">
+		<div id="editRoleButtonWrapper" data-dojo-type="dijit/MenuItem" data-dojo-props="disabled: true" onClick="editRole()">
 			<%= LanguageUtil.get(pageContext, "edit-role") %>
 		</div>
-		<div id="deleteRoleButtonWrapper" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: deleteRole, disabled: true">
+		<div id="deleteRoleButtonWrapper" data-dojo-type="dijit/MenuItem" data-dojo-props="disabled: true" onClick="deleteRole()">
 			<%= LanguageUtil.get(pageContext, "delete-role") %>
 		</div>
 	</div>
