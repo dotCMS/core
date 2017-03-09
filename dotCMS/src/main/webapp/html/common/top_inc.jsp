@@ -38,7 +38,7 @@ THIS FILE AND ITS INCLUDES
 	<title>dotCMS : <%= LanguageUtil.get(pageContext, "Enterprise-Web-Content-Management") %></title>
 
 	<style type="text/css">
-        @import "http://demos.dojotoolkit.org/dijit/themes/dijit.css";
+   		@import "<%=dojoPath%>/dijit/themes/dijit.css";
         @import "/html/css/dijit-dotcms/dotcms.css?b=<%= ReleaseInfo.getVersion() %>";
 	</style>
 
