@@ -108,7 +108,7 @@
 </div>
 
 <!-- Add Host Dialog -->
-<div id="addHostDialog" dojoType="dijit.Dialog">
+<div id="addHostDialog" dojoType="dijit.Dialog" class="noDijitDialogTitleBar">
     <form id="addHostDialogForm" dojoType="dijit.form.Form">
     	
     	<!-- Dialog step 1 -->
