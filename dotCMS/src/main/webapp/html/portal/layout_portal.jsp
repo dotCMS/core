@@ -19,7 +19,7 @@
         <jsp:include page="<%= Constants.TEXT_HTML_DIR + tilesContent %>"></jsp:include>
     </div>
         
-<%}else if(inPopupIFrame) { %>
+<%}else{ %>
         <%@ include file="/html/common/top_inc.jsp" %>
         <style>
                 body{
@@ -45,7 +45,7 @@
 					</li>            
 				</ul>
 			</div>
-            <%@ include file="/html/common/nav_main_inc_js.jsp" %>
+            <%@ include file="/html/common/rest_portlet_navigation_js.jsp" %>
             <%@ include file="/html/common/messages_inc.jsp" %>
                 
             <div id="dotAjaxMainHangerDiv">
@@ -60,29 +60,5 @@
         	<%@ include file="/html/common/messages_inc.jsp" %>
         	<jsp:include page="<%= Constants.TEXT_HTML_DIR + tilesContent %>"></jsp:include>
         <%} %>
-        <%@ include file="/html/common/bottom_inc.jsp" %>
-<%}else{ %>
-
-        <%@ include file="/html/common/top_inc.jsp" %>
-        
-        <div id="doc3" class="yui-t7">
-                <div id="hd">
-                        <%@ include file="/html/common/nav_main_inc.jsp" %>
-                        <%@ include file="/html/common/nav_sub_inc.jsp" %>
-                        <%@ include file="/html/common/messages_inc.jsp" %>
-                </div>
-                
-                <div id="bd">
-                        <div id="dotAjaxMainHangerDiv">
-                                <div id="dotAjaxMainDiv" dojoType="dojox.layout.ContentPane" style="overflow: visible;">
-                                        <jsp:include page="<%= Constants.TEXT_HTML_DIR + tilesContent %>"></jsp:include>
-                                </div>
-                        </div>
-                </div>
-                
-                <div>
-                        <%@ include file="/html/common/bottom_portal_inc.jsp" %>
-                </div>
-        </div>
         <%@ include file="/html/common/bottom_inc.jsp" %>
 <%} %>

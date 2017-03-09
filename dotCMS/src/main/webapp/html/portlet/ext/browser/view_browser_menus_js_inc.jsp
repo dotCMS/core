@@ -963,10 +963,7 @@
 			selectedFolder = "";
 		}
 
-
-		var htmlCode = '<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props=\'iconClass:"actionIcon", class:"dijitDropDownActionButton"\'>';
-		htmlCode += '<span></span>';
-		htmlCode += '<div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">';
+		var menuOptions = '';
 		if (selectedFolder == "") {
 			var host = inodes[activeHost];
 			var addChildren = hasAddChildrenPermissions(host.permissions);
@@ -978,30 +975,30 @@
 			    var isAdminUser = <%= APILocator.getUserAPI().isCMSAdmin(user)%>;
                 
                 if (isAdminUser || userRoles.folderModifiable) {
-                    htmlCode += '<div data-dojo-type="dijit/MenuItem" onclick="addTopFolder(\'' + objId + '\',\''+referer+'\')">';
-                    htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder")) %>';
-                    htmlCode += '</div>';
+					menuOptions += '<div data-dojo-type="dijit/MenuItem" onclick="addTopFolder(\'' + objId + '\',\''+referer+'\')">';
+					menuOptions += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder")) %>';
+					menuOptions += '</div>';
                 }
-                
-				htmlCode += '<div data-dojo-type="dijit/MenuItem" onclick="addHTMLPage(\'' + objId + '\',\'' + referer + '\')">';
-				htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "HTML-Page")) %>';
-				htmlCode += '</div>';
+
+					menuOptions += '<div data-dojo-type="dijit/MenuItem" onclick="addHTMLPage(\'' + objId + '\',\'' + referer + '\')">';
+					menuOptions += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "HTML-Page")) %>';
+					menuOptions += '</div>';
 
 				if(containerperm){
-					htmlCode += '<div data-dojo-type="dijit/MenuItem" onclick="addContainer(\'' + referer + '\')">';
-					htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Container")) %>';
-					htmlCode += '</div>';
+					menuOptions += '<div data-dojo-type="dijit/MenuItem" onclick="addContainer(\'' + referer + '\')">';
+					menuOptions += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Container")) %>';
+					menuOptions += '</div>';
 				}
 
 				if(templateperm){
-					htmlCode += '<div data-dojo-type="dijit/MenuItem" onclick="addTemplate(\'' + referer + '\')">';
-					htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Template")) %>';
-					htmlCode += '</div>';
+					menuOptions += '<div data-dojo-type="dijit/MenuItem" onclick="addTemplate(\'' + referer + '\')">';
+					menuOptions += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Template")) %>';
+					menuOptions += '</div>';
 				}
 
-				htmlCode += '<div data-dojo-type="dijit/MenuItem" onclick="addFile(\'' + objId + '\',\'' + referer + '\',false);hidePopUp(\'context_menu_popup_'+objId+'\');hidePopUp(\'context_child_menu_popup_'+objId+'\');">';
-				htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Image-or-File")) %>';
-				htmlCode += '</div>';
+				menuOptions += '<div data-dojo-type="dijit/MenuItem" onclick="addFile(\'' + objId + '\',\'' + referer + '\',false);hidePopUp(\'context_menu_popup_'+objId+'\');hidePopUp(\'context_child_menu_popup_'+objId+'\');">';
+				menuOptions += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Image-or-File")) %>';
+				menuOptions += '</div>';
 
 			}
 		} else {
@@ -1010,33 +1007,40 @@
 			if (addChildren) {
 				var referer = unescape(encodeURIComponent(origReferer));
 
-				htmlCode += '<div data-dojo-type="dijit/MenuItem" onclick="addFolder(\'' + selectedFolder + '\', \'' + referer + '\')">';
-				htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder")) %>';
-				htmlCode += '</div>';
+				menuOptions += '<div data-dojo-type="dijit/MenuItem" onclick="addFolder(\'' + selectedFolder + '\', \'' + referer + '\')">';
+				menuOptions += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder")) %>';
+				menuOptions += '</div>';
 
-				htmlCode += '<div data-dojo-type="dijit/MenuItem" onclick="addHTMLPage(\'' + selectedFolder + '\',\'' + referer + '\')">';
-				htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "HTML-Page")) %>';
-				htmlCode += '</div>';
+				menuOptions += '<div data-dojo-type="dijit/MenuItem" onclick="addHTMLPage(\'' + selectedFolder + '\',\'' + referer + '\')">';
+				menuOptions += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "HTML-Page")) %>';
+				menuOptions += '</div>';
 
-				htmlCode += '<div data-dojo-type="dijit/MenuItem" onclick="addFile(\'' + selectedFolder + '\',\'' + referer + '\',false);hidePopUp(\'context_menu_popup_'+objId+'\');hidePopUp(\'context_child_menu_popup_'+objId+'\');">';
-				htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Image-or-File")) %>';
-				htmlCode += '</div>';
+				menuOptions += '<div data-dojo-type="dijit/MenuItem" onclick="addFile(\'' + selectedFolder + '\',\'' + referer + '\',false);hidePopUp(\'context_menu_popup_'+objId+'\');hidePopUp(\'context_child_menu_popup_'+objId+'\');">';
+				menuOptions += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Image-or-File")) %>';
+				menuOptions += '</div>';
 
-				htmlCode += '<div data-dojo-type="dijit/MenuItem" onclick="addFile(\'' + selectedFolder + '\',\'' + referer + '\',true);hidePopUp(\'context_menu_popup_'+objId+'\');hidePopUp(\'context_child_menu_popup_'+objId+'\');">';
-				htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Multiple-Files")) %>';
-				htmlCode += '</div>';
+				menuOptions += '<div data-dojo-type="dijit/MenuItem" onclick="addFile(\'' + selectedFolder + '\',\'' + referer + '\',true);hidePopUp(\'context_menu_popup_'+objId+'\');hidePopUp(\'context_child_menu_popup_'+objId+'\');">';
+				menuOptions += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Multiple-Files")) %>';
+				menuOptions += '</div>';
 
-				htmlCode += '<div data-dojo-type="dijit/MenuItem" onclick="addLink(\'' + selectedFolder + '\',\'' + referer + '\')">';
-				htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Menu-Link")) %>';
-				htmlCode += '</div>';
+				menuOptions += '<div data-dojo-type="dijit/MenuItem" onclick="addLink(\'' + selectedFolder + '\',\'' + referer + '\')">';
+				menuOptions += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Menu-Link")) %>';
+				menuOptions += '</div>';
 			}
 		}
 
-		htmlCode += '	</div>';
-		htmlCode += '</div>';
+		if (menuOptions) {
+			var htmlCode = '';
+			htmlCode += '<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props=\'iconClass:"actionIcon", class:"dijitDropDownActionButton"\'>';
+			htmlCode += '<span></span>';
+			htmlCode += '<div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">';
+			htmlCode += menuOptions;
+			htmlCode += '</div>';
+			htmlCode += '</div>';
 
-		dojo.byId("addNewDropDownButtonDiv").innerHTML = htmlCode;
-		dojo.parser.parse("addNewDropDownButtonDiv");
+			dojo.byId("addNewDropDownButtonDiv").innerHTML = htmlCode;
+			dojo.parser.parse("addNewDropDownButtonDiv");
+		}
 	}
 
 	//*************************************

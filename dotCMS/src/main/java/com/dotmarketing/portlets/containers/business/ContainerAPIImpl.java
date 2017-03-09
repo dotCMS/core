@@ -13,6 +13,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.TemplateContainers;
 import com.dotmarketing.beans.Tree;
+import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.BaseWebAssetAPI;
@@ -201,87 +202,38 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 		return result;
 	}
+    @Override
+    @SuppressWarnings("unchecked")
+    public Container find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
+
+      Container container = containerFactory.find(inode);
+      if(container ==null){
+        return null;
+      }
+      if (!permissionAPI.doesUserHavePermission(container, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+        throw new DotSecurityException("You don't have permission to read the source file.");
+      }
+      
+      return container;
+      
+      
+    }
 	@Override
 	@SuppressWarnings("unchecked")
 	public Container getWorkingContainerById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-		//Trying to get the container from Working cache.
-		Container container = CacheLocator.getContainerCache().getWorking(id);
-		
-		//If it is not in cache.
-		if(container == null){
-			
-			//Get container from DB.
-			HibernateUtil dh = new HibernateUtil(Container.class);
-			
-			dh.setSQLQuery("select {" + Inode.Type.CONTAINERS.getTableName() + ".*} from " + Inode.Type.CONTAINERS.getTableName() + ", inode dot_containers_1_, container_version_info vv " +
-					"where " + Inode.Type.CONTAINERS.getTableName() + ".inode = dot_containers_1_.inode and vv.working_inode=" + Inode.Type.CONTAINERS.getTableName() + ".inode and " +
-					"vv.identifier = ?");
-			
-			dh.setParam(id);
-			
-			List<Container> list = dh.list();
+	    VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(id);
+		return find(info.getWorkingInode(), user, respectFrontendRoles);
 
-			//If DB return something.
-			if(!list.isEmpty()){
-				Container containerAux = list.get(0);
-
-				if (!permissionAPI.doesUserHavePermission(containerAux, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-					throw new DotSecurityException("You don't have permission to read the source file.");
-				}
-
-				if(InodeUtils.isSet(containerAux.getInode())){
-					//container is the one we are going to return.
-					container = containerAux;
-					//Add to cache.
-					CacheLocator.getContainerCache().add(container.getIdentifier(), container);
-				}
-			}
-		}
-		
-		return container;
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
 	public Container getLiveContainerById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		
-		//Trying to get the container from Live cache.
-		Container container = CacheLocator.getContainerCache().getLive(id);
-
-		//If it is not in cache.
-		if(container == null){
-			
-			//Get container from DB.
-			HibernateUtil dh = new HibernateUtil(Container.class);
-			
-			dh.setSQLQuery("select {" + Inode.Type.CONTAINERS.getTableName() + ".*} from " + Inode.Type.CONTAINERS.getTableName() + ", inode dot_containers_1_, container_version_info vv " +
-					"where " + Inode.Type.CONTAINERS.getTableName() + ".inode = dot_containers_1_.inode and vv.live_inode=" + Inode.Type.CONTAINERS.getTableName() + ".inode and " +
-					"vv.identifier = ?");
-			
-			dh.setParam(id);
-			
-			List<Container> list = dh.list();
-
-			//If DB return something.
-			if(!list.isEmpty()){
-				Container containerAux = list.get(0);
-
-				if (!permissionAPI.doesUserHavePermission(containerAux, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-					throw new DotSecurityException("You don't have permission to read the source file.");
-				}
-
-				if(InodeUtils.isSet(containerAux.getInode())){
-					//container is the one we are going to return.
-					container = containerAux;
-					//Add to cache.
-					CacheLocator.getContainerCache().add(container.getIdentifier(), container);
-				}
-			}
-		}
-		
-		return container;
+      VersionInfo info = APILocator.getVersionableAPI().getVersionInfo(id);
+      return find(info.getLiveInode(), user, respectFrontendRoles);
 	}
 
 	@Override
