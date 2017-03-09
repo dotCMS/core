@@ -169,6 +169,36 @@ public class JsonWebTokenUtils {
     } // isValidUser.
 
     /**
+     * Gets from the json web access token, the user id encrypted.
+     * @param jwtAccessToken String
+     * @return String returns the userId encrypted, null if it is not possible to get it.
+     */
+    public String getEncryptedUserId(final String jwtAccessToken) {
+
+        String encryptedUserId = null;
+
+        try {
+
+            if (null != jwtAccessToken) {
+                final DotCMSSubjectBean subject =
+                        this.getSubject(jwtAccessToken);
+
+                if (null != subject) {
+
+                    encryptedUserId =
+                            subject.getUserId();
+                }
+            }
+        } catch (Exception e) {
+
+            Logger.error(JsonWebTokenUtils.class, e.getMessage(), e);
+            encryptedUserId = null;
+        }
+
+        return encryptedUserId;
+    } // getUserId
+
+    /**
      * Gets from the json web access token, the user id decrypt.
      * @param jwtAccessToken String
      * @return String returns the userId, null if it is not possible to get it.
@@ -207,6 +237,8 @@ public class JsonWebTokenUtils {
 
         return getInstance().getUserId(jwtAccessToken);
     } // getUserIdFromJsonWebToken
+
+
 
     /**
      * Creates the Json Web Token based on the user
