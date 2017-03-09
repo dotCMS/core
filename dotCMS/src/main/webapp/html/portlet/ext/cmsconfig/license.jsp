@@ -638,6 +638,7 @@
 											<option value="200"><%= LanguageUtil.get(pageContext, "request-license-standard") %></option>
 											<option value="300"><%= LanguageUtil.get(pageContext, "request-license-professional") %></option>
 											<option value="400"><%= LanguageUtil.get(pageContext, "request-license-prime") %></option>
+											<option value="500"><%= LanguageUtil.get(pageContext, "request-license-platform") %></option>
 										</select>
 									</td>
 								</tr>
