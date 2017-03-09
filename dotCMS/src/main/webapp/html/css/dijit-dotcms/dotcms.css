@@ -4758,6 +4758,9 @@ html, body {
   line-height: 32px;
   padding: 0 10px;
 }
+.dijitComboBoxMenuPopup .dijitComboBoxMenu {
+  min-width: 200px;
+}
 
 .dijitMenuBar .dijitMenuItem {
   padding: 5px;
