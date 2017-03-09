@@ -28,16 +28,25 @@
             console.error(err);
         });
     </script>
+    <style>
+    	.logo-gear-hide{
+    		opacity:0;
+    	}
+		.logo-gear-show{
+		  opacity: 1;
+		  transition: opacity 4s;
+		  -webkit-transition: opacity 4s;
+		}    
+    </style>
 </head>
 
-<body>
+<body onload="document.getElementById('dotSpinner').classList.add('logo-gear-show')">
 <app>
 
-	<div style="position: fixed;top: 40%;left: 50%;transform: translate(-50%, -50%);vertical-align:middle;">
-		<div class="loader">
-			<i class="fa fa-circle-o-notch fa-spin" style="font-size:45px;color:#1681cb;font-weight:bold;"></i>
-			<img src="scss/img/dotCMS-logo.png" title="dotCMS loading" style="height: 50px; margin-left: 10px;vertical-align:bottom">
-		</div>
+	<div style="position: fixed;top: 40%;left: 50%;transform: translate(-50%, -50%);vertical-align:middle;background:url('scss/img/dotCMS-logo.png');height:64px;width:264px;background-repeat: no-repeat;background-size: 100% 100%;">
+		<div id="dotSpinner" style="position:relative;left:42px;top:12px;" class="logo-gear-hide">
+				<i  class="fa fa-cog fa-spin" style="font-size:54px;color:#1681cb;"></i>
+		</div>	
 	</div>
 
 </app>
