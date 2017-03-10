@@ -136,7 +136,7 @@ public class CacheLocator extends Locator<CacheIndex>{
 			adminCache.setTransport(new JGroupsCacheTransport());
 		}
 		catch(Exception e){
-			Logger.fatal(CacheLocator.class, "Unable to load Cache Admin:" + clazz);
+			Logger.fatal(CacheLocator.class, "Unable to load Cache Admin:" + clazz, e);
 		}
 
 		instance = new CacheLocator();

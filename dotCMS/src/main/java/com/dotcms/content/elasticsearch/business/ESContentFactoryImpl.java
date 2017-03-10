@@ -1294,6 +1294,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 				}
 			}
         } catch (Exception e) {
+            Logger.debug(this, e.getMessage(), e); e.printStackTrace();
             throw new RuntimeException(e);
         }
 	    return resp.getHits();

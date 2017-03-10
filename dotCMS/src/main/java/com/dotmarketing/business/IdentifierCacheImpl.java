@@ -252,7 +252,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
     }
 
     @Override
-    protected VersionInfo getVersionInfo(String identifier) {
+    public VersionInfo getVersionInfo(String identifier) {
         VersionInfo vi = null;
         try {
             vi = (VersionInfo)cache.get(getVersionInfoGroup()+identifier, getVersionInfoGroup());

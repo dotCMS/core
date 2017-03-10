@@ -574,6 +574,7 @@ public class ESIndexAPI {
 				serverCount = APILocator.getServerAPI().getAliveServersIds().length;
 			} catch (DotDataException e) {
 				Logger.error(this.getClass(), "Error getting live server list for server count, using 1 as default.");
+				Logger.debug(this.getClass(), e.getMessage(), e);
 				serverCount = 1;
 			}
 			// formula is (live server count (including the ones that are down but not yet timed out) - 1)
