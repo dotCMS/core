@@ -111,8 +111,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		if(System.getProperty(WebKeys.OSGI_ENABLED)!=null){
 			// Register main service
 			BundleContext context = HostActivator.instance().getBundleContext();
-			Hashtable<String, String> props = new Hashtable<String, String>();
-			context.registerService(WorkflowAPIOsgiService.class.getName(), this, props);
+			if (null != context) {
+				Hashtable<String, String> props = new Hashtable<String, String>();
+				context.registerService(WorkflowAPIOsgiService.class.getName(), this, props);
+			} else {
+				Logger.error(this, "Bundle Context is null, WorkflowAPIOsgiService has been not registered");
+			}
 		}
 	}
 
