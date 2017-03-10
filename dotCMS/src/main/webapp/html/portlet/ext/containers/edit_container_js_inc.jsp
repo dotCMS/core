@@ -643,6 +643,7 @@
 	function hideEditButtonsRow() {
 
 		dojo.style('editContainerButtonRow', { display: 'none' });
+		dojo.style('mainTabContainer', { width: '100%'});
 	}
 
 	function showEditButtonsRow() {
@@ -652,6 +653,7 @@
 			}
 		}
 		dojo.style('editContainerButtonRow', { display: '' });
+		dojo.style('mainTabContainer', { width: '80%'});
 		changesMadeToPermissions = false;
 	}
 

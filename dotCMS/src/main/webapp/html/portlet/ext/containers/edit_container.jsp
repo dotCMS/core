@@ -22,12 +22,11 @@
 		position: relative;
 	}
 	.show{
-		width: 900px;
+		width: 800px;
 		height: 400px;
 		border:1px solid #C0C0C0;
 	}
 	 .pShow{
-		width: 900px;
 		height: 250px;
 		border:1px solid #C0C0C0;
 	}
