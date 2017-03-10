@@ -33,6 +33,7 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.folders.business.AddContentToFolderPermissionException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.business.FolderFactory;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -45,6 +46,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
@@ -126,7 +128,11 @@ public class EditFolderAction extends DotPortletAction {
 					return;
 				}
 
-			} catch (Exception ae) {
+			} catch(AddContentToFolderPermissionException e){
+				req.setAttribute(WebKeys.FOLDER_EDIT, req.getAttribute(WebKeys.PARENT_FOLDER));
+				_sendToReferral(req, res, referer);
+				return;
+			}catch (Exception ae) {
 				_handleException(ae, req);
 				return;
 			}
@@ -411,8 +417,14 @@ public class EditFolderAction extends DotPortletAction {
 				return true;
 			}
 			HibernateUtil.commitTransaction();
-		}
-		catch(Exception ex) {
+		}catch(AddContentToFolderPermissionException e){
+			HibernateUtil.rollbackTransaction();
+			String message = LanguageUtil.format(user.getLocale(),
+					"message.folder.save.error.permission",new String[]{e.getUserId(), e.getFolderPath()}, false);
+			SessionMessages.add(req, "message", message);
+			Logger.error(this, e.getMessage(), e);
+			throw e;
+		} catch(Exception ex) {
 			HibernateUtil.rollbackTransaction();
 			SessionMessages.add(req, "message", "message.folder.save.error");
 			Logger.error(this, "ERROR: Cannot save folder '" + parentPath + folderForm.getName() + "'", ex);

@@ -562,7 +562,8 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 		if (!papi.doesUserHavePermission(parent, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user,respectFrontEndPermissions)
 				|| !papi.doesUserHavePermissions(PermissionableType.FOLDERS, PermissionAPI.PERMISSION_EDIT, user)) {
-			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to add to Folder " + parentFolder.getPath());
+			String userId = user.getUserId() != null ? user.getUserId() : "";
+			throw new AddContentToFolderPermissionException(userId, parentFolder.getPath());
 		}
 
 		boolean isNew = folder.getInode() == null;
