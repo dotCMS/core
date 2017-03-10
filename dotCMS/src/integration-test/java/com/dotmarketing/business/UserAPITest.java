@@ -554,8 +554,6 @@ public class UserAPITest extends IntegrationTestBase {
 		}
 
 		container = containerAPI.getLiveContainerById(container.getIdentifier(), systemUser, false);
-		System.out.println(container.getOwner());
-		System.out.println(replacementUser.getUserId());
 		assertTrue(container.getOwner().equals(replacementUser.getUserId()));
 		assertTrue(container.getModUser().equals(replacementUser.getUserId()));
 
