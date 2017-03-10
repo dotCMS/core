@@ -1892,7 +1892,7 @@
                         cell.innerHTML = cellData["modDate"];
 
                         var cell = row.insertCell (row.cells.length);
-                        cell.innerHTML = '<span class=\"dijitIcon actionIcon\" id=\"touchAction' + i + '\"></span>';
+                        cell.innerHTML = '<span class=\"dijitIcon actionIcon content-search__action-item\" id=\"touchAction' + i + '\"></span>';
 
                         live = cellData["live"] == "true"?true:false;
                         working = cellData["working"] == "true"?true:false;
