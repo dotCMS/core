@@ -16,6 +16,12 @@
 	<%} %>
 
 		function dotMakeBodVisible(){
+
+			if(!window.frameElement){
+				console.log("bottom_inc.jsp frame busting");
+				window.top.location="/dotAdmin/";
+				return;
+			}
 			
 			if(dojo.style(dojo.body(), "visibility") != "visible"){
 				setTimeout( "dotMakeBodVisible()",3000);
