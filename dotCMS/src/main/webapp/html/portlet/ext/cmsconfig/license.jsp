@@ -457,7 +457,7 @@
     	border: 1px solid #bce8f1;
     	padding: 15px 10px;
     	border-top: 0;
-    	min-height: 230px;
+    	height: 90%;
     }
     .btn{
     	display: inline-blcok;
@@ -611,7 +611,7 @@
 			</div>
 
 
-			<div class="yui-gb">
+			<div class="yui-gb" style="display: flex; align-items: stretch;">
 				<div class="yui-u first">
 					<div class="stepHeader"><%= LanguageUtil.get(pageContext, "global-step1") %> <small><%= LanguageUtil.get(pageContext, "request-license-step1-words") %></small></div>
 					<div class="stepBody">
