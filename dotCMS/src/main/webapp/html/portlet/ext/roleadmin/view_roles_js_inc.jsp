@@ -64,6 +64,7 @@
 	var roleLockedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "role-locked")) %>';
 	var roleUnlockedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "role-unlocked")) %>';
 	var nameMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Name")) %>';
+	var groupMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Tool-Group")) %>';
 	var emailMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Email")) %>';
 	var grantedFromMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Granted-From")) %>';
 	var layoutRemovedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "layout-removed")) %>';
@@ -922,7 +923,7 @@
 	        },
 			{
 	            field: 'name',
-	            name: nameMsg,
+	            name: groupMsg,
 	            width: col2Width + 'px'
 	        },
 	        {
