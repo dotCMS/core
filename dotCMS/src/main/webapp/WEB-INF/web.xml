@@ -208,11 +208,6 @@
 	</servlet>
 	
 	<servlet>
-		<servlet-name>FileServlet</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.FileServlet</servlet-class>
-	</servlet>
-	
-	<servlet>
 		<servlet-name>SpeedyAssetServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.SpeedyAssetServlet</servlet-class>
 	</servlet>
@@ -225,10 +220,6 @@
     	<servlet-class>com.dotmarketing.servlets.AjaxFileUploadServlet</servlet-class>
     </servlet>
     
-	<servlet>
-		<servlet-name>RedirectURLServlet</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.RedirectURLServlet</servlet-class>
-	</servlet>
 	<servlet>
 		<servlet-name>CategoriesServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.JSONCategoriesServlet</servlet-class>
@@ -389,7 +380,7 @@
  	<!-- END SERVLETS -->
  	
  	
-    <!-- TEST FRAMEWORK SERVLETS -->
+    <!-- TEST FRAMEWORK SERVLETS
        <servlet>
          <servlet-name>ServletTestRunner</servlet-name>
          <servlet-class>com.dotmarketing.servlets.test.ServletTestRunner</servlet-class>
@@ -399,7 +390,7 @@
          <servlet-name>ServletTestRunner</servlet-name>
          <url-pattern>/servlet/test</url-pattern>
       </servlet-mapping>
-	<!-- END OF TEST FRAMEWORK SERVLETS -->
+	END OF TEST FRAMEWORK SERVLETS -->
 	
     <!-- DOTCMS SERVLET-MAPPINGS -->
 	<servlet-mapping>
@@ -554,21 +545,6 @@
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN SERVLET-MAPPINGS -->
  	<!-- END SERVLET-MAPPINGS -->
- 	
- 	
-	<!-- TEST FRAMEWORK SERVLETS-MAPPING -->
-	<!--
-	<servlet-mapping>
-	    <servlet-name>ServletRedirector</servlet-name>
-	    <url-pattern>/servlets/ServletRedirector</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-	    <servlet-name>ServletTestRunner</servlet-name>
-	    <url-pattern>/servlets/ServletTestRunner</url-pattern>
-	</servlet-mapping>
-	-->
-	<!-- END OF TEST FRAMEWORK SERVLETS-MAPPING -->
-	
 	
 	<session-config>
 		<session-timeout>30</session-timeout>
