@@ -522,7 +522,7 @@
             }).play();
         }
         catch (e) {
-            console.log('Error smoothScroll()');
+            console.error('Error smoothScroll()', e);
         }
         
     }
