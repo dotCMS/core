@@ -704,6 +704,11 @@ class DeployWarTomcatTask extends DefaultTask{
             from project.zipTree(zipFile)
             into tomcatPath + project.webAppRootFolder
         }
+
+        if (project.gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
+            project.replaceText("$tomcatPath$project.webAppRootFolder/WEB-INF/web.xml", "<!-- TEST FRAMEWORK SERVLETS", "<!-- TEST FRAMEWORK SERVLETS -->")
+            project.replaceText("$tomcatPath$project.webAppRootFolder/WEB-INF/web.xml", "END OF TEST FRAMEWORK SERVLETS -->", "<!-- END OF TEST FRAMEWORK SERVLETS -->")
+        }
     }
 
     // Copying libs/buildlibs under tomcat8/lib.
