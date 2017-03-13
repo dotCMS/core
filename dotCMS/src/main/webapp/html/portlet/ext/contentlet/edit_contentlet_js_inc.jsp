@@ -503,13 +503,29 @@
     dojo.ready(
         function(){
             createLockedWarningDiv();
-            resetHasChanged();
+            resetHasChanged();   
+            scrollToFirst();
         }
     );
 
     var _bodyKeyDown;
     var _bodyMouseDown;
     var _hasUserChanged  = false;
+
+    dojo.require('dojox.fx.scroll');
+
+    function scrollToFirst() {
+        try {
+            dojox.fx.smoothScroll({
+                node: dojo.query('#mainTabContainer_tablist')[0],
+                win: dojo.query('.portlet-wrapper')[0]
+            }).play();
+        }
+        catch (e) {
+            console.log('Error smoothScroll()');
+        }
+        
+    }
 
     function resetHasChanged(){
         _hasUserChanged  = false;
