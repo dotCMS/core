@@ -504,7 +504,7 @@
         function(){
             createLockedWarningDiv();
             resetHasChanged();   
-            scrollToFirst();
+            scrollToTop();
         }
     );
 
@@ -514,7 +514,7 @@
 
     dojo.require('dojox.fx.scroll');
 
-    function scrollToFirst() {
+    function scrollToTop() {
         try {
             dojox.fx.smoothScroll({
                 node: dojo.query('#mainTabContainer_tablist')[0],
