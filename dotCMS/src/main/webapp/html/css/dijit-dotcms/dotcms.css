@@ -9358,7 +9358,9 @@ a.category_higlighted, a.tag_higlighted {
 
 .content-edit__main {
   margin: 16px 220px 0 0;
+  position: relative;
   width: auto;
+  z-index: 1;
 }
 
 .content-edit__sidebar {
@@ -9507,7 +9509,6 @@ a.category_higlighted, a.tag_higlighted {
 .content-search__result-item .dijitCheckBox {
   position: absolute;
   left: 0;
-  top: 3px;
 }
 
 @media (min-width: 835px) {
