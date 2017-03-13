@@ -3,9 +3,9 @@
 
 
 <br>&nbsp;<br>
-<h2>Examples Queries</h2>
+<h2>Example Queries</h2>
 <hr>
-These queries can be tested in the Elasticsearch query portlet
+<p>These queries can be tested in the ES Search tool</p>
 
 
 <h3>Match every piece of content, show the first 10 results</h3>
