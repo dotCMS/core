@@ -316,11 +316,16 @@ public class LoginServiceFactory implements Serializable {
             try{
 
                 String domainName = req.getServerName();
-                Host h = null;
-                h = APILocator.getHostAPI().findByName(domainName, user, false);
+                Host h = APILocator.getHostAPI().resolveHostName(domainName, user, false);
+
+                if (null == h || !UtilMethods.isSet(h.getInode())) {
+                    h = APILocator.getHostAPI().findByName(domainName, user, false);
+                }
+
                 if(h == null || !UtilMethods.isSet(h.getInode())){
                     h = APILocator.getHostAPI().findByAlias(domainName, user, false);
                 }
+
                 if(h != null && UtilMethods.isSet(h.getInode())){
                     req.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, h.getIdentifier());
                 }else{
