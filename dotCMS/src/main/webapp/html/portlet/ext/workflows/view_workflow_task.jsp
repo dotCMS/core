@@ -201,8 +201,8 @@
 <div class="view-workflow">
 	<table class="listingTable">
 	<tr>
-		<th style="text-align:left;">
-			<div style="display:inline-block;">
+		<th style="display:flex; align-items:center;">
+			<div>
 				<% if(structure.getStructureType() ==1){ %>
 					<span class="structureIcon"></span>
 				<%}else if(structure.getStructureType() ==2){ %>
@@ -215,7 +215,7 @@
 					<span class="pageIcon"></span>
 			    <%} %>
 			</div>
-			<h1 style="display:block;margin:15px 0;"><a href="javascript:doEdit()"><%= contentlet.getTitle() %></a></h1>
+			<h1 style="margin:15px 0 15px 10px;"><a href="javascript:doEdit()"><%= contentlet.getTitle() %></a></h1>
 		</th>
 		<th>
 		<!-- START Actions -->					
