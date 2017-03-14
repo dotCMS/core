@@ -506,11 +506,12 @@
 
 	}
 
+	/** Determines whether the specified element is checked or not. */
 	function isPermissionChecked(id){
-		if (dijit.byId(id) && dijit.byId(id).attr('value') == 'on'){
-			// Check if the checkbox element is visible (https://github.com/dotCMS/core/issues/9659)
-			var elem = document.getElementById(id);
-			return !!( elem.offsetWidth || elem.offsetHeight || elem.getClientRects().length );
+		var checkbox = dijit.byId(id);
+		if (checkbox) {
+			var parent = checkbox.domNode.parentNode;
+			return parent.style.display !== 'none' && checkbox.attr('value') == 'on';
 		} else {
 			return false;
 		}
