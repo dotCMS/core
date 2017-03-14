@@ -653,13 +653,7 @@ public interface PermissionAPI {
 	 * @version 1.8
 	 */
 	void clearCache();
-	
-	/**
-	 * This method is to clear a specific permissionable object from Cache. 
-	 * @since 4.0
-	 * @param permissionable
-	 */
-    void removePermissionableFromCache(Permissionable permissionable);
+
     
     /**
      * This method is to clear a specific permissionable object from Cache given a Permissionable Id

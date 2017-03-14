@@ -1124,10 +1124,6 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	public void clearCache() {
 		CacheLocator.getPermissionCache().clearCache();
 	}
-	
-    public void removePermissionableFromCache(Permissionable permissionable) {
-        removePermissionableFromCache(permissionable.getPermissionId());
-    }
 
     public void removePermissionableFromCache(String permissionableId) {
         CacheLocator.getPermissionCache().remove(permissionableId);
