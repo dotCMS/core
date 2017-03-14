@@ -1003,7 +1003,7 @@
 
 	var editLayoutDelayedHandler;
 	function roleLayoutClicked(evt) {
-		if(evt.cellIndex == 1) {
+		if(evt.cellIndex != 0) {
 			if(editLayoutDelayedHandler)
 				clearTimeout(editLayoutDelayedHandler);
 			var editLayoutDelayed = dojo.hitch(this, editLayout, allLayoutsList[evt.rowIndex].id);

@@ -9706,6 +9706,10 @@ a.category_higlighted, a.tag_higlighted {
   font-weight: normal;
 }
 
+.view-roles__cms-tabs .dojoxGridMasterView .dojoxGridRowTable td {
+  cursor: pointer;
+}
+
 .view-users .dijitDropDownActionButton {
   z-index: 2;
 }
