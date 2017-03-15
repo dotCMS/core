@@ -4239,6 +4239,7 @@ html, body {
 }
 .dijitTabPaneWrapper .dijitContentPane {
   padding: 24px;
+  overflow: visible;
 }
 .dijitTabChecked, .dijitTabChecked.dijitTabCheckedHover {
   background-color: #fff;
@@ -4812,6 +4813,10 @@ html, body {
 .dijitProgressBarTile {
   background-color: #ECEDEE;
   height: 100%;
+}
+
+.dijitProgressBarIndeterminate .dijitProgressBarTile {
+  background-image: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/progressBarAnim.gif");
 }
 
 .dijitInline .dijitButton {
@@ -5515,6 +5520,14 @@ a {
 }
 a:hover {
   text-decoration: none;
+}
+
+.link {
+  color: #0E80CB !important;
+  text-decoration: underline !important;
+}
+.link:hover {
+  text-decoration: none !important;
 }
 
 em {
@@ -6637,8 +6650,7 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-#menu ul.dropdown li.dotCMS_forms a span,
-.formIcon {
+#menu ul.dropdown li.dotCMS_forms a span {
   background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1320px;
   width: 18px;
   height: 18px;
@@ -7595,7 +7607,6 @@ div#_dotHelpMenu {
 .folderGlobeIcon,
 .folderOpenIcon,
 .folderSelectedIcon,
-.formIcon,
 .formNewIcon,
 .gearMinusIcon,
 .gearPencilIcon,
@@ -7925,7 +7936,7 @@ div#_dotHelpMenu {
 }
 
 .formIcon:before {
-  content: "";
+  content: "";
 }
 
 .formNewIcon:before {
@@ -10213,6 +10224,9 @@ a.category_higlighted, a.tag_higlighted {
 }
 .permissionWrapper .dijitAccordionTitle {
   padding: 0;
+}
+.permissionWrapper .dijitContentPane {
+  padding: 24px 0;
 }
 
 .permissionTable .permissionType {
