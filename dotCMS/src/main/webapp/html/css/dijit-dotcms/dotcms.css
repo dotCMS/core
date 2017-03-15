@@ -9717,6 +9717,10 @@ a.category_higlighted, a.tag_higlighted {
   font-weight: normal;
 }
 
+.view-roles__cms-tabs .dojoxGridMasterView .dojoxGridRowTable td {
+  cursor: pointer;
+}
+
 .view-users .dijitDropDownActionButton {
   z-index: 2;
 }
@@ -10223,6 +10227,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 .permissionWrapper .dijitContentPane {
   padding: 24px 0;
+  box-sizing: content-box;
 }
 
 .permissionTable .permissionType {
@@ -10284,10 +10289,6 @@ a.category_higlighted, a.tag_higlighted {
   color: red;
   text-align: center;
   font-weight: bolder;
-}
-
-.dijitTabPaneWrapper .dijitContentPane {
-  height: auto !important;
 }
 
 .related-content-dialog .dijitDialogPaneContent {
