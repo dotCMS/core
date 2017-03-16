@@ -208,7 +208,7 @@ public class Macro extends Directive
                 }
             }
 
-            argArray[i] = argArray[i].intern();
+            argArray[i] = argArray[i];
             i++;
         }
 

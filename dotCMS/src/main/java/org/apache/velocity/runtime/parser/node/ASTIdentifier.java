@@ -105,7 +105,7 @@ public class ASTIdentifier extends SimpleNode
     {
         super.init(context, data);
 
-        identifier = tokens.get(0).image.intern();
+        identifier = tokens.get(0).image;
 
         uberInfo = new Info(getTemplateName(), getLine(), getColumn());
         RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
