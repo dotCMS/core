@@ -56,8 +56,8 @@ dojo.require("dijit.layout.BorderContainer");
 dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templated], {
 
 	templatePath: dojo.moduleUrl("dotcms", "dijit/form/ContentSelector.jsp"),
-	selectButtonTemplate: '<button id="{buttonInode}" class="resultButton" dojoType="dijit.form.Button">SELECT</button>',
-	checkBoxTemplate: '<input value="{buttonInode}"  class="contentCheckbox" dojoType="dijit.form.CheckBox"></input>',
+	selectButtonTemplate: '<button id="{buttonInode}" class="dijitButtonFlat" dojoType="dijit.form.Button">Select</button>',
+	checkBoxTemplate: '<input value="{buttonInode}" class="contentCheckbox" dojoType="dijit.form.CheckBox"></input>',
 	widgetsInTemplate: true,
 	title: '',
 	structureInode: '',
@@ -121,7 +121,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	},
 
 	_structureDetailsCallback: function (structure) {
-		this.structureName.innerHTML = structure["name"] ? structure["name"] : "";
+		this.dialog.set('title', structure["name"] ? structure["name"] : "");
 		this.structureVelVar = structure["velocityVarName"] ? structure["velocityVarName"] : "";
 		this._structureChanged();
 	},
@@ -142,12 +142,12 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 	_fillStructures: function() {
 		this.structures_select.innerHTML = "";
-		var htmlstr = "<dl>";
-		htmlstr += "<dt><b>Content Type:</b></dt>";
+		var htmlstr = "<dl class='vertical'>";
+		htmlstr += "<dt><label><b>Content Type:</b></label></dt>";
 		htmlstr += "<dd>";
 		if(this.containerStructures.length > 1){
 			dojo.require("dijit.form.FilteringSelect");
-			htmlstr += "<select dojoType='dijit.form.FilteringSelect' onChange='displayStructure(this.value)' id='structuresSelect+"+this.dialogCounter+"' required='true' name='structuresSelect+"+this.dialogCounter+"' style=\"width:160px;\">";
+			htmlstr += "<select dojoType='dijit.form.FilteringSelect' onChange='displayStructure(this.value)' id='structuresSelect+"+this.dialogCounter+"' required='true' name='structuresSelect+"+this.dialogCounter+"'>";
 
 			for (var i = 0; i < this.containerStructures.length; i++) {
 				htmlstr += "<option value='"+this.containerStructures[i].inode+"'";
@@ -171,7 +171,6 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 	_fillLanguages: function(data) {
 		if(dijit.byId('langcombo+'+this.dialogCounter)){
-			window.console.log("destroying:langcombo+" + this.dialogCounter)
 			dijit.byId('langcombo+'+this.dialogCounter).destroy();
 		}
 		this.availableLanguages = data;
@@ -292,7 +291,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			if (type=='multi_select')
 				result = result+"<select  dojoType='dijit.form.MultiSelect'  multiple=\"multiple\" size=\"4\" id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\">\n";
 			else
-				result = result+"<select  dojoType='dijit.form.FilteringSelect' id=\"" + fieldId + "\" style=\"width:160px;\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\">\n<option value=\"\">None</option>";
+				result = result+"<select  dojoType='dijit.form.FilteringSelect' id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\">\n<option value=\"\">None</option>";
 
 			for(var i = 0; i < option.length; i++){
 				var actual_option = option[i].split("|");
@@ -322,14 +321,14 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			return result;
 
 		}else if(type=='tag'){
-			var result="<table style='width:200px;' border=\"0\">";
+			var result="<table border=\"0\">";
 			result = result + "<tr><td style='padding:0px;'>";
 			result = result +"<textarea id=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "Field" + this.dialogCounter + "\""
 			+ " name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\""
 			+ " cols=\"20\" rows=\"2\" onkeyup=\"suggestTagsForSearch(this,'"
 			+ this.structureVelVar+"."+ fieldVelocityVarName + "suggestedTagsDiv" + this.dialogCounter + "');\" "
 			+ " style=\"border-color: #7F9DB9; border-style: solid; border-width: 1px; "
-			+ " font-family: Verdana, Arial,Helvetica; font-size: 11px; height: 50px; width: 160px;\" "
+			+ " height: 50px; width: 100%;\" "
 			+ " ></textarea><br/><span style=\"font-size:11px; color:#999;\"> "
 			+ this.tagTextValue
 			+ " </span> "
@@ -356,11 +355,11 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			if(dojo.byId('FolderHostSelector-hostFoldersTreeWrapper')){
 				dojo.byId('FolderHostSelector-hostFoldersTreeWrapper').remove();
 			}
-			if(dijit.byId('FolderHostSelector')){
-				dijit.byId('FolderHostSelector').destroy();
+			if(dijit.byId('FolderHostSelector' + this.dialogCounter)){
+				dijit.byId('FolderHostSelector' + this.dialogCounter).destroy();
 			}
-			if(dijit.byId('FolderHostSelector-tree')){
-				dijit.byId('FolderHostSelector-tree').destroy();
+			if(dijit.byId('FolderHostSelector' + this.dialogCounter + '-tree')){
+				dijit.byId('FolderHostSelector' + this.dialogCounter + '-tree').destroy();
 			}
 
 			var hostId = "";
@@ -426,7 +425,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		if (data != null) {
 			categories = data;
 			for(i = 0;i< categories.length;i++){
-				dojo.create("dt", { innerHTML: categories[i]["categoryName"] + ":" }, searchCategoryList);
+				dojo.create("dt", { innerHTML: "<label>" + categories[i]["categoryName"] + ":</label>" }, searchCategoryList);
 				var selectId = categories[i]["categoryName"].replace(/[^A-Za-z0-9_]/g, "") + "Select" + this.dialogCounter;
 				dijit.registry.remove(selectId);
 				if(dijit.byId(selectId)){

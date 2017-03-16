@@ -4,11 +4,7 @@ import static com.dotcms.util.CollectionsUtils.entry;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.CollectionsUtils.mapEntries;
 import static com.dotcms.util.HttpRequestDataUtil.getHostname;
-import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_ENDPOINTS;
-import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_BASEURL;
-import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_PROTOCOL;
-import static com.dotmarketing.util.WebKeys.WEBSOCKET_SYSTEMEVENTS_ENDPOINT;
-import static com.dotmarketing.util.WebKeys.DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT;
+import static com.dotmarketing.util.WebKeys.*;
 
 import java.io.Serializable;
 import java.util.Locale;
@@ -39,6 +35,8 @@ public class ConfigurationHelper implements Serializable {
 	public static final String EDIT_CONTENT_STRUCTURES_PER_COLUMN = "EDIT_CONTENT_STRUCTURES_PER_COLUMN";
 	public static final String DEFAULT_REST_PAGE_COUNT = "DEFAULT_REST_PAGE_COUNT";
 	public static final String I18N_MESSAGES_MAP = "i18nMessagesMap";
+	public static final String WEB_SOCKET_SECURE_PROTOCOL = "wss";
+	public static final String WEB_SOCKET_PROTOCOL = "ws";
 	public static ConfigurationHelper INSTANCE = new ConfigurationHelper();
 
 	/**
@@ -64,7 +62,7 @@ public class ConfigurationHelper implements Serializable {
 
 		return map(
 				DOTCMS_WEBSOCKET_PROTOCOL,
-				Config.getStringProperty(DOTCMS_WEBSOCKET_PROTOCOL, "ws"),
+				Config.getAsString(DOTCMS_WEBSOCKET_PROTOCOL, () -> getWebSocketProtocol(request)),
 				DOTCMS_WEBSOCKET_BASEURL,
 				Config.getAsString(DOTCMS_WEBSOCKET_BASEURL, () -> getHostname(request)),
 				DOTCMS_WEBSOCKET_ENDPOINTS,
@@ -76,6 +74,8 @@ public class ConfigurationHelper implements Serializable {
 				Config.getIntProperty(DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT, 1000),
 				DEFAULT_REST_PAGE_COUNT,
 				Config.getIntProperty(DEFAULT_REST_PAGE_COUNT, 20),
+				DOTCMS_DISABLE_WEBSOCKET_PROTOCOL,
+				Boolean.valueOf( Config.getBooleanProperty(DOTCMS_DISABLE_WEBSOCKET_PROTOCOL, false) ),
 				I18N_MESSAGES_MAP,
 				mapEntries(
 						message("notifications_title", locale), // Notifications
@@ -84,6 +84,11 @@ public class ConfigurationHelper implements Serializable {
 						this.getRelativeTimeEntry(locale)
 				)
 				);
+	}
+
+	private String getWebSocketProtocol (final HttpServletRequest request) {
+
+		return request.isSecure()? WEB_SOCKET_SECURE_PROTOCOL : WEB_SOCKET_PROTOCOL;
 	}
 
 	/**

@@ -74,9 +74,9 @@
 
 			document.getElementById("postLoop").value = document.getElementById("postLoopMask").value;
 
-			form.<portlet:namespace />cmd.value = '<%=Constants.ADD%>';
-			form.<portlet:namespace />subcmd.value = subcmd;
-			form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/containers/edit_container" /></portlet:actionURL>';
+            form.<portlet:namespace />cmd.value = '<%=Constants.ADD%>';
+            form.<portlet:namespace />subcmd.value = subcmd;
+            form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/containers/edit_container" /></portlet:actionURL>';
 			submitForm(form);
 	}
 
@@ -643,6 +643,7 @@
 	function hideEditButtonsRow() {
 
 		dojo.style('editContainerButtonRow', { display: 'none' });
+		dojo.style('mainTabContainer', { width: '100%'});
 	}
 
 	function showEditButtonsRow() {
@@ -652,6 +653,7 @@
 			}
 		}
 		dojo.style('editContainerButtonRow', { display: '' });
+		dojo.style('mainTabContainer', { width: '80%'});
 		changesMadeToPermissions = false;
 	}
 
@@ -690,7 +692,10 @@
 			name: "codeMaskMulti"+structureInode,
 			id: "codeMaskMulti"+structureInode,
 			value: "",
-			style: "width:99%; height:300px"
+
+			class: "aceText",
+			style: "display:none"
+
 		  });
 
 		var div = dojo.create("div",{

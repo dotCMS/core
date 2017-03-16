@@ -41,12 +41,8 @@ import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.files.business.FileAPI;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -597,21 +593,7 @@ public class HostAPIImpl implements HostAPI {
                     hostCache.remove(host);
                 }
 
-                // Remove Old 1.9 Files
-                FileAPI fileAPI = APILocator.getFileAPI();
-                List<File> files = fileAPI.findFiles(user, true, null, host.getIdentifier(), null, null, null, 0, -1, null);
-                for (File file : files) {
-                    fileAPI.delete(file, user, respectFrontendRoles);
-                }
-
                 DotConnect dc = new DotConnect();
-
-                // Remove HTML Pages
-                HTMLPageAPI htmlPageAPI = APILocator.getHTMLPageAPI();
-                List<HTMLPage> pages = htmlPageAPI.findHtmlPages(user, true, null, host.getIdentifier(), null, null, null, 0, -1, null);
-                for (HTMLPage page : pages) {
-                    htmlPageAPI.delete(page, user, respectFrontendRoles);
-                }
 
                 // Remove Links
                 MenuLinkAPI linkAPI = APILocator.getMenuLinkAPI();
@@ -638,15 +620,6 @@ public class HostAPIImpl implements HostAPI {
                     dc.setSQL("delete from template_containers where template_id = ?");
                     dc.addParam(template.getIdentifier());
                     dc.loadResult();
-
-                    dc.setSQL("select inode, identifier from htmlpage where template_id = ?");
-                    dc.addParam(template.getIdentifier());
-                    List<HashMap<String, Object>> htmlpages =  dc.loadResults();
-                    for (HashMap<String, Object> folderMap : htmlpages) {
-                        String identifier = (String) folderMap.get("identifier");
-                        HTMLPage page = htmlPageAPI.loadWorkingPageById(identifier, user, respectFrontendRoles);
-                        htmlPageAPI.delete(page, user, respectFrontendRoles);
-                    }
 
                     templateAPI.delete(template, user, respectFrontendRoles);
                 }
@@ -676,7 +649,7 @@ public class HostAPIImpl implements HostAPI {
                 dc.addParam(host.getIdentifier());
                 dc.loadResult();
 
-                String[] assets = {Inode.Type.CONTAINERS.getTableName(),"template","htmlpage","links"};
+                String[] assets = {Inode.Type.CONTAINERS.getTableName(),"template","links"};
                 for(String asset : assets) {
                     dc.setSQL("select inode from "+asset+" where exists (select * from identifier where host_inode=? and id="+asset+".identifier)");
                     dc.addParam(host.getIdentifier());
@@ -987,13 +960,23 @@ public class HostAPIImpl implements HostAPI {
             dh.setParam(workingHostName+"/%");
             resultList = dh.list();
             for(Link link : resultList){
-                String workingURL = link.getUrl();
-                String newURL = updatedHostName+workingURL.substring(workingHostName.length());//gives url with updatedhostname
-                link.setUrl(newURL);
                 try {
-                    APILocator.getMenuLinkAPI().save(link, APILocator.getUserAPI().getSystemUser(), false);
-                } catch (DotSecurityException e) {
-                    throw new RuntimeException(e);
+                    //We need to ONLY update links that are INTERNALS and working/live.
+                    //https://github.com/dotCMS/core/issues/10609
+                    if ( Link.LinkType.INTERNAL.toString().equals(link.getLinkType() )
+                        && ( link.isLive() || link.isWorking() )){
+
+                        String workingURL = link.getUrl();
+                        String newURL = updatedHostName+workingURL.substring(workingHostName.length());//gives url with updatedhostname
+                        link.setUrl(newURL);
+                        try {
+                            APILocator.getMenuLinkAPI().save(link, APILocator.getUserAPI().getSystemUser(), false);
+                        } catch (DotSecurityException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                } catch (DotSecurityException e){
+                    Logger.error(this, "Could not update Menu Link with inode" + link.getInode());
                 }
             }
         }

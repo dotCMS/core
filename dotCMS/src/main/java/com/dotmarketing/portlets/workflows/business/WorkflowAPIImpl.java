@@ -12,7 +12,7 @@ import java.util.StringTokenizer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
 import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
-import com.dotcms.repackage.org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleContext;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -111,8 +111,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		if(System.getProperty(WebKeys.OSGI_ENABLED)!=null){
 			// Register main service
 			BundleContext context = HostActivator.instance().getBundleContext();
-			Hashtable<String, String> props = new Hashtable<String, String>();
-			context.registerService(WorkflowAPIOsgiService.class.getName(), this, props);
+			if (null != context) {
+				Hashtable<String, String> props = new Hashtable<String, String>();
+				context.registerService(WorkflowAPIOsgiService.class.getName(), this, props);
+			} else {
+				Logger.error(this, "Bundle Context is null, WorkflowAPIOsgiService has been not registered");
+			}
 		}
 	}
 
@@ -374,10 +378,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	public WorkflowTask findWorkFlowTaskById(String id) throws DotDataException {
 		return wfac.findWorkFlowTaskById(id);
-	}
-
-	public List<IFileAsset> findWorkflowTaskFiles(WorkflowTask task) throws DotDataException {
-		return wfac.findWorkflowTaskFiles(task);
 	}
 
 	public List<IFileAsset> findWorkflowTaskFilesAsContent(WorkflowTask task, User user) throws DotDataException {

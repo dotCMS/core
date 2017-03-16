@@ -18,7 +18,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
@@ -394,30 +393,7 @@ public interface ContentletAPI {
 	 * @throws DotDataException 
 	 */
 	public void addLinkToContentlet(Contentlet contentlet, String linkInode, String relationName, User user, boolean respectFrontendRoles)throws DotSecurityException, DotDataException;
-	
-	/**
-	 * Adds a relationship to a contentlet
-	 * @param contentlet
-	 * @param fileInode
-	 * @param relationName
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @throws DotDataException 
-	 * @throws DotSecurityExceptionlanguageId
-	 */
-	public void addFileToContentlet(Contentlet contentlet, String fileInode, String relationName, User user, boolean respectFrontendRoles)throws DotSecurityException, DotDataException;
-	
-	/**
-	 * Adds a relationship to a contentlet
-	 * @param contentlet
-	 * @param imageInode
-	 * @param relationName
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @throws DotSecurityException
-	 * @throws DotDataException 
-	 */
-	public void addImageToContentlet(Contentlet contentlet, String imageInode, String relationName, User user, boolean respectFrontendRoles)throws DotSecurityException, DotDataException;
+
 
 	/**
 	 * Returns the contentlets on a given page.  Will only return contentlets the user has permission to read/use
@@ -857,18 +833,7 @@ public interface ContentletAPI {
 	 * @throws DotReindexStateException
 	 */
 	public void refreshContentUnderFolderPath ( String hostId, String folderPath ) throws DotReindexStateException;
-	
-	/**
-	 * Get all the files relates to the contentlet
-	 * @param contentlet
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	public List<File> getRelatedFiles(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-	
+
 	/**
 	 * Gets a file with a specific relationship type to the passed in contentlet
 	 * @param contentlet

@@ -15,7 +15,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.templates.design.bean.PreviewFileAsset;
 import com.dotmarketing.util.Config;
 import com.liferay.util.FileUtil;
@@ -46,9 +45,6 @@ public class PreviewTemplateUtil {
 			if(pfa.isContentlet()){
 				Contentlet aContentlet = APILocator.getContentletAPI().find(pfa.getInode(), APILocator.getUserAPI().getSystemUser(), false);
 				result.add(aContentlet);
-			}else{ //a File
-				File aFile = APILocator.getFileAPI().find(pfa.getInode(), APILocator.getUserAPI().getSystemUser(), false);
-				result.add(aFile);
 			}
 		}
 		return result;
@@ -86,15 +82,6 @@ public class PreviewTemplateUtil {
 			result.setContentlet(true);
 			result.setInode(c.getInode());
 			result.setParent(c.getFolder());
-		}else if(asset instanceof File){ // is a File
-			File f = (File)asset;
-			assetFile =  APILocator.getFileAPI().getAssetIOFile(f);
-			previewAsset = new java.io.File(importedFilesAssetDir, assetFile.getName());
-			if(previewAsset.exists())
-				previewAsset.delete();
-			result.setContentlet(false);
-			result.setInode(f.getInode());
-			result.setParent(f.getParent());
 		}
 		//set the real path for the body preview
 		result.setRealFileSystemPath(previewAsset.getPath().substring(previewAsset.getPath().indexOf("/_preview")));

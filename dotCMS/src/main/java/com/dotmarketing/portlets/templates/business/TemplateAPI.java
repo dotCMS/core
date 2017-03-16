@@ -11,16 +11,14 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI.TemplateContainersReMap.ContainerRemapTuple;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 
 public interface TemplateAPI {
-
-	List<Template> findTemplatesUnder(Folder parentFolder) throws DotDataException;
 
 	/**
 	 *
@@ -120,17 +118,6 @@ public interface TemplateAPI {
 
 
 	/**
-	 * Return the list of pages that use a  template body.
-	 *
-	 * @param body
-	 * @return List<Identifier>
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 */
-	List<HTMLPage> getPagesUsingTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-
-
-	/**
 	 * Update template body code to use the new parse container syntax
 	 *
 	 * @param template
@@ -190,8 +177,6 @@ public interface TemplateAPI {
 
 	public void associateContainers( List<Container> containerIdentifiers,Template template) throws DotHibernateException;
 
-	public String checkDependencies(String templateInode, User user, Boolean respectFrontendRoles) throws PortalException, SystemException, DotDataException, DotSecurityException;
-
     public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException;
 
     public Template find(String inode, User user, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException;
@@ -206,18 +191,6 @@ public interface TemplateAPI {
 	 *
 	 */
     public void updateThemeWithoutVersioning(String templateInode, String theme) throws DotDataException;
-
-    /**
-     * Invalidate pages cache related to the specified template and also
-     * invalidates live html pages
-     *
-     * @param templateInode
-     * @param user
-     * @param respectFrontEndRoles
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
-    public void invalidateTemplatePages(String templateInode, User user, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException;
     
     /**
 	 * Method will replace user references of the given userId in templates

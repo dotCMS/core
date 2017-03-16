@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 
 /**
  * <a href="GenericServletOutputStream.java.html"><b><i>View Source</i></b></a>
@@ -51,6 +52,14 @@ public class GenericServletOutputStream extends ServletOutputStream {
 
 	public void write(byte[] b, int off, int len) throws IOException {
 		_dos.write(b, off, len);
+	}
+
+	public boolean isReady() {
+		return false;
+	}
+
+	public void setWriteListener(WriteListener writeListener) {
+
 	}
 
 	private DataOutputStream _dos;

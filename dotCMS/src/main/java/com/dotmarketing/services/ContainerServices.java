@@ -16,7 +16,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
@@ -51,14 +50,14 @@ public class ContainerServices {
     	StringBuilder sb = new StringBuilder();
 
         boolean isDynamic = UtilMethods.isSet(container.getLuceneQuery());
-        
+
         List<ContainerStructure> csList = new ArrayList<>();
         try{
             csList = APILocator.getContainerAPI().getContainerStructures(container);
         }catch(Exception e){
             throw new DotStateException(e.getMessage());
         }
-        
+
         //  let's write this puppy out to our file
         sb.append("#set ($SERVER_NAME =\"$host.getHostname()\" ) ");
         sb.append("#set ($CONTAINER_IDENTIFIER_INODE = '" ).append(identifier.getInode() ).append( "')");
@@ -101,6 +100,8 @@ public class ContainerServices {
             sb.append("#if ($request.getParameter(\"cont_" ).append( identifier.getInode() ).append( "_per_page\"))");
             sb.append("#set ($CONTENTS_PER_PAGE = $request.getParameter(\"cont_" ).append( identifier.getInode() ).append( "_per_page\"))");
             sb.append("#end ");
+            sb.append("#set ($CONTENTS_PER_PAGE = $request.getParameter(\"cont_" ).append( identifier.getInode() ).append( "_per_page\"))");
+            sb.append("#end");
             sb.append("#set ($CURRENT_PAGE = \"1\")");
             sb.append("#if ($request.getParameter(\"cont_" ).append( identifier.getInode() ).append( "_page\"))");
             sb.append("#set ($CURRENT_PAGE = $request.getParameter(\"cont_" ).append( identifier.getInode() ).append( "_page\"))");
@@ -122,7 +123,6 @@ public class ContainerServices {
                 sb.append(container.getPreLoop());
             }
 
-
             sb.append("#foreach ($contentletId in $contentletList" ).append( identifier.getInode() ).append( ")");
 
        		//##Checking of contentlet is parseable and not throwing errors
@@ -140,23 +140,23 @@ public class ContainerServices {
            	    // if the content has expired we rewrite the identifier so it isn't loaded
            	    sb.append("#if($UtilMethods.isSet($_ident.sysExpireDate) && $_tmdate.after($_ident.sysExpireDate))");
            	    sb.append("#set($contentletId='') ");
-           	    sb.append("#end ");
+           	    sb.append("#end");
 
            	    // if the content should be published then force to show the working version
            	    sb.append("#if($UtilMethods.isSet($_ident.sysPublishDate) && $_tmdate.after($_ident.sysPublishDate))");
            	    sb.append("#set($_show_working_=true) ");
-           	    sb.append("#end ");
+           	    sb.append("#end");
 
            	    sb.append("#if(! $webapi.contentHasLiveVersion($contentletId) && ! $_show_working_) ")
            	      .append("#set($contentletId='')") // working contentlet still not published
-           	      .append("#end ");
+           	      .append("#end");
 
-           	    sb.append("#end ");
+           	    sb.append("#end");
 
            		sb.append("#set($CONTENT_INODE = '')");
            		sb.append("#if($contentletId != '') ");
            	    sb.append("#getContentDetail($contentletId) ");
-           	    sb.append("#end ");
+           	    sb.append("#end");
            	    sb.append("#if($CONTENT_INODE != '')");
 
                	if (!EDIT_MODE) {
@@ -165,14 +165,16 @@ public class ContainerServices {
                		sb.append("#if($_hasPermissionToViewContent)");
                	}
 
-                String code = "";
+
+                String code =  "";
                 
+                sb.append("#set ($structureCode" ).append(
+                		" = $containerAPI.getStructureCode(\"").append( container.getIdentifier() ).append("\", \"$ContentletStructure\"))" );
 
 
                 //### HEADER ###
                 String startTag = "${contentletStart}";
-                if(!code.contains(startTag))
-                {
+                if(!code.contains(startTag)) {
                 	sb.append("#if($EDIT_MODE)");
                     	sb.append("<div class=\"dotContentlet\">");
                     	sb.append(" ");
@@ -181,8 +183,7 @@ public class ContainerServices {
                     	sb.append("<div>");
                     sb.append(" #end ");
                 }
-                else
-                {
+                else {
                 	String headerString = "#if($EDIT_MODE)" +
                 			"<div class=\"dotContentlet\">" + "<div>" +
                 			"#end ";
@@ -193,7 +194,8 @@ public class ContainerServices {
                 //### BODY ###
                 String endTag = "${contentletEnd}";
                 boolean containsEndTag = code.contains(endTag);
-                if(containsEndTag){
+                if(containsEndTag)
+                {
                 	String footerString = "#if($EDIT_MODE && ${contentletId.indexOf(\".structure\")}==-1) " +
                 			"$velutil.mergeTemplate('static/preview_mode/content_controls.vtl') " +
                 			" #end " +
@@ -205,29 +207,23 @@ public class ContainerServices {
 
                 sb.append("#if($isWidget == true)");
                 	sb.append("$widgetCode");
-                sb.append(" #else");
-                /*
-                  for (ContainerStructure cs : csList) {
-                    sb.append("#if($ContentletStructure ==\"" + cs.getStructureId() + "\")" );
-                    sb.append(cs.getCode());
-                    sb.append("#end");
-                  }
-                  */
-                  for (int i=0;i<csList.size();i++) {
+                sb.append(" #else ");
+/*
+                      for (ContainerStructure cs : csList) {                	sb.append("#if($ContentletStructure ==\"" + cs.getStructureId() + "\")" );
+                	sb.append(cs.getCode() );
+                	sb.append("#end");
+                      }
+                 */
+                for (int i=0;i<csList.size();i++) {
                     ContainerStructure cs = csList.get(i);
                     String ifelse = (i==0) ? "if" : "elseif";
                     sb.append("#"+ifelse+ "($ContentletStructure ==\"" + cs.getStructureId() + "\")" );
                     sb.append(cs.getCode());
-                  }
-                  if(csList.size()>0){
+                }
+                if(csList.size()>0){
                     sb.append("#end");
-                  }
-                  
-                  
-                  
-                  
-                  
-                sb.append("#end");
+                }
+                sb.append(" #end ");
               //The empty div added for styling issue in Internet Explorer is closed here
                 //http://jira.dotmarketing.net/browse/DOTCMS-1974
             	sb.append("#if($EDIT_MODE)");

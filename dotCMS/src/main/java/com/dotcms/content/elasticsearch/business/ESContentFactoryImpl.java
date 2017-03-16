@@ -1,5 +1,38 @@
 package com.dotcms.content.elasticsearch.business;
 
+import java.io.Serializable;
+import java.io.StringWriter;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
+
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.count.CountRequestBuilder;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.index.query.FilterBuilders;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.QueryStringQueryBuilder;
+import org.elasticsearch.index.query.functionscore.random.RandomScoreFunctionBuilder;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.internal.InternalSearchHits;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortOrder;
+import org.springframework.util.NumberUtils;
+
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
@@ -9,7 +42,12 @@ import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.query.ComplexCriteria;
 import com.dotmarketing.business.query.Criteria;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -29,7 +67,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.links.model.Link;
@@ -37,37 +74,14 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.util.*;
-import com.liferay.portal.language.LanguageUtil;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.NumberUtil;
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.RegExMatch;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.count.CountRequestBuilder;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.index.query.FilterBuilders;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.QueryStringQueryBuilder;
-import org.elasticsearch.index.query.functionscore.random.RandomScoreFunctionBuilder;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.internal.InternalSearchHits;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
-import org.springframework.util.NumberUtils;
-
-import java.io.Serializable;
-import java.io.StringWriter;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.MessageFormat;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.Calendar;
 
 /**
  * Implementation class for the {@link ContentletFactory} interface. This class
@@ -647,7 +661,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         int deleted=before - after;
 
         // deleting orphan binary files
-        java.io.File assets=new java.io.File(APILocator.getFileAPI().getRealAssetsRootPath());
+        java.io.File assets=new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath());
         for(java.io.File ff1 : assets.listFiles())
             if(ff1.isDirectory() && ff1.getName().length()==1 && ff1.getName().matches("^[a-f0-9]$"))
                 for(java.io.File ff2 : ff1.listFiles())
@@ -1130,28 +1144,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected List<File> getRelatedFiles(Contentlet contentlet) throws DotDataException {
-	    HibernateUtil dh = new HibernateUtil(File.class);
-
-        File f = new File();
-        String tableName = f.getType();
-
-        String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
-        + tableName + "_1_ where tree.parent = ? and tree.child = " + tableName + ".inode and " + tableName
-        + "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type ='"+tableName+"'";
-
-        Logger.debug(this, "HibernateUtilSQL:getRelatedFiles\n " + sql);
-
-        dh.setSQLQuery(sql);
-
-        Logger.debug(this, "inode:  " + contentlet.getInode() + "\n");
-
-        dh.setParam(contentlet.getInode());
-
-        return dh.list();
-	}
-
-	@Override
 	protected Identifier getRelatedIdentifier(Contentlet contentlet, String relationshipType) throws DotDataException {
 	    String tableName;
         try {
@@ -1360,6 +1352,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 				}
 			}
         } catch (Exception e) {
+            Logger.debug(this, e.getMessage(), e); 
             throw new RuntimeException(e);
         }
 	    return resp.getHits();
@@ -1476,12 +1469,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
                         Logger.info(this, String.format("Reindex of updated related content after deleting user %s "
                                 + " has finished successfully.",
                             userToReplace.getUserId() + "/" + userToReplace.getFullName()));
-
-                        String reindexMsg = MessageFormat.format(LanguageUtil.get(user,
-                            "com.dotmarketing.business.UserAPI.delete.reindex"),
-                            userToReplace.getUserId() + "/" + userToReplace.getFullName());
-
-                        notAPI.info(reindexMsg, user.getUserId());
 
                     } catch (Exception e) {
                         Logger.error(this.getClass(),e.getMessage(),e);
@@ -2298,28 +2285,33 @@ public class ESContentFactoryImpl extends ContentletFactory {
 		}
 
 	/**
+	 * Finds every content in the system associated to the specified Content
+	 * Type Inode and field and removes it completely.
 	 *
 	 * @param structureInode
+	 *            - The Inode of the Content Type whose field will be deleted.
 	 * @param field
+	 *            - The {@link Field} that will be removed.
 	 * @throws DotDataException
+	 *             An error occurred when updating the contents.
 	 */
     protected void clearField(String structureInode, Field field) throws DotDataException {
         Queries queries = getQueries(field);
         List<String> inodesToFlush = new ArrayList<>();
 
         Connection conn = DbConnectionFactory.getConnection();
-
+        
         try(PreparedStatement ps = conn.prepareStatement(queries.getSelect())) {
             ps.setObject(1, structureInode);
             final int BATCH_SIZE = 200;
 
-            try(ResultSet rs = ps.executeQuery();
-                PreparedStatement ps2 = conn.prepareCall(queries.getUpdate()))
+            try(ResultSet rs = ps.executeQuery();)
             {
+            	PreparedStatement ps2 = conn.prepareStatement(queries.getUpdate());
                 for (int i = 1; rs.next(); i++) {
                     String contentInode = rs.getString("inode");
                     inodesToFlush.add(contentInode);
-                    ps2.setObject(1, contentInode);
+                    ps2.setString(1, contentInode);
                     ps2.addBatch();
 
                     if (i % BATCH_SIZE == 0) {
@@ -2331,7 +2323,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
 
         } catch (SQLException e) {
-            throw new DotDataException(String.format("Error Clearing Field '%s' for Structure with id: %s",
+            throw new DotDataException(String.format("Error clearing field '%s' for Content Type with ID: %s",
                     field.getVelocityVarName(), structureInode), e);
 
         }
@@ -2346,7 +2338,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * @param field
      * @return
      */
-    private Queries getQueries(Field field) {
+    public Queries getQueries(Field field) {
 
         StringBuilder select = new StringBuilder("SELECT inode FROM contentlet ");
         StringBuilder update = new StringBuilder("UPDATE contentlet SET ");
@@ -2355,33 +2347,37 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         if (isFloatField) {
             if (DbConnectionFactory.isMySql()) {
-                select.append("`").append(field.getFieldContentlet()).append("`");
                 whereField.append("`").append(field.getFieldContentlet()).append("` IS NOT NULL AND `")
                         .append(field.getFieldContentlet()).append("` != ");
             } else if (DbConnectionFactory.isH2()) {
-                select.append("\"").append(field.getFieldContentlet()).append("\"");
                 whereField.append("\"").append(field.getFieldContentlet()).append("\" IS NOT NULL AND \"")
                         .append(field.getFieldContentlet()).append("\" != ");
+            } else if ( DbConnectionFactory.isOracle() ) {
+                whereField.append("'").append(field.getFieldContentlet()).append("' IS NOT NULL AND '")
+                        .append(field.getFieldContentlet()).append("' != ");
             } else {
-                select.append(field.getFieldContentlet());
                 whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ").append(field.getFieldContentlet())
                         .append(" != ");
             }
         //https://github.com/dotCMS/core/issues/10245
         }else {
             whereField.append(field.getFieldContentlet()).append(" IS NOT NULL AND ");
-            if(DbConnectionFactory.isMsSql() && field.getFieldContentlet().contains("text_area")) {
-                whereField.append(" DATALENGTH (").append(field.getFieldContentlet()).append(")");
+            if ( field.getFieldContentlet().contains("text_area") ) {
+                if ( DbConnectionFactory.isMsSql() ) {
+                    whereField.append(" DATALENGTH (").append(field.getFieldContentlet()).append(")");
+                } else if ( DbConnectionFactory.isOracle() ) {
+                    whereField.append("'").append(field.getFieldContentlet()).append("'").append(" != ");
+                } else {
+                    whereField.append(field.getFieldContentlet()).append(" != ");
+                }
             } else {
                 whereField.append(field.getFieldContentlet()).append(" != ");
             }
         }
-            
-
 
         if (DbConnectionFactory.isMySql()) {
             update.append("`").append(field.getFieldContentlet()).append("`").append(" = ");
-        }else if (DbConnectionFactory.isH2() && isFloatField) {
+        } else if ( (DbConnectionFactory.isH2() || DbConnectionFactory.isOracle()) && isFloatField ) {
             update.append("\"").append(field.getFieldContentlet()).append("\"").append(" = ");
         }else{
             update.append(field.getFieldContentlet()).append(" = ");
@@ -2394,8 +2390,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
             update.append(DbConnectionFactory.getDBDateTimeFunction());
             whereField.append(DbConnectionFactory.getDBDateTimeFunction());
         } else if (field.getFieldContentlet().contains("float")) {
-            update.append(0.0);
-            whereField.append(0.0);
+            if ( DbConnectionFactory.isOracle() ) {
+                update.append("'0.0'");// Oracle implicitly converts the character value to a NUMBER value,  implicitly converts '200' to 200:
+                whereField.append("'0.0'");
+            } else {
+                update.append(0.0);
+                whereField.append(0.0);
+            }
         } else if (field.getFieldContentlet().contains("integer")) {
             update.append(0);
             whereField.append(0);
@@ -2416,7 +2417,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     }
 
-    private final class Queries {
+    public final class Queries {
         private String select;
         private String update;
 

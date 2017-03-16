@@ -24,7 +24,9 @@ package com.liferay.util.servlet;
 
 import java.io.IOException;
 
+import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
+import javax.servlet.WriteListener;
 
 /**
  * <a href="ServletInputStreamWrapper.java.html"><b><i>View Source</i></b></a>
@@ -39,12 +41,14 @@ public class ServletInputStreamWrapper extends ServletInputStream {
 		_is = is;
 	}
 
+
 	public int available() throws IOException {
 		return _is.available();
 	}
 
 	public void close() throws IOException {
 		_is.close();
+		closed = true;
 	}
 
 	public void mark(int readlimit) {
@@ -79,6 +83,22 @@ public class ServletInputStreamWrapper extends ServletInputStream {
 		return _is.skip(n);
 	}
 
+	public  boolean isFinished() {
+
+		return closed;
+	}
+
+
+	public boolean isReady() {
+
+		return false;
+	}
+
+
+	public void setReadListener(ReadListener readListener) {}
+
+
 	private ServletInputStream _is;
+	private boolean closed = false;
 
 }

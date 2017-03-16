@@ -38,7 +38,7 @@ THIS FILE AND ITS INCLUDES
 	<title>dotCMS : <%= LanguageUtil.get(pageContext, "Enterprise-Web-Content-Management") %></title>
 
 	<style type="text/css">
-        @import "http://demos.dojotoolkit.org/dijit/themes/dijit.css";
+   		@import "<%=dojoPath%>/dijit/themes/dijit.css";
         @import "/html/css/dijit-dotcms/dotcms.css?b=<%= ReleaseInfo.getVersion() %>";
 	</style>
 
@@ -166,5 +166,8 @@ THIS FILE AND ITS INCLUDES
 
 
 </head>
-
-<body class="dotcms" style="background:white url();visibility:hidden;">
+<%if(UtilMethods.isSet(request.getParameter("popup")) || UtilMethods.isSet(request.getAttribute("popup")) ){%>
+<body class="dotcms" style="background:white">
+<%}else{ %>
+<body class="dotcms" style="visibility:hidden;background:white">
+<%} %>

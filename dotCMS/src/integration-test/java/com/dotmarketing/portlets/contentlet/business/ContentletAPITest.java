@@ -60,11 +60,10 @@ import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
@@ -500,7 +499,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         contentletAPI.isInodeIndexed(host2.getInode());
         
         
-        java.io.File bin=new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator 
+        java.io.File bin=new java.io.File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + java.io.File.separator
                 + UUIDGenerator.generateUuid() + java.io.File.separator + "hello.txt");
         bin.getParentFile().mkdirs();
         
@@ -654,7 +653,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find( multitree.getParent1() );
 
             //OK..., lets try to find this page in the cache...
-            HTMLPage foundPage = ( HTMLPage ) CacheLocator.getCacheAdministrator().get( "HTMLPageCache" + identifier, "HTMLPageCache" );
+            HTMLPageAsset foundPage = ( HTMLPageAsset ) CacheLocator.getCacheAdministrator().get( "HTMLPageCache" + identifier, "HTMLPageCache" );
 
             //Validations
             assertTrue( foundPage == null || ( foundPage.getInode() == null || foundPage.getInode().equals( "" ) ) );
@@ -960,132 +959,6 @@ public class ContentletAPITest extends ContentletBaseTest {
     }
 
     /**
-     * Testing {@link ContentletAPI#addFileToContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, String, String, com.liferay.portal.model.User, boolean)}
-     *
-     * @throws Exception
-     * @see ContentletAPI
-     * @see Contentlet
-     */
-    @Ignore ( "Not Ready to Run." )
-    @Test
-    public void addFileToContentlet () throws Exception {
-
-        File testFile = null;
-        try {
-        	HibernateUtil.startTransaction();
-            String RELATION_TYPE = new File().getType();
-
-            //Getting a known structure
-            Structure structure = structures.iterator().next();
-
-            //Search the contentlets for this structure
-            List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
-            Contentlet contentlet = contentletList.iterator().next();
-
-            //Creating the test file
-            testFile = createFile( ContentletAPITest.class.getResource( "test_files/test.txt" ), "test.txt" );
-
-            /*//Gettting the related files to this contentlet
-            List<File> files = contentletAPI.getRelatedFiles( contentlet, user, false );//TODO: This method is not working but we are not testing it on this call....
-            if ( files == null ) {
-                files = new ArrayList<File>();
-            }
-            int initialSize = files.size();*/
-
-            //Adding the file to the contentlet
-            contentletAPI.addFileToContentlet( contentlet, testFile.getInode(), RELATION_TYPE, user, false );
-
-            //Gettting the related files to this contentlet
-            //List<File> finalFiles = contentletAPI.getRelatedFiles( contentlet, user, false );//TODO: This method is not working but we are not testing it on this call....
-
-            //Get the contentlet Identifier to gather the menu links
-            Identifier fileIdentifier = APILocator.getIdentifierAPI().find( testFile );
-
-            //Verify if the relation was created
-            Tree tree = TreeFactory.getTree( contentlet.getInode(), fileIdentifier.getId(), RELATION_TYPE );
-
-            //Validations
-            assertNotNull( tree );
-            assertNotNull( tree.getParent() );
-            assertNotNull( tree.getChild() );
-            assertEquals( tree.getParent(), contentlet.getInode() );
-            assertEquals( tree.getChild(), fileIdentifier.getInode() );
-            assertEquals( tree.getRelationType(), RELATION_TYPE );
-
-            //Validations
-            /*assertNotNull( finalFiles );
-            assertTrue( !finalFiles.isEmpty() );
-            assertNotSame( initialSize, finalFiles.size() );*/
-        } finally {
-            fileAPI.delete( testFile, user, false );
-            HibernateUtil.commitTransaction();
-        }
-    }
-
-    /**
-     * Testing {@link ContentletAPI#addImageToContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, String, String, com.liferay.portal.model.User, boolean)}
-     *
-     * @throws Exception
-     * @see ContentletAPI
-     * @see Contentlet
-     */
-    @Ignore ( "Not Ready to Run." )
-    @Test
-    public void addImageToContentlet () throws Exception {
-
-        File testFile = null;
-        try {
-        	HibernateUtil.startTransaction();
-            String RELATION_TYPE = new File().getType();
-
-            //Getting a known structure
-            Structure structure = structures.iterator().next();
-
-            //Search the contentlets for this structure
-            List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
-            Contentlet contentlet = contentletList.iterator().next();
-
-            //Creating the test file
-            testFile = createFile( ContentletAPITest.class.getResource( "test_files/test.gif" ), "test.gif" );
-
-            /*//Gettting the related files to this contentlet
-            List<File> files = contentletAPI.getRelatedFiles( contentlet, user, false );//TODO: This method is not working but we are not testing it on this call....
-            if ( files == null ) {
-                files = new ArrayList<File>();
-            }
-            int initialSize = files.size();*/
-
-            //Adding the file to the contentlet
-            contentletAPI.addImageToContentlet( contentlet, testFile.getInode(), RELATION_TYPE, user, false );
-
-            //Gettting the related files to this contentlet
-            //List<File> finalFiles = contentletAPI.getRelatedFiles( contentlet, user, false );//TODO: This method is not working but we are not testing it on this call....
-
-            //Get the contentlet Identifier to gather the menu links
-            Identifier fileIdentifier = APILocator.getIdentifierAPI().find( testFile );
-
-            //Verify if the relation was created
-            Tree tree = TreeFactory.getTree( contentlet.getInode(), fileIdentifier.getId(), RELATION_TYPE );
-
-            //Validations
-            assertNotNull( tree );
-            assertNotNull( tree.getParent() );
-            assertNotNull( tree.getChild() );
-            assertEquals( tree.getParent(), contentlet.getInode() );
-            assertEquals( tree.getChild(), fileIdentifier.getId() );
-            assertEquals( tree.getRelationType(), RELATION_TYPE );
-
-            /*//Validations
-            assertNotNull( finalFiles );
-            assertTrue( !finalFiles.isEmpty() );
-            assertNotSame( initialSize, finalFiles.size() );*/
-        } finally {
-            fileAPI.delete( testFile, user, false );
-            HibernateUtil.commitTransaction();
-        }
-    }
-
-    /**
      * Testing {@link ContentletAPI#findPageContentlets(String, String, String, boolean, long, com.liferay.portal.model.User, boolean)}
      *
      * @see ContentletAPI
@@ -1329,21 +1202,41 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void deleteForAllVersions () throws DotSecurityException, DotDataException {
 
+        Language language = APILocator.getLanguageAPI().getDefaultLanguage();
+
         //First lets create a test structure
         Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ), "junit_test_structure_" + String.valueOf( new Date().getTime() ) );
 
         //Now a new contentlet
-        Contentlet newContentlet = createContentlet( testStructure, null, false );
+        Contentlet newContentlet = createContentlet( testStructure, language, false );
+
+        // new inode to create a new version
+        String newInode=UUIDGenerator.generateUuid();
+        newContentlet.setInode(newInode);
+
+
+        List<Language> languages = APILocator.getLanguageAPI().getLanguages();
+        for ( Language localLanguage : languages ) {
+            if ( localLanguage.getId() != language.getId() ) {
+                language = localLanguage;
+                break;
+            }
+        }
+
+        newContentlet.setLanguageId(language.getId());
+
+        newContentlet = contentletAPI.checkin(newContentlet, user, false);
 
         //Now we need to delete it
         contentletAPI.archive(newContentlet, user, false);
         contentletAPI.delete( newContentlet, user, false, true );
 
         //Try to find the deleted Contentlet
-        Contentlet foundContentlet = contentletAPI.find( newContentlet.getInode(), user, false );
+        Identifier contentletIdentifier = APILocator.getIdentifierAPI().find( newContentlet.getIdentifier() );
+        List<Contentlet> foundContentlets = contentletAPI.findAllVersions(contentletIdentifier, user, false );
 
         //Validations
-        assertTrue( foundContentlet == null || foundContentlet.getInode() == null || foundContentlet.getInode().isEmpty() );
+        assertTrue( foundContentlets == null || foundContentlets.isEmpty() );
     }
 
     /**
@@ -1619,22 +1512,52 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void deleteCollectionAllVersions () throws DotSecurityException, DotDataException {
 
+        Language language = APILocator.getLanguageAPI().getDefaultLanguage();
+
         //First lets create a test structure
         Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ), "junit_test_structure_" + String.valueOf( new Date().getTime() ) );
 
-        //Now a new contentlet
-        Contentlet newContentlet = createContentlet( testStructure, null, false );
+        //Create a new contentlet with one version
+        Contentlet newContentlet1 = createContentlet( testStructure, language, false );
+
+        //Create a new contentlet with two versions
+        Contentlet newContentlet2 = createContentlet( testStructure, language, false );
+
+        // new inode to create the second version
+        String newInode=UUIDGenerator.generateUuid();
+        newContentlet2.setInode(newInode);
+
+        List<Language> languages = APILocator.getLanguageAPI().getLanguages();
+        for ( Language localLanguage : languages ) {
+            if ( localLanguage.getId() != language.getId() ) {
+                language = localLanguage;
+                break;
+            }
+        }
+
+        newContentlet2.setLanguageId(language.getId());
+
+        newContentlet2 = contentletAPI.checkin(newContentlet2, user, false);
+
 
         //Now test this delete
         List<Contentlet> testContentlets = new ArrayList<>();
-        testContentlets.add( newContentlet );
+        testContentlets.add( newContentlet1 );
+        testContentlets.add( newContentlet2 );
         contentletAPI.delete( testContentlets, user, false, true );
 
-        //Try to find the deleted Contentlet
-        Contentlet foundContentlet = contentletAPI.find( newContentlet.getInode(), user, false );
+        //Try to find the deleted Contentlets
+        Identifier contentletIdentifier = APILocator.getIdentifierAPI().find( newContentlet1.getIdentifier() );
+        List<Contentlet> foundContentlets = contentletAPI.findAllVersions(contentletIdentifier, user, false );
 
-        //Validations
-        assertTrue( foundContentlet == null || foundContentlet.getInode() == null || foundContentlet.getInode().isEmpty() );
+        //Validations for newContentlet1
+        assertTrue( foundContentlets == null || foundContentlets.isEmpty() );
+
+        contentletIdentifier = APILocator.getIdentifierAPI().find( newContentlet2.getIdentifier() );
+        foundContentlets = contentletAPI.findAllVersions(contentletIdentifier, user, false );
+
+        //Validations for newContentlet2
+        assertTrue( foundContentlets == null || foundContentlets.isEmpty() );
     }
 
     /**

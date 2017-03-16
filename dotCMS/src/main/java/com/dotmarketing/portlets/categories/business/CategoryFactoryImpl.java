@@ -1,12 +1,7 @@
 package com.dotmarketing.portlets.categories.business;
 
-import java.sql.*;
-import java.util.*;
-
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
-
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -23,6 +18,12 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.*;
 
 /**
  *
@@ -481,75 +482,99 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	@SuppressWarnings("unchecked")
 	@Override
 	protected List<Category> findTopLevelCategoriesByFilter(String filter, String sort) throws DotDataException {
-		filter = SQLUtil.sanitizeParameter(filter);
-		sort = SQLUtil.sanitizeSortBy(sort);
-		String selectQuery = "SELECT * FROM category LEFT JOIN tree ON category.inode = tree.child, inode "
-				+ "WHERE tree.child IS NULL AND inode.inode = category.inode AND inode.type = 'category'";
-		if (UtilMethods.isSet(filter)) {
-			filter = filter.toLowerCase();
-			selectQuery += " AND (LOWER(category.category_name) LIKE ? OR LOWER(category.category_key) LIKE ? "
-					+ "OR LOWER(category.category_velocity_var_name) LIKE ? ) ";
-		}
-		if (UtilMethods.isSet(sort)) {
-			String sortDirection = sort.startsWith("-") ? " DESC" : " ASC";
-			sort = sort.startsWith("-") ? sort.substring(1, sort.length()) : sort;
-			if (DbConnectionFactory.isMsSql()) {
+
+		try {
+
+			filter = SQLUtil.sanitizeParameter(filter);
+			sort = SQLUtil.sanitizeSortBy(sort);
+
+			final DotConnect dc = new DotConnect();
+
+			String selectQuery = "SELECT * FROM category LEFT JOIN tree ON category.inode = tree.child, inode "
+					+ "WHERE tree.child IS NULL AND inode.inode = category.inode AND inode.type = 'category'";
+
+			if ( UtilMethods.isSet(filter) ) {
+				filter = filter.toLowerCase();
+				selectQuery += " AND (LOWER(category.category_name) LIKE ? OR LOWER(category.category_key) LIKE ? "
+						+ "OR LOWER(category.category_velocity_var_name) LIKE ? ) ";
+			}
+			if ( UtilMethods.isSet(sort) ) {
+				String sortDirection = sort.startsWith("-") ? " DESC" : " ASC";
+				sort = sort.startsWith("-") ? sort.substring(1, sort.length()) : sort;
 				selectQuery += " ORDER BY category." + sort + sortDirection;
 			} else {
-				selectQuery += " ORDER BY ?" + sortDirection;
+				selectQuery += " ORDER BY category.sort_order, category.category_name";
 			}
-		} else {
-			selectQuery += " ORDER BY category.sort_order, category.category_name";
-		}
 
-		final List<Category> categories = new ArrayList<>();
-
-		try (Connection conn = DbConnectionFactory.getConnection()) {
+			//Set the sql query
+			dc.setSQL(SQLUtil.addLimits(selectQuery, 0, -1));
 
 			Logger.debug(this, "Executing the query: " + selectQuery +
 					", filter: " + filter + ", sort" + sort);
 
-			PreparedStatement stmt = conn.prepareStatement(selectQuery);
-			if (UtilMethods.isSet(filter) && !UtilMethods.isSet(sort)) {
-				stmt.setString(1, "%" + filter + "%");
-				stmt.setString(2, "%" + filter + "%");
-				stmt.setString(3, "%" + filter + "%");
-			} else if (UtilMethods.isSet(sort) && !UtilMethods.isSet(filter) && !DbConnectionFactory.isMsSql()) {
-				stmt.setString(1, "category." + sort);
-			} else if (UtilMethods.isSet(filter) && UtilMethods.isSet(sort)) {
-				stmt.setString(1, "%" + filter + "%");
-				stmt.setString(2, "%" + filter + "%");
-				stmt.setString(3, "%" + filter + "%");
-				if (!DbConnectionFactory.isMsSql()) {
-					stmt.setString(4, "category." + sort);
-				}
+			if ( UtilMethods.isSet(filter) ) {
+				dc.addObject("%" + filter + "%");
+				dc.addObject("%" + filter + "%");
+				dc.addObject("%" + filter + "%");
 			}
 
-			final ResultSet rs = stmt.executeQuery();
-
-			while (rs.next()) {
-
-				categories.add(createCategory(rs));
-			}
-		} catch (SQLException e) {
+			//Execute and return the result of the query
+			return convertForCategories(dc.loadObjectResults());
+		} catch (Exception e) {
 			throw new DotDataException("An error occurred when filtering the top level categories.", e);
+		}
+	}
+
+	/**
+	 * Convert the SQL categories results into a list of Category objects
+	 *
+	 * @param sqlResults sql query results
+	 * @return a list of categories objects
+	 */
+	private List<Category> convertForCategories(List<Map<String, Object>> sqlResults) {
+
+		List<Category> categories = new ArrayList<>();
+
+		if ( sqlResults != null ) {
+
+			for ( Map<String, Object> row : sqlResults ) {
+				Category category = convertForCategory(row);
+				categories.add(category);
+			}
 		}
 
 		return categories;
 	}
 
-	private Category createCategory(final ResultSet rs) throws SQLException {
+	/**
+	 * Converts the category information coming from the database into a {@link Category}
+	 * object with all of its properties. If the information is not present, a
+	 * <code>null</code> value will be returned.
+	 *
+	 * @param sqlResult - The data of a specific category from the database.
+	 * @return The {@link Category} object.
+	 */
+	private Category convertForCategory(Map<String, Object> sqlResult) {
 
-		final Category category = new Category();
+		Category category = null;
+		if ( sqlResult != null ) {
+			category = new Category();
 
-		category.setInode(rs.getString("inode"));
-		category.setCategoryName(rs.getString("category_name"));
-		category.setKey(rs.getString("category_key"));
-		category.setSortOrder(rs.getInt("sort_order"));
-		category.setActive(DbConnectionFactory.isDBTrue(rs.getString("active")));
-		category.setKeywords(rs.getString("keywords"));
-		category.setCategoryVelocityVarName(rs.getString("category_velocity_var_name"));
-		category.setModDate(rs.getDate("mod_date"));
+			Object sortOrder = sqlResult.get("sort_order");
+
+			category.setInode((String) sqlResult.get("inode"));
+			category.setCategoryName((String) sqlResult.get("category_name"));
+			category.setKey((String) sqlResult.get("category_key"));
+			if ( sortOrder != null ) {
+				category.setSortOrder(Integer.valueOf(sortOrder.toString()));
+			} else {
+				category.setSortOrder((Integer) sortOrder);
+			}
+			category.setActive(DbConnectionFactory.isDBTrue(sqlResult.get("active").toString()));
+			category.setKeywords((String) sqlResult.get("keywords"));
+			category.setCategoryVelocityVarName((String) sqlResult.get("category_velocity_var_name"));
+			category.setModDate((Date) sqlResult.get("mod_date"));
+		}
 
 		return category;
 	}
@@ -592,67 +617,50 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	@SuppressWarnings("unchecked")
 	@Override
 	protected List<Category> findChildrenByFilter(String inode, String filter, String sort) throws DotDataException {
-		inode = SQLUtil.sanitizeParameter(inode);
-		filter = SQLUtil.sanitizeParameter(filter);
-		sort = SQLUtil.sanitizeSortBy(sort);
 
-		String selectQuery = "SELECT * FROM inode, category, tree WHERE category.inode = tree.child AND tree.parent = ? "
-				+ "AND inode.inode = category.inode AND inode.type = 'category'";
+		try {
 
-		if (UtilMethods.isSet(filter)) {
-			filter = filter.toLowerCase();
-			selectQuery += " AND (LOWER(category.category_name) LIKE ? OR LOWER(category.category_key) LIKE ? "
-					+ "OR LOWER(category.category_velocity_var_name) LIKE ? ) ";
-		}
-		if (UtilMethods.isSet(sort)) {
-			String sortDirection = sort.startsWith("-") ? " DESC" : " ASC";
-			sort = sort.startsWith("-") ? sort.substring(1, sort.length()) : sort;
-			if (DbConnectionFactory.isMsSql()) {
+			inode = SQLUtil.sanitizeParameter(inode);
+			filter = SQLUtil.sanitizeParameter(filter);
+			sort = SQLUtil.sanitizeSortBy(sort);
+
+			final DotConnect dc = new DotConnect();
+
+			String selectQuery = "SELECT * FROM inode, category, tree WHERE category.inode = tree.child AND tree.parent = ? "
+					+ "AND inode.inode = category.inode AND inode.type = 'category'";
+
+			if ( UtilMethods.isSet(filter) ) {
+				filter = filter.toLowerCase();
+				selectQuery += " AND (LOWER(category.category_name) LIKE ? OR LOWER(category.category_key) LIKE ? "
+						+ "OR LOWER(category.category_velocity_var_name) LIKE ? ) ";
+			}
+			if ( UtilMethods.isSet(sort) ) {
+				String sortDirection = sort.startsWith("-") ? " DESC" : " ASC";
+				sort = sort.startsWith("-") ? sort.substring(1, sort.length()) : sort;
 				selectQuery += " ORDER BY category." + sort + sortDirection;
 			} else {
-				selectQuery += " ORDER BY ?" + sortDirection;
+				selectQuery += " ORDER BY category.sort_order, category.category_name";
 			}
-		} else {
-			selectQuery += " ORDER BY category.sort_order, category.category_name";
-		}
 
-		final List<Category> children = new ArrayList<>();
-		try (Connection conn = DbConnectionFactory.getConnection()) {
+			//Set the sql query
+			dc.setSQL(SQLUtil.addLimits(selectQuery, 0, -1));
 
 			Logger.debug(this, "Select Query: " + selectQuery +
-							", filter: " + filter + ", sort: " + sort);
+					", inode: " + inode + ", filter: " + filter + ", sort: " + sort);
 
-			PreparedStatement stmt = conn.prepareStatement(selectQuery);
-			stmt.setString(1, inode);
-			if (UtilMethods.isSet(filter) && !UtilMethods.isSet(sort)) {
-				stmt.setString(2, "%" + filter + "%");
-				stmt.setString(3, "%" + filter + "%");
-				stmt.setString(4, "%" + filter + "%");
-			} else if (UtilMethods.isSet(sort) && !UtilMethods.isSet(filter) && !DbConnectionFactory.isMsSql()) {
-				stmt.setString(2, "category." + sort);
-			} else if (UtilMethods.isSet(filter) && UtilMethods.isSet(sort)) {
-				stmt.setString(2, "%" + filter + "%");
-				stmt.setString(3, "%" + filter + "%");
-				stmt.setString(4, "%" + filter + "%");
-				if (!DbConnectionFactory.isMsSql()) {
-					stmt.setString(5, "category." + sort);
-				}
+			dc.addObject(inode);
+			if ( UtilMethods.isSet(filter) ) {
+				dc.addObject("%" + filter + "%");
+				dc.addObject("%" + filter + "%");
+				dc.addObject("%" + filter + "%");
 			}
 
-			final ResultSet rs = stmt.executeQuery();
-			while (rs.next()) {
-
-				children.add(this.createCategory(rs));
-			}
-		} catch (SQLException e) {
-
-			Logger.error(this, e.getMessage(), e);
+			//Execute and return the result of the query
+			return convertForCategories(dc.loadObjectResults());
+		} catch (Exception e) {
 			throw new DotDataException("An error occurred when filtering child categories for inode '" + inode + "'.", e);
 		}
-
-		return children;
 	}
-
 
 	@Override
 	protected void clearCache() {

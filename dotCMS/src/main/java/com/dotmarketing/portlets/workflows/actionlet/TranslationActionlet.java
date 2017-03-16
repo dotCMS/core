@@ -220,7 +220,7 @@ public class TranslationActionlet extends WorkFlowActionlet {
                 java.io.File inputFile = APILocator
                     .getContentletAPI().getBinaryFile(sourceContentlet.getInode(), field.getVelocityVarName(), user);
                 if (inputFile != null) {
-                    java.io.File acopyFolder = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+                    java.io.File acopyFolder = new java.io.File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
                         + java.io.File.separator + user.getUserId() + java.io.File.separator + field
                         .getFieldContentlet()
                         + java.io.File.separator + UUIDGenerator.generateUuid());
@@ -231,7 +231,7 @@ public class TranslationActionlet extends WorkFlowActionlet {
 
                     String shortFileName = FileUtil.getShortFileName(inputFile.getAbsolutePath());
 
-                    java.io.File binaryFile = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+                    java.io.File binaryFile = new java.io.File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
                         + java.io.File.separator + user.getUserId() + java.io.File.separator + field
                         .getFieldContentlet()
                         + java.io.File.separator + shortFileName.trim());

@@ -12,6 +12,7 @@ import com.dotcms.util.security.Encryptor;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Config;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.CompanyLocalManager;
@@ -96,6 +97,11 @@ public class JsonWebTokenInterceptorTest extends UnitTestBase {
         final HttpServletResponse  response = mock(HttpServletResponse.class);
         final HttpSession          session  = mock(HttpSession.class);
         final LoginService    loginService  = mock(LoginService.class);
+
+        boolean allowHttp = Config.getBooleanProperty(JsonWebTokenInterceptor.JSON_WEB_TOKEN_ALLOW_HTTP, false);
+        if (allowHttp) {
+            Config.setProperty(JsonWebTokenInterceptor.JSON_WEB_TOKEN_ALLOW_HTTP, false);
+        }
 
         final JsonWebTokenInterceptor jsonWebTokenInterceptor =
                 new JsonWebTokenInterceptor(null, null, null, null, loginService, null);

@@ -6,11 +6,10 @@ package com.dotcms.notifications.bean;
  * alert levels that services can set to their notifications in order to mark
  * their importance. For example, this value can be handled by the client to
  * provide visual hints that indicate the priority of an event to users.
- * 
+ *
  * @author Daniel Silva
  * @version 3.0
  * @since Feb 3, 2014
- *
  */
 public enum NotificationLevel {
 

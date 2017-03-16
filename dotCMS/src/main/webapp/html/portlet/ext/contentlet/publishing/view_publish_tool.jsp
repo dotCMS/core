@@ -251,7 +251,7 @@
                     
                 </div>
                 <div class="portlet-toolbar__actions-secondary">
-                	<button dojoType="dijit.form.Button" onClick="deleteQueue();" iconClass="deleteIcon">
+                	<button dojoType="dijit.form.Button" onClick="deleteQueue();" iconClass="deleteIcon" class="dijitButtonDanger">
                         <%= LanguageUtil.get(pageContext, "publisher_Delete_from_queue") %>
                     </button>
                     <button  dojoType="dijit.form.Button" onClick="doQueueFilter();" class="dijitButtonFlat">

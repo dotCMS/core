@@ -60,8 +60,6 @@ import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPIFactory;
 
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.portal.PortletAPIImpl;
-import com.dotmarketing.cms.polls.business.PollsAPI;
-import com.dotmarketing.cms.polls.business.PollsAPILiferayImpl;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.business.journal.DistributedJournalAPIImpl;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -73,8 +71,6 @@ import com.dotmarketing.portlets.calendar.business.EventAPI;
 import com.dotmarketing.portlets.calendar.business.EventAPIImpl;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.business.CategoryAPIImpl;
-import com.dotmarketing.portlets.chains.business.ChainAPI;
-import com.dotmarketing.portlets.chains.business.ChainAPIImpl;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.business.ContainerAPIImpl;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -85,9 +81,6 @@ import com.dotmarketing.portlets.dashboard.business.DashboardAPI;
 import com.dotmarketing.portlets.dashboard.business.DashboardAPIImpl;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImpl;
-import com.dotmarketing.portlets.files.business.FileAPI;
-import com.dotmarketing.portlets.files.business.FileAPIImpl;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPIImpl;
 import com.dotmarketing.portlets.form.business.FormAPI;
@@ -96,9 +89,6 @@ import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPI;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPIImpl;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPIImpl;
 import com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPI;
@@ -128,7 +118,7 @@ import com.liferay.portal.model.User;
 /**
  * APILocator is a factory method (pattern) to get single(ton) service objects.
  * This is a kind of implementation, and there may be others.
- * 
+ *
  * @author Carlos Rivas (crivas)
  * @author Jason Tesser
  * @version 1.6.5
@@ -186,7 +176,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link PermissionAPI} class.
-	 * 
+	 *
 	 * @return The {@link PermissionAPI} class.
 	 */
 	public static PermissionAPI getPermissionAPI() {
@@ -195,7 +185,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link RoleAPI} class.
-	 * 
+	 *
 	 * @return The {@link RoleAPI} class.
 	 */
 	public static RoleAPI getRoleAPI() {
@@ -204,7 +194,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link UserAPI} class.
-	 * 
+	 *
 	 * @return The {@link UserAPI} class.
 	 */
 	public static UserAPI getUserAPI() {
@@ -222,7 +212,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link EventAPI} class.
-	 * 
+	 *
 	 * @return The {@link EventAPI} class.
 	 */
 	public static EventAPI getEventAPI() {
@@ -231,7 +221,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link CategoryAPI} class.
-	 * 
+	 *
 	 * @return The {@link CategoryAPI} class.
 	 */
 	public static CategoryAPI getCategoryAPI() {
@@ -240,7 +230,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link TemplateAPI} class.
-	 * 
+	 *
 	 * @return The {@link TemplateAPI} class.
 	 */
 	public static TemplateAPI getTemplateAPI() {
@@ -249,7 +239,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link TimeMachineAPI} class.
-	 * 
+	 *
 	 * @return The {@link TimeMachineAPI} class.
 	 */
 	public static TimeMachineAPI getTimeMachineAPI() {
@@ -260,7 +250,7 @@ public class APILocator extends Locator<APIIndex>{
 	 * This will return to you the intercepter which wraps the
 	 * {@link ContentletAPI}. It handles all the AOP logic in that it controls
 	 * the pre-hooks and post-hooks.
-	 * 
+	 *
 	 * @return The {@link ContentletAPI} class for dealing with interceptors.
 	 */
 	public static ContentletAPI getContentletAPIntercepter() {
@@ -272,7 +262,7 @@ public class APILocator extends Locator<APIIndex>{
 	 * be needed if you don't want the pre/post hooks to fire. A pre hook that
 	 * is on the checkin method might need to use this as it doesn't want all
 	 * the pre hooks to fire.
-	 * 
+	 *
 	 * @return The {@link ContentletAPI} class.
 	 */
 	public static ContentletAPI getContentletAPIImpl() {
@@ -282,7 +272,7 @@ public class APILocator extends Locator<APIIndex>{
 	/**
 	 * This is the contentletAPI which an application should use to do ALL
 	 * normal {@link ContentletAPI} logic.
-	 * 
+	 *
 	 * @return The {@link ContentletAPI} class.
 	 */
 	public static ContentletAPI getContentletAPI() {
@@ -291,7 +281,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link IdentifierAPI} class.
-	 * 
+	 *
 	 * @return The {@link IdentifierAPI} class.
 	 */
 	public static IdentifierAPI getIdentifierAPI() {
@@ -300,7 +290,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link RelationshipAPI} class.
-	 * 
+	 *
 	 * @return The {@link RelationshipAPI} class.
 	 */
 	public static RelationshipAPI getRelationshipAPI(){
@@ -308,9 +298,9 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
-	 * Creates a single instance of the {@link com.dotmarketing.portlets.structure.business.FieldAPI} class.
+	 * Creates a single instance of the {@link FieldAPI} class.
 	 *
-	 * @return The {@link com.dotmarketing.portlets.structure.business.FieldAPI} class.
+	 * @return The {@link FieldAPI} class.
 	 */
 	public static com.dotmarketing.portlets.structure.business.FieldAPI getFieldAPI(){
 		return (com.dotmarketing.portlets.structure.business.FieldAPI)getInstance(APIIndex.FIELD_API);
@@ -318,7 +308,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link PortletAPI} class.
-	 * 
+	 *
 	 * @return The {@link PortletAPI} class.
 	 */
 	public static PortletAPI getPortletAPI(){
@@ -327,7 +317,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link WidgetAPI} class.
-	 * 
+	 *
 	 * @return The {@link WidgetAPI} class.
 	 */
 	public static WidgetAPI getWidgetAPI(){
@@ -336,7 +326,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link FormAPI} class.
-	 * 
+	 *
 	 * @return The {@link FormAPI} class.
 	 */
 	public static FormAPI getFormAPI(){
@@ -345,7 +335,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link CalendarReminderAPI} class.
-	 * 
+	 *
 	 * @return The {@link CalendarReminderAPI} class.
 	 */
 	public static CalendarReminderAPI getCalendarReminderAPI(){
@@ -353,26 +343,8 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
-	 * Creates a single instance of the {@link PollsAPI} class.
-	 * 
-	 * @return The {@link PollsAPI} class.
-	 */
-	public static PollsAPI getPollAPI(){
-		return (PollsAPI) getInstance(APIIndex.POLL_API);
-	}
-
-	/**
-	 * Creates a single instance of the {@link ChainAPI} class.
-	 * 
-	 * @return The {@link ChainAPI} class.
-	 */
-	public static ChainAPI getChainAPI(){
-		return (ChainAPI) getInstance(APIIndex.CHAIN_API);
-	}
-
-	/**
 	 * Creates a single instance of the {@link PluginAPI} class.
-	 * 
+	 *
 	 * @return The {@link PluginAPI} class.
 	 */
 	public static PluginAPI getPluginAPI(){
@@ -381,7 +353,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link LanguageAPI} class.
-	 * 
+	 *
 	 * @return The {@link LanguageAPI} class.
 	 */
 	public static LanguageAPI getLanguageAPI(){
@@ -390,7 +362,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link DistributedJournalAPI} class.
-	 * 
+	 *
 	 * @return The {@link DistributedJournalAPI} class.
 	 */
 	@SuppressWarnings("unchecked")
@@ -400,7 +372,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link FolderAPI} class.
-	 * 
+	 *
 	 * @return The {@link FolderAPI} class.
 	 */
 	public static FolderAPI getFolderAPI(){
@@ -409,7 +381,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link HostAPI} class.
-	 * 
+	 *
 	 * @return The {@link HostAPI} class.
 	 */
 	public static HostAPI getHostAPI(){
@@ -418,7 +390,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link ContainerAPI} class.
-	 * 
+	 *
 	 * @return The {@link ContainerAPI} class.
 	 */
 	public static ContainerAPI getContainerAPI(){
@@ -427,7 +399,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link UserProxyAPI} class.
-	 * 
+	 *
 	 * @return The {@link UserProxyAPI} class.
 	 */
 	public static UserProxyAPI getUserProxyAPI(){
@@ -436,7 +408,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link LayoutAPI} class.
-	 * 
+	 *
 	 * @return The {@link LayoutAPI} class.
 	 */
 	public static LayoutAPI getLayoutAPI(){
@@ -445,7 +417,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link HostVariableAPI} class.
-	 * 
+	 *
 	 * @return The {@link HostVariableAPI} class.
 	 */
 	public static HostVariableAPI getHostVariableAPI(){
@@ -453,32 +425,8 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
-	 * Creates a single instance of the {@link HostVariableAPI} class.
-	 * 
-	 * @return The {@link HostVariableAPI} class.
-	 * @deprecated This API can be used for Legacy {@link File} objects ONLY.
-	 *             Files are now represented as content. Please refer to the
-	 *             {@link #getFileAssetAPI()}
-	 */
-	public static FileAPI getFileAPI(){
-		return (FileAPI) getInstance(APIIndex.FILE_API);
-	}
-
-	/**
-	 * Creates a single instance of the {@link HTMLPageAPI} class.
-	 * 
-	 * @return The {@link HTMLPageAPI} class.
-	 * @deprecated This API can be used for Legacy {@link HTMLPage} objects
-	 *             ONLY. HTML Pages are now represented as content. Please refer
-	 *             to the {@link #getHTMLPageAssetAPI()}
-	 */
-	public static HTMLPageAPI getHTMLPageAPI(){
-		return (HTMLPageAPI) getInstance(APIIndex.HTMLPAGE_API);
-	}
-
-	/**
 	 * Creates a single instance of the {@link MenuLinkAPI} class.
-	 * 
+	 *
 	 * @return The {@link MenuLinkAPI} class.
 	 */
 	public static MenuLinkAPI getMenuLinkAPI(){
@@ -487,7 +435,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link VirtualLinkAPI} class.
-	 * 
+	 *
 	 * @return The {@link VirtualLinkAPI} class.
 	 */
 	public static VirtualLinkAPI getVirtualLinkAPI(){
@@ -496,7 +444,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link DashboardAPI} class.
-	 * 
+	 *
 	 * @return The {@link DashboardAPI} class.
 	 */
 	public static DashboardAPI getDashboardAPI(){
@@ -505,7 +453,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link SiteSearchAPI} class.
-	 * 
+	 *
 	 * @return The {@link SiteSearchAPI} class.
 	 */
 	public static SiteSearchAPI getSiteSearchAPI(){
@@ -514,7 +462,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link FileAssetAPI} class.
-	 * 
+	 *
 	 * @return The {@link FileAssetAPI} class.
 	 */
 	public static FileAssetAPI getFileAssetAPI(){
@@ -523,7 +471,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link VersionableAPI} class.
-	 * 
+	 *
 	 * @return The {@link VersionableAPI} class.
 	 */
 	public static VersionableAPI getVersionableAPI(){
@@ -532,7 +480,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link WorkflowAPI} class.
-	 * 
+	 *
 	 * @return The {@link WorkflowAPI} class.
 	 */
 	public static WorkflowAPI getWorkflowAPI(){
@@ -541,7 +489,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link CacheProviderAPI} class.
-	 * 
+	 *
 	 * @return The {@link CacheProviderAPI} class.
 	 */
 	public static CacheProviderAPI getCacheProviderAPI () {
@@ -550,7 +498,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link TagAPI} class.
-	 * 
+	 *
 	 * @return The {@link TagAPI} class.
 	 */
 	public static TagAPI getTagAPI(){
@@ -559,7 +507,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link IndiciesAPI} class.
-	 * 
+	 *
 	 * @return The {@link IndiciesAPI} class.
 	 */
 	public static IndiciesAPI getIndiciesAPI() {
@@ -568,7 +516,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link ContentletIndexAPI} class.
-	 * 
+	 *
 	 * @return The {@link ContentletIndexAPI} class.
 	 */
 	public static ContentletIndexAPI getContentletIndexAPI() {
@@ -577,7 +525,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link ESIndexAPI} class.
-	 * 
+	 *
 	 * @return The {@link ESIndexAPI} class.
 	 */
 	public static ESIndexAPI getESIndexAPI() {
@@ -586,7 +534,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link PublisherAPI} class.
-	 * 
+	 *
 	 * @return The {@link PublisherAPI} class.
 	 */
 	public static PublisherAPI getPublisherAPI() {
@@ -595,7 +543,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link LinkCheckerAPI} class.
-	 * 
+	 *
 	 * @return The {@link LinkCheckerAPI} class.
 	 */
 	public static LinkCheckerAPI getLinkCheckerAPI() {
@@ -604,7 +552,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link PublishingEndPointAPI} class.
-	 * 
+	 *
 	 * @return The {@link PublishingEndPointAPI} class.
 	 */
 	public static PublishingEndPointAPI getPublisherEndPointAPI() {
@@ -613,7 +561,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link StructureAPI} class.
-	 * 
+	 *
 	 * @return The {@link StructureAPI} class.
 	 */
 	public static StructureAPI getStructureAPI() {
@@ -622,7 +570,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link SiteSearchAuditAPI} class.
-	 * 
+	 *
 	 * @return The {@link SiteSearchAuditAPI} class.
 	 */
 	public static SiteSearchAuditAPI getSiteSearchAuditAPI() {
@@ -631,7 +579,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link EnvironmentAPI} class.
-	 * 
+	 *
 	 * @return The {@link EnvironmentAPI} class.
 	 */
 	public static EnvironmentAPI getEnvironmentAPI() {
@@ -640,7 +588,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link BundleAPI} class.
-	 * 
+	 *
 	 * @return The {@link BundleAPI} class.
 	 */
 	public static BundleAPI getBundleAPI() {
@@ -649,16 +597,16 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link PushedAssetsAPI} class.
-	 * 
+	 *
 	 * @return The {@link PushedAssetsAPI} class.
 	 */
 	public static PushedAssetsAPI getPushedAssetsAPI() {
 		return (PushedAssetsAPI)getInstance(APIIndex.PUSHED_ASSETS_API);
 	}
     /**
-     * 
+     *
      * gets an instance of ShortyAPI
-     * 
+     *
      * @return The {@link ShortyIdAPI} class.
      */
     public static ShortyIdAPI getShortyAPI() {
@@ -667,7 +615,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link ServerAPI} class.
-	 * 
+	 *
 	 * @return The {@link ServerAPI} class.
 	 */
 	public static ServerAPI getServerAPI() {
@@ -676,7 +624,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link NotificationAPI} class.
-	 * 
+	 *
 	 * @return The {@link NotificationAPI} class.
 	 */
 	public static NotificationAPI getNotificationAPI() {
@@ -685,7 +633,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link HTMLPageAssetAPI} class.
-	 * 
+	 *
 	 * @return The {@link HTMLPageAssetAPI} class.
 	 */
 	public static HTMLPageAssetAPI getHTMLPageAssetAPI() {
@@ -694,7 +642,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link PersonaAPI} class.
-	 * 
+	 *
 	 * @return The {@link PersonaAPI} class.
 	 */
 	public static PersonaAPI getPersonaAPI() {
@@ -703,7 +651,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link ServerActionAPI} class.
-	 * 
+	 *
 	 * @return The {@link ServerActionAPI} class.
 	 */
 	public static ServerActionAPI getServerActionAPI() {
@@ -712,7 +660,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link ESSeachAPI} class.
-	 * 
+	 *
 	 * @return The {@link ESSeachAPI} class.
 	 */
 	public static ESSeachAPI getEsSearchAPI () {
@@ -721,7 +669,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Creates a single instance of the {@link RulesAPI} class.
-	 * 
+	 *
 	 * @return The {@link RulesAPI} class.
 	 */
     public static RulesAPI getRulesAPI () {
@@ -730,7 +678,7 @@ public class APILocator extends Locator<APIIndex>{
 
     /**
 	 * Creates a single instance of the {@link VisitorAPI} class.
-	 * 
+	 *
 	 * @return The {@link VisitorAPI} class.
 	 */
     public static VisitorAPI getVisitorAPI () {
@@ -796,7 +744,7 @@ public class APILocator extends Locator<APIIndex>{
 	 * Returns the System Events API that allows other pieces of the application
 	 * (or third-party services) to interact with events generated by system
 	 * features and react to them.
-	 * 
+	 *
 	 * @return An instance of the {@link SystemEventsAPI}.
 	 */
 	public static SystemEventsAPI getSystemEventsAPI() {
@@ -805,7 +753,7 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Generates a unique instance of the specified dotCMS API.
-	 * 
+	 *
 	 * @param index
 	 *            - The specified API to retrieve based on the {@link APIIndex}
 	 *            class.
@@ -851,7 +799,7 @@ public class APILocator extends Locator<APIIndex>{
  * Assists in the creation of singleton objects representing each of the APIs
  * that dotCMS provides for developers. <b>Every new API in the system must be
  * referenced in this class</b>.
- * 
+ *
  * @author Carlos Rivas (crivas)
  * @author Jason Tesser
  * @version 1.6.5
@@ -941,8 +889,6 @@ enum APIIndex
 		case PORTLET_API: return new PortletAPIImpl();
 		case WIDGET_API: return new WidgetAPIImpl();
 		case CALENDAR_REMINDER_API: return new CalendarReminderAPIImpl();
-		case POLL_API: return new PollsAPILiferayImpl();
-		case CHAIN_API: return new ChainAPIImpl();
 		case PLUGIN_API: return new PluginAPIImpl();
 		case LANGUAGE_API: return new LanguageAPIImpl();
 		case DISTRIBUTED_JOURNAL_API : return new DistributedJournalAPIImpl<String>();
@@ -954,8 +900,6 @@ enum APIIndex
 		case LAYOUT_API : return new LayoutAPIImpl();
 		case HOST_VARIABLE_API : return new HostVariableAPIImpl();
 		case FORM_API: return new FormAPIImpl();
-		case FILE_API: return new FileAPIImpl();
-		case HTMLPAGE_API: return new HTMLPageAPIImpl();
 		case MENULINK_API: return new MenuLinkAPIImpl();
 		case VIRTUALLINK_API: return new VirtualLinkAPIImpl();
 		case DASHBOARD_API: return new DashboardAPIImpl();

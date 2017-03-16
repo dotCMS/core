@@ -27,7 +27,6 @@ import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portal.struts.DotPortletActionInterface;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
@@ -198,10 +197,6 @@ public class EditTemplateAction extends DotPortletAction implements
 						}
 						// edited template from the form
 						Template template = (Template) req.getAttribute(WebKeys.TEMPLATE_FORM_EDIT);
-						// call for invalidation on the live cache if the theme changed
-						if(template.isDrawed() && !template.getTheme().equals(oldTemplate.getTheme())){
-							APILocator.getTemplateAPI().invalidateTemplatePages(template.getInode(), user, false);
-						}
 					}
 					try{
                         _sendToReferral(req, res, referer);
@@ -249,13 +244,6 @@ public class EditTemplateAction extends DotPortletAction implements
 						params.put("struts_action",new String[] {"/ext/templates/view_templates"});
 						referer = PortletURLUtil.getActionURL(req,WindowState.MAXIMIZED.toString(),params);
 					}
-					// edited template from the form
-					Template template = (Template) req.getAttribute(WebKeys.TEMPLATE_FORM_EDIT);
-					// call for invalidation on the live cache if the theme changed
-					if(template.isDrawed() && !template.getTheme().equals(oldTemplate.getTheme())){
-						APILocator.getTemplateAPI().invalidateTemplatePages(template.getInode(), user, false);
-					}
-
 
 				}
 
@@ -327,7 +315,7 @@ public class EditTemplateAction extends DotPortletAction implements
 				boolean returnValue = false;
 
 				for(String inode  : inodes)	{
-					String result = APILocator.getTemplateAPI().checkDependencies(inode, user, false);
+					String result = null;
 
 					WebAsset webAsset = (WebAsset) InodeFactory.getInode(inode,Template.class);
 
@@ -551,17 +539,13 @@ public class EditTemplateAction extends DotPortletAction implements
 
 		//gets image file --- on the image field on the template we store the image's identifier
 		//Identifier imageIdentifier = (Identifier) InodeFactory.getInode(template.getImage(), Identifier.class);
-		File imageFile = new File();
-		Boolean fileAsContent = false;
 		Contentlet imageContentlet = new Contentlet();
 
 		if(InodeUtils.isSet(template.getImage())){
 			Identifier imageIdentifier = APILocator.getIdentifierAPI().find(template.getImage());
 			if(imageIdentifier!=null && UtilMethods.isSet(imageIdentifier.getAssetType())) {
-    			if(fileAsContent = imageIdentifier.getAssetType().equals("contentlet")) {
+    			if(imageIdentifier.getAssetType().equals("contentlet")) {
     				imageContentlet = APILocator.getContentletAPI().findContentletByIdentifier(imageIdentifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
-    			} else {
-    				imageFile = (File) APILocator.getVersionableAPI().findWorkingVersion(imageIdentifier,APILocator.getUserAPI().getSystemUser(),false);
     			}
 			}
 		}
@@ -586,7 +570,7 @@ public class EditTemplateAction extends DotPortletAction implements
 			cf.setHostId(templateHost.getIdentifier());
 		}
 		ActivityLogger.logInfo(this.getClass(), "Edit Template action", "User " + user.getPrimaryKey() + " edit template " + cf.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
-		cf.setImage(fileAsContent?imageContentlet.getIdentifier():imageFile.getIdentifier());
+		cf.setImage(imageContentlet.getIdentifier());
 
 		// *********************** BEGIN GRAZIANO issue-12-dnd-template
 		req.setAttribute(WebKeys.TEMPLATE_IS_DRAWED, template.isDrawed());

@@ -1,12 +1,9 @@
-<%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.portlets.folders.model.Folder"%>
 <%@page import="com.dotmarketing.portlets.containers.model.Container"%>
 <%@page import="com.dotmarketing.portlets.templates.model.Template"%>
-<%@page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage"%>
-<%@page import="com.dotmarketing.portlets.files.model.File"%>
 <%@page import="com.dotmarketing.portlets.links.model.Link"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
@@ -17,14 +14,6 @@
 <%@ page import="com.dotmarketing.portlets.rules.model.Rule" %>
 <%@ page import="com.dotmarketing.portlets.templates.design.bean.TemplateLayout" %>
 
-<%if(!Config.getBooleanProperty("ENABLE_LEGACY_FILE_SUPPORT",false)) {%>
-<style>
-    tr.legacy_files_row {
-        display:none !important;
-    }
-</style>
-<%}%>
-
 <script type="text/javascript">
 
 	//I18n Messages
@@ -34,7 +23,6 @@
 	var templatesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Templates")) %>';
 	var templateLayoutsWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Template-Layouts")) %>';
 	var pagesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Pages")) %>';
-	var filesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Files-Legacy")) %>';
 	var linksWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Links")) %>';
 	var structuresWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Structures")) %>';
 	var contentWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Content-Files")) %>';
@@ -78,7 +66,6 @@
 	var templateClassName = '<%= Template.class.getCanonicalName() %>'
 	var templateLayoutClassName = '<%= TemplateLayout.class.getCanonicalName() %>'
 	var pageClassName = '<%= IHTMLPage.class.getCanonicalName() %>'
-	var fileClassName = '<%= File.class.getCanonicalName() %>'
 	var linkClassName = '<%= Link.class.getCanonicalName() %>'
 	var structureClassName = '<%= Structure.class.getCanonicalName() %>'
 	var contentClassName = '<%= Contentlet.class.getCanonicalName() %>';
@@ -347,15 +334,6 @@
 			'pages-edit-permissions-permission-' + id,
 			'pages-virtual-links-permission-' + id,
 
-			'files-view-permission-' + id,
-			'files-add-children-permission-' + id,
-			'files-edit-permission-' + id,
-			'files-publish-permission-' + id,
-			'files-edit-permission-' + id,
-			'files-publish-permission-' + id,
-			'files-edit-permissions-permission-' + id,
-			'files-virtual-links-permission-' + id,
-
 			'links-view-permission-' + id,
 			'links-add-children-permission-' + id,
 			'links-edit-permission-' + id,
@@ -507,7 +485,6 @@
 				var templatesPermissions = retrievePermissionChecks(id, 'templates');
 				var templateLayoutsPermissions = retrievePermissionChecks(id, 'template-layouts');
 				var pagesPermissions = retrievePermissionChecks(id, 'pages');
-				var filesPermissions = retrievePermissionChecks(id, 'files');
 				var linksPermissions = retrievePermissionChecks(id, 'links');
 				var structuresPermissions = retrievePermissionChecks(id, 'structures');
 				var contentPermissions = retrievePermissionChecks(id, 'content');
@@ -533,7 +510,6 @@
 						templates: templatesPermissions,
 						templateLayouts: templateLayoutsPermissions,
 						pages: pagesPermissions,
-						files: filesPermissions,
 						links: linksPermissions,
 						structures: structuresPermissions,
 						content: contentPermissions,
@@ -681,7 +657,7 @@
                 return true;
         }
 
-        types=['hosts','folders','containers','templates','template-layouts','pages','files','links','structures','content','categories','rules'];
+        types=['hosts','folders','containers','templates','template-layouts','pages','links','structures','content','categories','rules'];
 
         for(var i=0;i<types.length;i++)
             if(changedType(item,types[i]))
@@ -790,7 +766,6 @@
 		fillTemplatePermissionOptions(item, permissions, templateClassName, 'templates');
 		fillTemplatePermissionOptions(item, permissions, templateLayoutClassName, 'templateLayouts');
 		fillTemplatePermissionOptions(item, permissions, pageClassName, 'pages');
-		fillTemplatePermissionOptions(item, permissions, fileClassName, 'files');
 		fillTemplatePermissionOptions(item, permissions, linkClassName, 'links');
 		fillTemplatePermissionOptions(item, permissions, structureClassName, 'structures');
 		fillTemplatePermissionOptions(item, permissions, contentClassName, 'content');
@@ -834,7 +809,6 @@
 		item.templatesWillInherit = templatesWillInheritMsg;
 		item.templateLayoutsWillInherit = templateLayoutsWillInheritMsg;
 		item.pagesWillInherit = pagesWillInheritMsg;
-		item.filesWillInherit = filesWillInheritMsg;
 		item.linksWillInherit = linksWillInheritMsg;
 		item.structuresWillInherit = structuresWillInheritMsg;
 		item.contentWillInherit = contentWillInheritMsg;
@@ -857,7 +831,6 @@
 		fillEmptyTemplatePermissionOptions(item, 'templates');
 		fillEmptyTemplatePermissionOptions(item, 'templateLayouts');
 		fillEmptyTemplatePermissionOptions(item, 'pages');
-		fillEmptyTemplatePermissionOptions(item, 'files');
 		fillEmptyTemplatePermissionOptions(item, 'links');
 		fillEmptyTemplatePermissionOptions(item, 'structures');
 		fillEmptyTemplatePermissionOptions(item, 'content');
@@ -897,7 +870,6 @@
 		item.templatesWillInherit = templatesWillInheritMsg;
 		item.templateLayoutsWillInherit = templateLayoutsWillInheritMsg;
 		item.pagesWillInherit = pagesWillInheritMsg;
-		item.filesWillInherit = filesWillInheritMsg;
 		item.linksWillInherit = linksWillInheritMsg;
 		item.structuresWillInherit = structuresWillInheritMsg;
 		item.contentWillInherit = contentWillInheritMsg;

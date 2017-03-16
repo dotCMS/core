@@ -3,8 +3,6 @@
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@ include file="/html/common/init.jsp" %>
-<%@page import="com.dotmarketing.portlets.folders.business.FolderAPI"%>
-<%@page import="com.dotmarketing.portlets.folders.model.Folder"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Field"%>
 <%@page import="com.dotmarketing.beans.Identifier"%>
@@ -13,11 +11,9 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.util.*"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
-<%@page import="com.dotmarketing.portlets.languagesmanager.business.*"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@page import="com.dotmarketing.business.web.WebAPILocator"%>
 
 <%
 String contentletId = (String) request.getParameter("contentletId");
@@ -666,14 +662,10 @@ if(!hasPermissions) {
 	               		<% if(field.getFieldType().equals(Field.FieldType.FILE.toString())){
 	               		    String inode = String.valueOf(content.get(field.getVelocityVarName())) ;
 							if(InodeUtils.isSet(inode)){
-							    IFileAsset file=null;
-							    Identifier identifier=APILocator.getIdentifierAPI().find(inode);
-							    if(identifier.getAssetType().equals("file_asset"))
-							        file = APILocator.getFileAPI().getWorkingFileById(inode,APILocator.getUserAPI().getSystemUser(), false);
-							    else {
-							        Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier( inode, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
-							        file = APILocator.getFileAssetAPI().fromContentlet(cont);
-							    }
+							    IFileAsset file;
+								Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier( inode, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+								file = APILocator.getFileAssetAPI().fromContentlet(cont);
+
 								if(file!=null){	%>
 									<a target="_blank" href="<%=file.getURI()%>"><%=file.getFileName() %></a>
 								<%}%>

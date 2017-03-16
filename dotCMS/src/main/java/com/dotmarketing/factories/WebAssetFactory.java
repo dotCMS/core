@@ -49,12 +49,8 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.business.FileAPI;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -85,11 +81,9 @@ public class WebAssetFactory {
 
 	public enum AssetType {
 		HTMLPAGE("HTMLPAGE"),
-		FILE_ASSET("FILE_ASSET"),
 		CONTAINER("CONTAINER"),
 		TEMPLATE("TEMPLATE"),
-		LINK("LINK")
-		;
+		LINK("LINK");
 
 		private String value;
 
@@ -113,8 +107,6 @@ public class WebAssetFactory {
 
 
 	private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-	private static HTMLPageAPI htmlPageAPI = APILocator.getHTMLPageAPI();
-	private static FileAPI fileAPI = APILocator.getFileAPI();
 	private static ContainerAPI containerAPI = APILocator.getContainerAPI();
 	private static TemplateAPI templateAPI = APILocator.getTemplateAPI();
 	private static MenuLinkAPI linksAPI = APILocator.getMenuLinkAPI();
@@ -584,27 +576,6 @@ public class WebAssetFactory {
 
 		WebAsset live = (WebAsset) APILocator.getVersionableAPI().findLiveVersion(identifier, APILocator.getUserAPI().getSystemUser(), false);
 
-		//Delete the HTML Page from the Structure Detail
-		if(currWebAsset instanceof HTMLPage)
-		{
-			List<Structure> structures = (List<Structure>) StructureFactory.getStructures();
-			for(Structure structure : structures)
-			{
-				if(structure.getDetailPage() == identifier.getInode())
-				{
-					structure.setDetailPage("");
-					StructureFactory.saveStructure(structure);
-				}
-			}
-		}
-
-		else if (currWebAsset instanceof File)
-		{
-         RefreshMenus.deleteMenu(currWebAsset);
-         Identifier ident=APILocator.getIdentifierAPI().find(currWebAsset);
-         CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
-		}
-
 		User userMod = null;
 		try{
 			userMod = APILocator.getUserAPI().loadUserById(workingwebasset.getModUser(),APILocator.getUserAPI().getSystemUser(),false);
@@ -718,16 +689,7 @@ public class WebAssetFactory {
 						parent.deleteChild(workingwebasset);
 				}
 
-				if (currWebAsset instanceof HTMLPage) {
-					//remove page from the live directory
-					PageServices.invalidateLive((HTMLPage)currWebAsset);
-
-					//Refreshing the menues
-					//RefreshMenus.deleteMenus();
-					RefreshMenus.deleteMenu(currWebAsset);
-					CacheLocator.getNavToolCache().removeNavByPath(identifier.getHostId(), identifier.getParentPath());
-
-				} else if (currWebAsset instanceof Container) {
+				if (currWebAsset instanceof Container) {
 					//remove container from the live directory
 					ContainerServices.unpublishContainerFile((Container)currWebAsset);
 				} else if (currWebAsset instanceof Template) {
@@ -741,11 +703,7 @@ public class WebAssetFactory {
 						RefreshMenus.deleteMenu(host);
 						CacheLocator.getNavToolCache().removeNav(host.getIdentifier(), parentFolder.getInode());
 					}
-				} else if (currWebAsset instanceof File) {
-				    RefreshMenus.deleteMenu(currWebAsset);
-				    CacheLocator.getNavToolCache().removeNavByPath(identifier.getHostId(), identifier.getParentPath());
-			    }
-
+				}
 
 
 				LiveCache.removeAssetFromCache(currWebAsset);
@@ -874,11 +832,6 @@ public class WebAssetFactory {
 			{
 				sb.append(") and " + tableName + ".inode in (select inode.inode from inode,identifier where host_inode = '"
 						+ hostId + "' and "+tableName + ".identifier = identifier.id)");
-			}
-			else if(c.equals(HTMLPage.class))
-			{
-				sb.append(") and " + tableName + ".inode in (select inode from identifier," + tableName + "where host_inode = '"
-						+ hostId + "' and " + tableName + ".identifier = identifier.id)");
 			}
 			else
 			{
@@ -1661,13 +1614,6 @@ public class WebAssetFactory {
 				ContainerServices.unpublishContainerFile((Container)currWebAsset);
 				webAssetList = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
 			}
-			else if(currWebAsset instanceof HTMLPage)
-			{
-				PageServices.invalidateLive((HTMLPage)currWebAsset);
-				RefreshMenus.deleteMenu(currWebAsset);
-				CacheLocator.getNavToolCache().removeNavByPath(identifier.getHostId(), identifier.getParentPath());
-				webAssetList = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
-			}
 			else if(currWebAsset instanceof Template)
 			{
 				TemplateServices.unpublishTemplateFile((Template)currWebAsset);
@@ -1676,12 +1622,6 @@ public class WebAssetFactory {
 			else if(currWebAsset instanceof Link)
 			{
 				webAssetList = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
-			}
-			else if(currWebAsset instanceof File)
-			{
-				webAssetList = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
-				RefreshMenus.deleteMenu(currWebAsset);
-				CacheLocator.getNavToolCache().removeNavByPath(identifier.getHostId(), identifier.getParentPath());
 			}
 			for(Versionable webAsset : webAssetList)
 			{
@@ -1703,7 +1643,7 @@ public class WebAssetFactory {
 
 			//### Get and delete the multitree entries ###
 			List<MultiTree> multiTrees = new ArrayList<MultiTree>();
-			if (currWebAsset instanceof Container || currWebAsset instanceof HTMLPage)
+			if (currWebAsset instanceof Container)
 			{
 				multiTrees = MultiTreeFactory.getMultiTree(identifier);
 			}
@@ -2010,11 +1950,6 @@ public class WebAssetFactory {
 				sb.append(") and " + tableName + ".inode in (select inode from identifier," + tableName + "where host_inode = '"
 						+ hostId + "' and " + tableName + ".identifier = identifier.id)");
 			}
-			else if(c.equals(HTMLPage.class))
-			{
-				sb.append(") and " + tableName + ".inode in (select inode from identifier," + tableName + "where host_inode = '"
-						+ hostId + "' and " + tableName + ".identifier = identifier.id)");
-			}
 			else
 			{
 				sb.append(") and " + tableName + ".inode in (select tree.child from identifier, tree where host_inode = '"
@@ -2090,17 +2025,7 @@ public class WebAssetFactory {
 			params.put("title", query.toLowerCase().replace("\'","\\\'"));
 		}
 		try {
-		if (type.equals(AssetType.HTMLPAGE)){
-			if(UtilMethods.isSet(query)){
-				params.put("pageUrl", query.toLowerCase());
-			}
-			elements = htmlPageAPI.findIHtmlPages(user, includeArchived, params, hostId, null, null, parent, offset, limit, orderBy);
-		}else if (type.equals(AssetType.FILE_ASSET)){
-			if(UtilMethods.isSet(query)){
-				params.put("fileName", query.toLowerCase().replace("\'","\\\'"));
-			}
-			elements = fileAPI.findFiles(user, includeArchived, params, hostId, null,null, parent, offset, limit, orderBy);
-		}else if (type.equals(AssetType.CONTAINER)){
+		if (type.equals(AssetType.CONTAINER)){
 			if(APILocator.getIdentifierAPI().isIdentifier(query)){
 				params.put("identifier", query);
 			}

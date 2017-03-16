@@ -244,7 +244,7 @@ task createDBInstance(type: AmazonRDSCreateDBInstanceTask) {
 
 		vpcSecurityGroupIds = new java.util.ArrayList<String>()
 		vpcSecurityGroupIds += properties.getProperty("aws.securityGroupId")
-		
+
 		println("About to Create Database = "+ dbInstanceIdentifier)
 	}
 

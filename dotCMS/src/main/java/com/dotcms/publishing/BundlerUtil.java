@@ -32,21 +32,23 @@ public class BundlerUtil {
 		if(config.getId() ==null){
 			throw new DotStateException("publishing config.id is null.  Please set an id before publishing (it will be the folder name under which the bundle will be created)");
 		}
-		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId()+ File.separator + "bundle.xml";
 
+		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getName();
+		bundlePath += File.separator + "bundle.xml";
 
 		return new File(bundlePath).exists();
 	}
 
-	/**
-	 * This method takes a config and will create the bundle directory and
-	 * write the bundle.xml file to it
-	 * @param name Name of bundle
-	 */
-	public static File getBundleRoot(String name) {
+    public static File getBundleRoot(String name) {
+        return getBundleRoot(name, true);
+    }
+
+	public static File getBundleRoot(String name, boolean createDir) {
 		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + name;
 		File dir = new File(bundlePath);
-		dir.mkdirs();
+		if (createDir){
+            dir.mkdirs();
+        }
 		return dir;
 	}
 
@@ -56,7 +58,7 @@ public class BundlerUtil {
 	 * @param config Config with the id of bundle
 	 */
 	public static File getBundleRoot(PublisherConfig config){
-		return getBundleRoot(config.getId());
+		return getBundleRoot(config.getName());
 	}
 
 	/**
@@ -65,10 +67,11 @@ public class BundlerUtil {
 	 */
 	public static void writeBundleXML(PublisherConfig config){
 		getBundleRoot(config);
-		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId();
+
+		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getName();
+
 		File xml = new File(bundlePath + File.separator + "bundle.xml");
 		objectToXML(config, xml);
-
 	}
 
     /**
@@ -79,7 +82,9 @@ public class BundlerUtil {
      */
     public static PublisherConfig readBundleXml(PublisherConfig config){
 		getBundleRoot(config);
-		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getId();
+
+		String bundlePath = ConfigUtils.getBundlePath()+ File.separator + config.getName();
+
 		File xml = new File(bundlePath + File.separator + "bundle.xml");
 		if(xml.exists()){
 			return (PublisherConfig) xmlToObject(xml);

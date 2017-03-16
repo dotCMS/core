@@ -416,7 +416,7 @@ int periodData = dAPI.checkPeriodData(0,0);
 			<div class="inline-form">
 				<!-- <%= LanguageUtil.get(pageContext, "Host") %>:-->
 				<select id="dahboardHostSelector" name="dahboardHostSelector" dojoType="dijit.form.FilteringSelect" 
-					store="HostStore"  pageSize="30" labelAttr="hostname"  searchAttr="hostname" 
+					store="HostStore"   required="false" value="<%=hostId %>"  pageSize="30" labelAttr="hostname"  searchAttr="hostname" 
 					searchDelay="400"  <%= UtilMethods.isSet(selectedHost)?"value=\"" + selectedHost+ "\"":""  %> invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected")%>">
 				</select>
 				<button dojoType="dijit.form.Button" type="submit" onClick="submitfm();" iconClass="searchIcon">

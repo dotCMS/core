@@ -228,7 +228,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             m.put("conFolder", conFolder!=null && InodeUtils.isSet(conFolder.getInode()) ? conFolder.getInode() : con.getFolder());
             m.put("parentPath", ident.getParentPath());
             m.put("path", ident.getPath());
-            
+            // makes shorties searchable regardless of length
+            m.put("shortId", ident.getId().replace("-", ""));
+            m.put("shortInode", con.getInode().replace("-", ""));
             try{
             	WorkflowTask task = APILocator.getWorkflowAPI().findTaskByContentlet(con);
             	if(task!=null && task.getId()!=null){

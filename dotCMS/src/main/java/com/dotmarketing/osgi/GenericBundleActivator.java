@@ -2,13 +2,13 @@ package com.dotmarketing.osgi;
 
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotcms.enterprise.rules.RulesAPI;
-import com.dotcms.repackage.org.apache.felix.http.proxy.DispatcherTracker;
+import org.apache.felix.http.proxy.DispatcherTracker;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.config.ActionConfig;
 import com.dotcms.repackage.org.apache.struts.config.ForwardConfig;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
-import com.dotcms.repackage.org.osgi.framework.*;
+import org.osgi.framework.*;
 import com.dotcms.repackage.org.tuckey.web.filters.urlrewrite.NormalRule;
 import com.dotcms.repackage.org.tuckey.web.filters.urlrewrite.Rule;
 import com.dotmarketing.business.APILocator;

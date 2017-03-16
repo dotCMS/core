@@ -1,42 +1,26 @@
 package com.dotmarketing.util;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import javax.servlet.ServletContextEvent;
-
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.org.apache.felix.framework.FrameworkFactory;
-import com.dotcms.repackage.org.apache.felix.framework.util.FelixConstants;
-import com.dotcms.repackage.org.apache.felix.http.proxy.DispatcherTracker;
-import com.dotcms.repackage.org.apache.felix.main.AutoProcessor;
-import com.dotcms.repackage.org.apache.felix.main.Main;
-
-import org.apache.velocity.tools.view.PrimitiveToolboxManager;
-
-import com.dotcms.repackage.org.osgi.framework.BundleActivator;
-import com.dotcms.repackage.org.osgi.framework.BundleContext;
-import com.dotcms.repackage.org.osgi.framework.ServiceReference;
-import com.dotcms.repackage.org.osgi.framework.launch.Framework;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.osgi.OSGIProxyServlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
+import org.apache.felix.framework.FrameworkFactory;
+import org.apache.felix.framework.util.FelixConstants;
+import org.apache.felix.http.proxy.DispatcherTracker;
+import org.apache.felix.main.AutoProcessor;
+import org.apache.felix.main.Main;
+import org.apache.velocity.tools.view.PrimitiveToolboxManager;
+import org.osgi.framework.BundleActivator;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.osgi.framework.launch.Framework;
+
+import javax.servlet.ServletContextEvent;
+import javax.websocket.Session;
+import java.io.*;
+import java.net.URL;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Created by Jonathan Gamba
@@ -61,9 +45,11 @@ public class OSGIUtil {
     }
 
     private OSGIUtil () {
+
+
     }
 
-    private static Framework m_fwk;
+    private static Framework felixFramework;
     private ServletContextEvent servletContextEvent;
 
     public Framework initializeFramework () {
@@ -111,12 +97,12 @@ public class OSGIUtil {
 
         // (5) Use the specified auto-deploy directory over default.
         if ( bundleDir != null ) {
-            configProps.setProperty( AutoProcessor.AUTO_DEPLOY_DIR_PROPERY, bundleDir );
+            configProps.setProperty( AutoProcessor.AUTO_DEPLOY_DIR_PROPERTY, bundleDir );
         }
 
         // (6) Use the specified bundle cache directory over default.
         if ( cacheDir != null ) {
-            configProps.setProperty( com.dotcms.repackage.org.osgi.framework.Constants.FRAMEWORK_STORAGE, cacheDir );
+            configProps.setProperty( org.osgi.framework.Constants.FRAMEWORK_STORAGE, cacheDir );
         }
 
         // Create host activator;
@@ -134,22 +120,22 @@ public class OSGIUtil {
         try {
             // (8) Create an instance and initialize the framework.
             FrameworkFactory factory = getFrameworkFactory();
-            m_fwk = factory.newFramework( configProps );
-            m_fwk.init();
+            felixFramework = factory.newFramework( configProps );
+            felixFramework.init();
 
             // (9) Use the system bundle context to process the auto-deploy
             // and auto-install/auto-start properties.
-            AutoProcessor.process( configProps, m_fwk.getBundleContext() );
+            AutoProcessor.process( configProps, felixFramework.getBundleContext() );
 
             // (10) Start the framework.
-            m_fwk.start();
+            felixFramework.start();
             Logger.info( this, "osgi felix framework started" );
         } catch ( Exception ex ) {
             Logger.error( this, "Could not create framework: " + ex );
             throw new RuntimeException( ex );
         }
 
-        return m_fwk;
+        return felixFramework;
     }
 
     public void stopFramework () {
@@ -165,22 +151,24 @@ public class OSGIUtil {
                 OSGIProxyServlet.tracker = null;
             }
 
-            //Unregistering ToolBox services
-            ServiceReference toolBoxService = getBundleContext().getServiceReference( PrimitiveToolboxManager.class.getName() );
-            if ( toolBoxService != null ) {
-                bundleContext.ungetService( toolBoxService );
-            }
+            if (null != felixFramework) {
+                //Unregistering ToolBox services
+                ServiceReference toolBoxService = getBundleContext().getServiceReference(PrimitiveToolboxManager.class.getName());
+                if (toolBoxService != null) {
+                    bundleContext.ungetService(toolBoxService);
+                }
 
-            //Unregistering Workflow services
-            ServiceReference workflowService = getBundleContext().getServiceReference( WorkflowAPIOsgiService.class.getName() );
-            if ( workflowService != null ) {
-                bundleContext.ungetService( workflowService );
-            }
+                //Unregistering Workflow services
+                ServiceReference workflowService = getBundleContext().getServiceReference(WorkflowAPIOsgiService.class.getName());
+                if (workflowService != null) {
+                    bundleContext.ungetService(workflowService);
+                }
 
-            // Stop felix
-            m_fwk.stop();
-            // (11) Wait for framework to stop to exit the VM.
-            m_fwk.waitForStop( 0 );
+                // Stop felix
+                felixFramework.stop();
+                // (11) Wait for framework to stop to exit the VM.
+                felixFramework.waitForStop(0);
+            }
 
         } catch ( Exception e ) {
             Logger.warn( this, "exception while stopping felix!", e );
@@ -188,7 +176,7 @@ public class OSGIUtil {
     }
 
     public BundleContext getBundleContext () {
-        return m_fwk.getBundleContext();
+        return felixFramework.getBundleContext();
     }
 
     private static FrameworkFactory getFrameworkFactory () throws Exception {
@@ -263,17 +251,17 @@ public class OSGIUtil {
                 }
             }
 
-            bob.append( "com.dotcms.repackage.org.osgi.framework," +
-                    "com.dotcms.repackage.org.osgi.framework.wiring," +
-                    "com.dotcms.repackage.org.osgi.service.packageadmin," +
-                    "com.dotcms.repackage.org.osgi.framework.startlevel," +
-                    "com.dotcms.repackage.org.osgi.service.startlevel," +
-                    "com.dotcms.repackage.org.osgi.service.url," +
-                    "com.dotcms.repackage.org.osgi.util.tracker," +
-                    "com.dotcms.repackage.org.osgi.service.http," +
+            bob.append( "org.osgi.framework," +
+                    "org.osgi.framework.wiring," +
+                    "org.osgi.service.packageadmin," +
+                    "org.osgi.framework.startlevel," +
+                    "org.osgi.service.startlevel," +
+                    "org.osgi.service.url," +
+                    "org.osgi.util.tracker," +
+                    "org.osgi.service.http," +
                     "javax.inject.Qualifier," +
                     "javax.servlet.resources," +
-                    "javax.servlet;javax.servlet.http;version=2.5" );
+                    "javax.servlet;javax.servlet.http;version=3.1.0" );
 
         	BufferedWriter writer = null;
         	try {

@@ -46,7 +46,6 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 
     public enum Type {
         CONTENTLET("contentlet", "contentlet_version_info"),
-        HTMLPAGE("htmlpage", "htmlpage_version_info"),
         TEMPLATE("template", "template_version_info"),
         VIRTUAL_LINK("virtual_link", null),
         CONTAINERS("dot_containers", "container_version_info"),
@@ -56,9 +55,7 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
         RELATIONSHIP("relationship", null),
         LINKS("links", "link_version_info"),
         CATEGORY("category", null),
-        MAILING_LIST("mailing_list", null),
-        FIELD("field", null),
-		FILE_ASSET("file_asset", "fileasset_version_info");
+        FIELD("field", null);
 
         private String tableName;
 

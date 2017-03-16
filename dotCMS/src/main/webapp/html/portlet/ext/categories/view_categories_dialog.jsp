@@ -40,14 +40,6 @@
 	height: 100%;
 }
 
-#all<%=counter%> {
-	margin: 0px;
-	padding: 0px;
-	width: 100px;
-	float: right;
-	height: 0px;
-}
-
 </style>
 <script type="text/javascript" src="/dwr/interface/CategoryAjax.js"></script>
 
@@ -87,7 +79,7 @@
 
 		var deleteFormatter = function(value, index) {
 			var inode = addedGrid<%=counter%>.store.getValue(addedGrid<%=counter%>.getItem(index), 'id');
-			return "<a href=\"javascript:delCat<%=counter%>('"+inode+"');\"><img src='/html/images/icons/cross-small.png' /></a>";
+			return "<div style='width:100%;height:20px;cursor:pointer;' onclick=\"javascript:delCat<%=counter%>('"+inode+"');\">&nbsp;<span class='deleteIcon'></span>&nbsp" + value  + "</div>";
 		}
 
 		var addedlayout = [
@@ -97,16 +89,12 @@
 			width: '0px',
 			hidden : true
 		},
-		{
-			field : 'del',
-			name : ' ',
-			width: '20px',
-			formatter: deleteFormatter
-		},
+
 		{
 			field : 'name',
 			name : '<%= LanguageUtil.get(pageContext, "Added") %>',
-			width: 'auto'
+			width: 'auto',
+			formatter : deleteFormatter
 		}
 		];
 
@@ -114,9 +102,7 @@
 			jsId : "addedGrid<%=counter%>",
 	        store: addedStore<%=counter%>,
 			autoWidth : true,
-// 			class : "blank",
 			initialWidth : '25%',
-			style: "font-family: \"lucida grande\",tahoma,verdana,arial,sans-serif;font-size: 11px; margin-top: 10px",
 			escapeHTMLInData : false,
 	        structure: addedlayout
 	    }, dojo.byId('addedHolder<%=counter%>'));
@@ -174,14 +160,17 @@
 	/*  CATEGORIES GRID FUNCTIONS */
 
 	var addFormatter<%=counter%> = function(value, index) {
-
-		return "<a href=\"javascript:addCat<%=counter%>("+index+");\"><img src='/html/images/icons/plus-small.png' /></a>";
+		return "<div style='text-align:center;width:100%;cursor:pointer;' onclick=\"javascript:drillDown<%=counter%>("+index+");\"><span class='toggleOpenIcon'></span></div>";
 	};
 
 
 	/* format the name column of the grid to be an <a> element */
 	var formatHref<%=counter%> = function(value, index) {
-		return "<a href=\"javascript:drillDown<%=counter%>("+index+")\" >"+value+"</a>";
+		if(value == undefined || value==null || value=="null"){
+			value="&nbsp;";
+		}
+		
+		return "<div style='width:100%;cursor:pointer;' onclick=\"addCat<%=counter%>("+index+")\" >"+value+"</div>";
 	};
 
 	function createStore<%=counter%>(params) {
@@ -197,7 +186,7 @@
 			{
 				field : '',
 				name : ' ',
-				width : '20px',
+				width : '34px',
 				formatter : addFormatter<%=counter%>
 			},
 			{
@@ -208,11 +197,13 @@
 			}, {
 				field : 'category_key',
 				name : '<%= LanguageUtil.get(pageContext, "Key") %>',
-				width : '25%'
+				width : '25%',
+				formatter : formatHref<%=counter%>
 			}, {
 				field : 'category_velocity_var_name',
 				name : '<%= LanguageUtil.get(pageContext, "Variable") %>',
-				width : '25%'
+				width : '25%',
+				formatter : formatHref<%=counter%>
 			}
 			];
 
@@ -221,10 +212,8 @@
 				jsId : "grid<%=counter%>",
 				store : myStore<%=counter%>,
 				autoWidth : true,
-// 				class: "tundra",
 				initialWidth : '70%',
 				height: "90%",
-				style: "font-family: \"lucida grande\",tahoma,verdana,arial,sans-serif;font-size: 11px; margin-top: 10px",
 				autoHeight : true,
 				escapeHTMLInData : false,
 				structure : layout,
@@ -284,7 +273,7 @@
 	}
 
 	function manageBreadCrumbs<%=counter%>(inode, name) {
-		dojo.place("<a style=\"font-size: 12px\" id=\"a_"+inode+"\" href=\"javascript:prepareCrumbs<%=counter%>('"+inode+"', '"+name+"');  \">"+name+" &#62; </a>", "nav<%=counter%>", "last");
+		dojo.place(" <a style=\"\" id=\"a_"+inode+"\" href=\"javascript:prepareCrumbs<%=counter%>('"+inode+"', '"+name+"');  \"> &#62; "+name+"</a>", "nav<%=counter%>", "last");
 	}
 
 	function prepareCrumbs<%=counter%>(inode, name) {
@@ -331,27 +320,35 @@
 	}
 
 	function addPreview<%=counter%>(catName, inode) {
-		dojo.place("<li id='preview"+inode+"'  ><a href=\"javascript:delCat<%=counter%>('"+inode+"');\"><img src='/html/images/icons/cross-small.png' /></a>"+catName+"</li>", "previewCats<%=counter%>", "last");
+		dojo.place("<li id='preview"+inode+"'  ><a href=\"javascript:delCat<%=counter%>('"+inode+"');\"><img src='/html/images/icons/cross.png' /></a>"+catName+"</li>", "previewCats<%=counter%>", "last");
 	}
-
 </script>
-<div id="categoriesDialog<%=counter%>" dojoType="dijit.Dialog" style="display:none;width:630px;height:440px;vertical-align: middle; " draggable="true"
+
+
+
+<div id="categoriesDialog<%=counter%>" dojoType="dijit.Dialog" style="display:none;max-width:900px;max-height:540px;vertical-align: middle; " draggable="true"
 	title="<%= LanguageUtil.get(pageContext, "categories") %>" >
-		<div style="width:100%" id="breadCrumbs<%=counter%>">
-			<ul id="nav<%=counter%>" style="margin-left:0px">
-				<a id="a_null<%=counter%>" style="font-size: 12px" onfocus="return false;"  href="javascript:prepareCrumbs<%=counter%>(baseCat<%=counter%>, '<%= LanguageUtil.get(pageContext, "Top-Level") %>');"  \><%= LanguageUtil.get(pageContext, "Top-Level") %> &#62; </a>
+		<div class="categories-selector__breadcrumbs" id="breadCrumbs<%=counter%>">
+			<ul id="nav<%=counter%>" style="margin-left:0px;">
+				<a id="a_null<%=counter%>" style="" onfocus="return false;"  href="javascript:prepareCrumbs<%=counter%>(baseCat<%=counter%>, '<%= LanguageUtil.get(pageContext, "Top-Level") %>');"  \><%= LanguageUtil.get(pageContext, "Top-Level") %></a>
 			</ul>
 		</div>
-		<div style="margin-top: 10px">
-				<input name="catFilter" id="catFilter<%=counter%>" dojoType="dijit.form.TextBox" placeholder="<%= LanguageUtil.get(pageContext, "message.filter.categories") %>" style="width: 138px; height: 15px" />
-				<button dojoType="dijit.form.Button" onclick="doSearch<%=counter%>();" type="button" iconClass="searchIcon"><%= LanguageUtil.get(pageContext, "Search") %></button>
-				<button dojoType="dijit.form.Button" onclick="clearCatFilter<%=counter%>()" type="button" iconClass="resetIcon"><%= LanguageUtil.get(pageContext, "Clear") %></button>
-				<div id="all<%=counter%>" style="margin-top: 10px; margin-left: 50px; ">
-				<a href="javascript:delAll<%=counter%>()" style="font-size:11px">Delete All</a>
-		</div>
+		<div class="categories-selector__toolbar">
+			<div class="categories-selector__toolbar-actions-primary">
+				<div class="inline-form">
+					<input name="catFilter" id="catFilter<%=counter%>" dojoType="dijit.form.TextBox" placeholder="<%= LanguageUtil.get(pageContext, "message.filter.categories") %>" style="width: 265px;" />
+					<button dojoType="dijit.form.Button" onclick="doSearch<%=counter%>();" type="button"><%= LanguageUtil.get(pageContext, "Search") %></button>
+					<button dojoType="dijit.form.Button" onclick="clearCatFilter<%=counter%>()" type="button" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Clear") %></button>
+				</div>
+			</div>
+			<div class="categories-selector-toolbar-actions-secondary">
+				<div id="all<%=counter%>">
+					<button dojoType="dijit.form.Button" class="dijitButtonDanger" onclick="delAll<%=counter%>();" type="button"><%= LanguageUtil.get(pageContext, "delete-all") %></button>
+				</div>
+			</div>
 		</div>
 
-		<div id="container<%=counter%>" style="height: 340px;  overflow: auto;">
+		<div id="container<%=counter%>" style="height: 340px; overflow: auto;">
 
 			<div id="scroll<%=counter%>" style="height: 300px; margin-top: 0px">
 				<div id="catHolder<%=counter%>" ></div>

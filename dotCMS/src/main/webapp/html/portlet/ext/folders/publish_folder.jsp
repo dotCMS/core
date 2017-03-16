@@ -1,12 +1,7 @@
 <%@ include file="/html/portlet/ext/folders/init.jsp" %>
 
-<%@ page import="com.dotmarketing.util.Config" %>
 <%@ page import="com.dotmarketing.portlets.links.model.Link" %>
-<%@ page import="com.dotmarketing.portlets.templates.model.Template" %>
-<%@ page import="com.dotmarketing.portlets.files.model.File" %>
-<%@ page import="com.dotmarketing.portlets.containers.model.Container" %>
 <%@ page import="com.dotmarketing.portlets.contentlet.model.Contentlet" %>
-<%@ page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage" %>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 
 <%
@@ -85,12 +80,6 @@ function cancel() {
 											else if (webasset instanceof Link) {
 												title = ((Link)webasset).getProtocal() + ((Link)webasset).getUrl();
 											}
-											else if (webasset instanceof File) {
-												title = ((File)webasset).getFileName();
-											}
-											else if (webasset instanceof HTMLPage) {
-												title = ((HTMLPage)webasset).getPageUrl();
-											}
 											else {
 												title = webasset.getTitle();
 											}
@@ -123,7 +112,7 @@ function cancel() {
                         <button dojoType="dijit.form.Button" onClick="submitfmPublish()">
                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publish-all-related-assets"  )) %>
                         </button>
-                        <button dojoType="dijit.form.Button" onClick="cancel()">
+                        <button dojoType="dijit.form.Button" onClick="cancel()" class="dijitButtonFlat">
                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel" )) %>
                         </button>
 						</td>

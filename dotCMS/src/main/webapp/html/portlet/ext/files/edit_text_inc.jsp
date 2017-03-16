@@ -18,7 +18,7 @@
 	}
 </style>
 <script src="/html/js/ace-builds-1.2.3/src-noconflict/ace.js" type="text/javascript"></script>
-<script type='text/javascript' src='/dwr/interface/FileAjax.js'></script>
+<script type='text/javascript' src='/dwr/interface/FileAssetAjax.js'></script>
 
 <script language="JavaScript">
     var aceEditor;
@@ -35,7 +35,7 @@
 	    aceEditor.setTheme("ace/theme/textmate");
 	    aceEditor.getSession().setMode("ace/mode/"+parser);
   		aceEditor.getSession().setUseWrapMode(true);
-  		aceEditor.setValue(file.text);
+        aceEditor.setValue((file)?file.text:'');
   		editorText= aceEditor.getValue();
   		aceEditor.clearSelection();
   		iAmOpen = true;
@@ -49,7 +49,7 @@
 		editText: function (fileInode,fileId) {
 		    this.fileInode = fileInode;
 			this.fileId = fileId;
-			FileAjax.getWorkingTextFile(this.fileInode, dojo.hitch(this, this.loadTextCallback));
+			FileAssetAjax.getWorkingTextFile(this.fileInode, dojo.hitch(this, this.loadTextCallback));
 		},
 
 		loadTextCallback: function(file) {
@@ -87,7 +87,7 @@
 
 		save: function() {
 			var text = aceEditor.getValue();
-			FileAjax.saveFileText(this.fileId, text, {
+			FileAssetAjax.saveFileText(this.fileId, text, null, {
 				async: false,	
 				callback:function() {
 				editTextManager.close();
@@ -122,7 +122,7 @@
 	
 </script>
 
-<div dojoType="dijit.Dialog" id="editTextDialog" style="height:450px;width:650px;padding-top:15px\9;" onCancel="javascript:editTextManager.close();">
+<div dojoType="dijit.Dialog" class="noDijitDialogTitleBar" id="editTextDialog" onCancel="javascript:editTextManager.close();">
 
  	<div>
 		<h3><%= LanguageUtil.get(pageContext, "text-editor") %></h3>

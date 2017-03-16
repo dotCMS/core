@@ -20,6 +20,27 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   long dbHits = 0;
   public static final int MINIMUM_SHORTY_ID_LENGTH = Config.getIntProperty("MINIMUM_SHORTY_ID_LENGTH", 10);
 
+    
+    
+    @Override
+    public Optional<ShortyId> getShorty(final String shortStr) {
+        try {
+            validShorty(shortStr);
+            ShortyId shortyId = null;
+            Optional<ShortyId> opt = new ShortyIdCache().get(shortStr);
+            if (opt.isPresent()) {
+                shortyId = opt.get();
+            } else {
+                shortyId = viaDb(shortStr);
+                new ShortyIdCache().add(shortyId);
+            }
+            return shortyId.type == ShortType.CACHE_MISS ? Optional.empty() : Optional.of(shortyId);
+        } catch (ShortyException se) {
+            
+            Logger.warn(this.getClass(), se.getMessage());
+            return Optional.empty();
+        }
+    }
 
   @Override
   public ShortyId noShorty(String shorty) {
@@ -148,11 +169,18 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
           + MINIMUM_SHORTY_ID_LENGTH + " chars in length");
     }
 
-    for (char c : test.toCharArray()) {
-      if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-')) {
-        throw new ShortyException("shorty " + test + " is not an alpha numeric id.  Short Ids should be "
-            + MINIMUM_SHORTY_ID_LENGTH + " alpha/numeric chars in length");
-      }
+    public void validShorty(final String test) {
+        if (test == null || test.length() < MINIMUM_SHORTY_ID_LENGTH || test.length()>36) {
+            throw new ShortyException(
+                    "shorty " + test + " is not a short id.  Short Ids should be " + MINIMUM_SHORTY_ID_LENGTH + " chars in length");
+        }
+        
+        for (char c : test.toCharArray()) {
+            if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c=='-')) {
+                throw new ShortyException(
+                        "shorty " + test + " is not an alpha numeric id.  Short Ids should be " + MINIMUM_SHORTY_ID_LENGTH + " alpha/numeric chars in length");
+            }
+        }
     }
   }
 }

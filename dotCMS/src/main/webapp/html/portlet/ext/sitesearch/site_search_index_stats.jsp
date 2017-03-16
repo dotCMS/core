@@ -94,7 +94,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			
 		</div>
     	<div class="portlet-toolbar__actions-secondary">
-    		<button dojoType="dijit.form.Button"  onClick="refreshIndexStats()" iconClass="reloadIcon">
+    		<button dojoType="dijit.form.Button"  onClick="refreshIndexStats()">
                <%= LanguageUtil.get(pageContext,"Refresh") %>
             </button>
     	</div>

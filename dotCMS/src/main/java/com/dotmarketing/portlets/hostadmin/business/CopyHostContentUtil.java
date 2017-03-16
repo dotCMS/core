@@ -71,8 +71,7 @@ public class CopyHostContentUtil{
 					boolean copyContentOnPages = copyParams.get("copy_content_on_pages").equals("on");
 					boolean copyFolders = copyParams.get("copy_folders").equals("on");
 					boolean copyContentOnHost = copyParams.get("copy_content_on_host").equals("on");
-					boolean copyFiles = copyParams.get("copy_files").equals("on");
-					boolean copyPages = copyParams.get("copy_pages").equals("on");
+					boolean copyLinks = copyParams.get("copy_links").equals("on");
 					boolean copyVirtualLinks = copyParams.get("copy_virtual_links").equals("on");
 					boolean copyHostVariables = copyParams.get("copy_host_variables").equals("on");
 
@@ -81,7 +80,7 @@ public class CopyHostContentUtil{
 					if (copyAll)
 						hostCopyOptions = new HostCopyOptions(copyAll);
 					else
-						hostCopyOptions = new HostCopyOptions(copyTemplatesContainers, copyFolders, copyFiles, copyPages, copyContentOnPages, copyContentOnHost,
+						hostCopyOptions = new HostCopyOptions(copyTemplatesContainers, copyFolders, copyLinks, copyContentOnPages, copyContentOnHost,
 								copyVirtualLinks, copyHostVariables);
 
 					Map<String, Object> parameters = new HashMap<String, Object>();

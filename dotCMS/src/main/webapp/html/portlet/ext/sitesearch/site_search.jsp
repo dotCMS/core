@@ -871,31 +871,38 @@ function jobsProgressUpdate() {
                showDotCMSSystemMessage(dataOrError, true);
            } else {
         	   var refresh=false;
-        	   if(dojo.query("div.pb").length!=dataOrError.length) 
-        		   refresh=true;
-        	   else
-                 dataOrError.each(function(p) {
-            	   if(!refresh) {
-	            	   if(dojo.query("tr[jobname='"+p.jobname+"']").length) {
-	            		   if(p.progress!=-1) {
-	            			   // job in progress. Lets show the progress bar
-	            			   dojo.query("tr[jobname='"+p.jobname+"'] .deleteIcon").addClass("hidden");
-	            			   dojo.query("tr[jobname='"+p.jobname+"'] .pb").removeClass("hidden");
-	            			   dijit.byNode(dojo.query("tr[jobname='"+p.jobname+"'] .pb")[0]).set("value",p.progress);
-	            			   dijit.byNode(dojo.query("tr[jobname='"+p.jobname+"'] .pb")[0]).set("maximum",p.max);
-	            		   }
-	            		   else {
-	            			   // job not running. Lets show the delete icon
-	            			   dojo.query("tr[jobname='"+p.jobname+"'] .deleteIcon").removeClass("hidden");
-	                           dojo.query("tr[jobname='"+p.jobname+"'] .pb").addClass("hidden");
-	            		   }
-	            	   }
-	            	   else {
-	            		   // we don't know that job. Lets refresh the whole thing
-	            		   refresh=true;
-	            	   }
-            	   }
-                 });
+        	   if(dojo.query("div.pb").length!=dataOrError.length) {
+                   refresh = true;
+               } else {
+
+                   let p = null;
+                   for (let i = 0; i < dataOrError.length; ++i) {
+
+                       p = dataOrError[i];
+
+                       if (!refresh) {
+                           if (dojo.query("tr[jobname='" + p.jobname + "']").length) {
+                               if (p.progress != -1) {
+                                   // job in progress. Lets show the progress bar
+                                   dojo.query("tr[jobname='" + p.jobname + "'] .deleteIcon").addClass("hidden");
+                                   dojo.query("tr[jobname='" + p.jobname + "'] .pb").removeClass("hidden");
+                                   dijit.byNode(dojo.query("tr[jobname='" + p.jobname + "'] .pb")[0]).set("value", p.progress);
+                                   dijit.byNode(dojo.query("tr[jobname='" + p.jobname + "'] .pb")[0]).set("maximum", p.max);
+                               }
+                               else {
+                                   // job not running. Lets show the delete icon
+                                   dojo.query("tr[jobname='" + p.jobname + "'] .deleteIcon").removeClass("hidden");
+                                   dojo.query("tr[jobname='" + p.jobname + "'] .pb").addClass("hidden");
+                               }
+                           }
+                           else {
+                               // we don't know that job. Lets refresh the whole thing
+                               refresh = true;
+                           }
+                       }
+                   }
+               }
+
                if(refresh)
             	   refreshJobStats();
            }

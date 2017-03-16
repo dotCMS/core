@@ -445,6 +445,9 @@ var editButtonRow="editEventButtonRow";
 	        	%>
 		        <td colspan="2" align="center"><%= message %></td>
 		    </tr>
+			<tr>
+				<td>&nbsp;</td>
+			</tr>
 		    <tr>
 		        <td colspan="2" align="center">
 		        <button dojoType="dijit.form.Button" onClick="runpopulate();" type="button"><%= LanguageUtil.get(pageContext, "Yes") %></button>

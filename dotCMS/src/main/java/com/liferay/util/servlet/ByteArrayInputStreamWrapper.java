@@ -25,6 +25,7 @@ package com.liferay.util.servlet;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
+import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
 
 /**
@@ -46,6 +47,7 @@ public class ByteArrayInputStreamWrapper extends ServletInputStream {
 
 	public void close() throws IOException {
 		_is.close();
+		this.closed = true;
 	}
 
 	public void mark(int readlimit) {
@@ -80,6 +82,22 @@ public class ByteArrayInputStreamWrapper extends ServletInputStream {
 		return _is.skip(n);
 	}
 
+	public  boolean isFinished() {
+
+		return closed;
+	}
+
+
+	public boolean isReady() {
+
+		return false;
+	}
+
+
+	public void setReadListener(ReadListener readListener) {}
+
+
 	private ByteArrayInputStream _is;
+	private boolean closed = false;
 
 }

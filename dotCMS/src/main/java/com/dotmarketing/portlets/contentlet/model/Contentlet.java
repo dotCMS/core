@@ -566,34 +566,30 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			map.remove(velocityVarName);
             if ( map.get( INODE_KEY ) != null && InodeUtils.isSet( (String) map.get( INODE_KEY ) ) ) {
                 String inode = (String) map.get(INODE_KEY);
-	        	try{
-	        	
-	        		java.io.File binaryFilefolder = new java.io.File(APILocator.getFileAPI().getRealAssetPath()
-	                    + java.io.File.separator
-	                    + inode.charAt(0)
-	                    + java.io.File.separator
-	                    + inode.charAt(1)
-	                    + java.io.File.separator
-	                    + inode
-	                    + java.io.File.separator
-	                    + velocityVarName);
-	                    if(binaryFilefolder.exists()){
-	                    	java.io.File[] files = binaryFilefolder.listFiles(new BinaryFileFilter());
-		                    if(files.length > 0){
-		                    	f = files[0];
-		                    	map.put(velocityVarName, f);
-		                    }
-		                }
-	            }catch(Exception e){
-	                Logger.error(this,"Error occured while retrieving binary file name : getBinaryFileName(). ContentletInode : "+inode+"  velocityVaribleName : "+velocityVarName );
-	                throw new IOException("File System error.");
-	            }
-			}
-		}
-		
-		return f;
-		
-	}
+                try {
+
+                    java.io.File binaryFilefolder = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
+                            + java.io.File.separator
+                            + inode.charAt(0)
+                            + java.io.File.separator
+                            + inode.charAt(1)
+                            + java.io.File.separator
+                            + inode
+                            + java.io.File.separator
+                            + velocityVarName);
+                    if (binaryFilefolder.exists()) {
+                        java.io.File[] files = binaryFilefolder.listFiles(new BinaryFileFilter());
+                        if (files.length > 0) {
+                            f = files[0];
+                            map.put(velocityVarName, f);
+                        }
+                    }
+                } catch (Exception e) {
+                    Logger.error(this, "Error occured while retrieving binary file name : getBinaryFileName(). ContentletInode : " + inode + "  velocityVaribleName : " + velocityVarName);
+                    throw new IOException("File System error.");
+                }
+            }
+        }
 
 	public InputStream getBinaryStream(String velocityVarName) throws IOException{
 		FileInputStream fis = new FileInputStream(getBinary(velocityVarName));

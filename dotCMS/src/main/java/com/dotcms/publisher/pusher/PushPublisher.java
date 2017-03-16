@@ -5,8 +5,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.publishing.remote.bundler.*;
@@ -64,6 +66,8 @@ import com.dotmarketing.util.UtilMethods;
 public class PushPublisher extends Publisher {
 
     private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
+    private static final String PROTOCOL_HTTP = "http";
+    private static final String PROTOCOL_HTTPS = "https";
 
     @Override
     public PublisherConfig init ( PublisherConfig config ) throws DotPublishingException {
@@ -119,9 +123,9 @@ public class PushPublisher extends Publisher {
 				List<PublishingEndPoint> allEndpoints = APILocator.getPublisherEndPointAPI().findSendingEndPointsByEnvironment(environment.getId());
 				List<PublishingEndPoint> endpoints = new ArrayList<PublishingEndPoint>();
 				
-				//Filter Endpoints list and push only to those that are enabled
+				//Filter Endpoints list and push only to those that are enabled and are Dynamic (not S3 at the moment)
 				for(PublishingEndPoint ep : allEndpoints) {
-					if(ep.isEnabled()) {
+					if(ep.isEnabled() && getProtocols().contains(ep.getProtocol())) {
 						endpoints.add(ep);
 					}
 				}
@@ -285,7 +289,6 @@ public class PushPublisher extends Publisher {
             list.add( FolderBundler.class );
             list.add( TemplateBundler.class );
             list.add( ContainerBundler.class );
-            list.add( HTMLPageBundler.class );
             list.add(RuleBundler.class);
             list.add( LinkBundler.class );
             if ( Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES", false) ) {
@@ -302,12 +305,19 @@ public class PushPublisher extends Publisher {
 				list.add(LanguageBundler.class);
 			} else if (buildRules) {
 				list.add(HostBundler.class);
-				list.add(HTMLPageBundler.class);
 				list.add(RuleBundler.class);
 			}
         }
         list.add( BundleXMLAsc.class );
         return list;
     }
+
+    @Override
+	public Set<String> getProtocols(){
+		Set<String> protocols = new HashSet<>();
+		protocols.add(this.PROTOCOL_HTTP);
+		protocols.add(this.PROTOCOL_HTTPS);
+		return  protocols;
+	}
 
 }

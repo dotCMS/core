@@ -101,7 +101,6 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
@@ -561,28 +560,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             }
 
                         }
-                    } else if(InodeUtils.isSet(id.getInode())){ // If this is a Legacy File.
-                        File file  = (File) APILocator.getVersionableAPI().findWorkingVersion(id, systemUser, false);
-                        PublishFactory.publishAsset(file, systemUser, false, isNewVersion);
                     }
                 } catch ( Exception ex ) {
                     Logger.debug( this, ex.getMessage(), ex );
                     throw new DotStateException( "Problem occurred while publishing file", ex );
                 }
-            }
-        }
-
-        // gets all not live file children
-        List<File> files = getRelatedFiles(contentlet, systemUser, false);
-        for (File file : files) {
-            Logger.debug(this, "*****I'm a Contentlet -- Publishing my File Child=" + file.getInode());
-            try {
-                PublishFactory.publishAsset(file, systemUser, false, isNewVersion);
-            } catch (DotSecurityException e) {
-                Logger.debug(this, "User has permissions to publish the content = " + contentlet.getIdentifier()
-                        + " but not the related file = " + file.getIdentifier());
-            } catch (Exception e) {
-                throw new DotStateException("Problem occured while publishing file");
             }
         }
 
@@ -1038,30 +1020,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
-    public void addFileToContentlet(Contentlet contentlet, String fileInode, String relationName, User user, boolean respectFrontendRoles)throws DotSecurityException, DotDataException {
-        if(contentlet.getInode().equals(""))
-            throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
-        if (InodeUtils.isSet(fileInode)) {
-            File file = (File) InodeFactory.getInode(fileInode, File.class);
-            Identifier identifier = APILocator.getIdentifierAPI().find(file);
-            relAPI.addRelationship(contentlet.getInode(),identifier.getInode(), relationName);
-            ContentletServices.invalidateWorking(contentlet);
-        }
-    }
-
-    @Override
-    public void addImageToContentlet(Contentlet contentlet, String imageInode, String relationName, User user, boolean respectFrontendRoles)throws DotSecurityException, DotDataException {
-        if(contentlet.getInode().equals(""))
-            throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
-        if (InodeUtils.isSet(imageInode)) {
-            File image = (File) InodeFactory.getInode(imageInode, File.class);
-            Identifier identifier = APILocator.getIdentifierAPI().find(image);
-            relAPI.addRelationship(contentlet.getInode(),identifier.getInode(), relationName);
-            ContentletServices.invalidateWorking(contentlet);
-        }
-    }
-
-    @Override
     public List<Contentlet> findPageContentlets(String HTMLPageIdentifier,String containerIdentifier, String orderby, boolean working, long languageId, User user, boolean respectFrontendRoles)    throws DotSecurityException, DotDataException {
         List<Contentlet> contentlets = conFac.findPageContentlets(HTMLPageIdentifier, containerIdentifier, orderby, working, languageId);
         return perAPI.filterCollection(contentlets, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
@@ -1211,11 +1169,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotSecurityException("User: "+ (user != null ? user.getUserId() : "Unknown") +" cannot read Contentlet");
         }
         return conFac.getRelatedIdentifier(contentlet, relationshipType);
-    }
-
-    @Override
-    public List<File> getRelatedFiles(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException {
-        return perAPI.filterCollection(conFac.getRelatedFiles(contentlet), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
     }
 
     @Override
@@ -2998,7 +2951,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 String oldInode = workingContentlet.getInode();
 
 
-                java.io.File newDir = new java.io.File(APILocator.getFileAPI().getRealAssetPath() + java.io.File.separator
+                java.io.File newDir = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + java.io.File.separator
                 		+ newInode.charAt(0)
                         + java.io.File.separator
                         + newInode.charAt(1) + java.io.File.separator + newInode);
@@ -3006,7 +2959,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 java.io.File oldDir = null;
                 if(UtilMethods.isSet(oldInode)) {
-                	oldDir = new java.io.File(APILocator.getFileAPI().getRealAssetPath()
+                	oldDir = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
             			+ java.io.File.separator + oldInode.charAt(0)
             			+ java.io.File.separator + oldInode.charAt(1)
             			+ java.io.File.separator + oldInode);
@@ -3014,7 +2967,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 java.io.File tmpDir = null;
                 if(UtilMethods.isSet(oldInode)) {
-                	tmpDir = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+                	tmpDir = new java.io.File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
                 			+ java.io.File.separator + oldInode.charAt(0)
                 			+ java.io.File.separator + oldInode.charAt(1)
                 			+ java.io.File.separator + oldInode);
@@ -3080,19 +3033,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			                		// delete old content metadata if exists
 			                		if(metadata!=null && metadata.exists())
 			                		    metadata.delete();
-
-			                		// what happens is we never clean up the temp directory
-			                		// answer: this happends --> https://github.com/dotCMS/dotCMS/issues/1071
-			                		// there is a quarz job to clean that
-			                		/*java.io.File delMe = new java.io.File(incomingFile.getParentFile().getParentFile(), oldFileName);
-			                		if(delMe.exists() && delMe.getAbsolutePath().contains(
-			                		        APILocator.getFileAPI().getRealAssetPathTmpBinary()
-											+ java.io.File.separator + user.getUserId()
-											+ java.io.File.separator  ) ){
-			                			delMe.delete();
-			                			delMe = incomingFile.getParentFile().getParentFile();
-			                			FileUtil.deltree(delMe);
-			                		}*/
 
 			                	}
 			                	else if (oldFile.exists()) {
@@ -3945,11 +3885,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
         }
-        
-        
-        
-        
-        
+
         if(Structure.STRUCTURE_TYPE_HTMLPAGE == st.getStructureType()){
             if(contentlet.getHost()!=null && contentlet.getHost().equals(Host.SYSTEM_HOST) && (!UtilMethods.isSet(contentlet.getFolder()) || contentlet.getFolder().equals(FolderAPI.SYSTEM_FOLDER))){
                 DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.invalid.hostfolder");
@@ -3971,14 +3907,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 if(!UtilMethods.isSet(url)){
 
-                    Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
-                    if(UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getAssetName())){
+                    if (InodeUtils.isSet(contentlet.getVersionId()) || InodeUtils.isSet(contentlet.getInode())) {
+                        Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
+                        if (UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getAssetName())) {
 
-                        url = identifier.getAssetName();
+                            url = identifier.getAssetName();
+                        }
                     }
                 }
-	
-	            if(UtilMethods.isSet(url)){
+
+                if(UtilMethods.isSet(url)){
                     contentlet.setProperty(HTMLPageAssetAPI.URL_FIELD, url);
 	        		Identifier folderId = APILocator.getIdentifierAPI().find(folder);
 	        		String path = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)?"/"+url:folderId.getPath()+url;
@@ -3988,14 +3926,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	                    cve.addBadTypeField(st.getFieldVar(HTMLPageAssetAPI.URL_FIELD));
 	                    throw cve;
 	                }
-	            }else{
-	                DotContentletValidationException cve = new FileAssetValidationException("URL is required");
-	                cve.addBadTypeField(st.getFieldVar(HTMLPageAssetAPI.URL_FIELD));
-	                throw cve;
-	            }
-	            UtilMethods.validateFileName(url);
+                    UtilMethods.validateFileName(url);
 
-      
+	            }
+
         	}
         	catch(DotDataException | DotSecurityException | IllegalArgumentException e){
                 DotContentletValidationException cve = new FileAssetValidationException(" URL is invalid");
@@ -4012,7 +3946,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         
         
         
-        
+
 
         boolean hasError = false;
         DotContentletValidationException cve = new DotContentletValidationException("Contentlets' fields are not valid");
@@ -4679,7 +4613,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	private String getContentletAssetPath(Contentlet con, Field field) {
 		String inode = con.getInode();
 
-		String result = APILocator.getFileAPI().getRealAssetPath()
+		String result = APILocator.getFileAssetAPI().getRealAssetsRootPath()
 		                            + java.io.File.separator
 		                            + inode.charAt(0)
 		                            + java.io.File.separator
@@ -4696,7 +4630,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	private String getContentletCacheAssetPath(Contentlet con, Field field) {
 		String inode = con.getInode();
 
-        String result = APILocator.getFileAPI().getRealAssetPath()
+        String result = APILocator.getFileAssetAPI().getRealAssetsRootPath()
                 + java.io.File.separator
                 + "cache"
                 + java.io.File.separator
@@ -4727,7 +4661,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         java.io.File binaryFile = null ;
         /*** THIS LOGIC IS DUPED IN THE CONTENTLET POJO.  IF YOU CHANGE HERE, CHANGE THERE **/
         try{
-        java.io.File binaryFilefolder = new java.io.File(APILocator.getFileAPI().getRealAssetPath()
+        java.io.File binaryFilefolder = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
                 + java.io.File.separator
                 + contentletInode.charAt(0)
                 + java.io.File.separator
@@ -4889,7 +4823,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             List <Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
             java.io.File srcFile;
-            java.io.File destFile = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + user.getUserId());
+            java.io.File destFile = new java.io.File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + java.io.File.separator + user.getUserId());
             if (!destFile.exists())
                 destFile.mkdirs();
 
@@ -4907,7 +4841,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             }else{
                                 fieldValue=srcFile.getName();
                             }
-                            destFile = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + user.getUserId() + java.io.File.separator + fieldValue);
+                            destFile = new java.io.File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + java.io.File.separator + user.getUserId() + java.io.File.separator + fieldValue);
                             if (!destFile.exists())
                                 destFile.createNewFile();
 
@@ -5035,8 +4969,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     	        APILocator.getWorkflowAPI().saveWorkflowHistory(newHistory);
     	    }
 
-    	    List<IFileAsset> files = APILocator.getWorkflowAPI().findWorkflowTaskFiles(task);
-    	    files.addAll(APILocator.getWorkflowAPI().findWorkflowTaskFilesAsContent(task, APILocator.getUserAPI().getSystemUser()));
+    	    List<IFileAsset> files = APILocator.getWorkflowAPI().findWorkflowTaskFilesAsContent(task, APILocator.getUserAPI().getSystemUser());
     	    for(IFileAsset f : files) {
     	        APILocator.getWorkflowAPI().attachFileToTask(newTask, f.getInode());
     	    }

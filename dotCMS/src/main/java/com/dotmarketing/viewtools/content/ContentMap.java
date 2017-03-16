@@ -24,8 +24,6 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
-import com.dotmarketing.portlets.files.business.FileAPI;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.KeyValueFieldUtil;
@@ -35,7 +33,6 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.velocity.VelocityServlet;
 import com.dotmarketing.viewtools.ContentsWebAPI;
 import com.liferay.portal.model.User;
 
@@ -53,7 +50,6 @@ import com.liferay.portal.model.User;
  */
 public class ContentMap {
 
-	private static final FileAPI fileAPI = APILocator.getFileAPI();
 	private Contentlet content;
 	private ContentletAPI conAPI;
 	private PermissionAPI perAPI;
@@ -91,7 +87,7 @@ public class ContentMap {
 	 * It is not a bad performance but certainly slower then not displaying the category fields. Searching for categories doesn't effect the speed at all
 	 * it is only displaying them that will. The value returned to Velocity are the actual Category Objects. You get an ArrayList of them<br/>
 	 * <br/>
-	 * FILE/IMAGE FIELDS: You can get File/Image fields as well. $con.myimage or $con.myfile. It will return a FileMap object which wraps the actual File object from dotCMS.It adds the uri as a variable.
+	 * FILE/IMAGE FIELDS: You can get File/Image fields as well. $con.myimage or $con.myfile. It will return a FileAssetMap object which wraps the actual File object from dotCMS.It adds the uri as a variable.
 	 * All the objects have toString implemented on them which means you can spit it out in velocity and see what it available to you.<br/>
 	 * <br/>
 	 * BINARY FIELDS : You can also get at binary field types. $mycon.myBinaryField This return the BinaryMap object to you.<br/>
@@ -145,26 +141,13 @@ public class ContentMap {
 							return null;
 						}
 						Identifier i = APILocator.getIdentifierAPI().find(fid);
-						IFileAsset file = null;
-						String p = "";
-						if (EDIT_OR_PREVIEW_MODE){
-							p = WorkingCache.getPathFromCache(i.getURI(),InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier(), content.getLanguageId());
-						}else{
-							p = LiveCache.getPathFromCache(i.getURI(),InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier(), content.getLanguageId());
-						}
-						p = p.substring(5, p.lastIndexOf("."));
+
 						if(i!=null && InodeUtils.isSet(i.getId()) && i.getAssetType().equals("contentlet")){
 							return i.getPath();
 						}
-						file = fileAPI.find(p,user,false);
-						if(file != null && UtilMethods.isSet(file.getInode())){
-							return ((File)file).getURI();
-						}else{
-							return null;
-						}
-					}else{
-						return null;
 					}
+					return null;
+
 				}else{
 					return content.getMap().get(fieldVariableName);
 				}
@@ -196,8 +179,6 @@ public class ContentMap {
 
                             return fam;
 						}
-					}else{
-						file = fileAPI.find(p,user,true);
 					}
 				}else{
 					String p = LiveCache.getPathFromCache(i.getURI(),InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier(), content.getLanguageId());
@@ -211,18 +192,7 @@ public class ContentMap {
 
 						    return fam;
 						}
-					}else{
-						file = fileAPI.find(p,user,true);
 					}
-				}
-				if(file != null && UtilMethods.isSet(file.getInode())){
-				    FileMap fm = FileMap.of(file);
-				    // Store file map into fieldValueMap
-                    addFieldValue(f, fm);
-
-                    return FileMap.of(file);
-				}else{
-					return null;
 				}
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.BINARY.toString())){
                 // Check if fileAsset or binaryMap is in fieldValueMap hashmap
@@ -339,64 +309,71 @@ public class ContentMap {
 	}
 
     /**
-    * Returns the returns the identifier based URI for the 
+    * Returns the returns the identifier based URI for the
     * first doc/file on a piece of content
     * EXAMPLE : $mycontent.shorty
     * @return
-    * @throws IOException 
+    * @throws IOException
+    */
+    public String getShortyUrl() throws IOException{
+        return getShortyUrl(content.getIdentifier());
+    }
+
+    /**
+    * Returns the valid short version of the
+    * identifier
+    * @return
+    * @throws IOException
     */
     public String getShorty() throws IOException{
-        return getShorty(content.getIdentifier());
+        return APILocator.getShortyAPI().shortify(content.getIdentifier());
     }
-    
-    
+
     /**
-    * Returns the returns the identifier based URI for the 
+    * Returns the valid short version of the
+    * inode
+    * @return
+    * @throws IOException
+    */
+    public String getShortyInode() throws IOException{
+        return APILocator.getShortyAPI().shortify(content.getInode());
+    }
+    /**
+    * Returns the returns the identifier based URI for the
     * first doc/file on a piece of content
     * EXAMPLE : $mycontent.shortyInode
     * @return
-    * @throws IOException 
+    * @throws IOException
     */
-    public String getShortyInode() throws IOException{
-        return getShorty(content.getInode());
+    public String getShortyUrlInode() throws IOException{
+        return getShortyUrl(content.getInode());
     }
-	
-	
 
-    private String getShorty(final String idInode) throws IOException{
+
+
+    private String getShortyUrl(final String idInode) throws IOException{
         String tryField=getFileField();
-        java.io.File file=content.getBinary(getFileField());
-
         StringBuilder sb = new StringBuilder("/dA/").append(APILocator.getShortyAPI().shortify(idInode));
-        if(!"fileAsset".equals(tryField)){
-            sb.append("/").append(tryField);
+        if(tryField!=null){
+          java.io.File f = content.getBinary(tryField);
+          if(f !=null && f.exists()){
+            sb.append("/").append(content.getBinary(tryField).getName()) ;
+          }
         }
-        sb.append("/").append(file.getName()) ;
-        
         return sb.toString();
     }
-    
+
     private String getFileField() throws IOException{
-        String tryField="fileAsset";
-        java.io.File file=content.getBinary(tryField);
-
-        if(file!=null &&  file.exists()){
-            return tryField;
-        }
-
         for (Field f : FieldsCache.getFieldsByStructureInode(content.getStructureInode())) {
             if ("binary".equals(f.getFieldType())) {
-                file=content.getBinary(f.getVelocityVarName());
-                if(file!=null &&  file.exists()){
-                    return f.getVelocityVarName();
-                }
+                return f.getVelocityVarName();
             }
         }
         return null;
     }
-    
-	
-	
+
+
+
 	/**
 	 * Returns the URLMap if it exists for a piece of content. <br/>
 	 * EXAMPLE : $mycontent.urlMap OR $mycontent.getUrlMap() both of these work the same.
@@ -424,7 +401,7 @@ public class ContentMap {
      * object
      * 
      * @param field
-     * @returns field value object (FileMap, FileAssetMap or BinaryMap)
+     * @returns field value object (FileAssetMap or BinaryMap)
      */
     private Object retriveFieldValue(Field field) {
         if (fieldValueMap == null) {

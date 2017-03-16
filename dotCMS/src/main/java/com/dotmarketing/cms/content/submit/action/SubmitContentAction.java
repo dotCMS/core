@@ -611,7 +611,7 @@ public class SubmitContentAction extends DispatchAction{
 			if (!isEmptyFile) {
 				fileName = uploadRequest.getFileName(binaryFieldName);
 
-				File tempUserFolder = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+				File tempUserFolder = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
 								+ java.io.File.separator + user.getUserId() + java.io.File.separator + fieldContentlet);
 				if (!tempUserFolder.exists())
 					tempUserFolder.mkdirs();
@@ -621,10 +621,6 @@ public class SubmitContentAction extends DispatchAction{
 				if (dest.exists())
 					dest.delete();
 				FileUtil.move(f, dest);
-				//http://jira.dotmarketing.net/browse/DOTCMS-3463
-				/*SubmitContentUtil.saveTempFile(user, host, f, tempUserFolder
-						.getAbsolutePath(), binaryFieldName);*/
-				//String path = dest.getAbsolutePath();
 				values.put("parameterName", binaryFieldName);
 				values.put("parameterValues", dest);
 

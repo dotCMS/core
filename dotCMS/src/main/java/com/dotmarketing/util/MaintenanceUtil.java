@@ -19,7 +19,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.files.business.FileAPI;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -36,7 +36,7 @@ import com.liferay.util.FileUtil;
  */
 public class MaintenanceUtil {
 
-	private static final FileAPI fileAPI = APILocator.getFileAPI();
+	private static final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
 
 	/**
 	 * Use to delete the velocity static store
@@ -115,9 +115,7 @@ public class MaintenanceUtil {
 		count += deleteContentletsWithNoIdentifier();
 		count += deleteContainersWithNoIdentifier();
 		count += deleteLinksWithNoIdentifier();
-		count += deleteHTMLPagesWithNoIdentifier();
 		count += deleteTemplatesWithNoIdentifier();
-		count += deleteFileAssetsWithNoIdentifier();
 		return count;
 	}
 
@@ -274,13 +272,6 @@ public class MaintenanceUtil {
 	 */
 	public static int deleteContainersWithNoIdentifier(){
 		return deleteAssetsWithNoIdentifier(Inode.Type.CONTAINERS.getTableName());
-	}
-
-	/**
-	 * Delete from db all content with no identifier.  It will try to update identifiers from tree table first though
-	 */
-	public static int deleteFileAssetsWithNoIdentifier(){
-		return deleteAssetsWithNoIdentifier("file_asset");
 	}
 
 	/**
@@ -584,84 +575,6 @@ public class MaintenanceUtil {
 		}
 		Logger.info(MaintenanceUtil.class, "Finished Updating DB");
 		return hasErros;
-	}
-
-	/**
-	 * Will find all working/live Text in the DB and Search/Replace them. so the mimetype in db would need to be text/...
-	 * @param textToSearchFor
-	 * @param textToReplaceWith
-	 * @return boolean if there is an error found while running
-	 */
-	public static boolean textAssetsSearchAndReplace(String textToSearchFor, String textToReplaceWith){
-		return fileAssetSearchAndReplace(textToSearchFor, textToReplaceWith, "text");
-	}
-
-	/**
-	 * Will find all working/live VTLs in the DB and Search/Replace them
-	 * @param textToSearchFor
-	 * @param textToReplaceWith
-	 * @return boolean if there is an error found while running
-	 */
-	public static boolean VTLSearchAndReplace(String textToSearchFor, String textToReplaceWith){
-		return fileAssetSearchAndReplace(textToSearchFor, textToReplaceWith, "text/velocity");
-	}
-
-	/**
-	 * Will pull only working/live from the DB to search/replace on the FS
-	 * @param textToSearchFor
-	 * @param textToReplaceWith
-	 * @param mimeTypesOfFile Will search for things like text/Velocity in the DB. It will put a % after what you pass so text would pass text% in the like to the DB
-	 * @return
-	 */
-	private static boolean fileAssetSearchAndReplace(String textToSearchFor, String textToReplaceWith,String mimeTypesOfFile){
-		Logger.info(MaintenanceUtil.class, "Starting Search and Replace");
-		boolean hasErrors = false;
-		DotConnect dc = new DotConnect();
-		dc.setSQL("SELECT inode,file_name FROM file_asset fa, fileasset_version_info fvi WHERE mime_type LIKE '"+ mimeTypesOfFile +"%' AND (fa.inode = fvi.working_inode OR fa.inode = fvi.live_inode)");
-		List<Map<String,Object>> results = new ArrayList<Map<String,Object>>();
-		try {
-			results = dc.loadResults();
-		} catch (DotDataException e) {
-			Logger.error(MaintenanceUtil.class,"Unable to pull files from DB to search for on filesystem : " + e.getMessage(),e);
-			hasErrors = true;
-			Logger.info(MaintenanceUtil.class, "Finished Search and Replace With Errors");
-			return true;
-		}
-		File f = null;
-		String s = null;
-		for (Map<String,Object> result : results) {
-			if(!UtilMethods.isSet(result.get("inode").toString())){
-				hasErrors = true;
-				Logger.error(MaintenanceUtil.class, "Empty or null file inode found");
-				continue;
-			}
-			try{
-				f = new File(fileAPI.getRealAssetPath(result.get("inode").toString(), UtilMethods.getFileExtension(result.get("file_name").toString())));
-			}catch (Exception e) {
-				hasErrors = true;
-				Logger.error(MaintenanceUtil.class, "Unable to load the file with inode " + result.get("inode").toString() + " : " + e.getMessage(),e);
-				f=null;
-				continue;
-			}
-			if(!f.exists() || f.length() > 1310712000){
-				hasErrors = true;
-				Logger.error(MaintenanceUtil.class, "Unable to load the file with inode " + result.get("inode").toString());
-				f=null;
-				continue;
-			}
-			try{
-				s = FileUtils.readFileToString(f,"UTF-8");
-				s = s.replace(textToSearchFor, textToReplaceWith);
-				FileUtils.writeStringToFile(f, s,"UTF-8");
-			}catch (Exception e) {
-				hasErrors = true;
-				Logger.error(MaintenanceUtil.class, "Unable to replace file contents for " + f.getPath());
-			}
-			s = null;
-			f = null;
-		}
-		Logger.info(MaintenanceUtil.class, "Finished Search and Replace");
-		return hasErrors;
 	}
 
 	/**

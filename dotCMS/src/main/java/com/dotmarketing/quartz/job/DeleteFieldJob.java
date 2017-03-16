@@ -1,5 +1,18 @@
 package com.dotmarketing.quartz.job;
 
+import java.util.Date;
+import java.util.Locale;
+import java.util.UUID;
+
+import org.quartz.Job;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.SimpleTrigger;
+
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
@@ -7,6 +20,7 @@ import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -15,6 +29,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -28,23 +43,45 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
-import org.quartz.*;
 
-import java.util.Date;
-import java.util.Locale;
-import java.util.UUID;
-
+/**
+ * This Quartz Job is in charge of deleting a field from a specified Content
+ * Type and its respective content from all the dotCMS contentlets that use such
+ * a Content Type. The time taken by this job is determined by the number of
+ * contentlet records that need to be updated. System notifications will be
+ * issued under the following 3 circumstances:
+ * <ol>
+ * <li>The job has started with the deletion process.</li>
+ * <li>The job has finished with the deletion process.</li>
+ * <li>An error occurred the deletion process.</li>
+ * </ol>
+ * This job is triggered from the Content Type edition portlet, when clicking
+ * the {@code Delete} button of any field.
+ * <p>
+ * 
+ * @author Daniel Silva
+ * @version 3.5.1
+ * @since Apr 26, 2016
+ *
+ */
 public class DeleteFieldJob implements Job {
 
     private final PermissionAPI permAPI;
     private final ContentletAPI conAPI;
     private final NotificationAPI notfAPI;
+    private final FieldAPI fieldAPI;
+    private final UserAPI userAPI;
     private final DeleteFieldJobHelper deleteFieldJobHelper;
 
+    /**
+     * Default class constructor.
+     */
     public DeleteFieldJob() {
         this(APILocator.getPermissionAPI(),
             APILocator.getContentletAPI(),
             APILocator.getNotificationAPI(),
+            APILocator.getFieldAPI(),
+            APILocator.getUserAPI(),
             DeleteFieldJobHelper.INSTANCE);
     }
 
@@ -52,24 +89,40 @@ public class DeleteFieldJob implements Job {
     public DeleteFieldJob(final PermissionAPI permAPI,
                           final ContentletAPI conAPI,
                           final NotificationAPI notfAPI,
+                          final FieldAPI fieldAPI,
+                          final UserAPI userAPI,
                           final DeleteFieldJobHelper deleteFieldJobHelper) {
-
         this.permAPI = permAPI;
         this.conAPI = conAPI;
         this.notfAPI = notfAPI;
+        this.fieldAPI = fieldAPI;
+        this.userAPI = userAPI;
         this.deleteFieldJobHelper = deleteFieldJobHelper;
     }
 
-    public static void triggerDeleteFieldJob(Structure structure, Field field, User user) {
-        Preconditions.checkNotNull(structure, "Structure can't be null");
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(structure.getInode()),
-                "Structure Id can't be null or empty");
+	/**
+	 * Specifies the execution parameters for the field deletion job and
+	 * schedules it for immediate execution.
+	 * 
+	 * @param contentType
+	 *            - The Content Type ({@linkplain Structure}) whose field will
+	 *            be deleted.
+	 * @param field
+	 *            - The {@link Field} that will be deleted from the Content Type
+	 *            and all its associated contentlets.
+	 * @param user
+	 *            - The {@link User} performing this action.
+	 */
+    public static void triggerDeleteFieldJob(final Structure contentType, final Field field, final User user) {
+        Preconditions.checkNotNull(contentType, "Content Type can't be null");
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(contentType.getInode()),
+                "Content Type Id can't be null or empty");
         Preconditions.checkNotNull(field, "Field can't be null");
         Preconditions.checkNotNull(user, "User can't be null");
 
         JobDataMap dataMap = new JobDataMap();
-        dataMap.put("structure", structure);
-        dataMap.put("field", field);
+        dataMap.put("structure", contentType);
+        dataMap.put("fieldInode", field.getInode());
         dataMap.put("user", user);
 
         String randomID = UUID.randomUUID().toString();
@@ -93,38 +146,54 @@ public class DeleteFieldJob implements Job {
         }
 
         AdminLogger.log(DeleteFieldJob.class, "triggerJobImmediately",
-                String.format("Deleting Field '%s' for Structure with id: %s",
-                        field.getVelocityVarName(), structure.getInode()));
+                String.format("Deleting Field '%s' for Content Type with id: %s",
+                        field.getVelocityVarName(), contentType.getInode()));
     }
 
-    public void execute(JobExecutionContext jobContext) throws JobExecutionException {
-        JobDataMap map = jobContext.getJobDetail().getJobDataMap();
-        Structure structure = (Structure) map.get("structure");
-        Field field = (Field) map.get("field");
-        User user = (User) map.get("user");
-
-        Preconditions.checkNotNull(structure, "Structure can't be null");
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(structure.getInode()),
-                "Structure Id can't be null or empty");
+	/**
+	 * Performs the field deletion process based on a set of specific
+	 * parameters. This process involves deleting the Field object and then
+	 * saving the Content Type.
+	 * 
+	 * @param jobContext
+	 *            - The {@link JobExecutionContext} object contains the
+	 *            execution parameters of the job, including the data associated
+	 *            to the Content Type and the Field to delete.
+	 * @throws JobExecutionException
+	 *             An error occurred when deleting the Field.
+	 */
+    public void execute(final JobExecutionContext jobContext) throws JobExecutionException {
+        final JobDataMap map = jobContext.getJobDetail().getJobDataMap();
+        final Structure contentType = (Structure) map.get("structure");
+        Field field = null;
+        if (map.containsKey("fieldInode")) {
+        	field = FieldFactory.getFieldByInode(map.getString("fieldInode"));
+        } else {
+        	field = (Field) map.get("field");
+        }
+        final User user = (User) map.get("user");
+        Preconditions.checkNotNull(contentType, "Content Type can't be null");
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(contentType.getInode()),
+                "Content Type Id can't be null or empty");
         Preconditions.checkNotNull(field, "Field can't be null");
         Preconditions.checkNotNull(user, "User can't be null");
 
         try {
-            if (!permAPI.doesUserHavePermission(structure,
+            if (!this.permAPI.doesUserHavePermission(contentType,
                     PermissionAPI.PERMISSION_PUBLISH, user, false)) {
-                throw new DotSecurityException("Must be able to publish structure to clean all the fields with user: "
+                throw new DotSecurityException("Must be able to publish Content Type to clean all the fields with user: "
                         + (user != null ? user.getUserId() : "Unknown"));
             }
 
-            String type = field.getFieldType();
+            final String type = field.getFieldType();
             final Locale userLocale = user.getLocale();
 
             this.deleteFieldJobHelper.generateNotificationStartDeleting(this.notfAPI, userLocale, user.getUserId(),
-                    field.getVelocityVarName(), field.getInode(), structure.getInode());
+                    field.getVelocityVarName(), field.getInode(), contentType.getInode());
 
             HibernateUtil.startTransaction();
 
-            if (!APILocator.getFieldAPI().isElementConstant(field)
+            if (!this.fieldAPI.isElementConstant(field)
                     && !Field.FieldType.LINE_DIVIDER.toString().equals(type)
                     && !Field.FieldType.TAB_DIVIDER.toString().equals(type)
                     && !Field.FieldType.RELATIONSHIPS_TAB.toString().equals(type)
@@ -132,52 +201,53 @@ public class DeleteFieldJob implements Job {
                     && !Field.FieldType.PERMISSIONS_TAB.toString().equals(type)
                     && !Field.FieldType.HOST_OR_FOLDER.toString().equals(type)) {
 
-                conAPI.cleanField(structure, field, APILocator.getUserAPI().getSystemUser(), false);
+                this.conAPI.cleanField(contentType, field, this.userAPI.getSystemUser(), false);
             }
             FieldFactory.deleteField(field);
             // Call the commit method to avoid a deadlock
             HibernateUtil.commitTransaction();
 
             ActivityLogger.logInfo(ActivityLogger.class, "Delete Field Action", "User " + user.getUserId() + "/"
-                    + user.getFirstName() + " deleted field " + field.getFieldName() + " to " + structure.getName()
-                    + " Structure.");
+                    + user.getFirstName() + " deleted field " + field.getFieldName() + " from " + contentType.getName()
+                    + " Content Type.");
 
-            FieldsCache.removeFields(structure);
+            FieldsCache.removeFields(contentType);
 
-            CacheLocator.getContentTypeCache().remove(structure);
-            StructureServices.removeStructureFile(structure);
+            CacheLocator.getContentTypeCache().remove(contentType);
+            StructureServices.removeStructureFile(contentType);
 
             //Refreshing permissions
-            if (field.getFieldType().equals("host or folder")) {
-                conAPI.cleanHostField(structure, APILocator.getUserAPI().getSystemUser(), false);
-                permAPI.resetChildrenPermissionReferences(structure);
+			if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
+                this.conAPI.cleanHostField(contentType, this.userAPI.getSystemUser(), false);
+                this.permAPI.resetChildrenPermissionReferences(contentType);
             }
-            StructureFactory.saveStructure(structure);
+            StructureFactory.saveStructure(contentType);
             // rebuild contentlets indexes
-            conAPI.reindex(structure);
+            conAPI.reindex(contentType);
             // remove the file from the cache
-            ContentletServices.removeContentletFile(structure);
-            ContentletMapServices.removeContentletMapFile(structure);
+            ContentletServices.removeContentletFile(contentType);
+            ContentletMapServices.removeContentletMapFile(contentType);
 
             this.deleteFieldJobHelper.generateNotificationEndDeleting(this.notfAPI, userLocale, user.getUserId(),
-                    field.getVelocityVarName(), field.getInode(), structure.getInode());
-
+                    field.getVelocityVarName(), field.getInode(), contentType.getInode());
         } catch (Exception e) {
             try {
                 HibernateUtil.rollbackTransaction();
             } catch (DotHibernateException e1) {
                 Logger.error(this, "Error in rollback transaction", e);
             }
-            Logger.error(this, String.format("Unable to delete field '%s'. Field Inode: %s, Structure Inode: %s",
-                    field.getVelocityVarName(), field.getInode(), structure.getInode()), e);
+            Logger.error(this, String.format("Unable to delete field '%s'. Field Inode: %s, Content Type Inode: %s",
+                    field.getVelocityVarName(), field.getInode(), contentType.getInode()), e);
 
             try {
-
                 this.deleteFieldJobHelper.generateNotificationUnableDelete(this.notfAPI,
-                        user.getLocale(), user.getUserId(), field.getVelocityVarName(), field.getInode(), structure.getInode());
+                        user.getLocale(), user.getUserId(), field.getVelocityVarName(), field.getInode(), contentType.getInode());
             } catch (LanguageException | DotDataException e1) {
                 Logger.error(this, e1.getMessage(), e1);
             }
+
+            throw new JobExecutionException(String.format("Unable to delete field '%s'. Field Inode: %s, Content Type Inode: %s",
+                    field.getVelocityVarName(), field.getInode(), contentType.getInode()), e);
         } finally {
             try {
                 HibernateUtil.closeSession();
@@ -187,8 +257,6 @@ public class DeleteFieldJob implements Job {
                 DbConnectionFactory.closeConnection();
             }
         }
-
     }
-
 
 }

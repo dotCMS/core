@@ -32,9 +32,7 @@ import java.util.zip.ZipFile;
 
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister;
-
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
@@ -63,6 +61,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 
 
 /**
@@ -101,14 +100,12 @@ public class ImportExportUtil {
     private List<File> permissionXMLs = new ArrayList<File>();
     private List<File> contentletsXML = new ArrayList<File>();
     private List<File> menuLinksXML = new ArrayList<File>();
-    private List<File> pagesXML = new ArrayList<File>();
     private List<File> containersXML = new ArrayList<File>();
     private List<File> identifiersXML = new ArrayList<File>();
     private List<File> foldersXML = new ArrayList<File>();
     private List<File> templatesXML = new ArrayList<File>();
     private List<File> templateContainersXML = new ArrayList<File>();
     private List<File> containerStructuresXML = new ArrayList<File>();
-    private List<File> filesXML = new ArrayList<File>();
     private List<File> versionInfoFilesXML = new ArrayList<File>();
     private List<File> workFlowTaskXML = new ArrayList<File>();
     private List<File> workFlowCommentXML = new ArrayList<File>();
@@ -118,6 +115,9 @@ public class ImportExportUtil {
     private File workflowSchemaFile = null;
     private File ruleFile = null;
     private List<File> contentTypeJson = new ArrayList<File>();
+    
+    private static final String CHARSET = UtilMethods.getCharsetConfiguration();
+
     public ImportExportUtil() {
         MaintenanceUtil.flushCache();
         // Set the asset paths
@@ -255,10 +255,6 @@ public class ImportExportUtil {
                 containerStructuresXML.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().contains("com.dotmarketing.portlets.containers.model.Container_")){
                 containersXML.add(new File(_importFile.getPath()));
-            }else if(_importFile.getName().contains("com.dotmarketing.portlets.files.model.File_")){
-                filesXML.add(new File(_importFile.getPath()));
-            }else if(_importFile.getName().contains("com.dotmarketing.portlets.htmlpages.model.HTMLPage_")){
-                pagesXML.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().contains("com.dotmarketing.portlets.links.model.Link_")){
                 menuLinksXML.add(new File(_importFile.getPath()));
             }else if(_importFile.getName().endsWith(ContentTypeImportExportUtil.CONTENT_TYPE_FILE_EXTENSION)){
@@ -361,10 +357,10 @@ public class ImportExportUtil {
                 return;
             }
 
-            _xstream = new XStream();
+            _xstream = new XStream(new DomDriver(CHARSET));
 
             try{
-                charStream = new InputStreamReader(new FileInputStream(file), "UTF-8");
+                charStream = new InputStreamReader(new FileInputStream(file), CHARSET);
             }catch (UnsupportedEncodingException uet) {
                 Logger.error(this, "Reader doesn't not recoginize Encoding type: ", uet);
             }
@@ -460,7 +456,7 @@ public class ImportExportUtil {
              */
 
             final List<Identifier> folderIdents=new ArrayList<Identifier>();
-            final XStream xstream = new XStream();
+            final XStream xstream = new XStream(new DomDriver(CHARSET));
 
             // collecting all folder identifiers
             for(File ff : identifiersXML) {
@@ -586,31 +582,7 @@ public class ImportExportUtil {
                 Logger.error(this, "Unable to load " + file.getName() + " : " + e.getMessage(), e);
             }
         }
-        for (File file : pagesXML) {
-            try{
-				HibernateUtil.closeSession();
-			} catch (DotHibernateException e) {
-				Logger.error(this, "Unable to close Session : " + e.getMessage(), e);
-			}
-            try{
-                doXMLFileImport(file, out);
-            } catch (Exception e) {
-                Logger.error(this, "Unable to load " + file.getName() + " : " + e.getMessage(), e);
-            }
-        }
         for (File file : menuLinksXML) {
-            try{
-				HibernateUtil.closeSession();
-			} catch (DotHibernateException e) {
-				Logger.error(this, "Unable to close Session : " + e.getMessage(), e);
-			}
-            try{
-                doXMLFileImport(file, out);
-            } catch (Exception e) {
-                Logger.error(this, "Unable to load " + file.getName() + " : " + e.getMessage(), e);
-            }
-        }
-        for (File file : filesXML) {
             try{
 				HibernateUtil.closeSession();
 			} catch (DotHibernateException e) {
@@ -1153,12 +1125,12 @@ public class ImportExportUtil {
                     return;
                 }
             }
-            _xstream = new XStream();
+            _xstream = new XStream(new DomDriver(CHARSET));
             out.println("Importing:\t" + _className);
             Logger.info(this, "Importing:\t" + _className);
 
             try{
-                charStream = new InputStreamReader(new FileInputStream(f), "UTF-8");
+                charStream = new InputStreamReader(new FileInputStream(f), CHARSET);
             }catch (UnsupportedEncodingException uet) {
                 Logger.error(this, "Reader doesn't not recoginize Encoding type: ", uet);
             }

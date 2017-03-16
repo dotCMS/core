@@ -43,8 +43,6 @@ try {
 			linkURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_1&p_p_action=1";
 		}else if (portletId.equals(PortletID.HTML_PAGES)) {
 			pagesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.HTML_PAGES+"&p_p_action=1";
-		}else if (portletId.equals(PortletID.FILES_LEGACY)) {
-			filesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.FILES_LEGACY+"&p_p_action=1";
 		}else if (portletId.equals(PortletID.CONTENT)) {
 			contentURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.CONTENT+"&p_p_action=1";
 		}
@@ -212,13 +210,6 @@ try {
       		 window.location=href;	
       	}
 
-       function editFile(contInode){
-    	     var URL = '<%=filesURL%>&p_p_state=maximized&p_p_mode=view&_files-legacy_struts_action=%2Fext%2Ffiles%2Fedit_file&_files-legacy_cmd=edit&host_id={host_id}&inode={inode}&referer=<%=referer%>';	   	     	              	     	        
-    	     var hostId = dijit.byId("dahboardHostSelectorWorkStream").value;
-    	     var href = dojo.replace(URL, {inode: contInode, host_id: hostId})
-    		 window.location=href;	
-    	}
-
        function editTemplate(contInode){
   	     var URL = '<%=templateURL%>&p_p_state=maximized&p_p_mode=view&_templates_struts_action=%2Fext%2Ftemplates%2Fedit_template&_templates_cmd=edit&host_id={host_id}&inode={inode}&referer=<%=referer%>';	   	     	              	     	           	     	        
   	     var hostId = dijit.byId("dahboardHostSelectorWorkStream").value;
@@ -245,8 +236,6 @@ try {
     	function editAsset(assetType, inode, structureInode){
     		if(assetType=='htmlpage'){
          		editHtmlPage(inode);
-         	}else if(assetType =='file_asset'){
-         		editFile(inode);
          	}else if(assetType=='contentlet'){
          		editContent(inode,structureInode);
          	}else if(assetType=='container'){

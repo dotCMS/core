@@ -3,42 +3,14 @@
 <%@page import="com.dotcms.repackage.javax.portlet.WindowState"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@page import="com.dotmarketing.portlets.files.model.File"%>
-<%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.liferay.portal.model.User"%>
 
 <script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/CategoryAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/ContentletAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/TagAjax.js'></script>
-<script type='text/javascript' src='/dwr/interface/FileAjax.js'></script>
+<script type='text/javascript' src='/dwr/interface/FileAssetAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/TagAjax.js'></script>
-<style type="text/css">
-    #aceTextArea {
-        position: relative;
-    }
-    .aceClass {
-    	width: 100%;
-        height: 400px;
-        border:1px solid #C0C0C0;
-        text-overflow: clip;
-    	white-space: nowrap;
-    }
-    .aceText {
-    	width:600px;
-    	min-height:105px;
-    	max-height: 600px;
-        border:1px solid #C0C0C0;
-        text-overflow: clip;
-    	white-space: nowrap;
-    }
-    .widgetAceText {
-    	width:682px;min-height:362px;max-height: 400px;
-        border:1px solid #C0C0C0;
-        text-overflow: clip;
-    	white-space: nowrap;
-    }
-</style>
 
 <!-- AChecker support -->
 <script type='text/javascript' src='/dwr/interface/ACheckerDWR.js'></script>
@@ -172,11 +144,6 @@ var cmsfile=null;
 
 	    	//http://jira.dotmarketing.net/browse/DOTCMS-5802
 	 	    ContentletAjax.removeSiblingBinaryFromSession(x, null);
-
-	    	if(inode){
-	    	   FileAssetAjax.removeTempFile(inode, null);
-	    	}
-
 	    }
 
 
@@ -331,7 +298,7 @@ var cmsfile=null;
 			disableWYSIWYG(id);
 		}
 		if(!enabledCodeAreas[id])
-			aceArea(id);
+			aceAreaById(id);
 	}
 
 	function toWYSIWYG(id) {
@@ -540,12 +507,12 @@ var cmsfile=null;
 	  }
 	}
 
-	function aceArea(textarea){
+	function aceAreaById(textarea){
 		document.getElementById(textarea).style.display = "none";
 		var id = document.getElementById(textarea).value.trim();
 		aceEditors[textarea] = document.getElementById(textarea+'aceEditor');
 		var aceClass = aceEditors[textarea].className;
-		aceEditors[textarea].className = aceClass.replace('classAce', 'aceClass');
+		aceEditors[textarea].className = aceClass.replace('classAce', 'aceText');
 		aceEditors[textarea] = ace.edit(textarea+'aceEditor');
 	    aceEditors[textarea].setTheme("ace/theme/textmate");
 	    aceEditors[textarea].getSession().setMode("ace/mode/velocity");
@@ -562,7 +529,7 @@ var cmsfile=null;
 		var editorText = aceEditors[textarea].getValue();
 	    var aceEditor = document.getElementById(textarea+'aceEditor');
 	    var aceClass = aceEditor.className;
-		aceEditor.className = aceClass.replace('aceClass', 'classAce');
+		aceEditor.className = aceClass.replace('aceText', 'classAce');
 		dojo.query('#'+textarea).style({display:''});
 		dojo.query('#'+textarea)[0].value=editorText;
 		enabledCodeAreas[textarea]=false;
@@ -757,7 +724,7 @@ var cmsfile=null;
 		if (dijit.byId("toggleEditor_"+textarea).checked) {
 			document.getElementById(textarea).style.display = "none";
 			if(isWidget == 'true')
-				acetId.className = aceClass.replace('classAce', 'widgetAceText');
+				acetId.className = aceClass.replace('classAce', 'aceText');
 			else
 				acetId.className = aceClass.replace('classAce', 'aceText');
 
@@ -777,7 +744,7 @@ var cmsfile=null;
 		} else {
 			var editorText = textEditor[textarea].getValue();
 			if(isWidget == 'true')
-				acetId.className = aceClass.replace('widgetAceText', 'classAce');
+				acetId.className = aceClass.replace('aceText', 'classAce');
 			else
 				acetId.className = aceClass.replace('aceText', 'classAce');
 
@@ -799,3 +766,4 @@ var cmsfile=null;
 		elementWysiwyg.value = result;
 	}
 </script>
+<jsp:include page="/html/portlet/ext/files/edit_text_inc.jsp"/>
