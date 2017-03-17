@@ -589,7 +589,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
                     throw new IOException("File System error.");
                 }
             }
-        }
+       }
+   }
 
 	public InputStream getBinaryStream(String velocityVarName) throws IOException{
 		FileInputStream fis = new FileInputStream(getBinary(velocityVarName));

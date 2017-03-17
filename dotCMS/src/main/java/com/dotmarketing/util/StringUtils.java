@@ -1,6 +1,9 @@
 package com.dotmarketing.util;
 
 import java.util.regex.Pattern;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 import com.dotcms.repackage.com.google.common.base.CaseFormat;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;

@@ -59,27 +59,6 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
 
 
 
-  @Override
-  public Optional<ShortyId> getShorty(final String shortStr) {
-    try {
-      validShorty(shortStr);
-      ShortyId shortyId = null;
-      Optional<ShortyId> opt = new ShortyIdCache().get(shortStr);
-      if (opt.isPresent()) {
-        shortyId = opt.get();
-      } else {
-        shortyId = viaDb(shortStr);
-        new ShortyIdCache().add(shortyId);
-      }
-      return shortyId.type == ShortType.CACHE_MISS ? Optional.empty() : Optional.of(shortyId);
-    } catch (ShortyException se) {
-
-      Logger.debug(this.getClass(), se.getMessage());
-      return Optional.empty();
-    }
-  }
-
-
   /*
    * ShortyId viaIndex(final String shorty) {
    * 
@@ -163,12 +142,6 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
     return null;
   }
 
-  public void validShorty(final String test) {
-    if (test == null || test.length() < 8 || test.length() > 36) {
-      throw new ShortyException("shorty " + test + " is not a short id.  Short Ids should be "
-          + MINIMUM_SHORTY_ID_LENGTH + " chars in length");
-    }
-
     public void validShorty(final String test) {
         if (test == null || test.length() < MINIMUM_SHORTY_ID_LENGTH || test.length()>36) {
             throw new ShortyException(
@@ -182,5 +155,4 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
             }
         }
     }
-  }
 }
