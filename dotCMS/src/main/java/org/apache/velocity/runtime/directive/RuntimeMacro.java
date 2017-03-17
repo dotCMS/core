@@ -41,7 +41,6 @@ import org.apache.velocity.runtime.parser.ParserTreeConstants;
 import org.apache.velocity.runtime.parser.Token;
 import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.util.introspection.Info;
-
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
 
@@ -59,7 +58,7 @@ public class RuntimeMacro extends Directive
      * Name of the macro
      */
     private String macroName;
-
+    private final static String EVALING_MACRO="DOT_EVALING_MACRO";
     /**
      * Literal text of the macro
      */
@@ -96,7 +95,7 @@ public class RuntimeMacro extends Directive
             throw new IllegalArgumentException("Null arguments");
         }
         
-        this.macroName = macroName.intern();
+        this.macroName = macroName;
     }
 
     /**
@@ -343,15 +342,17 @@ public class RuntimeMacro extends Directive
                 postRender(context);
             }
         }
+
         else if(vmProxy==null){
             try{
                 Map<String, String> macroMap = (Map<String, String>)CacheLocator.getSystemCache().get("dotmacro_" + macroName);
-                if(macroMap != null) {
+                if(macroMap != null && context.get(EVALING_MACRO)==null) {
                     String macroName = macroMap.get("macroName");
                     String macroContent = macroMap.get("macroContent");
                     Context contextForEval = new VelocityContext(context);
+                    contextForEval.put(EVALING_MACRO, Boolean.TRUE);
                     VelocityUtil.eval(macroContent, contextForEval);
-                    render(context, writer, node, body);
+                    return this.render(context, writer, node);
                 }
             } catch (Exception e) {
                 Logger.error(this, "Unable to retrive macro from dotCMS macro cache", e);
