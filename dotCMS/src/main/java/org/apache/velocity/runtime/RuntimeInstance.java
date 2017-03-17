@@ -1265,7 +1265,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
      *              Velocity runtime log
      * @throws ParseErrorException The template could not be parsed.
      * @throws MethodInvocationException A method on a context object could not be invoked.
-     * @throws ResourceNotFoundException A referenced resource could not be loaded.
+     * @throws ResourceNotFoundException A referenced resource could not be loadedbut l.
      * @since Velocity 1.6
      */
     public boolean evaluate(Context context, Writer writer,

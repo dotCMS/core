@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.repackage.org.apache.commons.lang.text.StrBuilder;
-
+import com.dotmarketing.business.CacheLocator;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapter;
@@ -41,8 +41,6 @@ import org.apache.velocity.runtime.parser.ParserTreeConstants;
 import org.apache.velocity.runtime.parser.Token;
 import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.util.introspection.Info;
-
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
 
@@ -361,7 +359,6 @@ public class RuntimeMacro extends Directive
             }
         }
         else if (vmProxy==null && strictRef)
-
         {
             throw new VelocityException("Macro '#" + macroName + "' is not defined at "
                 + VelocityException.formatFileString(node));
