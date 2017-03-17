@@ -24,6 +24,7 @@ import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.amazonaws.annotation.Immutable;
 import com.dotmarketing.business.CacheLocator;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.TemplateInitException;
@@ -34,6 +35,7 @@ import org.apache.velocity.runtime.parser.Token;
 import org.apache.velocity.runtime.parser.node.Node;
 
 import com.dotmarketing.util.Logger;
+import com.google.common.collect.ImmutableMap;
 
 /**
  *  Macro implements the macro definition directive of VTL.
@@ -117,13 +119,10 @@ public class Macro extends Directive
         // Add this macro to the VelocimacroManager now that it has been initialized.        
         String argArray[] = getArgArray(node, rs);
         int numArgs = node.jjtGetNumChildren();
-
         rs.addVelocimacro(argArray[0], node.jjtGetChild(numArgs - 1), argArray, node.getTemplateName());
         String macroName = node.jjtGetChild(0).literal();
         String macroContent = node.literal();
-        Map m = new HashMap<String, String>();
-        m.put("macroName",macroName);
-        m.put("macroContent",macroContent);
+        Map<String, String> m  = ImmutableMap.<String, String>of(macroName,macroContent);
         CacheLocator.getSystemCache().put("dotmacro_" + macroName,m);
     }
     
