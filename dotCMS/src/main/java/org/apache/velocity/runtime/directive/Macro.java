@@ -21,7 +21,10 @@ package org.apache.velocity.runtime.directive;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.HashMap;
+import java.util.Map;
 
+import com.dotmarketing.business.CacheLocator;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.runtime.RuntimeServices;
@@ -114,7 +117,14 @@ public class Macro extends Directive
         // Add this macro to the VelocimacroManager now that it has been initialized.        
         String argArray[] = getArgArray(node, rs);
         int numArgs = node.jjtGetNumChildren();
+
         rs.addVelocimacro(argArray[0], node.jjtGetChild(numArgs - 1), argArray, node.getTemplateName());
+        String macroName = node.jjtGetChild(0).literal();
+        String macroContent = node.literal();
+        Map m = new HashMap<String, String>();
+        m.put("macroName",macroName);
+        m.put("macroContent",macroContent);
+        CacheLocator.getSystemCache().put("dotmacro_" + macroName,m);
     }
     
     /**

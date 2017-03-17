@@ -22,8 +22,12 @@ package org.apache.velocity.runtime.directive;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
+import java.util.Map;
 
 import com.dotcms.repackage.org.apache.commons.lang.text.StrBuilder;
+import com.dotmarketing.business.CacheLocator;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
@@ -339,7 +343,21 @@ public class RuntimeMacro extends Directive
                 postRender(context);
             }
         }
-        else if (strictRef)
+        else if(vmProxy==null){
+            try{
+                Map<String, String> macroMap = (Map<String, String>)CacheLocator.getSystemCache().get("dotmacro_" + macroName);
+                if(macroMap != null) {
+                    String macroName = macroMap.get("macroName");
+                    String macroContent = macroMap.get("macroContent");
+                    Context contextForEval = new VelocityContext(context);
+                    VelocityUtil.eval(macroContent, contextForEval);
+                    render(context, writer, node, body);
+                }
+            } catch (Exception e) {
+                Logger.error(this, "Unable to retrive macro from dotCMS macro cache", e);
+            }
+        }
+        else if (vmProxy==null && strictRef)
         {
             throw new VelocityException("Macro '#" + macroName + "' is not defined at "
                 + VelocityException.formatFileString(node));
