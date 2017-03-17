@@ -3,11 +3,14 @@ package com.dotmarketing.util;
 import java.util.regex.Pattern;
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
 import java.util.HashMap;
 
 import com.dotcms.repackage.com.google.common.base.CaseFormat;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
+import com.liferay.util.StringPool;
+
 import static com.dotcms.repackage.org.apache.commons.lang.StringUtils.*;
 public class StringUtils {
     public static String formatPhoneNumber(String phoneNumber) {
