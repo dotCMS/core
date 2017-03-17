@@ -29,7 +29,7 @@ cd ../..
 
 
 # Uncompress distro and tomcat under working directory
-tar zxf core/dist-output/dotcms_*.tgz
+tar zxf core/dist-output/dotcms_*.tar.gz
 mv dotserver/`ls dotserver | grep  tomcat` dotserver/tomcat
 
 
