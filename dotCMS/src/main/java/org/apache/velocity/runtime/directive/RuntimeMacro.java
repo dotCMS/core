@@ -22,8 +22,12 @@ package org.apache.velocity.runtime.directive;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
+import java.util.Map;
 
 import com.dotcms.repackage.org.apache.commons.lang.text.StrBuilder;
+
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
@@ -38,6 +42,7 @@ import org.apache.velocity.runtime.parser.Token;
 import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.util.introspection.Info;
 
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
 
@@ -55,7 +60,7 @@ public class RuntimeMacro extends Directive
      * Name of the macro
      */
     private String macroName;
-
+    private final static String EVALING_MACRO="DOT_EVALING_MACRO";
     /**
      * Literal text of the macro
      */
@@ -339,7 +344,24 @@ public class RuntimeMacro extends Directive
                 postRender(context);
             }
         }
-        else if (strictRef)
+
+        else if(vmProxy==null){
+            try{
+                Map<String, String> macroMap = (Map<String, String>)CacheLocator.getSystemCache().get("dotmacro_" + macroName);
+                if(macroMap != null && context.get(EVALING_MACRO)==null) {
+                    String macroName = macroMap.get("macroName");
+                    String macroContent = macroMap.get("macroContent");
+                    Context contextForEval = new VelocityContext(context);
+                    contextForEval.put(EVALING_MACRO, Boolean.TRUE);
+                    VelocityUtil.eval(macroContent, contextForEval);
+                    return this.render(context, writer, node);
+                }
+            } catch (Exception e) {
+                Logger.error(this, "Unable to retrive macro from dotCMS macro cache", e);
+            }
+        }
+        else if (vmProxy==null && strictRef)
+
         {
             throw new VelocityException("Macro '#" + macroName + "' is not defined at "
                 + VelocityException.formatFileString(node));
