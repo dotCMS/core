@@ -241,6 +241,7 @@ public class ReindexThread extends Thread {
 
                         //Generate and send an user notification
 						sendNotification("notification.reindexing.success", null, null, false);
+						this.finish();
 					} else if (remoteQ.size() == 0 && ESReindexationProcessStatus.inFullReindexation()
 							&& jAPI.recordsLeftToIndexForServer() > 0) {
 						// Fill the re-index queue with failed records now after
@@ -317,6 +318,7 @@ public class ReindexThread extends Thread {
                                     //Generate and send an user notification
 									sendNotification("notification.reindexing.error.processrecord", new Object[] {identToIndex}, msg, true);
 									this.notifiedFailingRecords.add(identToIndex);
+									this.finish();
 								}
 
 								try {
@@ -489,6 +491,7 @@ public class ReindexThread extends Thread {
 					
 				} catch (Exception ex) {
 					Logger.error(this, "Unable to index record", ex);
+					this.finish();
 				} finally {
 					try {
 						HibernateUtil.closeSession();
@@ -846,7 +849,7 @@ public class ReindexThread extends Thread {
 	 *             The established pauses to switch to the new index failed.
 	 */
 	private void reindexSwitchover(boolean forceSwitch) throws SQLException, DotDataException, InterruptedException {
-		Connection conn = DbConnectionFactory.getDataSource().getConnection();
+		Connection conn = DbConnectionFactory.getConnection();
 		try {
 			conn.setAutoCommit(false);
 			lockCluster(conn);
