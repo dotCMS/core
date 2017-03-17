@@ -150,7 +150,7 @@ public class ASTReference extends SimpleNode
          *  so it's thread- and context-safe
          */
 
-        rootString = getRoot().intern();
+        rootString = getRoot();
 
         numChildren = jjtGetNumChildren();
         

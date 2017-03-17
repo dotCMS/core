@@ -95,7 +95,7 @@ public class RuntimeMacro extends Directive
             throw new IllegalArgumentException("Null arguments");
         }
         
-        this.macroName = macroName.intern();
+        this.macroName = macroName;
     }
 
     /**
