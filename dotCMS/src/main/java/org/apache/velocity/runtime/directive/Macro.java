@@ -119,8 +119,8 @@ public class Macro extends Directive
         rs.addVelocimacro(argArray[0], node.jjtGetChild(numArgs - 1), argArray, node.getTemplateName());
         String macroName = node.jjtGetChild(0).literal();
         String macroContent = node.literal();
-        ImmutableMap<String, String> m  = ImmutableMap.<String, String>of(macroName,macroContent);
-        CacheLocator.getSystemCache().put("dotmacro_" + macroName,m);
+
+        CacheLocator.getVeloctyResourceCache().putMacro(macroName,macroContent);
     }
     
     /**
