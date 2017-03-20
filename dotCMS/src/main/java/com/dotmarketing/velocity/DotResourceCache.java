@@ -5,10 +5,6 @@ package com.dotmarketing.velocity;
 
 import java.io.File;
 
-import com.dotcms.repackage.org.apache.oro.text.regex.MalformedPatternException;
-import com.dotcms.repackage.org.apache.oro.text.regex.MatchResult;
-import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Compiler;
-import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Matcher;
 
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.resource.Resource;
@@ -37,15 +33,34 @@ public class DotResourceCache implements ResourceCache,Cachable {
 	private DotCacheAdministrator cache;
 	
 	private String primaryGroup = "VelocityCache";
-
+    private String macroCacheGroup = "VelocityMacroCache";
     // region's name for the cache
-    private String[] groupNames = {primaryGroup};
-    
+    private String[] groupNames = {primaryGroup, macroCacheGroup};
+    private static final String MACRO_PREFIX ="MACRO_PREFIX";
     public DotResourceCache() {
     	cache = CacheLocator.getCacheAdministrator();
 
 	}
+    
+    public String[] getMacro(String name) {
+      
+      
+      String[] rw = null;
+      try {
+          rw = (String[]) cache.get(MACRO_PREFIX + name, macroCacheGroup);
+      } catch ( DotCacheException e ) {
+          Logger.debug(this, "Cache Entry not found", e);
+      }
+      return rw;
+      
+    }    
+    
+    public void putMacro(String name, String content) {
 
+      String[] rw = {name, content};
+      cache.put(MACRO_PREFIX + name, content, macroCacheGroup);
+
+    }
 	/* (non-Javadoc)
 	 * @see org.apache.velocity.runtime.resource.ResourceCache#get(java.lang.Object)
 	 */
@@ -73,7 +88,7 @@ public class DotResourceCache implements ResourceCache,Cachable {
 	}
 
 	public void addMiss(Object resourceKey) {
-
+	  Logger.info(this.getClass(), "velocityMiss:" + resourceKey);
 	}
 	
 	public boolean isMiss(Object resourceKey){
@@ -119,7 +134,9 @@ public class DotResourceCache implements ResourceCache,Cachable {
 	}
 	
 	public void clearCache() {
-        cache.flushGroup(primaryGroup);
+	  for(String group : groupNames){
+        cache.flushGroup(group);
+	  }
 
     }
 	@Deprecated

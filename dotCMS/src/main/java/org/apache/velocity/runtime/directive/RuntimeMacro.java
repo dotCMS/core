@@ -343,23 +343,21 @@ public class RuntimeMacro extends Directive
             }
         }
 
-        else if(vmProxy==null){
+        else if(vmProxy==null && !strictRef){
             try{
-                Map<String, String> macroMap = (Map<String, String>)CacheLocator.getSystemCache().get("dotmacro_" + macroName);
+               String[] macroMap = CacheLocator.getVeloctyResourceCache().getMacro(macroName);
                 if(macroMap != null && context.get(EVALING_MACRO)==null) {
-                    String macroName = macroMap.get("macroName");
-                    String macroContent = macroMap.get("macroContent");
                     Context contextForEval = new VelocityContext(context);
                     contextForEval.put(EVALING_MACRO, Boolean.TRUE);
-                    VelocityUtil.eval(macroContent, contextForEval);
+                    VelocityUtil.eval(macroMap[1], contextForEval);
                     return this.render(context, writer, node);
                 }
             } catch (Exception e) {
-                Logger.error(this, "Unable to retrive macro from dotCMS macro cache", e);
+              Logger.warn(this,"Unable to load macro #" + macroName + " called at " +
+                  VelocityException.formatFileString(node));
             }
         }
-        else if (vmProxy==null && strictRef)
-        {
+        else if (vmProxy==null){
             throw new VelocityException("Macro '#" + macroName + "' is not defined at "
                 + VelocityException.formatFileString(node));
         }
