@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.liferay.util.SystemProperties;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.resource.Resource;
@@ -163,18 +164,6 @@ public class DotResourceCache implements ResourceCache,Cachable {
 	  
     }
 
-    private boolean shouldCache(String key){
-        boolean ret = true;
-        String[] macroFileNames = SystemProperties.getArray("velocimacro.library");
-        for (String fileName: macroFileNames){
-            if(key.contains(fileName)){
-                ret = false;
-                break;
-            }
-        }
-        return ret;
-    }
-	
 	public String[] getGroups() {
     	return groupNames;
     }
