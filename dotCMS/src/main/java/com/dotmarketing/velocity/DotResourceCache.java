@@ -42,7 +42,7 @@ public class DotResourceCache implements ResourceCache,Cachable {
     // region's name for the cache
     private String[] groupNames = {primaryGroup, macroCacheGroup};
     private static final String MACRO_PREFIX ="MACRO_PREFIX";
-    Set<String> ignoreGlobalVM;
+    private final Set<String> ignoreGlobalVM;
     
     
     
