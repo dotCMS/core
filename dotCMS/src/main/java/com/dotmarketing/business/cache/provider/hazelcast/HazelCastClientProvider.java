@@ -5,9 +5,12 @@ import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.util.Logger;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 
+import java.io.InputStream;
 import java.util.*;
 
 /**
@@ -15,15 +18,23 @@ import java.util.*;
  */
 public class HazelCastClientProvider extends CacheProvider {
 
-    HazelcastInstance hazel = null;
-    private Boolean isInitialized = false;
+    protected HazelcastInstance hazel = null;
+    protected Boolean initialized = false;
 
     @Override
     public void init() throws Exception {
-        Logger.info(this, "Setting Up HazelCast Config");
-        XmlClientConfigBuilder builder = new XmlClientConfigBuilder("hazelcast-client.xml");
-        hazel = HazelcastClient.newHazelcastClient(builder.build());
-        isInitialized = true;
+        Logger.info(this, "Setting Up HazelCast Client Config");
+        InputStream is = null;
+        try {
+            is = getClass().getClassLoader().getResourceAsStream("hazelcast-client.xml");
+            XmlClientConfigBuilder builder = new XmlClientConfigBuilder(is);
+            hazel = HazelcastClient.newHazelcastClient(builder.build());
+            initialized = true;
+        } finally {
+            if (is != null) {
+                is.close();
+            }
+        }
     }
 
     @Override
@@ -38,7 +49,7 @@ public class HazelCastClientProvider extends CacheProvider {
 
     @Override
     public boolean isInitialized() throws Exception {
-        return isInitialized;
+        return initialized;
     }
 
     @Override
