@@ -6,6 +6,7 @@ package com.dotmarketing.velocity;
 import java.io.File;
 
 
+import com.liferay.util.SystemProperties;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.ResourceCache;
@@ -56,7 +57,6 @@ public class DotResourceCache implements ResourceCache,Cachable {
     }    
     
     public void putMacro(String name, String content) {
-
       String[] rw = {name, content};
       cache.put(MACRO_PREFIX + name, content, macroCacheGroup);
 
@@ -99,7 +99,9 @@ public class DotResourceCache implements ResourceCache,Cachable {
 	 * @see org.apache.velocity.runtime.resource.ResourceCache#put(java.lang.Object, org.apache.velocity.runtime.resource.Resource)
 	 */
 	public Resource put(Object resourceKey, Resource resource) {
-
+        if(!shouldCache(resourceKey.toString())){
+            return resource;
+        }
 		ResourceWrapper rw = new ResourceWrapper(resource);
 		String cleanedResourceKey = cleanKey(resourceKey.toString());
 		String group = primaryGroup;
@@ -142,6 +144,18 @@ public class DotResourceCache implements ResourceCache,Cachable {
 	@Deprecated
 	public void clearMenuCache() {
 	  
+    }
+
+    private boolean shouldCache(String key){
+        boolean ret = true;
+        String[] macroFileNames = SystemProperties.getArray("velocimacro.library");
+        for (String fileName: macroFileNames){
+            if(key.contains(fileName)){
+                ret = false;
+                break;
+            }
+        }
+        return ret;
     }
 	
 	public String[] getGroups() {
