@@ -72,7 +72,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.guava', version:'11.0.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.hadoop-dev-core', version:'0.20.3_2'
     compile group: 'com.dotcms.lib', name: 'dot.hadoop-dev-tools', version:'0.20.3_2'
-    compile 'com.hazelcast:hazelcast-client:3.8'
+    compile 'com.hazelcast:hazelcast-all:3.8'
     compile group: 'com.dotcms.lib', name: 'dot.hibernate', version:'2.1.7_2'
     compile group: 'com.dotcms.lib', name: 'dot.httpbridge', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.httpclient', version:'4.2.2_2'
