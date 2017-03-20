@@ -4,8 +4,11 @@
 package com.dotmarketing.velocity;
 
 import java.io.File;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
-
+import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.ResourceCache;
@@ -16,6 +19,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.util.Logger;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringUtil;
 
 /**
@@ -37,9 +41,21 @@ public class DotResourceCache implements ResourceCache,Cachable {
     // region's name for the cache
     private String[] groupNames = {primaryGroup, macroCacheGroup};
     private static final String MACRO_PREFIX ="MACRO_PREFIX";
+    Set<String> ignoreGlobalVM;
+    
+    
+    
     public DotResourceCache() {
     	cache = CacheLocator.getCacheAdministrator();
-
+    	String files = System.getProperty(RuntimeConstants.VM_LIBRARY);
+    	Set<String> holder = new HashSet<>();
+    	for(String file : files.split(",")){
+    	  if(file!=null){
+    	    System.out.println("FILE: " +file);
+    	    holder.add(file.trim());
+    	  }
+    	}
+    	ignoreGlobalVM = ImmutableSet.copyOf(holder);
 	}
     
     public String[] getMacro(String name) {
@@ -99,7 +115,9 @@ public class DotResourceCache implements ResourceCache,Cachable {
 	 * @see org.apache.velocity.runtime.resource.ResourceCache#put(java.lang.Object, org.apache.velocity.runtime.resource.Resource)
 	 */
 	public Resource put(Object resourceKey, Resource resource) {
-
+	    if(resource !=null && ignoreGlobalVM.contains(resource.getName())){
+	      return resource;
+	    }
 		ResourceWrapper rw = new ResourceWrapper(resource);
 		String cleanedResourceKey = cleanKey(resourceKey.toString());
 		String group = primaryGroup;
