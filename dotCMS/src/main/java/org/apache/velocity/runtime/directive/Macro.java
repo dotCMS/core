@@ -32,7 +32,6 @@ import org.apache.velocity.runtime.parser.Token;
 import org.apache.velocity.runtime.parser.node.Node;
 
 import com.dotmarketing.util.Logger;
-import com.google.common.collect.ImmutableMap;
 
 /**
  *  Macro implements the macro definition directive of VTL.
