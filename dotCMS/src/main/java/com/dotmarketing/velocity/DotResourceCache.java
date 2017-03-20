@@ -14,12 +14,13 @@ import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.ResourceCache;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.util.Logger;
-import com.google.common.collect.ImmutableSet;
+
 import com.liferay.util.StringUtil;
 
 /**
