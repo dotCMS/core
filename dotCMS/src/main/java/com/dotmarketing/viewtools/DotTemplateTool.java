@@ -41,10 +41,10 @@ public class DotTemplateTool implements ViewTool {
     private static User sysUser = null;
     private static Cache<String, Map<String, Object>> cache = CacheBuilder.<String, Map<String, Object>>newBuilder()
         .expireAfterWrite(Config.getLongProperty("TEMPLATE_THEME_CACHE_TTL_MILLIS", 5000), TimeUnit.MILLISECONDS)
-        .build(); // look Ma, no CacheLoader
+        .build(); 
     private static Cache<String, TemplateLayout> layoutCache = CacheBuilder.<String,TemplateLayout>newBuilder()
         .expireAfterWrite(Config.getLongProperty("TEMPLATE_THEME_CACHE_TTL_MILLIS", 5000), TimeUnit.MILLISECONDS)
-        .build(); // look Ma, no CacheLoader
+        .build(); 
     /**
      * @param initData the ViewContext that is automatically passed on view tool initialization, either in the request or the application
      * @return
