@@ -186,6 +186,7 @@ public class CalendarAjax {
 		}
 		List<Event> events = eventAPI.find(hostId, fromDate, toDate, tags, keywords, categories, live, includeArchived, offset, limit, user, respectFrontendRoles);
 		for(Event ev : events) {
+			ev.setTags();
 			Map<String, Object> eventMap = ev.getMap();
 
 			//Loading categories
