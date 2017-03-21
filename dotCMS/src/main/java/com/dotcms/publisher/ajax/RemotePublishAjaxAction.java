@@ -44,6 +44,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.elasticsearch.common.base.Strings;
+
 import java.io.*;
 import java.lang.reflect.Method;
 import java.text.ParseException;
@@ -864,6 +866,13 @@ public class RemotePublishAjaxAction extends AjaxAction {
             String _contentPushExpireTime = request.getParameter( "remotePublishExpireTime" );
             String _iWantTo = request.getParameter( "iWantTo" );
             String whoToSendTmp = request.getParameter( "whoToSend" );
+            String forcePushTmp = request.getParameter( "forcePush" );
+            
+            Boolean forcePush = false;
+            if(!Strings.isNullOrEmpty(forcePushTmp)){
+                forcePush = Boolean.valueOf(forcePushTmp);
+            }
+            
             List<String> whereToSend = Arrays.asList(whoToSendTmp.split(","));
             List<Environment> envsToSendTo = new ArrayList<Environment>();
 
@@ -889,6 +898,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             SimpleDateFormat dateFormat = new SimpleDateFormat( "yyyy-MM-dd-H-m" );
             Date publishDate = dateFormat.parse( _contentPushPublishDate + "-" + _contentPushPublishTime );
             Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
+            bundle.setForcePush(forcePush);
             APILocator.getBundleAPI().saveBundleEnvironments(bundle, envsToSendTo);
 
             if ( _iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH )) {
