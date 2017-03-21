@@ -185,12 +185,7 @@
         <max-size>10</max-size>
         <eviction-policy>LFU</eviction-policy>
     </near-cache>
-    
-    <near-cache name="navcache">
-        <max-size>1000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </near-cache>
-    
+       
     <near-cache name="parentpermissionablecache">
         <max-size>10000</max-size>
         <eviction-policy>LFU</eviction-policy>
@@ -273,6 +268,11 @@
 
 <!--    Available cache regions    -->
 <!--
+
+	<near-cache name="navcache">
+        <max-size>1000</max-size>
+        <eviction-policy>LFU</eviction-policy>
+    </near-cache>
     <near-cache name="actionscache">
         <max-size>1000</max-size>
         <eviction-policy>LFU</eviction-policy>
