@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.dotcms.business.SystemCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
 import com.dotcms.contenttype.business.ContentTypeCache2;
@@ -152,6 +153,10 @@ public class CacheLocator extends Locator<CacheIndex>{
 		 */
 		adminCache.initProviders();
 		System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_CACHE, String.valueOf(System.currentTimeMillis() - start));
+	}
+
+	public static SystemCache getSystemCache() {
+		return (SystemCache)getInstance(CacheIndex.System);
 	}
 
 	public static PermissionCache getPermissionCache() {
@@ -348,6 +353,7 @@ public class CacheLocator extends Locator<CacheIndex>{
 
 enum CacheIndex
 {
+	System("System"),
 	Permission("Permission"),
 	CMSRole("CMS Role"),
 	Role("Role"),
@@ -390,6 +396,7 @@ enum CacheIndex
 	ContentTypeCache2("New Content Type Cache");
 	Cachable create() {
 		switch(this) {
+		case System: return new SystemCache();
 		case Permission: return new PermissionCacheImpl();
       	case Category: return new CategoryCacheImpl();
       	case Tag: return new TagCacheImpl();

@@ -179,3 +179,4 @@ if(!statePopUp || portletException){%>
 <%}else{ %>
 	<%= renderRequest.getAttribute(WebKeys.PORTLET_CONTENT) %>
 <%}}%>
+

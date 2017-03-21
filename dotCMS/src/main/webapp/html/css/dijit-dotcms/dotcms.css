@@ -10227,6 +10227,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 .permissionWrapper .dijitContentPane {
   padding: 24px 0;
+  box-sizing: content-box;
 }
 
 .permissionTable .permissionType {

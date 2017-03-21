@@ -365,7 +365,7 @@ task tgzTask(type: Tar) {
         }
         destinationDir file("$outputDistLocation")
         baseName 'dotcms_'+dotcmsReleaseVersion
-        extension = 'tgz'
+        extension = 'tar.gz'
         compression = Compression.GZIP
     }
 }
