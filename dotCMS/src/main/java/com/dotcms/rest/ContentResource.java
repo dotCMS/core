@@ -723,7 +723,7 @@ public class ContentResource {
 			else if(part.getContentDisposition()!=null) {
 				InputStream input=part.getEntityAs(InputStream.class);
 				String filename=part.getContentDisposition().getFileName();
-				java.io.File tmp=new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary()
+				java.io.File tmp=new java.io.File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
 						+ java.io.File.separator + user.getUserId()
 						+ java.io.File.separator + System.currentTimeMillis()
 						+ java.io.File.separator + filename);

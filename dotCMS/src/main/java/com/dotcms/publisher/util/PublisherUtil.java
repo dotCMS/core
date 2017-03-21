@@ -61,8 +61,12 @@ public class PublisherUtil {
 			pep.setGroupId(row.get("group_id").toString());
 		}
 		pep.setAddress(row.get("address").toString());
-		pep.setPort(row.get("port").toString());
-		pep.setProtocol(row.get("protocol").toString());
+		if(row.get("port") != null) {
+		    pep.setPort(row.get("port").toString());
+		}
+		if(row.get("protocol") != null) {
+		    pep.setProtocol(row.get("protocol").toString());
+		}
 		pep.setServerName(new StringBuilder(row.get("server_name").toString()));
 		pep.setAuthKey(new StringBuilder(row.get("auth_key").toString()));
 

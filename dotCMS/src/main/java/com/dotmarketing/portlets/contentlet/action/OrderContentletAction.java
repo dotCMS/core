@@ -25,7 +25,7 @@ import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
@@ -68,7 +68,7 @@ public class OrderContentletAction  extends DotPortletAction {
 	throws Exception {
 
 		Container container = (Container) InodeFactory.getInode(req.getParameter("containerId"),Container.class);
-		HTMLPage page= (HTMLPage) InodeFactory.getInode(req.getParameter("pageId"),HTMLPage.class);		
+		IHTMLPage page= (IHTMLPage) InodeFactory.getInode(req.getParameter("pageId"),IHTMLPage.class);		
 		String languaje_id = (String) ((ActionRequestImpl) req).getHttpServletRequest().getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);
 
 		Identifier containerIdentifier = APILocator.getIdentifierAPI().find(container);
@@ -101,7 +101,7 @@ public class OrderContentletAction  extends DotPortletAction {
 		try
 		{
 			Container container = (Container) InodeFactory.getInode(req.getParameter("containerId"),Container.class);
-			HTMLPage page= (HTMLPage) InodeFactory.getInode(req.getParameter("pageId"),HTMLPage.class);
+			IHTMLPage page= (IHTMLPage) InodeFactory.getInode(req.getParameter("pageId"),IHTMLPage.class);
 
 			Enumeration parameterNames = req.getParameterNames();
 			HashMap<String,HashMap<Integer, String>> hashMap = new HashMap<String,HashMap<Integer, String>>();

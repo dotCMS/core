@@ -1,7 +1,5 @@
 package com.dotmarketing.servlets;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.StringTokenizer;
@@ -156,18 +154,18 @@ public class SpeedyAssetServlet extends HttpServlet {
 				}else{
 					// Getting the identifier from the path like /dotAsset/{identifier}.{ext} E.G. /dotAsset/1234.js
 					StringTokenizer _st = new StringTokenizer(request.getRequestURI(), "/");
-	
+
 					Logger.debug(this, "Requesting by url: " + request.getRequestURI());
-	
+
 					String _fileName = null;
 					while(_st.hasMoreElements()){
 						_fileName = _st.nextToken();
 					}
-	
+
 					Logger.debug(this, "Parsed filename: " + _fileName);
-	
+
 					String identifier = UtilMethods.getFileName(_fileName);
-		
+
 					Logger.debug(SpeedyAssetServlet.class, "Loading identifier: " + identifier);
 					try{
 						ident = APILocator.getIdentifierAPI().find(identifier);
@@ -175,10 +173,10 @@ public class SpeedyAssetServlet extends HttpServlet {
 						Logger.debug(SpeedyAssetServlet.class, "Identifier not found going to try as a File Asset", ex);
 					}
 				}
-				
+
 				//Language is in request, let's load it. Otherwise use the language in session
 				long lang = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
-				
+
 				if(ident != null && ident.getURI() != null && !ident.getURI().equals("")){
 
 					if(serveWorkingVersion){
@@ -188,8 +186,8 @@ public class SpeedyAssetServlet extends HttpServlet {
 						}else{
 							f = new File(realPath + uri);
 						}
-						
-						//If URI cannot be found with selected language and property above is true, 
+
+						//If URI cannot be found with selected language and property above is true,
 						//let's pull the file with default Language Instead
 						if(uri == null && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)){
 							uri = WorkingCache.getPathFromCache(ident.getURI(), ident.getHostId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
@@ -199,7 +197,7 @@ public class SpeedyAssetServlet extends HttpServlet {
 									f = new File(realPath + uri);
 							 	}
 							}
-						
+
 						if(uri == null || !f.exists() || !f.canRead()) {
 							if(uri == null){
 								Logger.warn(SpeedyAssetServlet.class, "URI is null");
@@ -233,8 +231,8 @@ public class SpeedyAssetServlet extends HttpServlet {
 						}else{
 							f = new File(realPath + uri);
 						}
-						
-						//If URI cannot be found with selected language and property above is true, 
+
+						//If URI cannot be found with selected language and property above is true,
 						//let's pull the file with default Language Instead
 						if(StringUtils.isBlank(uri) && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)){
 							try{
@@ -286,7 +284,7 @@ public class SpeedyAssetServlet extends HttpServlet {
 
 			} else{
 				relativePath = request.getParameter("path");
-				f = new File(APILocator.getFileAPI().getRealAssetsRootPath() + relativePath);
+				f = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + relativePath);
 				if(!f.exists() || !f.canRead()) {
 					Logger.warn(this, "Invalid path passed: path = " + relativePath + ", file doesn't exists.");
 					//Invalid path given
@@ -295,11 +293,11 @@ public class SpeedyAssetServlet extends HttpServlet {
 				}
 			}
 
-			if(f.getPath().endsWith(".groovy") || f.getPath().endsWith(".php") || f.getPath().endsWith(".rb")  
+			if(f.getPath().endsWith(".groovy") || f.getPath().endsWith(".php") || f.getPath().endsWith(".rb")
 					|| f.getPath().endsWith(".vtl")|| f.getPath().endsWith(".vm")){
 				Logger.warn(this, "SpeedyAsset servlet should not serve this types: .groovy, .php, .rb, .vtl and .vm  ");
 				return;
-				
+
 			}
 
 			String inode = null;
@@ -307,44 +305,28 @@ public class SpeedyAssetServlet extends HttpServlet {
 			IFileAsset file = null;
 			Identifier identifier = null;
 			boolean canRead = false;
-			if(UtilMethods.isSet(relativePath) && relativePath.contains("fileAsset")){
-				String[] splits = relativePath.split(Pattern.quote(File.separator));
-				if(splits.length>0){
+			if ((UtilMethods.isSet(relativePath) && relativePath.contains("fileAsset")) || (UtilMethods.isSet(uri)
+				&& uri.contains("fileAsset"))) {
+				String[] splits;
+
+				if (UtilMethods.isSet(uri) && uri.contains("fileAsset")) {
+					splits = uri.split(Pattern.quote(File.separator));
+				} else {
+					splits = relativePath.split(Pattern.quote(File.separator));
+				}
+				if (splits.length > 0) {
 					inode = splits[3];
-					Contentlet cont =  null;
-					try{
+					Contentlet cont = null;
+					try {
 						cont = APILocator.getContentletAPI().find(inode, user, true);
 						file = APILocator.getFileAssetAPI().fromContentlet(cont);
 						identifier = APILocator.getIdentifierAPI().find(cont);
 						canRead = true;
-					}catch(Exception e){	
+					} catch (Exception e) {
 						Logger.warn(this, "Unable to find file asset contentlet with inode " + inode, e);
 					}
 				}
-			}else if(UtilMethods.isSet(uri) && uri.contains("fileAsset")){
-				String[] splits = uri.split(Pattern.quote(File.separator));
-				if(splits.length>0){
-					inode = splits[3];
-					Contentlet cont =  null;
-					try{
-						cont = APILocator.getContentletAPI().find(inode, user, true);
-						file = APILocator.getFileAssetAPI().fromContentlet(cont);
-						identifier = APILocator.getIdentifierAPI().find(cont);
-						canRead = true;
-					}catch(Exception e){	
-						Logger.warn(this, "Unable to find file asset contentlet with inode " + inode, e);
-					}
-				}
-			}else{
-			
-				inode = UtilMethods.getFileName(f.getName());
-				file = APILocator.getFileAPI().find(inode, user, true);
-				identifier = APILocator.getIdentifierAPI().find((com.dotmarketing.portlets.files.model.File)file);
-				com.dotmarketing.portlets.files.model.File fProxy = new com.dotmarketing.portlets.files.model.File();
-	            fProxy.setIdentifier(identifier.getInode());
-	            canRead = permissionAPI.doesUserHavePermission(fProxy, PERMISSION_READ, user, true);
 			}
-			
 			
 			//Checking permissions
         	/**
@@ -353,7 +335,7 @@ public class SpeedyAssetServlet extends HttpServlet {
         	 * without having to hit cache or db
         	 */
 
-			final String referrer = "/contentAsset/raw-data/" + inode + "/fileAsset/?byInode=true";
+			String referrer = "/contentAsset/raw-data/" + inode + "/fileAsset/?byInode=true";
 
             if (!canRead) {
             	if(user == null){

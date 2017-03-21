@@ -13,12 +13,10 @@
 <%@ page import="com.dotmarketing.portlets.containers.factories.ContainerFactory" %>
 <%@ page import="com.dotmarketing.portlets.containers.model.Container" %>
 <%@ page import="com.dotmarketing.portlets.templates.model.Template" %>
-<%@ page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage" %>
 <%@ page import="com.dotmarketing.db.HibernateUtil" %>
 <%@ page import="java.io.PrintWriter" %>
 <%@ page import="java.io.StringWriter" %>
 <%@ page import="com.dotmarketing.portlets.templates.factories.TemplateFactory" %>
-<%@ page import="com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory" %>
 <%@ page import="java.util.regex.Matcher" %>
 <%@ page import="java.util.regex.Pattern" %>
 
@@ -467,20 +465,6 @@
 					InodeFactory.saveInode(template);
 					templatesCounter++;
 				}
-				
-
-				//HTML Pages
-				int pagesCounter = 0;
-				List pages = HTMLPageFactory.getHTMLPageByCondition("redirect like '%" + searchString + "%'");
-				it = pages.iterator();
-				while (it.hasNext()) {
-					HTMLPage htmlpage = (HTMLPage)it.next();
-					String redirect = htmlpage.getRedirect();
-					redirect = redirect.replaceAll(searchString, replaceString);
-					htmlpage.setRedirect(redirect);
-					InodeFactory.saveInode(htmlpage);
-					pagesCounter++;
-				}
 
 				dh.commitTransaction();
 
@@ -493,7 +477,6 @@
 					<%=linksCounter%> Links modified!!<br>
 					<%=containersCounter%> Containers modified!!<br>
 					<%=templatesCounter%> Templates modified!!<br>
-					<%=pagesCounter%> HTMLPages modified!!<br>
 				</TD>
 			</TR>
 		</TABLE>

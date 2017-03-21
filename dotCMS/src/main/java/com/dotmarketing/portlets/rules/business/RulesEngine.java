@@ -7,6 +7,7 @@ import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Config;
@@ -139,8 +140,11 @@ public final class RulesEngine {
                 }
             }
 
-        } catch(Exception e) {
-            Logger.error(RulesEngine.class, "Unable process rules: " + e.getMessage(), e);
+        } catch(InvalidLicenseException ile){
+          Logger.debug(RulesEngine.class,  ile.getMessage());
+        }
+        catch(Exception e) {
+          Logger.error(RulesEngine.class, "Unable process rules: " + e.getMessage(), e);
         }
     }
 

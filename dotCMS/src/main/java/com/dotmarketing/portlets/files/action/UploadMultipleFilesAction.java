@@ -19,8 +19,6 @@ import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.files.business.FileAPI;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.files.struts.FileForm;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -81,7 +79,6 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 	        HibernateUtil.startTransaction();
 			try {
 				Logger.debug(this, "Calling Retrieve method");
-				_retrieveWebAsset(req, res, config, form, user, File.class, WebKeys.FILE_EDIT);
 	            Logger.debug(this, "Calling Edit Method");
 				_editWebAsset(req, res, config, form, user);
 			}
@@ -118,21 +115,12 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 	public void _editWebAsset(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, User user)
 	throws Exception {
 
-		FileAPI fileAPI = APILocator.getFileAPI();
 		FolderAPI folderAPI = APILocator.getFolderAPI();
-
-		// calls edit method from super class that returns parent folder
-		super._editWebAsset(req, res, config, form, user, WebKeys.FILE_EDIT);
-
-		// This can't be done on the WebAsset so it needs to be done here.
-		File file = (File) req.getAttribute(WebKeys.FILE_EDIT);
 
        Folder parentFolder = null;
 
 		if(req.getParameter("parent") != null) {
 			parentFolder = folderAPI.find(req.getParameter("parent"),user,false);
-		} else {
-			parentFolder = fileAPI.getFileFolder(file,WebAPILocator.getHostWebAPI().getCurrentHost(req), user, false);
 		}
 
 		// setting parent folder path and inode on the form bean
@@ -141,13 +129,9 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 			cf.setSelectedparent(parentFolder.getName());
 			cf.setParent(parentFolder.getInode());
 			cf.setSelectedparentPath(APILocator.getIdentifierAPI().find(parentFolder).getPath());
-			file.setParent(parentFolder.getInode());
 		}
 
-
-
 		req.setAttribute("PARENT_FOLDER",parentFolder);
-
 	}
 
 	private String checkMACFileName(String fileName)
@@ -299,12 +283,6 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 
                         contentlet = APILocator.getContentletAPI().checkin( contentlet, user, false );
                         if ( (subcmd != null) && subcmd.equals( com.dotmarketing.util.Constants.PUBLISH ) ) {
-                            if ( isRootHost
-                                    && !APILocator.getPermissionAPI().doesUserHaveInheriablePermissions( host, File.class.getCanonicalName(), PermissionAPI.PERMISSION_PUBLISH, user )
-                                    && !isAdmin ) {
-                                throw new ActionException( WebKeys.USER_PERMISSIONS_EXCEPTION );
-                            }
-
                             APILocator.getVersionableAPI().setLive( contentlet );
                         }
 

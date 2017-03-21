@@ -33,12 +33,12 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.files.model.File;
+import com.dotmarketing.portlets.folders.business.AddContentToFolderPermissionException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.business.FolderFactory;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.folders.struts.FolderForm;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
@@ -46,6 +46,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
@@ -127,7 +128,11 @@ public class EditFolderAction extends DotPortletAction {
 					return;
 				}
 
-			} catch (Exception ae) {
+			} catch(AddContentToFolderPermissionException e){
+				req.setAttribute(WebKeys.FOLDER_EDIT, req.getAttribute(WebKeys.PARENT_FOLDER));
+				_sendToReferral(req, res, referer);
+				return;
+			}catch (Exception ae) {
 				_handleException(ae, req);
 				return;
 			}
@@ -412,8 +417,14 @@ public class EditFolderAction extends DotPortletAction {
 				return true;
 			}
 			HibernateUtil.commitTransaction();
-		}
-		catch(Exception ex) {
+		}catch(AddContentToFolderPermissionException e){
+			HibernateUtil.rollbackTransaction();
+			String message = LanguageUtil.format(user.getLocale(),
+					"message.folder.save.error.permission",new String[]{e.getUserId(), e.getFolderPath()}, false);
+			SessionMessages.add(req, "message", message);
+			Logger.error(this, e.getMessage(), e);
+			throw e;
+		} catch(Exception ex) {
 			HibernateUtil.rollbackTransaction();
 			SessionMessages.add(req, "message", "message.folder.save.error");
 			Logger.error(this, "ERROR: Cannot save folder '" + parentPath + folderForm.getName() + "'", ex);
@@ -477,60 +488,7 @@ public class EditFolderAction extends DotPortletAction {
 		FolderAPI fapi = APILocator.getFolderAPI();
 		
 		/****** begin *************/
-		List<HTMLPage> htmlPages = fapi.getHTMLPages(folder,APILocator.getUserAPI().getSystemUser(),false);
-		for (HTMLPage page: htmlPages) {
-			Identifier identifier = APILocator.getIdentifierAPI().find(page);
-            if(!InodeUtils.isSet(identifier.getInode())) {
-                Logger.warn(FolderFactory.class, "_deleteChildrenAssetsFromFolder: page inode = " + ((HTMLPage)page).getInode() +  " doesn't have a valid identifier associated.");
-                continue;
-            }
-            
-            perAPI.removePermissions((HTMLPage)page);
 
-			List<Versionable> versions = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getDefaultUser(),false);
-
-			for (Versionable versionV : versions) {
-				HTMLPage version = (HTMLPage) versionV;
-				if (version.isWorking()) {
-					//updating caches
-					WorkingCache.removeAssetFromCache(version);
-					CacheLocator.getIdentifierCache().removeFromCacheByVersionable(version);
-				}
-
-				if (version.isLive()) {
-					LiveCache.removeAssetFromCache(version);
-				}
-
-				InodeFactory.deleteInode(version);
-			}
-			APILocator.getIdentifierAPI().delete(identifier);
-		}
-
-		List<File> files = fapi.getFiles(folder,APILocator.getUserAPI().getDefaultUser(),false);
-		for (File file: files) {
-			Identifier identifier = APILocator.getIdentifierAPI().find(file);
-
-            if(!InodeUtils.isSet(identifier.getInode())) {
-                Logger.warn(FolderFactory.class, "_deleteChildrenAssetsFromFolder: file inode = " + ((File)file).getInode() +  " doesn't have a valid identifier associated.");
-                continue;
-            }
-
-            perAPI.removePermissions((File)file);
-
-            List<Versionable> versions = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getDefaultUser(),false);
-            
-            for (Versionable versionV : versions) {
-            	File version = (File) versionV;
-	            //assets cache
-	            if (version.isLive()) 
-	                LiveCache.removeAssetFromCache(version);
-	            if (version.isWorking()) 
-	            	WorkingCache.removeAssetFromCache(version);
-	
-				InodeFactory.deleteInode(version);
-            }
-            APILocator.getIdentifierAPI().delete(identifier);
-		}
 		List<Link> links = fapi.getLinks(folder,APILocator.getUserAPI().getSystemUser(),false);
 		for (Link link: links) {		
 			if (link.isWorking()) {

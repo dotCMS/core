@@ -21,7 +21,6 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
@@ -159,7 +158,6 @@ public class UserAPITest extends IntegrationTestBase {
 		permissionsToSave.add(new Permission(Container.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
 		permissionsToSave.add(new Permission(Template.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
 		permissionsToSave.add(new Permission(TemplateLayout.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
-		permissionsToSave.add(new Permission(File.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
 		permissionsToSave.add(new Permission(Link.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
 		permissionsToSave.add(new Permission(Contentlet.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));
 		permissionsToSave.add(new Permission(IHTMLPage.class.getCanonicalName(), host.getPermissionId(), newRole.getId(), (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));

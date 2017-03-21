@@ -20,7 +20,7 @@
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 
-<iframe id="AjaxActionJackson" name="AjaxActionJackson" style="width:0px; height:0px;"></iframe>
+<iframe id="AjaxActionJackson" name="AjaxActionJackson" style="border:0; width:0; height:0;"></iframe>
 <%
 	List<Structure> structures = (List<Structure>)request.getAttribute (com.dotmarketing.util.WebKeys.Structure.STRUCTURES);
 	List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketing.util.WebKeys.LANGUAGES);
@@ -215,12 +215,36 @@
                 },
                 <%}%>
 
-                <%boolean started = false;%>
-                <%for(Structure s : structures){%>
+                <%	boolean started = false;
+					int baseType=0;
+					for(Structure s : structures){
+                	
+                	String labelAndIcon = (s.getStructureType()==1) 
+                  	    ? "<span class='contentIcon'></span>" 
+                  	    	: (s.getStructureType()==2) 
+                  	    		? "<span class='gearIcon'></span>" 
+                          	    	: (s.getStructureType()==3) 
+                      	    			? "<span class='fa-columns'></span>" 
+                                  	    	: (s.getStructureType()==4) 
+                          	    			? "<span class='fileIcon'></span>" 
+                                      	    	: (s.getStructureType()==5) 
+                              	    			? "<span class='pageIcon'></span> " 
+                                          	    	: (s.getStructureType()==6) 
+                                  	    			? "<span class='personaIcon'></span>" 
+                                  	    				:"<span class='blankIcon'></span>";
+                
+                
+                
+					labelAndIcon+="&nbsp; &nbsp;" + UtilMethods.javaScriptify(s.getName());
+					if(s.getStructureType() != baseType){
+					  labelAndIcon = "<div style='height:1px;margin:-1px -10px 0px -10px;background:silver;'></div>" + labelAndIcon;
+					  baseType = s.getStructureType();
+					}
+                %>
                         <%=(started) ? "," :""%>
                         {
                             name: "<%=s.getInode()%>",
-                            label: "<%=UtilMethods.javaScriptify(s.getName())%>",
+                            label: "<%=labelAndIcon %>",
                             textLabel: "<%=s.getName()%>"
                         }
                         <%started = true;%>

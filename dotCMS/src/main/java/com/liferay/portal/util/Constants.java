@@ -70,11 +70,6 @@ public interface Constants {
 	public static final String VIEW_ACTIVITY_STREAM = "view_activity_stream";
 	
 	public static final String VIEW_BROWSER = "view_browser";
-	
-	public static final String VIEW_FILES = "view_files";
-
-	public static final String VIEW_PAGES = "view_pages";
-	
 
 	// Rreturn values used in Action classes
 

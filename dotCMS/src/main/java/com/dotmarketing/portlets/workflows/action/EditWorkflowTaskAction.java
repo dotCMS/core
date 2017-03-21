@@ -168,8 +168,6 @@ public class EditWorkflowTaskAction extends DotPortletAction {
 		WorkflowTask task = (WorkflowTask) req.getAttribute(WebKeys.WORKFLOW_TASK_EDIT);
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
 		ActionResponseImpl resImpl  = (ActionResponseImpl) res;
-		HttpServletRequest httpReq= reqImpl.getHttpServletRequest();
-		HttpServletResponse httpRes= resImpl.getHttpServletResponse();
 		String fileToAttachInode = req.getParameter ("file_inode");
 		String title = null;
 		try{
@@ -177,12 +175,6 @@ public class EditWorkflowTaskAction extends DotPortletAction {
 			
 		}
 		catch(Exception e){
-			try{
-				title = APILocator.getFileAPI().find(fileToAttachInode,user, false).getTitle();
-			}
-			catch(Exception es){
-				
-			}
 			
 		}
 		
@@ -202,10 +194,6 @@ public class EditWorkflowTaskAction extends DotPortletAction {
 			PortletConfig config, ActionForm form, User user) throws Exception {
 
 		WorkflowTask task = (WorkflowTask) req.getAttribute(WebKeys.WORKFLOW_TASK_EDIT);
-		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
-		ActionResponseImpl resImpl  = (ActionResponseImpl) res;
-		HttpServletRequest httpReq= reqImpl.getHttpServletRequest();
-		HttpServletResponse httpRes= resImpl.getHttpServletResponse();
 		String fileToAttachInode = req.getParameter ("file_inode");
 		String title = null;
 		try{
@@ -213,12 +201,6 @@ public class EditWorkflowTaskAction extends DotPortletAction {
 			
 		}
 		catch(Exception e){
-			try{
-				title = APILocator.getFileAPI().find(fileToAttachInode,user, false).getTitle();
-			}
-			catch(Exception es){
-				
-			}
 			
 		}
 		

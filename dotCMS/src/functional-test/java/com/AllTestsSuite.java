@@ -13,10 +13,8 @@ import com.dotcms.rest.api.v1.sites.rules.RuleResourceFTest;
 import com.dotcms.rest.api.v1.system.i18n.I8NResourceFTest;
 import com.dotcms.rest.api.v1.system.ruleengine.ActionletResourceFTest;
 import com.dotmarketing.business.PermissionAPITest;
-import com.dotmarketing.business.UserAPITest;
 import com.dotmarketing.portlets.contentlet.business.FileAssetTest;
 import com.dotmarketing.portlets.rules.RulesUnderPageAssetsFTest;
-import com.dotmarketing.portlets.rules.actionlet.PersonaActionletFTest;
 import com.dotmarketing.portlets.rules.actionlet.SetResponseHeaderActionletFTest;
 import com.dotmarketing.portlets.rules.actionlet.SetSessionAttributeActionletFTest;
 import com.dotmarketing.portlets.rules.actionlet.VisitorsTagsActionletFTest;
@@ -72,10 +70,12 @@ import org.junit.runners.Suite;
     WebResourceTest.class,
     PermissionAPITest.class,
     FileAssetTest.class,
-    PersonaActionletFTest.class, //Needs Enterprise License.
+    //Ignored PersonaActionletFTest, see: https://github.com/dotCMS/core/issues/10746
+    //PersonaActionletFTest.class, //Needs Enterprise License.
     SetResponseHeaderActionletFTest.class, //Needs Enterprise License.
     SetSessionAttributeActionletFTest.class, //Needs Enterprise License.
-    VisitorsTagsActionletFTest.class, //Needs Enterprise License.
+    //Ignored VisitorsTagsActionletFTest, see: https://github.com/dotCMS/core/issues/10746
+    //VisitorsTagsActionletFTest.class, //Needs Enterprise License.
 
     //Rules.
     RulesAPIFTest.class, //Needs Enterprise License.

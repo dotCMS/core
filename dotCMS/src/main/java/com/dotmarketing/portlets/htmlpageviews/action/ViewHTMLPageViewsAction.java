@@ -1,57 +1,33 @@
 package com.dotmarketing.portlets.htmlpageviews.action;
 
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.List;
+import javax.servlet.jsp.PageContext;
 
-import com.dotcms.repackage.javax.portlet.ActionRequest;
-import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
 import com.dotcms.repackage.javax.portlet.WindowState;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.servlet.jsp.PageContext;
-
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.IdentifierFactory;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.VirtualLinksCache;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
-import com.dotmarketing.portlets.htmlpageviews.factories.HTMLPageViewFactory;
-import com.dotmarketing.portlets.mailinglists.factories.MailingListFactory;
-import com.dotmarketing.portlets.mailinglists.model.MailingList;
 import com.dotmarketing.portlets.virtuallinks.factories.VirtualLinkFactory;
 import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.liferay.portal.struts.ActionException;
 import com.liferay.portal.util.Constants;
-import com.liferay.portlet.ActionResponseImpl;
 import com.liferay.util.servlet.SessionMessages;
 
 /**
@@ -83,9 +59,8 @@ public class ViewHTMLPageViewsAction extends DotPortletAction {
                 return mapping.findForward("portlet.ext.htmlpageviews.view");
             } else {
                 //Mailing lists
-                List<MailingList> list = MailingListFactory.getMailingListsByUser(user);
-                list.add(MailingListFactory.getUnsubscribersMailingList());
-                req.setAttribute(WebKeys.MAILING_LIST_VIEW, list);
+
+
 
                 /** @see com.dotmarketing.portal.struts.DotPortletAction._viewWebAssets * */
                 _viewWebAssets(req, user);
@@ -112,8 +87,7 @@ public class ViewHTMLPageViewsAction extends DotPortletAction {
         	IHTMLPage myHTMLPage = null;
         	if (contentlet!=null){
         		myHTMLPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
-        	}else
-        		myHTMLPage = (IHTMLPage) InodeFactory.getInode(req.getParameter("htmlpage"), HTMLPage.class);
+        	}
             uri = APILocator.getIdentifierAPI().find(myHTMLPage).getURI();
 			host = hostAPI.findParentHost(myHTMLPage, systemUser, false);
             req.setAttribute("htmlPage", myHTMLPage);

@@ -5,7 +5,7 @@ import java.util.List;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.publisher.pusher.PushPublisherConfig.Operation;
+import com.dotcms.publishing.PublisherConfig.Operation;
 
 public class ContentTypeWrapper {
 	private ContentType contentType;
@@ -55,12 +55,12 @@ public class ContentTypeWrapper {
 		this.fields = fields;
 	}
 
-    public Operation getOperation() {
-        return operation;
-    }
-
-    public void setOperation(Operation operation) {
-        this.operation = operation;
+    public Operation getOperation() {		
+        return operation;		
+    }		
+ 		
+    public void setOperation(Operation operation) {		
+        this.operation = operation;		
     }
 
     public String getWorkflowSchemaId() {

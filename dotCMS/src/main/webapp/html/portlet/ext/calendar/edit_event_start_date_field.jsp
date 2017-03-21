@@ -1,16 +1,9 @@
 <%@page import="com.dotmarketing.portlets.structure.model.Field"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page	import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
-<%@page	import="com.dotmarketing.portlets.languagesmanager.business.*"%>
 <%@page import="java.util.GregorianCalendar"%>
 <%@page import="java.util.Date"%>
-<%@page import="com.liferay.util.cal.CalendarUtil"%>
-<%@page import="java.util.Locale"%>
 <%@page import="java.text.SimpleDateFormat"%>
-<%@page import="com.dotmarketing.portlets.files.model.File"%>
-<%@page import="com.dotmarketing.factories.InodeFactory"%>
-<%@page import="com.dotmarketing.util.Parameter"%>
-<%@page import="com.dotmarketing.portlets.links.model.Link"%>
 
 <%@ include file="/html/portlet/ext/contentlet/init.jsp"%>
 

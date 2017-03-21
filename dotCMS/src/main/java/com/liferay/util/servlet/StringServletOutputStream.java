@@ -26,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 
 /**
  * <a href="StringServletOutputStream.java.html"><b><i>View Source</i></b></a>
@@ -43,6 +44,16 @@ public class StringServletOutputStream extends ServletOutputStream {
 	public void write(int b) throws IOException {
 		_baos.write(b);
 	}
+
+	public boolean isReady() {
+		return false;
+	}
+
+	public void setWriteListener(WriteListener writeListener) {
+
+	}
+
+
 
 	private ByteArrayOutputStream _baos = null;
 

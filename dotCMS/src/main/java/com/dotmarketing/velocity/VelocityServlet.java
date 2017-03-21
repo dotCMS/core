@@ -67,7 +67,6 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.viewtools.DotTemplateTool;
@@ -575,7 +574,7 @@ public abstract class VelocityServlet extends HttpServlet {
     		String urlMap = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
     		String queryString = request.getQueryString();
     		String persona = null;
-    		Optional<Visitor> v = APILocator.getVisitorAPI().getVisitor(request, false);
+    		Optional<Visitor> v = visitorAPI.getVisitor(request, false);
     		if(v.isPresent() && v.get().getPersona() !=null){
     			persona=v.get().getPersona().getKeyTag();
     		}
@@ -673,7 +672,6 @@ public abstract class VelocityServlet extends HttpServlet {
 		if("contentlet".equals(htmlPage.getType())){
 			context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user,true,host, context) );
 		}
-		HTMLPageAPI htmlPageAPI = APILocator.getHTMLPageAPI();
 		PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 		List<PublishingEndPoint> receivingEndpoints = pepAPI.getReceivingEndPoints();
 		// to check user has permission to write on this page

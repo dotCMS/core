@@ -91,7 +91,7 @@
 			<%= LanguageUtil.get(pageContext, "Apply-Changes") %>
 		</button>
 		
-		<span id="cascadeChangesChkWrapper" style="display:none; vertical-align:middle;">
+		<span id="cascadeChangesChkWrapper" style="display: none" class="reset-permissions">
 			<input type="checkbox" dojoType="dijit.form.CheckBox" id="cascadeChangesCheckbox" /> 
 			<%= LanguageUtil.get(pageContext, "Reset-Children-Permissions") %><a href="javascript: ;" id="resetPermissionsHintHook">?</a>
 			<span dojoType="dijit.Tooltip" connectId="resetPermissionsHintHook" id="resetPermissionsHint" class="fieldHint"><%= LanguageUtil.get(pageContext, "Reset-Children-Permissions-Hint") %></span>

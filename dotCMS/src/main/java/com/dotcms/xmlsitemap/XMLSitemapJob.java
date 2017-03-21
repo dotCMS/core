@@ -23,7 +23,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
@@ -39,12 +38,9 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.files.business.FileAPI;
-import com.dotmarketing.portlets.files.business.FileFactory;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
@@ -77,17 +73,12 @@ public class XMLSitemapJob implements Job, StatefulJob {
 
 	private static String XML_SITEMAPS_FOLDER;
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
-	private FileAPI fileAPI = APILocator.getFileAPI();
-	private FileFactory ffac = FactoryLocator.getFileFactory();
 	private FolderAPI folderAPI = APILocator.getFolderAPI();
-	private HTMLPageAPI htmlAPI = APILocator.getHTMLPageAPI();
 	private IdentifierAPI identAPI = APILocator.getIdentifierAPI();
 	private UserAPI userAPI = APILocator.getUserAPI();
 	private HostAPI hostAPI = APILocator.getHostAPI();
-	private FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
 	private boolean usePermalinks = false;
 	private boolean useStructureURLMap = true;
-	private String changeFrequencyConfig = "daily";
 	private String modifiedDateStringValue = UtilMethods.dateToHTMLDate(
 			new java.util.Date(), "yyyy-MM-dd");
 
@@ -197,7 +188,6 @@ public class XMLSitemapJob implements Job, StatefulJob {
 				Folder folder = folderAPI.findFolderByPath(XML_SITEMAPS_FOLDER, host, systemUser, false);
 
 				if (InodeUtils.isSet(folder.getIdentifier())) {
-					oldSiteMapsToDel.addAll(fileAPI.getFolderFiles(folder, false, systemUser, true));
 					oldSiteMapsToDel.addAll(conAPI.findContentletsByFolder(folder, systemUser, false));
 				}
 
@@ -234,16 +224,11 @@ public class XMLSitemapJob implements Job, StatefulJob {
 
 					//Getting the detail page, that detail page could be a HTMLPageAsset or a legacy page
 					IHTMLPage page = null;
-					try {
 						//First lets asume it is a HTMLPageAsset
 						Contentlet contentlet = APILocator.getContentletAPI().search( "+identifier:" + st.getPagedetail() + " +live:true", 0, 0, "moddate", systemUser, false ).get( 0 );
 						if ( contentlet != null ) {
 							page = APILocator.getHTMLPageAssetAPI().fromContentlet( contentlet );
 						}
-					} catch ( DotContentletStateException e ) {
-						//HTMLPageAsset not found, now lets try to find a legacy page
-						page = htmlAPI.loadLivePageById( st.getPagedetail(), systemUser, true );
-					}
 
 					if ( !UtilMethods.isSet( page ) || !UtilMethods.isSet( page.getIdentifier() ) ) {
 						Logger.error( this, "Unable to find detail page for structure [" + stVelocityVarName + "]." );
@@ -381,10 +366,6 @@ public class XMLSitemapJob implements Job, StatefulJob {
 
                             writeHTMLPage( host, (IHTMLPage) itemChild, false );
 
-						} else if (itemChild instanceof com.dotmarketing.portlets.files.model.File) {
-
-                            writeFile( host, (com.dotmarketing.portlets.files.model.File) itemChild );
-
 						} else if (itemChild instanceof Contentlet) {
 
 							writeContentlet( host, (Contentlet) itemChild );
@@ -393,8 +374,6 @@ public class XMLSitemapJob implements Job, StatefulJob {
 					}
 
 				}
-				
-				cleanOldSitemapFiles(oldSiteMapsToDel);
 
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
@@ -489,10 +468,6 @@ public class XMLSitemapJob implements Job, StatefulJob {
 				} else if ( childChild2 instanceof IHTMLPage ) {
 
 					writeHTMLPage( host, (IHTMLPage) childChild2, isIndexPageAlreadyConfigured );
-
-				} else if ( childChild2 instanceof com.dotmarketing.portlets.files.model.File ) {
-
-					writeFile( host, (com.dotmarketing.portlets.files.model.File) childChild2 );
 
 				} else if ( childChild2 instanceof Contentlet ) {
 
@@ -638,28 +613,6 @@ public class XMLSitemapJob implements Job, StatefulJob {
 		processedRegistries = processedRegistries + 1;
 	}
 
-	/**
-	 * Delete previous XML sitemaps files from the specified host
-	 *
-     * @param siteMapsToDel
-	 * @throws Exception
-	 */
-	private void cleanOldSitemapFiles(List<Object> siteMapsToDel) throws Exception {
-
-		try{
-			for(Object siteMap : siteMapsToDel){
-				if(siteMap instanceof com.dotmarketing.portlets.files.model.File){
-					fileAPI.delete((com.dotmarketing.portlets.files.model.File)siteMap, systemUser, true);
-				}else if(siteMap instanceof Contentlet){
-					conAPI.delete((Contentlet)siteMap, systemUser, false);
-				}
-			}
-		}
-		catch(Exception e){
-			Logger.error(this, e.getMessage(), e);
-		}
-	}
-
 	private void writeContentlet ( Host host, Contentlet contentlet ) throws DotDataException, DotSecurityException {
 
 		if ( contentlet.isLive() && !contentlet.isArchived() ) {
@@ -671,25 +624,6 @@ public class XMLSitemapJob implements Job, StatefulJob {
 					+ XMLUtils.xmlEscape( "http://"
 					+ host.getHostname()
 					+ UtilMethods.encodeURIComponent( url ) )
-					+ "</loc><lastmod>"
-					+ modifiedDateStringValue
-					+ "</lastmod><changefreq>daily</changefreq></url>\n";
-
-			writeFile( stringbuf );
-			addRegistryProcessed();
-		}
-	}
-
-	private void writeFile ( Host host, com.dotmarketing.portlets.files.model.File file ) throws DotDataException, DotSecurityException {
-
-		Identifier childChild2Ident = identAPI.find( file.getIdentifier() );
-		if ( file.isLive() && !file.isDeleted() ) {
-
-			String stringbuf = "<url><loc>"
-					+ XMLUtils.xmlEscape( "http://"
-					+ host.getHostname()
-					+ childChild2Ident.getURI() + "/"
-					+ file.getFileName() )
 					+ "</loc><lastmod>"
 					+ modifiedDateStringValue
 					+ "</lastmod><changefreq>daily</changefreq></url>\n";

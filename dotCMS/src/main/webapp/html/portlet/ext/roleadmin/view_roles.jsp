@@ -56,14 +56,18 @@
 <div id="newLayouDialog" title="<%= LanguageUtil.get(pageContext, "edit-tab") %>" dojoType="dijit.Dialog" style="display: none;width:475px;">
 	<form id="newLayoutForm" dojoType="dijit.form.Form">
 		<ul id="addLayoutErrorMessagesList"></ul>
-		<dl style="margin-bottom:20px;">
-			<dt><%= LanguageUtil.get(pageContext, "Name") %>:</dt>
+		<dl>
+			<dt><label for="layoutName"><%= LanguageUtil.get(pageContext, "Tool-Group") %>:</label></dt>
 			<dd><input id="layoutName" type="text" maxlength="255" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
-			<dt><%= LanguageUtil.get(pageContext, "Description") %>:</dt>
-			<dd><input id="layoutDescription" type="text" dojoType="dijit.form.TextBox" /></dd>
-			<dt><%= LanguageUtil.get(pageContext, "order") %>:</dt>
+			<dt><label for="layoutDescription"><%= LanguageUtil.get(pageContext, "Icon") %>:</label></dt>
+			<dd style="position:relative;">
+				<input id="layoutDescription" type="text" dojoType="dijit.form.TextBox" onchange="updateIcon(this.value)"/>
+				<i id="tabIcon" class="fa" style="position:absolute;top: 8px; right:20px;" aria-hidden="true"></i>
+				<div class="hint-text"><%= LanguageUtil.get(pageContext, "Icon-hint") %></div>
+			</dd>
+			<dt><label for="layoutOrder"><%= LanguageUtil.get(pageContext, "order") %>:</label></dt>
 			<dd><input id="layoutOrder" type="text" value="0" dojoType="dijit.form.ValidationTextBox" /></dd>
-			<dt><%= LanguageUtil.get(pageContext, "Tools") %>:</dt>
+			<dt><label for="portletList"><%= LanguageUtil.get(pageContext, "Tools") %>:</label></dt>
 			<dd>
 				<select id="portletList"></select>
 				<button dojoType="dijit.form.Button" onclick="addPortletToLayoutList()" type="button"><%= LanguageUtil.get(pageContext, "add") %></button>
@@ -74,7 +78,7 @@
 
 		<div class="inputCaption" style="text-align:right">* <%= LanguageUtil.get(pageContext, "drag-a-tool-to-order-it") %></div>
 
-		<div class="buttonRow" style="margin-top:20px;">
+		<div class="buttonRow">
 		    <button dojoType="dijit.form.Button" type="button" onClick="saveLayout()">
 		        <%= LanguageUtil.get(pageContext, "Save") %>
 		    </button>
@@ -122,10 +126,10 @@
 		<div data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: addNewRole">
 			<%= LanguageUtil.get(pageContext, "Add-Role") %>
 		</div>
-		<div id="editRoleButtonWrapper" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: editRole, disabled: true">
+		<div id="editRoleButtonWrapper" data-dojo-type="dijit/MenuItem" data-dojo-props="disabled: true" onClick="editRole()">
 			<%= LanguageUtil.get(pageContext, "edit-role") %>
 		</div>
-		<div id="deleteRoleButtonWrapper" data-dojo-type="dijit/MenuItem" data-dojo-props="onClick: deleteRole, disabled: true">
+		<div id="deleteRoleButtonWrapper" data-dojo-type="dijit/MenuItem" data-dojo-props="disabled: true" onClick="deleteRole()">
 			<%= LanguageUtil.get(pageContext, "delete-role") %>
 		</div>
 	</div>
@@ -223,7 +227,7 @@
 
 						<div id="loadingRoleLayoutsWrapper"><img src="/html/images/icons/processing.gif"></div>
 
-						<div id="roleLayoutsGridWrapper" style="overflow-y:auto;overflow-x:hidden;">
+						<div id="roleLayoutsGridWrapper" style="overflow-y:auto;overflow-x:hidden;" class="view-roles__cms-tabs">
 							<div id="roleLayoutsGrid"></div>
 						</div>
 

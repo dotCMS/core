@@ -36,7 +36,14 @@
 
 
 <div class="contentIdentifier">
-<%= LanguageUtil.get(pageContext, "Identifier") %> : <%=ident.getId() %>
+<%= LanguageUtil.get(pageContext, "Identifier") %> : <%=ident.getId() %> 
+
+
+
+	<div style="float:right">
+	(&nbsp;<a href="/api/content/id/<%=ident.getId() %>" target="_blank">json</a> | 
+	<a href="/api/content/id/<%=ident.getId() %>/type/xml" target="_blank">xml</a>&nbsp;)
+	</div>
 </div>
 <table class="listingTable">
 	<tr>

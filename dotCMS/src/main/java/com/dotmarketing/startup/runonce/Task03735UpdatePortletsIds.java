@@ -4,6 +4,8 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -46,6 +48,8 @@ public class Task03735UpdatePortletsIds implements StartupTask {
 		//remove deleted portlets
 		dc.setSQL("delete from cms_layouts_portlets where portlet_id in ('EXT_3','EXT_ECO_ORDER','25','EXT_16','EXT_19','EXT_5','EXT_6','EXT_8','EXT_COMMUNICATIONS_MANAGER','EXT_CONTENTRATINGS','EXT_FACILITY','EXT_ORG','EXT_USERFILTER','EXT_USERMANAGER','EXT_USER_ACCOUNT_NOTES','REST_EXAMPLE_PORTLET','EXT_PRODUCT','EXT_USER_CLICKS','EXT_USER_COMMENTS','NetworkPortlet')");
 		dc.loadResult();
+
+		CacheLocator.getLayoutCache().clearCache();
 	}
 
 	/**

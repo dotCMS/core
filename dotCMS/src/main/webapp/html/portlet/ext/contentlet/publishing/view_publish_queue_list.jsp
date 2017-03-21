@@ -26,7 +26,6 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.dotmarketing.beans.Identifier"%>
-<%@ page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage"%>
 <%@ page import="com.dotmarketing.portlets.folders.model.Folder"%>
 <%@ page import="com.dotmarketing.portlets.templates.model.Template"%>
 <%@ page import="com.dotmarketing.portlets.containers.model.Container"%>
@@ -225,7 +224,7 @@
 		Bundle bundleObj = APILocator.getBundleAPI().getBundleById((String)bundle.get("bundle_id"));
 		%>
 
-	<table class="listingTable" style="margin:10px;margin-bottom:20px;">
+	<table class="listingTable" style="margin-bottom:20px;">
 		<tr>
 
 			<th style="width:30px;text-align:center;">
@@ -336,7 +335,7 @@
 	}
 }%>
 
-<table width="97%" style="margin:10px;" >
+<table width="100%">
 	<tr>
 		<%
 		if(begin > 0){ %>

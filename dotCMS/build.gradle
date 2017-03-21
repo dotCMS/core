@@ -85,18 +85,19 @@ idea {
 
 dependencies {
     /*****  Felix libs need to be placed in the WEB-INF/felix/bundle directory. This was previously handled using a pre-build copy task.  *****/
-    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.bundlerepository', version:'1.6.6_3'
-    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.fileinstall', version:'3.1.10_3'
-    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.command', version:'0.12.0_3'
-    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.runtime', version:'0.10.0_3'
-    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.shell', version:'0.10.0_3'
+    felix group: 'org.apache.felix', name: 'org.apache.felix.bundlerepository', version:'2.0.8'
+    felix group: 'org.apache.felix', name: 'org.apache.felix.fileinstall',      version:'3.5.8'
+    felix group: 'org.apache.felix', name: 'org.apache.felix.gogo.command',     version:'1.0.2'
+    felix group: 'org.apache.felix', name: 'org.apache.felix.gogo.runtime',     version:'1.0.2'
+    felix group: 'org.apache.felix', name: 'org.apache.felix.gogo.shell',       version:'1.0.0'
 
     /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
     compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
-    starter group: 'com.dotcms', name: 'starter', version: '20170214', ext: 'zip'
+    starter group: 'com.dotcms', name: 'starter', version: '20170320', ext: 'zip'
     coreWeb group: 'com.dotcms', name: 'core-web', version: '4.0.0-SNAPSHOT', ext: 'zip', changing: true
 
+    providedCompile "javax.servlet:javax.servlet-api:3.1.0"
     providedCompile fileTree("../libs/buildlibs").include('**/*.jar')
     providedCompile fileTree("../libs/buildlibs").include('jtds-*.jar', 'mail.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'sqljdbc*.jar')
 
@@ -158,7 +159,7 @@ compileJava {
 }
 
 jar{
-	exclude 'com/dotcms/enterprise/**'
+    exclude 'com/dotcms/enterprise/**'
 
     if (gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
         from project.sourceSets.main.output + project.sourceSets.test.output + project.sourceSets.integrationTest.output + project.sourceSets.functionalTest.output
@@ -166,8 +167,8 @@ jar{
 }
 
 task copyTestRuntimeLibs(type: Copy) {
-	into "build/libs/test"
-	from configurations.testCompile - configurations.compile
+    into "build/libs/test"
+    from configurations.testCompile - configurations.compile
 }
 
 // Expand the release properties.
@@ -197,7 +198,7 @@ war {
 
     from (configurations.compile) {
         into felixFolder
-        include '**/dot.org.apache.felix.http.bundle*.jar'
+        include '**/org.apache.felix.http.bundle*.jar'
     }
 
     from (configurations.starter) {
@@ -213,11 +214,11 @@ war.finalizedBy 'undeployPlugins'
 
 integrationTest{
     doFirst
-    {
-        if (project.hasProperty('databaseType')){
-            systemProperty "databaseType", "$databaseType"
-        }
-    }
+            {
+                if (project.hasProperty('databaseType')){
+                    systemProperty "databaseType", "$databaseType"
+                }
+            }
 }
 
 // Delete ROOT under tomcat8/webapps
@@ -485,14 +486,14 @@ task deployPlugins(dependsOn: ['buildPlugins']) << {
     }
 
     ant.taskdef(
-        name: 'pluginDeployTask', 
-        classname: 'com.dotmarketing.plugin.ant.DeployTask', 
-        classpath: configurations.compile.asPath)
+            name: 'pluginDeployTask',
+            classname: 'com.dotmarketing.plugin.ant.DeployTask',
+            classpath: configurations.compile.asPath)
 
     ant.pluginDeployTask(
-        distributionPath: '../', 
-        dotcmsHome: "$webAppFolder",
-        plugins: "$webAppFolder/WEB-INF/lib")
+            distributionPath: '../',
+            dotcmsHome: "$webAppFolder",
+            plugins: "$webAppFolder/WEB-INF/lib")
 }
 deployPlugins.group='dotCMS Development'
 deployPlugins.description='Builds and deploys all the plugins under /plugins folder.'
@@ -511,13 +512,13 @@ task undeployPlugins << {
 
 
     ant.taskdef(
-        name: 'pluginUndeployTask', 
-        classname: 'com.dotmarketing.plugin.ant.UndeployTask', 
-        classpath: configurations.compile.asPath)
+            name: 'pluginUndeployTask',
+            classname: 'com.dotmarketing.plugin.ant.UndeployTask',
+            classpath: configurations.compile.asPath)
     ant.pluginUndeployTask(
-        distributionPath: '../', 
-        dotcmsHome: "$webAppFolder",
-        plugins: "$webAppFolder/WEB-INF/lib")
+            distributionPath: '../',
+            dotcmsHome: "$webAppFolder",
+            plugins: "$webAppFolder/WEB-INF/lib")
 
     delete fileTree("$webAppFolder/WEB-INF/lib") {
         include '**/plugin-*.jar'
@@ -691,6 +692,11 @@ class DeployWarTomcatTask extends DefaultTask{
             from project.zipTree(zipFile)
             into tomcatPath + project.webAppRootFolder
         }
+
+        if (project.gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
+            project.replaceText("$tomcatPath$project.webAppRootFolder/WEB-INF/web.xml", "<!-- TEST FRAMEWORK SERVLETS", "<!-- TEST FRAMEWORK SERVLETS -->")
+            project.replaceText("$tomcatPath$project.webAppRootFolder/WEB-INF/web.xml", "END OF TEST FRAMEWORK SERVLETS -->", "<!-- END OF TEST FRAMEWORK SERVLETS -->")
+        }
     }
 
     // Copying libs/buildlibs under tomcat8/lib.
@@ -708,4 +714,3 @@ class DeployWarTomcatTask extends DefaultTask{
 
     }
 }
-

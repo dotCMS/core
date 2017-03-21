@@ -93,7 +93,8 @@ public class Http {
 
 	public static String encodeURL(String url) {
 		try {
-			return URLEncoder.encode(url, SystemProperties.get(FILE_ENCODING));
+			return (null == url)?StringPool.BLANK:
+					URLEncoder.encode(url, SystemProperties.get(FILE_ENCODING));
 		}
 		catch (UnsupportedEncodingException uee) {
 			Logger.error(Http.class,uee.getMessage(),uee);

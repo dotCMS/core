@@ -149,9 +149,9 @@ function showSettings() {
 	var dialog = new dijit.Dialog({
 		id: 'settingsDialog',
         title: "<%= LanguageUtil.get(pageContext, "TIMEMACHINE-SETTINGS")%>",
-        style: "width: 600px;height: 600px;",
+        style: "width: 600px;height: auto;",
         content: new dojox.layout.ContentPane({
-        	style: "height:550px; width: 580px;",
+        	style: "height:auto; width: 580px;",
             href: "/html/portlet/ext/timemachine/settings.jsp?random="+r
         }),
         onHide: function() {

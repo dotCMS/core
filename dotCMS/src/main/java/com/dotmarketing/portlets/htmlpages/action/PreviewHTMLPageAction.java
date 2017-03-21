@@ -17,7 +17,6 @@ import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.Logger;
@@ -46,7 +45,7 @@ public class PreviewHTMLPageAction extends DotPortletAction {
 			// get the user
 			User user = com.liferay.portal.util.PortalUtil.getUser(req);
 			
-			IHTMLPage webAsset;
+			IHTMLPage webAsset = null;
 			String inode=req.getParameter("inode");
             Identifier ident;
             try {
@@ -73,9 +72,7 @@ public class PreviewHTMLPageAction extends DotPortletAction {
                 webAsset =(IHTMLPage) contentlet;
                 
             }
-            else {
-                webAsset = (HTMLPage) APILocator.getVersionableAPI().findWorkingVersion(ident, user, false);
-            }
+            
             
             if(!APILocator.getPermissionAPI().doesUserHavePermission(webAsset, PermissionAPI.PERMISSION_READ, user)) {
                 throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);

@@ -12,7 +12,7 @@ public class RuleEngineException extends RuntimeException {
     }
 
     public RuleEngineException(Throwable cause, String message, String... messageArgs) {
-        super(String.format(message == null  ? "" : message, (String[])messageArgs), cause);
+        super(String.format(message == null  ? "" : message, (Object[])messageArgs), cause);
     }
 
 

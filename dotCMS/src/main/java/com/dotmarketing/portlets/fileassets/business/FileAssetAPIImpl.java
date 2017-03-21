@@ -16,7 +16,6 @@ import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
@@ -555,7 +554,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
     @Override
     public File getContentMetadataFile(String inode) {
-        return new File(APILocator.getFileAPI().getRealAssetsRootPath()+File.separator+
+        return new File(getRealAssetsRootPath()+File.separator+
                 inode.charAt(0)+File.separator+inode.charAt(1)+File.separator+inode+File.separator+
                 "metaData"+File.separator+"content");
     }
@@ -656,7 +655,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
         // http://jira.dotmarketing.net/browse/DOTCMS-5911
         final String inode = fileAsset.getInode();
         if (UtilMethods.isSet(inode)) {
-            final String realAssetPath = APILocator.getFileAPI().getRealAssetPath();
+            final String realAssetPath = getRealAssetsRootPath();
             java.io.File tumbnailDir = new java.io.File(realAssetPath + java.io.File.separator
                     + "dotGenerated" + java.io.File.separator + inode.charAt(0)
                     + java.io.File.separator + inode.charAt(1));
@@ -683,4 +682,37 @@ public class FileAssetAPIImpl implements FileAssetAPI {
             }
         }
     }
+
+	public String getMimeType(String filename) {
+		if (filename != null) {
+			filename = filename.toLowerCase();
+		}
+
+		String mimeType;
+
+		try {
+			mimeType = Config.CONTEXT.getMimeType(filename);
+			if(!UtilMethods.isSet(mimeType))
+				mimeType = FileAsset.UNKNOWN_MIME_TYPE;
+		}
+		catch(Exception ex) {
+			mimeType = FileAsset.UNKNOWN_MIME_TYPE;
+			Logger.warn(this,"Error looking for mimetype on file: "+filename,ex);
+		}
+
+		return mimeType;
+	}
+
+	public String getRealAssetPathTmpBinary() {
+		String assetpath=getRealAssetsRootPath();
+		java.io.File adir=new java.io.File(assetpath);
+		if(!adir.isDirectory())
+			adir.mkdir();
+		String path=assetpath+java.io.File.separator+"tmp_upload";
+		java.io.File dir=new java.io.File(path);
+		if(!dir.isDirectory())
+			dir.mkdir();
+		return path;
+	}
+
 }

@@ -14,7 +14,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.repackage.org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleContext;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.osgi.GenericBundleActivator;

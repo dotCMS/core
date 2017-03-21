@@ -8,11 +8,9 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.factories.TemplateFactory;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -26,9 +24,7 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
@@ -227,24 +223,9 @@ public class TemplateAjax {
 					toReturn.put("identifier", imageContentlet.getIdentifier());
 					toReturn.put("extension", com.dotmarketing.util.UtilMethods.getFileExtension(imageContentlet.getTitle()));
 				}
-			} else {
-				File imgFile = TemplateFactory.getImageFile(template);
-				if(imgFile!=null){
-					toReturn.put("inode", imgFile.getInode());
-					toReturn.put("name", imgFile.getFileName());
-					toReturn.put("identifier", imgFile.getIdentifier());
-					toReturn.put("extension", com.dotmarketing.util.UtilMethods.getFileExtension(imgFile.getFileName()));
-				}
 			}
 		}
 		return toReturn;
-	}
-
-	public String checkDependencies(String templateInode) throws DotDataException, DotRuntimeException, DotSecurityException, PortalException, SystemException{
-		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-		User user = userWebAPI.getLoggedInUser(req);
-		boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(req);
-		return templateAPI.checkDependencies(templateInode, user, respectFrontendRoles);
 	}
 
     /**
@@ -283,21 +264,5 @@ public class TemplateAjax {
 
         return duplicatedTitle;
     }
-    
-    public String deleteDependentNonWorkingVersions(String templateInode) throws DotDataException, DotRuntimeException, DotSecurityException, PortalException, SystemException{
-		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-		User user = userWebAPI.getLoggedInUser(req);
-		boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(req);
-		Template template = templateAPI.find(templateInode, user, respectFrontendRoles);
-		List<HTMLPage> pages= templateAPI.getPagesUsingTemplate(template, user, respectFrontendRoles);
-		for(HTMLPage page : pages) {
-			try{
-				WebAssetFactory.deleteAssetVersion(page);
-			}catch(Exception e){
-				e.printStackTrace();
-			}
-		}
-		return LanguageUtil.get(user, "Success");
-	}
 
 }

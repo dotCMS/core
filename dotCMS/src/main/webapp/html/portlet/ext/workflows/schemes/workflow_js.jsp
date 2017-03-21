@@ -87,7 +87,7 @@ dojo.declare("dotcms.dijit.workflows.MainAdmin", null, {
 		var r = Math.floor(Math.random() * 1000000000);
 		hashValue = hashValue + "&rand=" + r;
 		myCp.attr("href", hashValue);
-		myCp.refresh();
+		// myCp.refresh();
 		dojo.parser.parse("hangWorkflowMainHere");
 
 
@@ -221,15 +221,22 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 		dia = new dijit.Dialog({
 			id			:	this.addEditDiv,
 			title		: 	"<%=LanguageUtil.get(pageContext, "Edit-Scheme")%>",
-			});
+			draggable	:	false
+		});
 
 
+		myCp.attr("href", href);
 
 		myCp.placeAt("wfEditSchemeDia");
 
 		dia.show();
-		myCp.attr("href", href);
 
+		setTimeout(function() {
+			dia.domNode.style.top = "50%"
+			dia.domNode.style.marginTop = '-' + (parseInt(dia.domNode.offsetHeight / 2, 10) + 'px');
+			dia.domNode.style.left = "50%"
+			dia.domNode.style.marginLeft = '-' + (parseInt(dia.domNode.offsetWidth / 2, 10) + 'px');
+		}, 100)
 	},
 
 	hideAddEdit : function() {
@@ -279,7 +286,8 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 
 	toggleInitialAction : function(){
 		if( dijit.byId("schemeMandatory").getValue() ){
-			dojo.style('forceInitialAction', 'display', '');
+			dojo.style('forceInitialAction', 'display', 'flex');
+			dojo.query("#addEditSchemeForm").style("height","auto");
 		}
 		else{
 			dojo.style('forceInitialAction', 'display', 'none');
@@ -401,8 +409,8 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 		dia = new dijit.Dialog({
 			id			:	"stepEditDia",
 			title		: 	"<%=LanguageUtil.get(pageContext, "Edit-Step")%>",
-			style: "height : 280px"
-			});
+			draggable	:	false
+		});
 
 		var myCp = dijit.byId("stepEditCp");
 		if (myCp) {
@@ -416,7 +424,15 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 
 		myCp.placeAt("stepEditDia");
 
+
 		dia.show();
+		setTimeout(function() {
+			dia.domNode.style.top = "50%"
+			dia.domNode.style.marginTop = '-' + (parseInt(dia.domNode.offsetHeight / 2, 10) + 'px');
+			dia.domNode.style.left = "50%"
+			dia.domNode.style.marginLeft = '-' + (parseInt(dia.domNode.offsetWidth / 2, 10) + 'px');
+		}, 100)
+
 		myCp.attr("href","/html/portlet/ext/workflows/schemes/edit_step.jsp?stepId=" + stepId);
 		setTimeout(function() {
 		    showExpirationTime();
@@ -470,13 +486,14 @@ function edit_step_toggleEscalation() {
     if(dijit.byId("enableEscalation").checked) {
         var newHeight=dialogHeight+120;
         dojo.style(dojo.byId("stepEditDia"),'height',newHeight+"px");
-        dojo.query("#stepEditDia .escalation-row").style("display","table-row")
+        dojo.query("#stepEditDia .escalation-row").style("display","flex");
+		dojo.style(dojo.byId("addEditStepForm"),{'height':'auto','width':'340px'});
     }
     else {
         var newHeight=dialogHeight-120;
         dojo.style(dojo.byId("stepEditDia"),'height',newHeight+"px");
         dojo.query("#stepEditDia .escalation-row").style("display","none")
-
+		dojo.style(dojo.byId("addEditStepForm"),'width','auto');
     }
 }
 

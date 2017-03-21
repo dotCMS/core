@@ -1,3 +1,11 @@
+#if($UtilMethods.isSet($request.getParameter("previewDevice")))
+	#set($_previewDevice = $dotcontent.find($request.getParameter("previewDevice")))
+#elseif($UtilMethods.isSet($request.getAttribute("previewAsDeviceId")))
+	#set($_previewDevice = $dotcontent.find($session.getAttribute("previewAsDeviceId")))
+#elseif($UtilMethods.isSet($session.getAttribute("previewAsDeviceId")))
+	#set($_previewDevice = $dotcontent.find($session.getAttribute("previewAsDeviceId")))
+#end
+
 #if($request.getAttribute('archive'))
     #set($archive = $request.getAttribute('archive'))
 #end
@@ -25,6 +33,7 @@
 #set($iCanLock = $contents.canLock($dotPageContent.inode))
 #set($mandatory = $wfScheme.mandatory)
 			
+#set($previewDevices = $dotcontent.pull("+contentType:previewDevice", 500, "previewDevice.name"))
 
 
 <html>
@@ -48,7 +57,7 @@
         padding:0;
         font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
         font-size: 13px;
-        background: #fff;
+        background: #FBFAFB;
     }
 
 	div.maxmin{position:absolute;top:10px;right: 8px;width:24px;bottom:0px;height:24px;background: #0E80CB;border: 1px solid #aaa;border-radius: 100%;text-align: center;}
@@ -64,14 +73,14 @@
 
     .disabled{display:block;line-height:18px;padding:3px;color:#aaa;text-decoration:none;}
 
-    .viewOptions {background: #FBFAFB; padding: 15px 20px 15px 8px; border-top: solid 1px #C5C5C5; border-bottom: solid 1px #C5C5C5;}
+    .viewOptions {background: ; padding: 15px 20px 15px 8px; border-top: solid 1px #C5C5C5; border-bottom: solid 1px #C5C5C5;}
 
     .lang{margin: 0 0 15px 0; }
 
     .personaWrapper {}
     .personaWrapper .dijitComboBox, .lang .dijitComboBox {width: 100%;}
     .personaImageDiv {margin-top: 8px; text-align: center;}
-    .personaImage {border-radius: 16px; border: 1px solid #5C5C5; width: 85px; height: 85px; background-color: #fff;background-position: center center; background-repeat: no-repeat; background-size: contain;}
+    .personaImage {border-radius: 50%; border: 1px solid #5C5C5; width: 85px; height: 85px; background-color: #fff;background-position: center center; background-repeat: no-repeat; background-size: contain;}
     label {text-transform: uppercase; margin-bottom: 8px;color: #636163; font-size: 11px; display:block;}
 
 </style>
@@ -159,7 +168,7 @@
     
 
     var _lastUrl;
-
+    var _previewDevice="$!myDevice";
     //changeUrl Function updates the mainFrame iframe depending on the selected view and session-related attributes
     function changeUrl(){
     	
@@ -178,7 +187,11 @@
     	else if(state=="preview"){
     		newUrl+="&previewPage=2"
     	}
-
+        
+    	if(_previewDevice != undefined && _previewDevice.length > 0){
+    		newUrl+="&previewDevice=" + _previewDevice;
+    	}
+    	
         //Since it's a page as content, we add LanguageId, HostId AND PersonaId to the Query String
         newUrl+="&com.dotmarketing.htmlpage.language="+language ;
         newUrl+="&host_id=${host.identifier}";
@@ -198,18 +211,13 @@
     	if(_lastUrl!=newUrl){
 	    	_lastUrl=newUrl;
 	    	
-			var win = this.window;
-			
-			do {
-				listFrames(win);
-				win=win.parent;
-
-			}
-			while (win.frameMain == undefined && win.menuFrame==frameMenu && win != window.top);
+			var win = window.top.document.getElementById('detailFrame').contentDocument.getElementById("frameMain").contentWindow !=null 
+				? window.top.document.getElementById('detailFrame').contentDocument.getElementById("frameMain").contentWindow
+					: window.top.document.getElementById('detailFrame').contentDocument.getElementById("frameMain");
 	    	
 			console.log("name3:" + win.name);
 
-   			win.frameMain.location  = newUrl;
+   			win.location  = newUrl;
    	 	}
     }
     
@@ -508,7 +516,14 @@
     	}
     }
 
-    
+	function changePreviewDevice(){
+		if(dijit.byId("previewDeviceSelector")==undefined){
+			return;
+		}
+		_previewDevice=dijit.byId("previewDeviceSelector").getValue();
+
+		changeUrl();
+	}
     
     
     dojo.ready(function(){
@@ -687,9 +702,28 @@
         				src="/html/images/shim.gif" 
         			#end 
         			class="personaImage" /> 
+        			
+        			
+        			
         		</div>		
+   
+        	
+        	#if($previewDevices && $previewDevices.size() > 0)
+	        	<div style="border-top:0px;padding:10px 0px 10px 0px;text-align:center;">
+				on a(n):
+				</div>
+				
+				<select name="previewDeviceSelector" id="previewDeviceSelector" dojoType="dijit.form.FilteringSelect" onchange="changePreviewDevice">
+					<option value="0">$languagewebapi.getFromUserLanguage("Desktop")</option>
+					#foreach($device in $previewDevices)
+						<option value="$device.identifier" #if($device.identifier =="$_previewDevice.identifier" ) selected #end  >$device.name</option>
+					#end
+				</select>
+        	#end
         	</div>
         #end
+
+
 
     </div>
 

@@ -5,16 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.Tree;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.beans.*;
+import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -32,16 +24,17 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 public class ContainerFactoryImpl implements ContainerFactory {
+	static IdentifierCache identifierCache = CacheLocator.getIdentifierCache();
 	static ContainerCache containerCache = CacheLocator.getContainerCache();
 
 	public void save(Container container) throws DotDataException {
 		HibernateUtil.save(container);
-		containerCache.add(container.getIdentifier(), container);
+		containerCache.remove(container.getInode());
 	}
 
 	public void save(Container container, String existingId) throws DotDataException {
 		HibernateUtil.saveWithPrimaryKey(container, existingId);
-		containerCache.add(container.getIdentifier(), container);
+		containerCache.remove(container.getInode());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -63,7 +56,31 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		hu.setSQLQuery(sql);
 		return hu.list();
 	}
+    @Override
+    @SuppressWarnings("unchecked")
+    public Container find(String inode) throws DotDataException, DotSecurityException {
+      Container container = CacheLocator.getContainerCache().get(inode);
+      //If it is not in cache.
+      if(container == null){
+          
+          //Get container from DB.
+          HibernateUtil dh = new HibernateUtil(Container.class);
+          
+          Container containerAux= (Container) dh.load(inode);
 
+          if(InodeUtils.isSet(containerAux.getInode())){
+              //container is the one we are going to return.
+              container = containerAux;
+              //Add to cache.
+              CacheLocator.getContainerCache().add(container);
+          }
+          
+      }
+      
+      return container;
+      
+      
+    }
 	public List<Container> findContainers(User user, boolean includeArchived,
 			Map<String, Object> params, String hostId,String inode, String identifier, String parent,
 			int offset, int limit, String orderBy) throws DotSecurityException,
@@ -249,7 +266,17 @@ public class ContainerFactoryImpl implements ContainerFactory {
          
            for(HashMap<String, String> ident:containers){
                String identifier = ident.get("identifier");
-               CacheLocator.getContainerCache().remove(identifier);
+               if (UtilMethods.isSet(identifier)) {
+
+				   final VersionInfo info =
+						   this.identifierCache.getVersionInfo(identifier);
+				   if (null != info && UtilMethods.isSet(info.getLiveInode())) {
+
+					   CacheLocator.getContainerCache().remove(info.getLiveInode());
+				   }
+
+				   CacheLocator.getContainerCache().remove(identifier);
+			   }
            }
         } catch (DotDataException e) {
             Logger.error(ContainerFactory.class,e.getMessage(),e);

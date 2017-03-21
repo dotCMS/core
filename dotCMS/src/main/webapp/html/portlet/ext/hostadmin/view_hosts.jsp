@@ -108,7 +108,7 @@
 </div>
 
 <!-- Add Host Dialog -->
-<div id="addHostDialog" dojoType="dijit.Dialog">
+<div id="addHostDialog" dojoType="dijit.Dialog" class="noDijitDialogTitleBar">
     <form id="addHostDialogForm" dojoType="dijit.form.Form">
     	
     	<!-- Dialog step 1 -->
@@ -216,33 +216,26 @@
 						</div>
 						<div class="yui-g" style="margin-bottom: 16px;">
 						    <div class="yui-u first" style="text-align: left">
-								&nbsp;&nbsp;&nbsp;&nbsp;
-						        <input type="checkbox" id="copyFiles" disabled="true" checked="checked" dojoType="dijit.form.CheckBox">
-								<label for="copyFiles">
-			    					<%= LanguageUtil.get(pageContext, "Files") %>
-								</label>
-						    </div>
-						    <div class="yui-u" style="text-align: left">
 						        <input type="checkbox" id="copyVirtualLinks" disabled="true" checked="checked" dojoType="dijit.form.CheckBox">
 								<label for="copyVirtualLinks">
 			    					<%= LanguageUtil.get(pageContext, "Virtual-Links") %>
 								</label>
 						    </div>
+							<div class="yui-u" style="text-align: left">
+								<input type="checkbox" id="copyLinks" disabled="true" checked="checked" dojoType="dijit.form.CheckBox">
+								<label for="copyLinks">
+									<%= LanguageUtil.get(pageContext, "Menu-Links") %>
+								</label>
+							</div>
 						</div>
 						<div class="yui-g" style="margin-bottom: 16px;">
 						    <div class="yui-u first" style="text-align: left">
-								&nbsp;&nbsp;&nbsp;&nbsp;
-						        <input type="checkbox" id="copyPages" disabled="true" checked="checked" dojoType="dijit.form.CheckBox">
-								<label for="copyPages">
-			    					<%= LanguageUtil.get(pageContext, "Pages") %>
-								</label>
-						    </div>
-						    <div class="yui-u" style="text-align: left">
-						        <input type="checkbox" id="copyHostVariables" disabled="true" checked="checked" dojoType="dijit.form.CheckBox">
+								<input type="checkbox" id="copyHostVariables" disabled="true" checked="checked" dojoType="dijit.form.CheckBox">
 								<label for="copyHostVariables">
-			    					<%= LanguageUtil.get(pageContext, "Host-Variables") %>
+									<%= LanguageUtil.get(pageContext, "Host-Variables") %>
 								</label>
 						    </div>
+						    <div class="yui-u" style="text-align: left"></div>
 						</div>
 					</div>
          		</td>

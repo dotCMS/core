@@ -176,32 +176,32 @@ public class FileUtil {
 
         if (hardLinks) {
 
-			// I think we need to be sure to unlink first
-			if (destination.exists()) {
-				Path destinationPath = Paths.get(destination.getAbsolutePath());
-				//"If the file is a symbolic link then the symbolic link itself, not the final target of the link, is deleted."
-				Files.delete(destinationPath);
-			}
+            // I think we need to be sure to unlink first
+            if (destination.exists()) {
+                Path destinationPath = Paths.get(destination.getAbsolutePath());
+                //"If the file is a symbolic link then the symbolic link itself, not the final target of the link, is deleted."
+                Files.delete(destinationPath);
+            }
 
-			Path newLink = Paths.get(destination.getAbsolutePath());
-			Path existingFile = Paths.get(source.getAbsolutePath());
+            Path newLink = Paths.get(destination.getAbsolutePath());
+            Path existingFile = Paths.get(source.getAbsolutePath());
 
-			try {
+            try {
 
-				Files.createLink(newLink, existingFile);
-				// setting this means we will try again if we cannot hard link
-				if (!destination.exists() || destination.length() == 0) {
-					hardLinks = false;
-					Logger.warn(FileUtil.class, "Can't create hardLink. source: " + source.getAbsolutePath()
-						+ ", destination: " + destination.getAbsolutePath());
-				}
-			} catch (IOException e) {
+                Files.createLink(newLink, existingFile);
+                // setting this means we will try again if we cannot hard link
+                if (!destination.exists() || destination.length() == 0) {
+                    hardLinks = false;
+                    Logger.warn(FileUtil.class, "Can't create hardLink. source: " + source.getAbsolutePath()
+                            + ", destination: " + destination.getAbsolutePath());
+                }
+            } catch (IOException e) {
 
-				hardLinks = false; // setting to false will execute the fallback
-				Logger.debug(FileUtil.class,
-						"Could not created the hard link, will try copy for source: " + source +
-								", destination: " + destination + ". Error message: " + e.getMessage());
-			}
+                hardLinks = false; // setting to false will execute the fallback
+                Logger.debug(FileUtil.class,
+                        "Could not created the hard link, will try copy for source: " + source +
+                        ", destination: " + destination + ". Error message: " + e.getMessage());
+            }
         }
 
         if (!hardLinks) {
@@ -519,8 +519,8 @@ public class FileUtil {
                     //If both files are the same but the destination is a soft link do nothing...., we don't want to remove the original file
                     if ( source.toPath().toRealPath().equals(destination.toPath().toRealPath())
                             || Files.isSymbolicLink(destination.toPath()) ) {
-                        return true;
-                    }
+					return true;
+				}
 
 					return source.delete();
 				}

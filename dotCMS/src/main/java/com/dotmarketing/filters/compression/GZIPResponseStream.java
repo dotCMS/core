@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.zip.GZIPOutputStream;
 
 import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotmarketing.util.Logger;
@@ -23,6 +24,14 @@ public class GZIPResponseStream extends ServletOutputStream {
     this.output = response.getOutputStream();
     baos = new ByteArrayOutputStream();
     gzipstream = new GZIPOutputStream(baos);
+  }
+
+  public boolean isReady() {
+    return false;
+  }
+
+  public void setWriteListener(WriteListener writeListener) {
+
   }
 
   public void close() throws IOException {
@@ -75,5 +84,7 @@ public class GZIPResponseStream extends ServletOutputStream {
   
   public void reset() {
   }
+
+
 
 }

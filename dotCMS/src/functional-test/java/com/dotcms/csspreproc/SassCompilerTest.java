@@ -39,7 +39,7 @@ public class SassCompilerTest {
     	User systemUser = APILocator.getUserAPI().getSystemUser();
     	
         final String runId =  UUIDGenerator.generateUuid() ;
-        final File tmpDir = new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + 
+        final File tmpDir = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() +
                 File.separator + runId + File.separator + "sass01"); 
         tmpDir.mkdirs();
         
@@ -159,23 +159,23 @@ public class SassCompilerTest {
         Folder ff=APILocator.getFolderAPI().createFolders("/sass", host, user, false);
         
 
-        File file1=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "_file1.scss"); 
+        File file1=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "_file1.scss");
         FileUtils.writeStringToFile(file1, "$file1: 2;");
         Contentlet fileAsset1=newFile(file1, ff, host);
         
-        File file2=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "_file2.scss");
+        File file2=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "_file2.scss");
         FileUtils.writeStringToFile(file2, "$file2: 4;");
         Contentlet fileAsset2=newFile(file2, f1, defaultHost);
         
-        File file3=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "_file3.scss");
+        File file3=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "_file3.scss");
         FileUtils.writeStringToFile(file3, "$file3: 8;");
         Contentlet fileAsset3=newFile(file3, f4, defaultHost);
         
-        File file4=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "_file4.scss");
+        File file4=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "_file4.scss");
         FileUtils.writeStringToFile(file4, "$file4: 16;");
         Contentlet fileAsset4=newFile(file4, f3, defaultHost);
         
-        File file5=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "file5.scss");
+        File file5=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "file5.scss");
         FileUtils.writeStringToFile(file5, "@import \"//"+host.getHostname()+"/sass/file1\"; \r\n"+
                                            "@import \"/"+runId+"/a/file2\"; \r\n"+
                                            "@import \"../file3\"; \r\n"+
@@ -201,15 +201,15 @@ public class SassCompilerTest {
         Folder fabc=APILocator.getFolderAPI().createFolders("/"+runId+"/a/b/c", defaultHost, user, false);
         Folder fab=APILocator.getFolderAPI().findFolderByPath("/"+runId+"/a/b", defaultHost, user, false);
         
-        File file1=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "_fa.scss"); 
+        File file1=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "_fa.scss");
         FileUtils.writeStringToFile(file1, ".a { color:green; } ");
         Contentlet fileAsset1=newFile(file1, fa, defaultHost);
         
-        File file2=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "_fab.scss");
+        File file2=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "_fab.scss");
         FileUtils.writeStringToFile(file2, "@import \"../fa\"; .ab { color:black; }");
         Contentlet fileAsset2=newFile(file2, fab, defaultHost);
         
-        File file3=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "fabc.scss");
+        File file3=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "fabc.scss");
         FileUtils.writeStringToFile(file3, "@import \"../fab\"; .abc { color:white; }");
         Contentlet fileAsset3=newFile(file3, fabc, defaultHost);
         

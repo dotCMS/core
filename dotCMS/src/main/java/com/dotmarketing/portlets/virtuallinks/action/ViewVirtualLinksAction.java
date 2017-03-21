@@ -46,7 +46,7 @@ import com.dotmarketing.business.IdentifierFactory;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.virtuallinks.business.VirtualLinkAPI;
 import com.dotmarketing.portlets.virtuallinks.factories.VirtualLinkFactory;
 import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
@@ -154,7 +154,7 @@ public class ViewVirtualLinksAction extends PortletAction {
 					List<VirtualLink> list = new ArrayList<VirtualLink>();
 					Host h = hostAPI.find(hostId, user, false);
 					if (InodeUtils.isSet(req.getParameter("inode"))) {
-						HTMLPage htmlPage = (HTMLPage) InodeFactory.getInode(req.getParameter("inode"),HTMLPage.class);
+						IHTMLPage htmlPage = (IHTMLPage) InodeFactory.getInode(req.getParameter("inode"),IHTMLPage.class);
 						Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
 						listTemp = VirtualLinkFactory.getIncomingVirtualLinks(identifier.getURI());
 					}

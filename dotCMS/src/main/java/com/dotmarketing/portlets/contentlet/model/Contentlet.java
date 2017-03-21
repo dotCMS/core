@@ -568,7 +568,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
                 String inode = (String) map.get(INODE_KEY);
 	        	try{
 	        	
-	        		java.io.File binaryFilefolder = new java.io.File(APILocator.getFileAPI().getRealAssetPath()
+	        		java.io.File binaryFilefolder = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
 	                    + java.io.File.separator
 	                    + inode.charAt(0)
 	                    + java.io.File.separator

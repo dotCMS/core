@@ -48,7 +48,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -773,10 +772,7 @@ public class RoleAjax {
 				int permission = Integer.parseInt(permissions.get("templateLayouts"));
 				permissionsToSave.add(new Permission(TemplateLayout.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
 			}
-			if ( permissions.get("files") != null ) {
-				int permission = Integer.parseInt(permissions.get("files"));
-				permissionsToSave.add(new Permission(File.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
-			}
+
 			if ( permissions.get("links") != null ) {
 				int permission = Integer.parseInt(permissions.get("links"));
 				permissionsToSave.add(new Permission(Link.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));

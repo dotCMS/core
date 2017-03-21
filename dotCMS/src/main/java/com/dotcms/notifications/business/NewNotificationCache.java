@@ -11,123 +11,123 @@ import java.util.List;
  */
 public abstract class NewNotificationCache implements Cachable {
 
-	/**
-	 * Add the Count cache
-	 * @param key
-	 * @param newNotifications
+    /**
+     * Add the Count cache
+     * @param key
+     * @param newNotifications
      * @return Long
      */
-	abstract protected Long addCount(String key, Long newNotifications);
+    abstract protected Long addCount(String key, Long newNotifications);
 
-	/**
-	 * Get the Count cache
-	 * @param key
-	 * @return
+    /**
+     * Get the Count cache
+     * @param key
+     * @return
      */
-	abstract protected Long getCount(String key);
+    abstract protected Long getCount(String key);
 
-	/**
-	 * Get the notification by offset and limit
-	 * @param offset
-	 * @param limit
+    /**
+     * Get the notification by offset and limit
+     * @param offset
+     * @param limit
      * @return List
      */
-	abstract protected List<Notification> getNotifications(long offset, long limit);
+    abstract protected List<Notification> getNotifications(long offset, long limit);
 
-	/**
-	 * Get a single notification
-	 * @param userId
-	 * @param groupId
-	 * @return Notification
+    /**
+     * Get a single notification
+     * @param userId
+     * @param groupId
+     * @return Notification
      */
-	abstract protected Notification getNotification(String userId, String groupId);
-	/**
-	 * Adds a notification by offset and limit.
-	 * @param offset
-	 * @param limit
-	 * @param notifications
+    abstract protected Notification getNotification(String userId, String groupId);
+    /**
+     * Adds a notification by offset and limit.
+     * @param offset
+     * @param limit
+     * @param notifications
      */
-	public abstract void addNotifications(long offset, long limit, List<Notification> notifications);
+    public abstract void addNotifications(long offset, long limit, List<Notification> notifications);
 
-	/**
-	 * Clear all the cache (count and notifications)
-	 */
-	abstract public void clearCache();
-
-	/**
-	 * Remove a cache by using a userId, count and collections.
-	 * @param userId {@link String}
+    /**
+     * Clear all the cache (count and notifications)
      */
-	abstract public void remove(String userId);
+    abstract public void clearCache();
 
-	/**
-	 * Adds a notification
-	 * @param notification Notification
+    /**
+     * Remove a cache by using a userId, count and collections.
+     * @param userId {@link String}
      */
-	protected abstract void addNotification(Notification notification);
+    abstract public void remove(String userId);
 
-	/**
-	 * Remove a single notification
-	 * @param userId
-	 * @param groupId
-	 */
-	protected abstract void removeNotification(String userId, String groupId);
-
-	/**
-	 * Get the all count
-	 * @return Long
+    /**
+     * Adds a notification
+     * @param notification Notification
      */
-	protected abstract Long getAllCount();
+    protected abstract void addNotification(Notification notification);
 
-	/**
-	 * All the count to all notification
-	 * @param count {@link Long}
+    /**
+     * Remove a single notification
+     * @param userId
+     * @param groupId
      */
-	protected abstract void addAllCount(Long count);
+    protected abstract void removeNotification(String userId, String groupId);
 
-	/**
-	 * Get the User Count
-	 * @param userId {@link String}
-	 * @return Long
+    /**
+     * Get the all count
+     * @return Long
      */
-	protected abstract Long getUserCount(String userId);
+    protected abstract Long getAllCount();
 
-	/**
-	 * Adds User count
-	 * @param userId {@link String}
-	 * @param count {@link Long}
+    /**
+     * All the count to all notification
+     * @param count {@link Long}
      */
-	protected abstract void addUserCount(String userId, Long count);
+    protected abstract void addAllCount(Long count);
 
-	/**
-	 * Get all notifications for an user
-	 * @param userId {@link String}
-	 * @return List
+    /**
+     * Get the User Count
+     * @param userId {@link String}
+     * @return Long
      */
-	public abstract List<Notification> getAllNotifications(String userId);
+    protected abstract Long getUserCount(String userId);
 
-	/**
-	 * Add all notification for an user
-	 * @param userId {@link String}
-	 * @param notifications {@link List}
+    /**
+     * Adds User count
+     * @param userId {@link String}
+     * @param count {@link Long}
      */
-	public abstract void addAllNotifications(String userId, List<Notification> notifications);
+    protected abstract void addUserCount(String userId, Long count);
 
-	/**
-	 * Get a segment of user notifications
-	 * @param userId {@link String}
-	 * @param offset {@link Long}
-	 * @param limit {@link Long}
+    /**
+     * Get all notifications for an user
+     * @param userId {@link String}
      * @return List
      */
-	public abstract List<Notification> getNotifications(String userId, long offset, long limit);
+    public abstract List<Notification> getAllNotifications(String userId);
 
-	/**
-	 * Adds a segment of user notifications
-	 * @param userId {@link String}
-	 * @param offset {@link Long}
-	 * @param limit {@link Long}
-	 * @param notifications {@link List}
+    /**
+     * Add all notification for an user
+     * @param userId {@link String}
+     * @param notifications {@link List}
      */
-	public abstract void addNotifications(String userId, long offset, long limit, List<Notification> notifications);
+    public abstract void addAllNotifications(String userId, List<Notification> notifications);
+
+    /**
+     * Get a segment of user notifications
+     * @param userId {@link String}
+     * @param offset {@link Long}
+     * @param limit {@link Long}
+     * @return List
+     */
+    public abstract List<Notification> getNotifications(String userId, long offset, long limit);
+
+    /**
+     * Adds a segment of user notifications
+     * @param userId {@link String}
+     * @param offset {@link Long}
+     * @param limit {@link Long}
+     * @param notifications {@link List}
+     */
+    public abstract void addNotifications(String userId, long offset, long limit, List<Notification> notifications);
 } // E:O:F:NewNotificationCache.

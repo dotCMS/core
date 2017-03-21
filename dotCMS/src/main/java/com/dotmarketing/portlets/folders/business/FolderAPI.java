@@ -16,9 +16,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
@@ -199,51 +197,6 @@ import com.liferay.portal.model.User;
 	 */
 	public abstract void delete(Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
 
-	/**
-	 * Gets a list of 'working' HTMLPages under given folder
-	 *
-	 * @param parent
-	 * @param user
-	 * @param respectFrontEndPermissions
-	 * @return
-	 * @throws DotStateException
-	 * @throws DotDataException
-	 */
-	public abstract List<HTMLPage> getHTMLPages(Folder parent, User user, boolean respectFrontEndPermissions) throws DotStateException,
-			DotDataException, DotSecurityException;
-
-    /**
-	 * Gets a list of 'working' HTMLPages under a given host
-	 *
-	 * @param host
-	 * @param user
-	 * @param respectFrontEndPermissions
-	 * @return
-	 * @throws DotStateException
-	 * @throws DotDataException
-	 */
-	public abstract List<HTMLPage> getHTMLPages(Host host, User user, boolean respectFrontEndPermissions) throws DotStateException,
-			DotDataException, DotSecurityException;
-
-	public  List<HTMLPage> getHTMLPages(Folder parent, boolean working, boolean deleted, User user, boolean respectFrontEndPermissions) throws DotStateException,
-            DotDataException, DotSecurityException;
-
-    /**
-     * Gets a list of HTMLPages under a given host
-     *
-     * @param host
-     * @param working
-     * @param deleted
-     * @param user
-     * @param respectFrontEndPermissions
-     * @return
-     * @throws DotStateException
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    public List<HTMLPage> getHTMLPages ( Host host, boolean working, boolean deleted, User user, boolean respectFrontEndPermissions ) throws DotStateException,
-            DotDataException, DotSecurityException;
-
 
     /**
      * Gets a list of 'working' Links under given folder
@@ -276,34 +229,6 @@ import com.liferay.portal.model.User;
 
     public List<Link> getLinks ( Host host, boolean working, boolean deleted, User user, boolean respectFrontEndPermissions ) throws DotStateException,
             DotDataException, DotSecurityException;
-
-
-	/**
-	 * Gets a list of  'working' File under given folder
-	 *
-	 * @param parent
-	 * @param user
-	 * @param respectFrontEndPermissions
-	 * @return
-	 * @throws DotStateException
-	 * @throws DotDataException
-	 */
-	public abstract List<File> getFiles(Folder parent, User user, boolean respectFrontEndPermissions) throws DotStateException,
-			DotDataException, DotSecurityException;
-
-	/**
-	 * Gets a list of  'working' File under given folder
-	 *
-	 * @param parent
-	 * @param user
-	 * @param respectFrontEndPermissions
-	 * @param condition
-	 * @return
-	 * @throws DotStateException
-	 * @throws DotDataException
-	 */
-	public abstract List<File> getFiles(Folder parent, User user, boolean respectFrontEndPermissions, ChildrenCondition cond) throws DotStateException,
-			DotDataException, DotSecurityException;
 
 
 	/**
@@ -553,29 +478,7 @@ import com.liferay.portal.model.User;
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public abstract List<HTMLPage> getWorkingHTMLPages(Folder parent,User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
-
-	/**
-	 *
-	 * @param parent
-	 * @param user
-	 * @param respectFrontEndPermissions
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
 	public abstract List<Link> getWorkingLinks(Folder parent,User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
-
-	/**
-	 *
-	 * @param parent
-	 * @param user
-	 * @param respectFrontEndPermissions
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	public abstract List<File> getWorkingFiles(Folder parent,User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
 
 	/**
 	 *
@@ -597,62 +500,7 @@ import com.liferay.portal.model.User;
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public abstract List<HTMLPage> getLiveHTMLPages(Folder parent,User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
-
-    /**
-     * Returns the a list of live HTML pages living directly under a given host
-     *
-     * @param host
-     * @param user
-     * @param respectFrontEndPermissions
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    public abstract List<HTMLPage> getLiveHTMLPages ( Host host, User user, boolean respectFrontEndPermissions ) throws DotDataException, DotSecurityException;
-
-	/**
-	 *
-	 * @param parent
-	 * @param user
-	 * @param respectFrontEndPermissions
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
 	public abstract List<Link> getLiveLinks(Folder parent,User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
-
-	/**
-	 *
-	 * @param parent
-	 * @param user
-	 * @param respectFrontEndPermissions
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	public abstract List<File> getLiveFiles(Folder parent,User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
-	/**
-	 * returns child files sorted by title
-	 * @param parent
-	 * @param user
-	 * @param respectFrontEndPermissions
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	public abstract List<File> getLiveFilesSortTitle(Folder parent,User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
-	/**
-	 * returns child files sorted by title
-	 * @param parent
-	 * @param user
-	 * @param respectFrontEndPermissions
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	public abstract List<File> getLiveFilesSortOrder(Folder parent,User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
-
 
 	/**
 	 *

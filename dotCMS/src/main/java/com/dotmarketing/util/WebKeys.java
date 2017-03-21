@@ -412,7 +412,6 @@ public final class WebKeys {
 
 	// CMS USER LOGIN
     public static final String CMS_USER = "cms.user";
-    public static final String CMS_USER_ID_COOKIE = "cms.user.cookie";
     public static final String CMS_PERSONALIZATION_BEAN = "cms.user.personalization";
     public static final String CMS_USER_REGISTRATIONS = "cms.user.registrations";
     public static final String CMS_CURRENT_PAGE = "cms.current.page";
@@ -691,6 +690,7 @@ public final class WebKeys {
 	public static final String DOTCMS_WEBSOCKET_BASEURL = "dotcms.websocket.baseurl";
 	public static final String DOTCMS_WEBSOCKET_ENDPOINTS = "dotcms.websocket.endpoints";
     public static final String DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT = "dotcms.websocket.reconnect.time";
+    public static final String DOTCMS_DISABLE_WEBSOCKET_PROTOCOL = "dotcms.websocket.disable";
 
 	// System Events
 	public static final String WEBSOCKET_SYSTEMEVENTS_ENDPOINT = "websocket.systemevents.endpoint";

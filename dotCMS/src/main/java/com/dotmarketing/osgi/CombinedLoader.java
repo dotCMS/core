@@ -1,6 +1,7 @@
 package com.dotmarketing.osgi;
 
-import com.dotcms.repackage.org.apache.felix.framework.BundleWiringImpl;
+import org.apache.felix.framework.BundleWiringImpl;
+import org.osgi.framework.Bundle;
 
 import java.io.IOException;
 import java.net.URL;
@@ -26,7 +27,8 @@ public class CombinedLoader extends ClassLoader {
 
                 //If we already have a class loader of this bundle lets remove it an replace it with the new one it have
                 BundleWiringImpl.BundleClassLoader bundleClassLoader = (BundleWiringImpl.BundleClassLoader) loader;
-                removeByBundleName( bundleClassLoader.getBundle().getSymbolicName() );
+                final Bundle bundle = bundleClassLoader.getBundle();
+                removeByBundleName( bundle.getSymbolicName() );
             }
 
             loaders.add( loader );
@@ -42,7 +44,8 @@ public class CombinedLoader extends ClassLoader {
             if ( loader instanceof BundleWiringImpl.BundleClassLoader ) {
 
                 BundleWiringImpl.BundleClassLoader bundleClassLoader = (BundleWiringImpl.BundleClassLoader) loader;
-                String symbolicName = bundleClassLoader.getBundle().getSymbolicName();
+                final Bundle bundle = bundleClassLoader.getBundle();
+                String symbolicName = bundle.getSymbolicName();
 
                 if ( bundleName.contains( symbolicName ) ) {
                     iterator.remove();
@@ -130,7 +133,8 @@ public class CombinedLoader extends ClassLoader {
                             BundleWiringImpl.BundleClassLoader bundleClassLoader = (BundleWiringImpl.BundleClassLoader) loader;
 
                             //Get the real location of this bundle
-                            String bundleLocation = bundleClassLoader.getBundle().getLocation();
+                            final Bundle bundle   = bundleClassLoader.getBundle();
+                            String bundleLocation = bundle.getLocation();
                             //Create the proper URL object for a jar file, using a proper protocol and file paths for jars
                             url = new URL( "jar", null, bundleLocation + "!/" );
                         }

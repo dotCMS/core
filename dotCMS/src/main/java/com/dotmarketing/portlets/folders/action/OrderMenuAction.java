@@ -28,12 +28,10 @@ import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.InodeUtils;
@@ -410,7 +408,7 @@ public class OrderMenuAction extends DotPortletAction {
 	private boolean _findPublishPermissionExists(List itemsList) throws DotDataException{
 		boolean userHasPublishPermission = true;
 		for(int i = 0; i < itemsList.size(); i++){
-			if((itemsList.get(i) instanceof HTMLPage && !(perAPI.doesUserHavePermission((HTMLPage)itemsList.get(i), PermissionAPI.PERMISSION_PUBLISH, user)))){
+			if((itemsList.get(i) instanceof IHTMLPage && !(perAPI.doesUserHavePermission((IHTMLPage)itemsList.get(i), PermissionAPI.PERMISSION_PUBLISH, user)))){
 				userHasPublishPermission = false;
 			}
 		}
@@ -458,13 +456,7 @@ public class OrderMenuAction extends DotPortletAction {
 					if(o instanceof Folder && !((Folder)(o)).isShowOnMenu()){
 						o = null;
 					}
-					if((o instanceof File && !((File)(o)).isShowOnMenu())){
-						o = null;
-					}
 					if((o instanceof Link && !((Link)(o)).isShowOnMenu())){
-						o = null;
-					}
-					if((o instanceof HTMLPage && !((HTMLPage)(o)).isShowOnMenu())){
 						o = null;
 					}
 				}

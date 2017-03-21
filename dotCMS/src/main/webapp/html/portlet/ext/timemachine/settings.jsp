@@ -1,26 +1,26 @@
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
-    <%@page import="com.dotmarketing.beans.Host"%>
-        <%@page import="com.dotmarketing.business.APILocator"%>
-            <%@page import="com.dotmarketing.quartz.ScheduledTask"%>
-                <%@include file="/html/common/init.jsp"%>
+<%@page import="com.dotmarketing.beans.Host"%>
+<%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotmarketing.quartz.ScheduledTask"%>
+<%@include file="/html/common/init.jsp"%>
 
-                    <%if(!APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())){return;} %>
+<%if(!APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())){return;} %>
 
 
-                        <%
-String cronExp="";
-List<Host> hosts=new ArrayList<Host>();
-Boolean allhosts=false;
-List<Language> langs=new ArrayList<Language>();
-Boolean incremental = false;
-ScheduledTask task=APILocator.getTimeMachineAPI().getQuartzJob();
-if(task!=null) {
-    allhosts=(Boolean) task.getProperties().get("allhosts");
-    hosts=(List<Host>) task.getProperties().get("hosts");
-    langs=(List<Language>) task.getProperties().get("langs");
-    cronExp=(String) task.getProperties().get("CRON_EXPRESSION");
-    incremental = task.getProperties().get("incremental")!=null && (Boolean) task.getProperties().get("incremental");
-}
+<%
+    String cronExp="";
+    List<Host> hosts=new ArrayList<Host>();
+    Boolean allhosts=false;
+    List<Language> langs=new ArrayList<Language>();
+    Boolean incremental = false;
+    ScheduledTask task=APILocator.getTimeMachineAPI().getQuartzJob();
+    if(task!=null) {
+        allhosts=(Boolean) task.getProperties().get("allhosts");
+        hosts=(List<Host>) task.getProperties().get("hosts");
+        langs=(List<Language>) task.getProperties().get("langs");
+        cronExp=(String) task.getProperties().get("CRON_EXPRESSION");
+        incremental = task.getProperties().get("incremental")!=null && (Boolean) task.getProperties().get("incremental");
+    }
 %>
 <script type="text/javascript">
     dojo.require("dotcms.dojo.data.HostReadStore");
@@ -194,129 +194,129 @@ if(task!=null) {
 
     dojo.ready(function () {
         <% if(!allhosts && hosts != null) { %>
-            <% for(Host hh : hosts) { %>
-                addHost("<%=hh.getIdentifier()%>", "<%=hh.getHostname()%>");
+        <% for(Host hh : hosts) { %>
+        addHost("<%=hh.getIdentifier()%>", "<%=hh.getHostname()%>");
         <% } %>
-            <% } %>
-});
+        <% } %>
+    });
 
 </script>
 <span dojoType="dotcms.dojo.data.HostReadStore" jsId="HostStore"></span>
-<div style="height:550px; width:580px; overflow:auto;">
-<form id="settingform" dojoType="dijit.form.Form">
-    <div class="form-horizontal">
-        <dl>
-            <dt>
-                <label for=""><%= LanguageUtil.get(pageContext, "TIMEMACHINE-SELECTHOST") %>:</label>
-            </dt>
-            <dd>
-                <select id="hostSelector" name="hostSelector" dojoType="dijit.form.FilteringSelect" store="HostStore" pageSize="30" labelAttr="hostname"
-                    searchAttr="hostname" invalidMessage="<%= LanguageUtil.get(pageContext, " Invalid-option-selected ")%>" <%=allhosts?
-                    "disabled=true": "" %> required="false"></select>
-                <button id="addHostButton" dojoType="dijit.form.Button" type="button" iconClass="plusIcon" onclick="addHostUI()"
-                    <%=allhosts?"disabled":"" %>>
-                    <%= LanguageUtil.get(pageContext, "Add-Host") %>
-                </button>
-            </dd>
-        </dl>
-        <dl>
-            <dt> </dt>
-            <dd>
-                <div>
-                    <table id="hostTable" class="who-can-use__list">
-                        <tr id="nohosts">
-                            <td colspan="2">
-                                <div class="noResultsMessage">
-                                    <%= allhosts?LanguageUtil.get(pageContext, "all-hosts-selected"):LanguageUtil.get(pageContext, "no-hosts-selected") %>
-                                </div>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-            </dd>
-        </dl>
-        <dl>
-            <dt>
-                <label for=""><%= LanguageUtil.get(pageContext, "TIMEMACHINE-ALLHOSTS") %>:</label>
-            </dt>
-            <dd>
-                <div class="checkbox">
-                    <input name="allhosts" id="allhosts" dojoType="dijit.form.CheckBox" type="checkbox" value="true" <%=!allhosts? "":
-    "checked='true'"%> onclick="indexAll(this.checked)" />
-                </div>
-            </dd>
-        </dl>
-        <dl>
-            <dt>
-                <label for=""><%= LanguageUtil.get(pageContext, "TIMEMACHINE-LANGUAGE") %>:</label>
-            </dt>
-            <dd>
-                <% for(Language lang : APILocator.getLanguageAPI().getLanguages()) { %>
+<div style="height:auto; width:580px; overflow:auto;">
+    <form id="settingform" dojoType="dijit.form.Form">
+        <div class="form-horizontal">
+            <dl>
+                <dt>
+                    <label for=""><%= LanguageUtil.get(pageContext, "TIMEMACHINE-SELECTHOST") %>:</label>
+                </dt>
+                <dd>
+                    <select id="hostSelector" name="hostSelector" dojoType="dijit.form.FilteringSelect" store="HostStore" pageSize="30" labelAttr="hostname"
+                            searchAttr="hostname" invalidMessage="<%= LanguageUtil.get(pageContext, " Invalid-option-selected ")%>" <%=allhosts?
+                            "disabled=true": "" %> required="false"></select>
+                    <button id="addHostButton" dojoType="dijit.form.Button" type="button" iconClass="plusIcon" onclick="addHostUI()"
+                            <%=allhosts?"disabled":"" %>>
+                        <%= LanguageUtil.get(pageContext, "Add-Host") %>
+                    </button>
+                </dd>
+            </dl>
+            <dl>
+                <dt> </dt>
+                <dd>
+                    <div>
+                        <table id="hostTable" class="who-can-use__list">
+                            <tr id="nohosts">
+                                <td colspan="2">
+                                    <div class="noResultsMessage">
+                                        <%= allhosts?LanguageUtil.get(pageContext, "all-hosts-selected"):LanguageUtil.get(pageContext, "no-hosts-selected") %>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </dd>
+            </dl>
+            <dl>
+                <dt>
+                    <label for=""><%= LanguageUtil.get(pageContext, "TIMEMACHINE-ALLHOSTS") %>:</label>
+                </dt>
+                <dd>
                     <div class="checkbox">
-                        <input type="checkbox" dojoType="dijit.form.CheckBox" id="op_<%=lang.getId()%>" name="lang" value="<%=lang.getId()%>" 
-                            <%=(langs!=null && langs.contains(lang)) ? "checked='true'" : "" %>/>
+                        <input name="allhosts" id="allhosts" dojoType="dijit.form.CheckBox" type="checkbox" value="true" <%=!allhosts? "":
+                                "checked='true'"%> onclick="indexAll(this.checked)" />
+                    </div>
+                </dd>
+            </dl>
+            <dl>
+                <dt>
+                    <label for=""><%= LanguageUtil.get(pageContext, "TIMEMACHINE-LANGUAGE") %>:</label>
+                </dt>
+                <dd>
+                    <% for(Language lang : APILocator.getLanguageAPI().getLanguages()) { %>
+                    <div class="checkbox">
+                        <input type="checkbox" dojoType="dijit.form.CheckBox" id="op_<%=lang.getId()%>" name="lang" value="<%=lang.getId()%>"
+                                <%=(langs!=null && langs.contains(lang)) ? "checked='true'" : "" %>/>
                         <label for="op_<%=lang.getId()%>">
-                        <%= lang.getLanguage() + " - " + lang.getCountry() %>
+                            <%= lang.getLanguage() + " - " + lang.getCountry() %>
                         </label>
                     </div>
-                <% } %>
-            </dd>
-        </dl>
-        <dl>
-            <dt> 
-                <label for="incremental">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Incremental")) %></label>
-            </dt>
-            <dd>
-                <div class="checkbox">
-                    <input type="checkbox" dojoType="dijit.form.CheckBox" id="incremental" name="incremental" value="true" <%=(incremental) ? "checked='true'": "" %>>
-                </div>
-            </dd>
-        </dl>
-        <dl>
-            <dt>
-                <label for=""><%= LanguageUtil.get(pageContext, "TIMEMACHINE-CRONEXP") %>:</label>
-            </dt>
-            <dd>
-                <input name="cronExp" id="cronExp" type="text" dojoType='dijit.form.ValidationTextBox' required="true" style='width: 200px'" value="<%=cronExp %>" size="10" />
-            </dd>
-        </dl>
-        <dl>
-            <dt> </dt>
-            <dd>
-                <div style="width: 350px; text-align: left;" id="cronHelpDiv" class="callOutBox2">
-                    <h3>
-                        <%= LanguageUtil.get(pageContext, "cron-examples") %>
-                    </h3>
-                    <span style="font-size: 88%;">
+                    <% } %>
+                </dd>
+            </dl>
+            <dl>
+                <dt>
+                    <label for="incremental">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Incremental")) %></label>
+                </dt>
+                <dd>
+                    <div class="checkbox">
+                        <input type="checkbox" dojoType="dijit.form.CheckBox" id="incremental" name="incremental" value="true" <%=(incremental) ? "checked='true'": "" %>>
+                    </div>
+                </dd>
+            </dl>
+            <dl>
+                <dt>
+                    <label for=""><%= LanguageUtil.get(pageContext, "TIMEMACHINE-CRONEXP") %>:</label>
+                </dt>
+                <dd>
+                    <input name="cronExp" id="cronExp" type="text" dojoType='dijit.form.ValidationTextBox' required="true" style='width: 200px'" value="<%=cronExp %>" size="10" />
+                </dd>
+            </dl>
+            <dl>
+                <dt> </dt>
+                <dd>
+                    <div style="width: 350px; text-align: left;" id="cronHelpDiv" class="callOutBox2">
+                        <h3>
+                            <%= LanguageUtil.get(pageContext, "cron-examples") %>
+                        </h3>
+                        <span style="font-size: 88%;">
                     <p></p>
                     <p><b><%= LanguageUtil.get(pageContext, "cron-once-an-hour") %>:</b> 0 0/60 * * * ?</p>
                     <p><b><%= LanguageUtil.get(pageContext, "cron-twice-a-day") %>:</b> 0 0 10-11 ? * *</p>
                     <p><b><%= LanguageUtil.get(pageContext, "cron-once-a-day-1am")%>:</b> 0 0 1 * * ?</p>
                     </span>
-                </div>
-            </dd>
-        </dl>
-    </div>
-    <div class="buttonRow">
+                    </div>
+                </dd>
+            </dl>
+        </div>
+        <div class="buttonRow">
         <span class="showScheduler">
             <button dojoType="dijit.form.Button" id="saveButton" onClick="save()" iconClass="calListIcon">
                 <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "TIMEMACHINE-SAVE")) %>
             </button>
         </span>
 
-        <span class="showRunNow">
+            <span class="showRunNow">
             <button dojoType="dijit.form.Button" id="runButton" onClick="runNow();" iconClass="republishIcon">
                 <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "TIMEMACHINE-RUN")) %>
             </button>
         </span>
 
-        <span class="showScheduler">
+            <span class="showScheduler">
             <button dojoType="dijit.form.Button" class="dijitButtonFlat" id="disableButton" onClick="disableJob();" iconClass="deleteIcon">
                 <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "TIMEMACHINE-DISABLE")) %>
             </button>
         </span>
-    </div>
+        </div>
 
     </form>
-    </div>
-    <%@include file="/html/common/bottom_inc.jsp"%>
+</div>
+<%@include file="/html/common/bottom_inc.jsp"%>

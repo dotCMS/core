@@ -2,7 +2,6 @@ package com.dotmarketing.beans;
 
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
@@ -20,7 +19,6 @@ public enum PermissionType {
     TEMPLATE_LAYOUT(TemplateLayout.class.getCanonicalName(), ApplyTo.ONLY_HOST),
     CONTAINER(Container.class.getCanonicalName(), ApplyTo.ONLY_HOST),
     FOLDER(Folder.class.getCanonicalName()),
-    FILE(File.class.getCanonicalName()),
     IHTMLPAGE(IHTMLPage.class.getCanonicalName()),
     LINK(Link.class.getCanonicalName()),
     CONTENTLET(Contentlet.class.getCanonicalName()),

@@ -75,25 +75,24 @@ public class CleanAssetsThread extends Thread {
      * @param restartIfDied creates or not a new instance depending of the current thread is alive or not
      * @return
      */
-    public static CleanAssetsThread getInstance ( Boolean restartIfDied, boolean processFiles, boolean processBinary ) {
+    public static CleanAssetsThread getInstance ( Boolean restartIfDied, boolean processBinary ) {
 
         if ( instance == null ) {
 
-            instance = new CleanAssetsThread(processFiles,processBinary);
+            instance = new CleanAssetsThread(processBinary);
             processStatus = new BasicProcessStatus();
 
         } else if ( !instance.isAlive() && restartIfDied ) {
 
-            instance = new CleanAssetsThread(processFiles,processBinary);
+            instance = new CleanAssetsThread(processBinary);
             processStatus = new BasicProcessStatus();
         }
 
         return instance;
     }
 
-    private boolean processFiles, processBinary;
-    private CleanAssetsThread (boolean processFiles, boolean processBinary) {
-        this.processFiles=processFiles;
+    private boolean processBinary;
+    private CleanAssetsThread (boolean processBinary) {
         this.processBinary=processBinary;
     }
 
@@ -123,7 +122,7 @@ public class CleanAssetsThread extends Thread {
     void deleteAssetsWithNoInode () throws DotDataException {
 
         //Assest folder path
-        String assetsPath = APILocator.getFileAPI().getRealAssetsRootPath();
+        String assetsPath = APILocator.getFileAssetAPI().getRealAssetsRootPath();
         File assetsRootFolder = new File( assetsPath );
         
         processStatus.setStatus("Counting");
@@ -148,45 +147,19 @@ public class CleanAssetsThread extends Thread {
                     for(File ff : dir.listFiles()) {
                         processStatus.setCurrentFiles(++current);
                         if(!ff.getName().endsWith(".donotdelete.dat")) {
-                            if(ff.isDirectory()) {
+                            if(ff.isDirectory() && processBinary) {
                                 // binary file for a contentlet
-                                if(processBinary) {
-                                    String inode=ff.getName();
-                                    try {
-                                        Contentlet cont=APILocator.getContentletAPI().find(inode, systemUser,false);
-                                        if(cont==null || !UtilMethods.isSet(cont.getIdentifier())) {
-                                            Logger.info(this, "deleting orphan binary content "+ff.getAbsolutePath());
-                                            if(FileUtils.deleteQuietly(ff))
-                                                processStatus.setDeleted(++deleted);
-                                        }
-                                    }
-                                    catch(Exception ex) {
-                                        Logger.warn(this, ex.getMessage(), ex);
-                                    }
-                                }
-                            }
-                            else {
-                                // is a file_asset
-                                if(processFiles) {
-                                    String inode=ff.getName();
-                                    // maybe a thumbnail
-                                    if(inode.indexOf('_')!=-1)
-                                        inode=inode.substring(0,inode.indexOf('_'));
-                                    // remove extension if any
-                                    if(inode.indexOf('.')!=-1)
-                                        inode=inode.substring(0,inode.indexOf('.'));
-                                    com.dotmarketing.portlets.files.model.File file = null;
-                                    try {
-                                        file = APILocator.getFileAPI().find(inode, systemUser, false);
-                                    }
-                                    catch(Exception ex) {
-                                        Logger.warn(this, ex.getMessage(), ex);
-                                    }
-                                    if(file==null || !UtilMethods.isSet(file.getIdentifier())) {
-                                        Logger.info(this, "deleting orphan file_asset "+ff.getAbsolutePath());
+                                String inode=ff.getName();
+                                try {
+                                    Contentlet cont=APILocator.getContentletAPI().find(inode, systemUser,false);
+                                    if(cont==null || !UtilMethods.isSet(cont.getIdentifier())) {
+                                        Logger.info(this, "deleting orphan binary content "+ff.getAbsolutePath());
                                         if(FileUtils.deleteQuietly(ff))
                                             processStatus.setDeleted(++deleted);
                                     }
+                                }
+                                catch(Exception ex) {
+                                    Logger.warn(this, ex.getMessage(), ex);
                                 }
                             }
                         }

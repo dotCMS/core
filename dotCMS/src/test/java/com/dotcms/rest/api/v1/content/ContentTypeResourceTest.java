@@ -31,6 +31,9 @@ import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
+
 /**
  * Test for the {@link ContentTypeResource}
  */

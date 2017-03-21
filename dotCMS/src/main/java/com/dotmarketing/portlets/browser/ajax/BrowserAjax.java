@@ -32,14 +32,10 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.files.business.FileAPI;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.factories.LinkFactory;
@@ -90,7 +86,6 @@ public class BrowserAjax {
 	private HostAPI hostAPI = APILocator.getHostAPI();
 	private HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
 	private FolderAPI folderAPI = APILocator.getFolderAPI();
-	private FileAPI fileAPI = APILocator.getFileAPI();
 	private ContentletAPI contAPI = APILocator.getContentletAPI();
 	private LanguageAPI languageAPI = APILocator.getLanguageAPI();
 	private BrowserAPI browserAPI = new BrowserAPI();
@@ -451,36 +446,6 @@ public class BrowserAjax {
 				}
 			}
 		}
-
-        // If any of the fallback properties, ie DEFAULT_FILE_TO_DEFAULT_LANGUAGE is false,
-        // we need to iterate over all the contents in the result list so far, and we need to remove
-        // all the contents that don't have the same language that we are passing as parameter.
-        for (Iterator<Map<String, Object>> iterator = results.iterator(); iterator.hasNext();) {
-            Map<String, Object> contentMap = iterator.next();
-
-			// if DEFAULT_FILE_TO_DEFAULT_LANGUAGE is true we need to remove all the file_asset
-			// that are not in the same language or in default language.
-			if ( Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", true) &&
-				contentMap.containsKey("type") &&
-				"file_asset".equals(contentMap.get("type")) &&
-				!contentMap.get("languageId").toString().equals(String.valueOf(languageId)) &&
-				!contentMap.get("languageId").toString().equals(String.valueOf(languageAPI.getDefaultLanguage().getId()))) {
-
-				iterator.remove();
-			}
-
-			// if DEFAULT_FILE_TO_DEFAULT_LANGUAGE is false we need to remove all the file_asset
-			// that are not in the same language (including default language).
-			if ( !Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", true) &&
-				contentMap.containsKey("type") &&
-				"file_asset".equals(contentMap.get("type")) &&
-				!contentMap.get("languageId").toString().equals(String.valueOf(languageId))) {
-
-                iterator.remove();
-            }
-            //TODO logic for DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE
-            //TODO logic for DEFAULT_PAGE_TO_DEFAULT_LANGUAGE
-        }
 	}
 
 	/**
@@ -605,22 +570,6 @@ public class BrowserAjax {
 
 		if(languageId==0) {
 			languageId = languageAPI.getDefaultLanguage().getId();
-		}
-
-		if(ident!=null && InodeUtils.isSet(ident.getId()) && ident.getAssetType().equals("file_asset")) {
-			File file = fileAPI.getWorkingFileById(fileId, user, respectFrontendRoles);
-			String mimeType = servletContext.getMimeType(file.getFileName().toLowerCase());
-			Map<String, Object> fileMap = file.getMap();
-			fileMap.put("mimeType", mimeType);
-			fileMap.put("path", file.getPath());
-			return fileMap;
-		}
-
-		if(ident!=null && InodeUtils.isSet(ident.getId()) && ident.getAssetType().equals("htmlpage")) {
-			Map<String, Object> pageMap = APILocator.getHTMLPageAPI().loadWorkingPageById(fileId, user, respectFrontendRoles).getMap();
-			pageMap.put("mimeType", "application/dotpage");
-			pageMap.put("pageURI", ident.getURI());
-			return pageMap;
 		}
 
 		if(ident!=null && InodeUtils.isSet(ident.getId()) && ident.getAssetType().equals("contentlet")) {
@@ -766,7 +715,7 @@ public class BrowserAjax {
             }
 
             folderAPI.copy( folder, parentHost, user, false );
-            refreshIndex(null, null, user, parentHost, folder );
+            refreshIndex( null, parentHost, folder );
         } else {
 
             Folder parentFolder = APILocator.getFolderAPI().find( newFolder, user, false );
@@ -785,7 +734,7 @@ public class BrowserAjax {
             }
 
             folderAPI.copy( folder, parentFolder, user, false );
-            refreshIndex(null, parentFolder, user, null, folder );
+            refreshIndex(parentFolder, null, folder );
         }
 
         return true;
@@ -828,7 +777,7 @@ public class BrowserAjax {
                     //A folder with the same name already exists on the destination
                     return errorString;
                 }
-                refreshIndex(null, null, user, parentHost, folder );
+                refreshIndex(null, parentHost, folder );
             } else {
 
                 Folder parentFolder = APILocator.getFolderAPI().find( newFolder, user, false );
@@ -851,7 +800,7 @@ public class BrowserAjax {
                     return errorString;
                 }
 
-                refreshIndex(null, parentFolder, user, null, folder );
+                refreshIndex(parentFolder,null, folder );
                 APILocator.getPermissionAPI().resetPermissionReferences(folder);
             }
         } catch ( Exception e ) {
@@ -904,21 +853,6 @@ public class BrowserAjax {
     			}else{
     				result.put("result", 1);
     				result.put("errorReason", "The file is locked");
-    			}
-    		}else{
-    			File file = (File) InodeFactory.getInode(inode, File.class);
-    			result.put("lastName", file.getNameOnly());
-    			result.put("extension", file.getExtension());
-    			result.put("newName", newName);
-    			result.put("inode", inode);
-    			if (APILocator.getFileAPI().renameFile(file, newName, user, false)) {
-    				result.put("result", 0);
-    			} else {
-    				result.put("result", 1);
-    				if (file.isLocked())
-    					result.put("errorReason", "The file is locked");
-    				else
-    					result.put("errorReason", "Another file with the same name already exists on this folder");
     			}
     		}
 
@@ -994,36 +928,13 @@ public class BrowserAjax {
 				// issues/1967
 
 				Folder srcFolder = APILocator.getFolderAPI().find(cont.getFolder(),user,false);
-				refreshIndex(null, parent, user, host, srcFolder );
+				refreshIndex(parent, host, srcFolder );
 
 				result.put("status", "success");
 				result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "File-copied")));
 				return result;
 			}
 
-            File file = (File) InodeFactory.getInode( inode, File.class );
-            // CHECK THE FOLDER PATTERN		//DOTCMS-6017
-            if ( UtilMethods.isSet( file.getFileName() ) && (parent != null && !folderAPI.matchFilter( parent, file.getFileName() )) ) {
-                result.put("status", "error");
-                result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "message.file_asset.error.filename.filters")));
-                return result;
-            }
-
-            // Checking permissions
-            if ( !permissionAPI.doesUserHavePermission( file, PERMISSION_WRITE, user ) ) {
-                result.put("status", "error");
-                result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "File-failed-to-copy-check-you-have-the-required-permissions")));
-                return result;
-            }
-
-            if ( parent != null ) {
-                APILocator.getFileAPI().copyFile( file, parent, user, false );
-            } else {
-                APILocator.getFileAPI().copyFile( file, host, user, false );
-            }
-            
-            result.put("status", "success");
-            result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "File-copied")));
             return result;
 		}
         catch(Exception ex) {
@@ -1117,9 +1028,9 @@ public class BrowserAjax {
             Folder srcFolder = APILocator.getFolderAPI().find(contentlet.getFolder(),user,false);
 
             if(contentlet.getFolder().equals("SYSTEM_FOLDER")) {
-            	refreshIndex(null, null, user, APILocator.getHostAPI().find(contentlet.getHost(), user, false), srcFolder );
+            	refreshIndex(null, APILocator.getHostAPI().find(contentlet.getHost(), user, false), srcFolder );
             } else {
-            	refreshIndex(null, parent, user, host, srcFolder );
+            	refreshIndex(parent, host, srcFolder );
             }
 
             if ( parent != null ) {
@@ -1129,20 +1040,7 @@ public class BrowserAjax {
             }
         }
 
-        File file = (File) InodeFactory.getInode( inode, File.class );
-
-        // Checking permissions
-        if ( !permissionAPI.doesUserHavePermission( file, PERMISSION_WRITE, user ) ) {
-            throw new DotRuntimeException( "The user doesn't have the required permissions." );
-        }
-
-        refreshIndex(file, parent, user, host, null );
-
-        if ( parent != null ) {
-            return APILocator.getFileAPI().moveFile( file, parent, user, false );
-        } else {
-            return APILocator.getFileAPI().moveFile( file, host, user, false );
-        }
+        return false;
     }
 
 	public Map<String, Object> renameHTMLPage ( String inode, String newName ) throws Exception {
@@ -1151,9 +1049,7 @@ public class BrowserAjax {
 		User user = getUser( req );
 
 		Identifier ident = APILocator.getIdentifierAPI().findFromInode( inode );
-		IHTMLPage page = ident.getAssetType().equals( "htmlpage" ) ?
-				(IHTMLPage) InodeFactory.getInode( inode, HTMLPage.class )
-				: APILocator.getHTMLPageAssetAPI().fromContentlet( APILocator.getContentletAPI().find( inode, user, false ) );
+		IHTMLPage page = APILocator.getHTMLPageAssetAPI().fromContentlet( APILocator.getContentletAPI().find( inode, user, false ) );
 
 		String pageURL = ident.getAssetName();
 		String lastName = (pageURL.lastIndexOf( "." ) > -1) ? pageURL.substring( 0, pageURL.lastIndexOf( "." ) ) : pageURL;
@@ -1163,9 +1059,7 @@ public class BrowserAjax {
 		result.put( "newName", newName );
 		result.put( "inode", inode );
 
-		if ( ident.getAssetType().equals( "htmlpage" ) ?
-				HTMLPageFactory.renameHTMLPage( (HTMLPage) page, newName, user )
-				: APILocator.getHTMLPageAssetAPI().rename( (HTMLPageAsset) page, newName, user ) ) {
+		if ( APILocator.getHTMLPageAssetAPI().rename( (HTMLPageAsset) page, newName, user ) ) {
 			result.put( "result", 0 );
 		} else {
 			result.put( "result", 1 );
@@ -1193,9 +1087,7 @@ public class BrowserAjax {
 
         try {
             Identifier ident=APILocator.getIdentifierAPI().findFromInode(inode);
-            IHTMLPage page = ident.getAssetType().equals("htmlpage") 
-                               ? (IHTMLPage) InodeFactory.getInode(inode, HTMLPage.class)
-                               : APILocator.getHTMLPageAssetAPI().fromContentlet(
+            IHTMLPage page = APILocator.getHTMLPageAssetAPI().fromContentlet(
                                      APILocator.getContentletAPI().find(inode, user, false));
     
             // gets folder parent
@@ -1219,21 +1111,7 @@ public class BrowserAjax {
                 return result;
             }
 
-            if(ident.getAssetType().equals("htmlpage")) {
-            	HTMLPage newPage = null;
-                if ( parent != null ) {
-                	newPage=HTMLPageFactory.copyHTMLPage( (HTMLPage) page, parent );
-                } else {
-                	newPage=HTMLPageFactory.copyHTMLPage( (HTMLPage) page, host );
-                }
-                /*copy page associated contentlets*/
-                List<MultiTree> pageContents = MultiTreeFactory.getMultiTree(page.getIdentifier());
-                for(MultiTree m : pageContents){
-                   	MultiTree mt = new MultiTree(newPage.getIdentifier(), m.getParent2(), m.getChild());
-                   	MultiTreeFactory.saveMultiTree(mt);
-                }
-            }
-            else {
+
                 Contentlet cont=APILocator.getContentletAPI().find(inode, user, false);
                 Contentlet newContentlet=null;
                 if(parent!=null) {
@@ -1248,7 +1126,7 @@ public class BrowserAjax {
                    	MultiTree mt = new MultiTree(newContentlet.getIdentifier(), m.getParent2(), m.getChild());
                    	MultiTreeFactory.saveMultiTree(mt);
                 }
-            }
+
 
             result.put("status", "success");
             result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "Page-copied")));
@@ -1313,9 +1191,7 @@ public class BrowserAjax {
         User user = getUser( req );
 
         Identifier ident=APILocator.getIdentifierAPI().findFromInode(inode);
-        IHTMLPage page = ident.getAssetType().equals("htmlpage") 
-                           ? (IHTMLPage) InodeFactory.getInode(inode, HTMLPage.class)
-                           : APILocator.getHTMLPageAssetAPI().fromContentlet(
+        IHTMLPage page = APILocator.getHTMLPageAssetAPI().fromContentlet(
                                  APILocator.getContentletAPI().find(inode, user, false));
 
         // gets folder parent
@@ -1341,21 +1217,13 @@ public class BrowserAjax {
             throw new DotRuntimeException( permissionsError );
         }
 
-        if(ident.getAssetType().equals("htmlpage")) {
-            if ( parent != null ) {
-                return HTMLPageFactory.moveHTMLPage( (HTMLPage) page, parent, user );
-            } else {
-                return HTMLPageFactory.moveHTMLPage( (HTMLPage) page, host, user );
-            }
-        }
-        else {
             if ( parent != null ) {
                 return APILocator.getHTMLPageAssetAPI().move((HTMLPageAsset)page, parent, user);
             }
             else {
                 return APILocator.getHTMLPageAssetAPI().move((HTMLPageAsset)page, host, user);
             }
-        }
+
     }
 
     public Map<String, Object> renameLink (String inode, String newName) throws Exception {
@@ -1564,15 +1432,6 @@ public class BrowserAjax {
 		Inode asset = null;
 		if ( htmlPageAsset != null && InodeUtils.isSet( htmlPageAsset.getInode() ) ) {//Verify for HTMLPages as content
 			relatedAssets = PublishFactory.getUnpublishedRelatedAssetsForPage( htmlPageAsset, relatedAssets, false, user, false );
-		} else {
-
-			asset = InodeFactory.getInode( inode, Inode.class );
-
-			//Verify if it is a legacy HTMLPage and have unpublished content
-			if ( (asset != null && InodeUtils.isSet( asset.getInode() ))
-					&& asset instanceof HTMLPage ) {
-				relatedAssets = PublishFactory.getUnpublishedRelatedAssets( asset, relatedAssets, user, false );
-			}
 		}
 
 		//Only publish the content if there is not related unpublished content
@@ -1589,14 +1448,6 @@ public class BrowserAjax {
 
 				//Publish the page
 				return PublishFactory.publishHTMLPage( htmlPageAsset, req );
-			} else if ( asset != null && InodeUtils.isSet( asset.getInode() ) ) {//Publish for all the other asset types including legacy HTMLPages
-
-				if ( !permissionAPI.doesUserHavePermission( asset, PERMISSION_PUBLISH, user ) ) {
-					throw new Exception( "The user doesn't have the required permissions." );
-				}
-
-				//Publish the legacy HTMLPage
-				return PublishFactory.publishAsset( asset, req );
 			}
 
 		//} else {
@@ -2317,16 +2168,10 @@ public class BrowserAjax {
 		return foldersToReturn;
 	}
 
-	public void refreshIndex(File file, Folder parent, User user, Host host, Folder folder ) throws Exception {
+	public void refreshIndex(Folder parent, Host host, Folder folder ) throws Exception {
 
-		Folder srcFolder = folder;
-		if(folder == null){
-			srcFolder = APILocator.getFolderAPI().find(file.getParent(),user,false);
-
-		}
-     	// issues/1603 - refresh index for src Folder
-        if (srcFolder!=null){
-        	APILocator.getContentletAPI().refreshContentUnderFolder(srcFolder);
+        if (folder!=null){
+        	APILocator.getContentletAPI().refreshContentUnderFolder(folder);
      	}
 
         if ( parent != null ) {

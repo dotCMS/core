@@ -43,11 +43,7 @@ public class FixTask00012UpdateAssetsHosts implements FixTask {
 	private final static String selectContainerInodeByIdentifierSQL = "select " + Inode.Type.CONTAINERS.getTableName() + ".inode from " + Inode.Type.CONTAINERS.getTableName() + ", inode dot_containers_1_ where " + Inode.Type.CONTAINERS.getTableName() + ".inode = dot_containers_1_.inode and " + Inode.Type.CONTAINERS.getTableName() + ".identifier = ? and working = " + DbConnectionFactory.getDBTrue();
 	
 	private final static String selectLinkInodeByIdentifierSQL = "select links.inode from links, inode links_1_ where links.identifier = ? and links_1_.inode = links.inode and links.working = " + DbConnectionFactory.getDBTrue();
-	
-	private final static String selectHTMLPageInodeByIdentifierSQL = "select htmlpage.inode from htmlpage, inode htmlpage_1_ where htmlpage.identifier = ? and htmlpage.working = " + DbConnectionFactory.getDBTrue() + " and htmlpage_1_.inode = htmlpage.inode";
-	
-	private final static String selectFileInodeByIdentifierSQL = "select file_asset.* from file_asset, inode file_asset_1_ where file_asset.identifier = ? and file_asset.working = " + DbConnectionFactory.getDBTrue() + " and file_asset_1_.inode = file_asset.inode";
-	
+
 	private final static String getHostIdQuery = "select identifier.id as identifier " +
 												 "from tree, " +
 												 "     identifier, " +
@@ -138,31 +134,7 @@ public class FixTask00012UpdateAssetsHosts implements FixTask {
 						} catch (Exception e) {
 						}
 					}
-					
-					if (!InodeUtils.isSet(inode)) {
-						try {
-							dc = new DotConnect();
-							dc.setSQL(selectHTMLPageInodeByIdentifierSQL);
-							dc.addParam(identifier.get("inode"));
-							result = dc.getResults();
-							if ((result != null) && (0 < result.size()) && (result.get(0) != null) && InodeUtils.isSet(result.get(0).get("inode")))
-								inode = result.get(0).get("inode");
-						} catch (Exception e) {
-						}
-					}
-					
-					if (!InodeUtils.isSet(inode)) {
-						try {
-							dc = new DotConnect();
-							dc.setSQL(selectFileInodeByIdentifierSQL);
-							dc.addParam(identifier.get("inode"));
-							result = dc.getResults();
-							if ((result != null) && (0 < result.size()) && (result.get(0) != null) && InodeUtils.isSet(result.get(0).get("inode")))
-								inode = result.get(0).get("inode");
-						} catch (Exception e) {
-						}
-					}
-					
+
 					if (InodeUtils.isSet(inode)) {
 						dc = new DotConnect();
 						dc.setSQL(getHostIdQuery);

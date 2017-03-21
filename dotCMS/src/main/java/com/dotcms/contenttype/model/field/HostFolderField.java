@@ -40,7 +40,7 @@ public abstract class HostFolderField extends Field implements OnePerContentType
 	};
 	@Override
 	public final List<DataTypes> acceptedDataTypes() {
-		return ImmutableList.of(DataTypes.SYSTEM);
+		return ImmutableList.of(DataTypes.SYSTEM, DataTypes.TEXT);
 	}
 	public abstract static class Builder implements FieldBuilder {}
 }

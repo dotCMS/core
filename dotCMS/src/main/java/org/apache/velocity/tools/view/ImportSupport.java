@@ -21,6 +21,7 @@ import com.dotmarketing.util.Logger;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
@@ -345,6 +346,12 @@ public abstract class ImportSupport {
                 public void write(int b) throws IOException {
                     bos.write(b);
                 }
+
+                public boolean isReady() {
+                    return false;
+                }
+
+                public void setWriteListener(WriteListener writeListener) {}
             };
             return sos;
         }

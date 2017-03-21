@@ -31,7 +31,7 @@ public abstract class IdentifierCache implements Cachable {
 	
 	abstract public void removeFromCacheByInode(String inode);
 	
-    abstract protected VersionInfo getVersionInfo(String identifier);    
+    abstract public VersionInfo getVersionInfo(String identifier);
     
     abstract protected void addVersionInfoToCache(VersionInfo versionInfo);
     

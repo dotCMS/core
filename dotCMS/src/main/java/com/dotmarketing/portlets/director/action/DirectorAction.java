@@ -60,8 +60,8 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -84,12 +84,8 @@ public class DirectorAction extends DotPortletAction {
 	
 	protected IHTMLPage loadPage(String inode, User user) throws DotDataException, DotSecurityException {
 	    Identifier ident=APILocator.getIdentifierAPI().findFromInode(inode);
-	    if(ident.getAssetType().equals("contentlet")) {
-	        return APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().find(inode, user, false));
-	    }
-	    else {
-	        return (IHTMLPage) HibernateUtil.load(com.dotmarketing.portlets.htmlpages.model.HTMLPage.class, inode);
-	    }
+	    return APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().find(inode, user, false));
+	    
 	}
 
 	/**
@@ -128,12 +124,7 @@ public class DirectorAction extends DotPortletAction {
 	 */
 	protected void updatePageModDate(IHTMLPage htmlPage, User user,
 			long languageId) throws DotStateException, DotDataException {
-		if (htmlPage instanceof HTMLPage) {
-			HTMLPage ht = (HTMLPage) htmlPage;
-			ht.setModDate(new Date());
-			ht.setModUser(user.getUserId());
-			HibernateUtil.saveOrUpdate(htmlPage);
-		} else if (htmlPage.isContent()) {
+		if (htmlPage.isContent()) {
 			ContentletVersionInfo versionInfo = APILocator.getVersionableAPI()
 					.getContentletVersionInfo(htmlPage.getIdentifier(),
 							languageId);
@@ -282,20 +273,8 @@ public class DirectorAction extends DotPortletAction {
 					APILocator.getVersionableAPI().setLocked(htmlpage, false, user);
 				}
 
-				if (htmlpage.isLocked() && !htmlpage.getModUser().equals(user.getUserId())  &&  htmlpage instanceof HTMLPage) {
-					req.setAttribute(WebKeys.HTMLPAGE_EDIT, htmlpage);
-					setForward(req,"portlet.ext.director.unlock_htmlpage");
-					return;
-				}
-				else if (htmlpage.isLocked() && htmlpage instanceof HTMLPage) {
-					//it's locked by the same user
-				    APILocator.getVersionableAPI().setLocked(htmlpage, false, user);
-				}
-
 				java.util.Map params = new java.util.HashMap();
-				params.put("struts_action",new String[] { 
-				        htmlpage instanceof HTMLPage ? "/ext/htmlpages/edit_htmlpage" 
-				                                     : "/ext/contentlet/edit_contentlet"});
+				params.put("struts_action",new String[] {"/ext/contentlet/edit_contentlet"});
 				params.put("cmd",new String[] { "edit" });
 				params.put("inode",new String[] { htmlpage.getInode() });
 				params.put("referer",new String[] { referer });
@@ -398,7 +377,7 @@ public class DirectorAction extends DotPortletAction {
 
 				Logger.debug(DirectorAction.class, "Director :: editTemplate");
 
-				IHTMLPage htmlPage=new HTMLPage();
+				IHTMLPage htmlPage=new HTMLPageAsset();
 				WebAsset workingTemplate = new Template();
 				if (req.getParameter("htmlPage")!=null) {
 				    htmlPage = loadPage(req.getParameter("htmlPage"),user);
@@ -883,7 +862,7 @@ public class DirectorAction extends DotPortletAction {
 				return;
 			}
 			
-			if(cmd!=null && cmd.equals("migrate")) {
+			/*if(cmd!=null && cmd.equals("migrate")) {
 			    try {
 			        HibernateUtil.startTransaction();
     			    HTMLPage htmlPage = (HTMLPage) HibernateUtil.load(HTMLPage.class, req.getParameter("htmlPage"));
@@ -897,7 +876,7 @@ public class DirectorAction extends DotPortletAction {
 			    
 			    _sendToReferral(req, res, referer);
                 return;
-			}
+			}*/
 			
 
 			Contentlet contentlet = new Contentlet();

@@ -6,8 +6,6 @@ import javax.servlet.ServletRequestListener;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.scripting.util.BSFUtil;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
 
@@ -23,9 +21,7 @@ public class HibernateSessionsListener implements ServletRequestListener {
 			Logger.debug(this, e.getMessage(),e);
 		}
 		DbConnectionFactory.closeConnection();
-		if(Config.getBooleanProperty("ENABLE_SCRIPTING", false)){
-			BSFUtil.getInstance().terminateThreadLocalManager();
-		}
+
 	}
 
 	/* (non-Javadoc)

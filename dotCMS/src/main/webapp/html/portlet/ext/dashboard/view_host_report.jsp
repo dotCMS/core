@@ -41,9 +41,6 @@ for(TopAsset ta : topAssets){
 	}else if(ta.getAssetType().equalsIgnoreCase("contentlet")){
 		totalContent = ta.getCount();
 		
-	}else if(ta.getAssetType().equalsIgnoreCase("file_asset")){
-		totalFiles = ta.getCount();
-		
 	}
 }
 List<Relationship> relationships = new ArrayList<Relationship>();
@@ -58,7 +55,6 @@ Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
 List<Layout> layoutList=null;
 String userURL ="";
 String pagesURL ="";
-String filesURL ="";
 String contentURL ="";
 try {	
 	layoutList=APILocator.getLayoutAPI().findAllLayouts();
@@ -69,8 +65,6 @@ try {
 			userURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.USERS+"&p_p_action=0";
 		}else if (portletId.equals(PortletID.HTML_PAGES)) {
 			pagesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.HTML_PAGES+"&p_p_action=0";
-		}else if (portletId.equals(PortletID.FILES_LEGACY)) {
-			filesURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.FILES_LEGACY+"&p_p_action=0";
 		}else if (portletId.equals(PortletID.CONTENT)) {
 			contentURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.CONTENT;
 		}
@@ -1019,7 +1013,7 @@ try {
 		</div>
 		<!-- Statistics Tabs -->
 	
-		<div id="listingWrapper" dojoType="dijit.Dialog" style="display:none;height:430px;width:700px;vertical-align: middle;overflow: hidden;padding-top:15px\9;" draggable="true" >
+		<div id="listingWrapper" dojoType="dijit.Dialog" style="display:none;height:461px;width:700px;vertical-align: middle;overflow: hidden;padding-top:15px\9;" draggable="true" >
 			<div style="margin:-34px 0 15px 0;">
 				<span id="listTitle"></span>
 			</div>

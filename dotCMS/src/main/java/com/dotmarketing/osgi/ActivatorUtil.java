@@ -7,9 +7,9 @@ import com.dotcms.repackage.org.apache.struts.config.impl.ModuleConfigImpl;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.util.Constants;
 import com.liferay.util.FileUtil;
-import com.dotcms.repackage.org.apache.felix.http.api.ExtHttpService;
-import com.dotcms.repackage.org.osgi.framework.BundleContext;
-import com.dotcms.repackage.org.osgi.framework.ServiceReference;
+import org.apache.felix.http.api.ExtHttpService;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
 
 import javax.servlet.ServletContext;
 import java.io.File;

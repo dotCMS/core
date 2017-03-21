@@ -1,6 +1,7 @@
 package com.dotmarketing.util;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -61,18 +62,6 @@ public class FileUtil {
 			return "ukn";
 		}
 
-	}
-
-	/**
-	 * This will return the full path to the file asset as a String
-	 * 
-	 * @param inode
-	 * @return
-	 */
-	public static String getAbsoluteFileAssetPath(Inode inode) {
-		String _inode = inode.getInode();
-		return getAbsoluteFileAssetPath(_inode,
-				UtilMethods.getFileExtension(((com.dotmarketing.portlets.files.model.File) inode).getFileName()).intern());
 	}
 
 	/**
@@ -184,6 +173,19 @@ public class FileUtil {
 		   }
 		});
 	}
+
+    public static FileFilter getOnlyFolderFileFilter() {
+        return new FileFilter() {
+            @Override
+            public boolean accept(File pathname) {
+                if ( pathname.isDirectory() ){
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        };
+    }
 }
 
 final class PNGFileNameFilter implements FilenameFilter {

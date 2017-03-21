@@ -28,22 +28,18 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI.TemplateContainersReMap.ContainerRemapTuple;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.services.PageServices;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
 
 public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
@@ -74,10 +70,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
     		Logger.fatal(TemplateAPIImpl.class, "Unable to instaniate dotCMS Velocity Cache", mfe);
 			Logger.error(TemplateAPIImpl.class, mfe.getMessage(), mfe);
 		}
-	}
-
-	public List<Template> findTemplatesUnder(Folder parentFolder) throws DotDataException {
-		return FactoryLocator.getTemplateFactory().findTemplatesUnder(parentFolder);
 	}
 
 	public List<Template> findTemplatesAssignedTo(Host parentHost) throws DotDataException {
@@ -173,17 +165,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		save(newTemplate);
 
 		return newTemplate;
-	}
-
-
-	public List<HTMLPage> getPagesUsingTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-
-		if (!permissionAPI.doesUserHavePermission(template, PermissionAPI.PERMISSION_READ, user,
-				respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to read the template file.");
-		}
-
-		return templateFactory.getPagesUsingTemplate(template);
 	}
 
 	public Template copy(Template sourceTemplate, Host destination, boolean forceOverwrite,
@@ -379,24 +360,28 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	}
 
 	public void updateParseContainerSyntax(Template template) {
-		String tb = template.getBody();
-		Perl5Matcher matcher = (Perl5Matcher) localP5Matcher.get();
-		String oldParse;
-		String newParse;
-    	while(matcher.contains(tb, parseContainerPattern)){
-     		MatchResult match = matcher.getMatch();
-    		int groups = match.groups();
-     		for(int g=0;g<groups;g++){
-     			oldParse = match.group(g);
-     			if(matcher.contains(oldParse, oldContainerPattern)){
-     				MatchResult matchOld = matcher.getMatch();
-     				newParse = matchOld.group(0).trim();
-     				newParse = containerTag + newParse + "')";
-     				tb = StringUtil.replace(tb,oldParse,newParse);
-     			}
-     		}
-     		template.setBody(tb);
-    	}
+	    String tb = template.getBody();
+	    if(!UtilMethods.isSet(tb)){
+	        template.setBody(StringPool.BLANK); 
+	    }else{
+	        Perl5Matcher matcher = (Perl5Matcher) localP5Matcher.get();
+	        String oldParse;
+	        String newParse;
+	        while(matcher.contains(tb, parseContainerPattern)){
+	            MatchResult match = matcher.getMatch();
+	            int groups = match.groups();
+	            for(int g=0;g<groups;g++){
+	                oldParse = match.group(g);
+	                if(matcher.contains(oldParse, oldContainerPattern)){
+	                    MatchResult matchOld = matcher.getMatch();
+	                    newParse = matchOld.group(0).trim();
+	                    newParse = containerTag + newParse + "')";
+	                    tb = StringUtil.replace(tb,oldParse,newParse);
+	                }
+	            }
+	            template.setBody(tb);
+	        }
+	    }
 	}
 
 	@SuppressWarnings("unchecked")
@@ -485,31 +470,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		return find(info.getLiveInode(), user, respectFrontendRoles);
 	}
 
-
-	public String checkDependencies(String templateInode, User user, Boolean respectFrontendRoles) throws PortalException, SystemException, DotDataException, DotSecurityException {
-		String result = null;
-		Template template = (Template) InodeFactory.getInode(templateInode, Template.class);
-		// checking if there are pages using this template
-		List<HTMLPage> pages=APILocator.getTemplateAPI().getPagesUsingTemplate(template, user, respectFrontendRoles);
-
-		if(pages.size()>0) {
-			StringBuilder names=new StringBuilder();
-			for(int i=0; i<pages.size(); i++) {
-				names.append(pages.get(i).getURI());
-				if(i <pages.size()-1){
-					names.append(", ");
-				}
-				if(pages.size()-1 == i){
-					if(!(pages.get(i).isWorking())){
-						names.append(",HTMLPAGE_NON_WORKING_VERSIONS");
-					}
-				}
-			}
-			result =  names.toString();
-		}
-		return result;
-	}
-
     @Override
     public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException {
         return deleteOldVersions(assetsOlderThan,"template");
@@ -517,25 +477,6 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
     public void updateThemeWithoutVersioning(String templateInode, String theme) throws DotDataException{
     	templateFactory.updateThemeWithoutVersioning(templateInode, theme);
-    }
-
-    /**
-     * Invalidate pages cache related to the specified template and also
-     * invalidates live html pages
-     *
-     * @param templateInode
-     * @param user
-     * @param respectFrontEndRoles
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
-    public void invalidateTemplatePages(String templateInode, User user, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException{
-    	Template template = find(templateInode, user, respectFrontEndRoles);
-  		List<HTMLPage> pagesForThisTemplate = APILocator.getTemplateAPI().getPagesUsingTemplate(template, APILocator.getUserAPI().getSystemUser(), false);
-  		for (HTMLPage page : pagesForThisTemplate) {
-  			//writes the page to a file
-  			PageServices.invalidateLive(page);
-  		}
     }
     
     /**

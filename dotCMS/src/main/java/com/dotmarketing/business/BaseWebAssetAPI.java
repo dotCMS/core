@@ -3,13 +3,6 @@
  */
 package com.dotmarketing.business;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -30,20 +23,23 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
-import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.ContainerServices;
-import com.dotmarketing.services.PageServices;
 import com.dotmarketing.services.TemplateServices;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * @author jtesser
@@ -252,15 +248,15 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		return false;
 	}
 
-	/**
-	 * This method totally removes an asset from the cms
-	 * @param currWebAsset
-	 * @param user If the user is passed (not null) the system will check for write permission of the user in the asset
-	 * @param respectFrontendRoles
-	 * @return true if the asset was sucessfully removed
-	 * @exception Exception
-	 */
-	public static boolean deleteAsset(WebAsset currWebAsset) throws DotSecurityException, DotHibernateException, DotDataException{
+    /**
+     * This method totally removes an asset from the cms.
+     *
+     * @param currWebAsset
+     * @return true if the asset was sucessfully removed.
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+	public static boolean deleteAsset(WebAsset currWebAsset) throws DotSecurityException, DotDataException{
 		boolean returnValue = false;
 		try
 		{
@@ -289,19 +285,14 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 			webAssetList.addAll(APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false));
 			if(currWebAsset instanceof Container)
 			{
+                //We need to delete also the references to template_containers
+                DotConnect dc = new DotConnect();
+                dc.setSQL("DELETE FROM template_containers WHERE container_id = ?");
+                dc.addParam(currWebAsset.getIdentifier());
+                dc.loadResult();
+
 				ContainerServices.unpublishContainerFile((Container)currWebAsset);
 				CacheLocator.getContainerCache().remove(currWebAsset.getInode());
-			}
-			else if(currWebAsset instanceof HTMLPage)
-			{
-				PageServices.invalidateLive((HTMLPage)currWebAsset);
-				if(RefreshMenus.shouldRefreshMenus((HTMLPage)currWebAsset)){
-					RefreshMenus.deleteMenu(currWebAsset);
-					Identifier ident=APILocator.getIdentifierAPI().find(currWebAsset);
-					CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
-				}
-
-				CacheLocator.getHTMLPageCache().remove((HTMLPage)currWebAsset);
 			}
 			else if(currWebAsset instanceof Template)
 			{
@@ -319,23 +310,6 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 				}
 
 				VirtualLinksCache.removePathFromCache(((Link)currWebAsset).getUrl());
-			}
-			else if(currWebAsset instanceof File)
-			{
-
-				VersionInfo vi = APILocator.getVersionableAPI().getVersionInfo(currWebAsset.getIdentifier());
-
-				if(!UtilMethods.isSet(vi)) {
-					auxVersionInfo = getVersionInfo(currWebAsset, identifier,
-							webAssetList, "file_asset");
-				}
-
-				APILocator.getFileAPI().invalidateCache((File)currWebAsset);
-				if(RefreshMenus.shouldRefreshMenus((File)currWebAsset)){
-					RefreshMenus.deleteMenu(currWebAsset);
-					Identifier ident=APILocator.getIdentifierAPI().find(currWebAsset);
-					CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
-				}
 			}
 
 			if(auxVersionInfo==null || !UtilMethods.isSet(auxVersionInfo.getIdentifier())) { // null auxVersionInfo  indicates everything goes fine
@@ -366,7 +340,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 
 			//### Get and delete the multitree entries ###
 			List<MultiTree> multiTrees = new ArrayList<MultiTree>();
-			if (currWebAsset instanceof Container || currWebAsset instanceof HTMLPage)
+			if (currWebAsset instanceof Container)
 			{
 				multiTrees = MultiTreeFactory.getMultiTree(identifier);
 			}

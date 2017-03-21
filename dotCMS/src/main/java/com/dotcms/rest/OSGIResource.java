@@ -10,7 +10,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.repackage.org.osgi.framework.Bundle;
+import org.osgi.framework.Bundle;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
@@ -37,13 +37,16 @@ public class OSGIResource  {
 
     List<String> systemBundles = Arrays.asList(
             "org.apache.felix.http.bundle",
-            "com.dotcms.repackage.org.apache.felix.gogo.shell",
+            "org.apache.felix.gogo.shell",
             "org.apache.felix.framework",
-            "com.dotcms.repackage.org.apache.felix.bundlerepository",
-            "com.dotcms.repackage.org.apache.felix.fileinstall",
-            "com.dotcms.repackage.org.apache.felix.gogo.command",
-            "com.dotcms.repackage.org.apache.felix.gogo.runtime",
-            "org.osgi.core"
+            "org.apache.felix.bundlerepository",
+            "org.apache.felix.fileinstall",
+            "org.apache.felix.gogo.command",
+            "org.apache.felix.gogo.runtime",
+            "org.easymock",
+            "org.objenesis",
+            "osgi.cmpn",
+            "osgi.core"
     );
 
     private final WebResource webResource = new WebResource();

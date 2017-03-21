@@ -6,14 +6,11 @@ package com.dotcms.notifications.bean;
  * specific category that identifies where, how, or why it was created. This
  * will provide the client handling this notification more details on how to
  * deal with it.
- * 
+ *
  * @author Daniel Silva
  * @version 3.0
  * @since Feb 3, 2014
- *
  */
 public enum NotificationType {
-
 	GENERIC
-
 }

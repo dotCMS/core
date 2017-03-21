@@ -6,7 +6,7 @@
 <%@ page import="com.dotmarketing.business.APILocator" %>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
-<%@ page import="com.dotcms.repackage.org.osgi.framework.Bundle" %>
+<%@ page import="org.osgi.framework.Bundle" %>
 <%        
 	request.setAttribute("requiredPortletAccess", "dynamic-plugins"); 
 %>

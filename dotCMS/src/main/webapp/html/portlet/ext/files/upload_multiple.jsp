@@ -9,11 +9,8 @@
 <%@ page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.dotmarketing.beans.Host" %>
-<%@ page import="com.dotmarketing.portlets.files.model.File"%>
 <%@ page import="com.dotmarketing.business.APILocator"%>
 <%@ page import="com.dotmarketing.business.PermissionAPI"%>
-<%@ page import="com.dotmarketing.business.Role"%>
-<%@page import="com.dotmarketing.portlets.files.business.FileAPI"%>
 <%@page import="com.dotmarketing.portlets.folders.business.FolderAPI"%>
 <%@ page import="com.dotmarketing.util.*" %>
 
@@ -41,34 +38,19 @@ for (Field field : fields) {
 
 
 PermissionAPI perAPI = APILocator.getPermissionAPI();
-FileAPI fileAPI = APILocator.getFileAPI();
 FolderAPI folderAPI = APILocator.getFolderAPI();
-com.dotmarketing.portlets.files.model.File file;
-if (request.getAttribute(com.dotmarketing.util.WebKeys.FILE_EDIT)!=null) {
-	file = (com.dotmarketing.portlets.files.model.File) request.getAttribute(com.dotmarketing.util.WebKeys.FILE_EDIT);
-}
-else {
-	file = (com.dotmarketing.portlets.files.model.File) com.dotmarketing.factories.InodeFactory.getInode(request.getParameter("inode"), com.dotmarketing.portlets.files.model.File.class);
-}
-//gets parent identifier to get the categories selected for this file
-if(InodeUtils.isSet(file.getInode())){
- com.dotmarketing.beans.Identifier identifier = com.dotmarketing.business.APILocator.getIdentifierAPI().find(file);	
-}
 
+com.dotmarketing.portlets.folders.model.Folder parentFolder = (com.dotmarketing.portlets.folders.model.Folder) request.getAttribute("PARENT_FOLDER");
 //gets parent folder
-com.dotmarketing.portlets.folders.model.Folder folder = (com.dotmarketing.portlets.folders.model.Folder) folderAPI.find(file.getParent(),user,false);
+com.dotmarketing.portlets.folders.model.Folder folder = folderAPI.find(parentFolder.getInode(),user,false);
 
 //The host of the file
 Host host = folder != null?APILocator.getHostAPI().findParentHost(folder, APILocator.getUserAPI().getSystemUser(), false):null;
 
-com.dotmarketing.portlets.folders.model.Folder parentFolder = (com.dotmarketing.portlets.folders.model.Folder) request.getAttribute("PARENT_FOLDER");
-
 boolean hasOwnerRole = com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSOwnerRole().getId());
-boolean ownerHasPubPermission = (hasOwnerRole && perAPI.doesRoleHavePermission(file, PermissionAPI.PERMISSION_PUBLISH,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSOwnerRole()));
-boolean ownerHasWritePermission = (hasOwnerRole && perAPI.doesRoleHavePermission(file, PermissionAPI.PERMISSION_WRITE,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSOwnerRole()));
 boolean hasAdminRole = com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());
-boolean canUserWriteToFile = ownerHasWritePermission || hasAdminRole || perAPI.doesUserHavePermission(file, PermissionAPI.PERMISSION_WRITE, user, false);
-boolean canUserPublishFile = ownerHasPubPermission || hasAdminRole || perAPI.doesUserHavePermission(file, PermissionAPI.PERMISSION_PUBLISH, user, false) || perAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT, user, false);
+boolean canUserWriteToFile = hasOwnerRole || hasAdminRole;
+boolean canUserPublishFile = hasOwnerRole || hasAdminRole;
 
 boolean inFrame = false;
 if(request.getParameter(WebKeys.IN_FRAME)!=null){
@@ -154,20 +136,8 @@ if(request.getParameter(WebKeys.IN_FRAME)!=null){
 				        ></div>
 	                   
 
-	                 <%if (!InodeUtils.isSet(file.getInode()) && UtilMethods.isSet(folder)) {
-		                   	if(!InodeUtils.isSet(file.getInode())) {
-		                   	    boolean isRootHost=folderAPI.findSystemFolder().equals(folder);
-		                   	    if(isRootHost) {
-		                   	        String hostId=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
-		                   	        host=APILocator.getHostAPI().find(hostId, user, false);
-		                   	        canUserWriteToFile = hasAdminRole || perAPI.doesUserHavePermission(host,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user);
-		                   	        canUserPublishFile = hasAdminRole || perAPI.doesUserHaveInheriablePermissions(host, file.getPermissionType(), PermissionAPI.PERMISSION_PUBLISH, user);
-		                   	    }
-		                   	    else {
-		                   	        canUserWriteToFile = perAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user);
-		                   	    }
-			                }
-	                    }
+	                 <%
+						canUserWriteToFile = perAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user);
                      %>
 
 					<div class="buttonRow">

@@ -128,7 +128,7 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
     	
     	String mimeType = Config.CONTEXT.getMimeType(file.getName());
     	if (!UtilMethods.isSet(mimeType)) {
-			mimeType = com.dotmarketing.portlets.files.model.File.UNKNOWN_MIME_TYPE;
+			mimeType = "unknown";
 		}
     	
     	return mimeType;

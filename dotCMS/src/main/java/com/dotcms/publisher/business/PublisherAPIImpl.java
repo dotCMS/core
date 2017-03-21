@@ -19,6 +19,8 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
@@ -26,6 +28,11 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 
 import java.util.*;
+
+import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import org.quartz.SimpleTrigger;
+import org.quartz.Trigger;
 
 /**
  * Provides utility methods to interact with asset information added to the
@@ -265,7 +272,8 @@ public class PublisherAPIImpl extends PublisherAPI{
                   throw new DotPublisherException( "Unable to add element " + idToProcess + " to publish queue table: " + e.getMessage(), e );
               }
           }
-
+    	firePublisherQueueNow();
+    	  
         //Preparing and returning the response status object
         resultMap.put( "errorMessages", errorsList );
         resultMap.put( "errors", errorsList.size() );
@@ -273,7 +281,29 @@ public class PublisherAPIImpl extends PublisherAPI{
         resultMap.put( "total", identifiers != null ? identifiers.size() : 0 );
         return resultMap;
     }
-
+    
+    public void firePublisherQueueNow(){
+      //SCHEDULE PUBLISH QUEUE JOB for NOW
+      try {
+        Scheduler sched = QuartzUtils.getStandardScheduler();
+        JobDetail job = sched.getJobDetail("PublishQueueJob"  , "dotcms_jobs");
+        if(job==null) return;
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.SECOND, Config.getIntProperty("PUSH_PUBLISHING_FIRING_DELAY_SEC", 2));
+        Trigger trigger = new SimpleTrigger("PublishQueueJob"+ System.currentTimeMillis(),calendar.getTime() );
+        trigger.setJobName(job.getName());
+        trigger.setJobGroup(job.getGroup());
+        trigger.setJobDataMap(job.getJobDataMap());
+        sched.scheduleJob(trigger);
+        // quartz will throw this error if it is already running
+      } catch (org.quartz.ObjectAlreadyExistsException e) {
+          Logger.debug(this.getClass(), e.getMessage(),e);
+      }
+      catch (Exception e) {
+          Logger.error(this.getClass(), e.getMessage(),e);
+      }
+   } 
+    
 	private Collection<String> getAssets(String bundleId) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		dc.setSQL( SELECT_ASSET );
@@ -382,7 +412,10 @@ public class PublisherAPIImpl extends PublisherAPI{
 		return res;
 	}
 
-	private static final String MULTI_TREE_QUERY = "select multi_tree.* from multi_tree join htmlpage_version_info on htmlpage_version_info.identifier = multi_tree.parent1 join container_version_info on container_version_info.identifier = multi_tree.parent2 join contentlet_version_info on contentlet_version_info.identifier = multi_tree.child where multi_tree.child = ? and htmlpage_version_info.deleted = ? and container_version_info.deleted = ? and contentlet_version_info.deleted = ?";
+    private static final String MULTI_TREE_QUERY = "select multi_tree.* from multi_tree join contentlet_version_info page_version on page_version.identifier = multi_tree.parent1 "
+    		+ "join container_version_info on container_version_info.identifier = multi_tree.parent2 "
+    		+ "join contentlet_version_info on contentlet_version_info.identifier = multi_tree.child where multi_tree.child = ? "
+    		+ "and page_version.deleted = ? and container_version_info.deleted = ? and contentlet_version_info.deleted = ?";
 
 	@Override
 	public List<Map<String,Object>> getContentMultiTreeMatrix(String id) throws DotPublisherException {
@@ -650,7 +683,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 * Delete element from publishing_queue table by id
 	 */
 	private static final String DELETEELEMENTFROMQUEUESQL="DELETE FROM publishing_queue where asset=?";
-	
+
 	private static final String DELETE_ELEMENT_IN_LANGUAGE_FROM_QUEUE = "DELETE FROM publishing_queue WHERE asset = ? AND language_id = ?";
 
 	@Override
@@ -767,29 +800,32 @@ public class PublisherAPIImpl extends PublisherAPI{
 	}
 
 	private static final String MULTI_TREE_CONTAINER_QUERY = new StringBuilder("select multi_tree.* from multi_tree ")
-    .append("join htmlpage_version_info on htmlpage_version_info.identifier = multi_tree.parent1 ")
+	.append("join contentlet_version_info page_version on page_version.identifier = multi_tree.parent1 ")
     .append("join container_version_info on container_version_info.identifier = multi_tree.parent2 ")
     .append("join contentlet_version_info on contentlet_version_info.identifier = multi_tree.child ")
     .append("where multi_tree.parent1 = ? ")
-    .append("and (htmlpage_version_info.deleted = ? and container_version_info.deleted = ? ")
+    .append("and (page_version.deleted = ? ")
+	.append("and container_version_info.deleted = ? ")
     .append("and contentlet_version_info.deleted = ?) ")
     .append("group by multi_tree.child, multi_tree.parent1, multi_tree.parent2, multi_tree.relation_type, multi_tree.tree_order")
     .append(" UNION ALL ")
     .append("select multi_tree.* from multi_tree ")
-    .append("join htmlpage_version_info on htmlpage_version_info.identifier = multi_tree.parent1 ")
+	.append("join contentlet_version_info page_version on page_version.identifier = multi_tree.parent1 ")
     .append("join container_version_info on container_version_info.identifier = multi_tree.parent2 ")
     .append("join contentlet_version_info on contentlet_version_info.identifier = multi_tree.child ")
     .append("where multi_tree.parent2 = ? ")
-    .append("and (htmlpage_version_info.deleted = ? and container_version_info.deleted = ? ")
+    .append("and (page_version.deleted = ? ")
+	.append("and container_version_info.deleted = ? ")
     .append("and contentlet_version_info.deleted = ?) ")
     .append("group by multi_tree.child, multi_tree.parent1, multi_tree.parent2, multi_tree.relation_type, multi_tree.tree_order")
     .append(" UNION ALL ")
     .append("select multi_tree.* from multi_tree ")
-    .append("join htmlpage_version_info on htmlpage_version_info.identifier = multi_tree.parent1 ")
+	.append("join contentlet_version_info page_version on page_version.identifier = multi_tree.parent1 ")
     .append("join container_version_info on container_version_info.identifier = multi_tree.parent2 ")
     .append("join contentlet_version_info on contentlet_version_info.identifier = multi_tree.child ")
     .append("where multi_tree.child = ? ")
-    .append("and (htmlpage_version_info.deleted = ? and container_version_info.deleted = ? ")
+    .append("and (page_version.deleted = ? ")
+	.append("and container_version_info.deleted = ? ")
     .append("and contentlet_version_info.deleted = ?) ")
     .append("group by multi_tree.child, multi_tree.parent1, multi_tree.parent2, multi_tree.relation_type, multi_tree.tree_order").toString();
 

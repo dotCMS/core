@@ -4,15 +4,11 @@
 <%@page import="com.dotmarketing.portlets.folders.model.Folder"%>
 <%@page import="com.dotmarketing.portlets.containers.model.Container"%>
 <%@page import="com.dotmarketing.portlets.templates.model.Template"%>
-<%@page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage"%>
-<%@page import="com.dotmarketing.portlets.files.model.File"%>
 <%@page import="com.dotmarketing.portlets.links.model.Link"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.business.Permissionable"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="com.dotmarketing.beans.Inode"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
-<%@page import="com.dotmarketing.business.Versionable"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.business.CacheLocator"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
@@ -20,14 +16,6 @@
 <%@ page import="com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage" %>
 <%@ page import="com.dotmarketing.portlets.rules.model.Rule" %>
 <%@ page import="com.dotmarketing.portlets.templates.design.bean.TemplateLayout" %>
-
-<%if(!Config.getBooleanProperty("ENABLE_LEGACY_FILE_SUPPORT",false)) {%>
-<style>
-    tr.legacy_files_row {
-        display:none !important;
-    }
-</style>
-<%}%>
 
 <script type="text/javascript" src="/dwr/interface/PermissionAjax.js"></script>
 <script type="text/javascript" src="/html/js/dotcms/dijit/form/RolesFilteringSelect.js"></script>
@@ -77,7 +65,6 @@
 	var templatesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Templates")) %>';
 	var templateLayoutsWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Templates-Layouts")) %>';
 	var pagesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Pages")) %>';
-	var filesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Files-Legacy")) %>';
 	var linksWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Links")) %>';
 	var contentWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Content-Files")) %>';
 	var permissionsOnChildrenMsg1 = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Permissions-on-Children1")) %>';
@@ -117,7 +104,6 @@
 	var templateClassName = '<%= Template.class.getCanonicalName() %>'
 	var templateLayoutClassName = '<%= TemplateLayout.class.getCanonicalName() %>'
 	var pageClassName = '<%= IHTMLPage.class.getCanonicalName() %>'
-	var fileClassName = '<%= File.class.getCanonicalName() %>'
 	var linkClassName = '<%= Link.class.getCanonicalName() %>'
 	var contentClassName = '<%= Contentlet.class.getCanonicalName() %>';
 	var structureClassName = '<%= Structure.class.getCanonicalName() %>';
@@ -402,7 +388,6 @@
 				rolePermission.templatesPermission = retrievePermissionChecks(role.id, 'templates');
 				rolePermission.templateLayoutsPermission = retrievePermissionChecks(role.id, 'template-layouts');
 				rolePermission.pagesPermission = retrievePermissionChecks(role.id, 'pages');
-				rolePermission.filesPermission = retrievePermissionChecks(role.id, 'files');
 				rolePermission.linksPermission = retrievePermissionChecks(role.id, 'links');
 				rolePermission.contentPermission = retrievePermissionChecks(role.id, 'content');
 				rolePermission.structurePermission = retrievePermissionChecks(role.id, 'structure');
@@ -452,7 +437,6 @@
 		destroyCheckboxes(getPermissionCheckboxDijits('templates', role.roleId))
 		destroyCheckboxes(getPermissionCheckboxDijits('template-layouts', role.roleId))
 		destroyCheckboxes(getPermissionCheckboxDijits('pages', role.roleId))
-		destroyCheckboxes(getPermissionCheckboxDijits('files', role.roleId))
 		destroyCheckboxes(getPermissionCheckboxDijits('links', role.roleId))
 		destroyCheckboxes(getPermissionCheckboxDijits('content', role.roleId))
 		destroyCheckboxes(getPermissionCheckboxDijits('structure', role.roleId))
@@ -486,7 +470,6 @@
 					rolePermission.templatesPermission |
 					rolePermission.templateLayoutsPermission |
 					rolePermission.pagesPermission |
-					rolePermission.filesPermission |
 					rolePermission.linksPermission |
 					rolePermission.contentPermission |
 					rolePermission.structurePermission |
@@ -506,21 +489,32 @@
 		var prefix = '';
 		if(type) prefix = type + "-";
 
-		if(dijit.byId(prefix + 'view-permission-' + id) && dijit.byId(prefix + 'view-permission-' + id).attr('value') == 'on')
+		if(isPermissionChecked(prefix + 'view-permission-' + id))
 			permission = permission | viewPermission;
-		if(dijit.byId(prefix + 'add-children-permission-' + id) && dijit.byId(prefix + 'add-children-permission-' + id).attr('value') == 'on')
+		if(isPermissionChecked(prefix + 'add-children-permission-' + id))
 			permission = permission | addChildrenPermission;
-		if(dijit.byId(prefix + 'edit-permission-' + id) && dijit.byId(prefix + 'edit-permission-' + id).attr('value') == 'on')
+		if(isPermissionChecked(prefix + 'edit-permission-' + id))
 			permission = permission | editPermission;
-		if(dijit.byId(prefix + 'publish-permission-' + id) && dijit.byId(prefix + 'publish-permission-' + id).attr('value') == 'on')
+		if(isPermissionChecked(prefix + 'publish-permission-' + id))
 			permission = permission | publishPermission;
-		if(dijit.byId(prefix + 'edit-permissions-permission-' + id) && dijit.byId(prefix + 'edit-permissions-permission-' + id).attr('value') == 'on')
+		if(isPermissionChecked(prefix + 'edit-permissions-permission-' + id))
 			permission = permission | editPermissionsPermission;
-		if(dijit.byId(prefix + 'virtual-links-permission-' + id) && dijit.byId(prefix + 'virtual-links-permission-' + id).attr('value') == 'on')
+		if(isPermissionChecked(prefix + 'virtual-links-permission-' + id))
 			permission = permission | createVirtualLinksPermission;
 
 		return permission;
 
+	}
+
+	/** Determines whether the specified element is checked or not. */
+	function isPermissionChecked(id){
+		var checkbox = dijit.byId(id);
+		if (checkbox) {
+			var parent = checkbox.domNode.parentNode;
+			return parent.style.display !== 'none' && checkbox.attr('value') == 'on';
+		} else {
+			return false;
+		}
 	}
 
 	function thereIsPermissionCheckChanges(item) {
@@ -587,7 +581,7 @@
                 return true;
         }
 
-        types=['hosts','folders','containers','templates','template-layouts','pages','files','links','structure','content','categories','rules'];
+        types=['hosts','folders','containers','templates','template-layouts','pages','links','structure','content','categories','rules'];
 
         for(var i=0;i<types.length;i++)
             if(changedType(item,types[i]))
@@ -754,7 +748,6 @@
 			enableCheckboxes(getPermissionCheckboxDijits('templates', role.id))
 			enableCheckboxes(getPermissionCheckboxDijits('template-layouts', role.id))
 			enableCheckboxes(getPermissionCheckboxDijits('pages', role.id))
-			enableCheckboxes(getPermissionCheckboxDijits('files', role.id))
 			enableCheckboxes(getPermissionCheckboxDijits('links', role.id))
 			enableCheckboxes(getPermissionCheckboxDijits('content', role.id))
 			enableCheckboxes(getPermissionCheckboxDijits('structure', role.id))
@@ -894,7 +887,6 @@
 		fillTemplatePermissionOptions(role, permissions, templateClassName, 'templates');
 		fillTemplatePermissionOptions(role, permissions, templateLayoutClassName, 'templateLayouts');
 		fillTemplatePermissionOptions(role, permissions, pageClassName, 'pages');
-		fillTemplatePermissionOptions(role, permissions, fileClassName, 'files');
 		fillTemplatePermissionOptions(role, permissions, linkClassName, 'links');
 		fillTemplatePermissionOptions(role, permissions, contentClassName, 'content');
 		fillTemplatePermissionOptions(role, permissions, structureClassName, 'structure');
@@ -924,9 +916,7 @@
 			role["publish-permission-style"] = 'display:none';
 			role["add-children-permission-style"] = 'display: none'
 			role["virtual-links-permission-style"] = 'display: none'
-		} else if(assetType == 'com.dotmarketing.portlets.htmlpages.model.HTMLPage') {
-			role["virtual-links-permission-style"] = 'display: none'
-		} 
+		}
 		<% if(UtilMethods.isSet(contentletAux) && contentletAux.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {%>
         else if(assetType == contentClassName) {
             role["virtual-links-permission-style"] = 'display: none';
@@ -950,7 +940,6 @@
 		role.templatesWillInherit = templatesWillInheritMsg;
 		role.templateLayoutsWillInherit = templateLayoutsWillInheritMsg;
 		role.pagesWillInherit = pagesWillInheritMsg;
-		role.filesWillInherit = filesWillInheritMsg;
 		role.linksWillInherit = linksWillInheritMsg;
 		role.contentWillInherit = contentWillInheritMsg;
 		role.permissionsOnChildren1=permissionsOnChildrenMsg1;

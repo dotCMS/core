@@ -35,7 +35,6 @@ public class FixTask00070FixVersionInfo implements FixTask {
                 DotConnect dc=new DotConnect();
                 
                 String[] versionables=new String[] {
-                        "file_asset","htmlpage",
                         "template", Inode.Type.CONTAINERS.getTableName(),"links"};
                 for(String table : versionables) {
                     String vitable=Inode.Type.valueOf(table.toUpperCase()).getVersionTableName();

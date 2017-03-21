@@ -39,7 +39,7 @@
 	</tag>
 	<tag>
 		<name>namespace</name>
-		<tagclass>com.dotcms.taglib.NamespaceTag</tagclass>
+		<tagclass>com.dotcms.repackage.com.liferay.portlet.taglib.NamespaceTag</tagclass>
 		<bodycontent>JSP</bodycontent>
 	</tag>
 	<tag>

@@ -2,6 +2,7 @@ package com.dotmarketing.business;
 
 import com.dotcms.DwrAuthenticationUtil;
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -14,9 +15,8 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -500,53 +500,15 @@ public class PermissionAPITest extends IntegrationTestBase {
             perm.permissionIndividually(APILocator.getHostAPI().findSystemHost(), a, sysuser, false);
 
             String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
-
-            HTMLPage pa=new HTMLPage();
-            pa.setPageUrl("testpage"+ext);
-            pa.setFriendlyName("testpage"+ext);
-            pa.setTitle("testpage"+ext);
-            APILocator.getHTMLPageAPI().saveHTMLPage(pa, tt, a, sysuser, false);
-
-            HTMLPage pb=new HTMLPage();
-            pb.setPageUrl("testpage"+ext);
-            pb.setFriendlyName("testpage"+ext);
-            pb.setTitle("testpage"+ext);
-            APILocator.getHTMLPageAPI().saveHTMLPage(pb, tt, b, sysuser, false);
-
-            HTMLPage pc=new HTMLPage();
-            pc.setPageUrl("testpage"+ext);
-            pc.setFriendlyName("testpage"+ext);
-            pc.setTitle("testpage"+ext);
-            APILocator.getHTMLPageAPI().saveHTMLPage(pc, tt, c, sysuser, false);
+            
+            HTMLPageAsset pa = new HTMLPageDataGen(a, tt).nextPersisted();
+            HTMLPageAsset pb = new HTMLPageDataGen(b, tt).nextPersisted();
+            HTMLPageAsset pc = new HTMLPageDataGen(c, tt).nextPersisted();
 
             java.io.File fdata=java.io.File.createTempFile("tmpfile", "data.txt");
             FileWriter fw=new FileWriter(fdata);
             fw.write("test file");
             fw.close();
-
-            File fa=new File();
-            fa.setTitle("testfile.txt");
-            fa.setFileName("testfile.txt");
-            fa.setModUser(sysuser.getUserId());
-            java.io.File fadata=java.io.File.createTempFile("tmpfile", "fdata.txt");
-            FileUtils.copyFile(fdata, fadata);
-            APILocator.getFileAPI().saveFile(fa, fadata, a, sysuser, false);
-
-            File fb=new File();
-            fb.setTitle("testfile.txt");
-            fb.setFileName("testfile.txt");
-            fb.setModUser(sysuser.getUserId());
-            java.io.File fbdata=java.io.File.createTempFile("tmpfile", "fdata.txt");
-            FileUtils.copyFile(fdata, fbdata);
-            APILocator.getFileAPI().saveFile(fb, fbdata, b, sysuser, false);
-
-            File fc=new File();
-            fc.setTitle("testfile.txt");
-            fc.setFileName("testfile.txt");
-            fc.setModUser(sysuser.getUserId());
-            java.io.File fcdata=java.io.File.createTempFile("tmpfile", "fdata.txt");
-            FileUtils.copyFile(fdata, fcdata);
-            APILocator.getFileAPI().saveFile(fc, fcdata, c, sysuser, false);
 
             String FileAssetStInode=CacheLocator.getContentTypeCache().getStructureByVelocityVarName(
                     FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode();
@@ -591,29 +553,25 @@ public class PermissionAPITest extends IntegrationTestBase {
             perm.getPermissions(a);   perm.getPermissions(ca);
             perm.getPermissions(b);   perm.getPermissions(cb);
             perm.getPermissions(c);   perm.getPermissions(cc);
-            perm.getPermissions(fa);  perm.getPermissions(pa);
-            perm.getPermissions(fb);  perm.getPermissions(pb);
-            perm.getPermissions(fc);  perm.getPermissions(pc);
+            perm.getPermissions(pa);
+            perm.getPermissions(pb);
+            perm.getPermissions(pc);
 
             // permission individually on folder a
             perm.permissionIndividually(perm.findParentPermissionable(a), a, sysuser, false);
 
             // everybody should be inheriting from a
-            assertTrue(perm.findParentPermissionable(fa).equals(a));
             assertTrue(perm.findParentPermissionable(pa).equals(a));
             assertTrue(perm.findParentPermissionable(ca).equals(a));
             assertTrue(perm.findParentPermissionable(b).equals(a));
-            assertTrue(perm.findParentPermissionable(fb).equals(a));
             assertTrue(perm.findParentPermissionable(pb).equals(a));
             assertTrue(perm.findParentPermissionable(cb).equals(a));
             assertTrue(perm.findParentPermissionable(c).equals(a));
-            assertTrue(perm.findParentPermissionable(fc).equals(a));
             assertTrue(perm.findParentPermissionable(pc).equals(a));
             assertTrue(perm.findParentPermissionable(cc).equals(a));
         }
         finally {
             APILocator.getHostAPI().archive(hh, sysuser, false);
-            //APILocator.getHostAPI().delete(hh, sysuser, false);
         }
     }
 
