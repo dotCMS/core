@@ -337,7 +337,7 @@ public class ImportExportXMLServlet extends HttpServlet {
 			BufferedWriter _bout = null;
 
 			for (Class clazz : _tablesToDump) {
-				_xstream = new XStream(new DomDriver());
+				_xstream = new XStream(new DomDriver(CHARSET));
 
 				/*
 				 * String _shortClassName =
