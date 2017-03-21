@@ -3904,7 +3904,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         cve.addBadTypeField(field);
                         Logger.error(this,"A binary contentlet field must be of type File");
                     }
-                }else if(isFieldTypeSystem(field) || isFieldTypeConstant(field)){
+                }else if(isFieldTypeSystem(field) || isFieldTypeConstant(field) ||
+                	Field.FieldType.TAB_DIVIDER.toString().equalsIgnoreCase(field.getFieldType())
+                ){
 
                 }else{
                     Logger.error(this,"Found an unknown field type : This should never happen!!!");
