@@ -380,6 +380,28 @@ removeDistFolder.description='Removes the distribution folder.'
 
 removeDistFolder.mustRunAfter 'zip', 'tgzTask'
 
+/** If you want to create the javadoc, please run ./gradlew generateJavadocs */
+javadoc {
+    title      = "dotCMS API"
+    maxMemory  = "1024m"
+    classpath  = sourceSets.main.compileClasspath
+    source     = sourceSets.main.allJava
+    include   "com.dotmarketing.*"
+    include   "com.dotcms.*"
+    options.noQualifiers 'all'
+    options.author(true)
+    options.version(true)
+    options.use(true)
+    options.encoding 'utf-8'
+    options.docEncoding 'utf-8'
+    options.charSet 'utf-8'
+    options.linkSource true
+    options.links 'https://docs.oracle.com/javase/8/docs/api/'
+}
+
+task generateJavadocs(type: Javadoc) {
+    source = sourceSets.main.allJava
+}
 
 //Task meant to be use from a distribution structure using the buildwar.sh script.
 //This task will just use the already deployed folder inside the app server and compressed to a war file.
