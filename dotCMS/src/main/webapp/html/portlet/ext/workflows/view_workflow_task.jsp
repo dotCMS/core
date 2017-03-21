@@ -465,7 +465,9 @@
 								<%= file.getFileName() %>
 							</a>
 						</td>
-						<td><a href="javascript:removeFile('<%= file.getInode() %>')"><%= LanguageUtil.get(pageContext, "remove") %></a></td>
+						<td>
+							<button dojoType="dijit.form.Button" type="button" class="dijitButtonDanger" style="float: right;" href="javascript:removeFile('<%= file.getInode() %>')"><%= LanguageUtil.get(pageContext, "remove") %></button>
+						</td>
 					</tr>
 				<% } %>
 

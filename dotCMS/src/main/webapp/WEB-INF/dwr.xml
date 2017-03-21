@@ -28,7 +28,6 @@
     <create creator="new" javascript="RoleAjax" scope="application">
       <param name="class" value="com.dotmarketing.business.ajax.RoleAjax"/>
     </create>
-
     <create creator="new" javascript="CalendarAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.calendar.ajax.CalendarAjax"/>
     </create>
