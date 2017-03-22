@@ -35,7 +35,11 @@ public class SpeedyAssetServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
     public void init(ServletConfig config) throws ServletException {
-
+      if (Config.CONTEXT == null) {
+        Config.CONTEXT = this.getServletContext();
+        Logger.error(this, "Config.CONTEXT is null. RESETTING  Cannot Serve Files without this!!!!!!");
+        return;
+    }
     }
 
 
@@ -44,13 +48,8 @@ public class SpeedyAssetServlet extends HttpServlet {
     protected void service(HttpServletRequest request, HttpServletResponse response)
 	throws ServletException, IOException {
 
-		if (Config.CONTEXT == null) {
-			Config.CONTEXT = this.getServletContext();
-			Logger.error(this, "Config.CONTEXT is null. RESETTING  Cannot Serve Files without this!!!!!!");
-			return;
-		}
 
-/*
+        /*
 		 * Getting host object form the session
 		 */
         HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();

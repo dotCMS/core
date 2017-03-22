@@ -55,9 +55,8 @@ import org.apache.velocity.context.Context;
 
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -1731,15 +1730,22 @@ public class UtilMethods {
     }
 
     public static boolean isUrlLive(String url, String hostId) throws Exception {
-        return (LiveCache.getPathFromCache(url, hostId) != null);
+      
+      Identifier id = APILocator.getIdentifierAPI().find(APILocator.getHostAPI().find(hostId, APILocator.systemUser(), true), url);
+      ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( id.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId() );
+
+      return (cinfo !=null && cinfo.getLiveInode() !=null);
     }
 
     public static boolean isUrlPreview(String url, Host host) throws Exception {
-        return isUrlPreview(url, host.getIdentifier());
+      return isUrlPreview(url, host.getIdentifier());
     }
 
     public static boolean isUrlPreview(String url, String hostId) throws Exception {
-        return (WorkingCache.getPathFromCache(url, hostId) != null);
+      Identifier id = APILocator.getIdentifierAPI().find(APILocator.getHostAPI().find(hostId, APILocator.systemUser(), true), url);
+      ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( id.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId() );
+
+      return (cinfo !=null && cinfo.getWorkingInode() !=null);
     }
 
     public static String stripUnicode(String x) {

@@ -1,5 +1,29 @@
 package com.dotmarketing.webdav;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+
+import org.apache.velocity.runtime.resource.ResourceManager;
+
 import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
 import com.dotcms.repackage.com.bradmcevoy.http.HttpManager;
 import com.dotcms.repackage.com.bradmcevoy.http.LockInfo;
@@ -24,8 +48,6 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.FolderCache;
-import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -53,30 +75,6 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.FileUtil;
-
-import org.apache.velocity.runtime.resource.ResourceManager;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.WritableByteChannel;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
 public class DotWebdavHelper {
 
@@ -1141,8 +1139,7 @@ public class DotWebdavHelper {
 				        throw new DotDataException(e.getMessage(), e);
 				    }
 
-				    WorkingCache.removeAssetFromCache(fileAssetCont);
-				    LiveCache.removeAssetFromCache(fileAssetCont);
+
 				    fileResourceCache.remove(uri + "|" + user.getUserId());
 			    }
 			}

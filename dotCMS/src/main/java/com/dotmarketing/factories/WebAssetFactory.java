@@ -33,8 +33,6 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.Versionable;
-import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -53,12 +51,9 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.structure.factories.StructureFactory;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.ContainerServices;
-import com.dotmarketing.services.PageServices;
 import com.dotmarketing.services.TemplateServices;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -706,7 +701,7 @@ public class WebAssetFactory {
 				}
 
 
-				LiveCache.removeAssetFromCache(currWebAsset);
+
 
 				systemEventsAPI.pushAsync(SystemEventType.UN_PUBLISH_LINK, new Payload(currWebAsset, Visibility.EXCLUDE_OWNER,
 						new ExcludeOwnerVerifierBean(currWebAsset.getModUser(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
@@ -1597,8 +1592,7 @@ public class WebAssetFactory {
 		if(permissionAPI.doesUserHavePermission(currWebAsset, permission, user))
 		{
 			//### Delete the IDENTIFIER entry from cache ###
-			LiveCache.removeAssetFromCache(currWebAsset);
-			WorkingCache.removeAssetFromCache(currWebAsset);
+
 			CacheLocator.getIdentifierCache().removeFromCacheByVersionable(currWebAsset);
 			//### END Delete the entry from cache ###
 

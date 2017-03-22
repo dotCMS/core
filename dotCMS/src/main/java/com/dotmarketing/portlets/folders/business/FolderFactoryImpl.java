@@ -33,8 +33,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.cache.FolderCache;
-import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.WorkingCache;
+
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
@@ -44,7 +43,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
-import com.dotmarketing.menubuilders.RefreshMenus;
+
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
@@ -657,8 +656,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
 		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(folderId.getId());
 
-		if(folder.isShowOnMenu())
-			RefreshMenus.deleteMenu(folder);
+
 		
 		folder.setModDate(new Date());
 		save(folder);
@@ -722,12 +720,6 @@ public class FolderFactoryImpl extends FolderFactory {
 			Identifier identifier = APILocator.getIdentifierAPI().find(fa);
 			Contentlet fileAssetCont = APILocator.getContentletAPI().find(fa.getInode(), APILocator.getUserAPI().getSystemUser(), false);
 
-			// assets cache
-			if (fileAssetCont.isLive())
-				LiveCache.removeAssetFromCache(fa);
-
-			if (fileAssetCont.isWorking())
-				WorkingCache.removeAssetFromCache(fa);
 
 			if (fileAssetCont.isWorking()) {
 				// gets identifier for this webasset and changes the uri and
@@ -738,13 +730,6 @@ public class FolderFactoryImpl extends FolderFactory {
 				APILocator.getIdentifierAPI().save(identifier);
 				CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(identifier.getId());
 			}
-
-			// Add to Preview and Live Cache
-			if (fileAssetCont.isLive()) {
-				LiveCache.addToLiveAssetToCache(fileAssetCont);
-			}
-			if (fileAssetCont.isWorking())
-				WorkingCache.addToWorkingAssetToCache(fileAssetCont);
 
 		}
 
@@ -799,7 +784,6 @@ public class FolderFactoryImpl extends FolderFactory {
 			Contentlet newFileAsset = APILocator.getContentletAPI().copyContentlet(fa, newFolder, systemUser, appendCopyToFileName, false);
 			if(fa.isLive()){
 				APILocator.getVersionableAPI().setLive(newFileAsset);
-				LiveCache.addToLiveAssetToCache(newFileAsset);
 			}
 		}
 	}

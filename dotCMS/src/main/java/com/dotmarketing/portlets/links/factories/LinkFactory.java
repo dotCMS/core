@@ -27,8 +27,7 @@ import com.dotmarketing.business.query.GenericQueryFactory.BuilderType;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
-import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.WorkingCache;
+
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -458,14 +457,6 @@ public class LinkFactory {
             menuLink.setTitle(newName);
             menuLink.setFriendlyName(newName);
 
-	    	if (menuLink.isLive()){
-	    		LiveCache.removeAssetFromCache(menuLink);
-	    		LiveCache.addToLiveAssetToCache(menuLink);
-	    	}
-	    	if (menuLink.isWorking()){
-	    		WorkingCache.removeAssetFromCache(menuLink);
-	    		WorkingCache.addToWorkingAssetToCache(menuLink);
-	    	}
 	    	
 	    	HibernateUtil.saveOrUpdate(menuLink);
 

@@ -7,8 +7,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.plugin.model.Plugin;
 import com.dotmarketing.plugin.model.PluginProperty;
@@ -235,15 +233,7 @@ public class PluginAPIImpl implements PluginAPI {
 								APILocator.getContentletAPI().checkin(cont, APILocator.getUserAPI().getSystemUser(),false);
 								APILocator.getVersionableAPI().setWorking(cont);
 								APILocator.getVersionableAPI().setLive(cont);
-								if (cont.isLive()){
-									LiveCache.removeAssetFromCache(cont);
-									LiveCache.addToLiveAssetToCache(cont);
-								}else{
-									LiveCache.removeAssetFromCache(cont);
-									LiveCache.addToLiveAssetToCache(cont);
-								}
-								WorkingCache.removeAssetFromCache(cont);
-								WorkingCache.addToWorkingAssetToCache(cont);
+
 							}
 						}else{
 							Contentlet cont = new Contentlet();
@@ -255,15 +245,7 @@ public class PluginAPIImpl implements PluginAPI {
 							APILocator.getContentletAPI().checkin(cont, APILocator.getUserAPI().getSystemUser(),false);
 							APILocator.getVersionableAPI().setWorking(cont);
 							APILocator.getVersionableAPI().setLive(cont);
-							if (cont.isLive()){
-								LiveCache.removeAssetFromCache(cont);
-								LiveCache.addToLiveAssetToCache(cont);
-							}else{
-								LiveCache.removeAssetFromCache(cont);
-								LiveCache.addToLiveAssetToCache(cont);
-							}
-							WorkingCache.removeAssetFromCache(cont);
-							WorkingCache.addToWorkingAssetToCache(cont);
+
 						}
 			
 

@@ -163,14 +163,17 @@ public class H22Cache extends CacheProvider {
 				if (!opt.isPresent()) {
 					continue;
 				}
-				Connection c = opt.get();
+				
 				for (int table = 0; table < numberOfTablesPerDb; table++) {
+				    Connection c = opt.get();
+				    Logger.warn(this, "c.getAutoCommit():" + c.getAutoCommit());
 					PreparedStatement stmt = c.prepareStatement("DELETE from " + TABLE_PREFIX + table + " WHERE cache_group = ?");
 					stmt.setString(1, fqn.group);
 					stmt.executeUpdate();
+					c.close();
 				}
 
-				c.close();
+				
 
 			}
 		} catch (SQLException e) {
