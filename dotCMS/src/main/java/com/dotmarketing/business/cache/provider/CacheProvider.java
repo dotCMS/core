@@ -35,8 +35,8 @@ import java.util.Set;
  */
 public abstract class CacheProvider implements Serializable {
 
-    protected static final String ONLY_MEMORY_GROUP = DotResourceCache.primaryOnlyMemoryGroup.toLowerCase();
-    protected static final String USER_VTLS_GROUP = DotResourceCache.primaryUserVTLGroup.toLowerCase();
+    protected static final String ONLY_MEMORY_GROUP = "VelocityMemoryOnlyCache".toLowerCase();
+    protected static final String USER_VTLS_GROUP = "VelocityUserVTLCache".toLowerCase();
 
     /**
      * Returns the human readable name for this Cache Provider

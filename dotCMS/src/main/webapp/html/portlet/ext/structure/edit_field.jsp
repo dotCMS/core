@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.portlets.structure.model.Field.DataType"%>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="com.dotcms.repackage.javax.portlet.WindowState" %>
 <%@ page import="com.dotmarketing.util.*" %>
@@ -17,25 +18,25 @@
 <%
 
 
-String referer = request.getParameter("referer");
-FieldForm fieldForm = (FieldForm) request.getAttribute("DotFieldForm");
-Structure structure = StructureFactory.getStructureByInode(fieldForm.getStructureInode());
-String fieldName = fieldForm.getFieldName();
-boolean hasInode = (InodeUtils.isSet(fieldForm.getInode()));
-boolean fixed = fieldForm.isFixed();
+	String referer = request.getParameter("referer");
+	FieldForm fieldForm = (FieldForm) request.getAttribute("DotFieldForm");
+	Structure structure = StructureFactory.getStructureByInode(fieldForm.getStructureInode());
+	String fieldName = fieldForm.getFieldName();
+	boolean hasInode = (InodeUtils.isSet(fieldForm.getInode()));
+	boolean fixed = fieldForm.isFixed();
 
-CategoryAPI catAPI = APILocator.getCategoryAPI();
+	CategoryAPI catAPI = APILocator.getCategoryAPI();
 
-String   textArea = UtilMethods.isSet(fieldForm.getValues()) ? fieldForm.getValues() : "";
-if(textArea!=null){
-	textArea = textArea.replaceAll("&", "&amp;");
-	textArea = textArea.replaceAll("<", "&lt;");
-	textArea = textArea.replaceAll(">", "&gt;");
-}
+	String   textArea = UtilMethods.isSet(fieldForm.getValues()) ? fieldForm.getValues() : "";
+	if(textArea!=null){
+		textArea = textArea.replaceAll("&", "&amp;");
+		textArea = textArea.replaceAll("<", "&lt;");
+		textArea = textArea.replaceAll(">", "&gt;");
+	}
 
-String s1 = "<textarea name=\"values\" style=\"width:537px;height:146px;\"  class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
-String s2 = "<textarea name=\"values\" style=\"width:300px;height:120px;\"";
-s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
+	String s1 = "<textarea name=\"values\" style=\"width:537px;height:146px;\"  class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
+	String s2 = "<textarea name=\"values\" style=\"width:300px;height:120px;\"";
+	s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 
 %>
 
@@ -760,8 +761,7 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 	</dl>
 	<!-- END Check Boxes -->
 			</div>
-
-		</div>
+        </div>
 		<!-- END Tab1 -->
 
 		<!-- START Tab2 -->

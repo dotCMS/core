@@ -2122,7 +2122,7 @@ public class BrowserAjax {
 					folderMap.put("name", FolderAPI.SYSTEM_FOLDER);
 					folderMap.put("id", FolderAPI.SYSTEM_FOLDER);
 					folderMap.put("inode", FolderAPI.SYSTEM_FOLDER);
-					Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStructureByName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
+					Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
 					folderMap.put("defaultFileType", defaultFileAssetStructure.getInode());
 					folderMap.put("fullPath", host.getHostname() + ":/");
 					folderMap.put("absolutePath", "/");

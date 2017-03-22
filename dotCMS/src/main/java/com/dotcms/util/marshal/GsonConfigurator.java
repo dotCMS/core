@@ -1,8 +1,10 @@
 package com.dotcms.util.marshal;
 
+import com.google.gson.GsonBuilder;
+
 import java.io.Serializable;
 
-import com.dotcms.repackage.com.google.gson.GsonBuilder;
+
 
 /**
  * Contract to configure a marshal util object In case you want an specific

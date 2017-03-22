@@ -1,36 +1,37 @@
 package com.dotcms.rest.config;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.rest.RulesEnginePortlet;
 import com.dotcms.rest.TagResource;
 import com.dotcms.rest.api.v1.authentication.AuthenticationResource;
+import com.dotcms.rest.api.v1.authentication.CreateJsonWebTokenResource;
 import com.dotcms.rest.api.v1.authentication.ForgotPasswordResource;
 import com.dotcms.rest.api.v1.authentication.LoginFormResource;
 import com.dotcms.rest.api.v1.authentication.LogoutResource;
+import com.dotcms.rest.api.v1.authentication.ResetPasswordResource;
 import com.dotcms.rest.api.v1.browsertree.BrowserTreeResource;
-import com.dotcms.rest.api.v1.content.ContentTypeResource;
-import com.dotcms.rest.api.v1.authentication.*;
+import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
 import com.dotcms.rest.api.v1.event.EventsResource;
 import com.dotcms.rest.api.v1.languages.LanguagesResource;
+import com.dotcms.rest.api.v1.menu.MenuResource;
 import com.dotcms.rest.api.v1.personas.PersonaResource;
+import com.dotcms.rest.api.v1.sites.ruleengine.rules.RuleResource;
 import com.dotcms.rest.api.v1.site.SiteResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.actions.ActionResource;
+import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionGroupResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionValueResource;
-import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionGroupResource;
-import com.dotcms.rest.api.v1.sites.ruleengine.rules.RuleResource;
-import com.dotcms.rest.api.v1.system.ConfigurationResource;
 import com.dotcms.rest.api.v1.system.AppContextInitResource;
+import com.dotcms.rest.api.v1.system.ConfigurationResource;
+import com.dotcms.rest.api.v1.system.i18n.I18NResource;
 import com.dotcms.rest.api.v1.system.role.RoleResource;
 import com.dotcms.rest.api.v1.system.ruleengine.actionlets.ActionletsResource;
 import com.dotcms.rest.api.v1.system.ruleengine.conditionlets.ConditionletsResource;
-import com.dotcms.rest.api.v1.system.i18n.I18NResource;
 import com.dotcms.rest.api.v1.user.UserResource;
-import com.dotcms.rest.api.v1.menu.MenuResource;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * This class provides the list of all the REST end-points in dotCMS. Every new
@@ -107,6 +108,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(EventsResource.class);
 
 					REST_CLASSES.add(BrowserTreeResource.class);
+					REST_CLASSES.add(ContentTypeResource.class);
 				}
 			}
 		}

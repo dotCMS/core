@@ -39,6 +39,7 @@ import com.liferay.portal.model.User;
  */
 public class DeleteFieldJobTest extends IntegrationTestBase {
 
+
     final DeleteFieldJob instance = new DeleteFieldJob();
 
     @BeforeClass
@@ -136,7 +137,7 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
             FieldsCache.addField(textField);
 
             //Validate the fields were properly saved
-            Structure stFromDB = CacheLocator.getContentTypeCache().getStructureByName(contentTypeName);
+            Structure stFromDB = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(contentTypeName);
             List<Field> fieldsBySortOrder = stFromDB.getFieldsBySortOrder();
 
             assertEquals(6, fieldsBySortOrder.size());
@@ -178,7 +179,7 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
                     CollectionsUtils.map("structure", contentType, "field", textField, "user", systemUser));
 
             //Validate we deleted those fields properly
-            stFromDB = CacheLocator.getContentTypeCache().getStructureByName(contentTypeName);
+            stFromDB = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(contentTypeName);
             fieldsBySortOrder = stFromDB.getFieldsBySortOrder();
             assertEquals(0, fieldsBySortOrder.size());
 

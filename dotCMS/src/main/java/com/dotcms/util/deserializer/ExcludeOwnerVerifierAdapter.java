@@ -3,7 +3,7 @@ package com.dotcms.util.deserializer;
 
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
-import com.dotcms.repackage.com.google.gson.*;
+import com.google.gson.*;
 
 import java.lang.reflect.Type;
 

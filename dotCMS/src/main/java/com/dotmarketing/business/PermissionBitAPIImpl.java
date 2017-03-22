@@ -276,7 +276,20 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		return false;
 	}
 
-
+	/* (non-Javadoc)
+	 * @see com.dotmarketing.business.PermissionAPI#doesUserHavePermission(com.dotmarketing.beans.Inode, int, com.liferay.portal.model.User)
+	 */
+	@Override
+	public void  checkPermission(Permissionable permissionable, PermissionLevel level, User user) throws DotSecurityException{
+		try{
+			if(!doesUserHavePermission(permissionable, level.type, user, true)){
+				throw new DotSecurityException("User:" + user +" does not have permissions " + level + " for object " + permissionable + " of type " + permissionable.getPermissionType());
+			}
+		}
+		catch(DotDataException e){
+			throw new DotStateException(e);
+		}
+	}
 
 
 	/* (non-Javadoc)

@@ -13,6 +13,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
 public interface EventAPI {
@@ -151,14 +152,19 @@ public interface EventAPI {
 	 * Retrieves the content structure used by events
 	 * @return
 	 */
-	public Structure getFacilityStructure() throws DotDataException;
+	default Structure getFacilityStructure() throws DotDataException{
+	    Logger.warn(this.getClass(), "getFacilityStructure() should not be used and is not implemented");
+	    return null;
+	}
 
 	/**
 	 * Retrieves the content structure used by events
 	 * @return
 	 */
-	public Structure getBuildingStructure() throws DotDataException;
-
+	default Structure getBuildingStructure() throws DotDataException{
+	       Logger.warn(this.getClass(), "getBuildingStructure() should not be used and is not implemented");
+        return null;
+    }
 	/**
 	 * This method receive an Event and return the iCal format of the event.
 	 * @param event The event to be transformed in the iCal format.
@@ -183,7 +189,9 @@ public interface EventAPI {
 	 */
 	public Event disconnectEvent(Event event, User user, Date startDate, Date endDate) throws DotDataException, DotSecurityException, ParseException;
 	
-	
-	
+    public static final String EVENT_STRUCTURE_VAR = "calendarEvent";
+	public static final String EVENT_STRUCTURE_NAME = "Event";
+	public static final String EVENT_STRUCTURE_DESCRIPTION = "Calendar Events";
+
 	
 }

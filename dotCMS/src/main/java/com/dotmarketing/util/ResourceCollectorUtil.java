@@ -74,7 +74,7 @@ public class ResourceCollectorUtil{
         final File file = new File(element);
         if(file.isDirectory()){
             retval.addAll(getResourcesFromDirectory(file, pattern));
-        } else{
+        } else if(file.getName().endsWith(".jar")){
             retval.addAll(getResourcesFromJarFile(file, pattern));
         }
         return retval;

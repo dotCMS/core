@@ -4,8 +4,8 @@ import com.dotcms.api.system.event.ContentTypePayloadDataWrapper;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEvent;
 import com.dotcms.api.system.event.SystemEventProcessor;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.content.ContentTypeView;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
 
 /**
@@ -17,13 +17,13 @@ import com.liferay.portal.model.User;
  */
 public class BaseContentTypeSystemEventProcessor  implements SystemEventProcessor {
 
-  @Override
+    @Override
     public SystemEvent process(final SystemEvent event, final User sessionUser) {
 
         final Payload payload = event.getPayload();
         final ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = (ContentTypePayloadDataWrapper) payload.getRawData();
-        final Structure structure = contentTypePayloadDataWrapper.getStructure();
-        final ContentTypeView contentTypeView = new ContentTypeView(structure, contentTypePayloadDataWrapper.getActionUrl());
+        final ContentType type = contentTypePayloadDataWrapper.getContentType();
+        final ContentTypeView contentTypeView = new ContentTypeView(type, contentTypePayloadDataWrapper.getActionUrl());
 
         return new SystemEvent(event.getId(), event.getEventType(),
                 new Payload(contentTypeView, payload.getVisibility(), payload.getVisibilityValue()),

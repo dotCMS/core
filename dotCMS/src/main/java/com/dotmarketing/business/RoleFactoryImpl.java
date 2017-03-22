@@ -23,6 +23,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
@@ -274,7 +275,7 @@ public class RoleFactoryImpl extends RoleFactory {
 
 			r = role;
 			if(DbConnectionFactory.isMsSql()){
-				String roleKey= VelocityUtil.convertToVelocityVariable(r.getName());
+				String roleKey= StringUtils.camelCaseLower(r.getName());
 				DotConnect dc = new DotConnect();
 				dc.setSQL("select count(*) as total from cms_role where role_key =?");
 				dc.addParam(roleKey);

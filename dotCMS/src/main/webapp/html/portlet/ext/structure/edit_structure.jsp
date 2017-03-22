@@ -43,13 +43,11 @@
 			.getInode() });
 	String referer = com.dotmarketing.util.PortletURLUtil.getActionURL(
 			request, WindowState.MAXIMIZED.toString(), params);
-
 	params = new java.util.HashMap();
 	params.put("struts_action",
 			new String[] { "" });
 	String viewStructures = com.dotmarketing.util.PortletURLUtil.getRenderURL(
 			request, WindowState.MAXIMIZED.toString(), params);
-
 	boolean hasWritePermissions = false;
 	boolean hasPublishPermissions = false;
 	PermissionAPI strPerAPI = APILocator.getPermissionAPI();
@@ -59,24 +57,16 @@
 	if (strPerAPI.doesUserHavePermission(structure,PermissionAPI.PERMISSION_PUBLISH, user)) {
 		hasPublishPermissions = true;
     }
-
 	List<WorkflowScheme> wfSchemes=new ArrayList<WorkflowScheme>();
-
 	if(LicenseUtil.getLevel() > 100){
-
 		wfSchemes = APILocator.getWorkflowAPI().findSchemes(false);
 	}
 	else{
 		wfSchemes.add(APILocator.getWorkflowAPI().findDefaultScheme());
 	}
-
-
 	WorkflowScheme wfScheme = APILocator.getWorkflowAPI().findSchemeForStruct(structure);
-
-
 	List<Role> roles = APILocator.getRoleAPI().findAllAssignableRoles(false);
 	request.setAttribute ("roles", roles);
-
     StructureForm form = (StructureForm)request.getAttribute("StructureForm");
     int structureType = 1;
     try {
@@ -90,9 +80,6 @@
 		form.setStructureType(structureType);
 	}
 	boolean canEditAsset = strPerAPI.doesUserHavePermission(structure, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user);
-
-
-
     ArrayList<Field> dateFields=new ArrayList<Field>();
     if(UtilMethods.isSet(structure.getInode())){
       for(Field f : structure.getFields()){
@@ -101,24 +88,18 @@
         }
       }
     }
-
-
-
 %>
 
 
 <script language="javascript">
-
 	dojo.require('dotcms.dijit.form.FileSelector');
 	dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
 	dojo.require("dojo.dnd.Container");
 	dojo.require("dojo.dnd.Manager");
 	dojo.require("dojo.dnd.Source");
-
 	var structureInode = '<%=structure.getInode()%>';
 	<%-- This is the javascript Array that controls what is shown or hidden --%>
 	<%@ include file="/html/portlet/ext/structure/field_type_js_array.jsp" %>
-
 	function writeLabel(fieldType){
 		fieldType = fieldType.toLowerCase();
 		for(i=0;i<myData.items.length;i++){
@@ -128,9 +109,6 @@
 		}
 		return fieldType;
 	}
-
-
-
 	function isInteger(campo,A){
 		if(validateDots(campo))
 		{
@@ -146,10 +124,8 @@
 		}
 		else return false;
 	}
-
 	function addNewStructure()
 	{
-
 		var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
 		href = href + "<portlet:param name='struts_action' value='/ext/structure/edit_structure' />";
 		href = href + "<portlet:param name='cmd' value='add' />";
@@ -174,10 +150,8 @@
 			document.forms[0].submit();
 		}		
 	}
-
 	function addNewField(event)
 	{
-
 		var href= "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
 		href = href + "<portlet:param name='struts_action' value='/ext/structure/edit_field' />";
 		href = href + "<portlet:param name='referer' value='<%=referer%>' />";
@@ -185,10 +159,7 @@
 		href = href + "</portlet:actionURL>";
 		document.location.href = href;
 		dojo.stopEvent(event);
-
 	}
-
-
 	function reorderFields(){
 		var inodes = dojo.query(".hiddenInodeField");
 		var orders = dojo.query(".orderBox");
@@ -201,11 +172,9 @@
 		}
 		StructureAjax.reorderfields(structureInode, list, showReOrderAlert);
 	}
-
 	function showReOrderAlert(data){
 		showDotCMSSystemMessage(data);
 	}
-
 	function cancel(event)
 	{
 		var structureType = dijit.byId("structureType");
@@ -225,11 +194,9 @@
 			document.location = href;
 			dojo.stopEvent(event);
 		}
-
 	}
 	function  crumbType(stType)
 	{
-
 		if(stType == undefined){
 			stType=0;
 		}
@@ -237,36 +204,26 @@
 		href = href + "<portlet:param name='struts_action' value='/ext/structure/view_structure' />";
 		href = href + "</portlet:actionURL>";
 		document.location = href + "&structureType=" + stType;
-
-
-
 	}
 	function deleteStructure() {
 		if (confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.structure.delete.structure.and.content")) %>')) {
 	  	  StructureAjax.checkDependencies(structureInode, handleDepResponse);
 	  	}
 	}
-
 	function handleDepResponse(data) {
-
 		if(data['size'] != 0) {
-
 			var resultTableStr = '<table class="listingTable"><thead><tr><th><%=LanguageUtil.get(pageContext, "TITLE")%></th><th><%=LanguageUtil.get(pageContext, "IDENTIFIER")%></th><th><%=LanguageUtil.get(pageContext, "INODE")%></th></tr></thead><tbody>';
 			var containers = data['containers'];
-
 			for(var i = 0; i < data['size'] ; i++){
 				resultTableStr = resultTableStr + "<tr><td>" + containers[i]['title'] + "</td><td>" + containers[i]['identifier'] + "</td><td>" + containers[i]['inode'] + "</td></tr>";
 			}
-
 			resultTableStr = resultTableStr + '</tbody></table>';
 			dojo.byId("depDiv").innerHTML = "<br />" + resultTableStr;
-
 			dijit.byId("dependenciesDialog").show();
 		} else {
 			processDelete();
 		}
 	}
-
 	function processDelete() {
 		var r = Math.floor(Math.random() * 1000000000);
 		var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
@@ -278,12 +235,9 @@
 		href = href + "&random=" + r;
 		document.location.href = href;
 	}
-
-
 	function reviewChange(disregard) {
 		var enable = dojo.byId("reviewContent").checked;
 		var resetReviewBtn = dijit.byId("resetReviewsButtonId");
-
 		dijit.byId("reviewIntervalNumId").attr('disabled', !enable);
 		dijit.byId("reviewIntervalSelectId").attr('disabled', !enable);
 		dijit.byId("reviewerRoleId").attr('disabled', !enable);
@@ -291,7 +245,6 @@
 			resetReviewBtn.attr('disabled',!enable);
 		}
 	}
-
 	function resetReviews() {
 		if (confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.structure.reset.intervals")) %>')) {
 	      var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
@@ -303,9 +256,7 @@
 	  		document.location.href = href;
 		}
 	}
-
 	function deleteField(fieldInode) {
-
 	  if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.structure.delete.fields")) %>')){
 	      var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
 	      href = href + "<portlet:param name='struts_action' value='/ext/structure/deleteField' />";
@@ -315,11 +266,8 @@
 	      href = href + "&inode=" + fieldInode;
 	      document.location.href = href;
 	   }
-
 	}
-
 	function editField(fieldInode) {
-
 	     var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
 	     href = href + "<portlet:param name='struts_action' value='/ext/structure/edit_field' />";
 	     href = href + "<portlet:param name='referer' value='<%=referer%>' />";
@@ -327,9 +275,7 @@
 	     href = href + "&inode=" + fieldInode;
 	     href = href + "&structureInode=<%=structure.getInode()%>";
 	     document.location.href = href;
-
 	}
-
 	//called on load to resize the divs to ~100% width
 	function resizeTableAndAddIcons(){
 		var viewport = dijit.getViewport();
@@ -338,7 +284,6 @@
 		for(i = 0; i<labels.length; i++){
 			dojo.style(labels[i], "width", myWidth);
 		}
-
 		var icons = dojo.query(".fieldTypeCell");
 		for(i = 0; i<icons.length; i++){
 			var fieldType = dojo.trim(icons[i].innerHTML.toLowerCase() );
@@ -349,10 +294,7 @@
 				}
 			}
 		}
-
-
 	}
-
 	function renumberRecolorAndReorder(){
 		eles = dojo.query(".orderBox");
 		for(i = 0;i<eles.length;i++){
@@ -360,20 +302,16 @@
 		}
 		reorderFields();
 	}
-
 	function initDND(){
-
 		var ele = dojo.byId("dragNDropBox");
 	    // example subscribe to events
 	    dojo.subscribe("/dnd/drop", function(source){
 	      renumberRecolorAndReorder();
 	    });
-
 	 };
 	function hideEditButtonsRow() {
 		dojo.style('editStructureButtonRow', { display: '' });
 	}
-
 	function showEditButtonsRow() {
 		if( typeof changesMadeToPermissions!= "undefined"){
 			if(changesMadeToPermissions == true){
@@ -383,7 +321,6 @@
 		dojo.style('editStructureButtonRow', { display: '' });
 		changesMadeToPermissions = false
 	}
-
 function changeStructureType(){
 		var val = <%=form.getStructureType()%>;
 		var ele;
@@ -399,7 +336,6 @@ function changeStructureType(){
 		//dojo.style("widgetHelpDiv", { display: 'none' });
 		dojo.style("reviewDiv", { display: 'none' });
 		dojo.style("detailPageDiv", { display: 'none' });
-
 		if(val==1){
 			dojo.style("reviewDiv", { display: 'none' });
 			dojo.style("detailPageDiv", { display: '' });
@@ -422,9 +358,7 @@ function changeStructureType(){
 		else if(val==4) {
 			dojo.style("detailPageDiv", { display: '' });
 		}
-
 }
-
 function updateHostFolderValues(){
 	  if(!isInodeSet(dijit.byId('HostSelector').attr('value'))
 			  && dijit.byId('HostSelector').attr('value')!='SYSTEM_HOST'
@@ -449,9 +383,7 @@ function updateHostFolderValues(){
 	     <%}%>
 	  }
 	}
-
 function toggleSaveButton(disabled){
-
 	 var saveButton;
 	    try{
 		    saveButton = document.getElementById('saveButton');
@@ -461,11 +393,8 @@ function toggleSaveButton(disabled){
 	          saveButton.disabled = disabled;
 		   }
 	    }
-
 }
-
 function disableFormFields(){
-
 	var structureType = dijit.byId("structureType");
 	if(structureType == null || structureType == 'undefined'){
 		structureType = document.getElementById("structureType").value;
@@ -481,7 +410,6 @@ function disableFormFields(){
 		    }
 		toggleSaveButton(true);
 }
-
 </script>
 
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
@@ -624,7 +552,6 @@ function disableFormFields(){
 				<!-- END Table Results -->
 			</div>
 			<!-- END Listing Table -->
-
 			</div>
 			<!-- END Property Tab -->
 		<%} %>
@@ -654,7 +581,8 @@ function disableFormFields(){
 											<%= LanguageUtil.get(pageContext, "HTMLPage") %>
 										<%} else if(form.getStructureType() ==6){%>
 											<%= LanguageUtil.get(pageContext, "Persona") %>
-										<%}%>
+										<%}%>&nbsp;
+										<a target="_blank" href="/api/v1/contenttype/id/<%=structure.getInode() %>">json</a>
 									<%}else{ %>
 										<select onchange="changeStructureType()" dojoType="dijit.form.FilteringSelect" name="structureType" id="structureType" style="width:150px" value="<%= form.getStructureType()  %>" >
 											<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_CONTENT) %>"><%= LanguageUtil.get(pageContext, "Content") %></option>
@@ -696,17 +624,14 @@ function disableFormFields(){
 						<%
 						String host = structure.getHost() != null?structure.getHost():"";
 						String folder = structure.getFolder()!= null?structure.getFolder():"";
-
 						if(!UtilMethods.isSet(structure.getInode())){
 							String defaultHostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
 							if(structureType == Structure.STRUCTURE_TYPE_FORM){
 								host = HostUtils.filterDefaultHostForSelect(defaultHostId, "PARENT:"+PermissionAPI.PERMISSION_CAN_ADD_CHILDREN+", STRUCTURES:"+ PermissionAPI.PERMISSION_PUBLISH, user);
 							}else{
 								host = HostUtils.filterDefaultHostForSelect(defaultHostId, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user);
-
 							}
 						}
-
 						String selectorValue = UtilMethods.isSet(folder) && !folder.equals(com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER)?folder:host;
 						%>
 						<dl>
@@ -942,18 +867,14 @@ function disableFormFields(){
 	    }
   <%}
 }%>
-
     dojo.addOnLoad(	function () {reviewChange(true);});
 	dojo.addOnLoad(resizeTableAndAddIcons);
 	dojo.addOnLoad(initDND);
 	dojo.addOnLoad(updateHostFolderValues);
 	dojo.addOnLoad(changeStructureType);
-
 	<%if(InodeUtils.isSet(structure.getInode()) && !hasWritePermissions) {%>
 	    dojo.addOnLoad(disableFormFields);
 	<%}%>
-
-
 	<% if(InodeUtils.isSet(structure.getInode()) && InodeUtils.isSet(structure.getInode())){ %>
 		var stType = document.getElementById("structureType");
 		stType.disabled = true;

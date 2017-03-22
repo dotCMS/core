@@ -15,6 +15,7 @@ import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -22,7 +23,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -172,7 +172,7 @@ public class CommentsWebAPI implements ViewTool {
 	}
 	
 	
-	private static boolean existCommentsRelation(Contentlet contentlet) {
+	private static boolean existCommentsRelation(Contentlet contentlet) throws DotDataException {
 		boolean returnValue = false;
 		// Comments Structure
 		Structure commentsStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(commentsVelocityStructureName);
@@ -182,7 +182,7 @@ public class CommentsWebAPI implements ViewTool {
 
 
 		// Get the relationships of the comments structure
-		List<Relationship> relationships = RelationshipFactory.getAllRelationshipsByStructure(commentsStructure);
+		List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType(commentsStructure);
 		for (Relationship relationship : relationships) {
 			Structure childStructure = relationship.getChildStructure();
 			Structure parentStructure = relationship.getParentStructure();
@@ -194,7 +194,7 @@ public class CommentsWebAPI implements ViewTool {
 		return returnValue;
 	}
 
-	private static  void validateCommentsRelation(Contentlet contentlet) throws DotHibernateException {
+	private static  void validateCommentsRelation(Contentlet contentlet) throws DotDataException {
 		if (!existCommentsRelation(contentlet)) {
 			// Comments Structure
 			Structure commentsStructure =  CacheLocator.getContentTypeCache().getStructureByVelocityVarName(commentsVelocityStructureName);
@@ -215,18 +215,18 @@ public class CommentsWebAPI implements ViewTool {
 			relationship.setParentRequired(false);
 			relationship.setChildRequired(false);
 			relationship.setFixed(true);
-			RelationshipFactory.saveRelationship(relationship);
+			FactoryLocator.getRelationshipFactory().save(relationship);
 
 		}
 	}
 
-	private static boolean existCommentsCommentsRelation() {
+	private static boolean existCommentsCommentsRelation() throws DotDataException {
 		boolean returnValue = false;
 		// Comments Structure
 		Structure commentsStructure =  CacheLocator.getContentTypeCache().getStructureByVelocityVarName(commentsVelocityStructureName);
 
 		// Get the relationships of the comments structure
-		List<Relationship> relationships = RelationshipFactory.getAllRelationshipsByStructure(commentsStructure);
+		List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType(commentsStructure);
 		for (Relationship relationship : relationships) {
 			Structure childStructure = relationship.getChildStructure();
 			Structure parentStructure = relationship.getParentStructure();
@@ -238,7 +238,7 @@ public class CommentsWebAPI implements ViewTool {
 		return returnValue;
 	}
 
-	private static void validateCommentsCommentsRelation() throws DotHibernateException {
+	private static void validateCommentsCommentsRelation() throws DotDataException {
 		if (!existCommentsCommentsRelation()) {
 			// Comments Structure
 			Structure commentsStructure =  CacheLocator.getContentTypeCache().getStructureByVelocityVarName(commentsVelocityStructureName);
@@ -256,7 +256,7 @@ public class CommentsWebAPI implements ViewTool {
 			relationship.setRelationTypeValue(commentStructureName + "-" + commentStructureName);
 			relationship.setParentRequired(false);
 			relationship.setChildRequired(false);
-			RelationshipFactory.saveRelationship(relationship);
+			FactoryLocator.getRelationshipFactory().save(relationship);
 		}
 	}
 
@@ -423,7 +423,7 @@ public class CommentsWebAPI implements ViewTool {
 		}
 	}
 
-	public void validateComments(String contentletInode) throws DotSecurityException, DotHibernateException {
+	public void validateComments(String contentletInode) throws DotSecurityException, DotDataException {
 		// Load the contentlet
 		ContentletAPI conAPI = APILocator.getContentletAPI();
 		Contentlet contentlet = new Contentlet();
@@ -435,7 +435,7 @@ public class CommentsWebAPI implements ViewTool {
 		validateComments(contentlet);
 	}
 
-	public void validateComments(Contentlet contentlet) throws DotSecurityException, DotHibernateException {
+	public void validateComments(Contentlet contentlet) throws DotSecurityException, DotDataException {
 		if(!InodeUtils.isSet(contentlet.getInode())){
 			return;
 		}

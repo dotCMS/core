@@ -21,6 +21,7 @@ import com.dotmarketing.portlets.categories.business.Categorizable;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -142,19 +143,11 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 	 *            The inode to set
 	 */
 	public void setInode(String inode) {
-		if(inode == null||inode == "")
+		if(!UtilMethods.isSet(inode))
 			this.inode = null;
-		else if (inode.contains("-")) {
-			UUID uuid = UUID.fromString(inode);
-			this.inode = uuid.toString();
-		}else {
-			try {
-				long oldInode = Long.parseLong(inode);
-				this.inode = Long.valueOf(oldInode).toString();
-			} catch (Exception e) {
-				this.inode = "";
-			}
-		}
+		this.inode = inode;
+		
+		
 
 	}
 
@@ -163,18 +156,8 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 	 */
 
 	public String getInode() {
-		if (inode != null) {
-			if (inode.contains("-")) {
-				UUID uuid = UUID.fromString(inode);
-				return uuid.toString();
-			}else {
-				try {
-					long oldInode = Long.valueOf(inode);
-					return Long.valueOf(oldInode).toString();
-				} catch (Exception e) {
-					return "";
-				}
-			}
+		if(UtilMethods.isSet(inode)){
+			return inode;
 		} else
 			return "";
 	}

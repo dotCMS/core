@@ -56,6 +56,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
+import javax.servlet.ServletContext;
+
 /**
  * <a href="FileUtil.java.html"><b><i>View Source</i></b></a>
  *
@@ -304,8 +306,8 @@ public class FileUtil {
 	 * NOTE: relativePath has to start with "/"
 	 */
 	public static String getRealPath(String relativePath){
-		
-		if(Config.CONTEXT ==null){
+		ServletContext context = Config.CONTEXT;
+		if(context ==null){
 			Logger.fatal(FileUtil.class, "Config.CONTEXT not initialized with a servlet context, dying");
 			throw new DotStateException("Config.CONTEXT not initialized with a servlet context, dying");
 		}

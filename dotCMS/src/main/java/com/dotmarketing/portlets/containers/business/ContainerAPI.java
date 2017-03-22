@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
@@ -249,6 +250,8 @@ public interface ContainerAPI {
 	 */
 	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException;
 
+    void deleteContainerStructureByContentType(ContentType type) throws DotDataException;
+    
 	public Container find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 }

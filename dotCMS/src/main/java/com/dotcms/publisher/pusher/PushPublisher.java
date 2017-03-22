@@ -292,7 +292,7 @@ public class PushPublisher extends Publisher {
             list.add(RuleBundler.class);
             list.add( LinkBundler.class );
             if ( Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES", false) ) {
-                list.add( StructureBundler.class );
+                list.add( ContentTypeBundler.class );
                 list.add( RelationshipBundler.class );
             }
             list.add( LanguageVariablesBundler.class );

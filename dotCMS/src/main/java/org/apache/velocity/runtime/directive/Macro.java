@@ -22,6 +22,7 @@ package org.apache.velocity.runtime.directive;
 import java.io.IOException;
 import java.io.Writer;
 
+import com.dotmarketing.business.CacheLocator;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.runtime.RuntimeServices;
@@ -115,6 +116,10 @@ public class Macro extends Directive
         String argArray[] = getArgArray(node, rs);
         int numArgs = node.jjtGetNumChildren();
         rs.addVelocimacro(argArray[0], node.jjtGetChild(numArgs - 1), argArray, node.getTemplateName());
+        String macroName = node.jjtGetChild(0).literal();
+        String macroContent = node.literal();
+
+        CacheLocator.getVeloctyResourceCache().putMacro(macroName,macroContent);
     }
     
     /**
@@ -208,7 +213,7 @@ public class Macro extends Directive
                 }
             }
 
-            argArray[i] = argArray[i].intern();
+            argArray[i] = argArray[i];
             i++;
         }
 

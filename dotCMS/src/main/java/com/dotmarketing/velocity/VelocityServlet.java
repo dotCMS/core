@@ -107,8 +107,11 @@ public abstract class VelocityServlet extends HttpServlet {
 
 	private final String PREVIEW_MODE_VTL= "preview_mode.vtl";
     private final String PREVIEW_MODE_MENU_VTL= "preview_mode_menu.vtl";
-    
-    
+
+    private static VelocityServlet me;
+    public static VelocityServlet me(){
+        return me;
+    }
 	protected void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
 
 		final String uri =URLDecoder.decode(

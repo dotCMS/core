@@ -3,6 +3,7 @@ package com.dotcms.util;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.cms.login.LoginService;
 import com.dotcms.cms.login.LoginServiceFactory;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.portlet.PortletURL;
 import com.dotcms.repackage.javax.portlet.WindowState;
@@ -11,7 +12,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.structure.model.Structure;
+
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.portlet.PortletURLImpl;
@@ -24,7 +25,7 @@ import java.util.Locale;
 import static com.dotcms.util.CollectionsUtils.map;
 
 /**
- * Util class for {@link com.dotmarketing.portlets.structure.model.Structure}
+ * Util class for {@link com.dotmarketing.portlets.ContentType.model.ContentType}
  */
 public class ContentTypeUtil {
 
@@ -61,28 +62,35 @@ public class ContentTypeUtil {
         loginService = LoginServiceFactory.getInstance().getLoginService();
     }
 
-    public String getActionUrl(final Structure structure) {
+    public String getActionUrl(final ContentType ContentType) {
         HttpServletRequest request = httpServletRequestThreadLocal.getRequest();
         User user = loginService.getLoggedInUser(request);
-
-        //It is ok not to have a logged in user all the time as this can be called by a plugin or by a Unit test
+        
+      //It is ok not to have a logged in user all the time as this can be called by a plugin or by a Unit test
         if ( user == null ) {
             Logger.debug(this, "No Logged in User found when calling ContentTypeUtil.getActionUrl");
             return null;
         }
 
-        return getActionUrl(request, structure, user);
+        return getActionUrl(request, ContentType, user);
     }
+    
+    public String getActionUrl(final ContentType ContentType, final User user) {
+      HttpServletRequest request = httpServletRequestThreadLocal.getRequest();
+      return getActionUrl(request, ContentType, user);
+  }
+    
+    
     /**
-     * Get the action url for the structure
-     * @param structure
+     * Get the action url for the ContentType
+     * @param ContentType
      * @return String
      */
-    public String getActionUrl( HttpServletRequest request, final Structure structure, User user) {
-        return getActionUrl(request, structure.getInode(), user);
+    public String getActionUrl( HttpServletRequest request, final ContentType ContentType, User user) {
+        return getActionUrl(request, ContentType.inode(), user);
     }
 
-    public String getActionUrl( HttpServletRequest request, final String structureInode, User user) {
+    public String getActionUrl( HttpServletRequest request, final String ContentTypeInode, User user) {
         final List<Layout> layouts;
         String actionUrl = StringUtils.EMPTY;
 
@@ -107,16 +115,16 @@ public class ContentTypeUtil {
                         "inode", new String[]{""}
     	            ));
 
-        	        actionUrl = portletURL.toString() + "&selectedStructure=" + structureInode +
+        	        actionUrl = portletURL.toString() + "&selectedContentType=" + ContentTypeInode +
                         "&lang=" + this.getLanguageId(user.getLanguageId(), languageAPI);
-               } else {
-               
-                   Logger.info(this, "Portlets are empty for the Layout: " + 
-                   		layout.getId());
-               }
-            } else {
-            
-            	Logger.info(this, "Layouts are empty for the user: " + user.getUserId());
+                } else {		
+               		
+                    Logger.info(this, "Portlets are empty for the Layout: " + 		
+                    		layout.getId());		
+                }		
+             } else {		
+             		
+             	Logger.info(this, "Layouts are empty for the user: " + user.getUserId());
             }
         } catch (Exception e) {
 

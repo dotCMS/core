@@ -168,9 +168,6 @@ public class ContainerServices {
 
                 String code =  "";
                 
-                sb.append("#set ($structureCode" ).append(
-                		" = $containerAPI.getStructureCode(\"").append( container.getIdentifier() ).append("\", \"$ContentletStructure\"))" );
-
 
                 //### HEADER ###
                 String startTag = "${contentletStart}";

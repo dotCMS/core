@@ -7,12 +7,15 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.repackage.com.google.common.base.CaseFormat;
 import com.dotcms.repackage.org.apache.logging.log4j.util.Strings;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Identifier;
@@ -43,6 +46,7 @@ import com.dotmarketing.velocity.VelocityServlet;
 import com.dotmarketing.viewtools.RequestWrapper;
 import com.liferay.portal.model.Company;
 import com.liferay.util.SystemProperties;
+
 
 public class VelocityUtil {
 
@@ -110,34 +114,13 @@ public class VelocityUtil {
 		
 	}
 
-	public static String convertToVelocityVariable(String variable) {
-		return convertToVelocityVariable(variable, false);
-	}
-	
-	public static String convertToVelocityVariable(String variable, boolean firstLetterUppercase){
+
+	public static String convertToVelocityVariable(final String variable, boolean firstLetterUppercase){
 		
-		Boolean upperCase = firstLetterUppercase;
-		String velocityvar = "";
-		String re = "[^a-zA-Z0-9]+";
-		
-		for(int i=0;i < variable.length() ; i++){
-			Character c = variable.charAt(i);
-			if(upperCase){
-				c=Character.toUpperCase(c);
-			}
-			else{
-				c=Character.toLowerCase(c);
-			}
-			if(c == ' '){
-				upperCase = true;
-			}
-			else{
-				upperCase = false;
-				velocityvar+=c;
-			}
-		}
-		velocityvar = velocityvar.replaceAll(re, "");
-		return velocityvar; 
+
+	      return (firstLetterUppercase) 
+	              ? StringUtils.camelCaseUpper(variable)
+	              : StringUtils.camelCaseLower(variable);
 		
 	}
 	
@@ -495,18 +478,7 @@ public class VelocityUtil {
 	}
 
 	public static long getLanguageId(HttpServletRequest request) {
-		long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-
-		try {
-			if(request.getParameter(WebKeys.HTMLPAGE_LANGUAGE)!=null)
-				languageId = Long.parseLong(request.getParameter(WebKeys.HTMLPAGE_LANGUAGE));
-			else if (request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)!=null)
-				languageId = Long.parseLong((String) request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE));
-		} catch(NumberFormatException e) {
-			Logger.info(VelocityServlet.class, "Bad languageId passed in");
-		}
-
-		return languageId;
+		return WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 	}
 
 	/**

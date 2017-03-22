@@ -6,6 +6,7 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Date;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -16,6 +17,7 @@ import org.junit.Test;
 import com.dotcms.UnitTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.cms.login.LoginService;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
@@ -48,7 +50,12 @@ public class ContentTypeUtilTest extends UnitTestBase {
         layout.setId("2");
         List<Layout> layouts = list(layout);
 
+        when(structure.getStructureType()).thenReturn(1);
         when(structure.getInode()).thenReturn("38a3f133-85e1-4b07-b55e-179f38303b90");
+        when(structure.getModDate()).thenReturn(new Date());
+        when(structure.getIDate()).thenReturn(new Date());
+        when(structure.getName()).thenReturn("testSt");
+        when(structure.getVelocityVarName()).thenReturn("testSt");
         when(layoutAPI.loadLayoutsForUser(user)).thenReturn(layouts);
         when(request.getSession()).thenReturn(session);
         when(request.getServerName()).thenReturn("localhost");
@@ -59,9 +66,9 @@ public class ContentTypeUtilTest extends UnitTestBase {
         when(httpServletRequestThreadLocal.getRequest()).thenReturn(request);
         when(loginService.getLoggedInUser(request)).thenReturn(user);
 
-        String expected = "http://localhost:0/ctx/portal_public/layout?p_l_id=2&p_p_id=1&p_p_action=1&p_p_state=maximized&_1_inode=&_1_cmd=new&_1_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&selectedStructure=38a3f133-85e1-4b07-b55e-179f38303b90&lang=1";
+        String expected = "http://localhost:0/ctx/portal_public/layout?p_l_id=2&p_p_id=1&p_p_action=1&p_p_state=maximized&_1_inode=&_1_cmd=new&_1_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&selectedContentType=38a3f133-85e1-4b07-b55e-179f38303b90&lang=1";
 
-        String actionUrl = contentTypeUtil.getActionUrl(structure);
+        String actionUrl = contentTypeUtil.getActionUrl(new StructureTransformer(structure).from());
         assertEquals(expected, actionUrl);
     }
 }

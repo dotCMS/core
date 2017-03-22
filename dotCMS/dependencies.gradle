@@ -1,8 +1,8 @@
 //noinspection GroovyAssignabilityCheck
 dependencies {
 
-    compile group: 'com.dotcms.enterprise', name: 'ee', version: '4.0', changing: true
-    compile group: 'com.dotcms.enterprise', name: 'eelic', version: '4.0', changing: true
+    compile group: 'com.dotcms.enterprise', name: 'ee', version: '4.1.0-SNAPSHOT', changing: true
+    compile group: 'com.dotcms.enterprise', name: 'eelic', version: '4.1.0-SNAPSHOT', changing: true
 
     compile group: 'com.dotcms', name: 'ant-tooling', version: '1.2'
     compile 'io.jsonwebtoken:jjwt:0.6.0'
@@ -72,6 +72,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.guava', version:'11.0.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.hadoop-dev-core', version:'0.20.3_2'
     compile group: 'com.dotcms.lib', name: 'dot.hadoop-dev-tools', version:'0.20.3_2'
+    compile 'com.hazelcast:hazelcast-all:3.8'
     compile group: 'com.dotcms.lib', name: 'dot.hibernate', version:'2.1.7_2'
     compile group: 'com.dotcms.lib', name: 'dot.httpbridge', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.httpclient', version:'4.2.2_2'
@@ -188,19 +189,19 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.maxmind-db', version:'1.0.0_2'
     compile group: 'com.dotcms.lib', name: 'dot.geoip2', version:'2.1.0_2'
     compile group: 'com.dotcms.lib', name: 'dot.aopalliance-repackaged', version:'2.4.0-b10_2'
-	compile group: 'com.dotcms.lib', name: 'dot.hk2-api', version:'2.4.0-b10_2'
-	compile group: 'com.dotcms.lib', name: 'dot.hk2-locator', version:'2.4.0-b10_2'
-	compile group: 'com.dotcms.lib', name: 'dot.hk2-utils', version:'2.4.0-b10_2'
-	compile group: 'com.dotcms.lib', name: 'dot.javassist', version:'3.18.1-GA_2'
-	compile group: 'com.dotcms.lib', name: 'dot.javax.annotation-api', version:'1.2_2'
-	compile group: 'com.dotcms.lib', name: 'dot.javax.inject', version:'2.4.0-b10_2'
-	compile group: 'com.dotcms.lib', name: 'dot.javax.ws.rs-api', version:'2.0.1_2'
-	compile group: 'com.dotcms.lib', name: 'dot.persistence-api', version:'1.0_2'
-	compile group: 'com.dotcms.lib', name: 'dot.validation-api', version:'1.1.0.Final_2'
-	compile group: 'com.dotcms.lib', name: 'dot.hibernate-validator', version:'4.3.2.Final_2'
-	compile group: 'com.dotcms.lib', name: 'dot.jboss-logging', version:'3.3.0.Final_2'
-	compile group: 'com.dotcms.lib', name: 'dot.txtmark', version:'0.14-SNAPSHOT_1'
-	compile group: 'com.dotcms.lib', name: 'dot.HikariCP', version:'2.4.6_1'
+    compile group: 'com.dotcms.lib', name: 'dot.hk2-api', version:'2.4.0-b10_2'
+    compile group: 'com.dotcms.lib', name: 'dot.hk2-locator', version:'2.4.0-b10_2'
+    compile group: 'com.dotcms.lib', name: 'dot.hk2-utils', version:'2.4.0-b10_2'
+    compile group: 'com.dotcms.lib', name: 'dot.javassist', version:'3.18.1-GA_2'
+    compile group: 'com.dotcms.lib', name: 'dot.javax.annotation-api', version:'1.2_2'
+    compile group: 'com.dotcms.lib', name: 'dot.javax.inject', version:'2.4.0-b10_2'
+    compile group: 'com.dotcms.lib', name: 'dot.javax.ws.rs-api', version:'2.0.1_2'
+    compile group: 'com.dotcms.lib', name: 'dot.persistence-api', version:'1.0_2'
+    compile group: 'com.dotcms.lib', name: 'dot.validation-api', version:'1.1.0.Final_2'
+    compile group: 'com.dotcms.lib', name: 'dot.hibernate-validator', version:'4.3.2.Final_2'
+    compile group: 'com.dotcms.lib', name: 'dot.jboss-logging', version:'3.3.0.Final_2'
+    compile group: 'com.dotcms.lib', name: 'dot.txtmark', version:'0.14-SNAPSHOT_1'
+    compile group: 'com.dotcms.lib', name: 'dot.HikariCP', version:'2.4.6_1'
     compile group: 'org.springframework', name: 'spring-asm', version:'3.1.0.RELEASE'
     compile(group: 'org.springframework', name: 'spring-beans', version:'3.1.0.RELEASE') {
         exclude(module: 'commons-logging')
@@ -339,5 +340,9 @@ dependencies {
     }
 
     compile group: 'javax.websocket', name: 'javax.websocket-api', version:'1.1'
-
+    compile 'com.fasterxml.jackson.datatype:jackson-datatype-guava:2.4.0'
+    compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.6.3'
+    compile 'org.immutables:generator:2.3.3'
+    compile 'org.immutables:value:2.3.3'
+    compile 'org.immutables:gson:2.3.3'
 }

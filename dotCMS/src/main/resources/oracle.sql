@@ -2509,3 +2509,6 @@ CREATE TABLE system_event (
 );
 ALTER TABLE system_event ADD CONSTRAINT PK_system_event PRIMARY KEY (identifier);
 CREATE INDEX idx_system_event ON system_event (created);
+
+--Content Types improvement
+CREATE INDEX idx_lower_structure_name ON structure (LOWER(velocity_var_name));

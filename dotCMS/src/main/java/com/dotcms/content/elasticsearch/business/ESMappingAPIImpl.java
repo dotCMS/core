@@ -32,6 +32,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
@@ -45,7 +46,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
+
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.FieldVariable;
@@ -419,7 +420,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	    Structure st=con.getStructure();
         for (Field f : fields) {
             if (f.getFieldType().equals(Field.FieldType.BINARY.toString())
-                    || f.getFieldContentlet() != null && f.getFieldContentlet().startsWith("system_field")) {
+                    || f.getFieldContentlet() != null && (f.getFieldContentlet().startsWith("system_field") && !f.getFieldType().equals(Field.FieldType.TAG.toString()))) {
                 continue;
             }
             if(!f.isIndexed()){
@@ -577,7 +578,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
         if(relatedContentlets.size()>0) {
 
-            List<Relationship> relationships = RelationshipFactory.getAllRelationshipsByStructure(con.getStructure());
+            List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType(con.getStructure());
 
             for(Relationship rel : relationships) {
 
@@ -637,7 +638,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             String relType=relatedEntry.get("relation_type").toString();
             String order = relatedEntry.get("tree_order").toString();
 
-            Relationship rel = RelationshipFactory.getRelationshipByRelationTypeValue(relType);
+            Relationship rel = FactoryLocator.getRelationshipFactory().byTypeValue(relType);
 
             if(rel!=null && InodeUtils.isSet(rel.getInode())) {
                 boolean isSameStructRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());

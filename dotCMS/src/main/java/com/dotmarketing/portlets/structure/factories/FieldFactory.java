@@ -1,111 +1,136 @@
 package com.dotmarketing.portlets.structure.factories;
 
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 
-import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.db.HibernateUtil;
+import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.EmptyField;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.transform.field.FieldVariableTransformer;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.factories.InodeFactory;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.StringUtils;
 
 
-
+@Deprecated
 public class FieldFactory {
 
+    private static FieldAPI fapi(){
+        return APILocator.getContentTypeFieldAPI();
+    }
 	//### READ ###
-	public static Field getFieldByInode(String inode)
+	public static Field getFieldByInode(String inode) 
 	{
-		return (Field) InodeFactory.getInode(inode,Field.class);
+
+		try {
+            return new LegacyFieldTransformer(APILocator.getContentTypeFieldAPI().find(inode)).asOldField();
+        } catch (DotStateException | DotDataException e) {
+            return new Field();
+        }
+
 	}
 
 	@SuppressWarnings("unchecked")
 	public static List<Field> getFieldsByStructure(String structureInode)
 	{
-		String condition = "structure_inode = '" + structureInode + "'";
-		String order = "sort_order asc, field_name asc";
-		return InodeFactory.getInodesOfClassByConditionAndOrderBy(Field.class,condition,order);
+	       try {
+	            return new LegacyFieldTransformer(APILocator.getContentTypeFieldAPI().byContentTypeId(structureInode)).asOldFieldList();
+	        } catch (DotStateException | DotDataException e) {
+	            return ImmutableList.of();
+	        }
+	    
 	}
 
 	@SuppressWarnings("unchecked")
 	public static List<Field> getFieldsByStructureSortedBySortOrder(String structureInode)
 	{
-		String condition = "structure_inode = '" + structureInode + "'";
-		String order = "sort_order asc";
-		return InodeFactory.getInodesOfClassByConditionAndOrderBy(Field.class,condition,order);
+	    return getFieldsByStructure(structureInode);
 	}
 
 	public static boolean isTagField(String fieldLuceneName, Structure st)
 	{
+	    try {
+            com.dotcms.contenttype.model.field.Field f = fapi().byContentTypeIdAndVar(st.getInode(), fieldLuceneName);
+            return (f instanceof TagField);
+        } catch (DotDataException e) {
+            return false;
+        }
 
-		List<Field> targetFields = FieldsCache.getFieldsByStructureInode(st.getInode());
-		boolean istag=false;
-
-
-		   for( Field f : targetFields ) {
-	        	if (f.getFieldContentlet().equals(fieldLuceneName)&& f.getFieldType().equals(Field.FieldType.TAG.toString()))
-	        {
-	        		istag=true;
-	        }
-		   }
-	        	return istag;
-
-		}
-
-
-	public static List getFieldsByContentletField(String dataType, String fieldInode, String structureInode) {
-		StringBuilder condition = new StringBuilder("structure_inode = '" + structureInode + "' and field_contentlet like '" + dataType + "%'");
-
-		if (UtilMethods.isSet(fieldInode)) {
-			condition.append(" and inode <> '" + fieldInode + "'");
-		}
-
-		if (dataType.equals("text")) {
-			condition.append(" and field_contentlet not like '" + dataType + "_area%'");
-		}
-
-		String order = "field_contentlet";
-		return InodeFactory.getInodesOfClassByConditionAndOrderBy(Field.class, condition.toString(), order);
 	}
+
+
 
 	public static Field getFieldByVariableName(String structureInode, String velocityVarName)
 	{
-		String condition = "structure_inode = '" + structureInode + "' and velocity_var_name = '" + velocityVarName + "'";
-		return (Field)InodeFactory.getInodeOfClassByCondition(Field.class,condition);
+	    velocityVarName = StringUtils.camelCaseLower(velocityVarName);
+        try {
+            com.dotcms.contenttype.model.field.Field f = fapi().byContentTypeIdAndVar(structureInode, velocityVarName);
+            return new LegacyFieldTransformer(f).asOldField();
+        } catch (DotDataException e) {
+            return new Field();
+        }
 	}
 
-    public static Field getFieldByStructure(String structureInode, String fieldName)
-    {
-        String condition = "structure_inode = '" + structureInode + "' and field_name = '" + fieldName + "'";
-        return (Field) InodeFactory.getInodeOfClassByCondition(Field.class,condition);
+    public static Field getFieldByStructure(String structureInode, String fieldName){
+        try{
+            List<com.dotcms.contenttype.model.field.Field> fields = fapi().byContentTypeId(structureInode);
+            for(com.dotcms.contenttype.model.field.Field field : fields){
+                if(field.name().equals(fieldName)){
+                    return new LegacyFieldTransformer(field).asOldField();
+                }
+            }
+        }
+        catch(DotDataException e){
+            Logger.error(FieldFactory.class, e.getMessage(),e);
+        }
+        return new Field();
     }
 
-    public static Field getFieldByName(String structureType, String fieldName)
-    {
-        Structure st = StructureFactory.getStructureByType(structureType);
-        String condition = "structure_inode = '" + st.getInode() + "' and field_name = '" + fieldName + "'";
-        return (Field) InodeFactory.getInodeOfClassByCondition(Field.class,condition);
-    }
 
 	//### CREATE AND UPDATE ###
-	public static void saveField(Field field) throws DotHibernateException
+	public static Field saveField(Field oldField) throws DotHibernateException
 	{
-		field.setModDate(new Date());
-		HibernateUtil.saveOrUpdate(field);
-		FieldsCache.removeFieldVariables(field);
+	    
+        if (oldField.getFieldType().equals("host or folder") || oldField.getFieldType().equals("line_divider") || oldField.getFieldType().equals("tab_divider")
+                || oldField.getFieldType().equals("categories_tab")
+                || oldField.getFieldType().equals("permissions_tab") 
+                || oldField.getFieldType().equals( "relationships_tab")
+                || oldField.getFieldType().equals("category")
+                || oldField.getFieldType().equals("tag")
+             ) {
+
+            oldField.setFieldContentlet(DataTypes.SYSTEM.toString());
+            
+        }
+	    
+	    com.dotcms.contenttype.model.field.Field field = new LegacyFieldTransformer(oldField).from();
+	    try {
+            return new LegacyFieldTransformer(
+            	APILocator.getContentTypeFieldAPI().save(field, APILocator.systemUser())
+            ).asOldField();
+        } catch (DotDataException | DotSecurityException e) {
+            throw new DotHibernateException(e.getMessage(),e);
+        }
 	}
 
-	public static void saveField(Field field, String existingId) throws DotHibernateException
+	public static void saveField(Field oldField, String existingId) throws DotHibernateException
 	{
-		field.setModDate(new Date());
-		HibernateUtil.saveWithPrimaryKey(field, existingId);
+	    oldField.setInode(existingId);
+
+        saveField(oldField);
+
+
 	}
 
 	//### DELETE ###
@@ -115,104 +140,56 @@ public class FieldFactory {
 		deleteField(field);
 	}
 
-	public static void deleteField(Field field) throws DotHibernateException
+	public static void deleteField(Field oldField) throws DotHibernateException
 	{
-		InodeFactory.deleteInode(field);
-		FieldsCache.removeField(field);
-
-		List<FieldVariable> fieldVars = getFieldVariablesForField(field);
-		for (FieldVariable var : fieldVars) {
-			deleteFieldVariable(var);
-		}
+        com.dotcms.contenttype.model.field.Field field = new LegacyFieldTransformer(oldField).from();
+	    try {
+            fapi().delete(field);
+        } catch (DotDataException e) {
+            throw new DotHibernateException(e.getMessage(),e);
+        }
 
 	}
 
 	public static String getNextAvaliableFieldNumber (String dataType, String currentFieldInode, String structureInode) {
-		List fields = FieldFactory.getFieldsByContentletField(dataType,currentFieldInode,structureInode);
-		if (fields.size()>0) {
+	    
+        try{
+            com.dotcms.contenttype.model.field.Field proxy = FieldBuilder.builder(EmptyField.class)
+                    .contentTypeId(structureInode)
+                    .id(currentFieldInode)
+                    .name("fake")
+                    .variable("fake")
 
-			//check if there is at least one empty
-			if (fields.size()<25) {
+                    .dataType(DataTypes.getDataType(dataType)).build();
+            
 
-				int lastDataTypeIdx = 0;
-				for (int i=1;i<=25;i++) {
-					boolean found = false;
-					Iterator fieldsIter = fields.iterator();
-					while (fieldsIter.hasNext() && !found) {
-						Field nextField = (Field) fieldsIter.next();
-						try {
-							lastDataTypeIdx =Integer.parseInt(nextField.getFieldContentlet().replace(dataType,""));
-							if (i == lastDataTypeIdx) {
-								//found this field, break and try to find the next one
-								found = true;
-							}
-						}
-						catch (NumberFormatException e){
-
-						}
-					}
-					if (!found) {
-						lastDataTypeIdx = i;
-						break;
-					}
-				}
-				//found an empty field
-				//set the contentlet field to be the data type plus the last one used
-				return dataType + lastDataTypeIdx;
-			}
-			else {
-				return null;
-			}
-		}
-		else {
-			//set the contentlet field to be the data type plus the last one used
-			return dataType + "1";
-		}
+            return fapi().nextAvailableColumn(proxy);
+        }
+        catch(DotDataException e){
+            Logger.error(FieldFactory.class, e.getMessage(),e);
+        }
+        return null;
 	}
 
-	public static void saveFieldVariable(FieldVariable fieldVar){
+	public static FieldVariable saveFieldVariable(FieldVariable fieldVar){
 
-		String id = fieldVar.getId();
-		Field proxy = new Field();
-		proxy.setInode(fieldVar.getFieldId());
-
-
-		if(InodeUtils.isSet(id)) {
-			try {
-				HibernateUtil.update(fieldVar);
-			} catch (DotHibernateException e) {
-				Logger.error(FieldFactory.class, e.getMessage());
-			}
-		}else{
-			try {
-				HibernateUtil.save(fieldVar);
-			} catch (DotHibernateException e) {
-				Logger.error(FieldFactory.class, e.getMessage());
-			}
-		}
-		FieldsCache.removeField(proxy);
-		FieldsCache.removeFieldVariables(proxy);
-
-		Field f = getFieldByInode(fieldVar.getFieldId());
-		f.setModDate(new Date());
-		try {
-			saveField(f);
-		} catch (DotHibernateException e) {
-			Logger.error(FieldFactory.class, e.getMessage());
-		}
-
-
+	    com.dotcms.contenttype.model.field.FieldVariable var= new FieldVariableTransformer(fieldVar).newfield();
+	    
+        try {
+            return new FieldVariableTransformer(fapi().save(var, APILocator.systemUser())).oldField();
+        } catch (DotDataException | DotSecurityException e) {
+            Logger.error(FieldFactory.class, e.getMessage());
+        }
+        return new FieldVariable();
 	}
 
 	public static FieldVariable getFieldVariable(String id){
-
-		FieldVariable fVar = new FieldVariable();
-		 try {
-			 fVar = (FieldVariable) HibernateUtil.load(FieldVariable.class, id);
-		} catch (DotHibernateException e) {
-			Logger.error(FieldFactory.class, e.getMessage());
-		}
-		return fVar;
+	    try {
+            return new FieldVariableTransformer(fapi().loadVariable(id)).oldField();
+        } catch (DotStateException | DotDataException e) {
+            Logger.error(FieldFactory.class, e.getMessage());
+        }
+        return new FieldVariable();
 	}
 
 	public static void deleteFieldVariable(String id){
@@ -221,26 +198,14 @@ public class FieldFactory {
 	}
 
 	public static void deleteFieldVariable(FieldVariable fieldVar){
-		try {
-			HibernateUtil.delete(fieldVar);
-		} catch (DotHibernateException e) {
-			Logger.error(FieldFactory.class, e.getMessage());
-		}
-
+	       try {
+	           fapi().delete(new FieldVariableTransformer(fieldVar).newfield());
+	        } catch (DotStateException | DotDataException e) {
+	            Logger.error(FieldFactory.class, e.getMessage());
+	        }
+	
 	}
 
-	public static List <FieldVariable> getAllFieldVariables(){
-
-		List <FieldVariable> result = new ArrayList<FieldVariable>();
-		HibernateUtil hu = new HibernateUtil(FieldVariable.class);
-		try {
-			hu.setQuery("from " + FieldVariable.class.getName());
-			result = hu.list();
-		} catch (DotHibernateException e) {
-			Logger.error(FieldFactory.class, e.getMessage());
-		}
-		return result;
-	}
 
 	public static List<FieldVariable> getFieldVariablesForField (String fieldId ){
 
@@ -250,29 +215,16 @@ public class FieldFactory {
 	}
 
 	public static List<FieldVariable> getFieldVariablesForField (Field field ){
-
-		if(field == null || field.getInode() ==null){
-			return new ArrayList<FieldVariable>();
-		}
-		List<FieldVariable> result = null;
-
-		result = FieldsCache.getFieldVariables(field);
-		if(result ==null || result.isEmpty()){
-			HibernateUtil dh = new HibernateUtil(FieldVariable.class);
-
-			try {
-				dh.setQuery("from " + FieldVariable.class.getName()
-						+ " fvar where fvar.fieldId = ?");
-
-				dh.setParam(field.getInode());
-				result = dh.list();
-			} catch (DotHibernateException e) {
-				Logger.error(FieldFactory.class, e.getMessage());
-			}
-
-			FieldsCache.addFieldVariables(field, result);
-		}
-		return result;
+	    
+	       try {
+	           com.dotcms.contenttype.model.field.Field newfield = fapi().find(field.getInode());
+	           List<com.dotcms.contenttype.model.field.FieldVariable > fl = fapi().loadVariables(newfield);
+	           return new FieldVariableTransformer(fl).oldFieldList();
+	        } catch (DotStateException | DotDataException e) {
+	            Logger.error(FieldFactory.class, e.getMessage());
+	        }
+	        return new ArrayList<FieldVariable>();
+	    
 	}
 
 }

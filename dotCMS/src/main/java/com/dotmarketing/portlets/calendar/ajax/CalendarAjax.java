@@ -38,7 +38,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
+
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -466,79 +466,6 @@ public class CalendarAjax {
 		return callbackData;
 	}		
 	
-	public List<Map<String, Object>> findLocations(String filter) throws DotDataException, DotSecurityException, PortalException, SystemException {
-
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-
-		//Retrieving the current user
-		User user = userAPI.getLoggedInUser(request);
-		boolean respectFrontendRoles = true;
-
-		//Searching for buildings
-		Structure buildingStructure = eventAPI.getBuildingStructure();
-		Field titleField = buildingStructure.getFieldVar("title");
-		String luceneQuery = "+structureInode:" + buildingStructure.getInode();
-		List<Map<String, Object>> results = new ArrayList<Map<String,Object>>();
-		List<Contentlet> matches = contAPI.search(luceneQuery, -1, 0, titleField.getFieldContentlet(), user, respectFrontendRoles);
-		List<Map<String, Object>> facilitiesList = findChildFacilities(matches, filter, user, respectFrontendRoles);
-	
-		for(Contentlet cont:matches){
-			List<Map<String, Object>> facilitiesListCont = new ArrayList<Map<String,Object>>(); 
-			Map<String, Object> contMap = cont.getMap();
-			if(!UtilMethods.isSet(filter) || facilitiesList.size() > 0 || ((String)contMap.get("title")).contains(filter)) {
-				for(Map<String,Object> facility: facilitiesList){
-					for(Contentlet building: (ArrayList<Contentlet>)facility.get("buildings")){
-						if(building.getIdentifier().equals(cont.getIdentifier()) && !facilitiesListCont.contains(facility)){
-							Map<String,Object> facilityMap = new HashMap<String,Object>();
-							facilityMap.putAll(facility);
-							facilityMap.put("buildings",null);
-							facilitiesListCont.add(facilityMap);
-							break;
-						}
-					}
-
-				}
-				contMap.put("facilities", facilitiesListCont);
-				results.add(contMap);
-			}
-		}
-		return results;
-	}
-
-	private List<Map<String, Object>> findChildFacilities(List<Contentlet> buildingConts, String filter, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		List<Map<String, Object>> results = new ArrayList<Map<String,Object>>();
-		
-		//Searching for children facilities
-		Structure facilityStructure = eventAPI.getFacilityStructure();
-		// Facility Structure might be absent http://jira.dotmarketing.net/browse/DOTCMS-6275
-		if(facilityStructure.getName()!=null) {
-			Field titleField = facilityStructure.getFieldVar("title");
-			String luceneQuery = "+structureInode:" + facilityStructure.getInode() + " +(";
-			for(Contentlet cont:buildingConts){
-				luceneQuery+= " Building-Facility:" + cont.getIdentifier() + " ";
-			}
-			luceneQuery+=") ";
-			if(UtilMethods.isSet(filter))
-				luceneQuery += " +" + titleField.getFieldContentlet() + ":" + filter.trim() + "*";
-			
-			List<Contentlet> matches = contAPI.search(luceneQuery, -1, 0, titleField.getFieldContentlet(), user, respectFrontendRoles);
-			List<Relationship> rels = RelationshipFactory.getAllRelationshipsByStructure(eventAPI.getBuildingStructure());
-			for(Contentlet cont : matches) {
-				List<Contentlet> relCont = new ArrayList<Contentlet>();
-				for(Relationship rel: rels){
-					if(rel.getChildStructure().equals(eventAPI.getFacilityStructure()) && 
-							rel.getParentStructure().equals(eventAPI.getBuildingStructure())){
-						relCont.addAll(APILocator.getContentletAPI().getRelatedContent(cont, rel , user, respectFrontendRoles));
-					}
-				}
-				Map<String, Object> contMap = cont.getMap();
-				contMap.put("buildings", relCont);
-				results.add(contMap);
-			}
-		}
-		return results;
-	}
 
 
 	public Map<String, Object> saveEvent(List<String> formData,

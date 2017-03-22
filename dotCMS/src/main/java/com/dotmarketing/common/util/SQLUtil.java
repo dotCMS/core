@@ -19,6 +19,7 @@ import net.sourceforge.squirrel_sql.plugins.oracle.tokenizer.OracleQueryTokenize
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -45,7 +46,7 @@ public class SQLUtil {
 			"mod_date","structuretype,upper(name)","upper(name)",
 			"category_key", "page_url","name","velocity_var_name",
 			"description","category_","sort_order","hostName", "keywords",
-			"mod_date,upper(name)");
+			"mod_date,upper(name)", "relation_type_value");
 	
 	public static List<String> tokenize(String schema) {
 		List<String> ret=new ArrayList<String>();
@@ -201,7 +202,7 @@ public class SQLUtil {
 	 */
 	public static String sanitizeSortBy(String parameter){
 
-		if(!UtilMethods.isSet(parameter)){//check if is not null
+		if(StringUtils.isBlank(parameter) || parameter.contains("null")){//first check if is null or empty, check if contains the word null (e.g null null)
 			return StringPool.BLANK;
 		}
 

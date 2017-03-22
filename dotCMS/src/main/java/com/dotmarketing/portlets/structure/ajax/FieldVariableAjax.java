@@ -78,21 +78,8 @@ public class FieldVariableAjax {
 	
 		List<FieldVariable> variables = fieldAPI.getFieldVariablesForField(fieldId, user, false);
 	
-		FieldVariable fieldVariable = null;
-		for (FieldVariable next : variables) {
-			if (next.getKey().equals(key) && !next.getId().equals(id)) {
-				return LanguageUtil.get(user, "message.fieldvariables.exist.error.key");
-			}
-			if(UtilMethods.isSet(id) && next.getId().equals(id)) {
-				fieldVariable = next;
-				continue;
-			}
-		}
-		
-		if(fieldVariable == null) {
-			fieldVariable = new FieldVariable();
-		}
-	
+		FieldVariable fieldVariable = new FieldVariable();
+
 		fieldVariable.setId(id);
 		fieldVariable.setFieldId(fieldId);
 		fieldVariable.setName(name);

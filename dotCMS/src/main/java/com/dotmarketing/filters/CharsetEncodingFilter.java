@@ -21,6 +21,7 @@ import javax.servlet.http.HttpSession;
 import com.dotcms.repackage.org.apache.struts.Globals;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
@@ -96,47 +97,10 @@ public class CharsetEncodingFilter implements Filter {
 						}
 	        		}
 	        	} else {
-	        	//if frontend the locale is defined by the dotCMS frontend language session variables
-	        		
-			        // set default page language
-			        if (!UtilMethods.isSet((String) session.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE))) {
-			
-				        languageId = String.valueOf(langAPI.getDefaultLanguage().getId());
-			        	Language currentLang = langAPI.getLanguage(languageId);
-			            Locale locale = new Locale(currentLang.getLanguageCode(), currentLang.getCountryCode());
-			
-			            session.setAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE, languageId);
-			            boolean ADMIN_MODE = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-			            if(ADMIN_MODE==false){session.setAttribute(WebKeys.Globals_FRONTEND_LOCALE_KEY, locale);}//DOTCMS-5013
-				        session.setAttribute(com.dotmarketing.util.WebKeys.LOCALE, locale);
-			
-			        }
-			
-			        // update page language
-			        if (UtilMethods.isSet(request.getParameter(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE)) ||
-			        	UtilMethods.isSet(request.getParameter("language_id"))) 
-			        {
-			        	if(UtilMethods.isSet(request.getParameter(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE)))
-			        	{
-			        		languageId = request.getParameter(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);
-			        	}
-			        	else
-			        	{
-			        		languageId = request.getParameter("language_id");
-			        	}
-			        	if(Xss.URLHasXSS(languageId)){
-			        		/*Pull default language*/
-			        		languageId = Long.toString(langAPI.getDefaultLanguage().getId());
-			        		request.setAttribute("language_id", languageId);
-			        	}
-			        	Language currentLang = langAPI.getLanguage(languageId);
-			            Locale locale = new Locale(currentLang.getLanguageCode(), currentLang.getCountryCode());
-			
-			            session.setAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE, languageId);
-			            boolean ADMIN_MODE = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-			            if(ADMIN_MODE==false){session.setAttribute(Globals.LOCALE_KEY, locale);}
-				        session.setAttribute(com.dotmarketing.util.WebKeys.LOCALE, locale);
-			        }
+	        	    //if frontend the locale is defined by the dotCMS frontend language session variables
+	        	    // ALL work should be done here
+        	        WebAPILocator.getLanguageWebAPI().checkSessionLocale(httpRequest);
+	        	    
 		        
 	        	}
 	        }

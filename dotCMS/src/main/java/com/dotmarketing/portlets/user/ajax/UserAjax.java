@@ -177,23 +177,25 @@ public class UserAjax {
 		} catch(UserFirstNameException e) {
 			ActivityLogger.logInfo(getClass(), "Error Adding User. Invalid First Name", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 			AdminLogger.log(getClass(), "Error Updating User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
-			e.setMessage(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"User-Info-Save-First-Name-Failed"));
-			
+
+
 			if (localTransaction) {
 				HibernateUtil.rollbackTransaction();
+				
 			}
-			
-			throw e;
+            throw new DotDataException(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"User-Info-Save-First-Name-Failed"),"User-Info-Save-First-Name-Failed",e);
+
+
 		} catch(UserLastNameException e) {
 			ActivityLogger.logInfo(getClass(), "Error Adding User. Invalid Last Name", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 			AdminLogger.log(getClass(), "Error Updating User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
-			e.setMessage(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"User-Info-Save-Last-Name-Failed"));
 			
 			if (localTransaction) {
 				HibernateUtil.rollbackTransaction();
 			}
 			
-			throw e;
+            throw new DotDataException(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"User-Info-Save-Last-Name-Failed"),"User-Info-Save-Last-Name-Failed",e);
+
 		} catch (DotDataException | DotStateException e) {
 			ActivityLogger.logInfo(getClass(), "Error Adding User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 			AdminLogger.log(getClass(), "Error Adding User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
@@ -298,13 +300,13 @@ public class UserAjax {
 		}catch(UserFirstNameException e) {
 			ActivityLogger.logInfo(getClass(), "Error Updating User. Invalid First Name", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 			AdminLogger.log(getClass(), "Error Updating User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
-			e.setMessage(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"User-Info-Save-First-Name-Failed"));
-			throw e;
+            throw new DotDataException(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"User-Info-Save-First-Name-Failed"),"User-Info-Save-Last-Name-Failed",e);
+
 		} catch(UserLastNameException e) {
 			ActivityLogger.logInfo(getClass(), "Error Updating User. Invalid Last Name", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 			AdminLogger.log(getClass(), "Error Updating User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
-			e.setMessage(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"User-Info-Save-Last-Name-Failed"));
-			throw e;
+            throw new DotDataException(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"User-Info-Save-Last-Name-Failed"),"User-Info-Save-Last-Name-Failed",e);
+
 		} catch(DotDataException | DotStateException e) {
 			ActivityLogger.logInfo(getClass(), "Error Updating User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 			AdminLogger.log(getClass(), "Error Updating User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());

@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
 import com.dotcms.repackage.org.apache.commons.lang.builder.EqualsBuilder;
@@ -17,7 +18,6 @@ import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
@@ -1644,12 +1644,21 @@ public class Contentlet extends WebAsset implements Serializable {
 	 */
 	public Map<String, Object> getMap() throws DotRuntimeException {
 		Map<String, Object> myMap = new HashMap<String, Object>();
-		List<Field> fields = FieldsCache.getFieldsByStructureInode(structureInode);
+		try{
+		List<Field> fields = new LegacyFieldTransformer(APILocator.getContentTypeFieldAPI().byContentTypeId(structureInode)).asOldFieldList();
 		for (Field f : fields) {
 			if(!APILocator.getFieldAPI().valueSettable(f)){
 				continue;
 			}
 			if (Field.FieldType.HOST_OR_FOLDER.toString().equals(f.getFieldType())) {
+				continue;
+			}
+			if (Field.FieldType.TAG.toString().equals(f.getFieldType())) {
+				continue;
+			}
+			// https://github.com/dotCMS/core/issues/10245
+			if (f.getFieldContentlet() != null && f.getFieldContentlet().startsWith("system_field") &&
+				! Field.FieldType.BINARY.toString().equals(f.getFieldType())) {
 				continue;
 			}
 			// http://jira.dotmarketing.net/browse/DOTCMS-1073
@@ -1663,10 +1672,9 @@ public class Contentlet extends WebAsset implements Serializable {
 				value = f.getValues();
 			}else{
 				try {
-					value = PropertyUtils.getProperty(this, f.getFieldContentlet());
 					// http://jira.dotmarketing.net/browse/DOTCMS-3463
 					/*** THIS LOGIC IS DUPED IN THE CONTENTLETAPI.  IF YOU CHANGE HERE, CHANGE THERE **/
-					if(f.getFieldContentlet().startsWith("binary")&& value == null){
+					if(Field.FieldType.BINARY.toString().equals(f.getFieldType())){
 						java.io.File binaryFile = null ;
 						java.io.File binaryFilefolder = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
 								+ java.io.File.separator
@@ -1684,6 +1692,8 @@ public class Contentlet extends WebAsset implements Serializable {
 							}
 						}
 						value = binaryFile;
+					} else {
+						value = PropertyUtils.getProperty(this, f.getFieldContentlet());
 					}
 				} catch (Exception e) {
 					Logger.error(this, "Unable to obtain contentlet property value for: " + f.getFieldContentlet(), e);
@@ -1694,6 +1704,10 @@ public class Contentlet extends WebAsset implements Serializable {
 
 		}
 		return myMap;
+		}
+		catch(Exception e){
+			throw new DotRuntimeException(e);
+		}
 	}
 
 	/**

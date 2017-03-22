@@ -30,11 +30,8 @@ public class UUIDGenerator implements IdentifierGenerator {
 
 	}
 	
-	public static synchronized String generateUuid(){
-
-		/** generate UUID **/
-		UUID u = UUID.randomUUID();
-		return u.toString().toLowerCase();
+	public static String generateUuid(){
+	  return UUID.randomUUID().toString();
 	}
 	
 }

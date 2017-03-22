@@ -94,7 +94,7 @@ dependencies {
     /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
     compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
-    starter group: 'com.dotcms', name: 'starter', version: '20170315', ext: 'zip'
+    starter group: 'com.dotcms', name: 'starter', version: '20170320', ext: 'zip'
     coreWeb group: 'com.dotcms', name: 'core-web', version: '4.0.0-SNAPSHOT', ext: 'zip', changing: true
 
     providedCompile "javax.servlet:javax.servlet-api:3.1.0"
@@ -110,14 +110,15 @@ dependencies {
 // Import and apply the dependencies from the dependencies scripts.
 apply from: "$rootDir/dependencies.gradle"
 
+
 if (gradle.startParameter.taskNames.contains("deployWarTomcatDev")) {
-    sourceSets {
-        main {
-            java {
-                srcDirs = ["src/main/java", "$enterpriseProjectHome/src", "$licenseProjectHome/src"]
-            }
-        }
-    }
+	sourceSets {
+    	main {
+        	java { 
+            	srcDirs = ["src/main/java", "$enterpriseProjectHome/src/main/java", "$licenseProjectHome/src/main/java"]
+	        }
+    	}
+	}
 }
 
 
@@ -126,7 +127,6 @@ ant.lifecycleLogLevel = "INFO"
 ext {
     // Open the Git repository in the current directory.
 
-    dotcmsReleaseVersion="$dotcmsReleaseVersion"
     dotcmsReleaseBuild = ''
     dotcmsReleaseName='dotCMS Platform'
     dotcmsReleaseCodename='Panther'
@@ -365,7 +365,7 @@ task tgzTask(type: Tar) {
         }
         destinationDir file("$outputDistLocation")
         baseName 'dotcms_'+dotcmsReleaseVersion
-        extension = 'tgz'
+        extension = 'tar.gz'
         compression = Compression.GZIP
     }
 }
@@ -380,6 +380,28 @@ removeDistFolder.description='Removes the distribution folder.'
 
 removeDistFolder.mustRunAfter 'zip', 'tgzTask'
 
+/** If you want to create the javadoc, please run ./gradlew generateJavadocs */
+javadoc {
+    title      = "dotCMS API"
+    maxMemory  = "1024m"
+    classpath  = sourceSets.main.compileClasspath
+    source     = sourceSets.main.allJava
+    include   "com.dotmarketing.*"
+    include   "com.dotcms.*"
+    options.noQualifiers 'all'
+    options.author(true)
+    options.version(true)
+    options.use(true)
+    options.encoding 'utf-8'
+    options.docEncoding 'utf-8'
+    options.charSet 'utf-8'
+    options.linkSource true
+    options.links 'https://docs.oracle.com/javase/8/docs/api/'
+}
+
+task generateJavadocs(type: Javadoc) {
+    source = sourceSets.main.allJava
+}
 
 //Task meant to be use from a distribution structure using the buildwar.sh script.
 //This task will just use the already deployed folder inside the app server and compressed to a war file.
@@ -601,54 +623,42 @@ restoreBackupWarTomcatData.description='Restores content of assets, dotsecure, M
 undeployPlugins.finalizedBy 'deployConfig'
 
 //Generates a no obfuscated version of the license jar
-task generateMoveCleanLicenseTomcat << {
+task generateMoveCleanLicenseTomcat(type: GradleBuild) {
+    buildFile = "$licenseProjectHome/build.gradle"
+    tasks = gradle.startParameter.taskNames.contains('clean') ? ['clean', 'build'] : ['build']
+	startParameter.projectProperties = [dotcmsReleaseVersion: "$dotcmsReleaseVersion"]
 
-    javaexec {
-        workingDir licenseProjectHome
-        main="-jar";
-        args = [
-                "$rootDir/../bin/ant/ant-launcher.jar",
-                "-Ddotcms.release.version",
-                dotcmsReleaseVersion
-        ]
-    }
-
-    delete fileTree("$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"){
-        include "eelic-*", "eelic_*"
-    }
-
-    copy{
-        from "$licenseProjectHome/build"
-        into "$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"
-        include "eelic_clean.jar"
-    }
-
+	doLast {
+		delete fileTree("$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"){
+			include "eelic-*", "eelic_*"
+		}
+		copy{
+			from "$licenseProjectHome/build/libs"
+			into "$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"
+			include "eelic_clean.jar"
+		}
+	}
 }
 generateMoveCleanLicenseTomcat.group='dotCMS Util'
 generateMoveCleanLicenseTomcat.description='Creates a no-obfuscated license JAR and moves it into WEB-INF/lib .'
 
 //Generates a no obfuscated version of the enterprise jar
-task generateMoveCleanEnterpriseTomcat << {
+task generateMoveCleanEnterpriseTomcat(type: GradleBuild) {
+    buildFile = "$enterpriseProjectHome/build.gradle"
+    tasks = gradle.startParameter.taskNames.contains('clean') ? ['clean', 'build'] : ['build']
+	startParameter.projectProperties = [dotcmsReleaseVersion: "$dotcmsReleaseVersion"]
 
-    javaexec {
-        workingDir enterpriseProjectHome
-        main="-jar";
-        args = [
-                "$rootDir/../bin/ant/ant-launcher.jar",
-                "-Ddotcms.release.version",
-                dotcmsReleaseVersion
-        ]
-    }
+	doLast {
+		delete fileTree("$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"){
+			include "ee-*", "ee_*"
+		}
 
-    delete fileTree("$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"){
-        include "ee-*", "ee_*"
-    }
-
-    copy{
-        from "$enterpriseProjectHome/build"
-        into "$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"
-        include "ee_clean.jar"
-    }
+		copy{
+			from "$enterpriseProjectHome/build/libs"
+			into "$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"
+			include "ee_clean.jar"
+		}
+	}
 }
 generateMoveCleanEnterpriseTomcat.group='dotCMS Util'
 generateMoveCleanEnterpriseTomcat.description='Creates a no-obfuscated enterprise JAR and moves it into WEB-INF/lib .'

@@ -1,5 +1,26 @@
 package com.dotcms.rest;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
+
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.converters.Converter;
 import com.dotcms.repackage.com.thoughtworks.xstream.converters.MarshallingContext;
@@ -21,7 +42,6 @@ import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.org.apache.commons.net.io.Util;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
@@ -33,7 +53,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
@@ -45,9 +65,7 @@ import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -60,17 +78,6 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.content.util.ContentUtils;
 import com.liferay.portal.model.User;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Part;
 
 @Path("/content")
 public class ContentResource {
@@ -630,7 +637,7 @@ public class ContentResource {
 	@Produces(MediaType.TEXT_PLAIN)
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	public Response multipartPUT(@Context HttpServletRequest request, @Context HttpServletResponse response,
-			FormDataMultiPart multipart,@PathParam("params") String params) throws URISyntaxException {
+			FormDataMultiPart multipart,@PathParam("params") String params) throws URISyntaxException, DotDataException {
 		return multipartPUTandPOST(request, response, multipart, params, "PUT");
 	}
 	
@@ -639,12 +646,12 @@ public class ContentResource {
 	@Produces(MediaType.TEXT_PLAIN)
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	public Response multipartPOST(@Context HttpServletRequest request, @Context HttpServletResponse response,
-			FormDataMultiPart multipart,@PathParam("params") String params) throws URISyntaxException {
+			FormDataMultiPart multipart,@PathParam("params") String params) throws URISyntaxException, DotDataException {
 		return multipartPUTandPOST(request, response, multipart, params, "POST");
 	}
 	
 	private Response multipartPUTandPOST(HttpServletRequest request, HttpServletResponse response,
-			FormDataMultiPart multipart, String params, String method) throws URISyntaxException{
+			FormDataMultiPart multipart, String params, String method) throws URISyntaxException, DotDataException{
 
         InitDataObject init= webResource.init(params, true, request, false, null);
 		User user=init.getUser();
@@ -991,7 +998,7 @@ public class ContentResource {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected void processXML(Contentlet contentlet, InputStream inputStream) throws IOException, DotSecurityException {
+	protected void processXML(Contentlet contentlet, InputStream inputStream) throws IOException, DotSecurityException, DotDataException {
 		
 		
 		String input = IOUtils.toString(inputStream, "UTF-8");
@@ -1052,7 +1059,7 @@ public class ContentResource {
 		processMap( contentlet, map );
 	}
 
-	protected void processMap(Contentlet contentlet, Map<String,Object> map) {
+	protected void processMap(Contentlet contentlet, Map<String,Object> map) throws DotDataException {
 		String stInode=(String)map.get(Contentlet.STRUCTURE_INODE_KEY);
 		if(!UtilMethods.isSet(stInode)) {
 			String stName=(String)map.get("stName");
@@ -1092,7 +1099,7 @@ public class ContentResource {
 
 				// look for relationships
 				Map<Relationship,List<Contentlet>> relationships=new HashMap<Relationship,List<Contentlet>>();
-				for(Relationship rel : RelationshipFactory.getAllRelationshipsByStructure(st)) {
+				for(Relationship rel : FactoryLocator.getRelationshipFactory().byContentType(st)) {
 					String relname=rel.getRelationTypeValue();
 					String query=(String)map.get(relname);
 					if(UtilMethods.isSet(query)) {
@@ -1143,7 +1150,7 @@ public class ContentResource {
 												if(folder!=null && InodeUtils.isSet(folder.getInode())) {
 													contentlet.setHost(hh.getIdentifier());
 													contentlet.setFolder(folder.getInode());
-													if(st.getStructureType()==Structure.Type.FILEASSET.getType()){
+													if(st.getStructureType()==BaseContentType.FILEASSET.getType()){
 														Identifier existingIdent = APILocator.getIdentifierAPI().find(hh,split[1]);
 														if(existingIdent != null && UtilMethods.isSet(existingIdent.getId()) && UtilMethods.isSet(contentlet.getIdentifier())){
 															contentlet.setIdentifier(existingIdent.getId());
@@ -1202,7 +1209,7 @@ public class ContentResource {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected void processJSON(Contentlet contentlet, InputStream input) throws JSONException, IOException {
+	protected void processJSON(Contentlet contentlet, InputStream input) throws JSONException, IOException, DotDataException {
 		processMap(contentlet, webResource.processJSON(input));
 	}
 	

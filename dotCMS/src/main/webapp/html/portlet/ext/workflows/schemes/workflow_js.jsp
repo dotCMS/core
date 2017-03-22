@@ -121,9 +121,6 @@ dojo.declare("dotcms.dijit.workflows.MainAdmin", null, {
 
 
 
-		dojo.create("li", {innerHTML:"<span class='hostStoppedIcon' style='float:left;margin-right:5px;'></span><%=LanguageUtil.get(pageContext, "Global-Page")%>", id:"selectHostDiv", onClick:"window.location='/c'"},crumbDiv );
-
-
 
 
 		for( i =0;i< this.wfCrumbTrail.length;i++ ){

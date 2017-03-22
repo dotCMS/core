@@ -9,32 +9,16 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
 
 public class ShortyIdAPIImpl implements ShortyIdAPI {
 
-    public long getDbHits() {
-        return dbHits;
-    }
+  public long getDbHits() {
+    return dbHits;
+  }
 
-    long dbHits = 0;
-    public static final int MINIMUM_SHORTY_ID_LENGTH = Config.getIntProperty("MINIMUM_SHORTY_ID_LENGTH", 10);
-    
-    
-    @Override
-    public ShortyId noShorty(String shorty) {
-        return new ShortyId(shorty, ShortType.CACHE_MISS.toString(), ShortType.CACHE_MISS,
-                ShortType.CACHE_MISS);
-    }
-
-    @Override
-    public String shortify(final String shortStr) {
-        try{
-            validShorty(shortStr);
-            return shortStr.replaceAll("-", "").substring(0, MINIMUM_SHORTY_ID_LENGTH);
-        } catch (ShortyException se) {
-            return null;
-        }
-    }
+  long dbHits = 0;
+  public static final int MINIMUM_SHORTY_ID_LENGTH = Config.getIntProperty("MINIMUM_SHORTY_ID_LENGTH", 10);
 
     
     
@@ -58,103 +42,105 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
         }
     }
 
+  @Override
+  public ShortyId noShorty(String shorty) {
+    return new ShortyId(shorty, ShortType.CACHE_MISS.toString(), ShortType.CACHE_MISS, ShortType.CACHE_MISS);
+  }
 
-    /*
-     * ShortyId viaIndex(final String shorty) {
-     * 
-     * 
-     * ContentletAPI capi = APILocator.getContentletAPI(); ContentletSearch con = null; ShortyId
-     * shortyId = new ShortyId(shorty, "CACHE_MISS", ShortType.CACHE_MISS);
-     * 
-     * // if we have a shorty, use the index
-     * 
-     * StringBuilder query = new StringBuilder("+(identifier:").append(shorty).append("* inode:")
-     * .append(shorty).append("*) ");
-     * 
-     * 
-     * query.append("+working:true ");
-     * 
-     * List<ContentletSearch> cons; try { cons = capi.searchIndex(query.toString(), 1, 0, "score",
-     * APILocator.getUserAPI().getSystemUser(), false); if (cons.size() > 0) { con = cons.get(0);
-     * ShortType type = (con.getIdentifier().startsWith(shorty)) ? ShortType.IDENTIFIER :
-     * ShortType.CONTENTLET; String id = (con.getIdentifier().startsWith(shorty)) ?
-     * con.getIdentifier() : con.getInode(); shortyId = new ShortyId(shorty, id, type); } } catch
-     * (Exception e) { // we should not add to the cache if something went wrong throw new
-     * ShortyException("somthing went wrong in the index", e); }
-     * 
-     * return shortyId; }
-     */
+  @Override
+  public String shortify(final String shortStr) {
+    try {
+      validShorty(shortStr);
+      return shortStr.replaceAll("-", "").substring(0, MINIMUM_SHORTY_ID_LENGTH);
+    } catch (ShortyException se) {
+      return null;
+    }
+  }
 
-    String unUidIfy(String shorty){
-        while(shorty.indexOf('-')>-1){
-            shorty = shorty.replace("-", "");
-        }
-        return shorty;
+
+
+  /*
+   * ShortyId viaIndex(final String shorty) {
+   * 
+   * 
+   * ContentletAPI capi = APILocator.getContentletAPI(); ContentletSearch con = null; ShortyId
+   * shortyId = new ShortyId(shorty, "CACHE_MISS", ShortType.CACHE_MISS);
+   * 
+   * // if we have a shorty, use the index
+   * 
+   * StringBuilder query = new StringBuilder("+(identifier:").append(shorty).append("* inode:")
+   * .append(shorty).append("*) ");
+   * 
+   * 
+   * query.append("+working:true ");
+   * 
+   * List<ContentletSearch> cons; try { cons = capi.searchIndex(query.toString(), 1, 0, "score",
+   * APILocator.getUserAPI().getSystemUser(), false); if (cons.size() > 0) { con = cons.get(0);
+   * ShortType type = (con.getIdentifier().startsWith(shorty)) ? ShortType.IDENTIFIER :
+   * ShortType.CONTENTLET; String id = (con.getIdentifier().startsWith(shorty)) ?
+   * con.getIdentifier() : con.getInode(); shortyId = new ShortyId(shorty, id, type); } } catch
+   * (Exception e) { // we should not add to the cache if something went wrong throw new
+   * ShortyException("somthing went wrong in the index", e); }
+   * 
+   * return shortyId; }
+   */
+
+  String unUidIfy(String shorty) {
+    return UUIDUtil.unUidIfy(shorty);
+  }
+
+
+  public String uuidIfy(String shorty) {
+    return UUIDUtil.uuidIfy(shorty);
+  }
+
+
+
+  ShortyId viaDb(final String shorty) {
+
+    this.dbHits++;
+    ShortyId shortyId = noShorty(shorty);
+
+
+    DotConnect db = new DotConnect();
+    db.setSQL(ShortyIdSql.SELECT_SHORTY_SQL);
+    String uuid = uuidIfy(shorty);
+    db.addParam(uuid + "%");
+    db.addParam(uuid + "%");
+
+
+    List<Map<String, Object>> results;
+    try {
+      results = db.loadObjectResults();
+
+      if (results.size() > 1) {
+        throw new ShortyException("Shorty ID collision:" + uuid);
+      } else if (results.size() == 1) {
+        String id = (String) results.get(0).get("id");
+        String type = (String) results.get(0).get("type");
+        String subType = (String) results.get(0).get("subtype");
+
+        shortyId = new ShortyId(shorty, id, ShortType.fromString(type), ShortType.fromString(subType));
+      }
+    } catch (DotDataException e) {
+      Logger.warn(this.getClass(), "db exception:" + e.getMessage());
     }
 
 
-    public String uuidIfy(String shorty) {
-        StringBuilder newShorty = new StringBuilder();
-        shorty = unUidIfy(shorty);
-        char[] chars =shorty.toCharArray();
-        for (int i=0;i< chars.length;i++) {
-            char c = chars[i];
-            if(i==8 || i==12|| i==16 || i==20){
-                newShorty.append('-');
-            }            
-            newShorty.append(c);
-        }
-        return newShorty.toString();
-    }
-    
-    
+    return shortyId;
+  }
 
-    ShortyId viaDb(final String shorty) {
-
-        this.dbHits++;
-        ShortyId shortyId = noShorty(shorty);
+  public String shortUri(Contentlet c) {
 
 
-        DotConnect db = new DotConnect();
-        db.setSQL(ShortyIdSql.SELECT_SHORTY_SQL);
-        String uuid = uuidIfy(shorty);
-        db.addParam(uuid + "%");
-        db.addParam(uuid + "%");
+    return null;
+  }
+
+  public String shortInodeUri(Contentlet c) {
 
 
-        List<Map<String, Object>> results;
-        try {
-            results = db.loadObjectResults();
-
-            if (results.size() > 1) {
-                throw new ShortyException("Shorty ID collision:" + uuid );
-            } else if (results.size() == 1) {
-                String id = (String) results.get(0).get("id");
-                String type = (String) results.get(0).get("type");
-                String subType = (String) results.get(0).get("subtype");
-
-                shortyId = new ShortyId(shorty, id, ShortType.fromString(type),
-                        ShortType.fromString(subType));
-            }
-        } catch (DotDataException e) {
-            Logger.warn(this.getClass(), "db exception:" + e.getMessage());
-        }
-
-
-        return shortyId;
-    }
-    
-    public String shortUri(Contentlet c){
-        
-        
-        return null;
-    }
-    
-    public String shortInodeUri(Contentlet c){
-        
-        
-        return null;
-    }
+    return null;
+  }
 
     public void validShorty(final String test) {
         if (test == null || test.length() < MINIMUM_SHORTY_ID_LENGTH || test.length()>36) {

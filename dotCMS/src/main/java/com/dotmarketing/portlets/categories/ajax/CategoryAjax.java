@@ -24,6 +24,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
@@ -394,7 +395,7 @@ public class CategoryAjax {
 		int found=0;
 		Boolean Proceed=false;
 		if(!UtilMethods.isSet(catvelvar)){
-			catvelvar=VelocityUtil.convertToVelocityVariable(catName);
+			catvelvar=StringUtils.camelCaseLower(catName);
 			Proceed=true;
 		}
 		if(!InodeUtils.isSet(cat.getInode())|| Proceed){

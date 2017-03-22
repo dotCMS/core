@@ -5,14 +5,18 @@ import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.api.tree.TreeableAPI;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
-import com.dotcms.company.CompanyAPI;
-import com.dotcms.company.CompanyAPIFactory;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.ContentTypeAPIImpl;
+import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.business.FieldAPIImpl;
+import com.dotcms.company.CompanyAPI;
+import com.dotcms.company.CompanyAPIFactory;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.RulesAPIProxy;
 import com.dotcms.enterprise.ServerActionAPIImplProxy;
@@ -35,8 +39,7 @@ import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.publisher.environment.business.EnvironmentAPIImpl;
 import com.dotcms.publishing.PublisherAPI;
 import com.dotcms.publishing.PublisherAPIImpl;
-import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
-import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPIFactory;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.timemachine.business.TimeMachineAPI;
 import com.dotcms.timemachine.business.TimeMachineAPIImpl;
 import com.dotcms.util.ReflectionUtils;
@@ -46,6 +49,9 @@ import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPIImpl;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.business.VisitorAPIImpl;
+import com.dotmarketing.beans.Host;
+import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
+import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPIFactory;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.portal.PortletAPIImpl;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
@@ -84,8 +90,6 @@ import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.business.MenuLinkAPIImpl;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.business.PersonaAPIImpl;
-import com.dotmarketing.portlets.structure.business.FieldAPI;
-import com.dotmarketing.portlets.structure.business.FieldAPIImpl;
 import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.structure.business.StructureAPIImpl;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
@@ -103,6 +107,7 @@ import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.business.TagAPIImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
 
 /**
  * APILocator is a factory method (pattern) to get single(ton) service objects.
@@ -291,8 +296,8 @@ public class APILocator extends Locator<APIIndex>{
 	 *
 	 * @return The {@link FieldAPI} class.
 	 */
-	public static FieldAPI getFieldAPI(){
-		return (FieldAPI)getInstance(APIIndex.FIELD_API);
+	public static com.dotmarketing.portlets.structure.business.FieldAPI getFieldAPI(){
+		return (com.dotmarketing.portlets.structure.business.FieldAPI)getInstance(APIIndex.FIELD_API);
 	}
 
 	/**
@@ -674,7 +679,60 @@ public class APILocator extends Locator<APIIndex>{
 		return (VisitorAPI) getInstance( APIIndex.VISITOR_API );
 	}
 
+	/**
+	 * Creates a single instance of the {@link ContentTypeAPI} class setup with the provided arguments
+	 * 
+	 * @param user
+	 *
+	 * @return The {@link ContentTypeAPI} class.
+	 */
+    public static ContentTypeAPI getContentTypeAPI(User user) {
+    	return getContentTypeAPI(user, false);
+    }
+
+    /**
+	 * Creates a single instance of the {@link ContentTypeAPI} class setup with the provided arguments
+	 * 
+	 * @param user
+	 * @param respectFrontendRoles
+	 *
+	 * @return The {@link ContentTypeAPI} class.
+	 */
+    public static ContentTypeAPI getContentTypeAPI(User user, boolean respectFrontendRoles) {
+    	return getAPILocatorInstance().getContentTypeAPIImpl(user, respectFrontendRoles);
+	}
+
+    @VisibleForTesting
+    protected ContentTypeAPI getContentTypeAPIImpl(User user, boolean respectFrontendRoles) {
+    	return new ContentTypeAPIImpl(user, respectFrontendRoles);
+    }
+
+    public static FieldAPI getContentTypeFieldAPI() {
+		return new FieldAPIImpl();
+	}
+
+    public static User systemUser()  {
+      try{
+        return getUserAPI().getSystemUser();
+      }
+      catch(Exception e){
+        throw new DotStateException(e);
+      }
+	}
+    
+    
+    public static Host systemHost()  {
+      try{
+        return getHostAPI().findSystemHost();
+      }
+      catch(Exception e){
+        throw new DotStateException(e);
+      }
+	}
+    
+
 	public static TreeableAPI getTreeableAPI () {return new TreeableAPI();}
+
 
 	/**
 	 * Returns the System Events API that allows other pieces of the application
@@ -697,6 +755,18 @@ public class APILocator extends Locator<APIIndex>{
 	 */
 	private static Object getInstance(APIIndex index) {
 
+		APILocator apiLocatorInstance = getAPILocatorInstance();
+
+		Object serviceRef = apiLocatorInstance.getServiceInstance(index);
+
+		if( Logger.isDebugEnabled(APILocator.class) ) {
+			Logger.debug(APILocator.class, apiLocatorInstance.audit(index));
+		}
+
+		return serviceRef;
+	}
+
+	private static APILocator getAPILocatorInstance() {
 		if(instance == null){
 			init();
 			if(instance == null){
@@ -704,15 +774,7 @@ public class APILocator extends Locator<APIIndex>{
 				throw new DotRuntimeException("CACHE IS NOT INITIALIZED : THIS SHOULD NEVER HAPPEN");
 			}
 		}
-
-		Object serviceRef = instance.getServiceInstance(index);
-
-		if( Logger.isDebugEnabled(APILocator.class) ) {
-			Logger.debug(APILocator.class, instance.audit(index));
-		}
-
-		return serviceRef;
-
+		return instance;
 	}
 
 	@Override
@@ -817,7 +879,7 @@ enum APIIndex
 		case CONTENTLET_API_INTERCEPTER: return new ContentletAPIInterceptor();
 		case RELATIONSHIP_API: return new RelationshipAPIImpl();
 		case IDENTIFIER_API: return new IdentifierAPIImpl();
-		case FIELD_API: return new FieldAPIImpl();
+		case FIELD_API: return new com.dotmarketing.portlets.structure.business.FieldAPIImpl();
 		case PORTLET_API: return new PortletAPIImpl();
 		case WIDGET_API: return new WidgetAPIImpl();
 		case CALENDAR_REMINDER_API: return new CalendarReminderAPIImpl();

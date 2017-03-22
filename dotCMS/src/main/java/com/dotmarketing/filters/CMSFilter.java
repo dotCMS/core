@@ -199,7 +199,20 @@ public class CMSFilter implements Filter {
 		// if we are not rewriting anything, use the uri
 		rewrite = (rewrite == null) ? uri : rewrite;
 
+		if (iAm == IAm.PAGE) {
+			request.setAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE, rewrite);
+		}
 
+		// run rules engine for all requests
+        RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
+        
+        //if we have committed the response, die
+        if(response.isCommitted()){
+          return;
+        }
+        
+        
+        
 		if (iAm == IAm.FILE) {
 			Identifier ident = null;
 			try {
@@ -209,12 +222,7 @@ public class CMSFilter implements Filter {
 				
 				ident = APILocator.getIdentifierAPI().find(host, rewrite);
 				request.setAttribute(CMS_FILTER_IDENTITY, ident);
-				RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
-				if(response.isCommitted()) {
-                /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
-					return;
-				}
-				
+
 				//If language is in session, set as query string
 				if(UtilMethods.isSet(languageId)){
 					forward.append('?');
@@ -230,8 +238,6 @@ public class CMSFilter implements Filter {
 		}
 
 		if (iAm == IAm.PAGE) {
-			request.setAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE, rewrite);
-
 			// Serving a page through the velocity servlet
 			StringWriter forward = new StringWriter();
 			forward.append("/servlets/VelocityServlet");
@@ -244,18 +250,11 @@ public class CMSFilter implements Filter {
 				forward.append(queryString);
 			}
 
-			// fire every_request rules
-            RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
-            if(response.isCommitted()){
-                /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
-                return;
-            }
 			request.getRequestDispatcher(forward.toString()).forward(request, response);
 			return;
 		}
 
 		if(rewrite.startsWith("/contentAsset/")){
-	        RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
 	        if(response.isCommitted()){
 	            /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
 	            return;

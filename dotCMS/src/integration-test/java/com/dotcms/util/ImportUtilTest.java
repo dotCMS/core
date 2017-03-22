@@ -71,10 +71,10 @@ public class ImportUtilTest extends IntegrationTestBase {
 
         //Create test fields
         Field textFileStructure1 = new Field( "Title", Field.FieldType.TEXT, Field.DataType.TEXT, structure1, true, true, true, 1, false, false, true );
-        FieldFactory.saveField( textFileStructure1 );
+        textFileStructure1 = FieldFactory.saveField( textFileStructure1 );
 
         Field hostFileStructure1 = new Field( "Host", Field.FieldType.HOST_OR_FOLDER, Field.DataType.TEXT, structure1, true, true, true, 2, false, false, true );
-        FieldFactory.saveField( hostFileStructure1 );
+        hostFileStructure1 = FieldFactory.saveField( hostFileStructure1 );
 
         //----------------PREVIEW = TRUE------------------------------------------
         //------------------------------------------------------------------------

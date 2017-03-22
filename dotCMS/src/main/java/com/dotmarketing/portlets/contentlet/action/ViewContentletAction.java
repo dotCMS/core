@@ -114,7 +114,7 @@ public class ViewContentletAction extends DotPortletAction {
 			if(req.getParameter("structure_id") != null){
 				Structure st = (Structure) InodeFactory.getInode(req.getParameter("structure_id"), Structure.class);
 				if(st.getStructureType()==Structure.STRUCTURE_TYPE_FORM){
-					List<Structure> structures =StructureFactory.getStructuresByUser(user,"structuretype="+st.getStructureType(), "upper(name)", 0, 0, "asc");
+					List<Structure> structures =StructureFactory.getStructuresByUser(user,"structuretype="+st.getStructureType(), "upper(name)", -1, 0, "asc");
 					req.setAttribute(WebKeys.Structure.STRUCTURES, structures);
 					req.setAttribute("SHOW_FORMS_ONLY", true);
 				}else{

@@ -11,6 +11,7 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
@@ -25,6 +26,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -41,7 +43,6 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -200,7 +201,7 @@ public class CommentsAction extends DispatchAction {
 			/*List<Category> cats = catAPI.getParents(contentlet, user, true);
 			Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<Relationship, List<Contentlet>>();
 
-			List<Relationship> rels = RelationshipFactory.getAllRelationshipsByStructure(contentlet.getStructure());
+			List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(contentlet.getStructure());
 			for (Relationship r : rels) {
 				if(!contentRelationships.containsKey(r)){
 					contentRelationships.put(r, new ArrayList<Contentlet>());
@@ -288,7 +289,7 @@ public class CommentsAction extends DispatchAction {
 
 
 			/* get the next in the order */
-			int order  = RelationshipFactory.getMaxInSortOrder(contentletIdentifier.getInode(), relationName);
+			int order  = FactoryLocator.getRelationshipFactory().maxSortOrder(contentletIdentifier.getInode(), relationName);
 
 
 			contentletIdentifier.addChild(contentletCommentIdentifier, relationName, ++order);
@@ -387,8 +388,8 @@ public class CommentsAction extends DispatchAction {
 		String order = "";
 
 		// Gather all comment no matter the value of the Email Response
-		List<Contentlet> comments = RelationshipFactory.getRelatedContentByParent(contentletIdentifier.getInode(), relationName, true, order);
-
+		//List<Contentlet> comments = FactoryLocator.getRelationshipFactory().getRelatedContentByParent(contentletIdentifier.getInode(), relationName, true, order);
+		List<Contentlet> comments = ImmutableList.of();
 		//Cycle for all comments to get the most recent comment from each email
 		HashMap<String,CommentDate> commentDates = new HashMap<String, CommentDate>();
 		for(Contentlet comment : comments)

@@ -63,6 +63,10 @@ public class HibernateUtil {
 
 	private static final boolean useCache = true;
 	
+	public HibernateUtil(SessionFactory sessionFac){
+		this.sessionFactory = sessionFac;
+	}
+	
 	public static final String addToIndex="-add-to-index";
 	public static final String removeFromIndex="-remove-from-index";
 
@@ -219,7 +223,7 @@ public class HibernateUtil {
 			session.delete(obj);
 			session.flush();
 		}catch (Exception e) {
-			throw new DotHibernateException("Error deleting object ", e);
+			throw new DotHibernateException("Error deleting object " + e.getMessage(), e);
 		}
 	}
 
@@ -231,7 +235,7 @@ public class HibernateUtil {
 			Session session = getSession();
 			session.delete(sql);
 		}catch (Exception e) {
-			throw new DotHibernateException("Error deleteing SQL ", e);
+			throw new DotHibernateException("Error deleteing SQL " + e.getMessage(), e);
 		}
 	}
 
@@ -240,7 +244,7 @@ public class HibernateUtil {
 			Session session = getSession();
 			return (ArrayList) session.find(x);
 		}catch (Exception e) {
-			throw new DotHibernateException("Error executing a find on Hibernate Session ", e);
+			throw new DotHibernateException("Error executing a find on Hibernate Session " + e.getMessage(), e);
 		}
 	}
 
@@ -593,6 +597,7 @@ public class HibernateUtil {
 			cfg.setInterceptor(new NoDirtyFlushInterceptor());
 
 			mappings = cfg.createMappings();
+			
 			sessionFactory = cfg.buildSessionFactory();
 			dialect = cfg.getProperty("hibernate.dialect");
 			System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_DB, String.valueOf(System.currentTimeMillis() - start));
@@ -847,7 +852,7 @@ public class HibernateUtil {
 				HibernateUtil.startTransaction();
 			}
 		} catch (SQLException e) {
-			Logger.error(WorkflowAPIImpl.class,e.getMessage(),e);
+			Logger.error(HibernateUtil.class,e.getMessage(),e);
 			throw new DotDataException(e.getMessage());
 		}
 		return startTransaction;

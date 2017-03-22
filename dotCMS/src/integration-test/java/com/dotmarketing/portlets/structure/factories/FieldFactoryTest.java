@@ -72,7 +72,9 @@ public class FieldFactoryTest extends ContentletBaseTest {
     public void getFieldsByStructureSortedBySortOrder () {
 
         //Getting a known structure
-        Structure structure = structures.iterator().next();
+    	Iterator<Structure> it = structures.iterator();
+    	it.next();
+        Structure structure = it.next();
 
         //Getting the fields for this structure
         Collection<Field> fields = FieldFactory.getFieldsByStructureSortedBySortOrder( structure.getInode() );
@@ -103,7 +105,7 @@ public class FieldFactoryTest extends ContentletBaseTest {
         for ( Field field : fields ) {
 
             //Its a tag field???
-            Boolean isTagField = FieldFactory.isTagField( field.getFieldContentlet(), structure );
+            Boolean isTagField = FieldFactory.isTagField( field.getVelocityVarName(), structure );
             if ( field.getFieldType().equals( Field.FieldType.TAG.toString() ) ) {
                 assertTrue( isTagField );
             } else {
@@ -135,19 +137,7 @@ public class FieldFactoryTest extends ContentletBaseTest {
         Iterator<Field> iterator = fields.iterator();
         Field field = iterator.next();
 
-        //Search by the field contentlet
-        //TODO: The data type is used everywhere instead the field.getFieldContentlet() as the method name, parameter and even te query suggested...
-        Collection<Field> fieldsByContentlet = FieldFactory.getFieldsByContentletField( Field.DataType.TEXT.toString(), field.getInode(), structure.getInode() );
 
-        //Validations
-        assertTrue( fieldsByContentlet != null && !fieldsByContentlet.isEmpty() );
-
-        //Search by the field contentlet and with an Inode null
-        //TODO: The data type is used everywhere instead the field.getFieldContentlet() as the method name, parameter and even te query suggested...
-        fieldsByContentlet = FieldFactory.getFieldsByContentletField( Field.DataType.TEXT.toString(), null, structure.getInode() );
-
-        //Validations
-        assertTrue( fieldsByContentlet != null && !fieldsByContentlet.isEmpty() );
     }
 
     /**
@@ -179,34 +169,7 @@ public class FieldFactoryTest extends ContentletBaseTest {
         assertEquals( foundField.getInode(), field.getInode() );
     }
 
-    /**
-     * Testing {@link FieldFactory#getFieldByStructure(String, String)}
-     *
-     * @see FieldFactory
-     * @see FieldsCache
-     */
-    @Test
-    public void getFieldByStructure () {
 
-        //Getting a known structure
-        Structure structure = structures.iterator().next();
-
-        //Getting the fields for this structure
-        Collection<Field> fields = FieldsCache.getFieldsByStructureInode( structure.getInode() );
-
-        //Validations
-        assertTrue( fields != null && !fields.isEmpty() );
-
-        Iterator<Field> iterator = fields.iterator();
-        Field field = iterator.next();
-
-        //Search by field name
-        Field foundField = FieldFactory.getFieldByStructure( structure.getInode(), field.getFieldName() );
-
-        //Start with the validations
-        assertNotNull( foundField );
-        assertEquals( foundField.getInode(), field.getInode() );
-    }
 
     /**
      * Testing {@link FieldFactory#getFieldByName(String, String)}
@@ -230,9 +193,7 @@ public class FieldFactoryTest extends ContentletBaseTest {
         Field field = iterator.next();
 
         //Search by field name
-        //Field foundField = FieldFactory.getFieldByName( structure.getInode(), field.getFieldName() );
-        //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
-        Field foundField = FieldFactory.getFieldByName( structure.getName(), field.getFieldName() );
+        Field foundField = FieldFactory.getFieldByVariableName(structure.getInode(), field.getVelocityVarName());
 
         //Start with the validations
         assertNotNull( foundField );
@@ -262,8 +223,8 @@ public class FieldFactoryTest extends ContentletBaseTest {
 
         //++++++++++++++++++++++++++++++++++++++++++++
         //Testing the save
-        FieldFactory.saveField( field );
-        FieldFactory.saveField( field2 );
+        field = FieldFactory.saveField( field );
+        field2 = FieldFactory.saveField( field2 );
 
         //Validations
         assertNotNull( field.getInode() );
@@ -365,17 +326,9 @@ public class FieldFactoryTest extends ContentletBaseTest {
         fieldVariable.setLastModifierId( user.getUserId() );
         fieldVariable.setLastModDate( new Date() );
 
-        FieldVariable fieldVariable2 = new FieldVariable();
-        fieldVariable2.setFieldId( field.getInode() );
-        fieldVariable2.setName( NAME_ORIGINAL + "_2" );
-        fieldVariable2.setKey( "test_variable_key_2" );
-        fieldVariable2.setValue( "test variable value_2" );
-        fieldVariable2.setLastModifierId( user.getUserId() );
-        fieldVariable2.setLastModDate( new Date() );
-
         //++++++++++++++++++++++++++++++++++++++++++++
         //Saving the field variable
-        FieldFactory.saveFieldVariable( fieldVariable );
+        fieldVariable = FieldFactory.saveFieldVariable( fieldVariable );
 
         //Validations
         assertNotNull( fieldVariable.getId() );
@@ -390,7 +343,7 @@ public class FieldFactoryTest extends ContentletBaseTest {
         //++++++++++++++++++++++++++++++++++++++++++++
         //Updating the field variable
         savedVariable.setName( NAME_UPDATED );
-        FieldFactory.saveFieldVariable( fieldVariable );
+        FieldFactory.saveFieldVariable( savedVariable );
 
         //Getting again the saved variable
         fieldVariable = FieldFactory.getFieldVariable( fieldVariable.getId() );
@@ -407,13 +360,6 @@ public class FieldFactoryTest extends ContentletBaseTest {
         assertTrue( variables != null && !variables.isEmpty() );
 
         //++++++++++++++++++++++++++++++++++++++++++++
-        //Getting all the variables
-        variables = FieldFactory.getAllFieldVariables();
-
-        //Validations
-        assertTrue( variables != null && !variables.isEmpty() );
-
-        //++++++++++++++++++++++++++++++++++++++++++++
         //Delete a given variable
         String variableId = fieldVariable.getId();
         FieldFactory.deleteFieldVariable( fieldVariable );
@@ -422,16 +368,5 @@ public class FieldFactoryTest extends ContentletBaseTest {
 
         //validations
         assertTrue( tempFieldVariable == null || tempFieldVariable.getId() == null || tempFieldVariable.getId().isEmpty() );
-
-        //++++++++++++++++++++++++++++++++++++++++++++
-        //Delete a given variable
-        variableId = fieldVariable2.getId();
-        FieldFactory.deleteFieldVariable( variableId );
-        //Try to get the deleted variable
-        tempFieldVariable = FieldFactory.getFieldVariable( variableId );
-
-        //validations
-        assertTrue( tempFieldVariable == null || tempFieldVariable.getId() == null || tempFieldVariable.getId().isEmpty() );
     }
-
 }

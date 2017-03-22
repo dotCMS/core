@@ -9,49 +9,56 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 
 /**
- * Mock {@link HttpServletRequest} with a {@link Map} as part of the class
- * that will contain the Headers.
+ * Mock {@link HttpServletRequest} with a {@link Map} as part of the class that will contain the
+ * Headers.
  *
  * See an example here: {@link MockHttpRequest#MockHttpRequest(String, String)}
  */
 public class MockHeaderRequest extends HttpServletRequestWrapper implements MockRequest {
-    final Map<String, String> headers = new HashMap<String, String>();
+  final Map<String, String> headers = new HashMap<String, String>();
 
 
-    public MockHeaderRequest(HttpServletRequest request) {
-        super(request);
+  public MockHeaderRequest(HttpServletRequest request) {
+    super(request);
+    if (request.getHeaderNames() != null) {
+      Enumeration<String> oldHeaders = request.getHeaderNames();
+      while (oldHeaders.hasMoreElements()) {
+        String param = oldHeaders.nextElement();
+        this.headers.put(param, request.getHeader(param));
+      }
     }
+  }
 
-    public MockHeaderRequest(HttpServletRequest request, final String key, final String value) {
-        super(request);
-        headers.put(key, value);
-    }
+  public MockHeaderRequest(HttpServletRequest request, final String key, final String value) {
+    this(request);
+    headers.put(key, value);
+  }
 
-    public HttpServletRequest request() {
-        return this;
-    }
+  public HttpServletRequest request() {
+    return this;
+  }
 
-    @Override
-    public String getHeader(String name) {
+  @Override
+  public String getHeader(String name) {
 
-        return headers.get(name);
-    }
+    return headers.get(name);
+  }
 
-    @Override
-    public Enumeration<String> getHeaderNames() {
-        return new Vector<String>(headers.keySet()).elements();
-    }
+  @Override
+  public Enumeration<String> getHeaderNames() {
+    return new Vector<String>(headers.keySet()).elements();
+  }
 
 
-    public void setHeader(final String name, final String o) {
-        headers.put(name, o);
-    }
+  public void setHeader(final String name, final String o) {
+    headers.put(name, o);
+  }
 
-    @Override
-    public Enumeration<String> getHeaders(final String name) {
+  @Override
+  public Enumeration<String> getHeaders(final String name) {
 
-        return super.getHeaders(name);
-    }
+    return super.getHeaders(name);
+  }
 
 
 }

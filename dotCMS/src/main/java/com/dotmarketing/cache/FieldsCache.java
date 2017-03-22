@@ -1,12 +1,13 @@
 package com.dotmarketing.cache;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotCacheAdministrator;
-import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.portlets.structure.factories.FieldFactory;
+import com.dotcms.contenttype.transform.field.FieldVariableTransformer;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -19,28 +20,17 @@ import com.dotmarketing.util.Logger;
 public class FieldsCache {
 
     public static void addFields(Structure st, List<Field> fields){
-    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-		// we use the identifier uri for our mappings.
-		String inode = st.getInode();
-		cache.put(getPrimaryGroup() + inode, fields,getPrimaryGroup());
-        cache.put(getPrimaryGroup() + st.getVelocityVarName(), fields, getPrimaryGroup());
+        Logger.warn(FieldsCache.class, "addFields no longer implemented");
 	}
-    
+    public static void addField(Field fields){
+        Logger.warn(FieldsCache.class, "addField no longer implemented");
+    }
     public static List<Field> getFieldsByStructureInode(String inode){
-    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-    	List<Field> fields = null;
-    	try{
-    		fields = (List<Field>) cache.get(getPrimaryGroup() + inode, getPrimaryGroup());
-	    }catch (DotCacheException e) {
-			Logger.debug(FieldsCache.class, "Cache Entry not found", e);
-		}
-        if (fields == null) {
-            Structure st = CacheLocator.getContentTypeCache().getStructureByInode(inode);
-            fields = st.getFields();
-            if(fields.size()>0)
-                addFields(st, fields);
+        try {
+            return new LegacyFieldTransformer(APILocator.getContentTypeAPI(APILocator.getUserAPI().getSystemUser(), true).find(inode).fields()).asOldFieldList();
+        } catch (DotStateException | DotDataException | DotSecurityException e) {
+            throw new DotStateException(e);
         }
-        return fields;
 	}
 
     /*public static List<Field> getFieldsByStructureInode(String inode) 
@@ -64,29 +54,11 @@ public class FieldsCache {
      */
     @SuppressWarnings("unchecked")
 	public static List<Field> getFieldsByStructureVariableName(String velocityVarName){
-    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-    	List<Field> fields = null;
-        try{
-        	fields = (List<Field>) cache.get(getPrimaryGroup() + velocityVarName, getPrimaryGroup());
-        }catch (DotCacheException e) {
-			Logger.debug(FieldsCache.class,"Cache Entry not found", e);
+        try {
+            return new LegacyFieldTransformer(APILocator.getContentTypeAPI(APILocator.getUserAPI().getSystemUser(), true).find(velocityVarName).fields()).asOldFieldList();
+        } catch (DotStateException | DotDataException | DotSecurityException e) {
+            throw new DotStateException(e);
         }
-        if (fields == null) {
-        	synchronized (velocityVarName.intern()){
-                try{
-                	fields = (List<Field>) cache.get(getPrimaryGroup() + velocityVarName, getPrimaryGroup());
-                }catch (DotCacheException e) {
-        			Logger.debug(FieldsCache.class,"Cache Entry not found", e);
-                }
-        		if(fields ==null){
-		            Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(velocityVarName);
-		            fields = FieldFactory.getFieldsByStructure(st.getInode());
-		            if(fields.size()>0)
-		                addFields(st, fields);
-        		}
-        	}
-        }
-        return new ArrayList(fields);
     }
     
     /**
@@ -119,23 +91,16 @@ public class FieldsCache {
     }*/
     
     public static void removeFields(Structure st){
-    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-        String inode = st.getInode();
-        cache.remove(getPrimaryGroup() + inode, getPrimaryGroup());
-        cache.remove(getPrimaryGroup() + st.getVelocityVarName(), getPrimaryGroup());
-        cache.remove(getPrimaryGroup() + st.getVelocityVarName(), getPrimaryGroup());
-        CacheLocator.getContentTypeCache().clearURLMasterPattern();
+
     }
 
 	public static void clearCache(){
-		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-	    cache.flushGroup(getPrimaryGroup());
-	    CacheLocator.getContentTypeCache().clearURLMasterPattern();
+
 	}
     
 	public static String[] getGroups() {
-    	String[] groups = {getPrimaryGroup()};
-    	return groups;
+    	return new String[0];
+
     }
     
     public static String getPrimaryGroup() {
@@ -146,59 +111,38 @@ public class FieldsCache {
     	return "FieldsVarCache";
     }
     
-    public static void addField(Field f){
-    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();		
-		String inode = f.getInode();
-		cache.put(getPrimaryGroup() + inode, f, getPrimaryGroup());        
-	}
     
 	public static Field getField(String id) {
-		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-    	Field field = null;
-    	try{
-    		field = (Field) cache.get(getPrimaryGroup() + id, getPrimaryGroup());
-	    }catch (DotCacheException e) {
-			Logger.debug(FieldsCache.class, "Cache Entry not found", e);
-		}
-        if (field == null) {
-            field = FieldFactory.getFieldByInode(id);
-            addField(field);
+        try {
+            return new LegacyFieldTransformer(APILocator.getContentTypeFieldAPI().find(id)).asOldField();
+        } catch (DotStateException | DotDataException e) {
+            throw new DotStateException(e);
         }
-        return field;
 	}
 	
 	public static void removeField(Field field) {
-    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-        String id = field.getInode();
-        cache.remove(getPrimaryGroup() + id,getPrimaryGroup());
-        removeFieldVariables(field);
+
     } 
     
 	public static List<FieldVariable> getFieldVariables(Field field) {
-    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-        String key = getFieldsVarGroup() + field.getInode();
-        
-        
         try {
-			return (List<FieldVariable>) cache.get(key,getFieldsVarGroup());
-		} catch (DotCacheException e) {
-			return null;
-		}
+            return new FieldVariableTransformer(
+                    APILocator.getContentTypeFieldAPI().loadVariables(
+                            new LegacyFieldTransformer(field).from()
+                            )
+                    ).oldFieldList();
+        } catch (DotStateException | DotDataException e) {
+            throw new DotStateException(e);
+        }
     }
     
 	public static void addFieldVariables(Field field, List<FieldVariable> vars) {
-    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-        String key = getFieldsVarGroup() + field.getInode();
-        cache.put(key, vars, getFieldsVarGroup());
+
 
     }
 	
 	
 	public static void removeFieldVariables(Field field) {
-    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-        String key = getFieldsVarGroup() + field.getInode();
-
-		cache.remove(key,getFieldsVarGroup());
 
     }
     

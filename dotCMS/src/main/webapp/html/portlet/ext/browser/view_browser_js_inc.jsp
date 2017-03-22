@@ -12,7 +12,7 @@
 <%@page import="com.dotmarketing.business.CacheLocator"%>
 
 <%
-    Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStructureByName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
+Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
 
 
     String selectedLang=String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId());

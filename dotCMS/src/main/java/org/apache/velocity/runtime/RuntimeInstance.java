@@ -1265,7 +1265,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
      *              Velocity runtime log
      * @throws ParseErrorException The template could not be parsed.
      * @throws MethodInvocationException A method on a context object could not be invoked.
-     * @throws ResourceNotFoundException A referenced resource could not be loaded.
+     * @throws ResourceNotFoundException A referenced resource could not be loadedbut l.
      * @since Velocity 1.6
      */
     public boolean evaluate(Context context, Writer writer,
@@ -1648,7 +1648,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
                                           String argArray[],
                                           String sourceTemplate )
     {
-        return vmFactory.addVelocimacro(name.intern(), macro,  argArray,  sourceTemplate);
+        return vmFactory.addVelocimacro(name, macro,  argArray,  sourceTemplate);
     }
 
     /**
@@ -1672,7 +1672,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
                                           String argArray[],
                                           String sourceTemplate )
     {
-        return vmFactory.addVelocimacro(name.intern(), macro,  argArray,  sourceTemplate);
+        return vmFactory.addVelocimacro(name, macro,  argArray,  sourceTemplate);
     }
     
     
@@ -1685,7 +1685,7 @@ public class RuntimeInstance implements RuntimeConstants, RuntimeServices
      */
     public boolean isVelocimacro( String vmName, String templateName )
     {
-        return vmFactory.isVelocimacro(vmName.intern(), templateName);
+        return vmFactory.isVelocimacro(vmName, templateName);
     }
 
     /**

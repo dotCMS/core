@@ -428,26 +428,6 @@
 			<property name="active" type="boolean" />
 		</joined-subclass>
 
-		<joined-subclass name="com.dotmarketing.portlets.structure.model.Structure" table="structure">
-			<key column="inode" />
-			<property column="name" name="name" type="string" length="255" />
-			<property column="description" name="description" type="string" length="255" />
-			<property column="default_structure" name="defaultStructure" type="boolean" />
-			<property column="review_interval" name="reviewInterval" type="string" />
-			<property column="reviewer_role" name="reviewerRole" type="string" />
-			<property column="page_detail" name="detailPage" type="string" length="36" />
-			<property column="structuretype" name="structureType" type="integer" />
-			<property column="system" name="system" type="boolean" not-null="false" />
-			<property column="fixed" name="fixed" type="boolean" not-null="true" />
-			<property column="velocity_var_name" name="velocityVarName" type="string" length="255"/>
-			<property column="url_map_pattern" name="urlMapPattern" type="string" length="512" not-null="false"/>
-		   	<property column="host" name="host" type="string" length="36" not-null="true"/>
-			<property column="folder" name="folder" type="string" length="36" not-null="true"/>
-			<property column="expire_date_var" name="expireDateVar" type="string" length="255" not-null="false"/>
-			<property column="publish_date_var" name="publishDateVar" type="string" length="255" not-null="false"/>
-			<property column="mod_date" length="23" name="modDate" type="java.util.Date" />
-		</joined-subclass>
-
 		<joined-subclass name="com.dotmarketing.portlets.structure.model.Relationship" table="relationship">
 			<key column="inode" />
 			<property name="parentStructureInode" type="string" length="36" >
@@ -1174,17 +1154,5 @@
         <property column="locked_on"     name="lockedOn"                 type="java.util.Date"    not-null="false"/>
         <property column="version_ts"     name="versionTs"  type="java.util.Date"    not-null="true"/>
     </class>
-
-	<class  name="com.dotmarketing.portlets.structure.model.FieldVariable" table="field_variable">
-		<id name="id" column="id" type="string" length="36" unsaved-value="any">
-			<generator class="com.dotmarketing.util.UUIDGenerator" />
-		</id>
-		<property name="fieldId" column="field_id" length="36" type="string" />
-		<property name="name" column="variable_name" type="string" />
-		<property name="key" column="variable_key" type="string" />
-		<property name="value" column="variable_value" type="string" length="123456789" />
-		<property name="lastModifierId" column="user_id" type="string" />
-		<property name="lastModDate" column="last_mod_date" type="java.util.Date"  />
-	</class>
 
 </hibernate-mapping>

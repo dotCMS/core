@@ -2,11 +2,13 @@ package com.dotmarketing.portlets.structure.factories;
 
 import java.util.List;
 
+import com.dotcms.contenttype.model.type.ContentTypeIf;
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.portlets.structure.model.Structure;
+
 
 public class RelationshipCacheImpl extends RelationshipCache {
 
@@ -40,18 +42,34 @@ public class RelationshipCacheImpl extends RelationshipCache {
 		cache.remove(String.valueOf(rel.getRelationTypeValue()), secondaryGroup);
 	}
 	@Override
-	public List<Relationship> getRelationshipsByStruct(Structure struct) throws DotCacheException {
+	public List<Relationship> getRelationshipsByStruct(ContentTypeIf struct) throws DotCacheException {
 		
-		return (List<Relationship>) cache.get("STRUCT" + struct.getInode(), primaryGroup);
+		return (List<Relationship>) cache.get("STRUCT" + struct.id(), primaryGroup);
 		
 	}
 	@Override
-	public void putRelationshipsByStruct(Structure struct, List<Relationship> rels)  {
-		cache.put("STRUCT" + struct.getInode(), rels, primaryGroup);
+	public List<Relationship> getRelationshipsByType(ContentTypeIf type) throws DotCacheException {
+		
+		return (List<Relationship>) cache.get("STRUCT" + type.id(), primaryGroup);
+		
 	}
 	@Override
-	public void removeRelationshipsByStruct(Structure struct)  {
-		cache.remove("STRUCT" + struct.getInode(), primaryGroup);
+	public void putRelationshipsByStruct(ContentTypeIf struct, List<Relationship> rels)  {
+		
+		cache.put("STRUCT" + struct.id(), ImmutableList.copyOf(rels), primaryGroup);
+	}
+	@Override
+	public void putRelationshipsByType(ContentTypeIf type, List<Relationship> rels)  {
+		
+		cache.put("STRUCT" + type.id(), ImmutableList.copyOf(rels), primaryGroup);
+	}
+	@Override
+	public void removeRelationshipsByStruct(ContentTypeIf struct)  {
+		cache.remove("STRUCT" + struct.id(), primaryGroup);
+	}
+	@Override
+	public void removeRelationshipsByType(ContentTypeIf type)  {
+		cache.remove("STRUCT" + type.id(), primaryGroup);
 	}
 	
 	@Override
