@@ -138,6 +138,7 @@
     -->
     <near-cache name="default">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
@@ -163,81 +164,117 @@
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
+=======
+        <time-to-live-seconds>0</time-to-live-seconds>
+        <max-idle-seconds>0</max-idle-seconds>
+        <eviction-policy>LFU</eviction-policy>
+        <invalidate-on-change>true</invalidate-on-change>
+        <in-memory-format>BINARY</in-memory-format>
+>>>>>>> master-4.0
         <local-update-policy>INVALIDATE</local-update-policy>
     </near-cache>
     
     <near-cache name="adminconfigpool">
         <max-size>100</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="contentletcache">
         <max-size>5000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="companypool">
         <max-size>10</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="csscache">
         <max-size>2500</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="fileassetmetadatacache">
         <max-size>200</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="identifiercache">
         <max-size>50000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="indiciescache">
         <max-size>8</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="logmappercache">
         <max-size>10</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
@@ -264,160 +301,229 @@
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+    </near-cache>
+       
+    <near-cache name="parentpermissionablecache">
+        <max-size>10000</max-size>
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="permissioncache">
         <max-size>50000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="portletpool">
         <max-size>100</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="publishingendpointcache">
         <max-size>100</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="pushedassetscache">
         <max-size>5000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="structurecache">
         <max-size>500</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="templatecache">
         <max-size>500</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="translatedquerycache">
         <max-size>5000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="velocityuservtlcache">
         <max-size>500</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="versioncache">
         <max-size>50000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="versioninfocache">
         <max-size>50000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="workflowactioncache">
         <max-size>10000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="workflowtaskcache">
         <max-size>10000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="shorty">
         <max-size>25000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="identifier404cache">
         <max-size>5000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="virtuallinkscache">
         <max-size>25000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
 
 <!--    Available cache regions    -->
 <!--
+<<<<<<< HEAD
     <near-cache name="actionscache">
         <max-size>1000</max-size>
         <time-to-live-seconds>90</time-to-live-seconds>
@@ -426,476 +532,674 @@
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+
+	<near-cache name="navcache">
+        <max-size>1000</max-size>
+        <eviction-policy>LFU</eviction-policy>
+    </near-cache>
+    <near-cache name="actionscache">
+        <max-size>1000</max-size>
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="blockdirectivecache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="blockdirectivehtmlpagecache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="categorybykeycache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="categorycache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="categorychildrencache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="categoryparentscache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="conditionscache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="conditionsgroupconditionscache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="conditionsgroupscache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="containercache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="containerstructurecache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="dotcmslayoutcache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="dotcmsrolecache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="dotcmsrolekeycache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="dotcmsrootrolescache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="dotcmsuserrolecache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="fieldscache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="fieldsvarcache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="filecache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="foldercache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="hostaliascache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="hostcache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="hostrulescache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="hostvariablescache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="htmlpagecache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="identifier404cache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="languagecacheimpl">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="newnotificationcache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="plugincache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="propertycache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="ratingcache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="relationshipcachebyinode">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="relationshipcachebyname">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="ruleactionscache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="ruleconditiongroupscache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="ruleconditionletsitevisitscache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="rulescache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="structuresbytypecache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="tagsbyinodecache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="userdotcmscache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="useremaildotcmscache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="userproxycache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="velocitycache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="velocitymacrocache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="virtuallinkscache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="workflowcache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
     
     <near-cache name="workflowstepcache">
         <max-size>1000</max-size>
+<<<<<<< HEAD
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
+=======
+        <eviction-policy>LFU</eviction-policy>
+>>>>>>> master-4.0
     </near-cache>
 
 -->
