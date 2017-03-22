@@ -1,6 +1,6 @@
 <%@page import="com.dotmarketing.business.IdentifierCache" %>
 <%@page import="com.dotmarketing.cache.LiveCache" %>
-<%@page import="com.dotmarketing.cache.WorkingCache" %>
+
 <%@page import="com.dotmarketing.business.APILocator" %>
 <%@page import="com.dotmarketing.factories.ClickstreamFactory"%>
 <%@page import="com.dotmarketing.beans.Clickstream"%>

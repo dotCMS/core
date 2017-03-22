@@ -15,7 +15,7 @@
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.util.URLUtils"%>
 <%@page import="com.dotmarketing.util.URLUtils.ParsedURL"%>
-<%@page import="com.dotmarketing.cache.WorkingCache"%>
+
 <%@page import="com.liferay.util.ParamUtil"%>
 <%@page import="com.dotmarketing.portlets.common.bean.CrumbTrailEntry"%>
 <%@page import="java.util.ArrayList"%>

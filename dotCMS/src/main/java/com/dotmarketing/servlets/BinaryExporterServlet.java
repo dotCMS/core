@@ -571,6 +571,7 @@ public class BinaryExporterServlet extends HttpServlet {
 			resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 		} catch (DotSecurityException e) {
 			try {
+			  if(req.getSession()!=null){
 				if(WebAPILocator.getUserWebAPI().isLoggedToBackend(req)){
 				    req.getSession().removeAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN);
 					resp.sendError(HttpServletResponse.SC_FORBIDDEN);
@@ -578,6 +579,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				    req.getSession().setAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, req.getAttribute("javax.servlet.forward.request_uri"));
 					resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
 				}
+			  }
 			} catch (Exception e1) {
 				Logger.error(BinaryExporterServlet.class,e1.getMessage(),e1);
 				resp.sendError(HttpServletResponse.SC_FORBIDDEN);
