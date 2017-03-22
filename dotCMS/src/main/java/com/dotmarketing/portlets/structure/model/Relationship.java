@@ -1,6 +1,11 @@
 package com.dotmarketing.portlets.structure.model;
 
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotmarketing.beans.Inode;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 
 
@@ -71,7 +76,12 @@ public class Relationship extends Inode
 	}
 	
 	public Structure getChildStructure () {
-		return (Structure) InodeFactory.getInode(childStructureInode, Structure.class);
+	  try {
+        return new StructureTransformer(APILocator.getContentTypeAPI(APILocator.systemUser()).find(childStructureInode)).asStructure();
+      } catch (DotStateException | DotDataException | DotSecurityException e) {
+        return null;
+      }
+
 	}
 	
 	/**
@@ -94,7 +104,11 @@ public class Relationship extends Inode
 	}
 
 	public Structure getParentStructure () {
-		return (Structure) InodeFactory.getInode(parentStructureInode, Structure.class);
+      try {
+        return new StructureTransformer(APILocator.getContentTypeAPI(APILocator.systemUser()).find(parentStructureInode)).asStructure();
+      } catch (DotStateException | DotDataException | DotSecurityException e) {
+        return null;
+      }
 	}
 	
 	/**
