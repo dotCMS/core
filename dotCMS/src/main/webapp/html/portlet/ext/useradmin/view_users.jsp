@@ -150,7 +150,7 @@
 								<select id="deleteUsersFilter" name="deleteUsersFilter" dojoType="dijit.form.FilteringSelect" store="usersStore" searchDelay="300" pageSize="30" labelAttr="name" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>"></select>
 								<div class="clear"></div>
 								<div class="buttonRow">
-									<button dojoType="dijit.form.Button" onclick="deleteUser()" type="button" iconClass="deleteIcon"><%= LanguageUtil.get(pageContext, "Delete") %></button>
+									<button dojoType="dijit.form.Button" onclick="deleteUser()" type="button" class="dijitButtonDanger"><%= LanguageUtil.get(pageContext, "Delete") %></button>
 									<button dojoType="dijit.form.Button" onclick="cancelDeleteUser()" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
 								</div>
 							</div>
