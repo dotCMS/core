@@ -20,7 +20,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
