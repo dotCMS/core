@@ -4,6 +4,7 @@ dotCMS is a scalable, java based, open source content management system (CMS) th
 
 dotCMS is available for download or as a cloud based product.
 
+
 - Download dotCMS: https://dotcms.com/download
 - dotCMS Enterprise Cloud: https://dotcms.com/cms-platform/cloud-cms/
 
