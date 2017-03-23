@@ -16,7 +16,10 @@ import com.liferay.portal.model.User;
 
 /**
  * @author Jason Tesser
- *
+ * @deprecated As of dotCMS 4.1.0, this API has been deprecated. From now on,
+ *             please use the {@link com.dotcms.contenttype.business.FieldAPI}
+ *             class via {@link APILocator#getContentTypeFieldAPI()} in order to
+ *             interact with Content Type fields.
  */
 public class FieldAPIImpl implements FieldAPI {
 

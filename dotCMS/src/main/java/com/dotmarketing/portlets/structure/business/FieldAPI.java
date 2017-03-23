@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.structure.business;
 
 import java.util.List;
 
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -12,6 +13,10 @@ import com.liferay.portal.model.User;
  * 
  * @author Jason Tesser
  * @since 1.6
+ * @deprecated As of dotCMS 4.1.0, this API has been deprecated. From now on,
+ *             please use the {@link com.dotcms.contenttype.business.FieldAPI}
+ *             class via {@link APILocator#getContentTypeFieldAPI()} in order to
+ *             interact with Content Type fields.
  */
 public interface FieldAPI {
 

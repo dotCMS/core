@@ -11,16 +11,18 @@ import org.junit.Test;
 import org.quartz.JobExecutionException;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -39,177 +41,495 @@ import com.liferay.portal.model.User;
  */
 public class DeleteFieldJobTest extends IntegrationTestBase {
 
-
     final DeleteFieldJob instance = new DeleteFieldJob();
 
     @BeforeClass
     public static void prepare() throws Exception{
-        //Setting web app environment
+        // Setting web app environment
         IntegrationTestInitService.getInstance().init();
     }
 
     @Test
     public void deleteContentTypeField() throws DotDataException, DotSecurityException, JobExecutionException {
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        final Host site = APILocator.getHostAPI().findDefaultHost(systemUser, true);
+        final long langId =APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
-        User systemUser = APILocator.getUserAPI().getSystemUser();
-        Host host = APILocator.getHostAPI().findDefaultHost(systemUser, true);
-        long langId =APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        ContentletAPI contentletAPI = APILocator.getContentletAPI();
-
-        Boolean boolValue = Boolean.TRUE;
-        Date dateValue = new Date();
-        Integer integerValue = 23;
-        Float floatValue = 2f;
-        String textValue = "Some content";
-        String textAreaValue = "Some content,Some content,Some content,Some content,Some content,Some content,Some content," +
+        final Boolean boolValue = Boolean.TRUE;
+        final String checkboxValue = "CA";
+        final String selectTextValue = "US";
+        final Date dateValue = new Date();
+        final Integer integerValue = 23;
+        final Float floatValue = 2f;
+        final Float decimalValue = 120.43f;
+        final int wholeNumberValue = 5;
+        final String textValue = "Some content";
+        final String textAreaValue = "Some content,Some content,Some content,Some content,Some content,Some content,Some content," +
                 "Some content,Some content,Some content,Some content,Some content,Some content,Some content";
+        final String wysiwygValue = "Some content,Some content,Some content,Some content,Some content,Some content,Some content,"
+				+ "Some content,Some content,Some content,Some content,Some content,Some content,Some content";
+        final String fileValue = "4d7daefa-6adb-4b76-896d-c2d9f95b2280";
+        final String imageValue = "4f43f9af-9ee6-4e17-8b50-10c4039186ee";
+        final String tagValue = "community,united states,test";
+        final String constantValue = "Constant Value";
+        final String lineDividerValue = "Test Line Divider";
+        final String tabDividerValue = "Test Tab Divider";
+        final String permissionsTabValue = "Permissions Value";
+        final String relationshipsTabValue = "Relationships Value";
+        final String hiddenValue = "Hidden Value";
+        final String binaryValue = "4f43f9af-9ee6-4e17-8b50-10c4039186ee";
+        final String customValue = "$date.long";
+        final String siteOrFolderValue = "48190c8c-42c4-46af-8d1a-0cd5db894797";
+        final String currentTime = String.valueOf(new Date().getTime());
 
-        String currentTime = String.valueOf(new Date().getTime());
-        String contentTypeName = "DeleteFieldContentType_" + currentTime;
-        String textAreaFieldVarName = "textAreaFieldVarName_" + currentTime;
-        String integerFieldVarName = "integerFieldVarName_" + currentTime;
-        String floatFieldVarName = "floatFieldVarName_" + currentTime;
-        String textFieldVarName = "textFieldVarName_" + currentTime;
-        String dateFieldVarName = "dateFieldVarName_" + currentTime;
-        String radioFieldVarName = "radioFieldVarName_" + currentTime;
+        // Checkbox Field
+        final String checkboxFieldVarName = "checkboxFieldVarName_" + currentTime;
+        // Date Field
+        final String dateFieldVarName = "dateFieldVarName_" + currentTime;
+        // Time Field
+        final String timeFieldVarName = "timeFieldVarName_" + currentTime;
+        // Date-Time Field
+        final String dateTimeFieldVarName = "dateTimeFieldVarName_" + currentTime;
+        // Radio Field
+        final String radioFieldVarName = "radioFieldVarName_" + currentTime;
+        // Select Field and its 4 types
+        final String selectTextFieldVarName = "selectTextFieldVarName_" + currentTime;
+        final String selectBooleanFieldVarName = "selectBooleanFieldVarName_" + currentTime;
+        final String selectDecimalFieldVarName = "selectDecimalFieldVarName_" + currentTime;
+        final String selectWholeNumberFieldVarName = "selectWholeNumberFieldVarName_" + currentTime;
+        // Multi-Select Field
+        final String multiSelectFieldVarName = "multiSelectFieldVarName_" + currentTime;
+        // Text Field and its 3 types
+        final String textFieldVarName = "textFieldVarName_" + currentTime;
+        final String textDecimalFieldVarName = "floatFieldVarName_" + currentTime;
+        final String textWholeNumberFieldVarName = "integerFieldVarName_" + currentTime;
+        // Text Area Field
+        final String textAreaFieldVarName = "textAreaFieldVarName_" + currentTime;
+        // WYSIWYG Field
+        final String wysiwygFieldVarName = "wysiwygFieldVarName_" + currentTime;
+        // File Field
+        final String fileFieldVarName = "fileFieldVarName_" + currentTime;
+        // Image Field
+        final String imageFieldVarName = "imageFieldVarName_" + currentTime;
+        // Tag Field
+        final String tagFieldVarName = "tagFieldVarName_" + currentTime;
+        // Constant Field
+        final String constantFieldVarName = "constantFieldVarName_" + currentTime;
+        // Category Field
+        final String categoryFieldVarName = "categoryFieldVarName_" + currentTime;
+        // Line Divider Field
+        final String lineDividerFieldVarName = "lineDividerFieldVarName_" + currentTime;
+        // Tab Divider Field
+        final String tabDividerFieldVarName = "tabDividerFieldVarName_" + currentTime;
+        // Permissions Tab Field
+        final String permissionsTabFieldVarName = "permissionsTabFieldVarName_" + currentTime;
+        // Relationships Tab Field
+        final String relationshipsTabFieldVarName = "relationshipsTabFieldVarName_" + currentTime;
+        // Hidden Field
+        final String hiddenFieldVarName = "hiddenFieldVarName_" + currentTime;
+        // Binary Field
+        final String binaryFieldVarName = "binaryFieldVarName_" + currentTime;
+        // Custom Field
+        final String customFieldVarName = "customFieldVarName_" + currentTime;
+        // Site or Folder Field
+        final String siteOrFolderFieldVarName = "siteOrFolderFieldVarName_" + currentTime;
+        // Key/Value Field
+        final String keyValueFieldVarName = "keyValueFieldVarName_" + currentTime;
 
-        //Create content types
+        // Create content type
+        final String contentTypeName = "DeleteFieldContentType_" + currentTime;
+        final String contentTypeVelocityVarName = "deleteFieldVarName_" + currentTime;
         Structure contentType = new Structure();
-        contentType.setHost(host.getIdentifier());
+        contentType.setHost(site.getIdentifier());
         contentType.setDescription("Testing delete content types's field");
         contentType.setName(contentTypeName);
-        contentType.setVelocityVarName("deleteFieldVarName_" + currentTime);
+        contentType.setVelocityVarName(contentTypeVelocityVarName);
         contentType.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
         contentType.setFixed(false);
         contentType.setOwner(systemUser.getUserId());
-        contentType.setExpireDateVar("");
-        contentType.setPublishDateVar("");
+        contentType.setExpireDateVar(StringUtils.EMPTY);
+        contentType.setPublishDateVar(StringUtils.EMPTY);
 
         Contentlet contentlet = null;
-
-        try{
-
-            //Save the test structure
+        try {
+            // Save the test Content Type
             StructureFactory.saveStructure(contentType);
+            contentType = StructureFactory.getStructureByVelocityVarName(contentTypeVelocityVarName);
+            
+            final boolean required = Boolean.TRUE;
+            final boolean listed = Boolean.TRUE;
+            final boolean indexed = Boolean.TRUE;
+            final boolean fixed = Boolean.TRUE;
+            final boolean readOnly = Boolean.TRUE;
+            final boolean searchable = Boolean.TRUE;
 
-            //Adding the test fields
+			// Adding the test fields
+			Field checkboxField = new Field("checkboxField_" + currentTime, Field.FieldType.CHECKBOX,
+					Field.DataType.TEXT, contentType, required, listed, indexed, 1, "Canada|CA\r\nMexico|MX\r\nUSA|US",
+					StringUtils.EMPTY, StringUtils.EMPTY, !fixed, !readOnly, searchable);
+			checkboxField.setVelocityVarName(checkboxFieldVarName);
+			checkboxField = FieldFactory.saveField(checkboxField);
 
-            Field radioField = new Field("radioField_" + currentTime, Field.FieldType.RADIO, Field.DataType.BOOL,
-                    contentType, true, true, true, 1, "", "",
-                    "", false, false, true);
-            radioField.setVelocityVarName(radioFieldVarName);
-            FieldFactory.saveField(radioField);
-            FieldsCache.addField(radioField);
+			Field dateField = new Field("dateField_" + currentTime, Field.FieldType.DATE, Field.DataType.DATE,
+					contentType, required, listed, indexed, 1, StringUtils.EMPTY, StringUtils.EMPTY, StringUtils.EMPTY,
+					!fixed, !readOnly, searchable);
+			dateField.setVelocityVarName(dateFieldVarName);
+			dateField = FieldFactory.saveField(dateField);
 
-            Field dateField = new Field("dateField_" + currentTime, Field.FieldType.DATE, Field.DataType.DATE,
-                    contentType, true, true, true, 1, "", "",
-                    "", false, false, true);
-            dateField.setVelocityVarName(dateFieldVarName);
-            FieldFactory.saveField(dateField);
-            FieldsCache.addField(dateField);
+			Field timeField = new Field("timeField_" + currentTime, Field.FieldType.TIME, Field.DataType.DATE,
+					contentType, required, listed, indexed, 1, StringUtils.EMPTY, StringUtils.EMPTY, StringUtils.EMPTY,
+					!fixed, !readOnly, searchable);
+			timeField.setVelocityVarName(timeFieldVarName);
+			timeField = FieldFactory.saveField(timeField);
 
-            Field textAreaField = new Field("textAreaField_" + currentTime, Field.FieldType.TEXT_AREA, Field.DataType.LONG_TEXT,
-                    contentType, true, true, true, 1, "", "",
-                    "", false, false, true);
-            textAreaField.setVelocityVarName(textAreaFieldVarName);
-            FieldFactory.saveField(textAreaField);
-            FieldsCache.addField(textAreaField);
+			Field dateTimeField = new Field("dateTimeField_" + currentTime, Field.FieldType.TIME, Field.DataType.DATE,
+					contentType, required, listed, indexed, 1, StringUtils.EMPTY, StringUtils.EMPTY, StringUtils.EMPTY,
+					!fixed, !readOnly, searchable);
+			dateTimeField.setVelocityVarName(dateTimeFieldVarName);
+			dateTimeField = FieldFactory.saveField(dateTimeField);
 
-            Field integerField = new Field("integerField_" + currentTime, Field.FieldType.TEXT, Field.DataType.INTEGER,
-                    contentType, true, true, true, 1, "", "",
-                    "", false, false, true);
-            integerField.setVelocityVarName(integerFieldVarName);
-            FieldFactory.saveField(integerField);
-            FieldsCache.addField(integerField);
+			Field radioField = new Field("radioField_" + currentTime, Field.FieldType.RADIO, Field.DataType.BOOL,
+					contentType, required, listed, indexed, 1, StringUtils.EMPTY, StringUtils.EMPTY, StringUtils.EMPTY,
+					!fixed, !readOnly, searchable);
+			radioField.setVelocityVarName(radioFieldVarName);
+			radioField = FieldFactory.saveField(radioField);
 
-            Field floatField = new Field("floatField_" + currentTime, Field.FieldType.TEXT, Field.DataType.FLOAT,
-                    contentType, true, true, true, 1, "", "",
-                    "", false, false, true);
-            floatField.setVelocityVarName(floatFieldVarName);
-            FieldFactory.saveField(floatField);
-            FieldsCache.addField(floatField);
+			Field selectTextField = new Field("selectTextField_" + currentTime, Field.FieldType.SELECT,
+					Field.DataType.TEXT, contentType, required, listed, indexed, 1, "Canada|CA\r\nMexico|MX\r\nUSA|US",
+					StringUtils.EMPTY, StringUtils.EMPTY, !fixed, !readOnly, searchable);
+			selectTextField.setVelocityVarName(selectTextFieldVarName);
+			selectTextField = FieldFactory.saveField(selectTextField);
 
-            Field textField = new Field("textField_" + currentTime, Field.FieldType.TEXT, Field.DataType.TEXT,
-                    contentType, true, true, true, 1, "", "",
-                    "", false, false, true);
-            textField.setVelocityVarName(textFieldVarName);
-            FieldFactory.saveField(textField);
-            FieldsCache.addField(textField);
+			Field selectBooleanField = new Field("selectBooleanField_" + currentTime, Field.FieldType.SELECT,
+					Field.DataType.BOOL, contentType, required, listed, indexed, 1,
+					"Yes|" + DbConnectionFactory.getDBTrue() + "\r\nNo|" + DbConnectionFactory.getDBFalse(),
+					StringUtils.EMPTY, StringUtils.EMPTY, !fixed, !readOnly, searchable);
+			selectBooleanField.setVelocityVarName(selectBooleanFieldVarName);
+			selectBooleanField = FieldFactory.saveField(selectBooleanField);
 
-            //Validate the fields were properly saved
-            Structure stFromDB = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(contentTypeName);
-            List<Field> fieldsBySortOrder = stFromDB.getFieldsBySortOrder();
+			Field selectDecimalField = new Field("selectDecimalField_" + currentTime, Field.FieldType.SELECT,
+					Field.DataType.FLOAT, contentType, required, listed, indexed, 1,
+					"Decimal 1|120.43\r\nDecimal 2|14.88", StringUtils.EMPTY, StringUtils.EMPTY, !fixed, !readOnly,
+					searchable);
+			selectDecimalField.setVelocityVarName(selectDecimalFieldVarName);
+			selectDecimalField = FieldFactory.saveField(selectDecimalField);
 
-            assertEquals(6, fieldsBySortOrder.size());
+			Field selectWholeNumberField = new Field("selectWholeNumberField_" + currentTime, Field.FieldType.SELECT,
+					Field.DataType.INTEGER, contentType, required, listed, indexed, 1, "Number 1|5\r\nNumber 2|11",
+					StringUtils.EMPTY, StringUtils.EMPTY, !fixed, !readOnly, searchable);
+			selectWholeNumberField.setVelocityVarName(selectWholeNumberFieldVarName);
+			selectWholeNumberField = FieldFactory.saveField(selectWholeNumberField);
 
-            //Create a new content of the DeleteFieldContentType type
+			Field multiSelectField = new Field("multiSelectField_" + currentTime, Field.FieldType.SELECT,
+					Field.DataType.TEXT, contentType, required, listed, indexed, 1, "Canada|CA\r\nMexico|MX\r\nUSA|US",
+					StringUtils.EMPTY, StringUtils.EMPTY, !fixed, !readOnly, searchable);
+			multiSelectField.setVelocityVarName(multiSelectFieldVarName);
+			multiSelectField = FieldFactory.saveField(multiSelectField);
+
+			Field textAreaField = new Field("textAreaField_" + currentTime, Field.FieldType.TEXT_AREA,
+					Field.DataType.LONG_TEXT, contentType, required, listed, indexed, 1, StringUtils.EMPTY,
+					StringUtils.EMPTY, StringUtils.EMPTY, !fixed, !readOnly, searchable);
+			textAreaField.setVelocityVarName(textAreaFieldVarName);
+			textAreaField = FieldFactory.saveField(textAreaField);
+
+			Field textWholeNumberField = new Field("integerField_" + currentTime, Field.FieldType.TEXT,
+					Field.DataType.INTEGER, contentType, required, listed, indexed, 1, StringUtils.EMPTY,
+					StringUtils.EMPTY, StringUtils.EMPTY, !fixed, !readOnly, searchable);
+			textWholeNumberField.setVelocityVarName(textWholeNumberFieldVarName);
+			textWholeNumberField = FieldFactory.saveField(textWholeNumberField);
+
+			Field textDecimalField = new Field("floatField_" + currentTime, Field.FieldType.TEXT, Field.DataType.FLOAT,
+					contentType, required, listed, indexed, 1, StringUtils.EMPTY, StringUtils.EMPTY, StringUtils.EMPTY,
+					!fixed, !readOnly, searchable);
+			textDecimalField.setVelocityVarName(textDecimalFieldVarName);
+			textDecimalField = FieldFactory.saveField(textDecimalField);
+
+			Field textField = new Field("textField_" + currentTime, Field.FieldType.TEXT, Field.DataType.TEXT,
+					contentType, required, listed, indexed, 1, StringUtils.EMPTY, StringUtils.EMPTY, StringUtils.EMPTY,
+					!fixed, !readOnly, searchable);
+			textField.setVelocityVarName(textFieldVarName);
+			textField = FieldFactory.saveField(textField);
+
+			Field wysiwygField = new Field("wysiwygField_" + currentTime, Field.FieldType.WYSIWYG,
+					Field.DataType.LONG_TEXT, contentType, required, listed, indexed, 1, wysiwygValue,
+					StringUtils.EMPTY, StringUtils.EMPTY, !fixed, !readOnly, searchable);
+			wysiwygField.setVelocityVarName(wysiwygFieldVarName);
+			wysiwygField = FieldFactory.saveField(wysiwygField);
+
+			Field fileField = new Field("fileField_" + currentTime, Field.FieldType.FILE, Field.DataType.TEXT,
+					contentType, required, listed, indexed, 1, fileValue, StringUtils.EMPTY, StringUtils.EMPTY, !fixed,
+					!readOnly, searchable);
+			fileField.setVelocityVarName(fileFieldVarName);
+			fileField = FieldFactory.saveField(fileField);
+
+			Field imageField = new Field("imageField_" + currentTime, Field.FieldType.IMAGE, Field.DataType.TEXT,
+					contentType, required, listed, indexed, 1, imageValue, StringUtils.EMPTY, StringUtils.EMPTY, !fixed,
+					!readOnly, searchable);
+			imageField.setVelocityVarName(imageFieldVarName);
+			imageField = FieldFactory.saveField(imageField);
+
+			Field tagField = new Field("tagField_" + currentTime, Field.FieldType.TAG, Field.DataType.LONG_TEXT,
+					contentType, required, listed, indexed, 1, StringUtils.EMPTY, StringUtils.EMPTY, StringUtils.EMPTY,
+					!fixed, !readOnly, searchable);
+			tagField.setVelocityVarName(tagFieldVarName);
+			tagField = FieldFactory.saveField(tagField);
+
+			Field constantField = new Field("constantField_" + currentTime, Field.FieldType.CONSTANT,
+					Field.DataType.LONG_TEXT, contentType, !required, !listed, !indexed, 1, constantValue,
+					StringUtils.EMPTY, StringUtils.EMPTY, !fixed, !readOnly, !searchable);
+			constantField.setFieldContentlet(FieldAPI.ELEMENT_CONSTANT);
+			constantField = FieldFactory.saveField(constantField);
+
+			Field categoryField = new Field("categoryField_" + currentTime, Field.FieldType.CATEGORY,
+					Field.DataType.TEXT, contentType, !required, !listed, !indexed, 1, StringUtils.EMPTY,
+					StringUtils.EMPTY, StringUtils.EMPTY, !fixed, !readOnly, !searchable);
+			categoryField.setVelocityVarName(categoryFieldVarName);
+			categoryField = FieldFactory.saveField(categoryField);
+
+			Field lineDividerField = new Field("lineDividerField_" + currentTime, Field.FieldType.LINE_DIVIDER,
+					Field.DataType.TEXT, contentType, !required, !listed, !indexed, 1, StringUtils.EMPTY,
+					StringUtils.EMPTY, StringUtils.EMPTY, !fixed, !readOnly, !searchable);
+			lineDividerField.setVelocityVarName(lineDividerFieldVarName);
+			lineDividerField = FieldFactory.saveField(lineDividerField);
+
+			Field tabDividerField = new Field("tabDividerField_" + currentTime, Field.FieldType.TAB_DIVIDER,
+					Field.DataType.TEXT, contentType, !required, !listed, !indexed, 1, StringUtils.EMPTY,
+					StringUtils.EMPTY, StringUtils.EMPTY, !fixed, !readOnly, !searchable);
+			tabDividerField.setVelocityVarName(tabDividerFieldVarName);
+			tabDividerField = FieldFactory.saveField(tabDividerField);
+
+			Field permissionsTabField = new Field("permissionsTabField_" + currentTime, Field.FieldType.PERMISSIONS_TAB,
+					Field.DataType.TEXT, contentType, !required, !listed, !indexed, 1, StringUtils.EMPTY,
+					StringUtils.EMPTY, StringUtils.EMPTY, !fixed, !readOnly, !searchable);
+			permissionsTabField.setVelocityVarName(permissionsTabFieldVarName);
+			permissionsTabField = FieldFactory.saveField(permissionsTabField);
+
+			Field relationshipsTabField = new Field("relationshipsTabField_" + currentTime,
+					Field.FieldType.RELATIONSHIPS_TAB, Field.DataType.TEXT, contentType, !required, !listed, !indexed,
+					1, StringUtils.EMPTY, StringUtils.EMPTY, StringUtils.EMPTY, !fixed, !readOnly, !searchable);
+			relationshipsTabField.setVelocityVarName(relationshipsTabFieldVarName);
+			relationshipsTabField = FieldFactory.saveField(relationshipsTabField);
+
+			Field hiddenField = new Field("hiddenField_" + currentTime, Field.FieldType.HIDDEN, Field.DataType.SYSTEM,
+					contentType, !required, !listed, !indexed, 1, hiddenValue, StringUtils.EMPTY, StringUtils.EMPTY,
+					!fixed, !readOnly, !searchable);
+			hiddenField.setVelocityVarName(hiddenFieldVarName);
+			hiddenField = FieldFactory.saveField(hiddenField);
+
+			Field binaryField = new Field("binaryField_" + currentTime, Field.FieldType.BINARY, Field.DataType.BINARY,
+					contentType, !required, !listed, !fixed, 1, StringUtils.EMPTY, StringUtils.EMPTY, StringUtils.EMPTY,
+					!fixed, !readOnly, searchable);
+			binaryField.setVelocityVarName(binaryFieldVarName);
+			binaryField = FieldFactory.saveField(binaryField);
+
+			Field customField = new Field("customField_" + currentTime, Field.FieldType.CUSTOM_FIELD,
+					Field.DataType.LONG_TEXT, contentType, !required, !listed, !indexed, 1, customValue,
+					StringUtils.EMPTY, StringUtils.EMPTY, !fixed, !readOnly, !searchable);
+			customField.setVelocityVarName(customFieldVarName);
+			customField = FieldFactory.saveField(customField);
+
+			Field siteOrFolderField = new Field("siteOrFolderField_" + currentTime, Field.FieldType.HOST_OR_FOLDER,
+					Field.DataType.TEXT, contentType, !required, !listed, indexed, 1, customValue, StringUtils.EMPTY,
+					StringUtils.EMPTY, !fixed, !readOnly, !searchable);
+			siteOrFolderField.setVelocityVarName(siteOrFolderFieldVarName);
+			siteOrFolderField = FieldFactory.saveField(siteOrFolderField);
+
+			Field keyValueField = new Field("keyValueField_" + currentTime, Field.FieldType.KEY_VALUE,
+					Field.DataType.LONG_TEXT, contentType, !required, !listed, !indexed, 1, StringUtils.EMPTY,
+					StringUtils.EMPTY, StringUtils.EMPTY, !fixed, !readOnly, !searchable);
+			keyValueField.setVelocityVarName(keyValueFieldVarName);
+			keyValueField = FieldFactory.saveField(keyValueField);
+
+            // Validate the fields were properly saved
+			Structure contentTypeFromDB = CacheLocator.getContentTypeCache()
+					.getStructureByVelocityVarName(contentTypeVelocityVarName);
+            List<Field> fieldsBySortOrder = contentTypeFromDB.getFieldsBySortOrder();
+
+            assertEquals(29, fieldsBySortOrder.size());
+
+            // Create a new content of the DeleteFieldContentType type
             contentlet = new Contentlet();
             contentlet.setStructureInode(contentType.getInode());
-            contentlet.setHost(host.getIdentifier());
+            contentlet.setHost(site.getIdentifier());
             contentlet.setLanguageId(langId);
 
-            //Set the fields values
+            // Set the field values
+            contentletAPI.setContentletProperty(contentlet, checkboxField, checkboxValue);
             contentletAPI.setContentletProperty(contentlet, dateField, dateValue);
+            contentletAPI.setContentletProperty(contentlet, timeField, dateValue);
+            contentletAPI.setContentletProperty(contentlet, dateTimeField, dateValue);
             contentletAPI.setContentletProperty(contentlet, radioField, boolValue);
-            contentletAPI.setContentletProperty(contentlet, textAreaField, textAreaValue);
-            contentletAPI.setContentletProperty(contentlet, integerField, integerValue);
-            contentletAPI.setContentletProperty(contentlet, floatField, floatValue);
+            contentletAPI.setContentletProperty(contentlet, selectTextField, selectTextValue);
+            contentletAPI.setContentletProperty(contentlet, selectBooleanField, Boolean.TRUE);
+            contentletAPI.setContentletProperty(contentlet, selectDecimalField, decimalValue);
+            contentletAPI.setContentletProperty(contentlet, selectWholeNumberField, wholeNumberValue);
+            contentletAPI.setContentletProperty(contentlet, multiSelectField, selectTextValue);
+            contentletAPI.setContentletProperty(contentlet, textWholeNumberField, integerValue);
+            contentletAPI.setContentletProperty(contentlet, textDecimalField, floatValue);
             contentletAPI.setContentletProperty(contentlet, textField, textValue);
+            contentletAPI.setContentletProperty(contentlet, textAreaField, textAreaValue);
+            contentletAPI.setContentletProperty(contentlet, wysiwygField, wysiwygValue);
+            contentletAPI.setContentletProperty(contentlet, fileField, fileValue);
+            contentletAPI.setContentletProperty(contentlet, imageField, imageValue);
+            contentletAPI.setContentletProperty(contentlet, tagField, tagValue);
+            contentletAPI.setContentletProperty(contentlet, constantField, constantValue);
+            contentletAPI.setContentletProperty(contentlet, categoryField, null);
+            contentletAPI.setContentletProperty(contentlet, lineDividerField, lineDividerValue);
+            contentletAPI.setContentletProperty(contentlet, tabDividerField, tabDividerValue);
+            contentletAPI.setContentletProperty(contentlet, permissionsTabField, permissionsTabValue);
+            contentletAPI.setContentletProperty(contentlet, relationshipsTabField, relationshipsTabValue);
+            contentletAPI.setContentletProperty(contentlet, hiddenField, hiddenValue);
+            contentletAPI.setContentletProperty(contentlet, binaryField, binaryValue);
+            contentletAPI.setContentletProperty(contentlet, customField, customValue);
+            contentletAPI.setContentletProperty(contentlet, siteOrFolderField, siteOrFolderValue);
+            contentletAPI.setContentletProperty(contentlet, keyValueField, StringUtils.EMPTY);
 
-            //Save the content
+            // Save the content
             contentlet = contentletAPI.checkin(contentlet, systemUser, true);
 
-            //Delete fields
+            // Execute jobs to delete fields
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", checkboxField, "user", systemUser));
+            
             TestJobExecutor.execute(instance,
                     CollectionsUtils.map("structure", contentType, "field", dateField, "user", systemUser));
+
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", timeField, "user", systemUser));
+
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", dateTimeField, "user", systemUser));
 
             TestJobExecutor.execute(instance,
                     CollectionsUtils.map("structure", contentType, "field", radioField, "user", systemUser));
 
             TestJobExecutor.execute(instance,
-                    CollectionsUtils.map("structure", contentType, "field", textAreaField, "user", systemUser));
+                    CollectionsUtils.map("structure", contentType, "field", selectTextField, "user", systemUser));
 
             TestJobExecutor.execute(instance,
-                    CollectionsUtils.map("structure", contentType, "field", integerField, "user", systemUser));
+                    CollectionsUtils.map("structure", contentType, "field", selectBooleanField, "user", systemUser));
 
             TestJobExecutor.execute(instance,
-                    CollectionsUtils.map("structure", contentType, "field", floatField, "user", systemUser));
+                    CollectionsUtils.map("structure", contentType, "field", selectDecimalField, "user", systemUser));
+
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", selectWholeNumberField, "user", systemUser));
+
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", multiSelectField, "user", systemUser));
+
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", textWholeNumberField, "user", systemUser));
+
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", textDecimalField, "user", systemUser));
 
             TestJobExecutor.execute(instance,
                     CollectionsUtils.map("structure", contentType, "field", textField, "user", systemUser));
+            
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", textAreaField, "user", systemUser));
 
-            //Validate we deleted those fields properly
-            stFromDB = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(contentTypeName);
-            fieldsBySortOrder = stFromDB.getFieldsBySortOrder();
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", wysiwygField, "user", systemUser));
+
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", fileField, "user", systemUser));
+
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", imageField, "user", systemUser));
+
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", tagField, "user", systemUser));
+
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", constantField, "user", systemUser));
+
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", categoryField, "user", systemUser));
+
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", lineDividerField, "user", systemUser));
+
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", tabDividerField, "user", systemUser));
+
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", permissionsTabField, "user", systemUser));
+
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", relationshipsTabField, "user", systemUser));
+
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", hiddenField, "user", systemUser));
+
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", binaryField, "user", systemUser));
+
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", customField, "user", systemUser));
+
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", siteOrFolderField, "user", systemUser));
+
+            TestJobExecutor.execute(instance,
+                    CollectionsUtils.map("structure", contentType, "field", keyValueField, "user", systemUser));
+
+            // Validate we deleted those fields properly
+            contentTypeFromDB = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(contentTypeVelocityVarName);
+            fieldsBySortOrder = contentTypeFromDB.getFieldsBySortOrder();
             assertEquals(0, fieldsBySortOrder.size());
 
-            //Make sure the values are not in cache
+            // Make sure the values are not in cache anymore
             Contentlet contentletFromDB = CacheLocator.getContentletCache().get(contentlet.getInode());
+            assertNull(contentletFromDB.get(checkboxFieldVarName));
             assertNull(contentletFromDB.get(dateFieldVarName));
+            assertNull(contentletFromDB.get(timeFieldVarName));
+            assertNull(contentletFromDB.get(dateTimeFieldVarName));
             assertNull(contentletFromDB.get(radioFieldVarName));
-            assertNull(contentletFromDB.get(textAreaFieldVarName));
-            assertNull(contentletFromDB.get(integerFieldVarName));
-            assertNull(contentletFromDB.get(floatFieldVarName));
+            assertNull(contentletFromDB.get(selectTextFieldVarName));
+            assertNull(contentletFromDB.get(selectBooleanFieldVarName));
+            assertNull(contentletFromDB.get(selectDecimalFieldVarName));
+            assertNull(contentletFromDB.get(selectWholeNumberFieldVarName));
+            assertNull(contentletFromDB.get(multiSelectFieldVarName));
+            assertNull(contentletFromDB.get(textWholeNumberFieldVarName));
+            assertNull(contentletFromDB.get(textDecimalFieldVarName));
             assertNull(contentletFromDB.get(textFieldVarName));
-        }catch(Exception e){
-
-            if (contentType != null){
+            assertNull(contentletFromDB.get(textAreaFieldVarName));
+            assertNull(contentletFromDB.get(wysiwygFieldVarName));
+            assertNull(contentletFromDB.get(fileFieldVarName));
+            assertNull(contentletFromDB.get(imageFieldVarName));
+            assertNull(contentletFromDB.get(tagFieldVarName));
+            assertNull(contentletFromDB.get(constantFieldVarName));
+            assertNull(contentletFromDB.get(categoryFieldVarName));
+            assertNull(contentletFromDB.get(lineDividerFieldVarName));
+            assertNull(contentletFromDB.get(tabDividerFieldVarName));
+            assertNull(contentletFromDB.get(permissionsTabFieldVarName));
+            assertNull(contentletFromDB.get(relationshipsTabFieldVarName));
+            assertNull(contentletFromDB.get(hiddenFieldVarName));
+            assertNull(contentletFromDB.get(binaryFieldVarName));
+            assertNull(contentletFromDB.get(customFieldVarName));
+            assertNull(contentletFromDB.get(siteOrFolderFieldVarName));
+            assertNull(contentletFromDB.get(keyValueFieldVarName));
+		} catch (Exception e) {
+			throw new RuntimeException("An error occurred when deleting fields from a test Content Type ["
+					+ (contentType != null ? contentType.getName() : "N/A") + "]", e);
+        } finally {
+        	if (contentType != null){
                 try {
                     StructureFactory.deleteStructure(contentType);
                 } catch (DotDataException e1) {
-                    //Do nothing....
+                    // Do nothing
                 }
             }
-
             if (contentlet != null) {
                 try {
                     contentletAPI.delete(contentlet, systemUser, true);
                 } catch (Exception e1) {
-                    //Do nothing....
+                    // Do nothing
                 }
             }
-
-            throw new RuntimeException(e);
         }
     }
 
