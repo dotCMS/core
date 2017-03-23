@@ -1,10 +1,22 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <base href="<%= htmlWebpackPlugin.options.metadata.baseUrl %>">
-    <meta charset="UTF-8">
+
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>dotCMS Content Management Platform</title>
+
+    <title><%= htmlWebpackPlugin.options.title %></title>
+
+    <meta name="description" content="<%= htmlWebpackPlugin.options.title %>">
+
+    <% if (webpackConfig.htmlElements.headTags) { %>
+    <!-- Configured Head Tags  -->
+    <%= webpackConfig.htmlElements.headTags %>
+    <% } %>
+
+    <!-- base url -->
+    <base href="<%= htmlWebpackPlugin.options.metadata.baseUrl %>">
 
     <style>
         .cog {
@@ -28,7 +40,7 @@
         }
 
         .logo {
-            background: url('scss/img/dotCMS-logo.png') no-repeat;
+            background: url('styles/img/dotCMS-logo.png') no-repeat;
             background-size: cover;
             height: 64px;
             position: relative;
@@ -63,16 +75,7 @@
         }
     </style>
 
-    <link rel="stylesheet" type="text/css" href="scss/main.css" />
-
-    <!-- 1. Load libraries -->
-    <!-- Polyfill(s) for older browsers -->
-    <!-- build:ng thirdparty/lib.js -->
-    <script src="../node_modules/core-js/client/shim.min.js"></script>
-    <script src="../node_modules/reflect-metadata/Reflect.js"></script>
-    <script src="../node_modules/systemjs/dist/system.src.js"></script>
-    <script src="../node_modules/zone.js/dist/zone.min.js"></script>
-    <!-- endbuild -->
+    <link rel="stylesheet" type="text/css" href="styles/main.css" />
 
 </head>
 
@@ -94,9 +97,9 @@
     </div>
 </app>
 
-<!-- build:js thirdparty/plugins.js -->
-<script src="../node_modules/jquery/dist/jquery.min.js"></script>
-<script src="../node_modules/semantic-ui/dist/semantic.min.js"></script>
-<!-- endbuild -->
+<% if (htmlWebpackPlugin.options.metadata.isDevServer && htmlWebpackPlugin.options.metadata.HMR !== true) { %>
+<!-- Webpack Dev Server reload -->
+<script src="/webpack-dev-server.js"></script>
+<% } %>
 </body>
 </html>

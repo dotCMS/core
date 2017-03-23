@@ -4,9 +4,8 @@ import {LoggerService} from "../../../../../api/services/logger.service";
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
-    moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     selector: 'dot-forgot-password-component',
-    templateUrl: ['forgot-password-component.html'],
+    templateUrl: 'forgot-password-component.html',
 })
 
 export class ForgotPasswordComponent {

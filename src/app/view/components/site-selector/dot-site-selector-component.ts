@@ -9,12 +9,11 @@ import {IframeOverlayService} from '../../../api/services/iframe-overlay-service
 
 @Component({
     encapsulation: ViewEncapsulation.None,
-    moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     pipes: [],
     providers: [],
     selector: 'dot-site-selector-component',
     styleUrls: ['dot-site-selector-component.css'],
-    templateUrl: ['dot-site-selector-component.html'],
+    templateUrl: 'dot-site-selector-component.html',
 })
 export class SiteSelectorComponent extends BaseComponent {
     private currentSite: any;

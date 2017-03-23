@@ -52,7 +52,7 @@ export interface ConditionActionEvent extends RuleActionEvent {
  */
 @Component({
   encapsulation: ViewEncapsulation.None,
-  moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
+
   selector: 'cw-rule-engine-container',
   styleUrls: ['styles/rule-engine.css', 'styles/angular-material.layouts.css', 'styles/semantic.ui.css'],
   template: `

@@ -4,7 +4,6 @@ import {MessageService} from '../../../../api/services/messages-service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
-    moduleId: __moduleName,
     selector: 'base'
 })
 

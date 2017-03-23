@@ -5,10 +5,9 @@ import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
-    moduleId: __moduleName,
     selector: 'custom-time',
     styleUrls: ['custom-time.css'],
-    templateUrl: ['custom-time.html'],
+    templateUrl: 'custom-time.html',
 
 })
 export class CustomTimeComponent {

@@ -6,11 +6,10 @@ import {NotLicensedService} from './api/services/not-licensed-service';
 @Component({
     directives: [],
     encapsulation: ViewEncapsulation.Emulated,
-    moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     providers: [],
     selector: 'app',
-    styleUrls: ['app.scss'],
-    templateUrl: ['app.html']
+    styleUrls: ['app.scss', '../../node_modules/primeng/resources/primeng.min.css'],
+    templateUrl: 'app.html'
 })
 
 /**

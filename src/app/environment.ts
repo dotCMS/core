@@ -15,7 +15,7 @@ import {CoreWebService} from './api/services/core-web-service';
 import {NotLicensedService} from './api/services/not-licensed-service';
 import {AccountService} from './api/services/account-service';
 import {ApiRoot} from './api/persistence/ApiRoot';
-//import {BundleService} from './api/services/bundle-service';
+import {BundleService} from './api/services/bundle-service';
 import {DotcmsConfig} from './api/services/system/dotcms-config';
 import {DotcmsEventsService} from './api/services/dotcms-events-service';
 import {DotRouterService} from './api/services/dot-router-service';
@@ -31,14 +31,12 @@ import {StringFormat} from './api/util/stringFormat';
 import {UserModel} from './api/auth/UserModel';
 import {IframeOverlayService} from './api/services/iframe-overlay-service';
 import {SocketFactory} from './api/services/protocol/socket-factory';
-/*
 import {ActionService} from './api/rule-engine/Action';
 import {ConditionGroupService} from './api/rule-engine/ConditionGroup';
 import {ConditionService} from './api/rule-engine/Condition';
 import {GoogleMapService} from './api/maps/GoogleMapService';
 import {I18nService} from './api/system/locale/I18n';
 import {RuleService} from './api/rule-engine/Rule';
-*/
 import {Logger} from 'angular2-logger/core';
 
 // ROUTING
@@ -46,12 +44,12 @@ import {LocationStrategy, HashLocationStrategy} from '@angular/common';
 
 // Environment Providers
 const RULES_ENGINE_SERVICES = [
-  /*ActionService,
+  ActionService,
   ConditionGroupService,
   ConditionService,
   GoogleMapService,
   I18nService,
-  RuleService,*/
+  RuleService,
 ];
 
 let PROVIDERS: any[] = [

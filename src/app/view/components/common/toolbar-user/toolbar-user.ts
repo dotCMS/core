@@ -8,10 +8,9 @@ import {LoggerService} from '../../../../api/services/logger.service';
 import {IframeOverlayService} from "../../../../api/services/iframe-overlay-service";
 
 @Component({
-    moduleId: __moduleName,
     selector: 'toolbar-user',
     styleUrls: ['toolbar-user.css'],
-    templateUrl: ['toolbar-user.html'],
+    templateUrl: 'toolbar-user.html',
 
 })
 export class ToolbarUserComponent extends BaseComponent {

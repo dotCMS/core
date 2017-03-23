@@ -7,7 +7,6 @@ import {DotRouterService} from '../../../../../api/services/dot-router-service';
 @Component({
     directives: [ForgotPasswordComponent],
     encapsulation: ViewEncapsulation.Emulated,
-    moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     selector: 'dot-forgot-password-container',
     template: `
         <dot-forgot-password-component

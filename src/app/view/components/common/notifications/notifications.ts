@@ -8,12 +8,11 @@ import {MessageService} from '../../../../api/services/messages-service';
 @Component({
     directives: [CustomTimeComponent],
     encapsulation: ViewEncapsulation.Emulated,
-    moduleId: __moduleName,
     pipes: [CapitalizePipe],
     providers: [],
     selector: 'dot-notifications-item',
     styleUrls: ['notifications-item.css'],
-    templateUrl: ['notifications-item.html'],
+    templateUrl: 'notifications-item.html',
 
 })
 export class NotificationsItem extends BaseComponent{
@@ -53,11 +52,10 @@ export class NotificationsItem extends BaseComponent{
 @Component({
     directives: [NotificationsItem],
     encapsulation: ViewEncapsulation.Emulated,
-    moduleId: __moduleName,
     providers: [],
     selector: 'dot-notifications-list',
     styleUrls: ['notifications-list.css'],
-    templateUrl: ['notifications-list.html'],
+    templateUrl: 'notifications-list.html',
 })
 export class NotificationsList {
     @Input() notifications: INotification;

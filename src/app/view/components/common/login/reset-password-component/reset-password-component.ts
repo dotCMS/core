@@ -8,12 +8,11 @@ import {LoggerService} from '../../../../../api/services/logger.service';
 @Component({
     directives: [],
     encapsulation: ViewEncapsulation.Emulated,
-    moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     pipes: [],
     providers: [],
     selector: 'dot-reset-password-component',
     styleUrls: [],
-    templateUrl: ['reset-password-component.html'],
+    templateUrl: 'reset-password-component.html',
 })
 
 export class ResetPasswordComponent {

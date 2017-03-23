@@ -3,11 +3,11 @@ import {RoutingService, Menu, MenuItem} from '../../../../api/services/routing-s
 
 @Component({
     encapsulation: ViewEncapsulation.None,
-    moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
+
     providers: [],
     selector: 'dot-main-nav',
     styleUrls: ['main-navigation.css'],
-    templateUrl: ['main-navigation.html'],
+    templateUrl: 'main-navigation.html',
 })
 export class MainNavigation {
 

@@ -5,10 +5,10 @@ import {Component, EventEmitter, Input, Output, ViewEncapsulation, ElementRef} f
     host: {
         '(document:click)': 'handleClick($event)',
     },
-    moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
+
     selector: 'dot-dropdown-component',
     styleUrls: ['dropdown-component.css'],
-    templateUrl: ['dropdown-component.html']
+    templateUrl: 'dropdown-component.html'
 })
 
 export class DropdownComponent {

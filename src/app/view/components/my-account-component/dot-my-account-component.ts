@@ -7,10 +7,10 @@ import {StringFormat} from '../../../api/util/stringFormat';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
-    moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
+
     selector: 'dot-my-account',
     styleUrls: ['dot-my-account-component.css'],
-    templateUrl: ['dot-my-account-component.html'],
+    templateUrl: 'dot-my-account-component.html',
 })
 
 export class MyAccountComponent extends BaseComponent {

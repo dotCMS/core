@@ -8,10 +8,9 @@ import {IframeOverlayService} from "../../../api/services/iframe-overlay-service
 
 @Component({
     directives: [],
-    moduleId: __moduleName,
     selector: 'toolbar-add-contentlet-body',
     styleUrls: ['toolbar-add-contentlet-body.css'],
-    templateUrl: ['toolbar-add-contentlet-body.html'],
+    templateUrl: 'toolbar-add-contentlet-body.html',
 
 })
 export class ToolbarAddContenletBodyComponent {
@@ -37,11 +36,10 @@ export class ToolbarAddContenletBodyComponent {
 }
 
 @Component({
-    moduleId: __moduleName,
     providers: [ContentletService],
     selector: 'toolbar-add-contentlet',
     styleUrls: ['toolbar-add-contentlet.css'],
-    templateUrl: ['toolbar-add-contentlet.html'],
+    templateUrl: 'toolbar-add-contentlet.html',
 
 })
 export class ToolbarAddContenletComponent extends BaseComponent {

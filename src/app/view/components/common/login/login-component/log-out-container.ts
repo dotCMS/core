@@ -5,7 +5,7 @@ import {DotRouterService} from '../../../../../api/services/dot-router-service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
-    moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
+
     selector: 'dot-log-out-container',
     template: ''
 })

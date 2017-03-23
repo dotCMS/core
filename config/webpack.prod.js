@@ -291,11 +291,7 @@ module.exports = function (env) {
           // TODO: Need to workaround Angular 2's html syntax => #id [bind] (event) *ngFor
           htmlLoader: {
             minimize: true,
-            removeAttributeQuotes: false,
-            caseSensitive: true,
-            customAttrSurround: [
-              [/#/, /(?:)/],
-              [/\*/, /(?:)/],
+            removeAttributeQuotes: fals[/\*/, /(?:)/],
               [/\[?\(?/, /(?:)/]
             ],
             customAttrAssign: [/\)?\]?=/]

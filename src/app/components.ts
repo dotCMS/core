@@ -1,6 +1,5 @@
 
 // RULES ENGINE COMPONENTS
-/*
 import {AddToBundleDialogComponent} from './view/components/common/push-publish/add-to-bundle-dialog-component';
 import {AddToBundleDialogContainer} from './view/components/common/push-publish/add-to-bundle-dialog-container';
 import {AreaPickerDialogComponent} from './view/components/common/google-map/area-picker-dialog.component';
@@ -21,9 +20,9 @@ import {RuleEngineContainer} from './view/components/rule-engine/rule-engine.con
 import {ServersideCondition} from './view/components/rule-engine/condition-types/serverside-condition/serverside-condition';
 import {VisitorsLocationComponent} from './view/components/rule-engine/custom-types/visitors-location/visitors-location.component';
 import {VisitorsLocationContainer} from './view/components/rule-engine/custom-types/visitors-location/visitors-location.container';
-*/
+
 const RULES_ENGINE_COMPONENTS = [
-    /*AddToBundleDialogComponent,
+    AddToBundleDialogComponent,
     AddToBundleDialogContainer,
     AreaPickerDialogComponent,
     ConditionComponent,
@@ -43,7 +42,7 @@ const RULES_ENGINE_COMPONENTS = [
     RuleEngineContainer,
     ServersideCondition,
     VisitorsLocationComponent,
-    VisitorsLocationContainer,*/
+    VisitorsLocationContainer,
 ];
 
 // CUSTOM COMPONENTS
@@ -120,4 +119,3 @@ import {MessageKeyDirective} from './view/directives/message-keys';
 export const DIRECTIVES = [
     MessageKeyDirective
 ];
-

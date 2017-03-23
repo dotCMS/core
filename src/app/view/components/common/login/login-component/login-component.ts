@@ -5,9 +5,8 @@ import {LoggerService} from '../../../../../api/services/logger.service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
-    moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     selector: 'dot-login-component',
-    templateUrl: ['login-component.html'],
+    templateUrl: 'login-component.html',
 })
 
 /**

@@ -6,7 +6,7 @@ import {ResetPasswordComponent} from './reset-password-component';
 @Component({
     directives: [ResetPasswordComponent],
     encapsulation: ViewEncapsulation.Emulated,
-    moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
+
     pipes: [],
     providers: [LoginService],
     selector: 'dot-reset-password-container',

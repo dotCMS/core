@@ -3,10 +3,10 @@ import {SelectItem, AutoComplete} from "primeng/primeng";
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
-    moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
+
     selector: 'pattern-library',
     styleUrls: ['pattern-library.css'],
-    templateUrl: ['pattern-library.html']
+    templateUrl: 'pattern-library.html'
 })
 
 export class PatternLibrary {

@@ -8,10 +8,10 @@ import {IframeOverlayService} from "../../../../api/services/iframe-overlay-serv
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
-    moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
+
     selector: 'dot-toolbar-notifications',
     styleUrls: ['toolbar-notifications.css'],
-    templateUrl: ['toolbar-notifications.html']
+    templateUrl: 'toolbar-notifications.html'
 })
 export class ToolbarNotifications extends BaseComponent{
     private elementRef;

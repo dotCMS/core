@@ -8,11 +8,10 @@ import {AutoComplete} from "primeng/primeng";
 @Component({
     directives: [],
     encapsulation: ViewEncapsulation.None,
-    moduleId: __moduleName,
     providers: [],
     selector: 'dot-login-as',
     styleUrls: ['login-as.css'],
-    templateUrl: ['login-as.html']
+    templateUrl: 'login-as.html'
 })
 export class LoginAsComponent extends BaseComponent {
     @Output() cancel = new EventEmitter<>();

@@ -3,11 +3,10 @@ import {Component, ViewEncapsulation} from '@angular/core';
 @Component({
     directives: [],
     encapsulation: ViewEncapsulation.None,
-    moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     providers: [],
     selector: 'dot-main-component',
     styleUrls: ['main-component.css'],
-    templateUrl: ['main-component.html'],
+    templateUrl: 'main-component.html',
 })
 export class MainComponent {
     private messages: any = {};

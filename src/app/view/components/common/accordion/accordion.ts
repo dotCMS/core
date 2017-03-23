@@ -1,7 +1,7 @@
 import {Component, Input, OnDestroy} from '@angular/core';
 
 @Component({
-    moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
+
     selector: 'accordion',
     template:`
         <ng-content></ng-content>
@@ -31,7 +31,7 @@ export class Accordion {
 }
 
 @Component({
-    moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
+
     selector: 'accordion-group',
     template: `
         <a href="#" (click)="toggleOpen($event)" class="accordion-group__title" [ngClass]="{'is-active': isOpen}">

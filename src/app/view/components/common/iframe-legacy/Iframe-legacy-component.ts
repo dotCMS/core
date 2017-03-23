@@ -12,10 +12,9 @@ import {IframeOverlayService} from '../../../../api/services/iframe-overlay-serv
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
-    moduleId: __moduleName, // REQUIRED to use relative path in styleUrls
     selector: 'dot-iframe',
     styleUrls: ['iframe-legacy-component.css'],
-    templateUrl: ['iframe-legacy-component.html']
+    templateUrl: 'iframe-legacy-component.html'
 })
 export class IframeLegacyComponent extends SiteChangeListener {
     iframe: SafeResourceUrl;
