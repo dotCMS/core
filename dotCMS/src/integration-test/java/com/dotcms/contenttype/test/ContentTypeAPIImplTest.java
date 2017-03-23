@@ -496,10 +496,13 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			if (!save)
 				continue;
 			for (DataTypes dt : fakeField.acceptedDataTypes()) {
+				if(fakeField instanceof OnePerContentType){
 				Field savedField = FieldBuilder.builder(clazz).name("test field" + numFields)
 						.variable(TEST_VAR_PREFIX + "textField" + numFields).contentTypeId(type.id()).dataType(dt).build();
 				APILocator.getContentTypeFieldAPI().save(savedField, APILocator.systemUser());
 				numFields++;
+				break;
+				}
 			}
 		}
 	}

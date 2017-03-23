@@ -473,6 +473,7 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 			}
 			if(!save) continue;
 			for (DataTypes dt : fakeField.acceptedDataTypes()) {
+				if(fakeField instanceof OnePerContentType){
 				Field savedField = FieldBuilder.builder(clazz)
 						.name("test field" + numFields)
 						.variable(TEST_VAR_PREFIX + "textField" + numFields)
@@ -481,6 +482,8 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 						.build();
 				APILocator.getContentTypeFieldAPI().save(savedField, APILocator.systemUser());
 				numFields++;
+				break;
+				}
 			}
 		}
 	}
