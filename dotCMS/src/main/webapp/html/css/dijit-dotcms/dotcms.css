@@ -2971,6 +2971,10 @@ html, body {
   position: relative;
 }
 
+.dijitSelect .dijitArrowButtonContainer {
+  padding-top: 14px;
+}
+
 .dijitPlaceHolder {
   color: rgba(91, 91, 91, 0.4);
   font-style: normal;
@@ -4826,7 +4830,7 @@ html, body {
   line-height: normal;
 }
 .dijitInline.dijitTextBox .dijitInputInner {
-  height: auto;
+  height: 30px;
   line-height: 30px;
   padding: 0;
 }
@@ -10227,7 +10231,6 @@ a.category_higlighted, a.tag_higlighted {
 }
 .permissionWrapper .dijitContentPane {
   padding: 24px 0;
-  box-sizing: content-box;
 }
 
 .permissionTable .permissionType {
