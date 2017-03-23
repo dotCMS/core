@@ -154,7 +154,8 @@ public class SystemEventsFactory implements Serializable {
 					Logger.error(SystemEventsAPIImpl.class, hibernateException.getMessage(), hibernateException);
 				}
 
-				final String msg = "An error occurred when saving a system event with ID: [" + systemEvent.getId() + "]";
+				final String msg = "An error occurred when saving a system event with ID: [" + systemEvent.getId()
+						+ "]: " + e.getMessage();
 				Logger.error(this, msg, e);
 				throw new DotDataException(msg, e);
 			}
