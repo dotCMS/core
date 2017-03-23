@@ -18,20 +18,18 @@ import com.dotmarketing.business.CacheLocator;
 public class TestShortyIdApi {
 
     List<String[]> expecteds = ImmutableList.<String[]>builder()
-            .add(new String[] {"f6b80fab-8671-4764-af0d-79b716725ffd", "inode", "containers"})
+            .add(new String[] {"f05ca8e0-eae5-422e-8e15-7a87734edda1", "inode", "containers"})
             .add(new String[] {"fc193c82-8c32-4abe-ba8a-49522328c93e", "identifier", "containers"})
 
 
             .add(new String[] {"ff9d9f72-3650-4bca-9e0f-6ce18150d51e", "identifier", "contentlet"})
             .add(new String[] {"ffa0b494-cbb2-4634-b747-8795b5995d74", "identifier", "folder"})
-            .add(new String[] {"1aeb328b-57b5-46e8-9eec-2cb2b4c24953", "identifier", "htmlpage"})
             .add(new String[] {"b12f30da-0f0c-4376-88a0-a17d1ffe39f9", "identifier", "links"})
             .add(new String[] {"fdb3f906-e9c4-46c4-b7e4-148201271d04", "identifier", "template"})
 
 
 
             .add(new String[] {"ffe266d8-0683-45f3-9b08-3d7804ae3280", "inode", "contentlet"})
-            .add(new String[] {"975964f8-ef1f-451a-aa23-10a44c39ce98", "inode", "htmlpage"})
             .add(new String[] {"fe654925-f011-487c-b5db-d7cb4ed2553a", "inode", "template"})
 
             .add(new String[] {"ede13663-ff06-4d01-ab99-a8976e995010", "inode", "category"})
@@ -46,19 +44,19 @@ public class TestShortyIdApi {
             .build();
 
     List<String[]> starterExpecteds = ImmutableList.<String[]>builder()
-            .add(new String[] {"dc4b6228-67d7-454f-bd01-f96a196922d0", "inode", "containers"})
+            .add(new String[] {"f05ca8e0-eae5-422e-8e15-7a87734edda1", "inode", "containers"})
             .add(new String[] {"3f0255e8-b45d-46ea-8bb7-eb6597db4c1e", "identifier", "containers"})
 
 
             .add(new String[] {"767509b1-2392-4661-a16b-e0e31ce27719", "identifier", "contentlet"})
             .add(new String[] {"008dab22-8bc3-4eb2-93a0-79e3d5d0a4ab", "inode", "folder"})
-            .add(new String[] {"c12fe7e6-d338-49d5-973b-2d974d57015b", "identifier", "CONTENTLET"})
+            .add(new String[] {"c12fe7e6-d338-49d5-973b-2d974d57015b", "identifier", "contentlet"})
             .add(new String[] {"4d7112b5-3efe-40b0-acff-912cc44b483e", "identifier", "links"})
             .add(new String[] {"d30a0347-7473-49ab-b67d-cc7a972f4d59", "identifier", "template"})
 
 
 
-            .add(new String[] {"d8c405c7-465a-4fc0-9f52-33fc74461a28", "inode", "contentlet"})
+            .add(new String[] {"085642aa-a552-4d2e-a163-8424183b039e", "inode", "contentlet"})
             .add(new String[] {"cc2cdf9c-a20d-4862-9454-2a76c1132123", "inode", "contentlet"})
             .add(new String[] {"b76bc77a-59a7-45e4-9d8f-01d0f4a1567e", "inode", "template"})
 
