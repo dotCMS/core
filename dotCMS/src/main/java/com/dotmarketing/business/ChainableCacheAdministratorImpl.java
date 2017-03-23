@@ -10,6 +10,7 @@ import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.com.google.common.cache.RemovalListener;
 import com.dotcms.repackage.com.google.common.cache.RemovalNotification;
+import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
@@ -404,7 +405,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 		return cacheProviderAPI.getGroups();
 	}
 
-	public List<Map<String, Object>> getCacheStatsList () {
+	public List<CacheProviderStats> getCacheStatsList () {
 		//Returns the stats for all the cache providers
 		return cacheProviderAPI.getStats();
 	}

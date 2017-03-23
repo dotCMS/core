@@ -29,11 +29,12 @@ import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import com.dotcms.repackage.com.google.common.cache.CacheStats;
 import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
 import com.dotcms.repackage.org.apache.commons.io.comparator.LastModifiedFileComparator;
 import com.dotcms.repackage.org.apache.commons.io.filefilter.DirectoryFileFilter;
 import com.dotmarketing.business.cache.provider.CacheProvider;
+import com.dotmarketing.business.cache.provider.CacheProviderStats;
+import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
@@ -288,41 +289,25 @@ public class H22Cache extends CacheProvider {
 	}
 
 	@Override
-	public List<Map<String, Object>> getStats() {
-
-		List<Map<String, Object>> list = new ArrayList<>();
-
+	public CacheProviderStats getStats() {
+		CacheStats providerStats = new CacheStats();
+		CacheProviderStats ret = new CacheProviderStats(providerStats,getName());
 		Set<String> currentGroups = new HashSet<>();
 		currentGroups.addAll(getGroups());
 		for (String group : currentGroups) {
 			H22GroupStats groupStats = stats.group(group);
-
-			CacheStats googleStats = new CacheStats(groupStats.hits, groupStats.misses, groupStats.hits, 0, groupStats.totalTimeReading, 0);
-
-			Map<String, Object> stats = new HashMap<>();
-			stats.put("CacheStats", googleStats);
-			stats.put("name", getName());
-			stats.put("key", getKey());
-			stats.put("region", group);
-			stats.put("toDisk", true);
-			stats.put("entrySize", groupStats.totalSize);
-			boolean isDefault = false;
-			stats.put("isDefault", isDefault);
-			stats.put("memory", -1);
-
-			// we don't limit the size of the disk cache
-			stats.put("configuredSize", -1);
-
+			CacheStats stats = new CacheStats();
+			stats.addStat("region", group);
+			stats.addStat("entrySize", groupStats.totalSize + "");
 			try {
-				stats.put("disk", _getGroupCount(group));
+				stats.addStat("disk", _getGroupCount(group));
 			} catch (SQLException e) {
 				Logger.warn(this, "can't get h22 group data for: " + group, e);
 			}
-
-			list.add(stats);
+			ret.addStatRecord(stats);
 		}
 
-		return list;
+		return ret;
 	}
 
 	@Override
@@ -705,8 +690,6 @@ public class H22Cache extends CacheProvider {
 	 * Method that verifies if must exclude content that can not or must not be
 	 * added to this h2 cache based on the given cache group and key
 	 *
-	 * @param group
-	 * @param key
 	 * @return
 	 */
 	private boolean exclude(Fqn fqn) {

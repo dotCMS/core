@@ -1,5 +1,6 @@
 package com.dotmarketing.business.cache.provider.hazelcast;
 
+import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.util.Logger;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
@@ -83,7 +84,7 @@ public class HazelCastEmbeddedProvider extends HazelCastClientProvider {
     }
 
     @Override
-    public List<Map<String, Object>> getStats() {
+    public CacheProviderStats getStats() {
         return super.getStats();
     }
 

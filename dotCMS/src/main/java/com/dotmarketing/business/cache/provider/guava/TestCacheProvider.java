@@ -1,6 +1,7 @@
 package com.dotmarketing.business.cache.provider.guava;
 
 import com.dotmarketing.business.cache.provider.CacheProvider;
+import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.util.Logger;
 
 import java.util.List;
@@ -77,7 +78,7 @@ public class TestCacheProvider extends CacheProvider {
     }
 
     @Override
-    public List<Map<String, Object>> getStats () {
+    public CacheProviderStats getStats () {
         Logger.info(this.getClass(), "===== Calling getCacheStats [" + getName() + "].");
         return null;
     }

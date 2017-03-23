@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.business;
 
+import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 
 import java.util.List;
@@ -65,7 +66,7 @@ public interface DotCacheAdministrator  {
 	 * This will create journal entries for other servers in a clustered environment. 
 	 * @param key
 	 * @param content
-	 * @param groups
+	 * @param group
 	 */
 	void put ( String key, Object content, String group );
 
@@ -87,7 +88,7 @@ public interface DotCacheAdministrator  {
 	 */
 	void shutdown ();
 
-	List<Map<String, Object>> getCacheStatsList ();
+	List<CacheProviderStats> getCacheStatsList ();
 
 	Class getImplementationClass ();
 

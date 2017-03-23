@@ -12,6 +12,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.cache.provider.CacheProvider;
+import com.dotmarketing.business.cache.provider.CacheProviderStats;
+import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -158,30 +160,26 @@ public class CaffineCache extends CacheProvider {
     }
 
     @Override
-    public List<Map<String, Object>> getStats() {
+    public CacheProviderStats getStats() {
 
-        List<Map<String, Object>> list = new ArrayList<>();
+        CacheStats providerStats = new CacheStats();
+        CacheProviderStats ret = new CacheProviderStats(providerStats,getName());
 
         Set<String> currentGroups = new HashSet<>();
         currentGroups.addAll(getGroups());
-
         Cache<String, Object> defaultCache = getCache(DEFAULT_CACHE);
-        for (String group : currentGroups) {
 
-            Map<String, Object> stats = new HashMap<>();
-            stats.put("name", getName());
-            stats.put("key", getKey());
-            stats.put("cache", getCache(group));
-            stats.put("region", group);
-            stats.put("toDisk", false);
+        for (String group : currentGroups) {
+            CacheStats stats = new CacheStats();
+            stats.addStat("cache", getCache(group).toString());
+            stats.addStat("region", group);
 
             Cache<String, Object> foundCache = getCache(group);
-            stats.put("memory", foundCache.estimatedSize());
-            stats.put("CacheStats", foundCache.stats());
-            stats.put("disk", -1);
+            stats.addStat("memory", foundCache.estimatedSize() + "");
+            stats.addStat("CacheStats", foundCache.stats().toString());
 
             boolean isDefault = (!DEFAULT_CACHE.equals(group) && foundCache.equals(defaultCache));
-            stats.put("isDefault", isDefault);
+            stats.addStat("isDefault", isDefault + "");
 
             int configured = isDefault ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".size")
                     : (Config.getIntProperty("cache." + group + ".size", -1) != -1)
@@ -200,12 +198,11 @@ public class CaffineCache extends CacheProvider {
                                                                     : Config.getIntProperty(
                                                                             "cache." + DEFAULT_CACHE
                                                                                     + ".size");
-            stats.put("configuredSize", configured);
-
-            list.add(stats);
+            stats.addStat("configuredSize", configured + "");
+            ret.addStatRecord(stats);
         }
 
-        return list;
+        return ret;
     }
 
     @Override
