@@ -4,3 +4,4 @@
 [submodule "dotCMS/src/main/license"]
 	path = dotCMS/src/main/license
 	url = git@github.com:dotCMS/license.git
+
