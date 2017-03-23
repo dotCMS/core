@@ -1,27 +1,29 @@
 package com.dotmarketing.portlets.structure.business;
 
 
-import java.util.List;
-
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-
-import java.util.*;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
-import com.dotmarketing.business.*;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
-
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -37,6 +39,10 @@ import com.liferay.portal.model.User;
  * @author Jorge Urdaneta
  * @version 1.0
  * @since Feb 11, 2013
+ * @deprecated As of dotCMS 4.1.0, this API has been deprecated. From now on,
+ *             please use the {@link ContentTypeAPI} class via
+ *             {@link APILocator#getContentTypeAPI(User)} in order to interact
+ *             with Content Types.
  *
  */
 public class StructureAPIImpl implements StructureAPI {

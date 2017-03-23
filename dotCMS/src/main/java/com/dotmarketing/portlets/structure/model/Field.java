@@ -1,23 +1,17 @@
 package com.dotmarketing.portlets.structure.model;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import com.dotcms.contenttype.model.field.FieldIf;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
-
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.util.UtilMethods;
-
-
 
 public class Field extends Inode implements  FieldIf
 {
@@ -81,7 +75,8 @@ public class Field extends Inode implements  FieldIf
 		TEXT("text"),
 		LONG_TEXT("text_area"),
 		SECTION_DIVIDER("section_divider"),
-		BINARY("binary");
+		BINARY("binary"),
+		SYSTEM("system_field");
 
 		private String value;
 
@@ -139,12 +134,41 @@ public class Field extends Inode implements  FieldIf
     	modDate = new Date();
     }
 
-
-
+    /**
+     * 
+     * @param fieldName
+     * @param fieldType
+     * @param dataType
+     * @param structure
+     * @param required
+     * @param listed
+     * @param indexed
+     * @param sortOrder
+     * @param fixed
+     * @param readOnly
+     * @param searchable
+     */
 	public Field (String fieldName, FieldType fieldType, DataType dataType, Structure structure, boolean required, boolean listed, boolean indexed, int sortOrder,boolean fixed, boolean readOnly, boolean searchable) {
 		this(fieldName, fieldType, dataType, structure, required, listed, indexed, sortOrder, "", "", "",fixed, readOnly, searchable);
 	}
 
+	/**
+	 * 
+	 * @param fieldName
+	 * @param fieldType
+	 * @param dataType
+	 * @param structure
+	 * @param required
+	 * @param listed
+	 * @param indexed
+	 * @param sortOrder
+	 * @param values
+	 * @param defaultValue
+	 * @param checkRegex
+	 * @param fixed
+	 * @param readOnly
+	 * @param searchable
+	 */
 	public Field (String fieldName, FieldType fieldType, DataType dataType, Structure structure, boolean required, boolean listed, boolean indexed, int sortOrder, String values, String defaultValue, String checkRegex, boolean fixed, boolean readOnly, boolean searchable) {
 		this();
 		this.setFieldContentlet(FieldFactory.getNextAvaliableFieldNumber(dataType.toString(), "", structure.getInode()));
