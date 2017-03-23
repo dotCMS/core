@@ -1,0 +1,51 @@
+accordion a {
+  display: block;
+  padding: 5px 0;
+  color: #161616;
+  text-decoration: none;
+}
+
+accordion .accordion-group__content {
+  background-color: #FAFAFA;
+  border-left: solid 3px #0E80CB;
+}
+
+accordion .accordion-group__title {
+  border-left: solid 3px transparent;
+  padding: 16px 10px 16px 20px;
+  transition: background-color 0.15s ease-in;
+}
+
+accordion .accordion-group__title:hover {
+  background-color: #FAFAFA;
+}
+
+accordion .accordion-group__title.is-active {
+  background-color: #FAFAFA;
+  border-left: solid 3px #0E80CB;
+  font-weight: bold;
+}
+
+accordion .accordion-group__title .fa {
+  font-size: 18px;
+}
+
+accordion .accordion-group__title-text {
+  margin-left: 6px;
+}
+
+accordion .main-nav__submenu {
+  padding: 0 30px 10px 47px;
+}
+
+accordion .main-nav__submenu a {
+  color: #5B5B5B;
+}
+
+accordion .main-nav__submenu a:hover {
+  color: #161616;
+}
+
+accordion .main-nav__submenu--active {
+  font-weight: bold;
+}

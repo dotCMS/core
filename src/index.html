@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <base href="/build/">
+    <base href="<%= htmlWebpackPlugin.options.metadata.baseUrl %>">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>dotCMS Content Management Platform</title>
@@ -73,18 +73,6 @@
     <script src="../node_modules/systemjs/dist/system.src.js"></script>
     <script src="../node_modules/zone.js/dist/zone.min.js"></script>
     <!-- endbuild -->
-
-    <!-- 2. Configure SystemJS -->
-    <script src="systemjs.config.js"></script>
-    <script>
-    System.import('view/main.js')
-        .catch(function(err) {
-            console.error("Error on Init app");
-            console.error('Name:', JSON.stringify(err.name));
-            console.error('Message:', JSON.stringify(err.message));
-            console.error(err);
-        });
-    </script>
 
 </head>
 

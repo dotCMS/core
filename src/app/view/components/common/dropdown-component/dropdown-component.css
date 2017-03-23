@@ -1,0 +1,23 @@
+:host {
+  position: relative;
+}
+
+:host .dropdown-content {
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  border-radius: 2px;
+  background-color: #fff;
+  color: #161616;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  position: absolute;
+  top: 25px;
+  z-index: 100;
+}
+
+:host .dropdown-content_align-left {
+  left: 0;
+}
+
+:host .dropdown-content_align-right {
+  right: 0;
+}

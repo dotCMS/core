@@ -1,0 +1,17 @@
+:host .toolbar-add-contentlet__head {
+  align-items: center;
+  border-bottom: #ECEDEE 1px solid;
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 8px 16px;
+}
+
+:host .toolbar-add-contentlet__head-button {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+}
+
+:host .toolbar-add-contentlet__head-selected {
+  background-color: #FAFAFA;
+}

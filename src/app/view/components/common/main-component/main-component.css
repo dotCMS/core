@@ -1,0 +1,53 @@
+.layout {
+  background-color: #FAFAFA;
+  padding-top: 60px;
+}
+
+.layout__main {
+  margin-left: 190px;
+  transition: margin-left 250ms cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.collapsed .layout__main {
+  margin-left: 0;
+}
+
+.layout__sidebar {
+  background-color: #fff;
+  border-right: solid 1px #ECEDEE;
+  height: 100%;
+  padding-top: 60px;
+  position: fixed;
+  overflow: auto;
+  transition: transform 250ms cubic-bezier(0.25, 0.8, 0.25, 1);
+  top: 0;
+  width: 190px;
+}
+
+.collapsed .layout__sidebar {
+  transform: translateX(-100%);
+}
+
+.layout__toolbar {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1;
+}
+
+.layout__toolbar-inner {
+  display: flex;
+  flex: 1;
+  justify-content: space-between;
+}
+
+.toolbar__actions,
+.toolbar__host {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.toolbar__host .dot-select.is-active .dot-select__icon {
+  color: #fff;
+}
