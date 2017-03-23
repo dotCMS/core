@@ -1,3 +1,4 @@
+
 // RULES ENGINE COMPONENTS
 /*
 import {AddToBundleDialogComponent} from './view/components/common/push-publish/add-to-bundle-dialog-component';
@@ -119,3 +120,4 @@ import {MessageKeyDirective} from './view/directives/message-keys';
 export const DIRECTIVES = [
     MessageKeyDirective
 ];
+
