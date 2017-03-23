@@ -1,5 +1,1 @@
-
-export class CwComponent {
-
-
-}
+export class CwComponent {}

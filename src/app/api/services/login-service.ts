@@ -21,8 +21,8 @@ export class LoginService {
     private _logout$: Subject<> = new Subject<>();
     private _auth: Auth;
     private _loginAsUsersList$: Subject<User[]>;
-    private country: string = '';
-    private lang: string = '';
+    private country = '';
+    private lang = '';
     private loginAsUserList: User[];
     private urls: any;
 
@@ -56,10 +56,6 @@ export class LoginService {
                 this.logOutUser().subscribe(() => {});
             }
         });
-    }
-
-    private isLogoutAfterLastLogin(date): boolean {
-        return this.auth.user && this.auth.user.loggedInDate && date && Number(date) > Number(this.auth.user.loggedInDate);
     }
 
     get loginAsUsersList$(): Observable<User[]> {
@@ -266,13 +262,13 @@ export class LoginService {
                 user: null
             };
 
-            this.loggerService.debug("Processing the logOutUser");
+            this.loggerService.debug('Processing the logOutUser');
             this.setAuth(nullAuth);
 
             // on logout close the websocket
             this.dotcmsEventsService.destroy();
 
-            this.loggerService.debug("Navigating to Public Login");
+            this.loggerService.debug('Navigating to Public Login');
 
             this.router.navigate(['/public/login']);
         });
@@ -308,6 +304,10 @@ export class LoginService {
                 func(auth);
             }
         });
+    }
+
+    private isLogoutAfterLastLogin(date): boolean {
+        return this.auth.user && this.auth.user.loggedInDate && date && Number(date) > Number(this.auth.user.loggedInDate);
     }
 
     /**
@@ -375,6 +375,6 @@ export interface User {
 }
 
 export interface Auth {
-    user: User,
-    loginAsUser: User
+    user: User;
+    loginAsUser: User;
 }

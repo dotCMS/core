@@ -12,7 +12,7 @@ interface QueryFuncBuilder {
 
 export class LongPollingProtocol extends Protocol {
 
-    private isClosed: boolean = false;
+    private isClosed = false;
 
     constructor(private url: Url, loggerService: LoggerService, private coreWebService: CoreWebService,
         private queryBuilder?: QueryFuncBuilder) {
@@ -31,7 +31,7 @@ export class LongPollingProtocol extends Protocol {
         this.coreWebService.requestView({
             method: RequestMethod.Get,
             url: this.url.getUrlWith(queryParameters),
-        }).pluck('entity').subscribe( data => {
+        }).pluck('entity').subscribe(data => {
             this.loggerService.debug('new Events', data);
 
             if (data instanceof Array) {
@@ -59,4 +59,3 @@ export class LongPollingProtocol extends Protocol {
         this.isClosed = true;
     }
 }
-

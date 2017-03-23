@@ -29,12 +29,12 @@ export class HttpRequestUtils {
     getQueryStringParam(name: string): string {
 
         let value = null;
-        var regex = new RegExp("[?&]" + name.replace(/[\[\]]/g, "\\$&") + "(=([^&#]*)|&|#|$)");
+        let regex = new RegExp('[?&]' + name.replace(/[\[\]]/g, '\\$&') + '(=([^&#]*)|&|#|$)');
         let results = regex.exec(window.location.href);
 
         if (results && results[2]) {
 
-            value = decodeURIComponent(results[2].replace(/\+/g, " "));
+            value = decodeURIComponent(results[2].replace(/\+/g, ' '));
         }
 
         return value;

@@ -1,4 +1,4 @@
-import {Observable, Scheduler} from "rxjs/Rx";
+import {Observable, Scheduler} from 'rxjs/Rx';
 
 
 export class ObservableHack {

@@ -11,7 +11,7 @@ import {
 import {ApiRoot} from '../persistence/ApiRoot';
 import {ResponseView} from './response-view';
 import {HttpErrorHandler} from './http-error-handler';
-import {LoggerService} from "./logger.service";
+import {LoggerService} from './logger.service';
 
 export const RULE_CREATE = 'RULE_CREATE';
 export const RULE_DELETE = 'RULE_DELETE';
@@ -145,4 +145,3 @@ export class CoreWebService {
     this.httpErrosSubjects[response.status].next(response);
   }
 }
-

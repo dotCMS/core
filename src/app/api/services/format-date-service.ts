@@ -18,4 +18,3 @@ export class FormatDateService {
         return moment(parseInt(time, 10)).fromNow();
     }
 }
-

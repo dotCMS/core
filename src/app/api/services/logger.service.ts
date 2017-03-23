@@ -3,7 +3,6 @@ import {Logger} from 'angular2-logger/core';
 import {Config} from '../util/config';
 import {StringUtils} from '../util/string.utils';
 
-
 /**
  * LoggerService to log.  Allows logger to be changed at runtime
  * To set the logger level in the console run logger.level=logger.Level.DEBUG
@@ -11,9 +10,9 @@ import {StringUtils} from '../util/string.utils';
 @Injectable()
 export class LoggerService {
 
-    private isProduction: boolean = true;
+    private isProduction = true;
 
-    constructor(private logger: Logger, private config: Config, private stringUtils : StringUtils) {
+    constructor(private logger: Logger, private config: Config, private stringUtils: StringUtils) {
 
         console.log('Setting the logger...');
 

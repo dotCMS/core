@@ -41,53 +41,12 @@ export class MessageService {
         });
     }
 
-    private setRelativeDateMessages() {
-        let relativeDateKeys = [
-            'relativetime.future',
-            'relativetime.past',
-            'relativetime.s',
-            'relativetime.m',
-            'relativetime.mm',
-            'relativetime.h',
-            'relativetime.hh',
-            'relativetime.d',
-            'relativetime.dd',
-            'relativetime.M',
-            'relativetime.MM',
-            'relativetime.y',
-            'relativetime.yy'
-        ];
-        this.getMessages(relativeDateKeys).subscribe(res => {
-            let relativeDateMessages = _.mapKeys(res, function(value, key) {
-                return key.replace('relativetime.', '');
-            });
-            this.formatDateService.setLang(this.lang.split('_')[0], relativeDateMessages);
-        })
-    }
-
     /**
      * Get the messages objects as an Observable
      * @returns {Observable<any>}
      */
     get messageMap$(): Observable<any> {
         return this._messageMap$.asObservable();
-    }
-
-    /**
-     * Do the request to the server to get messages
-     */
-    private requestMessages(): void {
-        this.coreWebService.requestView({
-            body: {
-                messagesKey: this.messageKeys
-            },
-            method: RequestMethod.Post,
-            url: this.i18nUrl,
-        }).pluck('i18nMessagesMap').subscribe(messages => {
-            this.messageKeys = [];
-            this.messagesLoaded = Object.assign({}, this.messagesLoaded, messages);
-            this._messageMap$.next(this.messagesLoaded);
-        });
     }
 
     /**
@@ -105,8 +64,49 @@ export class MessageService {
                 let messageMapSub = this.messageMap$.subscribe(res => {
                     observer.next(_.pick(res, keys));
                     messageMapSub.unsubscribe();
-                })
+                });
             }
+        });
+    }
+
+    private setRelativeDateMessages(): string|void {
+        let relativeDateKeys = [
+            'relativetime.future',
+            'relativetime.past',
+            'relativetime.s',
+            'relativetime.m',
+            'relativetime.mm',
+            'relativetime.h',
+            'relativetime.hh',
+            'relativetime.d',
+            'relativetime.dd',
+            'relativetime.M',
+            'relativetime.MM',
+            'relativetime.y',
+            'relativetime.yy'
+        ];
+        this.getMessages(relativeDateKeys).subscribe(res => {
+            let relativeDateMessages = _.mapKeys(res, function(value, key): string {
+                return key.replace('relativetime.', '');
+            });
+            this.formatDateService.setLang(this.lang.split('_')[0], relativeDateMessages);
+        });
+    }
+
+    /**
+     * Do the request to the server to get messages
+     */
+    private requestMessages(): void {
+        this.coreWebService.requestView({
+            body: {
+                messagesKey: this.messageKeys
+            },
+            method: RequestMethod.Post,
+            url: this.i18nUrl,
+        }).pluck('i18nMessagesMap').subscribe(messages => {
+            this.messageKeys = [];
+            this.messagesLoaded = Object.assign({}, this.messagesLoaded, messages);
+            this._messageMap$.next(this.messagesLoaded);
         });
     }
 }

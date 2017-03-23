@@ -1,3 +1,4 @@
+// tslint:disable:typedef
 
 /**
  * Lazy Verifiers DO NOT CHECK ASSUMPTIONS before executing the validation logic.
@@ -15,40 +16,39 @@
  */
 export class LazyVerify {
   static exists(value) {
-    return !(value === null || value === undefined)
+    return !(value === null || value === undefined);
   }
 
   static empty(value) {
-    let empty = !LazyVerify.exists(value)
-    if(!empty){
+    let empty = !LazyVerify.exists(value);
+    if(!empty) {
       if (LazyVerify.isString(value)) {
-        empty = LazyVerify.maxLength(value, 0)
-      }
-      else if(LazyVerify.isObject(value)){
-        empty = LazyVerify.emptyObject(value)
+        empty = LazyVerify.maxLength(value, 0);
+      } else if (LazyVerify.isObject(value)) {
+        empty = LazyVerify.emptyObject(value);
       }
     }
     return empty;
   }
 
   static isObject(value) {
-    return (typeof value === 'object' || value.constructor === Object)
+    return (typeof value === 'object' || value.constructor === Object);
   }
 
   static isString(value) {
-    return (typeof value === 'string' || value instanceof String)
+    return (typeof value === 'string' || value instanceof String);
   }
 
   static isFunction(value) {
-    return (typeof value === 'function' || value instanceof Function)
+    return (typeof value === 'function' || value instanceof Function);
   }
 
   static isArray(value) {
-    return (typeof value === 'array' || value instanceof Array)
+    return (typeof value === 'array' || value instanceof Array);
   }
 
   static emptyObject(value){
-    return Object.getOwnPropertyNames(value).length === 0
+    return Object.getOwnPropertyNames(value).length === 0;
   }
 
   /**
@@ -60,20 +60,20 @@ export class LazyVerify {
    * but will not fail if a key is not present on the object.
    * @returns {boolean}
    */
-  static hasOnly(object, properties=[], allowMissing=false ){
-    let keys = Object.keys(object)
-    let has = { }
-    let count = 0
-    keys.forEach((key)=>{
-      has[key] = true
-      count++
-    })
-    let hasAllOfDems = properties.every((propKey)=>{
-      count--
-      let x = has[propKey]
-      return x === undefined || x === true
-    })
-    return (hasAllOfDems && (allowMissing ? count <= 0 : count === 0))
+  static hasOnly(object, properties = [], allowMissing = false ) {
+    let keys = Object.keys(object);
+    let has = { };
+    let count = 0;
+    keys.forEach((key) => {
+      has[key] = true;
+      count++;
+    });
+    let hasAllOfDems = properties.every((propKey) => {
+      count--;
+      let x = has[propKey];
+      return x === undefined || x === true;
+    });
+    return (hasAllOfDems && (allowMissing ? count <= 0 : count === 0));
   }
 
   /**
@@ -82,44 +82,44 @@ export class LazyVerify {
    * @param properties Array of strings that represent keys to check for
    * @returns {boolean}
    */
-  static hasAll(object, properties=[]){
-    let keys = Object.keys(object)
-    let has = { }
-    keys.forEach((key)=>{
-      has[key] = true
-    })
-    let hasAllOfDems = properties.every((propKey)=>{
-      return has[propKey]
-    })
-    return hasAllOfDems
+  static hasAll(object, properties= []) {
+    let keys = Object.keys(object);
+    let has = { };
+    keys.forEach((key) => {
+      has[key] = true;
+    });
+    let hasAllOfDems = properties.every((propKey) => {
+      return has[propKey];
+    });
+    return hasAllOfDems;
   }
 
   static maxLength(value, max) {
-    return value.length <= max
+    return value.length <= max;
   }
 
   static minLength(value, min) {
-    return value.length >= min
+    return value.length >= min;
   }
 
   static isNumber(value) {
-    return (typeof value === 'number' || value instanceof Number)
+    return (typeof value === 'number' || value instanceof Number);
   }
 
   static isInteger(value) {
-    return (value % 1 === 0)
+    return (value % 1 === 0);
   }
 
   static min(value, min) {
-    return value >= min
+    return value >= min;
   }
 
   static max(value, max) {
-    return value <= max
+    return value <= max;
   }
 
   static isBoolean(value) {
-    return value === true || value === false
+    return value === true || value === false;
   }
 
 
@@ -132,35 +132,35 @@ export class Verify extends LazyVerify {
   }
 
   static maxLength(value, max) {
-    return Verify.isString(value) && LazyVerify.maxLength(value, max)
+    return Verify.isString(value) && LazyVerify.maxLength(value, max);
   }
 
   static minLength(value, min) {
-    return Verify.isString(value) && LazyVerify.minLength(value, min)
+    return Verify.isString(value) && LazyVerify.minLength(value, min);
   }
 
   static isNumber(value) {
-    return LazyVerify.exists(value) && LazyVerify.isNumber(value)
+    return LazyVerify.exists(value) && LazyVerify.isNumber(value);
   }
 
   static isInteger(value) {
-    return Verify.isNumber(value) && LazyVerify.isInteger(value)
+    return Verify.isNumber(value) && LazyVerify.isInteger(value);
   }
 
   static min(value, min) {
-    return Verify.isNumber(value) && LazyVerify.min(value, min)
+    return Verify.isNumber(value) && LazyVerify.min(value, min);
   }
 
   static max(value, max) {
-    return Verify.isNumber(value) && LazyVerify.max(value, max)
+    return Verify.isNumber(value) && LazyVerify.max(value, max);
   }
 
   static isFunction(value) {
-    return LazyVerify.exists(value) && LazyVerify.isFunction(value)
+    return LazyVerify.exists(value) && LazyVerify.isFunction(value);
   }
 
   static isArray(value) {
-    return LazyVerify.exists(value) && LazyVerify.isArray(value)
+    return LazyVerify.exists(value) && LazyVerify.isArray(value);
   }
 }
 
