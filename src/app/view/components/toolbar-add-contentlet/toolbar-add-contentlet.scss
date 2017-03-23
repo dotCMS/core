@@ -1,0 +1,24 @@
+@import "../../../scss/mixins";
+@import "../../../scss/variables";
+
+:host {
+
+  .toolbar-add-contentlet__head {
+    align-items: center;
+    border-bottom: $gray-lighter 1px solid;
+    display: flex;
+    justify-content: space-around;
+    padding: $basic-padding $basic-padding $basic-padding * 2;
+  }
+
+  .toolbar-add-contentlet__head-button {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .toolbar-add-contentlet__head-selected{
+    background-color: $gray-lightest;
+  }
+}
+

@@ -1,0 +1,56 @@
+@import "../../../../scss/variables";
+
+accordion {
+    a {
+        display: block;
+        padding: 5px 0;
+        color: $body-font-color;
+        text-decoration: none;
+    }
+
+    .accordion-group__content {
+        background-color: $gray-lightest;
+        border-left: solid 3px $brand-primary;
+    }
+
+    .accordion-group__title {
+        border-left: solid 3px transparent;
+        padding: ($basic-padding * 2) 10px ($basic-padding * 2) 20px;
+        transition: background-color 0.15s ease-in;
+
+        &:hover {
+            background-color: $gray-lightest;
+        }
+
+        &.is-active {
+            background-color: $gray-lightest;
+            border-left: solid 3px $brand-primary;
+            font-weight: bold;
+        }
+
+        .fa {
+            font-size: $font-size-large;
+        }
+    }
+
+
+    .accordion-group__title-text {
+        margin-left: 6px; // with the space it's 10px
+    }
+
+    .main-nav__submenu {
+        padding: 0 30px 10px 47px;
+
+        a {
+            color: $gray-dark;
+
+            &:hover {
+                color: $body-font-color;
+            }
+        }
+    }
+
+    .main-nav__submenu--active {
+        font-weight: bold;
+    }
+}

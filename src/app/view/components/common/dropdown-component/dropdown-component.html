@@ -1,0 +1,20 @@
+<button *ngIf="icon"
+        pButton iconButton
+        [icon]="icon"
+        (click)="onToggle()"
+        [disabled]="disabled"
+        [class.inverse]="inverse">
+    <ng-content select=".badge"></ng-content>
+</button>
+
+<button pButton *ngIf="title"
+        icon="fa-chevron-down"
+        iconPos="right"
+        [label]="title"
+        (click)="onToggle()"
+        [disabled]="disabled">
+</button>
+
+<div class="dropdown-content" *ngIf="show" [ngClass]="{'dropdown-content_align-right': alignRight, 'dropdown-content_align-left': !alignRight}">
+    <ng-content></ng-content>
+</div>

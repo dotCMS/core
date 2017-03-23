@@ -1,0 +1,91 @@
+<p-dialog header="{{i18nMessages['my-account']}}" [(visible)]="visible"  appendTo="body" modal="modal" width="300" responsive="true">
+    <div class="error-message" [innerHTML]="message" *ngIf="message" id="dot-my-account-general-error-message"></div>
+
+    <form #myAccountForm="ngForm" class="my-account">
+        <div class="form-group">
+            <input pInputText id="dot-my-account-first-name-input"
+                #firstNameInput="ngModel"
+                placeholder="{{i18nMessages['First-Name']}}"
+                name="givenName"
+                [(ngModel)]="accountUser.givenName"
+                floatingPlaceholder="false"
+                (keyup)="message=''"
+                required/>
+        </div>
+        <p class="error-message" id="dot-my-account-first-name-error-message" [hidden]="firstNameInput.valid || firstNameInput.pristine">{{getRequiredMessage(i18nMessages['First-Name'])}}</p>
+        <div class="form-group">
+            <input pInputText id="dot-my-account-last-name-input"
+                #lastNameInput="ngModel"
+                placeholder="{{i18nMessages['Last-Name']}}"
+                name="surname"
+                [(ngModel)]="accountUser.surname"
+                floatingPlaceholder="false"
+                (keyup)="message=''"
+                required/>
+        </div>
+        <p class="error-message" id="dot-my-account-last-name-error-message" [hidden]="lastNameInput.valid || lastNameInput.pristine">{{getRequiredMessage(i18nMessages['Last-Name'])}}</p>
+        <div class="form-group">
+            <input pInputText id="dot-my-account-email-input"
+                #emailInput="ngModel"
+                placeholder="{{i18nMessages['email-address']}}"
+                name="email"
+                [(ngModel)]="accountUser.email"
+                floatingPlaceholder="false"
+                type="email"
+                required
+                (keyup)="message=''"
+                pattern="^[a-zA-Z0–9_.+-]+@[a-zA-Z0–9_.+-]+\.[a-zA-Z0–9_.+-]+$"/>
+        </div>
+        <div class="error-message" [hidden]="emailInput.valid || emailInput.pristine">
+            <p *ngIf="emailInput.errors && emailInput.errors.required" id="dot-my-account-email-required-error-message">{{getRequiredMessage(i18nMessages['email-address'])}}</p>
+            <p *ngIf="emailInput.errors && emailInput.errors.pattern" id="dot-my-account-email-invalid-error-message">{{stringFormat.formatMessage(i18nMessages['errors.email'], i18nMessages['email-address'])}}</p>
+        </div>
+        <div class="form-group">
+            <input pPassword id="dot-my-account-current-password-input"
+                #currentPasswordInput="ngModel"
+                placeholder="{{i18nMessages['current-password']}}"
+                name="password"
+                [(ngModel)]="accountUser.currentPassword"
+                floatingPlaceholder="false"
+                type="password"
+                (keyup)="message=''"
+                required/>
+        </div>
+        <div class="form-group">
+            <p-checkbox (click)="toggleChangePasswordOption()" binary="true"
+                         id="dot-my-account-change-password-option" label="{{i18nMessages['change-password']}}">
+            </p-checkbox>
+        </div>
+        <div class="form-group">
+            <input pPassword id="dot-my-account-new-password-input"
+                #passwordInput="ngModel"
+                placeholder="{{i18nMessages['new-password']}}"
+                name="newPassword"
+                [(ngModel)]="accountUser.newPassword"
+                floatingPlaceholder="false"
+                (keyup)="checkPasswords()"
+                type="password"
+                (keyup)="message=''"
+                [disabled]="!changePasswordOption"/>
+        </div>
+        <div class="form-group">
+            <input pPassword id="dot-my-account-confirm-new-password-input"
+                #confirmPasswordInput="ngModel"
+                placeholder="{{i18nMessages['re-enter-new-password']}}"
+                name="confirmPassword"
+                [(ngModel)]="passwordConfirm"
+                floatingPlaceholder="false"
+                (keyup)="checkPasswords()"
+                type="password"
+                (keyup)="message=''"
+                [disabled]="!changePasswordOption"/>
+        </div>
+        <p class="error-message" [hidden]="!(passwordInput.dirty && confirmPasswordInput.dirty) || passwordMatch">{{i18nMessages['error.forgot.password.passwords.dont.match']}}</p>
+    </form>
+    <footer>
+        <div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix">
+            <button pButton id="dot-my-account-ok-button" (click)="save()" [disabled]="(changePasswordOption && !passwordMatch) || !myAccountForm.form.valid" label="{{i18nMessages['save']}}"></button>
+            <button pButton flat id="dot-my-account-close-button" (click)="close.emit()" type="button" label="{{i18nMessages['modes.Close']}}"></button>
+        </div>
+    </footer>
+</p-dialog>

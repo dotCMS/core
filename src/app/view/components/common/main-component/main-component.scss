@@ -1,0 +1,61 @@
+@import "../../../../scss/mixins";
+@import "../../../../scss/variables";
+
+$sidebar-width: 190px;
+
+.layout {
+  background-color: $gray-lightest;
+  padding-top: $toolbar-height;
+}
+
+.layout__main {
+  margin-left: $sidebar-width;
+  transition: margin-left $basic-speed cubic-bezier(0.25, 0.8, 0.25, 1);
+
+  .collapsed & {
+    margin-left: 0;
+  }
+}
+
+.layout__sidebar {
+  background-color: $white;
+  border-right: solid 1px $gray-lighter;
+  height: 100%;
+  padding-top: $toolbar-height;
+  position: fixed;
+  overflow: auto;
+  transition: transform $basic-speed cubic-bezier(0.25, 0.8, 0.25, 1);
+  top: 0;
+  width: $sidebar-width;
+
+  .collapsed & {
+    transform: translateX(-100%);
+  }
+}
+
+.layout__toolbar {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1;
+}
+
+.layout__toolbar-inner {
+  display: flex;
+  flex: 1;
+  justify-content: space-between;
+}
+
+.toolbar__actions,
+.toolbar__host {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.toolbar__host {
+  // TODO: should we add a param for not hover state in the dot-select?
+  .dot-select.is-active .dot-select__icon {
+    color: $white;
+  }
+}

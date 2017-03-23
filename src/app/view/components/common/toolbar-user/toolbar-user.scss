@@ -1,0 +1,31 @@
+@import "../../../../scss/mixins";
+@import "../../../../scss/variables";
+
+:host {
+    font-size: $body-font-size-base;
+
+    .toolbar-user__content {
+        min-width: 250px;
+    }
+
+    .toolbar-user__email {
+        margin: 0;
+    }
+
+    .toolbar-user__header {
+        background: $gray-lightest;
+        padding: $basic-padding $basic-padding * 2;
+    }
+
+    .toolbar-user__menu {
+        @include naked-list();
+        margin: $basic-padding * 2;
+        white-space: nowrap;
+    }
+
+    .toolbar-user__user-name {
+        margin: 0;
+        white-space: nowrap;
+    }
+}
+

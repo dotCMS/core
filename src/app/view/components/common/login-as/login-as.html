@@ -1,0 +1,24 @@
+<p-dialog header="{{i18nMessages['login-as']}}" [(visible)]="visible" appendTo="body" modal="modal" resizable class="login-as">
+    <!--TODO: manage errors on required fields and errors messages -->
+    <form #loginAsForm="ngForm" class="login-as">
+        <div class="form-group">
+            <!--TODO: get rid of this let autoComplete when this is fixed: https://github.com/primefaces/primeng/issues/745-->
+            <p-autoComplete let autoComplete ngModel required field="label"
+                name="user" id="userId" [suggestions]="filteredLoginAsUsersResults" (completeMethod)="filterUsers($event)" size="30"
+                (onSelect)="userSelectedHandler($event)" minLength="1" placeholder="{{i18nMessages['loginas.select.loginas.user']}}"
+                [dropdown]="true" (onDropdownClick)="handleLoginAsUsersDropdownClick($event)">
+            </p-autoComplete>
+        </div>
+        <div class="form-group" *ngIf="needPassword">
+            <input pPassword name="password" id="dot-login-as-password" type="password" placeholder="{{i18nMessages['password']}}" floatingPlaceholder="false" [required]="needPassword" ngModel/>
+        </div>
+    </form>
+    <footer>
+        <div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix">
+            <button pButton id="dot-login-as-button-change" [disabled]="!loginAsForm.valid" label="{{i18nMessages['Change']}}" (click)="dolLoginAs(loginAsForm.value)"></button>
+            <button pButton flat id="dot-login-as-button-cancel" (click)="close($event)" label="{{i18nMessages['cancel']}}"></button>
+        </div>
+    </footer>
+</p-dialog>
+
+

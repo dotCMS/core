@@ -1,0 +1,411 @@
+.cw-message.ui.message:first-child {
+  margin: 2em 2em 1em;
+}
+
+.cw-loading {
+  background-color: rgba(10, 10, 10, 0.35);
+  width: 100%;
+  height: 100%;
+}
+
+.ui.fluid.input input:hover {
+  border-color: rgba(34, 36, 38, 0.35);
+  box-shadow: none;
+}
+
+.cw-rule-status-text {
+  margin-top: .2em;
+  margin-right: 2em;
+}
+
+.cw-saved .ui.checkbox input:checked ~ .box:after, .cw-saved .ui.checkbox input:checked ~ label:after {
+  background-color: #209021;
+  border: .5em solid white;
+}
+
+.cw-saved .cw-rule-status-text {
+  opacity: 0;
+  transition-property: opacity;
+  transition-delay: 1s;
+  transition-duration: 2s;
+  transition-timing-function: cubic-bezier(1, 0.1, 0, 1);
+}
+
+.cw-saving .ui.checkbox input:checked ~ .box:after, .cw-saving .ui.checkbox input:checked ~ label:after {
+  background-color: #fd7b1d;
+}
+
+.cw-saving .cw-rule-status-text {
+  opacity: 1;
+  transition-property: opacity;
+  transition-delay: 0s;
+  transition-duration: 0s;
+}
+
+/* Semantic Text input box. */
+.ng-dirty.ng-valid input:focus,
+.ng-dirty.ng-valid .ui.input input:focus,
+input:focus.ng-valid.ng-dirty,
+.ng-dirty.ui.input input:focus.ng-valid,
+.ng-dirty.ng-valid .ui.input input:focus,
+.ng-dirty.ui.selection.dropdown.ng-valid {
+  border-left: 5px solid #209021;
+  transition-property: border-left;
+  transition-delay: 0s;
+  transition-duration: 0s;
+}
+
+.ng-touched.ng-valid .ui.selection.dropdown.search.visible {
+  border-left: 5px solid #209021;
+  transition-property: border-left;
+  transition-delay: 0s;
+  transition-duration: 0s;
+}
+
+.ng-dirty.ng-valid input,
+input.ng-dirty.ng-valid,
+.ng-dirty.ui.input input.ng-valid,
+.ng-dirty.ng-valid .ui.input input,
+.ng-dirty.ui.dropdown.ng-valid,
+.ng-dirty.ui.selection.dropdown.ng-valid,
+.ng-touched.ng-valid .ui.selection.dropdown.search {
+  border-left: 1px solid rgba(34, 36, 38, 0.15);
+  transition-property: border-left, border-left-width;
+  transition-delay: 1s;
+  transition-duration: 600ms;
+  transition-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.ng-untouched.ng-pristine.ng-invalid .ui.input input,
+.ng-untouched.ng-pristine.ng-invalid .ui.selection.dropdown.search {
+  border-left: 5px solid #848484;
+}
+
+.ng-touched.ng-pristine.ng-invalid .ui.input input,
+.ng-touched.ng-pristine.ng-invalid .ui.selection.dropdown.search {
+  border-left: 5px solid #c85a6a;
+  border-color: #c85a6a;
+}
+
+.ng-dirty.ng-invalid .ui.input input,
+.ng-dirty.ng-invalid .ui.selection.dropdown.search {
+  border-left: 5px solid #c85a6a;
+  border-color: #c85a6a;
+}
+
+.cw-rule-engine > .cw-header {
+  padding: 1em 2em 2em 2em;
+}
+
+.cw-rule-engine > .cw-header .cw-button-add {
+  background-color: #fd7b1d;
+  color: #ffffff;
+}
+
+.cw-rule-engine .cw-btn-group .ui.basic.buttons .ui.button:focus {
+  border: 1px solid #96C8DA;
+}
+
+.cw-warn {
+  color: #c85a6a;
+}
+
+.cw-hidden {
+  display: none !important;
+}
+
+.cw-button-link.ui.basic.black.button {
+  box-shadow: none !important;
+}
+
+.cw-button-link.ui.basic.black.button:focus, .cw-button-link.ui.basic.black.button:hover, .cw-button-link.ui.basic.black.button:active {
+  box-shadow: none !important;
+  background-color: inherit;
+}
+
+.cw-filter-links {
+  font-size: .8em;
+  color: #a4a4a4;
+}
+
+.cw-filter-link {
+  color: #a4a4a4;
+}
+
+.cw-filter-link.active {
+  font-weight: bold;
+  color: #848484;
+}
+
+.cw-filter-link.active:hover {
+  color: #848484;
+}
+
+.cw-filter-link:hover {
+  color: #a4a4a4;
+}
+
+.cw-rule {
+  margin: 0 2em 2em 2em;
+  border: 1px solid #f2f2f2;
+  border-radius: .5em;
+}
+
+.cw-rule .cw-header-actions {
+  margin-right: .5em;
+  position: relative;
+}
+
+.cw-rule .cw-header-actions .cw-btn-group .ui.basic.buttons .ui.button:focus {
+  border: none;
+}
+
+.cw-rule .cw-header-actions .ui.vertical.menu {
+  position: absolute;
+  right: 0;
+  top: 25px;
+  z-index: 4;
+}
+
+.cw-rule .cw-type-dropdown {
+  max-height: 2em;
+}
+
+.cw-rule .cw-input-label-right {
+  margin-left: .25em;
+}
+
+.cw-rule .cw-input-label-left {
+  margin-right: .25em;
+}
+
+.cw-rule .cw-input, .cw-rule.cw-last {
+  margin-right: 1em;
+}
+
+.cw-rule .cw-rule-name-input {
+  margin-right: 1em;
+}
+
+.cw-rule > .cw-header {
+  background-color: #f2f2f2;
+  padding: .35em 0;
+  border-top-left-radius: .5em;
+  border-top-right-radius: .5em;
+}
+
+.cw-rule .cw-rule-caret {
+  min-width: 1.25em;
+  max-width: 1.25em;
+  margin-left: 0;
+}
+
+.cw-rule .cw-rule-cloud {
+  min-width: 1.0em;
+  max-width: 1.0em;
+  margin-left: .5em;
+  margin-right: .25em;
+  color: white;
+  text-shadow: 1px 1px 8px #555555;
+}
+
+.cw-rule .cw-rule-cloud.out-of-sync {
+  color: red;
+  text-shadow: 1px 1px 8px black;
+}
+
+.cw-rule .cw-fire-on-label {
+  font-weight: bold;
+  margin-right: .5em;
+  min-width: 4em;
+  max-width: 4em;
+}
+
+.cw-rule .cw-fire-on-dropdown {
+  min-width: 12em;
+  max-width: 12em;
+}
+
+.cw-rule .cw-btn-group .ui.basic {
+  background-color: white;
+}
+
+.cw-rule .cw-accordion-body {
+  margin: 1em;
+}
+
+.cw-rule .cw-action-separator {
+  background-color: #d4efd5;
+}
+
+.cw-rule .cw-add-action-button {
+  width: 2em;
+  height: 2em;
+}
+
+.cw-rule .cw-comparator-selector {
+  min-width: 10em;
+  max-width: 10em;
+}
+
+.cw-rule .cw-condition-component-body {
+  margin-left: 1em;
+}
+
+.cw-rule cw-toggle-input.cw-input {
+  margin-top: .75em;
+}
+
+.cw-rule .cw-condition-row, .cw-rule .cw-action-row {
+  margin-bottom: .5em;
+  min-height: 1em;
+}
+
+.cw-rule .cw-action-row {
+  padding-left: 6em;
+}
+
+.cw-condition-group-separator, .cw-action-separator {
+  padding: .5em 1em;
+  background-color: #dff1f9;
+  border-radius: .5em;
+  width: 100%;
+}
+
+.cw-action-group {
+  margin-top: 1em;
+}
+
+.cw-rule-group .cw-header-text {
+  width: 200em;
+  margin-left: 2em;
+}
+
+.cw-rule-group .cw-group-operator {
+  color: #fc7e1c;
+  background-color: #f2f2f2;
+  opacity: 50;
+  height: 1.25em;
+  width: 4em;
+  vertical-align: middle;
+}
+
+.cw-rule-group .cw-group-operator div {
+  margin-top: -.5em;
+}
+
+.cw-rule-group .cw-group-operator.ui.button:hover {
+  background-color: #f2f2f2 !important;
+}
+
+.cw-last {
+  margin-right: 0;
+}
+
+.ui.basic.button.cw-button-toggle-operator {
+  width: 100%;
+  margin: 0;
+}
+
+.cw-rule-actions, .cw-conditions {
+  padding: .5em 2em 0 2em;
+}
+
+.cw-rule-actions .cw-entry > div.buttons, .cw-conditions .cw-entry > div.buttons {
+  width: 100%;
+}
+
+.cw-rule-actions .cw-btn-group .ui.basic.buttons, .cw-conditions .cw-btn-group .ui.basic.buttons {
+  border: none;
+}
+
+.cw-rule-actions .cw-add-btn, .cw-conditions .cw-add-btn {
+  min-width: 39px;
+  height: 36px;
+}
+
+.cw-rule-actions .cw-delete-btn, .cw-conditions .cw-delete-btn {
+  margin-right: .5em;
+}
+
+.cw-rule-actions .trash, .cw-conditions .trash {
+  color: #c85a6a;
+}
+
+.cw-button-add-item i {
+  color: #209021;
+}
+
+.cw-spacer.cw-condition-operator {
+  width: 4em;
+}
+
+.cw-spacer.cw-add-condition {
+  width: 2.25em;
+}
+
+.basic button.ui.cw-button-add-item:hover {
+  font-weight: bolder;
+}
+
+.cw-condition-toggle {
+  min-width: 5em;
+  max-width: 5em;
+  margin-right: 1em;
+}
+
+.cw-condition-buttons {
+  width: 3em;
+  max-width: 3em;
+}
+
+.cw-name-field {
+  margin: .5em 2em .5em 2em;
+}
+
+.cw-spacer.cw-4em {
+  width: 4em;
+}
+
+.cw-spacer.cw-3em {
+  width: 3em;
+}
+
+.cw-spacer.cw-2em {
+  width: 2em;
+}
+
+.ui.modal.cw-modal-dialog2 {
+  display: block;
+  margin: -103px 0 0 -200px;
+  height: 600px;
+  width: 400px;
+}
+
+.ui.modal.cw-modal-dialog {
+  display: block;
+  position: absolute;
+  margin-left: auto;
+  margin-right: auto;
+  top: 50%;
+  left: 50%;
+  -moz-transform: translate(-50%, -50%);
+  -o-transform: translate(-50%, -50%);
+  -ms-transform: translate(-50%, -50%);
+  -webkit-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+}
+
+.cw-modal-dialog .cw-dialog-body {
+  height: 100%;
+  width: 100%;
+}
+
+.cw-visitors-location .cw-latLong .ui.input input, .cw-visitors-location .cw-radius .ui.input input {
+  text-align: right;
+  color: lightgray;
+}
+
+cw-modal-dialog .ui.dimmer {
+  background-color: rgba(0, 0, 0, 0.55);
+}

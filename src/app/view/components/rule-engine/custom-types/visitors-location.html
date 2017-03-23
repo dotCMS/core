@@ -1,0 +1,64 @@
+<html lang="en">
+<head>
+  <title>Serverside Condition Demo</title>
+  <link rel="stylesheet" type="text/css" href="../../../../thirdparty/semantic/dist/semantic.css">
+  <link rel="stylesheet" type="text/css" href="../../../../thirdparty/angular-material/angular-material.layouts.css">
+
+  <script src="../../../../thirdparty/systemjs/dist/system.js"></script>
+  <script src="../../../../thirdparty/angular2/bundles/angular2-polyfills.js"></script>
+  <script src="../../../../thirdparty/es6-shim/es6-shim.js"></script>
+  <script src="../../../../thirdparty/rxjs/bundles/Rx.js"></script>
+  <script src="../../../../thirdparty/angular2/bundles/angular2.js"></script>
+  <script src="../../../../thirdparty/jquery/dist/jquery.js"></script>
+  <script src="../../../../thirdparty/semantic/dist/semantic.js"></script>
+  <script src="../../../../thirdparty/core-js/client/shim.js"></script>
+
+
+  <script>
+    System.config({
+      packages: {
+        app: {
+          format: 'register',
+          defaultExtension: 'js'
+        },
+        'visitors-location': {
+          format: 'register',
+          defaultExtension: 'js'
+        },
+        'view/components/common/google-map': {
+          format: 'register',
+          defaultExtension: 'js'
+        },
+        'modal-dialog': {
+          format: 'register',
+          defaultExtension: 'js'
+        },
+        api: {
+          format: 'register',
+          defaultExtension: 'js'
+        },
+        view: {
+          format: 'register',
+          defaultExtension: 'js'
+        }
+      },
+      map: {
+        "api": "/build/api",
+        "whatwg-fetch": "build/thirdparty/whatwg-fetch/fetch.js"
+      }
+    });
+    System.import('./visitors-location/boot')
+        .then(function (p) {
+          console.log("Project load complete.")
+        }, console.error.bind(console));
+
+  </script>
+
+
+</head>
+<body>
+<demo>Loading...</demo>
+
+
+</body>
+</html>

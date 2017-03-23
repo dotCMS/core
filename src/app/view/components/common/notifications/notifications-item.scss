@@ -1,0 +1,79 @@
+@import "../../../../scss/mixins";
+@import "../../../../scss/variables";
+$notification-icon-size: 16px;
+
+:host {
+    display: block;
+
+    custom-time {
+        color: $gray;
+        display: block;
+    }
+
+    a {
+        color: $black;
+    }
+
+    .notification-item {
+        border-top: solid 1px $gray-lighter;
+        position: relative;
+    }
+
+    .notification-item__content {
+        margin-left: rem-cal(5px);
+    }
+
+    .notification-item__close {
+        color: $gray-light;
+        height: $notification-icon-size;
+        position: absolute;
+        right: 0;
+        top: 1rem;
+        width: $notification-icon-size;
+
+        &.ui-state-hover {
+            background: none;
+        }
+    }
+
+    .notification-item__icon {
+        font-size: rem-cal(18px);
+        width: $notification-icon-size;
+    }
+
+    .notification-item__title {
+        font-size: rem-cal($body-font-size-base);
+    }
+
+    .notification-item__title,
+    .notification-item__message {
+        margin: 0;
+    }
+
+    .notification-item__message {
+        line-height: 1.5rem;
+    }
+
+    .notification-item__wrapper {
+        display: flex;
+        padding: 1rem 0;
+    }
+
+    .warning {
+        .notification-item__icon,
+        .notification-item__link,
+        .notification-item__title,
+        .notification-item__title a {
+            color: $brand-primary;
+        }
+    }
+
+    .error {
+        .notification-item__icon,
+        .notification-item__link,
+        .notification-item__title,
+        .notification-item__title a {
+            color: $brand-secondary;
+        }
+    }
+}

@@ -1,0 +1,47 @@
+@import "../../../scss/variables";
+@import "../../../scss/mixins";
+
+.site-selector__field {
+  &.ui-inputwrapper-focus .ui-autocomplete {
+    background-color: rgba($white, 0.1);
+  }
+
+  .ui-autocomplete {
+    background: none;
+    border: none;
+
+    &:hover {
+      background-color: rgba($white, 0.1);
+    }
+  }
+
+  .ui-inputtext {
+    background: none;
+    color: $white;
+    font-size: $font-size-large;
+    text-overflow: ellipsis;
+  }
+  
+  .fa {
+    color: $white;
+  }
+}
+
+.site-selector__title {
+  color: $white;
+  font-size: 20px;
+  margin: 0 0 0 10px;
+  align-self: center;
+}
+
+.site-selector__modal {
+  @include box_shadow(2);
+  background-color: $white;
+  color: $black;
+  display: block;
+  left: 50%;
+  padding: 40px 50px;
+  position: fixed;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}

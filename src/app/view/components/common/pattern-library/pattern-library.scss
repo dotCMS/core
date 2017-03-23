@@ -1,0 +1,57 @@
+@import "../../../../scss/mixins";
+@import "../../../../scss/variables";
+
+:host {
+    display: block;
+    margin: 0 rem-cal(40px);
+
+    article {
+        margin-bottom: rem-cal(20px);
+    }
+
+    .section-buttons {
+        article {
+            margin-bottom: rem-cal(40px);
+        }
+    }
+
+    .section_desc {
+        font-size: rem-cal(13px);
+    }
+
+    .section-headings, .section-paragraph {
+        .section_desc {
+            border-bottom: solid 1px $gray-light;
+            text-align: right;
+        }
+    }
+
+    .section-headings {
+        h1, h2, h3, h4, h5, h6 {
+            margin-bottom: 0;
+        }
+
+        .section_desc {
+            margin: 0 0 rem-cal(20px);
+
+
+            &:last-child {
+                margin-bottom: 0;
+            }
+        }
+    }
+
+    .section__subtitle {
+        color: $gray-dark;
+        font-size: rem-cal(12px);
+        margin: rem-cal($basic-padding * 2) 0;
+
+        text-transform: uppercase;
+    }
+
+    .section__title {
+        color: $body-font-color;
+    }
+
+}
+

@@ -1,0 +1,15 @@
+:host {
+  cursor: pointer;
+  display: block;
+  padding: 10px 16px;
+  transition: background-color 250ms;
+  white-space: nowrap;
+}
+
+:host:hover {
+  background-color: #EEE;
+}
+
+:host .is-selected {
+  color: #EE5C4A;
+}

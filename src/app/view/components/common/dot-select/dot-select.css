@@ -1,0 +1,41 @@
+:host {
+  display: inline-block;
+  position: relative;
+}
+
+:host .is-active .dot-select__icon {
+  color: #EE5C4A;
+}
+
+:host .is-disabled {
+  cursor: not-allowed;
+}
+
+:host .is-disabled .dot-select__text,
+:host .is-disabled .dot-select__icon {
+  color: #D0D0D0;
+}
+
+:host .dot-select__options {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  background-color: #FFF;
+  max-height: 0;
+  overflow: hidden;
+  position: absolute;
+  top: 0;
+  transition: all 250ms;
+  z-index: 1;
+  z-index: 2;
+}
+
+:host .dot-select__options--is-open {
+  max-height: 1000px;
+}
+
+:host .dot-select__wrapper {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+}

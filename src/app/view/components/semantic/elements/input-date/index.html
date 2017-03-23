@@ -1,0 +1,44 @@
+<html lang="en">
+<head>
+  <title>1st Jasmine Tests</title>
+  <link rel="stylesheet" type="text/css" href="../../../../../thirdparty/semantic/dist/semantic.css">
+  <link rel="stylesheet" type="text/css" href="../../../../../thirdparty/angular-material/angular-material.layouts.css">
+
+</head>
+<body>
+<demo>Loading...</demo>
+
+
+<script src="../../../../../thirdparty/system/dist/system.src.js"></script>
+<script src="../../../../../thirdparty/angular2/bundles/angular2.dev.js"></script>
+<script src="../../../../../thirdparty/angular2/node_modules/@reactivex/rxjs/dist/global/Rx.js"></script>
+<script src="../../../../../thirdparty/jquery/dist/jquery.js"></script>
+<script src="../../../../../thirdparty/semantic/dist/semantic.js"></script>
+
+<script>
+  System.config({
+
+    packages: {
+      'api': {defaultExtension: 'js'},
+      'view': {defaultExtension: 'js'},
+      'angular2': {defaultExtension: false},
+      '@reactivex': {defaultExtension: false}
+    },
+    map: {
+      "angular2/angular2": "angular2/angular2",
+      "whatwg-fetch": "../../../../../thirdparty/whatwg-fetch/fetch.js",
+      "view": "../../../../../view"
+    }
+  });
+
+  Promise.all([
+    System.import('index.js')
+  ]).then(
+      function (p) {
+        console.log("Project load complete.")
+      });
+</script>
+
+
+</body>
+</html>

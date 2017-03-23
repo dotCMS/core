@@ -1,0 +1,20 @@
+<dot-dropdown-component
+        id="dot-toolbar-notifications"
+        inverse="true"
+        icon="fa-bell"
+        (toggle)="toggleNotifications()"
+        [disabled]="!notifications.length"
+        alignRight="true"
+        (open)="iframeOverlayService.show()"
+        (close)="iframeOverlayService.hide()">
+    <span *ngIf="notificationsUnreadCount" class="badge" id="dot-toolbar-notifications-badge">{{notificationsUnreadCount}}</span>
+    <div class="toolbar-notifications">
+        <div class="toolbar-notifications__heading">
+            <h3 class="toolbar-notifications__title" id="dot-toolbar-notifications-title">{{i18nMessages['notifications_title']}}</h3>
+            <button pButton iconButton icon="fa-trash-o" id="dot-toolbar-notifications-button-dismiss-all" (click)="dismissAllNotifications()" title="{{i18nMessages['notifications_dismissall']}}"></button>
+        </div>
+        <div class="toolbar-notifications__content" id="dot-toolbar-notifications-content">
+            <dot-notifications-list id="dot-notifications-list" [notifications]="notifications" (dismissNotification)="onDismissNotification($event)"></dot-notifications-list>
+        </div>
+    </div>
+</dot-dropdown-component>

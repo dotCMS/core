@@ -1,0 +1,35 @@
+@import "../../../../scss/variables";
+@import "../../../../scss/mixins";
+
+$placeholder-color: rgba($white, 0.5);
+
+:host {
+    flex: 1;
+    margin: 0 50px;
+
+    .global-search__textbox {
+        background-color: rgba($white, 0.2);
+        border: none;
+        color: $white;
+        font-size: $font-size-large;
+        height: 36px;
+        padding: 0 10px;
+        width: 100%;
+
+        &::-webkit-input-placeholder {
+            color: $placeholder-color;
+        }
+
+        &:-moz-placeholder {
+            color: $placeholder-color;
+        }
+
+        &::-moz-placeholder {
+            color: $placeholder-color;
+        }
+
+        &:-ms-input-placeholder {
+            color: $placeholder-color;
+        }
+    }
+}

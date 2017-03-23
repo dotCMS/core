@@ -1,0 +1,8 @@
+@import "../../../../scss/mixins";
+@import "../../../../scss/variables";
+
+.login-as {
+    input[type="password"] {
+        width: 100%;
+    }
+}
