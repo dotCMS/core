@@ -93,7 +93,7 @@ export class RoutingService {
             this.portlets = new Map();
 
             for (let i = 0; i < this.menus.length; i++) {
-                let menu = this.menus[i]
+                let menu = this.menus[i];
 
                 for (let k = 0; k < menu.menuItems.length; k++) {
                     let subMenuItem = menu.menuItems[k];

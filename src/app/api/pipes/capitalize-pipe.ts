@@ -10,7 +10,7 @@ import {Pipe, PipeTransform} from '@angular/core';
 /**
  * Put in uppercase le first character of the string
  */
-export class CapitalizePipe implements PipeTransform{
+export class CapitalizePipe implements PipeTransform {
 
     transform(value: string, args: Array<any>): string {
 

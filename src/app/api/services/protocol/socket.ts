@@ -25,18 +25,18 @@ export class EventsSocket extends Protocol {
 
     private static protocolImpl: Protocol;
 
-    private closedOnLogout: boolean = false;
+    private closedOnLogout = false;
     private isWebSocketServerSupport: WEB_SOCKET_SERVER_SUPPORT = WEB_SOCKET_SERVER_SUPPORT.DONT_NOW;
     private status: CONNECTION_STATUS = CONNECTION_STATUS.NONE;
 
     private lastcallback: number;
 
-     /**
+    /**
      * Initializes this service with the configuration properties that are
      * necessary for opening the Websocket with the System Events end-point.
      *
      * @param dotcmsConfig - The dotCMS configuration properties that include
-     *                        the Websocket parameters.
+     * the Websocket parameters.
      */
     constructor(private url: Url, configParams: ConfigParams, loggerService: LoggerService,
                 private coreWebService: CoreWebService) {

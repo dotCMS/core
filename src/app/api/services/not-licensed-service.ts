@@ -14,4 +14,3 @@ export class NotLicensedService {
         this.coreWebService.subscribeTo(403).subscribe(res => this.router.goToNotLicensed());
     }
 }
-

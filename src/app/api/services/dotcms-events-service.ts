@@ -8,7 +8,7 @@ import {Socket, Url} from './socket';
 import {Protocol} from './protocol/protocol';
 import {HelloMessage} from './protocol/HelloMessage';
 import {SocketFactory} from './protocol/socket-factory';
-import {CoreWebService} from "./core-web-service";
+import {CoreWebService} from './core-web-service';
 import {RequestMethod, Http} from '@angular/http';
 
 @Injectable()

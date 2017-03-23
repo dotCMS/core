@@ -18,6 +18,7 @@ export class Url {
     public getUrlWith(queryParameters: QueryParams): string {
         let buffer = '';
 
+        // tslint:disable-next-line:forin
         for (let propt in queryParameters) {
             if (buffer.length > 0) {
                 buffer += '&';

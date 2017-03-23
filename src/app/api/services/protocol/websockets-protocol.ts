@@ -14,6 +14,7 @@ export class WebSocketProtocol extends Protocol {
     private readyStateConstants = {
         'CONNECTING': 0,
         'OPEN': 1,
+        // tslint:disable-next-line:object-literal-sort-keys
         'CLOSING': 2,
         'CLOSED': 3,
         'RECONNECT_ABORTED': 4

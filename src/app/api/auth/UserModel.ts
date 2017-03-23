@@ -6,7 +6,7 @@ export class UserModel {
   username: string;
   password: string;
   locale: string;
-  suppressAlerts: boolean = false;
+  suppressAlerts = false;
 
   constructor(private loggerService: LoggerService) {
 
