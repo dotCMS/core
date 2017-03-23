@@ -10,7 +10,6 @@
 <%@page import="java.lang.management.RuntimeMXBean"%>
 <%@page import="java.lang.management.ManagementFactory"%>
 <%@page import="com.dotmarketing.business.ChainableCacheAdministratorImpl"%>
-<%@page import="com.dotmarketing.business.cache.provider.h2.H2CacheLoader"%>
 <%@page import="com.dotmarketing.business.CacheLocator"%>
 <%@ page import="java.util.Calendar"%>
 <%@ page import="com.dotcms.repackage.javax.portlet.WindowState"%>
@@ -398,14 +397,7 @@ function refreshCache(){
 	var y =Math.floor(Math.random()*1123213213);
 
 	<%if(CacheLocator.getCacheAdministrator().getImplementationClass().equals(ChainableCacheAdministratorImpl.class)){%>
-		if(dijit.byId("showSize").checked){
-			x.attr( "href","/html/portlet/ext/cmsmaintenance/cachestats_guava.jsp?showSize=true&r=" + y  );
-
-		}
-		else{
-			x.attr( "href","/html/portlet/ext/cmsmaintenance/cachestats_guava.jsp?r=" + y  );
-
-		}
+		x.attr( "href","/html/portlet/ext/cmsmaintenance/cachestats_guava.jsp?r=" + y  );
 	<%}else{%>
 		x.attr( "href","/html/portlet/ext/cmsmaintenance/cachestats.jsp?r=" + y  );
 	<%}%>
@@ -1330,9 +1322,6 @@ dd.leftdl {
                 <tr>
                     <td colspan="3">
                         <div class="buttonRow" style="text-align: right">
-                        <label for="showSize">
-                        <%= LanguageUtil.get(pageContext,"Show-Memory-Size") %>: <input type="checkbox" value="true" dojoType="dijit.form.CheckBox" name="showSize" id="showSize" />
-                        </label>
                         <button dojoType="dijit.form.Button"  onClick="refreshCache()" iconClass="resetIcon">
                            <%= LanguageUtil.get(pageContext,"Refresh-Stats") %>
                         </button>

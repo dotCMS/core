@@ -17,6 +17,7 @@ import com.dotcms.publisher.assets.business.PushedAssetsCache;
 import com.dotcms.publisher.assets.business.PushedAssetsCacheImpl;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointCache;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointCacheImpl;
+import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.jgroups.JGroupsCacheTransport;
 import com.dotmarketing.cache.ContentTypeCache;
@@ -97,7 +98,7 @@ public class CacheLocator extends Locator<CacheIndex>{
         public void remove(String key, String group) { dotcache.remove(key,group); }
         public void removeLocalOnly(String key, String group) { dotcache.removeLocalOnly(key, group); }
         public void shutdown() { dotcache.shutdown(); }
-        public List<Map<String, Object>> getCacheStatsList() { return dotcache.getCacheStatsList(); }
+        public List<CacheProviderStats> getCacheStatsList() { return dotcache.getCacheStatsList(); }
 		public CacheTransport getTransport () {return dotcache.getTransport();}
 		public void setTransport ( CacheTransport transport ) {dotcache.setTransport(transport);}
         public Class<?> getImplementationClass() { return dotcache.getClass(); }
@@ -392,6 +393,7 @@ enum CacheIndex
 	RulesCache("Rules Cache"),
 	SiteVisitCache("Rules Engine - Site Visits"),
 	NewNotification("NewNotification Cache"),
+
 	ContentTypeCache("Legacy Content Type Cache"),
 	ContentTypeCache2("New Content Type Cache");
 	Cachable create() {

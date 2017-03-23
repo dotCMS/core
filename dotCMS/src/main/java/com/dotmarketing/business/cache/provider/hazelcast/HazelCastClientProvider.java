@@ -1,13 +1,12 @@
 package com.dotmarketing.business.cache.provider.hazelcast;
 
-import com.dotcms.repackage.com.google.common.cache.CacheStats;
+import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.business.cache.provider.CacheProvider;
+import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.util.Logger;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
-import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 
 import java.io.InputStream;
@@ -105,30 +104,20 @@ public class HazelCastClientProvider extends CacheProvider {
     }
 
     @Override
-    public List<Map<String, Object>> getStats() {
-        List<Map<String, Object>> list = new ArrayList<>();
-
-        //Getting the list of groups
+    public CacheProviderStats getStats() {
+        CacheStats providerStats = new CacheStats();
+        CacheProviderStats ret = new CacheProviderStats(providerStats,getName());
         Set<String> currentGroups = getGroups();
 
         for (String group : currentGroups) {
-            Map<String, Object> stats = new HashMap<>();
-
-            stats.put("name", getName());
-            stats.put("key", getKey());
-            stats.put("region", group);
-            stats.put("toDisk", false);
-            stats.put("isDefault", false);
-            stats.put("memory", hazel.getMap(group).keySet().size() + "");
-            stats.put("disk", "0");
-            stats.put("configuredSize", new Integer(new Long(hazel.getMap(group).getLocalMapStats().getOwnedEntryMemoryCost()).intValue()));
-
-            stats.put("CacheStats", new CacheStats(0, 0, 0, 0, 0, 0));
-
-            list.add(stats);
+            CacheStats stats = new CacheStats();
+            stats.addStat("region", group);
+            stats.addStat("size", hazel.getMap(group).keySet().size() + "");
+            stats.addStat("local-memory-cost", hazel.getMap(group).getLocalMapStats().getOwnedEntryMemoryCost() + "");
+            ret.addStatRecord(stats);
         }
 
-        return list;
+        return ret;
     }
 
     @Override

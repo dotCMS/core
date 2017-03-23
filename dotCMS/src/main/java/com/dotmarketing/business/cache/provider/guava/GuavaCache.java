@@ -6,6 +6,8 @@ import com.dotcms.repackage.com.google.common.cache.CacheBuilder;
 import com.dotcms.repackage.com.google.common.cache.CacheLoader;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.cache.provider.CacheProvider;
+import com.dotmarketing.business.cache.provider.CacheProviderStats;
+import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
@@ -162,30 +164,24 @@ public class GuavaCache extends CacheProvider {
     }
 
     @Override
-    public List<Map<String, Object>> getStats () {
-
-        List<Map<String, Object>> list = new ArrayList<>();
-
+    public CacheProviderStats getStats () {
+        CacheStats providerStats = new CacheStats();
+        CacheProviderStats ret = new CacheProviderStats(providerStats,getName());
         Set<String> currentGroups = new HashSet<>();
         currentGroups.addAll(getGroups());
 
         Cache defaultCache = getCache(DEFAULT_CACHE);
         for ( String group : currentGroups ) {
-
-            Map<String, Object> stats = new HashMap<>();
-            stats.put("name", getName());
-            stats.put("key", getKey());
-            stats.put("cache", getCache(group));
-            stats.put("region", group);
-            stats.put("toDisk", false);
+            CacheStats stats = new CacheStats();
+            stats.addStat("cache", getCache(group).toString());
+            stats.addStat("region", group);
 
             Cache foundCache = getCache(group);
-            stats.put("memory", foundCache.size());
-            stats.put("CacheStats", foundCache.stats());
-            stats.put("disk", -1);
+            stats.addStat("memory", foundCache.size() + "");
+            stats.addStat("CacheStats", foundCache.stats().toString());
 
             boolean isDefault = (!DEFAULT_CACHE.equals(group) && foundCache.equals(defaultCache));
-            stats.put("isDefault", isDefault);
+            stats.addStat("isDefault", isDefault + "");
 
             int configured = isDefault
                     ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".size")
@@ -196,12 +192,12 @@ public class GuavaCache extends CacheProvider {
                     : (group.startsWith(LIVE_CACHE_PREFIX) && Config.getIntProperty("cache." + LIVE_CACHE_PREFIX + ".size", -1) != -1)
                     ? Config.getIntProperty("cache." + LIVE_CACHE_PREFIX + ".size")
                     : Config.getIntProperty("cache." + DEFAULT_CACHE + ".size");
-            stats.put("configuredSize", configured);
+            stats.addStat("configuredSize", configured + "");
 
-            list.add(stats);
+            ret.addStatRecord(stats);
         }
 
-        return list;
+        return ret;
     }
 
     @Override
