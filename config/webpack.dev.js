@@ -248,6 +248,11 @@ module.exports = function (options) {
           target: 'http://localhost:8080',
           changeOrigin: false
         },
+        '/api/ws': {
+          target: 'http://localhost:8080',
+          changeOrigin: false,
+          ws: true
+        },
         '/api': {
           target: 'http://localhost:8080',
           changeOrigin: false
