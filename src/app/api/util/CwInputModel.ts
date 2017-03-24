@@ -95,6 +95,10 @@ export class CwInputDefinition {
   private _vFns: Function[];
   private _validator: Function;
 
+  static registerType(typeId: string, type: Function): void {
+    Registry[typeId] = type;
+  }
+
   constructor(public json: any,
               public type: string,
               public name: string,
