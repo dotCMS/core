@@ -113,6 +113,10 @@ public class FieldFactory {
             oldField.setFieldContentlet(DataTypes.SYSTEM.toString());
             
         }
+        
+        if(oldField.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
+        	oldField.setIndexed(true);
+        }
 	    
 	    com.dotcms.contenttype.model.field.Field field = new LegacyFieldTransformer(oldField).from();
 	    try {
