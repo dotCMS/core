@@ -10,10 +10,6 @@ import {
   createNewHosts,
   createInputTransfer
 } from '@angularclass/hmr';
-import {
-  RouterModule,
-  PreloadAllModules
-} from '@angular/router';
 
 /*
  * Platform and Environment providers/directives/pipes
@@ -85,7 +81,7 @@ type StoreType = {
     BrowserModule,
     FormsModule,
     HttpModule,
-    RouterModule.forRoot(ROUTES, { useHash: true, preloadingStrategy: PreloadAllModules }),
+    ROUTES,
     FormsModule,
     ReactiveFormsModule,
     ...NGFACES_MODULES,

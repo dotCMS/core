@@ -28,7 +28,7 @@ const METADATA = webpackMerge(commonConfig({env: ENV}).metadata, {
   ENV: ENV,
   HMR: HMR,
   DEFAULT_LOCALE: 'en-US',
-  baseUrl: '/build'
+  baseUrl: '/'
 });
 
 

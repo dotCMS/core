@@ -6,16 +6,16 @@ import {MainComponent} from './view/components/common/main-component/main-compon
 import {ModuleWithProviders}  from '@angular/core';
 import {PatternLibrary} from './view/components/common/pattern-library/pattern-library';
 import {ResetPasswordContainer} from './view/components/common/login/reset-password-component/reset-password-container';
-import {Routes, RouterModule} from '@angular/router';
+import {Routes, RouterModule, PreloadAllModules} from '@angular/router';
 import {RoutingPublicAuthService} from './api/services/routing-public-auth-service';
 import {MainCoreComponent} from './view/components/main-core-component/MainCoreComponent';
 import {NotLicensedComponent} from './view/components/not-licensed-component/not-licensed-component';
 import {LogOutContainer} from './view/components/common/login/login-component/log-out-container';
 import {RoutingPrivateAuthService} from './api/services/routing-private-auth-service';
-//import {RuleEngineContainer} from './view/components/rule-engine/rule-engine.container';
+import {RuleEngineContainer} from './view/components/rule-engine/rule-engine.container';
 
 let angularComponents: any[] = [];
-//angularComponents.push({component: RuleEngineContainer, id: 'rules'});
+angularComponents.push({component: RuleEngineContainer, id: 'rules'});
 
 let mainComponentChildren = [
     {
@@ -117,4 +117,4 @@ const appRoutes: Routes = [
     }
 ];
 
-export const ROUTES: ModuleWithProviders = RouterModule.forRoot(appRoutes);
+export const ROUTES: ModuleWithProviders = RouterModule.forRoot(appRoutes, { useHash: true, preloadingStrategy: PreloadAllModules });
