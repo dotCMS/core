@@ -68,6 +68,9 @@ public class ContentTool implements ViewTool {
 			if (user == null) {
 				user = userAPI.getLoggedInFrontendUser(req);
 			}
+	        if (user == null) {
+               user = userAPI.getAnonymousUser();
+           }
 		} catch (Exception e) {
 			Logger.error(this, "Error finding the logged in user", e);
 		}

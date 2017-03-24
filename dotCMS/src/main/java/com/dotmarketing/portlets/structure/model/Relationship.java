@@ -1,7 +1,13 @@
 package com.dotmarketing.portlets.structure.model;
 
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotmarketing.beans.Inode;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
+import com.dotmarketing.util.Logger;
 
 
 
@@ -71,7 +77,13 @@ public class Relationship extends Inode
 	}
 	
 	public Structure getChildStructure () {
-		return (Structure) InodeFactory.getInode(childStructureInode, Structure.class);
+	  try {
+        return new StructureTransformer(APILocator.getContentTypeAPI(APILocator.systemUser()).find(childStructureInode)).asStructure();
+      } catch (DotStateException | DotDataException | DotSecurityException e) {
+        throw new DotStateException("getChildStructure Struc not found, childStructureInode:" + childStructureInode, e);
+
+      }
+	  
 	}
 	
 	/**
@@ -94,7 +106,12 @@ public class Relationship extends Inode
 	}
 
 	public Structure getParentStructure () {
-		return (Structure) InodeFactory.getInode(parentStructureInode, Structure.class);
+      try {
+        return new StructureTransformer(APILocator.getContentTypeAPI(APILocator.systemUser()).find(parentStructureInode)).asStructure();
+      } catch (DotStateException | DotDataException | DotSecurityException e) {
+        throw new DotStateException("getParentStructure Struc not found, parentStructureInode:" + parentStructureInode, e);
+
+      }
 	}
 	
 	/**

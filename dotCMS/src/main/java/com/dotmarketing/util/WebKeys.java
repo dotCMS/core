@@ -576,7 +576,7 @@ public final class WebKeys {
         public static final String CACHE_PAGE_NOT_FOUND_CACHE = "com.dotmarketing.cache.PageNotFoundCache";
         public static final String CACHE_PERMISSION_CACHE = PermissionCache.class.getName();
         public static final String CACHE_VIRTUAL_LINKS_CACHE = "com.dotmarketing.cache.VirtualLinksCache";
-        public static final String CACHE_WORKING_CACHE = "com.dotmarketing.cache.WorkingCache";
+
         public static final String CACHE_ALL_CACHES = "CACHE_ALL_CACHES";
         public static final String CACHE_WORKING_FILES = "CACHE_WORKING_FILES";
         public static final String CACHE_LIVE_FILES = "CACHE_LIVE_FILES";

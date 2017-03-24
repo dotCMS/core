@@ -18,11 +18,11 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.WorkingCache;
+
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -166,34 +166,18 @@ public class ContentMap {
 					return null;
 				}
 				Identifier i = APILocator.getIdentifierAPI().find(fid);
-				IFileAsset file = null;
-				if (EDIT_OR_PREVIEW_MODE){
-					String p = WorkingCache.getPathFromCache(i.getURI(), InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier(), content.getLanguageId());
-					p = p.substring(5, p.lastIndexOf("."));
-					if(i!=null && InodeUtils.isSet(i.getId()) && i.getAssetType().equals("contentlet")){
-						Contentlet fileAsset  = APILocator.getContentletAPI().find(p.substring(0, p.indexOf(java.io.File.separator)), user!=null?user:APILocator.getUserAPI().getAnonymousUser(), true);
-						if(fileAsset != null && UtilMethods.isSet(fileAsset.getInode())){
-	                        FileAssetMap fam = FileAssetMap.of(fileAsset);
-                            // Store file asset map into fieldValueMap
-                            addFieldValue(f, fam);
-
-                            return fam;
-						}
-					}
-				}else{
-					String p = LiveCache.getPathFromCache(i.getURI(),InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier(), content.getLanguageId());
-					p = p.substring(5, p.lastIndexOf("."));
-					if(i!=null && InodeUtils.isSet(i.getId()) && i.getAssetType().equals("contentlet")){
-						Contentlet fileAsset  = APILocator.getContentletAPI().find(p.substring(0, p.indexOf(java.io.File.separator)), user!=null?user:APILocator.getUserAPI().getAnonymousUser(), true);
-						if(fileAsset != null && UtilMethods.isSet(fileAsset.getInode())){
-						    FileAssetMap fam = FileAssetMap.of(fileAsset);
-						    // Store file asset map into fieldValueMap
-						    addFieldValue(f, fam);
-
-						    return fam;
-						}
-					}
-				}
+				ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(i.getId(), content.getLanguageId());
+				String inode =  (EDIT_OR_PREVIEW_MODE) ? cvi.getWorkingInode()  : cvi.getLiveInode();
+				Contentlet fileAsset  =  APILocator.getContentletAPI().find(inode, user!=null?user:APILocator.getUserAPI().getAnonymousUser(), true);
+					
+				if(fileAsset != null && UtilMethods.isSet(fileAsset.getInode())){
+	                FileAssetMap fam = FileAssetMap.of(fileAsset);
+                    // Store file asset map into fieldValueMap
+                    addFieldValue(f, fam);
+                    return fam;
+				  }
+					
+				
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.BINARY.toString())){
                 // Check if fileAsset or binaryMap is in fieldValueMap hashmap
                 Object fieldvalue = retriveFieldValue(f);

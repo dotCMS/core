@@ -32,17 +32,15 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.WorkingCache;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
+
 
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
@@ -62,16 +60,20 @@ public class WebAPI implements ViewTool {
 
 	private HttpServletRequest request;
 	private HttpServletResponse response;
-	private IdentifierAPI identAPI;
+	private IdentifierAPI identAPI = APILocator.getIdentifierAPI();
 
-	private PermissionAPI perAPI;
-	private UserWebAPI userAPI;
+	private PermissionAPI perAPI = APILocator.getPermissionAPI();
+	private UserWebAPI userAPI = WebAPILocator.getUserWebAPI();
 	private LanguageAPI langAPI = APILocator.getLanguageAPI();
 
 	Context ctx;
 	User user = null;
-	User backEndUser = null;
 
+    boolean ADMIN_MODE=false;
+    boolean PREVIEW_MODE=false;
+    boolean EDIT_MODE = false;
+    long langId;
+    long defualtLang  = langAPI.getDefaultLanguage().getId();
 	/**
 	 * @param  obj  the ViewContext that is automatically passed on view tool initialization, either in the request or the application
 	 * @return
@@ -81,24 +83,26 @@ public class WebAPI implements ViewTool {
 		ViewContext context = (ViewContext) obj;
 		this.request = context.getRequest();
 		this.response = context.getResponse();
-		identAPI = APILocator.getIdentifierAPI();
+		
 		ctx = context.getVelocityContext();
 
-		userAPI = WebAPILocator.getUserWebAPI();
+		this.langId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 		try {
-			user = userAPI.getLoggedInFrontendUser(request);
-		} catch (Exception e) {
-			Logger.error(this, "Error finding the logged in user", e);
-		}
-
-		try {
-			backEndUser =  userAPI.getLoggedInUser(request);
+		    user =  userAPI.getLoggedInUser(request);
 		} catch (Exception e) {
 			Logger.error(this, "Error finding the logged in user", e);
 		}
 
 
-		perAPI = APILocator.getPermissionAPI();
+		
+ 
+        HttpSession session = request.getSession(false);
+        
+        if(session!=null){
+          ADMIN_MODE = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
+          PREVIEW_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null) && ADMIN_MODE);
+          EDIT_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
+        }
 	}
 
 	// Utility Methods
@@ -151,23 +155,7 @@ public class WebAPI implements ViewTool {
 		}
 	}
 
-	public String toString(Integer i) {
-		try {
-			return Integer.toString(i);
-		} catch (Exception e) {
-			Logger.error(this.getClass(), "toString(Integer) Error: " + e);
-			return "";
-		}
-	}
 
-	public String toString(int i) {
-		try {
-			return Integer.toString(i);
-		} catch (Exception e) {
-			Logger.error(this.getClass(), "toString(int) Error: " + e);
-			return "";
-		}
-	}
 
 	static final String[] WEEKDAY_NAME = { "None", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
 	"Saturday" };
@@ -260,24 +248,7 @@ public class WebAPI implements ViewTool {
 		return UtilMethods.getShortMonthName(month);
 	}
 
-	/**
-	 *
-	 * @param catInode
-	 *            Can use either the category inode or the name
-	 * @return
-	 */
-	public List<Contentlet> getContentletsByCategory(String catInode) {
 
-		/*long myCat = 0;
-		try {
-			myCat = Long.parseLong(catInode);
-		} catch (Exception e) {
-
-		}*/
-		int limit = 10;
-		return InodeFactory.getChildrenClassByConditionAndOrderBy(catInode, Contentlet.class, " live ", "idate desc",
-				limit, 0);
-	}
 
 	public String prettyShortenString(String text, String maxLength) {
 		return UtilMethods.prettyShortenString(text, Integer.parseInt(maxLength));
@@ -347,25 +318,6 @@ public class WebAPI implements ViewTool {
 		return true;
 	}
 
-	// Used by the code generated in the contentletmapservices
-	public String evaluateVelocity(String vtl) {
-		VelocityEngine ve = VelocityUtil.getEngine();
-		try {
-			StringWriter sw = new StringWriter();
-			//Was put in to fix DOTCMS-995 but it caused DOTCMS-1210.
-//			I actually think it should be fine passed the ctx which is a chained context here
-//			VelocityContext vc = UtilMethods.pushVelocityContext(ctx);
-//			boolean success = Velocity.evaluate(vc, sw, "RenderTool.eval()", vtl);
-			boolean success = ve.evaluate(ctx, sw, "RenderTool.eval()", vtl);
-			if (success)
-				return sw.toString();
-			else
-				return null;
-		} catch (Exception e) {
-			Logger.debug(UtilMethods.class, "Error evaluating velocity code: " + vtl, e);
-			return "Syntax Error: " + UtilMethods.htmlLineBreak(e.getMessage());
-		}
-	}
 
 	public String getContentIdentifier(String parsePath) {
 		StringTokenizer st = new StringTokenizer(parsePath, "/.");
@@ -460,84 +412,49 @@ public class WebAPI implements ViewTool {
 		return UtilMethods.isImage(text);
 	}
 
-	public String getAssetPath(String path){
-		try{
-			Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
-			return getAssetPath(path, host.getIdentifier());
-		}catch (Exception e) {
-			Logger.error(this, e.getMessage(),e);
-			return null;
-		}
+	public String getAssetPath(final String path) throws DotStateException, DotDataException, PortalException, SystemException, DotSecurityException{
+	    Host host =  WebAPILocator.getHostWebAPI().getCurrentHost(request);
+	    
+	    if(path.startsWith("//")){
+	      String[] paths = path.split("/");
+	      String hostname = paths[2];
+	      StringWriter newPath = new StringWriter();
+	      for(int i=3;i<paths.length;i++){
+	        newPath.append("/").append(paths[i]);
+	      }
+	      host = WebAPILocator.getHostWebAPI().resolveHostName(hostname, user, !ADMIN_MODE);
+	      return this.getAssetPath(newPath.toString(), host.getIdentifier());
+	    }
+	    
+		return this.getAssetPath(path, host.getIdentifier());
 	}
 
+	public String getAssetPath(String path, String hostStr) throws DotDataException, DotSecurityException{
+	  Host host = APILocator.getHostAPI().find(hostStr, user, !ADMIN_MODE);
+	  return this.getAssetPath(path, host);
+	}
+	
+	
 
-	public String getAssetPath(String path, String host){
+	public String getAssetPath(final String path, final Host host){
 		try{
-			if(path == null ) return null;
-			path = path.replaceAll("\\.\\.", "");
-			path = path.replaceAll("WEB-INF", "");
+          if(path == null ) return null;
+		  Identifier ident = identAPI.find(host, path);
+		  ContentletVersionInfo cvi;
+		  
+		  // Language Fall Back
+		  cvi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), langId);
+		  if(cvi ==null && defualtLang != langId){
+		    cvi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), defualtLang);
+		  }
+		  String conInode = (PREVIEW_MODE && EDIT_MODE) ? cvi.getWorkingInode() : cvi.getLiveInode();
+		  FileAsset file  = APILocator.getFileAssetAPI().fromContentlet(APILocator.getContentletAPI().find(conInode,  user, true));
+		  
+		  return APILocator.getFileAssetAPI().getRealAssetPath(conInode, file.getFileName());
 
-			while(path.indexOf("//") > -1){
-				path = path.replaceAll("//", "/");
-			}
-			boolean ADMIN_MODE=false;
-			boolean PREVIEW_MODE=false;
-			boolean EDIT_MODE = false;
-					
-
-			HttpSession session = request.getSession(false);
-			
-			if(session!=null){
-				 ADMIN_MODE = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-				 PREVIEW_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null) && ADMIN_MODE);
-				 EDIT_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
-			}
-			String logicalFilePath;
-
-			if (PREVIEW_MODE && ADMIN_MODE) {	// working page
-				logicalFilePath = WorkingCache.getPathFromCache(path , host);
-			} else if (EDIT_MODE && ADMIN_MODE) {	// working page
-				logicalFilePath = WorkingCache.getPathFromCache(path , host);
-			} else if (ADMIN_MODE) {	// live page
-				logicalFilePath = LiveCache.getPathFromCache(path , host);
-			} else {	// live page
-				logicalFilePath = LiveCache.getPathFromCache(path , host);
-			}
-
-			if (!UtilMethods.isSet(logicalFilePath))
-				return "";
-
-			StringTokenizer _st = new StringTokenizer(logicalFilePath, "/\\");
-			String fileName = null;
-			while(_st.hasMoreElements()){
-				fileName = _st.nextToken();
-			}
-			if (fileName.contains("."))
-				fileName = fileName.substring(0, fileName.lastIndexOf("."));
-			String ext = UtilMethods.getFileExtension(logicalFilePath);
-			String realPath = "";
-			Host hostCont = APILocator.getHostAPI().find(host,userAPI.getSystemUser(), false);
-			Identifier id = APILocator.getIdentifierAPI().find(hostCont, path);
-			if(id!=null && InodeUtils.isSet(id.getId()) && id.getAssetType().equals("contentlet")){
-				User localUser = APILocator.getUserAPI().getAnonymousUser();
-				if(backEndUser!=null){
-					localUser = backEndUser;
-				}else if(user!=null){
-					localUser = user;
-				}
-				Contentlet cont;
-				if(ADMIN_MODE && (EDIT_MODE || PREVIEW_MODE)){
-					cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), localUser, true);
-				}else{
-					cont = APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), localUser, true);
-				}
-				if(cont!=null && InodeUtils.isSet(cont.getInode())){
-					realPath = APILocator.getFileAssetAPI().getRealAssetPath(cont.getInode(), fileName, ext);
-				}
-			}
-			return realPath;
 		}catch (Exception e) {
-			Logger.error(this, e.getMessage(),e);
+			Logger.warn(this, e.getMessage());
+			Logger.debug(this, e.getMessage(),e);
 			return null;
 		}
 	}
@@ -582,10 +499,8 @@ public class WebAPI implements ViewTool {
 			Identifier id = APILocator.getIdentifierAPI().find(host, path);
 			if(id!=null && InodeUtils.isSet(id.getId()) && id.getAssetType().equals("contentlet")){
 				User localUser = APILocator.getUserAPI().getAnonymousUser();
-				if(backEndUser!=null){
-					localUser = backEndUser;
-				}else if(user!=null){
-					localUser = user;
+				if( user!=null){
+					localUser =  user;
 				}
 
 				Contentlet cont;
@@ -981,21 +896,18 @@ public class WebAPI implements ViewTool {
 		HttpSession session = request.getSession();
 		boolean ADMIN_MODE = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
 		boolean EDIT_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
-		User u = user;
-		if(EDIT_MODE){
-			u = backEndUser;
-		}
+
 		Permissionable fileAsset = null;
 		Identifier ident = getIdentifierByInode(fileInode);
 		if(ident.getAssetType().equals("contentlet")){
 			try {
-				fileAsset = APILocator.getContentletAPI().find(fileInode, u, false);
+				fileAsset = APILocator.getContentletAPI().find(fileInode, user, false);
 			} catch (DotSecurityException e) {
 				Logger.error(this, e.getMessage());
 				return false;
 			}
 		}
-		return perAPI.doesUserHavePermission(fileAsset, permission, u, false);
+		return perAPI.doesUserHavePermission(fileAsset, permission, user, false);
 	}
 	
 	

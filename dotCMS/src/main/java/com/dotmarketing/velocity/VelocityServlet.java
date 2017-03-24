@@ -55,7 +55,7 @@ import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cache.LiveCache;
+
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -396,34 +396,6 @@ public abstract class VelocityServlet extends HttpServlet {
 			long currentLanguageId = VelocityUtil.getLanguageId(request);
 			Long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
-			// Map with all identifier inodes for a given uri.
-    		//
-    		// Checking the path is really live using the livecache
-			String cachedUri = null;
-			try {
-				/*
-				First search using the current language.
-				WE COULD HAVE A PAGE THAT DOES NOT EXIST IN THE DEFAULT LANGUAGE, ALWAYS USE THE LANGUAGE ID
-				 */
-				cachedUri = LiveCache.getPathFromCache( uri, host, currentLanguageId );
-			} catch ( DotContentletStateException e ) {
-
-				//Nothing found with the given language...
-
-				if ( currentLanguageId != defaultLanguageId ) {
-					//Now trying with the default language
-					try {
-						cachedUri = LiveCache.getPathFromCache( uri, host, defaultLanguageId );
-					} catch ( DotContentletStateException e1 ) {
-						//Ok, we found nothing....
-					}
-				}
-			}
-			// if we still have nothing, check live cache first (which has a 404 cache )
-    		if (cachedUri == null) {
-    			throw new ResourceNotFoundException(String.format("Resource %s not found in Live mode!", uri));
-    		}
-    
     		// now  we check identifier cache first (which DOES NOT have a 404 cache )
     		Identifier ident = APILocator.getIdentifierAPI().find(host, uri);
     		if(ident == null || ident.getInode() == null){

@@ -13,28 +13,20 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.exception.ResourceNotFoundException;
+
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
-import com.dotcms.notifications.bean.NotificationType;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotcms.util.I18NMessage;
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.exception.ResourceNotFoundException;
-
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.UserProxy;
-import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -44,21 +36,15 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.filters.ClickstreamFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -67,7 +53,6 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.services.PageServices;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.CookieUtil;
 import com.dotmarketing.util.InodeUtils;
@@ -77,7 +62,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.velocity.VelocityServlet;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
 
@@ -677,20 +661,15 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
 
         // Map with all identifier inodes for a given uri.
-        String idInode = identifierAPI.find(host, uri).getInode();
+        String idInode = identifierAPI.find(host, uri).getId();
+        
 
-        String cachedUri;
-        if (UtilMethods.isSet(langId)) {
-            // Checking the path is really live using the livecache
-            cachedUri = (liveMode) ? LiveCache.getPathFromCache(uri, host, langId)
-                    : WorkingCache.getPathFromCache(uri, host, langId);
-        } else {
-            // Checking the path is really live using the livecache
-            cachedUri = (liveMode) ? LiveCache.getPathFromCache(uri, host) : WorkingCache.getPathFromCache(uri, host);
+        ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( idInode, langId );
+        if(cinfo==null && langId!=APILocator.getLanguageAPI().getDefaultLanguage().getId()){
+          cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( idInode, APILocator.getLanguageAPI().getDefaultLanguage().getId() );
         }
-
         // if we still have nothing.
-        if (!InodeUtils.isSet(idInode) || cachedUri == null) {
+        if (!InodeUtils.isSet(idInode) || cinfo.getLiveInode() == null) {
             throw new ResourceNotFoundException(String.format("Resource %s not found in Live mode!", uri));
         }
 

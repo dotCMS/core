@@ -66,8 +66,7 @@ import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.WorkingCache;
+
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -3173,10 +3172,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    CacheLocator.getCSSCache().remove(contIdent.getHostId(), contIdent.getURI(), true);
 				    CacheLocator.getCSSCache().remove(contIdent.getHostId(), contIdent.getURI(), false);
 				    
-				    if(!isNewContent) {
-                        LiveCache.removeAssetFromCache(contentlet);
-                        WorkingCache.removeAssetFromCache(contentlet);
-				    }
 
 				}
 				
@@ -3256,8 +3251,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				// DOTCMS-7290
 				DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
 				Host host = APILocator.getHostAPI().find(contIdent.getHostId(), user, respectFrontendRoles);
-				cache.remove(LiveCache.getPrimaryGroup() + host.getIdentifier() + ":" + contIdent.getParentPath()+contIdent.getAssetName(),
-						LiveCache.getPrimaryGroup() + "_" + host.getIdentifier());
 
                 this.contentTypeCache.clearRecents(contentlet.getModUser());
 

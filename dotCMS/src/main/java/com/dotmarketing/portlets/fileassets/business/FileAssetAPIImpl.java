@@ -28,8 +28,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.WorkingCache;
+
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -351,11 +350,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 					if(isfileAssetContLive) {
 						 APILocator.getVersionableAPI().setLive(fileAssetCont);
 					}
-					LiveCache.removeAssetFromCache(fileAssetCont);
-					LiveCache.addToLiveAssetToCache(fileAssetCont);
-					WorkingCache.removeAssetFromCache(fileAssetCont);
-					WorkingCache.addToWorkingAssetToCache(fileAssetCont);
-					RefreshMenus.deleteMenu(folder);
+
 					CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
 					CacheLocator.getIdentifierCache().removeFromCacheByVersionable(fileAssetCont);
 				} catch (Exception e) {
@@ -417,10 +412,6 @@ public class FileAssetAPIImpl implements FileAssetAPI {
                 if ( isfileAssetContLive )
                     APILocator.getVersionableAPI().setLive( fileAssetCont );
 
-                LiveCache.removeAssetFromCache( fileAssetCont );
-                LiveCache.addToLiveAssetToCache( fileAssetCont );
-                WorkingCache.removeAssetFromCache( fileAssetCont );
-                WorkingCache.addToWorkingAssetToCache( fileAssetCont );
                 if ( parent != null ) {
                     RefreshMenus.deleteMenu( oldParent, parent );
                     CacheLocator.getNavToolCache().removeNav(parent.getHostId(), parent.getInode());

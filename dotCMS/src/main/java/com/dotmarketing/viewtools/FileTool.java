@@ -2,12 +2,15 @@ package com.dotmarketing.viewtools;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.WorkingCache;
+
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
@@ -30,46 +33,16 @@ public class FileTool implements ViewTool {
 
 	}
 
-	public IFileAsset getFile(String identifier, boolean live){
-		return getFile(identifier, live, -1);
+	public IFileAsset getFile(String identifier, boolean live) throws DotStateException, DotDataException, DotSecurityException{
+		return getFile(identifier, live, languageAPI.getDefaultLanguage().getId());
 	}
 
-	public IFileAsset getFile(String identifier, boolean live, long languageId){
-		Identifier id;
-		String p = null;
-		try {
-			id = identifierAPI.find(identifier);
-		    if(live){
-			  p = LiveCache.getPathFromCache(id.getURI(), id.getHostId(), languageId != -1 ? languageId : null);
-		    }else{
-			  p = WorkingCache.getPathFromCache(id.getURI(), id.getHostId(), languageId != -1 ? languageId : null);
-		    }
-		} catch (Exception e1) {
-			Logger.error(FileTool.class,e1.getMessage(),e1);
-			return new FileAsset();
-		}
-        p = p.substring(5, p.lastIndexOf("."));
-        IFileAsset file = null;
-		try {
-			if(id!=null && InodeUtils.isSet(id.getId()) && id.getAssetType().equals("contentlet")){
-				Contentlet cont = contentletAPI.findContentletByIdentifier(
-					id.getId(),
-					live,
-					languageId != -1 ? languageId : languageAPI.getDefaultLanguage().getId(),
-					userAPI.getSystemUser(),
-					false);
-				if(cont!=null && InodeUtils.isSet(cont.getInode())){
-					file = fileAssetAPI.fromContentlet(cont);
-				}
-			}
-
-		} catch (Exception e) {
-			Logger.error(FileTool.class,e.getMessage(),e);
-		}
-		if(file == null){
-			file = new FileAsset();
-		}
-		return file;
+	public IFileAsset getFile(String identifier, boolean live, long languageId) throws DotDataException, DotStateException, DotSecurityException{
+		Identifier id = identifierAPI.find(identifier);
+		ContentletVersionInfo  cvi = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), languageId);
+	    String conInode = (!live) ? cvi.getWorkingInode() : cvi.getLiveInode();
+	    FileAsset file  = APILocator.getFileAssetAPI().fromContentlet(APILocator.getContentletAPI().find(conInode,  userAPI.getSystemUser(), false));
+	    return file;
 	}
 
 	public String getURI(FileAsset file){
