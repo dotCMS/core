@@ -2971,10 +2971,6 @@ html, body {
   position: relative;
 }
 
-.dijitSelect .dijitArrowButtonContainer {
-  padding-top: 14px;
-}
-
 .dijitPlaceHolder {
   color: rgba(91, 91, 91, 0.4);
   font-style: normal;
@@ -3010,6 +3006,10 @@ html, body {
 }
 .dijitValidationContainer .dijitValidationInner {
   display: none;
+}
+
+.dijitSelect .dijitArrowButtonContainer {
+  padding-top: 14px;
 }
 
 .dijitTextBox {
