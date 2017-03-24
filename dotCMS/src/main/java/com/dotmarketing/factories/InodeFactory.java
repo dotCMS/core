@@ -20,6 +20,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Parameter;
@@ -41,6 +42,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
 			HibernateUtil dh = new HibernateUtil(c);
@@ -74,6 +79,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
 			HibernateUtil dh = new HibernateUtil(c);
@@ -113,6 +122,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
 			HibernateUtil dh = new HibernateUtil(c);
@@ -151,6 +164,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
 			HibernateUtil dh = new HibernateUtil(c);
@@ -191,6 +208,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
 			HibernateUtil dh = new HibernateUtil(c);
@@ -229,6 +250,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 
 			String tableName = ((Inode) c.newInstance()).getType();
@@ -268,6 +293,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
 			HibernateUtil dh = new HibernateUtil(c);
@@ -306,6 +335,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
 			HibernateUtil dh = new HibernateUtil(c);
@@ -346,6 +379,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
 			HibernateUtil dh = new HibernateUtil(c);
@@ -398,6 +435,10 @@ public class InodeFactory {
 			if( c.equals(Identifier.class)){
 				throw new DotStateException("Identifiers are no longer Inodes!");
 			}
+			if(c.equals(Structure.class)){
+				throw new DotStateException("Structure mapping was deleted from hibernate files");
+			}
+			
 			String tableName = ((Inode) c.newInstance()).getType();
 			HibernateUtil dh = new HibernateUtil(c);
 
@@ -437,6 +478,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		if (inodes == null || inodes.length == 0) {
 			return InodeFactory.getInodesOfClassByConditionAndOrderBy(c, condition, orderBy);
 		}
@@ -509,6 +554,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
 			HibernateUtil dh = new HibernateUtil(c);
@@ -569,6 +618,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		if (inodes == null || inodes.size() == 0) {
 			return InodeFactory.getInodesOfClassByConditionAndOrderBy(c, condition, orderBy);
 
@@ -645,6 +698,9 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
 
 		try {
 
@@ -718,6 +774,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
 			HibernateUtil dh = new HibernateUtil(c);
@@ -785,6 +845,10 @@ public class InodeFactory {
 				return new Inode();
 			}
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		
 		
 		Inode inode = null;
@@ -804,6 +868,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		return getInodesOfClass(c, 0, 0);
 	}
 
@@ -811,6 +879,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			HibernateUtil dh = new HibernateUtil(c);
 			String type = ((Inode) c.newInstance()).getType();
@@ -838,6 +910,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			HibernateUtil dh = new HibernateUtil(c);
 			String type = ((Inode) c.newInstance()).getType();
@@ -862,6 +938,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			HibernateUtil dh = new HibernateUtil(c);
 			String type = ((Inode) c.newInstance()).getType();
@@ -894,6 +974,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			HibernateUtil dh = new HibernateUtil(c);
 			String type = ((Inode) c.newInstance()).getType();
@@ -917,6 +1001,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			HibernateUtil dh = new HibernateUtil(c);
 			String type = ((Inode) c.newInstance()).getType();
@@ -941,6 +1029,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			HibernateUtil dh = new HibernateUtil(c);
 			String type = ((Inode) c.newInstance()).getType();
@@ -963,6 +1055,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		Object obj ;
 		try {
 			obj = new HibernateUtil(c).load(x);
@@ -981,6 +1077,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
 			HibernateUtil dh = new HibernateUtil(c);
@@ -1023,6 +1123,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
 			HibernateUtil dh = new HibernateUtil(c);
@@ -1054,6 +1158,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
 			HibernateUtil dh = new HibernateUtil(c);
@@ -1085,6 +1193,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
 			HibernateUtil dh = new HibernateUtil(c);
@@ -1116,6 +1228,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try 
 		{
 			String tableName = ((Inode) c.newInstance()).getType();
@@ -1156,6 +1272,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
 			HibernateUtil dh = new HibernateUtil(c);
@@ -1190,6 +1310,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
 			HibernateUtil dh = new HibernateUtil(c);
@@ -1264,6 +1388,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		java.util.List children = getChildrenClass(parent, c);
 		java.util.Iterator childrenIter = children.iterator();
 
@@ -1353,6 +1481,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
 			HibernateUtil dh = new HibernateUtil(c);
@@ -1400,6 +1532,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
 			HibernateUtil dh = new HibernateUtil(c);
@@ -1442,6 +1578,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 
 		orderby = SQLUtil.sanitizeSortBy(orderby);
 		direction = SQLUtil.sanitizeParameter(direction);
@@ -1476,6 +1616,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
 			HibernateUtil dh = new HibernateUtil(c);
@@ -1504,6 +1648,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		try {
 			String tableName = ((Inode) c.newInstance()).getType();
 			HibernateUtil dh = new HibernateUtil(c);
@@ -1537,6 +1685,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+		if(c.equals(Structure.class)){
+			throw new DotStateException("Structure mapping was deleted from hibernate files");
+		}
+		
 		if (inodes == null || inodes.length == 0)
 		{        	
 			return InodeFactory.getInodesOfClassByConditionAndOrderBy(c, condition, orderBy,quantity);
