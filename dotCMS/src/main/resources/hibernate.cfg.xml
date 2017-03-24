@@ -1,6 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
-<!DOCTYPE hibernate-configuration SYSTEM 
-    "WEB-INF/classes/hibernate-configuration-2.0.dtd">
+<!DOCTYPE hibernate-configuration PUBLIC
+   "-//Hibernate/Hibernate Configuration DTD 2.0//EN"
+   "http://hibernate.sourceforge.net/hibernate-configuration-2.0.dtd">
 <hibernate-configuration>
 	<session-factory>
 		<property name="show_sql">false</property>
