@@ -167,6 +167,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 	}
 
+	/*
 	@Test
 	public void testLegacyTransform() throws Exception {
 
@@ -189,6 +190,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 		assertThat("findAll sort by Name has same size as find all", contentTypeApi.findAll("name").size() == types.size());
 	}
+	*/
 
 	@Test
 	public void testAddingContentTypes() throws Exception {
@@ -472,9 +474,11 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		}
 	}
 
+	/*
 	private static List<Structure> getCrappyStructures() {
 		return InodeFactory.getInodesOfClass(Structure.class, "name");
 	}
+	*/
 
 	private void addFields(ContentType type) throws Exception {
 
