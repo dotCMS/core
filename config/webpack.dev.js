@@ -239,7 +239,8 @@ module.exports = function (options) {
         poll: 1000
       },
       proxy: {
-        // proxy all requests starting with /api to localhost:8080 (local dotcms instance)
+        // proxy specific to localhost:8080 (local dotcms instance)
+        // TODO: do this better
         '/admin': {
           target: 'http://localhost:8080',
           changeOrigin: false
