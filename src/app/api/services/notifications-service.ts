@@ -5,6 +5,7 @@ import {ApiRoot} from '../persistence/ApiRoot';
 import {Observable} from 'rxjs/Rx';
 
 export interface INotification {
+    id: string;
     title: string;
     message: string;
 }

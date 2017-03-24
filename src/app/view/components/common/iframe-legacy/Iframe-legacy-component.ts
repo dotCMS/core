@@ -19,10 +19,10 @@ import {IframeOverlayService} from '../../../../api/services/iframe-overlay-serv
 export class IframeLegacyComponent extends SiteChangeListener {
     iframe: SafeResourceUrl;
     iframeElement;
-    private loadingInProgress: boolean = true;
-    private showOverlay: boolean = false;
+    private loadingInProgress = true;
+    private showOverlay = false;
 
-    constructor(private route: ActivatedRoute, private routingService: RoutingService, private siteService: SiteService,
+    constructor(private route: ActivatedRoute, private routingService: RoutingService, siteService: SiteService,
                 private sanitizer: DomSanitizer, private element: ElementRef, private loginService: LoginService,
                 private dotcmsEventsService: DotcmsEventsService, messageService: MessageService,
                 private loggerService: LoggerService, private iframeOverlayService: IframeOverlayService) {
@@ -37,11 +37,6 @@ export class IframeLegacyComponent extends SiteChangeListener {
         routingService.portletUrl$.subscribe(url => {
             this.reloadIframePortlet(url);
         });
-
-    }
-
-    hideLoadingIndicator($event): void {
-        this.loadingInProgress = false;
     }
 
     ngOnInit(): void {

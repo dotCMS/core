@@ -18,7 +18,7 @@ import {LoggerService} from './logger.service';
 export class LoginService {
 
     private _auth$: Subject<Auth> = new Subject<Auth>();
-    private _logout$: Subject<> = new Subject<>();
+    private _logout$: Subject<any> = new Subject<any>();
     private _auth: Auth;
     private _loginAsUsersList$: Subject<User[]>;
     private country = '';
@@ -66,7 +66,7 @@ export class LoginService {
         return this._auth$.asObservable();
     }
 
-    get logout$(): Observable<> {
+    get logout$(): Observable<any> {
         return this._logout$.asObservable();
     }
 
@@ -79,7 +79,7 @@ export class LoginService {
             if (this.auth && this.auth.user) {
                 obs.next(true);
             } else {
-                this.loadAuth().subscribe(auth => obs.next(<boolean> auth.user));
+                this.loadAuth().subscribe(auth => obs.next(auth.user !== null));
             }
         });
     }
@@ -92,7 +92,8 @@ export class LoginService {
         return this.coreWebService.requestView({
             method: RequestMethod.Get,
             url: this.urls.getAuth
-        }).pluck('entity').map(auth => {
+        }).pluck('entity').map(data => {
+            let auth = <Auth> data;
 
             if (auth.user) {
                 this.setAuth(auth);
@@ -118,15 +119,6 @@ export class LoginService {
             url: this.urls.changePassword,
         });
     }
-
-    /**
-     * Get specific user from the Login as user list
-     * @param id
-     * @returns {User}
-     */
-    getLoginAsUser(id: string): User {
-        return this.loginAsUserList.filter(user => user.userId === id)[0];
-    };
 
     /**
      * Get login as user list
@@ -166,7 +158,7 @@ export class LoginService {
             method: RequestMethod.Get,
             url: this.urls.loginAsUserList
         }).pluck('entity', 'users').subscribe(data => {
-            this.loginAsUserList = data;
+            this.loginAsUserList = <User[]> data;
             this._loginAsUsersList$.next(this.loginAsUserList);
         });
     }
@@ -306,15 +298,11 @@ export class LoginService {
         });
     }
 
-    private isLogoutAfterLastLogin(date): boolean {
-        return this.auth.user && this.auth.user.loggedInDate && date && Number(date) > Number(this.auth.user.loggedInDate);
-    }
-
     /**
      * Set logged_auth and update auth Observable
      * @param _auth
      */
-    private setAuth(auth: Auth): void {
+    public setAuth(auth: Auth): void {
         this._auth = auth;
         this._auth$.next(auth);
 
@@ -324,6 +312,10 @@ export class LoginService {
         }else {
             this.dotcmsEventsService.start();
         }
+    }
+
+    private isLogoutAfterLastLogin(date): boolean {
+        return this.auth.user && this.auth.user.loggedInDate && date && Number(date) > Number(this.auth.user.loggedInDate);
     }
 
     /**

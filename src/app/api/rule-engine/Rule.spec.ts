@@ -1,25 +1,17 @@
 
 import {Check} from '../../api/validation/Check';
 import {RuleService, RuleModel} from '../../api/rule-engine/Rule';
-import {ApiRoot} from "../../api/persistence/ApiRoot";
-import {UserModel} from "../../api/auth/UserModel";
+import {ApiRoot} from '../../api/persistence/ApiRoot';
+import {UserModel} from '../../api/auth/UserModel';
 
+describe('Unit.api.rule-engine.Rule', () => {
 
-
-describe('Unit.api.rule-engine.Rule', function () {
-
-
-  beforeEach(function () {
+  beforeEach(() => {
   });
 
-  it("Isn't valid when new.", function(){
+  it('Isn\'t valid when new.', () => {
 
-    var foo = new RuleModel(null)
+    let foo = new RuleModel(null);
     expect(foo.isValid()).toEqual(false);
-
-  })
-
-
-
+  });
 });
-

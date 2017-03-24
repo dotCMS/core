@@ -1,11 +1,11 @@
-import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "@angular/core";
-import {AddToBundleDialogComponent} from "./add-to-bundle-dialog-component";
-import {BehaviorSubject} from "rxjs/Rx";
-import {BundleService, IBundle} from "../../../../api/services/bundle-service";
+import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from '@angular/core';
+import {AddToBundleDialogComponent} from './add-to-bundle-dialog-component';
+import {BehaviorSubject} from 'rxjs/Rx';
+import {BundleService, IBundle} from '../../../../api/services/bundle-service';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'cw-add-to-bundle-dialog-container',
-  directives: [AddToBundleDialogComponent],
   template: `
   <cw-add-to-bundle-dialog-component
   [bundleStores]="bundleService.bundles$ | async"
@@ -14,39 +14,36 @@ import {BundleService, IBundle} from "../../../../api/services/bundle-service";
   (cancel)="hidden = true; close.emit($event); errorMessage = null;"
   (addToBundle)="addToBundle($event)"
   ></cw-add-to-bundle-dialog-component>`
-  , changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AddToBundleDialogContainer {
-  @Input() assetId:string
-  @Input() hidden:boolean = false
+  @Input() assetId: string;
+  @Input() hidden = false;
 
-  @Output() close:EventEmitter<{isCanceled:boolean}> = new EventEmitter(false)
-  @Output() cancel:EventEmitter<boolean> = new EventEmitter(false)
+  @Output() close: EventEmitter<{isCanceled: boolean}> = new EventEmitter(false);
+  @Output() cancel: EventEmitter<boolean> = new EventEmitter(false);
 
-  errorMessage:BehaviorSubject<string> = new BehaviorSubject(null)
-  bundlesLoaded:boolean = false
-  
-  constructor(public bundleService:BundleService) {
-    
+  errorMessage: BehaviorSubject<string> = new BehaviorSubject(null);
+  bundlesLoaded = false;
+
+  constructor(public bundleService: BundleService) {
+
   }
 
-  ngOnChanges(change){
+  ngOnChanges(change): void {
     if (change.hidden && !this.hidden && !this.bundlesLoaded) {
-      this.bundlesLoaded = true
-      this.bundleService.loadBundleStores()
+      this.bundlesLoaded = true;
+      this.bundleService.loadBundleStores();
     }
   }
 
-  addToBundle(bundle:IBundle) {
-    this.bundleService.addRuleToBundle(this.assetId, bundle).subscribe((result:any)=> {
+  addToBundle(bundle: IBundle): void {
+    this.bundleService.addRuleToBundle(this.assetId, bundle).subscribe((result: any) => {
       if (!result.errors) {
-        this.close.emit({isCanceled:false})
-        this.errorMessage = null
+        this.close.emit({isCanceled: false});
+        this.errorMessage = null;
       } else {
-        this.errorMessage.next(result.errors)
+        this.errorMessage.next(result.errors);
       }
-    })
+    });
   }
-
 }
-

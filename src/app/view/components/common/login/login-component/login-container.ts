@@ -1,4 +1,4 @@
-import {Component,ViewEncapsulation} from '@angular/core';
+import {Component, ViewEncapsulation} from '@angular/core';
 import {HttpRequestUtils} from '../../../../../api/util/httpRequestUtils';
 import {LoginService} from '../../../../../api/services/login-service';
 import {DotRouterService} from '../../../../../api/services/dot-router-service';
@@ -22,16 +22,16 @@ import {LoggerService} from '../../../../../api/services/logger.service';
     `,
 })
 export class LoginContainer {
-    private isLoginInProgress: boolean = false;
-    private message:string;
-    private passwordChanged: boolean = false;
-    private resetEmail: string = '';
-    private resetEmailSent: boolean = false;
+    private isLoginInProgress = false;
+    private message: string;
+    private passwordChanged = false;
+    private resetEmail = '';
+    private resetEmailSent = false;
 
     constructor(private loginService: LoginService, private router: DotRouterService,
                 private httprequestUtils: HttpRequestUtils, private loggerService: LoggerService) {
         // TODO: change the httpRequestUtils.getQueryParams() with an NG2 method equivalent to QueryParams on NGRX.
-        let queryParams: Map = this.httprequestUtils.getQueryParams();
+        let queryParams: Map<string, any> = this.httprequestUtils.getQueryParams();
         if (<boolean> queryParams.get('changedPassword')) {
             this.passwordChanged = queryParams.get('changedPassword');
         } else if (<boolean> queryParams.get('resetEmailSent')) {
@@ -40,7 +40,7 @@ export class LoginContainer {
         }
     }
 
-    logInUser(loginData:LoginData): void {
+    logInUser(loginData: LoginData): void {
         this.isLoginInProgress = true;
         this.message = '';
 

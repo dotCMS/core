@@ -1,11 +1,11 @@
-import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "@angular/core";
-import {Dropdown, InputOption} from "../../semantic/modules/dropdown/dropdown";
-import {ModalDialogComponent} from "../modal-dialog/dialog-component";
-import {IPublishEnvironment} from "../../../../api/services/bundle-service";
+import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from '@angular/core';
+import {Dropdown, InputOption} from '../../semantic/modules/dropdown/dropdown';
+import {ModalDialogComponent} from '../modal-dialog/dialog-component';
+import {IPublishEnvironment} from '../../../../api/services/bundle-service';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'cw-push-publish-dialog-component',
-  directives: [ModalDialogComponent, Dropdown, InputOption],
   template: `<cw-modal-dialog
     [headerText]="'Push Publish'"
     [okButtonText]="'Push'"
@@ -28,29 +28,27 @@ import {IPublishEnvironment} from "../../../../api/services/bundle-service";
     ></cw-input-option>
   </cw-input-dropdown>
 </cw-modal-dialog>`
-  , changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PushPublishDialogComponent {
-  @Input() hidden:boolean = false
-  @Input() environmentStores:IPublishEnvironment[];
-  @Input() errorMessage:string = null
+  @Input() hidden = false;
+  @Input() environmentStores: IPublishEnvironment[];
+  @Input() errorMessage: string = null;
 
-  @Output() close:EventEmitter<{isCanceled:boolean}> = new EventEmitter(false)
-  @Output() cancel:EventEmitter<boolean> = new EventEmitter(false)
-  @Output() doPushPublish:EventEmitter<IPublishEnvironment> = new EventEmitter(false)
+  @Output() close: EventEmitter<{isCanceled: boolean}> = new EventEmitter(false);
+  @Output() cancel: EventEmitter<boolean> = new EventEmitter(false);
+  @Output() doPushPublish: EventEmitter<IPublishEnvironment> = new EventEmitter(false);
 
-  public selectedEnvironmentId:string;
+  public selectedEnvironmentId: string;
 
   constructor() { }
 
-  ngOnChanges(change){
+  ngOnChanges(change): void {
     if (change.environmentStores) {
       this.selectedEnvironmentId = change.environmentStores.currentValue[0];
     }
   }
 
-  setSelectedEnvironment(environmentId:string) {
-    this.selectedEnvironmentId = environmentId
+  setSelectedEnvironment(environmentId: string): void {
+    this.selectedEnvironmentId = environmentId;
   }
 }
-

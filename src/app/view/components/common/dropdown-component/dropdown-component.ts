@@ -12,17 +12,17 @@ import {Component, EventEmitter, Input, Output, ViewEncapsulation, ElementRef} f
 })
 
 export class DropdownComponent {
-    @Input() disabled: boolean = false;
-    @Input() icon: string = null;
-    @Input() title: string = null;
-    @Input() alignRight: boolean = false;
-    @Input() inverse: boolean = false;
+    @Input() disabled= false;
+    @Input() icon = null;
+    @Input() title = null;
+    @Input() alignRight = false;
+    @Input() inverse = false;
 
-    @Output() open = new EventEmitter<>();
+    @Output() open = new EventEmitter<any>();
     @Output() toggle = new EventEmitter<boolean>();
-    @Output() close = new EventEmitter<>();
+    @Output() close = new EventEmitter<any>();
 
-    private show: boolean = false;
+    private show = false;
 
     constructor(private elementRef: ElementRef) {}
 

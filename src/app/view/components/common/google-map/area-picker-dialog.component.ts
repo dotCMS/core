@@ -3,12 +3,17 @@ import {ModalDialogComponent} from '../modal-dialog/dialog-component';
 import {GoogleMapService, GCircle} from '../../../../api/maps/GoogleMapService';
 import {LoggerService} from '../../../../api/services/logger.service';
 
-
-var mapIdCounter = 1;
+let mapIdCounter = 1;
 
 @Component({
-  selector: 'cw-area-picker-dialog-component',
+  changeDetection: ChangeDetectionStrategy.Default
   directives: [ModalDialogComponent],
+  selector: 'cw-area-picker-dialog-component',
+    styles: [`
+  .g-map {
+    height:100%;
+    width:100%;
+  }`],
   template: `<cw-modal-dialog 
                  [headerText]="headerText"
                  [hidden]="hidden"
@@ -18,13 +23,7 @@ var mapIdCounter = 1;
   <div *ngIf="!hidden" class="cw-dialog-body">
     <div id="{{mapId}}" class="g-map" *ngIf="!hidden" > </div>
   </div>
-</cw-modal-dialog>`,
-  styles: [`
-  .g-map {
-    height:100%;
-    width:100%;
-  }`]
-  , changeDetection: ChangeDetectionStrategy.Default
+</cw-modal-dialog>`
 })
 export class AreaPickerDialogComponent {
   @Input() apiKey:string = ''

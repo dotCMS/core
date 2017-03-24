@@ -4,7 +4,7 @@ import {DotcmsEventsService} from '../../../../api/services/dotcms-events-servic
 import {INotification, NotificationsService} from '../../../../api/services/notifications-service';
 import {MessageService} from '../../../../api/services/messages-service';
 import {LoginService} from '../../../../api/services/login-service';
-import {IframeOverlayService} from "../../../../api/services/iframe-overlay-service";
+import {IframeOverlayService} from '../../../../api/services/iframe-overlay-service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -13,16 +13,15 @@ import {IframeOverlayService} from "../../../../api/services/iframe-overlay-serv
     styleUrls: ['toolbar-notifications.css'],
     templateUrl: 'toolbar-notifications.html'
 })
-export class ToolbarNotifications extends BaseComponent{
+export class ToolbarNotifications extends BaseComponent {
     private elementRef;
-    private isNotificationsMarkedAsRead: boolean = false;
+    private isNotificationsMarkedAsRead = false;
     private notifications: Array<INotification> = [];
-    private notificationsUnreadCount: number = 0;
-    private showNotifications: boolean = false;
-
+    private notificationsUnreadCount = 0;
+    private showNotifications = false;
 
     constructor(private dotcmsEventsService: DotcmsEventsService, private notificationService: NotificationsService,
-                myElement: ElementRef, private messageService: MessageService, private loginService: LoginService,
+                myElement: ElementRef, messageService: MessageService, private loginService: LoginService,
                 private iframeOverlayService: IframeOverlayService) {
         super(['notifications_dismissall', 'notifications_title'], messageService);
         this.elementRef = myElement;

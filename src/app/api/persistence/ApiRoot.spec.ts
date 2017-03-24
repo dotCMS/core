@@ -1,8 +1,8 @@
 // tslint:disable:typedef
 
 import {Injector} from '@angular/core';
-import {UserModel} from '../../api/auth/UserModel';
-import {ApiRoot} from '../../api/persistence/ApiRoot';
+import {UserModel} from '../auth/UserModel';
+import {ApiRoot} from './ApiRoot';
 
 let injector = Injector.resolveAndCreate([
   UserModel,

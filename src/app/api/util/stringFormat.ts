@@ -1,10 +1,9 @@
 export class StringFormat {
-    formatMessage(): string {
-        let s = arguments[0];
+    public formatMessage(s: string, ...args: string[]): string {
         if (s) {
-            for (let i = 0; i < arguments.length - 1; i++) {
+            for (let i = 0; i < args.length - 1; i++) {
                 let reg = new RegExp('\\{' + i + '\\}', 'gm');
-                s = s.replace(reg, arguments[i + 1]);
+                s = s.replace(reg, arguments[i]);
             }
             return s;
         }

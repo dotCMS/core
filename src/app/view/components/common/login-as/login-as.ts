@@ -3,10 +3,9 @@ import {Component, Output, EventEmitter, Input, ViewEncapsulation, ViewChild} fr
 import {LoginService, User} from '../../../../api/services/login-service';
 import {MessageService} from '../../../../api/services/messages-service';
 import {DotRouterService} from '../../../../api/services/dot-router-service';
-import {AutoComplete} from "primeng/primeng";
+import {AutoComplete} from 'primeng/primeng';
 
 @Component({
-    directives: [],
     encapsulation: ViewEncapsulation.None,
     providers: [],
     selector: 'dot-login-as',
@@ -14,16 +13,16 @@ import {AutoComplete} from "primeng/primeng";
     templateUrl: 'login-as.html'
 })
 export class LoginAsComponent extends BaseComponent {
-    @Output() cancel = new EventEmitter<>();
+    @Output() cancel = new EventEmitter<boolean>();
     @Input() visible: boolean;
 
-    private needPassword: boolean = false;
+    private needPassword = false;
     private userLists: Array<User>;
     private filteredLoginAsUsersResults: Array<any>;
 
     @ViewChild(AutoComplete) private autoCompleteComponent: AutoComplete;
 
-    constructor(private loginService: LoginService, private router: DotRouterService, private messageService: MessageService) {
+    constructor(private loginService: LoginService, private router: DotRouterService, messageService: MessageService) {
         super(['Change', 'cancel', 'password', 'loginas.select.loginas.user', 'login-as'], messageService);
     }
 
@@ -33,7 +32,7 @@ export class LoginAsComponent extends BaseComponent {
         });
     }
 
-    close(): void {
+    close(): boolean {
         this.cancel.emit(true);
         return false;
     }

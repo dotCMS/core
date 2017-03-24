@@ -14,6 +14,6 @@ export class DotLoadingIndicator {
 
     constructor(private loggerService: LoggerService) {
 
-        this.loggerService.debug(this.fullscreen)
+        this.loggerService.debug(this.fullscreen);
     }
 }

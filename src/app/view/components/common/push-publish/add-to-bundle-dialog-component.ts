@@ -1,12 +1,12 @@
-import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from "@angular/core";
-import {ModalDialogComponent} from "../modal-dialog/dialog-component";
-import {Dropdown, InputOption} from "../../semantic/modules/dropdown/dropdown";
-import {IBundle} from "../../../../api/services/bundle-service";
-import {ViewChild} from "@angular/core";
+import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from '@angular/core';
+import {ModalDialogComponent} from '../modal-dialog/dialog-component';
+import {Dropdown, InputOption} from '../../semantic/modules/dropdown/dropdown';
+import {IBundle} from '../../../../api/services/bundle-service';
+import {ViewChild} from '@angular/core';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'cw-add-to-bundle-dialog-component',
-  directives: [ModalDialogComponent, Dropdown, InputOption],
   template: `<cw-modal-dialog
     [headerText]="'Add to Bundle'"
     [okButtonText]="'Add'"
@@ -32,42 +32,40 @@ import {ViewChild} from "@angular/core";
     ></cw-input-option>
   </cw-input-dropdown>
 </cw-modal-dialog>`
-  , changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AddToBundleDialogComponent {
-  @Input() hidden:boolean = false
-  @Input() bundleStores:IBundle[];
-  @Input() errorMessage:string = null
+  @Input() hidden = false;
+  @Input() bundleStores: IBundle[];
+  @Input() errorMessage: string = null;
 
-  @Output() close:EventEmitter<{isCanceled:boolean}> = new EventEmitter(false)
-  @Output() cancel:EventEmitter<boolean> = new EventEmitter(false)
-  @Output() addToBundle:EventEmitter<IBundle> = new EventEmitter(false)
+  @Output() close: EventEmitter<{isCanceled: boolean}> = new EventEmitter(false);
+  @Output() cancel: EventEmitter<boolean> = new EventEmitter(false);
+  @Output() addToBundle: EventEmitter<IBundle> = new EventEmitter(false);
 
   @ViewChild(Dropdown)
-  dropdown: Dropdown
+  dropdown: Dropdown;
 
-  public selectedBundle:IBundle = null;
+  public selectedBundle: IBundle = null;
 
-  ngOnChanges(change){
+  ngOnChanges(change): void {
     if (change.bundleStores) {
       this.selectedBundle = change.bundleStores.currentValue[0];
     }
   }
 
-  setSelectedBundle(bundleId:string) {
+  setSelectedBundle(bundleId: string): void {
     this.selectedBundle = {
       id: bundleId,
       name: bundleId
-    }
+    };
     this.bundleStores.forEach((bundle) => {
       if (bundle.id === bundleId) {
-        this.selectedBundle = bundle
+        this.selectedBundle = bundle;
       }
-    })
+    });
   }
 
-  focusDropDown(){
+  focusDropDown(): void {
     this.dropdown.focus();
   }
 }
-

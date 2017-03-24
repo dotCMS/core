@@ -6,43 +6,41 @@ import {INotification} from '../../../../api/services/notifications-service';
 import {MessageService} from '../../../../api/services/messages-service';
 
 @Component({
-    directives: [CustomTimeComponent],
     encapsulation: ViewEncapsulation.Emulated,
-    pipes: [CapitalizePipe],
     providers: [],
     selector: 'dot-notifications-item',
     styleUrls: ['notifications-item.css'],
     templateUrl: 'notifications-item.html',
 
 })
-export class NotificationsItem extends BaseComponent{
+export class NotificationsItem extends BaseComponent {
     @Input() data;
     @Output() clear = new EventEmitter<Object>();
 
     private notificationIcons: Object = {
-        'WARNING': 'ban',
-        'ERROR': 'exclamation-triangle',
-        'INFO': 'info-circle'
+        ERROR: 'exclamation-triangle',
+        INFO: 'info-circle',
+        WARNING: 'ban',
     };
-    private showLinkAction: boolean = false;
-    private showTitleLinked: boolean = false;
+    private showLinkAction = false;
+    private showTitleLinked = false;
 
-    constructor(private messageService: MessageService) {
+    constructor(messageService: MessageService) {
         super(['notifications_dismiss'], messageService);
     }
 
-    ngOnInit():void {
+    ngOnInit(): void {
         // TODO: hand more than one action
         let actions = this.data.actions ? this.data.actions[0] : null;
         this.showLinkAction = actions && actions.actionType === 'LINK' && (actions.text || actions.text !== '') && actions.action && actions.action !== '';
         this.showTitleLinked = actions && actions.actionType === 'LINK' && (!actions.text || actions.text === '') && actions.action && actions.action !== '';
     }
 
-    getIconName(val:string) {
+    getIconName(val: string): string {
         return 'notification-item__icon fa fa-' + this.notificationIcons[val];
     }
 
-    onClear() {
+    onClear(): void {
         this.clear.emit({
             id: this.data.id
         });
@@ -50,7 +48,6 @@ export class NotificationsItem extends BaseComponent{
 }
 
 @Component({
-    directives: [NotificationsItem],
     encapsulation: ViewEncapsulation.Emulated,
     providers: [],
     selector: 'dot-notifications-list',
@@ -63,7 +60,7 @@ export class NotificationsList {
 
     constructor() {}
 
-    onClearNotification($event) {
+    onClearNotification($event): void {
         this.dismissNotification.emit($event);
     }
 }

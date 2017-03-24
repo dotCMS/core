@@ -5,7 +5,7 @@ import {DropdownComponent} from '../dropdown-component/dropdown-component';
 import {LoginService, Auth} from '../../../../api/services/login-service';
 import {MessageService} from '../../../../api/services/messages-service';
 import {LoggerService} from '../../../../api/services/logger.service';
-import {IframeOverlayService} from "../../../../api/services/iframe-overlay-service";
+import {IframeOverlayService} from '../../../../api/services/iframe-overlay-service';
 
 @Component({
     selector: 'toolbar-user',
@@ -16,13 +16,12 @@ import {IframeOverlayService} from "../../../../api/services/iframe-overlay-serv
 export class ToolbarUserComponent extends BaseComponent {
     @ViewChild(DropdownComponent) dropdown: DropdownComponent;
 
-
-    private showLoginAs: boolean = false;
+    private showLoginAs = false;
     private auth: Auth;
-    private showMyAccount: boolean = false;
+    private showMyAccount = false;
 
     constructor(private router: DotRouterService, private loginService: LoginService,
-                private messageService: MessageService, private loggerService: LoggerService,
+                messageService: MessageService, private loggerService: LoggerService,
                 private iframeOverlayService: IframeOverlayService) {
         super(['my-account'], messageService);
     }

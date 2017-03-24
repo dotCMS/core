@@ -1,6 +1,6 @@
 import {Component, EventEmitter , Input, Output, ViewEncapsulation} from '@angular/core';
 import {LoginService} from '../../../../../api/services/login-service';
-import {LoggerService} from "../../../../../api/services/logger.service";
+import {LoggerService} from '../../../../../api/services/logger.service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -11,22 +11,21 @@ import {LoggerService} from "../../../../../api/services/logger.service";
 export class ForgotPasswordComponent {
 
     @Input() message: string;
-
-    @Output() cancel = new EventEmitter<>();
+    @Output() cancel = new EventEmitter<any>();
     @Output() recoverPassword  = new EventEmitter<string>();
 
     private forgotPasswordLogin: string;
-    private language: string = '';
+    private language = '';
 
     // labels
-    forgotPasswordLabel: string = '';
-    forgotPasswordButton: string = '';
-    cancelButton: string = '';
-    userIdOrEmailLabel:string = '';
+    private cancelButton = '';
+    private forgotPasswordButton = '';
+    private forgotPasswordLabel = '';
+    private userIdOrEmailLabel = '';
 
-    //Messages
-    emailMandatoryFieldError:string = '';
-    forgotPasswordConfirmationMessage: string = '';
+    // Messages
+    private emailMandatoryFieldError = '';
+    private forgotPasswordConfirmationMessage = '';
 
     private i18nMessages: Array<string> = [  'error.form.mandatory', 'user-id', 'email-address', 'forgot-password',
         'get-new-password', 'cancel', 'an-email-with-instructions-will-be-sent'];

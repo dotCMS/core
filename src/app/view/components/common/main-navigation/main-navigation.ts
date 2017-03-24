@@ -15,11 +15,11 @@ export class MainNavigation {
 
     private menuItemIdActive: string;
     private menuActiveTabName: string;
-    private open: boolean = true;
+    private open = true;
 
     constructor(private routingService: RoutingService) {
-        if (routingService.menus) {
-            this.menuItems = routingService.menus;
+        if (routingService.currentMenu) {
+            this.menuItems = routingService.currentMenu;
         }
 
         routingService.menusChange$.subscribe(menu => {

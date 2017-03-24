@@ -14,7 +14,7 @@ import {LoggerService} from '../../../../api/services/logger.service';
  * the info required to log in the dotCMS angular backend
  */
 export class LoginPageComponent {
-    @Output() recoverPassword:EventEmitter<boolean>  = new EventEmitter<boolean>(false);
+    @Output() recoverPassword: EventEmitter<boolean>  = new EventEmitter<boolean>(false);
 
     constructor(private loginService: LoginService, private loggerService: LoggerService) {
     }
@@ -25,7 +25,6 @@ export class LoginPageComponent {
 
             // Translate labels and messages
             let entity = data.entity;
-
 
             // Set background color and image with the values provided by the service
             if (entity.backgroundColor !== 'undefined' && entity.backgroundColor !== '') {

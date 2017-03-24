@@ -1,11 +1,9 @@
-import {bootstrap} from '@angular/bootstrap'
-import {Attribute, Component, View} from '@angular/core'
-import {InputToggle} from './InputToggle'
-
+import {bootstrap} from '@angular/bootstrap';
+import {Attribute, Component, View} from '@angular/core';
+import {InputToggle} from './InputToggle';
 
 @Component({
   selector: 'demo',
-  directives: [InputToggle],
   template: `
   <div class="ui three column grid">
   <div class="column">
@@ -44,20 +42,19 @@ import {InputToggle} from './InputToggle'
   `
 })
 class App {
-  changeDemoValue: boolean
-  constructor(@Attribute('id') id:string) {
-    this.changeDemoValue = true
+  changeDemoValue: boolean;
+  constructor(@Attribute('id') id: string) {
+    this.changeDemoValue = true;
   }
 }
 
-
-export function main() {
-  let app = bootstrap(App)
+export function main(): any {
+  let app = bootstrap(App);
   app.then((appRef) => {
-    console.log("Bootstrapped App: ", appRef)
+    console.log('Bootstrapped App: ', appRef);
   }).catch((e) => {
-    console.log("Error bootstrapping app: ", e)
+    console.log('Error bootstrapping app: ', e);
     throw e;
   });
-  return app
+  return app;
 }

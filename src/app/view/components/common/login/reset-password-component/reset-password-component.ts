@@ -6,9 +6,7 @@ import {ChangePasswordData} from './reset-password-container';
 import {LoggerService} from '../../../../../api/services/logger.service';
 
 @Component({
-    directives: [],
     encapsulation: ViewEncapsulation.Emulated,
-    pipes: [],
     providers: [],
     selector: 'dot-reset-password-component',
     styleUrls: [],
@@ -17,34 +15,34 @@ import {LoggerService} from '../../../../../api/services/logger.service';
 
 export class ResetPasswordComponent {
 
-    @Input() private token:string = '';
-    @Input()  message: string = '';
+    @Input() private token = '';
+    @Input() private message = '';
 
-    @Output() changePassword  = new EventEmitter<ChangePasswordData>();
+    @Output() private changePassword  = new EventEmitter<ChangePasswordData>();
 
-    private language: string = '';
+    private language = '';
 
     // labels
-    private resetPasswordLabel: string = '';
-    private enterPasswordLabel: string = '';
-    private confirmPasswordLabel: string = '';
-    private changePasswordButton: string = '';
+    private resetPasswordLabel = '';
+    private enterPasswordLabel = '';
+    private confirmPasswordLabel = '';
+    private changePasswordButton = '';
 
-    //Message
-    private resetPasswordSuccessMessage:string = '';
-    private resetPasswordConfirmationDoNotMessage:string = '';
-    private mandatoryFieldError: string = '';
-    private passwordMandatoryFieldError: string = '';
-    private confirmPasswordMandatoryFieldError: string = '';
+    // Message
+    private resetPasswordSuccessMessage = '';
+    private resetPasswordConfirmationDoNotMessage = '';
+    private mandatoryFieldError = '';
+    private passwordMandatoryFieldError = '';
+    private confirmPasswordMandatoryFieldError = '';
 
-    private password:string = '';
-    private confirmPassword:string = '';
+    private password = '';
+    private confirmPassword = '';
 
     private i18nMessages: Array<string> = [ 'error.form.mandatory', 'reset-password', 'enter-password', 're-enter-password', 'change-password', 'reset-password-success', 'reset-password-confirmation-do-not-match'];
 
     constructor(private loginService: LoginService, private loggerService: LoggerService) {}
 
-    ngOnInit() {
+    ngOnInit(): void {
         this.loginService.getLoginFormInfo(this.language, this.i18nMessages).subscribe((data) => {
             let dataI18n = data.i18nMessagesMap;
 
@@ -63,21 +61,21 @@ export class ResetPasswordComponent {
     }
 
     public ok(): void {
-        if (this.password == this.confirmPassword) {
+        if (this.password === this.confirmPassword) {
             this.changePassword.emit({
                 password: this.password,
                 token: this.token
             });
-        }else{
+        }else {
             this.message = this.resetPasswordConfirmationDoNotMessage;
         }
     }
 
-    private cleanConfirmPassword() {
+    private cleanConfirmPassword(): void {
         this.clean();
         this.confirmPassword = '';
     }
-    private clean() {
+    private clean(): void {
         this.message = '';
     }
 }

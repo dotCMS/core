@@ -14,7 +14,7 @@ import {StringFormat} from '../../../api/util/stringFormat';
 })
 
 export class MyAccountComponent extends BaseComponent {
-    @Output() close  = new EventEmitter<>();
+    @Output() close  = new EventEmitter<any>();
     @Input() visible: boolean;
 
     private accountUser: AccountUser = {
@@ -28,10 +28,10 @@ export class MyAccountComponent extends BaseComponent {
     private passwordConfirm: string;
     private passwordMatch: boolean;
     private message = null;
-    private changePasswordOption: boolean = false;
+    private changePasswordOption = false;
 
     constructor(private loginService: LoginService, private accountService: AccountService,
-                private messageService: MessageService, private stringFormat: StringFormat) {
+             messageService: MessageService, private stringFormat: StringFormat) {
         super(['my-account', 'modes.Close', 'save', 'error.form.mandatory', 'errors.email', 'First-Name',
             'Last-Name', 'email-address', 'new-password', 're-enter-new-password', 'error.forgot.password.passwords.dont.match',
             'message.createaccount.success', 'Error-communicating-with-server-Please-try-again', 'change-password', 'current-password'], messageService);
@@ -52,19 +52,16 @@ export class MyAccountComponent extends BaseComponent {
         this.changePasswordOption = !this.changePasswordOption;
     }
 
-    private getRequiredMessage(item): void {
+    private getRequiredMessage(item): string {
         return this.stringFormat.formatMessage(this.i18nMessages['error.form.mandatory'], item);
     }
 
     private loadUser(auth: Auth): void {
         let user: User = auth.user;
-        this.accountUser = {
-            email: user.emailAddress,
-            givenName: user.firstName,
-            surname: user.lastName,
-            userId: user.userId
-        };
-
+        this.accountUser.email = user.emailAddress;
+        this.accountUser.givenName = user.firstName;
+        this.accountUser.surname = user.lastName;
+        this.accountUser.userId = user.userId;
         this.accountUser.newPassword = null;
         this.passwordConfirm = null;
     }

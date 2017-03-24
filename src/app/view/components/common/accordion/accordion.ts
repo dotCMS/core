@@ -3,7 +3,7 @@ import {Component, Input, OnDestroy} from '@angular/core';
 @Component({
 
     selector: 'accordion',
-    template:`
+    template: `
         <ng-content></ng-content>
     `
 })
@@ -17,7 +17,7 @@ export class Accordion {
     closeOthers(openGroup: AccordionGroup): void {
         this.groups.forEach((group: AccordionGroup) => {
             if (group !== openGroup) {
-                //group.isOpen = false;
+                // group.isOpen = false;
             }
         });
     }
@@ -33,6 +33,7 @@ export class Accordion {
 @Component({
 
     selector: 'accordion-group',
+    styleUrls: ['accordion-group.css'],
     template: `
         <a href="#" (click)="toggleOpen($event)" class="accordion-group__title" [ngClass]="{'is-active': isOpen}">
             <i class="fa fa-th-list {{icon}}" aria-hidden="true" *ngIf="icon"></i>
@@ -44,11 +45,10 @@ export class Accordion {
         <div class="accordion-group__content" [ngClass]="{'is-open': isOpen}">
             <ng-content></ng-content>
         </div>
-    `,
-    styleUrls: ['accordion-group.css']
+    `
 })
 export class AccordionGroup implements OnDestroy {
-    @Input('open') _isOpen:boolean = false;
+    @Input('open') _isOpen = false;
 
     @Input() heading: string;
     @Input() icon: string;

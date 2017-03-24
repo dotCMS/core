@@ -5,7 +5,6 @@ import {ResponseView} from '../../../../../api/services/response-view';
 import {DotRouterService} from '../../../../../api/services/dot-router-service';
 
 @Component({
-    directives: [ForgotPasswordComponent],
     encapsulation: ViewEncapsulation.Emulated,
     selector: 'dot-forgot-password-container',
     template: `
@@ -18,8 +17,8 @@ import {DotRouterService} from '../../../../../api/services/dot-router-service';
 })
 export class ForgotPasswordContainer {
 
-    private message: string = '';
-    private email: string = '';
+    private message = '';
+    private email = '';
 
     constructor( private loginService: LoginService, private router: DotRouterService) {
 

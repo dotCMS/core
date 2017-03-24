@@ -14,43 +14,43 @@ import {LoggerService} from '../../../../../api/services/logger.service';
  * the info required to log in the dotCMS angular backend
  */
 export class LoginComponent {
-    @Input() isLoginInProgress: boolean = false;
-    @Input()  message: string = '';
-    @Input() passwordChanged: boolean = false;
-    @Input() resetEmailSent: boolean = false;
-    @Input() resetEmail: string = '';
+    @Input() isLoginInProgress = false;
+    @Input()  message = '';
+    @Input() passwordChanged = false;
+    @Input() resetEmailSent = false;
+    @Input() resetEmail = '';
 
-    @Output() recoverPassword  = new EventEmitter<>();
+    @Output() recoverPassword  = new EventEmitter<any>();
     @Output() login  = new EventEmitter<LoginData>();
 
     private myAccountLogin: string;
     private password: string;
-    private myAccountRememberMe: boolean = false;
-    private language: string = '';
+    private myAccountRememberMe = false;
+    private language = '';
 
-    languages: Array<any> = [];
+    private languages: Array<any> = [];
 
     // labels
-    cancelButton: string = '';
-    communityLicenseInfoMessage: string = '';
-    dotcmsBuildDateString: string = '';
-    dotcmscompanyLogo: string = '';
-    dotcmslicenceLevel: string = '';
-    dotcmsServerId: string = '';
-    dotcmsVersion: string = '';
-    emailAddressLabel: string = '';
-    forgotPasswordButton: string = '';
-    loginButton: string = '';
-    loginLabel: string = '';
-    mandatoryFieldError: string = '';
-    passwordLabel: string = '';
-    rememberMeLabel: string = '';
-    resetEmailMessage: string ='';
-    resetPasswordSuccess: string = '';
-    serverLabel: string = '';
-    userIdOrEmailLabel: string = '';
+    private cancelButton = '';
+    private communityLicenseInfoMessage = '';
+    private dotcmsBuildDateString = '';
+    private dotcmscompanyLogo = '';
+    private dotcmslicenceLevel = '';
+    private dotcmsServerId = '';
+    private dotcmsVersion = '';
+    private emailAddressLabel = '';
+    private forgotPasswordButton = '';
+    private loginButton = '';
+    private loginLabel = '';
+    private mandatoryFieldError = '';
+    private passwordLabel = '';
+    private rememberMeLabel = '';
+    private resetEmailMessage = '';
+    private resetPasswordSuccess = '';
+    private serverLabel = '';
+    private userIdOrEmailLabel = '';
 
-    isCommunityLicense: boolean = true;
+    private isCommunityLicense = true;
 
     private i18nMessages: Array<string> = [ 'Login', 'email-address', 'user-id', 'password', 'remember-me', 'sign-in',
        'get-new-password', 'cancel', 'Server', 'error.form.mandatory',
@@ -78,10 +78,10 @@ export class LoginComponent {
 
         if (isSetUserId && isSetPassword) {
             this.login.emit({
+                language: this.language,
                 login: this.myAccountLogin,
                 password: this.password,
-                remenberMe: this.myAccountRememberMe,
-                language: this.language
+                remenberMe: this.myAccountRememberMe
             });
         } else {
             let error = '';
@@ -109,6 +109,13 @@ export class LoginComponent {
     }
 
     /**
+     * Display the forgot password card
+     */
+    showForgotPassword(): void {
+        this.recoverPassword.emit();
+    }
+
+    /**
      * Renders all the labels, images, and placeholder values for the Log In page.
      */
     private renderPageData(): void {
@@ -120,7 +127,7 @@ export class LoginComponent {
             let entity = data.entity;
 
             this.loginLabel = dataI18n.Login;
-            this.emailAddressLabel = 'emailAddress' === entity.authorizationType ? this.userIdOrEmailLabel = dataI18n['email-address']: this.userIdOrEmailLabel = dataI18n['user-id'];
+            this.emailAddressLabel = 'emailAddress' === entity.authorizationType ? this.userIdOrEmailLabel = dataI18n['email-address'] : this.userIdOrEmailLabel = dataI18n['user-id'];
             this.passwordLabel = dataI18n.password;
             this.rememberMeLabel = dataI18n['remember-me'];
             this.loginButton = dataI18n['sign-in'].toUpperCase();
@@ -131,7 +138,6 @@ export class LoginComponent {
             this.communityLicenseInfoMessage = dataI18n['angular.login.component.community.licence.message'];
             this.resetPasswordSuccess = dataI18n['reset-password-success'];
             this.resetEmailMessage = dataI18n['a-new-password-has-been-sent-to-x'];
-
 
             // Set dotCMS Info
             this.dotcmscompanyLogo = entity.logo;
@@ -168,12 +174,5 @@ export class LoginComponent {
         }, (error) => {
              this.loggerService.debug(error);
         });
-    }
-
-    /**
-     * Display the forgot password card
-     */
-    showForgotPassword(): void {
-        this.recoverPassword.emit();
     }
 }

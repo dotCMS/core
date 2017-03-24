@@ -8,8 +8,8 @@ import {MessageService} from '../../../../api/services/messages-service';
     styleUrls: ['global-search.css'],
     templateUrl: 'global-search.html',
 })
-export class GlobalSearch extends BaseComponent{
-    constructor(private messageService: MessageService) {
+export class GlobalSearch extends BaseComponent {
+    constructor(messageService: MessageService) {
         super(['search'], messageService);
     }
 }

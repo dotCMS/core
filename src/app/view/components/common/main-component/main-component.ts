@@ -1,7 +1,6 @@
 import {Component, ViewEncapsulation} from '@angular/core';
 
 @Component({
-    directives: [],
     encapsulation: ViewEncapsulation.None,
     providers: [],
     selector: 'dot-main-component',
