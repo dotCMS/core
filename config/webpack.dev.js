@@ -269,6 +269,10 @@ module.exports = function (options) {
         '/DotAjaxDirector': {
           target: 'http://localhost:8080',
           changeOrigin: false
+        },
+        '/image/company_logo': {
+          target: 'http://localhost:8080',
+          changeOrigin: false
         }
       }
     },
