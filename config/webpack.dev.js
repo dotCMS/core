@@ -240,9 +240,29 @@ module.exports = function (options) {
       },
       proxy: {
         // proxy all requests starting with /api to localhost:8080 (local dotcms instance)
+        '/admin': {
+          target: 'http://localhost:8080',
+          changeOrigin: false
+        },
+        '/html': {
+          target: 'http://localhost:8080',
+          changeOrigin: false
+        },
         '/api': {
           target: 'http://localhost:8080',
-          changeOrigin: true
+          changeOrigin: false
+        },
+        '/c': {
+          target: 'http://localhost:8080',
+          changeOrigin: false
+        },
+        '/dwr': {
+          target: 'http://localhost:8080',
+          changeOrigin: false
+        },
+        '/DotAjaxDirector': {
+          target: 'http://localhost:8080',
+          changeOrigin: false
         }
       }
     },
