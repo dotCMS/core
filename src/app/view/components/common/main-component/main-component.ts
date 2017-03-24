@@ -10,8 +10,8 @@ import {Component, ViewEncapsulation} from '@angular/core';
 })
 export class MainComponent {
     private messages: any = {};
-    private label: string = '';
-    private isMenuCollapsed: boolean = false;
+    private label = '';
+    private isMenuCollapsed = false;
 
     constructor() {
     }
@@ -26,7 +26,7 @@ export class MainComponent {
         this.label = null;
     }
 
-    toggleSidenav() {
+    toggleSidenav(): void {
         this.isMenuCollapsed = !this.isMenuCollapsed;
     }
 }

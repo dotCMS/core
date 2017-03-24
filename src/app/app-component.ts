@@ -5,9 +5,10 @@ import {NotLicensedService} from './api/services/not-licensed-service';
 
 @Component({
     directives: [],
-    encapsulation: ViewEncapsulation.Emulated,
+    encapsulation: ViewEncapsulation.None,
     providers: [],
     selector: 'app',
+    // TODO: make primeng into main.scss
     styleUrls: ['app.scss', '../../node_modules/primeng/resources/primeng.min.css'],
     templateUrl: 'app.html'
 })

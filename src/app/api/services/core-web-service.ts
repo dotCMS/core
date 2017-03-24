@@ -130,8 +130,7 @@ export class CoreWebService {
     options.headers = headers;
 
     if (options.url.indexOf('://') === -1) {
-      //options.url = `${this._apiRoot.baseUrl}api/${options.url}`;
-      options.url = `http://localhost:8080/api/${options.url}`;
+      options.url = `${this._apiRoot.baseUrl}api/${options.url}`;
     }
 
     return new Request(options);

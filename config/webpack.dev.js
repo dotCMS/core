@@ -237,6 +237,13 @@ module.exports = function (options) {
       watchOptions: {
         aggregateTimeout: 300,
         poll: 1000
+      },
+      proxy: {
+        // proxy all requests starting with /api to localhost:8080 (local dotcms instance)
+        '/api': {
+          target: 'http://localhost:8080',
+          changeOrigin: true
+        }
       }
     },
 
