@@ -42,6 +42,7 @@ import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.timemachine.business.TimeMachineAPI;
 import com.dotcms.timemachine.business.TimeMachineAPIImpl;
+import com.dotcms.util.FileWatcherAPI;
 import com.dotcms.util.ReflectionUtils;
 import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotcms.util.SecurityLoggerServiceAPIFactory;
@@ -109,6 +110,11 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 /**
  * APILocator is a factory method (pattern) to get single(ton) service objects.
  * This is a kind of implementation, and there may be others.
@@ -121,6 +127,7 @@ import com.liferay.portal.model.User;
 public class APILocator extends Locator<APIIndex>{
 
 	protected static APILocator instance;
+	private static Queue<Closeable> closeableQueue = new ConcurrentLinkedQueue<>();
 
 	/**
 	 * Private constructor for the singleton.
@@ -145,6 +152,40 @@ public class APILocator extends Locator<APIIndex>{
 			instance = new APILocator();
 		}
 	}
+
+	/**
+	 * This method is just allowed by the own package to register {@link Closeable} resources
+	 * @param closeable
+	 */
+	static void addCloseableResource (final Closeable closeable) {
+
+		closeableQueue.add(closeable);
+	}
+
+	/**
+	 * This method must be called just at the end of the webcontainer process, to close Services API resources
+	 */
+	public static void destroy () {
+
+		Logger.debug(APILocator.class, "Destroying API resources");
+
+		for (Closeable closeable : closeableQueue) {
+
+			if (null != closeable) {
+
+				try {
+
+					Logger.debug(APILocator.class, "Destroying resource: " + closeable);
+					closeable.close();
+				} catch (IOException e) {
+
+					Logger.error(APILocator.class, "Error on Destroying resource: " + closeable, e);
+				}
+			}
+		}
+	} // destroy.
+
+
 
 	public static SecurityLoggerServiceAPI getSecurityLogger() {
 		return (SecurityLoggerServiceAPI)getInstance(APIIndex.SECURITY_LOGGER_API);
@@ -746,6 +787,15 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
+	 * Returns the File Watcher API that allows watch events over directories or files.
+	 *
+	 * @return An instance of the {@link FileWatcherAPI}.
+	 */
+	public static FileWatcherAPI getFileWatcherAPI() {
+		return (FileWatcherAPI) getInstance(APIIndex.FILE_WATCHER_API);
+	}
+
+	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
 	 * @param index
@@ -865,7 +915,8 @@ enum APIIndex
 	SYSTEM_EVENTS_API,
 	WEB_SOCKET_CONTAINER_API,
 	COMPANY_API,
-	SECURITY_LOGGER_API;
+	SECURITY_LOGGER_API,
+	FILE_WATCHER_API;
 
 	Object create() {
 		switch(this) {
@@ -928,8 +979,23 @@ enum APIIndex
 		case WEB_SOCKET_CONTAINER_API:return WebSocketContainerAPIFactory.getInstance().getWebSocketContainerAPI();
 		case COMPANY_API: return CompanyAPIFactory.getInstance().getCompanyAPI();
 		case SECURITY_LOGGER_API: return SecurityLoggerServiceAPIFactory.getInstance().getSecurityLoggerAPI();
+		case FILE_WATCHER_API: return createFileWatcherAPI();
 		}
 		throw new AssertionError("Unknown API index: " + this);
+	}
+
+	private static FileWatcherAPI createFileWatcherAPI () {
+
+		FileWatcherAPI fileWatcherAPI = null;
+		try {
+
+			fileWatcherAPI = new FileWatcherAPI();
+			APILocator.addCloseableResource(fileWatcherAPI);
+		} catch (IOException e) {
+			Logger.error(APILocator.class, "The File Watcher API couldn't be created", e);
+		}
+
+		return fileWatcherAPI;
 	}
 
 }

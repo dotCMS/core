@@ -95,7 +95,7 @@ public class StringUtils {
     } // splitByComma.
 
     // this the pattern for replace variables, such as {xxx} @see interpolate method
-    private static final String ALPHA_HYPHEN_VARIABLE_REGEX = "(\\{[\\w\\-]+\\})";
+    private static final String ALPHA_HYPHEN_VARIABLE_REGEX = "{(.*?)}";
 
     /**
      * Replace any expression with {?} by the right value in the context Map (interpolation)
