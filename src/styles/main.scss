@@ -4,8 +4,11 @@
 @import "typography";
 @import "material-design";
 
+// FONT AWESOME
+@import "../../node_modules/font-awesome/css/font-awesome.css";
+
 // PRIME NG
-@import "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css";
+@import "../../node_modules/primeng/resources/primeng.css";
 @import "primeng-theme/base";
 
 *, *:before, *:after {
@@ -45,10 +48,15 @@ a {
 }
 
 // This is legacy code, needs to once we refactor rule-engine component and remove semantic-ui
+$rules-engine-fonts-url: "../app/view/components/rule-engine/styles/fonts" ;
 @font-face {
     font-family: 'Icons';
-    src: url("../view/components/rule-engine/fonts/icons.eot");
-    src: url("../view/components/rule-engine/fonts/icons.eot?#iefix") format('embedded-opentype'), url("../view/components/rule-engine/fonts/icons.woff2") format('woff2'), url("../view/components/rule-engine/fonts/icons.woff") format('woff'), url("../view/components/rule-engine/fonts/icons.ttf") format('truetype'), url("../view/components/rule-engine/fonts/icons.svg#icons") format('svg');
+    src: url("${rules-engine-fonts-url}/icons.eot");
+    src: url("${rules-engine-fonts-url}/icons.eot?#iefix") format('embedded-opentype'),
+         url("${rules-engine-fonts-url}/icons.woff2") format('woff2'),
+         url("${rules-engine-fonts-url}/icons.woff") format('woff'),
+         url("${rules-engine-fonts-url}/icons.ttf") format('truetype'),
+         url("${rules-engine-fonts-url}/icons.svg#icons") format('svg');
     font-style: normal;
     font-weight: normal;
     font-variant: normal;

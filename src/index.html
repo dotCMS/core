@@ -1,18 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head>
-
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
     <title><%= htmlWebpackPlugin.options.title %></title>
-
     <meta name="description" content="<%= htmlWebpackPlugin.options.title %>">
 
     <% if (webpackConfig.htmlElements.headTags) { %>
-    <!-- Configured Head Tags  -->
-    <%= webpackConfig.htmlElements.headTags %>
+        <!-- Configured Head Tags  -->
+        <%= webpackConfig.htmlElements.headTags %>
     <% } %>
 
     <!-- base url -->
@@ -40,7 +37,7 @@
         }
 
         .logo {
-            background: url('styles/img/dotCMS-logo.png') no-repeat;
+            background: url('assets/img/dotCMS-logo.png') no-repeat;
             background-size: cover;
             height: 64px;
             position: relative;
@@ -75,11 +72,16 @@
         }
     </style>
 
-    <link rel="stylesheet" type="text/css" href="styles/main.css" />
+    <script>
+        function loaderIndicatorHandler() {
+            document.getElementById('cog').classList.add('cog-show');
+        }
+        document.addEventListener("DOMContentLoaded", loaderIndicatorHandler);
+    </script>
 
 </head>
 
-<body onload="document.getElementById('cog').classList.add('cog-show')">
+<body>
 <app>
     <div class="loading-wrapper">
         <div class="logo">

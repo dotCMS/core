@@ -50,8 +50,7 @@ const NGFACES_MODULES = [
  */
 import { COMPONENTS, DIRECTIVES, PIPES } from './components';
 
-//import '../styles/styles.scss';
-//import '../styles/headings.css';
+import '../styles/main.scss';
 
 // Application wide providers
 const APP_PROVIDERS = [

@@ -9,7 +9,7 @@ import {NotLicensedService} from './api/services/not-licensed-service';
     providers: [],
     selector: 'app',
     // TODO: make primeng into main.scss
-    styleUrls: ['app.scss', '../../node_modules/primeng/resources/primeng.min.css'],
+    styleUrls: ['app.scss'],
     templateUrl: 'app.html'
 })
 

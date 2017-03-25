@@ -32,7 +32,7 @@ const METADATA = webpackMerge(commonConfig({
   ENV: ENV,
   HMR: false,
   DEFAULT_LOCALE: 'en-US',
-  baseUrl: '/dotAdmin'
+  baseUrl: '/'
 });
 
 module.exports = function (env) {
