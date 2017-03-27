@@ -10,6 +10,10 @@ buildscript {
     }
 }
 
+plugins {
+    id "net.ltgt.apt" version "0.9"
+}
+
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 
 configurations {
