@@ -23,6 +23,8 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.backport-util-concurrent', version:'3.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.bsf', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.bsh', version:'2.0b4_3'
+    compile 'net.bytebuddy:byte-buddy:1.6.12'
+    compile 'net.bytebuddy:byte-buddy-agent:1.6.12'
     compile group: 'com.dotcms.lib', name: 'dot.cactus.integration.ant', version:'1.8.0_2'
     compile group: 'com.dotcms.lib', name: 'dot.cargo-ant', version:'0.9_2'
     compile group: 'com.dotcms.lib', name: 'dot.cargo-core-uberjar', version:'0.9_2'
