@@ -582,27 +582,27 @@
 	
 	<error-page>
 	   <error-code>404</error-code>
-	   <location>/portal/custom-error-page.jsp</location>
+	   <location>/html/error/custom-error-page.jsp</location>
 	</error-page>
 	
 	<error-page>
 	   <error-code>401</error-code>
-	   <location>/portal/custom-error-page.jsp</location>
+	   <location>/html/error/custom-error-page.jsp</location>
 	</error-page>
 	
 	<error-page>
 	   <error-code>403</error-code>
-	   <location>/portal/custom-error-page.jsp</location>
+	   <location>/html/error/custom-error-page.jsp</location>
 	</error-page>
 	
 	<error-page>
 	   <error-code>500</error-code>
-	   <location>/portal/custom-error-page.jsp</location>
+	   <location>/html/error/custom-error-page.jsp</location>
 	</error-page>
 	
 	<error-page>
 	   <error-code>503</error-code>
-	   <location>/portal/custom-error-page.jsp</location>
+	   <location>/html/error/custom-error-page.jsp</location>
 	</error-page>
 	
 	<jsp-config>
