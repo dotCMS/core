@@ -1,26 +1,23 @@
 package com.dotmarketing.util;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Supplier;
-import com.dotcms.repackage.com.google.common.io.Files;
+import com.dotcms.repackage.org.apache.commons.configuration.Configuration;
 import com.dotcms.repackage.org.apache.commons.configuration.PropertiesConfiguration;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.util.ConfigurationInterpolator;
+import com.dotcms.util.FileWatcherAPI;
+import com.dotcms.util.ReflectionUtils;
+import com.dotcms.util.SystemEnvironmentConfigurationInterpolator;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 
-import org.mockito.Matchers;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URL;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-
-import javax.servlet.ServletContext;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class provides access to the system configuration parameters that are
@@ -35,14 +32,28 @@ import javax.servlet.ServletContext;
 
 public class Config {
 
-	private static final String BLANK = "";
-
 	//Generated File Indicator
 	public static final String GENERATED_FILE ="dotGenerated_";
 	public static final String RENDITION_FILE ="dotRendition_";
+	public static final AtomicBoolean useWatcherMode = new AtomicBoolean(true);
+	public static final AtomicBoolean isWatching     = new AtomicBoolean(false);
+
+
+	/**
+	 * If this property is set in the dotmarketing-config, will try to use the interpolator for the properties
+	 * Otherwise will use {@link SystemEnvironmentConfigurationInterpolator}
+	 */
+	public static final String DOTCMS_CUSTOM_INTERPOLATOR = "dotcms.custom.interpolator";
+
+	/**
+	 * If this property is set, defines the way you want to use to monitoring the changes over the dotmarketing-config.properties file.
+	 * By default is true and means that the {@link FileWatcherAPI} will be used to monitoring any change over the file and refresh the property based on it.
+	 * If you set it to false, will use the legacy mode previously used on dotCMS.
+	 */
+	public static final String DOTCMS_USEWATCHERMODE = "dotcms.usewatchermode";
 	public static int DB_VERSION=0;
 
-    //Object Config properties
+    //Object Config properties      n
 	public static javax.servlet.ServletContext CONTEXT = null;
 	public static String CONTEXT_PATH = null;
 
@@ -59,6 +70,7 @@ public class Config {
     protected static URL dotmarketingPropertiesUrl = null;
     protected static URL clusterPropertiesUrl = null;
     private static int prevInterval = Integer.MIN_VALUE;
+    private static FileWatcherAPI fileWatcherAPI = null;
 
     private static final String syncMe = "esSync";
 
@@ -70,12 +82,57 @@ public class Config {
 	    _loadProperties();
 	}
 
+	private static void registerWatcher(final File fileToRead) {
+
+		initWatcherAPI();
+		if (null != fileWatcherAPI) {
+
+			// if we are not already watching, so register the waticher
+			if (!isWatching.get()) {
+				try {
+
+					Logger.debug(APILocator.class, "Start watching: " + fileToRead);
+					fileWatcherAPI.watchFile(fileToRead, () -> _loadProperties());
+					isWatching.set(true);
+				} catch (IOException e) {
+					Logger.error(Config.class, e.getMessage(), e);
+				}
+			}
+		} else {
+			// if not fileWatcherAPI could not monitoring, so use the fallback
+			useWatcherMode.set(false); isWatching.set(false);
+		}
+	} // registerWatcher.
+
+	private static void initWatcherAPI() {
+
+		// checki if the watcher is already instantiated.
+		if (null == fileWatcherAPI) {
+			synchronized (syncMe) {
+
+				if (null == fileWatcherAPI) {
+
+					fileWatcherAPI = APILocator.getFileWatcherAPI();
+				}
+			}
+		}
+	}
+
+	private static void unregisterWatcher(final File fileToRead) {
+
+		initWatcherAPI();
+		if (null != fileWatcherAPI) {
+
+			Logger.debug(APILocator.class, "Stop watching: " + fileToRead);
+			fileWatcherAPI.stopWatchingFile(fileToRead);
+		}
+	}
 	/**
 	 * 
 	 */
     private static void _loadProperties () {
 
-        if ( classLoader == null ) {
+         if ( classLoader == null ) {
             classLoader = Thread.currentThread().getContextClassLoader();
             Logger.info(Config.class, "Initializing properties reader.");
         }
@@ -172,6 +229,8 @@ public class Config {
      */
     private static void readProperties ( File fileToRead, String fileName ) {
 
+		InputStream propsInputStream = null;
+
         try {
 
             Logger.info( Config.class, "Loading dotCMS [" + fileName + "] Properties..." );
@@ -180,24 +239,57 @@ public class Config {
                 props = new PropertiesConfiguration();
             }
 
-            InputStream propsInputStream = new FileInputStream( fileToRead );
+            propsInputStream = new FileInputStream( fileToRead );
             props.load( new InputStreamReader( propsInputStream ) );
-            propsInputStream.close();
-
             Logger.info( Config.class, "dotCMS Properties [" + fileName + "] Loaded" );
+            postProperties();
+            // check if the configuration for the watcher has changed.
+			useWatcherMode.set(getBooleanProperty(DOTCMS_USEWATCHERMODE, true));
+			if (useWatcherMode.get()) {
+
+				registerWatcher (fileToRead);
+			} else if (isWatching.get()) {
+				unregisterWatcher (fileToRead);
+				isWatching.set(false);
+			}
         } catch ( Exception e ) {
             Logger.fatal( Config.class, "Exception loading properties for file [" + fileName + "]", e );
             props = null;
-        }
-    }
+        } finally {
+
+			IOUtils.closeQuietly(propsInputStream);
+		}
+	}
+
+
+
+	/**
+	 * Does the post process properties based on the interpolator
+	 */
+    protected static void postProperties () {
+
+    	final String customConfigurationInterpolator       = getStringProperty(DOTCMS_CUSTOM_INTERPOLATOR, null);
+    	final ConfigurationInterpolator customInterpolator = UtilMethods.isSet(customConfigurationInterpolator)?
+				(ConfigurationInterpolator) ReflectionUtils.newInstance(customConfigurationInterpolator) :null;
+		final ConfigurationInterpolator interpolator       = (null != customInterpolator)?
+				customInterpolator:SystemEnvironmentConfigurationInterpolator.INSTANCE;
+		final Configuration configuration = interpolator.interpolate(props);
+
+		props = (configuration instanceof PropertiesConfiguration)?(PropertiesConfiguration)configuration: props;
+	}
 
     /**
      * 
      */
 	private static void _refreshProperties () {
-	    if(System.currentTimeMillis() > lastRefreshTime.getTime() + (refreshInterval * 60 * 1000) || props == null){
-	    	_loadProperties();
-	    }
+
+		if ((props == null) || // if props is null go ahead.
+				(
+						(!useWatcherMode.get()) && // if we are using watcher mode, do not need to check this
+						(System.currentTimeMillis() > lastRefreshTime.getTime() + (refreshInterval * 60 * 1000))
+				)) {
+			_loadProperties();
+		}
 	}
 
 	/**
@@ -278,7 +370,7 @@ public class Config {
 	 */
 	public static String getAsString(String name, Supplier<String> defValue, boolean forceDefaultToString) {
 		_refreshProperties();
-		String result = BLANK;
+		String result = StringUtils.EMPTY;
 		if (props != null) {
 			String[] propsArr = props.getStringArray(name);
 			StringBuilder property = new StringBuilder();
