@@ -3660,7 +3660,7 @@ html, body {
   width: 32px;
   background-color: #fff;
 }
-.dijitSelect .dijitArrowButton:before {
+.dijitSelect .dijitArrowButton > .dijitArrowButtonInner {
   left: 50%;
   margin-left: -5px;
   margin-top: -2.5px;
@@ -3672,6 +3672,10 @@ html, body {
   content: "";
   height: 0;
   width: 0;
+  float: none;
+  height: 0 !important;
+  margin: 0;
+  position: static;
 }
 .dijitSelect .dijitArrowButtonInner {
   width: 32px;
@@ -4826,7 +4830,7 @@ html, body {
   line-height: normal;
 }
 .dijitInline.dijitTextBox .dijitInputInner {
-  height: auto;
+  height: 30px;
   line-height: 30px;
   padding: 0;
 }
