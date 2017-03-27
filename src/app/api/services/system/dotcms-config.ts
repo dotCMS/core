@@ -34,7 +34,7 @@ export interface ConfigParams {
 @Injectable()
 export class DotcmsConfig {
 
-    private waiting: Observer[] = [];
+    private waiting: Observer<any>[] = [];
     private configParams: ConfigParams;
     private configUrl: string;
 
@@ -65,7 +65,7 @@ export class DotcmsConfig {
         this.coreWebService.requestView({
             method: RequestMethod.Get,
             url: this.configUrl
-        }).pluck('entity').subscribe(res => {
+        }).pluck('entity').subscribe((res: any) => {
 
             this.loggerService.debug('Configuration Loaded!', res);
 

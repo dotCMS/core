@@ -31,11 +31,12 @@
     "src/**/*.spec.ts",
     "src/**/*.it-spec.ts",
     "src/**/*.e2e.ts",
-
     "src/app/api/rule-engine/**/*.ts",
     "src/app/view/components/rule-engine/**/*.ts",
     "src/app/api/services/bundle-service.ts",
-    "src/app/view/components/common/push-publish/**/*.ts"
+    "src/app/api/auth",
+    "src/app/view/components/common/push-publish/**/*.ts",
+    "src/app/e2e/**/*.ts"
   ],
   "awesomeTypescriptLoaderOptions": {
     "forkChecker": true,

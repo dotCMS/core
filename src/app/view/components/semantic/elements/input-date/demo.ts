@@ -1,72 +1,70 @@
-import {bootstrap} from '@angular/bootstrap'
-import {Attribute, Component, View} from '@angular/core'
-import {CORE_DIRECTIVES, FORM_DIRECTIVES} from '@angular/common'
-import {InputDate} from './input-date'
-
+import {bootstrap} from '@angular/bootstrap';
+import {Attribute, Component, View} from '@angular/core';
+import {CORE_DIRECTIVES, FORM_DIRECTIVES} from '@angular/common';
+import {InputDate} from './input-date';
 
 export class InputDateModel {
-  name:string
-  placeholder:string
-  value:string
-  disabled:boolean
-  icon:string
-  type:string
+  name: string;
+  placeholder: string;
+  value: string;
+  disabled: boolean;
+  icon: string;
+  type: string;
 
-  constructor(name:string = null,
-              placeholder:string = '',
-              type:string = 'date',
-              value:string = null,
-              disabled:boolean = null,
-              icon:string = '') {
+  constructor(name: string = null,
+              placeholder = '',
+              type = 'date',
+              value: string = null,
+              disabled: boolean = null,
+              icon = '') {
 
-    this.name = !!name ? name : 'field-' + new Date().getTime() + Math.floor(Math.random() * 1000)
-    this.placeholder = placeholder
-    this.type = type
-    this.value = value
-    this.disabled = disabled
-    this.icon = icon || ''
-    if(this.icon.indexOf(' ') == -1 && this.icon.length > 0){
-      this.icon = (this.icon + ' icon').trim()
+    this.name = !!name ? name : 'field-' + new Date().getTime() + Math.floor(Math.random() * 1000);
+    this.placeholder = placeholder;
+    this.type = type;
+    this.value = value;
+    this.disabled = disabled;
+    this.icon = icon || '';
+    if (this.icon.indexOf(' ') === -1 && this.icon.length > 0){
+      this.icon = (this.icon + ' icon').trim();
     }
   }
 
-  validateDate(date:string) {
-    var date_regex = /^(?:(?:31(\/|-|\.)(?:0?[13578]|1[02]))\1|(?:(?:29|30)(\/|-|\.)(?:0?[1,3-9]|1[0-2])\2))(?:(?:1[6-9]|[2-9]\d)?\d{2})$|^(?:29(\/|-|\.)0?2\3(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00))))$|^(?:0?[1-9]|1\d|2[0-8])(\/|-|\.)(?:(?:0?[1-9])|(?:1[0-2]))\4(?:(?:1[6-9]|[2-9]\d)?\d{2})$/;
+  validateDate(date: string): void {
+    let date_regex = /^(?:(?:31(\/|-|\.)(?:0?[13578]|1[02]))\1|(?:(?:29|30)(\/|-|\.)(?:0?[1,3-9]|1[0-2])\2))(?:(?:1[6-9]|[2-9]\d)?\d{2})$|^(?:29(\/|-|\.)0?2\3(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00))))$|^(?:0?[1-9]|1\d|2[0-8])(\/|-|\.)(?:(?:0?[1-9])|(?:1[0-2]))\4(?:(?:1[6-9]|[2-9]\d)?\d{2})$/;
     if (!date_regex.test(date)) {
-      throw new Error("Insert a valid date dd/mm/yyyy,dd-mm-yyyy or dd.mm.yyyy");
+      throw new Error('Insert a valid date dd/mm/yyyy,dd-mm-yyyy or dd.mm.yyyy');
     }
   }
 
-  validateTime(time:string) {
-    var time_regex = /^(10|11|12|[1-9]):[0-5][0-9]$/;
+  validateTime(time: string): void {
+    let time_regex = /^(10|11|12|[1-9]):[0-5][0-9]$/;
     if (!time_regex.test(time)) {
-      throw new Error("Insert a valid time HH:MM");
+      throw new Error('Insert a valid time HH:MM');
     }
   }
 
-  validateDateTime(dateTime:string) {
+  validateDateTime(dateTime: string): void {
     // TODO: better match this regex for MM/DD/YYYY HH:MM
-    var date_time_regex = /^(((\d\d)(([02468][048])|([13579][26]))-02-29)|(((\d\d)(\d\d)))-((((0\d)|(1[0-2]))-((0\d)|(1\d)|(2[0-8])))|((((0[13578])|(1[02]))-31)|(((0[1,3-9])|(1[0-2]))-(29|30)))))\s(([01]\d|2[0-3]):([0-5]\d):([0-5]\d))$/;
+    let date_time_regex = /^(((\d\d)(([02468][048])|([13579][26]))-02-29)|(((\d\d)(\d\d)))-((((0\d)|(1[0-2]))-((0\d)|(1\d)|(2[0-8])))|((((0[13578])|(1[02]))-31)|(((0[1,3-9])|(1[0-2]))-(29|30)))))\s(([01]\d|2[0-3]):([0-5]\d):([0-5]\d))$/;
     if (!date_time_regex.test(dateTime)) {
-      throw new Error("Insert a valid date time");
+      throw new Error('Insert a valid date time');
     }
   }
 
-  validate(value:string){
+  validate(value: string): void {
     console.log(this.type);
     if (this.type === 'date') {
-      this.validateDate(value)
+      this.validateDate(value);
     } else if (this.type === 'time') {
-      this.validateTime(value)
+      this.validateTime(value);
     } else if (this.type === 'datetime-local') {
-      this.validateDateTime(value)
+      this.validateDateTime(value);
     }
   };
 }
 
 @Component({
   selector: 'demo',
-  directives: [InputDate],
   template: `<div class="ui three column grid">
   <div class="column">
     <h4 class="ui top attached inverted header">Default</h4>
@@ -102,75 +100,75 @@ export class InputDateModel {
 `
 })
 class App {
-  demoValue:InputDateModel
-  demoDisabled:InputDateModel
-  demoError:InputDateModel
-  demoIcon:InputDateModel
+  demoValue: InputDateModel;
+  demoDisabled: InputDateModel;
+  demoError: InputDateModel;
+  demoIcon: InputDateModel;
 
-  constructor(@Attribute('id') id:string) {
-    this.initDemoValue()
-    this.initDemoDisabled()
-    this.initDemoError()
-    this.initDemoIcon()
+  constructor(@Attribute('id') id: string) {
+    this.initDemoValue();
+    this.initDemoDisabled();
+    this.initDemoError();
+    this.initDemoIcon();
   }
 
-  initDemoValue() {
-    let model = new InputDateModel()
-    model.name = "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
-    model.value = "Costa Rica"
-    model.type = 'datetime-local'
+  initDemoValue(): void {
+    let model = new InputDateModel();
+    model.name = 'field-' + new Date().getTime() + Math.floor(Math.random() * 1000);
+    model.value = 'Costa Rica';
+    model.type = 'datetime-local';
 
     this.demoValue = model;
   }
 
-  initDemoDisabled() {
-    let model = new InputDateModel()
-    model.name = "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
-    model.disabled = true
-    model.placeholder = "Disabled"
+  initDemoDisabled(): void {
+    let model = new InputDateModel();
+    model.name = 'field-' + new Date().getTime() + Math.floor(Math.random() * 1000);
+    model.disabled = true;
+    model.placeholder = 'Disabled';
 
     this.demoDisabled = model;
   }
 
-  initDemoError() {
-    let model = new InputDateModel()
-    model.type = 'time'
-    model.name = "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
-    model.value = "Required Field"
-    model.validate = (newValue:string)=> {
-      var biggerThanFive = /^([5-9]|0[5-9]|1[0-9]|2[0-3]):[0-5][0-9]$/;
-      if(!newValue){
-        throw new Error("Required Field")
+  initDemoError(): void {
+    let model = new InputDateModel();
+    model.type = 'time';
+    model.name = 'field-' + new Date().getTime() + Math.floor(Math.random() * 1000);
+    model.value = 'Required Field';
+    model.validate = (newValue: string) => {
+      let biggerThanFive = /^([5-9]|0[5-9]|1[0-9]|2[0-3]):[0-5][0-9]$/;
+      if (!newValue) {
+        throw new Error('Required Field');
       } else if (!biggerThanFive.test(newValue)) {
-        throw new Error("Time should be bigger than 5AM")
+        throw new Error('Time should be bigger than 5AM');
       }
-    }
+    };
 
     this.demoError = model;
   }
 
-  initDemoIcon() {
-    let model = new InputDateModel()
-    model.name = "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
-    model.icon = "icon circular calendar link"
-    model.placeholder = "Icon"
+  initDemoIcon(): void {
+    let model = new InputDateModel();
+    model.name = 'field-' + new Date().getTime() + Math.floor(Math.random() * 1000);
+    model.icon = 'icon circular calendar link';
+    model.placeholder = 'Icon';
 
     this.demoIcon = model;
   }
 
-  customChange(event){
-    console.log("Value of field: " + event.target.value)
+  customChange(event): void {
+    console.log('Value of field: ' + event.target.value);
   }
 
 }
 
-export function main() {
-  let app = bootstrap(App)
+export function main(): any {
+  let app = bootstrap(App);
   app.then((appRef) => {
-    console.log("Bootstrapped App: ", appRef)
+    console.log('Bootstrapped App: ', appRef);
   }).catch((e) => {
-    console.log("Error bootstrapping app: ", e)
+    console.log('Error bootstrapping app: ', e);
     throw e;
   });
-  return app
+  return app;
 }

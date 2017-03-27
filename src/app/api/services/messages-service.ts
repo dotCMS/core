@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import {ApiRoot} from '../persistence/ApiRoot';
 import {CoreWebService} from './core-web-service';
 import {FormatDateService} from './format-date-service';
 import {Injectable} from '@angular/core';

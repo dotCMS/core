@@ -28,7 +28,7 @@ export class ResponseView {
         return this.bodyJsonObject.i18nMessagesMap;
     }
 
-    get entity(): any{
+    get entity(): any {
         return this.bodyJsonObject.entity;
     }
 
@@ -50,7 +50,7 @@ export class ResponseView {
         return this.resp.status;
     }
 
-    get response(): Response{
+    get response(): Response {
         return this.resp;
     }
 

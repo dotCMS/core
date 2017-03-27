@@ -1,9 +1,8 @@
 import { Validators, ValidatorFn } from '@angular/forms';
 import {CustomValidators} from '../validation/CustomValidators';
 
-export class CwValidationResults{
+export class CwValidationResults {
   valid: boolean;
-
 
   constructor(valid: boolean) {
     this.valid = valid;
@@ -19,14 +18,6 @@ interface ValidatorDefinition {
   providerFn: Function;
 }
 const VALIDATIONS = {
-  required: {
-    key: 'required',
-    providerFn: (constraint: TypeConstraint) => CustomValidators.required()
-  },
-  minLength: {
-    key: 'minLength',
-    providerFn: (constraint: TypeConstraint) => CustomValidators.minLength(constraint.args['value'])
-  },
   maxLength: {
     key: 'maxLength',
     providerFn: (constraint: TypeConstraint) => CustomValidators.maxLength(constraint.args['value'])
@@ -35,35 +26,28 @@ const VALIDATIONS = {
     key: 'maxValue',
     providerFn: (constraint: TypeConstraint) => CustomValidators.max(constraint.args['value'])
   },
+  minLength: {
+    key: 'minLength',
+    providerFn: (constraint: TypeConstraint) => CustomValidators.minLength(constraint.args['value'])
+  },
   minValue: {
     key: 'minValue',
     providerFn: (constraint: TypeConstraint) => CustomValidators.min(constraint.args['value'])
-  }
+  },
+  required: {
+    key: 'required',
+    providerFn: (constraint: TypeConstraint) => CustomValidators.required()
+  },
 };
 
+let Registry = {};
 
 export class DataTypeModel {
 
   private _vFns: Function[];
 
-    static registerType(typeId: string, type: Function){
+    static registerType(typeId: string, type: Function): void {
     Registry[typeId] = type;
-  }
-
-  static fromJson(json: any, name: string): CwInputDefinition{
-    let typeId = json.id || json.type;
-    let type = Registry[typeId];
-
-    if (!type){
-      let msg = 'No input definition registered for \'' + (json.id || json.type) + '\'. Using default.';
-      console.error(msg, json);
-      type = 'text';
-    }
-    let dataType = null;
-    if (json.dataType){
-      dataType = new DataTypeModel(json.dataType.id, json.dataType.errorMessageKey, json.dataType.constraints, json.dataType.defaultValue );
-    }
-    return new type(json, typeId, name, json.placeholder, dataType);
   }
 
   constructor(public id: string, public errorMessageKey: string, private _constraints: any, public defaultValue: string = null) {
@@ -85,11 +69,9 @@ export class DataTypeModel {
   }
 
   validator(): ValidatorFn {
-    return Validators.compose(this.validators());
+    return Validators.compose(<ValidatorFn[]> this.validators());
   }
 }
-
-let Registry = {};
 
 export class CwInputDefinition {
   private _vFns: Function[];
@@ -97,6 +79,22 @@ export class CwInputDefinition {
 
   static registerType(typeId: string, type: Function): void {
     Registry[typeId] = type;
+  }
+
+  static fromJson(json: any, name: string): CwInputDefinition {
+    let typeId = json.id || json.type;
+    let type = Registry[typeId];
+
+    if (!type) {
+      let msg = 'No input definition registered for \'' + (json.id || json.type) + '\'. Using default.';
+      console.error(msg, json);
+      type = 'text';
+    }
+    let dataType = null;
+    if (json.dataType) {
+      dataType = new DataTypeModel(json.dataType.id, json.dataType.errorMessageKey, json.dataType.constraints, json.dataType.defaultValue );
+    }
+    return new type(json, typeId, name, json.placeholder, dataType);
   }
 
   constructor(public json: any,
@@ -116,12 +114,12 @@ export class CwInputDefinition {
   }
 
   validator(): Function {
-    if (this._validator == null){
+    if (this._validator == null) {
       this._vFns =  this.validators();
-      if (this._vFns && this._vFns.length){
-        this._validator = Validators.compose(this._vFns);
+      if (this._vFns && this._vFns.length) {
+        this._validator = Validators.compose( <ValidatorFn[]> this._vFns);
       } else {
-        this._validator = () => { return null };
+        this._validator = () => { return null; };
       }
     }
     return this._validator;
@@ -141,7 +139,6 @@ export class CwSpacerInputDefinition extends CwInputDefinition {
   }
 }
 
-
 CwInputDefinition.registerType('text', CwInputDefinition);
 CwInputDefinition.registerType('datetime', CwInputDefinition);
 CwInputDefinition.registerType('number', CwInputDefinition);
@@ -155,7 +152,7 @@ export class CwDropdownInputModel extends CwInputDefinition {
   selected: Array<any> = [];
   i18nBaseKey: string;
 
-  static createValidators(json: any) {
+  static createValidators(json: any): any[] {
     let ary = [];
     ary.push(CustomValidators.minSelections(json.minSelections || 0));
     ary.push(CustomValidators.maxSelections(json.maxSelections || 1));
@@ -201,8 +198,6 @@ export class CwRestDropdownInputModel extends CwInputDefinition {
 
 CwInputDefinition.registerType('restDropdown', CwRestDropdownInputModel);
 
-
-
 export class ParameterDefinition {
   defaultValue: string;
   priority: number;
@@ -210,7 +205,7 @@ export class ParameterDefinition {
   inputType: CwInputDefinition;
   i18nBaseKey: string;
 
-  static fromJson(json: any): ParameterDefinition{
+  static fromJson(json: any): ParameterDefinition {
     let m = new ParameterDefinition;
     let defV = json.defaultValue;
     m.defaultValue = (defV == null || defV === '') ? null : defV;
@@ -225,5 +220,3 @@ export class ParameterDefinition {
   constructor() {
   }
 }
-
-

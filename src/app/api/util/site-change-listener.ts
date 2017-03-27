@@ -5,7 +5,7 @@ import {MessageService} from '../services/messages-service';
 
 export abstract class SiteChangeListener extends BaseComponent {
 
-    constructor(private siteService: SiteService, i18nKeys: string[], private messageService: MessageService) {
+    constructor(private siteService: SiteService, i18nKeys: string[], messageService: MessageService) {
         super(i18nKeys, messageService);
 
         siteService.switchSite$.subscribe(

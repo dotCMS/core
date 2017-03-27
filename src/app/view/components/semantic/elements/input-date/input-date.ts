@@ -6,8 +6,8 @@ import {
     Input,
     Output,
     Optional
-} from '@angular/core'
-import {NgControl, ControlValueAccessor} from '@angular/forms'
+} from '@angular/core';
+import {NgControl, ControlValueAccessor} from '@angular/forms';
 import _ from 'lodash';
 
 /**
@@ -15,9 +15,9 @@ import _ from 'lodash';
  * @see http://semantic-ui.com/elements/input.html
  */
 @Component({
-  selector: 'cw-input-date',
-  host: {'role': 'text'},
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {'role': 'text'},
+  selector: 'cw-input-date',
   template: `<div flex layout="row" layout-wrap class="ui fluid input"  [ngClass]="{disabled: disabled, icon: icon, required: required}">
     <input flex
            type="datetime-local"
@@ -34,72 +34,70 @@ import _ from 'lodash';
 })
 export class InputDate implements ControlValueAccessor {
 
-  private static DEFAULT_VALUE:string = InputDate._defaultValue()
-  @Input() placeholder:string = ""
-  @Input() type:string = ""
-  @Input() value:string = ""
-  @Input() icon:string
-  @Input() disabled:boolean = false
-  @Input() focused:boolean = false
-  @Input() tabIndex:number = null
-  @Input() required:boolean = false
+  private static DEFAULT_VALUE: string = InputDate._defaultValue();
+  @Input() placeholder = '';
+  @Input() type = '';
+  @Input() value = '';
+  @Input() icon: string;
+  @Input() disabled = false;
+  @Input() focused = false;
+  @Input() tabIndex: number = null;
+  @Input() required = false;
 
-  @Output() blur:EventEmitter<any> = new EventEmitter()
+  @Output() blur: EventEmitter<any> = new EventEmitter();
 
-  errorMessage:string
-  onChange:Function
-  onTouched:Function
+  errorMessage: string;
+  onChange: Function;
+  onTouched: Function;
 
-  private _modelValue:any
+  private _modelValue: any;
 
-  constructor( @Optional() control:NgControl, private _elementRef:ElementRef) {
-    if(control){
+  private static _defaultValue(): string {
+    let d = new Date();
+    let off = d.getTimezoneOffset();
+    d.setHours(0);
+    d.setMinutes(0);
+    d.setSeconds(0);
+    d.setMilliseconds(0);
+    d.setMonth(d.getMonth() + 1);
+    d.setDate(1);
+    let r = d.toISOString();
+    r = r.substring(0, r.indexOf('T') + 1);
+    r = r + '00:00:00';
+    return r;
+  }
+
+  constructor( @Optional() control: NgControl, private _elementRef: ElementRef) {
+    if (control) {
       control.valueAccessor = this;
     }
   }
 
-  ngOnChanges(change) {
+  ngOnChanges(change): void {
     if (change.focused) {
-      let f = change.focused.currentValue === true || change.focused.currentValue == 'true'
+      let f = change.focused.currentValue === true || change.focused.currentValue === 'true';
       if (f) {
-        let el = this._elementRef.nativeElement
-        el.children[0].children[0].focus()
+        let el = this._elementRef.nativeElement;
+        el.children[0].children[0].focus();
       }
     }
   }
 
-
-  onBlur(value) {
-    this.onTouched()
-    this.blur.emit(value)
+  onBlur(value): void {
+    this.onTouched();
+    this.blur.emit(value);
   }
 
-  writeValue(value:any) {
-    this._modelValue = _.isEmpty(value) ? InputDate.DEFAULT_VALUE : value
-    this._elementRef.nativeElement.firstElementChild.firstElementChild.setAttribute('value', this._modelValue)
+  writeValue(value: any): void {
+    this._modelValue = _.isEmpty(value) ? InputDate.DEFAULT_VALUE : value;
+    this._elementRef.nativeElement.firstElementChild.firstElementChild.setAttribute('value', this._modelValue);
   }
 
-  registerOnChange(fn) {
+  registerOnChange(fn): void {
     this.onChange = fn;
   }
 
-  registerOnTouched(fn) {
+  registerOnTouched(fn): void {
     this.onTouched = fn;
   }
-
-  private static _defaultValue():string {
-    let d = new Date()
-    let off = d.getTimezoneOffset()
-    d.setHours(0)
-    d.setMinutes(0)
-    d.setSeconds(0)
-    d.setMilliseconds(0)
-    d.setMonth(d.getMonth() + 1)
-    d.setDate(1)
-    let r = d.toISOString()
-    r = r.substring(0, r.indexOf('T') + 1)
-    r = r + "00:00:00"
-    return r
-  }
 }
-

@@ -1,16 +1,16 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {Observable} from 'rxjs/Rx'
-import {RuleModel, RULE_CREATE} from "../../../api/rule-engine/Rule"
-import {I18nService} from "../../../api/system/locale/I18n"
-import {CwFilter} from "../../../api/util/CwFilter"
-import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
+import {Observable} from 'rxjs/Rx';
+import {RuleModel, RULE_CREATE} from '../../../api/rule-engine/Rule';
+import {I18nService} from '../../../api/system/locale/I18n';
+import {CwFilter} from '../../../api/util/CwFilter';
+import {ServerSideTypeModel} from '../../../api/rule-engine/ServerSideFieldModel';
 import {
     ConditionActionEvent, RuleActionActionEvent, RuleActionEvent,
     ConditionGroupActionEvent
-} from "./rule-engine.container";
-import {IPublishEnvironment} from "../../../api/services/bundle-service";
+} from './rule-engine.container';
+import {IPublishEnvironment} from '../../../api/services/bundle-service';
 
-const I8N_BASE:string = 'api.sites.ruleengine'
+const I8N_BASE = 'api.sites.ruleengine';
 
 /**
  *
@@ -77,104 +77,101 @@ const I8N_BASE:string = 'api.sites.ruleengine'
 })
 export class RuleEngineComponent {
 
-  @Input() rules:RuleModel[]
-  @Input() ruleActionTypes:{[key:string]: ServerSideTypeModel} = {}
-  @Input() loading:boolean
-  @Input() globalError:string
-  @Input() showRules:boolean
-  @Input() conditionTypes:{[key:string]: ServerSideTypeModel} = {}
-  @Input() environmentStores:IPublishEnvironment[];
+  @Input() rules: RuleModel[];
+  @Input() ruleActionTypes: {[key: string]: ServerSideTypeModel} = {};
+  @Input() loading: boolean;
+  @Input() globalError: string;
+  @Input() showRules: boolean;
+  @Input() conditionTypes: {[key: string]: ServerSideTypeModel} = {};
+  @Input() environmentStores: IPublishEnvironment[];
 
-  @Output() createRule:EventEmitter<{type:string}> = new EventEmitter(false)
-  @Output() deleteRule:EventEmitter<RuleActionEvent> = new EventEmitter(false)
-  @Output() updateName:EventEmitter<RuleActionEvent> = new EventEmitter(false)
-  @Output() updateExpandedState:EventEmitter<RuleActionEvent> = new EventEmitter(false)
-  @Output() updateEnabledState:EventEmitter<RuleActionEvent> = new EventEmitter(false)
-  @Output() updateFireOn:EventEmitter<RuleActionEvent> = new EventEmitter(false)
+  @Output() createRule: EventEmitter<{type: string}> = new EventEmitter(false);
+  @Output() deleteRule: EventEmitter<RuleActionEvent> = new EventEmitter(false);
+  @Output() updateName: EventEmitter<RuleActionEvent> = new EventEmitter(false);
+  @Output() updateExpandedState: EventEmitter<RuleActionEvent> = new EventEmitter(false);
+  @Output() updateEnabledState: EventEmitter<RuleActionEvent> = new EventEmitter(false);
+  @Output() updateFireOn: EventEmitter<RuleActionEvent> = new EventEmitter(false);
 
-  @Output() createRuleAction:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
-  @Output() deleteRuleAction:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
-  @Output() updateRuleActionType:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
-  @Output() updateRuleActionParameter:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
+  @Output() createRuleAction: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
+  @Output() deleteRuleAction: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
+  @Output() updateRuleActionType: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
+  @Output() updateRuleActionParameter: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
 
-  @Output() createConditionGroup:EventEmitter<ConditionGroupActionEvent> = new EventEmitter(false)
-  @Output() updateConditionGroupOperator:EventEmitter<ConditionGroupActionEvent> = new EventEmitter(false)
+  @Output() createConditionGroup: EventEmitter<ConditionGroupActionEvent> = new EventEmitter(false);
+  @Output() updateConditionGroupOperator: EventEmitter<ConditionGroupActionEvent> = new EventEmitter(false);
 
-  @Output() createCondition:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
-  @Output() deleteCondition:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
-  @Output() updateConditionType:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
-  @Output() updateConditionParameter:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
-  @Output() updateConditionOperator:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
+  @Output() createCondition: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
+  @Output() deleteCondition: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
+  @Output() updateConditionType: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
+  @Output() updateConditionParameter: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
+  @Output() updateConditionOperator: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
 
+  filterText: string;
+  status: string;
+  activeRules: number;
 
+  private resources: I18nService;
+  private _rsrcCache: {[key: string]: Observable<string>};
 
-  filterText:string
-  status:string
-  activeRules:number
-
-  private resources:I18nService;
-  private _rsrcCache:{[key:string]:Observable<string>}
-
-
-  constructor(resources:I18nService) {
-    this.resources = resources
-    resources.get(I8N_BASE).subscribe((rsrc)=> { })
-    this.filterText = ""
-    this.rules = []
-    this._rsrcCache = {}
-    this.status = null
+  constructor(resources: I18nService) {
+    this.resources = resources;
+    resources.get(I8N_BASE).subscribe((rsrc) => { });
+    this.filterText = '';
+    this.rules = [];
+    this._rsrcCache = {};
+    this.status = null;
   }
 
-  rsrc(subkey:string) {
-    let x = this._rsrcCache[subkey]
-    if(!x){
-      x = this.resources.get(I8N_BASE + '.rules.' + subkey)
-      this._rsrcCache[subkey] = x
+  rsrc(subkey: string) {
+    let x = this._rsrcCache[subkey];
+    if (!x) {
+      x = this.resources.get(I8N_BASE + '.rules.' + subkey);
+      this._rsrcCache[subkey] = x;
     }
-    return x
+    return x;
   }
 
-  ngOnChange(change){
-    if(change.rules){
-      this.updateActiveRuleCount()
+  ngOnChange(change): void {
+    if (change.rules) {
+      this.updateActiveRuleCount();
     }
   }
 
-  addRule() {
-    this.createRule.emit({type:RULE_CREATE})
+  addRule(): void {
+    this.createRule.emit({type: RULE_CREATE});
   }
 
-  updateActiveRuleCount() {
+  updateActiveRuleCount(): void {
     this.activeRules = 0;
-    for (var i = 0; i < this.rules.length; i++) {
+    for (let i = 0; i < this.rules.length; i++) {
       if (this.rules[i].enabled) {
         this.activeRules++;
       }
     }
   }
 
-  setFieldFilter(field:string, value:string = null) {
+  setFieldFilter(field: string, value: string = null): void {
     // remove old status
-    var re = new RegExp(field + ':[\\w]*')
-    this.filterText = this.filterText.replace(re, '') // whitespace issues: "blah:foo enabled:false mahRule"
+    let re = new RegExp(field + ':[\\w]*');
+    this.filterText = this.filterText.replace(re, ''); // whitespace issues: "blah:foo enabled:false mahRule"
     if (value !== null) {
-      this.filterText = field + ':' + value + ' ' + this.filterText
+      this.filterText = field + ':' + value + ' ' + this.filterText;
     }
   }
 
-  isFilteringField(field:string, value:any = null):boolean {
-    let isFiltering
+  isFilteringField(field: string, value: any = null): boolean {
+    let isFiltering;
     if (value === null) {
-      var re = new RegExp(field + ':[\\w]*')
-      isFiltering = this.filterText.match(re) != null
+      let re = new RegExp(field + ':[\\w]*');
+      isFiltering = this.filterText.match(re) != null;
     } else {
-      isFiltering = this.filterText.indexOf(field + ':' + value) >= 0
+      isFiltering = this.filterText.indexOf(field + ':' + value) >= 0;
     }
-    return isFiltering
+    return isFiltering;
   }
 
-  isFiltered(rule:RuleModel) {
-    return CwFilter.isFiltered(rule, this.filterText)
+  isFiltered(rule: RuleModel): boolean {
+    return CwFilter.isFiltered(rule, this.filterText);
   }
 
 }

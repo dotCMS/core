@@ -9,7 +9,6 @@ import {IframeOverlayService} from '../../../api/services/iframe-overlay-service
 
 @Component({
     encapsulation: ViewEncapsulation.None,
-    pipes: [],
     providers: [],
     selector: 'dot-site-selector-component',
     styleUrls: ['dot-site-selector-component.css'],
@@ -21,9 +20,9 @@ export class SiteSelectorComponent extends BaseComponent {
     private sitesCounter: number;
     private message: string;
     private filteredSitesResults: Array<any>;
-    private paginationPage: number = 1;
+    private paginationPage = 1;
     private paginationPerPage: number;
-    private paginationQuery: string = '';
+    private paginationQuery = '';
 
     @ViewChild(AutoComplete) private autoCompleteComponent: AutoComplete;
 
@@ -71,7 +70,7 @@ export class SiteSelectorComponent extends BaseComponent {
         /**
          * only execute the search if there is at least 3 characters
          */
-        if(event.query.length >= 3) {
+        if (event.query.length >= 3) {
             /**
              * If the query change then clean the paginationPage
              * and paginationQuery variables
@@ -92,7 +91,7 @@ export class SiteSelectorComponent extends BaseComponent {
      * @param event - The click event to display the dropdown options
      */
     handleSitesDropdownClick(event: {originalEvent: Event, query: string}): void {
-        this.iframeOverlayService.toggle()
+        this.iframeOverlayService.toggle();
 
         // TODO: get rid of this lines when this is fixed: https://github.com/primefaces/primeng/issues/745
         event.originalEvent.preventDefault();

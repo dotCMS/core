@@ -4,7 +4,6 @@ import {GCircle} from '../../../../api/maps/GoogleMapService';
 
 @Component({
   selector: 'demo',
-  directives: [AreaPickerDialogComponent],
   template: `
     <cw-google-map-dialog-component 
     [hidden]="!showingMap" 

@@ -1,11 +1,8 @@
-import {bootstrap} from '@angular/platform-browser-dynamic'
-import {Attribute, Component, View} from '@angular/core'
-import {Dropdown, InputOption} from './dropdown'
-import {Observable} from 'rxjs/Rx'
+import {Attribute, Component} from '@angular/core';
+import {Observable} from 'rxjs/Rx';
 
 @Component({
   selector: 'demo',
-  directives: [Dropdown, InputOption],
   template: `<div class="ui three column grid">
   <!--<div class="column">-->
     <!--<h4 class="ui top attached inverted header">Default</h4>-->
@@ -56,85 +53,83 @@ import {Observable} from 'rxjs/Rx'
 })
 
 export class App {
-  demo2:any
-  demo3:any
-  demo4:any
+  demo2: any;
+  demo3: any;
+  demo4: any;
 
-  constructor(@Attribute('id') id:string) {
-    this.initDemo2()
-    this.initDemo3()
-    this.initDemo4()
+  constructor(@Attribute('id') id: string) {
+    this.initDemo2();
+    this.initDemo3();
+    this.initDemo4();
   }
 
-  initDemo2() {
+  initDemo2(): void {
     this.demo2 = {
-      name: "field-" + new Date().getTime() + Math.floor(Math.random() * 1000),
-      placeholder: Observable.of("Gender"),
-      value: null,
+      name: 'field-' + new Date().getTime() + Math.floor(Math.random() * 1000),
       options: [
-        //{valueId: '', value: '', label:  Observable.of('Gender')},
         {value: 'M', label:  this.delayedValue('Male', 100), icon: 'male icon' },
         {value: 'F', label:  this.delayedValue('Female', 2000), icon: 'female icon' }
-      ]
-    }
+      ],
+      placeholder: Observable.of('Gender'),
+      value: null,
+    };
   }
 
-  initDemo3() {
+  initDemo3(): void {
     this.demo3 = {
-      name: "field-" + new Date().getTime() + Math.floor(Math.random() * 1000),
-      placeholder: Observable.from("Size"),
-      value: null,
+      name: 'field-' + new Date().getTime() + Math.floor(Math.random() * 1000),
       options: [
-        //{valueId: '', value: '', label:  Observable.of('Gender')},
+        // {valueId: '', value: '', label:  Observable.of('Gender')},
         {value: 'L', label:  this.delayedValue('Large', 100), icon: 'asterisk icon' },
         {value: 'M', label:  this.delayedValue('Medium', 1000), icon: 'cube icon' },
         {value: 'S', label:  this.delayedValue('Small', 2000), icon: 'cubes icon' }
-      ]
-    }
+      ],
+      placeholder: Observable.from('Size'),
+      value: null,
+    };
 
-    this.delayedValue('M', 2000).subscribe((v)=>{
-      console.log("Retrieved value for demo3:", v)
-      this.demo3.value = v
-    })
+    this.delayedValue('M', 2000).subscribe((v) => {
+      console.log('Retrieved value for demo3:', v);
+      this.demo3.value = v;
+    });
 
   }
 
-  initDemo4() {
+  initDemo4(): void {
     this.demo4 = {
-      name: "field-" + new Date().getTime() + Math.floor(Math.random() * 1000),
-      placeholder: Observable.of("Select a make"),
-      value: null,
+      name: 'field-' + new Date().getTime() + Math.floor(Math.random() * 1000),
       options: [
-        //{valueId: '', value: '', label:  Observable.of('Gender')},
+        // {valueId: '', value: '', label:  Observable.of('Gender')},
         {value: 'BMW', label:  this.delayedValue('BMW', 5000), icon: 'car icon' },
         {value: 'Ford', label:  this.delayedValue('Ford', 10), icon: 'car icon' },
-        {value: 'GMC', label:  this.delayedValue('General Motors',50), icon: 'car icon' },
+        {value: 'GMC', label:  this.delayedValue('General Motors', 50), icon: 'car icon' },
         {value: 'Toyota', label:  this.delayedValue('Toyota', 100), icon: 'car icon' },
-      ]
-    }
+      ],
+      placeholder: Observable.of('Select a make'),
+      value: null,
+    };
 
-    this.delayedValue('BMW', 3000).subscribe((v)=>{
-      console.log("Retrieved value for demo3:", v)
-      this.demo4.value = v
-    })
+    this.delayedValue('BMW', 3000).subscribe((v) => {
+      console.log('Retrieved value for demo3:', v);
+      this.demo4.value = v;
+    });
 
   }
 
-
-  delayedValue(value:string, delay:number){
-    return Observable.timer(delay).map(x => value)
+  delayedValue(value: string, delay: number): Observable<string> {
+    return Observable.timer(delay).map(x => value);
   }
 
-  //initDemo3() {
+  // initDemo3() {
   //  this.demo3 = new DropdownModel(null,Observable.of("Color"), ["Y"], [
   //    new DropdownOption('R', {x: 'red'}, Observable.of('Red'), 'asterisk'),
   //    new DropdownOption('Y', 'yellow', Observable.of('Yellow'), 'certificate'),
   //    new DropdownOption('G', 92, Observable.of('Green'), 'circle'),
   //    new DropdownOption('B', 'blue', Observable.of('Blue'), 'square'),
   //    new DropdownOption('P', 'purple', Observable.of('Purple'), 'cube')], false, 0, 2);
-  //}
+  // }
   //
-  //initDemo4() {
+  // initDemo4() {
   //  let model = new DropdownModel(null, Observable.of("Color"), [], [
   //    new DropdownOption('R', 'red', Observable.of('Red'), 'asterisk'),
   //    new DropdownOption('Y', 'yellow', Observable.of('Yellow'), 'certificate'),
@@ -147,11 +142,10 @@ export class App {
   //    model: model,
   //    selected: []
   //  };
-  //}
+  // }
 
-  demo4OnChange(event) {
-    let dd = event.target.model
-    console.log(dd)
+  demo4OnChange(event): void {
+    let dd = event.target.model;
+    console.log(dd);
   }
-
 }

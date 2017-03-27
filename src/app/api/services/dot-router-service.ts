@@ -31,14 +31,6 @@ export class DotRouterService {
         return url === '/';
     }
 
-    public goToRoot(): void {
-        if (!this.loginService.isLogin) {
-            this.goToLogin();
-        } else {
-            this.goToMain();
-        }
-    }
-
     public gotoPortlet(portletId: string): void {
         this.router.navigate([`c/${portletId.replace(' ', '_')}`]);
     }

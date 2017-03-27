@@ -100,5 +100,5 @@ export interface ProtocolConfig {
 }
 
 export interface QueryParams {
-    [key: string]: string;
+    [key: string]: any;
 }

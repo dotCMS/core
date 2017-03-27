@@ -245,8 +245,8 @@ describe('Integration.api.rule-engine.RuleService', () => {
     };
     let clientRuleAction: IRuleAction = {
       parameters: {
-        'headerKey': {key: 'headerKey', value: 'Hi', priority: 0},
-        'headerValue': {key: 'headerValue', value: 'Bob', priority: 1},
+        'headerKey': {key: 'headerKey', priority: 0, value: 'Hi'},
+        'headerValue': {key: 'headerValue', priority: 1, value: 'Bob'},
       },
       priority: 10,
       type: 'SetResponseHeaderActionlet'
@@ -276,8 +276,8 @@ describe('Integration.api.rule-engine.RuleService', () => {
     };
     let clientRuleAction: IRuleAction = {
       parameters: {
-        'headerKey': {key: 'headerKey', value: 'Hi', priority: 0},
-        'headerValue': {key: 'headerValue', value: 'Bob', priority: 1},
+        'headerKey': {key: 'headerKey', priority: 0, value: 'Hi' },
+        'headerValue': {key: 'headerValue', priority: 1, value: 'Bob'},
       },
       priority: 10,
       type: 'SetResponseHeaderActionlet',
@@ -347,8 +347,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
             expect(rule.conditionGroups[conditionGroup.key]).toBeDefined('Well that\'s odd');
             expect(rule.conditionGroups[conditionGroup.key].operator).toEqual('OR');
             /* Now read the ConditionGroups off the rule we just got back. Add listener first, then trigger call. */
-            conditionGroupService.all(rule.key, Object.keys(rule.conditionGroups)).subscribe((conditionGroups: ConditionGroupModel[]) => {
-              let condGroup = conditionGroups[0];
+            conditionGroupService.all(rule.key, Object.keys(rule.conditionGroups)).subscribe((condGroup: ConditionGroupModel) => {
               expect(conditionGroup.operator).toEqual('OR');
               expect(conditionGroup.priority).toEqual(99);
               done();

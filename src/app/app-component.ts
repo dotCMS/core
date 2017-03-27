@@ -4,7 +4,6 @@ import {LoginService} from './api/services/login-service';
 import {NotLicensedService} from './api/services/not-licensed-service';
 
 @Component({
-    directives: [],
     encapsulation: ViewEncapsulation.None,
     providers: [],
     selector: 'app',

@@ -1,6 +1,4 @@
-import {Injectable} from '@angular/core';
 
-import {Observable} from 'rxjs/Rx';
 import {WebSocketProtocol} from './websockets-protocol';
 import {Protocol, Url, QueryParams} from './protocol';
 import {LoggerService} from '../logger.service';
@@ -23,7 +21,7 @@ enum WEB_SOCKET_SERVER_SUPPORT {
 
 export class EventsSocket extends Protocol {
 
-    private static protocolImpl: Protocol;
+    private protocolImpl: Protocol;
 
     private closedOnLogout = false;
     private isWebSocketServerSupport: WEB_SOCKET_SERVER_SUPPORT = WEB_SOCKET_SERVER_SUPPORT.DONT_NOW;

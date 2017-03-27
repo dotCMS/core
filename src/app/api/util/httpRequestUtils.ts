@@ -39,5 +39,4 @@ export class HttpRequestUtils {
 
         return value;
     } // getQueryStringParam.
-
 }

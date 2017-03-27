@@ -1,13 +1,11 @@
 import _ from 'lodash';
-import {Injectable} from '@angular/core';
 import {Subject} from 'rxjs/Subject';
 import {LoggerService} from '../logger.service';
 import {Protocol, Url} from './protocol';
-import {Observable} from 'rxjs/Rx';
 
 export class WebSocketProtocol extends Protocol {
 
-    private static socket: WebSocket;
+    private socket: WebSocket;
 
     private sendQueue = [];
 
@@ -45,18 +43,16 @@ export class WebSocketProtocol extends Protocol {
                 self.socket = this.protocols ? new WebSocket(this.url.url, this.protocols) : new WebSocket(this.url.url);
 
                 self.socket.onopen = (ev: Event) => {
-                    this.loggerService.debug('Web EventsSocket connection opened', ev, this.count);
                     this._open.next(ev);
                 };
 
                 self.socket.onmessage = (ev: MessageEvent) => {
-                    this.loggerService.debug('Message:', ev, this.count);
                     this._message.next(JSON.parse(ev.data));
                 };
 
                 self.socket.onclose = (ev: CloseEvent) => {
                     alert();
-                    this.loggerService.debug('Web EventsSocket connection closed', ev, this.count);
+
                     if ((this.reconnectIfNotNormalClose && ev.code !== this.normalCloseCode) || this.reconnectableStatusCodes.indexOf(ev.code) > -1) {
                         this.loggerService.debug('Reconnecting Web EventsSocket connection');
                         this.reconnect();
@@ -67,7 +63,6 @@ export class WebSocketProtocol extends Protocol {
                 };
 
                 self.socket.onerror = (ev: ErrorEvent) => {
-                    this.loggerService.debug('Web EventsSocket connection error', ev, this.count);
                     this._error.next(ev);
                 };
             }catch (error) {
@@ -77,7 +72,7 @@ export class WebSocketProtocol extends Protocol {
         }
     }
 
-    send(data): void {
+    send(data): Promise<any> {
         let self = this;
         if (this.getReadyState() !== this.readyStateConstants.OPEN && this.getReadyState() !== this.readyStateConstants.CONNECTING) {
             this.connect();

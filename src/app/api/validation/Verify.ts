@@ -21,7 +21,7 @@ export class LazyVerify {
 
   static empty(value) {
     let empty = !LazyVerify.exists(value);
-    if(!empty) {
+    if (!empty) {
       if (LazyVerify.isString(value)) {
         empty = LazyVerify.maxLength(value, 0);
       } else if (LazyVerify.isObject(value)) {
@@ -44,10 +44,10 @@ export class LazyVerify {
   }
 
   static isArray(value) {
-    return (typeof value === 'array' || value instanceof Array);
+    return (Array.isArray(value) || value instanceof Array);
   }
 
-  static emptyObject(value){
+  static emptyObject(value) {
     return Object.getOwnPropertyNames(value).length === 0;
   }
 
@@ -121,8 +121,6 @@ export class LazyVerify {
   static isBoolean(value) {
     return value === true || value === false;
   }
-
-
 }
 
 export class Verify extends LazyVerify {
@@ -163,5 +161,3 @@ export class Verify extends LazyVerify {
     return LazyVerify.exists(value) && LazyVerify.isArray(value);
   }
 }
-
-

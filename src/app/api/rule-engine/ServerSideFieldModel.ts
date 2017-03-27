@@ -1,7 +1,7 @@
 import {CwModel} from '../util/CwModel';
 import {ParameterDefinition} from '../util/CwInputModel';
 import {ParameterModel} from './Rule';
-import {FormControl, Validators} from '@angular/forms';
+import {FormControl, Validators, ValidatorFn} from '@angular/forms';
 import {CustomValidators} from '../validation/CustomValidators';
 
 export class ServerSideFieldModel extends CwModel {
@@ -15,11 +15,11 @@ export class ServerSideFieldModel extends CwModel {
   static createNgControl(model: ServerSideFieldModel, paramName: string): FormControl {
     let param = model.parameters[paramName];
     let paramDef = model.parameterDefs[paramName];
-    let vFn: Function[] = paramDef.inputType.dataType.validators();
+    let vFn: ValidatorFn[] = <ValidatorFn[]> paramDef.inputType.dataType.validators();
     vFn.push(CustomValidators.noQuotes());
     let control = new FormControl(
         model.getParameterValue(param.key),
-        Validators.compose( vFn));
+        Validators.compose( vFn ));
     return control;
   }
 

@@ -4,10 +4,9 @@ import {ContentletService, StructureTypeView, ContentTypeView} from '../../../ap
 import {RoutingService} from '../../../api/services/routing-service';
 import {BaseComponent} from '../common/_base/base-component';
 import {MessageService} from '../../../api/services/messages-service';
-import {IframeOverlayService} from "../../../api/services/iframe-overlay-service";
+import {IframeOverlayService} from '../../../api/services/iframe-overlay-service';
 
 @Component({
-    directives: [],
     selector: 'toolbar-add-contentlet-body',
     styleUrls: ['toolbar-add-contentlet-body.css'],
     templateUrl: 'toolbar-add-contentlet-body.html',
@@ -15,10 +14,10 @@ import {IframeOverlayService} from "../../../api/services/iframe-overlay-service
 })
 export class ToolbarAddContenletBodyComponent {
     @Input() structureTypeViews: StructureTypeView[];
-    @Input() showMore: boolean = false;
+    @Input() showMore = false;
 
-    @Output() select = new EventEmitter<>();
-    @Output() more = new EventEmitter<>();
+    @Output() select = new EventEmitter<any>();
+    @Output() more = new EventEmitter<any>();
 
     constructor(private routingService: RoutingService) {}
 
@@ -47,19 +46,19 @@ export class ToolbarAddContenletComponent extends BaseComponent {
 
     private types: StructureTypeView[];
     private typesIcons: any = {
-        "Content": 'fa-table',
-        "Widget": 'fa-cog',
-        "File": 'fa-picture-o',
-        "Page": 'fa-file-text-o',
-        "Persona": 'fa-user',
+        'Content': 'fa-table',
+        'File': 'fa-picture-o',
+        'Page': 'fa-file-text-o',
+        'Persona': 'fa-user',
+        'Widget': 'fa-cog',
     };
     private recent: StructureTypeView[];
     private structureTypeViewSelected: StructureTypeView[];
-    private showMore: boolean = false;
+    private showMore = false;
 
-    private NUMBER_BY_PAGE: number = 4;
+    private NUMBER_BY_PAGE = 4;
     private currentPage: number = -1;
-    private selectedName: string = '';
+    private selectedName = '';
 
     constructor(private contentletService: ContentletService, private routingService: RoutingService,
                  messageService: MessageService, private iframeOverlayService: IframeOverlayService) {

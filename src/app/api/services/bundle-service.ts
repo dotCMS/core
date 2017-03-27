@@ -34,7 +34,7 @@ export class BundleService {
   private bundles$: BehaviorSubject<IBundle[]> = new BehaviorSubject([]);
   private environments$: BehaviorSubject<IDBEnvironment[]> = new BehaviorSubject([]);
   private _bundlesAry: IBundle[] = [];
-  private _environmentsAry: IDBEnvironment[] = [];
+  private _environmentsAry: IPublishEnvironment[] = [];
 
   static fromServerBundleTransformFn(data): IBundle[] {
     return data.items || [];
@@ -88,7 +88,7 @@ export class BundleService {
     if (this._environmentsAry.length) {
       obs = Observable.from(this._environmentsAry);
     } else {
-      obs = this._doLoadPublishEnvironments().map((environments: IDBEnvironment[]) => {
+      obs = this._doLoadPublishEnvironments().map((environments: IPublishEnvironment[]) => {
         this._environmentsAry = environments;
         return environments;
       });

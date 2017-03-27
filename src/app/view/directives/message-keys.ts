@@ -2,8 +2,8 @@ import {Directive, ElementRef} from '@angular/core';
 import {MessageService} from '../../api/services/messages-service';
 
 @Directive({
+    host: {},
     selector: '[messagekey]',
-    host: {}
 })
 export class MessageKeyDirective {
     private key: string;
@@ -11,7 +11,7 @@ export class MessageKeyDirective {
 
     constructor(private el: ElementRef, private messageService: MessageService) {}
 
-    ngOnInit() {
+    ngOnInit(): void {
         this.key = this.el.nativeElement.innerText;
 
         this.messageMapSubscription = this.messageService.getMessages([this.key]).subscribe(res => {
@@ -19,7 +19,7 @@ export class MessageKeyDirective {
         });
     }
 
-    ngOnDestroy() {
+    ngOnDestroy(): void {
         this.messageMapSubscription.unsubscribe();
     }
 }
