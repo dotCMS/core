@@ -13,6 +13,9 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
 
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
@@ -66,6 +69,10 @@ import com.liferay.portal.model.User;
  */
 public class DeleteFieldJob implements Job {
 
+	public static final String JOB_DATA_MAP_CONTENT_TYPE = "structure";
+	public static final String JOB_DATA_MAP_FIELD = "field";
+	public static final String JOB_DATA_MAP_USER = "user";
+
     private final PermissionAPI permAPI;
     private final ContentletAPI conAPI;
     private final NotificationAPI notfAPI;
@@ -100,6 +107,25 @@ public class DeleteFieldJob implements Job {
         this.deleteFieldJobHelper = deleteFieldJobHelper;
     }
 
+    /**
+	 * Specifies the execution parameters for the field deletion job and
+	 * schedules it for immediate execution.
+	 * 
+	 * @param contentType
+	 *            - The Content Type ({@linkplain Structure}) whose field will
+	 *            be deleted.
+	 * @param field
+	 *            - The {@link Field} that will be deleted from the Content Type
+	 *            and all its associated contentlets.
+	 * @param user
+	 *            - The {@link User} performing this action.
+	 */
+	public static void triggerDeleteFieldJob(final ContentType contentType,
+			final com.dotcms.contenttype.model.field.Field field, final User user) {
+		triggerDeleteFieldJob(new StructureTransformer(contentType).asStructure(),
+				new LegacyFieldTransformer(field).asOldField(), user);
+	}
+
 	/**
 	 * Specifies the execution parameters for the field deletion job and
 	 * schedules it for immediate execution.
@@ -121,7 +147,7 @@ public class DeleteFieldJob implements Job {
         Preconditions.checkNotNull(user, "User can't be null");
 
         JobDataMap dataMap = new JobDataMap();
-        dataMap.put("structure", contentType);
+        dataMap.put(JOB_DATA_MAP_CONTENT_TYPE, contentType);
         dataMap.put("fieldInode", field.getInode());
         dataMap.put("user", user);
 
@@ -164,14 +190,24 @@ public class DeleteFieldJob implements Job {
 	 */
     public void execute(final JobExecutionContext jobContext) throws JobExecutionException {
         final JobDataMap map = jobContext.getJobDetail().getJobDataMap();
-        final Structure contentType = (Structure) map.get("structure");
-        Field field = null;
-        if (map.containsKey("fieldInode")) {
-        	field = FieldFactory.getFieldByInode(map.getString("fieldInode"));
-        } else {
-        	field = (Field) map.get("field");
-        }
-        final User user = (User) map.get("user");
+		Structure contentType = null;
+		if (map.get(JOB_DATA_MAP_CONTENT_TYPE) instanceof Structure) {
+			contentType = Structure.class.cast(map.get(JOB_DATA_MAP_CONTENT_TYPE));
+		} else {
+			contentType = new StructureTransformer(ContentType.class.cast(map.get(JOB_DATA_MAP_CONTENT_TYPE))).asStructure();
+		}
+		Field field = null;
+		if (map.containsKey("fieldInode")) {
+			field = FieldFactory.getFieldByInode(map.getString("fieldInode"));
+		} else {
+			if (map.get(JOB_DATA_MAP_FIELD) instanceof Field) {
+				field = Field.class.cast(map.get(JOB_DATA_MAP_FIELD));
+			} else {
+				field = new LegacyFieldTransformer(
+						com.dotcms.contenttype.model.field.Field.class.cast(map.get(JOB_DATA_MAP_FIELD))).asOldField();
+			}
+		}
+        final User user = (User) map.get(JOB_DATA_MAP_USER);
         Preconditions.checkNotNull(contentType, "Content Type can't be null");
         Preconditions.checkArgument(!Strings.isNullOrEmpty(contentType.getInode()),
                 "Content Type Id can't be null or empty");
