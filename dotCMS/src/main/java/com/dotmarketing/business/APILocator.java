@@ -42,10 +42,7 @@ import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.timemachine.business.TimeMachineAPI;
 import com.dotcms.timemachine.business.TimeMachineAPIImpl;
-import com.dotcms.util.FileWatcherAPI;
-import com.dotcms.util.ReflectionUtils;
-import com.dotcms.util.SecurityLoggerServiceAPI;
-import com.dotcms.util.SecurityLoggerServiceAPIFactory;
+import com.dotcms.util.*;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPIImpl;
 import com.dotcms.visitor.business.VisitorAPI;
@@ -986,16 +983,17 @@ enum APIIndex
 
 	private static FileWatcherAPI createFileWatcherAPI () {
 
-		FileWatcherAPI fileWatcherAPI = null;
+		FileWatcherAPIImpl fileWatcherAPI = null;
+
 		try {
 
-			fileWatcherAPI = new FileWatcherAPI();
+			fileWatcherAPI = new FileWatcherAPIImpl();
 			APILocator.addCloseableResource(fileWatcherAPI);
 		} catch (IOException e) {
 			Logger.error(APILocator.class, "The File Watcher API couldn't be created", e);
 		}
 
 		return fileWatcherAPI;
-	}
+	} // createFileWatcherAPI.
 
 }

@@ -132,7 +132,7 @@ public class Config {
 	 */
     private static void _loadProperties () {
 
-        if ( classLoader == null ) {
+         if ( classLoader == null ) {
             classLoader = Thread.currentThread().getContextClassLoader();
             Logger.info(Config.class, "Initializing properties reader.");
         }
