@@ -4,43 +4,41 @@ import {FormControl} from '@angular/forms';
 import {GCircle} from '../../../../../api/maps/GoogleMapService';
 
 interface Param<T> {
-  key:string
-  priority?:number
-  value:T
+  key: string;
+  priority?: number;
+  value: T;
 }
 
 interface VisitorsLocationParams {
-  comparison:Param<string>
-  latitude:Param<number>
-  longitude:Param<number>
-  radius:Param<number>
-  preferredDisplayUnits:Param<string>
-
-
+  comparison: Param<string>;
+  latitude: Param<number>;
+  longitude: Param<number>;
+  radius: Param<number>;
+  preferredDisplayUnits: Param<string>;
 }
 
 const UNITS = {
-  mi: {
-    m: ((len) => len * 1609.34),
-    mi: ((len) => len  ),
-    km: ((len) => len / 1.60934),
-  },
-  km: {
+    km: {
+    km: ((len) => len),
     m: ((len) => len * 1000),
     mi: ((len) => len / 1.60934 ),
-    km: ((len) => len),
   },
   m: {
+    km: ((len) => len / 1000),
     m: ((len) => len ),
     mi: ((len) => len / 1609.34 ),
-    km: ((len) => len / 1000),
-  }
-
-}
-const I8N_BASE:string = 'api.sites.ruleengine'
+  },
+  mi: {
+    km: ((len) => len / 1.60934),
+    m: ((len) => len * 1609.34),
+    mi: ((len) => len  ),
+  },
+};
+const I8N_BASE = 'api.sites.ruleengine';
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [DecimalPipe],
   selector: 'cw-visitors-location-component',
-  providers:[DecimalPipe],
   template: `<div flex layout="row" class="cw-visitors-location cw-condition-component-body" *ngIf="comparisonDropdown != null">
   <cw-input-dropdown flex
                      class="cw-input"
@@ -88,66 +86,61 @@ const I8N_BASE:string = 'api.sites.ruleengine'
     (circleUpdate)="onUpdate($event)"
     (cancel)="showingMap = !showingMap"
 ></cw-area-picker-dialog-component>
-`,  changeDetection: ChangeDetectionStrategy.OnPush,
-
+`
 })
 export class VisitorsLocationComponent {
-  @Input() circle:GCircle = {center: {lat:38.89, lng: -77.04}, radius: 10000}
-  @Input() comparisonValue:string
-  @Input() comparisonControl:FormControl
-  @Input() comparisonOptions:{}[]
-  @Input() fromLabel:string = 'of'
-  @Input() changedHook:number = 0
-  @Input() preferredUnit:string = 'm'
+  @Input() circle: GCircle = {center: {lat: 38.89, lng: -77.04}, radius: 10000};
+  @Input() comparisonValue: string;
+  @Input() comparisonControl: FormControl;
+  @Input() comparisonOptions: {}[];
+  @Input() fromLabel = 'of';
+  @Input() changedHook = 0;
+  @Input() preferredUnit = 'm';
 
+  @Output() areaChange: EventEmitter<GCircle> = new EventEmitter(false);
+  @Output() comparisonChange: EventEmitter<string> = new EventEmitter(false);
 
-  @Output() areaChange:EventEmitter<GCircle> = new EventEmitter(false)
-  @Output() comparisonChange:EventEmitter<string> = new EventEmitter(false)
-
-  showingMap:boolean = false
-  comparisonDropdown:any
+  showingMap = false;
+  comparisonDropdown: any;
 
   constructor(public decimalPipe: DecimalPipe) {
-    console.log("VisitorsLocationComponent", "constructor")
+    console.log('VisitorsLocationComponent', 'constructor');
   }
 
-  ngOnChanges(change){
-    console.log("VisitorsLocationComponent", "ngOnChanges", change)
+  ngOnChanges(change): void {
+    console.log('VisitorsLocationComponent', 'ngOnChanges', change);
 
-    if(change.comparisonOptions){
+    if (change.comparisonOptions) {
       this.comparisonDropdown = {
-        name: 'comparison',
         control: this.comparisonControl,
+        name: 'comparison',
+        options: this.comparisonOptions,
         placeholder: '',
-        value: this.comparisonValue,
-        options: this.comparisonOptions
-      }
+        value: this.comparisonValue
+      };
     }
   }
 
-  getLatLong():string{
-    let lat = this.circle.center.lat
-    let lng = this.circle.center.lng
-    let latStr = this.decimalPipe.transform(parseFloat(lat+''), '1.6-6')
-    let lngStr = this.decimalPipe.transform(parseFloat(lng+''), '1.6-6')
-    return latStr + ', ' + lngStr
+  getLatLong(): string {
+    let lat = this.circle.center.lat;
+    let lng = this.circle.center.lng;
+    let latStr = this.decimalPipe.transform(parseFloat(lat + ''), '1.6-6');
+    let lngStr = this.decimalPipe.transform(parseFloat(lng + ''), '1.6-6');
+    return latStr + ', ' + lngStr;
   }
 
-  getRadiusInPreferredUnit():number{
-    let r = this.circle.radius
-    console.log("VisitorsLocationComponent", "getRadiusInPreferredUnit", r)
-    return UNITS.m[this.preferredUnit](r)
+  getRadiusInPreferredUnit(): number {
+    let r = this.circle.radius;
+    console.log('VisitorsLocationComponent', 'getRadiusInPreferredUnit', r);
+    return UNITS.m[this.preferredUnit](r);
   }
 
-  toggleMap(){
-    this.showingMap = !this.showingMap
+  toggleMap(): void {
+    this.showingMap = !this.showingMap;
   }
 
-  onUpdate(circle:GCircle){
-    this.showingMap = false
-    this.areaChange.emit(circle)
+  onUpdate(circle: GCircle): void {
+    this.showingMap = false;
+    this.areaChange.emit(circle);
   }
-
 }
-
-

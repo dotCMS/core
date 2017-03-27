@@ -1,6 +1,6 @@
 import {Component, EventEmitter, ElementRef, Input, Output, ChangeDetectionStrategy} from '@angular/core';
-import {FormControl, Validators, FormGroup, FormBuilder, FormGroup} from '@angular/forms';
-import {Observable} from 'rxjs/Rx'
+import {FormControl, Validators, FormGroup, FormBuilder} from '@angular/forms';
+import {Observable} from 'rxjs/Rx';
 
 import {
     RuleModel, RULE_UPDATE_ENABLED_STATE,
@@ -12,30 +12,30 @@ import {
     V_RULE_UPDATE_EXPANDED_STATE, RULE_CONDITION_UPDATE_PARAMETER, RULE_CONDITION_UPDATE_OPERATOR,
     RULE_CONDITION_UPDATE_TYPE, ConditionGroupModel, ActionModel, RULE_RULE_ACTION_DELETE, RULE_RULE_ACTION_CREATE,
     RULE_CONDITION_GROUP_CREATE, RuleService
-} from "../../../api/rule-engine/Rule";
+} from '../../../api/rule-engine/Rule';
 
-import {I18nService} from "../../../api/system/locale/I18n";
-import {UserModel} from "../../../api/auth/UserModel";
-import {ApiRoot} from "../../../api/persistence/ApiRoot";
+import {I18nService} from '../../../api/system/locale/I18n';
+import {UserModel} from '../../../api/auth/UserModel';
+import {ApiRoot} from '../../../api/persistence/ApiRoot';
 import {
     ConditionActionEvent,
     RuleActionActionEvent, RuleActionEvent, ConditionGroupActionEvent
-} from "./rule-engine.container";
-import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
-import {IPublishEnvironment} from "../../../api/services/bundle-service";
+} from './rule-engine.container';
+import {ServerSideTypeModel} from '../../../api/rule-engine/ServerSideFieldModel';
+import {IPublishEnvironment} from '../../../api/services/bundle-service';
 
-
-const I8N_BASE:string = 'api.sites.ruleengine'
-var rsrc = {
+const I8N_BASE = 'api.sites.ruleengine';
+let rsrc = {
   fireOn: {
     EVERY_PAGE: 'Every Page',
+    EVERY_REQUEST: 'Every Request',
     ONCE_PER_VISIT: 'Once per visit',
     ONCE_PER_VISITOR: 'Once per visitor',
-    EVERY_REQUEST: 'Every Request'
   }
-}
+};
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.Default,
   selector: 'rule',
   template: `<form [formGroup]="formModel" let rf="ngForm">
   <cw-add-to-bundle-dialog-container
@@ -137,229 +137,223 @@ var rsrc = {
   </div>
 </div>
 </form>
-`,
-  changeDetection: ChangeDetectionStrategy.Default
+`
 })
 class RuleComponent {
-  @Input() rule:RuleModel
-  @Input() saved:boolean
-  @Input() saving:boolean
-  @Input() errors:{[key:string]:any}
-  @Input() ruleActions:ActionModel[]
-  @Input() ruleActionTypes:{[key:string]: ServerSideTypeModel} = {}
-  @Input() conditionTypes:{[key:string]: ServerSideTypeModel}
-  @Input() environmentStores:IPublishEnvironment[];
+  @Input() rule: RuleModel;
+  @Input() saved: boolean;
+  @Input() saving: boolean;
+  @Input() errors: {[key: string]: any};
+  @Input() ruleActions: ActionModel[];
+  @Input() ruleActionTypes: {[key: string]: ServerSideTypeModel} = {};
+  @Input() conditionTypes: {[key: string]: ServerSideTypeModel};
+  @Input() environmentStores: IPublishEnvironment[];
 
-  @Input() hidden:boolean = false
+  @Input() hidden = false;
 
-  @Output() deleteRule:EventEmitter<RuleActionEvent> = new EventEmitter(false)
-  @Output() updateExpandedState:EventEmitter<RuleActionEvent> = new EventEmitter(false)
-  @Output() updateName:EventEmitter<RuleActionEvent> = new EventEmitter(false)
-  @Output() updateEnabledState:EventEmitter<RuleActionEvent> = new EventEmitter(false)
-  @Output() updateFireOn:EventEmitter<RuleActionEvent> = new EventEmitter(false)
+  @Output() deleteRule: EventEmitter<RuleActionEvent> = new EventEmitter(false);
+  @Output() updateExpandedState: EventEmitter<RuleActionEvent> = new EventEmitter(false);
+  @Output() updateName: EventEmitter<RuleActionEvent> = new EventEmitter(false);
+  @Output() updateEnabledState: EventEmitter<RuleActionEvent> = new EventEmitter(false);
+  @Output() updateFireOn: EventEmitter<RuleActionEvent> = new EventEmitter(false);
 
-  @Output() createRuleAction:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
-  @Output() updateRuleActionType:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
-  @Output() updateRuleActionParameter:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
-  @Output() deleteRuleAction:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
+  @Output() createRuleAction: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
+  @Output() updateRuleActionType: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
+  @Output() updateRuleActionParameter: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
+  @Output() deleteRuleAction: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
 
-  @Output() updateConditionGroupOperator:EventEmitter<ConditionGroupActionEvent> = new EventEmitter(false)
-  @Output() createConditionGroup:EventEmitter<ConditionGroupActionEvent> = new EventEmitter(false)
+  @Output() updateConditionGroupOperator: EventEmitter<ConditionGroupActionEvent> = new EventEmitter(false);
+  @Output() createConditionGroup: EventEmitter<ConditionGroupActionEvent> = new EventEmitter(false);
 
-  @Output() createCondition:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
-  @Output() deleteCondition:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
-  @Output() updateConditionType:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
-  @Output() updateConditionParameter:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
-  @Output() updateConditionOperator:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
+  @Output() createCondition: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
+  @Output() deleteCondition: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
+  @Output() updateConditionType: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
+  @Output() updateConditionParameter: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
+  @Output() updateConditionOperator: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
 
-  private _updateEnabledStateDelay:EventEmitter<{type:string, payload: {rule:RuleModel, value:boolean}}> = new EventEmitter(false)
+  private _updateEnabledStateDelay: EventEmitter<{type: string, payload: {rule: RuleModel, value: boolean}}> = new EventEmitter(false);
 
-  hideFireOn:boolean
-  formModel:FormGroup
+  private hideFireOn: boolean;
+  private formModel: FormGroup;
 
-  private fireOn:any
-  private _rsrcCache:{[key:string]:Observable<string>}
+  private fireOn: any;
+  private _rsrcCache: {[key: string]: Observable<string>};
 
-  showMoreMenu:boolean = false
-  showAddToBundleDialog:boolean = false
-  showPushPublishDialog:boolean = false
-  actionTypePlaceholder:string = ""
-  conditionTypePlaceholder:string = ""
+  private showMoreMenu = false;
+  private showAddToBundleDialog = false;
+  private showPushPublishDialog = false;
+  private actionTypePlaceholder = '';
+  private conditionTypePlaceholder = '';
 
-
-  constructor(private _user:UserModel,
-              public elementRef:ElementRef,
-              public resources:I18nService,
-              public ruleService:RuleService,
-              public apiRoot:ApiRoot,
-              fb:FormBuilder) {
-    this._rsrcCache = {}
-    this.hideFireOn = apiRoot.hideFireOn
+  constructor(private _user: UserModel,
+              public elementRef: ElementRef,
+              public resources: I18nService,
+              public ruleService: RuleService,
+              public apiRoot: ApiRoot,
+              fb: FormBuilder) {
+    this._rsrcCache = {};
+    this.hideFireOn = apiRoot.hideFireOn;
 
     /* Need to delay the firing of the state change toggle, to give any blur events time to fire. */
-    this._updateEnabledStateDelay.debounceTime(20).subscribe((event:RuleActionEvent)=> {
-      this.updateEnabledState.emit(event)
-    })
+    this._updateEnabledStateDelay.debounceTime(20).subscribe((event: RuleActionEvent) => {
+      this.updateEnabledState.emit(event);
+    });
 
     this.fireOn = {
-      value: 'EVERY_PAGE',
-      placeholder: this.rsrc('inputs.fireOn.placeholder', "Select One"),
       options: [
         {value: 'EVERY_PAGE', label: this.rsrc('inputs.fireOn.options.EveryPage')},
         {value: 'ONCE_PER_VISIT', label: this.rsrc('inputs.fireOn.options.OncePerVisit')},
         {value: 'ONCE_PER_VISITOR', label: this.rsrc('inputs.fireOn.options.OncePerVisitor')},
         {value: 'EVERY_REQUEST', label: this.rsrc('inputs.fireOn.options.EveryRequest')}
-      ]
-    }
-    this.initFormModel(fb)
+      ],
+      placeholder: this.rsrc('inputs.fireOn.placeholder', 'Select One'),
+      value: 'EVERY_PAGE',
+    };
+    this.initFormModel(fb);
 
-    this.resources.get("api.sites.ruleengine.rules.inputs.action.type.placeholder").subscribe((label)=>{
-      this.actionTypePlaceholder = label
-    })
+    this.resources.get('api.sites.ruleengine.rules.inputs.action.type.placeholder').subscribe((label) => {
+      this.actionTypePlaceholder = label;
+    });
 
-    this.resources.get("api.sites.ruleengine.rules.inputs.condition.type.placeholder").subscribe((label)=>{
-      this.conditionTypePlaceholder = label
-    })
+    this.resources.get('api.sites.ruleengine.rules.inputs.condition.type.placeholder').subscribe((label) => {
+      this.conditionTypePlaceholder = label;
+    });
 
   }
 
-  initFormModel(fb:FormBuilder) {
-    let vFns = []
-    vFns.push(Validators.required)
-    vFns.push(Validators.minLength(3))
+  initFormModel(fb: FormBuilder): void {
+    let vFns = [];
+    vFns.push(Validators.required);
+    vFns.push(Validators.minLength(3));
     this.formModel = fb.group({
       name: new FormControl(this.rule ? this.rule.name : '', Validators.compose(vFns))
-    })
+    });
   }
 
-  rsrc(subkey:string, defVal:string = '-missing-') {
-    let msgObserver = this._rsrcCache[subkey]
+  rsrc(subkey: string, defVal = '-missing-') {
+    let msgObserver = this._rsrcCache[subkey];
     if (!msgObserver) {
-      msgObserver = this.resources.get(I8N_BASE + '.rules.' + subkey, defVal)
-      this._rsrcCache[subkey] = msgObserver
+      msgObserver = this.resources.get(I8N_BASE + '.rules.' + subkey, defVal);
+      this._rsrcCache[subkey] = msgObserver;
     }
-    return msgObserver
+    return msgObserver;
   }
 
-  ngOnChanges(change) {
+  ngOnChanges(change): void {
     if (change.rule) {
-      let rule = this.rule
-      let ctrl:FormControl = <FormControl>this.formModel.controls['name']
-      ctrl.patchValue(this.rule.name, {})
-      ctrl.valueChanges.debounceTime(250).subscribe((name:string)=> {
+      let rule = this.rule;
+      let ctrl: FormControl = <FormControl>this.formModel.controls['name'];
+      ctrl.patchValue(this.rule.name, {});
+      ctrl.valueChanges.debounceTime(250).subscribe((name: string) => {
         if (ctrl.valid) {
-          this.updateName.emit({type: RULE_UPDATE_NAME, payload: {rule: this.rule, value: name}})
+          this.updateName.emit({type: RULE_UPDATE_NAME, payload: {rule: this.rule, value: name}});
         }
-      })
+      });
       if (rule.isPersisted()) {
-        this.fireOn.value = rule.fireOn
+        this.fireOn.value = rule.fireOn;
       }
     }
-
   }
 
-  statusText(length:number=0) {
-    let t = "";
-    if (this.saved)
-    { t = "All changes saved"
+  statusText(length= 0): string {
+    let t = '';
+    if (this.saved) {
+      t = 'All changes saved';
+    } else if (this.saving) {
+      t = 'Saving...';
+    } else if (this.errors) {
+      t = this.errors['invalid'] || this.errors['serverError'] || 'Unsaved changes...';
     }
-    else if(this.saving){
-      t = "Saving..."
-    } else if(this.errors){
-      t = this.errors['invalid'] || this.errors['serverError'] || "Unsaved changes..."
-    }
-    if(length){
-      t = t.substring(0, length) + '...'
+    if (length) {
+      t = t.substring(0, length) + '...';
     }
     return t;
   }
 
-  setRuleExpandedState(expanded:boolean) {
-    this.updateExpandedState.emit({type: V_RULE_UPDATE_EXPANDED_STATE, payload: {rule:this.rule, value:expanded}})
+  setRuleExpandedState(expanded: boolean): void {
+    this.updateExpandedState.emit({type: V_RULE_UPDATE_EXPANDED_STATE, payload: {rule: this.rule, value: expanded}});
   }
 
-  setRuleEnabledState(enabled:boolean) {
+  setRuleEnabledState(enabled: boolean): void {
     this._updateEnabledStateDelay.emit({
-      type: RULE_UPDATE_ENABLED_STATE,
-      payload: {rule: this.rule, value: enabled}
-    })
+      payload: {rule: this.rule, value: enabled},
+      type: RULE_UPDATE_ENABLED_STATE
+    });
   }
 
-  onCreateRuleAction(){
-    console.log("RuleComponent", "onCreateRuleAction")
-    this.createRuleAction.emit( { type:RULE_RULE_ACTION_CREATE, payload:{rule:this.rule}} )
+  onCreateRuleAction(): void {
+    console.log('RuleComponent', 'onCreateRuleAction');
+    this.createRuleAction.emit( { type: RULE_RULE_ACTION_CREATE, payload: {rule: this.rule}} );
   }
 
-  onDeleteCondition(event:ConditionActionEvent, conditionGroup:ConditionGroupModel){
-    Object.assign(event.payload, { rule:this.rule, conditionGroup:conditionGroup })
-    this.deleteCondition.emit( event )
+  onDeleteCondition(event: ConditionActionEvent, conditionGroup: ConditionGroupModel): void {
+    Object.assign(event.payload, { rule: this.rule, conditionGroup: conditionGroup });
+    this.deleteCondition.emit( event );
   }
 
-  onCreateConditionGroupClicked(){
-    let len = this.rule._conditionGroups.length
-    let priority:number = len ? this.rule._conditionGroups[len - 1].priority : 1;
-    this.createConditionGroup.emit({type:RULE_CONDITION_GROUP_CREATE, payload:{rule:this.rule, priority}})
+  onCreateConditionGroupClicked(): void {
+    let len = this.rule._conditionGroups.length;
+    let priority: number = len ? this.rule._conditionGroups[len - 1].priority : 1;
+    this.createConditionGroup.emit({type: RULE_CONDITION_GROUP_CREATE, payload: {rule: this.rule, priority}});
   }
 
-  onCreateCondition(event:ConditionActionEvent){
-    console.log("RuleComponent", "onCreateCondition")
-    Object.assign(event.payload, { rule:this.rule })
-    this.createCondition.emit( event )
+  onCreateCondition(event: ConditionActionEvent): void {
+    console.log('RuleComponent', 'onCreateCondition');
+    Object.assign(event.payload, { rule: this.rule });
+    this.createCondition.emit( event );
   }
 
-  onUpdateRuleActionType(event:{type:string, payload:{value:string, index:number}}){
-    console.log("RuleComponent", "onUpdateRuleActionType")
-    this.updateRuleActionType.emit( { type:RULE_RULE_ACTION_UPDATE_TYPE, payload:Object.assign({rule:this.rule}, event.payload) } )
+  onUpdateRuleActionType(event: {type: string, payload: {value: string, index: number}}): void {
+    console.log('RuleComponent', 'onUpdateRuleActionType');
+    this.updateRuleActionType.emit( { type: RULE_RULE_ACTION_UPDATE_TYPE, payload: Object.assign({rule: this.rule}, event.payload) } );
   }
 
-  onUpdateRuleActionParameter(event){
-    console.log("RuleComponent", "onUpdateRuleActionParameter")
-    this.updateRuleActionParameter.emit( { type: RULE_RULE_ACTION_UPDATE_PARAMETER, payload:Object.assign({rule:this.rule}, event.payload) } )
+  onUpdateRuleActionParameter(event): void {
+    console.log('RuleComponent', 'onUpdateRuleActionParameter');
+    this.updateRuleActionParameter.emit( { type: RULE_RULE_ACTION_UPDATE_PARAMETER, payload: Object.assign({rule: this.rule}, event.payload) } );
   }
 
-  onDeleteRuleAction(event:{type:string, payload:{value:string, index:number}}){
-    console.log("RuleComponent", "onDeleteRuleAction")
-    this.deleteRuleAction.emit( { type:RULE_RULE_ACTION_DELETE, payload:Object.assign({rule:this.rule}, event.payload) } )
+  onDeleteRuleAction(event: {type: string, payload: {value: string, index: number}}): void {
+    console.log('RuleComponent', 'onDeleteRuleAction');
+    this.deleteRuleAction.emit( { type: RULE_RULE_ACTION_DELETE, payload: Object.assign({rule: this.rule}, event.payload) } );
   }
 
-  onUpdateConditionGroupOperator(event:{type:string, payload:{value:string, index:number}}, conditionGroup:ConditionGroupModel){
-    this.updateConditionGroupOperator.emit( { type:RULE_CONDITION_UPDATE_TYPE, payload:Object.assign({rule:this.rule, conditionGroup: conditionGroup}, event.payload) } )
+  onUpdateConditionGroupOperator(event: {type: string, payload: {value: string, index: number}}, conditionGroup: ConditionGroupModel): void {
+    this.updateConditionGroupOperator.emit( { type: RULE_CONDITION_UPDATE_TYPE, payload: Object.assign({rule: this.rule, conditionGroup: conditionGroup}, event.payload) } );
   }
 
-  onUpdateConditionType(event:{type:string, payload:{value:string, index:number}}, conditionGroup:ConditionGroupModel){
-    console.log("RuleComponent", "onUpdateConditionType")
-    this.updateConditionType.emit( { type:RULE_CONDITION_UPDATE_TYPE, payload:Object.assign({rule:this.rule, conditionGroup: conditionGroup}, event.payload) } )
+  onUpdateConditionType(event: {type: string, payload: {value: string, index: number}}, conditionGroup: ConditionGroupModel): void {
+    console.log('RuleComponent', 'onUpdateConditionType');
+    this.updateConditionType.emit( { type: RULE_CONDITION_UPDATE_TYPE, payload: Object.assign({rule: this.rule, conditionGroup: conditionGroup}, event.payload) } );
   }
 
-  onUpdateConditionParameter(event, conditionGroup:ConditionGroupModel){
-    console.log("RuleComponent", "onUpdateConditionParameter")
-    this.updateConditionParameter.emit( { type: RULE_CONDITION_UPDATE_PARAMETER, payload:Object.assign({rule:this.rule, conditionGroup: conditionGroup}, event.payload) } )
+  onUpdateConditionParameter(event, conditionGroup: ConditionGroupModel): void {
+    console.log('RuleComponent', 'onUpdateConditionParameter');
+    this.updateConditionParameter.emit( { type: RULE_CONDITION_UPDATE_PARAMETER, payload: Object.assign({rule: this.rule, conditionGroup: conditionGroup}, event.payload) } );
   }
 
-  onUpdateConditionOperator(event, conditionGroup:ConditionGroupModel){
-    console.log("RuleComponent", "onUpdateConditionOperator")
-    this.updateConditionOperator.emit( { type: RULE_CONDITION_UPDATE_OPERATOR, payload:Object.assign({rule:this.rule, conditionGroup: conditionGroup}, event.payload) } )
+  onUpdateConditionOperator(event, conditionGroup: ConditionGroupModel): void {
+    console.log('RuleComponent', 'onUpdateConditionOperator');
+    this.updateConditionOperator.emit( { type: RULE_CONDITION_UPDATE_OPERATOR, payload: Object.assign({rule: this.rule, conditionGroup: conditionGroup}, event.payload) } );
   }
 
-  deleteRuleClicked(event:any) {
-    event.stopPropagation()
-    let noWarn = this._user.suppressAlerts || (event.altKey && event.shiftKey)
+  deleteRuleClicked(event: any): void {
+    event.stopPropagation();
+    let noWarn = this._user.suppressAlerts || (event.altKey && event.shiftKey);
     if (!noWarn) {
-      noWarn = this.ruleActions.length === 1 && !this.ruleActions[0].isPersisted()
-      noWarn = noWarn && this.rule._conditionGroups.length === 1
+      noWarn = this.ruleActions.length === 1 && !this.ruleActions[0].isPersisted();
+      noWarn = noWarn && this.rule._conditionGroups.length === 1;
       if (noWarn) {
-        let conditions = this.rule._conditionGroups[0].conditions
-        let keys = Object.keys(conditions)
-        noWarn = noWarn && (keys.length === 0)
+        let conditions = this.rule._conditionGroups[0].conditions;
+        let keys = Object.keys(conditions);
+        noWarn = noWarn && (keys.length === 0);
       }
     }
 
     if (noWarn || confirm('Are you sure you want delete this rule?')) {
-      this.deleteRule.emit({type: RULE_DELETE, payload: {rule: this.rule}})
+      this.deleteRule.emit({type: RULE_DELETE, payload: {rule: this.rule}});
     }
   }
-
-
 }
 
 export {RuleComponent}

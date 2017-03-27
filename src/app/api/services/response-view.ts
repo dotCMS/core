@@ -18,7 +18,7 @@ export class ResponseView {
 
     public constructor( private resp: Response ) {
         try {
-            this.bodyJsonObject = JSON.parse(resp._body);
+            this.bodyJsonObject = resp.json();
         }catch (e) {
             this.bodyJsonObject = {};
         }

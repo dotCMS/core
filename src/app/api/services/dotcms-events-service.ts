@@ -4,9 +4,7 @@ import {Observable} from 'rxjs/Rx';
 import {WebSocketProtocol} from './protocol/websockets-protocol';
 import {LoggerService} from './logger.service';
 import {Subject} from 'rxjs/Subject';
-import {Socket, Url} from './socket';
 import {Protocol} from './protocol/protocol';
-import {HelloMessage} from './protocol/HelloMessage';
 import {SocketFactory} from './protocol/socket-factory';
 import {CoreWebService} from './core-web-service';
 import {RequestMethod, Http} from '@angular/http';
@@ -41,8 +39,6 @@ export class DotcmsEventsService {
 
                 socket.message$().subscribe(
                     data => {
-                        this.loggerService.debug('new event3:', data, socket.count);
-
                         if (!this.subjects[data.event]) {
                             this.subjects[data.event] = new Subject();
                         }

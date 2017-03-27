@@ -1,5 +1,4 @@
 import {Http, Response, Request, Headers, RequestOptionsArgs} from '@angular/http';
-import {Observable} from 'rxjs/Rx';
 import {Injectable} from '@angular/core';
 import {Subject} from 'rxjs/Subject';
 import {Observable} from 'rxjs/Rx';
@@ -10,7 +9,6 @@ import {
 } from '../system/http-response-util';
 import {ApiRoot} from '../persistence/ApiRoot';
 import {ResponseView} from './response-view';
-import {HttpErrorHandler} from './http-error-handler';
 import {LoggerService} from './logger.service';
 
 export const RULE_CREATE = 'RULE_CREATE';
@@ -93,7 +91,7 @@ export class CoreWebService {
 
       this._http.request(request).subscribe(
           resp => {
-            if (resp._body.errors && resp._body.errors.length > 0) {
+            if (resp.json().errors && resp.json().errors.length > 0) {
               observer.error(new ResponseView(resp));
             } else {
               observer.next(new ResponseView(resp));

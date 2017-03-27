@@ -35,7 +35,8 @@ export class ContentletService {
             this._structureTypeView$.next(this.structureTypeView);
         });
 
-        dotcmsEventsService.subscribeTo('DELETE_BASE_CONTENT_TYPE').pluck('data').subscribe( contentTypeViewRemoved => {
+        dotcmsEventsService.subscribeTo('DELETE_BASE_CONTENT_TYPE').pluck('data').subscribe( data => {
+            let contentTypeViewRemoved = <ContentTypeView> data;
             let structureTypeView: StructureTypeView = this.getStructureTypeView(contentTypeViewRemoved.type);
             structureTypeView.types = structureTypeView.types.filter(
                 contentTypeView => contentTypeView.inode !== contentTypeViewRemoved.inode);
@@ -53,8 +54,8 @@ export class ContentletService {
             url: 'v1/content/types'
         }).pluck('entity').subscribe(
             structureTypeView => {
-                this.structureTypeView = structureTypeView;
-                this._structureTypeView$.next(structureTypeView);
+                this.structureTypeView = <StructureTypeView[]> structureTypeView;
+                this._structureTypeView$.next(<StructureTypeView[]> structureTypeView);
             }
         );
     }

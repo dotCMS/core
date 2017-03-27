@@ -3,7 +3,7 @@ import {BehaviorSubject, Observable} from 'rxjs/Rx';
 
 @Injectable()
 export class IframeOverlayService {
-    public $overlay: BehaviorSubject<boolean> = new BehaviorSubject<boolean>();
+    public $overlay: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
 
     constructor() {}
 

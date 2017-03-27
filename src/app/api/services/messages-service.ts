@@ -3,7 +3,7 @@ import {ApiRoot} from '../persistence/ApiRoot';
 import {CoreWebService} from './core-web-service';
 import {FormatDateService} from './format-date-service';
 import {Injectable} from '@angular/core';
-import {LoginService} from './login-service';
+import {LoginService, User} from './login-service';
 import {Observable} from 'rxjs/Observable';
 import {RequestMethod, Http} from '@angular/http';
 import {Subject} from 'rxjs/Subject';
@@ -14,7 +14,7 @@ export class MessageService {
     private doMessageLoad;
     private i18nUrl: string;
     private lang: string;
-    private messageKeys: Array;
+    private messageKeys: String[];
     private messagesLoaded: any;
 
     constructor(loginService: LoginService, private formatDateService: FormatDateService,
@@ -31,7 +31,7 @@ export class MessageService {
         this.messagesLoaded = {};
         this.setRelativeDateMessages();
 
-        loginService.auth$.pluck('user').subscribe(user => {
+        loginService.auth$.pluck('user').subscribe( (user: User) => {
             if (user && this.lang !== user.languageId) {
                 this.messagesLoaded = {};
                 this.messageKeys = [];
@@ -54,7 +54,7 @@ export class MessageService {
      * @param keys
      * @returns {any}
      */
-    public getMessages(keys: Array): Observable {
+    public getMessages(keys: String[]): Observable<any> {
         return Observable.create(observer => {
             if (_.every(keys, _.partial(_.has, this.messagesLoaded))) {
                 observer.next(_.pick(this.messagesLoaded, keys));
@@ -86,7 +86,7 @@ export class MessageService {
             'relativetime.yy'
         ];
         this.getMessages(relativeDateKeys).subscribe(res => {
-            let relativeDateMessages = _.mapKeys(res, function(value, key): string {
+            let relativeDateMessages = _.mapKeys(res, function(value, key: string): string {
                 return key.replace('relativetime.', '');
             });
             this.formatDateService.setLang(this.lang.split('_')[0], relativeDateMessages);
