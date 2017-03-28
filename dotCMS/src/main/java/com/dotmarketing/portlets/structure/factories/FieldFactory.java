@@ -113,6 +113,11 @@ public class FieldFactory {
             oldField.setFieldContentlet(DataTypes.SYSTEM.toString());
             
         }
+        
+        //The Host or Folder Field and the Tag Field needs to be always indexed (issue #11128)
+        if(Field.FieldType.HOST_OR_FOLDER.toString().equals(oldField.getFieldType()) || Field.FieldType.TAG.toString().equals(oldField.getFieldType())){
+        	oldField.setIndexed(true);
+        }
 	    
 	    com.dotcms.contenttype.model.field.Field field = new LegacyFieldTransformer(oldField).from();
 	    try {
