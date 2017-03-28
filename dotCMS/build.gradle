@@ -81,6 +81,9 @@ idea {
 
         testSourceDirs += file('functional-test/java')
 
+        sourceDirs += file('src/main/enterprise/src/main/java')
+        sourceDirs += file('src/main/license/src/main/java')
+
         //if you prefer different SDK than the one inherited from IDEA project
         jdkName = '1.8'
 
