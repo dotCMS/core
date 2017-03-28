@@ -1138,6 +1138,10 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		CacheLocator.getPermissionCache().clearCache();
 	}
 
+    public void removePermissionableFromCache(String permissionableId) {
+        CacheLocator.getPermissionCache().remove(permissionableId);
+    }
+
 	public <P extends Permissionable> List<P> filterCollection(List<P> inputList, int requiredTypePermission,boolean respectFrontendRoles, User user) throws DotDataException, DotSecurityException {
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
@@ -1556,5 +1560,6 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	public boolean isInheritingPermissions(Permissionable permissionable) throws DotDataException {
 		return permissionFactory.isInheritingPermissions(permissionable);
 	}
+
 }
 
