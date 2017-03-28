@@ -1,3 +1,4 @@
+///<reference path="../../../../../../node_modules/@angular/router/src/router_state.d.ts"/>
 import {Component, ElementRef, ViewEncapsulation, ViewChild} from '@angular/core';
 import {LoginService} from '../../../../api/services/login-service';
 import {ActivatedRoute} from '@angular/router';

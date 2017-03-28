@@ -21,6 +21,7 @@
       "node_modules/@types"
     ],
     "types": [
+      "googlemaps",
       "hammerjs",
       "node"
     ]
