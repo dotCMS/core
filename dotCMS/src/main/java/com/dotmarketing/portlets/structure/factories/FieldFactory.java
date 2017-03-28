@@ -114,7 +114,8 @@ public class FieldFactory {
             
         }
         
-        if(oldField.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
+        //The Host or Folder Field and the Tag Field needs to be always indexed (issue #11128)
+        if(oldField.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString()) || oldField.getFieldType().equals(Field.FieldType.TAG.toString())){
         	oldField.setIndexed(true);
         }
 	    
