@@ -33,6 +33,9 @@
   "exclude": [
     "node_modules",
     "dist",
+    "src/**/*.spec.ts",
+    "src/**/*.it-spec.ts",
+    "src/**/*.e2e.ts",
     "src/app/e2e/**/*.ts",
     "src/**/boot.ts",
     "src/**/demo.ts",

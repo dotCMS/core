@@ -104,7 +104,7 @@ module.exports = function (options) {
              }
            }
          ],
-         exclude: [/\.(spec|e2e)\.ts$/]
+         exclude: [/\.(spec|e2e)\.ts$/, helpers.root('node_modules')]
        },
 
         /*
