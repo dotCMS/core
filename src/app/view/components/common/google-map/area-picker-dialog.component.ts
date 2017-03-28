@@ -82,8 +82,8 @@ export class AreaPickerDialogComponent {
       this._prevCircle = this.circle;
       this.map = new google.maps.Map(el, {
         center: new google.maps.LatLng(this.circle.center.lat, this.circle.center.lng),
-        zoom: 7,
-        mapTypeId: google.maps.MapTypeId.TERRAIN
+        mapTypeId: google.maps.MapTypeId.TERRAIN,
+        zoom: 7
       });
 
       let circle = new google.maps.Circle({
