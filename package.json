@@ -95,6 +95,7 @@
   },
   "devDependencies": {
     "@angular/compiler-cli": "2.4.6",
+    "@types/googlemaps": "^3.26.7",
     "@types/hammerjs": "^2.0.33",
     "@types/jasmine": "^2.2.34",
     "@types/node": "^7.0.0",
