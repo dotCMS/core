@@ -230,11 +230,9 @@ class RuleComponent {
     });
   }
 
-<<<<<<< HEAD
+
    rsrc(subkey: string, defVal = '-missing-'): any {
-=======
-   rsrc(subkey: string, defVal = '-missing-'): Observable<string> {
->>>>>>> fb6c93020ad3509c2f28e795d7f648c76d5f50db
+
     let msgObserver = this._rsrcCache[subkey];
     if (!msgObserver) {
       msgObserver = this.resources.get(I8N_BASE + '.rules.' + subkey, defVal);
