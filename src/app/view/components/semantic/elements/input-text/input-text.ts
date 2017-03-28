@@ -35,14 +35,14 @@ import _ from 'lodash';
 })
   export class InputText implements ControlValueAccessor {
 
-  @Input() placeholder: string = '';
-  @Input() type: string = 'text';
+  @Input() placeholder = '';
+  @Input() type = 'text';
   @Input() icon: string;
-  @Input() disabled: boolean = false;
-  @Input() readonly: boolean = false;
-  @Input() focused: boolean = false;
+  @Input() disabled = false;
+  @Input() readonly = false;
+  @Input() focused = false;
   @Input() tabIndex: number = null;
-  @Input() required: boolean = false;
+  @Input() required = false;
   @Output() blur: EventEmitter<any> = new EventEmitter();
 
   errorMessage: string;

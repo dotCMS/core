@@ -104,7 +104,7 @@ export class ServersideCondition {
     required: 'Required'
   };
 
-  private static getRightHandArgCount(selectedComparison) {
+  private static getRightHandArgCount(selectedComparison): boolean {
     let argCount = null;
     if (selectedComparison) {
       argCount = Verify.isNumber(selectedComparison.rightHandArgCount)
@@ -114,14 +114,14 @@ export class ServersideCondition {
     return argCount;
   }
 
-  private static isComparisonParameter(input) {
+  private static isComparisonParameter(input): boolean {
     return input && input.name === 'comparison';
   }
 
-  private static getSelectedOption(input, value) {
+  private static getSelectedOption(input, value): string {
     let opt = null;
-    let optAry = input.options.filter((e) => { return e.value == value });
-    if (optAry && optAry.length === 1){
+    let optAry = input.options.filter((e) => { return e.value === value; });
+    if (optAry && optAry.length === 1) {
       opt = optAry[0];
     }
     return opt;
@@ -185,6 +185,7 @@ export class ServersideCondition {
       let err = control.errors[key];
       message +=  this._errorMessageFormatters[key];
       if (Object.keys(err).length) {
+        // tslint:disable-next-line:no-debugger
         debugger;
       }
     });
@@ -335,12 +336,10 @@ export class ServersideCondition {
     return input;
   }
 
-  private applyRhsCount(selectedComparison: string) {
+  private applyRhsCount(selectedComparison: string): void {
     let comparisonDef = this.componentInstance.getParameterDef('comparison');
     let comparisonType: CwDropdownInputModel = <CwDropdownInputModel>comparisonDef.inputType;
     let selectedComparisonDef = comparisonType.options[selectedComparison];
     this._rhArgCount = ServersideCondition.getRightHandArgCount(selectedComparisonDef);
   }
 }
-
-
