@@ -80,9 +80,12 @@ export class CustomValidators {
       }
       if (minSelections > 0) {
         if (v == null || v.length < minSelections) {
-          valid = { 'minSelections': {
-              'minSelectionCount': this.minSelections,
-              'actualSelectionCount': (v ? v.length : 0)}};
+          valid = {
+            'minSelectionCount': this.minSelections,
+            'minSelections': {
+              'actualSelectionCount': (v ? v.length : 0)
+            }
+          };
         }
       }
       return valid;
@@ -99,8 +102,8 @@ export class CustomValidators {
       if (v != null && v.length > maxSelections) {
         valid = valid ? valid : {};
         valid['maxSelections'] = {
-          'maxSelectionCount': this.maxSelections,
-          'actualSelectionCount': (v ? v.length : 0)
+          'actualSelectionCount': (v ? v.length : 0),
+          'maxSelectionCount': this.maxSelections
         };
       }
       return valid;

@@ -85,7 +85,7 @@ export class VisitorsLocationContainer {
     );
   }
 
-  rsrc(subkey: string) {
+  rsrc(subkey: string): Observable<string> {
     let x = this._rsrcCache[subkey];
     if (!x) {
       x = this.resources.get(subkey);

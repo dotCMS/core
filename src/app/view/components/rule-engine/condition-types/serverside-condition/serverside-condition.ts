@@ -96,7 +96,7 @@ export class ServersideCondition {
 
   private _inputs: Array<any>;
   private _resources: I18nService;
-  private _rhArgCount: number;
+  private _rhArgCount: boolean;
 
   private _errorMessageFormatters = {
     minLength: 'Input must be at least ${len} characters long.',
@@ -104,7 +104,7 @@ export class ServersideCondition {
     required: 'Required'
   };
 
-  private static getRightHandArgCount(selectedComparison) {
+  private static getRightHandArgCount(selectedComparison): boolean {
     let argCount = null;
     if (selectedComparison) {
       argCount = Verify.isNumber(selectedComparison.rightHandArgCount)
@@ -121,6 +121,7 @@ export class ServersideCondition {
   private static getSelectedOption(input, value): any {
     let opt = null;
     let optAry = input.options.filter((e) => { return e.value === value; } );
+
     if (optAry && optAry.length === 1) {
       opt = optAry[0];
     }
@@ -146,7 +147,7 @@ export class ServersideCondition {
         let paramDef = this.componentInstance.getParameterDef(key);
         let param = this.componentInstance.getParameter(key);
         if (paramDef.priority > (prevPriority + 1)) {
-          this._inputs.push({type: 'spacer', flex: 40});
+          this._inputs.push({flex: 40, type: 'spacer'});
         }
         prevPriority = paramDef.priority;
         console.log('ServersideCondition', 'onChange', 'params', key, param);
@@ -185,6 +186,7 @@ export class ServersideCondition {
       let err = control.errors[key];
       message +=  this._errorMessageFormatters[key];
       if (Object.keys(err).length) {
+        // tslint:disable-next-line:no-debugger
         debugger;
       }
     });
@@ -335,12 +337,10 @@ export class ServersideCondition {
     return input;
   }
 
-  private applyRhsCount(selectedComparison: string) {
+  private applyRhsCount(selectedComparison: string): void {
     let comparisonDef = this.componentInstance.getParameterDef('comparison');
     let comparisonType: CwDropdownInputModel = <CwDropdownInputModel>comparisonDef.inputType;
     let selectedComparisonDef = comparisonType.options[selectedComparison];
     this._rhArgCount = ServersideCondition.getRightHandArgCount(selectedComparisonDef);
   }
 }
-
-
