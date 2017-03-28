@@ -55,7 +55,7 @@ export class MessageService {
      */
     public getMessages(keys: String[]): Observable<any> {
         return Observable.create(observer => {
-            if (_.every(keys, _.partial(_.has, this.messagesLoaded))) {
+            if (_.every(keys, _.partial(_.has, [this.messagesLoaded]))) {
                 observer.next(_.pick(this.messagesLoaded, keys));
             } else {
                 this.messageKeys = _.concat(this.messageKeys, _.difference(keys, this.messageKeys));

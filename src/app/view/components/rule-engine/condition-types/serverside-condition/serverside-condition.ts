@@ -114,14 +114,14 @@ export class ServersideCondition {
     return argCount;
   }
 
-  private static isComparisonParameter(input) {
+  private static isComparisonParameter(input): boolean {
     return input && input.name === 'comparison';
   }
 
-  private static getSelectedOption(input, value) {
+  private static getSelectedOption(input, value): any {
     let opt = null;
-    let optAry = input.options.filter((e) => { return e.value == value });
-    if (optAry && optAry.length === 1){
+    let optAry = input.options.filter((e) => { return e.value === value; } );
+    if (optAry && optAry.length === 1) {
       opt = optAry[0];
     }
     return opt;

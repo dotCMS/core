@@ -34,7 +34,7 @@ export class ForgotPasswordComponent {
 
     }
 
-    ngOnInit() {
+    ngOnInit(): void {
         this.loadLabels();
     }
 

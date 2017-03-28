@@ -15,11 +15,11 @@ export class ServerSideFieldModel extends CwModel {
   static createNgControl(model: ServerSideFieldModel, paramName: string): FormControl {
     let param = model.parameters[paramName];
     let paramDef = model.parameterDefs[paramName];
-    let vFn: ValidatorFn[] = <ValidatorFn[]> paramDef.inputType.dataType.validators();
+    let vFn: Function[] = <ValidatorFn[]> paramDef.inputType.dataType.validators();
     vFn.push(CustomValidators.noQuotes());
     let control = new FormControl(
         model.getParameterValue(param.key),
-        Validators.compose( vFn ));
+        Validators.compose( <ValidatorFn[]> vFn ));
     return control;
   }
 
@@ -44,7 +44,7 @@ export class ServerSideFieldModel extends CwModel {
         let paramDef = ParameterDefinition.fromJson(x);
         let defaultValue = paramDef.defaultValue || paramDef.inputType.dataType.defaultValue;
         this.parameterDefs[key] = paramDef;
-        this.parameters[key] = {key: key, value: defaultValue, priority: paramDef.priority};
+        this.parameters[key] = {key: key, priority: paramDef.priority, value: defaultValue };
       });
     }
   }
@@ -54,7 +54,7 @@ export class ServerSideFieldModel extends CwModel {
       console.log('Unsupported parameter: ', key, 'Valid parameters: ', Object.keys(this.parameterDefs));
       return;
     }
-    this.parameters[key] = {key: key, value: value, priority: priority};
+    this.parameters[key] = {key: key, priority: priority, value: value};
   }
 
   getParameter(key: string): ParameterModel {

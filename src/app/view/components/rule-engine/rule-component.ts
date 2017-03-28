@@ -202,9 +202,9 @@ class RuleComponent {
     this.fireOn = {
       options: [
         {label: this.rsrc('inputs.fireOn.options.EveryPage'), value: 'EVERY_PAGE'},
-        {value: 'ONCE_PER_VISIT', label: this.rsrc('inputs.fireOn.options.OncePerVisit')},
-        {value: 'ONCE_PER_VISITOR', label: this.rsrc('inputs.fireOn.options.OncePerVisitor')},
-        {value: 'EVERY_REQUEST', label: this.rsrc('inputs.fireOn.options.EveryRequest')}
+        {label: this.rsrc('inputs.fireOn.options.OncePerVisit'), value: 'ONCE_PER_VISIT'},
+        {label: this.rsrc('inputs.fireOn.options.OncePerVisitor'), value: 'ONCE_PER_VISITOR'},
+        {label: this.rsrc('inputs.fireOn.options.EveryRequest'), value: 'EVERY_REQUEST'}
       ],
       placeholder: this.rsrc('inputs.fireOn.placeholder', 'Select One'),
       value: 'EVERY_PAGE',
@@ -230,7 +230,7 @@ class RuleComponent {
     });
   }
 
-   rsrc(subkey: string, defVal = '-missing-') {
+   rsrc(subkey: string, defVal = '-missing-'): any {
     let msgObserver = this._rsrcCache[subkey];
     if (!msgObserver) {
       msgObserver = this.resources.get(I8N_BASE + '.rules.' + subkey, defVal);
@@ -246,7 +246,7 @@ class RuleComponent {
       ctrl.patchValue(this.rule.name, {});
       ctrl.valueChanges.debounceTime(250).subscribe((name: string) => {
         if (ctrl.valid) {
-          this.updateName.emit({type: RULE_UPDATE_NAME, payload: {rule: this.rule, value: name}});
+          this.updateName.emit({payload: {rule: this.rule, value: name}, type: RULE_UPDATE_NAME});
         }
       });
       if (rule.isPersisted()) {
@@ -271,7 +271,7 @@ class RuleComponent {
   }
 
   setRuleExpandedState(expanded: boolean): void {
-    this.updateExpandedState.emit({type: V_RULE_UPDATE_EXPANDED_STATE, payload: {rule: this.rule, value: expanded}});
+    this.updateExpandedState.emit({payload: {rule: this.rule, value: expanded}, type: V_RULE_UPDATE_EXPANDED_STATE});
   }
 
   setRuleEnabledState(enabled: boolean): void {
@@ -283,18 +283,18 @@ class RuleComponent {
 
   onCreateRuleAction(): void {
     console.log('RuleComponent', 'onCreateRuleAction');
-    this.createRuleAction.emit( { type: RULE_RULE_ACTION_CREATE, payload: {rule: this.rule}} );
+    this.createRuleAction.emit( { payload: {rule: this.rule}, type: RULE_RULE_ACTION_CREATE} );
   }
 
   onDeleteCondition(event: ConditionActionEvent, conditionGroup: ConditionGroupModel): void {
-    Object.assign(event.payload, { rule: this.rule, conditionGroup: conditionGroup });
+    Object.assign(event.payload, { conditionGroup: conditionGroup, rule: this.rule });
     this.deleteCondition.emit( event );
   }
 
   onCreateConditionGroupClicked(): void {
     let len = this.rule._conditionGroups.length;
     let priority: number = len ? this.rule._conditionGroups[len - 1].priority : 1;
-    this.createConditionGroup.emit({type: RULE_CONDITION_GROUP_CREATE, payload: {rule: this.rule, priority}});
+    this.createConditionGroup.emit({payload: {rule: this.rule, priority}, type: RULE_CONDITION_GROUP_CREATE});
   }
 
   onCreateCondition(event: ConditionActionEvent): void {
@@ -305,36 +305,36 @@ class RuleComponent {
 
   onUpdateRuleActionType(event: {type: string, payload: {value: string, index: number}}): void {
     console.log('RuleComponent', 'onUpdateRuleActionType');
-    this.updateRuleActionType.emit( { type: RULE_RULE_ACTION_UPDATE_TYPE, payload: Object.assign({rule: this.rule}, event.payload) } );
+    this.updateRuleActionType.emit( { payload: Object.assign({rule: this.rule}, event.payload), type: RULE_RULE_ACTION_UPDATE_TYPE } );
   }
 
   onUpdateRuleActionParameter(event): void {
     console.log('RuleComponent', 'onUpdateRuleActionParameter');
-    this.updateRuleActionParameter.emit( { type: RULE_RULE_ACTION_UPDATE_PARAMETER, payload: Object.assign({rule: this.rule}, event.payload) } );
+    this.updateRuleActionParameter.emit( { payload: Object.assign({rule: this.rule}, event.payload), type: RULE_RULE_ACTION_UPDATE_PARAMETER } );
   }
 
   onDeleteRuleAction(event: {type: string, payload: {value: string, index: number}}): void {
     console.log('RuleComponent', 'onDeleteRuleAction');
-    this.deleteRuleAction.emit( { type: RULE_RULE_ACTION_DELETE, payload: Object.assign({rule: this.rule}, event.payload) } );
+    this.deleteRuleAction.emit( { payload: Object.assign({rule: this.rule}, event.payload), type: RULE_RULE_ACTION_DELETE } );
   }
 
   onUpdateConditionGroupOperator(event: {type: string, payload: {value: string, index: number}}, conditionGroup: ConditionGroupModel): void {
-    this.updateConditionGroupOperator.emit( { type: RULE_CONDITION_UPDATE_TYPE, payload: Object.assign({rule: this.rule, conditionGroup: conditionGroup}, event.payload) } );
+    this.updateConditionGroupOperator.emit( { payload: Object.assign({conditionGroup: conditionGroup, rule: this.rule}, event.payload), type: RULE_CONDITION_UPDATE_TYPE } );
   }
 
   onUpdateConditionType(event: {type: string, payload: {value: string, index: number}}, conditionGroup: ConditionGroupModel): void {
     console.log('RuleComponent', 'onUpdateConditionType');
-    this.updateConditionType.emit( { type: RULE_CONDITION_UPDATE_TYPE, payload: Object.assign({rule: this.rule, conditionGroup: conditionGroup}, event.payload) } );
+    this.updateConditionType.emit( { payload: Object.assign({conditionGroup: conditionGroup, rule: this.rule}, event.payload), type: RULE_CONDITION_UPDATE_TYPE } );
   }
 
   onUpdateConditionParameter(event, conditionGroup: ConditionGroupModel): void {
     console.log('RuleComponent', 'onUpdateConditionParameter');
-    this.updateConditionParameter.emit( { type: RULE_CONDITION_UPDATE_PARAMETER, payload: Object.assign({rule: this.rule, conditionGroup: conditionGroup}, event.payload) } );
+    this.updateConditionParameter.emit( { payload: Object.assign({conditionGroup: conditionGroup, rule: this.rule}, event.payload), type: RULE_CONDITION_UPDATE_PARAMETER } );
   }
 
   onUpdateConditionOperator(event, conditionGroup: ConditionGroupModel): void {
     console.log('RuleComponent', 'onUpdateConditionOperator');
-    this.updateConditionOperator.emit( { type: RULE_CONDITION_UPDATE_OPERATOR, payload: Object.assign({rule: this.rule, conditionGroup: conditionGroup}, event.payload) } );
+    this.updateConditionOperator.emit( { payload: Object.assign({conditionGroup: conditionGroup, rule: this.rule}, event.payload), type: RULE_CONDITION_UPDATE_OPERATOR } );
   }
 
   deleteRuleClicked(event: any): void {
@@ -351,7 +351,7 @@ class RuleComponent {
     }
 
     if (noWarn || confirm('Are you sure you want delete this rule?')) {
-      this.deleteRule.emit({type: RULE_DELETE, payload: {rule: this.rule}});
+      this.deleteRule.emit({ payload: {rule: this.rule}, type: RULE_DELETE});
     }
   }
 }

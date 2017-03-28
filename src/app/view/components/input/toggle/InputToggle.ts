@@ -40,12 +40,11 @@ import {LoggerService} from '../../../../api/services/logger.service';
   </span>
   `
 })
-
 export class InputToggle {
-  @Input() value: boolean = false;
-  @Input() disabled: boolean = false;
-  @Input() onText: string = 'On';
-  @Input() offText: string = 'Off';
+  @Input() value = false;
+  @Input() disabled = false;
+  @Input() onText = 'On';
+  @Input() offText = 'Off';
 
   @Output() change: EventEmitter<boolean> = new EventEmitter();
 
