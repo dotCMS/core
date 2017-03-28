@@ -18,7 +18,9 @@ module.exports = function (config) {
     frameworks: ['jasmine'],
 
     // list of files to exclude
-    exclude: [],
+    exclude: [
+
+    ],
 
     client: {
       captureConsole: false

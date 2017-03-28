@@ -5,13 +5,13 @@ let createCheckError = function(validation, value,  message): Error {
   e['validation'] = validation;
   e['validatedValue'] = value;
   return e;
-}
+};
 
 export let Check = {
 
-  exists(value, message = 'Value does not exist') {
+  exists(value, message = 'Value does not exist'): any {
     if (!Verify.exists(value)) {
-      throw createCheckError('exists', value, message)
+      throw createCheckError('exists', value, message);
     }
     return value;
   },
@@ -25,11 +25,8 @@ export let Check = {
 
   notEmpty(value, message = 'The value is empty'): string {
     if (!Verify.minLength(value, 1)) {
-      throw createCheckError('notEmpty', value, message)
+      throw createCheckError('notEmpty', value, message);
     }
     return value;
   }
-}
-
-
-
+};

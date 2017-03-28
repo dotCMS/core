@@ -32,7 +32,7 @@
     "github-deploy:dev": "webpack --config config/webpack.github-deploy.js --progress --profile --env.githubDev",
     "github-deploy:prod": "webpack --config config/webpack.github-deploy.js --progress --profile --env.githubProd",
     "github-deploy": "npm run github-deploy:dev",
-    "lint": "npm run tslint \"src/**/*.ts\"",
+    "lint": "npm run tslint \"src/**/*.ts -e src/app/e2e/**/* -e src/app/view/components/rule-engine/**/* -e src/app/api/util/CwFilter.spec.ts -e src/app/view/components/semantic/elements/input-text/* -e /app/api/rule-engine/* -e src/app/api/system/locale/I18n.it-spec.ts -e src/app/api/validation/Check.spec.ts -e src/app/api/rule-engine/Action.it-spec.ts -e src/app/api/services/bundle-service.it-spec.ts -e src/app/api/util/DevUtil.ts -e src/main.browser.aot.ts -e src/app/view/components/semantic/elements/input-date/demo.ts -e src/app/api/rule-engine/Rule.it-spec.ts -e src/app/api/persistence/ApiRoot.spec.ts\"",
     "postinstall": "npm run webdriver:update",
     "postversion": "git push && git push --tags",
     "preclean:install": "npm run clean",

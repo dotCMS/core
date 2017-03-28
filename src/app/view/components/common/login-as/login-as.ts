@@ -45,7 +45,7 @@ export class LoginAsComponent extends BaseComponent {
      * @param options - The parameters required by the back-end service.
      */
     dolLoginAs(options: any): void {
-        let parameters = {userId: options.user.value, password: options.password};
+        let parameters = {password: options.password, userId: options.user.value};
         this.loginService.loginAs(parameters).subscribe(data => {
             if (data) {
                 this.router.goToMain();

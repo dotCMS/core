@@ -231,7 +231,6 @@ module.exports = function (options) {
           // legacy options go here
         }
       }),
-
     ],
 
     /**
