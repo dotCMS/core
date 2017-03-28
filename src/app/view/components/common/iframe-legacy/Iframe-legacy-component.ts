@@ -73,11 +73,11 @@ export class IframeLegacyComponent extends SiteChangeListener {
     }
 
     initComponent(): void {
-        this.route.params.pluck<string>('id').subscribe(id => {
+        this.route.params.pluck('id').subscribe((id: string) => {
             this.iframe = this.loadURL(this.routingService.getPortletURL(id));
         });
 
-        this.route.queryParams.pluck<string>('url').subscribe( url => {
+        this.route.queryParams.pluck('url').subscribe( (url: string) => {
             if (url) {
                 this.iframe = this.loadURL(url);
             }

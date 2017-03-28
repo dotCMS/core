@@ -201,7 +201,7 @@ class RuleComponent {
 
     this.fireOn = {
       options: [
-        {value: 'EVERY_PAGE', label: this.rsrc('inputs.fireOn.options.EveryPage')},
+        {label: this.rsrc('inputs.fireOn.options.EveryPage'), value: 'EVERY_PAGE'},
         {value: 'ONCE_PER_VISIT', label: this.rsrc('inputs.fireOn.options.OncePerVisit')},
         {value: 'ONCE_PER_VISITOR', label: this.rsrc('inputs.fireOn.options.OncePerVisitor')},
         {value: 'EVERY_REQUEST', label: this.rsrc('inputs.fireOn.options.EveryRequest')}
@@ -230,7 +230,7 @@ class RuleComponent {
     });
   }
 
-  rsrc(subkey: string, defVal = '-missing-') {
+   rsrc(subkey: string, defVal = '-missing-') {
     let msgObserver = this._rsrcCache[subkey];
     if (!msgObserver) {
       msgObserver = this.resources.get(I8N_BASE + '.rules.' + subkey, defVal);

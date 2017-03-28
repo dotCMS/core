@@ -43,7 +43,8 @@ export interface ConditionActionEvent extends RuleActionEvent {
     condition?: ConditionModel,
     conditionGroup?: ConditionGroupModel,
     index?: number,
-    name?: string};
+    name?: string
+    type?: string};
 }
 
 /**

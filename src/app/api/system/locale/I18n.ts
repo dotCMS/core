@@ -22,7 +22,7 @@ export class TreeNode {
     this._loaded = false;
   }
 
-  $addAllFromJson(key: string, childJson: any) {
+  $addAllFromJson(key: string, childJson: any): void {
     let cNode = this.$child(key);
     if (Verify.isString(childJson)) {
       cNode._value = childJson;
@@ -86,7 +86,6 @@ export class TreeNode {
   }
 }
 
-
 @Injectable()
 export class I18nService {
   root: TreeNode;
@@ -119,7 +118,7 @@ export class I18nService {
     if (!cNode.$isLoaded() && !cNode.$isLoading()) {
       let promise = new Promise((resolve, reject) => {
         this.makeRequest(path.join('/')).catch((err: any, source: Observable<any>) => {
-          if (err && err.status === 404){
+          if (err && err.status === 404) {
             this.loggerService.debug('Missing Resource: \'' , msgKey, '\'');
           } else {
             this.loggerService.debug('I18n', 'Failed:: ', msgKey, '=', cNode, 'error:', err);

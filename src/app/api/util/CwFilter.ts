@@ -3,14 +3,14 @@ import {Verify} from '../validation/Verify';
 const numberRegex = /[\d.]/;
 export class CwFilter {
 
-static transformValue(fieldValue: any): any{
+static transformValue(fieldValue: any): any {
     let xform = fieldValue;
     if (Verify.exists(fieldValue)) {
       if (fieldValue === 'true') {
         xform = true;
-      } else if (fieldValue === 'false'){
+      } else if (fieldValue === 'false') {
         xform = false;
-      } else if (fieldValue.match(numberRegex)){
+      } else if (fieldValue.match(numberRegex)) {
         xform = Number.parseFloat(fieldValue);
       }
     }
@@ -43,7 +43,7 @@ static transformValue(fieldValue: any): any{
           });
         }
         filter = filter.trim().toLowerCase();
-        if (filter){
+        if (filter) {
           isFiltered = isFiltered || !(obj.name.toLowerCase().indexOf(filter) >= 0 );
         }
       }

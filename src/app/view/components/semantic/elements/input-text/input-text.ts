@@ -6,8 +6,8 @@ import {
     Input,
     Output,
     Optional
-} from '@angular/core'
-import {NgControl, ControlValueAccessor} from '@angular/forms'
+} from '@angular/core';
+import {NgControl, ControlValueAccessor} from '@angular/forms';
 import _ from 'lodash';
 
 /**
@@ -15,9 +15,9 @@ import _ from 'lodash';
  * @see http://semantic-ui.com/elements/input.html
  */
 @Component({
-  selector: 'cw-input-text',
-  host: {'role': 'text'},
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {'role': 'text'},
+  selector: 'cw-input-text',
   template: `<div flex layout="row" layout-wrap class="ui fluid input"  [ngClass]="{disabled: disabled, icon: icon, required: required}">
     <input flex
            type="{{type}}"
@@ -35,69 +35,65 @@ import _ from 'lodash';
 })
   export class InputText implements ControlValueAccessor {
 
-  @Input() placeholder:string = ""
-  @Input() type:string = "text"
-  @Input() icon:string
-  @Input() disabled:boolean = false
-  @Input() readonly:boolean = false
-  @Input() focused:boolean = false
-  @Input() tabIndex:number = null
-  @Input() required:boolean = false
+  @Input() placeholder: string = '';
+  @Input() type: string = 'text';
+  @Input() icon: string;
+  @Input() disabled: boolean = false;
+  @Input() readonly: boolean = false;
+  @Input() focused: boolean = false;
+  @Input() tabIndex: number = null;
+  @Input() required: boolean = false;
+  @Output() blur: EventEmitter<any> = new EventEmitter();
 
+  errorMessage: string;
+  onChange: Function;
+  onTouched: Function;
 
+  private _modelValue: any;
 
-  @Output() blur:EventEmitter<any> = new EventEmitter()
-
-  errorMessage:string
-  onChange:Function
-  onTouched:Function
-
-  private _modelValue:any
-  
-  constructor( @Optional() control:NgControl, private _elementRef:ElementRef) {
-    if(control){
+  constructor( @Optional() control: NgControl, private _elementRef: ElementRef) {
+    if (control) {
       control.valueAccessor = this;
     }
   }
 
-  ngOnChanges(change) {
+  ngOnChanges(change): void {
     if (change.focused) {
-      let f = change.focused.currentValue === true || change.focused.currentValue == 'true'
+      let f = change.focused.currentValue === true || change.focused.currentValue === 'true';
       if (f) {
-        let el = this._elementRef.nativeElement
+        let el = this._elementRef.nativeElement;
 
         // More info: http://stackoverflow.com/questions/36332418/angular-2-exception-expression-ngclassuntouched-has-changed-after-it-was-che
         setTimeout(() => {
-          el.querySelector('input').focus()
+          el.querySelector('input').focus();
         }, 0);
       }
     }
   }
 
   @Input()
-  set value(v:string){
-    this.writeValue(v)
+  set value(v: string){
+    this.writeValue(v);
   }
-  get value():string {
-    return this._modelValue
-  }
-
-  onBlur(value) {
-    this.onTouched()
-    this.blur.emit(value)
+  get value(): string {
+    return this._modelValue;
   }
 
-  writeValue(value:any) {
+  onBlur(value): void {
+    this.onTouched();
+    this.blur.emit(value);
+  }
+
+  writeValue(value: any): void {
     this._modelValue = _.isEmpty(value) ? '' : value;
-    this._elementRef.nativeElement.firstElementChild.firstElementChild.setAttribute('value', this._modelValue)
+    this._elementRef.nativeElement.firstElementChild.firstElementChild.setAttribute('value', this._modelValue);
   }
 
-  registerOnChange(fn) {
+  registerOnChange(fn): void {
     this.onChange = fn;
   }
 
-  registerOnTouched(fn) {
+  registerOnTouched(fn): void {
     this.onTouched = fn;
   }
 }
-

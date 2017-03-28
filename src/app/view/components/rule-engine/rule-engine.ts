@@ -122,7 +122,7 @@ export class RuleEngineComponent {
     this.status = null;
   }
 
-  rsrc(subkey: string) {
+  rsrc(subkey: string): Observable<any> {
     let x = this._rsrcCache[subkey];
     if (!x) {
       x = this.resources.get(I8N_BASE + '.rules.' + subkey);

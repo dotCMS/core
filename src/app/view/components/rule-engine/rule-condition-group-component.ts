@@ -83,7 +83,7 @@ export class ConditionGroupComponent {
     }
   }
 
-  rsrc(subkey: string) {
+  rsrc(subkey: string): Observable<String> {
     let x = this._rsrcCache[subkey];
     if (!x) {
       x = this.resources.get(ConditionGroupComponent.I8N_BASE + '.' + subkey);
@@ -94,11 +94,11 @@ export class ConditionGroupComponent {
 
   onCreateCondition(): void {
     console.log('ConditionGroupComponent', 'onCreateCondition');
-    this.createCondition.emit( { type: RULE_CONDITION_CREATE, payload: {conditionGroup: this.group, index: this.groupIndex}} );
+    this.createCondition.emit( <ConditionActionEvent> { payload: {conditionGroup: this.group, index: this.groupIndex, type: RULE_CONDITION_CREATE}} );
   }
 
   toggleGroupOperator(): void {
     let value = this.group.operator === 'AND' ? 'OR' : 'AND';
-    this.updateConditionGroupOperator.emit({type: RULE_CONDITION_GROUP_UPDATE_OPERATOR, payload: {conditionGroup: this.group, value: value, index: this.groupIndex}});
+    this.updateConditionGroupOperator.emit( <ConditionActionEvent> {payload: {conditionGroup: this.group, index: this.groupIndex, type: RULE_CONDITION_GROUP_UPDATE_OPERATOR, value: value}});
   }
 }
