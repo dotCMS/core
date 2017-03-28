@@ -230,7 +230,6 @@ class RuleComponent {
     });
   }
 
-
    rsrc(subkey: string, defVal = '-missing-'): any {
 
     let msgObserver = this._rsrcCache[subkey];
