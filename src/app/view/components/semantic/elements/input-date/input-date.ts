@@ -34,7 +34,8 @@ import _ from 'lodash';
 })
 export class InputDate implements ControlValueAccessor {
 
-  private static DEFAULT_VALUE: string = InputDate._defaultValue();
+  private static DEFAULT_VALUE: string;
+
   @Input() placeholder = '';
   @Input() type = '';
   @Input() value = '';
@@ -70,6 +71,10 @@ export class InputDate implements ControlValueAccessor {
   constructor( @Optional() control: NgControl, private _elementRef: ElementRef) {
     if (control) {
       control.valueAccessor = this;
+    }
+
+    if (!InputDate.DEFAULT_VALUE) {
+      InputDate.DEFAULT_VALUE = InputDate._defaultValue();
     }
   }
 

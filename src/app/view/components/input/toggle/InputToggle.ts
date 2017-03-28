@@ -1,5 +1,5 @@
-import {Component, View, EventEmitter, Attribute, Input, Output} from '@angular/core';
-import {LoggerService} from "../../../../api/services/logger.service";
+import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {LoggerService} from '../../../../api/services/logger.service';
 
 @Component({
   selector: 'cw-toggle-input',
@@ -42,27 +42,26 @@ import {LoggerService} from "../../../../api/services/logger.service";
 })
 
 export class InputToggle {
-  @Input() value:boolean = false
-  @Input() disabled:boolean = false
-  @Input() onText:string = 'On'
-  @Input() offText:string = 'Off'
+  @Input() value: boolean = false;
+  @Input() disabled: boolean = false;
+  @Input() onText: string = 'On';
+  @Input() offText: string = 'Off';
 
-  @Output() change:EventEmitter<boolean> = new EventEmitter()
+  @Output() change: EventEmitter<boolean> = new EventEmitter();
 
   constructor(private loggerService: LoggerService) {}
 
-  ngOnChanges(change){
-    if(change.value){
-      this.value = change.value.currentValue === true
+  ngOnChanges(change): void {
+    if (change.value) {
+      this.value = change.value.currentValue === true;
     }
   }
 
-  updateValue($event) {
-    $event.stopPropagation() // grrr.
-    let value = $event.target.checked
-    this.loggerService.debug("InputToggle", "updateValue", 'input value changed: [from / to]', this.value, value);
-    this.value = value
-    this.change.emit(value)
+  updateValue($event): void {
+    $event.stopPropagation(); // grrr.
+    let value = $event.target.checked;
+    this.loggerService.debug('InputToggle', 'updateValue', 'input value changed: [from / to]', this.value, value);
+    this.value = value;
+    this.change.emit(value);
   }
 }
-
