@@ -65,6 +65,12 @@ THIS FILE AND ITS INCLUDES
 	   	function isInodeSet(x){
 			return (x && x != undefined && x!="" && x.length>15);
 		}
+		// Polyfill IE11
+		if (typeof String.prototype.endsWith !== 'function') {
+			String.prototype.endsWith = function(suffix) {
+				return this.indexOf(suffix, this.length - suffix.length) !== -1;
+			};
+		}
    	</script>
 
 	<script type="text/javascript" src="/html/js/log4js/log4javascript.js"></script>
