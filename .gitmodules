@@ -9,3 +9,7 @@
 	path = test
 	url = https://github.com/dotCMS/enterprise-2.x
 	branch = master-4.1
+[submodule "test1"]
+	path = test1
+	url = https://github.com/dotCMS/enterprise-2.x
+	branch = master-4.1
