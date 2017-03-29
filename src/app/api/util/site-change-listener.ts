@@ -1,6 +1,6 @@
 import {SiteService} from '../services/site-service';
 import {Site} from '../services/site-service';
-import {BaseComponent} from '../../view/components/common/_base/base-component';
+import {BaseComponent} from '../../view/components/_common/_base/base-component';
 import {MessageService} from '../services/messages-service';
 
 export abstract class SiteChangeListener extends BaseComponent {

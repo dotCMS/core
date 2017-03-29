@@ -1,8 +1,8 @@
 import {Component, ViewChild, Input, Output, EventEmitter} from '@angular/core';
-import {DropdownComponent} from '../common/dropdown-component/dropdown-component';
+import {DropdownComponent} from '../_common/dropdown-component/dropdown-component';
 import {ContentletService, StructureTypeView, ContentTypeView} from '../../../api/services/contentlet-service';
 import {RoutingService} from '../../../api/services/routing-service';
-import {BaseComponent} from '../common/_base/base-component';
+import {BaseComponent} from '../_common/_base/base-component';
 import {MessageService} from '../../../api/services/messages-service';
 import {IframeOverlayService} from '../../../api/services/iframe-overlay-service';
 

@@ -3,7 +3,7 @@ import {DotcmsConfig} from '../../../api/services/system/dotcms-config';
 import {Site} from '../../../api/services/site-service';
 import {SiteService} from '../../../api/services/site-service';
 import {MessageService} from '../../../api/services/messages-service';
-import {BaseComponent} from '../common/_base/base-component';
+import {BaseComponent} from '../_common/_base/base-component';
 import {AutoComplete} from 'primeng/primeng';
 import {IframeOverlayService} from '../../../api/services/iframe-overlay-service';
 

@@ -1,18 +1,18 @@
-import {ForgotPasswordContainer} from './view/components/common/login/forgot-password-component/forgot-password-container';
-import {IframeLegacyComponent} from './view/components/common/iframe-legacy/iframe-legacy-component';
-import {LoginContainer} from './view/components/common/login/login-component/login-container';
-import {LoginPageComponent} from './view/components/common/login/login-page-component';
-import {MainComponent} from './view/components/common/main-component/main-component';
+import {ForgotPasswordContainer} from './view/components/login/forgot-password-component/forgot-password-container';
+import {IframeLegacyComponent} from './view/components/iframe-legacy/iframe-legacy-component';
+import {LoginContainer} from './view/components/login/login-component/login-container';
+import {LoginPageComponent} from './view/components/login/login-page-component';
+import {MainComponentLegacy} from './view/components/main-legacy/main-legacy-component';
 import {ModuleWithProviders}  from '@angular/core';
-import {PatternLibrary} from './view/components/common/pattern-library/pattern-library';
-import {ResetPasswordContainer} from './view/components/common/login/reset-password-component/reset-password-container';
+import {PatternLibrary} from './view/components/_common/pattern-library/pattern-library';
+import {ResetPasswordContainer} from './view/components/login/reset-password-component/reset-password-container';
 import {Routes, RouterModule, PreloadAllModules} from '@angular/router';
 import {RoutingPublicAuthService} from './api/services/routing-public-auth-service';
-import {MainCoreComponent} from './view/components/main-core-component/MainCoreComponent';
-import {NotLicensedComponent} from './view/components/not-licensed-component/not-licensed-component';
-import {LogOutContainer} from './view/components/common/login/login-component/log-out-container';
+import {MainCoreLegacyComponent} from './view/components/main-core-legacy/main-core-legacy-component';
+import {NotLicensedComponent} from './view/components/not-licensed/not-licensed-component';
+import {LogOutContainer} from './view/components/login/login-component/log-out-container';
 import {RoutingPrivateAuthService} from './api/services/routing-private-auth-service';
-import {RuleEngineContainer} from './view/components/rule-engine/rule-engine.container';
+import {RuleEngineContainer} from './portlets/rule-engine/rule-engine.container';
 
 let angularComponents: any[] = [];
 angularComponents.push({component: RuleEngineContainer, id: 'rules'});
@@ -77,13 +77,13 @@ const appRoutes: Routes = [
     {
         canActivate: [RoutingPrivateAuthService],
         children: angularChildren,
-        component: MainComponent,
+        component: MainComponentLegacy,
         path: '',
     },
     {
         canActivate: [RoutingPrivateAuthService],
         children: mainComponentChildren,
-        component: MainComponent,
+        component: MainComponentLegacy,
         path: 'c',
     },
     {
@@ -108,7 +108,7 @@ const appRoutes: Routes = [
     {
         canActivate: [RoutingPrivateAuthService],
         children: fromCoreChildren,
-        component: MainCoreComponent,
+        component: MainCoreLegacyComponent,
         path: 'fromCore'
     },
     {
