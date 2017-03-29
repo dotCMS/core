@@ -13,7 +13,10 @@ exports.config = {
     helpers.root('src/**/**.e2e.ts'),
     helpers.root('src/**/*.e2e.ts')
   ],
-  exclude: [],
+  exclude: [
+      helpers.root('src/app/view/components/rule-engine/**/*.e2e.ts'),
+      helpers.root('src/app/view/components/semantic/elements/input-text/input-text.e2e.ts')
+  ],
 
   framework: 'jasmine2',
 

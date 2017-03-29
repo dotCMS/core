@@ -1,13 +1,13 @@
 import {TestInputDropdown} from '../../../../../e2e/CwProtractor';
+import { browser, by, element } from 'protractor';
 
 class TextInput {
-  root: protractor.ElementFinder;
-  valueInput: protractor.ElementFinder;
+  root: any;
+  valueInput: any;
 
-
-  constructor(root: protractor.ElementFinder) {
+  constructor(root: any) {
     this.root = root;
-    this.valueInput = this.root.element(by.tagName('INPUT'));
+    this.valueInput = element(by.tagName('INPUT'));
   }
 }
 
@@ -24,14 +24,14 @@ class ServerSideConditionPage {
 
 }
 
-describe('The serverside condtion demo', function () {
-  it('should have a title.', function () {
+describe('The serverside condtion demo', () => {
+  it('should have a title.', () => {
     let page = new ServerSideConditionPage();
     browser.get(page.url);
-    expect(browser.getTitle()).toEqual(page.title);
+    expect<any>(browser.getTitle()).toEqual(page.title);
   });
 
-  it('should have three inputs from demo one.', function () {
+  it('should have three inputs from demo one.', () => {
     let page = new ServerSideConditionPage();
     browser.get(page.url);
     expect(page.inputs.demoOneRequestHeaderDD.el).toBeDefined('Dropdown for demo 1 should exist');

@@ -51,8 +51,6 @@ export class WebSocketProtocol extends Protocol {
                 };
 
                 self.socket.onclose = (ev: CloseEvent) => {
-                    alert();
-
                     if ((this.reconnectIfNotNormalClose && ev.code !== this.normalCloseCode) || this.reconnectableStatusCodes.indexOf(ev.code) > -1) {
                         this.loggerService.debug('Reconnecting Web EventsSocket connection');
                         this.reconnect();
