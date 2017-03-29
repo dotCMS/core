@@ -8948,10 +8948,10 @@ dd .buttonCaption {
 }
 .calendar-events .portlet-toolbar__actions-primary,
 .calendar-events .portlet-toolbar__actions-secondary {
-  flex: 1;
+  flex: 0 1 auto;
 }
 .calendar-events .portlet-toolbar__info {
-  flex: 2;
+  flex: 1 0 auto;
   font-size: 18px;
   justify-content: center;
 }
