@@ -196,7 +196,7 @@
     </map>
 	   
     <map name="adminconfigpool">
-        <max-size>100</max-size>
+        <max-size>271</max-size>
         <eviction-policy>LFU</eviction-policy>
     </map>
     
@@ -206,7 +206,7 @@
     </map>
     
     <map name="companypool">
-        <max-size>10</max-size>
+        <max-size>271</max-size>
         <eviction-policy>LFU</eviction-policy>
     </map>
     
@@ -216,7 +216,7 @@
     </map>
     
     <map name="fileassetmetadatacache">
-        <max-size>200</max-size>
+        <max-size>271</max-size>
         <eviction-policy>LFU</eviction-policy>
     </map>
     
@@ -226,7 +226,7 @@
     </map>
     
     <map name="indiciescache">
-        <max-size>8</max-size>
+        <max-size>271</max-size>
         <eviction-policy>LFU</eviction-policy>
     </map>
     
@@ -246,7 +246,7 @@
     </map>
     
     <map name="portletpool">
-        <max-size>100</max-size>
+        <max-size>271</max-size>
         <eviction-policy>LFU</eviction-policy>
     </map>
     
