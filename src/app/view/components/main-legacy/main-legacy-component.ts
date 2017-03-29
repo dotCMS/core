@@ -1,0 +1,31 @@
+import {Component, ViewEncapsulation} from '@angular/core';
+
+@Component({
+    encapsulation: ViewEncapsulation.None,
+    providers: [],
+    selector: 'dot-main-component',
+    styleUrls: ['main-legacy-component.css'],
+    templateUrl: 'main-legacy-component.html',
+})
+export class MainComponentLegacy {
+    private messages: any = {};
+    private label = '';
+    private isMenuCollapsed = false;
+
+    constructor() {
+    }
+
+    ngOnInit(): void {
+        document.body.style.backgroundColor = '';
+        document.body.style.backgroundImage = '';
+    }
+
+    ngOnDestroy(): void {
+        this.messages = null;
+        this.label = null;
+    }
+
+    toggleSidenav(): void {
+        this.isMenuCollapsed = !this.isMenuCollapsed;
+    }
+}

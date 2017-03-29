@@ -28,7 +28,7 @@ import {CheckboxModule} from 'primeng/primeng';
 import {ButtonModule} from 'primeng/primeng';
 import {DropdownModule} from 'primeng/primeng';
 import {AutoCompleteModule} from 'primeng/primeng';
-import {MainCoreComponent} from './view/components/main-core-component/MainCoreComponent';
+import {MainCoreLegacyComponent} from './view/components/main-core-legacy/main-core-legacy-component';
 import {ToolbarModule} from 'primeng/primeng';
 import {DialogModule} from 'primeng/primeng';
 import {RadioButtonModule} from 'primeng/primeng';
