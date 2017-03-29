@@ -5,3 +5,7 @@
 	path = dotCMS/src/main/license
 	url = git@github.com:dotCMS/license.git
 
+[submodule "test"]
+	path = test
+	url = https://github.com/dotCMS/enterprise-2.x
+	branch = master-4.1
