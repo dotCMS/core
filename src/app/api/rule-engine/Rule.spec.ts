@@ -11,7 +11,7 @@ describe('Unit.api.rule-engine.Rule', () => {
 
   it('Isn\'t valid when new.', () => {
 
-    let foo = new RuleModel(null);
+    let foo = new RuleModel({});
     expect(foo.isValid()).toEqual(false);
   });
 });
