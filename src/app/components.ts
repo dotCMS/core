@@ -5,14 +5,14 @@ import {AddToBundleDialogContainer} from './view/components/common/push-publish/
 import {AreaPickerDialogComponent} from './view/components/common/google-map/area-picker-dialog.component';
 import {ConditionComponent} from './view/components/rule-engine/rule-condition-component';
 import {ConditionGroupComponent} from './view/components/rule-engine/rule-condition-group-component';
-import {Dropdown, InputOption} from './view/components/semantic/modules/dropdown/dropdown';
-import {InputDate} from './view/components/semantic/elements/input-date/input-date';
-import {InputText} from './view/components/semantic/elements/input-text/input-text';
+import {Dropdown, InputOption} from './view/components/rule-engine/semantic/modules/dropdown/dropdown';
+import {InputDate} from './view/components/rule-engine/semantic/elements/input-date/input-date';
+import {InputText} from './view/components/rule-engine/semantic/elements/input-text/input-text';
 import {InputToggle} from './view/components/input/toggle/inputToggle';
 import {ModalDialogComponent} from './view/components/common/modal-dialog/dialog-component';
 import {PushPublishDialogComponent} from './view/components/common/push-publish/push-publish-dialog-component';
 import {PushPublishDialogContainer} from './view/components/common/push-publish/push-publish-dialog-container';
-import {RestDropdown} from './view/components/semantic/modules/restdropdown/RestDropdown';
+import {RestDropdown} from './view/components/rule-engine/semantic/modules/restdropdown/RestDropdown';
 import {RuleActionComponent} from './view/components/rule-engine/rule-action-component';
 import {RuleComponent} from './view/components/rule-engine/rule-component';
 import {RuleEngineComponent} from './view/components/rule-engine/rule-engine';

@@ -3,8 +3,8 @@ import { AfterViewInit, Output, Input, ChangeDetectionStrategy } from '@angular/
 import {NgControl, ControlValueAccessor, } from '@angular/forms';
 import {Http} from '@angular/http';
 
-import {Verify} from '../../../../../api/validation/Verify';
-import {ApiRoot} from '../../../../../api/persistence/ApiRoot';
+import {Verify} from '../../../../../../api/validation/Verify';
+import {ApiRoot} from '../../../../../../api/persistence/ApiRoot';
 import {Observer, Observable} from 'rxjs';
 import _ from 'lodash';
 

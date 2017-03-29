@@ -23,6 +23,7 @@
     "types": [
       "googlemaps",
       "hammerjs",
+      "jquery",
       "node"
     ]
   },
@@ -37,7 +38,7 @@
     "src/**/demo.ts",
     "src/main.browser.aot.ts",
     "src/app/view/components/rule-engine/condition-types/serverside-condition/index.ts",
-    "src/app/view/components/semantic/elements/input-date/index.ts"
+    "src/app/view/components/rule-engine/semantic/elements/input-date/index.ts"
   ],
   "awesomeTypescriptLoaderOptions": {
     "forkChecker": true,

@@ -11,7 +11,6 @@ import _ from 'lodash';
  *
  * @todo ggranum: Extract semantic UI components into a separate github repo and include them via npm.
  */
-let $ = window['$'];
 
 const DO_NOT_SEARCH_ON_THESE_KEY_EVENTS = {
 

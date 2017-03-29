@@ -52,9 +52,12 @@ export interface ConditionActionEvent extends RuleActionEvent {
  */
 @Component({
   encapsulation: ViewEncapsulation.None,
-
   selector: 'cw-rule-engine-container',
-  styleUrls: ['styles/rule-engine.css', 'styles/angular-material.layouts.css', 'styles/semantic.ui.css'],
+  styleUrls: [
+    'styles/rule-engine.scss',
+    'styles/angular-material.layouts.scss',
+    './semantic/assets/semantic.css'
+  ],
   template: `
     <cw-rule-engine
       [environmentStores]="environments"

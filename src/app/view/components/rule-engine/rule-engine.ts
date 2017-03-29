@@ -12,6 +12,8 @@ import {IPublishEnvironment} from '../../../api/services/bundle-service';
 
 const I8N_BASE = 'api.sites.ruleengine';
 
+import './semantic/assets/semantic.js';
+
 /**
  *
  */

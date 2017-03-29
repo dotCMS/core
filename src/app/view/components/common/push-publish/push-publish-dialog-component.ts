@@ -1,5 +1,5 @@
 import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from '@angular/core';
-import {Dropdown, InputOption} from '../../semantic/modules/dropdown/dropdown';
+import {Dropdown, InputOption} from '../../rule-engine/semantic/modules/dropdown/dropdown';
 import {ModalDialogComponent} from '../modal-dialog/dialog-component';
 import {IPublishEnvironment} from '../../../../api/services/bundle-service';
 

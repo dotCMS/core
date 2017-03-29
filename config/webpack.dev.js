@@ -152,6 +152,7 @@ module.exports = function (options) {
           'ENV': JSON.stringify(METADATA.ENV),
           'NODE_ENV': JSON.stringify(METADATA.ENV),
           'HMR': METADATA.HMR,
+          'DEFAULT_LOCALE': JSON.stringify(METADATA.DEFAULT_LOCALE)
         }
       }),
 
