@@ -3,6 +3,7 @@ package com.dotmarketing.viewtools;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -21,9 +22,12 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.liferay.portal.model.User;
 
 /**
@@ -35,6 +39,12 @@ public class DotTemplateTool implements ViewTool {
     private static HttpServletRequest request;
     Context ctx;
     private static User sysUser = null;
+    private static Cache<String, Map<String, Object>> cache = CacheBuilder.<String, Map<String, Object>>newBuilder()
+        .expireAfterWrite(Config.getLongProperty("TEMPLATE_THEME_CACHE_TTL_MILLIS", 5000), TimeUnit.MILLISECONDS)
+        .build(); 
+    private static Cache<String, TemplateLayout> layoutCache = CacheBuilder.<String,TemplateLayout>newBuilder()
+        .expireAfterWrite(Config.getLongProperty("TEMPLATE_THEME_CACHE_TTL_MILLIS", 5000), TimeUnit.MILLISECONDS)
+        .build(); 
     /**
      * @param initData the ViewContext that is automatically passed on view tool initialization, either in the request or the application
      * @return
@@ -77,7 +87,9 @@ public class DotTemplateTool implements ViewTool {
      *
      */
     public static TemplateLayout themeLayout ( String themeInode, Boolean isPreview ) throws DotDataException, DotSecurityException {
-
+        String key = themeInode + isPreview;
+        TemplateLayout layout = layoutCache.getIfPresent(key);
+        if(layout==null){
         String title = null;
         String drawedBody;
         if ( UtilMethods.isSet( themeInode ) ) {
@@ -99,9 +111,10 @@ public class DotTemplateTool implements ViewTool {
         }
 
         //Parse and return the layout for this template
-        TemplateLayout layout = DesignTemplateUtil.getDesignParameters( drawedBody, isPreview );
+        layout = DesignTemplateUtil.getDesignParameters( drawedBody, isPreview );
         layout.setTitle( title );
-
+        layoutCache.put(key, layout);
+        }
         return layout;
     }
 
@@ -182,8 +195,13 @@ public class DotTemplateTool implements ViewTool {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    
     private static Map<String, Object> setThemeData ( Folder themeFolder, String hostId ) throws DotDataException, DotSecurityException {
 
+      String key = "themeMap" + themeFolder.getIdentifier();
+      Map<String, Object> themeMap = cache.getIfPresent(key);
+      if(themeMap==null){
+        themeMap = new HashMap<String, Object>();
         //Get the theme files
         List<FileAsset> themeFiles = APILocator.getFileAssetAPI().findFileAssetsByFolder( themeFolder, APILocator.getUserAPI().getSystemUser(), false );
 
@@ -216,11 +234,12 @@ public class DotTemplateTool implements ViewTool {
         }
 
         //Setting required theme data for the Layout template
-        Map<String, Object> themeMap = new HashMap<String, Object>();
+        
         themeMap.put( "path", themePath );
         themeMap.put( "templatePath", themeTemplatePath );
         themeMap.put( "htmlHead", haveHtmlHead );
-
+        cache.put(key, themeMap);
+      }
         return themeMap;
     }
 
