@@ -66,6 +66,7 @@ dll/
 .idea/
 *.swp
 .vscode/
+*.iml
 
 
 # Angular #
