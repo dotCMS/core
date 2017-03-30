@@ -2,6 +2,8 @@ package com.dotmarketing.business.cache.provider.hazelcast;
 
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.util.Logger;
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -17,6 +19,8 @@ import java.util.Set;
  */
 public class HazelCastEmbeddedProvider extends HazelCastClientProvider {
 
+    protected HazelcastInstance hazelEmbedded = null;
+
     @Override
     public void init() throws Exception {
         Logger.info(this, "Setting Up HazelCast Embedded Config");
@@ -24,7 +28,20 @@ public class HazelCastEmbeddedProvider extends HazelCastClientProvider {
         try {
             is = getClass().getClassLoader().getResourceAsStream("hazelcast-embedded.xml");
             XmlConfigBuilder builder = new XmlConfigBuilder(is);
-            hazel = Hazelcast.newHazelcastInstance(builder.build());
+            hazelEmbedded = Hazelcast.newHazelcastInstance(builder.build());
+            initialized = true;
+        } finally {
+            if (is != null) {
+                is.close();
+            }
+        }
+
+        Logger.info(this, "Setting Up HazelCast Client Config");
+        is = null;
+        try {
+            is = getClass().getClassLoader().getResourceAsStream("hazelcast-client.xml");
+            XmlClientConfigBuilder builder = new XmlClientConfigBuilder(is);
+            hazel = HazelcastClient.newHazelcastClient(builder.build());
             initialized = true;
         } finally {
             if (is != null) {
