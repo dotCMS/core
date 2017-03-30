@@ -89,7 +89,6 @@
     "reflect-metadata": "^0.1.9",
     "require-dot-file": "0.4.0",
     "rxjs": "5.0.2",
-    "semantic-ui": "2.1.8",
     "whatwg-fetch": "0.x.x",
     "zone.js": "0.7.6"
   },
