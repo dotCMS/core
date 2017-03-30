@@ -152,6 +152,26 @@ npm run build:prod
 npm run server:prod
 ```
 
+## Publish the node module
+We publish the ```dist``` folder as a node module so we can easily include it into our ```dotcms``` instance.
+
+
+### Versioning
+**REMEMBER: to update the version in the ```package.json``` file every time we publish a new version to npm.***
+
+- Bug fixes and other minor changes: Patch release, increment the last number, e.g. 1.0.1
+- New features which don't break existing features: Minor release, increment the middle number, e.g. 1.1.0
+- Changes which break backwards compatibility: Major release, increment the first number, e.g. 2.0.0
+
+More information about versions: [https://docs.npmjs.com/getting-started/semantic-versioning](https://docs.npmjs.com/getting-started/semantic-versioning)
+
+
+```bash
+# will compile app for prod and publish to npm
+npm run publish
+```
+
+
 ## Other commands
 
 ### build files
