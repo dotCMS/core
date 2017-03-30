@@ -25,7 +25,7 @@ import javax.servlet.http.HttpSession;
 
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.*;
@@ -107,11 +107,8 @@ public abstract class VelocityServlet extends HttpServlet {
 
 	private final String PREVIEW_MODE_VTL= "preview_mode.vtl";
     private final String PREVIEW_MODE_MENU_VTL= "preview_mode_menu.vtl";
-
-    private static VelocityServlet me;
-    public static VelocityServlet me(){
-        return me;
-    }
+    
+    
 	protected void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
 
 		final String uri =URLDecoder.decode(
@@ -394,7 +391,10 @@ public abstract class VelocityServlet extends HttpServlet {
 
 			//Find the current language
 			long currentLanguageId = VelocityUtil.getLanguageId(request);
-			Long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+
+
+			// Map with all identifier inodes for a given uri.
+
 
     		// now  we check identifier cache first (which DOES NOT have a 404 cache )
     		Identifier ident = APILocator.getIdentifierAPI().find(host, uri);
