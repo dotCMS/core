@@ -22,7 +22,6 @@
     ],
     "types": [
       "googlemaps",
-      "hammerjs",
       "jquery",
       "node"
     ]

@@ -1,17 +1,17 @@
 import {ForgotPasswordContainer} from './view/components/login/forgot-password-component/forgot-password-container';
 import {IframeLegacyComponent} from './view/components/iframe-legacy/iframe-legacy-component';
+import {LogOutContainer} from './view/components/login/login-component/log-out-container';
 import {LoginContainer} from './view/components/login/login-component/login-container';
 import {LoginPageComponent} from './view/components/login/login-page-component';
 import {MainComponentLegacy} from './view/components/main-legacy/main-legacy-component';
+import {MainCoreLegacyComponent} from './view/components/main-core-legacy/main-core-legacy-component';
 import {ModuleWithProviders}  from '@angular/core';
+import {NotLicensedComponent} from './view/components/not-licensed/not-licensed-component';
 import {PatternLibrary} from './view/components/_common/pattern-library/pattern-library';
 import {ResetPasswordContainer} from './view/components/login/reset-password-component/reset-password-container';
 import {Routes, RouterModule, PreloadAllModules} from '@angular/router';
-import {RoutingPublicAuthService} from './api/services/routing-public-auth-service';
-import {MainCoreLegacyComponent} from './view/components/main-core-legacy/main-core-legacy-component';
-import {NotLicensedComponent} from './view/components/not-licensed/not-licensed-component';
-import {LogOutContainer} from './view/components/login/login-component/log-out-container';
 import {RoutingPrivateAuthService} from './api/services/routing-private-auth-service';
+import {RoutingPublicAuthService} from './api/services/routing-public-auth-service';
 import {RuleEngineContainer} from './portlets/rule-engine/rule-engine.container';
 
 let angularComponents: any[] = [];
