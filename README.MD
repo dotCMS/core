@@ -1,153 +1,334 @@
-# Core-Web
-DotCMS Core-Web is a Typescript based Angular 2 application. The project is divided into two primary layers: an API 
-that provides convenience methods for accessing the DotCMS Core ReST API, and views. 
+# DotCMS Angular 2 UI App
 
-As of this writing the view layer uses [Semantic UI](http://semantic-ui.com/) to provide widgets and input components,
-and Angular 2 alpha 44 for framework and scaffolding (templating, dependency injection, etc).   
+This project was created using as base the "[Angular2 Webpack Starter](https://github.com/AngularClass/angular2-webpack-starter/blob/master/README.md)" project from AngularClass.
 
-## Running this project:
+## In summary:
 
-### Requirements
-  * [NodeJS](https://nodejs.org/en/download/) (min. v4.4.5)
-  * [npm](https://nodejs.org/en/download/) (min. v3.9.6)
-  * [TypeScript](https://www.typescriptlang.org/#download-links) (min. v2.0.0)
-  * [Typings](https://www.npmjs.com/package/typings) (min. v1.4.0)
+* [Webpack 2](http://webpack.github.io/) for building
+* [Protractor](http://www.protractortest.org/#/) for our end-to-end story
+* [Jasmine](https://jasmine.github.io/) and [Karma](https://karma-runner.github.io/1.0/index.html) for our unit testing.
 
-### Before run it for the first time running:
-  * Run ```npm install```
-  * Run ```npm run typings install```
+## Features:
 
-### DotCMS instance
-To run this project locally you need a DotCMS instance running in ```http://localhost:8080```.
+* Best practices in file and application organization for Angular 2.
+* Ready to go build system using Webpack for working with TypeScript.
+* Ahead of Time (AoT) compile for rapid page loads of your production builds.
+* Tree shaking to automatically remove unused code from your production bundle.
+* [Webpack DLLs](https://robertknight.github.io/posts/webpack-dll-plugins/) dramatically speed your development builds.
+* Testing Angular 2 code with Jasmine and Karma.
+* Coverage with Istanbul and Karma
+* End-to-end Angular 2 code using Protractor.
+* Type manager with @types
+* Hot Module Replacement with Webpack and [@angularclass/hmr](https://github.com/angularclass/angular2-hmr) and [@angularclass/hmr-loader](https://github.com/angularclass/angular2-hmr-loader)
+* Material Design with [angular/material2](https://github.com/angular/material2)
+* Angular 4 support via changing package.json and any future Angular versions
 
-Also edit file ```plugins/com.dotcms.config/conf/dotmarketing-config-ext.properties``` and add the following line: 
+## Quick start
+**Make sure you have Node version >= 5.0 and NPM >= 3**
 
-```java
-dotcms.websocket.baseurl=localhost:8080
+```bash
+# clone the repo
+git clone https://github.com/dotCMS/core-web.git
+
+# change directory to our repo
+cd core-web
+
+# install the repo with npm
+npm install
+
+# start the server
+npm start
+
+# use Hot Module Replacement
+npm run server:dev:hmr
+```
+Go to [http://0.0.0.0:3000](http://0.0.0.0:3000) or [http://localhost:3000](http://localhost:3000) in your browser
+
+# Table of Contents
+* [File Structure](#file-structure)
+* [Getting Started](#getting-started)
+    * [Dependencies](#dependencies)
+    * [Installing](#installing)
+    * [Running the app](#running-the-app)
+* [Configuration](#configuration)
+* [AoT Don'ts](#aot-donts)
+* [External Stylesheets](#external-stylesheets)
+* [Contributing](#contributing)
+* [TypeScript](#typescript)
+* [@Types](#types)
+* [Frequently asked questions](#frequently-asked-questions)
+* [Support, Questions, or Feedback](#support-questions-or-feedback)
+* [License](#license)
+
+
+## File Structure
+We use the component approach in our starter. This is the new standard for developing Angular apps and a great way to ensure maintainable code by encapsulation of our behavior logic. A component is basically a self contained app usually in a single file or a folder with each concern as a file: style, template, specs, e2e, and component class. Here's how it looks:
+```
+angular2-webpack-starter/
+ ├──config/                        * our configuration
+ │   ├──helpers.js                 * helper functions for our configuration files
+ │   ├──spec-bundle.js             * ignore this magic that sets up our angular 2 testing environment
+ │   ├──karma.conf.js              * karma config for our unit tests
+ │   ├──protractor.conf.js         * protractor config for our end-to-end tests
+ │   ├──webpack.dev.js             * our development webpack config
+ │   ├──webpack.prod.js            * our production webpack config
+ │   └──webpack.test.js            * our testing webpack config
+ │
+ ├──src/                           * our source files that will be compiled to javascript
+ │   ├──app/                       * WebApp: folder
+ │   │   ├──api/                   * services, pipes and utilities
+ │   │   │
+ │   │   ├──e2e/                   * TBR
+ │   │   │
+ │   │   ├──portlets/              * all angular modules for porlets
+ │   │   │
+ │   │   ├──views/
+ │   │   │  ├──components/
+ │   │   │  │  ├──_common/         * common reusable components
+ │   │   │  │  └──**/              * all other specifics components
+ │   │   │  │
+ │   │   │  └──directives/         * app directives
+ │   │   │
+ │   │   ├──app.component.ts       * a simple version of our App component components
+ │   │   ├──app.component.spec.ts  * a simple test of components in app.component.ts
+ │   │   ├──app.e2e.ts             * a simple end-to-end test for /
+ │   │   ├──app.html               * angular template for app.component
+ │   │   ├──app.module.ts          * app module imports
+ │   │   ├──app.resolver.ts        * not being use at the time
+ │   │   ├──app.rotuing.ts         * app routing
+ │   │   ├──app.scss               * styling for app.component
+ │   │   ├──app.service.ts         * not being use at the time
+ │   │   ├──components.ts          * group all components, pipes and directives
+ │   │   ├──environment.ts         * TBD
+ │   │   └──index.ts               * entry file
+ │   │
+ │   ├──assets/                    * static assets are served here
+ │   │   └──img                    * images use in the project
+ │   │
+ │   ├──custom-typings.d.ts        * custom type definition file
+ │   ├──index.html                 * Index.html: where we generate our index page
+ │   ├──main.browser.ts            * our entry file for our browser environment
+ │   └──polyfills.browser.ts       * our polyfills file
+ │
+ │
+ ├──tslint.json                    * typescript lint config
+ ├──typedoc.json                   * typescript documentation generator
+ ├──tsconfig.json                  * typescript config used outside webpack
+ ├──tsconfig.webpack.json          * config that webpack uses for typescript
+ ├──package.json                   * what npm uses to manage it's dependencies
+ └──webpack.config.js              * webpack main configuration file
+
 ```
 
-After that your start your DotCMS instance normally.
+# Getting Started
+## Dependencies
+What you need to run this app:
+* `node` and `npm` (`brew install node`) or go to [https://nodejs.org/en/download/](https://nodejs.org/en/download/)
+* Ensure you're running the latest versions Node `v4.x.x`+ (or `v5.x.x`) and NPM `3.x.x`+
 
-### Run `dev` mode:
-Make sure you have your [DotCMS instance](#dotcms-instance) running and...
-  * Run ```npm rum dev```
+> If you have `nvm` installed, which is highly recommended (`brew install nvm`) you can do a `nvm install --lts && nvm use` in `$` to run with the latest Node LTS. You can also have this `zsh` done for you [automatically](https://github.com/creationix/nvm#calling-nvm-use-automatically-in-a-directory-with-a-nvmrc-file)
 
-This will compile scss and ts files, copy dependecies and start the server in ```http://localhost:9000``` from the ```/build/``` folder. **Give it a couple of minutes** while the whole procces is finish, it will open the browser before it's done. 
+Once you have those, you should install these globals with `npm install --global`:
+* `webpack` (`npm install --global webpack`)
+* `webpack-dev-server` (`npm install --global webpack-dev-server`)
+* `karma` (`npm install --global karma-cli`)
+* `protractor` (`npm install --global protractor`)
+* `typescript` (`npm install --global typescript`)
 
-This will also be on ```watch``` mode, all the changes in ```scss```, ```html``` and ```ts``` will update automatically, you'll only need to refresh the page to see your changes.
+## Installing
+* `npm install webpack-dev-server rimraf webpack -g` to install required global dependencies
+* `npm install` to install all dependencies or `yarn`
+* `npm run server` to start the dev server in another tab
 
-### Run `dev` mode with integration test in watch mode
+## Running the app
+After you have installed all dependencies you can now run the app. Run `npm run server` to start a local server using `webpack-dev-server` which will watch, build (in-memory), and reload for you. The port will be displayed to you as `http://0.0.0.0:3000` (or if you prefer IPv6, if you're using `express` server, then it's `http://[::1]:3000/`).
 
-To run for development purposes you should execute the `npm run itest` target. This will open your browser to the integration tests, and will start a server on http://localhost:9000 that by default will proxy all ReST requests to http://localhost:8080, which is where you should have an up-to-date instance of dotCMS running.
+### server
+```bash
+# development
+npm run server
+# production
+npm run build:prod
+npm run server:prod
+```
 
-The `itest` target will also maintain a watch task that will compile your files when changes are detected. You will need
-to refresh the test page manually to re-run the integration tests.
+## Other commands
 
-## Deploy to artifactory
+### build files
+```bash
+# development
+npm run build:dev
+# production (jit)
+npm run build:prod
+# AoT
+npm run build:aot
+```
 
-  * Edit ```deploy-config.local.js``` file with your artifactory credentials.
-  * Run ```npm run publish-snapshot```
+### hot module replacement
+```bash
+npm run server:dev:hmr
+```
 
-## The Build System
+### watch and build files
+```bash
+npm run watch
+```
 
-  * Gulp with NPM script targets for convenience.
-  * Jasmine + Karma
-    
-## API Layer
+### run unit tests
+```bash
+npm run test
+```
 
-  * WhatWG for HTTP requests. 
-  * Angular2 for DI, EventEmitter
-  * Reactive, using [ReactiveX/RxJS](https://github.com/ReactiveX/RxJS), which is included with Angular2. Currently Beta. 
+### watch and run our tests
+```bash
+npm run watch:test
+```
 
-## View Layer
-  
-  * Angular2: 
-    * Templating, WebComponents, DI
-  * Angular Material Styles: 
-    * For the convenient Flex Layout styles. See [https://material.angularjs.org/HEAD/layout/container]()
-  * Semantic-UI:
-    * Input elements and styling
+### run end-to-end tests
+```bash
+# update Webdriver (optional, done automatically by postinstall script)
+npm run webdriver:update
+# this will start a test server and launch Protractor
+npm run e2e
+```
 
-### Components
- 
-#### 'Widget' Components versus 'Feature' Components 
+### continuous integration (run unit tests and e2e tests together)
+```bash
+# this will test both your JIT and AoT builds
+npm run ci
+```
 
-Widgets are bits of frequently reused functionality, such as input components, layout helpers/templates, etc. Feature
-components are blocks of functionality. A Card element is a Widget Component. A Person-Card would be a Feature Component.
- 
-Verbiage subject to change. 
+### run Protractor's elementExplorer (for end-to-end)
+```bash
+npm run e2e:live
+```
 
-#### Widgets - Input elements and layout templates
+### build Docker
+```bash
+npm run build:docker
+```
 
-##### List of Widgets (links to demo pages)
-  * Semantic UI Wrappers [http://semantic-ui.com/]() 
-    * [Input Toggle](http://localhost:9000/build/view/components/input/toggle.html)
-    * [Input Dropdown](http://localhost:9000/build/view/components/semantic/modules/dropdown.html)
-  
-  For all demos, make sure to open the browser's console in order to view log messages.
+# Configuration
+Configuration files live in `config/` we are currently using webpack, karma, and protractor for different stages of your application
 
-#### Feature Components
-  * [Rules Engine](http://localhost:9000/index-dev.html)
+# AoT Don'ts
+The following are some things that will make AoT compile fail.
 
-## Developing
- 
-### IDE Support
- 
-This project contains the IntelliJ/WebStorm project files which JetBrains recommends be shared among developers. 
-Rather than using 'create new project', simply open the project with IntelliJ >= 14.1.2 or WebStorm >= 10.0.0.3.
+- Don’t use require statements for your templates or styles, use styleUrls and templateUrls, the angular2-template-loader plugin will change it to require at build time.
+- Don’t use default exports.
+- Don’t use `form.controls.controlName`, use `form.get(‘controlName’)`
+- Don’t use `control.errors?.someError`, use `control.hasError(‘someError’)`
+- Don’t use functions in your providers, routes or declarations, export a function and then reference that function name
+- @Inputs, @Outputs, View or Content Child(ren), Hostbindings, and any field you use from the template or annotate for Angular should be public
 
-For the most part, these files only change when there are legitimate updates to the project. Sometimes, particularly 
-as version updates occur, there are additions to some of the files. 
+# External Stylesheets
+Any stylesheets (Sass or CSS) placed in the `src/styles` directory and imported into your project will automatically be compiled into an external `.css` and embedded in your production builds.
 
-### Clean often
+For example to use Bootstrap as an external stylesheet:
+1) Create a `styles.scss` file (name doesn't matter) in the `src/styles` directory.
+2) `npm install` the version of Boostrap you want.
+3) In `styles.scss` add `@import 'bootstrap/scss/bootstrap.scss';`
+4) In `src/app/app.module.ts` add underneath the other import statements: `import '../styles/styles.scss';`
 
-If you update and something breaks, try updating the project dependencies before anything else. Especially if 
-`{projectRoot}/package.json` has been modified by the update. If that doesn't work and it makes sense (or you don't 
-know what else to try) you might consider deleting your `{projectRoot}/node_modules` directory and rerunning `npm install`.
+# TypeScript
+> To take full advantage of TypeScript with autocomplete you would have to install it globally and use an editor with the correct TypeScript plugins.
 
-### Patterns and Practices
+## Use latest TypeScript compiler
+TypeScript 2.1.x includes everything you need. Make sure to upgrade, even if you installed TypeScript previously.
 
-#### Top Down
+```
+npm install --global typescript
+```
 
-A child should never know about its parent component. The only exception to this is for Model objects. A child model may 
-need to maintain a reference to its parent model type, such as for an 'is owned by' relationship. However, the related 
-child Service should not be aware of the parent Service. 
- 
-Similarly, in the view layer, a component that represents the child should avoid directly modifying any service 
-related to the parent, or modifying the parent model object.  Use Observers and EventEmitters to communicate changes
-that parent components should be aware of.
+## Use a TypeScript-aware editor
+We have good experience using these editors:
 
-A good way to think of this style of development is to consider a bunch of newborn puppies. They know exactly nothing about 
-the world around them. The are utterly unaware even of the concept of 'mother'. But when they cry (emit an event), things happen.
-Warmth, food, cleaning.
- 
-View components and API Services are puppies. They are blind and naive. They know nothing about the world around
-them, only the small bit of the world under their control. If they need to change something that is not encompassed 
-within that world then their only hope is to emit an event and hope something larger than them knows what to do with it.
+* [Visual Studio Code](https://code.visualstudio.com/)
+* [Webstorm 10](https://www.jetbrains.com/webstorm/download/)
+* [Atom](https://atom.io/) with [TypeScript plugin](https://atom.io/packages/atom-typescript)
+* [Sublime Text](http://www.sublimetext.com/3) with [Typescript-Sublime-Plugin](https://github.com/Microsoft/Typescript-Sublime-plugin#installation)
 
-#### Design for off-line first
-Each View component should have a demo page that uses fake/mocked models to demonstrate functionality. This forces a 
-development model that allows testing of view components without the need of a backend server, or even a 
-mock persistence layer. 
- 
-### Troubleshooting
-When all else fails, try running `gulp clean` and deleting the node_modules directory, and then re-run `npm install`. 
+### Visual Studio Code + Debugger for Chrome
+> Install [Debugger for Chrome](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome) and see docs for instructions to launch Chrome
 
-### Some useful links
+The included `.vscode` automatically connects to the webpack development server on port `3000`.
 
-#### Angular2
-  * [Angular](https://angular.io/)
-  * [Github Page](https://github.com/angular/angular)
-  * [Is angular 2 ready?](http://splintercode.github.io/is-angular-2-ready/)
-  * [Gitter Page](https://gitter.im/angular/angular)
-  * [AngularU - June 2015 conference](https://angularu.com/ng/videos)
-  * [Requisite John Lindquist intro video](https://egghead.io/lessons/angularjs-angular-2-template-syntax)
-  * [Angular 2 + Flux](http://victorsavkin.com/post/99998937651/building-angular-apps-using-flux-architecture)
-  * [Some background on Functional programming with Ng2](http://victorsavkin.com/post/108837493941/better-support-for-functional-programming-in)
-  * [Pascal Precht on dependency injection](https://www.youtube.com/watch?v=8c-qv9TisVE&list=PL9w_03cWjMXOkPgcoOnLaPJBoa2GJWxvD&index=9)
+# Types
+> When you include a module that doesn't include Type Definitions inside of the module you can include external Type Definitions with @types
 
-#### Layout
-  * [Flex layouts by Angular Material CSS](https://material.angularjs.org/HEAD/layout)
-  
-#### General
-  * [Jasmine - Unit testing framework](http://jasmine.github.io/2.2/introduction.html)
+i.e, to have youtube api support, run this command in terminal:
+```shell
+npm i @types/youtube @types/gapi @types/gapi.youtube
+```
+In some cases where your code editor doesn't support Typescript 2 yet or these types weren't listed in ```tsconfig.json```, add these to **"src/custom-typings.d.ts"** to make peace with the compile check:
+```es6
+import '@types/gapi.youtube';
+import '@types/gapi';
+import '@types/youtube';
+```
+
+## Custom Type Definitions
+When including 3rd party modules you also need to include the type definition for the module
+if they don't provide one within the module. You can try to install it with @types
+
+```
+npm install @types/node
+npm install @types/lodash
+```
+
+If you can't find the type definition in the registry we can make an ambient definition in
+this file for now. For example
+
+```typescript
+declare module "my-module" {
+  export function doesSomething(value: string): string;
+}
+```
+
+
+If you're prototyping and you will fix the types later you can also declare it as type any
+
+```typescript
+declare var assert: any;
+declare var _: any;
+declare var $: any;
+```
+
+If you're importing a module that uses Node.js modules which are CommonJS you need to import as
+
+```typescript
+import * as _ from 'lodash';
+```
+
+# dotCMS
+
+dotCMS is a scalable, java based, open source content management system (CMS) that has been designed to manage and deliver personalized, permission based content experiences across multiple channels.  dotCMS can serve as the plaform for sites, mobile apps, mini-sites, portals, intranets or as a headless CMS (content is consumed via RESTful APIs).  dotCMS is used everywhere, from running small sites to powering multi-node installations for governemnts, Fortune 100 companies, Universities and Global Brands. A dotCMS environment can scale to support hundreds of editors managing thousands of sites with millions of content objects.  
+
+dotCMS is available for download or as a cloud based product.
+
+
+- Download dotCMS: [https://dotcms.com/download](https://dotcms.com/download)
+- dotCMS Enterprise Cloud: [https://dotcms.com/cms-platform/cloud-cms/](https://dotcms.com/cms-platform/cloud-cms/)
+
+## Licensing
+dotCMS comes in multiple editions and as such is dual licensed.  The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization and deployment for use within organizations of all stripes.  dotCMS Enterprise Editions (EE) adds a number of enterprise features and is available via a supported, indemnified commercial license from dotCMS.  For the differences between the editions, see [the feature page](http://dotcms.com/cms-platform/features).
+
+## Contributing
+
+GitHub pull requests are the preferred method to contribute code to dotCMS.  Before any pull requests can be accepted, an automated tool will ask you to agree to the [dotCMS Contributor's Agreement](https://gist.github.com/wezell/85ef45298c48494b90d92755b583acb3).
+
+## Requirements
+
+dotCMS requires a Java 8 Runtime Environment (JRE) or a Java 7 Development Kit (JDK). For a complete list of requirements, see [this page](http://dotcms.com/docs/latest/dotcms-technology-requirements).
+
+## Getting Help
+
+| Source        | Location                                               |
+| ------------- |--------------------------------------------------------|
+| Installation | [Installation](https://dotcms.com/docs/latest/quick-start-guide)                  |
+| Documentation | [Documentation](http://dotcms.com/docs/)                  |
+| Videos | [Helpful Videos](http://dotcms.com/videos/)                  |
+| Code Examples | [Codeshare](http://dotcms.com/codeshare)                  |
+| Forums/Listserv        | [via Google Groups](https://groups.google.com/forum/#!forum/dotCMS) |
+| Twitter       | @dotCMS                         |
+| Main Site | [dotCMS.com](http://dotcms.com/)                  |
