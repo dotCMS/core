@@ -9,6 +9,7 @@ import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Tree;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Logger;
@@ -279,7 +280,7 @@ public class TreeFactory {
 		try {
 			HibernateUtil.delete(tree);
 		} catch (DotHibernateException e) {
-			Logger.error(TreeFactory.class, "deleteTree failed:" + e, e);
+		  throw new DotStateException(e);
 		}
 	}
 
@@ -287,7 +288,7 @@ public class TreeFactory {
 		try {
 			HibernateUtil.delete("from tree in class com.dotmarketing.beans.Tree where tree.parent = '" + parent.getInode()+"'");
 		} catch (DotHibernateException e) {
-			Logger.error(TreeFactory.class, "deleteTreesByParent failed:" + e, e);
+		  throw new DotStateException(e);
 		}
 	}
 
@@ -296,7 +297,7 @@ public class TreeFactory {
 			HibernateUtil.delete("from tree in class com.dotmarketing.beans.Tree where tree.parent = '" + parent.getInode() + 
 					"' and tree.relationType = '" + relationType + "'");
 		} catch (DotHibernateException e) {
-			Logger.error(TreeFactory.class, "deleteTreesByParentAndRelationType failed:" + e, e);
+		  throw new DotStateException(e);
 		}
 	}
 
@@ -306,7 +307,7 @@ public class TreeFactory {
 			HibernateUtil.delete("from tree in class com.dotmarketing.beans.Tree where tree.child = '" + child.getInode() + 
 					"' and tree.relationType = '" + relationType + "'");
 		} catch (DotHibernateException e) {
-			Logger.error(TreeFactory.class, "deleteTreesByChildAndRelationType failed:" + e, e);
+		  throw new DotStateException(e);
 		}
 	}
 	
@@ -314,7 +315,7 @@ public class TreeFactory {
 		try {
 			HibernateUtil.delete("from tree in class com.dotmarketing.beans.Tree where tree.child = '" + child.getInode()+"'");
 		} catch (DotHibernateException e) {
-			Logger.error(TreeFactory.class, "deleteTreesByChild failed:" + e, e);
+		  throw new DotStateException(e);
 		}
 	}
 
@@ -323,7 +324,7 @@ public class TreeFactory {
 			HibernateUtil
 					.delete("from tree in class com.dotmarketing.beans.Tree where tree.relationType = '" + relationType + "'");
 		} catch (DotHibernateException e) {
-			Logger.error(TreeFactory.class, "deleteTreesByRelationType failed:" + e, e);
+			throw new DotStateException(e);
 		}
 	}
 
@@ -331,7 +332,7 @@ public class TreeFactory {
 		try {
 			HibernateUtil.saveOrUpdate(tree);
 		} catch (DotHibernateException e) {
-			Logger.error(TreeFactory.class, "saveTree failed:" + e, e);
+		  throw new DotStateException(e);
 		}
 	}
 

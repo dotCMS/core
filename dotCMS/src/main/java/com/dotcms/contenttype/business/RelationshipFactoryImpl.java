@@ -371,6 +371,10 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
    @Override
     public void delete(Relationship relationship) throws DotHibernateException {
         InodeFactory.deleteInode(relationship);
+        
+        TreeFactory.deleteTreesByRelationType(relationship.getRelationTypeValue());
+        
+        
         CacheLocator.getRelationshipCache().removeRelationshipByInode(relationship);
         try {
             CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getParentStructure());
