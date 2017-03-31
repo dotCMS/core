@@ -1,7 +1,8 @@
 [submodule "dotCMS/src/main/enterprise"]
 	path = dotCMS/src/main/enterprise
 	url = git@github.com:dotCMS/enterprise-2.x.git
+         branch = master-4.1
 [submodule "dotCMS/src/main/license"]
 	path = dotCMS/src/main/license
 	url = git@github.com:dotCMS/license.git
-
+         branch = master-4.1
