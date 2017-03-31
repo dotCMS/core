@@ -304,7 +304,6 @@ module.exports = function (env) {
 
         }
       }),
-
       /**
        * Plugin: BundleAnalyzerPlugin
        * Description: Webpack plugin and CLI utility that represents

@@ -1,18 +1,23 @@
 {
-  "name": "core-web",
-  "version": "4.0.0",
-  "license": "GPLv3",
-  "description": "DotCMS Core-Web: ReST Client API and UI Components",
+  "name": "dotcms-ui",
+  "version": "1.0.0",
+  "license": "GPL 3",
+  "author": "dotCMS",
+  "description": "DotCMS UI Angular App",
   "repository": {
     "type": "git",
     "url": "https://github.com/dotcms/core-web.git"
   },
+  "files": [
+    "dist/**/*.*"
+  ],
   "scripts": {
     "build:aot:prod": "npm run clean:dist && npm run clean:aot && webpack --config config/webpack.prod.js  --progress --profile --bail",
     "build:aot": "npm run build:aot:prod",
     "build:dev": "npm run clean:dist && webpack --config config/webpack.dev.js --progress --profile",
     "build:docker": "npm run build:prod && docker build -t angular2-webpack-start:latest .",
     "build:prod": "npm run clean:dist && webpack --config config/webpack.prod.js  --progress --profile --bail",
+    "build:pack": "npm run clean:dist && webpack --config config/webpack.generate.package.js  --progress --profile --bail",
     "build": "npm run build:dev",
     "ci:aot": "npm run lint && npm run test && npm run build:aot && npm run e2e",
     "ci:jit": "npm run lint && npm run test && npm run build:prod && npm run e2e",
@@ -40,6 +45,7 @@
     "protractor": "protractor",
     "protractor:delay": "sleep 3 && npm run protractor",
     "protractor:live": "protractor --elementExplorer",
+    "publish": "npm run build:pack && cd dist && npm publish && cd /",
     "rimraf": "rimraf",
     "server:dev:hmr": "npm run server:dev -- --inline --hot",
     "server:dev": "webpack-dev-server --config config/webpack.dev.js --open --progress --profile --watch --content-base src/",
@@ -116,6 +122,7 @@
     "file-loader": "^0.10.0",
     "find-root": "^1.0.0",
     "font-awesome": "^4.7.0",
+    "generate-json-webpack-plugin": "^0.2.1",
     "gh-pages": "^0.12.0",
     "html-webpack-plugin": "^2.28.0",
     "imports-loader": "^0.7.0",
