@@ -19,14 +19,24 @@ import java.util.Set;
  */
 public class HazelCastEmbeddedProvider extends HazelCastClientProvider {
 
+
+    /**
+   * 
+   */
+  private static final long serialVersionUID = 1L;
+
+
     protected HazelcastInstance hazelEmbedded = null;
+
+
+  final String xmlFilePath;
 
     @Override
     public void init() throws Exception {
         Logger.info(this, "Setting Up HazelCast Embedded Config");
         InputStream is = null;
         try {
-            is = getClass().getClassLoader().getResourceAsStream("hazelcast-embedded.xml");
+            is = getClass().getClassLoader().getResourceAsStream(xmlFilePath);
             XmlConfigBuilder builder = new XmlConfigBuilder(is);
             hazelEmbedded = Hazelcast.newHazelcastInstance(builder.build());
             initialized = true;
@@ -50,14 +60,21 @@ public class HazelCastEmbeddedProvider extends HazelCastClientProvider {
         }
     }
 
+    public HazelCastEmbeddedProvider(String xmlPath){
+     this.xmlFilePath=xmlPath;
+    }
+    
+    public HazelCastEmbeddedProvider(){
+      this("hazelcast-embedded.xml");
+    }
     @Override
     public String getName() {
-        return super.getName();
+        return "Hazelcast Embedded Provider";
     }
 
     @Override
     public String getKey() {
-        return super.getKey();
+        return "HazelCastEmbeddedProvider";
     }
 
     @Override

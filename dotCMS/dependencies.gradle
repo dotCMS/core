@@ -189,6 +189,8 @@ dependencies {
     compile group: 'redis.clients', name: 'jedis', version:'2.7.3'
     compile group: 'org.apache.commons', name: 'commons-pool2', version:'2.0'
     compile group: 'com.dotcms.lib', name: 'dot.maxmind-db', version:'1.0.0_2'
+    
+    compile group: 'org.openjdk.jmh', name: 'jmh-core', version:'0.1'
     compile group: 'com.dotcms.lib', name: 'dot.geoip2', version:'2.1.0_2'
     compile group: 'com.dotcms.lib', name: 'dot.aopalliance-repackaged', version:'2.4.0-b10_2'
     compile group: 'com.dotcms.lib', name: 'dot.hk2-api', version:'2.4.0-b10_2'
