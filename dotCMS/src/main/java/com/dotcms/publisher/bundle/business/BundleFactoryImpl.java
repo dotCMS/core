@@ -162,6 +162,7 @@ public class BundleFactoryImpl extends BundleFactory {
 		dc.addParam(bundle.getName());
 		dc.addParam(bundle.getPublishDate());
 		dc.addParam(bundle.getExpireDate());
+		dc.addParam(bundle.isForcePush());
 		dc.addParam(bundle.getId());
 
 		dc.loadResult();
