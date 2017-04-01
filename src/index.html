@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><%= htmlWebpackPlugin.options.title %></title>
     <meta name="description" content="<%= htmlWebpackPlugin.options.title %>">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
     <% if (webpackConfig.htmlElements.headTags) { %>
         <!-- Configured Head Tags  -->
@@ -25,7 +26,7 @@
             opacity: 0;
             position: absolute;
             top: 16px;
-            transition: opacity 3s;
+            transition: opacity 500ms;
         }
 
         .cog-show {
@@ -77,11 +78,12 @@
     </style>
 
     <script>
-        function loaderIndicatorHandler() {
-            document.getElementById('cog').classList.add('cog-show');
-        }
-        document.addEventListener("DOMContentLoaded", loaderIndicatorHandler);
-    </script>
+    function loaderIndicatorHandler() {
+        var cog = document.getElementById('cog');
+        cog.className.baseVal += ' cog-show';
+    }
+    window.onload = loaderIndicatorHandler;
+</script>
 
 </head>
 
