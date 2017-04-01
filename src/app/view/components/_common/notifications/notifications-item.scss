@@ -20,7 +20,7 @@ $notification-icon-size: 16px;
     }
 
     .notification-item__content {
-        margin-left: rem-cal(5px);
+        margin-left: rem-cal($notification-icon-size + $basic-padding);
     }
 
     .notification-item__close {
@@ -30,6 +30,7 @@ $notification-icon-size: 16px;
         right: 0;
         top: 1rem;
         width: $notification-icon-size;
+        z-index: 1;
 
         &.ui-state-hover {
             background: none;
@@ -38,6 +39,9 @@ $notification-icon-size: 16px;
 
     .notification-item__icon {
         font-size: rem-cal(18px);
+        left: 0;
+        position: absolute;
+        top: 1rem;
         width: $notification-icon-size;
     }
 
@@ -55,8 +59,8 @@ $notification-icon-size: 16px;
     }
 
     .notification-item__wrapper {
-        display: flex;
         padding: 1rem 0;
+        position: relative;
     }
 
     .warning {
