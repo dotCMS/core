@@ -1,5 +1,8 @@
 :host {
     display: block;
+    max-height: 600px;
+    overflow-x: hidden;
+    overflow-y: scroll;
     
     .dot-notifications-list {
         list-style: none;

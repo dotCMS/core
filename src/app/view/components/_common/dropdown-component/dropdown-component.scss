@@ -9,8 +9,7 @@
     border-radius: $border-radius;
     background-color: $white;
     color: $black;
-    overflow-x: hidden;
-    overflow-y: scroll;
+    overflow: hidden;
     position: absolute;
     top: 25px;
     z-index: 100;
