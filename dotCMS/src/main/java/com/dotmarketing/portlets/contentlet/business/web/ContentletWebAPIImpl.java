@@ -15,6 +15,9 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.commons.collections.CollectionUtils;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
@@ -956,8 +959,14 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		}
 	}
 
-	protected void _retrieveWebAsset(Map<String,Object> contentletFormData,User user) throws Exception {
+	private Structure transform(final ContentType contentType) {
 
+		return (null != contentType)?new StructureTransformer(contentType).asStructure():null;
+	} // transform.
+
+	protected void _retrieveWebAsset(final Map<String,Object> contentletFormData, final User user) throws Exception {
+
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
 		HttpServletRequest req =WebContextFactory.get().getHttpServletRequest();
 
 		String inode = (String) contentletFormData.get("contentletInode");
@@ -1004,11 +1013,11 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			String selectedStructure = "";
 			if (UtilMethods.isSet(contentletFormData.get("selectedStructure"))) {
 				selectedStructure = (String) contentletFormData.get("selectedStructure");
-				st = (Structure) InodeFactory.getInode(selectedStructure, Structure.class);
+				st = this.transform(contentTypeAPI.find(selectedStructure));
 
 			}else if (UtilMethods.isSet(contentletFormData.get("sibblingStructure"))) {
 				selectedStructure = (String) contentletFormData.get("sibblingStructure");
-				st = (Structure) InodeFactory.getInode(selectedStructure, Structure.class);
+				st = this.transform(contentTypeAPI.find(selectedStructure));
 
 			}else{
 				st = StructureFactory.getDefaultStructure();

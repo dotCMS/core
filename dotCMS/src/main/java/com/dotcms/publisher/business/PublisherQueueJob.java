@@ -1,5 +1,7 @@
 package com.dotcms.publisher.business;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -8,9 +10,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.StatefulJob;
+
 import com.dotcms.enterprise.publishing.PublishDateUpdater;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
+import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
+import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
+import com.dotcms.publisher.pusher.PushPublisher;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.util.PublisherUtil;
+import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.IPublisher;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
@@ -20,19 +34,6 @@ import com.dotcms.repackage.javax.ws.rs.client.Client;
 import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 import com.dotcms.repackage.org.apache.log4j.MDC;
 import com.dotcms.rest.RestClientBuilder;
-import com.dotmarketing.util.PushPublishLogger;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.StatefulJob;
-
-import com.dotcms.publisher.business.PublishAuditStatus.Status;
-import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
-import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
-import com.dotcms.publisher.environment.bean.Environment;
-import com.dotcms.publisher.pusher.PushPublisher;
-import com.dotcms.publisher.pusher.PushPublisherConfig;
-import com.dotcms.publisher.util.PublisherUtil;
-import com.dotcms.publishing.DotPublishingException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -40,37 +41,60 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PushPublishLogger;
 
 /**
- * This class read the publishing_queue table and send bundles to some environments
+ * This job is in charge of performing two actions:
+ * <ol>
+ * <li><b>Bundle status update:</b> Each bundle is associated to an environment,
+ * which contains one or more end-points. This job will connect to one or all of
+ * them to verify the deployment status of the bundle in order to update its
+ * status in the sender server. Examples of status can be:
+ * <ul>
+ * <li><code>Success</code></li>
+ * <li><code>Bundle sent</code></li>
+ * <li><code>Failed to Publish</code></li>
+ * <li><code>Failed to send to all environments</code></li>
+ * <li>etc.</li>
+ * </ul>
+ * Please see the {@link Status} class to see all the available status options.
+ * </li>
+ * <li><code>Pending bundle push:</code> Besides auditing the different bundles
+ * that are being sent, this job will take the bundles that are in the
+ * publishing queue, identifies its assets (i.e., pages, contentlets, folders,
+ * etc.) and sends them to publishing mechanism.</li>
+ * </ol>
+ * 
  * @author Alberto
+ * @since Oct 5, 2012
  *
  */
 public class PublisherQueueJob implements StatefulJob {
 
 	private static final String BUNDLE_ID = "BundleId";
+
+	public static final Integer MAX_NUM_TRIES = Config.getIntProperty("PUBLISHER_QUEUE_MAX_TRIES", 3);
+
 	private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 	private PublishingEndPointAPI endpointAPI = APILocator.getPublisherEndPointAPI();
 	private PublisherAPI pubAPI = PublisherAPI.getInstance();
     private EnvironmentAPI environmentAPI = APILocator.getEnvironmentAPI();
     private PublishingEndPointAPI publisherEndPointAPI = APILocator.getPublisherEndPointAPI();
 
-	public static final Integer MAX_NUM_TRIES = Config.getIntProperty("PUBLISHER_QUEUE_MAX_TRIES", 3);
-
 	/**
-	 * Reads from the publishing queue table and depending of the publish date will send a bundle<br/>
-	 * to publish ({@link com.dotcms.publishing.PublisherAPI#publish(com.dotcms.publishing.PublisherConfig)}).
+	 * Reads from the publishing queue table and depending of the publish date
+	 * will send a bundle to publish
+	 * ({@link com.dotcms.publishing.PublisherAPI#publish(com.dotcms.publishing.PublisherConfig)}).
 	 *
-	 * @param jobExecutionContext Containing the current job context information
-	 * @throws JobExecutionException if there is an exception while executing the job.
+	 * @param jobExecution
+	 *            - Context Containing the current job context information (the data).
+	 * @throws JobExecutionException
+	 *             An exception occurred while executing the job.
 	 * @see PublisherAPI
 	 * @see PublisherAPIImpl
 	 */
-	@SuppressWarnings("rawtypes")
 	public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
-
 		try {
-
 			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - check for publish dates");
 			PublishDateUpdater.updatePublishExpireDates(jobExecutionContext.getFireTime());
 			Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job - check for publish/expire dates");
@@ -82,7 +106,6 @@ public class PublisherQueueJob implements StatefulJob {
 			//Verify if we have endpoints where to send the bundles
 			List<PublishingEndPoint> endpoints = endpointAPI.getEnabledReceivingEndPoints();
 			if ( endpoints != null && endpoints.size() > 0 ) {
-
 				Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job");
 
 				List<Map<String, Object>> bundles = pubAPI.getQueueBundleIdsToProcess();
@@ -93,7 +116,6 @@ public class PublisherQueueJob implements StatefulJob {
 
 				for ( Map<String, Object> bundle : bundles ) {
 					Date publishDate = (Date) bundle.get("publish_date");
-
 					if ( publishDate.before(new Date()) ) {
 						tempBundleId = (String) bundle.get("bundle_id");
 						MDC.put(BUNDLE_ID, BUNDLE_ID + "=" + tempBundleId);
@@ -131,7 +153,6 @@ public class PublisherQueueJob implements StatefulJob {
 							pconf.setUser(APILocator.getUserAPI().getSystemUser());
 							pconf.setStartDate(new Date());
 							pconf.runNow();
-
 							pconf.setPublishers(new ArrayList<>(getPublishersForBundle(tempBundleId)));
 
 							if ( Integer.parseInt(bundle.get("operation").toString()) == PublisherAPI.ADD_OR_UPDATE_ELEMENT ) {
@@ -141,7 +162,6 @@ public class PublisherQueueJob implements StatefulJob {
 							}
 
 							pconf = setUpConfigForPublisher(pconf);
-
 							PushPublishLogger.log(this.getClass(), "Pre-publish work complete.");
 
 							try {
@@ -160,12 +180,9 @@ public class PublisherQueueJob implements StatefulJob {
 							MDC.remove(BUNDLE_ID);
 						}
 					}
-
 				}
-
 				Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job");
 			}
-
 		} catch (Exception e) {
 			Logger.error(PublisherQueueJob.class, e.getMessage(), e);
 		} finally {
@@ -179,31 +196,32 @@ public class PublisherQueueJob implements StatefulJob {
 		}
 	}
 
-    /**
-	 * Method that updates the status of a Bundle in the job queue. This method also verifies and limit the number<br/>
-	 * of times a Bundle is allowed to try to be published in case of errors.
+	/**
+	 * Updates the status of a Bundle in the job queue. This method also
+	 * verifies and limits the number of times a Bundle is allowed to attempt to
+	 * be published in case of errors.
 	 *
-	 * @throws DotPublisherException If fails modifying the Publishing status, retrieving status information or<br/>
-	 *                               removing the current bundle from the Publish queue table
-	 * @throws DotDataException      If fails retrieving end points
+	 * @throws DotPublisherException
+	 *             An error occurred when modifying the Publishing status,
+	 *             retrieving status information or removing the current bundle
+	 *             from the Publish queue table.
+	 * @throws DotDataException
+	 *             An error occurred when retrieving the end-points from the
+	 *             database.
 	 */
 	private void updateAuditStatus() throws DotPublisherException, DotDataException {
-
 		Client client = RestClientBuilder.newClient();
 		List<PublishAuditStatus> pendingBundleAudits = pubAuditAPI.getPendingPublishAuditStatus();
 		// For each bundle
  		for ( PublishAuditStatus bundleAudit : pendingBundleAudits ) {
-
 			MDC.put(BUNDLE_ID, BUNDLE_ID + "=" + bundleAudit.getBundleId());
 
 			try {
-
 				PublishAuditHistory localHistory = bundleAudit.getStatusPojo();
 				Date publishStart = null;
 				Date publishEnd = null;
 				//There is no need to keep checking after MAX_NUM_TRIES.
 				if ( localHistory.getNumTries() <= (MAX_NUM_TRIES + 1) ) {
-
 					int countGroupOk = 0;
 					int countGroupPublishing = 0;
 					int countGroupFailed = 0;
@@ -213,7 +231,7 @@ public class PublisherQueueJob implements StatefulJob {
 					// For each group (environment)
 					for ( String groupID : endpointsMap.keySet() ) {
 						Map<String, EndpointDetail> endpointsGroup = endpointsMap.get(groupID);
-						// For each endpoint (server) in the group
+						// For each end-point (server) in the group
 						for ( String endpointID : endpointsGroup.keySet() ) {
 							PublishingEndPoint targetEndpoint = endpointAPI.findEndPointById(endpointID);
 							if ( targetEndpoint != null && !targetEndpoint.isSending() ) {
@@ -222,34 +240,34 @@ public class PublisherQueueJob implements StatefulJob {
 								if (!AWSS3Publisher.PROTOCOL_AWS_S3.equalsIgnoreCase(targetEndpoint.getProtocol())) {
 									WebTarget webTarget = client.target(targetEndpoint.toURL() + "/api/auditPublishing");
 									try {
-										// Try to get the status of the remote endpoints to
+										// Try to get the status of the remote end-points to
 										// update the local history
 										PublishAuditHistory remoteHistory =
 												PublishAuditHistory.getObjectFromString(
 														webTarget
 																.path("get")
 																.path(bundleAudit.getBundleId()).request().get(String.class));
-										if ( remoteHistory != null ) {
+										if (remoteHistory != null) {
 											publishStart = remoteHistory.getPublishStart();
 											publishEnd = remoteHistory.getPublishEnd();
-											endpointTrackingMap.putAll(remoteHistory
-													.getEndpointsMap());
-											for ( String remoteGroupId : remoteHistory
-													.getEndpointsMap().keySet() ) {
+											endpointTrackingMap.putAll(remoteHistory.getEndpointsMap());
+											for (String remoteGroupId : remoteHistory.getEndpointsMap().keySet()) {
 												Map<String, EndpointDetail> remoteGroup = endpointTrackingMap
 														.get(remoteGroupId);
-												for ( String remoteEndpointId : remoteGroup
-														.keySet() ) {
-													EndpointDetail remoteDetail = remoteGroup
-															.get(remoteEndpointId);
-													localHistory.addOrUpdateEndpoint(
-															groupID, endpointID,
-															remoteDetail);
+												for (String remoteEndpointId : remoteGroup.keySet()) {
+													EndpointDetail remoteDetail = remoteGroup.get(remoteEndpointId);
+													localHistory.addOrUpdateEndpoint(groupID, endpointID, remoteDetail);
 												}
 											}
 										}
 									} catch (Exception e) {
+										// An error occurred when retrieving the end-point's audit info. 
+										// Usually caused by a network problem.
 										Logger.error(PublisherQueueJob.class, e.getMessage(), e);
+										String failedAuditUpdate = "failed-remote-group-" + System.currentTimeMillis();
+										EndpointDetail detail = new EndpointDetail();
+										detail.setStatus(Status.FAILED_TO_PUBLISH.getCode());
+										endpointTrackingMap.put(failedAuditUpdate, map(failedAuditUpdate, detail));
 									}
 								} else {
 									PublishAuditStatus pas = pubAuditAPI.getPublishAuditStatus(bundleAudit.getBundleId());
@@ -344,20 +362,22 @@ public class PublisherQueueJob implements StatefulJob {
 		}
 	}
 
-    /**
-     * Get the Publisher needed depending on the protocol of the endpoints of the bundle.
-     *
-     * @param bundleId
-     * @return
-     */
-    private Set<Class> getPublishersForBundle(String bundleId){
+	/**
+	 * Get the Publisher needed depending on the protocol of the end-points of
+	 * the bundle.
+	 *
+	 * @param bundleId
+	 *            - The Id of the generated bundle.
+	 * @return The {@link Publisher} classes for the specified bundle.
+	 */
+    private Set<Class<?>> getPublishersForBundle(String bundleId){
 
-        Set<Class> publishersClasses = new HashSet<>();
+        Set<Class<?>> publishersClasses = new HashSet<>();
 
 	    try{
             Map<String, Class<? extends IPublisher>> protocolPublisherMap = Maps.newConcurrentMap();
             //TODO: for OSGI we need to get this list from implementations of IPublisher or something else.
-            Set<Class> publishers = Sets.newHashSet(PushPublisher.class, AWSS3Publisher.class);
+            Set<Class<?>> publishers = Sets.newHashSet(PushPublisher.class, AWSS3Publisher.class);
 
             //Fill protocolPublisherMap with protocol -> publisher.
             for (Class publisher : publishers) {
@@ -367,16 +387,16 @@ public class PublisherQueueJob implements StatefulJob {
                 }
             }
 
-            //For each environment in the bundle we need to get the endpoints.
+            //For each environment in the bundle we need to get the end-points.
             List<Environment> environments = this.environmentAPI.findEnvironmentsByBundleId(bundleId);
 
             for (Environment environment : environments) {
-                //For each endpoint we choose if run static or dynamic process (Static = AWSS3Publisher, Dynamic = PushPublisher)
+                //For each end-point we choose if run static or dynamic process (Static = AWSS3Publisher, Dynamic = PushPublisher)
                 List<PublishingEndPoint> endpoints = this.publisherEndPointAPI.findSendingEndPointsByEnvironment(environment.getId());
 
-                //For each endpoint we need include the Publisher depending on the type.
+                //For each end-point we need include the Publisher depending on the type.
                 for (PublishingEndPoint endpoint : endpoints) {
-                    //Only if the endpoint is enabled.
+                    //Only if the end-point is enabled.
                     if (endpoint.isEnabled() && protocolPublisherMap.containsKey(endpoint.getProtocol())){
                         publishersClasses.add(protocolPublisherMap.get(endpoint.getProtocol()));
 
@@ -390,20 +410,24 @@ public class PublisherQueueJob implements StatefulJob {
 	    return publishersClasses;
     }
 
-    /**
-     * Send the parameter {@link PublisherConfig} to each Publisher in use to be filled with the information necessary
-     * like extra languages, hosts, etc.
-     *
-     * @param pconf {@link PublisherConfig}
-     * @return
-     * @throws IllegalAccessException
-     * @throws InstantiationException
-     */
+	/**
+	 * Sends the parameter {@link PublisherConfig} to each Publisher in use to
+	 * be filled with the necessary information, such as extra languages, hosts,
+	 * etc.
+	 *
+	 * @param pconf
+	 *            - The {@link PublisherConfig} object.
+	 * @return
+	 * @throws IllegalAccessException
+	 *             The {@link Publisher} class could not be instantiated.
+	 * @throws InstantiationException
+	 *             The {@link Publisher} class could not be instantiated.
+	 */
     private PublisherConfig setUpConfigForPublisher(PublisherConfig pconf)
         throws IllegalAccessException, InstantiationException {
 
         final List<Class> publishers = pconf.getPublishers();
-        for (Class publisher : publishers) {
+        for (Class<?> publisher : publishers) {
             pconf = ((Publisher)publisher.newInstance()).setUpConfig(pconf);
         }
 

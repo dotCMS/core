@@ -53,7 +53,7 @@ public class DotResourceCache implements ResourceCache,Cachable {
     	Set<String> holder = new HashSet<>();
     	for(String file : files.split(",")){
     	  if(file!=null){
-    	    System.out.println("FILE: " +file);
+    	    //System.out.println("FILE: " +file);
     	    holder.add(file.trim());
     	  }
     	}

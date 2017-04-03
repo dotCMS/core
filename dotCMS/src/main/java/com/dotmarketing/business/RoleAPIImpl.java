@@ -198,13 +198,7 @@ public class RoleAPIImpl implements RoleAPI {
 
 	public Role save(Role role) throws DotDataException, DotStateException {
 		if(InodeUtils.isSet(role.getId())) {
-			Role r = loadRoleById(role.getId());
-			if(r.isSystem() || r.isLocked() || role.isSystem()){
-				throw new DotStateException("Cannot save locked or system role");
-			}
-		} else {
-			Logger.debug(this, "assuming is a new role checking if locked or system");
-			if(role.isSystem() || role.isLocked()){
+			if(role.isLocked() || role.isSystem()){
 				throw new DotStateException("Cannot save locked or system role");
 			}
 		}

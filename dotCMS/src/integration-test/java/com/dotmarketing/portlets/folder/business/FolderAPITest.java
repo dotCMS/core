@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.folder.business;
 
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -19,6 +20,7 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
@@ -558,6 +560,9 @@ public class FolderAPITest {
 		
 		String folderPath = "/folderDeleteSourceTest"+System.currentTimeMillis();
 		Folder ftest = APILocator.getFolderAPI().createFolders(folderPath, demo, user, false);
+
+		String folderIdentifier = ftest.getIdentifier();
+
 		//adding page
 		String pageStr ="mypage";
 		List<Template> templates = APILocator.getTemplateAPI().findTemplatesAssignedTo(demo);
@@ -598,6 +603,9 @@ public class FolderAPITest {
 		
 		page = APILocator.getHTMLPageAssetAPI().getPageByPath(folderPath+"/"+pageStr, demo, langIdES, false);
 		Assert.assertTrue(page == null);
+
+		Identifier dbFolderIdentifier = APILocator.getIdentifierAPI().find(folderIdentifier);
+		Assert.assertTrue(dbFolderIdentifier == null || !UtilMethods.isSet(dbFolderIdentifier.getId()));
 	}
 
 }

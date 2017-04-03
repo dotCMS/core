@@ -10,6 +10,10 @@ buildscript {
     }
 }
 
+plugins {
+    id "net.ltgt.apt" version "0.9"
+}
+
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 
 configurations {
@@ -76,6 +80,9 @@ idea {
         testSourceDirs += file('integration-test/java')
 
         testSourceDirs += file('functional-test/java')
+
+        sourceDirs += file('src/main/enterprise/src/main/java')
+        sourceDirs += file('src/main/license/src/main/java')
 
         //if you prefer different SDK than the one inherited from IDEA project
         jdkName = '1.8'
