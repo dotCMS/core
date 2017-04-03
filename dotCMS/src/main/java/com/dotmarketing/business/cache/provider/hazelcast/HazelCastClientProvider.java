@@ -4,6 +4,7 @@ import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.core.DistributedObject;
@@ -113,7 +114,7 @@ public class HazelCastClientProvider extends CacheProvider {
             CacheStats stats = new CacheStats();
             stats.addStat("region", group);
             stats.addStat("size", hazel.getMap(group).keySet().size() + "");
-            stats.addStat("local-memory-cost", hazel.getMap(group).getLocalMapStats().getOwnedEntryMemoryCost() + "");
+            stats.addStat("local-memory-cost", UtilMethods.prettyByteify(hazel.getMap(group).getLocalMapStats().getOwnedEntryMemoryCost()) + "");
             ret.addStatRecord(stats);
         }
 
