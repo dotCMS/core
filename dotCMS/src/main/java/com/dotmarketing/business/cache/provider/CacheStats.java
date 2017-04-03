@@ -16,7 +16,9 @@ public class CacheStats {
     public void addStat(String statName, String value) {
         stats.put(statName, value);
     }
-
+    public void addStat(String statName, Object value) {
+      stats.put(statName, String.valueOf(value));
+  }
     public Set<String> getStatColumns() {
         return stats.keySet();
     }
@@ -24,5 +26,7 @@ public class CacheStats {
     public String getStatValue(String columnName) {
         return stats.get(columnName);
     }
+    
+    
 
 }
