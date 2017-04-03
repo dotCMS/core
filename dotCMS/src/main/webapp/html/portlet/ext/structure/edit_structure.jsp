@@ -1,3 +1,4 @@
+<%@page import="com.dotcms.contenttype.model.field.DataTypes"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowScheme"%>
 <%@ page import="java.util.ArrayList"%>
 <%@ page import="com.dotcms.repackage.javax.portlet.WindowState"%>
@@ -494,7 +495,7 @@ function disableFormFields(){
 						String color = (i % 2 == 0 ? "#FFFFFF" : "#EEEEEE");
 						String inode = field.getInode();  %>
 
-						<% if(!field.getFieldType().equals(Field.FieldType.HIDDEN.toString()) || fAPI.isElementConstant(field)){ %>
+						<% if(!field.getFieldType().equals(Field.FieldType.HIDDEN.toString()) || fAPI.isElementConstant(field) || DataTypes.SYSTEM.toString().equalsIgnoreCase(field.getFieldContentlet())) { %>
 							<div class="dojoDndItem content-type__fields-list-row" id="<%=field.getInode() %>">
 								<span class="hiddenInodeField" style="display:none; width: 0px;"><%=field.getInode()%></span>
 								<input class="orderBox" type="hidden" value="<%=i+1%>">
