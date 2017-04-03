@@ -362,4 +362,25 @@ public class Field extends Inode implements Exportable, Importable
 	public String getDataType() {
 		return this.getFieldContentlet().replaceAll("[0-9]*", "");
 	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		if (!super.equals(o)) return false;
+
+		Field field = (Field) o;
+
+		if (structureInode != null ? !structureInode.equals(field.structureInode) : field.structureInode != null)
+			return false;
+		return fieldName != null ? fieldName.equals(field.fieldName) : field.fieldName == null;
+	}
+
+	@Override
+	public int hashCode() {
+		int result = super.hashCode();
+		result = 31 * result + (structureInode != null ? structureInode.hashCode() : 0);
+		result = 31 * result + (fieldName != null ? fieldName.hashCode() : 0);
+		return result;
+	}
 }

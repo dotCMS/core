@@ -1254,7 +1254,7 @@ public class InodeFactory {
 				db.addParam(inode.getInode());
 				db.getResult();
             				
-			HibernateUtil.delete(o);
+			HibernateUtil.delete(inode);
 			db.setSQL("delete from inode where inode = ?");
 			db.addParam(inode.getInode());
 			db.getResult();

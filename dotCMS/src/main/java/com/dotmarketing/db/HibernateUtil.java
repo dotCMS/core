@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import com.dotmarketing.beans.Inode;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.client.Client;
 
@@ -217,6 +218,22 @@ public class HibernateUtil {
 		try{
 			Session session = getSession();
 			session.delete(obj);
+			session.flush();
+		}catch (Exception e) {
+			throw new DotHibernateException("Error deleting object ", e);
+		}
+	}
+
+	public static void delete(Inode obj) throws DotHibernateException {
+		try{
+			Session session = getSession();
+			Object objectAttach = session.get(obj.getClass(), obj.getInode());
+
+			if (objectAttach == null){
+				objectAttach = obj;
+			}
+
+			session.delete(objectAttach);
 			session.flush();
 		}catch (Exception e) {
 			throw new DotHibernateException("Error deleting object ", e);
