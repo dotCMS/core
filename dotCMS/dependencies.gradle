@@ -64,7 +64,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.drools-decisiontables', version:'3.0.5_2'
     compile group: 'com.dotcms.lib', name: 'dot.drools-jsr94', version:'3.0.5_2'
     compile group: 'com.dotcms.lib', name: 'dot.dwr', version:'3rc2modified_2'
-    compile group: 'com.dotcms.lib', name: 'dot.ehcache', version:'1.6.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.elasticsearch', version:'1.7.3_1'
     compile group: 'com.dotcms.lib', name: 'dot.fileupload-ext', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.fop', version:'0.20.1_3'
