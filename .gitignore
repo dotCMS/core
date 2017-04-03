@@ -43,7 +43,7 @@ dotCMS/starter.zip
 .ant-targets-build.xml
 .gradle/
 /*.local.*
-
+dotCMS/src/main/webapp/dotAdmin
 
 # Changes after gradle migration #
 ###############################
