@@ -756,7 +756,11 @@ class DeployWarTomcatTask extends DefaultTask {
 }
 
 task installDotcmsUI(type: NpmTask) {
-    args = ['install', 'dotcms-ui']
+    if ("latest".equals(coreWebReleaseVersion)) {
+        args = ['install', 'dotcms-ui']
+    }else{
+        args = ['install', 'dotcms-ui@' + coreWebReleaseVersion]
+    }
 }
 
 task makeDotAdminFolder(type: DefaultTask) {
