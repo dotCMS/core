@@ -381,6 +381,10 @@ public class PermissionAjax {
 				perm = InodeFactory.getInode(inode, InodeUtils.getClassByDBType(type));
 			}
 		}
+		
+		if(perm == null){
+			perm = APILocator.getContentTypeAPI(user).find(assetId);
+		}
 
 		if(perm == null || !UtilMethods.isSet(perm.getPermissionId())) {
 			perm = InodeFactory.getInode(assetId, Inode.class);
