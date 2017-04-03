@@ -14,6 +14,10 @@ plugins {
     id "net.ltgt.apt" version "0.9"
 }
 
+plugins {
+    id "com.moowork.node" version "1.1.1"
+}
+
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 
 configurations {
@@ -102,7 +106,6 @@ dependencies {
     compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
     starter group: 'com.dotcms', name: 'starter', version: '20170320', ext: 'zip'
-    coreWeb group: 'com.dotcms', name: 'core-web', version: '4.0.0-SNAPSHOT', ext: 'zip', changing: true
 
     providedCompile "javax.servlet:javax.servlet-api:3.1.0"
     providedCompile fileTree("../libs/buildlibs").include('**/*.jar')
@@ -187,12 +190,23 @@ processResources {
 
 // By default the war task compiles everything under src/main/java into WEB-INF/classes/
 // but, instead, we want to compile everything on a .jar file and put it under WEB-INF/lib.
-war.dependsOn 'deployPlugins'
+war.dependsOn 'deployPlugins','installDotcmsUI', 'makeDotAdminFolder'
+war.finalizedBy 'cleanNodeModules'
+
 war {
+    
+    String dotAdminFolder = "./src/main/webapp/$angularFolder"
+
+    project.copy {
+        from "./node_modules/dotcms-ui"
+        into dotAdminFolder
+        include "**/*.*"
+    }
+
     classpath = classpath - sourceSets.main.output.classesDir
 
     if (gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
-        classpath = configurations.testRuntime
+       classpath = configurations.testRuntime
     }
 
     from (jar) {
@@ -212,11 +226,8 @@ war {
         into dotcmsFolder
         rename ( /starter(.+)\.zip/, "starter.zip" )
     }
-
-    from (zipTree(configurations.coreWeb.files.toArray()[0])) {
-        into angularFolder
-    }
 }
+
 war.finalizedBy 'undeployPlugins'
 
 integrationTest{
@@ -709,15 +720,15 @@ class ClonePullTomcatTask extends DefaultTask{
 //Gradle Custom Task that contains the logic for deploying the app war in the application server
 //It works for dist and development versions
 //Also, copies specific libraries from /libs/buildlibs to tomcat/lib folder
-class DeployWarTomcatTask extends DefaultTask{
+class DeployWarTomcatTask extends DefaultTask {
     String tomcatPath;
 
     @TaskAction
-    def deploy(){
+    def deploy() {
         copyBuildLibs(tomcatPath)
 
         def zipFile = project.file("$project.buildDir/libs/$project.archivesBaseName" + ".war")
-        project.copy{
+        project.copy {
             from project.zipTree(zipFile)
             into tomcatPath + project.webAppRootFolder
         }
@@ -730,7 +741,7 @@ class DeployWarTomcatTask extends DefaultTask{
 
     // Copying libs/buildlibs under tomcat8/lib.
     def copyBuildLibs(buildLibLocation) {
-        project.copy{
+        project.copy {
             from '../libs/buildlibs'
             into buildLibLocation + '/lib'
             include 'mail.jar'
@@ -742,4 +753,22 @@ class DeployWarTomcatTask extends DefaultTask{
         }
 
     }
+}
+
+task installDotcmsUI(type: NpmTask) {
+    if ("latest".equals(coreWebReleaseVersion)) {
+        args = ['install', 'dotcms-ui']
+    }else{
+        args = ['install', 'dotcms-ui@' + coreWebReleaseVersion]
+    }
+}
+
+task makeDotAdminFolder(type: DefaultTask) {
+    String dotAdminFolder = "./src/main/webapp/$angularFolder"
+    project.mkdir(dotAdminFolder)
+}
+
+task cleanNodeModules(type: Delete) {
+    delete "./node_modules"
+    followSymlinks = true
 }
