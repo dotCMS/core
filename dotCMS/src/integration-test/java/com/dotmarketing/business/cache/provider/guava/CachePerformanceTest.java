@@ -5,11 +5,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.dotmarketing.business.cache.provider.CacheProviderStats;
+import com.dotmarketing.business.cache.provider.CacheStats;
+import com.dotmarketing.util.UtilMethods;
 import org.junit.Test;
-import org.openjdk.jmh.annotations.GenerateMicroBenchmark;
 
 import com.dotcms.repackage.org.apache.commons.lang.RandomStringUtils;
 import com.dotcms.repackage.org.apache.log4j.Logger;
@@ -35,7 +38,7 @@ public class CachePerformanceTest {
   private static final Logger LOGGER = Logger.getLogger("ROOT");
 
   private final long startTime = System.currentTimeMillis();
-  //Class provider = GuavaCache.class;
+//  Class provider = GuavaCache.class;
   Class provider = HazelCastEmbeddedProvider.class;
   //Class provider = HazelCastClientProvider.class;
 
@@ -98,17 +101,32 @@ public class CachePerformanceTest {
     // testMultithreaded(cache, numberOfThreads,true, false, true);
 
     // test causing an error and recovering
-    
-    
+
+    LOGGER.info("Total Memory Available : " +  UtilMethods.prettyByteify( Runtime.getRuntime().maxMemory()));
+    LOGGER.info("Memory Allocated : " + UtilMethods.prettyByteify( Runtime.getRuntime().totalMemory()));
+    LOGGER.info("Filled Memory : " + UtilMethods.prettyByteify( Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() ));
+    LOGGER.info("Free Memory : " + UtilMethods.prettyByteify( Runtime.getRuntime().freeMemory() ));
+
     testMultithreaded(cache, numberOfThreads, false, true, false);
 
-    //
+    LOGGER.info("Total Memory Available : " +  UtilMethods.prettyByteify( Runtime.getRuntime().maxMemory()));
+    LOGGER.info("Memory Allocated : " + UtilMethods.prettyByteify( Runtime.getRuntime().totalMemory()));
+    LOGGER.info("Filled Memory : " + UtilMethods.prettyByteify( Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() ));
+    LOGGER.info("Free Memory : " + UtilMethods.prettyByteify( Runtime.getRuntime().freeMemory() ));
+
+    CacheProviderStats pStats = cache.getStats();
+    Set<String> columns = pStats.getStatColumns();
+    for (CacheStats cs :pStats.getStats()) {
+      for(String col : columns){
+        LOGGER.info(col + " : " + cs.getStatValue(col));
+      }
+    }
+
     cache.shutdown();
 
 
   }
 
-  @GenerateMicroBenchmark
   void testMultithreaded(CacheProvider cache, int numberOfThreads, boolean dumpCacheInMiddle, boolean breakCache,
       final boolean dieOnError) throws InterruptedException, SQLException {
 
@@ -147,7 +165,8 @@ public class CachePerformanceTest {
       }
     }
     assertThat("Cache with 1 group removed , we should have 99 groups",
-        cache.getGroups().size() == (numberOfGroups - 1));
+            cache.getKeys("group_1").size()==0);
+
     // assertThat("Cache filled , we should have 10 in group 1", cache.getKeys("group_1").size() ==
     // numberOfPuts / numberOfGroups);
 

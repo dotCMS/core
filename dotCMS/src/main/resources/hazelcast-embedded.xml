@@ -89,7 +89,7 @@
     </network>
     <partition-group enabled="false"/>
     <executor-service name="default">
-        <pool-size>16</pool-size>
+        <pool-size>100</pool-size>
         <!--Queue capacity. 0 means Integer.MAX_VALUE.-->
         <queue-capacity>0</queue-capacity>
     </executor-service>
@@ -158,14 +158,14 @@
             LFU (Least Frequently Used).
             NONE is the default.
         -->
-        <eviction-policy>NONE</eviction-policy>
+        <eviction-policy>LFU</eviction-policy>
         <!--
             Maximum size of the map. When max size is reached,
             map is evicted based on the policy defined.
             Any integer between 0 and Integer.MAX_VALUE. 0 means
             Integer.MAX_VALUE. Default is 0.
         -->
-        <max-size policy="PER_NODE">0</max-size>
+        <max-size policy="PER_NODE">271</max-size>
 
         <!--
             While recovering from split-brain (network partitioning),
@@ -193,127 +193,133 @@
         -->
         <cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>
 
+        <near-cache>
+            <in-memory-format>OBJECT</in-memory-format>
+            <!-- 			<invalidate-on-change>true</invalidate-on-change> -->
+            <cache-local-entries>true</cache-local-entries>
+        </near-cache>
+
     </map>
-	   
-    <map name="adminconfigpool">
-        <max-size>100</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="contentletcache">
-        <max-size>5000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="companypool">
-        <max-size>10</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="csscache">
-        <max-size>2500</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="fileassetmetadatacache">
-        <max-size>200</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="identifiercache">
-        <max-size>50000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="indiciescache">
-        <max-size>8</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="logmappercache">
-        <max-size>10</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-       
-    <map name="parentpermissionablecache">
-        <max-size>10000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="permissioncache">
-        <max-size>50000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="portletpool">
-        <max-size>100</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="publishingendpointcache">
-        <max-size>100</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="pushedassetscache">
-        <max-size>5000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="structurecache">
-        <max-size>500</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="templatecache">
-        <max-size>500</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="translatedquerycache">
-        <max-size>5000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="velocityuservtlcache">
-        <max-size>500</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="versioncache">
-        <max-size>50000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="versioninfocache">
-        <max-size>50000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="workflowactioncache">
-        <max-size>10000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="workflowtaskcache">
-        <max-size>10000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="shorty">
-        <max-size>25000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="identifier404cache">
-        <max-size>5000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
-    
-    <map name="virtuallinkscache">
-        <max-size>25000</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
+	   <!---->
+    <!--<map name="adminconfigpool">-->
+        <!--<max-size>271</max-size>-->
+        <!--<eviction-policy>LFU</eviction-policy>-->
+    <!--</map>-->
+    <!---->
+    <!--<map name="contentletcache">-->
+        <!--<max-size>5000</max-size>-->
+        <!--<eviction-policy>LFU</eviction-policy>-->
+    <!--</map>-->
+    <!---->
+    <!--<map name="companypool">-->
+        <!--<max-size>271</max-size>-->
+        <!--<eviction-policy>LFU</eviction-policy>-->
+    <!--</map>-->
+    <!---->
+    <!--<map name="csscache">-->
+        <!--<max-size>2500</max-size>-->
+        <!--<eviction-policy>LFU</eviction-policy>-->
+    <!--</map>-->
+    <!---->
+    <!--<map name="fileassetmetadatacache">-->
+        <!--<max-size>271</max-size>-->
+        <!--<eviction-policy>LFU</eviction-policy>-->
+    <!--</map>-->
+    <!---->
+    <!--<map name="identifiercache">-->
+        <!--<max-size>50000</max-size>-->
+        <!--<eviction-policy>LFU</eviction-policy>-->
+    <!--</map>-->
+    <!---->
+    <!--<map name="indiciescache">-->
+        <!--<max-size>271</max-size>-->
+        <!--<eviction-policy>LFU</eviction-policy>-->
+    <!--</map>-->
+    <!---->
+    <!--<map name="logmappercache">-->
+        <!--<max-size>271</max-size>-->
+        <!--<eviction-policy>LFU</eviction-policy>-->
+    <!--</map>-->
+       <!---->
+    <!--<map name="parentpermissionablecache">-->
+        <!--<max-size>10000</max-size>-->
+        <!--<eviction-policy>LFU</eviction-policy>-->
+    <!--</map>-->
+    <!---->
+    <!--<map name="permissioncache">-->
+        <!--<max-size>50000</max-size>-->
+        <!--<eviction-policy>LFU</eviction-policy>-->
+    <!--</map>-->
+    <!---->
+    <!--<map name="portletpool">-->
+        <!--<max-size>271</max-size>-->
+        <!--<eviction-policy>LFU</eviction-policy>-->
+    <!--</map>-->
+    <!---->
+    <!--<map name="publishingendpointcache">-->
+        <!--<max-size>271</max-size>-->
+        <!--<eviction-policy>LFU</eviction-policy>-->
+    <!--</map>-->
+    <!---->
+    <!--<map name="pushedassetscache">-->
+        <!--<max-size>5000</max-size>-->
+        <!--<eviction-policy>LFU</eviction-policy>-->
+    <!--</map>-->
+    <!---->
+    <!--<map name="structurecache">-->
+        <!--<max-size>500</max-size>-->
+        <!--<eviction-policy>LFU</eviction-policy>-->
+    <!--</map>-->
+    <!---->
+    <!--<map name="templatecache">-->
+        <!--<max-size>500</max-size>-->
+        <!--<eviction-policy>LFU</eviction-policy>-->
+    <!--</map>-->
+    <!---->
+    <!--<map name="translatedquerycache">-->
+        <!--<max-size>5000</max-size>-->
+        <!--<eviction-policy>LFU</eviction-policy>-->
+    <!--</map>-->
+    <!---->
+    <!--<map name="velocityuservtlcache">-->
+        <!--<max-size>500</max-size>-->
+        <!--<eviction-policy>LFU</eviction-policy>-->
+    <!--</map>-->
+    <!---->
+    <!--<map name="versioncache">-->
+        <!--<max-size>50000</max-size>-->
+        <!--<eviction-policy>LFU</eviction-policy>-->
+    <!--</map>-->
+    <!---->
+    <!--<map name="versioninfocache">-->
+        <!--<max-size>50000</max-size>-->
+        <!--<eviction-policy>LFU</eviction-policy>-->
+    <!--</map>-->
+    <!---->
+    <!--<map name="workflowactioncache">-->
+        <!--<max-size>10000</max-size>-->
+        <!--<eviction-policy>LFU</eviction-policy>-->
+    <!--</map>-->
+    <!---->
+    <!--<map name="workflowtaskcache">-->
+        <!--<max-size>10000</max-size>-->
+        <!--<eviction-policy>LFU</eviction-policy>-->
+    <!--</map>-->
+    <!---->
+    <!--<map name="shorty">-->
+        <!--<max-size>25000</max-size>-->
+        <!--<eviction-policy>LFU</eviction-policy>-->
+    <!--</map>-->
+    <!---->
+    <!--<map name="identifier404cache">-->
+        <!--<max-size>5000</max-size>-->
+        <!--<eviction-policy>LFU</eviction-policy>-->
+    <!--</map>-->
+    <!---->
+    <!--<map name="virtuallinkscache">-->
+        <!--<max-size>25000</max-size>-->
+        <!--<eviction-policy>LFU</eviction-policy>-->
+    <!--</map>-->
 
 <!--    Available cache regions    -->
 <!--

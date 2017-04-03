@@ -38,7 +38,7 @@ public class HazelCastEmbeddedProvider extends HazelCastClientProvider {
         try {
             is = getClass().getClassLoader().getResourceAsStream(xmlFilePath);
             XmlConfigBuilder builder = new XmlConfigBuilder(is);
-            hazelEmbedded = Hazelcast.newHazelcastInstance(builder.build());
+            hazel = Hazelcast.newHazelcastInstance(builder.build());
             initialized = true;
         } finally {
             if (is != null) {
@@ -46,18 +46,18 @@ public class HazelCastEmbeddedProvider extends HazelCastClientProvider {
             }
         }
 
-        Logger.info(this, "Setting Up HazelCast Client Config");
-        is = null;
-        try {
-            is = getClass().getClassLoader().getResourceAsStream("hazelcast-client.xml");
-            XmlClientConfigBuilder builder = new XmlClientConfigBuilder(is);
-            hazel = HazelcastClient.newHazelcastClient(builder.build());
-            initialized = true;
-        } finally {
-            if (is != null) {
-                is.close();
-            }
-        }
+//        Logger.info(this, "Setting Up HazelCast Client Config");
+//        is = null;
+//        try {
+//            is = getClass().getClassLoader().getResourceAsStream("hazelcast-client.xml");
+//            XmlClientConfigBuilder builder = new XmlClientConfigBuilder(is);
+//            hazel = HazelcastClient.newHazelcastClient(builder.build());
+//            initialized = true;
+//        } finally {
+//            if (is != null) {
+//                is.close();
+//            }
+//        }
     }
 
     public HazelCastEmbeddedProvider(String xmlPath){
