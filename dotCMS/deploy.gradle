@@ -106,7 +106,7 @@ repositories {
 
 ext {
 
-    artifactGroupId = ""
+    artifactGroupId = "com.dotcms"
     fileToUpload    = ""
     jarName         = ""
     submodulePath   = ""
@@ -130,6 +130,17 @@ ext {
         artifactGroupId = "com.dotcms.enterprise"
         submodulePath = "src/main/license"
     }
+
+    if (gradle.startParameter.taskNames.contains("uploadDotcms")) {
+        jarName = "dotcms_$dotcmsReleaseVersion"+ "_" + git.head().abbreviatedId
+        fileToUpload = "build/libs/$jarName" + ".jar"
+        submodulePath = "."
+    }
+
+    if (project.hasProperty('file')) {
+        fileToUpload = "$file"
+    }
+
 
     releaseUpload = "false"
     if (project.hasProperty('release')) {
@@ -239,9 +250,10 @@ uploadArchives {
 
 defaultTasks 'help', 'tasks'
 
-//Generates dynamic tasks with the same content for Enterprise and License.
-//Tasks generated will be called: uploadEnterprise and uploadLicense
-['Enterprise', 'License'].each { taskName ->
+//Generates dynamic tasks with the same content for Enterprise, License, Dotcms, Starter and AntTooling.
+//Tasks generated will be called: uploadEnterprise, uploadLicense, uploadDotcms, uploadStarter and uploadAntTooling
+//respectively
+['Enterprise', 'License', 'Dotcms', 'Starter', 'AntTooling'].each { taskName ->
     task "upload$taskName"(dependsOn: 'generateArtifact') << {
         updateSubmoduleReference()
     }
@@ -249,21 +261,36 @@ defaultTasks 'help', 'tasks'
 
 uploadEnterprise.finalizedBy "uploadArchives"
 uploadLicense.finalizedBy "uploadArchives"
+uploadDotcms.finalizedBy "uploadArchives"
+uploadStarter.finalizedBy "uploadArchives"
+uploadAntTooling.finalizedBy "uploadArchives"
 
 task generateArtifact(type: GradleBuild) {
+
+    //Get the latest changes from the branch for each submodule
+    project.exec{
+        commandLine "git", "submodule", "update", "--remote"
+    }
+
     buildFile = "$submodulePath/build.gradle"
-    tasks = ['jar']
-    startParameter.projectProperties = [obfuscatedJarName: jarName]
+    tasks     = ['clean','jar']
+    startParameter.projectProperties = [jarBaseName: jarName]
 }
+generateArtifact.onlyIf { !submodulePath.equals("")}
 
+//Updating submodule reference (commits and pushes reference)
 def updateSubmoduleReference(){
-    //Updating submodule reference
-    git.add(patterns: ["dotCMS/$submodulePath"])
 
-    if (git.status().staged.modified.contains("dotCMS/$submodulePath".toString())){
+    if(!(submodulePath.equals("") || submodulePath.equals("."))){
 
-        git.commit(message: "Updating commit reference for $submodulePath", paths:["dotCMS/$submodulePath"])
-        git.push()
+
+        git.add(patterns: ["dotCMS/$submodulePath"])
+
+        if (git.status().staged.modified.contains("dotCMS/$submodulePath".toString())){
+
+            git.commit(message: "Updating commit reference for $submodulePath", paths:["dotCMS/$submodulePath"])
+            git.push()
+        }
     }
 }
 
@@ -278,10 +305,13 @@ Parameters:
         -> Required
     password:                       - password of the user with upload privileges
         -> Required
+    file: File to upload.           - if this parameter is specified, the file path specified will be used 
+                                      as the artifact, otherwise, a new artifact will be generated
+        -> Optional
 
 Example of use:
 
-Name convention: ee_dotcmsversion.jar -> ee_3.6.jar
+Name convention: ee_version.jar -> ee_3.6.jar
 As snapshot: ./gradlew -b deploy.gradle uploadEnterprise -Pusername=username -Ppassword=XYZ 
 As release: ./gradlew -b deploy.gradle uploadEnterprise -Prelease=true -Pusername=username -Ppassword=XYZ
 """
@@ -299,12 +329,83 @@ Parameters:
         -> Required
     password:                       - password of the user with upload privileges
         -> Required
+    file: File to upload.           - if this parameter is specified, the file path specified will be used 
+                                      as the artifact, otherwise, a new artifact will be generated
+        -> Optional
 
 Example of use:
 
-Name convention: eelic_dotcmsversion.jar -> eelic_3.6.jar
+Name convention: eelic_version.jar -> eelic_3.6.jar
 As snapshot: ./gradlew -b deploy.gradle uploadLicense -Pusername=username -Ppassword=XYZ 
 As release: ./gradlew -b deploy.gradle uploadLicense -Prelease=true -Pusername=username -Ppassword=XYZ
 """
 
 uploadLicense.group='dotCMS Upload Version'
+
+uploadDotcms.description """
+Creates and uploads a snapshot or release version of the core project to the artifactory repository
+
+Parameters:
+
+    release: (true/false)           - true if is a release upload, false if is a snapshot
+        -> Default false
+    username:                       - user name of the user with upload privileges
+        -> Required
+    password:                       - password of the user with upload privileges
+        -> Required
+    file: File to upload.           - if this parameter is specified, the file path specified will be used 
+                                      as the artifact, otherwise, a new artifact will be generated
+        -> Optional
+
+Example of use:
+
+Name convention: dotcms_version_hash.jar -> dotcms_3.6_a434224.jar
+As snapshot: ./gradlew -b deploy.gradle uploadDotcms -Pusername=username -Ppassword=XYZ 
+As release: ./gradlew -b deploy.gradle uploadDotcms -Prelease=true -Pusername=username -Ppassword=XYZ
+"""
+
+uploadDotcms.group='dotCMS Upload Version'
+
+uploadStarter.description """
+Uploads a snapshot or release version of the starter to the artifactory repository
+
+Parameters:
+
+    release: (true/false)           - true if is a release upload, false if is a snapshot
+        -> Default false
+    username:                       - user name of the user with upload privileges
+        -> Required
+    password:                       - password of the user with upload privileges
+        -> Required
+    file: File to upload.           - the file path used as the artifact
+        -> Required
+
+Example of use:
+Name convention: starter_timestamp.zip -> starter_20140805.zip
+As snapshot: ./gradlew -b deploy.gradle uploadStarter -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20140805.zip
+As release: ./gradlew -b deploy.gradle uploadStarter -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20140805.zip
+"""
+
+uploadStarter.group='dotCMS Upload Version'
+
+uploadAntTooling.description """
+Uploads a snapshot or release version of the ant-tooling to the artifactory repository
+
+Parameters:
+
+    release: (true/false)           - true if is a release upload, false if is a snapshot
+        -> Default false
+    username:                       - user name of the user with upload privileges
+        -> Required
+    password:                       - password of the user with upload privileges
+        -> Required
+    file: File to upload.           - the file path used as the artifact
+        -> Required
+
+Example of use:
+Name convention: ant-tooling_version.jar -> ant-tooling_1.1.jar
+As snapshot: ./gradlew -b deploy.gradle uploadAntTooling -Pusername=username -Ppassword=XYZ -Pfile=/project/path/ant-tooling/build/libs/ant-tooling_1.1.jar
+As release: ./gradlew -b deploy.gradle uploadAntTooling -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/ant-tooling/build/libs/ant-tooling_1.1.jar
+"""
+
+uploadAntTooling.group='dotCMS Upload Version'

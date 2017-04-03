@@ -158,7 +158,13 @@ ext {
     }
 }
 
-archivesBaseName = 'dotcms_'+dotcmsReleaseVersion+'_'+dotcmsReleaseBuild
+
+if (project.hasProperty('jarBaseName')) {
+    archivesBaseName = "$jarBaseName"
+}else{
+    archivesBaseName = 'dotcms_'+dotcmsReleaseVersion+'_'+dotcmsReleaseBuild
+}
+
 def tomcatDistBase = "$distLocation/$tomcatDistInstallLocation-$tomcatInstallVersion"
 def dotcmsDistBase = "../$tomcatDistInstallLocation-$tomcatInstallVersion"
 
