@@ -140,7 +140,7 @@
 		dojo.query("#usersGrid").addClass('view-users__users-list');
 
         //Loading the grid for first time
-        UserAjax.getUsersList(null, null, { start: 0, limit: 50 }, dojo.hitch(this, getUsersListCallback));
+        UserAjax.getUsersList(null, null, { start: 0, limit: 50, includeDefault: false }, dojo.hitch(this, getUsersListCallback));
     });
 
 	//Gethering the data from server and setting the grid to display it
@@ -202,7 +202,7 @@
 		dojo.byId('loadingUsers').style.display = '';
 		dojo.byId('usersGrid').style.display = 'none';
 		var value = dijit.byId('usersFilter').attr('value');
-		UserAjax.getUsersList(null, null, { start: 0, limit: 50, query: value }, dojo.hitch(this, getUsersListCallback));
+		UserAjax.getUsersList(null, null, { start: 0, limit: 50, query: value, includeDefault: false }, dojo.hitch(this, getUsersListCallback));
 	}
 
 	//Event handler for clearing the users filter
@@ -210,7 +210,7 @@
 		dojo.byId('loadingUsers').style.display = '';
 		dojo.byId('usersGrid').style.display = 'none';
 		dijit.byId('usersFilter').attr('value', '');
-		UserAjax.getUsersList(null, null, { start: 0, limit: 50, query: '' }, dojo.hitch(this, getUsersListCallback));
+		UserAjax.getUsersList(null, null, { start: 0, limit: 50, query: '', includeDefault: false }, dojo.hitch(this, getUsersListCallback));
 	}
 
 	//CRUD operations over users

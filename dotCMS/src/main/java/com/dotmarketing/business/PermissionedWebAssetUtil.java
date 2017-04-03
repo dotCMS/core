@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -143,35 +145,11 @@ public class PermissionedWebAssetUtil {
 	 * @throws DotSecurityException 
 	 * @throws DotDataException 
 	 */
-	public static List<Structure> findStructuresForLimitedUser(String searchString, Integer structureType ,String dbColSort ,int offset, int limit,int permission, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException{
-		offset = offset<0?0:offset;
-		ArrayList<ColumnItem> columnsToOrderBy = new ArrayList<ColumnItem>();
-		ColumnItem structureTitle = new ColumnItem(dbColSort, "structure", null, true, OrderDir.ASC);
-		columnsToOrderBy.add(structureTitle);
-
-		List<String> tIds = queryForAssetIds("structure, inode",
-		        new String[] {Structure.class.getCanonicalName()},
-		        "structure.inode", 
-		        "inode.inode",
-		        "inode.inode = structure.inode "
-				+ (
-						UtilMethods.isSet(searchString) ? 
-						" and (lower(structure.name) LIKE '%" + searchString.toLowerCase() + "%'" 
-						+(structureType!=null? " AND structuretype = "+ structureType.intValue():"") + ")":
-						(structureType!=null? " AND structuretype = "+ structureType.intValue():"")
-			      ) , columnsToOrderBy, offset, limit, permission, respectFrontEndPermissions, user);
-
-		if(tIds != null && tIds.size()>0){
-			StringBuilder bob = new StringBuilder();
-			for (String s : tIds) {
-				bob.append("'").append(s).append("',");
-			}
-
-			return InodeFactory.getInodesOfClassByConditionAndOrderBy(Structure.class, "inode in (" + bob.toString().subSequence(0, bob.toString().length()-1) + ")", dbColSort);
-		}else{
-			return new ArrayList<Structure>();
-		}
-		//	}
+	public static List<Structure> findStructuresForLimitedUser(String searchString, Integer structureType ,String dbColSort ,int offset, 
+			int limit,int permission, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException{
+		
+		List<ContentType> listContentTypes = APILocator.getContentTypeAPI(user).search(searchString, dbColSort, limit, offset);
+		return new StructureTransformer(listContentTypes).asStructureList();
 	}
 	
 	/**
