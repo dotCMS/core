@@ -13,6 +13,8 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
 
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -235,8 +237,8 @@ public class DeleteFieldJob implements Job {
                     && !Field.FieldType.RELATIONSHIPS_TAB.toString().equals(type)
                     && !Field.FieldType.CATEGORIES_TAB.toString().equals(type)
                     && !Field.FieldType.PERMISSIONS_TAB.toString().equals(type)
-                    && !Field.FieldType.HOST_OR_FOLDER.toString().equals(type)) {
-
+                    && !Field.FieldType.HOST_OR_FOLDER.toString().equals(type)
+                    && !DataTypes.SYSTEM.toString().equalsIgnoreCase(field.getFieldContentlet())) {
                 this.conAPI.cleanField(contentType, field, this.userAPI.getSystemUser(), false);
             }
             FieldFactory.deleteField(field);
@@ -272,8 +274,8 @@ public class DeleteFieldJob implements Job {
             } catch (DotHibernateException e1) {
                 Logger.error(this, "Error in rollback transaction", e);
             }
-            Logger.error(this, String.format("Unable to delete field '%s'. Field Inode: %s, Content Type Inode: %s",
-                    field.getVelocityVarName(), field.getInode(), contentType.getInode()), e);
+            Logger.error(this, String.format("Unable to delete field '%s'. Field Inode: %s, Content Type Inode: %s, Content Type name: %s",
+                    field.getVelocityVarName(), field.getInode(), contentType.getInode(), contentType.getName()), e);
 
             try {
                 this.deleteFieldJobHelper.generateNotificationUnableDelete(this.notfAPI,
@@ -282,8 +284,8 @@ public class DeleteFieldJob implements Job {
                 Logger.error(this, e1.getMessage(), e1);
             }
 
-            throw new JobExecutionException(String.format("Unable to delete field '%s'. Field Inode: %s, Content Type Inode: %s",
-                    field.getVelocityVarName(), field.getInode(), contentType.getInode()), e);
+            throw new JobExecutionException(String.format("Unable to delete field '%s'. Field Inode: %s, Content Type Inode: %s, Content Type name: %s",
+                    field.getVelocityVarName(), field.getInode(), contentType.getInode(), contentType.getName()), e);
         } finally {
             try {
                 HibernateUtil.closeSession();

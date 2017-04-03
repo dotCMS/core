@@ -22,26 +22,47 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 
-
-@Deprecated
+/**
+ * 
+ * @author root
+ * @version 1.x
+ * @since Mar 22, 2012
+ * @deprecated As of dotCMS 4.1.0, this API has been deprecated. From now on,
+ *             please use the {@link FieldAPI} interface via
+ *             {@link APILocator#getContentTypeFieldAPI()} in order to interact
+ *             with Content Type fields.
+ *
+ */
 public class FieldFactory {
 
+	/**
+	 * 
+	 * @return
+	 */
     private static FieldAPI fapi(){
         return APILocator.getContentTypeFieldAPI();
     }
+
 	//### READ ###
+    /**
+     * 
+     * @param inode
+     * @return
+     */
 	public static Field getFieldByInode(String inode) 
 	{
-
 		try {
             return new LegacyFieldTransformer(APILocator.getContentTypeFieldAPI().find(inode)).asOldField();
         } catch (DotStateException | DotDataException e) {
             return new Field();
         }
-
 	}
 
-	@SuppressWarnings("unchecked")
+	/**
+	 * 
+	 * @param structureInode
+	 * @return
+	 */
 	public static List<Field> getFieldsByStructure(String structureInode)
 	{
 	       try {
@@ -49,15 +70,24 @@ public class FieldFactory {
 	        } catch (DotStateException | DotDataException e) {
 	            return ImmutableList.of();
 	        }
-	    
 	}
 
-	@SuppressWarnings("unchecked")
+	/**
+	 * 
+	 * @param structureInode
+	 * @return
+	 */
 	public static List<Field> getFieldsByStructureSortedBySortOrder(String structureInode)
 	{
 	    return getFieldsByStructure(structureInode);
 	}
 
+	/**
+	 * 
+	 * @param fieldLuceneName
+	 * @param st
+	 * @return
+	 */
 	public static boolean isTagField(String fieldLuceneName, Structure st)
 	{
 	    try {
@@ -66,11 +96,14 @@ public class FieldFactory {
         } catch (DotDataException e) {
             return false;
         }
-
 	}
 
-
-
+	/**
+	 * 
+	 * @param structureInode
+	 * @param velocityVarName
+	 * @return
+	 */
 	public static Field getFieldByVariableName(String structureInode, String velocityVarName)
 	{
 	    velocityVarName = StringUtils.camelCaseLower(velocityVarName);
@@ -82,6 +115,12 @@ public class FieldFactory {
         }
 	}
 
+	/**
+	 * 
+	 * @param structureInode
+	 * @param fieldName
+	 * @return
+	 */
     public static Field getFieldByStructure(String structureInode, String fieldName){
         try{
             List<com.dotcms.contenttype.model.field.Field> fields = fapi().byContentTypeId(structureInode);
@@ -97,22 +136,28 @@ public class FieldFactory {
         return new Field();
     }
 
-
 	//### CREATE AND UPDATE ###
-	public static Field saveField(Field oldField) throws DotHibernateException
-	{
-	    
-        if (oldField.getFieldType().equals("host or folder") || oldField.getFieldType().equals("line_divider") || oldField.getFieldType().equals("tab_divider")
-                || oldField.getFieldType().equals("categories_tab")
-                || oldField.getFieldType().equals("permissions_tab") 
-                || oldField.getFieldType().equals( "relationships_tab")
-                || oldField.getFieldType().equals("category")
-                || oldField.getFieldType().equals("tag")
-             ) {
-
-            oldField.setFieldContentlet(DataTypes.SYSTEM.toString());
-            
-        }
+	/**
+	 * Saves a field in a Content Type.
+	 * 
+	 * @param oldField
+	 *            - The legacy Field object.
+	 * @return The Field object that was saved.
+	 * @throws DotHibernateException
+	 *             An error occurred when saving the field.
+	 */
+	public static Field saveField(Field oldField) throws DotHibernateException {
+		if (Field.FieldType.HOST_OR_FOLDER.toString().equals(oldField.getFieldType())
+				|| Field.FieldType.LINE_DIVIDER.toString().equals(oldField.getFieldType())
+				|| Field.FieldType.TAB_DIVIDER.toString().equals(oldField.getFieldType())
+				|| Field.FieldType.CATEGORIES_TAB.toString().equals(oldField.getFieldType())
+				|| Field.FieldType.PERMISSIONS_TAB.toString().equals(oldField.getFieldType())
+				|| Field.FieldType.RELATIONSHIPS_TAB.toString().equals(oldField.getFieldType())
+				|| Field.FieldType.CATEGORY.toString().equals(oldField.getFieldType())
+				|| Field.FieldType.TAG.toString().equals(oldField.getFieldType())
+				|| Field.FieldType.HIDDEN.toString().equals(oldField.getFieldType())) {
+			oldField.setFieldContentlet(DataTypes.SYSTEM.toString());
+		}
         
         //The Host or Folder Field and the Tag Field needs to be always indexed (issue #11128)
         if(Field.FieldType.HOST_OR_FOLDER.toString().equals(oldField.getFieldType()) || Field.FieldType.TAG.toString().equals(oldField.getFieldType())){
@@ -129,22 +174,35 @@ public class FieldFactory {
         }
 	}
 
+	/**
+	 * 
+	 * @param oldField
+	 * @param existingId
+	 * @throws DotHibernateException
+	 */
 	public static void saveField(Field oldField, String existingId) throws DotHibernateException
 	{
 	    oldField.setInode(existingId);
-
         saveField(oldField);
-
-
 	}
 
 	//### DELETE ###
+	/**
+	 * 
+	 * @param inode
+	 * @throws DotHibernateException
+	 */
 	public static void deleteField(String inode) throws DotHibernateException
 	{
 		Field field = getFieldByInode(inode);
 		deleteField(field);
 	}
 
+	/**
+	 * 
+	 * @param oldField
+	 * @throws DotHibernateException
+	 */
 	public static void deleteField(Field oldField) throws DotHibernateException
 	{
         com.dotcms.contenttype.model.field.Field field = new LegacyFieldTransformer(oldField).from();
@@ -153,11 +211,16 @@ public class FieldFactory {
         } catch (DotDataException e) {
             throw new DotHibernateException(e.getMessage(),e);
         }
-
 	}
 
+	/**
+	 * 
+	 * @param dataType
+	 * @param currentFieldInode
+	 * @param structureInode
+	 * @return
+	 */
 	public static String getNextAvaliableFieldNumber (String dataType, String currentFieldInode, String structureInode) {
-	    
         try{
             com.dotcms.contenttype.model.field.Field proxy = FieldBuilder.builder(EmptyField.class)
                     .contentTypeId(structureInode)
@@ -176,8 +239,12 @@ public class FieldFactory {
         return null;
 	}
 
+	/**
+	 * 
+	 * @param fieldVar
+	 * @return
+	 */
 	public static FieldVariable saveFieldVariable(FieldVariable fieldVar){
-
 	    com.dotcms.contenttype.model.field.FieldVariable var= new FieldVariableTransformer(fieldVar).newfield();
 	    
         try {
@@ -188,6 +255,11 @@ public class FieldFactory {
         return new FieldVariable();
 	}
 
+	/**
+	 * 
+	 * @param id
+	 * @return
+	 */
 	public static FieldVariable getFieldVariable(String id){
 	    try {
             return new FieldVariableTransformer(fapi().loadVariable(id)).oldField();
@@ -197,30 +269,44 @@ public class FieldFactory {
         return new FieldVariable();
 	}
 
+	/**
+	 * 
+	 * @param id
+	 */
 	public static void deleteFieldVariable(String id){
 		FieldVariable fieldVar = getFieldVariable(id);
 		deleteFieldVariable(fieldVar);
 	}
 
+	/**
+	 * 
+	 * @param fieldVar
+	 */
 	public static void deleteFieldVariable(FieldVariable fieldVar){
 	       try {
 	           fapi().delete(new FieldVariableTransformer(fieldVar).newfield());
 	        } catch (DotStateException | DotDataException e) {
 	            Logger.error(FieldFactory.class, e.getMessage());
 	        }
-	
 	}
 
-
+	/**
+	 * 
+	 * @param fieldId
+	 * @return
+	 */
 	public static List<FieldVariable> getFieldVariablesForField (String fieldId ){
-
 		Field proxy = new Field();
 		proxy.setInode(fieldId);
 		return getFieldVariablesForField(proxy);
 	}
 
+	/**
+	 * 
+	 * @param field
+	 * @return
+	 */
 	public static List<FieldVariable> getFieldVariablesForField (Field field ){
-	    
 	       try {
 	           com.dotcms.contenttype.model.field.Field newfield = fapi().find(field.getInode());
 	           List<com.dotcms.contenttype.model.field.FieldVariable > fl = fapi().loadVariables(newfield);
@@ -229,7 +315,6 @@ public class FieldFactory {
 	            Logger.error(FieldFactory.class, e.getMessage());
 	        }
 	        return new ArrayList<FieldVariable>();
-	    
 	}
 
 }
