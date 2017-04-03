@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.structure.factories;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.DataTypes;
@@ -11,6 +12,7 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.transform.field.FieldVariableTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import static com.dotcms.util.CollectionsUtils.set;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -147,15 +149,12 @@ public class FieldFactory {
 	 *             An error occurred when saving the field.
 	 */
 	public static Field saveField(Field oldField) throws DotHibernateException {
-		if (Field.FieldType.HOST_OR_FOLDER.toString().equals(oldField.getFieldType())
-				|| Field.FieldType.LINE_DIVIDER.toString().equals(oldField.getFieldType())
-				|| Field.FieldType.TAB_DIVIDER.toString().equals(oldField.getFieldType())
-				|| Field.FieldType.CATEGORIES_TAB.toString().equals(oldField.getFieldType())
-				|| Field.FieldType.PERMISSIONS_TAB.toString().equals(oldField.getFieldType())
-				|| Field.FieldType.RELATIONSHIPS_TAB.toString().equals(oldField.getFieldType())
-				|| Field.FieldType.CATEGORY.toString().equals(oldField.getFieldType())
-				|| Field.FieldType.TAG.toString().equals(oldField.getFieldType())
-				|| Field.FieldType.HIDDEN.toString().equals(oldField.getFieldType())) {
+		final Set<String> systemFieldsSet = set(Field.FieldType.HOST_OR_FOLDER.toString(),
+				Field.FieldType.LINE_DIVIDER.toString(), Field.FieldType.TAB_DIVIDER.toString(),
+				Field.FieldType.CATEGORIES_TAB.toString(), Field.FieldType.PERMISSIONS_TAB.toString(),
+				Field.FieldType.RELATIONSHIPS_TAB.toString(), Field.FieldType.CATEGORY.toString(),
+				Field.FieldType.TAG.toString(), Field.FieldType.HIDDEN.toString());
+		if (systemFieldsSet.contains(oldField.getFieldType())) {
 			oldField.setFieldContentlet(DataTypes.SYSTEM.toString());
 		}
         
