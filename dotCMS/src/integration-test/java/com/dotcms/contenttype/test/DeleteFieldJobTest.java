@@ -46,8 +46,6 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.structure.business.FieldAPI;
-import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.quartz.job.DeleteFieldJob;
 import com.dotmarketing.quartz.job.TestJobExecutor;
 
@@ -57,9 +55,9 @@ import com.dotmarketing.quartz.job.TestJobExecutor;
  * successful for the different OOTB fields in the system. This is the 4.1 way
  * of creating and deleting fields using the new Field and Content Type APIs.
  * 
- * @author Will Ezell
+ * @author Jose Castro
  * @version 4.1
- * @since Oct 17, 2016
+ * @since Apr 3, 2016
  *
  */
 public class DeleteFieldJobTest extends ContentTypeBaseTest {
@@ -170,7 +168,6 @@ public class DeleteFieldJobTest extends ContentTypeBaseTest {
 		// Image Field
 		final String tagName = "Tag Field" + currentTime;
 		final String tagVariable = "tagField" + currentTime;
-		final String tagValue = "community,united states,test";
 
 		// Constant Field
 		final String constantName = "Constant Field" + currentTime;
@@ -191,7 +188,7 @@ public class DeleteFieldJobTest extends ContentTypeBaseTest {
 		final String tabDividerVariable = "tabDividerField" + currentTime;
 		final String tabDividerValue = "Test Tab Divider";
 
-		// Permisions Tab Field
+		// Permissions Tab Field
 		final String permissionsTabName = "Permissions Tab Field" + currentTime;
 		final String permissionsTabVariable = "permissionsField" + currentTime;
 		final String permissionsTabValue = "Test Permissions Tab";
@@ -209,7 +206,6 @@ public class DeleteFieldJobTest extends ContentTypeBaseTest {
 		// Binary Field
 		final String binaryName = "Binary Field" + currentTime;
 		final String binaryVariable = "binaryField" + currentTime;
-		final String binaryValue = "4f43f9af-9ee6-4e17-8b50-10c4039186ee";
 
 		// Custom Field
 		final String customName = "CustomField" + currentTime;
@@ -471,22 +467,20 @@ public class DeleteFieldJobTest extends ContentTypeBaseTest {
 					.name(tagName)
 					.variable(tagVariable)
 					.contentTypeId(contentType.id())
-					.required(Boolean.TRUE)
 					.listed(Boolean.TRUE)
 					.indexed(Boolean.TRUE)
 					.searchable(Boolean.TRUE)
 					.build();
 			tagField = fieldApi.save(tagField, user);
-			com.dotmarketing.portlets.structure.model.Field oldTagField = asOldField(tagField);
 			fieldList.add(tagField);
 
 			Field constantField = ImmutableConstantField.builder()
 					.name(constantName)
 					.variable(constantVariable)
 					.contentTypeId(contentType.id())
+					.values(constantValue)
 					.build();
 			constantField = fieldApi.save(constantField, user);
-			com.dotmarketing.portlets.structure.model.Field oldConstantField = asOldField(constantField);
 			fieldList.add(constantField);
 
 			Field categoryField = ImmutableCategoryField.builder()
@@ -495,7 +489,6 @@ public class DeleteFieldJobTest extends ContentTypeBaseTest {
 					.contentTypeId(contentType.id())
 					.build();
 			categoryField = fieldApi.save(categoryField, user);
-			com.dotmarketing.portlets.structure.model.Field oldCategoryField = asOldField(categoryField);
 			fieldList.add(categoryField);
 
 			Field lineDividerField = ImmutableLineDividerField.builder()
@@ -505,7 +498,6 @@ public class DeleteFieldJobTest extends ContentTypeBaseTest {
 					.values(lineDividerValue)
 					.build();
 			lineDividerField = fieldApi.save(lineDividerField, user);
-			com.dotmarketing.portlets.structure.model.Field oldLineDividerField = asOldField(lineDividerField);
 			fieldList.add(lineDividerField);
 
 			Field tabDividerField = ImmutableTabDividerField.builder()
@@ -515,7 +507,6 @@ public class DeleteFieldJobTest extends ContentTypeBaseTest {
 					.values(tabDividerValue)
 					.build();
 			tabDividerField = fieldApi.save(tabDividerField, user);
-			com.dotmarketing.portlets.structure.model.Field oldTabDividerField = asOldField(tabDividerField);
 			fieldList.add(tabDividerField);
 
 			Field permissionsTabField = ImmutablePermissionTabField.builder()
@@ -525,7 +516,6 @@ public class DeleteFieldJobTest extends ContentTypeBaseTest {
 					.values(permissionsTabValue)
 					.build();
 			permissionsTabField = fieldApi.save(permissionsTabField, user);
-			com.dotmarketing.portlets.structure.model.Field oldPermissionsTabField = asOldField(permissionsTabField);
 			fieldList.add(permissionsTabField);
 
 			Field relationshipsTabField = ImmutableRelationshipsTabField.builder()
@@ -535,7 +525,6 @@ public class DeleteFieldJobTest extends ContentTypeBaseTest {
 					.values(relationshipsTabValue)
 					.build();
 			relationshipsTabField = fieldApi.save(relationshipsTabField, user);
-			com.dotmarketing.portlets.structure.model.Field oldRelationshipsTabField = asOldField(relationshipsTabField);
 			fieldList.add(relationshipsTabField);
 
 			Field hiddenField = ImmutableHiddenField.builder()
@@ -545,7 +534,6 @@ public class DeleteFieldJobTest extends ContentTypeBaseTest {
 					.values(hiddenValue)
 					.build();
 			hiddenField = fieldApi.save(hiddenField, user);
-			com.dotmarketing.portlets.structure.model.Field oldHiddenField = asOldField(hiddenField);
 			fieldList.add(hiddenField);
 
 			Field binaryField = ImmutableBinaryField.builder()
@@ -555,7 +543,6 @@ public class DeleteFieldJobTest extends ContentTypeBaseTest {
 					.searchable(Boolean.TRUE)
 					.build();
 			binaryField = fieldApi.save(binaryField, user);
-			com.dotmarketing.portlets.structure.model.Field oldBinaryField = asOldField(binaryField);
 			fieldList.add(binaryField);
 
 			Field customField = ImmutableCustomField.builder()
@@ -571,10 +558,10 @@ public class DeleteFieldJobTest extends ContentTypeBaseTest {
 					.name(siteOrFolderName)
 					.variable(siteOrFolderVariable)
 					.contentTypeId(contentType.id())
+					.values(siteOrFolderValue)
 					.indexed(Boolean.TRUE)
 					.build();
 			siteOrFolderField = fieldApi.save(siteOrFolderField, user);
-			com.dotmarketing.portlets.structure.model.Field oldSiteOrFolderField = asOldField(siteOrFolderField);
 			fieldList.add(siteOrFolderField);
 
 			Field keyValueField = ImmutableKeyValueField.builder()
@@ -612,17 +599,7 @@ public class DeleteFieldJobTest extends ContentTypeBaseTest {
 			contentletAPI.setContentletProperty(contentlet, oldWysiwygField, wysiwygValue);
 			contentletAPI.setContentletProperty(contentlet, oldFileField, fileValue);
 			contentletAPI.setContentletProperty(contentlet, oldImageField, imageValue);
-			contentletAPI.setContentletProperty(contentlet, oldTagField, tagValue);
-			contentletAPI.setContentletProperty(contentlet, oldConstantField, constantValue);
-			contentletAPI.setContentletProperty(contentlet, oldCategoryField, null);
-			contentletAPI.setContentletProperty(contentlet, oldLineDividerField, lineDividerValue);
-			contentletAPI.setContentletProperty(contentlet, oldTabDividerField, tabDividerValue);
-			contentletAPI.setContentletProperty(contentlet, oldPermissionsTabField, permissionsTabValue);
-			contentletAPI.setContentletProperty(contentlet, oldRelationshipsTabField, relationshipsTabValue);
-			contentletAPI.setContentletProperty(contentlet, oldHiddenField, hiddenValue);
-			contentletAPI.setContentletProperty(contentlet, oldBinaryField, binaryValue);
 			contentletAPI.setContentletProperty(contentlet, oldCustomField, customValue);
-			contentletAPI.setContentletProperty(contentlet, oldSiteOrFolderField, siteOrFolderValue);
 			contentletAPI.setContentletProperty(contentlet, oldKeyValueField, StringUtils.EMPTY);
 
 			// Save the content
@@ -767,17 +744,7 @@ public class DeleteFieldJobTest extends ContentTypeBaseTest {
 			assertNull(contentletFromDB.get(wysiwygVariable));
 			assertNull(contentletFromDB.get(fileVariable));
 			assertNull(contentletFromDB.get(imageVariable));
-			assertNull(contentletFromDB.get(tagVariable));
-			assertNull(contentletFromDB.get(constantVariable));
-			assertNull(contentletFromDB.get(categoryVariable));
-			assertNull(contentletFromDB.get(lineDividerVariable));
-			assertNull(contentletFromDB.get(tabDividerVariable));
-			assertNull(contentletFromDB.get(permissionsTabVariable));
-			assertNull(contentletFromDB.get(relationshipsTabVariable));
-			assertNull(contentletFromDB.get(hiddenVariable));
-			assertNull(contentletFromDB.get(binaryVariable));
 			assertNull(contentletFromDB.get(customVariable));
-			assertNull(contentletFromDB.get(siteOrFolderVariable));
 			assertNull(contentletFromDB.get(keyValueVariable));
 		} catch (Exception e) {
 			throw new RuntimeException(e);
