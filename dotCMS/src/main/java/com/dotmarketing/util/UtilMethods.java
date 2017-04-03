@@ -1273,6 +1273,7 @@ public class UtilMethods {
         if (isSet(text)) {
             text = replace(text, "\"", "${quote}");
             text = replace(text, "##", "${pounds}");
+            text = replace(text, "\\", "&#92;"); //this fixes issue 10529
             return text.trim();
         }
 

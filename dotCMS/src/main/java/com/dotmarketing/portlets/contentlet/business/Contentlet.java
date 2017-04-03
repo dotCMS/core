@@ -12,6 +12,7 @@ import java.util.Map;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
+import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
 import com.dotcms.repackage.org.apache.commons.lang.builder.EqualsBuilder;
 import com.dotcms.repackage.org.apache.commons.lang.builder.HashCodeBuilder;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
@@ -25,6 +26,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 /** @author Hibernate CodeGenerator */
 public class Contentlet extends WebAsset implements Serializable {
@@ -1607,9 +1609,12 @@ public class Contentlet extends WebAsset implements Serializable {
 			if(value != null && value instanceof Timestamp){
 				value = new Date(((Timestamp)value).getTime());
 			}
+
+			/* This code is not being used anymore - issue 10529
 			if(value!=null && value instanceof String && ((String)value).indexOf("\\u")>-1) {
 				value = ((String)value).replace("\\u", "${esc.b}u");
 			}
+			*/
 			BeanUtils.setProperty(this, f.getFieldContentlet(), value);
 		}catch(IllegalArgumentException iae){
 			Logger.error(this, "Unable to set the contentlet field.");

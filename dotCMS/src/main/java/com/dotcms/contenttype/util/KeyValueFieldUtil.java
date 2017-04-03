@@ -28,8 +28,16 @@ public class KeyValueFieldUtil {
 				return keyValueMap;
 			}
 
+			// the following code fixes issue 10529
+			String json2;
+			if (json.contains("\\")) {
+				json2 = UtilMethods.replace(json, "\\", "&#92;");
+			} else {
+				json2 = json;
+			}
+
 			Gson gson = new Gson();
-			return gson.fromJson(json, new TypeToken<LinkedHashMap<String, String>>() {
+			return gson.fromJson(json2, new TypeToken<LinkedHashMap<String, String>>() {
 			}.getType());
 		}
 		return keyValueMap;
