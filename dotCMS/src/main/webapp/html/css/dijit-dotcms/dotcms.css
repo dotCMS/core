@@ -3008,6 +3008,10 @@ html, body {
   display: none;
 }
 
+.dijitSelect .dijitArrowButtonContainer {
+  padding-top: 14px;
+}
+
 .dijitTextBox {
   background-color: #fff;
   border: solid 1px #C5C5C5;
@@ -10231,7 +10235,6 @@ a.category_higlighted, a.tag_higlighted {
 }
 .permissionWrapper .dijitContentPane {
   padding: 24px 0;
-  box-sizing: content-box;
 }
 
 .permissionTable .permissionType {
