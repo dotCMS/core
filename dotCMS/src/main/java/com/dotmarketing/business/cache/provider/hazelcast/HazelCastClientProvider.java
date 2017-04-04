@@ -120,7 +120,7 @@ public class HazelCastClientProvider extends CacheProvider {
             CacheStats stats = new CacheStats();
 
             stats.addStat("cache-region", group);
-            stats.addStat("cache-local-memory-cost", hazel.getMap(group).getLocalMapStats().getOwnedEntryMemoryCost());
+            stats.addStat("cache-local-memory-cost", UtilMethods.prettyByteify(hazel.getMap(group).getLocalMapStats().getOwnedEntryMemoryCost()));
             stats.addStat("cache-local-heap-cost", hazel.getMap(group).getLocalMapStats().getHeapCost());
             stats.addStat("cache-requests", hazel.getMap(group).getLocalMapStats().getGetOperationCount());
             stats.addStat("cache-hits", hazel.getMap(group).getLocalMapStats().getHits());

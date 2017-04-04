@@ -20,6 +20,7 @@ import com.dotcms.publisher.endpoint.business.PublishingEndPointCacheImpl;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.jgroups.JGroupsCacheTransport;
+import com.dotmarketing.business.jgroups.NullTransport;
 import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.FolderCacheImpl;
@@ -137,7 +138,7 @@ public class CacheLocator extends Locator<CacheIndex>{
 		Logger.info(CacheLocator.class, "loading cache administrator: "+clazz);
 		try{
 			adminCache = new CommitListenerCacheWrapper((DotCacheAdministrator) Class.forName(clazz).newInstance());
-			adminCache.setTransport(new JGroupsCacheTransport());
+			adminCache.setTransport(new NullTransport());
 		}
 		catch(Exception e){
 			Logger.fatal(CacheLocator.class, "Unable to load Cache Admin:" + clazz, e);
