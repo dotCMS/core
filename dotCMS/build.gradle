@@ -29,7 +29,6 @@ configurations {
     compile
     buildlibs
     starter
-    coreWeb
     provided
     felix
 }
@@ -111,7 +110,6 @@ dependencies {
     compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
     starter group: 'com.dotcms', name: 'starter', version: '20170320', ext: 'zip'
-    coreWeb group: 'com.dotcms', name: 'core-web', version: '4.0.0-SNAPSHOT', ext: 'zip', changing: true
 
     providedCompile "javax.servlet:javax.servlet-api:3.1.0"
     providedCompile fileTree("../libs/buildlibs").include('**/*.jar')
@@ -221,10 +219,6 @@ war {
     from (configurations.starter) {
         into dotcmsFolder
         rename ( /starter(.+)\.zip/, "starter.zip" )
-    }
-
-    from (zipTree(configurations.coreWeb.files.toArray()[0])) {
-        into angularFolder
     }
 }
 war.finalizedBy 'undeployPlugins'
