@@ -137,7 +137,7 @@ public class ViewStructureAction extends DotPortletAction {
                 orderby = "mod_date desc,upper(name)";
                 direction = "asc";
             }
-            if (orderby.equals("name")) {
+            if ("name".equals(orderby)) {
                 orderby = "upper(name)";
             }
 
@@ -172,7 +172,7 @@ public class ViewStructureAction extends DotPortletAction {
                     }
                 }
 
-                if (contentTypeBaseType != null && !contentTypeBaseType.toString().equals("0")) {
+                if (contentTypeBaseType != null && !"0".equals(contentTypeBaseType.toString())) {
                     if (!queryCondition.equals("")) {
                         queryCondition += " and structuretype = " + contentTypeBaseType + " ";
                     } else {
@@ -184,7 +184,7 @@ public class ViewStructureAction extends DotPortletAction {
                 Logger.debug(this, "Getting all Content Types");
             }
 
-            if (UtilMethods.isSet(showSystem) && showSystem.equals("1")) {
+            if (UtilMethods.isSet(showSystem) && "1".equals(showSystem)) {
                 if (!queryCondition.equals("")) {
                     queryCondition += " and system = " + DbConnectionFactory.getDBTrue() + " ";
                 } else {
@@ -200,9 +200,9 @@ public class ViewStructureAction extends DotPortletAction {
             req.setAttribute(countWebKey, new Integer(count));
             req.setAttribute(viewWebKey, contentTypes);
             if (UtilMethods.isSet(req.getParameter("direction"))) {
-                if (req.getParameter("direction").equals("asc")) {
+                if ("asc".equals(req.getParameter("direction"))) {
                     req.setAttribute("direction", "desc");
-                } else if (req.getParameter("direction").equals("desc")) {
+                } else if ("desc".equals(req.getParameter("direction"))) {
                     req.setAttribute("direction", "asc");
                 } else {
                     req.setAttribute("direction", "desc");
