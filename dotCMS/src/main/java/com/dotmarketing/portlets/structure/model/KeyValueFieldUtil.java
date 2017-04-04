@@ -1,13 +1,5 @@
 package com.dotmarketing.portlets.structure.model;
 
-import com.dotcms.repackage.com.fasterxml.jackson.core.JsonFactory;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotcms.util.marshal.MarshalFactory;
-import com.dotmarketing.portlets.contentlet.business.ContentletCache;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
