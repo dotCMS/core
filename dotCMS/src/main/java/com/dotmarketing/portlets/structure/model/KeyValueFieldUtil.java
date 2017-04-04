@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.structure.model;
 
 import com.dotcms.repackage.com.fasterxml.jackson.core.JsonFactory;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotcms.util.marshal.MarshalFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -45,16 +46,14 @@ public class KeyValueFieldUtil {
 //			}
 
             // the following code fixes issue 10529
-            String json2;
+            String replacedJSJson;
             if (json.contains("\\")) {
-                json2 = UtilMethods.replace(json, "\\", "&#92;");
+                replacedJSJson = UtilMethods.replace(json, "\\", "&#92;");
             } else {
-                json2 = json;
+                replacedJSJson = json;
             }
 
-            Gson gson = new Gson();
-            return gson.fromJson(json2, new TypeToken<LinkedHashMap<String, String>>() {
-            }.getType());
+            return MarshalFactory.getInstance().getMarshalUtils().unmarshal(replacedJSJson, Map.class);
         }
         return keyValueMap;
     }
