@@ -254,16 +254,16 @@ defaultTasks 'help', 'tasks'
 //Tasks generated will be called: uploadEnterprise, uploadLicense, uploadDotcms, uploadStarter and uploadAntTooling
 //respectively
 ['Enterprise', 'License', 'Dotcms', 'Starter', 'AntTooling'].each { taskName ->
-    task "upload$taskName"(dependsOn: 'generateArtifact') << {
+    task "upload$taskName"() << {
         updateSubmoduleReference()
     }
 }
 
-uploadEnterprise.finalizedBy "uploadArchives"
-uploadLicense.finalizedBy "uploadArchives"
-uploadDotcms.finalizedBy "uploadArchives"
-uploadStarter.finalizedBy "uploadArchives"
-uploadAntTooling.finalizedBy "uploadArchives"
+uploadEnterprise.finalizedBy "generateArtifact"
+uploadLicense.finalizedBy "generateArtifact"
+uploadDotcms.finalizedBy "generateArtifact"
+uploadStarter.finalizedBy "generateArtifact"
+uploadAntTooling.finalizedBy "generateArtifact"
 
 task generateArtifact(type: GradleBuild) {
 
@@ -278,11 +278,12 @@ task generateArtifact(type: GradleBuild) {
 }
 generateArtifact.onlyIf { !submodulePath.equals("")}
 
+generateArtifact.finalizedBy "uploadArchives"
+
 //Updating submodule reference (commits and pushes reference)
 def updateSubmoduleReference(){
 
     if(!(submodulePath.equals("") || submodulePath.equals("."))){
-
 
         git.add(patterns: ["dotCMS/$submodulePath"])
 
@@ -305,9 +306,6 @@ Parameters:
         -> Required
     password:                       - password of the user with upload privileges
         -> Required
-    file: File to upload.           - if this parameter is specified, the file path specified will be used 
-                                      as the artifact, otherwise, a new artifact will be generated
-        -> Optional
 
 Example of use:
 
@@ -329,9 +327,6 @@ Parameters:
         -> Required
     password:                       - password of the user with upload privileges
         -> Required
-    file: File to upload.           - if this parameter is specified, the file path specified will be used 
-                                      as the artifact, otherwise, a new artifact will be generated
-        -> Optional
 
 Example of use:
 
@@ -353,9 +348,6 @@ Parameters:
         -> Required
     password:                       - password of the user with upload privileges
         -> Required
-    file: File to upload.           - if this parameter is specified, the file path specified will be used 
-                                      as the artifact, otherwise, a new artifact will be generated
-        -> Optional
 
 Example of use:
 
