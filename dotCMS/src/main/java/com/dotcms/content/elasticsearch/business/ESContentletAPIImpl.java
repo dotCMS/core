@@ -3251,6 +3251,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				// DOTCMS-7290
 				DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
 				Host host = APILocator.getHostAPI().find(contIdent.getHostId(), user, respectFrontendRoles);
+				ContentletServices.invalidateLive(contentlet);
+				ContentletServices.invalidateWorking(contentlet);
 
                 this.contentTypeCache.clearRecents(contentlet.getModUser());
 
