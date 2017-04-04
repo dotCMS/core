@@ -190,19 +190,9 @@ processResources {
 
 // By default the war task compiles everything under src/main/java into WEB-INF/classes/
 // but, instead, we want to compile everything on a .jar file and put it under WEB-INF/lib.
-war.dependsOn 'deployPlugins','installDotcmsUI', 'makeDotAdminFolder'
-war.finalizedBy 'cleanNodeModules'
+war.dependsOn 'deployPlugins','installDotcmsUI'
 
 war {
-    
-    String dotAdminFolder = "./src/main/webapp/$angularFolder"
-
-    project.copy {
-        from "./node_modules/dotcms-ui"
-        into dotAdminFolder
-        include "**/*.*"
-    }
-
     classpath = classpath - sourceSets.main.output.classesDir
 
     if (gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
@@ -761,6 +751,8 @@ task installDotcmsUI(type: NpmTask) {
     }else{
         args = ['install', 'dotcms-ui@' + coreWebReleaseVersion]
     }
+
+    finalizedBy 'copyNodeModules'
 }
 
 task makeDotAdminFolder(type: DefaultTask) {
@@ -771,4 +763,13 @@ task makeDotAdminFolder(type: DefaultTask) {
 task cleanNodeModules(type: Delete) {
     delete "./node_modules"
     followSymlinks = true
+}
+
+task copyNodeModules(type: Copy) {
+    dependsOn 'makeDotAdminFolder'
+
+    from (file("./node_modules/dotcms-ui"))
+    into("./src/main/webapp/$angularFolder")
+
+    finalizedBy 'cleanNodeModules'
 }
