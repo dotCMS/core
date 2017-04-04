@@ -22,11 +22,7 @@ package org.apache.velocity.runtime.parser.node;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.List;
 
-import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
-import com.dotcms.repackage.org.apache.commons.lang.text.StrBuilder;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
@@ -50,8 +46,7 @@ public class SimpleNode implements Node, Serializable
     protected Node[] children;
 
     /** */
-    protected int id;
-
+    protected int id,  line,column;
     /** */
     // TODO - It seems that this field is only valid when parsing, and should not be kept around.    
     private transient Parser parser;
@@ -65,15 +60,13 @@ public class SimpleNode implements Node, Serializable
     /** */
     protected boolean invalid = false;
 
-    /** */
-    private transient Token jjtFirst;    
-    
-    protected List<Token> tokens;
-    
-    
+
     protected String templateName;
 
+    protected String firstImage, lastImage;
     
+    protected transient Token first,last;
+    protected String literal = null;
     /**
      * @param i
      */
@@ -98,7 +91,7 @@ public class SimpleNode implements Node, Serializable
      */
     public void jjtOpen()
     {
-        jjtFirst = parser.getToken(1); // added
+        first = parser.getToken(1); // added
     }
 
     /**
@@ -106,31 +99,31 @@ public class SimpleNode implements Node, Serializable
      */
     public void jjtClose()
     {
-        Token last = parser.getToken(0); // added
-        parser = null;
-        
-        tokens=new ArrayList<Token>();
-        Token t=jjtFirst;
-        while(t!=null) {
-            Token n=new Token();
-            n.beginColumn=t.beginColumn; n.endColumn=t.endColumn;
-            n.beginLine=t.beginLine; n.image=t.image;
-            n.kind=t.kind; n.endLine=t.endLine;
-            n.specialToken=t.specialToken;
-            tokens.add(n);
-            
-            if(t==last) {
-                break;
-            }
-            else {
-                t=t.next;
-            }
-        }
-        jjtFirst=null;
+      last = parser.getToken(0); // added
     }
     
-    public List<Token> getTokens() {
-        return tokens;
+    /**
+     * @param t
+     */
+    public void setFirstToken(Token t)
+    {
+        this.first = t;
+    }
+
+    /**
+     * @see org.apache.velocity.runtime.parser.node.Node#getFirstToken()
+     */
+    public Token getFirstToken()
+    {
+        return first;
+    }
+
+    /**
+     * @see org.apache.velocity.runtime.parser.node.Node#getLastToken()
+     */
+    public Token getLastToken()
+    {
+        return last;
     }
     
     /**
@@ -265,19 +258,32 @@ public class SimpleNode implements Node, Serializable
      */
     public String literal()
     {
+      if( literal != null )
+      {
+          return literal;
+      }
+      if (first ==null || last==null){
+        return null;
+      }
+      
+      
+      
         // if we have only one string, just return it and avoid
         // buffer allocation. VELOCITY-606
-        if (tokens.size()==1)
+        if (first == last)
         {
-            return NodeUtils.tokenLiteral(tokens.get(0));
+            literal = NodeUtils.tokenLiteral(first);
+            return literal;
         }
-
-        StrBuilder sb = new StrBuilder();
-        for(Token t : tokens) {
+        Token t = first;
+        StringBuilder sb = new StringBuilder(NodeUtils.tokenLiteral(t));
+        while (t != last)
+        {
+            t = t.next;
             sb.append(NodeUtils.tokenLiteral(t));
         }
-        
-        return sb.toString();
+        literal = sb.toString();
+        return literal;
     }
 
     /**
@@ -296,7 +302,8 @@ public class SimpleNode implements Node, Serializable
         {
             jjtGetChild(i).init( context, data);
         }
-
+        line = first.beginLine;
+        column = first.beginColumn;
         return data;
     }
 
@@ -386,7 +393,7 @@ public class SimpleNode implements Node, Serializable
      */
     public int getLine()
     {
-        return tokens.get(0).beginLine;
+        return line;
     }
 
     /**
@@ -394,7 +401,7 @@ public class SimpleNode implements Node, Serializable
      */
     public int getColumn()
     {
-        return tokens.get(0).beginColumn;
+        return column;
     }
     
     /**
@@ -402,22 +409,29 @@ public class SimpleNode implements Node, Serializable
      */
     public String toString()
     {
-        StrBuilder str = new StrBuilder();
-        
-        boolean first = true;
-        for(Token t : tokens) {
-            str.append("[").append(t.image).append("]");
-            
-            if(first) first=false; else str.append(", ");
+        StringBuilder tokens = new StringBuilder();
+
+        for (Token t = getFirstToken(); t != null; )
+        {
+            tokens.append("[").append(t.image).append("]");
+            if (t.next != null)
+            {
+                if (t.equals(getLastToken()))
+                {
+                    break;
+                }
+                else
+                {
+                    tokens.append(", ");
+                }
+            }
+            t = t.next;
         }
-        
-        return new ToStringBuilder(this)
-            .append("id", getType())
-            .append("info", getInfo())
-            .append("invalid", isInvalid())
-            .append("children", jjtGetNumChildren())
-            .append("tokens", str)
-            .toString();
+        String tok = tokens.toString();
+        if (tok.length() > 50) tok = tok.substring(0, 50) + "...";
+        return getClass().getSimpleName() + " [id=" + id + ", info=" + info + ", invalid="
+                + invalid
+                + ", tokens=" + tok + "]";
     }
 
     public String getTemplateName()
@@ -427,6 +441,44 @@ public class SimpleNode implements Node, Serializable
     
     private void readObject(java.io.ObjectInputStream ois) throws IOException, ClassNotFoundException{ 
         ois.defaultReadObject();
+    }
+
+    public void cleanupParserAndTokens()
+    {
+        this.parser = null;
+        this.first = null;
+        this.last = null;
+    }
+
+    public String getFirstTokenImage()
+    {
+        if(firstImage ==null){
+          if(first!=null){
+            firstImage = first.image;
+          }
+        }
+        return firstImage;
+    }
+    
+    public String getLastTokenImage()
+    {
+        if(lastImage ==null){
+          if(last!=null){
+            lastImage = last.image;
+          }
+        }
+        return lastImage;
+    }
+    public void saveTokenImages()
+    {
+        if( first != null )
+        {
+            this.firstImage = first.image;
+        }
+        if( last != null )
+        {
+            this.lastImage = last.image;
+        }
     }
 }
 
