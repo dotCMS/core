@@ -198,7 +198,8 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
 
 			Field selectBooleanField = new Field("selectBooleanField_" + currentTime, Field.FieldType.SELECT,
 					Field.DataType.BOOL, contentType, required, listed, indexed, 1,
-					"Yes|" + DbConnectionFactory.getDBTrue() + "\r\nNo|" + DbConnectionFactory.getDBFalse(),
+					"Yes|" + DbConnectionFactory.getDBTrue().replaceAll("'", StringUtils.EMPTY) + "\r\nNo|"
+							+ DbConnectionFactory.getDBFalse().replaceAll("'", StringUtils.EMPTY),
 					StringUtils.EMPTY, StringUtils.EMPTY, !fixed, !readOnly, searchable);
 			selectBooleanField.setVelocityVarName(selectBooleanFieldVarName);
 			selectBooleanField = FieldFactory.saveField(selectBooleanField);
