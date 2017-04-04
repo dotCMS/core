@@ -6,8 +6,6 @@ import com.dotcms.util.marshal.MarshalFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
