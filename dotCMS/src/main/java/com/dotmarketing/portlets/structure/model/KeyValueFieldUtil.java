@@ -14,46 +14,12 @@ import java.util.Map;
  * Utility class to handle Key Value field
  *
  * @author Roger
+ * @deprecated Please use the one in the com.dotcms.contenttype.util package
  */
 public class KeyValueFieldUtil {
 
-    private static final JsonFactory factory = new JsonFactory();
-    private static final ObjectMapper mapper = new ObjectMapper( factory );
-
     public static Map<String, Object> JSONValueToHashMap ( final String json ) {
-
-        LinkedHashMap<String, Object> keyValueMap = new LinkedHashMap<String, Object>();
-        if ( UtilMethods.isSet( json ) ) {
-
-            if ( json.equals( ContentletCache.CACHED_METADATA ) ) {
-
-                /*
-                 Contentlet.get(key) already verify for the metadata field if the data is cached in order to get the information from cache.
-
-                 Anyone calling this method for metadata should do the same, verify if the data is cached and if it is load
-                 that cached data before to call this method.
-                 */
-                Logger.error( KeyValueFieldUtil.class, "Trying to parse JSON content for cached Metadata, it is required first to search the data into the cache." );
-                return keyValueMap;
-            }
-//			TypeReference<LinkedHashMap<String,Object>> typeRef = new TypeReference<LinkedHashMap<String,Object>>() {}; 
-//			try {
-//				keyValueMap = mapper.readValue(json, typeRef);
-//			} catch (Exception e) {
-//				//TODO
-//			}
-
-            // the following code fixes issue 10529
-            String replacedJSJson;
-            if (json.contains("\\")) {
-                replacedJSJson = UtilMethods.replace(json, "\\", "&#92;");
-            } else {
-                replacedJSJson = json;
-            }
-
-            return MarshalFactory.getInstance().getMarshalUtils().unmarshal(replacedJSJson, Map.class);
-        }
-        return keyValueMap;
+        return com.dotcms.contenttype.util.KeyValueFieldUtil.JSONValueToHashMap(json);
     }
 
 }
