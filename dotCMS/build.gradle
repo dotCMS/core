@@ -80,14 +80,6 @@ idea {
         testSourceDirs += file('integration-test/java')
         testSourceDirs += file('functional-test/java')
 
-        def enterpriseSrcFolder = file('src/main/enterprise/src/main/java')
-        def licenseSrcFolder    = file('src/main/license/src/main/java')
-
-        if (enterpriseSrcFolder.exists() && licenseSrcFolder.exists()){
-            sourceDirs += enterpriseSrcFolder
-            sourceDirs += licenseSrcFolder
-        }
-
         //if you prefer different SDK than the one inherited from IDEA project
         jdkName = '1.8'
 
@@ -121,8 +113,10 @@ dependencies {
 // Import and apply the dependencies from the dependencies scripts.
 apply from: "$rootDir/dependencies.gradle"
 
+def enterpriseSrcFolder = file("$enterpriseProjectHome/src/main/java")
+def licenseSrcFolder    = file("$licenseProjectHome/src/main/java")
 
-if (gradle.startParameter.taskNames.contains("deployWarTomcatDev")) {
+if (enterpriseSrcFolder.exists() && licenseSrcFolder.exists()){
 	sourceSets {
     	main {
         	java { 
