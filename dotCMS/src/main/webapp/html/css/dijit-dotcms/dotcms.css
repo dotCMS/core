@@ -4436,12 +4436,12 @@ html, body {
   float: none;
 }
 .dijitTreeNode {
-  background-image: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/i.gif");
+  background-image: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/i.gif");
   background-repeat: repeat-y;
   zoom: 1;
 }
 .dijitTreeIsLast {
-  background: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/i_half.gif") no-repeat;
+  background: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/i_half.gif") no-repeat;
 }
 .dijitTreeIsRoot {
   margin-left: 0;
@@ -4488,16 +4488,16 @@ html, body {
   background-color: rgba(22, 22, 22, 0.025);
 }
 .dijitTreeExpandoOpened {
-  background-image: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/treeExpand_minus.gif");
+  background-image: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/treeExpand_minus.gif");
 }
 .dijitTreeExpandoClosed {
-  background-image: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/treeExpand_plus.gif");
+  background-image: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/treeExpand_plus.gif");
 }
 .dijitTreeExpandoLeaf {
-  background-image: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/treeExpand_leaf.gif");
+  background-image: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/treeExpand_leaf.gif");
 }
 .dijitTreeExpandoLoading {
-  background-image: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/treeExpand_loading.gif");
+  background-image: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/treeExpand_loading.gif");
 }
 .dijitTreeIcon {
   width: 16px;
@@ -4507,13 +4507,13 @@ html, body {
   margin: 3px 3px 0 3px;
 }
 .dijitFolderOpened {
-  background: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/folderOpened.gif") no-repeat;
+  background: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/folderOpened.gif") no-repeat;
 }
 .dijitFolderClosed {
-  background: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/folderClosed.gif") no-repeat;
+  background: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/folderClosed.gif") no-repeat;
 }
 .dijitLeaf {
-  background: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/leaf.gif") no-repeat;
+  background: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/leaf.gif") no-repeat;
 }
 .dijitTreeNode .dojoDndItemBefore, .dijitTreeNode .dojoDndItemAfter {
   border-bottom: none;
@@ -4820,7 +4820,7 @@ html, body {
 }
 
 .dijitProgressBarIndeterminate .dijitProgressBarTile {
-  background-image: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/progressBarAnim.gif");
+  background-image: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/progressBarAnim.gif");
 }
 
 .dijitInline .dijitButton {
@@ -9152,7 +9152,7 @@ dd .buttonCaption {
 
 .removeFilter {
   display: block;
-  background: transparent url(/html/js/dojo/release/dojo/dijit/themes/dmundra/images/tabClose.png) no-repeat scroll center center;
+  background: transparent url(/html/js/dojo/custom-build/dijit/themes/dmundra/images/tabClose.png) no-repeat scroll center center;
   height: 16px;
   width: 20px;
   cursor: pointer;
@@ -9160,7 +9160,7 @@ dd .buttonCaption {
 
 .closeFilter {
   display: block;
-  background: transparent url(/html/js/dojo/release/dojo/dijit/themes/dmundra/images/tabClose.png) no-repeat scroll center center;
+  background: transparent url(/html/js/dojo/custom-build/dijit/themes/dmundra/images/tabClose.png) no-repeat scroll center center;
   height: 16px;
   width: 20px;
   cursor: pointer;

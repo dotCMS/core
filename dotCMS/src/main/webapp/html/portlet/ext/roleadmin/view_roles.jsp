@@ -4,8 +4,12 @@
 <%@ include file="/html/portlet/ext/roleadmin/view_roles_js_inc.jsp" %>
 <%@ include file="/html/portlet/ext/roleadmin/view_role_permissions_js_inc.jsp" %>
 
+<%
+	String dojoPath = Config.getStringProperty("path.to.dojo");
+%>
+
 <style type="text/css">
-	@import url("/html/js/dojo/release/dojo/dojox/grid/resources/tundraGrid.css?b=3.7.0");
+	@import url("<%=dojoPath%>/dojox/grid/resources/tundraGrid.css?b=3.7.0");
 	<%@ include file="/html/portlet/ext/roleadmin/view_roles.css" %>
 </style>
 
