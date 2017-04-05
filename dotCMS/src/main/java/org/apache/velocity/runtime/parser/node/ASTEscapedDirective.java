@@ -35,7 +35,7 @@ import org.apache.velocity.runtime.parser.Parser;
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @version $Id: ASTEscapedDirective.java 731266 2009-01-04 15:11:20Z byron $
  */
-public class ASTEscapedDirective extends SimpleNode
+public class ASTEscapedDirective extends SimpleNode implements TokenImageSaver
 {
     /**
      * @param id

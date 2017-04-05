@@ -52,7 +52,7 @@ import com.dotmarketing.util.VelocityUtil;
  * @author <a href="mailto:geirm@optonline.net">Geir Magnusson Jr.</a>
  * @version $Id: ASTIdentifier.java 732250 2009-01-07 07:37:10Z byron $
  */
-public class ASTIdentifier extends SimpleNode
+public class ASTIdentifier extends SimpleNode implements TokenImageSaver
 {
     private String identifier = "";
 

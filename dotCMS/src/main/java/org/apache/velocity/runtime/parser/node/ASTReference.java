@@ -56,7 +56,7 @@ import com.dotmarketing.util.VelocityUtil;
  * @author <a href="mailto:kjohnson@transparent.com>Kent Johnson</a>
  * @version $Id: ASTReference.java 832302 2009-11-03 05:32:31Z wglass $
 */
-public class ASTReference extends SimpleNode
+public class ASTReference extends SimpleNode implements TokenImageSaver
 {
     /* Reference types */
     private static final int NORMAL_REFERENCE = 1;
