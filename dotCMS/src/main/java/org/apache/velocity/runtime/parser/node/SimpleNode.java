@@ -295,16 +295,18 @@ public class SimpleNode implements Node, Serializable
         /*
          * hold onto the RuntimeServices
          */
-
-        int i, k = jjtGetNumChildren();
-
-        for (i = 0; i < k; i++)
-        {
-            jjtGetChild(i).init( context, data);
-        }
-        line = first.beginLine;
-        column = first.beginColumn;
-        return data;
+          int i, k = jjtGetNumChildren();
+  
+          for (i = 0; i < k; i++)
+          {
+            Node child =jjtGetChild(i);
+            child.init( context, data);
+            child.cleanupParserAndTokens();
+          }
+          line = first.beginLine;
+          column = first.beginColumn;
+          return data;
+        
     }
 
     /**
@@ -442,9 +444,12 @@ public class SimpleNode implements Node, Serializable
     private void readObject(java.io.ObjectInputStream ois) throws IOException, ClassNotFoundException{ 
         ois.defaultReadObject();
     }
-
+    @Override
     public void cleanupParserAndTokens()
     {
+        if(this instanceof TokenImageSaver){
+          saveTokenImages();
+        }
         this.parser = null;
         this.first = null;
         this.last = null;

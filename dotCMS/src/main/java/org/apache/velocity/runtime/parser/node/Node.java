@@ -221,4 +221,6 @@ public interface Node extends Renderable
      * @return cached image (String) of the last Token for this Node returned by the Parser
      */
     String getLastTokenImage();
+
+    void cleanupParserAndTokens();
 }
