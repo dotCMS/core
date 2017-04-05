@@ -55,11 +55,12 @@ THIS FILE AND ITS INCLUDES
 
    	<script type="text/javascript">
 	   	djConfig={
-			   parseOnLoad: true,
-			   useXDomain: false,
-			   isDebug: false,
-			   <%=dojoLocaleConfig%>
-			   modulePaths: { dotcms: "/html/js/dotcms" }
+			parseOnLoad: true,
+			i18n: "<%=dojoPath%>/custom-build/build/",
+			useXDomain: false,
+			isDebug: false,
+			<%=dojoLocaleConfig%>
+			modulePaths: { dotcms: "/html/js/dotcms" }
 	   };
 
 	   	function isInodeSet(x){
@@ -75,8 +76,9 @@ THIS FILE AND ITS INCLUDES
 
 	<script type="text/javascript" src="/html/js/log4js/log4javascript.js"></script>
 	<script type="text/javascript" src="/html/js/log4js/dotcms-log4js.js"></script>
-	<script type="text/javascript" src="<%=dojoPath%>/dojo/dojo.js?b=<%= ReleaseInfo.getVersion() %>"></script>
-  <script type="text/javascript" src="/html/common/javascript.jsp?b=<%= ReleaseInfo.getVersion() %>"></script>
+	<script type="text/javascript" src="/html/js/dojo/custom-build/dojo/dojo.js?b=<%= ReleaseInfo.getVersion() %>"></script>
+	<script type="text/javascript" src="/html/js/dojo/custom-build/build/build.js?b=<%= ReleaseInfo.getVersion() %>"></script>
+  	<script type="text/javascript" src="/html/common/javascript.jsp?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/dwr/engine.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/dwr/util.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/dwr/interface/TemplateAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
@@ -89,45 +91,10 @@ THIS FILE AND ITS INCLUDES
 
 
 	<script type="text/javascript">
-		dojo.require("dijit.Dialog");
-		dojo.require("dijit.form.Button");
-		dojo.require("dijit.form.CheckBox");
-		dojo.require("dijit.form.DateTextBox");
-		dojo.require("dijit.form.FilteringSelect");
-		dojo.require("dijit.form.TextBox");
-		dojo.require("dijit.form.ValidationTextBox");
-		dojo.require("dijit.form.Textarea");
-		dojo.require("dijit.Menu");
-		dojo.require("dijit.MenuItem");
-		dojo.require("dijit.MenuSeparator");
-		dojo.require("dijit.ProgressBar");
-		dojo.require("dijit.PopupMenuItem");
-		dojo.require('dijit.layout.TabContainer');
-		dojo.require('dijit.layout.ContentPane');
-		dojo.require('dojox.layout.ContentPane');
-		dojo.require("dijit.layout.BorderContainer");
-		dojo.require("dijit.TitlePane");
-		dojo.require("dijit.Tooltip");
-		dojo.require("dojo.parser");
-		dojo.require("dojo.fx");
-		dojo.require("dotcms.dojo.data.UsersReadStore");
-		dojo.require("dojox.form.DropDownSelect");
-		dojo.require("dojox.json.query");
-		dojo.require("dijit.form.NumberTextBox");
-		dojo.require("dijit.form.TimeTextBox");
-		dojo.require("dotcms.dijit.image.ImageEditor");
-		dojo.require("dojox.widget.Calendar");
-		dojo.require("dojo.date.locale");
-		dojo.require("dojox.form.Uploader");
-		dojo.require("dojox.form.uploader.FileList");
-		dojo.require("dojox.form.uploader.plugins.HTML5");
-		dojo.require("dijit.form.ComboBox");
-   		dojo.require("dijit.TooltipDialog");
-		dojo.require("dojox.grid.EnhancedGrid");
-		dojo.require("dojox.grid.enhanced.plugins.Menu");
 		dojo.require("dojo.data.ItemFileReadStore");
-		dojo.require("dijit.form.Form");
-		dojo.require("dojo.io.script");
+
+		dojo.require("dotcms.dijit.image.ImageEditor");
+		dojo.require("dotcms.dojo.data.UsersReadStore");
 
 		dojo.addOnLoad(function () {
 			dojo.global.DWRUtil = dwr.util;

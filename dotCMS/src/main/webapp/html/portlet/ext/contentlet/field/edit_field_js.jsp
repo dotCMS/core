@@ -23,9 +23,8 @@
 <%}%>
 <script type="text/javascript">
 
-	dojo.require('dijit.form.Slider');
 	dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
-	dojo.require('dotcms.dijit.form.FileSelector');
+	dojo.require("dotcms.dijit.form.FileSelector");
 	dojo.require("dotcms.dijit.form.FileAjaxUploader");
 	dojo.require("dotcms.dijit.FileBrowserDialog");
 	dojo.require("dojo.dnd.Source");
