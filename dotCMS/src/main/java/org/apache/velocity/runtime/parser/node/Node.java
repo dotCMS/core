@@ -113,11 +113,7 @@ public interface Node extends Renderable
      * @return The first token.
      */
     //public Token getFirstToken();
-    /**
-     * @return The last token.
-     */
-    //public Token getLastToken();
-    public List<Token> getTokens();
+
     /**
      * @return The NodeType.
      */
@@ -167,7 +163,15 @@ public interface Node extends Renderable
      */
     public Object execute(Object o, InternalContextAdapter context)
       throws MethodInvocationException;
-
+    
+    /**
+     * @return The first token.
+     */
+    Token getFirstToken();
+    /**
+     * @return The last token.
+     */
+    Token getLastToken();
     /**
      * @param info
      */
@@ -207,4 +211,16 @@ public interface Node extends Renderable
      * @return the file name of the template
      */
     public String getTemplateName();
+    
+    /**
+     * @return cached image (String) of the first Token for this Node returned by the Parser
+     */
+    String getFirstTokenImage();
+
+    /**
+     * @return cached image (String) of the last Token for this Node returned by the Parser
+     */
+    String getLastTokenImage();
+
+    void cleanupParserAndTokens();
 }

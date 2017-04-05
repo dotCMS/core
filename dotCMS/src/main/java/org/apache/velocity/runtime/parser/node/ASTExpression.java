@@ -26,7 +26,7 @@ import org.apache.velocity.runtime.parser.Parser;
 /**
  *
  */
-public class ASTExpression extends SimpleNode
+public class ASTExpression extends SimpleNode implements TokenImageSaver
 {
     /**
      * @param id
