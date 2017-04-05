@@ -30,9 +30,13 @@
 </script>
 <%@ include file="/html/portlet/ext/useradmin/view_users_js_inc.jsp" %>
 
+<%
+	String dojoPath = Config.getStringProperty("path.to.dojo");
+%>
+
 
 <style type="text/css">
-	@import url("/html/js/dojo/release/dojo/dojox/grid/resources/tundraGrid.css?b=3.7.0");
+	@import url("<%=dojoPath%>/dojox/grid/resources/tundraGrid.css?b=3.7.0");
 	<%request.setAttribute("ViewingUserRole", true); %>
 </style>
 
