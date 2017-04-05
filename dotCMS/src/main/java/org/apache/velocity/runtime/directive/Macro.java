@@ -197,7 +197,7 @@ public class Macro extends Directive
 
         while (i < numArgs)
         {
-            argArray[i] = node.jjtGetChild(i).getTokens().get(0).image;
+            argArray[i] = node.jjtGetChild(i).getFirstTokenImage();
 
             /*
              *  trim off the leading $ for the args after the macro name.
