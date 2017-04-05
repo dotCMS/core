@@ -51,7 +51,7 @@ export class ContentletService {
     private loadContentTypes(): void {
         this.coreWebService.requestView({
             method: RequestMethod.Get,
-            url: 'v1/content/types'
+            url: 'v1/contenttype/basetypes'
         }).pluck('entity').subscribe(
             structureTypeView => {
                 this.structureTypeView = <StructureTypeView[]> structureTypeView;
