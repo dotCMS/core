@@ -52,7 +52,14 @@ export class LoginAsComponent extends BaseComponent {
                 this.close();
             }
             // TODO: Replace the alert below with a modal error message.
-        }, message => alert(message));
+        }, response => {
+
+            if (response.entity) {
+                alert(response.errorsMessages)
+            }else{
+                alert(response);
+            }
+        });
     }
 
     userSelectedHandler($event): void {

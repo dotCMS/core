@@ -35,7 +35,7 @@ export class LoginService {
         this.urls = {
             changePassword: 'v1/changePassword',
             getAuth: 'v1/authentication/logInUser',
-            loginAs: 'v1/users/loginas/userid',
+            loginAs: 'v1/users/loginas',
             loginAsUserList: 'v1/users/loginAsData',
             logout: 'v1/logout',
             logoutAs: 'v1/users/logoutas',
@@ -180,8 +180,12 @@ export class LoginService {
     // TODO: password in the url is a no-no, fix asap. Sanchez and Jose have an idea.
     public loginAs(options: any): Observable<any> {
         return this.coreWebService.requestView({
-            method: RequestMethod.Put,
-            url: `${this.urls.loginAs}/${options.userId}${options.password ? `/pwd/${options.password}` : ''}`
+            method: RequestMethod.Post,
+            url: this.urls.loginAs,
+            body: {
+                userId: options.userId,
+                password: options.password
+            },
         }).map((res) => {
             if (!res.entity.loginAs) {
                 throw res.errorsMessages;
