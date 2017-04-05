@@ -53,10 +53,9 @@ export class LoginAsComponent extends BaseComponent {
             }
             // TODO: Replace the alert below with a modal error message.
         }, response => {
-
             if (response.entity) {
                 alert(response.errorsMessages)
-            }else{
+            } else {
                 alert(response);
             }
         });
