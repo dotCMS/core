@@ -1,5 +1,6 @@
 package com.dotmarketing.servlets;
 
+import com.dotcms.cluster.business.HazelcastUtil;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
@@ -73,7 +74,10 @@ public class InitServlet extends HttpServlet {
     }
 
     public void destroy() {
+        Logger.info(this, "dotCMS shutting down Elastic Search");
     	new ESClient().shutDownNode();
+        Logger.info(this, "dotCMS shutting down Hazelcast");
+    	new HazelcastUtil().shutdown();
         Logger.info(this, "dotCMS shutting down");
 
 

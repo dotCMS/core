@@ -196,6 +196,7 @@
     </map>
 	   
     <map name="adminconfigpool">
+        <in-memory-format>OBJECT</in-memory-format>
         <max-size>271</max-size>
         <eviction-policy>LFU</eviction-policy>
     </map>

@@ -138,7 +138,11 @@ public class CacheLocator extends Locator<CacheIndex>{
 		Logger.info(CacheLocator.class, "loading cache administrator: "+clazz);
 		try{
 			adminCache = new CommitListenerCacheWrapper((DotCacheAdministrator) Class.forName(clazz).newInstance());
-			adminCache.setTransport(new NullTransport());
+
+			String cTransClass = Config.getStringProperty("CACHE_INVALIDATION_TRANSPORT_CLASS","com.dotmarketing.business.jgroups.JGroupsCacheTransport");
+			CacheTransport cTrans = (CacheTransport)Class.forName(cTransClass).newInstance();
+			adminCache.setTransport(cTrans);
+
 		}
 		catch(Exception e){
 			Logger.fatal(CacheLocator.class, "Unable to load Cache Admin:" + clazz, e);

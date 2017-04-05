@@ -20,9 +20,6 @@ import com.hazelcast.core.HazelcastInstance;
  */
 public class HazelCastClientProvider extends CacheProvider {
 
-    /**
-   * 
-   */
   private static final long serialVersionUID = 1L;
     protected HazelcastInstance hazel = null;
     protected Boolean initialized = false;
