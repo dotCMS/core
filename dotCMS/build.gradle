@@ -86,11 +86,7 @@ idea {
     module {
         //and some extra test source dirs
         testSourceDirs += file('integration-test/java')
-
         testSourceDirs += file('functional-test/java')
-
-        sourceDirs += file('src/main/enterprise/src/main/java')
-        sourceDirs += file('src/main/license/src/main/java')
 
         //if you prefer different SDK than the one inherited from IDEA project
         jdkName = '1.8'
@@ -124,8 +120,10 @@ dependencies {
 // Import and apply the dependencies from the dependencies scripts.
 apply from: "$rootDir/dependencies.gradle"
 
+def enterpriseSrcFolder = file("$enterpriseProjectHome/src/main/java")
+def licenseSrcFolder    = file("$licenseProjectHome/src/main/java")
 
-if (gradle.startParameter.taskNames.contains("deployWarTomcatDev")) {
+if (enterpriseSrcFolder.exists() && licenseSrcFolder.exists()){
 	sourceSets {
     	main {
         	java {
@@ -161,7 +159,13 @@ ext {
     }
 }
 
-archivesBaseName = 'dotcms_'+dotcmsReleaseVersion+'_'+dotcmsReleaseBuild
+
+if (project.hasProperty('jarBaseName')) {
+    archivesBaseName = "$jarBaseName"
+}else{
+    archivesBaseName = 'dotcms_'+dotcmsReleaseVersion+'_'+dotcmsReleaseBuild
+}
+
 def tomcatDistBase = "$distLocation/$tomcatDistInstallLocation-$tomcatInstallVersion"
 def dotcmsDistBase = "../$tomcatDistInstallLocation-$tomcatInstallVersion"
 
