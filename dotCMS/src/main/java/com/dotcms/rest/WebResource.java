@@ -136,12 +136,15 @@ public  class WebResource {
 
         checkForceSSL(request);
 
-        InitDataObject initData = new InitDataObject();
-
         if(!UtilMethods.isSet(params))
             params = "";
 
         Map<String, String> paramsMap = buildParamsMap(params);
+        return initWithMap(paramsMap, authenticate, request, rejectWhenNoUser, requiredPortlet);
+    }
+
+    public InitDataObject initWithMap(Map<String, String> paramsMap, boolean authenticate, HttpServletRequest request, boolean rejectWhenNoUser, String requiredPortlet) throws SecurityException {
+        InitDataObject initData = new InitDataObject();
         User user = getCurrentUser(request, paramsMap, rejectWhenNoUser);
 
         if(UtilMethods.isSet(requiredPortlet)) {

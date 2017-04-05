@@ -27,8 +27,6 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.api.v1.content.BaseContentTypesView;
-import com.dotcms.rest.api.v1.content.ContentTypeHelper;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
