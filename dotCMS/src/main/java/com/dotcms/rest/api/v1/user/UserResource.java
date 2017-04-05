@@ -297,11 +297,11 @@ public class UserResource implements Serializable {
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public final Response loginAs(@Context final HttpServletRequest request, final LoginAsForm loginAsForm) throws Exception {
-		InitDataObject initData = webResource.initWithMap(CollectionsUtils.map("userid", loginAsForm.getUserId(), "pwd", loginAsForm.getPassword()),
-				true, request,true, null);
-
 		final String loginAsUserId = loginAsForm.getUserId();
 		final String loginAsUserPwd = loginAsForm.getPassword();
+
+		InitDataObject initData = webResource.init(loginAsUserId, loginAsUserPwd,true, request,
+				true, null);
 		final String serverName = request.getServerName();
 		final User currentUser = initData.getUser();
 		Response response = null;

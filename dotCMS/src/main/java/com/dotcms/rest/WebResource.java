@@ -14,6 +14,7 @@ import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.repackage.org.glassfish.jersey.server.ContainerRequest;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.rest.validation.ServletPreconditions;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.LayoutAPI;
@@ -143,7 +144,11 @@ public  class WebResource {
         return initWithMap(paramsMap, authenticate, request, rejectWhenNoUser, requiredPortlet);
     }
 
-    public InitDataObject initWithMap(Map<String, String> paramsMap, boolean authenticate, HttpServletRequest request, boolean rejectWhenNoUser, String requiredPortlet) throws SecurityException {
+    public InitDataObject init(String userId, String password, boolean authenticate, HttpServletRequest request, boolean rejectWhenNoUser, String requiredPortlet) throws SecurityException {
+        return initWithMap(CollectionsUtils.map("userid", userId, "pwd", password), authenticate, request, rejectWhenNoUser, requiredPortlet);
+    }
+
+    private InitDataObject initWithMap(Map<String, String> paramsMap, boolean authenticate, HttpServletRequest request, boolean rejectWhenNoUser, String requiredPortlet) throws SecurityException {
         InitDataObject initData = new InitDataObject();
         User user = getCurrentUser(request, paramsMap, rejectWhenNoUser);
 
