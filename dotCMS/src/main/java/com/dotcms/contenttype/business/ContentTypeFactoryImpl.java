@@ -61,10 +61,11 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     ContentType type = cache.byVarOrInode(id);
     if (type == null) {
       type =  LocalTransaction.wrapReturn(() -> {
-        return (UUIDUtil.isUUID(id)) ? dbById(id) : dbByVar(id);
+        ContentType t = (UUIDUtil.isUUID(id)) ? dbById(id) : dbByVar(id);
+        t.fields();
+        return t;
       });
       Logger.debug(this.getClass(), "found type by db:" + type.name());
-      type.fields();
       cache.add(type);
     }
     return type;
