@@ -1,6 +1,9 @@
 package com.dotmarketing.business.cache.provider.h22;
 
-import static org.hamcrest.MatcherAssert.assertThat;
+import com.dotcms.repackage.org.apache.commons.lang.RandomStringUtils;
+import com.dotcms.repackage.org.apache.log4j.Logger;
+import com.liferay.util.FileUtil;
+import org.junit.Test;
 
 import java.io.File;
 import java.sql.Connection;
@@ -13,21 +16,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.dotcms.repackage.org.apache.commons.lang.RandomStringUtils;
-import com.dotcms.repackage.org.apache.log4j.BasicConfigurator;
-import com.dotcms.repackage.org.apache.log4j.Logger;
-import com.dotcms.repackage.org.apache.logging.log4j.Level;
-import com.dotcms.repackage.org.apache.logging.log4j.LogManager;
-import com.dotcms.repackage.org.apache.logging.log4j.core.LoggerContext;
-import com.dotcms.repackage.org.apache.logging.log4j.core.appender.ConsoleAppender;
-import com.dotcms.repackage.org.apache.logging.log4j.core.config.AbstractConfiguration;
-import com.dotcms.repackage.org.apache.logging.log4j.core.config.AppenderRef;
-import com.dotcms.repackage.org.apache.logging.log4j.core.config.LoggerConfig;
-import com.liferay.util.FileUtil;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class H22CacheTest {
 
