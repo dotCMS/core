@@ -160,19 +160,19 @@ public class H22Cache extends CacheProvider {
 
 		try {
 			for (int db = 0; db < numberOfDbs; db++) {
-				Optional<Connection> opt = createConnection(true, db);
-				if (!opt.isPresent()) {
-					continue;
-				}
 				
 				for (int table = 0; table < numberOfTablesPerDb; table++) {
-				    Connection c = opt.get();
-				    Logger.warn(this, "c.getAutoCommit():" + c.getAutoCommit());
-					PreparedStatement stmt = c.prepareStatement("DELETE from " + TABLE_PREFIX + table + " WHERE cache_group = ?");
-					stmt.setString(1, fqn.group);
-					stmt.executeUpdate();
-					c.close();
-				}
+		              Optional<Connection> opt = createConnection(true, db);
+		                if (!opt.isPresent()) {
+		                   throw new SQLException("unable to get a connection");
+		                }
+					    Connection c = opt.get();
+					    Logger.warn(this, "c.getAutoCommit():" + c.getAutoCommit());
+						PreparedStatement stmt = c.prepareStatement("DELETE from " + TABLE_PREFIX + table + " WHERE cache_group = ?");
+						stmt.setString(1, fqn.group);
+						stmt.executeUpdate();
+						c.close();
+					}
 
 				
 
