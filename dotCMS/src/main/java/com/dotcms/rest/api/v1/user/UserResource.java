@@ -15,25 +15,19 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.PUT;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
-import com.dotcms.rest.ErrorEntity;
-import com.dotcms.rest.ErrorResponseHelper;
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.WebResource;
+import com.dotcms.rest.*;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.authentication.AuthenticationForm;
 import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.NoSuchUserException;
@@ -292,22 +286,22 @@ public class UserResource implements Serializable {
 	 * 
 	 * @param request
 	 *            - The {@link HttpServletRequest} object.
-	 * @param params
 	 *            - The parameters that can be specified in the REST call.
 	 * @return A {@link Response} containing the status of the operation. This
 	 *         will probably require a page refresh.
 	 * @throws Exception An error occurred when authenticating the request.
 	 */
-	@PUT
-	@Path("/loginas/{params:.*}")
+	@POST
+	@Path("/loginas")
 	@JSONP
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-	public final Response loginAs(@Context final HttpServletRequest request, @PathParam("params") final String params) throws Exception {
-		InitDataObject initData = webResource.init(params, true, request, true, null);
-		final Map<String, String> urlParams = initData.getParamsMap();
-		final String loginAsUserId = getMapValue(urlParams, "userid", null);
-		final String loginAsUserPwd = getMapValue(urlParams, "pwd", null);
+	public final Response loginAs(@Context final HttpServletRequest request, final LoginAsForm loginAsForm) throws Exception {
+		final String loginAsUserId = loginAsForm.getUserId();
+		final String loginAsUserPwd = loginAsForm.getPassword();
+
+		InitDataObject initData = webResource.init(loginAsUserId, loginAsUserPwd,true, request,
+				true, null);
 		final String serverName = request.getServerName();
 		final User currentUser = initData.getUser();
 		Response response = null;
