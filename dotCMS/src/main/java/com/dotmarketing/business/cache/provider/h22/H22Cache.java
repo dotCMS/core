@@ -168,7 +168,7 @@ public class H22Cache extends CacheProvider {
 					 final Optional<Connection> opt = createConnection(true, db); 
 					 
 					if (!opt.isPresent()) {
-					    throw new SQLException("unable to get a connection");
+					    throw new SQLException("Unable to get connection when trying to remove in H22Cache");
 					}
 
 					try {
