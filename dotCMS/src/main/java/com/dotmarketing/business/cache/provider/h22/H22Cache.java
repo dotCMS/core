@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
 import com.dotcms.repackage.org.apache.commons.io.comparator.LastModifiedFileComparator;
 import com.dotcms.repackage.org.apache.commons.io.filefilter.DirectoryFileFilter;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
@@ -160,19 +161,27 @@ public class H22Cache extends CacheProvider {
 
 		try {
 			for (int db = 0; db < numberOfDbs; db++) {
-				Optional<Connection> opt = createConnection(true, db);
-				if (!opt.isPresent()) {
-					continue;
-				}
 				
 				for (int table = 0; table < numberOfTablesPerDb; table++) {
-				    Connection c = opt.get();
-				    Logger.warn(this, "c.getAutoCommit():" + c.getAutoCommit());
-					PreparedStatement stmt = c.prepareStatement("DELETE from " + TABLE_PREFIX + table + " WHERE cache_group = ?");
-					stmt.setString(1, fqn.group);
-					stmt.executeUpdate();
-					c.close();
-				}
+					 Connection connection = null;
+					 PreparedStatement stmt = null;
+					 final Optional<Connection> opt = createConnection(true, db); 
+					 
+					if (!opt.isPresent()) {
+					    throw new SQLException("Unable to get connection when trying to remove in H22Cache");
+					}
+
+					try {
+					    connection = opt.get();
+					    Logger.warn(this, "connection.getAutoCommit():" + connection.getAutoCommit());
+					    stmt = connection.prepareStatement("DELETE from " + TABLE_PREFIX + table + " WHERE cache_group = ?");
+					    stmt.setString(1, fqn.group);
+					    stmt.executeUpdate();
+					} finally {
+					    
+						CloseUtils.closeQuietly(stmt, connection);
+					} 
+			}
 
 				
 
