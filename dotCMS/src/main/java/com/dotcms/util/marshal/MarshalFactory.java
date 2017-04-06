@@ -314,6 +314,12 @@ public class MarshalFactory implements Serializable {
         }
 
         @Override
+        public <T> T unmarshal(final String s, final Type typeOfT) {
+
+            return this.gson.fromJson(s, typeOfT);
+        }
+
+        @Override
         public <T> T unmarshal(final Reader reader, final Class<? extends T> clazz) {
 
             return this.gson.fromJson(reader, clazz);
