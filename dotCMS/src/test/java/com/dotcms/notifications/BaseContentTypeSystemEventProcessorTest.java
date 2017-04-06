@@ -10,7 +10,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
-import com.dotcms.rest.api.v1.content.ContentTypeView;
+import com.dotcms.rest.api.v1.contenttype.ContentTypeView;
 import com.liferay.portal.model.User;
 
 import org.junit.Test;
