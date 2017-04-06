@@ -2,6 +2,7 @@ package com.dotcms.contenttype.util;
 
 import com.dotcms.repackage.com.fasterxml.jackson.core.JsonFactory;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotcms.util.marshal.DotTypeToken;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.util.Logger;
@@ -52,7 +53,12 @@ public class KeyValueFieldUtil {
                 replacedJSJson = json;
             }
 
-            return MarshalFactory.getInstance().getMarshalUtils().unmarshal(replacedJSJson, Map.class);
+            try {
+                return MarshalFactory.getInstance().getMarshalUtils().unmarshal(replacedJSJson, new DotTypeToken<LinkedHashMap<String, String>>().getType());
+            } catch (Exception ex) {
+                Logger.error(KeyValueFieldUtil.class, "Error parsing json: " + json, ex);
+            }
+
         }
         return keyValueMap;
     }
