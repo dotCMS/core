@@ -29,7 +29,7 @@ module.exports = function (env) {
   plugins: [
     new GenerateJsonPlugin('package.json', {
       name: packageJson.name,
-      version: packageJson.version,
+      version: `${packageJson.version}-${new Date().getTime()}`,
       license: packageJson.license,
       author: packageJson.author,
       description: packageJson.description,
