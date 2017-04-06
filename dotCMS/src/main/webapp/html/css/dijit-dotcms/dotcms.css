@@ -3646,16 +3646,17 @@ html, body {
   background-color: #C5C5C5;
 }
 
-.dijitSelect {
-  background-color: #fff;
-  border: solid 1px #C5C5C5;
-  color: #161616;
-}
-.dijitSelect #select-arrow, .dijitSelect .dijitArrowButton > .dijitArrowButtonInner, .dijitSelect .dijitSelectHover .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectHover .dijitSelect .dijitArrowButton > .dijitArrowButtonInner, .dijitSelect .dijitSelectActive .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectActive .dijitSelect .dijitArrowButton > .dijitArrowButtonInner, .dijitSelect .dijitSelectOpened .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectOpened .dijitSelect .dijitArrowButton > .dijitArrowButtonInner {
+#select-arrow, .dijitSelect .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectHover .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectActive .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectOpened .dijitArrowButton > .dijitArrowButtonInner {
   float: none;
   height: 0 !important;
   margin: 0;
   position: static;
+}
+
+.dijitSelect {
+  background-color: #fff;
+  border: solid 1px #C5C5C5;
+  color: #161616;
 }
 .dijitSelect .dijitButtonContents {
   padding: 0 16px;
