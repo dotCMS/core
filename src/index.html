@@ -26,11 +26,6 @@
             opacity: 0;
             position: absolute;
             top: 16px;
-            transition: opacity 500ms;
-        }
-
-        .cog-show {
-            opacity: 1;
         }
 
         .loading-wrapper {
@@ -50,8 +45,8 @@
         }
 
         .spin {
-            -webkit-animation: spin 2s infinite linear;
-            animation: spin 2s infinite linear;
+            -webkit-animation: spin 2s infinite linear, fade 2s normal forwards;
+            animation: spin 2s infinite linear, fade 2s normal forwards;
         }
 
         @-webkit-keyframes spin {
@@ -75,19 +70,25 @@
                 transform: rotate(359deg);
             }
         }
-    </style>
 
-    <script>
-    function loaderIndicatorHandler() {
-        var cog = document.getElementById('cog');
-        cog.className.baseVal += ' cog-show';
-    }
-    if (window.addEventListener) {
-        window.addEventListener('DOMContentLoaded', loaderIndicatorHandler);
-    } else {
-        window.onload = loaderIndicatorHandler;
-    }
-</script>
+        @-webkit-keyframes fade {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fade {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+    </style>
 
 </head>
 
@@ -96,7 +97,7 @@
     <div class="loading-wrapper">
         <div class="logo">
             <?xml version="1.0" encoding="UTF-8"?>
-            <svg id="cog" width="47px" height="47px" class="cog spin" viewBox="0 0 154 154" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+            <svg width="47px" height="47px" class="cog spin" viewBox="0 0 154 154" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                 <!-- Generator: Sketch 41.2 (35397) - http://www.bohemiancoding.com/sketch -->
                 <title>Cog</title>
                 <desc>Created with Sketch.</desc>
