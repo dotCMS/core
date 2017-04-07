@@ -5,6 +5,7 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -2396,6 +2397,11 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
     public SearchResponse esSearchRaw(String esQuery, boolean live, User user,
     		boolean respectFrontendRoles) throws DotSecurityException,
     		DotDataException {
+		final int[] levels = { 200, 300, 400, 500 };
+		LicenseManager i = LicenseManager.getInstance();
+		if (!i.isAuthorized(levels)) {
+			throw new DotStateException("Need an enterprise license to run this functionality.");
+		}
     	for(ContentletAPIPreHook pre : preHooks){
             boolean preResult = pre.esSearchRaw(esQuery, live, user, respectFrontendRoles);
             if(!preResult){

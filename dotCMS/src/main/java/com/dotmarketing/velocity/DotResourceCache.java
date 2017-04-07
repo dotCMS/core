@@ -5,10 +5,10 @@ package com.dotmarketing.velocity;
 
 import java.io.File;
 import java.util.HashSet;
-import java.util.Map;
+
 import java.util.Set;
 
-import com.liferay.util.SystemProperties;
+
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.resource.Resource;
@@ -86,15 +86,14 @@ public class DotResourceCache implements ResourceCache,Cachable {
 		String cleanedResourceKey = cleanKey(resourceKey.toString());
 		String group = primaryGroup;
 
-
+		Resource resource=null;
 		String key = group + cleanedResourceKey;
-		ResourceWrapper rw = null;
 		try {
-			rw = (ResourceWrapper) cache.get(key, group);
+		  resource = (Resource) cache.get(key, group);
 		} catch ( DotCacheException e ) {
 			Logger.debug(this, "Cache Entry not found", e);
 		}
-        return rw != null ? rw.getResource() : null;	
+        return resource != null ? resource : null;	
 	}
 	
 	/* (non-Javadoc)
@@ -120,7 +119,6 @@ public class DotResourceCache implements ResourceCache,Cachable {
 	      return resource;
 	    }
 
-		ResourceWrapper rw = new ResourceWrapper(resource);
 		String cleanedResourceKey = cleanKey(resourceKey.toString());
 		String group = primaryGroup;
 
@@ -128,9 +126,9 @@ public class DotResourceCache implements ResourceCache,Cachable {
 
 		String key = group + cleanedResourceKey;
 		// Add the key to the cache
-		cache.put(key, rw, group);
+		cache.put(key, resource, group);
 
-        return rw.getResource();
+        return resource;
 
 	}
 
@@ -144,13 +142,13 @@ public class DotResourceCache implements ResourceCache,Cachable {
 
 
 		String key = group + cleanedResourceKey;
-		ResourceWrapper rw = null;
+
     	try{
 	       cache.remove(key,group);
 		} catch ( Exception e ) {
 			Logger.debug(this, e.getMessage(), e);
 		} 
-    	return rw != null ? rw.getResource() : null;	
+    	return null;	
 	}
 	
 	public void clearCache() {

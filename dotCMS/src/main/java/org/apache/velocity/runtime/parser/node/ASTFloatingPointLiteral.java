@@ -85,7 +85,7 @@ public class ASTFloatingPointLiteral extends SimpleNode
         /**
          * Determine the size of the item and make it a Double or BigDecimal as appropriate.
          */
-         String str = tokens.get(0).image;
+         String str = getFirstTokenImage();
          try
          {
              value = new Double( str );

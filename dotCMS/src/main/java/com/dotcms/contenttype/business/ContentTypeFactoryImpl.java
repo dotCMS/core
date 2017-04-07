@@ -60,7 +60,11 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   public ContentType find(String id) throws DotDataException {
     ContentType type = cache.byVarOrInode(id);
     if (type == null) {
-      type = (UUIDUtil.isUUID(id)) ? dbById(id) : dbByVar(id);
+      type =  LocalTransaction.wrapReturn(() -> {
+        ContentType t = (UUIDUtil.isUUID(id)) ? dbById(id) : dbByVar(id);
+        t.fields();
+        return t;
+      });
       Logger.debug(this.getClass(), "found type by db:" + type.name());
       cache.add(type);
     }
@@ -69,7 +73,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   @Override
   public List<ContentType> findAll() throws DotDataException {
-    return dbAll("structuretype,upper(name)");
+    return LocalTransaction.wrapReturn(() -> {
+          return dbAll("structuretype,upper(name)");
+        });
   }
 
   @Override
@@ -84,28 +90,37 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   @Override
   public List<ContentType> findAll(String orderBy) throws DotDataException {
-    return dbAll(orderBy);
+    return LocalTransaction.wrapReturn(() -> {
+      return dbAll(orderBy);
+    });
   }
 
   @Override
   public List<ContentType> findUrlMapped() throws DotDataException {
-    return dbSearch(" url_map_pattern is not null ", BaseContentType.ANY.getType(), "mod_date", -1, 0);
+    return LocalTransaction.wrapReturn(() -> {
+        return dbSearch(" url_map_pattern is not null ", BaseContentType.ANY.getType(), "mod_date", -1, 0);
+     });
   }
 
   @Override
   public List<ContentType> search(String search, int baseType, String orderBy, int limit, int offset)
       throws DotDataException {
-    return dbSearch(search, baseType, orderBy, limit, offset);
+    return  LocalTransaction.wrapReturn(() -> {
+      return dbSearch(search, baseType, orderBy, limit, offset);
+    });
   }
 
   @Override
   public List<ContentType> search(String search, BaseContentType baseType, String orderBy, int limit, int offset)
       throws DotDataException {
+      return  LocalTransaction.wrapReturn(() -> {
     return dbSearch(search, baseType.getType(), orderBy, limit, offset);
+    });
   }
 
   @Override
   public List<ContentType> search(String search, String orderBy, int limit, int offset) throws DotDataException {
+    
     return search(search, BaseContentType.ANY, orderBy, limit, offset);
   }
 
@@ -131,33 +146,45 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   @Override
   public int searchCount(String search) throws DotDataException {
-    return dbCount(search, BaseContentType.ANY.getType());
+    return  LocalTransaction.wrapReturn(() -> {
+      return dbCount(search, BaseContentType.ANY.getType());
+    });
   }
 
   @Override
   public int searchCount(String search, int baseType) throws DotDataException {
-    return dbCount(search, baseType);
+    return  LocalTransaction.wrapReturn(() -> {
+      return dbCount(search, baseType);
+    });
   }
 
   @Override
   public int searchCount(String search, BaseContentType baseType) throws DotDataException {
-    return dbCount(search, baseType.getType());
+    return  LocalTransaction.wrapReturn(() -> {
+      return dbCount(search, baseType.getType());
+    });
   }
 
   @Override
   public List<ContentType> findByBaseType(BaseContentType type) throws DotDataException {
-    return dbByType(type.getType());
+    return  LocalTransaction.wrapReturn(() -> {
+      return dbByType(type.getType());
+    });
   }
 
 
   @Override
   public ContentType findDefaultType() throws DotDataException {
-    return dbSelectDefaultType();
+    return  LocalTransaction.wrapReturn(() -> {
+      return dbSelectDefaultType();
+    });
   }
 
   @Override
   public List<ContentType> findByBaseType(int type) throws DotDataException {
-    return dbByType(type);
+    return  LocalTransaction.wrapReturn(() -> {
+      return dbByType(type);
+    });
   }
 
   @Override

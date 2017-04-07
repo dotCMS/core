@@ -99,6 +99,7 @@ public class ShortyServlet extends HttpServlet {
     }
 
     boolean jpeg = uri.contains("jpeg");
+    boolean jpegp = jpeg && uri.contains("jpegp");
     boolean isImage = jpeg || w+h>0;
     
     
@@ -144,7 +145,7 @@ public class ShortyServlet extends HttpServlet {
       path += "/filter/";
       path += (w+h > 0) ? "Resize," : "";
       path += (jpeg) ? "Jpeg/jpeg_q/75" : "";
-      
+      path += (jpeg && jpegp) ? "/jpeg_p/1" : "";
       path += (w > 0) ? "/resize_w/" + w : "";
       path += (h > 0) ? "/resize_h/" + h : "";
     }

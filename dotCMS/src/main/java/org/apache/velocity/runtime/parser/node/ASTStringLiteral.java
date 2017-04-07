@@ -98,7 +98,7 @@ public class ASTStringLiteral extends SimpleNode
          * has a directive or reference, then we can interpolate. Otherwise,
          * don't bother.
          */
-        Token ff=tokens.get(0);
+        Token ff=getFirstToken();
         interpolate = rsvc.getBoolean(
                 RuntimeConstants.INTERPOLATE_STRINGLITERALS, true)
                 && ff.image.startsWith("\"")
@@ -122,27 +122,14 @@ public class ASTStringLiteral extends SimpleNode
             // replace double single quotes '' with a single quote '
             image = replaceQuotes(image, img.charAt(0));
         }
+        String interpolateimage;
 
-        /**
-         * note. A kludge on a kludge. The first part, Geir calls this the
-         * dreaded <MORE> kludge. Basically, the use of the <MORE> token eats
-         * the last character of an interpolated string. EXCEPT when a line
-         * comment (##) is in the string this isn't an issue.
-         * 
-         * So, to solve this we look for a line comment. If it isn't found we
-         * add a space here and remove it later.
-         */
-
-        /**
-         * Note - this should really use a regexp to look for [^\]## but
-         * apparently escaping of line comments isn't working right now anyway.
-         */
         containsLineComment = (image.indexOf("##") != -1);
 
         /*
          * if appropriate, tack a space on the end (dreaded <MORE> kludge)
          */
-        String interpolateimage=null;
+
         
         if (!containsLineComment)
         {
@@ -188,9 +175,7 @@ public class ASTStringLiteral extends SimpleNode
 
             nodeTree.init(context, rsvc);
             
-            // we really don't need those anymore in this case
-            image="";
-            tokens.get(0).image="";
+
         }
 
         return data;
@@ -206,21 +191,23 @@ public class ASTStringLiteral extends SimpleNode
      */
     public void adjTokenLineNums(Node node)
     {
-        // Test against null is probably not neccessary, but just being safe
-        for(Token tok : node.getTokens())
-        {
-            // If tok is on the first line, then the actual column is 
-            // offset by the template column.
-          
-            if (tok.beginLine == 1)
-                tok.beginColumn += getColumn();
-            
-            if (tok.endLine == 1)
-                tok.endColumn += getColumn();
-            
-            tok.beginLine += getLine()- 1;
-            tok.endLine += getLine() - 1;
-        }
+      Token tok = node.getFirstToken();
+      // Test against null is probably not necessary, but just being safe
+      while(tok != null && tok != node.getLastToken())
+      {
+          // If tok is on the first line, then the actual column is
+          // offset by the template column.
+
+          if (tok.beginLine == 1)
+              tok.beginColumn += getColumn();
+
+          if (tok.endLine == 1)
+              tok.endColumn += getColumn();
+
+          tok.beginLine += getLine()- 1;
+          tok.endLine += getLine() - 1;
+          tok = tok.next;
+      }
     }
 
     /**

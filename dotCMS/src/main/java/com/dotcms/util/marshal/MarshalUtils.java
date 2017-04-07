@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.Serializable;
 import java.io.Writer;
+import java.lang.reflect.Type;
 
 /**
  * Encapsulates the logic to marshal an object to JSON and viceversa.
@@ -35,6 +36,16 @@ public interface MarshalUtils extends Serializable {
      * @return T
      */
     public <T> T unmarshal (final String s, Class<? extends T> clazz);
+
+    /**
+     * Un marshal from a String into a Type
+     *
+     * @param s String
+     * @param typeOfT Type
+     * @param <T>
+     * @return T
+     */
+    public <T> T unmarshal(final String s, Type typeOfT);
 
     /**
      * Un marshal from a reader to a object with the clazz type

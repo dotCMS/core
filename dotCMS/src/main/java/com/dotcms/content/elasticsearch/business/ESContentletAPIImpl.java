@@ -152,13 +152,13 @@ import com.liferay.util.FileUtil;
  */
 public class ESContentletAPIImpl implements ContentletAPI {
 
-    private final ContentTypeCache contentTypeCache = CacheLocator.getContentTypeCache();
+    
 
     private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
     private static final String CANT_GET_LOCK_ON_CONTENT ="Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
 	
-	private static final ESContentletIndexAPI indexAPI = new ESContentletIndexAPI();
-    
+	private ESContentletIndexAPI indexAPI;
+	private ContentTypeCache contentTypeCache;
     private ESContentFactoryImpl conFac;
     private PermissionAPI perAPI;
     private CategoryAPI catAPI;
@@ -182,7 +182,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	 *
 	 */
     public ESContentletAPIImpl () {
-
+        indexAPI = new ESContentletIndexAPI();
         fAPI = APILocator.getFieldAPI();
         conFac = new ESContentFactoryImpl();
         perAPI = APILocator.getPermissionAPI();
@@ -3254,7 +3254,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				ContentletServices.invalidateLive(contentlet);
 				ContentletServices.invalidateWorking(contentlet);
 
-                this.contentTypeCache.clearRecents(contentlet.getModUser());
+
 
 				String velocityResourcePath = "working/" + contentlet.getIdentifier() + "_" + contentlet.getLanguageId() + "." + Config.getStringProperty("VELOCITY_CONTENT_EXTENSION","content");
 				if(CacheLocator.getVeloctyResourceCache().isMiss(velocityResourcePath))

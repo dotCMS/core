@@ -66,7 +66,7 @@ public class Define extends Block
          * just assume it looks like this: $block_name. Should we check if it has
          * a '$' or not?
          */
-        key = node.jjtGetChild(0).getTokens().get(0).image.substring(1);
+        key = node.jjtGetChild(0).getFirstTokenImage().substring(1);
 
         /*
          * default max depth of two is used because intentional recursion is

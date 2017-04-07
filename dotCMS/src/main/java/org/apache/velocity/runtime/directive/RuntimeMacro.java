@@ -153,8 +153,8 @@ public class RuntimeMacro extends Directive
          * "#end" is a block style macro. We use starts with because the token
          * may end with '\n'
          */
-        List<Token> tokens=node.getTokens();
-        Token t = tokens.get(tokens.size()-1);
+
+        Token t = node.getLastToken();
         if (t.image.startsWith(")") || t.image.startsWith("#end"))
         {
             RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
@@ -168,7 +168,7 @@ public class RuntimeMacro extends Directive
             Node child = node.jjtGetChild(n);
             if (child.getType() == ParserTreeConstants.JJTWORD)
             {
-                badArgsErrorMsg = "Invalid arg '" + child.getTokens().get(0).image 
+                badArgsErrorMsg = "Invalid arg '" + child.getFirstTokenImage()
                 + "' in macro #" + macroName + " at " + VelocityException.formatFileString(child);
               
                 if (strictRef)  // If strict, throw now
@@ -192,9 +192,10 @@ public class RuntimeMacro extends Directive
         if (literal == null)
         {
             StrBuilder buffer = new StrBuilder();
-            
-            for(Token t : node.getTokens()) {
+            Token t = node.getFirstToken();
+            while (t != null && t != node.getLastToken()){
                 buffer.append(t.image);
+              t = t.next;
             }
             
             literal = buffer.toString();

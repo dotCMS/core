@@ -74,7 +74,7 @@ public class ASTComment extends SimpleNode
      */
     public Object init(InternalContextAdapter context, Object data)
     {
-        Token t = tokens.get(0);
+        Token t = getFirstToken();
 
         int loc1 = t.image.indexOf("##");
         int loc2 = t.image.indexOf("#*");
