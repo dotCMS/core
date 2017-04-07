@@ -329,6 +329,11 @@ export class RuleService {
     this._preCacheCommonResources(_resources);
     this.loadActionTypes().subscribe((types: ServerSideTypeModel[]) => this.ruleActionTypes$.next(types));
     this.loadConditionTypes().subscribe((types: ServerSideTypeModel[]) => this.conditionTypes$.next(types));
+
+    this.siteService.switchSite$.subscribe(site => {
+      console.log('switchSite$ loadRules');
+      this.sendLoadRulesRequest(site.identifier).subscribe();
+    });
   }
 
  createRule(body: RuleModel): Observable<RuleModel|CwError> {
@@ -355,11 +360,11 @@ export class RuleService {
     return this._rules$.asObservable();
   }
 
-  public requestRules(siteId: string): Observable<any> {
+  public requestRules(siteId: string){
     if (siteId) {
-      return this.sendLoadRulesRequest(siteId);
+      this.sendLoadRulesRequest(siteId).subscribe();
     } else if (this.siteService.currentSite) {
-      return this.sendLoadRulesRequest(this.siteService.currentSite.identifier);
+      this.sendLoadRulesRequest(this.siteService.currentSite.identifier).subscribe();
     }
   }
 
@@ -435,10 +440,6 @@ export class RuleService {
     }).map(ruleMap => {
       this._rules = RuleService.fromServerRulesTransformFn(ruleMap);
       this._rules$.next(this.rules);
-
-      this.siteService.switchSite$.subscribe(site => {
-        this.sendLoadRulesRequest(site.identifier);
-      });
 
       return RuleService.fromServerRulesTransformFn(ruleMap);
     });
