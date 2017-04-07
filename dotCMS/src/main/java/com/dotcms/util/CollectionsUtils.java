@@ -11,7 +11,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.dotcms.repackage.com.google.common.collect.ImmutableBiMap;
 import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
+import jdk.nashorn.internal.ir.annotations.Immutable;
 
 /**
  * This utility class provides common use methods for creating and interacting
@@ -470,6 +472,26 @@ public class CollectionsUtils implements Serializable {
         }
 
         return mapEntries(entriesCollection);
+    } // map.
+
+    /**
+     * Get an immutable new map based on a collections of entries
+     * @param entries Entry
+     * @param <K>
+     * @param <V>
+     * @return Map
+     */
+    @SuppressWarnings("unchecked")
+    public static <K,V> Map<K,V> imap(final Map.Entry<K, V>... entries) {
+        final ImmutableBiMap.Builder<K, V> mapBuilder =
+                new ImmutableBiMap.Builder<K, V>();
+
+        for (Map.Entry<K, V> entry : entries) {
+
+            mapBuilder.put(entry.getKey(), entry.getValue());
+        }
+
+        return mapBuilder.build();
     } // map.
 
     /**

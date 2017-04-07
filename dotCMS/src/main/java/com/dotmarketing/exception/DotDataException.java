@@ -1,12 +1,12 @@
 package com.dotmarketing.exception;
 
-import com.dotcms.exception.BaseInternationalizationException;
+import com.dotcms.exception.BaseRuntimeInternationalizationException;
 
 /**
  * @todo remove the setMessage method, replace uses with 'throw new WhateverException(message,
  *       oldException)'
  */
-public class DotDataException extends BaseInternationalizationException {
+public class DotDataException extends BaseRuntimeInternationalizationException {
 
   /**
 	 * 

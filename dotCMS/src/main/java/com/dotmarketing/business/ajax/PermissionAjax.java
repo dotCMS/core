@@ -10,18 +10,14 @@ import java.util.TreeMap;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.PermissionableObjectDWR;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -61,7 +57,18 @@ import com.liferay.portal.model.User;
  *
  */
 public class PermissionAjax {
-		
+
+	private final PermissionableAPI permissionableAPI;
+
+	public PermissionAjax() {
+		this(APILocator.getPermissionableAPI());
+	}
+
+	@VisibleForTesting
+	public PermissionAjax(final PermissionableAPI permissionableAPI) {
+		this.permissionableAPI = permissionableAPI;
+	}
+
 	/**
 	 * Retrieves a list of roles and its associated permissions for the given asset
 	 * @param assetId
@@ -318,82 +325,28 @@ public class PermissionAjax {
 	}
 
 	@SuppressWarnings("unchecked")
-	private Permissionable retrievePermissionable (String assetId, Long language, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		
-		HostAPI hostAPI = APILocator.getHostAPI();
-		Permissionable perm = null;
+	private Permissionable retrievePermissionable (final String assetId,
+												   final Long language,
+												   final User user,
+												   final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-		//Determining the type
-		try{
-			//Host?
-			perm = hostAPI.find(assetId, user, respectFrontendRoles);
-		}
-		catch(Exception e){
+		Permissionable permissionable = null;
 
-		}
-		
-		if(perm == null) {
-			//Content?
-			ContentletAPI contAPI = APILocator.getContentletAPI();
-			
-			try {
-				if(language == null || language <= 0){
-					language=APILocator.getLanguageAPI().getDefaultLanguage().getId();
-				}
-				perm = contAPI.findContentletByIdentifier(assetId, false, language, user, respectFrontendRoles);
-			} catch (DotContentletStateException e) {
+		try {
 
-			}
+			Logger.debug(this, "Resolving the permissionable by the assetId: " + assetId);
+			permissionable = this.permissionableAPI.resolvePermissionable
+					(assetId, language, user, respectFrontendRoles);
+		} catch (Exception e) {
+
+			Logger.error(this,
+					"Error resolving the permissionable for the assertId " + assetId, e);
 		}
 
-		if(perm == null) {
+		return permissionable;
+	} // retrievePermissionable.
 
-			DotConnect dc = new DotConnect();
-			ArrayList results = new ArrayList();
-			String assetType ="";
-			dc.setSQL("Select asset_type from identifier where id =?");
-			dc.addParam(assetId);
-			ArrayList assetResult = dc.loadResults();
-			
-			if(assetResult.size()>0){
-                // It could be:
-                //
-                // 1. folder
-                // 2. contentlet
-                // 3. htmlpage
-                // 4. template
-                // 5. links
-                // 6. containers: table has different name: dot_containers
-                assetType = (String) ((Map)assetResult.get(0)).get("asset_type");
-			}
-			
-			if(UtilMethods.isSet(assetType)){
-				dc.setSQL("select i.inode, type from inode i," +
-                    Inode.Type.valueOf(assetType.toUpperCase()).getTableName() +
-                    " a where i.inode = a.inode and a.identifier = ?");
-				dc.addParam(assetId);
-				results = dc.loadResults();
-			}
-			
-			if(results.size() > 0) {
-				String type =  (String) ((Map)results.get(0)).get("type");
-				String inode = (String) ((Map)results.get(0)).get("inode");
-				perm = InodeFactory.getInode(inode, InodeUtils.getClassByDBType(type));
-			}
-		}
-		
-		if(perm == null){
-			perm = APILocator.getContentTypeAPI(user).find(assetId);
-		}
-
-		if(perm == null || !UtilMethods.isSet(perm.getPermissionId())) {
-			perm = InodeFactory.getInode(assetId, Inode.class);
-		}
-		
-		return perm;
-	}
-
-	  public void permissionIndividually(String assetId, Long languageId) throws Exception {
+	public void permissionIndividually(String assetId, Long languageId) throws Exception {
 			HibernateUtil.startTransaction();
 	    	try {
 	    		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
