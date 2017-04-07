@@ -51,7 +51,7 @@ public class HazelcastUtil {
                     if(xmlFilePath == null){
                         xmlFilePath = "hazelcast-embedded.xml";
                     }
-                    Logger.info(this, "Setting Up HazelCast Embedded Config");
+                    Logger.info(this, "Setting Up HazelCast");
                     InputStream is = null;
                     try {
                         is = getClass().getClassLoader().getResourceAsStream(xmlFilePath);
