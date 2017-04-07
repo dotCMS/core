@@ -812,6 +812,85 @@
 				<div class="portlet-toolbar">
 					<div class="portlet-toolbar__actions-primary">
 						<%@ include file="/html/portlet/ext/common/sub_nav_inc.jsp" %>
+						<!-- Start breadcrumps -->
+
+						<%
+							if (0 < crumbTrailEntries.size()) {
+
+								boolean _amITheFirst = true;
+						%>
+
+						<div class="subNavCrumbTrailCategories" id="subNavCrumbTrail">
+							<ul id="ulNav">
+								<% if (!showHostSelector) {  _amITheFirst = false; %>
+								<li id="selectHostDiv"
+										<%if(UtilMethods.isSet(_browserCrumbUrl)){ %>
+									onclick="window.location='<%=_browserCrumbUrl%>';"
+										<%} %>
+								>
+									<span class="hostStoppedIcon" style="float:left;margin-right:5px;"></span>
+									<%=LanguageUtil.get(pageContext, "Global-Page")%>
+								</li>
+								<% } %>
+
+								<% for (CrumbTrailEntry crumbTrailEntry : crumbTrailEntries) {
+									if (UtilMethods.isSet(crumbTrailEntry.getLink())) { %>
+								<li style="cursor: pointer"
+										<%if(_amITheFirst){%> id="selectHostDiv"<%} %>
+								>
+									<% if (_amITheFirst) { %>
+									<span class="publishIcon"></span>
+									<% }
+										_amITheFirst = false;
+									%>
+									<a href="
+                                        <%= crumbTrailEntry.getLink() %>"
+									>
+										<%=crumbTrailEntry.getTitle()%>
+									</a>
+								</li>
+								<%
+								} else {
+								%>
+								<li class="lastCrumb" id="lastCrumb"><span><%=crumbTrailEntry.getTitle()%></span></li>
+								<%
+									}
+								%>
+								<%
+									}
+								%>
+							</ul>
+							<%
+								if (showHostSelector) {
+							%>
+							<div class="changeHost" onclick="dijit.popup.open({popup: myDialog, around: dojo.byId('changeHostId')})">
+								<span id="changeHostId"><%=LanguageUtil.get(pageContext, "Change-Host")%></span>
+								<span class="chevronExpandIcon"></span>
+							</div>
+							<%
+								}
+							%>
+							<div class="clear"></div>
+
+						</div>
+
+						<%
+							}
+						%>
+
+						<script type="text/javascript">
+
+                            function showHostPreview() {
+                                window.location = '<%=_browserCrumbUrl%>';
+                            }
+                            function updateCMSSelectedHosts() {
+                                if( dijit.byId('subNavHost').attr('value')!=null && dijit.byId('subNavHost').attr('value')!=''){
+                                    window.location.href = "/html/portlet/ext/common/sub_nav_refresh_host.jsp?referer=" + escape(window.location) + "&host_id=" + dijit.byId('subNavHost').attr('value');
+                                }
+                            }
+						</script>
+
+						<!-- End breadcrumps  -->
 					</div>
 					<div class="portlet-toolbar__info">
 						<div id="warningDiv" style="color: red;"></div>
@@ -830,6 +909,8 @@
 					<button dojoType="dijit.form.Button" type="button" onClick="doSearch(true);" iconClass="resetIcon"><%= LanguageUtil.get(pageContext,"Reorder") %></button>
 				</div>
 				<input type="hidden" name="fullCommand" id="fullCommand" value="">
+
+
 			</div>
 			<!-- END Children Tab -->
 
@@ -889,95 +970,15 @@
 				<!-- END Permission Tab -->
 
 			</div>
+
+
 		</div>
 		<!-- END Tabs -->
-	</div>
 
-	<!-- Start breadcrumps -->
-
-	<%
-		if (0 < crumbTrailEntries.size()) {
-	%>
-	<%
-		boolean _amITheFirst = true;
-	%>
-	<div class="subNavCrumbTrail" id="subNavCrumbTrail">
-		<ul id="ulNav">
-			<% if (!showHostSelector) { %>
-			<% _amITheFirst = false; %>
-			<li id="selectHostDiv" style=""
-					<%if(UtilMethods.isSet(_browserCrumbUrl)){ %>
-				onclick="window.location='<%=_browserCrumbUrl%>';"
-					<%} %>
-			>
-				<span class="hostStoppedIcon" style="float:left;margin-right:5px;"></span>
-				<%=LanguageUtil.get(pageContext, "Global-Page")%>
-			</li>
-			<% } %>
-
-			<% for (CrumbTrailEntry crumbTrailEntry : crumbTrailEntries) { %>
-
-			<% if (UtilMethods.isSet(crumbTrailEntry.getLink())) { %>
-			<li style="cursor: pointer"
-					<%if(_amITheFirst){%> id="selectHostDiv"<%} %>
-			>
-				<% if (_amITheFirst) { %>
-				<span class="publishIcon"></span>
-				<% } %>
-				<% _amITheFirst = false; %>
-				<a href="
-					<%= crumbTrailEntry.getLink() %>"
-				>
-					<%=crumbTrailEntry.getTitle()%>
-				</a>
-			</li>
-			<%
-			} else {
-			%>
-			<li class="lastCrumb" id="lastCrumb"><span><%=crumbTrailEntry.getTitle()%></span></li>
-			<%
-				}
-			%>
-			<%
-				}
-			%>
-		</ul>
-		<%
-			if (showHostSelector) {
-		%>
-		<div class="changeHost" onclick="dijit.popup.open({popup: myDialog, around: dojo.byId('changeHostId')})">
-			<span id="changeHostId"><%=LanguageUtil.get(pageContext, "Change-Host")%></span>
-			<span class="chevronExpandIcon"></span>
-		</div>
-		<%
-			}
-		%>
-		<div class="clear"></div>
 
 	</div>
 
-	<%
-		}
-	%>
 
-	<div class="clear"></div>
-
-
-
-	<script type="text/javascript">
-
-        function showHostPreview() {
-            window.location = '<%=_browserCrumbUrl%>';
-        }
-        function updateCMSSelectedHosts() {
-            if( dijit.byId('subNavHost').attr('value')!=null && dijit.byId('subNavHost').attr('value')!=''){
-                window.location.href = "/html/portlet/ext/common/sub_nav_refresh_host.jsp?referer=" + escape(window.location) + "&host_id=" + dijit.byId('subNavHost').attr('value');
-            }
-        }
-
-	</script>
-
-	<!-- End breadcrumps  -->
 
 
 	<script language="Javascript">
