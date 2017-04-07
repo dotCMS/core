@@ -9,7 +9,7 @@ import {MessageService} from '../../../../api/services/messages-service';
     encapsulation: ViewEncapsulation.Emulated,
     providers: [],
     selector: 'dot-notifications-item',
-    styleUrls: ['notifications-item.css'],
+    styles: [require('./notifications-item.scss')],
     templateUrl: 'notifications-item.html',
 
 })
@@ -51,7 +51,7 @@ export class NotificationsItem extends BaseComponent {
     encapsulation: ViewEncapsulation.Emulated,
     providers: [],
     selector: 'dot-notifications-list',
-    styleUrls: ['notifications-list.css'],
+    styles: [require('./notifications-list.scss')],
     templateUrl: 'notifications-list.html',
 })
 export class NotificationsList {

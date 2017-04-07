@@ -82,7 +82,11 @@
         var cog = document.getElementById('cog');
         cog.className.baseVal += ' cog-show';
     }
-    window.onload = loaderIndicatorHandler;
+    if (window.addEventListener) {
+        window.addEventListener('DOMContentLoaded', loaderIndicatorHandler);
+    } else {
+        window.onload = loaderIndicatorHandler;
+    }
 </script>
 
 </head>
@@ -104,7 +108,6 @@
         </div>
     </div>
 </app>
-
 <% if (htmlWebpackPlugin.options.metadata.isDevServer && htmlWebpackPlugin.options.metadata.HMR !== true) { %>
 <!-- Webpack Dev Server reload -->
 <script src="/webpack-dev-server.js"></script>

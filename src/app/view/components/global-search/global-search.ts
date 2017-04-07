@@ -5,7 +5,7 @@ import {MessageService} from '../../../api/services/messages-service';
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
     selector: 'dot-global-search',
-    styleUrls: ['global-search.css'],
+    styles: [require('./global-search.scss')],
     templateUrl: 'global-search.html',
 })
 export class GlobalSearch extends BaseComponent {

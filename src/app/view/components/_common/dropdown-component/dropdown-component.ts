@@ -7,7 +7,7 @@ import {Component, EventEmitter, Input, Output, ViewEncapsulation, ElementRef} f
     },
 
     selector: 'dot-dropdown-component',
-    styleUrls: ['dropdown-component.css'],
+    styles: [require('./dropdown-component.scss')],
     templateUrl: 'dropdown-component.html'
 })
 

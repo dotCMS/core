@@ -5,7 +5,7 @@ import {LoggerService} from '../../../api/services/logger.service';
 @Component({
     encapsulation: ViewEncapsulation.None,
     selector: 'dot-login-page-component',
-    styleUrls: ['login-page.css'],
+    styles: [require('./login-page.scss')],
     templateUrl: 'login-page-component.html',
 })
 

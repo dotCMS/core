@@ -9,7 +9,7 @@ import {AutoComplete} from 'primeng/primeng';
     encapsulation: ViewEncapsulation.None,
     providers: [],
     selector: 'dot-login-as',
-    styleUrls: ['login-as.css'],
+    styles: [require('./login-as.scss')],
     templateUrl: 'login-as.html'
 })
 export class LoginAsComponent extends BaseComponent {

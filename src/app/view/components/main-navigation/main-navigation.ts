@@ -6,7 +6,7 @@ import {RoutingService, Menu, MenuItem} from '../../../api/services/routing-serv
 
     providers: [],
     selector: 'dot-main-nav',
-    styleUrls: ['main-navigation.css'],
+    styles: [require('./main-navigation.scss')],
     templateUrl: 'main-navigation.html',
 })
 export class MainNavigation {

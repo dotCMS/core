@@ -5,7 +5,7 @@ import {SelectItem, AutoComplete} from 'primeng/primeng';
     encapsulation: ViewEncapsulation.Emulated,
 
     selector: 'pattern-library',
-    styleUrls: ['pattern-library.css'],
+    styles: [require('./pattern-library.scss')],
     templateUrl: 'pattern-library.html'
 })
 

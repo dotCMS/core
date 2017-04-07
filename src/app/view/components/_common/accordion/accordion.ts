@@ -33,7 +33,7 @@ export class Accordion {
 @Component({
 
     selector: 'accordion-group',
-    styleUrls: ['accordion-group.css'],
+    styles: [require('./accordion-group.scss')],
     template: `
         <a href="#" (click)="toggleOpen($event)" class="accordion-group__title" [ngClass]="{'is-active': isOpen}">
             <i class="fa fa-th-list {{icon}}" aria-hidden="true" *ngIf="icon"></i>
