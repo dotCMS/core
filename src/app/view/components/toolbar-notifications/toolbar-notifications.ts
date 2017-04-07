@@ -10,7 +10,7 @@ import {IframeOverlayService} from '../../../api/services/iframe-overlay-service
     encapsulation: ViewEncapsulation.Emulated,
 
     selector: 'dot-toolbar-notifications',
-    styleUrls: ['toolbar-notifications.css'],
+    styles: [require('./toolbar-notifications.scss')],
     templateUrl: 'toolbar-notifications.html'
 })
 export class ToolbarNotifications extends BaseComponent {

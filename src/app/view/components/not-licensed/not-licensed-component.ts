@@ -5,7 +5,7 @@ import {BaseComponent} from '../_common/_base/base-component';
     encapsulation: ViewEncapsulation.None,
 
     selector: 'not-licensed-component',
-    styleUrls: ['not-licensed-component.css'],
+    styles: [require('./not-licensed-component.scss')],
     templateUrl: 'not-licensed-component.html',
 })
 export class NotLicensedComponent {

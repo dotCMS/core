@@ -14,7 +14,7 @@ import {IframeOverlayService} from '../../../api/services/iframe-overlay-service
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
     selector: 'dot-iframe',
-    styleUrls: ['iframe-legacy-component.css'],
+    styles: [require('./iframe-legacy-component.scss')],
     templateUrl: 'iframe-legacy-component.html'
 })
 export class IframeLegacyComponent extends SiteChangeListener {

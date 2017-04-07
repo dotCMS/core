@@ -2,10 +2,9 @@ import {Component, Input, ViewEncapsulation} from '@angular/core';
 import {LoggerService} from '../../../../api/services/logger.service';
 
 @Component({
-
     encapsulation: ViewEncapsulation.Emulated,
     selector: 'dot-loading-indicator',
-    styleUrls: ['dot-loading-indicator.css'],
+    styles: [require('./dot-loading-indicator.scss')],
     templateUrl: 'dot-loading-indicator.html'
 })
 

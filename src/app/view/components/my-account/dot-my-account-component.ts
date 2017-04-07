@@ -9,7 +9,7 @@ import {StringFormat} from '../../../api/util/stringFormat';
     encapsulation: ViewEncapsulation.None,
 
     selector: 'dot-my-account',
-    styleUrls: ['dot-my-account-component.css'],
+    styles: [require('./dot-my-account-component.scss')],
     templateUrl: 'dot-my-account-component.html',
 })
 

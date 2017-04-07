@@ -11,7 +11,7 @@ import {IframeOverlayService} from '../../../api/services/iframe-overlay-service
     encapsulation: ViewEncapsulation.None,
     providers: [],
     selector: 'dot-site-selector-component',
-    styleUrls: ['dot-site-selector-component.css'],
+    styles: [require('./dot-site-selector-component.scss')],
     templateUrl: 'dot-site-selector-component.html',
 })
 export class SiteSelectorComponent extends BaseComponent {
