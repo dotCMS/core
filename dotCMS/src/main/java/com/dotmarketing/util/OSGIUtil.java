@@ -28,7 +28,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class OSGIUtil {
 
-    private static final String FELIX_FILEINSTALL_DIR = "felix.fileinstall.dir";
+    public static final String FELIX_BASE_DIR = "felix.base.dir";
+    public static final String FELIX_FILEINSTALL_DIR = "felix.fileinstall.dir";
+    public static final String FELIX_UNDEPLOYED_DIR = "felix.undeployed.dir";
     public static final String BUNDLE_HTTP_BRIDGE_SYMBOLIC_NAME = "org.apache.felix.http.bundle";
     private static final String PROPERTY_OSGI_PACKAGES_EXTRA = "org.osgi.framework.system.packages.extra";
     public String FELIX_EXTRA_PACKAGES_FILE;
@@ -73,6 +75,7 @@ public class OSGIUtil {
         String bundleDir = felixDirectory + File.separator + "bundle";
         String cacheDir = felixDirectory + File.separator + "felix-cache";
         String autoLoadDir = felixDirectory + File.separator + "load";
+        String undeployedDir = felixDirectory + File.separator + "undeployed";
 
         Properties configProps;
         String extraPackages;
@@ -112,10 +115,20 @@ public class OSGIUtil {
         list.add( hostActivator );
         configProps.put( FelixConstants.SYSTEMBUNDLE_ACTIVATORS_PROP, list );
 
-	String felixFileInstallDirPath = configProps.getProperty(FELIX_FILEINSTALL_DIR);
+        String felixBaseDirPath = configProps.getProperty(FELIX_BASE_DIR);
+        if (felixBaseDirPath == null || !new File(felixBaseDirPath).isDirectory()) {
+            configProps.put(FELIX_BASE_DIR, felixDirectory);
+        }
+
+        String felixFileInstallDirPath = configProps.getProperty(FELIX_FILEINSTALL_DIR);
 	if (felixFileInstallDirPath == null || !new File(felixFileInstallDirPath).isDirectory()) {
 	    configProps.put(FELIX_FILEINSTALL_DIR, autoLoadDir);
 	}
+
+        String felixUndeployedDirPath = configProps.getProperty(FELIX_UNDEPLOYED_DIR);
+        if (felixUndeployedDirPath == null || !new File(felixUndeployedDirPath).isDirectory()) {
+            configProps.put(FELIX_UNDEPLOYED_DIR, undeployedDir);
+        }
 
         try {
             // (8) Create an instance and initialize the framework.

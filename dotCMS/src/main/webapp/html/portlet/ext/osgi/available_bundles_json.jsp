@@ -3,6 +3,7 @@
 <%@page import="java.util.ArrayList"%>
 <%@page import="java.io.File"%>
 <%@page import="java.util.List"%>
+<%@ page import="com.dotmarketing.util.OSGIUtil" %>
 
 <%!
     /**
@@ -18,7 +19,14 @@
 %>
 
 <%
-    String f = FileUtil.getRealPath( "/WEB-INF/felix/undeployed" );
+    String path;
+    try {
+        path = OSGIUtil.getInstance().getBundleContext().getProperty(OSGIUtil.FELIX_UNDEPLOYED_DIR);
+    } catch (Exception ex) {
+        path = "/WEB-INF/felix/undeployed";
+    }
+
+    String f = FileUtil.getRealPath( path );
     if ( f == null ) {
         return;
     }

@@ -22,7 +22,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 
 public class OSGIAJAX extends OSGIBaseAJAX {
-    final String FELIX_BASE_FOLDER = com.dotmarketing.util.Config.getStringProperty("FELIX_BASE_FOLDER", "/WEB-INF/felix");
+
     @Override
     public void action ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
     }
@@ -48,8 +48,25 @@ public class OSGIAJAX extends OSGIBaseAJAX {
 
         //Then move the bundle from the load folder to the undeployed folder
 
-        File from = new File( FileUtil.getRealPath( "/WEB-INF/felix/load/" + jar ) );
-        File to = new File( FileUtil.getRealPath( "/WEB-INF/felix/undeployed/" + jar ) );
+        String loadPath;
+        String undeployedPath;
+
+        try {
+            loadPath = OSGIUtil.getInstance().getBundleContext().getProperty(OSGIUtil.FELIX_FILEINSTALL_DIR);
+        } catch (Exception ex) {
+            Logger.error(this, "Unable to find the felix load folder path from OSGI bundle context. Setting it manually to /WEB-INF/felix/load", ex);
+            loadPath = "/WEB-INF/felix/load";
+        }
+
+        try {
+            undeployedPath = OSGIUtil.getInstance().getBundleContext().getProperty(OSGIUtil.FELIX_UNDEPLOYED_DIR);
+        } catch (Exception ex) {
+            Logger.error(this, "Unable to find the felix undeployed folder path from OSGI bundle context. Setting it manually to /WEB-INF/felix/undeployed", ex);
+            undeployedPath = "/WEB-INF/felix/undeployed";
+        }
+
+        File from = new File( FileUtil.getRealPath( loadPath + File.separator + jar ) );
+        File to = new File( FileUtil.getRealPath( undeployedPath + File.separator + jar ) );
 
         if(to.exists()) {
             to.delete();
@@ -66,10 +83,26 @@ public class OSGIAJAX extends OSGIBaseAJAX {
     }
 
     public void deploy ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
+        String loadPath;
+        String undeployedPath;
+
+        try {
+            loadPath = OSGIUtil.getInstance().getBundleContext().getProperty(OSGIUtil.FELIX_FILEINSTALL_DIR);
+        } catch (Exception ex) {
+            Logger.error(this, "Unable to find the felix load folder path from OSGI bundle context. Setting it manually to /WEB-INF/felix/load", ex);
+            loadPath = "/WEB-INF/felix/load";
+        }
+
+        try {
+            undeployedPath = OSGIUtil.getInstance().getBundleContext().getProperty(OSGIUtil.FELIX_UNDEPLOYED_DIR);
+        } catch (Exception ex) {
+            Logger.error(this, "Unable to find the felix undeployed folder path from OSGI bundle context. Setting it manually to /WEB-INF/felix/undeployed", ex);
+            undeployedPath = "/WEB-INF/felix/undeployed";
+        }
 
         String jar = request.getParameter( "jar" );
-        File from = new File( FileUtil.getRealPath( FELIX_BASE_FOLDER + "/undeployed/" + jar ) );
-        File to = new File( FileUtil.getRealPath( FELIX_BASE_FOLDER + "/load/" + jar ) );
+        File from = new File( FileUtil.getRealPath( undeployedPath + File.separator + jar ) );
+        File to = new File( FileUtil.getRealPath( loadPath + File.separator + jar ) );
 
         Boolean success = from.renameTo( to );
         if ( success ) {
@@ -135,11 +168,18 @@ public class OSGIAJAX extends OSGIBaseAJAX {
                     }
 
 
+                    String felixBaseFolder;
+                    try {
+                        felixBaseFolder = OSGIUtil.getInstance().getBundleContext().getProperty(OSGIUtil.FELIX_BASE_DIR);
+                    } catch (Exception ex) {
+                        Logger.error(this, "Unable to find the felix base folder path from OSGI bundle context. Setting it manually to /WEB-INF/felix", ex);
+                        felixBaseFolder = "/WEB-INF/felix";
+                    }
 
-                    File felixFolder  = (FELIX_BASE_FOLDER.startsWith("/WEB-INF")) ?
-                        new File(Config.CONTEXT.getRealPath(FELIX_BASE_FOLDER)) : 
-                        new File(com.dotmarketing.util.FileUtil.getAbsolutlePath(FELIX_BASE_FOLDER));
-                    File osgiJar = new File(FileUtil.getRealPath( FELIX_BASE_FOLDER + "/load/" + fname ) );
+                    File felixFolder  = (felixBaseFolder.startsWith("/WEB-INF")) ?
+                        new File(Config.CONTEXT.getRealPath(felixBaseFolder)) :
+                        new File(com.dotmarketing.util.FileUtil.getAbsolutlePath(felixBaseFolder));
+                    File osgiJar = new File(FileUtil.getRealPath( felixBaseFolder + "/load/" + fname ) );
 
 
                     if ( !felixFolder.exists() 
