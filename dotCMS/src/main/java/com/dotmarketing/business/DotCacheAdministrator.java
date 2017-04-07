@@ -94,6 +94,8 @@ public interface DotCacheAdministrator  {
 
 	DotCacheAdministrator getImplementationObject ();
 
+	public void invalidateCacheMesageFromCluster ( String message );
+
 	/**
 	 * Returns the CacheTransport in use if any
 	 *

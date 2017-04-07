@@ -102,6 +102,7 @@ public class CacheLocator extends Locator<CacheIndex>{
         public List<CacheProviderStats> getCacheStatsList() { return dotcache.getCacheStatsList(); }
 		public CacheTransport getTransport () {return dotcache.getTransport();}
 		public void setTransport ( CacheTransport transport ) {dotcache.setTransport(transport);}
+		public void invalidateCacheMesageFromCluster ( String message ) {dotcache.invalidateCacheMesageFromCluster(message);}
         public Class<?> getImplementationClass() { return dotcache.getClass(); }
         public void put(final String key, final Object content, final String group) {
             dotcache.put(key, content, group);
