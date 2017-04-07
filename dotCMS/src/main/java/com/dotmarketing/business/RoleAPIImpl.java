@@ -336,7 +336,7 @@ public class RoleAPIImpl implements RoleAPI {
 		//if(r.isSystem())
 		//	throw new DotStateException("Cannot lock a system role");
 		r.setLocked(true);
-		rf.save(role);
+		rf.save(r);
 	}
 	
 	public void unLock(Role role) throws DotDataException {
