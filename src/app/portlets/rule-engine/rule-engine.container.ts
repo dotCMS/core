@@ -531,13 +531,11 @@ export class RuleEngineContainer {
     this.route.queryParams.subscribe(params => {
       siteId = params['realmId'];
     });
-    this._ruleService.requestRules(siteId).subscribe( (rules: RuleModel[]) => {
-      console.log('requestRules success', rules);
-      this.loadRules(rules);
 
-      this._ruleService.loadRules().subscribe((rules: RuleModel[]) => {
-        this.loadRules(rules);
-      });
+    this._ruleService.requestRules(siteId);
+
+    this._ruleService.loadRules().subscribe((rules: RuleModel[]) => {
+       this.loadRules(rules);
     });
   }
 

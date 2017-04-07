@@ -5,7 +5,7 @@
             <accordion-group [heading]="menu.tabName" [icon]="menu.tabIcon">
                 <div class="main-nav__submenu">
                     <template ngFor let-menuItem [ngForOf]="menu.menuItems">
-                        <a (click)="gotToPage(menuItem.menuLink)" [routerLink]="[menuItem.menuLink]"
+                        <a (click)="gotToPage($event, menuItem.menuLink)" [routerLink]="[menuItem.menuLink]"
                            *ngIf="menuItem.url && !menuItem.angular && !menuItem.ajax"
                            [class.main-nav__submenu--active]="menuItemIdActive === menuItem.id">
 
@@ -16,7 +16,7 @@
 
                             {{menuItem.name}}
                         </a>
-                        <a (click)="gotToPage(menuItem.menuLink)" [routerLink]="[menuItem.menuLink]" *ngIf="menuItem.url && menuItem.ajax"
+                        <a (click)="gotToPage($event, menuItem.menuLink)" [routerLink]="[menuItem.menuLink]" *ngIf="menuItem.url && menuItem.ajax"
                             [class.main-nav__submenu--active]="menuItemIdActive === menuItem.id">
 
                             {{menuItem.name}}

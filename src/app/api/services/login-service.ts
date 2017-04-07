@@ -180,12 +180,12 @@ export class LoginService {
     // TODO: password in the url is a no-no, fix asap. Sanchez and Jose have an idea.
     public loginAs(options: any): Observable<any> {
         return this.coreWebService.requestView({
+            body: {
+                password: options.password,
+                userId: options.userId
+            },
             method: RequestMethod.Post,
             url: this.urls.loginAs,
-            body: {
-                userId: options.userId,
-                password: options.password
-            },
         }).map((res) => {
             if (!res.entity.loginAs) {
                 throw res.errorsMessages;

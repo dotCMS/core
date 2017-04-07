@@ -315,9 +315,9 @@ export class RuleService {
       json.key = key;
       return ServerSideTypeModel.fromJson(json);
     });
-    // console.log("RuleService", "fromServerServersideTypesTransformFn - loaded", types)
     return types.filter((type) => type.key !== 'CountRulesActionlet');
   }
+
   constructor(public _apiRoot: ApiRoot, private _resources: I18nService, private siteService: SiteService,
               private coreWebService: CoreWebService) {
 
@@ -329,6 +329,10 @@ export class RuleService {
     this._preCacheCommonResources(_resources);
     this.loadActionTypes().subscribe((types: ServerSideTypeModel[]) => this.ruleActionTypes$.next(types));
     this.loadConditionTypes().subscribe((types: ServerSideTypeModel[]) => this.conditionTypes$.next(types));
+
+    this.siteService.switchSite$.subscribe(site => {
+      this.sendLoadRulesRequest(site.identifier);
+    });
   }
 
  createRule(body: RuleModel): Observable<RuleModel|CwError> {
@@ -355,11 +359,11 @@ export class RuleService {
     return this._rules$.asObservable();
   }
 
-  public requestRules(siteId: string): Observable<any> {
+  public requestRules(siteId: string): void {
     if (siteId) {
-      return this.sendLoadRulesRequest(siteId);
+      this.sendLoadRulesRequest(siteId);
     } else if (this.siteService.currentSite) {
-      return this.sendLoadRulesRequest(this.siteService.currentSite.identifier);
+      this.sendLoadRulesRequest(this.siteService.currentSite.identifier);
     }
   }
 
@@ -428,17 +432,13 @@ export class RuleService {
     resources.get('api.system.ruleengine').subscribe((rsrc) => {});
   }
 
-  private sendLoadRulesRequest(siteId: string): Observable<any> {
-    return this.coreWebService.request({
+  private sendLoadRulesRequest(siteId: string): void {
+    this.coreWebService.request({
       method: RequestMethod.Get,
       url: `${this._apiRoot.baseUrl}api/v1/sites/${siteId}/ruleengine/rules`
-    }).map(ruleMap => {
+    }).subscribe(ruleMap => {
       this._rules = RuleService.fromServerRulesTransformFn(ruleMap);
       this._rules$.next(this.rules);
-
-      this.siteService.switchSite$.subscribe(site => {
-        this.sendLoadRulesRequest(site.identifier);
-      });
 
       return RuleService.fromServerRulesTransformFn(ruleMap);
     });

@@ -64,17 +64,16 @@ export class RoutingService {
     }
 
     public isPortlet(url: string): boolean {
-        let urlSplit = url.split('/');
-        let id = urlSplit[urlSplit.length - 1];
+        let id = this.getPortletId(url);
         if (id.indexOf('?') >= 0) {
             id = id.substr(0, id.indexOf('?'));
         }
+
         return this.portlets.has(id);
     }
 
     public setCurrentPortlet(url: string): void {
-        let urlSplit = url.split('/');
-        let id = urlSplit[urlSplit.length - 1];
+        let id = this.getPortletId(url);
         if (id.indexOf('?') >= 0) {
             id = id.substr(0, id.indexOf('?'));
         }
@@ -114,7 +113,10 @@ export class RoutingService {
      * @param url portlet url
      */
     public changeRefreshPortlet(url: string): void {
-        this._portletUrlSource$.next(url);
+        let portletId = this.getPortletId(url);
+        if (portletId === this.currentPortletId) {
+            this._portletUrlSource$.next(url);
+        }
     }
 
     private loadMenus(): void {
@@ -124,6 +126,11 @@ export class RoutingService {
         }).subscribe(response => {
             this.setMenus(response.entity);
         }, error => this._menusChange$.error(error));
+    }
+
+    private getPortletId(url: string): string {
+        let urlSplit = url.split('/');
+        return urlSplit[urlSplit.length - 1];
     }
 }
 

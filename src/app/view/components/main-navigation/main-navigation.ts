@@ -37,8 +37,10 @@ export class MainNavigation {
      * Change or refresh the portlets from the main menu
      * @param menuItem portlet url
      */
-    public gotToPage(link: string): void {
-        this.routingService.changeRefreshPortlet(link);
+    public gotToPage(event: any, link: string): void {
+        if (!event.ctrlKey && !event.metaKey) {
+            this.routingService.changeRefreshPortlet(link);
+        }
     }
 
     private getMenuSelected(menuItemSelectedId: string): Menu {
