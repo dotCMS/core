@@ -315,9 +315,9 @@ export class RuleService {
       json.key = key;
       return ServerSideTypeModel.fromJson(json);
     });
-    // console.log("RuleService", "fromServerServersideTypesTransformFn - loaded", types)
     return types.filter((type) => type.key !== 'CountRulesActionlet');
   }
+
   constructor(public _apiRoot: ApiRoot, private _resources: I18nService, private siteService: SiteService,
               private coreWebService: CoreWebService) {
 
@@ -331,8 +331,7 @@ export class RuleService {
     this.loadConditionTypes().subscribe((types: ServerSideTypeModel[]) => this.conditionTypes$.next(types));
 
     this.siteService.switchSite$.subscribe(site => {
-      console.log('switchSite$ loadRules');
-      this.sendLoadRulesRequest(site.identifier).subscribe();
+      this.sendLoadRulesRequest(site.identifier);
     });
   }
 
@@ -360,11 +359,11 @@ export class RuleService {
     return this._rules$.asObservable();
   }
 
-  public requestRules(siteId: string){
+  public requestRules(siteId: string): void {
     if (siteId) {
-      this.sendLoadRulesRequest(siteId).subscribe();
+      this.sendLoadRulesRequest(siteId);
     } else if (this.siteService.currentSite) {
-      this.sendLoadRulesRequest(this.siteService.currentSite.identifier).subscribe();
+      this.sendLoadRulesRequest(this.siteService.currentSite.identifier);
     }
   }
 
@@ -433,11 +432,11 @@ export class RuleService {
     resources.get('api.system.ruleengine').subscribe((rsrc) => {});
   }
 
-  private sendLoadRulesRequest(siteId: string): Observable<any> {
-    return this.coreWebService.request({
+  private sendLoadRulesRequest(siteId: string): void {
+    this.coreWebService.request({
       method: RequestMethod.Get,
       url: `${this._apiRoot.baseUrl}api/v1/sites/${siteId}/ruleengine/rules`
-    }).map(ruleMap => {
+    }).subscribe(ruleMap => {
       this._rules = RuleService.fromServerRulesTransformFn(ruleMap);
       this._rules$.next(this.rules);
 
