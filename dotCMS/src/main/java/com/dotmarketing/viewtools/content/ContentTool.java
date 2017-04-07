@@ -460,9 +460,7 @@ public class ContentTool implements ViewTool {
 			query = q;
 		
 		if(!query.contains("languageId")){
-			if(UtilMethods.isSet(req.getAttribute(WebKeys.HTMLPAGE_LANGUAGE))){
-				q += " +languageId:" + req.getAttribute(WebKeys.HTMLPAGE_LANGUAGE);
-			} 
+			q += " +languageId:" + WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
 		}
 	  
 	  	if(!(query.contains("live:") || query.contains("working:") )){      

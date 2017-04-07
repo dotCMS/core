@@ -213,7 +213,7 @@
     </near-cache>
     
     <near-cache name="publishingendpointcache">
-        <max-size>100</max-size>
+        <max-size>271</max-size>
         <eviction-policy>LFU</eviction-policy>
         <in-memory-format>OBJECT</in-memory-format>
     </near-cache>

@@ -14,13 +14,21 @@ plugins {
     id "net.ltgt.apt" version "0.9"
 }
 
+plugins {
+    id "com.moowork.node" version "1.1.1"
+}
+
+node {
+    // If true, it will download node using above parameters.
+    // If false, it will try to use globally installed node.
+    download = true
+}
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 
 configurations {
     compile
     buildlibs
     starter
-    coreWeb
     provided
     felix
 }
@@ -45,6 +53,7 @@ apply plugin: 'java'
 apply plugin: 'war'
 apply plugin: 'org.unbroken-dome.test-sets'
 apply plugin: 'idea'
+apply plugin: 'eclipse'
 
 // In this section you declare where to find the dependencies of your project.
 repositories {
@@ -78,17 +87,18 @@ idea {
     module {
         //and some extra test source dirs
         testSourceDirs += file('integration-test/java')
-
         testSourceDirs += file('functional-test/java')
-
-        sourceDirs += file('src/main/enterprise/src/main/java')
-        sourceDirs += file('src/main/license/src/main/java')
 
         //if you prefer different SDK than the one inherited from IDEA project
         jdkName = '1.8'
 
     }
 }
+
+eclipse.project {
+    natures 'org.springsource.ide.eclipse.gradle.core.nature'
+}
+
 
 dependencies {
     /*****  Felix libs need to be placed in the WEB-INF/felix/bundle directory. This was previously handled using a pre-build copy task.  *****/
@@ -102,7 +112,6 @@ dependencies {
     compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
     starter group: 'com.dotcms', name: 'starter', version: '20170320', ext: 'zip'
-    coreWeb group: 'com.dotcms', name: 'core-web', version: '4.0.0-SNAPSHOT', ext: 'zip', changing: true
 
     providedCompile "javax.servlet:javax.servlet-api:3.1.0"
     providedCompile fileTree("../libs/buildlibs").include('**/*.jar')
@@ -117,11 +126,13 @@ dependencies {
 // Import and apply the dependencies from the dependencies scripts.
 apply from: "$rootDir/dependencies.gradle"
 
+def enterpriseSrcFolder = file("$enterpriseProjectHome/src/main/java")
+def licenseSrcFolder    = file("$licenseProjectHome/src/main/java")
 
-if (gradle.startParameter.taskNames.contains("deployWarTomcatDev")) {
+if (enterpriseSrcFolder.exists() && licenseSrcFolder.exists()){
 	sourceSets {
     	main {
-        	java { 
+        	java {
             	srcDirs = ["src/main/java", "$enterpriseProjectHome/src/main/java", "$licenseProjectHome/src/main/java"]
 	        }
     	}
@@ -154,7 +165,13 @@ ext {
     }
 }
 
-archivesBaseName = 'dotcms_'+dotcmsReleaseVersion+'_'+dotcmsReleaseBuild
+
+if (project.hasProperty('jarBaseName')) {
+    archivesBaseName = "$jarBaseName"
+}else{
+    archivesBaseName = 'dotcms_'+dotcmsReleaseVersion+'_'+dotcmsReleaseBuild
+}
+
 def tomcatDistBase = "$distLocation/$tomcatDistInstallLocation-$tomcatInstallVersion"
 def dotcmsDistBase = "../$tomcatDistInstallLocation-$tomcatInstallVersion"
 
@@ -193,7 +210,8 @@ processResources {
 
 // By default the war task compiles everything under src/main/java into WEB-INF/classes/
 // but, instead, we want to compile everything on a .jar file and put it under WEB-INF/lib.
-war.dependsOn 'deployPlugins'
+war.dependsOn 'deployPlugins','installDotcmsUI'
+
 war {
     classpath = classpath - sourceSets.main.output.classesDir
 
@@ -217,10 +235,6 @@ war {
     from (configurations.starter) {
         into dotcmsFolder
         rename ( /starter(.+)\.zip/, "starter.zip" )
-    }
-
-    from (zipTree(configurations.coreWeb.files.toArray()[0])) {
-        into angularFolder
     }
 }
 war.finalizedBy 'undeployPlugins'
@@ -748,4 +762,33 @@ class DeployWarTomcatTask extends DefaultTask{
         }
 
     }
+}
+
+task installDotcmsUI(type: NpmTask) {
+    if ("latest".equals(coreWebReleaseVersion)) {
+        args = ['install', 'dotcms-ui']
+    }else{
+        args = ['install', 'dotcms-ui@' + coreWebReleaseVersion]
+    }
+
+    finalizedBy 'copyNodeModules'
+}
+
+task makeDotAdminFolder(type: DefaultTask) {
+    String dotAdminFolder = "./src/main/webapp/$angularFolder"
+    project.mkdir(dotAdminFolder)
+}
+
+task cleanNodeModules(type: Delete) {
+    delete "./node_modules"
+    followSymlinks = true
+}
+
+task copyNodeModules(type: Copy) {
+    dependsOn 'makeDotAdminFolder'
+
+    from (file("./node_modules/dotcms-ui"))
+    into("./src/main/webapp/$angularFolder")
+
+    finalizedBy 'cleanNodeModules'
 }

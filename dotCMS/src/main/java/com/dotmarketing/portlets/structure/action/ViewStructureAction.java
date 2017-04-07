@@ -2,14 +2,14 @@ package com.dotmarketing.portlets.structure.action;
 
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
 import com.dotcms.repackage.javax.portlet.WindowState;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
@@ -24,8 +24,9 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
 /**
- * Struts action that retrieves the required information to display the
- * "Content Types" portlet.
+ * Struts action that retrieves the required information to display the "Content
+ * Types" portlet. Users can also order the data based on a specified criteria
+ * and filter objects based on their names.
  * 
  * @author root
  * @version 1.1
@@ -37,12 +38,44 @@ public class ViewStructureAction extends DotPortletAction {
 	private StructureAPI structureAPI = APILocator.getStructureAPI();
 
 	/**
+	 * Default class constructor for Struts.
+	 */
+	public ViewStructureAction() {
+
+	}
+
+	/**
+	 * Class constructor for unit tests.
 	 * 
+	 * @param structureAPI
+	 *            - The {@link StructureAPI} instance.
+	 */
+	@VisibleForTesting
+	public ViewStructureAction(StructureAPI structureAPI) {
+		this.structureAPI = structureAPI;
+	}
+	
+	/**
+	 * The main entry point that will handle all requests to the Struts action.
+	 * 
+	 * @param mapping
+	 *            - Contains the mapping of a particular request to an instance
+	 *            of a particular action class.
+	 * @param form
+	 *            - The form containing the information selected by the user in
+	 *            the UI.
+	 * @param config
+	 *            - The configuration parameters for this portlet.
+	 * @param req
+	 *            - The HTTP Request wrapper.
+	 * @param res
+	 *            - The HTTP Response wrapper.
+	 * @throws Exception
+	 *             An error occurred when editing a field.
 	 */
 	public ActionForward render(ActionMapping mapping, ActionForm form,
 			PortletConfig config, RenderRequest req, RenderResponse res)
 	throws Exception {
-
 		String orderBy = req.getParameter("orderBy");
 		User user = _getUser(req);
 		orderBy = (UtilMethods.isSet(orderBy) ? orderBy : "name");
@@ -51,22 +84,30 @@ public class ViewStructureAction extends DotPortletAction {
 			return mapping.findForward("portlet.ext.structure.view");
 		} else {			
 			return mapping.findForward("portlet.ext.structure.view_structure");
-
 		}
 	}
 
-    /**
-     * Retrieves a list of {@link Structure} objects based on specific filtering parameters coming in the
-     * {@link RenderRequest} object. The resulting collection will be added as a request attribute that will be
-     * processed by the JSP associated to this action.
-     * 
-     * @param req - Portlet wrapper class for the HTTP request.
-     * @param user - The {@link User} loading the portlet.
-     * @param countWebKey -
-     * @param viewWebKey -
-     * @param queryWebKey -
-     * @throws Exception An error occurred when processing the request.
-     */
+	/**
+	 * Retrieves a list of {@link Structure} objects based on specific filtering
+	 * parameters coming in the {@link RenderRequest} object. The resulting
+	 * collection will be added as a request attribute that will be processed by
+	 * the UI layer associated to this action.
+	 * 
+	 * @param req
+	 *            - Portlet wrapper class for the HTTP request.
+	 * @param user
+	 *            - The {@link User} loading the portlet.
+	 * @param countWebKey
+	 *            - The parameter name indicating the
+	 * @param viewWebKey
+	 *            - The parameter name indicating the objects that will be
+	 *            displayed on the page. In this case, Content Types.
+	 * @param queryWebKey
+	 *            - The parameter name indicating a specific search criterion
+	 *            set by the user.
+	 * @throws Exception
+	 *             An error occurred when processing the request.
+	 */
     protected void _loadStructures(RenderRequest req, User user, String countWebKey, String viewWebKey,
             String queryWebKey) throws Exception {
         com.liferay.portlet.RenderRequestImpl reqImpl = (com.liferay.portlet.RenderRequestImpl) req;
@@ -74,20 +115,19 @@ public class ViewStructureAction extends DotPortletAction {
         // gets the session object for the messages
         HttpSession session = httpReq.getSession();
 
-        Integer structureType =
+        Integer contentTypeBaseType =
                 (Integer) session.getAttribute(com.dotmarketing.util.WebKeys.Structure.STRUCTURE_EDIT_TYPE);
         if (req.getParameter("structureType") != null)
-            structureType = Integer.parseInt(req.getParameter("structureType"));
-        if (structureType == null) {
-            structureType = 0;
+            contentTypeBaseType = Integer.parseInt(req.getParameter("structureType"));
+        if (contentTypeBaseType == null) {
+            contentTypeBaseType = 0;
         } else {
-            session.setAttribute(com.dotmarketing.util.WebKeys.Structure.STRUCTURE_EDIT_TYPE, structureType);
+            session.setAttribute(com.dotmarketing.util.WebKeys.Structure.STRUCTURE_EDIT_TYPE, contentTypeBaseType);
         }
         String query = req.getParameter("query");
         String resetQuery = req.getParameter("resetQuery");
         String showSystem = req.getParameter("system");
-
-        List<Structure> structures = new java.util.ArrayList<Structure>();
+        List<Structure> contentTypes = new java.util.ArrayList<Structure>();
         APILocator.getPersonaAPI().createDefaultPersonaStructure();
 
         try {
@@ -97,7 +137,7 @@ public class ViewStructureAction extends DotPortletAction {
                 orderby = "mod_date desc,upper(name)";
                 direction = "asc";
             }
-            if (orderby.equals("name")) {
+            if ("name".equals(orderby)) {
                 orderby = "upper(name)";
             }
 
@@ -106,13 +146,11 @@ public class ViewStructureAction extends DotPortletAction {
             }
 
             int pageNumber = 1;
-
             if (UtilMethods.isSet(req.getParameter("pageNumber"))) {
                 pageNumber = Integer.parseInt(req.getParameter("pageNumber"));
             }
 
             int limit = com.dotmarketing.util.Config.getIntProperty("PER_PAGE", 40);
-
             int offset = (pageNumber - 1) * limit;
 
             if ((query == null) && (resetQuery == null)) {
@@ -122,8 +160,7 @@ public class ViewStructureAction extends DotPortletAction {
 
             int count = 0;
             String queryCondition = "";
-
-            if (((query != null) && (query.length() != 0)) || (structureType != null)) {
+            if (((query != null) && (query.length() != 0)) || (contentTypeBaseType != null)) {
 
                 if (query == null)
                     query = "";
@@ -135,48 +172,49 @@ public class ViewStructureAction extends DotPortletAction {
                     }
                 }
 
-                if (structureType != null && !structureType.toString().equals("0")) {
+                if (contentTypeBaseType != null && !"0".equals(contentTypeBaseType.toString())) {
                     if (!queryCondition.equals("")) {
-                        queryCondition += " and structuretype = " + structureType + " ";
+                        queryCondition += " and structuretype = " + contentTypeBaseType + " ";
                     } else {
-                        queryCondition += "structuretype = " + structureType + " ";
+                        queryCondition += "structuretype = " + contentTypeBaseType + " ";
                     }
                 }
-                Logger.debug(this, "Getting Structures based on condition = " + queryCondition);
+                Logger.debug(this, "Getting Content Types based on condition = " + queryCondition);
             } else {
-                Logger.debug(this, "Getting all Structures");
+                Logger.debug(this, "Getting all Content Types");
             }
 
-            if (UtilMethods.isSet(showSystem) && showSystem.equals("1")) {
-
+            if (UtilMethods.isSet(showSystem) && "1".equals(showSystem)) {
                 if (!queryCondition.equals("")) {
                     queryCondition += " and system = " + DbConnectionFactory.getDBTrue() + " ";
                 } else {
                     queryCondition += "system = " + DbConnectionFactory.getDBTrue() + " ";
                 }
-
             }
-            structures = this.structureAPI.find(user, false, false, queryCondition, orderby, limit, offset, direction);
+            contentTypes = this.structureAPI.find(user, false, false, queryCondition, orderby, limit, offset, direction);
 
-            if (structures != null && !structures.isEmpty()) {
-                count = this.structureAPI.countStructures(queryCondition);
+            if (contentTypes != null && !contentTypes.isEmpty()) {
+            	count = APILocator.getContentTypeAPI(user).count(queryCondition);
             }
 
             req.setAttribute(countWebKey, new Integer(count));
-            req.setAttribute(viewWebKey, structures);
+            req.setAttribute(viewWebKey, contentTypes);
             if (UtilMethods.isSet(req.getParameter("direction"))) {
-                if (req.getParameter("direction").equals("asc"))
+                if ("asc".equals(req.getParameter("direction"))) {
                     req.setAttribute("direction", "desc");
-                else if (req.getParameter("direction").equals("desc"))
+                } else if ("desc".equals(req.getParameter("direction"))) {
                     req.setAttribute("direction", "asc");
-                else
+                } else {
                     req.setAttribute("direction", "desc");
+                }
             } else {
                 req.setAttribute("direction", "desc");
             }
         } catch (Exception e) {
-            req.setAttribute(viewWebKey, structures);
-            Logger.error(this, "Exception e =" + e.getMessage(), e);
+            req.setAttribute(viewWebKey, contentTypes);
+			Logger.error(this,
+					String.format("An error occurred when retrieving Content types: type=[%d], query=[%s] : ",
+							contentTypeBaseType, query) + e.getMessage(), e);
             throw new Exception(e.getMessage());
         }
     }

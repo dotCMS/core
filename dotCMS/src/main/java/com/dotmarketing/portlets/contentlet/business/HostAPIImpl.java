@@ -95,7 +95,7 @@ public class HostAPIImpl implements HostAPI {
         }
 
         try {
-            ContentType type =APILocator.getContentTypeAPI(user,true).find("Host");
+            ContentType type =APILocator.getContentTypeAPI(APILocator.systemUser(), true).find("Host");
 
             List<Contentlet> list = null;
             try{

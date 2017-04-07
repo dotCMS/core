@@ -71,14 +71,11 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
 				+ "Some content,Some content,Some content,Some content,Some content,Some content,Some content";
         final String fileValue = "4d7daefa-6adb-4b76-896d-c2d9f95b2280";
         final String imageValue = "4f43f9af-9ee6-4e17-8b50-10c4039186ee";
-        final String tagValue = "community,united states,test";
         final String constantValue = "Constant Value";
+        final String categoryValue = "375341a2-0912-422f-b903-2602b6105c70";
         final String lineDividerValue = "Test Line Divider";
         final String tabDividerValue = "Test Tab Divider";
-        final String permissionsTabValue = "Permissions Value";
-        final String relationshipsTabValue = "Relationships Value";
         final String hiddenValue = "Hidden Value";
-        final String binaryValue = "4f43f9af-9ee6-4e17-8b50-10c4039186ee";
         final String customValue = "$date.long";
         final String siteOrFolderValue = "48190c8c-42c4-46af-8d1a-0cd5db894797";
         final String currentTime = String.valueOf(new Date().getTime());
@@ -114,8 +111,6 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
         final String imageFieldVarName = "imageFieldVarName_" + currentTime;
         // Tag Field
         final String tagFieldVarName = "tagFieldVarName_" + currentTime;
-        // Constant Field
-        final String constantFieldVarName = "constantFieldVarName_" + currentTime;
         // Category Field
         final String categoryFieldVarName = "categoryFieldVarName_" + currentTime;
         // Line Divider Field
@@ -203,7 +198,8 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
 
 			Field selectBooleanField = new Field("selectBooleanField_" + currentTime, Field.FieldType.SELECT,
 					Field.DataType.BOOL, contentType, required, listed, indexed, 1,
-					"Yes|" + DbConnectionFactory.getDBTrue() + "\r\nNo|" + DbConnectionFactory.getDBFalse(),
+					"Yes|" + DbConnectionFactory.getDBTrue().replaceAll("'", StringUtils.EMPTY) + "\r\nNo|"
+							+ DbConnectionFactory.getDBFalse().replaceAll("'", StringUtils.EMPTY),
 					StringUtils.EMPTY, StringUtils.EMPTY, !fixed, !readOnly, searchable);
 			selectBooleanField.setVelocityVarName(selectBooleanFieldVarName);
 			selectBooleanField = FieldFactory.saveField(selectBooleanField);
@@ -270,7 +266,7 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
 			imageField = FieldFactory.saveField(imageField);
 
 			Field tagField = new Field("tagField_" + currentTime, Field.FieldType.TAG, Field.DataType.LONG_TEXT,
-					contentType, required, listed, indexed, 1, StringUtils.EMPTY, StringUtils.EMPTY, StringUtils.EMPTY,
+					contentType, !required, listed, indexed, 1, StringUtils.EMPTY, StringUtils.EMPTY, StringUtils.EMPTY,
 					!fixed, !readOnly, searchable);
 			tagField.setVelocityVarName(tagFieldVarName);
 			tagField = FieldFactory.saveField(tagField);
@@ -282,19 +278,19 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
 			constantField = FieldFactory.saveField(constantField);
 
 			Field categoryField = new Field("categoryField_" + currentTime, Field.FieldType.CATEGORY,
-					Field.DataType.TEXT, contentType, !required, !listed, !indexed, 1, StringUtils.EMPTY,
+					Field.DataType.TEXT, contentType, !required, !listed, !indexed, 1, categoryValue,
 					StringUtils.EMPTY, StringUtils.EMPTY, !fixed, !readOnly, !searchable);
 			categoryField.setVelocityVarName(categoryFieldVarName);
 			categoryField = FieldFactory.saveField(categoryField);
 
 			Field lineDividerField = new Field("lineDividerField_" + currentTime, Field.FieldType.LINE_DIVIDER,
-					Field.DataType.TEXT, contentType, !required, !listed, !indexed, 1, StringUtils.EMPTY,
+					Field.DataType.TEXT, contentType, !required, !listed, !indexed, 1, lineDividerValue,
 					StringUtils.EMPTY, StringUtils.EMPTY, !fixed, !readOnly, !searchable);
 			lineDividerField.setVelocityVarName(lineDividerFieldVarName);
 			lineDividerField = FieldFactory.saveField(lineDividerField);
 
 			Field tabDividerField = new Field("tabDividerField_" + currentTime, Field.FieldType.TAB_DIVIDER,
-					Field.DataType.TEXT, contentType, !required, !listed, !indexed, 1, StringUtils.EMPTY,
+					Field.DataType.TEXT, contentType, !required, !listed, !indexed, 1, tabDividerValue,
 					StringUtils.EMPTY, StringUtils.EMPTY, !fixed, !readOnly, !searchable);
 			tabDividerField.setVelocityVarName(tabDividerFieldVarName);
 			tabDividerField = FieldFactory.saveField(tabDividerField);
@@ -317,7 +313,7 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
 			hiddenField.setVelocityVarName(hiddenFieldVarName);
 			hiddenField = FieldFactory.saveField(hiddenField);
 
-			Field binaryField = new Field("binaryField_" + currentTime, Field.FieldType.BINARY, Field.DataType.BINARY,
+			Field binaryField = new Field("binaryField_" + currentTime, Field.FieldType.BINARY, Field.DataType.SYSTEM,
 					contentType, !required, !listed, !fixed, 1, StringUtils.EMPTY, StringUtils.EMPTY, StringUtils.EMPTY,
 					!fixed, !readOnly, searchable);
 			binaryField.setVelocityVarName(binaryFieldVarName);
@@ -330,7 +326,7 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
 			customField = FieldFactory.saveField(customField);
 
 			Field siteOrFolderField = new Field("siteOrFolderField_" + currentTime, Field.FieldType.HOST_OR_FOLDER,
-					Field.DataType.TEXT, contentType, !required, !listed, indexed, 1, customValue, StringUtils.EMPTY,
+					Field.DataType.TEXT, contentType, !required, !listed, indexed, 1, siteOrFolderValue, StringUtils.EMPTY,
 					StringUtils.EMPTY, !fixed, !readOnly, !searchable);
 			siteOrFolderField.setVelocityVarName(siteOrFolderFieldVarName);
 			siteOrFolderField = FieldFactory.saveField(siteOrFolderField);
@@ -341,7 +337,7 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
 			keyValueField.setVelocityVarName(keyValueFieldVarName);
 			keyValueField = FieldFactory.saveField(keyValueField);
 
-            // Validate the fields were properly saved
+            // Validate that the fields were properly saved
 			Structure contentTypeFromDB = CacheLocator.getContentTypeCache()
 					.getStructureByVelocityVarName(contentTypeVelocityVarName);
             List<Field> fieldsBySortOrder = contentTypeFromDB.getFieldsBySortOrder();
@@ -354,14 +350,17 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
             contentlet.setHost(site.getIdentifier());
             contentlet.setLanguageId(langId);
 
-            // Set the field values
+			// Set the field values
+			// IMPORTANT: Remember that not all fields store their values in the
+			// "contentlet" table, but in the "field" table. Therefore, they are
+			// not included in the following contentlet object
             contentletAPI.setContentletProperty(contentlet, checkboxField, checkboxValue);
             contentletAPI.setContentletProperty(contentlet, dateField, dateValue);
             contentletAPI.setContentletProperty(contentlet, timeField, dateValue);
             contentletAPI.setContentletProperty(contentlet, dateTimeField, dateValue);
             contentletAPI.setContentletProperty(contentlet, radioField, boolValue);
             contentletAPI.setContentletProperty(contentlet, selectTextField, selectTextValue);
-            contentletAPI.setContentletProperty(contentlet, selectBooleanField, Boolean.TRUE);
+            contentletAPI.setContentletProperty(contentlet, selectBooleanField, boolValue);
             contentletAPI.setContentletProperty(contentlet, selectDecimalField, decimalValue);
             contentletAPI.setContentletProperty(contentlet, selectWholeNumberField, wholeNumberValue);
             contentletAPI.setContentletProperty(contentlet, multiSelectField, selectTextValue);
@@ -372,17 +371,7 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
             contentletAPI.setContentletProperty(contentlet, wysiwygField, wysiwygValue);
             contentletAPI.setContentletProperty(contentlet, fileField, fileValue);
             contentletAPI.setContentletProperty(contentlet, imageField, imageValue);
-            contentletAPI.setContentletProperty(contentlet, tagField, tagValue);
-            contentletAPI.setContentletProperty(contentlet, constantField, constantValue);
-            contentletAPI.setContentletProperty(contentlet, categoryField, null);
-            contentletAPI.setContentletProperty(contentlet, lineDividerField, lineDividerValue);
-            contentletAPI.setContentletProperty(contentlet, tabDividerField, tabDividerValue);
-            contentletAPI.setContentletProperty(contentlet, permissionsTabField, permissionsTabValue);
-            contentletAPI.setContentletProperty(contentlet, relationshipsTabField, relationshipsTabValue);
-            contentletAPI.setContentletProperty(contentlet, hiddenField, hiddenValue);
-            contentletAPI.setContentletProperty(contentlet, binaryField, binaryValue);
             contentletAPI.setContentletProperty(contentlet, customField, customValue);
-            contentletAPI.setContentletProperty(contentlet, siteOrFolderField, siteOrFolderValue);
             contentletAPI.setContentletProperty(contentlet, keyValueField, StringUtils.EMPTY);
 
             // Save the content
@@ -500,17 +489,7 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
             assertNull(contentletFromDB.get(wysiwygFieldVarName));
             assertNull(contentletFromDB.get(fileFieldVarName));
             assertNull(contentletFromDB.get(imageFieldVarName));
-            assertNull(contentletFromDB.get(tagFieldVarName));
-            assertNull(contentletFromDB.get(constantFieldVarName));
-            assertNull(contentletFromDB.get(categoryFieldVarName));
-            assertNull(contentletFromDB.get(lineDividerFieldVarName));
-            assertNull(contentletFromDB.get(tabDividerFieldVarName));
-            assertNull(contentletFromDB.get(permissionsTabFieldVarName));
-            assertNull(contentletFromDB.get(relationshipsTabFieldVarName));
-            assertNull(contentletFromDB.get(hiddenFieldVarName));
-            assertNull(contentletFromDB.get(binaryFieldVarName));
             assertNull(contentletFromDB.get(customFieldVarName));
-            assertNull(contentletFromDB.get(siteOrFolderFieldVarName));
             assertNull(contentletFromDB.get(keyValueFieldVarName));
 		} catch (Exception e) {
 			throw new RuntimeException("An error occurred when deleting fields from a test Content Type ["

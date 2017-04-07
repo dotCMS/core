@@ -71,7 +71,7 @@ public class ASTTextblock extends SimpleNode
     throws TemplateInitException
     {
         
-        String text = tokens.get(0).image;
+        String text = getFirstTokenImage();
         
         // t.image is in format: #% <string> %#
         // we must strip away the hash tags

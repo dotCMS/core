@@ -34,6 +34,7 @@ Thumbs.db
 ######################
 libs/test
 build/
+!dotCMS/src/main/webapp/html/js/dojo/custom-build/build/
 out/
 dotCMS/src/main/webapp/WEB-INF/generated_web.xml
 dotCMS/src/main/webapp/WEB-INF/lib/*.jar
@@ -43,7 +44,8 @@ dotCMS/starter.zip
 .ant-targets-build.xml
 .gradle/
 /*.local.*
-
+dotCMS/src/main/webapp/dotAdmin
+dotCMS/bin/*
 
 # Changes after gradle migration #
 ###############################

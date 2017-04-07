@@ -10,6 +10,8 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.contenttype.model.field.LegacyFieldTypes;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -25,8 +27,6 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotPortletAction;
-import com.dotmarketing.portlets.categories.business.CategoryAPI;
-import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
@@ -55,20 +55,51 @@ import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.StringUtil;
 import com.liferay.util.servlet.SessionMessages;
 
+/**
+ * This Struts action will handle all the requests related to adding, updating
+ * or deleting a field in a Content Type. This action is called from the Content
+ * Type editing page.
+ * 
+ * @author root
+ * @version 1.x
+ * @since Mar 22, 2017
+ *
+ */
 public class EditFieldAction extends DotPortletAction {
 
-    private CategoryAPI categoryAPI = APILocator.getCategoryAPI();
     private ContentletAPI conAPI = APILocator.getContentletAPI();
     private FieldAPI fAPI = APILocator.getFieldAPI();
 
-    public CategoryAPI getCategoryAPI() {
-        return categoryAPI;
-    }
+	/**
+	 * Default constructor for Struts to instantiate this action.
+	 */
+    public EditFieldAction() {
 
-    public void setCategoryAPI(CategoryAPI categoryAPI) {
-        this.categoryAPI = categoryAPI;
     }
-
+    
+	@VisibleForTesting
+	public EditFieldAction(ContentletAPI contentletAPI, FieldAPI fieldAPI) {
+		this.conAPI = contentletAPI;
+		this.fAPI = fieldAPI;
+	}
+    
+	/**
+	 * Handles all the actions associated to a field in a Content Type.
+	 *
+	 * @param mapping
+	 *            -
+	 * @param form
+	 *            - The form containing the information selected by the user in
+	 *            the UI.
+	 * @param config
+	 *            - The configuration parameters for this portlet.
+	 * @param req
+	 *            - The HTTP Request wrapper.
+	 * @param res
+	 *            - The HTTP Response wrapper.
+	 * @throws Exception
+	 *             An error occurred when editing a field.
+	 */
     public void processAction(ActionMapping mapping, ActionForm form, PortletConfig config, ActionRequest req,
             ActionResponse res) throws Exception {
 
@@ -175,14 +206,22 @@ public class EditFieldAction extends DotPortletAction {
         setForward(req, "portlet.ext.structure.edit_field");
     }
 
+	/**
+	 * Creates a {@link Field} object or retrieves it in case it already exists,
+	 * and puts it in the {@link ActionRequest} instance.
+	 *
+	 * @param form
+	 *            - The form containing the information selected by the user in
+	 *            the UI.
+	 * @param req
+	 *            - The HTTP Request wrapper.
+	 * @param res
+	 *            - The HTTP Response wrapper.
+	 */
     private void _retrieveField(ActionForm form, ActionRequest req, ActionResponse res) {
         Field field = new Field();
         String inodeString = req.getParameter("inode");
         if (InodeUtils.isSet(inodeString)) {
-            /*
-             * long inode = Long.parseLong(inodeString); if (inode != 0) { field =
-             * FieldFactory.getFieldByInode(inode); }
-             */
             if (InodeUtils.isSet(inodeString)) {
                 field = FieldFactory.getFieldByInode(inodeString);
             } else {
@@ -204,6 +243,22 @@ public class EditFieldAction extends DotPortletAction {
         req.setAttribute(WebKeys.Field.FIELD, field);
     }
 
+	/**
+	 * Creates/updates a field added to the currently selected Content Type.
+	 * 
+	 * @param form
+	 *            - The form containing the information selected by the user in
+	 *            the UI.
+	 * @param req
+	 *            - The HTTP Request wrapper.
+	 * @param res
+	 *            - The HTTP Response wrapper.
+	 * @param user
+	 *            - The {@link User} performing this action.
+	 * @return If the field was successfully created/updated, returns
+	 *         {@code true}. Otherwise, returns {@code false}.
+	 * @throws Exception An error occurred when saving the field.
+	 */
     private boolean _saveField(ActionForm form, ActionRequest req, ActionResponse res, User user) {
         try {
             FieldForm fieldForm = (FieldForm) form;
@@ -211,9 +266,6 @@ public class EditFieldAction extends DotPortletAction {
             Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(field.getStructureInode());
             boolean isNew = false;
             boolean wasIndexed = field.isIndexed();
-
-
-            //http://jira.dotmarketing.net/browse/DOTCMS-5918
             HttpServletRequest httpReq = ((ActionRequestImpl) req).getHttpServletRequest();
             try {
                 _checkUserPermissions(structure, user, PERMISSION_PUBLISH);
@@ -240,10 +292,15 @@ public class EditFieldAction extends DotPortletAction {
             }
 
             BeanUtils.copyProperties(field, fieldForm);
+            
+            if (LegacyFieldTypes.CATEGORY.legacyValue().equalsIgnoreCase(fieldForm.getFieldType())) {
+	            if (UtilMethods.isSet(req.getParameter("categories"))) {
+					field.setValues(req.getParameter("categories"));
+					field.setIndexed(true);
+	            }
+            }
 
-            //To validate values entered for decimal/number type check box field
-            //http://jira.dotmarketing.net/browse/DOTCMS-5516
-
+            // Validate values entered for decimal/number type check box field
             if (field.getFieldType().equals(Field.FieldType.CHECKBOX.toString())){
                 String values = fieldForm.getValues();
                 String temp = values.replaceAll("\r\n","|");
@@ -328,18 +385,6 @@ public class EditFieldAction extends DotPortletAction {
                 field.setVelocityVarName(fieldVelocityName);
             }
 
-            if (!field.isFixed() && !field.isReadOnly()) {
-                // gets the data type from the contentlet: bool, date, text, etc
-
-
-
-
-
-
-            }
-
-
-
             boolean isUpdating = UtilMethods.isSet(field.getInode());
             // saves this field
             FieldFactory.saveField(field);
@@ -365,7 +410,6 @@ public class EditFieldAction extends DotPortletAction {
                 perAPI.resetChildrenPermissionReferences(structure);
             }
 
-            //http://jira.dotmarketing.net/browse/DOTCMS-5178
             if(!isNew && ((!wasIndexed && fieldForm.isIndexed()) || (wasIndexed && !fieldForm.isIndexed()))){
               // rebuild contentlets indexes
               conAPI.reindex(structure);
@@ -387,6 +431,16 @@ public class EditFieldAction extends DotPortletAction {
         return false;
     }
 
+    /**
+     * 
+     * @param form
+	 *            - The form containing the information selected by the user in
+	 *            the UI.
+	 * @param req
+	 *            - The HTTP Request wrapper.
+	 * @param res
+	 *            - The HTTP Response wrapper.
+     */
     private void _loadForm(ActionForm form, ActionRequest req, ActionResponse res) {
         try {
             FieldForm fieldForm = (FieldForm) form;
@@ -418,6 +472,16 @@ public class EditFieldAction extends DotPortletAction {
         }
     }
 
+    /**
+     * 
+     * @param form
+	 *            - The form containing the information selected by the user in
+	 *            the UI.
+	 * @param req
+	 *            - The HTTP Request wrapper.
+	 * @param res
+	 *            - The HTTP Response wrapper.
+     */
     private void _deleteField(ActionForm form, ActionRequest req, ActionResponse res) {
         Field field = (Field) req.getAttribute(WebKeys.Field.FIELD);
         Structure structure = StructureFactory.getStructureByInode(field.getStructureInode());
@@ -444,6 +508,16 @@ public class EditFieldAction extends DotPortletAction {
 
     }
 
+    /**
+     * 
+     * @param form
+	 *            - The form containing the information selected by the user in
+	 *            the UI.
+	 * @param req
+	 *            - The HTTP Request wrapper.
+	 * @param res
+	 *            - The HTTP Response wrapper.
+     */
     private void _reorderFields(ActionForm form, ActionRequest req, ActionResponse res) {
         try {
             Enumeration enumeration = req.getParameterNames();
@@ -471,6 +545,11 @@ public class EditFieldAction extends DotPortletAction {
         }
     }
 
+    /**
+     * 
+     * @param fieldVelVarName
+     * @return
+     */
     private boolean validateInternalFieldVelocityVarName(String fieldVelVarName){
 
         if(fieldVelVarName.equals(Contentlet.INODE_KEY)||
@@ -498,8 +577,13 @@ public class EditFieldAction extends DotPortletAction {
 
     }
 
+    /**
+     * 
+	 * @param req
+	 *            - The HTTP Request wrapper.
+     * @return
+     */
     public String hostNameUtil(ActionRequest req) {
-
         ActionRequestImpl reqImpl = (ActionRequestImpl) req;
         HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
         HttpSession session = httpReq.getSession();
@@ -516,8 +600,6 @@ public class EditFieldAction extends DotPortletAction {
         }
 
         return h.getTitle()!=null?h.getTitle():"default";
-
     }
 
 }
-
