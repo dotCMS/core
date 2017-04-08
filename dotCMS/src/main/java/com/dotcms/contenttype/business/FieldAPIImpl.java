@@ -165,7 +165,9 @@ public class FieldAPIImpl implements FieldAPI {
 
       HibernateUtil.startTransaction();
 
-      if (!(field instanceof ConstantField) &&
+      if (!(field instanceof CategoryField) &&
+          !(field instanceof ConstantField) &&
+          !(field instanceof HiddenField) &&
     	  !(field instanceof LineDividerField) &&
     	  !(field instanceof TabDividerField) &&
     	  !(field instanceof RelationshipsTabField) &&
