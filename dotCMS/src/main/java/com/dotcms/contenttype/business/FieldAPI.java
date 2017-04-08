@@ -82,6 +82,14 @@ public interface FieldAPI {
 	void delete(Field field) throws DotDataException;
 
 	/**
+	 * Deletes a field from a content type (as specified in the passed in Field object)
+	 * 
+	 * @param field Field that wants to be deleted.
+	 * @throws DotDataException Error occurred when performing the action.
+	 */
+	void delete(Field field, User user) throws DotDataException, DotSecurityException;
+
+	/**
 	 * Deletes all the fields related to the given Content Type
 	 * 
 	 * @param type Content Type that contains the fields.
