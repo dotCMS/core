@@ -3646,6 +3646,13 @@ html, body {
   background-color: #C5C5C5;
 }
 
+#select-arrow, .dijitSelect .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectHover .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectActive .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectOpened .dijitArrowButton > .dijitArrowButtonInner {
+  float: none;
+  height: 0 !important;
+  margin: 0;
+  position: static;
+}
+
 .dijitSelect {
   background-color: #fff;
   border: solid 1px #C5C5C5;
@@ -3658,7 +3665,7 @@ html, body {
 .dijitSelect .dijitArrowButton {
   border-left: solid 1px #C5C5C5;
   width: 32px;
-  background-color: #fff;
+  background-color: transparent;
 }
 .dijitSelect .dijitArrowButton > .dijitArrowButtonInner {
   left: 50%;
@@ -3672,10 +3679,6 @@ html, body {
   content: "";
   height: 0;
   width: 0;
-  float: none;
-  height: 0 !important;
-  margin: 0;
-  position: static;
 }
 .dijitSelect .dijitArrowButtonInner {
   width: 32px;
@@ -3687,9 +3690,9 @@ html, body {
 }
 .dijitSelectHover .dijitArrowButton {
   border-left: solid 1px #0E80CB;
-  background-color: #fff;
+  background-color: transparent;
 }
-.dijitSelectHover .dijitArrowButton:before {
+.dijitSelectHover .dijitArrowButton > .dijitArrowButtonInner {
   left: 50%;
   margin-left: -5px;
   margin-top: -2.5px;
@@ -3709,9 +3712,9 @@ html, body {
 }
 .dijitSelectActive .dijitArrowButton, .dijitSelectOpened .dijitArrowButton {
   border-left: solid 1px #0E80CB;
-  background-color: #fff;
+  background-color: transparent;
 }
-.dijitSelectActive .dijitArrowButton:before, .dijitSelectOpened .dijitArrowButton:before {
+.dijitSelectActive .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectOpened .dijitArrowButton > .dijitArrowButtonInner {
   left: 50%;
   margin-left: -5px;
   margin-top: -2.5px;
