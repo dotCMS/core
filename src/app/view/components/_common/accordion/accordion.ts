@@ -1,4 +1,4 @@
-import {Component, Input, OnDestroy} from '@angular/core';
+import { Component, Input, ElementRef, ViewChild } from '@angular/core';
 
 @Component({
 
@@ -31,7 +31,6 @@ export class Accordion {
 }
 
 @Component({
-
     selector: 'accordion-group',
     styles: [require('./accordion-group.scss')],
     template: `
@@ -42,16 +41,23 @@ export class Accordion {
             </span>
             
         </a>
-        <div class="accordion-group__content" [ngClass]="{'is-open': isOpen}">
-            <ng-content></ng-content>
+        <div class="accordion-group__content" [style.height.px]="isOpen ? accordionGroupHeight : 0">
+            <div class="accordion-group__content-inner" #accordionGroupContentInner>
+                <ng-content></ng-content>
+            </div>
         </div>
     `
 })
-export class AccordionGroup implements OnDestroy {
+export class AccordionGroup {
     @Input('open') _isOpen = false;
-
     @Input() heading: string;
     @Input() icon: string;
+    @ViewChild('accordionGroupContentInner') accordionGroupContentInner: ElementRef;
+    public accordionGroupHeight: number;
+
+    constructor(private accordion: Accordion) {
+        this.accordion.addGroup(this);
+    }
 
     set isOpen(value: boolean) {
         this._isOpen = value;
@@ -59,13 +65,16 @@ export class AccordionGroup implements OnDestroy {
             this.accordion.closeOthers(this);
         }
     }
-
-    constructor(private accordion: Accordion) {
-        this.accordion.addGroup(this);
-    }
-
     get isOpen(): boolean {
         return this._isOpen;
+    }
+
+    ngAfterViewInit(): void {
+        this.accordionGroupHeight = this.accordionGroupContentInner.nativeElement.offsetHeight;
+    }
+
+    getHeight(): number {
+        return this._isOpen ? this.accordionGroupHeight : 0;
     }
 
     open(): void {
