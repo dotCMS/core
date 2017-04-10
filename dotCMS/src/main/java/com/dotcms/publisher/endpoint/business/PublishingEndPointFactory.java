@@ -6,11 +6,14 @@ import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotmarketing.exception.DotDataException;
 
 /**
- * Factory for manage data into publishing_end_point
+ * This class provides methods to interact with publishing end-points in the
+ * system. Publishing environments are composed of one or more publishing
+ * end-points which represent the servers that dotCMS can send bundles to (HTML
+ * pages, contents, files, folders, and so on).
  *
- * @author Graziano Aliberti - Engineering Ingegneria Informatica S.p.a
- *
- * Oct 26, 2012 - 10:04:20 AM
+ * @author Graziano Aliberti
+ * @since Oct 26, 2012
+ * 
  */
 public abstract class PublishingEndPointFactory {
 
@@ -35,25 +38,88 @@ public abstract class PublishingEndPointFactory {
 	protected static String SELECT_END_POINT_BY_NAME				=	"SELECT * FROM publishing_end_point " +
 																	"WHERE server_name = ?";
 
+	/**
+	 * 
+	 * @return
+	 * @throws DotDataException
+	 */
 	public abstract List<PublishingEndPoint> getEndPoints() throws DotDataException;
 
+	/**
+	 * 
+	 * @return
+	 * @throws DotDataException
+	 */
 	public abstract List<PublishingEndPoint> getReceivingEndPoints() throws DotDataException;
 
+	/**
+	 * Returns the publishing end-point associated to the specified ID.
+	 * 
+	 * @param id
+	 *            - The end-point's ID.
+	 * @return The associated {@link PublishingEndPoint}
+	 * @throws DotDataException
+	 *             An error occurred when accessing the data source.
+	 */
 	public abstract PublishingEndPoint getEndPointById(String id) throws DotDataException;
 
+	/**
+	 * 
+	 * @param name
+	 * @return
+	 * @throws DotDataException
+	 */
 	public abstract PublishingEndPoint getEndPointByName(String name) throws DotDataException;
 
+	/**
+	 * 
+	 * @param address
+	 * @return
+	 * @throws DotDataException
+	 */
 	public abstract PublishingEndPoint getEnabledSendingEndPointByAddress(String address) throws DotDataException;
 
+	/**
+	 * 
+	 * @param environmentId
+	 * @return
+	 * @throws DotDataException
+	 */
 	public abstract List<PublishingEndPoint> getSendingEndPointsByEnvironment(String environmentId) throws DotDataException;
 
+	/**
+	 * 
+	 * @return
+	 * @throws DotDataException
+	 */
 	public abstract List<PublishingEndPoint> getEnabledReceivingEndPoints() throws DotDataException;
 
+	/**
+	 * 
+	 * @param anEndPoint
+	 * @throws DotDataException
+	 */
 	public abstract void store(PublishingEndPoint anEndPoint) throws DotDataException;
 
+	/**
+	 * 
+	 * @param anEndPoint
+	 * @throws DotDataException
+	 */
 	public abstract void update(PublishingEndPoint anEndPoint) throws DotDataException;
 
+	/**
+	 * 
+	 * @param id
+	 * @throws DotDataException
+	 */
 	public abstract void deleteEndPointById(String id) throws DotDataException;
 
+	/**
+	 * 
+	 * @return
+	 * @throws DotDataException
+	 */
 	public abstract List<String> findSendGroups() throws DotDataException;
+
 }
