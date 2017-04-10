@@ -28,9 +28,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class OSGIUtil {
 
-    public static final String FELIX_BASE_DIR = "felix.base.dir";
-    public static final String FELIX_FILEINSTALL_DIR = "felix.fileinstall.dir";
-    public static final String FELIX_UNDEPLOYED_DIR = "felix.undeployed.dir";
+    private static final String FELIX_BASE_DIR = "felix.base.dir";
+    private static final String FELIX_FILEINSTALL_DIR = "felix.fileinstall.dir";
+    private static final String FELIX_UNDEPLOYED_DIR = "felix.undeployed.dir";
+
     public static final String BUNDLE_HTTP_BRIDGE_SYMBOLIC_NAME = "org.apache.felix.http.bundle";
     private static final String PROPERTY_OSGI_PACKAGES_EXTRA = "org.osgi.framework.system.packages.extra";
     public String FELIX_EXTRA_PACKAGES_FILE;
@@ -327,4 +328,122 @@ public class OSGIUtil {
         return propertiesMap;
     }
 
+
+    /**
+     * Fetches the Felix Base, Deploy or Undeploy path.
+     * First it looks for the $env property on the <@link>com.dotmarketing.util.Config</@link> as 'FELIX_BASE_PATH', 'FELIX_DEPLOY_PATH' or 'FELIX_UNDEPLOYED_PATH'.
+     * If found then converts it to the real path.
+     * If not found, searches for the property on the bundle context and if it fails then it sets it manually.
+     *
+     * @param deploy    Indicates whether it's trying to fetch the deploy or undeployed path. If deploy = true, the fetch the deploy path, if false then fetch the undeploy path
+     * @param base      Fetch base folder, if this property exists, then it overrides the deploy param
+     * @return String
+     */
+    private String getFelixPath(boolean deploy, boolean base) {
+        String felixPath;
+
+        String envProperty, felixDir, manualPath;
+        if (!base) {
+            if (deploy) {
+                envProperty = "FELIX_DEPLOY_PATH";
+                felixDir = FELIX_FILEINSTALL_DIR;
+                manualPath = "load";
+            } else {
+                envProperty = "FELIX_UNDEPLOY_PATH";
+                felixDir = FELIX_UNDEPLOYED_DIR;
+                manualPath = "undeployed";
+            }
+
+            Logger.debug(this, "Fetching $env property '" + envProperty + "'");
+            String felixEnvProperty = Config.getStringProperty(envProperty, null);
+
+            if (felixEnvProperty == null || felixEnvProperty.isEmpty() || felixEnvProperty.equals("null")) {
+                Logger.debug(this, "'" + envProperty + "' not found. Fetching path from felix bundle context.");
+
+                try {
+                    felixPath = getBundleContext().getProperty(felixDir);
+                } catch (Exception ex) {
+                    Logger.error(this, String.format("Unable to find the felix '%s' folder path from OSGI bundle context. Trying to fetch it from Config.CONTEXT as real path from '/WEB-INF/felix/%s'", manualPath, manualPath), ex);
+
+                    try {
+                        felixPath = Config.CONTEXT.getRealPath("/WEB-INF/felix/" + manualPath);
+                    } catch (Exception ex2) {
+                        Logger.error(this, String.format("Unable to find the felix '%s' folder real path from Config.CONTEXT. Setting it manually to '/WEB-INF/felix/%s'", manualPath, manualPath), ex2);
+                        felixPath = "/WEB-INF/felix/" + manualPath;
+                    }
+                }
+            } else {
+                Logger.debug(this, "'" + envProperty + "' found. Fetching the real path.");
+
+                try {
+                    felixPath = Config.CONTEXT.getRealPath(felixEnvProperty);
+                } catch (Exception ex) {
+                    Logger.error(this, String.format("Unable to find the felix '%s' folder real path from Config.CONTEXT. Setting it manually to '/WEB-INF/felix/%s'", manualPath, manualPath), ex);
+                    felixPath = "/WEB-INF/felix/" + manualPath;
+                }
+            }
+
+            if (felixPath == null) {
+                Logger.error(this, String.format("Path '%s' was not successfully set. Setting it manually to '/WEB-INF/felix/%s'", manualPath, manualPath));
+                felixPath = "/WEB-INF/felix/" + manualPath;
+            }
+        } else {
+            envProperty = "FELIX_BASE_PATH";
+
+            Logger.debug(this, "Fetching $env property '" + envProperty + "'");
+            String felixEnvProperty = Config.getStringProperty(envProperty, null);
+
+            if (felixEnvProperty == null || felixEnvProperty.isEmpty() || felixEnvProperty.equals("null")) {
+                try {
+                    felixPath = OSGIUtil.getInstance().getBundleContext().getProperty(FELIX_BASE_DIR);
+                } catch (Exception ex) {
+                    Logger.error(this, "Unable to find the felix base folder path from OSGI bundle context. Setting it manually to /WEB-INF/felix", ex);
+                    felixPath = "/WEB-INF/felix";
+                }
+            } else {
+                Logger.debug(this, "'" + envProperty + "' found. Fetching the real path.");
+
+                try {
+                    felixPath = Config.CONTEXT.getRealPath(felixEnvProperty);
+                } catch (Exception ex) {
+                    Logger.error(this, "Unable to find the felix base folder real path from Config.CONTEXT. Setting it manually to '/WEB-INF/felix'", ex);
+                    felixPath = "/WEB-INF/felix";
+                }
+            }
+
+            if (felixPath == null) {
+                Logger.error(this, "Path was not successfully set. Setting it manually to '/WEB-INF/felix'");
+                felixPath = "/WEB-INF/felix";
+            }
+        }
+
+        return felixPath;
+    }
+
+    /**
+     * Fetches the Felix Base path
+     *
+     * @return String
+     */
+    public String getFelixBasePath() {
+        return getFelixPath(false, true);
+    }
+
+    /**
+     * Fetches the Felix Deploy path
+     *
+     * @return String
+     */
+    public String getFelixDeployPath() {
+        return getFelixPath(true, false);
+    }
+
+    /**
+     * Fetches the Felix Undeploy path
+     *
+     * @return String
+     */
+    public String getFelixUndeployPath() {
+        return getFelixPath(false, false);
+    }
 }

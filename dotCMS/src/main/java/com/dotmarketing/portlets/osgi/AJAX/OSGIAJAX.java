@@ -48,22 +48,8 @@ public class OSGIAJAX extends OSGIBaseAJAX {
 
         //Then move the bundle from the load folder to the undeployed folder
 
-        String loadPath;
-        String undeployedPath;
-
-        try {
-            loadPath = OSGIUtil.getInstance().getBundleContext().getProperty(OSGIUtil.FELIX_FILEINSTALL_DIR);
-        } catch (Exception ex) {
-            Logger.error(this, "Unable to find the felix load folder path from OSGI bundle context. Setting it manually to /WEB-INF/felix/load", ex);
-            loadPath = "/WEB-INF/felix/load";
-        }
-
-        try {
-            undeployedPath = OSGIUtil.getInstance().getBundleContext().getProperty(OSGIUtil.FELIX_UNDEPLOYED_DIR);
-        } catch (Exception ex) {
-            Logger.error(this, "Unable to find the felix undeployed folder path from OSGI bundle context. Setting it manually to /WEB-INF/felix/undeployed", ex);
-            undeployedPath = "/WEB-INF/felix/undeployed";
-        }
+        String loadPath = OSGIUtil.getInstance().getFelixDeployPath();
+        String undeployedPath = OSGIUtil.getInstance().getFelixUndeployPath();
 
         File from = new File( FileUtil.getRealPath( loadPath + File.separator + jar ) );
         File to = new File( FileUtil.getRealPath( undeployedPath + File.separator + jar ) );
@@ -83,22 +69,8 @@ public class OSGIAJAX extends OSGIBaseAJAX {
     }
 
     public void deploy ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
-        String loadPath;
-        String undeployedPath;
-
-        try {
-            loadPath = OSGIUtil.getInstance().getBundleContext().getProperty(OSGIUtil.FELIX_FILEINSTALL_DIR);
-        } catch (Exception ex) {
-            Logger.error(this, "Unable to find the felix load folder path from OSGI bundle context. Setting it manually to /WEB-INF/felix/load", ex);
-            loadPath = "/WEB-INF/felix/load";
-        }
-
-        try {
-            undeployedPath = OSGIUtil.getInstance().getBundleContext().getProperty(OSGIUtil.FELIX_UNDEPLOYED_DIR);
-        } catch (Exception ex) {
-            Logger.error(this, "Unable to find the felix undeployed folder path from OSGI bundle context. Setting it manually to /WEB-INF/felix/undeployed", ex);
-            undeployedPath = "/WEB-INF/felix/undeployed";
-        }
+        String loadPath = OSGIUtil.getInstance().getFelixDeployPath();
+        String undeployedPath = OSGIUtil.getInstance().getFelixUndeployPath();
 
         String jar = request.getParameter( "jar" );
         File from = new File( FileUtil.getRealPath( undeployedPath + File.separator + jar ) );
@@ -168,13 +140,7 @@ public class OSGIAJAX extends OSGIBaseAJAX {
                     }
 
 
-                    String felixBaseFolder;
-                    try {
-                        felixBaseFolder = OSGIUtil.getInstance().getBundleContext().getProperty(OSGIUtil.FELIX_BASE_DIR);
-                    } catch (Exception ex) {
-                        Logger.error(this, "Unable to find the felix base folder path from OSGI bundle context. Setting it manually to /WEB-INF/felix", ex);
-                        felixBaseFolder = "/WEB-INF/felix";
-                    }
+                    String felixBaseFolder = OSGIUtil.getInstance().getFelixBasePath();
 
                     File felixFolder  = (felixBaseFolder.startsWith("/WEB-INF")) ?
                         new File(Config.CONTEXT.getRealPath(felixBaseFolder)) :

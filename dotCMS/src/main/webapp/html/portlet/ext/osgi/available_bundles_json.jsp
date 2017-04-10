@@ -19,12 +19,7 @@
 %>
 
 <%
-    String path;
-    try {
-        path = OSGIUtil.getInstance().getBundleContext().getProperty(OSGIUtil.FELIX_UNDEPLOYED_DIR);
-    } catch (Exception ex) {
-        path = "/WEB-INF/felix/undeployed";
-    }
+    String path = OSGIUtil.getInstance().getFelixUndeployPath();
 
     String f = FileUtil.getRealPath( path );
     if ( f == null ) {
