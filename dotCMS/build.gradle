@@ -53,6 +53,7 @@ apply plugin: 'java'
 apply plugin: 'war'
 apply plugin: 'org.unbroken-dome.test-sets'
 apply plugin: 'idea'
+apply plugin: 'eclipse'
 
 // In this section you declare where to find the dependencies of your project.
 repositories {
@@ -93,6 +94,11 @@ idea {
 
     }
 }
+
+eclipse.project {
+    natures 'org.springsource.ide.eclipse.gradle.core.nature'
+}
+
 
 dependencies {
     /*****  Felix libs need to be placed in the WEB-INF/felix/bundle directory. This was previously handled using a pre-build copy task.  *****/
