@@ -2,6 +2,11 @@
 
 // Polyfills
 
+// Angular 2 use the latest Web Animations API and as today April 11, 2017
+// it's only supported by Chrome and Firefox
+//http://caniuse.com/#feat=web-animation
+import 'web-animations-js';
+
 // import 'ie-shim'; // Internet Explorer 9 support
 
 // import 'core-js/es6';

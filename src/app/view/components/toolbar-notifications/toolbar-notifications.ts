@@ -1,10 +1,11 @@
 import {BaseComponent} from '../_common/_base/base-component';
-import {Component, ViewEncapsulation, ElementRef} from '@angular/core';
+import {Component, ViewEncapsulation, ElementRef, ViewChild } from '@angular/core';
 import {DotcmsEventsService} from '../../../api/services/dotcms-events-service';
 import {INotification, NotificationsService} from '../../../api/services/notifications-service';
 import {MessageService} from '../../../api/services/messages-service';
 import {LoginService} from '../../../api/services/login-service';
 import {IframeOverlayService} from '../../../api/services/iframe-overlay-service';
+import {DropdownComponent} from '../_common/dropdown-component/dropdown-component';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -14,6 +15,7 @@ import {IframeOverlayService} from '../../../api/services/iframe-overlay-service
     templateUrl: 'toolbar-notifications.html'
 })
 export class ToolbarNotifications extends BaseComponent {
+    @ViewChild(DropdownComponent) dropdown: DropdownComponent;
     private elementRef;
     private isNotificationsMarkedAsRead = false;
     private notifications: Array<INotification> = [];
@@ -38,6 +40,7 @@ export class ToolbarNotifications extends BaseComponent {
         this.notifications = [];
         this.notificationsUnreadCount = 0;
         this.showNotifications = false;
+        this.dropdown.closeIt();
     }
 
     private dismissAllNotifications(): void {
@@ -49,6 +52,7 @@ export class ToolbarNotifications extends BaseComponent {
             }
 
             this.clearNotitications();
+
         });
     }
 
