@@ -46,17 +46,31 @@ public class KeyValueFieldUtil {
             */
 
             // the following code fixes issue 10529
-            String replacedJSJson;
-            if (json.contains("\\")) {
-                replacedJSJson = UtilMethods.replace(json, "\\", "&#92;");
-            } else {
-                replacedJSJson = json;
-            }
-
             try {
-                return MarshalFactory.getInstance().getMarshalUtils().unmarshal(replacedJSJson, new DotTypeToken<LinkedHashMap<String, String>>().getType());
+                return MarshalFactory.getInstance().getMarshalUtils().unmarshal(json, new DotTypeToken<LinkedHashMap<String, String>>().getType());
             } catch (Exception ex) {
-                Logger.error(KeyValueFieldUtil.class, "Error parsing json: " + json, ex);
+                Logger.error(KeyValueFieldUtil.class, String.format("Error parsing json: %s. Trying to parse with the JS replacement due to container or key/value data...", json), ex);
+
+                boolean tryEvaluate = false;
+                String replacedJSJson;
+                if (json.contains("\\")) {
+                    replacedJSJson = UtilMethods.replace(json, "\\", "&#92;");
+                    tryEvaluate = true;
+                } else {
+                    replacedJSJson = json;
+                }
+
+                if (tryEvaluate) {
+                    try {
+                        return MarshalFactory.getInstance().getMarshalUtils().unmarshal(replacedJSJson, new DotTypeToken<LinkedHashMap<String, String>>().getType());
+                    } catch (Exception ex2) {
+                        Logger.error(KeyValueFieldUtil.class, String.format("Unable to parse JSON with backslash replacement: %s. Returning the exception.", replacedJSJson), ex);
+                        throw ex2;
+                    }
+                } else {
+                    Logger.error(KeyValueFieldUtil.class, String.format("Unable to parse JSON: %s. Please review the content and check for potential JS replacements. Returning exception.", replacedJSJson), ex);
+                    throw ex;
+                }
             }
 
         }
