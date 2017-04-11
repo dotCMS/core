@@ -42,6 +42,7 @@ import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -49,6 +50,7 @@ import com.dotmarketing.quartz.job.DeleteFieldJobHelper;
 import com.dotmarketing.services.ContentletMapServices;
 import com.dotmarketing.services.ContentletServices;
 import com.dotmarketing.services.StructureServices;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -152,56 +154,74 @@ public class FieldAPIImpl implements FieldAPI {
 
   @Override
   public void delete(Field field, User user) throws DotDataException, DotSecurityException {
+	  boolean local = false;
+	  try{
+		  try {
 
-	  ContentTypeAPI tapi = APILocator.getContentTypeAPI(user);
-	  ContentType type = tapi.find(field.contentTypeId());
+			  local = HibernateUtil.startLocalTransactionIfNeeded();
 
-	  perAPI.checkPermission(type, PermissionLevel.PUBLISH, user);
+		  } catch (DotDataException e1) {
+			  Logger.error(FieldAPIImpl.class, e1.getMessage(), e1);
 
-
-	  Structure structure = new StructureTransformer(type).asStructure();
-	  com.dotmarketing.portlets.structure.model.Field legacyField = new LegacyFieldTransformer(field).asOldField();
-
-
-      HibernateUtil.startTransaction();
-
-      if (!(field instanceof CategoryField) &&
-          !(field instanceof ConstantField) &&
-          !(field instanceof HiddenField) &&
-    	  !(field instanceof LineDividerField) &&
-    	  !(field instanceof TabDividerField) &&
-    	  !(field instanceof RelationshipsTabField) &&
-    	  !(field instanceof PermissionTabField) &&
-    	  !(field instanceof HostFolderField) &&
-    	  structure != null
-      ) {
-          this.conAPI.cleanField(structure, legacyField, this.userAPI.getSystemUser(), false);    	  
-      }
-
-      fac.delete(field);
-
-      // Call the commit method to avoid a deadlock
-      HibernateUtil.commitTransaction();
+			  throw new DotHibernateException("Unable to start a local transaction " + e1.getMessage(), e1);
+		  }
 
 
-      CacheLocator.getContentTypeCache().remove(structure);
-      StructureServices.removeStructureFile(structure);
+		  ContentTypeAPI tapi = APILocator.getContentTypeAPI(user);
+		  ContentType type = tapi.find(field.contentTypeId());
 
-      //Refreshing permissions
-      if (field instanceof HostFolderField) {
-    	  try {
-    		  this.conAPI.cleanHostField(structure, this.userAPI.getSystemUser(), false);
-    	  } catch(DotMappingException e) {
-    	  }
-		  this.perAPI.resetChildrenPermissionReferences(structure);
-      }
+		  perAPI.checkPermission(type, PermissionLevel.PUBLISH, user);
 
-	  // rebuild contentlets indexes
-      conAPI.reindex(structure);
 
-      // remove the file from the cache
-      ContentletServices.removeContentletFile(structure);
-      ContentletMapServices.removeContentletMapFile(structure);
+		  Structure structure = new StructureTransformer(type).asStructure();
+		  com.dotmarketing.portlets.structure.model.Field legacyField = new LegacyFieldTransformer(field).asOldField();
+
+
+	      if (!(field instanceof CategoryField) &&
+	              !(field instanceof ConstantField) &&
+	              !(field instanceof HiddenField) &&
+	        	  !(field instanceof LineDividerField) &&
+	        	  !(field instanceof TabDividerField) &&
+	        	  !(field instanceof RelationshipsTabField) &&
+	        	  !(field instanceof PermissionTabField) &&
+	        	  !(field instanceof HostFolderField) &&
+	        	  structure != null
+	      ) {
+	    	  this.conAPI.cleanField(structure, legacyField, this.userAPI.getSystemUser(), false);    	  
+	      }
+
+	      fac.delete(field);
+
+
+	      CacheLocator.getContentTypeCache().remove(structure);
+	      StructureServices.removeStructureFile(structure);
+
+	      //Refreshing permissions
+	      if (field instanceof HostFolderField) {
+	    	  try {
+	    		  this.conAPI.cleanHostField(structure, this.userAPI.getSystemUser(), false);
+	    	  } catch(DotMappingException e) {}
+
+	    	  this.perAPI.resetChildrenPermissionReferences(structure);
+	      }
+
+	      // rebuild contentlets indexes
+	      conAPI.reindex(structure);
+
+	      // remove the file from the cache
+	      ContentletServices.removeContentletFile(structure);
+	      ContentletMapServices.removeContentletMapFile(structure);
+
+	  } catch(DotHibernateException e){
+		  if(local){
+			  HibernateUtil.rollbackTransaction();
+		  }
+		  throw new DotDataException(e);
+	  } finally {
+		  if(local){
+			  HibernateUtil.commitTransaction();
+		  }
+	  }
   }
 
 
