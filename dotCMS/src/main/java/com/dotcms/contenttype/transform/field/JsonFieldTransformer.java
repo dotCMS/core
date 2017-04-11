@@ -3,6 +3,7 @@ package com.dotcms.contenttype.transform.field;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
@@ -17,6 +18,7 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
 public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
@@ -139,5 +141,29 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
     return jarr;
   }
 
+  public List<Map<String, Object>> mapList() {
+	  List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+	  for (Field field : asList()) {
+		  list.add(new JsonFieldTransformer(field).mapObject());
+	  }
+	  return list;
+  }
+
+  public Map<String, Object> mapObject() {
+	  try {
+		  Map<String, Object> map = mapper.readValue(
+			mapper.writeValueAsString(from()),
+			new TypeReference<Map<String, String>>(){}
+		  );
+
+		  map.remove("acceptedDataTypes");
+		  map.remove("iDate");
+		  map.remove("dbColumn");
+
+		  return map;
+      } catch (IOException e) {
+        throw new DotStateException(e);
+      }
+  }
 }
 
