@@ -40,9 +40,8 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -50,7 +49,6 @@ import com.dotmarketing.quartz.job.DeleteFieldJobHelper;
 import com.dotmarketing.services.ContentletMapServices;
 import com.dotmarketing.services.ContentletServices;
 import com.dotmarketing.services.StructureServices;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -154,18 +152,7 @@ public class FieldAPIImpl implements FieldAPI {
 
   @Override
   public void delete(Field field, User user) throws DotDataException, DotSecurityException {
-	  boolean local = false;
-	  try{
-		  try {
-
-			  local = HibernateUtil.startLocalTransactionIfNeeded();
-
-		  } catch (DotDataException e1) {
-			  Logger.error(FieldAPIImpl.class, e1.getMessage(), e1);
-
-			  throw new DotHibernateException("Unable to start a local transaction " + e1.getMessage(), e1);
-		  }
-
+	  LocalTransaction.wrapReturn(() -> {
 
 		  ContentTypeAPI tapi = APILocator.getContentTypeAPI(user);
 		  ContentType type = tapi.find(field.contentTypeId());
@@ -212,16 +199,8 @@ public class FieldAPIImpl implements FieldAPI {
 	      ContentletServices.removeContentletFile(structure);
 	      ContentletMapServices.removeContentletMapFile(structure);
 
-	  } catch(DotHibernateException e){
-		  if(local){
-			  HibernateUtil.rollbackTransaction();
-		  }
-		  throw new DotDataException(e);
-	  } finally {
-		  if(local){
-			  HibernateUtil.commitTransaction();
-		  }
-	  }
+	      return null;
+	  });
   }
 
 
