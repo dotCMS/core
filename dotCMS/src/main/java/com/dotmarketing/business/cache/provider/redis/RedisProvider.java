@@ -11,6 +11,8 @@ import com.dotmarketing.velocity.DotResourceCache;
 import redis.clients.jedis.*;
 
 import java.io.*;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.*;
 
 /**
@@ -373,16 +375,15 @@ public class RedisProvider extends CacheProvider {
             if ( memoryUsageString != null ) {
                 memoryUsage = Integer.valueOf(memoryUsageString);
             }
-
+            NumberFormat nf = DecimalFormat.getInstance();
             //Getting the list of groups
             Set<String> currentGroups = getGroups();
 
             for ( String group : currentGroups ) {
                 CacheStats stats = new CacheStats();
-                stats.addStat("region", group);
-                stats.addStat("size", getKeys(group).size() + "");
-                stats.addStat("configuredSize", memoryUsage + "");
-
+                stats.addStat(CacheStats.REGION, group);
+                stats.addStat(CacheStats.REGION_SIZE, nf.format(getKeys(group).size()));
+                stats.addStat(CacheStats.REGION_CONFIGURED_SIZE, nf.format(memoryUsage));
                 /*
                 Show the complete memory usage just one time,
                 the cache stats page needs improvements (html/portlet/ext/cmsmaintenance/cachestats_guava.jsp), that page was not

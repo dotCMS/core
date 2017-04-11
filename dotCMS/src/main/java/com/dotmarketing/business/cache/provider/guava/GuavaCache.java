@@ -4,13 +4,17 @@ import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotcms.repackage.com.google.common.cache.Cache;
 import com.dotcms.repackage.com.google.common.cache.CacheBuilder;
 import com.dotcms.repackage.com.google.common.cache.CacheLoader;
+
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -172,29 +176,35 @@ public class GuavaCache extends CacheProvider {
 
         Cache defaultCache = getCache(DEFAULT_CACHE);
         for ( String group : currentGroups ) {
-            CacheStats stats = new CacheStats();
-            stats.addStat("cache", getCache(group).toString());
-            stats.addStat("region", group);
+          Cache foundCache = getCache(group);
+          CacheStats stats = new CacheStats();
+          
+          boolean isDefault = (Config.getIntProperty("cache." + group + ".size", -1) == -1);
 
-            Cache foundCache = getCache(group);
-            stats.addStat("memory", foundCache.size() + "");
-            stats.addStat("CacheStats", foundCache.stats().toString());
 
-            boolean isDefault = (!DEFAULT_CACHE.equals(group) && foundCache.equals(defaultCache));
-            stats.addStat("isDefault", isDefault + "");
+          int configured = (Config.getIntProperty("cache." + group + ".size", -1) != -1)
+              ? Config.getIntProperty("cache." + group + ".size")
+                  :Config.getIntProperty("cache." + DEFAULT_CACHE + ".size");
 
-            int configured = isDefault
-                    ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".size")
-                    : (Config.getIntProperty("cache." + group + ".size", -1) != -1)
-                    ? Config.getIntProperty("cache." + group + ".size")
-                    : (group.startsWith(WORKING_CACHE_PREFIX) && Config.getIntProperty("cache." + WORKING_CACHE_PREFIX + ".size", -1) != -1)
-                    ? Config.getIntProperty("cache." + WORKING_CACHE_PREFIX + ".size")
-                    : (group.startsWith(LIVE_CACHE_PREFIX) && Config.getIntProperty("cache." + LIVE_CACHE_PREFIX + ".size", -1) != -1)
-                    ? Config.getIntProperty("cache." + LIVE_CACHE_PREFIX + ".size")
-                    : Config.getIntProperty("cache." + DEFAULT_CACHE + ".size");
-            stats.addStat("configuredSize", configured + "");
 
-            ret.addStatRecord(stats);
+          
+          
+          com.dotcms.repackage.com.google.common.cache.CacheStats guavaStats = foundCache.stats();
+          
+          NumberFormat nf = DecimalFormat.getInstance();
+          DecimalFormat pf = new DecimalFormat("##.##%");
+
+          stats.addStat(CacheStats.REGION, group);
+          stats.addStat(CacheStats.REGION_DEFAULT, isDefault + "");
+          stats.addStat(CacheStats.REGION_CONFIGURED_SIZE, nf.format(configured));
+          stats.addStat(CacheStats.REGION_SIZE, nf.format(foundCache.size()));
+          stats.addStat(CacheStats.REGION_LOAD, nf.format(guavaStats.loadCount()));
+          stats.addStat(CacheStats.REGION_HITS, nf.format(guavaStats.hitCount()));
+          stats.addStat(CacheStats.REGION_HITS, nf.format(guavaStats.hitCount()));
+          stats.addStat(CacheStats.REGION_HIT_RATE, pf.format(guavaStats.hitRate()));
+          stats.addStat(CacheStats.REGION_AVG_LOAD_TIME, nf.format(guavaStats.averageLoadPenalty()/1000000) + " ms");
+          stats.addStat(CacheStats.REGION_EVICTIONS, nf.format(guavaStats.evictionCount()));
+          ret.addStatRecord(stats);
         }
 
         return ret;
