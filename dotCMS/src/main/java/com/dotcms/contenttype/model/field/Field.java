@@ -134,11 +134,12 @@ public abstract class Field implements FieldIf, Serializable {
     return false;
   }
 
+  @Nullable
   public abstract String variable();
 
   @Value.Default
   public int sortOrder() {
-    return 0;
+    return -1;
   }
 
   @Value.Lazy
@@ -191,7 +192,7 @@ public abstract class Field implements FieldIf, Serializable {
     innerFieldVariables = fieldVariables;
   }
 
-
+  @JsonIgnore
   public abstract List<DataTypes> acceptedDataTypes();
 
   public abstract DataTypes dataType();
