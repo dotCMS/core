@@ -2397,9 +2397,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
     public SearchResponse esSearchRaw(String esQuery, boolean live, User user,
     		boolean respectFrontendRoles) throws DotSecurityException,
     		DotDataException {
-		final int[] levels = { 200, 300, 400, 500 };
-		LicenseManager i = LicenseManager.getInstance();
-		if (!i.isAuthorized(levels)) {
+		if (LicenseManager.getInstance().isCommunity()) {
 			throw new DotStateException("Need an enterprise license to run this functionality.");
 		}
     	for(ContentletAPIPreHook pre : preHooks){
