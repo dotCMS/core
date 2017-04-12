@@ -182,6 +182,7 @@ public class CaffineCache extends CacheProvider {
                   ? Config.getIntProperty("cache." + group + ".size")
                       : Config.getIntProperty("cache." + DEFAULT_CACHE + ".size");
 
+
             com.github.benmanes.caffeine.cache.stats.CacheStats cstats = foundCache.stats();
             stats.addStat(CacheStats.REGION, group);
             stats.addStat(CacheStats.REGION_DEFAULT, isDefault + "");

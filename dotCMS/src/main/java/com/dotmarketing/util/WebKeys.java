@@ -682,6 +682,7 @@ public final class WebKeys {
 	public static final String DOTCMS_STARTUP_TIME_CACHE="dotcms.startup.cache.ms";
 	public static final String DOTCMS_STARTUP_TIME_DB="dotcms.startup.db.ms";
 	public static final String DOTCMS_STARTUP_TIME_ES="dotcms.startup.es.ms";
+    public static final String DOTCMS_STARTUP_TIME_HAZEL="dotcms.startup.hazel.ms";
 	public static final String DOTCMS_STARTUP_TIME_QUARTZ="dotcms.startup.quartz.ms";
 	public static final String DOTCMS_STARTUP_TIME_OSGI="dotcms.startup.osgi.ms";
 	
