@@ -98,7 +98,7 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
             field = new Field("html", Field.FieldType.WYSIWYG, Field.DataType.LONG_TEXT, structure,
                     true, true, true, 1, "", "", "", true, false, true);
             field.setVelocityVarName("html");
-            FieldFactory.saveField(field);
+            field = FieldFactory.saveField(field);
             FieldsCache.addField(field);
 
             container=new Container();
@@ -138,7 +138,7 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
             urlmapfield = new Field("a", Field.FieldType.TEXT, Field.DataType.TEXT, urlmapstructure,
                     true, true, true, 1, "", "", "", true, false, true);
             urlmapfield.setVelocityVarName("a");
-            FieldFactory.saveField(urlmapfield);
+            urlmapfield = FieldFactory.saveField(urlmapfield);
             FieldsCache.addField(urlmapfield);
 
         }
