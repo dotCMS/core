@@ -1,10 +1,9 @@
 package com.dotmarketing.business.cache.provider.caffine;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -168,18 +167,16 @@ public class CaffineCache extends CacheProvider {
         Set<String> currentGroups = new HashSet<>();
         currentGroups.addAll(getGroups());
         Cache<String, Object> defaultCache = getCache(DEFAULT_CACHE);
-
+        NumberFormat nf = DecimalFormat.getInstance();
+        DecimalFormat pf = new DecimalFormat("##.##%");
         for (String group : currentGroups) {
             CacheStats stats = new CacheStats();
-            stats.addStat("cache", getCache(group).toString());
             stats.addStat("region", group);
-
             Cache<String, Object> foundCache = getCache(group);
-            stats.addStat("memory", foundCache.estimatedSize() + "");
-            stats.addStat("CacheStats", foundCache.stats().toString());
 
-            boolean isDefault = (!DEFAULT_CACHE.equals(group) && foundCache.equals(defaultCache));
-            stats.addStat("isDefault", isDefault + "");
+
+            boolean isDefault = (Config.getIntProperty("cache." + group + ".size", -1) == -1);
+            stats.addStat(CacheStats.REGION_DEFAULT, isDefault + "");
 
             int configured = isDefault ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".size")
                     : (Config.getIntProperty("cache." + group + ".size", -1) != -1)
@@ -198,7 +195,19 @@ public class CaffineCache extends CacheProvider {
                                                                     : Config.getIntProperty(
                                                                             "cache." + DEFAULT_CACHE
                                                                                     + ".size");
-            stats.addStat("configuredSize", configured + "");
+
+            com.github.benmanes.caffeine.cache.stats.CacheStats cstats = foundCache.stats();
+            stats.addStat(CacheStats.REGION, group);
+            stats.addStat(CacheStats.REGION_DEFAULT, isDefault + "");
+            stats.addStat(CacheStats.REGION_CONFIGURED_SIZE, nf.format(configured));
+            stats.addStat(CacheStats.REGION_SIZE, nf.format(foundCache.estimatedSize()));
+            stats.addStat(CacheStats.REGION_LOAD, nf.format(cstats.missCount()+cstats.hitCount()));
+            stats.addStat(CacheStats.REGION_HITS, nf.format(cstats.hitCount()));
+            stats.addStat(CacheStats.REGION_HIT_RATE, pf.format(cstats.hitRate()));
+            stats.addStat(CacheStats.REGION_AVG_LOAD_TIME, nf.format(cstats.averageLoadPenalty()/1000000) + " ms");
+            stats.addStat(CacheStats.REGION_EVICTIONS, nf.format(cstats.evictionCount()));
+            
+
             ret.addStatRecord(stats);
         }
 

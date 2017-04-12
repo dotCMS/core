@@ -15,7 +15,6 @@
     } catch (Exception e) {
         Logger.error(this.getClass(), e.getMessage());
 %>
-
 <div class="callOutBox2" style="text-align:center;margin:40px;padding:20px;">
     <%= LanguageUtil.get(pageContext, "you-have-been-logged-off-because-you-signed-on-with-this-account-using-a-different-session") %>
     <br>&nbsp;<br>
@@ -23,7 +22,7 @@
     </a>
 </div>
 <%}%>
-
+<script src="/html/js/sortable-0.8.0/js/sortable.min.js"></script>
 <div style="padding-bottom:30px;">
     <table class="listingTable shadowBox" style="width:400px">
         <tr>
@@ -61,38 +60,38 @@
         List<CacheStats> stats = providerStat.getStats();
 
 %>
-<div><%= providerStat.getProviderName() %>
-</div>
-<table class="listingTable ">
-    <thead>
-    <%
-        for (String col : statColumns) {
-    %>
 
 
-    <th><%= LanguageUtil.get(pageContext, col) %>
-    </th>
+<h2 style="text-align:left"><%= providerStat.getProviderName() %></h2>
 
-    <%
-        }
-    %>
+
+<table class="listingTable " data-sortable id="sortme<%=providerStat.hashCode()%>" style="margin-bottom:50px;">
+    <thead style="cursor: pointer;">
+    	<% for (String col : statColumns) { %>
+    		<th style="text-align:left"><%= LanguageUtil.get(pageContext, col) %></th>
+		<% } %>
     </thead>
-    <%
-        for (CacheStats stat : stats) {
-    %>
+    <% for (CacheStats stat : stats) { %>
     <tr>
-        <%
-            for (String col : statColumns) {
-        %>
-        <td><%= stat.getStatValue(col) %></td>
-        <%
-            }
-        %>
+        <% for (String col : statColumns) {  %>
+        <td style="text-align:left"><%= stat.getStatValue(col) %></td>
+        <% } %>
     </tr>
-    <%
-        }
-    %>
+    <% } %>
 </table>
-<%
-    }
-%>
+<script>
+dojo.ready(function() {
+	var newTableObject = document.getElementById("sortme<%=providerStat.hashCode()%>");
+	Sortable.initTable(newTableObject)
+});
+
+</script>
+<% } %>
+
+
+
+
+
+
+
+</div>
