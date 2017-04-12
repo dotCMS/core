@@ -1,22 +1,26 @@
 package com.dotmarketing.business.cache.provider.hazelcast;
 
-import com.dotmarketing.business.cache.provider.CacheStats;
+import java.io.InputStream;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
+import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
-
-import java.io.InputStream;
-import java.util.*;
 
 /**
  * Created by jasontesser on 3/14/17.
  */
 public class HazelCastClientProvider extends CacheProvider {
 
+  private static final long serialVersionUID = 1L;
     protected HazelcastInstance hazel = null;
     protected Boolean initialized = false;
 
@@ -38,12 +42,12 @@ public class HazelCastClientProvider extends CacheProvider {
 
     @Override
     public String getName() {
-        return "HazelCast Provider";
+        return "HazelCast Client Provider";
     }
 
     @Override
     public String getKey() {
-        return "HazelCastProvider";
+        return "HazelCastClientProvider";
     }
 
     @Override
@@ -111,9 +115,15 @@ public class HazelCastClientProvider extends CacheProvider {
 
         for (String group : currentGroups) {
             CacheStats stats = new CacheStats();
-            stats.addStat("region", group);
-            stats.addStat("size", hazel.getMap(group).keySet().size() + "");
-            stats.addStat("local-memory-cost", hazel.getMap(group).getLocalMapStats().getOwnedEntryMemoryCost() + "");
+
+            stats.addStat("cache-region", group);
+            stats.addStat("cache-local-memory-cost", UtilMethods.prettyByteify(hazel.getMap(group).getLocalMapStats().getOwnedEntryMemoryCost()));
+            stats.addStat("cache-local-heap-cost", hazel.getMap(group).getLocalMapStats().getHeapCost());
+            stats.addStat("cache-requests", hazel.getMap(group).getLocalMapStats().getGetOperationCount());
+            stats.addStat("cache-hits", hazel.getMap(group).getLocalMapStats().getHits());
+            stats.addStat("cache-local-size", hazel.getMap(group).getLocalMapStats().getOwnedEntryCount());
+
+
             ret.addStatRecord(stats);
         }
 
