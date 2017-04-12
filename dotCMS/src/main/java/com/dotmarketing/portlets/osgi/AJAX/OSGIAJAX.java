@@ -51,8 +51,8 @@ public class OSGIAJAX extends OSGIBaseAJAX {
         String loadPath = OSGIUtil.getInstance().getFelixDeployPath();
         String undeployedPath = OSGIUtil.getInstance().getFelixUndeployPath();
 
-        File from = new File( FileUtil.getRealPath( loadPath + File.separator + jar ) );
-        File to = new File( FileUtil.getRealPath( undeployedPath + File.separator + jar ) );
+        File from = new File(loadPath + File.separator + jar);
+        File to = new File(undeployedPath + File.separator + jar);
 
         if(to.exists()) {
             to.delete();
@@ -73,8 +73,8 @@ public class OSGIAJAX extends OSGIBaseAJAX {
         String undeployedPath = OSGIUtil.getInstance().getFelixUndeployPath();
 
         String jar = request.getParameter( "jar" );
-        File from = new File( FileUtil.getRealPath( undeployedPath + File.separator + jar ) );
-        File to = new File( FileUtil.getRealPath( loadPath + File.separator + jar ) );
+        File from = new File(undeployedPath + File.separator + jar);
+        File to = new File(loadPath + File.separator + jar);
 
         Boolean success = from.renameTo( to );
         if ( success ) {
@@ -145,7 +145,7 @@ public class OSGIAJAX extends OSGIBaseAJAX {
                     File felixFolder  = (felixBaseFolder.startsWith("/WEB-INF")) ?
                         new File(Config.CONTEXT.getRealPath(felixBaseFolder)) :
                         new File(com.dotmarketing.util.FileUtil.getAbsolutlePath(felixBaseFolder));
-                    File osgiJar = new File(FileUtil.getRealPath( felixBaseFolder + "/load/" + fname ) );
+                    File osgiJar = new File(felixBaseFolder + "/load/" + fname);
 
 
                     if ( !felixFolder.exists() 
