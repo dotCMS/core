@@ -2,6 +2,8 @@ package com.dotcms.contenttype.business;
 
 import java.util.List;
 
+import com.dotcms.content.business.DotMappingException;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.CheckboxField;
@@ -28,12 +30,26 @@ import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.quartz.job.DeleteFieldJobHelper;
+import com.dotmarketing.services.ContentletMapServices;
+import com.dotmarketing.services.ContentletServices;
+import com.dotmarketing.services.StructureServices;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 
@@ -47,16 +63,70 @@ public class FieldAPIImpl implements FieldAPI {
       TabDividerField.class, TagField.class, TextAreaField.class, TimeField.class,
       WysiwygField.class);
 
-  FieldFactory fac = new FieldFactoryImpl();
+  private final PermissionAPI perAPI;
+  private final ContentletAPI conAPI;
+  private final UserAPI userAPI;
+
+  private FieldFactory fac = new FieldFactoryImpl();
+
+  public FieldAPIImpl() {
+      this(APILocator.getPermissionAPI(),
+          APILocator.getContentletAPI(),
+          APILocator.getUserAPI(),
+          DeleteFieldJobHelper.INSTANCE);
+  }
+
+  @VisibleForTesting
+  public FieldAPIImpl(final PermissionAPI perAPI,
+                        final ContentletAPI conAPI,
+                        final UserAPI userAPI,
+                        final DeleteFieldJobHelper deleteFieldJobHelper) {
+      this.perAPI = perAPI;
+      this.conAPI = conAPI;
+      this.userAPI = userAPI;
+  }
 
   @Override
 	public Field save(Field field, User user) throws DotDataException, DotSecurityException {
-		ContentTypeAPI tapi = APILocator.getContentTypeAPI(user );
+		ContentTypeAPI tapi = APILocator.getContentTypeAPI(user);
 		ContentType type = tapi.find(field.contentTypeId()) ;
-		APILocator.getPermissionAPI().checkPermission(type, PermissionLevel.PUBLISH, user);
-		
+		perAPI.checkPermission(type, PermissionLevel.PUBLISH, user);
 
-		return fac.save(field);
+	    Field oldField = null;
+	    if (UtilMethods.isSet(field.id())) {
+	    	try {
+	    		oldField = fac.byId(field.id());
+	    	} catch(NotFoundInDbException e) {
+	    		//Do nothing as Starter comes with id but field is unexisting yet
+	    	}
+	    }
+
+		Field result = fac.save(field);
+
+
+		Structure structure = new StructureTransformer(type).asStructure();
+
+        CacheLocator.getContentTypeCache().remove(structure);
+        StructureServices.removeStructureFile(structure);
+
+        //Refreshing permissions
+        if(oldField != null && field instanceof HostFolderField){
+        	perAPI.resetChildrenPermissionReferences(structure);
+        }
+
+        //http://jira.dotmarketing.net/browse/DOTCMS-5178
+        if(oldField != null && ((!oldField.indexed() && field.indexed()) || (oldField.indexed() && !field.indexed()))){
+          // rebuild contentlets indexes
+          conAPI.reindex(structure);
+        }
+
+        if (field instanceof ConstantField) {
+            ContentletServices.removeContentletFile(structure);
+            ContentletMapServices.removeContentletMapFile(structure);
+            conAPI.refresh(structure);
+        }
+
+        return result;
 	}
   
   @Override
@@ -70,9 +140,67 @@ public class FieldAPIImpl implements FieldAPI {
 
       return fac.save(var);
   }
+
   @Override
   public void delete(Field field) throws DotDataException {
-    fac.delete(field);
+	  try {
+		  this.delete(field, this.userAPI.getSystemUser());
+	  } catch (DotSecurityException e){
+		  throw new DotDataException(e);
+	  }
+  }
+
+  @Override
+  public void delete(Field field, User user) throws DotDataException, DotSecurityException {
+	  LocalTransaction.wrapReturn(() -> {
+
+		  ContentTypeAPI tapi = APILocator.getContentTypeAPI(user);
+		  ContentType type = tapi.find(field.contentTypeId());
+
+		  perAPI.checkPermission(type, PermissionLevel.PUBLISH, user);
+
+
+		  Structure structure = new StructureTransformer(type).asStructure();
+		  com.dotmarketing.portlets.structure.model.Field legacyField = new LegacyFieldTransformer(field).asOldField();
+
+
+	      if (!(field instanceof CategoryField) &&
+	              !(field instanceof ConstantField) &&
+	              !(field instanceof HiddenField) &&
+	        	  !(field instanceof LineDividerField) &&
+	        	  !(field instanceof TabDividerField) &&
+	        	  !(field instanceof RelationshipsTabField) &&
+	        	  !(field instanceof PermissionTabField) &&
+	        	  !(field instanceof HostFolderField) &&
+	        	  structure != null
+	      ) {
+	    	  this.conAPI.cleanField(structure, legacyField, this.userAPI.getSystemUser(), false);    	  
+	      }
+
+	      fac.delete(field);
+
+
+	      CacheLocator.getContentTypeCache().remove(structure);
+	      StructureServices.removeStructureFile(structure);
+
+	      //Refreshing permissions
+	      if (field instanceof HostFolderField) {
+	    	  try {
+	    		  this.conAPI.cleanHostField(structure, this.userAPI.getSystemUser(), false);
+	    	  } catch(DotMappingException e) {}
+
+	    	  this.perAPI.resetChildrenPermissionReferences(structure);
+	      }
+
+	      // rebuild contentlets indexes
+	      conAPI.reindex(structure);
+
+	      // remove the file from the cache
+	      ContentletServices.removeContentletFile(structure);
+	      ContentletMapServices.removeContentletMapFile(structure);
+
+	      return null;
+	  });
   }
 
 

@@ -209,55 +209,11 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
         } else if ( v.toString().equals(ChainableCacheAdministratorImpl.DUMMY_TEXT_TO_SEND) ) {
             //Don't do anything is we are only checking sending.
         } else {
-            invalidateCacheFromCluster(v.toString());
+            CacheLocator.getCacheAdministrator().invalidateCacheMesageFromCluster(v.toString());
         }
     }
 
-    private void invalidateCacheFromCluster ( String k ) {
 
-        boolean flushMenus = false;
-        DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
-        String menuGroup = vc.getMenuGroup();
-
-        int i = k.lastIndexOf(":");
-        if ( i > 0 ) {
-
-            String key = k.substring(0, i);
-            String group = k.substring(i + 1, k.length());
-
-            key = key.toLowerCase();
-            group = group.toLowerCase();
-
-            if ( key.contains("dynamic") ) {
-                if ( group.equals(menuGroup) ) {
-                    flushMenus = true;
-                }
-            }
-            if ( !flushMenus ) {
-                if ( key.equals("0") ) {
-
-                    if ( group.equalsIgnoreCase(DotCacheAdministrator.ROOT_GOUP) ) {
-                        CacheLocator.getCacheAdministrator().flushAlLocalOnly();
-                    } else if ( group.equalsIgnoreCase(menuGroup) ) {
-                        flushMenus = true;
-                    } else {
-                        CacheLocator.getCacheAdministrator().flushGroupLocalOnly(group);
-                    }
-
-                } else {
-                    CacheLocator.getCacheAdministrator().removeLocalOnly(key, group);
-                }
-            }
-        } else {
-            Logger.error(this, "The cache to locally remove key is invalid. The value was " + k);
-        }
-
-        if ( flushMenus ) {
-            RefreshMenus.deleteMenusOnFileSystemOnly();
-            CacheLocator.getCacheAdministrator().flushGroupLocalOnly(menuGroup);
-        }
-
-    }
 
     public Map<String, Boolean> validateCacheInCluster ( String dateInMillis, int numberServers, int maxWaitSeconds ) throws CacheTransportException {
 

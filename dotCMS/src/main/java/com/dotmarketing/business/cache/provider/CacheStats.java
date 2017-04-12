@@ -31,7 +31,7 @@ public class CacheStats {
     public void addStat(String statName, String value) {
         stats.put(statName, value);
     }
-    
+
     public void addStat(String statName, long value) {
       stats.put(statName, value+"");
     }
@@ -43,5 +43,7 @@ public class CacheStats {
     public String getStatValue(String columnName) {
         return stats.get(columnName);
     }
+    
+    
 
 }

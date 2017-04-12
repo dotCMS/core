@@ -19,9 +19,11 @@ import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.velocity.DotResourceCache;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -491,6 +493,32 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
 		}
 
+	}
+
+	public void invalidateCacheMesageFromCluster ( String message ) {
+		if(message==null){return;};
+		int i = message.lastIndexOf(":");
+		if ( i > 0 ) {
+
+			String key = message.substring(0, i);
+			String group = message.substring(i + 1, message.length());
+
+			key = key.toLowerCase();
+			group = group.toLowerCase();
+
+			if ( key.equals("0") ) {
+
+				if ( group.equalsIgnoreCase(DotCacheAdministrator.ROOT_GOUP) ) {
+					CacheLocator.getCacheAdministrator().flushAlLocalOnly();
+				} else {
+					CacheLocator.getCacheAdministrator().flushGroupLocalOnly(group);
+				}
+			} else {
+				CacheLocator.getCacheAdministrator().removeLocalOnly(key, group);
+			}
+		} else {
+			Logger.error(this, "The cache to locally remove key is invalid. The value was " + message);
+		}
 	}
 
     @Override

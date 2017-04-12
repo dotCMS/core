@@ -1,8 +1,13 @@
 package com.dotmarketing.business.cache.provider.hazelcast;
 
-import com.dotmarketing.business.cache.provider.CacheStats;
+import java.io.InputStream;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
+import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.hazelcast.client.HazelcastClient;
@@ -22,6 +27,7 @@ import java.util.*;
  */
 public class HazelCastClientProvider extends CacheProvider {
 
+  private static final long serialVersionUID = 1L;
     protected HazelcastInstance hazel = null;
     protected Boolean initialized = false;
 
@@ -43,12 +49,12 @@ public class HazelCastClientProvider extends CacheProvider {
 
     @Override
     public String getName() {
-        return "HazelCast Provider";
+        return "HazelCast Client Provider";
     }
 
     @Override
     public String getKey() {
-        return "HazelCastProvider";
+        return "HazelCastClientProvider";
     }
 
     @Override
@@ -116,6 +122,7 @@ public class HazelCastClientProvider extends CacheProvider {
         NumberFormat nf = DecimalFormat.getInstance();
         for (String group : currentGroups) {
             CacheStats stats = new CacheStats();
+
             LocalMapStats local = hazel.getMap(group).getLocalMapStats();
             NearCacheStats near = local.getNearCacheStats();
             long size = hazel.getMap(group).keySet().size();
@@ -130,6 +137,7 @@ public class HazelCastClientProvider extends CacheProvider {
             stats.addStat(CacheStats.REGION_HITS, local.getHits());
             stats.addStat(CacheStats.REGION_AVG_LOAD_TIME, nf.format(avgTime/1000000) + " ms"); 
             stats.addStat(CacheStats.REGION_MEM_TOTAL_PRETTY, x);
+
             ret.addStatRecord(stats);
         }
 
