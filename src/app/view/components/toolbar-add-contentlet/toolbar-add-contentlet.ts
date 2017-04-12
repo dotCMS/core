@@ -48,9 +48,10 @@ export class ToolbarAddContenletComponent extends BaseComponent {
     private typesIcons: any = {
         'Content': 'fa-table',
         'File': 'fa-picture-o',
+        'Form': 'fa-list ',
         'Page': 'fa-file-text-o',
         'Persona': 'fa-user',
-        'Widget': 'fa-cog',
+        'Widget': 'fa-cog'
     };
     private recent: StructureTypeView[];
     private structureTypeViewSelected: StructureTypeView[];
