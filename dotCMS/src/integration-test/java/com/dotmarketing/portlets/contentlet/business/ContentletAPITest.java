@@ -1974,7 +1974,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         // https://github.com/dotCMS/dotCMS/issues/2630
         Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ) + "zzzvv", "junit_test_structure_" + String.valueOf( new Date().getTime() ) + "zzzvv" );
         Field field = new Field( "JUnit Test Text", Field.FieldType.TEXT, Field.DataType.TEXT, testStructure, false, true, true, 1, false, false, false );
-        FieldFactory.saveField( field );
+        field = FieldFactory.saveField( field );
 
         List<Contentlet> list=new ArrayList<>();
         String[] letters={"a","b","c","d","e","f","g"};

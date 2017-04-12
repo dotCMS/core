@@ -356,15 +356,18 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
 
     // set up default fields
-    List<Field> fields = (saveType.fields().isEmpty() && !existsInDb) ? retType.requiredFields() : saveType.fields();
-    FieldAPI fapi = new FieldAPIImpl().instance();
-    for (Field f : fields) {
-      f = FieldBuilder.builder(f).contentTypeId(retType.id()).build();
-      try {
-        fapi.save(f, APILocator.systemUser());
-      } catch (DotSecurityException e) {
-        throw new DotStateException(e);
-      }
+    if (!existsInDb) {
+    	List<Field> fields = (saveType.fields().isEmpty()) ? retType.requiredFields() : saveType.fields();
+
+        FieldAPI fapi = new FieldAPIImpl().instance();
+        for (Field f : fields) {
+          f = FieldBuilder.builder(f).contentTypeId(retType.id()).build();
+          try {
+            fapi.save(f, APILocator.systemUser());
+          } catch (DotSecurityException e) {
+            throw new DotStateException(e);
+          }
+        }
     }
 
     return retType;
