@@ -1,7 +1,7 @@
 package com.dotcms.contenttype.util;
 
-import com.dotcms.repackage.com.fasterxml.jackson.core.JsonFactory;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+//import com.dotcms.repackage.com.fasterxml.jackson.core.JsonFactory;
+//import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.util.marshal.DotTypeToken;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
@@ -18,8 +18,8 @@ import java.util.Map;
  */
 public class KeyValueFieldUtil {
 
-    private static final JsonFactory factory = new JsonFactory();
-    private static final ObjectMapper mapper = new ObjectMapper(factory);
+    //private static final JsonFactory factory = new JsonFactory();
+    //private static final ObjectMapper mapper = new ObjectMapper(factory);
 
     public static Map<String, Object> JSONValueToHashMap(final String json) {
         LinkedHashMap<String, Object> keyValueMap = new LinkedHashMap<String, Object>();
