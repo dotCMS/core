@@ -195,12 +195,6 @@ task copyTestRuntimeLibs(type: Copy) {
     from configurations.testCompile - configurations.compile
 }
 
-task copyWillLib(type: Copy) {
-    into "gradle-dependencies-lib"
-    from configurations.runtime +configurations.starter
-}
-
-
 // Expand the release properties.
 processResources {
     filesMatching("release.properties") {
