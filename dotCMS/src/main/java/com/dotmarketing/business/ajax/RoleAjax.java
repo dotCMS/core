@@ -309,8 +309,9 @@ public class RoleAjax {
 		}  catch(RoleNameException e) {
 			ActivityLogger.logInfo(getClass(), "Error Adding Role. Invalid Name", "Date: " + date + ";  "+ "User:" + user.getUserId());
 			AdminLogger.log(getClass(), "Error Adding Role. Invalid Name", "Date: " + date + ";  "+ "User:" + user.getUserId());
-			e.setMessage(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"Role-Save-Name-Failed"));
-			throw e;
+			throw new DotDataException(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"Role-Save-Name-Failed"),"Role-Save-Name-Failed",e);
+
+
 
 		} catch(DotDataException | DotStateException e) {
 			ActivityLogger.logInfo(getClass(), "Error Adding Role", "Date: " + date + ";  "+ "User:" + user.getUserId());
@@ -359,8 +360,8 @@ public class RoleAjax {
 		} catch(RoleNameException e) {
 			ActivityLogger.logInfo(getClass(), "Error Adding Role. Invalid Name", "Date: " + date + ";  "+ "User:" + user.getUserId());
 			AdminLogger.log(getClass(), "Error Adding Role. Invalid Name", "Date: " + date + ";  "+ "User:" + user.getUserId());
-			e.setMessage(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"Role-Save-Name-Failed"));
-			throw e;
+            throw new DotDataException(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"Role-Save-Name-Failed"),"Role-Save-Name-Failed",e);
+
 		} catch(DotDataException | DotStateException e) {
 			ActivityLogger.logInfo(getClass(), "Error Modifying Role", "Date: " + date + ";  "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
 			AdminLogger.log(getClass(), "Error Modifying Role", "Date: " + date + ";  "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );

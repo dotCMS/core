@@ -276,7 +276,20 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		return false;
 	}
 
-
+	/* (non-Javadoc)
+	 * @see com.dotmarketing.business.PermissionAPI#doesUserHavePermission(com.dotmarketing.beans.Inode, int, com.liferay.portal.model.User)
+	 */
+	@Override
+	public void  checkPermission(Permissionable permissionable, PermissionLevel level, User user) throws DotSecurityException{
+		try{
+			if(!doesUserHavePermission(permissionable, level.type, user, true)){
+				throw new DotSecurityException("User:" + user +" does not have permissions " + level + " for object " + permissionable + " of type " + permissionable.getPermissionType());
+			}
+		}
+		catch(DotDataException e){
+			throw new DotStateException(e);
+		}
+	}
 
 
 	/* (non-Javadoc)
@@ -1125,6 +1138,10 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		CacheLocator.getPermissionCache().clearCache();
 	}
 
+    public void removePermissionableFromCache(String permissionableId) {
+        CacheLocator.getPermissionCache().remove(permissionableId);
+    }
+
 	public <P extends Permissionable> List<P> filterCollection(List<P> inputList, int requiredTypePermission,boolean respectFrontendRoles, User user) throws DotDataException, DotSecurityException {
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
@@ -1543,5 +1560,6 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	public boolean isInheritingPermissions(Permissionable permissionable) throws DotDataException {
 		return permissionFactory.isInheritingPermissions(permissionable);
 	}
+
 }
 

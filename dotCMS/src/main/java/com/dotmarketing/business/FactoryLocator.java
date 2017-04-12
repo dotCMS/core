@@ -4,14 +4,19 @@ import com.dotcms.cluster.business.ServerFactory;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesFactory;
 import com.dotcms.content.elasticsearch.business.IndiciesFactoryImpl;
+import com.dotcms.contenttype.business.ContentTypeFactory;
+import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
+import com.dotcms.contenttype.business.FieldFactory;
+import com.dotcms.contenttype.business.FieldFactoryImpl;
+import com.dotcms.contenttype.business.RelationshipFactory;
+import com.dotcms.contenttype.business.RelationshipFactoryImpl;
 import com.dotcms.enterprise.DashboardProxy;
 import com.dotcms.enterprise.RulesFactoryProxy;
 import com.dotcms.enterprise.ServerActionFactoryImplProxy;
 import com.dotcms.enterprise.cluster.ServerFactoryImpl;
 import com.dotcms.enterprise.cluster.action.business.ServerActionFactory;
 import com.dotcms.enterprise.linkchecker.LinkCheckerFactoryImpl;
-import com.dotmarketing.portlets.personas.business.PersonaFactory;
-import com.dotmarketing.portlets.personas.business.PersonaFactoryImpl;
+import com.dotcms.enterprise.rules.RulesFactory;
 import com.dotcms.journal.business.ESDistributedJournalFactoryImpl;
 import com.dotcms.notifications.business.NotificationFactory;
 import com.dotcms.notifications.business.NotificationFactoryImpl;
@@ -46,7 +51,8 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageFactoryImpl;
 import com.dotmarketing.portlets.linkchecker.business.LinkCheckerFactory;
 import com.dotmarketing.portlets.links.business.MenuLinkFactory;
 import com.dotmarketing.portlets.links.business.MenuLinkFactoryImpl;
-import com.dotcms.enterprise.rules.RulesFactory;
+import com.dotmarketing.portlets.personas.business.PersonaFactory;
+import com.dotmarketing.portlets.personas.business.PersonaFactoryImpl;
 import com.dotmarketing.portlets.templates.business.TemplateFactory;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImpl;
 import com.dotmarketing.portlets.virtuallinks.business.VirtualLinkFactory;
@@ -70,7 +76,7 @@ public class FactoryLocator extends Locator<FactoryIndex>{
 
 	private static FactoryLocator instance;
 
-	private FactoryLocator() {
+	FactoryLocator() {
 		super();
 	}
 
@@ -91,7 +97,10 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     public static CategoryFactory getCategoryFactory() {
         return (CategoryFactory)getInstance(FactoryIndex.CATEGORY_FACTORY);
     }
-
+    
+    public static RelationshipFactory getRelationshipFactory() {
+      return (RelationshipFactory)getInstance(FactoryIndex.RELATIONSHIP_FACTORY);
+    }
     public static ContentletFactory getContentletFactory(){
     	return (ContentletFactory)getInstance(FactoryIndex.CONTENTLET_FACTORY);
     }
@@ -214,8 +223,12 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     public static PersonaFactory getPersonaFactory(){
         return (PersonaFactory) getInstance(FactoryIndex.PERSONA_FACTORY);
     }
-    
-
+    public static ContentTypeFactory getContentTypeFactory(){
+        return (ContentTypeFactory)  new ContentTypeFactoryImpl();
+    }
+    public static FieldFactory getFieldFactory(){
+        return (FieldFactory)  new FieldFactoryImpl();
+    }
     private static Object getInstance(FactoryIndex index) {
 
 		if(instance == null){
@@ -286,7 +299,10 @@ enum FactoryIndex
 	SERVER_ACTION_FACTORY,
 	RULES_FACTORY,
 	TAG_FACTORY,
-	PERSONA_FACTORY;
+	PERSONA_FACTORY,
+	CONTENTTYPE_FACTORY_2,
+	RELATIONSHIP_FACTORY,
+	FIELD_FACTORY_2;
 
 	Object create() {
 		switch(this) {
@@ -323,6 +339,7 @@ enum FactoryIndex
             case SERVER_ACTION_FACTORY: return new ServerActionFactoryImplProxy();
             case RULES_FACTORY: return new RulesFactoryProxy();
             case PERSONA_FACTORY: return new PersonaFactoryImpl();
+            case RELATIONSHIP_FACTORY: return new RelationshipFactoryImpl();
             case TAG_FACTORY: return new TagFactoryImpl();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);

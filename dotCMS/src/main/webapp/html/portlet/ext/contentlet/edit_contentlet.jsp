@@ -81,7 +81,7 @@
 	if (!InodeUtils.isSet(structure.getInode())){
 		structure = StructureFactory.getStructureByInode(request.getParameter("sibblingStructure"));
 	}
-	List<Field> fields = structure.getFields();
+	List<Field> fields = new ArrayList<>(structure.getFields());
 
 	//Categories
 	String[] selectedCategories = contentletForm.getCategories ();
@@ -129,7 +129,7 @@
 	request.setAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT_BASE, structure);
 
 
-	List<Structure> structures = StructureFactory.getStructuresByUser(user, "", "name", 0, 100,"asc");
+	List<Structure> structures = StructureFactory.getStructuresByUser(user, "", "name", 100, 0,"asc");
 
 
 

@@ -52,7 +52,7 @@ import com.dotmarketing.util.VelocityUtil;
  * @author <a href="mailto:kav@kav.dk">Kasper Nielsen</a>
  * @version $Id: ASTDirective.java 736677 2009-01-22 15:39:02Z nbubna $
  */
-public class ASTDirective extends SimpleNode
+public class ASTDirective extends SimpleNode implements TokenImageSaver
 {
     private static final long serialVersionUID = -1770606067556493952L;
     private Directive directive = null;

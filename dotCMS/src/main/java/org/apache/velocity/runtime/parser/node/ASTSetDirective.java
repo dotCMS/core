@@ -124,7 +124,7 @@ public class ASTSetDirective extends SimpleNode
             /*
              *  grab this now.  No need to redo each time
              */
-            leftReference = left.getTokens().get(0).image.substring(1);
+            leftReference = left.getFirstTokenImage().substring(1);
         
             isInitialized = true;
         }
@@ -177,8 +177,7 @@ public class ASTSetDirective extends SimpleNode
                 String rightReference = null;
                 if (right instanceof ASTExpression)
                 {
-                    List<Token> tt=right.getTokens();
-                    rightReference = tt.get(tt.size()-1).image;
+                    rightReference = ((ASTExpression) right).lastImage;
                 }
                 EventHandlerUtil.invalidSetMethod(rsvc, context, leftReference, rightReference, uberInfo);
                 
@@ -191,8 +190,7 @@ public class ASTSetDirective extends SimpleNode
             String rightReference = null;
             if (right instanceof ASTExpression)
             {
-                List<Token> tt=right.getTokens();
-                rightReference = tt.get(tt.size()-1).image;
+              rightReference = ((ASTExpression) right).lastImage;
             }
             EventHandlerUtil.invalidSetMethod(rsvc, context, leftReference, rightReference, uberInfo);
 

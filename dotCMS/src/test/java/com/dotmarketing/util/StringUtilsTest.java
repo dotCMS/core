@@ -16,9 +16,13 @@ public class StringUtilsTest {
 
         final Map<String, Object> params = new HashMap<>();
 
+        params.put("sys:user.home", "jsanca");
         params.put("hostId", "1.dotcms.com");
         params.put("hostname", "dotcms.com");
         params.put("languageId", "en");
+        params.put("language-Id", "en");
+        params.put("language.Id", "en");
+        params.put("language:I.d", "en");
         return params;
     }
 
@@ -128,5 +132,18 @@ public class StringUtilsTest {
 
         assertNotNull(expected);
         assertEquals("xxxen/dotcms.com-mycustomname/en", expected);
+    }
+
+    @Test
+    public void testDotVar() {
+
+
+        final Map<String, Object> params = createParams();
+        final String expression = "customvar_{language-Id}:{sys:user.home}-hostId:{hostId}--{language.Id}>>:{language:I.d}-";
+        System.out.println(expression);
+        final String expected = StringUtils.interpolate(expression, params);
+
+        assertNotNull(expected);
+        assertEquals("customvar_en:jsanca-hostId:1.dotcms.com--en>>:en-", expected);
     }
 }

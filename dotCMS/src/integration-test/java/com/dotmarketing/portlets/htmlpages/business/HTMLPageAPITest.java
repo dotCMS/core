@@ -237,9 +237,11 @@ public class HTMLPageAPITest extends IntegrationTestBase {
     		// create new roles
     		RoleAPI roleAPI = APILocator.getRoleAPI();
 
+    		long time = System.currentTimeMillis();
+    		
     		role = new Role();
-    		role.setName("testRole1");
-    		role.setRoleKey("testKey1");
+    		role.setName("testRole1"+time);
+    		role.setRoleKey("testKey1"+time);
     		role.setEditUsers(true);
     		role.setEditPermissions(true);
     		role.setEditLayouts(true);

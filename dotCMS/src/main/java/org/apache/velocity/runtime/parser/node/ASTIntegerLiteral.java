@@ -78,7 +78,7 @@ public class ASTIntegerLiteral extends SimpleNode
         /**
          * Determine the size of the item and make it an Integer, Long, or BigInteger as appropriate.
          */
-         String str = tokens.get(0).image;
+         String str = getFirstTokenImage();
          try
          {
              value = new Integer( str );

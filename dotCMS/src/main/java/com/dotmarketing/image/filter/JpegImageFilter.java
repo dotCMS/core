@@ -13,7 +13,6 @@ import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
-import javax.imageio.stream.FileImageOutputStream;
 import javax.imageio.stream.ImageOutputStream;
 
 import com.dotmarketing.util.Logger;
@@ -27,6 +26,8 @@ public class JpegImageFilter extends ImageFilter {
 	}
 	public File runFilter(File file,   Map<String, String[]> parameters) {
 		int quality = parameters.get(getPrefix() +"q") != null?Integer.parseInt(parameters.get(getPrefix() +"q")[0]):85;
+        boolean progressive = (parameters.get(getPrefix() +"p") != null);
+
 
 		
 		Double q = new Double(quality);
@@ -45,7 +46,11 @@ public class JpegImageFilter extends ImageFilter {
 			ImageWriter writer = iter.next();
 			ImageWriteParam iwp = writer.getDefaultWriteParam();
 			iwp.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+			
 			iwp.setCompressionQuality(q.floatValue());   
+			if(progressive){
+			  iwp.setProgressiveMode(ImageWriteParam.MODE_DEFAULT);
+			}
 			BufferedImage src = ImageIO.read(file);
 			BufferedImage dst = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_3BYTE_BGR);
 			Graphics2D graphics = dst.createGraphics();  

@@ -1,5 +1,6 @@
 package com.dotmarketing.viewtools;
 
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.ChallengeQuestion;
 import com.dotmarketing.beans.UserProxy;
@@ -87,6 +88,7 @@ public class CMSUsersWebAPI implements ViewTool {
 	 * @return List
 	 */
 	public List getAddresesByUser(User user) {
+	  if(user==null) return ImmutableList.of();
 		try {
 			return PublicAddressFactory.getAddressesByUserId(user.getUserId());
 		} catch (Exception e) {

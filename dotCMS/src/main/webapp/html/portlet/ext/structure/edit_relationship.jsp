@@ -4,12 +4,13 @@
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
 <%@ page import="com.dotmarketing.portlets.structure.model.Relationship" %>
 <%@ page import="com.dotmarketing.portlets.structure.struts.RelationshipForm" %>
-<%@ page import="com.dotmarketing.portlets.structure.factories.RelationshipFactory" %>
+<%@ page import="com.dotcms.contenttype.business.RelationshipFactory " %>
+<%@ page import="com.dotmarketing.business.FactoryLocator" %>
 <%@ include file="/html/portlet/ext/structure/init.jsp" %>
 <%	
  String referer = request.getParameter("referer");
  RelationshipForm relationshipForm = (RelationshipForm) request.getAttribute("RelationshipForm");
- Relationship relationship = RelationshipFactory.getRelationshipByInode(relationshipForm.getInode());
+ Relationship relationship = FactoryLocator.getRelationshipFactory().byInode(relationshipForm.getInode());
  boolean disabled = false;
  if(relationship.isFixed()){
 	 disabled = true;

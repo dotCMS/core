@@ -5,8 +5,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.comparators.ContentComparator;
 import com.dotmarketing.comparators.WebAssetSortOrderComparator;
 import com.dotmarketing.exception.DotDataException;
@@ -69,12 +67,7 @@ public class ContentletServices {
 	public static void invalidateAll(Contentlet contentlet) throws DotDataException, DotSecurityException {
 		Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
 
-		// Live
-		LiveCache.removeAssetFromCache(contentlet);
-		invalidate(contentlet, identifier, false);
 
-		// Working
-		WorkingCache.removeAssetFromCache(contentlet);
 		invalidate(contentlet, identifier, true);
 
 		// Writes the contentlet object to a file
@@ -122,7 +115,7 @@ public class ContentletServices {
 	public static void invalidateLive(Contentlet contentlet, Identifier identifier) throws DotDataException, DotSecurityException {
 	    Identifier localIdentifier = (identifier == null) ? APILocator.getIdentifierAPI().find(contentlet) : identifier;
 
-        LiveCache.removeAssetFromCache(contentlet);
+
         invalidate(contentlet, localIdentifier, false);
 
         // Writes the contentlet object to a file
@@ -156,7 +149,7 @@ public class ContentletServices {
 	public static void invalidateWorking(Contentlet contentlet, Identifier identifier) throws DotDataException, DotSecurityException {
         Identifier localIdentifier = (identifier == null) ? APILocator.getIdentifierAPI().find(contentlet) : identifier;
 
-        WorkingCache.removeAssetFromCache(contentlet);
+
         invalidate(contentlet, localIdentifier, true);
 
         // Writes the contentlet object to a file

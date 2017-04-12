@@ -10,7 +10,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Date;
 
-import com.dotcms.repackage.com.google.gson.*;
+import com.google.gson.*;
 import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
@@ -311,6 +311,12 @@ public class MarshalFactory implements Serializable {
         public <T> T unmarshal(final String s, final Class<? extends T> clazz) {
 
             return this.gson.fromJson(s, clazz);
+        }
+
+        @Override
+        public <T> T unmarshal(final String s, final Type typeOfT) {
+
+            return this.gson.fromJson(s, typeOfT);
         }
 
         @Override

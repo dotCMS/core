@@ -250,7 +250,7 @@ public class StructureAjax {
 			user = (User)request.getSession().getAttribute(WebKeys.CMS_USER);
 		}
 
-		Structure st = (Structure) CacheLocator.getContentTypeCache().getStructureByName(structureName);
+		Structure st = (Structure) CacheLocator.getContentTypeCache().getStructureByVelocityVarName(structureName);
 		List<Map<String, Object>> maps = new ArrayList<Map<String,Object>>();
 
 

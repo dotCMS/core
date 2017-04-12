@@ -16,7 +16,7 @@
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@ page import="com.dotmarketing.util.Config" %>
 <%@page import="com.dotmarketing.business.IdentifierCache"%>
-<%@page import="com.dotmarketing.portlets.structure.factories.RelationshipFactory"%>
+<%@page import="com.dotmarketing.business.FactoryLocator"%>
 <%@page import="java.util.HashMap"%>
 
 <%
@@ -218,7 +218,7 @@
 				    catch(Exception e){
 
 				    }
-				   	if(parent && RelationshipFactory.isSameStructureRelationship(rel, targetStructure)){
+				   	if(parent && FactoryLocator.getRelationshipFactory().sameParentAndChild(rel)){
 			        	//continue;
 			        }
 				   	

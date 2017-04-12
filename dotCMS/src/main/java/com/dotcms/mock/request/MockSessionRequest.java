@@ -2,6 +2,7 @@ package com.dotcms.mock.request;
 
 import com.dotmarketing.util.Config;
 
+import java.util.Enumeration;
 import java.util.UUID;
 
 import javax.servlet.ServletContext;
@@ -18,10 +19,13 @@ import javax.servlet.http.HttpSession;
  */
 public class MockSessionRequest extends HttpServletRequestWrapper implements MockRequest {
 
-	MockSession session = null;
+    HttpSession session = null;
 
 	public MockSessionRequest(HttpServletRequest request) {
-		super(request);
+	    super(request);
+	    if (request.getSession(false)!= null) {
+	      session = request.getSession();
+	    }
 
 	}
 
@@ -49,6 +53,7 @@ public class MockSessionRequest extends HttpServletRequestWrapper implements Moc
 		        : session!=null 
 		            ? session 
 		                    : null;
+
 	}
 	
  

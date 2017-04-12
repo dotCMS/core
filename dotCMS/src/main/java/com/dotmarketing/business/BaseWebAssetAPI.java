@@ -11,9 +11,9 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.beans.WebAsset;
-import com.dotmarketing.cache.LiveCache;
+
 import com.dotmarketing.cache.VirtualLinksCache;
-import com.dotmarketing.cache.WorkingCache;
+
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -267,9 +267,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 
 			PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
-			//### Delete the IDENTIFIER entry from cache ###
-			LiveCache.removeAssetFromCache(currWebAsset);
-			WorkingCache.removeAssetFromCache(currWebAsset);
+
 			CacheLocator.getIdentifierCache().removeFromCacheByVersionable(currWebAsset);
 
 			//### END Delete the entry from cache ###

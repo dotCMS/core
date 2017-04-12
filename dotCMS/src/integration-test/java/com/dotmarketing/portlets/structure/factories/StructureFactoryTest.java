@@ -185,7 +185,7 @@ public class StructureFactoryTest extends ContentletBaseTest {
         Structure structure = structures.iterator().next();
 
         //Search for the structures
-        Collection<Structure> structures = StructureFactory.getStructuresByUser( user, "structuretype=" + structure.getStructureType(), "upper(name)", 0, 0, "asc" );
+        Collection<Structure> structures = StructureFactory.getStructuresByUser( user, "structuretype=" + structure.getStructureType(), "upper(name)", Integer.MAX_VALUE, 0, "asc" );
 
         //Validations
         assertTrue( structures != null && !structures.isEmpty() );
@@ -348,13 +348,13 @@ public class StructureFactoryTest extends ContentletBaseTest {
         testStructure1.setDescription( "JUnit Test Structure Description." );
         testStructure1.setFixed( false );
         testStructure1.setIDate( new Date() );
-        testStructure1.setName( "JUnit Test Structure_4" );
+        testStructure1.setName( "JUnit Test Structure_4_"+System.currentTimeMillis() );
         testStructure1.setOwner( user.getUserId() );
         testStructure1.setDetailPage( "" );
         testStructure1.setStructureType( Structure.STRUCTURE_TYPE_CONTENT );
-        testStructure1.setSystem( true );
+        testStructure1.setSystem( false );
         testStructure1.setType( "structure" );
-        testStructure1.setVelocityVarName( "junit_test_structure_4" );
+        testStructure1.setVelocityVarName( "junit_test_structure_4_"+System.currentTimeMillis() );
 
         Structure testStructure2 = new Structure();
 
@@ -362,13 +362,13 @@ public class StructureFactoryTest extends ContentletBaseTest {
         testStructure2.setDescription( "JUnit Test Structure Description." );
         testStructure2.setFixed( false );
         testStructure2.setIDate( new Date() );
-        testStructure2.setName( "JUnit Test Structure_5" );
+        testStructure2.setName( "JUnit Test Structure_5_"+System.currentTimeMillis() );
         testStructure2.setOwner( user.getUserId() );
         testStructure2.setDetailPage( "" );
         testStructure2.setStructureType( Structure.STRUCTURE_TYPE_CONTENT );
-        testStructure2.setSystem( true );
+        testStructure2.setSystem( false );
         testStructure2.setType( "structure" );
-        testStructure2.setVelocityVarName( "junit_test_structure_5" );
+        testStructure2.setVelocityVarName( "junit_test_structure_5_"+System.currentTimeMillis() );
 
         //++++++++++++++++++++++++++++++++++++++++++++
         //Saving the structures
@@ -429,31 +429,11 @@ public class StructureFactoryTest extends ContentletBaseTest {
      *
      * @see StructureFactory
      */
-    @Test
+    @Test(expected=DotHibernateException.class)
     public void disableDefault () throws DotHibernateException {
-
-        //Getting the default structure
-        Structure defaultStructure = StructureFactory.getDefaultStructure();
-
-        if ( defaultStructure.getInode() == null || defaultStructure.getInode().isEmpty() ) {
-            //Getting a known structure and make it the default
-            defaultStructure = structures.iterator().next();
-            defaultStructure.setDefaultStructure( true );
-            StructureFactory.saveStructure( defaultStructure );
-        }
 
         //Disable the default structure
         StructureFactory.disableDefault();
-
-        //Getting the one that was the default
-        defaultStructure = StructureFactory.getStructureByInode( defaultStructure.getInode() );
-
-        //Validations
-        assertFalse( defaultStructure.isDefaultStructure() );
-
-        //Set the default structure back to normal
-        defaultStructure.setDefaultStructure( true );
-        StructureFactory.saveStructure( defaultStructure );
     }
 
     /**

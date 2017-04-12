@@ -33,7 +33,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
+
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -258,7 +258,7 @@ public class ContentletBaseTest extends IntegrationTestBase {
         testStructure.setOwner( user.getUserId() );
         testStructure.setDetailPage( "" );
         testStructure.setStructureType( Structure.STRUCTURE_TYPE_CONTENT );
-        testStructure.setSystem( true );
+        testStructure.setSystem( false );
         testStructure.setType( "structure" );
         testStructure.setVelocityVarName( structureVelocityVarName );
 
@@ -330,10 +330,10 @@ public class ContentletBaseTest extends IntegrationTestBase {
         field = new Field( "JUnit Test Binary-" + uniqueIdentifier, Field.FieldType.BINARY, Field.DataType.BINARY, jUnitTestStructure, false, false, false, 12, false, false, false );
         FieldFactory.saveField( field );
 
-        field = new Field( "JUnit Test Host Folder-" + uniqueIdentifier, Field.FieldType.HOST_OR_FOLDER, Field.DataType.TEXT, jUnitTestStructure, false, false, false, 12, false, false, false );
+        field = new Field( "JUnit Test Host Folder-" + uniqueIdentifier, Field.FieldType.HOST_OR_FOLDER, Field.DataType.TEXT, jUnitTestStructure, false, false, true, 12, false, false, false );
         FieldFactory.saveField( field );
 
-        field = new Field( "JUnit Test Tag-" + uniqueIdentifier, Field.FieldType.TAG, Field.DataType.TEXT, jUnitTestStructure, false, false, false, 12, false, false, false );
+        field = new Field( "JUnit Test Tag-" + uniqueIdentifier, Field.FieldType.TAG, Field.DataType.TEXT, jUnitTestStructure, false, false, true, 12, false, false, false );
         FieldFactory.saveField( field );
 
         return uniqueIdentifier;
@@ -532,9 +532,9 @@ public class ContentletBaseTest extends IntegrationTestBase {
      * @param structure
      * @param required
      * @return
-     * @throws DotHibernateException
+     * @throws DotDataException 
      */
-    protected static Relationship createRelationShip ( Structure structure, boolean required ) throws DotHibernateException {
+    protected static Relationship createRelationShip ( Structure structure, boolean required ) throws DotDataException {
 
         return createRelationShip( structure.getInode(), structure.getInode(), required );
     }
@@ -546,9 +546,9 @@ public class ContentletBaseTest extends IntegrationTestBase {
      * @param childStrunctureInode
      * @param required
      * @return
-     * @throws DotHibernateException
+     * @throws DotDataException 
      */
-    protected static Relationship createRelationShip ( String parentStructureInode, String childStrunctureInode, boolean required ) throws DotHibernateException {
+    protected static Relationship createRelationShip ( String parentStructureInode, String childStrunctureInode, boolean required ) throws DotDataException {
 
         Relationship relationship = new Relationship();
         //Set Parent Info
@@ -564,7 +564,7 @@ public class ContentletBaseTest extends IntegrationTestBase {
         relationship.setCardinality( 0 );
 
         //Save it
-        RelationshipFactory.saveRelationship( relationship );
+        FactoryLocator.getRelationshipFactory().save( relationship );
 
         return relationship;
     }
@@ -582,7 +582,7 @@ public class ContentletBaseTest extends IntegrationTestBase {
         //Create the contentlet relationships
         ContentletRelationships contentletRelationships = new ContentletRelationships( contentlet );
 
-        boolean hasParent = RelationshipFactory.isParentOfTheRelationship( relationship, structure );
+        boolean hasParent = FactoryLocator.getRelationshipFactory().isParent( relationship, structure );
 
         //Adding the relationships records
         ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords = contentletRelationships.new ContentletRelationshipRecords( relationship, hasParent );

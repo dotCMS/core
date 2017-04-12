@@ -1,0 +1,31 @@
+[
+	{
+		"name": "TEST File Asset",
+		"description": "Here is a test",
+		"defaultType": false,
+		"fixed": false,
+		"system": false,
+		"variable": "testFileAsset",
+		"folder": "SYSTEM_FOLDER",
+		"host": "demo.dotcms.com",
+		"implClass": "com.dotcms.contenttype.model.type.FileAssetContentType",
+		"fields": [
+			{
+				"dataType": "TEXT",
+				"fixed": false,
+				"implClass": "com.dotcms.contenttype.model.field.TextField",
+				"indexed": true,
+				"listed": true,
+				"modDate": 1478557845000,
+				"name": "习近平谈新闻舆论工",
+				"readOnly": false,
+				"regexCheck": "[^(<[.\\n]+>)]*",
+				"required": true,
+				"searchable": true,
+				"sortOrder": 2,
+				"unique": false,
+				"variable": "myBigField"
+			}
+		]
+	}
+]

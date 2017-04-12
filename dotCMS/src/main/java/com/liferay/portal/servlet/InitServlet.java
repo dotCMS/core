@@ -75,4 +75,15 @@ public class InitServlet extends HttpServlet {
 		}
 	}
 
+	@Override
+	public void destroy() {
+
+		synchronized (InitServlet.class) {
+
+			// Destroy
+			super.destroy();
+
+			APILocator.destroy();
+		}
+	} // destroy.
 }

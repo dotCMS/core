@@ -1,23 +1,51 @@
 package com.dotmarketing.portlets.contentlet.business.web;
 
+import java.text.DateFormat;
+import java.text.MessageFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
+
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.commons.collections.CollectionUtils;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.*;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotLanguageException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.EmailFactory;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.MultiTreeFactory;
+import com.dotmarketing.portlets.calendar.business.EventAPI;
 import com.dotmarketing.portlets.calendar.model.Event;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -32,7 +60,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
+
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
@@ -41,20 +69,19 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletURLUtil;
+import com.dotmarketing.util.UtilHTML;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.servlet.SessionMessages;
-
-import javax.servlet.http.HttpServletRequest;
-import java.text.DateFormat;
-import java.text.MessageFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
 /*
  *     //http://jira.dotmarketing.net/browse/DOTCMS-2273
  *     To save content via ajax.
@@ -90,13 +117,19 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		contentletSystemEventUtil = ContentletSystemEventUtil.getInstance();
 	}
 
+	/*
+	 * 	(non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPI#saveContent(java.util.Map, boolean, boolean, com.liferay.portal.model.User)
+	 * This funtion works similar to EditContentletAction cmd = Constants.ADD
+	 */
 	public String saveContent(Map<String, Object> contentletFormData,
-							  boolean isAutoSave, boolean isCheckin, User user) throws DotContentletValidationException, Exception {
+			  boolean isAutoSave, boolean isCheckin, User user) throws DotContentletValidationException, Exception {
 		return saveContent(contentletFormData, isAutoSave, isCheckin, user, false);
 	}
 
 	public String saveContent(Map<String, Object> contentletFormData,
-							  boolean isAutoSave, boolean isCheckin, User user, boolean generateSystemEvent) throws DotContentletValidationException, Exception {
+			  boolean isAutoSave, boolean isCheckin, User user, boolean generateSystemEvent) throws DotContentletValidationException, Exception {
+
 
 		HttpServletRequest req =WebContextFactory.get().getHttpServletRequest();
 
@@ -168,6 +201,9 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		if(autocommit) {
 			HibernateUtil.commitTransaction();
 		}
+
+		// todo: make it async by thread pool
+		contentletSystemEventUtil.pushSaveEvent(cont, isNew);
 
 		contentletFormData.put("cache_control", "0");
 
@@ -304,7 +340,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	}
 
 	private void _saveWebAsset(Map<String, Object> contentletFormData,
-							   boolean isAutoSave, boolean isCheckin, User user, boolean generateSystemEvent) throws Exception, DotContentletValidationException {
+			boolean isAutoSave, boolean isCheckin, User user, boolean generateSystemEvent) throws Exception, DotContentletValidationException {
 
 		/**
 		System.out.println("----------------------------from form-------------------------");
@@ -540,7 +576,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 					for(ContentletRelationshipRecords records : recordsList) {
 						if(!records.getRelationship().getRelationTypeValue().equals(relationType))
 							continue;
-						if(RelationshipFactory.isSameStructureRelationship(records.getRelationship()) &&
+						if(FactoryLocator.getRelationshipFactory().sameParentAndChild(records.getRelationship()) &&
 								((!records.isHasParent() && relationHasParent.equals("no")) ||
 								 (records.isHasParent() && relationHasParent.equals("yes"))))
 							continue;
@@ -570,16 +606,14 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			if(!isAutoSave){
 
 				currentContentlet.setInode(null);
-				currentContentlet = conAPI.checkin(currentContentlet, contRel,cats,
-						perAPI.getPermissions(currentContentlet, false, true),
-						user, false, generateSystemEvent);
+				currentContentlet = conAPI.checkin(currentContentlet, contRel,cats, perAPI.getPermissions(currentContentlet, false, true), user, false,generateSystemEvent);
 
 
 			}else{
 				 // Existing contentlet auto save
 				Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<Relationship, List<Contentlet>>();
-				List<Relationship> rels = RelationshipFactory
-											.getAllRelationshipsByStructure( currentContentlet
+				List<Relationship> rels = FactoryLocator.getRelationshipFactory()
+											.byContentType( currentContentlet
                                                     .getStructure() );
 				for (Relationship r : rels) {
 					if (!contentRelationships.containsKey(r)) {
@@ -707,7 +741,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	}
 
 	private void handleEventRecurrence(Map<String, Object> contentletFormData, Contentlet contentlet) throws DotRuntimeException, ParseException{
-		if(!contentlet.getStructure().getVelocityVarName().equals("calendarEvent")){
+		if(!contentlet.getStructure().getVelocityVarName().equals(EventAPI.EVENT_STRUCTURE_VAR)){
 			return;
 		}
 		if (contentletFormData.get("recurrenceChanged") != null && Boolean.parseBoolean(contentletFormData.get("recurrenceChanged").toString())) {
@@ -842,6 +876,10 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				Object value = contentletFormData.get(field.getFieldContentlet());
 				String typeField = field.getFieldType();
 
+				if(field.getFieldType().equals(Field.FieldType.TAG.toString())){
+					contentlet.setStringProperty(field.getVelocityVarName(), (String) contentletFormData.get(field.getVelocityVarName()));
+				}
+
 				//http://jira.dotmarketing.net/browse/DOTCMS-5334
 				if(field.getFieldType().equals(Field.FieldType.CHECKBOX.toString())){
 					if(field.getFieldContentlet().startsWith("float")
@@ -891,7 +929,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				}
 				if ((value != null || field.getFieldType().equals(Field.FieldType.BINARY.toString()))
 						&& APILocator.getFieldAPI().valueSettable(field)
-						&& !field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
+						&& !field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())
+						&& !field.getFieldContentlet().startsWith("system")) {
 					conAPI.setContentletProperty(contentlet, field, value);
 				}
 			}
@@ -920,8 +959,14 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		}
 	}
 
-	protected void _retrieveWebAsset(Map<String,Object> contentletFormData,User user) throws Exception {
+	private Structure transform(final ContentType contentType) {
 
+		return (null != contentType)?new StructureTransformer(contentType).asStructure():null;
+	} // transform.
+
+	protected void _retrieveWebAsset(final Map<String,Object> contentletFormData, final User user) throws Exception {
+
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
 		HttpServletRequest req =WebContextFactory.get().getHttpServletRequest();
 
 		String inode = (String) contentletFormData.get("contentletInode");
@@ -968,11 +1013,11 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			String selectedStructure = "";
 			if (UtilMethods.isSet(contentletFormData.get("selectedStructure"))) {
 				selectedStructure = (String) contentletFormData.get("selectedStructure");
-				st = (Structure) InodeFactory.getInode(selectedStructure, Structure.class);
+				st = this.transform(contentTypeAPI.find(selectedStructure));
 
 			}else if (UtilMethods.isSet(contentletFormData.get("sibblingStructure"))) {
 				selectedStructure = (String) contentletFormData.get("sibblingStructure");
-				st = (Structure) InodeFactory.getInode(selectedStructure, Structure.class);
+				st = this.transform(contentTypeAPI.find(selectedStructure));
 
 			}else{
 				st = StructureFactory.getDefaultStructure();

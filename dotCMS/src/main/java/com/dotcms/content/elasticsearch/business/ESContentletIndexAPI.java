@@ -15,7 +15,7 @@ import java.util.Map;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
-import com.dotcms.repackage.com.google.gson.Gson;
+import com.google.gson.Gson;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
@@ -30,6 +30,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -38,7 +39,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
+
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -467,7 +468,12 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
 	    if(content==null || !UtilMethods.isSet(content.getIdentifier())) return;
 
-	    List<Relationship> relationships = RelationshipFactory.getAllRelationshipsByStructure(content.getStructure());
+	    List<Relationship> relationships;
+      try {
+        relationships = FactoryLocator.getRelationshipFactory().byContentType(content.getStructure());
+      } catch (DotDataException e) {
+        throw new DotHibernateException(e.getMessage(),e);
+      }
 	    // add a commit listener to index the contentlet if the entire
         // transaction finish clean
         removeContentFromIndex(content, onlyLive, relationships);

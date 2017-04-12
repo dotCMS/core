@@ -27,6 +27,7 @@ import org.quartz.JobExecutionContext;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
+import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.com.thoughtworks.xstream.mapper.Mapper;
@@ -62,6 +63,8 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.dashboard.model.DashboardSummary404;
 import com.dotmarketing.portlets.dashboard.model.DashboardUserPreferences;
 import com.dotmarketing.portlets.links.model.LinkVersionInfo;
+import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
@@ -177,7 +180,7 @@ public class CMSMaintenanceAjax {
 	private String backupTempFilePath = ConfigUtils.getBackupPath()+File.separator+"temp";
 
 	private static String assetRealPath = null;
-	private static String assetPath = "/assets";
+	private static String assetPath = File.separator + "assets";
 
     private  FixTasksExecutor fixtask=FixTasksExecutor.getInstance();
 
@@ -327,7 +330,7 @@ public class CMSMaintenanceAjax {
         return processStatus.buildStatusMap();
     }
 
-    public String doBackupExport(String action, boolean dataOnly) throws IOException, ServletException, DotDataException {
+    public String doBackupExport(String action, boolean dataOnly) throws IOException, ServletException, DotDataException, DotSecurityException {
     	validateUser();
 			try {
 				MaintenanceUtil.fixImagesTable();
@@ -351,7 +354,7 @@ public class CMSMaintenanceAjax {
 				message = "Creating XML Files. ";
 				createXMLFiles();
 				String x = UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');
-				File zipFile = new File(backupFilePath + "/backup_" + x + "_.zip");
+				File zipFile = new File(backupFilePath + File.separator + "backup_" + x + "_.zip");
 				message +="Zipping up to file:" + zipFile.getAbsolutePath();
 				BufferedOutputStream bout = new BufferedOutputStream(new FileOutputStream(zipFile));
 				Logger.info(this, "Creating zipped backup file in "+ backupFilePath + " folder. Please wait");
@@ -374,7 +377,7 @@ public class CMSMaintenanceAjax {
 			Logger.info(this, "Found "+_tempFiles.length+" Files");
 			int count = 0;
 			for (int i = 0; i < _tempFiles.length; i++) {
-				f = new File(backupTempFilePath + "/" + _tempFiles[i]);
+				f = new File(backupTempFilePath + File.separator +  _tempFiles[i]);
 					if(f.isDirectory()){
 						FileUtil.deltree(f);
 					}
@@ -418,7 +421,7 @@ public class CMSMaintenanceAjax {
 		 * @throws DotCacheException
 		 */
 		@SuppressWarnings("unchecked")
-		public void createXMLFiles() throws ServletException, IOException, DotDataException {
+		public void createXMLFiles() throws ServletException, IOException, DotDataException, DotSecurityException {
 			validateUser();
 			Logger.info(this, "Starting createXMLFiles()");
 
@@ -443,6 +446,9 @@ public class CMSMaintenanceAjax {
 				BufferedOutputStream _bout = null;
 
 				for (Class clazz : _tablesToDump) {
+				    if(clazz.equals(Structure.class) || clazz.equals(Field.class) || clazz.equals(FieldVariable.class)){
+				        continue;
+				    }
 					//http://jira.dotmarketing.net/browse/DOTCMS-5031
 	                if(PermissionReference.class.equals(clazz)){
 	                	continue;
@@ -524,7 +530,7 @@ public class CMSMaintenanceAjax {
 	                    	java.util.Collections.sort(_list);
 	                    }
 
-	    				_writing = new File(backupTempFilePath + "/" + clazz.getName() + "_" + formatter.format(i) + ".xml");
+	    				_writing = new File(backupTempFilePath + File.separator +  clazz.getName() + "_" + formatter.format(i) + ".xml");
 	    				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
 
 	    				total = total + _list.size();
@@ -552,7 +558,7 @@ public class CMSMaintenanceAjax {
 				_list = PublicCompanyFactory.getCompanies();
 				List<Company> companies = new ArrayList<Company>(_list);
 				_xstream = new XStream(new DomDriver());
-				_writing = new File(backupTempFilePath + "/" + Company.class.getName() + ".xml");
+				_writing = new File(backupTempFilePath + File.separator +  Company.class.getName() + ".xml");
 				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
 				_xstream.toXML(_list, _bout);
 				_bout.close();
@@ -563,7 +569,7 @@ public class CMSMaintenanceAjax {
 				_list = APILocator.getUserAPI().findAllUsers();
 				_list.add(APILocator.getUserAPI().getDefaultUser());
 				_xstream = new XStream(new DomDriver());
-				_writing = new File(backupTempFilePath + "/" + User.class.getName() + ".xml");
+				_writing = new File(backupTempFilePath + File.separator +  User.class.getName() + ".xml");
 				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
 				_xstream.toXML(_list, _bout);
 				_bout.close();
@@ -576,7 +582,7 @@ public class CMSMaintenanceAjax {
 				dc.setSQL("select * from counter");
 				_list = dc.getResults();
 				_xstream = new XStream(new DomDriver());
-				_writing = new File(backupTempFilePath + "/Counter.xml");
+				_writing = new File(backupTempFilePath + File.separator + "Counter.xml");
 				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
 				_xstream.toXML(_list, _bout);
 				_bout.close();
@@ -587,56 +593,13 @@ public class CMSMaintenanceAjax {
 				dc.setSQL("select * from address");
 				_list = dc.getResults();
 				_xstream = new XStream(new DomDriver());
-				_writing = new File(backupTempFilePath + "/Address.xml");
+				_writing = new File(backupTempFilePath + File.separator + "Address.xml");
 				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
 				_xstream.toXML(_list, _bout);
 				_bout.close();
 				_list = null;
 				_bout = null;
 
-				/* pollschoice */
-				dc.setSQL("select * from pollschoice");
-				_list = dc.getResults();
-				_xstream = new XStream(new DomDriver());
-				_writing = new File(backupTempFilePath + "/Pollschoice.xml");
-				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-				_xstream.toXML(_list, _bout);
-				_bout.close();
-				_list = null;
-				_bout = null;
-
-				/* pollsdisplay */
-				dc.setSQL("select * from pollsdisplay");
-				_list = dc.getResults();
-				_xstream = new XStream(new DomDriver());
-				_writing = new File(backupTempFilePath + "/Pollsdisplay.xml");
-				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-				_xstream.toXML(_list, _bout);
-				_bout.close();
-				_list = null;
-				_bout = null;
-
-				/* pollsquestion */
-				dc.setSQL("select * from pollsquestion");
-				_list = dc.getResults();
-				_xstream = new XStream(new DomDriver());
-				_writing = new File(backupTempFilePath + "/Pollsquestion.xml");
-				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-				_xstream.toXML(_list, _bout);
-				_bout.close();
-				_list = null;
-				_bout = null;
-
-				/* pollsvote */
-				dc.setSQL("select * from pollsvote");
-				_list = dc.getResults();
-				_xstream = new XStream(new DomDriver());
-				_writing = new File(backupTempFilePath + "/Pollsvote.xml");
-				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-				_xstream.toXML(_list, _bout);
-				_bout.close();
-				_list = null;
-				_bout = null;
 
 				/* image */
 				_list = ImageLocalManagerUtil.getImages();
@@ -649,7 +612,7 @@ public class CMSMaintenanceAjax {
 				 */
 
 				_xstream = new XStream(new DomDriver());
-				_writing = new File(backupTempFilePath + "/Image.xml");
+				_writing = new File(backupTempFilePath + File.separator + "Image.xml");
 				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
 				_xstream.toXML(_list, _bout);
 				_bout.close();
@@ -667,7 +630,7 @@ public class CMSMaintenanceAjax {
 				dc.setSQL("select * from portlet");
 				_list = dc.getResults();
 				_xstream = new XStream(new DomDriver());
-				_writing = new File(backupTempFilePath + "/Portlet.xml");
+				_writing = new File(backupTempFilePath + File.separator + "Portlet.xml");
 				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
 				_xstream.toXML(_list, _bout);
 				_bout.close();
@@ -682,21 +645,24 @@ public class CMSMaintenanceAjax {
 					Logger.error(this,"Error in retrieveing all portlet preferences");
 				}
 				_xstream = new XStream(new DomDriver());
-				_writing = new File(backupTempFilePath + "/Portletpreferences.xml");
+				_writing = new File(backupTempFilePath + File.separator + "Portletpreferences.xml");
 				_bout = new BufferedOutputStream(new FileOutputStream(_writing));
 				_xstream.toXML(_list, _bout);
 				_bout.close();
 				_list = null;
 				_bout = null;
 
-
+	            
+				//backup content types
+	            File file = new File(backupTempFilePath + File.separator + "ContentTypes-" + ContentTypeImportExportUtil.CONTENT_TYPE_FILE_EXTENSION);
+	            new ContentTypeImportExportUtil().exportContentTypes(file);
 
 				//backup workflow
-				File file = new File(backupTempFilePath + "/WorkflowSchemeImportExportObject.json");
+				file = new File(backupTempFilePath + File.separator + "WorkflowSchemeImportExportObject.json");
 				WorkflowImportExportUtil.getInstance().exportWorkflows(file);
 
 				//Backup Rules.
-				file = new File(backupTempFilePath + "/RuleImportExportObject.json");
+				file = new File(backupTempFilePath + File.separator + "RuleImportExportObject.json");
 				RulesImportExportUtil.getInstance().export(file);
 
 			} catch (HibernateException e) {

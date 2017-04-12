@@ -27,6 +27,7 @@ import javax.servlet.jsp.PageContext;
 
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
+import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.com.thoughtworks.xstream.mapper.Mapper;
@@ -69,6 +70,8 @@ import com.dotmarketing.portlets.dashboard.model.DashboardSummary404;
 import com.dotmarketing.portlets.dashboard.model.DashboardUserPreferences;
 import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
+import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.tag.model.Tag;
@@ -118,7 +121,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 	 */
 	String backupTempFilePath = ConfigUtils.getBackupPath()+File.separator+"temp";
 	private static String assetRealPath = null;
-	private static String assetPath = "/assets";
+	private static String assetPath = File.separator + "assets";
 
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
 
@@ -175,7 +178,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			{
 				Logger.info(this, "Running Contents Index Cache");
 				if(defaultStructure.equals("Rebuild Whole Index")){
-					structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(defaultStructure);
+					//structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(defaultStructure);
 				}else
 					structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(ccf.getStructure());
 				if(!InodeUtils.isSet(structure.getInode()))
@@ -273,6 +276,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			f.mkdirs();
 			deleteTempFiles();
 			boolean dataOnly = Parameter.getBooleanFromString(req.getParameter("dataOnly"), true);
+
 			if(cmd.equals("createZip")) {
 				if(!dataOnly){
 					moveAssetsToBackupDir();
@@ -312,7 +316,8 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				zipTempDirectoryToStream(httpResponse.getOutputStream());
 
 			}else if(cmd.equals("upload")) {
-
+ 
+ 
 				UploadPortletRequest uploadReq = PortalUtil.getUploadPortletRequest(req);
 				ActionResponseImpl responseImpl = (ActionResponseImpl) res;
 				HttpServletResponse httpResponse = responseImpl.getHttpServletResponse();
@@ -358,7 +363,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			String realPath = "";
 
 			String velocityRootPath =ConfigUtils.getDynamicVelocityPath();
-			if (velocityRootPath.startsWith("/WEB-INF")) {
+			if (velocityRootPath.startsWith(File.separator + "WEB-INF")) {
 				velocityRootPath = FileUtil.getRealPath(velocityRootPath);
 			}
 
@@ -434,7 +439,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		{
 			Logger.debug(this, "Initializing Cache Values");
 			String velocityRootPath =ConfigUtils.getDynamicVelocityPath();
-			if (velocityRootPath.startsWith("/WEB-INF")) {
+			if (velocityRootPath.startsWith(File.separator + "WEB-INF")) {
 				velocityRootPath = FileUtil.getRealPath(velocityRootPath);
 			}
 			String livePath = velocityRootPath + File.separator + "live";
@@ -511,7 +516,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		Logger.info(this, "Found "+_tempFiles.length+" Files");
 		int count = 0;
 		for (int i = 0; i < _tempFiles.length; i++) {
-			f = new File(backupTempFilePath + "/" + _tempFiles[i]);
+			f = new File(backupTempFilePath + File.separator + "" + _tempFiles[i]);
 				if(f.isDirectory()){
 					FileUtil.deltree(f);
 				}
@@ -541,6 +546,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		FileUtil.deltree(d);
 	}
 
+
 	/**
 	 * This method will pull a list of all tables /classed being managed by
 	 * hibernate and export them, one class per file to the backupTempFilePath
@@ -551,7 +557,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 	 * @author Will
 	 * @throws DotDataException
 	 */
-	private void createXMLFiles() throws ServletException, IOException, DotDataException {
+	private void createXMLFiles() throws ServletException, IOException, DotDataException, DotSecurityException {
 
 //		deleteTempFiles();
 
@@ -577,6 +583,10 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			BufferedOutputStream _bout = null;
 
 			for (Class clazz : _tablesToDump) {
+			    if(clazz.equals(Structure.class) || clazz.equals(Field.class) || clazz.equals(FieldVariable.class)){
+			        continue;
+			    }
+
 				//http://jira.dotmarketing.net/browse/DOTCMS-5031
                 if(PermissionReference.class.equals(clazz)){
                 	continue;
@@ -675,7 +685,8 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				}
 				Logger.info(this, "writing : " + total + " records for " + clazz.getName());
 			}
-
+ 
+ 
 			/* Run Liferay's Tables */
 			/* Companies */
 			_list = PublicCompanyFactory.getCompanies();
@@ -699,73 +710,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			_list = null;
 			_bout = null;
 
-			/* Roles */
-//			_list = RoleManagerUtil.findAll();
-//			_xstream = new XStream(new DomDriver());
-//			_writing = new File(backupTempFilePath + "/" + Role.class.getName() + ".xml");
-//			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-//			_xstream.toXML(_list, _bout);
-//			_bout.close();
-//			_list = null;
-//			_bout = null;
-
-			/* Groups */
-//			_list = new ArrayList<Group>();
-//			for (Company company : companies) {
-//				_list.addAll(CompanyLocalManagerUtil.getGroups(CompanyUtils.getDefaultCompany().getCompanyId()));
-//			}
-//			List<Group> groups = new ArrayList<Group>(_list);
-//			_xstream = new XStream(new DomDriver());
-//			_writing = new File(backupTempFilePath + "/" + Group.class.getName() + ".xml");
-//			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-//			_xstream.toXML(_list, _bout);
-//			_bout.close();
-//			_list = null;
-//			_bout = null;
-
-			/* Layouts */
-//			_list = LayoutManagerUtil.findAll();
-//			_xstream = new XStream(new DomDriver());
-//			_writing = new File(backupTempFilePath + "/" + Layout.class.getName() + ".xml");
-//			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-//			_xstream.toXML(_list, _bout);
-//			_bout.close();
-//			_list = null;
-//			_bout = null;
 
 			/* users_roles */
 			DotConnect dc = new DotConnect();
-//			dc.setSQL("select * from users_roles");
-//			_list = dc.getResults();
-//			_xstream = new XStream(new DomDriver());
-//			_writing = new File(backupTempFilePath + "/Users_Roles.xml");
-//			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-//			_xstream.toXML(_list, _bout);
-//			_bout.close();
-//			_list = null;
-//			_bout = null;
-//
-//			/* users_groups */
-//			dc.setSQL("select * from users_groups");
-//			_list = dc.getResults();
-//			_xstream = new XStream(new DomDriver());
-//			_writing = new File(backupTempFilePath + "/Users_Groups.xml");
-//			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-//			_xstream.toXML(_list, _bout);
-//			_bout.close();
-//			_list = null;
-//			_bout = null;
-//
-//			/* users_groups */
-//			dc.setSQL("select * from groups_roles");
-//			_list = dc.getResults();
-//			_xstream = new XStream(new DomDriver());
-//			_writing = new File(backupTempFilePath + "/Groups_Roles.xml");
-//			_bout = new BufferedOutputStream(new FileOutputStream(_writing));
-//			_xstream.toXML(_list, _bout);
-//			_bout.close();
-//			_list = null;
-//			_bout = null;
 
 			/* counter */
 			dc.setSQL("select * from counter");
@@ -883,10 +830,12 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			_bout.close();
 			_list = null;
 			_bout = null;
-			
-			
-			
-			File file = new File(backupTempFilePath + "/WorkflowSchemeImportExportObject.json");
+
+			//backup content types
+            File file = new File(backupTempFilePath + File.separator + "ContentTypes-" + ContentTypeImportExportUtil.CONTENT_TYPE_FILE_EXTENSION);
+            new ContentTypeImportExportUtil().exportContentTypes(file);
+
+			file = new File(backupTempFilePath + "/WorkflowSchemeImportExportObject.json");
 			WorkflowImportExportUtil.getInstance().exportWorkflows(file);
 
 			file = new File(backupTempFilePath + "/RuleImportExportObject.json");
@@ -915,6 +864,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 
 	}
 
+
 	/**
 	 * Will zip up all files in the tmp directory and send the result to the
 	 * given OutputStream
@@ -934,7 +884,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 //			if(s[i].equals(".svn")){
 //				continue;
 //			}
-//			f = new File(backupTempFilePath + "/" + s[i]);
+//			f = new File(backupTempFilePath + File.separator + "" + s[i]);
 //			InputStream in;
 //			if(f.isDirectory()){
 //				in = new BufferedInputStream(new ByteArrayInputStream(f.));

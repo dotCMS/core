@@ -621,9 +621,9 @@
     %>
     <!-- display -->
     <div class="tagsWrapper" id="<%=field.getVelocityVarName()%>Wrapper">
-        <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>Content" value="<%=hiddenTextValue%>" />
-        <input type="text" name="name" value="" dojoType="dijit.form.TextBox" id="<%=field.getVelocityVarName()%>" />
-        <div class="tagsOptions" id="<%=field.getVelocityVarName()%>SuggestedTagsDiv" style="display:none;"></div>
+      <input type="hidden" name="<%=field.getVelocityVarName()%>" id="<%=field.getVelocityVarName()%>Content" value="<%=hiddenTextValue%>" />
+      <input type="text" name="name" value="" dojoType="dijit.form.TextBox" id="<%=field.getVelocityVarName()%>" />
+      <div class="tagsOptions" id="<%=field.getVelocityVarName()%>SuggestedTagsDiv" style="display:none;"></div>
     </div>
 
     <script>

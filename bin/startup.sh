@@ -57,7 +57,7 @@ DOTCMS_HOME=`cd "$PRGDIR/../$HOME_FOLDER" ; pwd`
 #JAVA_OPTS="-agentpath:/Applications/YourKit_Java_Profiler_9.0.5.app/bin/mac/libyjpagent.jnilib $JAVA_OPTS -Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -Xms1024M -Xmx1024M -XX:PermSize=128m "
 
 #JAVA_OPTS="$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=n"
-JAVA_OPTS="$JAVA_OPTS -Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -Xmx1G -XX:+UseG1GC -javaagent:$DOTCMS_HOME/WEB-INF/lib/dot.jamm-0.2.5_2.jar"
+JAVA_OPTS="$JAVA_OPTS -Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -Xmx1G -XX:+UseG1GC -javaagent:$DOTCMS_HOME/WEB-INF/lib/byte-buddy-agent-1.6.12.jar"
 
 if [ "$1" = "debug" ] ; then
 

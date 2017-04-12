@@ -88,6 +88,9 @@ public final class RulesEngine {
         if ( LicenseUtil.getLevel() < 200 ) {
             return;
         }
+        if(res.isCommitted()) {
+          return;
+        }
         if (!UtilMethods.isSet(req)) {
         	throw new DotRuntimeException("ERROR: HttpServletRequest is null");
         }
@@ -99,14 +102,7 @@ public final class RulesEngine {
         	return;
         }
 
-        User systemUser;
-
-        try {
-            systemUser = WebAPILocator.getUserWebAPI().getSystemUser();
-        } catch (DotDataException e) {
-            Logger.error(RulesEngine.class, "Unable to get systemUser", e);
-            return;
-        }
+        User systemUser = APILocator.systemUser();
 
         try {
 
@@ -118,6 +114,9 @@ public final class RulesEngine {
                     rule.checkValid(); // @todo ggranum: this should actually be done on writing to the DB, or at worst reading from.
                     boolean evaled = rule.evaluate(req, res);
 
+                    if(res.isCommitted()) {
+                      return;
+                    }
 					if (evaled) {
 						Rule rCopy = new Rule();
 						rCopy.setId(rule.getId());

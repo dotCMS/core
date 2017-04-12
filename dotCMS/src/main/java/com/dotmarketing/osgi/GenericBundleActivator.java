@@ -2,6 +2,11 @@ package com.dotmarketing.osgi;
 
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotcms.enterprise.rules.RulesAPI;
+import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.agent.ByteBuddyAgent;
+import net.bytebuddy.dynamic.ClassFileLocator;
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
+import net.bytebuddy.dynamic.loading.ClassReloadingStrategy;
 import org.apache.felix.http.proxy.DispatcherTracker;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
@@ -63,7 +68,6 @@ import java.util.Map;
 
 import static com.dotmarketing.osgi.ActivatorUtil.PATH_SEPARATOR;
 import static com.dotmarketing.osgi.ActivatorUtil.cleanResources;
-import static com.dotmarketing.osgi.ActivatorUtil.findCustomURLLoader;
 import static com.dotmarketing.osgi.ActivatorUtil.getBundleFolder;
 import static com.dotmarketing.osgi.ActivatorUtil.getManifestHeaderValue;
 import static com.dotmarketing.osgi.ActivatorUtil.getModuleConfig;
@@ -147,16 +151,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
         ClassLoader felixClassLoader = getFelixClassLoader();
         ClassLoader contextClassLoader = getContextClassLoader();
 
-        //Create a new class loader where we can "combine" our classLoaders
-        CombinedLoader combinedLoader;
-        if ( contextClassLoader instanceof CombinedLoader ) {
-            combinedLoader = (CombinedLoader) contextClassLoader;
-            combinedLoader.addLoader( felixClassLoader );
-        } else {
-            combinedLoader = new CombinedLoader( contextClassLoader );
-            combinedLoader.addLoader( felixClassLoader );
-        }
-
         //Force the loading of some classes that may be already loaded on the host classpath but we want to override with the ones on this bundle
         String overrideClasses = getManifestHeaderValue( context, MANIFEST_HEADER_OVERRIDE_CLASSES );
         if ( overrideClasses != null && !overrideClasses.isEmpty() ) {
@@ -168,30 +162,24 @@ public abstract class GenericBundleActivator implements BundleActivator {
                     //Get the activator class for this OSGI bundle
                     String activatorClass = getManifestHeaderValue( context, MANIFEST_HEADER_BUNDLE_ACTIVATOR );
                     //Injecting this bundle context code inside the dotCMS context
-                    injectContext( activatorClass );
+                    addClassTodotCMSClassLoader( activatorClass );
                 } catch ( Exception e ) {
                     Logger.error( this, "Error injecting context for overriding", e );
                     throw e;
                 }
 
                 for ( String classToOverride : forceOverride ) {
-                    try {
-                        /*
-                         Loading the custom implementation will allows to override the one the ClassLoader
-                         already had loaded and use it on this OSGI bundle context
-                         */
-                        combinedLoader.loadClass( classToOverride.trim() );
-                    } catch ( Exception e ) {
-                        Logger.error( this, "Error overriding class: " + classToOverride, e );
-                        throw e;
-                    }
+                    ByteBuddyAgent.install();
+                    new ByteBuddy()
+                            .rebase(Class.forName(classToOverride.trim()), ClassFileLocator.ForClassLoader.of(felixClassLoader))
+                            .name(classToOverride.trim())
+                            .make()
+                            .load(contextClassLoader,ClassReloadingStrategy.fromInstalledAgent());
                 }
             }
 
         }
 
-        //Use this new "combined" class loader
-        Thread.currentThread().setContextClassLoader( combinedLoader );
     }
 
     /**
@@ -356,59 +344,16 @@ public abstract class GenericBundleActivator implements BundleActivator {
     /**
      * Will inject this bundle context code inside the dotCMS context
      *
-     * @param name a reference class inside this bundle jar
-     * @throws Exception
-     */
-    private void injectContext ( String name ) throws Exception {
-        injectContext( name, true );
-    }
-
-    /**
-     * Will inject this bundle context code inside the dotCMS context
-     *
      * @param className a reference class inside this bundle jar
-     * @param reload    if a redefinition should be done or not
      * @throws Exception
      */
-    private void injectContext ( String className, Boolean reload ) throws Exception {
-
-        if (this.context == null ) {
-            throw new RuntimeException( "No context bundle was set, use the initializeServices method at the top of your Activator class." );
-        }
-
-        long bundleId = this.context.getBundle().getBundleId();
-
-        //Get the location of this OSGI bundle jar source code using a known class inside this bundle
-        Class clazz = Class.forName( className, false, getFelixClassLoader() );
-        URL sourceURL = clazz.getProtectionDomain().getCodeSource().getLocation();
-
-        //Verify if we have our UrlOsgiClassLoader on the main class loaders
-        UrlOsgiClassLoader urlOsgiClassLoader = findCustomURLLoader( ClassLoader.getSystemClassLoader(), bundleId );
-        if ( urlOsgiClassLoader != null ) {
-
-            if ( !urlOsgiClassLoader.contains( sourceURL ) ) {//Verify if this URL is already in our custom ClassLoader
-                urlOsgiClassLoader.addURL( sourceURL );
-            }
-
-            //The ClassLoader and the class content is already in the system ClassLoader, so we need to reload the jar contents
-            if ( reload ) {
-                urlOsgiClassLoader.reload( sourceURL );
-            }
-        } else {
-
-            //Getting the reference of a known class in order to get the base/main class loader
-            Class baseClass = getContextClassLoader().loadClass( "com.dotcms.rest.CMSConfigResource" );
-            //Creates our custom class loader in order to use it to inject the class code inside dotcms context
-            urlOsgiClassLoader = new UrlOsgiClassLoader( sourceURL, baseClass.getClassLoader(), bundleId );
-
-            //We may have classes we want to override from e beginning, for example a custom implementation of a dotCMS class
-            if ( reload ) {
-                urlOsgiClassLoader.reload( sourceURL );
-            } else {
-                //Linking our custom class loader with the dotCMS class loaders hierarchy.
-                urlOsgiClassLoader.linkClassLoaders();
-            }
-        }
+    protected void addClassTodotCMSClassLoader ( String className ) throws Exception {
+        ByteBuddyAgent.install();
+        new ByteBuddy()
+                .rebase(Class.forName(className.trim()), ClassFileLocator.ForClassLoader.of(getFelixClassLoader()))
+                .name(className.trim())
+                .make()
+                .load(getContextClassLoader(),ClassReloadingStrategy.fromInstalledAgent());
     }
 
     //*******************************************************************
@@ -513,7 +458,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
         String actionClassType = actionMapping.getType();
 
         //Injects the action classes inside the dotCMS context
-        injectContext( actionClassType );
+        addClassTodotCMSClassLoader( actionClassType );
 
         ModuleConfig moduleConfig = getModuleConfig();
         //We need to unfreeze this module in order to add new action mappings
@@ -543,7 +488,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
         }
 
         //Injects the job classes inside the dotCMS context
-        injectContext( scheduledTask.getJavaClassName() );
+        addClassTodotCMSClassLoader( scheduledTask.getJavaClassName() );
 
         /*
         Schedules the given job in the quartz system, and depending on the sequentialScheduled
@@ -884,40 +829,41 @@ public abstract class GenericBundleActivator implements BundleActivator {
      */
     protected void unpublishBundleServices () throws Exception {
 
-        //Get the current ClassLoader
+        if ( this.context == null ) {
+            this.context = context;
+        }
+
+        //ClassLoaders
+        ClassLoader felixClassLoader = getFelixClassLoader();
         ClassLoader contextClassLoader = getContextClassLoader();
-        if ( contextClassLoader instanceof CombinedLoader ) {
-            //Try to remove this class loader
-            ClassLoader felixClassLoader = getFelixClassLoader();
-            ((CombinedLoader) contextClassLoader).removeLoader( felixClassLoader );
-        }
 
-        //Find the UrlOsgiClassLoader for this bundleId
-        UrlOsgiClassLoader urlOsgiClassLoader = findCustomURLLoader( ClassLoader.getSystemClassLoader(), this.context.getBundle().getBundleId() );
-        if ( urlOsgiClassLoader != null ) {
+        //Force the loading of some classes that may be already loaded on the host classpath but we want to override with the ones on this bundle
+        String overrideClasses = getManifestHeaderValue( context, MANIFEST_HEADER_OVERRIDE_CLASSES );
+        if ( overrideClasses != null && !overrideClasses.isEmpty() ) {
 
-            //Get the activator class for this OSGI bundle
-            String activatorClass = getManifestHeaderValue( context, MANIFEST_HEADER_BUNDLE_ACTIVATOR );
-            //Get the location of this OSGI bundle jar source code using a known class inside this bundle
-            Class clazz = Class.forName( activatorClass, false, this.getClass().getClassLoader() );
-            URL sourceURL = clazz.getProtectionDomain().getCodeSource().getLocation();
+            String[] forceOverride = overrideClasses.split( "," );
+            if ( forceOverride.length > 0 ) {
 
-            //First verify if the source url exist
-            File source = new File( sourceURL.getPath() );
-            if ( source.exists() ) {
-                //Restoring to their original state any override class
-                urlOsgiClassLoader.reload( sourceURL, true );
+                try {
+                    //Get the activator class for this OSGI bundle
+                    String activatorClass = getManifestHeaderValue( context, MANIFEST_HEADER_BUNDLE_ACTIVATOR );
+                    //Injecting this bundle context code inside the dotCMS context
+                    addClassTodotCMSClassLoader( activatorClass );
+                } catch ( Exception e ) {
+                    Logger.error( this, "Error injecting context for overriding", e );
+                    throw e;
+                }
+
+                for ( String classToOverride : forceOverride ) {
+                    ByteBuddyAgent.install();
+                    new ByteBuddy()
+                            .rebase(Class.forName(classToOverride.trim()), ClassFileLocator.ForClassLoader.of(contextClassLoader))
+                            .name(classToOverride.trim())
+                            .make()
+                            .load(contextClassLoader,ClassReloadingStrategy.fromInstalledAgent());
+                }
             }
-
-            /*
-             Closes this URLClassLoader, so that it can no longer be used to load new classes or resources that are defined by this loader.
-             Classes and resources defined by any of this loader's parents in the delegation hierarchy are still accessible.
-             Also, any classes or resources that are already loaded, are still accessible.
-             */
-            urlOsgiClassLoader.close();
-            urlOsgiClassLoader.unlinkClassLoaders();
         }
-
     }
 
     /**

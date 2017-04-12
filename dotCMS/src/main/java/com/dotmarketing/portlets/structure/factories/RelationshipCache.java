@@ -2,10 +2,11 @@ package com.dotmarketing.portlets.structure.factories;
 
 import java.util.List;
 
+import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.portlets.structure.model.Structure;
+
 
 public abstract class RelationshipCache implements Cachable {
 	
@@ -20,19 +21,34 @@ public abstract class RelationshipCache implements Cachable {
 	
 	abstract public void clearCache();
 
-	public List<Relationship> getRelationshipsByStruct(Structure struct) throws DotCacheException {
+	public List<Relationship> getRelationshipsByStruct(ContentTypeIf struct) throws DotCacheException {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public void putRelationshipsByStruct(Structure struct, List<Relationship> rels) throws DotCacheException {
+	public void putRelationshipsByStruct(ContentTypeIf struct, List<Relationship> rels) throws DotCacheException {
 		// TODO Auto-generated method stub
 		
 	}
 
-	public void removeRelationshipsByStruct(Structure struct) throws DotCacheException {
+	public void removeRelationshipsByStruct(ContentTypeIf struct) throws DotCacheException {
 		// TODO Auto-generated method stub
 		
+	}
+
+	public void putRelationshipsByType(ContentTypeIf type, List<Relationship> rels) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void removeRelationshipsByType(ContentTypeIf type) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public List<Relationship> getRelationshipsByType(ContentTypeIf type) throws DotCacheException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 	
 }

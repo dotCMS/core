@@ -10,6 +10,7 @@ import java.util.TreeMap;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
@@ -379,6 +380,16 @@ public class PermissionAjax {
 				String type =  (String) ((Map)results.get(0)).get("type");
 				String inode = (String) ((Map)results.get(0)).get("inode");
 				perm = InodeFactory.getInode(inode, InodeUtils.getClassByDBType(type));
+			}
+		}
+		
+		if(perm == null){
+			try {
+				perm = APILocator.getContentTypeAPI(user).find(assetId);
+			} catch (NotFoundInDbException e) {
+				// Do nothing as "perm" is left as null
+				// Code above is trying to lookup a Content-Type by using an id
+				// that might not correspond to a Content-Type (assetId)
 			}
 		}
 

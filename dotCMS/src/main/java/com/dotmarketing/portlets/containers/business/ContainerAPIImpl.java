@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -488,6 +489,24 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
         return deleteOldVersions(assetsOlderThan, Inode.Type.CONTAINERS.getValue());
     }
 
+    @Override
+    public void deleteContainerStructureByContentType(ContentType type)
+            throws DotDataException {
+            
+      List<Container> containers = findContainersForStructure(type.id());
+
+      new DotConnect()
+        .setSQL("DELETE FROM container_structures WHERE structure_id = ?")
+        .addParam(type.id())
+        .loadResult();
+      
+        for(Container container : containers){
+          CacheLocator.getContentTypeCache().removeContainerStructures(container.getIdentifier(), container.getInode());
+        }
+    }
+
+    
+    
 	@Override
 	public void deleteContainerStructuresByContainer(Container container)
 			throws DotStateException, DotDataException, DotSecurityException {

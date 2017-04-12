@@ -14,6 +14,7 @@ import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -27,7 +28,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
+
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -177,42 +178,23 @@ public class EventFactoryImpl extends EventFactory {
 		
 	}
 
-	//Structure creation constants
-	/**
-	 * Returns the event structure
-	 */
-	@SuppressWarnings("deprecation")
-	@Override
-	protected Structure getBuildingStructure() {
-		Structure eventStructure = CacheLocator.getContentTypeCache().getStructureByName(BUILDING_STRUCTURE_NAME);
-		return eventStructure;
-	}
+
 
 	@SuppressWarnings("deprecation")
 	@Override
 	protected Structure getEventStructure() {
-		Structure eventStructure = CacheLocator.getContentTypeCache().getStructureByName(EVENT_STRUCTURE_NAME);
+		Structure eventStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(EventAPI.EVENT_STRUCTURE_VAR);
 		return eventStructure;
 	}
 
-	@SuppressWarnings("deprecation")
-	@Override
-	protected Structure getLocationStructure() {
-		Structure eventStructure = CacheLocator.getContentTypeCache().getStructureByName(FACILITY_STRUCTURE_NAME);
-		return eventStructure;
-	}	
+
 	
-	private static final String EVENT_STRUCTURE_NAME = "Event";
-	private static final String EVENT_STRUCTURE_DESCRIPTION = "Calendar Events";
-	private static final String BUILDING_STRUCTURE_NAME = "Building";
-	private static final String BUILDING_STRUCTURE_DESCRIPTION = "Buildings";
-	private static final String FACILITY_STRUCTURE_NAME = "Facility";
-	private static final String FACILITY_STRUCTURE_DESCRIPTION = "Facilities";
+
 
 	private static void initEventEventRelation(Structure eventStructure) throws DotHibernateException {
 		
 		if(true)return;
-		Relationship relationship = RelationshipFactory.getRelationshipByRelationTypeValue("Event-Event");
+		Relationship relationship = FactoryLocator.getRelationshipFactory().byTypeValue("Event-Event");
 		
 		if (relationship == null) {
 
@@ -226,14 +208,18 @@ public class EventFactoryImpl extends EventFactory {
 			relationship.setRelationTypeValue("Event-Event");
 			relationship.setParentRequired(false);
 			relationship.setChildRequired(false);
-			RelationshipFactory.saveRelationship(relationship);
+            try {
+              FactoryLocator.getRelationshipFactory().save(relationship);
+            } catch (DotDataException e) {
+                 throw new DotHibernateException(e.getMessage(),e);
+            }
 
 		}
 	}	
 	
 	private static void initBuidlingFacilityRelation(Structure buildingStructure, Structure facilityStructure) throws DotHibernateException {
 		if(true)return;
-		Relationship relationship = RelationshipFactory.getRelationshipByRelationTypeValue("Building-Facility");
+		Relationship relationship = FactoryLocator.getRelationshipFactory().byTypeValue("Building-Facility");
 		
 		if (relationship == null || !InodeUtils.isSet(relationship.getInode())) {
 
@@ -247,7 +233,12 @@ public class EventFactoryImpl extends EventFactory {
 			relationship.setRelationTypeValue("Building-Facility");
 			relationship.setParentRequired(true);
 			relationship.setChildRequired(false);
-			RelationshipFactory.saveRelationship(relationship);
+		     try {
+		         FactoryLocator.getRelationshipFactory().save(relationship);
+		     } catch (DotDataException e) {
+		          throw new DotHibernateException(e.getMessage(),e);
+		     }
+			
 
 		}
 	}

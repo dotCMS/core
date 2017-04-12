@@ -654,6 +654,15 @@ public interface PermissionAPI {
 	 */
 	void clearCache();
 
+    
+    /**
+     * This method is to clear a specific permissionable object from Cache given a Permissionable Id
+     * @since 4.0
+     * @param permissionable
+     */
+    void removePermissionableFromCache(String permissionableId);
+
+
 	/**
 	 * This method updates the given permissionable owner with the given user id
 	 * @param asset
@@ -811,6 +820,15 @@ public interface PermissionAPI {
      * @throws DotDataException
      */
     boolean isInheritingPermissions(Permissionable permissionable) throws DotDataException;
+
+    /**
+     * Checks permissions and if user does not have the proper permissions, will throw a DotSecurityException
+     * @param permissionable
+     * @param level
+     * @param user
+     * @throws DotSecurityException
+     */
+	void checkPermission(Permissionable permissionable, PermissionLevel level, User user) throws DotSecurityException;
 
 
 }

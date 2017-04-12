@@ -163,7 +163,7 @@ public class SiteSearchJobImpl {
             // if it is going to be an incremental job, write the bundle to the same folder
             // every time.  Otherwise, create a new folder using a date stamp.
             if(dataMap.get("incremental")!=null){
-                config.setId(StringUtils.sanitizeCamelCase(config.getJobName()));
+                config.setId(StringUtils.camelCaseLower(config.getJobName()));
             }
             else{
                 String x = UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');

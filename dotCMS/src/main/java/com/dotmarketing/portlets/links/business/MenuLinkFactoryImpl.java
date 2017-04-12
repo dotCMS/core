@@ -12,8 +12,6 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -79,8 +77,7 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 				HibernateUtil.flush();
 			}
 			APILocator.getIdentifierAPI().updateIdentifierURI(menuLink, destination);
-			WorkingCache.removeAssetFromCache(menuLink);
-	        LiveCache.removeAssetFromCache(menuLink);
+
 	        
 		} else {
 		    HibernateUtil.save(menuLink);

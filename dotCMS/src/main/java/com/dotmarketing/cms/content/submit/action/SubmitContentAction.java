@@ -359,7 +359,7 @@ public class SubmitContentAction extends DispatchAction{
 			List <Field> fields = st.getFields();
 			for(Field field:fields){
 				Map <String, Object> binaryvalues= new HashMap <String, Object>();
-				if (field.getFieldType().equals("binary"))
+				if (Field.FieldType.BINARY.toString().equals(field.getFieldType()))
 				{
 					tempBinaryValues=processBinaryTempFileUpload( field.getVelocityVarName(), request, field.getFieldContentlet()) ;
 					binaryvalues.put("field", field);

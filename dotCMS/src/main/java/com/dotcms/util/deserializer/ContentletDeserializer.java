@@ -1,6 +1,6 @@
 package com.dotcms.util.deserializer;
 
-import com.dotcms.repackage.com.google.gson.*;
+import com.google.gson.*;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 import java.lang.reflect.Type;

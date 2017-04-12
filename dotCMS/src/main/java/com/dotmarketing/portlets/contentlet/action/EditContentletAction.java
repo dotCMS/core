@@ -17,11 +17,15 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.commons.collections.CollectionUtils;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
@@ -34,6 +38,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PublishStateException;
@@ -67,7 +72,7 @@ import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
+
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
@@ -118,7 +123,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	private FieldAPI fAPI;
 	private HostWebAPI hostWebAPI;
 	private TagAPI tagAPI;
-
 	private String currentHost;
 
 	/**
@@ -784,10 +788,16 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	 * @param user
 	 * @throws Exception
 	 */
-	protected void _retrieveWebAsset(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form,User user) throws Exception {
+	protected void _retrieveWebAsset(final ActionRequest req,
+									 final ActionResponse res,
+									 final PortletConfig config,
+									 final ActionForm form,
+									 final User user) throws Exception {
+
 		String inode = req.getParameter("inode");
-		String inodeStr = (InodeUtils.isSet(inode) ? inode : "");
+		String inodeStr = (InodeUtils.isSet(inode) ? inode : StringUtils.EMPTY);
 		Contentlet contentlet = new Contentlet();
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
 
 		if(InodeUtils.isSet(inodeStr))
 		{
@@ -831,23 +841,16 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		contentletToEdit = contentlet;
 
 		// Contententlets Relationships
-		Structure st = contentlet.getStructure();
-		if (st == null || !InodeUtils.isSet(st.getInode())) {
-			String selectedStructure = "";
-			if (InodeUtils.isSet(req.getParameter("selectedStructure"))) {
-				selectedStructure = req.getParameter("selectedStructure");
-				st = (Structure) InodeFactory.getInode(selectedStructure, Structure.class);
-			}else if (InodeUtils.isSet(req.getParameter("sibblingStructure"))) {
-				selectedStructure = req.getParameter("sibblingStructure");
-				st = (Structure) InodeFactory.getInode(selectedStructure, Structure.class);
-			}else{
-				st = StructureFactory.getDefaultStructure();
-				((ContentletForm)form).setAllowChange(true);
-			}
-		}
-		((ContentletForm)form).setStructureInode(st.getInode());
+		Structure contentType = contentlet.getStructure();
 
-		_loadContentletRelationshipsInRequest(req, contentlet, st, user);
+		if (contentType == null || !InodeUtils.isSet(contentType.getInode())) {
+
+			contentType = this.getSelectedStructure(req, (ContentletForm) form, contentTypeAPI);
+		}
+
+		((ContentletForm)form).setStructureInode(contentType.getInode());
+
+		_loadContentletRelationshipsInRequest(req, contentlet, contentType, user);
 
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
 		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
@@ -855,7 +858,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		//This parameter is used to determine if the structure was selected from Add/Edit Content link in subnav.jsp, from
 		//the Content Search Manager
 		if(httpReq.getParameter("selected") != null){
-			httpReq.getSession().setAttribute("selectedStructure", st.getInode());
+			httpReq.getSession().setAttribute("selectedStructure", contentType.getInode());
 		}
 
 		if(contentlet.getLanguageId() != 0){
@@ -869,6 +872,31 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		req.setAttribute(WebKeys.VERSIONS_INODE_EDIT, contentlet);
 
 	}
+
+	private Structure getSelectedStructure(final ActionRequest request,
+										   final ContentletForm form,
+										   final ContentTypeAPI contentTypeAPI) throws DotSecurityException, DotDataException {
+		Structure contentType = null;
+		String selectedStructure = StringUtils.EMPTY;
+
+		if (InodeUtils.isSet(request.getParameter("selectedStructure"))) {
+            selectedStructure = request.getParameter("selectedStructure");
+            contentType = this.transform(contentTypeAPI.find(selectedStructure));
+        } else if (InodeUtils.isSet(request.getParameter("sibblingStructure"))) {
+            selectedStructure = request.getParameter("sibblingStructure");
+            contentType = this.transform(contentTypeAPI.find(selectedStructure));
+        } else{
+            contentType = StructureFactory.getDefaultStructure();
+            form.setAllowChange(true);
+        }
+
+		return contentType;
+	} // getSelectedStructure.
+
+	private Structure transform(final ContentType contentType) {
+
+		return (null != contentType)?new StructureTransformer(contentType).asStructure():null;
+	} // transform.
 
 	/**
 	 * 
@@ -977,12 +1005,16 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	 * @throws Exception
 	 *             An error occurred when generating the content edit page.
 	 */
-	private void _newContent(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user)
-	throws Exception {
+	private void _newContent(final ActionRequest req,
+							 final ActionResponse res,
+							 final PortletConfig config,
+							 final ActionForm form,
+							 final User user) throws Exception {
 
 		// wraps request to get session object
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
 		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
 
 		//Contentlet Form
 		ContentletForm cf = (ContentletForm) form;
@@ -1002,7 +1034,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		String selectedContentType = "";
 		if (InodeUtils.isSet(req.getParameter("selectedStructure"))) {
 			selectedContentType = req.getParameter("selectedStructure");
-			contentType = (Structure) InodeFactory.getInode(selectedContentType, Structure.class);
+			contentType = this.transform(contentTypeAPI.find (selectedContentType));
 			contentlet.setStructureInode(contentType.getInode());
 		} else if (cmd.equals("newedit")) {
 			contentType = StructureFactory.getDefaultStructure();
@@ -1148,7 +1180,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				Structure structure = contentlet.getStructure();
 				List<Field> list = FieldsCache.getFieldsByStructureInode(structure.getInode());
 				for (Field field : list) {
-					if(field.getFieldContentlet().startsWith("binary")){
+					if(Field.FieldType.BINARY.toString().equals(field.getFieldType())){
 						httpReq.getSession().setAttribute(field.getFieldContentlet() + "-sibling", sib+","+field.getVelocityVarName());
 						java.io.File inputFile = APILocator.getContentletAPI().getBinaryFile(sib, field.getVelocityVarName(), user);
 						if(inputFile != null){
@@ -1412,7 +1444,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 					for(ContentletRelationshipRecords records : recordsList) {
 						if(!records.getRelationship().getRelationTypeValue().equals(relationType))
 							continue;
-						if(RelationshipFactory.isSameStructureRelationship(records.getRelationship()) &&
+						if(FactoryLocator.getRelationshipFactory().sameParentAndChild(records.getRelationship()) &&
 								((!records.isHasParent() && relationHasParent.equals("no")) ||
 										(records.isHasParent() && relationHasParent.equals("yes"))))
 							continue;

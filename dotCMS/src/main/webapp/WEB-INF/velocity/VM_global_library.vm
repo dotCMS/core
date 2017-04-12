@@ -122,30 +122,8 @@
   #end
 
   #if ($velutil.isVelocityFile($_dotParsePath))
-    #if ($_dotParsePath.length() > 3 && $_dotParsePath.startsWith("//"))
-      ##finds first / after //
-  	  #set($_dotParseIndex1 = $_dotParsePath.indexOf("/",2))
-  	  ##if index1 exists
-  	  #if ($_dotParseIndex1 > -1)
-  		##get the host from the path
-  		#set($_dotParsePathHost = $_dotParsePath.substring(2,$_dotParseIndex1))
-  		##get the file path from the path
-  		#set($_dotParsePath = $_dotParsePath.substring($_dotParseIndex1,$_dotParsePath.length()))
-  	  #end
-	  #if ($UtilMethods.isSet($_dotParsePathHost))
-		  ##we found a host, we search the host by hostname
-		  #set ($_dotParseHost = $webapi.resolveHostName($_dotParsePathHost))
-		  #if ($_dotParseHost && $UtilMethods.isSet($_dotParseHost.identifier))
-			#set($_dotParseHostId = $_dotParseHost.identifier)
-		  #end
-	  #end
-    #end
-
     #if (!$UtilMethods.isSet($dontShowIcon) || !$dontShowIcon)
       #if($EDIT_MODE)
-	      #if(!$_dotParseHostId)
-	      	#set($_dotParseHostId = '')
-	      #end
         #set($_dotParseInode = ${webapi.getAssetInode($_dotParsePath, $_dotParseHostId)})
         #if($InodeUtils.isSet($_dotParseInode)&& ${webapi.doesUserHasPermissionOverFile($_dotParseInode, 2)})
           <div  class="dot_parseIcon"> <a href="javascript:window.top.document.getElementById('detailFrame').contentWindow.editFile('${_dotParseInode}'); " title="$_dotParsePath"><span class="editIcon"></span></a></div>
@@ -154,12 +132,8 @@
       #end
     #end
 
-    #if($UtilMethods.isSet($_dotParseHostId))
-  	  #set($_dotParseRealPath = $webapi.getAssetPath($_dotParsePath, $_dotParseHostId))
-  	  #set ($_dotParseHostId = '')
-    #else
-  	  #set($_dotParseRealPath = $webapi.getAssetPath($_dotParsePath))
-    #end
+   #set($_dotParseRealPath = $webapi.getAssetPath($_dotParsePath))
+
 
     #if($UtilMethods.isSet($_dotParseRealPath))
       $velutil.mergeTemplate($_dotParseRealPath)

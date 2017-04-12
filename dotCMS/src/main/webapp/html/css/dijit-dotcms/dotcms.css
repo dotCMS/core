@@ -3646,6 +3646,25 @@ html, body {
   background-color: #C5C5C5;
 }
 
+#select-arrow, .dijitSelect .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectHover .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectActive .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectOpened .dijitArrowButton > .dijitArrowButtonInner {
+  float: none;
+  height: 0 !important;
+  margin: 0;
+  position: static;
+}
+
+.dijitSelect {
+  background-color: #fff;
+  border: solid 1px #C5C5C5;
+  color: #161616;
+}
+.dijitSelect #select-arrow, .dijitSelect .dijitArrowButton > .dijitArrowButtonInner, .dijitSelect .dijitSelectHover .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectHover .dijitSelect .dijitArrowButton > .dijitArrowButtonInner, .dijitSelect .dijitSelectActive .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectActive .dijitSelect .dijitArrowButton > .dijitArrowButtonInner, .dijitSelect .dijitSelectOpened .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectOpened .dijitSelect .dijitArrowButton > .dijitArrowButtonInner {
+  float: none;
+  height: 0 !important;
+  margin: 0;
+  position: static;
+}
+
 .dijitSelect {
   background-color: #fff;
   border: solid 1px #C5C5C5;
@@ -3658,9 +3677,9 @@ html, body {
 .dijitSelect .dijitArrowButton {
   border-left: solid 1px #C5C5C5;
   width: 32px;
-  background-color: #fff;
+  background-color: transparent;
 }
-.dijitSelect .dijitArrowButton:before {
+.dijitSelect .dijitArrowButton > .dijitArrowButtonInner {
   left: 50%;
   margin-left: -5px;
   margin-top: -2.5px;
@@ -3683,9 +3702,9 @@ html, body {
 }
 .dijitSelectHover .dijitArrowButton {
   border-left: solid 1px #0E80CB;
-  background-color: #fff;
+  background-color: transparent;
 }
-.dijitSelectHover .dijitArrowButton:before {
+.dijitSelectHover .dijitArrowButton > .dijitArrowButtonInner {
   left: 50%;
   margin-left: -5px;
   margin-top: -2.5px;
@@ -3705,9 +3724,9 @@ html, body {
 }
 .dijitSelectActive .dijitArrowButton, .dijitSelectOpened .dijitArrowButton {
   border-left: solid 1px #0E80CB;
-  background-color: #fff;
+  background-color: transparent;
 }
-.dijitSelectActive .dijitArrowButton:before, .dijitSelectOpened .dijitArrowButton:before {
+.dijitSelectActive .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectOpened .dijitArrowButton > .dijitArrowButtonInner {
   left: 50%;
   margin-left: -5px;
   margin-top: -2.5px;
@@ -3735,6 +3754,9 @@ html, body {
 }
 .dijitSelectDisabled .dijitArrowButton:before {
   border-top-color: #C5C5C5;
+}
+.dijitSelect.dijitSelectFixedWidth .dijitButtonContents {
+  width: auto;
 }
 
 .dijitComboBox {
@@ -4432,12 +4454,12 @@ html, body {
   float: none;
 }
 .dijitTreeNode {
-  background-image: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/i.gif");
+  background-image: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/i.gif");
   background-repeat: repeat-y;
   zoom: 1;
 }
 .dijitTreeIsLast {
-  background: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/i_half.gif") no-repeat;
+  background: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/i_half.gif") no-repeat;
 }
 .dijitTreeIsRoot {
   margin-left: 0;
@@ -4484,16 +4506,16 @@ html, body {
   background-color: rgba(22, 22, 22, 0.025);
 }
 .dijitTreeExpandoOpened {
-  background-image: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/treeExpand_minus.gif");
+  background-image: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/treeExpand_minus.gif");
 }
 .dijitTreeExpandoClosed {
-  background-image: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/treeExpand_plus.gif");
+  background-image: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/treeExpand_plus.gif");
 }
 .dijitTreeExpandoLeaf {
-  background-image: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/treeExpand_leaf.gif");
+  background-image: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/treeExpand_leaf.gif");
 }
 .dijitTreeExpandoLoading {
-  background-image: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/treeExpand_loading.gif");
+  background-image: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/treeExpand_loading.gif");
 }
 .dijitTreeIcon {
   width: 16px;
@@ -4503,13 +4525,13 @@ html, body {
   margin: 3px 3px 0 3px;
 }
 .dijitFolderOpened {
-  background: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/folderOpened.gif") no-repeat;
+  background: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/folderOpened.gif") no-repeat;
 }
 .dijitFolderClosed {
-  background: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/folderClosed.gif") no-repeat;
+  background: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/folderClosed.gif") no-repeat;
 }
 .dijitLeaf {
-  background: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/leaf.gif") no-repeat;
+  background: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/leaf.gif") no-repeat;
 }
 .dijitTreeNode .dojoDndItemBefore, .dijitTreeNode .dojoDndItemAfter {
   border-bottom: none;
@@ -4816,7 +4838,7 @@ html, body {
 }
 
 .dijitProgressBarIndeterminate .dijitProgressBarTile {
-  background-image: url("/html/js/dojo/release/dojo/dijit/themes/dmundra/images/progressBarAnim.gif");
+  background-image: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/progressBarAnim.gif");
 }
 
 .dijitInline .dijitButton {
@@ -4826,7 +4848,7 @@ html, body {
   line-height: normal;
 }
 .dijitInline.dijitTextBox .dijitInputInner {
-  height: auto;
+  height: 30px;
   line-height: 30px;
   padding: 0;
 }
@@ -8944,10 +8966,10 @@ dd .buttonCaption {
 }
 .calendar-events .portlet-toolbar__actions-primary,
 .calendar-events .portlet-toolbar__actions-secondary {
-  flex: 1;
+  flex: 0 1 auto;
 }
 .calendar-events .portlet-toolbar__info {
-  flex: 2;
+  flex: 1 0 auto;
   font-size: 18px;
   justify-content: center;
 }
@@ -9148,7 +9170,7 @@ dd .buttonCaption {
 
 .removeFilter {
   display: block;
-  background: transparent url(/html/js/dojo/release/dojo/dijit/themes/dmundra/images/tabClose.png) no-repeat scroll center center;
+  background: transparent url(/html/js/dojo/custom-build/dijit/themes/dmundra/images/tabClose.png) no-repeat scroll center center;
   height: 16px;
   width: 20px;
   cursor: pointer;
@@ -9156,7 +9178,7 @@ dd .buttonCaption {
 
 .closeFilter {
   display: block;
-  background: transparent url(/html/js/dojo/release/dojo/dijit/themes/dmundra/images/tabClose.png) no-repeat scroll center center;
+  background: transparent url(/html/js/dojo/custom-build/dijit/themes/dmundra/images/tabClose.png) no-repeat scroll center center;
   height: 16px;
   width: 20px;
   cursor: pointer;

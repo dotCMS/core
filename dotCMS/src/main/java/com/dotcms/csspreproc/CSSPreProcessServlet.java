@@ -11,8 +11,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.WorkingCache;
+
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -79,13 +78,7 @@ public class CSSPreProcessServlet extends HttpServlet {
             }
 
             if(!reqURI.endsWith(".css")) {
-                String path=live ? LiveCache.getPathFromCache(uri, host.getIdentifier()) : WorkingCache.getPathFromCache(uri, host.getIdentifier());
-                if(UtilMethods.isSet(path)) {
-                    req.getRequestDispatcher("/dotAsset?path=" + path).forward(req, resp);
-                }
-                else {
-                    resp.sendError(404);
-                }
+                resp.sendError(404);
                 return;
             }
             

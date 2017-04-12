@@ -2,6 +2,8 @@ package com.dotmarketing.business.cache.provider.redis;
 
 import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
 import com.dotmarketing.business.cache.provider.CacheProvider;
+import com.dotmarketing.business.cache.provider.CacheProviderStats;
+import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -355,10 +357,9 @@ public class RedisProvider extends CacheProvider {
     }
 
     @Override
-    public List<Map<String, Object>> getStats () {
-
-        List<Map<String, Object>> list = new ArrayList<>();
-
+    public CacheProviderStats getStats () {
+        CacheStats providerStats = new CacheStats();
+        CacheProviderStats ret = new CacheProviderStats(providerStats,getName());
         try ( Jedis jedis = readPool.getResource() ) {
 
             //Getting some stats from redis
@@ -377,17 +378,10 @@ public class RedisProvider extends CacheProvider {
             Set<String> currentGroups = getGroups();
 
             for ( String group : currentGroups ) {
-
-                Map<String, Object> stats = new HashMap<>();
-                stats.put("name", getName());
-                stats.put("key", getKey());
-                stats.put("region", group);
-                stats.put("toDisk", true);
-
-                stats.put("isDefault", false);
-                stats.put("memory", -1);
-                stats.put("disk", getKeys(group).size());
-                stats.put("configuredSize", memoryUsage);
+                CacheStats stats = new CacheStats();
+                stats.addStat("region", group);
+                stats.addStat("size", getKeys(group).size() + "");
+                stats.addStat("configuredSize", memoryUsage + "");
 
                 /*
                 Show the complete memory usage just one time,
@@ -395,15 +389,12 @@ public class RedisProvider extends CacheProvider {
                 created in caches that does not rely on groups
                  */
                 memoryUsage = 0;
-
-                list.add(stats);
+                ret.addStatRecord(stats);
             }
-
         } catch ( Exception e ) {
             Logger.error(this, "Error generating Stats for Redis", e);
         }
-
-        return list;
+        return ret;
     }
 
     @Override

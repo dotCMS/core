@@ -22,8 +22,12 @@ package org.apache.velocity.runtime.directive;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
+import java.util.Map;
 
 import com.dotcms.repackage.org.apache.commons.lang.text.StrBuilder;
+import com.dotmarketing.business.CacheLocator;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
@@ -37,7 +41,6 @@ import org.apache.velocity.runtime.parser.ParserTreeConstants;
 import org.apache.velocity.runtime.parser.Token;
 import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.util.introspection.Info;
-
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
 
@@ -55,7 +58,7 @@ public class RuntimeMacro extends Directive
      * Name of the macro
      */
     private String macroName;
-
+    private final static String EVALING_MACRO="DOT_EVALING_MACRO";
     /**
      * Literal text of the macro
      */
@@ -92,7 +95,7 @@ public class RuntimeMacro extends Directive
             throw new IllegalArgumentException("Null arguments");
         }
         
-        this.macroName = macroName.intern();
+        this.macroName = macroName;
     }
 
     /**
@@ -150,8 +153,8 @@ public class RuntimeMacro extends Directive
          * "#end" is a block style macro. We use starts with because the token
          * may end with '\n'
          */
-        List<Token> tokens=node.getTokens();
-        Token t = tokens.get(tokens.size()-1);
+
+        Token t = node.getLastToken();
         if (t.image.startsWith(")") || t.image.startsWith("#end"))
         {
             RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();
@@ -165,7 +168,7 @@ public class RuntimeMacro extends Directive
             Node child = node.jjtGetChild(n);
             if (child.getType() == ParserTreeConstants.JJTWORD)
             {
-                badArgsErrorMsg = "Invalid arg '" + child.getTokens().get(0).image 
+                badArgsErrorMsg = "Invalid arg '" + child.getFirstTokenImage()
                 + "' in macro #" + macroName + " at " + VelocityException.formatFileString(child);
               
                 if (strictRef)  // If strict, throw now
@@ -189,9 +192,10 @@ public class RuntimeMacro extends Directive
         if (literal == null)
         {
             StrBuilder buffer = new StrBuilder();
-            
-            for(Token t : node.getTokens()) {
+            Token t = node.getFirstToken();
+            while (t != null && t != node.getLastToken()){
                 buffer.append(t.image);
+              t = t.next;
             }
             
             literal = buffer.toString();
@@ -339,8 +343,22 @@ public class RuntimeMacro extends Directive
                 postRender(context);
             }
         }
-        else if (strictRef)
-        {
+
+        else if(vmProxy==null && !strictRef){
+            try{
+               String[] macroMap = CacheLocator.getVeloctyResourceCache().getMacro(macroName);
+                if(macroMap != null && context.get(EVALING_MACRO)==null) {
+                    Context contextForEval = new VelocityContext(context);
+                    contextForEval.put(EVALING_MACRO, Boolean.TRUE);
+                    VelocityUtil.eval(macroMap[1], contextForEval);
+                    return this.render(context, writer, node);
+                }
+            } catch (Exception e) {
+              Logger.warn(this,"Unable to load macro #" + macroName + " called at " +
+                  VelocityException.formatFileString(node));
+            }
+        }
+        else if (vmProxy==null){
             throw new VelocityException("Macro '#" + macroName + "' is not defined at "
                 + VelocityException.formatFileString(node));
         }

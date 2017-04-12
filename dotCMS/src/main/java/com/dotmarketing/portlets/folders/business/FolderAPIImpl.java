@@ -511,7 +511,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			}
 
 			/************ Structures *****************/
-			StructureFactory.updateFolderReferences(folder);
+			
 		} catch (Exception e) {
 			Logger.error(FolderAPI.class, e.getMessage(), e);
 			throw new DotStateException(e.getMessage());
@@ -713,7 +713,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		if (!papi.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + parent.getPath());
 		}
-		List list = StructureFactory.getStructures("folder='"+parent.getInode()+"'", null, 0, 0, null);
+		List list = StructureFactory.getStructures("folder='"+parent.getInode()+"'", "mod_date", Integer.MAX_VALUE, 0, "asc");
 		return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
 	}
 

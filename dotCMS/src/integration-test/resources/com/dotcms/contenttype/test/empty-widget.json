@@ -1,0 +1,11 @@
+[ {
+  "name" : "TEST WIDGET Gallery",
+  "description" : "Pulls a list of images based on folder",
+  "defaultType" : false,
+  "fixed" : false,
+  "system" : false,
+  "variable" : "testWidget",
+  "folder" : "SYSTEM_FOLDER",
+  "host" : "demo.dotcms.com",
+  "implClass" : "com.dotcms.contenttype.model.type.WidgetContentType"
+} ]

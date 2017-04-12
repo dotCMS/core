@@ -6,6 +6,7 @@ import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.apache.commons.lang.mutable.MutableInt;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
@@ -17,6 +18,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.util.ConfigUtils;
+import com.liferay.util.StringPool;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -37,11 +39,13 @@ import java.util.function.Consumer;
  */
 public class RoleIntegrityChecker extends AbstractIntegrityChecker {
 
+    private final PermissionAPI permissionAPI;
 	private final RoleAPI roleAPI;
 	private final UserAPI userAPI;
 	private final WorkflowAPI workflowAPI;
 	
     public RoleIntegrityChecker() {
+        permissionAPI = APILocator.getPermissionAPI();
     	roleAPI = APILocator.getRoleAPI();
     	userAPI = APILocator.getUserAPI();
     	workflowAPI = APILocator.getWorkflowAPI();
@@ -192,6 +196,7 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
      */
     @Override
     public void executeFix(final String endpointId) throws DotDataException, DotSecurityException {
+        
         DotConnect dc = new DotConnect();
 
         dc.setSQL("select name, local_role_id, remote_role_id from "+ getIntegrityType().getResultsTableName() +
@@ -208,6 +213,8 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
         	// If the local role still exists and has an id different than the one in remote role 
         	if (oldRole != null && newRole == null && !oldRoleId.equals(newRoleId)) {
         		applyFixToRole(dc, oldRole, oldRoleId, newRoleId);
+                //clean up permissions for updated role
+                permissionAPI.removePermissionableFromCache(oldRole.getId());
         	}
         }
 
@@ -215,7 +222,8 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
 			@Override
 			public void run() {
             	CacheLocator.getCmsRoleCache().clearCache();
-            	CacheLocator.getPermissionCache().clearCache();
+            	//we should remove permissions cached for edited roles only
+            	//CacheLocator.getPermissionCache().clearCache();
 			}
 		});
 	}

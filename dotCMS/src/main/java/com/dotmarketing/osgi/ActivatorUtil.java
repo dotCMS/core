@@ -27,29 +27,6 @@ class ActivatorUtil {
     static final String OSGI_FOLDER = "/osgi";
     static final String VELOCITY_FOLDER = "/WEB-INF/velocity";
 
-    /**
-     * Searches for the custom classloader created for a specified bundle if any
-     *
-     * @param loader
-     * @param bundleId
-     * @return
-     */
-    static UrlOsgiClassLoader findCustomURLLoader ( ClassLoader loader, Long bundleId ) {
-
-        if ( loader == null ) {
-            return null;
-        } else if ( loader instanceof UrlOsgiClassLoader ) {
-            UrlOsgiClassLoader urlOsgiClassLoader = (UrlOsgiClassLoader) loader;
-            if ( urlOsgiClassLoader.getBundleId().equals( bundleId ) ) {
-                return urlOsgiClassLoader;
-            } else {
-                return findCustomURLLoader( loader.getParent(), bundleId );
-            }
-        } else {
-            return findCustomURLLoader( loader.getParent(), bundleId );
-        }
-    }
-
     static String getBundleFolder ( BundleContext context, String separator ) {
 
         //We will use the bundle jar name as the folder name for the osgi resources we move inside dotCMS

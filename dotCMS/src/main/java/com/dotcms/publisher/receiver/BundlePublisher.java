@@ -29,7 +29,7 @@ import com.dotcms.enterprise.publishing.remote.handler.LinkHandler;
 import com.dotcms.enterprise.publishing.remote.handler.OSGIHandler;
 import com.dotcms.enterprise.publishing.remote.handler.RelationshipHandler;
 import com.dotcms.enterprise.publishing.remote.handler.RuleHandler;
-import com.dotcms.enterprise.publishing.remote.handler.StructureHandler;
+import com.dotcms.enterprise.publishing.remote.handler.ContentTypeHandler;
 import com.dotcms.enterprise.publishing.remote.handler.TemplateHandler;
 import com.dotcms.enterprise.publishing.remote.handler.UserHandler;
 import com.dotcms.enterprise.publishing.remote.handler.WorkflowHandler;
@@ -100,7 +100,7 @@ public class BundlePublisher extends Publisher {
         handlers.add(new FolderHandler(config));
         handlers.add(new WorkflowHandler(config));
         if (Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES", true)) {
-            handlers.add(new StructureHandler(config));
+            handlers.add(new ContentTypeHandler(config));
             handlers.add(new RelationshipHandler(config));
         }
         handlers.add(new ContainerHandler(config));

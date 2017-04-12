@@ -25,23 +25,20 @@ import com.dotcms.repackage.org.glassfish.jersey.media.multipart.BodyPart;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPart;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
+import com.dotmarketing.business.*;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
-import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
+
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.DataType;
@@ -66,7 +63,7 @@ public class ContentResourceTest extends IntegrationTestBase {
     WebTarget webTarget;
     String authheader="Authorization";
     String authvalue="Basic "+new String(Base64.encode("admin@dotcms.com:admin".getBytes()));
-    
+
     @Before
     public void before() throws Exception{
         LicenseTestUtil.getLicense();
@@ -77,7 +74,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         long serverPort = request.getServerPort();
         webTarget = client.target("http://" + serverName + ":" + serverPort + "/api/content");
     }
-    
+
     @Test
     @Ignore
     public void singlePUT() throws Exception {
@@ -109,7 +106,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         Assert.assertEquals("Test content from ContentResourceTest",cont.getStringProperty("title"));
         Assert.assertEquals("this is an example text",cont.getStringProperty("body"));
         Assert.assertTrue(cont.isLive());
-        
+
         // testing other host_or_folder formats: folderId
         Folder folder=APILocator.getFolderAPI().findFolderByPath("/home", demo, sysuser, false);
         response=webTarget.path("/publish/1").request()
@@ -125,7 +122,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         cont=APILocator.getContentletAPI().find(inode, sysuser, false);
         Assert.assertEquals(folder.getInode(), cont.getFolder());
         Assert.assertTrue(cont.isLive());
-        
+
         // testing other host_or_folder formats: hostname
         response=webTarget.path("/publish/1").request()
                 .header(authheader, authvalue).put(Entity.entity(
@@ -140,7 +137,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         cont=APILocator.getContentletAPI().find(inode, sysuser, false);
         Assert.assertEquals(demoId, cont.getHost());
         Assert.assertTrue(cont.isLive());
-        
+
         // testing other host_or_folder formats: hostname:path
         response=webTarget.path("/justsave/1").request()
                 .header(authheader, authvalue).put(Entity.entity(
@@ -155,8 +152,8 @@ public class ContentResourceTest extends IntegrationTestBase {
         cont=APILocator.getContentletAPI().find(inode, sysuser, false);
         Assert.assertEquals(folder.getInode(), cont.getFolder());
         Assert.assertFalse(cont.isLive());
-        
-        
+
+
         // testing XML
         response=webTarget.path("/publish/1").request()
                        .header(authheader, authvalue).put(Entity.entity(
@@ -180,7 +177,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         Assert.assertEquals("Test content from ContentResourceTest XML",cont.getStringProperty("title"));
         Assert.assertEquals("this is an example text XML",cont.getStringProperty("body"));
         Assert.assertTrue(cont.isLive());
-        
+
         // testing form-urlencoded
         String title="Test content from ContentResourceTest FORM "+UUIDGenerator.generateUuid();
         String body="this is an example text FORM "+UUIDGenerator.generateUuid();
@@ -207,9 +204,9 @@ public class ContentResourceTest extends IntegrationTestBase {
         Assert.assertEquals(body,cont.getStringProperty("body"));
         Assert.assertTrue(cont.isLive());
 
-        
+
     }
-    
+
     @Test
     public void multipartPUT() throws Exception {
         final String salt=Long.toString(System.currentTimeMillis());
@@ -243,7 +240,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         Assert.assertEquals("demo.dotcms.com", APILocator.getHostAPI().find(file.getHost(), sysuser, false).getHostname());
         Assert.assertEquals("this is the salt "+salt, IOUtils.toString(file.getFileInputStream()));
     }
-    
+
     @SuppressWarnings("unchecked")
     @Test
     public void categoryAndTagFields() throws Exception {
@@ -270,25 +267,25 @@ public class ContentResourceTest extends IntegrationTestBase {
         Contentlet cont=APILocator.getContentletAPI().find(inode, sysuser, false);
         Assert.assertNotNull(cont);
         Assert.assertTrue(InodeUtils.isSet(cont.getIdentifier()));
-        
+
         /////////////////////////
         // checking categories //
         /////////////////////////
-        
+
         List<Category> cats=APILocator.getCategoryAPI().getParents(cont, sysuser, false);
         Assert.assertNotNull(cats);
         Assert.assertEquals(2,cats.size());
-        
+
         Set<String> expectedIds=new HashSet<String>();
         expectedIds.add("investing"); expectedIds.add("banking");
         expectedIds.remove(cats.get(0).getCategoryVelocityVarName());
         expectedIds.remove(cats.get(1).getCategoryVelocityVarName());
         Assert.assertEquals(0, expectedIds.size());
-        
+
         ///////////////////
         // checking tags //
         ///////////////////
-        
+
         List<Tag> tags=APILocator.getTagAPI().getTagsByInode(cont.getInode());
         Assert.assertNotNull(tags);
         Assert.assertEquals(3, tags.size());
@@ -296,14 +293,14 @@ public class ContentResourceTest extends IntegrationTestBase {
         for(Tag tt : tags) {
             Assert.assertTrue(expectedTags.remove(tt.getTagName()));
         }
-        
+
     }
-    
+
     @SuppressWarnings("unchecked")
     @Test
     public void workflowTask() throws  Exception {
         final String salt=Long.toString(System.currentTimeMillis());
-                
+
         // a mandatory scheme to test
         WorkflowScheme scheme = new WorkflowScheme();
         scheme.setMandatory(true);
@@ -311,7 +308,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         scheme.setDescription("testing rest save content");
         scheme.setCreationDate(new Date());
         APILocator.getWorkflowAPI().saveScheme(scheme);
-        
+
         WorkflowStep step1=new WorkflowStep();
         step1.setCreationDate(new Date());
         step1.setEnableEscalation(false);
@@ -320,7 +317,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         step1.setResolved(false);
         step1.setSchemeId(scheme.getId());
         APILocator.getWorkflowAPI().saveStep(step1);
-        
+
         WorkflowStep step2=new WorkflowStep();
         step2.setCreationDate(new Date());
         step2.setEnableEscalation(false);
@@ -329,7 +326,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         step2.setResolved(false);
         step2.setSchemeId(scheme.getId());
         APILocator.getWorkflowAPI().saveStep(step2);
-        
+
         WorkflowStep step3=new WorkflowStep();
         step3.setCreationDate(new Date());
         step3.setEnableEscalation(false);
@@ -338,7 +335,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         step3.setResolved(true);
         step3.setSchemeId(scheme.getId());
         APILocator.getWorkflowAPI().saveStep(step3);
-        
+
         // Save as Draft Step1 -> Step1
         WorkflowAction saveDraft=new WorkflowAction();
         saveDraft.setId(UUIDGenerator.generateUuid());
@@ -348,14 +345,14 @@ public class ContentResourceTest extends IntegrationTestBase {
         saveDraft.setRequiresCheckout(true);
         saveDraft.setStepId(step1.getId());
         saveDraft.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
-        APILocator.getWorkflowAPI().saveAction(saveDraft, 
-                Arrays.asList(new Permission[] { 
+        APILocator.getWorkflowAPI().saveAction(saveDraft,
+                Arrays.asList(new Permission[] {
                         new Permission(
                                 saveDraft.getPermissionType(),
                                 saveDraft.getId(),
                                 APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
                                 PermissionAPI.PERMISSION_USE) }));
-        
+
      // Save as Draft Step1 -> Step1
         WorkflowAction escalate=new WorkflowAction();
         escalate.setId(UUIDGenerator.generateUuid());
@@ -367,14 +364,14 @@ public class ContentResourceTest extends IntegrationTestBase {
         escalate.setAssignable(true);
         escalate.setCommentable(true);
         escalate.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
-        APILocator.getWorkflowAPI().saveAction(escalate, 
-                Arrays.asList(new Permission[] { 
+        APILocator.getWorkflowAPI().saveAction(escalate,
+                Arrays.asList(new Permission[] {
                         new Permission(
                                 escalate.getPermissionType(),
                                 escalate.getId(),
                                 APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
                                 PermissionAPI.PERMISSION_USE) }));
-        
+
         // Send for review Step1 -> Step2
         WorkflowAction sendReview=new WorkflowAction();
         sendReview.setId(UUIDGenerator.generateUuid());
@@ -384,14 +381,14 @@ public class ContentResourceTest extends IntegrationTestBase {
         sendReview.setRequiresCheckout(false);
         sendReview.setStepId(step1.getId());
         sendReview.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
-        APILocator.getWorkflowAPI().saveAction(sendReview, 
-                Arrays.asList(new Permission[] { 
+        APILocator.getWorkflowAPI().saveAction(sendReview,
+                Arrays.asList(new Permission[] {
                         new Permission(
                                 sendReview.getPermissionType(),
                                 sendReview.getId(),
                                 APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
                                 PermissionAPI.PERMISSION_USE) }));
-        
+
         // reject Step2 -> Step1
         WorkflowAction reject=new WorkflowAction();
         reject.setId(UUIDGenerator.generateUuid());
@@ -401,14 +398,14 @@ public class ContentResourceTest extends IntegrationTestBase {
         reject.setRequiresCheckout(false);
         reject.setStepId(step2.getId());
         reject.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
-        APILocator.getWorkflowAPI().saveAction(reject, 
-                Arrays.asList(new Permission[] { 
+        APILocator.getWorkflowAPI().saveAction(reject,
+                Arrays.asList(new Permission[] {
                         new Permission(
                                 reject.getPermissionType(),
                                 reject.getId(),
                                 APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
                                 PermissionAPI.PERMISSION_USE) }));
-        
+
         // publish Step2 -> Step3
         WorkflowAction publish=new WorkflowAction();
         publish.setId(UUIDGenerator.generateUuid());
@@ -418,8 +415,8 @@ public class ContentResourceTest extends IntegrationTestBase {
         publish.setRequiresCheckout(false);
         publish.setStepId(step2.getId());
         publish.setNextAssign(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
-        APILocator.getWorkflowAPI().saveAction(publish, 
-                Arrays.asList(new Permission[] { 
+        APILocator.getWorkflowAPI().saveAction(publish,
+                Arrays.asList(new Permission[] {
                         new Permission(
                                 publish.getPermissionType(),
                                 publish.getId(),
@@ -431,7 +428,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         publishlet.setName("publish");
         publishlet.setOrder(1);
         APILocator.getWorkflowAPI().saveActionClass(publishlet);
-        
+
         // a test structure with that scheme
         Structure st=new Structure();
         st.setName("Rest test st "+salt);
@@ -441,7 +438,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         Field field=new Field("Title",FieldType.TEXT,DataType.TEXT,st,true,true,true,1,false,false,true);
         FieldFactory.saveField(field);
         APILocator.getWorkflowAPI().saveSchemeForStruct(st, scheme);
-        
+
         // send the Rest api call
         User sysuser=APILocator.getUserAPI().getSystemUser();
         User bill=APILocator.getUserAPI().loadUserById("dotcms.org.2806");
@@ -455,16 +452,16 @@ public class ContentResourceTest extends IntegrationTestBase {
                     .put(field.getVelocityVarName(), "test title "+salt)
                     .toString(), MediaType.APPLICATION_JSON_TYPE));
         Assert.assertEquals(200, response.getStatus());
-        
+
         Contentlet cont = APILocator.getContentletAPI().find((String)response.getHeaders().getFirst("inode"), sysuser, false);
         Assert.assertNotNull(cont);
         Assert.assertTrue(InodeUtils.isSet(cont.getIdentifier()));
-        
+
         // must be in the first step
         Assert.assertEquals(step1.getId(), APILocator.getWorkflowAPI().findStepByContentlet(cont).getId());
-        
+
         boolean assigned=false;
-        
+
         HashMap<String, Object> map = new HashMap<String,Object>();
         map.put("assignedTo",billrole.getId());
         for(WorkflowTask task : APILocator.getWorkflowAPI().searchTasks(new WorkflowSearcher(map, sysuser))) {
@@ -475,15 +472,15 @@ public class ContentResourceTest extends IntegrationTestBase {
             }
         }
         Assert.assertTrue(assigned);
-        
+
     }
-    
+
     @Test
     public void uriFileImageFields() throws Exception {
         User sysuser=APILocator.getUserAPI().getSystemUser();
-        
+
         final String salt=Long.toString(System.currentTimeMillis());
-        
+
         Structure st=new Structure();
         st.setName("Rest Test File Img "+salt);
         st.setVelocityVarName("restTestSt"+salt);
@@ -495,15 +492,15 @@ public class ContentResourceTest extends IntegrationTestBase {
         FieldFactory.saveField(file);
         Field image=new Field("aImage",FieldType.IMAGE,DataType.TEXT,st,true,false,true,3,false,false,true);
         FieldFactory.saveField(image);
-        
+
         Host demo=APILocator.getHostAPI().findByName("demo.dotcms.com", sysuser, false);
         Folder ff=APILocator.getFolderAPI().createFolders("/rest/"+salt, demo, sysuser, false);
-        
+
         java.io.File filefile = java.io.File.createTempFile("filefile", ".txt");
         FileUtil.write(filefile, "helloworld");
         java.io.File imgimg = java.io.File.createTempFile("imgimg", ".jpg");
         FileUtil.write(imgimg, "helloworld");
-        
+
         Contentlet filea=new Contentlet();
         filea.setFolder(ff.getInode());
         filea.setHost(demo.getIdentifier());
@@ -514,7 +511,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         filea.setBinary(FileAssetAPI.BINARY_FIELD, filefile);
         filea.setLanguageId(1);
         filea = APILocator.getContentletAPI().checkin(filea, sysuser, false);
-        
+
         Contentlet imga=new Contentlet();
         imga.setFolder(ff.getInode());
         imga.setHost(demo.getIdentifier());
@@ -536,18 +533,18 @@ public class ContentResourceTest extends IntegrationTestBase {
                     .put(title.getVelocityVarName(), "a simple title")
                     .toString(), MediaType.APPLICATION_JSON_TYPE));
         Assert.assertEquals(200, response.getStatus());
-        
+
         String inode=(String)response.getHeaders().getFirst("inode");
         Contentlet cont = APILocator.getContentletAPI().find(inode, sysuser, false);
         Assert.assertEquals(filea.getIdentifier(),cont.getStringProperty(file.getVelocityVarName()));
         Assert.assertEquals(imga.getIdentifier(),cont.getStringProperty(image.getVelocityVarName()));
     }
-    
+
     @Test
     public void relationShips() throws Exception {
         final String salt=Long.toString(System.currentTimeMillis());
         final User sysuser=APILocator.getUserAPI().getSystemUser();
-        
+
         Structure st1=new Structure();
         st1.setName("Rest Test rel "+salt);
         st1.setVelocityVarName("restTestSt"+salt);
@@ -555,7 +552,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         StructureFactory.saveStructure(st1);
         Field title1=new Field("Title",FieldType.TEXT,DataType.TEXT,st1,true,true,true,1,false,false,true);
         FieldFactory.saveField(title1);
-        
+
         Structure st2=new Structure();
         st2.setName("Rest Test rel 2 "+salt);
         st2.setVelocityVarName("restTestSt2"+salt);
@@ -563,24 +560,24 @@ public class ContentResourceTest extends IntegrationTestBase {
         StructureFactory.saveStructure(st2);
         Field title2=new Field("Title",FieldType.TEXT,DataType.TEXT,st2,true,true,true,1,false,false,true);
         FieldFactory.saveField(title2);
-        
+
         Contentlet c1=new Contentlet();
         c1.setLanguageId(1);
         c1.setStringProperty(title2.getVelocityVarName(), "title 2");
         c1.setStructureInode(st2.getInode());
         c1 = APILocator.getContentletAPI().checkin(c1, sysuser, false);
-        
+
         Contentlet c2=new Contentlet();
         c2.setLanguageId(1);
         c2.setStringProperty(title2.getVelocityVarName(), "title 222");
         c2.setStructureInode(st2.getInode());
         c2 = APILocator.getContentletAPI().checkin(c2, sysuser, false);
-        
+
         APILocator.getContentletAPI().isInodeIndexed(c1.getInode());
         APILocator.getContentletAPI().isInodeIndexed(c2.getInode());
-        
+
         Relationship rel=new Relationship(st1,st2,"st1"+salt,"st2"+salt,0,false,false);
-        RelationshipFactory.saveRelationship(rel);
+        FactoryLocator.getRelationshipFactory().save(rel);
 
         Response response = webTarget.path("/publish/1")
                 .request()
@@ -591,23 +588,23 @@ public class ContentResourceTest extends IntegrationTestBase {
                         .put(rel.getRelationTypeValue(), "+structureName:" + st2.getVelocityVarName())
                         .toString(), MediaType.APPLICATION_JSON_TYPE));
         Assert.assertEquals(200, response.getStatus());
-        
+
         Thread.sleep(2000); // wait for relation fields update
-        
+
         String inode=(String)response.getHeaders().getFirst("inode");
         Contentlet cc=APILocator.getContentletAPI().find(inode, sysuser, false);
-        
+
         List<Contentlet> relatedContent = APILocator.getContentletAPI().getRelatedContent(cc, rel, sysuser, false);
         Assert.assertEquals(2, relatedContent.size());
-        
+
         Set<String> inodes=new HashSet<String>();
         inodes.add(c1.getInode()); inodes.add(c2.getInode());
         inodes.remove(relatedContent.get(0).getInode());
         inodes.remove(relatedContent.get(1).getInode());
         Assert.assertEquals(0, inodes.size());
-            
+
     }
-    
+
     @Test
     public void newVersion() throws Exception {
         final User sysuser=APILocator.getUserAPI().getSystemUser();
@@ -622,10 +619,10 @@ public class ContentResourceTest extends IntegrationTestBase {
                         .put("body", "just testing")
                         .toString(), MediaType.APPLICATION_JSON_TYPE));
         Assert.assertEquals(200, response.getStatus());
-        
+
         String inode=(String)response.getHeaders().getFirst("inode");
-        
-        
+
+
         String identifier=(String)response.getHeaders().getFirst("identifier");
 
         response = webTarget.path("/justSave/1")
@@ -640,19 +637,19 @@ public class ContentResourceTest extends IntegrationTestBase {
                         .toString(), MediaType.APPLICATION_JSON_TYPE));
         String inode2=(String)response.getHeaders().getFirst("inode");
         String identifier2=(String)response.getHeaders().getFirst("identifier");
-        
+
         Assert.assertEquals(identifier, identifier2);
         Assert.assertNotSame(inode, inode2);
-        
+
         Contentlet c1=APILocator.getContentletAPI().find(inode, sysuser, false);
         Contentlet c2=APILocator.getContentletAPI().find(inode2, sysuser, false);
-        
+
         Contentlet working=APILocator.getContentletAPI().findContentletByIdentifier(identifier, false, 1, sysuser, false);
-        
+
         Assert.assertEquals("testing newVersion 2", c2.getStringProperty("title"));
         Assert.assertEquals("just testing 2", c2.getStringProperty("body"));
         Assert.assertEquals(c1.getIdentifier(), c2.getIdentifier());
-        
+
         Assert.assertEquals(working.getInode(), c2.getInode());
     }
 }

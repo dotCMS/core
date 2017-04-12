@@ -623,7 +623,7 @@
 								<tr>
 									<th style="text-align: right;"><label for="license_type"><%= LanguageUtil.get(pageContext, "request-license-type") %>: </label></th>
 									<td>
-										<select onchange="licenseAdmin.doCodeRequest()" style="width:120px;"  data-dojo-id="license_type" id="license_type" name="license_type" data-dojo-type="dijit.form.Select">
+										<select onchange="licenseAdmin.doCodeRequest()" style="width:160px;"  data-dojo-id="license_type" id="license_type" name="license_type" data-dojo-type="dijit.form.Select">
 											<option value="--"></option>
 											<option value="prod"><%= LanguageUtil.get(pageContext, "request-license-prod") %></option>
 											<option value="dev"><%= LanguageUtil.get(pageContext, "request-license-dev") %></option>
@@ -633,7 +633,7 @@
 								<tr>
 									<th style="text-align: right;"><label for="license_level"><%= LanguageUtil.get(pageContext, "request-license-level") %>: </label></th>
 									<td>
-										<select onchange="licenseAdmin.doCodeRequest()" style="width:120px;" data-dojo-id="license_level" id="license_level" name="license_level" data-dojo-type="dijit.form.Select">
+										<select onchange="licenseAdmin.doCodeRequest()" style="width:160px;" data-dojo-id="license_level" id="license_level" name="license_level" data-dojo-type="dijit.form.Select">
 											<option value="100"></option>
 											<option value="200"><%= LanguageUtil.get(pageContext, "request-license-standard") %></option>
 											<option value="300"><%= LanguageUtil.get(pageContext, "request-license-professional") %></option>
