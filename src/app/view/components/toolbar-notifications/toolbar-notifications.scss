@@ -42,4 +42,12 @@
         font-size: rem-cal(18px);
         margin: 0;
     }
+
+    .toolbar-notifications__footer{
+        text-align: center; 
+    }
+
+    .toolbar-notifications__footer button{
+        margin:auto;
+    }
 }

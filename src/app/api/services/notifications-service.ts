@@ -17,12 +17,20 @@ export class NotificationsService {
     constructor(private coreWebService: CoreWebService) {
         this.urls = {
             dismissNotificationsUrl: 'v1/notification/delete',
-            getNotificationsUrl: 'v1/notification/getNotifications/offset/0/limit/25',
+            getLastNotificationsUrl: 'v1/notification/getNotifications/offset/0/limit/24',
+            getNotificationsUrl: 'v1/notification/getNotifications/',
             markAsReadNotificationsUrl: 'v1/notification/markAsRead'
         };
     }
 
-    getNotifications(): Observable<any> {
+    getLastNotifications(): Observable<any> {
+        return this.coreWebService.request({
+            method: RequestMethod.Get,
+            url: this.urls.getLastNotificationsUrl
+        });
+    }
+
+    getAllNotifications(): Observable<any> {
         return this.coreWebService.request({
             method: RequestMethod.Get,
             url: this.urls.getNotificationsUrl

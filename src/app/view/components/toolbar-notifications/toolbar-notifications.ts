@@ -9,23 +9,25 @@ import {DropdownComponent} from '../_common/dropdown-component/dropdown-componen
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
-
     selector: 'dot-toolbar-notifications',
     styles: [require('./toolbar-notifications.scss')],
     templateUrl: 'toolbar-notifications.html'
 })
 export class ToolbarNotifications extends BaseComponent {
+    private static readonly MAX_NOTIFICATIONS_TO_SHOW = 25;
+
     @ViewChild(DropdownComponent) dropdown: DropdownComponent;
     private elementRef;
     private isNotificationsMarkedAsRead = false;
     private notifications: Array<INotification> = [];
     private notificationsUnreadCount = 0;
     private showNotifications = false;
+    private existsMoreToLoad = false;
 
     constructor(private dotcmsEventsService: DotcmsEventsService, private notificationService: NotificationsService,
                 myElement: ElementRef, messageService: MessageService, private loginService: LoginService,
                 private iframeOverlayService: IframeOverlayService) {
-        super(['notifications_dismissall', 'notifications_title'], messageService);
+        super(['notifications_dismissall', 'notifications_title', 'notifications_load_more'], messageService);
         this.elementRef = myElement;
     }
 
@@ -57,9 +59,18 @@ export class ToolbarNotifications extends BaseComponent {
     }
 
     private getNotifications(): void {
-        this.notificationService.getNotifications().subscribe(res => {
+        this.notificationService.getLastNotifications().subscribe(res => {
             this.notificationsUnreadCount = res.entity.count;
             this.notifications = res.entity.notifications;
+            this.existsMoreToLoad = true;
+        });
+    }
+
+    private loadMore(): void {
+        this.notificationService.getAllNotifications().subscribe(res => {
+            this.notificationsUnreadCount = res.entity.count;
+            this.notifications = res.entity.notifications;
+            this.existsMoreToLoad = false;
         });
     }
 
