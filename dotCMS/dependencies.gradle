@@ -268,7 +268,7 @@ dependencies {
 	compile group: 'com.twelvemonkeys.imageio', name: 'imageio-batik', version:'3.2.1'
 	compile group: 'com.twelvemonkeys.imageio', name: 'imageio-clippath', version:'3.2.1'
     compile group: 'com.twelvemonkeys.servlet', name: 'servlet', version:'3.2.1'
-    compile 'com.github.ben-manes.caffeine:caffeine:2.3.3'
+    compile 'com.github.ben-manes.caffeine:caffeine:2.4.0'
     compile (group: 'org.apache.pdfbox', name: 'pdfbox', version: '2.0.1'){
         exclude(group: 'commons-logging')
     }
