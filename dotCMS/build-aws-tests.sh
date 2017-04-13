@@ -21,10 +21,9 @@ fi
 
 # Build tests and distro
 cd core/dotCMS
-./gradlew --stop
-./gradlew clean --no-daemon --refresh-dependencies
-./gradlew copyTestRuntimeLibs individualTestJar integrationTestJar functionalTestJar --no-daemon
-./gradlew createDist --no-daemon 
+./gradlew clean --refresh-dependencies
+./gradlew copyTestRuntimeLibs individualTestJar integrationTestJar functionalTestJar
+./gradlew createDist
 cd ../..
 
 
@@ -93,7 +92,7 @@ cp dotserver/tomcat/webapps/ROOT/dotsecure/logs/test/*.xml tests
 
 # Run Integration tests
 cd core/dotCMS
-./gradlew integrationTest -PdatabaseType=$DB_TYPE --no-daemon || true
+./gradlew integrationTest -PdatabaseType=$DB_TYPE  || true
 cd ../..
 cp core/dotCMS/build/test-results/integrationTest/*.xml tests
 
