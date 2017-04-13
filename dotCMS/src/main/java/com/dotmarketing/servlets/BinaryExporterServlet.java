@@ -31,6 +31,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.io.Files;
 import com.dotcms.repackage.org.apache.commons.collections.LRUMap;
 import com.dotcms.util.DownloadUtil;
@@ -308,8 +309,9 @@ public class BinaryExporterServlet extends HttpServlet {
                         return;
                     }
                 }
+                ContentType type = content.getContentType();
+                com.dotcms.contenttype.model.field.Field field = APILocator.getFieldAPI2().byContentTypeAndVar(type, fieldVarName);
 
-				Field field = content.getStructure().getFieldVar(fieldVarName);
 				if(field == null){
 					Logger.debug(this,"Field " + fieldVarName + " does not exists within structure " + content.getStructure().getVelocityVarName());
 					resp.sendError(404);
@@ -317,9 +319,9 @@ public class BinaryExporterServlet extends HttpServlet {
 				}
 
 				if(isTempBinaryImage)
-					inputFile = contentAPI.getBinaryFile(content.getInode(), field.getVelocityVarName(), APILocator.getUserAPI().getSystemUser());
+					inputFile = contentAPI.getBinaryFile(content.getInode(), field.variable(), APILocator.getUserAPI().getSystemUser());
 				else
-					inputFile = contentAPI.getBinaryFile(content.getInode(), field.getVelocityVarName(), user);
+					inputFile = contentAPI.getBinaryFile(content.getInode(), field.variable(), user);
 				if(inputFile == null){
 					Logger.debug(this,"binary file '" + fieldVarName + "' does not exist for inode " + content.getInode());
 					resp.sendError(404);
@@ -552,23 +554,33 @@ public class BinaryExporterServlet extends HttpServlet {
             
 		} catch (DotContentletStateException e) {
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
-			resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+            if(!resp.isCommitted()){
+              resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+            }
 		} catch (DotRuntimeException e) {
 			//Logger.error(BinaryExporterServlet.class, e.getMessage());
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
-			resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+            if(!resp.isCommitted()){
+              resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+            }
 		} catch (PortalException e) {
 			Logger.error(BinaryExporterServlet.class, e.getMessage());
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
-			resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+            if(!resp.isCommitted()){
+              resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+            }
 		} catch (SystemException e) {
 			Logger.error(BinaryExporterServlet.class, e.getMessage());
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
-			resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+            if(!resp.isCommitted()){
+              resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+            }
 		} catch (DotDataException e) {
 			Logger.error(BinaryExporterServlet.class, e.getMessage());
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
-			resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+	         if(!resp.isCommitted()){
+	           resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+	         }
 		} catch (DotSecurityException e) {
 			try {
 			  if(req.getSession()!=null){
@@ -582,16 +594,22 @@ public class BinaryExporterServlet extends HttpServlet {
 			  }
 			} catch (Exception e1) {
 				Logger.error(BinaryExporterServlet.class,e1.getMessage(),e1);
-				resp.sendError(HttpServletResponse.SC_FORBIDDEN);
+	            if(!resp.isCommitted()){
+	              resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+	            }
 			}
 		} catch (BinaryContentExporterException e) {
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
 			Logger.error(BinaryExporterServlet.class, e.getMessage());
-			resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+			if(!resp.isCommitted()){
+			  resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+			}
 		}catch (Exception e) {
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
 			Logger.error(BinaryExporterServlet.class, e.getMessage());
-			resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+            if(!resp.isCommitted()){
+              resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+            }
 		}
 		// close our resources no matter what
 		finally{

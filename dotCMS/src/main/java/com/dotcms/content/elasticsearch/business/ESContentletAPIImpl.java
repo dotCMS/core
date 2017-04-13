@@ -35,6 +35,9 @@ import org.elasticsearch.search.SearchHits;
 import org.springframework.beans.BeanUtils;
 
 import com.dotcms.content.business.DotMappingException;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.ConstantField;
+import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -963,7 +966,45 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         return results;
     }
-
+    @Override
+    public Object getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField){
+      if(theField instanceof ConstantField){
+            contentlet.getMap().put(theField.variable(), theField.values());
+        return theField.values();
+      }
+      if(theField instanceof HostFolderField){
+        if(FolderAPI.SYSTEM_FOLDER.equals(contentlet.getFolder())){
+             return contentlet.getHost();
+        }else{
+             return contentlet.getFolder();
+        }
+      }else if(theField instanceof CategoryField){
+        Category category;
+        try {
+          category = catAPI.find(theField.values(), APILocator.getUserAPI().getSystemUser(), false);
+          // Get all the Contentlets Categories
+          List<Category> selectedCategories = catAPI.getParents(contentlet, APILocator.getUserAPI().getSystemUser(), false);
+          Set<Category> categoryList = new HashSet<Category>();
+          List<Category> categoryTree = catAPI.getAllChildren(category, APILocator.getUserAPI().getSystemUser(), false);
+          if (selectedCategories.size() > 0 && categoryTree != null) {
+              for (int k = 0; k < categoryTree.size(); k++) {
+                  Category cat = (Category) categoryTree.get(k);
+                  for (Category categ : selectedCategories) {
+                      if (categ.getInode().equalsIgnoreCase(cat.getInode())) {
+                          categoryList.add(cat);
+                      }
+                  }
+              }
+          }
+          return categoryList;
+        } catch (DotDataException | DotSecurityException e) {
+          throw new DotStateException(e);
+        }
+        
+      }else{
+          return contentlet.get(theField.variable());
+      }
+    }
     @Override
     public Object getFieldValue(Contentlet contentlet, Field theField){
         try {
@@ -4665,14 +4706,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 + contentletInode
                 + java.io.File.separator
                 + velocityVariableName);
-                if(binaryFilefolder.exists()){
+                //if(binaryFilefolder.exists()){
                 java.io.File[] files = binaryFilefolder.listFiles(new BinaryFileFilter());
 
                 if(files.length > 0){
                 	binaryFile = files[0];
                 }
 
-            }
+            //}
         }catch(Exception e){
             Logger.error(this,"Error occured while retrieving binary file name : getBinaryFileName(). ContentletInode : "+contentletInode+"  velocityVaribleName : "+velocityVariableName );
             Logger.debug(this,"Error occured while retrieving binary file name : getBinaryFileName(). ContentletInode : "+contentletInode+"  velocityVaribleName : "+velocityVariableName, e);
