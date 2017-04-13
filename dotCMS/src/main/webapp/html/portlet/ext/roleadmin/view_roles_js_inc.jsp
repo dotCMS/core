@@ -150,12 +150,13 @@
 			getIconClass: function (item, opened) {
 				if (item) {
 					var locked = eval(norm(item.locked));
-					if (locked) {
+					if (locked && !dojo.byId("lockedNode-" + item.id)) {
 						var node = dijit.byId("treeNode-" + item.id);
 						node.iconNode.style.width = "0";
 						node.iconNode.style.height = "0";
 						node.iconNode.style.margin = "0";
-						var newIcon = document.createElement('span');
+						var newIcon = document.createElement("span");
+						newIcon.setAttribute("id", "lockedNode-" + item.id);
 						newIcon.classList = "lockIcon";
 						node.iconNode.parentNode.insertBefore(newIcon, node.iconNode);
 					}
