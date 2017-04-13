@@ -3,7 +3,7 @@
 accordion {
     a {
         display: block;
-        padding: 5px 0;
+        padding: 5px 30px 5px 47px;
         color: $body-font-color;
         text-decoration: none;
     }
@@ -39,7 +39,7 @@ accordion {
     }
 
     .main-nav__submenu {
-        padding: 0 30px 10px 47px;
+        padding: 0 0 10px 0;
 
         a {
             color: $gray-dark;

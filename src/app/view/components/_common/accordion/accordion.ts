@@ -34,7 +34,7 @@ export class Accordion {
     selector: 'accordion-group',
     styles: [require('./accordion-group.scss')],
     template: `
-        <a href="#" (click)="toggleOpen($event)" class="accordion-group__title" [ngClass]="{'is-active': isOpen}">
+        <a href="#" ripple (click)="toggleOpen($event)" class="accordion-group__title" [ngClass]="{'is-active': isOpen}">
             <i class="fa fa-th-list {{icon}}" aria-hidden="true" *ngIf="icon"></i>
             <span class="accordion-group__title-text">
                 {{heading}}

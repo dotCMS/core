@@ -5,23 +5,23 @@
             <accordion-group [heading]="menu.tabName" [icon]="menu.tabIcon">
                 <div class="main-nav__submenu">
                     <template ngFor let-menuItem [ngForOf]="menu.menuItems">
-                        <a (click)="gotToPage($event, menuItem.menuLink)" [routerLink]="[menuItem.menuLink]"
+                        <a ripple (click)="gotToPage($event, menuItem.menuLink)" [routerLink]="[menuItem.menuLink]"
                            *ngIf="menuItem.url && !menuItem.angular && !menuItem.ajax"
                            [class.main-nav__submenu--active]="menuItemIdActive === menuItem.id">
 
                             {{menuItem.name}}
                         </a>
-                        <a [routerLink]="[menuItem.url]" *ngIf="menuItem.angular && !menuItem.ajax"
+                        <a ripple [routerLink]="[menuItem.url]" *ngIf="menuItem.angular && !menuItem.ajax"
                            [class.main-nav__submenu--active]="menuItemIdActive === menuItem.id">
 
                             {{menuItem.name}}
                         </a>
-                        <a (click)="gotToPage($event, menuItem.menuLink)" [routerLink]="[menuItem.menuLink]" *ngIf="menuItem.url && menuItem.ajax"
+                        <a ripple (click)="gotToPage($event, menuItem.menuLink)" [routerLink]="[menuItem.menuLink]" *ngIf="menuItem.url && menuItem.ajax"
                             [class.main-nav__submenu--active]="menuItemIdActive === menuItem.id">
 
                             {{menuItem.name}}
                         </a>
-                    </template>
+                    </template> 
                 </div>
             </accordion-group>
         </template>

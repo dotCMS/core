@@ -44,7 +44,7 @@
                 </div>
                 <div class="form-group">
                     <dot-loading-indicator *ngIf="isLoginInProgress"></dot-loading-indicator>
-                    <button pButton id="login-component-login-submit-button" *ngIf="!isLoginInProgress"
+                    <button ripple pButton id="login-component-login-submit-button" *ngIf="!isLoginInProgress"
                             (click)="logInUser()" [label]="loginButton"></button>
                     <button pButton flat id="login-component-show-fogot-password-button" *ngIf="!isLoginInProgress"
                             (click)="showForgotPassword()" [label]="forgotPasswordButton"></button>

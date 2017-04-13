@@ -1,28 +1,27 @@
 import { Component, EventEmitter, Input, Output, ViewEncapsulation, ElementRef, trigger, style, state, transition, animate } from '@angular/core';
 
 @Component({
+    animations: [
+        trigger(
+        'enterAnimation', [
+            transition(':enter', [
+            style({transform: 'translateY(-10%)', opacity: 0}),
+            animate('100ms', style({transform: 'translateY(0)', opacity: 1}))
+            ]),
+            transition(':leave', [
+            style({transform: 'translateY(0)', opacity: 1}),
+            animate('100ms', style({transform: 'translateY(-10%)', opacity: 0}))
+            ])
+        ]
+        )
+    ],
     encapsulation: ViewEncapsulation.Emulated,
     host: {
         '(document:click)': 'handleClick($event)',
     },
-
     selector: 'dot-dropdown-component',
     styles: [require('./dropdown-component.scss')],
-    templateUrl: 'dropdown-component.html',
-    animations: [
-    trigger(
-      'enterAnimation', [
-        transition(':enter', [
-          style({transform: 'translateY(-10%)', opacity: 0}),
-          animate('100ms', style({transform: 'translateY(0)', opacity: 1}))
-        ]),
-        transition(':leave', [
-          style({transform: 'translateY(0)', opacity: 1}),
-          animate('100ms', style({transform: 'translateY(-10%)', opacity: 0}))
-        ])
-      ]
-    )
-  ]
+    templateUrl: 'dropdown-component.html'
 })
 
 export class DropdownComponent {

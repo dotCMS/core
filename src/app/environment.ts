@@ -40,7 +40,8 @@ import {StringUtils} from './api/util/string.utils';
 import {UserModel} from './api/auth/UserModel';
 
 // ROUTING
-import {LocationStrategy, HashLocationStrategy} from '@angular/common';
+import { LocationStrategy, HashLocationStrategy } from '@angular/common';
+import { ColorUtil } from './api/util/ColorUtil';
 
 // Environment Providers
 const RULES_ENGINE_SERVICES = [
@@ -79,6 +80,7 @@ let PROVIDERS: any[] = [
   StringFormat,
   StringUtils,
   UserModel,
+  ColorUtil,
   {provide: LocationStrategy, useClass: HashLocationStrategy}
 ];
 

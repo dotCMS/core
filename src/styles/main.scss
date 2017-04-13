@@ -11,6 +11,8 @@
 @import "../../node_modules/primeng/resources/primeng.css";
 @import "primeng-theme/base";
 
+@import '../app/view/directives/ripple/ripple-effects.scss';
+
 *, *:before, *:after {
     box-sizing: border-box;
 }
