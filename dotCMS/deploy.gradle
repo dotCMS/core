@@ -356,8 +356,8 @@ Parameters:
 Example of use:
 
 Name convention: dotcms_version_hash.jar -> dotcms_3.6_a434224.jar
-As snapshot: ./gradlew -b deploy.gradle uploadDotcms -Pusername=username -Ppassword=XYZ 
-As release: ./gradlew -b deploy.gradle uploadDotcms -Prelease=true -Pusername=username -Ppassword=XYZ
+As snapshot: ./gradlew -b deploy.gradle uploadDotcms -Pusername=username -Ppassword=XYZ -PincludeDependencies=true
+As release: ./gradlew -b deploy.gradle uploadDotcms -Prelease=true -Pusername=username -Ppassword=XYZ -PincludeDependencies=true
 """
 
 uploadDotcms.group='dotCMS Upload Version'
