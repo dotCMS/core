@@ -1088,7 +1088,21 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 		return c;
 	}
-
+	
+    public Object getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField) {
+      for(ContentletAPIPreHook pre : preHooks){
+          boolean preResult = pre.getFieldValue(contentlet, theField);
+          if(!preResult){
+              Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+              throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+          }
+      }
+      Object c = conAPI.getFieldValue(contentlet, theField);
+      for(ContentletAPIPostHook post : postHooks){
+          post.getFieldValue(contentlet, theField,c);
+      }
+      return c;
+  }
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#getName(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
 	 */
