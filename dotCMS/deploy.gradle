@@ -78,7 +78,7 @@ def taskDescription = """
 /**
  * Override both the Gradle out-of-the-box 'help' task
  */
-task help(overwrite:true) << {
+task help(overwrite:true) {
 
     print """
     Welcome to Gradle $gradle.gradleVersion.
@@ -254,8 +254,10 @@ defaultTasks 'help', 'tasks'
 //Tasks generated will be called: uploadEnterprise, uploadLicense, uploadDotcms, uploadStarter and uploadAntTooling
 //respectively
 ['Enterprise', 'License', 'Dotcms', 'Starter', 'AntTooling'].each { taskName ->
-    task "upload$taskName"() << {
-        updateSubmoduleReference()
+    task "upload$taskName"() {
+        doLast {
+            updateSubmoduleReference()
+        }
     }
 }
 
