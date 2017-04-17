@@ -393,6 +393,15 @@ public class PermissionAjax {
 			}
 		}
 
+		if ( perm == null ) {
+			try {
+				// Now trying with categories
+				perm = APILocator.getCategoryAPI().find(assetId, user, respectFrontendRoles);
+			} catch (NotFoundInDbException e) {
+				// Do nothing
+			}
+		}
+
 		if(perm == null || !UtilMethods.isSet(perm.getPermissionId())) {
 			perm = InodeFactory.getInode(assetId, Inode.class);
 		}
