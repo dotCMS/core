@@ -224,7 +224,8 @@ public class TaskLocatorUtil {
         ret.add(Task03740UpdateLayoutIcons.class);
         ret.add(Task03745DropLegacyHTMLPageAndFileTables.class);
         ret.add(Task03800AddIndexLowerStructureTable.class);
-	ret.add(Task04100DeleteUnusedJobEntries.class);
+        ret.add(Task04100DeleteUnusedJobEntries.class);
+        ret.add(Task04110AddColumnsPublishingPushedAssetsTable.class);
 
 	return ret;
     }

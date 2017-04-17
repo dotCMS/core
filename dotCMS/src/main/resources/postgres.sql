@@ -2350,12 +2350,15 @@ create table publishing_pushed_assets(
 	asset_id varchar(36) NOT NULL,
 	asset_type varchar(255) NOT NULL,
 	push_date TIMESTAMP,
-	environment_id varchar(36) NOT NULL
+	environment_id varchar(36) NOT NULL,
+	endpoint_ids text,
+	publisher varchar(255)
 );
 
 CREATE INDEX idx_pushed_assets_1 ON publishing_pushed_assets (bundle_id);
 CREATE INDEX idx_pushed_assets_2 ON publishing_pushed_assets (environment_id);
 CREATE INDEX idx_pushed_assets_3 ON publishing_pushed_assets (asset_id, environment_id);
+CREATE INDEX idx_pushed_assets_4 ON publishing_pushed_assets (asset_id, environment_id, endpoint_ids);
 
 alter table publishing_bundle add force_push bool ;
 

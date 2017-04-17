@@ -9,15 +9,19 @@ public class PushedAsset implements Serializable {
 	private String assetType;
 	private Date pushDate;
 	private String environmentId;
+	private String endpointIds;
+	private String publisher;
 
 	public PushedAsset() {}
 
-	public PushedAsset(String bundleId, String assetId, String assetType, Date pushDate, String environmentId) {
+	public PushedAsset(String bundleId, String assetId, String assetType, Date pushDate, String environmentId, String endpointIds, String publisher) {
 		this.bundleId = bundleId;
 		this.assetId = assetId;
 		this.assetType = assetType;
 		this.pushDate = pushDate;
 		this.environmentId = environmentId;
+		this.endpointIds = endpointIds;
+		this.publisher = publisher;
 	}
 
 	public String getAssetId() {
@@ -52,6 +56,22 @@ public class PushedAsset implements Serializable {
 
 	public void setBundleId(String bundleId) {
 		this.bundleId = bundleId;
+	}
+	
+	public void setEndpointId(String endpointIds) {
+		this.endpointIds = endpointIds;
+	}
+		 
+	public String getEndpointIds() {
+		return endpointIds;
+	}
+		 
+	public String getPublisher() {
+		return publisher;
+	}
+
+	public void setPublisher(String publisher) {
+		this.publisher = publisher;
 	}
 
 

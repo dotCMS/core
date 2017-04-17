@@ -1,14 +1,18 @@
 package com.dotcms.publisher.util;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 
+import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.assets.business.PushedAssetsCache;
 import com.dotcms.publisher.bundle.bean.Bundle;
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
+import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -31,6 +35,8 @@ public class DependencySet extends HashSet<String> {
 	private Bundle bundle;
 	private boolean isDownload;
 	private boolean isPublish;
+	private String endpointIds = null;
+	private String publisher = null;
 
 	public DependencySet(String bundleId, String assetType, boolean isDownload, boolean isPublish) {
 		super();
@@ -53,8 +59,8 @@ public class DependencySet extends HashSet<String> {
 		}
 	}
 
-	public boolean add(String assetId, Date assetModDate) {
-        return addOrClean( assetId, assetModDate, false );
+	public boolean add(String assetId, Date assetModDate, boolean isStatic) {
+        return addOrClean( assetId, assetModDate, false, isStatic );
     }
 
     /**
@@ -66,11 +72,11 @@ public class DependencySet extends HashSet<String> {
      * @param assetModDate
      * @return
      */
-    public boolean addOrClean ( String assetId, Date assetModDate) {
-        return addOrClean( assetId, assetModDate, true );
+    public boolean addOrClean ( String assetId, Date assetModDate, boolean isStatic) {
+        return addOrClean( assetId, assetModDate, true, isStatic );
     }
 
-    private boolean addOrClean ( String assetId, Date assetModDate, Boolean cleanForUnpublish ) {
+    private boolean addOrClean ( String assetId, Date assetModDate, Boolean cleanForUnpublish, boolean isStatic ) {
 
         if ( !isPublish ) {
 
@@ -108,7 +114,44 @@ public class DependencySet extends HashSet<String> {
             for (Environment env : envs) {
 				PushedAsset asset;
 				try {
-					asset = APILocator.getPushedAssetsAPI().getLastPushForAsset(assetId, env.getId());
+					if(endpointIds == null){
+						
+						List<PublishingEndPoint> allEndpoints = APILocator.getPublisherEndPointAPI().findSendingEndPointsByEnvironment(env.getId());
+		                
+		                //Filter Endpoints list
+		                for(PublishingEndPoint ep : allEndpoints) {
+		                    if(isStatic && ep.isEnabled() && AWSS3Publisher.PROTOCOL_AWS_S3.equals(ep.getProtocol())) {
+		                        if(endpointIds == null){
+		                        	endpointIds=ep.getId();
+		                        }else {
+		                        	endpointIds+=","+ep.getId();
+		                        }
+		                        if(publisher == null){
+		                        	publisher=AWSS3Publisher.class.getName();
+		                        }
+		                    }else if(!isStatic && ep.isEnabled() && !AWSS3Publisher.PROTOCOL_AWS_S3.equals(ep.getProtocol())) {
+		                    	if(endpointIds == null){
+		                        	endpointIds=ep.getId();
+		                        }else {
+		                        	endpointIds+=","+ep.getId();
+		                        }
+		                    	if(publisher == null){
+		                        	publisher=PushPublisher.class.getName();
+		                        }
+		                    }
+		                }
+	
+		                if(!env.getPushToAll()) {
+		                    if(endpointIds != null && endpointIds.indexOf(",") != -1){
+		                        endpointIds = endpointIds.substring(0, endpointIds.indexOf(","));
+		                    }
+		                }
+					}
+					if(endpointIds != null){
+						asset = APILocator.getPushedAssetsAPI().getLastPushForAsset(assetId, env.getId(),endpointIds);
+					}else{
+						asset = APILocator.getPushedAssetsAPI().getLastPushForAsset(assetId, env.getId(),null);
+					}
 				} catch (DotDataException e1) {
 					// Asset does not exist in db or cache, return true;
 					return true;
@@ -140,7 +183,11 @@ public class DependencySet extends HashSet<String> {
 				
 				if(modifiedOnCurrentEnv) {
 					try {
-                        asset = new PushedAsset(bundleId, assetId, assetType, new Date(), env.getId());
+						if(endpointIds != null && publisher != null){
+							asset = new PushedAsset(bundleId, assetId, assetType, new Date(), env.getId(), endpointIds, publisher);
+						}else{
+							asset = new PushedAsset(bundleId, assetId, assetType, new Date(), env.getId(), null, null);
+						}
                         APILocator.getPushedAssetsAPI().savePushedAsset(asset);
                         //If the asset was modified at least in one environment, set this to true
                         modifiedOnAtLeastOneEnv = true;
