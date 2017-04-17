@@ -41,6 +41,7 @@ public class TestInitialContext extends InitialContext {
         dataSource.setLogAbandoned(true);
         dataSource.setMaxIdle(Integer.parseInt(prop.getProperty(dbType + "db.max.idle")));
         dataSource.setMaxActive(Integer.parseInt(prop.getProperty(dbType + "db.max.total")));
+        
     }
 
     public static TestInitialContext getInstance() throws NamingException {
@@ -68,10 +69,14 @@ public class TestInitialContext extends InitialContext {
     private void loadProperties() throws NamingException {
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
         prop = new Properties();
+
         try (InputStream resourceStream = loader.getResourceAsStream("db-config.properties")) {
             prop.load(resourceStream);
         } catch (IOException e) {
             throw new NamingException("Unable to get properties from db-config.properties");
+        }
+        for(String key :System.getenv().keySet()){
+          prop.put(key, System.getenv(key));
         }
     }
 }
