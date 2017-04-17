@@ -14,7 +14,6 @@ public class SchedulerJobLocator {
 		jobsList.add("com.dotmarketing.quartz.job.ContentFromEmailJob");
 		jobsList.add("com.dotmarketing.quartz.job.ContentImportThread");
 		jobsList.add("com.dotmarketing.quartz.DotJob");
-		jobsList.add("com.dotmarketing.quartz.job.PopBouncedMailThread");
 		jobsList.add("com.dotmarketing.quartz.job.ResetPermissionsJob");
 		jobsList.add("com.dotmarketing.quartz.job.TrashCleanupJob");
 		jobsList.add("com.dotmarketing.quartz.job.UsersToDeleteThread");
