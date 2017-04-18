@@ -64,11 +64,11 @@ public class KeyValueFieldUtil {
                     try {
                         return MarshalFactory.getInstance().getMarshalUtils().unmarshal(replacedJSJson, new DotTypeToken<LinkedHashMap<String, String>>().getType());
                     } catch (Exception ex2) {
-                        Logger.error(KeyValueFieldUtil.class, String.format("Unable to parse JSON with backslash replacement: %s.", replacedJSJson));
+                        Logger.error(KeyValueFieldUtil.class, String.format("Unable to parse JSON with backslash replacement: %s. Returning Exception.", replacedJSJson), ex2);
                         throw ex2;
                     }
                 } else {
-                    Logger.error(KeyValueFieldUtil.class, String.format("Unable to parse JSON: %s. Please review the content and check for potential JS replacements.", replacedJSJson));
+                    Logger.error(KeyValueFieldUtil.class, String.format("Unable to parse JSON: %s. Please review the content and check for potential JS replacements. Returning exception", replacedJSJson), ex);
                     throw ex;
                 }
             }
