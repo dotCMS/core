@@ -5,6 +5,7 @@ import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.dotcms.repackage.org.apache.struts.config.impl.ModuleConfigImpl;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.util.Constants;
 import com.liferay.util.FileUtil;
 import org.apache.felix.http.api.ExtHttpService;
@@ -23,9 +24,8 @@ import java.util.Enumeration;
 
 class ActivatorUtil {
 
-	static final String PATH_SEPARATOR = "/";
+    static final String PATH_SEPARATOR = "/";
     static final String OSGI_FOLDER = "/osgi";
-    static final String VELOCITY_FOLDER = "/WEB-INF/velocity";
 
     static String getBundleFolder ( BundleContext context, String separator ) {
 
@@ -75,7 +75,7 @@ class ActivatorUtil {
         }
 
         //Now cleaning the resources under the velocity folder
-        resourcesPath = servletContext.getRealPath( VELOCITY_FOLDER + getBundleFolder( context, "/" ) );
+        resourcesPath = servletContext.getRealPath( VelocityUtil.getVelocityRootPath() + getBundleFolder( context, "/" ) );
         resources = new File( resourcesPath );
         if ( resources.exists() ) {
             FileUtil.deltree( resources );
@@ -92,7 +92,7 @@ class ActivatorUtil {
     static void moveVelocityResources ( BundleContext context, String referenceResourcePath ) throws Exception {
 
         ServletContext servletContext = Config.CONTEXT;
-        String destinationPath = servletContext.getRealPath( VELOCITY_FOLDER + getBundleFolder( context, "/" ) );
+        String destinationPath = servletContext.getRealPath( VelocityUtil.getVelocityRootPath() + getBundleFolder( context, "/" ) );
 
         moveResources( context, referenceResourcePath, destinationPath );
     }

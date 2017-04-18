@@ -1,6 +1,7 @@
 package com.dotmarketing.services;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
@@ -16,6 +17,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.DotResourceCache;
 import com.liferay.util.FileUtil;
 
@@ -151,11 +153,6 @@ public class StructureServices {
 		
 		try {
 			if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
-			    String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
-	            if (velocityRootPath.startsWith("/WEB-INF")) {
-	                velocityRootPath = FileUtil.getRealPath(velocityRootPath);
-	            }
-	            velocityRootPath += java.io.File.separator;
 
 	            String relativePath = "/working/" + structure.getInode() + "." + Config.getStringProperty("VELOCITY_STRUCTURE_EXTENSION");
 	            
@@ -181,7 +178,9 @@ public class StructureServices {
 	public static void removeStructureFile(Structure structure) {
 		String folderPath = "working/";
 		String filePath=folderPath + structure.getInode() + "." + Config.getStringProperty("VELOCITY_STRUCTURE_EXTENSION");
-		String absolutPath = FileUtil.getRealPath("/WEB-INF/velocity/" +filePath);
+
+		String velocityRootPath = VelocityUtil.getVelocityRootPath();
+		String absolutPath = velocityRootPath + File.separator + filePath;
 		java.io.File f = new java.io.File(absolutPath);
 		f.delete();
 		DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
