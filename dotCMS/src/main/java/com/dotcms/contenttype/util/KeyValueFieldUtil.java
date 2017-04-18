@@ -49,7 +49,7 @@ public class KeyValueFieldUtil {
             try {
                 return MarshalFactory.getInstance().getMarshalUtils().unmarshal(json, new DotTypeToken<LinkedHashMap<String, String>>().getType());
             } catch (Exception ex) {
-                Logger.error(KeyValueFieldUtil.class, String.format("Error parsing json: %s. Trying to parse with the JS replacement due to container or key/value data...", json), ex);
+                Logger.error(KeyValueFieldUtil.class, String.format("Error parsing json: %s. Trying to parse with the JS replacement due to container or key/value data...", json));
 
                 boolean tryEvaluate = false;
                 String replacedJSJson;
@@ -64,11 +64,11 @@ public class KeyValueFieldUtil {
                     try {
                         return MarshalFactory.getInstance().getMarshalUtils().unmarshal(replacedJSJson, new DotTypeToken<LinkedHashMap<String, String>>().getType());
                     } catch (Exception ex2) {
-                        Logger.error(KeyValueFieldUtil.class, String.format("Unable to parse JSON with backslash replacement: %s. Returning the exception.", replacedJSJson), ex);
+                        Logger.error(KeyValueFieldUtil.class, String.format("Unable to parse JSON with backslash replacement: %s. Returning Exception.", replacedJSJson), ex2);
                         throw ex2;
                     }
                 } else {
-                    Logger.error(KeyValueFieldUtil.class, String.format("Unable to parse JSON: %s. Please review the content and check for potential JS replacements. Returning exception.", replacedJSJson), ex);
+                    Logger.error(KeyValueFieldUtil.class, String.format("Unable to parse JSON: %s. Please review the content and check for potential JS replacements. Returning exception", replacedJSJson), ex);
                     throw ex;
                 }
             }
