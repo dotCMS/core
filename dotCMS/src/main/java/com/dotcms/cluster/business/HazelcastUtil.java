@@ -54,9 +54,13 @@ public class HazelcastUtil {
                     Logger.info(this, "Setting Up HazelCast");
                     InputStream is = null;
                     try {
+                        Logger.info(this, "Using hazel resource " + xmlFilePath);
                         is = getClass().getClassLoader().getResourceAsStream(xmlFilePath);
+                        Logger.info(this, "Initializing hazel builder ");
                         XmlConfigBuilder builder = new XmlConfigBuilder(is);
+                        Logger.info(this, "hazel builder initialized" + builder.getNamespaceType());
                         _memberInstance = Hazelcast.newHazelcastInstance(builder.build());
+                        Logger.info(this, "Hazel member instance initialized " + _memberInstance.getName());
                     } finally {
                         if (is != null) {
                             try {
