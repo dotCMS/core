@@ -2545,13 +2545,12 @@ create table publishing_pushed_assets(
     push_date DATETIME,
     environment_id NVARCHAR(36) NOT NULL,
     endpoint_ids NVARCHAR(MAX),
-	publisher varchar2(255)
+	publisher NVARCHAR(255)
 );
 
 CREATE INDEX idx_pushed_assets_1 ON publishing_pushed_assets (bundle_id);
 CREATE INDEX idx_pushed_assets_2 ON publishing_pushed_assets (environment_id);
 CREATE INDEX idx_pushed_assets_3 ON publishing_pushed_assets (asset_id, environment_id);
-CREATE INDEX idx_pushed_assets_4 ON publishing_pushed_assets (asset_id, environment_id, endpoint_ids);
 
 alter table publishing_bundle add force_push tinyint ;
 

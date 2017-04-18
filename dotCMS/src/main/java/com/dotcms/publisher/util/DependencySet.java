@@ -13,6 +13,7 @@ import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisher;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -70,6 +71,7 @@ public class DependencySet extends HashSet<String> {
      *
      * @param assetId
      * @param assetModDate
+     * @param isStatic 
      * @return
      */
     public boolean addOrClean ( String assetId, Date assetModDate, boolean isStatic) {
@@ -115,32 +117,29 @@ public class DependencySet extends HashSet<String> {
 				PushedAsset asset;
 				try {
 					if(endpointIds == null){
-						
+						//this code allows to find if the asset should be included or not in the dependencies depending of the assetId, environment Id and endpoint Ids 
 						List<PublishingEndPoint> allEndpoints = APILocator.getPublisherEndPointAPI().findSendingEndPointsByEnvironment(env.getId());
-		                
+						List<String> endpoints = new ArrayList<String>();
 		                //Filter Endpoints list
 		                for(PublishingEndPoint ep : allEndpoints) {
 		                    if(isStatic && ep.isEnabled() && AWSS3Publisher.PROTOCOL_AWS_S3.equals(ep.getProtocol())) {
-		                        if(endpointIds == null){
-		                        	endpointIds=ep.getId();
-		                        }else {
-		                        	endpointIds+=","+ep.getId();
-		                        }
+		                    	//If the isStatic variable is true then get all the static endpoints
+		                    	endpoints.add(ep.getId());
+		                        //Set that class name of the puh publisher used by these endpoints
 		                        if(publisher == null){
 		                        	publisher=AWSS3Publisher.class.getName();
 		                        }
 		                    }else if(!isStatic && ep.isEnabled() && !AWSS3Publisher.PROTOCOL_AWS_S3.equals(ep.getProtocol())) {
-		                    	if(endpointIds == null){
-		                        	endpointIds=ep.getId();
-		                        }else {
-		                        	endpointIds+=","+ep.getId();
-		                        }
+		                    	//If the isStatic variable is false then get all the no static endpoints
+		                    	endpoints.add(ep.getId());
+		                    	//Set that class name of the puh publisher used by these endpoints
 		                    	if(publisher == null){
 		                        	publisher=PushPublisher.class.getName();
 		                        }
 		                    }
 		                }
-	
+		                //comma separated string with the list of endpoint ids 
+		                endpointIds = StringUtils.join(endpoints,",");
 		                if(!env.getPushToAll()) {
 		                    if(endpointIds != null && endpointIds.indexOf(",") != -1){
 		                        endpointIds = endpointIds.substring(0, endpointIds.indexOf(","));
@@ -148,8 +147,10 @@ public class DependencySet extends HashSet<String> {
 		                }
 					}
 					if(endpointIds != null){
+						//Search the last pushed entry register of the pushed asset by asset Id, environment Id and endpoints Ids
 						asset = APILocator.getPushedAssetsAPI().getLastPushForAsset(assetId, env.getId(),endpointIds);
 					}else{
+						//Search the last pushed entry register of the pushed asset by asset Id and environment id
 						asset = APILocator.getPushedAssetsAPI().getLastPushForAsset(assetId, env.getId(),null);
 					}
 				} catch (DotDataException e1) {
@@ -184,8 +185,10 @@ public class DependencySet extends HashSet<String> {
 				if(modifiedOnCurrentEnv) {
 					try {
 						if(endpointIds != null && publisher != null){
+							//Insert the new pushed asset indicating to wish endpoints will be sent and with what publisher class
 							asset = new PushedAsset(bundleId, assetId, assetType, new Date(), env.getId(), endpointIds, publisher);
 						}else{
+							//Insert the new pushed asset without indicating to wish endpoints will be sent and with what publisher class
 							asset = new PushedAsset(bundleId, assetId, assetType, new Date(), env.getId(), null, null);
 						}
                         APILocator.getPushedAssetsAPI().savePushedAsset(asset);
