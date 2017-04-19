@@ -1,5 +1,7 @@
 package com.dotcms.publisher.util;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -7,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.assets.business.PushedAssetsCache;
@@ -64,19 +67,25 @@ public class DependencySet extends HashSet<String> {
 
 				//Filter Endpoints list
 				for(PublishingEndPoint ep : allEndpoints) {
-					if(isStatic && ep.isEnabled() && AWSS3Publisher.PROTOCOL_AWS_S3.equals(ep.getProtocol())) {
+					Class endPointPublisher = ep.getPublisher();
+					Object instance = endPointPublisher.newInstance();
+					Method method = endPointPublisher.getMethod("isStatic");
+					Object result = method.invoke(instance);
+					Boolean isStaticEndpoint = (Boolean) result;
+					
+					if(isStatic && ep.isEnabled() && isStaticEndpoint) {
 						//If the isStatic variable is true then get all the static endpoints
 						endpoints.add(ep.getId());
 						//Set that class name of the puh publisher used by these endpoints
 						if(publisher == null){
-							publisher=AWSS3Publisher.class.getName();
+							publisher=endPointPublisher.getName();
 						}
-					}else if(!isStatic && ep.isEnabled() && !AWSS3Publisher.PROTOCOL_AWS_S3.equals(ep.getProtocol())) {
-						//If the isStatic variable is false then get all the no static endpoints
+					}else if(!isStatic && ep.isEnabled() && !isStaticEndpoint) {
+						//If the isStatic variable is false then get all the dynamic endpoints
 						endpoints.add(ep.getId());
 						//Set that class name of the puh publisher used by these endpoints
 						if(publisher == null){
-							publisher=PushPublisher.class.getName();
+							publisher=endPointPublisher.getName();
 						}
 					}
 				}
@@ -92,7 +101,11 @@ public class DependencySet extends HashSet<String> {
 				environmentsEndpointsAndPublisher.put(env.getId()+ENDPOINTS_SUFFIX, endpointIds);
 				environmentsEndpointsAndPublisher.put(env.getId()+PUBLISHER_SUFFIX, publisher);
 			}
+		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			Logger.error(getClass(), "Can't get environments endpoints and publishers", e);
 		} catch (DotDataException e) {
+			Logger.error(getClass(), "Can't get environments endpoints and publishers", e);
+		} catch (InstantiationException e) {
 			Logger.error(getClass(), "Can't get environments endpoints and publishers", e);
 		}
 
