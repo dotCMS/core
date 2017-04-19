@@ -1,6 +1,7 @@
 package com.dotmarketing.business.jgroups;
 
 import com.dotcms.cluster.bean.Server;
+import com.dotcms.cluster.business.HazelcastUtil;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
 import com.dotcms.repackage.org.apache.struts.Globals;
@@ -13,6 +14,7 @@ import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.velocity.DotResourceCache;
 import com.liferay.portal.struts.MultiMessageResources;
 
@@ -33,6 +35,8 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
     public void init ( Server localServer ) throws CacheTransportException {
 
         Logger.info(this, "***\t Setting up JChannel");
+
+        setProperties();
 
         try {
             ServerAPI serverAPI = APILocator.getServerAPI();
@@ -79,6 +83,42 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
         }
     }
 
+    private Map<String, Object> setProperties(){
+        Map<String, Object> properties = new HashMap<>();
+
+        // Bind Address
+        String bindAddressProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_BIND_ADDRESS, null);
+        if (UtilMethods.isSet(bindAddressProperty)) {
+        	System.setProperty("jgroups.bind_addr", bindAddressProperty);
+        }
+
+        // Bind Port
+        String bindPortProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_BIND_PORT, null);
+        if (UtilMethods.isSet(bindPortProperty)) {
+        	System.setProperty("jgroups.bind_port", bindPortProperty);
+        }
+
+        // Initial Hosts
+        String initialHostsProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_TCP_INITIAL_HOSTS, null);
+        if (UtilMethods.isSet(initialHostsProperty)) {
+        	System.setProperty("jgroups.tcpping.initial_hosts",	initialHostsProperty);
+        }
+
+        // Multicast Address
+        String multiCastAddressProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_UDP_MCAST_ADDRESS, null);
+        if (UtilMethods.isSet(multiCastAddressProperty)) {
+        	System.setProperty("jgroups.udp.mcast_addr", multiCastAddressProperty);
+        }
+
+        // Multicast Port
+        String multiCastPortProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_UDP_MCAST_PORT, null);
+        if (UtilMethods.isSet(multiCastPortProperty)) {
+        	System.setProperty("jgroups.udp.mcast_port", multiCastPortProperty);
+        }
+
+        return properties;
+    }
+    
     @Override
     public void send ( String message ) throws CacheTransportException {
 

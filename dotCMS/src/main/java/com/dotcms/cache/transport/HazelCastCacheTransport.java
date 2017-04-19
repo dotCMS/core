@@ -11,6 +11,8 @@ import com.dotmarketing.business.cache.transport.CacheTransportException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Message;
@@ -34,7 +36,8 @@ public class HazelCastCacheTransport implements CacheTransport{
     public void init(Server localServer) throws CacheTransportException {
         Logger.info(this,"Starting Hazelcast Cache Transport");
         Logger.debug(this,"Calling HazelUtil to ensure Hazelcast member is up");
-        HazelcastInstance hazel = new HazelcastUtil().getHazel();
+        
+        HazelcastInstance hazel = new HazelcastUtil().getHazel(buildProperties());
         TopicConfig topicConfig = new TopicConfig();
         topicConfig.setGlobalOrderingEnabled( false );
         topicConfig.setStatisticsEnabled( false );
@@ -57,7 +60,38 @@ public class HazelCastCacheTransport implements CacheTransport{
         topicId = new HazelcastUtil().getHazel().getTopic(topicName).addMessageListener(messageListener);
     }
 
+    private Map<String, Object> buildProperties(){
+        Map<String, Object> properties = new HashMap<>();
 
+        // Bind Address
+        String bindAddressProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_BIND_ADDRESS, null);
+        if (UtilMethods.isSet(bindAddressProperty)) {
+        	properties.put(HazelcastUtil.PROPERTY_HAZELCAST_NETWORK_BIND_ADDRESS, bindAddressProperty);
+        }
+
+        // Bind Port
+        String bindPortProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_BIND_PORT, null);
+        if (UtilMethods.isSet(bindPortProperty)) {
+        	properties.put(HazelcastUtil.PROPERTY_HAZELCAST_NETWORK_BIND_PORT, bindPortProperty);
+        }
+
+        // Initial Hosts
+        String initialHostsProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_TCP_INITIAL_HOSTS, null);
+        if (UtilMethods.isSet(initialHostsProperty)) {
+
+        	String[] initialHosts = initialHostsProperty.split(",");
+
+        	for(int i = 0; i < initialHosts.length; i++){
+				String initialHost = initialHosts[i].trim();
+
+				initialHosts[i] = initialHost.replaceAll("^(.*)\\[(.*)\\]$", "$1:$2");
+			}
+
+        	properties.put(HazelcastUtil.PROPERTY_HAZELCAST_NETWORK_TCP_MEMBERS, initialHosts);
+        }
+
+        return properties;
+    }
 
     public void receive(String msg){
         if ( msg.equals(ChainableCacheAdministratorImpl.TEST_MESSAGE) ) {

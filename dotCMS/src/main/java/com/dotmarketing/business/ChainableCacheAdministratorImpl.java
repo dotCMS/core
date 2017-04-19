@@ -19,11 +19,10 @@ import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.velocity.DotResourceCache;
+import com.dotmarketing.util.WebKeys;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -93,7 +92,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 	}
 
 	public void setCluster(Server localServer) throws Exception {
-			Logger.info(this, "***\t Starting JGroups Cluster Setup");
+			Logger.info(this, "***\t Starting Cluster Setup");
 
 			journalAPI = APILocator.getDistributedJournalAPI();
 			ServerAPI serverAPI = APILocator.getServerAPI();
@@ -176,7 +175,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 			    cacheProtocol = Config.getStringProperty("CACHE_PROTOCOL", "tcp");
 			    bindAddr = Config.getStringProperty("CACHE_BINDADDRESS", null);
 			    bindPort = Config.getStringProperty("CACHE_BINDPORT", null);
-			    cacheTCPInitialHosts = Config.getStringProperty("CACHE_TCP_INITIAL_HOSTS", "localhost[7800]");
+			    cacheTCPInitialHosts = Config.getStringProperty("CACHE_TCP_INITIAL_HOSTS", "localhost[5701]");
 			    mCastAddr = Config.getStringProperty("CACHE_MULTICAST_ADDRESS", "228.10.10.10");
 			    mCastPort = Config.getStringProperty("CACHE_MULTICAST_PORT", "45588");
 			    preferIPv4 = Config.getStringProperty("CACHE_FORCE_IPV4", "true");
@@ -184,7 +183,8 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
 			if (UtilMethods.isSet(bindAddr)) {
 			    Logger.info(this, "***\t Using " + bindAddr + " as the bindaddress");
-				System.setProperty("jgroups.bind_addr", bindAddr);
+
+			    Config.setProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_BIND_ADDRESS, bindAddr);
 			}
 			else {
                 Logger.info(this, "***\t bindaddress is not set");
@@ -192,19 +192,22 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
 			if (UtilMethods.isSet(bindPort)) {
 			    Logger.info(this, "***\t Using " + bindPort + " as the bindport");
-				System.setProperty("jgroups.bind_port", bindPort);
+
+			    Config.setProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_BIND_PORT, bindPort);
 			}
 			else {
                 Logger.info(this, "***\t bindport is not set");
             }
-			
+
 			if (cacheProtocol.equals("tcp")) {
 				Logger.info(this, "***\t Setting up TCP initial hosts: "+cacheTCPInitialHosts);
-				System.setProperty("jgroups.tcpping.initial_hosts",	cacheTCPInitialHosts);
+
+				Config.setProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_TCP_INITIAL_HOSTS, cacheTCPInitialHosts);
 			} else if (cacheProtocol.equals("udp")) {
 				Logger.info(this, "***\t Setting up UDP address and port: "+mCastAddr+":"+mCastPort);
-				System.setProperty("jgroups.udp.mcast_port", mCastPort);
-				System.setProperty("jgroups.udp.mcast_addr", mCastAddr);
+
+				Config.setProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_UDP_MCAST_ADDRESS, mCastAddr);
+			    Config.setProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_UDP_MCAST_PORT, mCastPort);
 			} else {
 				Logger.info(this, "Not Setting up any Properties as no protocal was found");
 			}
