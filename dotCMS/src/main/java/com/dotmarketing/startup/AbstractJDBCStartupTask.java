@@ -818,8 +818,8 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 		    conn = DbConnectionFactory.getDataSource().getConnection();
             conn.setAutoCommit(true);
 
-            logTaskProgress("==> Restoring check constraints");
 			if (checkConstraints != null && rebuildCheckConstraints) {
+				logTaskProgress("==> Restoring check constraints");
 				for (Constraint constraint : checkConstraints) {
 					try {
 						createConstraint(conn, constraint);
@@ -830,8 +830,8 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 				}
 			}
 
-			logTaskProgress("==> Restoring default constraints");
 			if (defaultConstraints != null && rebuildDefaultConstraints) {
+				logTaskProgress("==> Restoring default constraints");
 				for (Constraint constraint : defaultConstraints) {
 					try {
 						createConstraint(conn, constraint);
@@ -842,8 +842,8 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 				}
 			}
 
-			logTaskProgress("==> Restoring primary keys");
 			if (primaryKeys!=null && rebuildPrimaryKeys) {
+				logTaskProgress("==> Restoring primary keys");
 				List<String> processedPks = new ArrayList<>();
 				for (PrimaryKey key:primaryKeys) {
 					try {
@@ -858,8 +858,8 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 				}
 			}
 
-            logTaskProgress("==> Restoring foreign keys");
 			if (foreignKeys!=null && rebuildForeignKeys) {
+				logTaskProgress("==> Restoring foreign keys");
 				for (ForeignKey key:foreignKeys) {
 					try {
 						createConstraint(conn, key);
@@ -870,8 +870,8 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 				}
 			}
 
-			logTaskProgress("==> Restoring indices");
 			if (indexes!=null && rebuildIndices) {
+				logTaskProgress("==> Restoring indices");
 				idxfor: for (Index index:indexes) {
 					try {
 						for (PrimaryKey pk:primaryKeys) {
