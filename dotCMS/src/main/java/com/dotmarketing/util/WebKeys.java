@@ -700,4 +700,11 @@ public final class WebKeys {
 	public static final String AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED = "auth.failedattempts.delay.enabled";
 	public static final String AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY = "auth.failedattempts.delay.strategy";
 
+	// Cache Transport
+	public static final String DOTCMS_CACHE_TRANSPORT_BIND_ADDRESS = "dotcms.cache.transport.bind.address";
+	public static final String DOTCMS_CACHE_TRANSPORT_BIND_PORT = "dotcms.cache.transport.bind.port";
+	public static final String DOTCMS_CACHE_TRANSPORT_TCP_INITIAL_HOSTS = "dotcms.cache.transport.tcp.initial.hosts";
+	public static final String DOTCMS_CACHE_TRANSPORT_UDP_MCAST_ADDRESS = "dotcms.cache.transport.udp.mcast.address";
+	public static final String DOTCMS_CACHE_TRANSPORT_UDP_MCAST_PORT = "dotcms.cache.transport.udp.mcast.port";
+
 }
