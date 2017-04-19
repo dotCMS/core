@@ -146,13 +146,10 @@ public class DependencySet extends HashSet<String> {
 		                    }
 		                }
 					}
-					if(endpointIds != null){
-						//Search the last pushed entry register of the pushed asset by asset Id, environment Id and endpoints Ids
-						asset = APILocator.getPushedAssetsAPI().getLastPushForAsset(assetId, env.getId(),endpointIds);
-					}else{
-						//Search the last pushed entry register of the pushed asset by asset Id and environment id
-						asset = APILocator.getPushedAssetsAPI().getLastPushForAsset(assetId, env.getId(),null);
-					}
+					
+					//Search the last pushed entry register of the pushed asset by asset Id, environment Id and endpoints Ids
+					asset = APILocator.getPushedAssetsAPI().getLastPushForAsset(assetId, env.getId(),endpointIds);
+					
 				} catch (DotDataException e1) {
 					// Asset does not exist in db or cache, return true;
 					return true;
@@ -184,13 +181,9 @@ public class DependencySet extends HashSet<String> {
 				
 				if(modifiedOnCurrentEnv) {
 					try {
-						if(endpointIds != null && publisher != null){
-							//Insert the new pushed asset indicating to wish endpoints will be sent and with what publisher class
-							asset = new PushedAsset(bundleId, assetId, assetType, new Date(), env.getId(), endpointIds, publisher);
-						}else{
-							//Insert the new pushed asset without indicating to wish endpoints will be sent and with what publisher class
-							asset = new PushedAsset(bundleId, assetId, assetType, new Date(), env.getId(), null, null);
-						}
+						//Insert the new pushed asset indicating to wish endpoints will be sent and with what publisher class
+						asset = new PushedAsset(bundleId, assetId, assetType, new Date(), env.getId(), endpointIds, publisher);
+						
                         APILocator.getPushedAssetsAPI().savePushedAsset(asset);
                         //If the asset was modified at least in one environment, set this to true
                         modifiedOnAtLeastOneEnv = true;
