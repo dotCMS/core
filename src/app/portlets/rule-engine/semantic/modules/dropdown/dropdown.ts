@@ -183,14 +183,14 @@ export class Dropdown implements AfterViewInit, OnDestroy, ControlValueAccessor 
         }
         return this.onHide();
       },
-      onLabelCreate: (value, text) => {
+      onLabelCreate: function(value, text): any {
         let $label = this;
         return self.onLabelCreate($label, value, text);
       },
       onLabelSelect: ($selectedLabels) => {
         return this.onLabelSelect($selectedLabels);
       },
-      onNoResults: (searchValue) => {
+      onNoResults: function (searchValue): any {
         if (!this.allowAdditions) {
             badSearch = searchValue;
         }
