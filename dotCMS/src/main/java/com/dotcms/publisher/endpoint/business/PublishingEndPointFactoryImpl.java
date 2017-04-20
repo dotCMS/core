@@ -10,14 +10,13 @@ import java.util.UUID;
 
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.util.PublisherUtil;
-import com.dotcms.repackage.net.sf.hibernate.odmg.Implementation;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 
 /**
- * {@link Implementation} class for the {@link PublishingEndPointFactory}.
+ * Implementation class for the {@link PublishingEndPointFactory}.
  * 
  * @author Brent Griffin
  * @since Jan 29, 2013

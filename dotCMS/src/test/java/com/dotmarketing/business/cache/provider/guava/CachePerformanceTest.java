@@ -31,9 +31,9 @@ public class CachePerformanceTest {
   final String LONG_KEYNAME = new String("A" + "\u00ea" + "\u00f1" + "\u00fc" + "C"
       + "ASDSADFDDSFasfddsadasdsadsadasdq3r4efwqrrqwerqewrqewrqreqwreqwrqewrqwerqewrqewrqwerqwerqwerqewr43545324542354235243524354325423qwerewds fds fds gf eqgq ewg qeg qe wg egw  ww  eeR ASdsadsadadsadsadsadaqrewq43223t14@#$#@^%$%&%#$sfwf erqwfewfqewfgqewdsfqewtr243fq43f4q444fa4ferfrearge");;
   final String CANT_CACHE_KEYNAME = "CantCacheMe";
-  final int numberOfPuts = 10000;
+  final int numberOfPuts = 1000;
   final int numberOfThreads = 20;
-  final int numberOfGroups = 100;
+  final int numberOfGroups = 10;
   final int maxCharOfObjects = 50000;
   private static final Logger LOGGER = Logger.getLogger("ROOT");
 
