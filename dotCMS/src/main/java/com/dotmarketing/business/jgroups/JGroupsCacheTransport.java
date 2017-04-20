@@ -1,7 +1,6 @@
 package com.dotmarketing.business.jgroups;
 
 import com.dotcms.cluster.bean.Server;
-import com.dotcms.cluster.business.HazelcastUtil;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
 import com.dotcms.repackage.org.apache.struts.Globals;
@@ -10,12 +9,10 @@ import com.dotmarketing.business.*;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.dotmarketing.velocity.DotResourceCache;
 import com.liferay.portal.struts.MultiMessageResources;
 
 import java.util.Date;
@@ -306,4 +303,56 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
         return channel;
     }
 
+    @Override
+    public CacheTransportInfo getInfo() {
+    	View view = getView();
+
+    	return (view == null) ? null : new CacheTransportInfo(){
+    		@Override
+    		public String getClusterName() {
+    			return channel.getClusterName();
+    		}
+
+    		@Override
+        	public String getAddress() {
+    			return channel.getAddressAsString();
+    		}
+
+    		@Override
+    		public int getPort() {
+                Address channelAddress = channel.getAddress();
+                PhysicalAddress physicalAddr = (PhysicalAddress) channel.down(new Event(Event.GET_PHYSICAL_ADDRESS, channelAddress));
+                String[] addrParts = physicalAddr.toString().split(":");
+                String usedPort = addrParts[addrParts.length - 1];
+
+    			return Integer.parseInt(usedPort);
+    		}
+
+    		@Override
+    		public boolean isOpen() {
+    			return channel.isOpen();
+    		}
+
+
+    		@Override
+    		public long getReceivedBytes() {
+    			return channel.getReceivedBytes();
+    		}
+
+    		@Override
+    		public long getReceivedMessages() {
+    			return channel.getReceivedMessages();
+    		}
+
+    		@Override
+    		public long getSentBytes() {
+    			return channel.getSentBytes();
+    		}
+
+    		@Override
+    		public long getSentMessages() {
+    			return channel.getSentMessages();
+    		}
+    	};
+    }
 }

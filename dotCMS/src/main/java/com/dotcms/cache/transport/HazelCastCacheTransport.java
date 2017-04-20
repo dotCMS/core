@@ -19,9 +19,11 @@ import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.liferay.portal.struts.MultiMessageResources;
 
+import java.net.InetSocketAddress;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Created by jasontesser on 3/28/17.
@@ -29,6 +31,12 @@ import java.util.Map;
 public class HazelCastCacheTransport implements CacheTransport{
 
     private Map<String, Map<String, Boolean>> cacheStatus;
+
+    private AtomicLong receivedMessages = new AtomicLong(0);
+    private AtomicLong receivedBytes = new AtomicLong(0);
+    private AtomicLong sentMessages = new AtomicLong(0);
+    private AtomicLong sentBytes = new AtomicLong(0);
+
     private final String topicName = "dotCMSClusterCacheInvalidation";
     private String topicId;
 
@@ -94,6 +102,10 @@ public class HazelCastCacheTransport implements CacheTransport{
     }
 
     public void receive(String msg){
+
+    	receivedMessages.addAndGet(1);
+    	receivedBytes.addAndGet(msg.length());
+
         if ( msg.equals(ChainableCacheAdministratorImpl.TEST_MESSAGE) ) {
 
             Logger.info(this, "Received Message Ping " + new Date());
@@ -162,7 +174,11 @@ public class HazelCastCacheTransport implements CacheTransport{
 
     @Override
     public void send(String message) throws CacheTransportException {
-        try {
+
+    	sentMessages.addAndGet(1);
+    	sentBytes.addAndGet(message.length());
+
+    	try {
             new HazelcastUtil().getHazel().getTopic(topicName).publish(message);
         } catch ( Exception e ) {
             Logger.error(HazelCastCacheTransport.class, "Unable to send message: " + e.getMessage(), e);
@@ -229,4 +245,51 @@ public class HazelCastCacheTransport implements CacheTransport{
         new HazelcastUtil().getHazel().getTopic(topicName).removeMessageListener(topicId);
     }
 
+    @Override
+    public CacheTransportInfo getInfo() {
+    	HazelcastInstance hazel = new HazelcastUtil().getHazel();
+
+    	return new CacheTransportInfo(){
+    		@Override
+    		public String getClusterName() {
+    			return hazel.getName();
+    		}
+
+    		@Override
+        	public String getAddress() {
+    			return ((InetSocketAddress) hazel.getLocalEndpoint().getSocketAddress()).getHostString();
+    		}
+
+    		@Override
+    		public int getPort() {
+    			return ((InetSocketAddress) hazel.getLocalEndpoint().getSocketAddress()).getPort();
+    		}
+
+    		@Override
+    		public boolean isOpen() {
+    			return hazel.getLifecycleService().isRunning();
+    		}
+
+
+    		@Override
+    		public long getReceivedBytes() {
+    			return receivedBytes.get();
+    		}
+
+    		@Override
+    		public long getReceivedMessages() {
+    			return receivedMessages.get();
+    		}
+
+    		@Override
+    		public long getSentBytes() {
+    			return sentBytes.get();
+    		}
+
+    		@Override
+    		public long getSentMessages() {
+    			return sentMessages.get();
+    		}
+    	};
+    }
 }
