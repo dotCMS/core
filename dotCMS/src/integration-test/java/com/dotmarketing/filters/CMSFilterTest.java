@@ -1,28 +1,5 @@
 package com.dotmarketing.filters;
 
-import com.dotcms.LicenseTestUtil;
-import com.dotcms.repackage.org.apache.struts.Globals;
-import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
-import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
-import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.cache.VirtualLinksCache;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.portlets.virtuallinks.factories.VirtualLinkFactory;
-import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
-import com.dotmarketing.servlets.SpeedyAssetServlet;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.velocity.ClientVelocityServlet;
-import com.dotmarketing.velocity.VelocityServlet;
-
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-
 import static org.mockito.Matchers.startsWith;
 
 import java.io.FileInputStream;
@@ -47,6 +24,27 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionContext;
+
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+
+import com.dotcms.LicenseTestUtil;
+import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cache.VirtualLinksCache;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.portlets.virtuallinks.business.VirtualLinkAPI;
+import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
+import com.dotmarketing.servlets.SpeedyAssetServlet;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.velocity.ClientVelocityServlet;
+import com.dotmarketing.velocity.VelocityServlet;
 
 public class CMSFilterTest {
 	
@@ -73,7 +71,7 @@ public class CMSFilterTest {
 
 	@Test
 	public void shouldWorkVirtualLink() throws IOException {
-
+		VirtualLinkAPI virtualLinkAPI = APILocator.getVirtualLinkAPI();
 		VirtualLink link1 = new VirtualLink();
 		VirtualLink link2 = new VirtualLink();
 		VirtualLink link3 = new VirtualLink();
@@ -82,7 +80,7 @@ public class CMSFilterTest {
 
 		// build them up
 		try {
-			link1 = VirtualLinkFactory.getVirtualLinkByURL("/testLink1");
+			link1 = virtualLinkAPI.getVirtualLinkByURL("/testLink1");
 			link1 = new VirtualLink();
 			link1.setActive(true);
 			link1.setTitle("test link1");
@@ -91,7 +89,7 @@ public class CMSFilterTest {
 			HibernateUtil.save(link1);
 
 
-			link2 = VirtualLinkFactory.getVirtualLinkByURL("demo.dotcms.com:/testLink2");
+			link2 = virtualLinkAPI.getVirtualLinkByURL("demo.dotcms.com:/testLink2");
 
 			link2 = new VirtualLink();
 			link2.setActive(true);
@@ -101,7 +99,7 @@ public class CMSFilterTest {
 			HibernateUtil.save(link2);
 
 
-			link3 = VirtualLinkFactory.getVirtualLinkByURL("/testLink3");
+			link3 = virtualLinkAPI.getVirtualLinkByURL("/testLink3");
 
 			link3 = new VirtualLink();
 			link3.setActive(true);
@@ -111,7 +109,7 @@ public class CMSFilterTest {
 			HibernateUtil.save(link3);
 
 
-			link4 = VirtualLinkFactory.getVirtualLinkByURL("demo.dotcms.com:/testLink4");
+			link4 = virtualLinkAPI.getVirtualLinkByURL("demo.dotcms.com:/testLink4");
 
 			link4 = new VirtualLink();
 			link4.setActive(true);
@@ -121,7 +119,7 @@ public class CMSFilterTest {
 			HibernateUtil.save(link4);
 
 			
-			link5 = VirtualLinkFactory.getVirtualLinkByURL("demo.dotcms.com:/testLink5");
+			link5 = virtualLinkAPI.getVirtualLinkByURL("demo.dotcms.com:/testLink5");
 
 			link5 = new VirtualLink();
 			link5.setActive(true);
@@ -233,14 +231,13 @@ public class CMSFilterTest {
 
 	@Test
 	public void shouldWorkVirtualLinkCMSHomePage() throws IOException {
-
-
+		VirtualLinkAPI virtualLinkAPI = APILocator.getVirtualLinkAPI();
 		VirtualLink cmsHomePage = new VirtualLink();
 
 		// build them up
 		try {
 
-			cmsHomePage = VirtualLinkFactory.getVirtualLinkByURL("/cmsHomePage");
+			cmsHomePage = virtualLinkAPI.getVirtualLinkByURL("/cmsHomePage");
 
 			cmsHomePage = new VirtualLink();
 			cmsHomePage.setActive(true);
@@ -266,7 +263,7 @@ public class CMSFilterTest {
 			HibernateUtil.delete(cmsHomePage);
 			VirtualLinksCache.removePathFromCache(cmsHomePage.getUrl());
 
-			cmsHomePage = VirtualLinkFactory.getVirtualLinkByURL("demo.dotcms.com:/cmsHomePage");
+			cmsHomePage = virtualLinkAPI.getVirtualLinkByURL("demo.dotcms.com:/cmsHomePage");
 
 			cmsHomePage = new VirtualLink();
 			cmsHomePage.setActive(true);

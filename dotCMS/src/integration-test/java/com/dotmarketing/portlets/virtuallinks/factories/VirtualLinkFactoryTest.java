@@ -3,16 +3,17 @@ package com.dotmarketing.portlets.virtuallinks.factories;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.BeforeClass;
+import org.junit.Test;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
-
-import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.virtuallinks.business.VirtualLinkFactory;
 import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
 import com.liferay.portal.model.User;
 
@@ -22,11 +23,10 @@ import com.liferay.portal.model.User;
  * @since 8/24/15
  *
  */
-public class VirtualLinkFactoryTest extends IntegrationTestBase{
+public class VirtualLinkFactoryTest extends IntegrationTestBase {
 	
     @BeforeClass
     public static void prepare () throws Exception {
-    	
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
     }
@@ -34,18 +34,18 @@ public class VirtualLinkFactoryTest extends IntegrationTestBase{
 	/**
 	 * Testing {@link VirtualLinkFactory#getVirtualLinkByURL(String)}
 	 *
-	 * @see VirtualLinkFactory
+	 * @see {@link VirtualLinkFactory}
 	 */
 	@Test
 	public void getVirtualLinkByURL () {
+		VirtualLinkFactory virtualLinkFactory = FactoryLocator.getVirtualLinkFactory();
+		HostAPI hostAPI = APILocator.getHostAPI();
 		try{
-			HostAPI hostAPI = APILocator.getHostAPI();
-
 			//host name
 			String hostName="demo.dotcms.com";
 			//default virtual link url
 			String url = "/Family-Weekend-Reg";
-			
+
 			User user = APILocator.getUserAPI().getSystemUser();
 			Host host = hostAPI.findByName(hostName, user, false);
 			String  completeUrl = host.getHostname() + ":" + url;
@@ -64,15 +64,14 @@ public class VirtualLinkFactoryTest extends IntegrationTestBase{
 			VirtualLinksCache.addPathToCache(vl);
 
 			//test vanity url works with upper case url
-			VirtualLink nvl = VirtualLinkFactory.getVirtualLinkByURL(completeUrl);
+			VirtualLink nvl = virtualLinkFactory.getVirtualLinkByURL(completeUrl);
 			assertTrue(nvl.getUrl() != null);
 			//test vanity url with lower case url
-			nvl = VirtualLinkFactory.getVirtualLinkByURL(completeUrl.toLowerCase());
+			nvl = virtualLinkFactory.getVirtualLinkByURL(completeUrl.toLowerCase());
 			assertTrue(nvl.getUri() != null);
-
 		}catch(Exception e){
 			assertTrue(e.getMessage(),false);
 		}
-
 	}
+
 }
