@@ -87,10 +87,8 @@ mkdir tests
 
 
 # Run End-2-End tests
-#ant -f build-tests.xml test-dotcms
-#cp dotserver/tomcat/webapps/ROOT/dotsecure/logs/test/*.xml tests
-ant -f build-tests.xml tomcat-start
-ant -f build-tests.xml tomcat-stop
+ant -f build-tests.xml test-dotcms
+cp dotserver/tomcat/webapps/ROOT/dotsecure/logs/test/*.xml tests
 
 # Run Integration tests
 cd core/dotCMS
