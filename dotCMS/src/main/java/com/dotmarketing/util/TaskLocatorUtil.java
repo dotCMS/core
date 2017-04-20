@@ -116,7 +116,7 @@ public class TaskLocatorUtil {
 	 * 
 	 * @return The list of Run-Once Tasks.
 	 */
-	public static List<Class<?>> 	getStartupRunOnceTaskClasses() {
+	public static List<Class<?>> getStartupRunOnceTaskClasses() {
 		List<Class<?>> ret = new ArrayList<Class<?>>();
 		ret.add(Task00760AddContentletStructureInodeIndex.class);
 		ret.add(Task00765AddUserForeignKeys.class);
@@ -224,9 +224,9 @@ public class TaskLocatorUtil {
         ret.add(Task03740UpdateLayoutIcons.class);
         ret.add(Task03745DropLegacyHTMLPageAndFileTables.class);
         ret.add(Task03800AddIndexLowerStructureTable.class);
-	ret.add(Task04100DeleteUnusedJobEntries.class);
-
-	return ret;
+        ret.add(Task04100DeleteUnusedJobEntries.class);
+        ret.add(Task04105LowercaseVanityUrls.class);
+        return ret;
     }
 
 	/**
@@ -247,7 +247,6 @@ public class TaskLocatorUtil {
 		ret.add(Task00007RemoveSitesearchQuartzJob.class);
 		ret.add(Task00009ClusterInitialize.class);
 		ret.add(Task00010CheckAnonymousUser.class);
-		
 		return ret;
 	}
 
