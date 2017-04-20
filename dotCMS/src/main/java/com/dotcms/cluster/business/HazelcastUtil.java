@@ -62,6 +62,8 @@ public class HazelcastUtil {
                     Config config = buildConfig(xmlPath, properties);
 
         		    _memberInstance = Hazelcast.newHazelcastInstance(config);
+
+        		    Logger.info(this, "Initialized Hazelcast member "+ _memberInstance);
                 }
             }
             System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_HAZEL, String.valueOf(System.currentTimeMillis() - start));

@@ -39,6 +39,8 @@ public class HazelCastCacheTransport implements CacheTransport{
 
     private final String topicName = "dotCMSClusterCacheInvalidation";
     private String topicId;
+    
+    private boolean isInitialized;
 
     @Override
     public void init(Server localServer) throws CacheTransportException {
@@ -66,6 +68,8 @@ public class HazelCastCacheTransport implements CacheTransport{
             }
         };
         topicId = new HazelcastUtil().getHazel().getTopic(topicName).addMessageListener(messageListener);
+
+        isInitialized = true;
     }
 
     private Map<String, Object> buildProperties(){
@@ -242,7 +246,11 @@ public class HazelCastCacheTransport implements CacheTransport{
 
     @Override
     public void shutdown() throws CacheTransportException {
-        new HazelcastUtil().getHazel().getTopic(topicName).removeMessageListener(topicId);
+    	if (isInitialized) {
+    		new HazelcastUtil().getHazel().getTopic(topicName).removeMessageListener(topicId);
+
+    		isInitialized = false;
+    	}
     }
 
     @Override
