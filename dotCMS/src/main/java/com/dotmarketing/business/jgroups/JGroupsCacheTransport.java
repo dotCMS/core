@@ -83,9 +83,7 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
         }
     }
 
-    private Map<String, Object> setProperties(){
-        Map<String, Object> properties = new HashMap<>();
-
+    private void setProperties(){
         // Bind Address
         String bindAddressProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_BIND_ADDRESS, null);
         if (UtilMethods.isSet(bindAddressProperty)) {
@@ -115,8 +113,6 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
         if (UtilMethods.isSet(multiCastPortProperty)) {
         	System.setProperty("jgroups.udp.mcast_port", multiCastPortProperty);
         }
-
-        return properties;
     }
     
     @Override
