@@ -5,6 +5,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotmarketing.beans.*;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
@@ -86,6 +89,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			int offset, int limit, String orderBy) throws DotSecurityException,
 			DotDataException {
 
+		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+
 		PaginatedArrayList<Container> assets = new PaginatedArrayList<Container>();
 		List<Permissionable> toReturn = new ArrayList<Permissionable>();
 		int internalLimit = 500;
@@ -140,12 +145,16 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		query.append("select asset from asset in class " + Container.class.getName() + ", " +
 				"inode in class " + Inode.class.getName()+", identifier in class " + Identifier.class.getName() +", vinfo in class "+ContainerVersionInfo.class.getName());
 		if(UtilMethods.isSet(parent)){
-			if(InodeUtils.isSet(InodeFactory.getInode(parent, Structure.class).getInode()))
+
+			//Search for the given ContentType inode
+			ContentType foundContentType = contentTypeAPI.find(parent);
+
+			if ( null != foundContentType && InodeUtils.isSet(foundContentType.inode()) )
 				query.append(" where asset.inode = inode.inode and asset.identifier = identifier.id"
-						+ " and exists ( from cs in class " + ContainerStructure.class.getName() + " where cs.containerId = asset.identifier and cs.structureId = '"+parent+"' ) ");
-		   else
-			   query.append(" ,tree in class " + Tree.class.getName() + " where asset.inode = inode.inode " +
-						    "and asset.identifier = identifier.id and tree.parent = '"+parent+"' and tree.child=asset.inode");
+						+ " and exists ( from cs in class " + ContainerStructure.class.getName() + " where cs.containerId = asset.identifier and cs.structureId = '" + parent + "' ) ");
+			else
+				query.append(" ,tree in class " + Tree.class.getName() + " where asset.inode = inode.inode " +
+						"and asset.identifier = identifier.id and tree.parent = '" + parent + "' and tree.child=asset.inode");
 		}else{
 			query.append(" where asset.inode = inode.inode and asset.identifier = identifier.id");
 		}
