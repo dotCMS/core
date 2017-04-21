@@ -150,16 +150,23 @@ public class VirtualLinkAPIImpl implements VirtualLinkAPI {
 	}
 
 	@Override
-	public VirtualLink create(final String title, String url, final String uri, final boolean isActive, Host site,
-			User user) {
-		if (!url.startsWith("/")) {
+	public VirtualLink create(final String title, String url, final String uri,
+							  final boolean isActive, Host site, User user) {
+
+		if ( !url.startsWith("/") ) {
 			url = "/" + url;
 		}
-		if (url.trim().endsWith("/")) {
+		if ( url.trim().endsWith("/") ) {
 			url = url.trim().substring(0, url.trim().length() - 1);
 		}
+
 		final String completeUrl;
-		if (InodeUtils.isSet(site.getIdentifier())) {
+		if ( null != site ) {
+
+			if ( !InodeUtils.isSet(site.getIdentifier()) ) {
+				throw new DotRuntimeException("The site Identifier is empty.");
+			}
+
 			try {
 				final Host permissionedSite = this.siteAPI.find(site.getIdentifier(), user, Boolean.FALSE);
 				completeUrl = permissionedSite.getHostname() + URL_SEPARATOR + url;
@@ -168,8 +175,9 @@ public class VirtualLinkAPIImpl implements VirtualLinkAPI {
 						user.getUserId(), site.getHostname()), e);
 			}
 		} else {
-			throw new DotRuntimeException("The site Identifier is empty.");
+			completeUrl = url;
 		}
+
 		final VirtualLink virtualLink = new VirtualLink();
 		virtualLink.setTitle(title);
 		virtualLink.setUrl(completeUrl);

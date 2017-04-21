@@ -205,7 +205,8 @@ public interface VirtualLinkAPI {
 	 *            - If set to {@code true}, the Vanity URL is active. Otherwise,
 	 *            set to {@code false}.
 	 * @param site
-	 *            - The site where the Vanity URL will be created.
+	 *            - The site where the Vanity URL will be created, if {@code null} this {@link VirtualLink} applies to
+	 *            all sites
 	 * @param user
 	 *            - The {@link User} calling this method.
 	 * @return The complete Vanity URL object.
