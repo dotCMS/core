@@ -1,10 +1,11 @@
 package com.dotcms.cluster.business;
 
-import com.dotcms.cluster.business.HazelcastUtil.HazelcastInstanceType;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -25,23 +26,17 @@ public class HazelcastUtil {
 	private final static String PROPERTY_HAZELCAST_NETWORK_TCP_MEMBERS = "HAZELCAST_NETWORK_TCP_MEMBERS";
 
 	public enum HazelcastInstanceType {
-	    EMBEDDED("hazelcast-embedded.xml", true),
-	    CLIENT("hazelcast-client.xml", false);
+	    EMBEDDED("hazelcast-embedded.xml"),
+	    CLIENT("hazelcast-client.xml");
 
 	    private String path;
-	    private boolean autoWired;
 
-	    HazelcastInstanceType(String path, boolean autoWired) {
+	    HazelcastInstanceType(String path) {
 	        this.path = path;
-	        this.autoWired = autoWired;
 	    }
 
 	    public String getPath() {
 	        return path;
-	    }
-
-	    public boolean isAutoWired() {
-	        return autoWired;
 	    }
 	}
 
@@ -83,9 +78,16 @@ public class HazelcastUtil {
                 if (_memberInstances.get(instanceType) == null) {
                     Logger.info(this, "Setting Up HazelCast ("+ instanceType +")");
 
-                    com.hazelcast.config.Config config = buildConfig(instanceType);
+                    HazelcastInstance memberInstance = null;
 
-                    HazelcastInstance memberInstance = Hazelcast.newHazelcastInstance(config);
+                    if (instanceType == HazelcastInstanceType.EMBEDDED) {
+
+                    	memberInstance = newHazelcastInstanceEmbedded(instanceType.getPath());
+
+                    } else if (instanceType == HazelcastInstanceType.CLIENT) {
+
+                    	memberInstance = newHazelcastInstanceClient(instanceType.getPath());
+                    }
 
                     _memberInstances.put(instanceType, memberInstance);
 
@@ -104,18 +106,18 @@ public class HazelcastUtil {
         }
     }
 
-	private com.hazelcast.config.Config buildConfig(HazelcastInstanceType instanceType) {
+	private HazelcastInstance newHazelcastInstanceEmbedded(String xmlPath) {
 
-		InputStream is = getClass().getClassLoader().getResourceAsStream(instanceType.getPath());
+		InputStream is = getClass().getClassLoader().getResourceAsStream(xmlPath);
 
 		try {
 		    XmlConfigBuilder builder = new XmlConfigBuilder(is);
 
 		    com.hazelcast.config.Config config = builder.build();
 
-		    if (instanceType.isAutoWired() && Config.getBooleanProperty("CLUSTER_HAZELCAST_AUTOWIRE", true)) {
+		    if (Config.getBooleanProperty("CLUSTER_HAZELCAST_AUTOWIRE", true)) {
 
-		    	Map<String, Object> properties = buildProperties();
+		    	Map<String, Object> properties = buildPropertiesEmbedded();
 
 			    if (UtilMethods.isSet( properties.get(PROPERTY_HAZELCAST_NETWORK_BIND_PORT) ) &&
 			    	UtilMethods.isSet( properties.get(PROPERTY_HAZELCAST_NETWORK_TCP_MEMBERS) ) )
@@ -130,7 +132,7 @@ public class HazelcastUtil {
 			    }
 		    }
 
-		    return config;
+		    return Hazelcast.newHazelcastInstance(config);
 		} finally {
 	        try {
 	            is.close();
@@ -140,7 +142,26 @@ public class HazelcastUtil {
 		}
 	}
 
-    private Map<String, Object> buildProperties(){
+	private HazelcastInstance newHazelcastInstanceClient(String xmlPath) {
+
+		InputStream is = getClass().getClassLoader().getResourceAsStream(xmlPath);
+
+		try {
+			XmlClientConfigBuilder builder = new XmlClientConfigBuilder(is);
+
+		    com.hazelcast.client.config.ClientConfig config = builder.build();
+
+		    return HazelcastClient.newHazelcastClient(config);
+		} finally {
+	        try {
+	            is.close();
+	        }catch (Exception e){
+	            Logger.error(Hazelcast.class, "Unable to close inputstream for Hazel xml", e);
+	        }
+		}
+	}
+
+    private Map<String, Object> buildPropertiesEmbedded(){
         Map<String, Object> properties = new HashMap<>();
 
         // Bind Address

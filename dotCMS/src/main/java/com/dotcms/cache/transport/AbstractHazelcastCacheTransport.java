@@ -1,8 +1,6 @@
 package com.dotcms.cache.transport;
 
 import com.dotcms.cluster.bean.Server;
-import com.dotcms.cluster.business.HazelcastUtil;
-import com.dotcms.cluster.business.HazelcastUtil.HazelcastInstanceType;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -12,7 +10,6 @@ import com.dotmarketing.business.cache.transport.CacheTransportException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
@@ -27,7 +24,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Created by jasontesser on 3/28/17.
  */
-public class HazelCastCacheTransport implements CacheTransport{
+public abstract class AbstractHazelcastCacheTransport implements CacheTransport {
 
     private Map<String, Map<String, Boolean>> cacheStatus;
 
@@ -41,17 +38,15 @@ public class HazelCastCacheTransport implements CacheTransport{
     
     private boolean isInitialized;
 
+    protected abstract HazelcastInstance getHazelcastInstance();
+    
     @Override
     public void init(Server localServer) throws CacheTransportException {
         Logger.info(this,"Starting Hazelcast Cache Transport");
         Logger.debug(this,"Calling HazelUtil to ensure Hazelcast member is up");
-        
+
         HazelcastInstance hazel = getHazelcastInstance();
-        TopicConfig topicConfig = new TopicConfig();
-        topicConfig.setGlobalOrderingEnabled( false );
-        topicConfig.setStatisticsEnabled( false );
-        topicConfig.setName( topicName );
-        hazel.getConfig().addTopicConfig(topicConfig);
+
         MessageListener<Object> messageListener = new MessageListener<Object>() {
             @Override
             public void onMessage( Message<Object> message ) {
@@ -66,7 +61,7 @@ public class HazelCastCacheTransport implements CacheTransport{
                 receive(msg);
             }
         };
-        topicId = getHazelcastInstance().getTopic(topicName).addMessageListener(messageListener);
+        topicId = hazel.getTopic(topicName).addMessageListener(messageListener);
 
         isInitialized = true;
     }
@@ -82,7 +77,7 @@ public class HazelCastCacheTransport implements CacheTransport{
             try {
                 getHazelcastInstance().getTopic(topicName).publish("ACK");
             } catch ( Exception e ) {
-                Logger.error(HazelCastCacheTransport.class, e.getMessage(), e);
+                Logger.error(AbstractHazelcastCacheTransport.class, e.getMessage(), e);
             }
 
             //Handle when other server is responding to ping.
@@ -151,7 +146,7 @@ public class HazelCastCacheTransport implements CacheTransport{
     	try {
             getHazelcastInstance().getTopic(topicName).publish(message);
         } catch ( Exception e ) {
-            Logger.error(HazelCastCacheTransport.class, "Unable to send message: " + e.getMessage(), e);
+            Logger.error(AbstractHazelcastCacheTransport.class, "Unable to send message: " + e.getMessage(), e);
             throw new CacheTransportException("Unable to send message", e);
         }
     }
@@ -162,7 +157,7 @@ public class HazelCastCacheTransport implements CacheTransport{
             send(ChainableCacheAdministratorImpl.TEST_MESSAGE);
             Logger.info(this, "Sending Ping to Cluster " + new Date());
         } catch ( Exception e ) {
-            Logger.error(HazelCastCacheTransport.class, e.getMessage(), e);
+            Logger.error(AbstractHazelcastCacheTransport.class, e.getMessage(), e);
             throw new CacheTransportException("Error testing cluster", e);
         }
     }
@@ -265,9 +260,5 @@ public class HazelCastCacheTransport implements CacheTransport{
     			return sentMessages.get();
     		}
     	};
-    }
-
-    protected HazelcastInstance getHazelcastInstance() {
-    	return new HazelcastUtil().getHazel(HazelcastInstanceType.EMBEDDED);
     }
 }

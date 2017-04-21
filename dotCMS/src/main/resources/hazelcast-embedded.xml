@@ -85,6 +85,12 @@
         <!--Queue capacity. 0 means Integer.MAX_VALUE.-->
         <queue-capacity>0</queue-capacity>
     </executor-service>
+
+    <topic name="dotCMSClusterCacheInvalidation">
+        <global-ordering-enabled>false</global-ordering-enabled>
+        <statistics-enabled>false</statistics-enabled>
+    </topic>
+
     <queue name="default">
         <!--
             Maximum size of the queue. When a JVM's local queue size reaches the maximum,
@@ -186,7 +192,7 @@
         <cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>
 
     </map>
-	   
+
     <map name="adminconfigpool">
         <in-memory-format>OBJECT</in-memory-format>
         <max-size>271</max-size>
