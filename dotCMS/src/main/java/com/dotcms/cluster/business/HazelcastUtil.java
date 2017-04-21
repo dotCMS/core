@@ -1,14 +1,18 @@
 package com.dotcms.cluster.business;
 
+import com.dotcms.cluster.business.HazelcastUtil.HazelcastInstanceType;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 
 import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -16,70 +20,102 @@ import java.util.Map;
  */
 public class HazelcastUtil {
 
-	public final static String PROPERTY_HAZELCAST_NETWORK_BIND_ADDRESS = "HAZELCAST_NETWORK_BIND_ADDRESS";
-	public final static String PROPERTY_HAZELCAST_NETWORK_BIND_PORT = "HAZELCAST_NETWORK_BIND_PORT";
-	public final static String PROPERTY_HAZELCAST_NETWORK_TCP_MEMBERS = "HAZELCAST_NETWORK_TCP_MEMBERS";
+	private final static String PROPERTY_HAZELCAST_NETWORK_BIND_ADDRESS = "HAZELCAST_NETWORK_BIND_ADDRESS";
+	private final static String PROPERTY_HAZELCAST_NETWORK_BIND_PORT = "HAZELCAST_NETWORK_BIND_PORT";
+	private final static String PROPERTY_HAZELCAST_NETWORK_TCP_MEMBERS = "HAZELCAST_NETWORK_TCP_MEMBERS";
 
-    private static HazelcastInstance _memberInstance;
+	public enum HazelcastInstanceType {
+	    EMBEDDED("hazelcast-embedded.xml", true),
+	    CLIENT("hazelcast-client.xml", false);
+
+	    private String path;
+	    private boolean autoWired;
+
+	    HazelcastInstanceType(String path, boolean autoWired) {
+	        this.path = path;
+	        this.autoWired = autoWired;
+	    }
+
+	    public String getPath() {
+	        return path;
+	    }
+
+	    public boolean isAutoWired() {
+	        return autoWired;
+	    }
+	}
+
+    private static Map<HazelcastInstanceType, HazelcastInstance> _memberInstances = new HashMap<>();
+
     final String syncMe = "hazelSync";
 
-    public HazelcastInstance getHazel(){
-        return getHazel(null);
-    }
-
-    public HazelcastInstance getHazel(Map<String, Object> properties){
-        return getHazel("hazelcast-embedded.xml", properties);
-    }
-
-    public HazelcastInstance getHazel(String xmlPath, Map<String, Object> properties) {
+    public HazelcastInstance getHazel(HazelcastInstanceType instanceType){
         try{
-            initMember(xmlPath, properties);
+            initMember(instanceType);
         }catch (Exception e) {
             Logger.error(HazelcastUtil.class, "Could not initialize Hazelcast Member", e);
         }
-        return _memberInstance;
+        return _memberInstances.get(instanceType);
     }
 
-    public void shutdown(){
-        if (_memberInstance != null) {
+    public void shutdown(HazelcastInstanceType instanceType){
+        if (_memberInstances.get(instanceType) != null) {
             synchronized (syncMe) {
-                if ( _memberInstance != null) {
-                    _memberInstance.shutdown();
-                    _memberInstance = null;
+                if (_memberInstances.get(instanceType) != null) {
+                	_memberInstances.get(instanceType).shutdown();
+                	_memberInstances.remove(instanceType);
                 }
             }
         }
     }
 
-    private void initMember(String xmlPath, Map<String, Object> properties) {
+    public void shutdown() {
+        for(HazelcastInstanceType instanceType : HazelcastInstanceType.values()){
+        	shutdown(instanceType);        	
+        }
+    }
 
-        if (_memberInstance == null) {
+    private void initMember(HazelcastInstanceType instanceType) {
+
+        if (_memberInstances.get(instanceType) == null) {
             long start = System.currentTimeMillis();
             synchronized (syncMe) {
-                if ( _memberInstance == null) {
-                    Logger.info(this, "Setting Up HazelCast");
+                if (_memberInstances.get(instanceType) == null) {
+                    Logger.info(this, "Setting Up HazelCast ("+ instanceType +")");
 
-                    Config config = buildConfig(xmlPath, properties);
+                    com.hazelcast.config.Config config = buildConfig(instanceType);
 
-        		    _memberInstance = Hazelcast.newHazelcastInstance(config);
+                    HazelcastInstance memberInstance = Hazelcast.newHazelcastInstance(config);
 
-        		    Logger.info(this, "Initialized Hazelcast member "+ _memberInstance);
+                    _memberInstances.put(instanceType, memberInstance);
+
+        		    Logger.info(this, "Initialized Hazelcast member "+ memberInstance);
+
+        		    try {
+        		    	throw new Exception();
+        		    } catch(Exception e) {
+        		    	StringWriter sw = new StringWriter();
+        		    	e.printStackTrace(new PrintWriter(sw));
+        		    	Logger.info(this, "Location:"+ sw.toString());
+        		    }
                 }
             }
             System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_HAZEL, String.valueOf(System.currentTimeMillis() - start));
         }
     }
 
-	private Config buildConfig(String xmlPath, Map<String, Object> properties) {
+	private com.hazelcast.config.Config buildConfig(HazelcastInstanceType instanceType) {
 
-		InputStream is = getClass().getClassLoader().getResourceAsStream(xmlPath);
+		InputStream is = getClass().getClassLoader().getResourceAsStream(instanceType.getPath());
 
 		try {
 		    XmlConfigBuilder builder = new XmlConfigBuilder(is);
 
-		    Config config = builder.build();
+		    com.hazelcast.config.Config config = builder.build();
 
-		    if (properties != null) {
+		    if (instanceType.isAutoWired() && Config.getBooleanProperty("CLUSTER_HAZELCAST_AUTOWIRE", true)) {
+
+		    	Map<String, Object> properties = buildProperties();
 
 			    if (UtilMethods.isSet( properties.get(PROPERTY_HAZELCAST_NETWORK_BIND_PORT) ) &&
 			    	UtilMethods.isSet( properties.get(PROPERTY_HAZELCAST_NETWORK_TCP_MEMBERS) ) )
@@ -90,7 +126,7 @@ public class HazelcastUtil {
 
 			        for(String member : (String[]) properties.get(PROPERTY_HAZELCAST_NETWORK_TCP_MEMBERS)) {
 			        	config.getNetworkConfig().getJoin().getTcpIpConfig().addMember(member);
-			        }			    	
+			        }
 			    }
 		    }
 
@@ -103,4 +139,37 @@ public class HazelcastUtil {
 	        }
 		}
 	}
+
+    private Map<String, Object> buildProperties(){
+        Map<String, Object> properties = new HashMap<>();
+
+        // Bind Address
+        String bindAddressProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_BIND_ADDRESS, null);
+        if (UtilMethods.isSet(bindAddressProperty)) {
+        	properties.put(HazelcastUtil.PROPERTY_HAZELCAST_NETWORK_BIND_ADDRESS, bindAddressProperty);
+        }
+
+        // Bind Port
+        String bindPortProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_BIND_PORT, null);
+        if (UtilMethods.isSet(bindPortProperty)) {
+        	properties.put(HazelcastUtil.PROPERTY_HAZELCAST_NETWORK_BIND_PORT, bindPortProperty);
+        }
+
+        // Initial Hosts
+        String initialHostsProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_TCP_INITIAL_HOSTS, null);
+        if (UtilMethods.isSet(initialHostsProperty)) {
+
+        	String[] initialHosts = initialHostsProperty.split(",");
+
+        	for(int i = 0; i < initialHosts.length; i++){
+				String initialHost = initialHosts[i].trim();
+
+				initialHosts[i] = initialHost.replaceAll("^(.*)\\[(.*)\\]$", "$1:$2");
+			}
+
+        	properties.put(HazelcastUtil.PROPERTY_HAZELCAST_NETWORK_TCP_MEMBERS, initialHosts);
+        }
+
+        return properties;
+    }
 }

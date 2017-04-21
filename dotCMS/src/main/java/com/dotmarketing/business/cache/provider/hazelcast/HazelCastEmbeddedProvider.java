@@ -1,12 +1,15 @@
 package com.dotmarketing.business.cache.provider.hazelcast;
 
 import com.dotcms.cluster.business.HazelcastUtil;
+import com.dotcms.cluster.business.HazelcastUtil.HazelcastInstanceType;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.HazelcastInstance;
+
 import java.util.*;
 
 
@@ -21,7 +24,7 @@ public class HazelCastEmbeddedProvider extends CacheProvider {
     @Override
     public void init()  {
         Logger.debug(this,"Calling HazelUtil to ensure Hazelcast member is up");
-        new HazelcastUtil().getHazel();
+        getHazelcastInstance();
         initialized = true;
     }
 
@@ -42,30 +45,30 @@ public class HazelCastEmbeddedProvider extends CacheProvider {
 
     @Override
     public void put(String group, String key, Object content) {
-        new HazelcastUtil().getHazel().getMap(group).set(key, content);
+        getHazelcastInstance().getMap(group).set(key, content);
     }
 
     @Override
     public Object get(String group, String key) {
-        return new HazelcastUtil().getHazel().getMap(group).get(key);
+        return getHazelcastInstance().getMap(group).get(key);
     }
 
     @Override
     public void remove(String group, String key) {
-        new HazelcastUtil().getHazel().getMap(group).remove(key);
+        getHazelcastInstance().getMap(group).remove(key);
     }
 
     @Override
     public void remove(String group) {
-        new HazelcastUtil().getHazel().getMap(group).clear();
+        getHazelcastInstance().getMap(group).clear();
     }
 
     @Override
     public void removeAll() {
-        Collection<DistributedObject> distObjs = new HazelcastUtil().getHazel().getDistributedObjects();
+        Collection<DistributedObject> distObjs = getHazelcastInstance().getDistributedObjects();
         for (DistributedObject distObj : distObjs) {
             if (distObj.getServiceName().contains("mapService")) {
-                new HazelcastUtil().getHazel().getMap(distObj.getName()).clear();
+                getHazelcastInstance().getMap(distObj.getName()).clear();
             }
         }
     }
@@ -73,7 +76,7 @@ public class HazelCastEmbeddedProvider extends CacheProvider {
     @Override
     public Set<String> getKeys(String group) {
         Set<String> keys = new HashSet<String>();
-        for (Object key : new HazelcastUtil().getHazel().getMap(group).keySet()) {
+        for (Object key : getHazelcastInstance().getMap(group).keySet()) {
             keys.add(key.toString());
         }
         return keys;
@@ -83,7 +86,7 @@ public class HazelCastEmbeddedProvider extends CacheProvider {
     public Set<String> getGroups() {
         Set groups = new HashSet();
 
-        Collection<DistributedObject> distObjs = new HazelcastUtil().getHazel().getDistributedObjects();
+        Collection<DistributedObject> distObjs = getHazelcastInstance().getDistributedObjects();
         for (DistributedObject distObj : distObjs) {
             if (distObj.getServiceName().contains("mapService")) {
                 groups.add(distObj.getName());
@@ -102,11 +105,11 @@ public class HazelCastEmbeddedProvider extends CacheProvider {
             CacheStats stats = new CacheStats();
 
             stats.addStat("cache-region", group);
-            stats.addStat("cache-local-memory-cost", UtilMethods.prettyByteify(new HazelcastUtil().getHazel().getMap(group).getLocalMapStats().getOwnedEntryMemoryCost()));
-            stats.addStat("cache-local-heap-cost", new HazelcastUtil().getHazel().getMap(group).getLocalMapStats().getHeapCost());
-            stats.addStat("cache-requests", new HazelcastUtil().getHazel().getMap(group).getLocalMapStats().getGetOperationCount());
-            stats.addStat("cache-hits", new HazelcastUtil().getHazel().getMap(group).getLocalMapStats().getHits());
-            stats.addStat("cache-local-size", new HazelcastUtil().getHazel().getMap(group).getLocalMapStats().getOwnedEntryCount());
+            stats.addStat("cache-local-memory-cost", UtilMethods.prettyByteify(getHazelcastInstance().getMap(group).getLocalMapStats().getOwnedEntryMemoryCost()));
+            stats.addStat("cache-local-heap-cost", getHazelcastInstance().getMap(group).getLocalMapStats().getHeapCost());
+            stats.addStat("cache-requests", getHazelcastInstance().getMap(group).getLocalMapStats().getGetOperationCount());
+            stats.addStat("cache-hits", getHazelcastInstance().getMap(group).getLocalMapStats().getHits());
+            stats.addStat("cache-local-size", getHazelcastInstance().getMap(group).getLocalMapStats().getOwnedEntryCount());
 
 
             ret.addStatRecord(stats);
@@ -117,9 +120,12 @@ public class HazelCastEmbeddedProvider extends CacheProvider {
 
     @Override
     public void shutdown() {
-        new HazelcastUtil().getHazel().shutdown();
+        getHazelcastInstance().shutdown();
     }
-   
+
+    protected HazelcastInstance getHazelcastInstance() {
+    	return new HazelcastUtil().getHazel(HazelcastInstanceType.EMBEDDED);
+    }
 }
 
 

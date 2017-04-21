@@ -2,6 +2,7 @@ package com.dotcms.cache.transport;
 
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.business.HazelcastUtil;
+import com.dotcms.cluster.business.HazelcastUtil.HazelcastInstanceType;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -11,8 +12,6 @@ import com.dotmarketing.business.cache.transport.CacheTransportException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Message;
@@ -47,7 +46,7 @@ public class HazelCastCacheTransport implements CacheTransport{
         Logger.info(this,"Starting Hazelcast Cache Transport");
         Logger.debug(this,"Calling HazelUtil to ensure Hazelcast member is up");
         
-        HazelcastInstance hazel = new HazelcastUtil().getHazel(buildProperties());
+        HazelcastInstance hazel = getHazelcastInstance();
         TopicConfig topicConfig = new TopicConfig();
         topicConfig.setGlobalOrderingEnabled( false );
         topicConfig.setStatisticsEnabled( false );
@@ -67,42 +66,9 @@ public class HazelCastCacheTransport implements CacheTransport{
                 receive(msg);
             }
         };
-        topicId = new HazelcastUtil().getHazel().getTopic(topicName).addMessageListener(messageListener);
+        topicId = getHazelcastInstance().getTopic(topicName).addMessageListener(messageListener);
 
         isInitialized = true;
-    }
-
-    private Map<String, Object> buildProperties(){
-        Map<String, Object> properties = new HashMap<>();
-
-        // Bind Address
-        String bindAddressProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_BIND_ADDRESS, null);
-        if (UtilMethods.isSet(bindAddressProperty)) {
-        	properties.put(HazelcastUtil.PROPERTY_HAZELCAST_NETWORK_BIND_ADDRESS, bindAddressProperty);
-        }
-
-        // Bind Port
-        String bindPortProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_BIND_PORT, null);
-        if (UtilMethods.isSet(bindPortProperty)) {
-        	properties.put(HazelcastUtil.PROPERTY_HAZELCAST_NETWORK_BIND_PORT, bindPortProperty);
-        }
-
-        // Initial Hosts
-        String initialHostsProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_TCP_INITIAL_HOSTS, null);
-        if (UtilMethods.isSet(initialHostsProperty)) {
-
-        	String[] initialHosts = initialHostsProperty.split(",");
-
-        	for(int i = 0; i < initialHosts.length; i++){
-				String initialHost = initialHosts[i].trim();
-
-				initialHosts[i] = initialHost.replaceAll("^(.*)\\[(.*)\\]$", "$1:$2");
-			}
-
-        	properties.put(HazelcastUtil.PROPERTY_HAZELCAST_NETWORK_TCP_MEMBERS, initialHosts);
-        }
-
-        return properties;
     }
 
     public void receive(String msg){
@@ -114,7 +80,7 @@ public class HazelCastCacheTransport implements CacheTransport{
 
             Logger.info(this, "Received Message Ping " + new Date());
             try {
-                new HazelcastUtil().getHazel().getTopic(topicName).publish("ACK");
+                getHazelcastInstance().getTopic(topicName).publish("ACK");
             } catch ( Exception e ) {
                 Logger.error(HazelCastCacheTransport.class, e.getMessage(), e);
             }
@@ -183,7 +149,7 @@ public class HazelCastCacheTransport implements CacheTransport{
     	sentBytes.addAndGet(message.length());
 
     	try {
-            new HazelcastUtil().getHazel().getTopic(topicName).publish(message);
+            getHazelcastInstance().getTopic(topicName).publish(message);
         } catch ( Exception e ) {
             Logger.error(HazelCastCacheTransport.class, "Unable to send message: " + e.getMessage(), e);
             throw new CacheTransportException("Unable to send message", e);
@@ -247,7 +213,7 @@ public class HazelCastCacheTransport implements CacheTransport{
     @Override
     public void shutdown() throws CacheTransportException {
     	if (isInitialized) {
-    		new HazelcastUtil().getHazel().getTopic(topicName).removeMessageListener(topicId);
+    		getHazelcastInstance().getTopic(topicName).removeMessageListener(topicId);
 
     		isInitialized = false;
     	}
@@ -255,7 +221,7 @@ public class HazelCastCacheTransport implements CacheTransport{
 
     @Override
     public CacheTransportInfo getInfo() {
-    	HazelcastInstance hazel = new HazelcastUtil().getHazel();
+    	HazelcastInstance hazel = getHazelcastInstance();
 
     	return new CacheTransportInfo(){
     		@Override
@@ -299,5 +265,9 @@ public class HazelCastCacheTransport implements CacheTransport{
     			return sentMessages.get();
     		}
     	};
+    }
+
+    protected HazelcastInstance getHazelcastInstance() {
+    	return new HazelcastUtil().getHazel(HazelcastInstanceType.EMBEDDED);
     }
 }
