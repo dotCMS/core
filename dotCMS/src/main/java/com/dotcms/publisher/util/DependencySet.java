@@ -1,7 +1,5 @@
 package com.dotcms.publisher.util;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -9,15 +7,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.assets.business.PushedAssetsCache;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
-import com.dotcms.publisher.pusher.PushPublisher;
+import com.dotcms.publishing.PublisherConfiguration;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.util.AnnotationUtils;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -64,31 +61,30 @@ public class DependencySet extends HashSet<String> {
 
 				List<PublishingEndPoint> allEndpoints = APILocator.getPublisherEndPointAPI().findSendingEndPointsByEnvironment(env.getId());
 				List<String> endpoints = new ArrayList<String>();
-
+				List<String> publishers = new ArrayList<String>();
 				//Filter Endpoints list
 				for(PublishingEndPoint ep : allEndpoints) {
 					Class endPointPublisher = ep.getPublisher();
-					Object instance = endPointPublisher.newInstance();
-					Method method = endPointPublisher.getMethod("isStatic");
-					Object result = method.invoke(instance);
-					Boolean isStaticEndpoint = (Boolean) result;
+					PublisherConfiguration result = AnnotationUtils.getBeanAnnotation(endPointPublisher, PublisherConfiguration.class);
+					boolean isStaticEndpoint = result == null? false: result.isStatic();
 					
 					if(isStatic && ep.isEnabled() && isStaticEndpoint) {
 						//If the isStatic variable is true then get all the static endpoints
 						endpoints.add(ep.getId());
 						//Set that class name of the puh publisher used by these endpoints
-						if(publisher == null){
-							publisher=endPointPublisher.getName();
+						if(!publishers.contains(endPointPublisher.getName())){
+							publishers.add(endPointPublisher.getName());
 						}
 					}else if(!isStatic && ep.isEnabled() && !isStaticEndpoint) {
 						//If the isStatic variable is false then get all the dynamic endpoints
 						endpoints.add(ep.getId());
 						//Set that class name of the puh publisher used by these endpoints
-						if(publisher == null){
-							publisher=endPointPublisher.getName();
+						if(!publishers.contains(endPointPublisher.getName())){
+							publishers.add(endPointPublisher.getName());
 						}
 					}
 				}
+				publisher = StringUtils.join(publishers,",");
 				//comma separated string with the list of endpoint ids 
 				endpointIds = StringUtils.join(endpoints,",");
 				if(!env.getPushToAll()) {
@@ -96,16 +92,14 @@ public class DependencySet extends HashSet<String> {
 						endpointIds = endpointIds.substring(0, endpointIds.indexOf(","));
 					}
 				}
-
+				
 				//Add environment endpoints and publisher to map
 				environmentsEndpointsAndPublisher.put(env.getId()+ENDPOINTS_SUFFIX, endpointIds);
 				environmentsEndpointsAndPublisher.put(env.getId()+PUBLISHER_SUFFIX, publisher);
 			}
-		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+		} catch (SecurityException | IllegalArgumentException e) {
 			Logger.error(getClass(), "Can't get environments endpoints and publishers", e);
 		} catch (DotDataException e) {
-			Logger.error(getClass(), "Can't get environments endpoints and publishers", e);
-		} catch (InstantiationException e) {
 			Logger.error(getClass(), "Can't get environments endpoints and publishers", e);
 		}
 

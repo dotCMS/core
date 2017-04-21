@@ -40,12 +40,5 @@ public interface IPublisher {
     PublisherConfig setUpConfig(PublisherConfig config);
 
     boolean shouldForcePush(String hostId, long languageId);
-    
-    /**
-	 * Return if the publisher is a static publisher
-	 * @return true if the publisher is a static publisher, false if not
-	 */
-    default public boolean isStatic(){
-    	return false;
-    }
+
 }
