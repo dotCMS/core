@@ -248,9 +248,24 @@ public class VirtualLinkFactoryImpl implements VirtualLinkFactory {
 	@Override
 	public void save(VirtualLink vanityUrl) {
 
-		final String completeUrl = vanityUrl.getUrl().toLowerCase();
+		String completeUrl = vanityUrl.getUrl();
 		final String uri = vanityUrl.getUri().toLowerCase();
-		final String url = completeUrl.split(VirtualLinkAPI.URL_SEPARATOR)[1];
+
+		/*
+		We need to verify if this VirtualLink was created for a host or for all host in order
+		to decide in what part of the url apply the toLowerCase
+		 */
+		if ( completeUrl.contains(VirtualLinkAPI.URL_SEPARATOR) ) {
+
+			String[] urlArray = completeUrl.split(VirtualLinkAPI.URL_SEPARATOR);
+
+			final String siteName = urlArray[0];
+			final String url = urlArray[1].toLowerCase();
+
+			completeUrl = siteName + VirtualLinkAPI.URL_SEPARATOR + url;
+		} else {
+			completeUrl = completeUrl.toLowerCase();
+		}
 
 		// Overriding the given url and uri in order to apply the lower case value
 		vanityUrl.setUrl(completeUrl);
@@ -260,12 +275,12 @@ public class VirtualLinkFactoryImpl implements VirtualLinkFactory {
 			HibernateUtil.saveOrUpdate(vanityUrl);
 		} catch (DotHibernateException e) {
 			throw new DotRuntimeException(
-					String.format("An error occurred when saving Vanirty URL with title=[%s], url=[%s]",
+					String.format("An error occurred when saving Vanity URL with title=[%s], url=[%s]",
 							vanityUrl.getTitle(), vanityUrl.getUrl()),
 					e);
 		}
 
-		VirtualLinksCache.removePathFromCache(url);
+		VirtualLinksCache.removePathFromCache(completeUrl);
 		VirtualLinksCache.addPathToCache(vanityUrl);
 	}
 
