@@ -33,8 +33,10 @@ import static org.junit.Assert.*;
  */
 public class VirtualLinkAPITest extends IntegrationTestBase {
 
-	static Collection<VirtualLink> activeVirtualLinks;
-	static Collection<VirtualLink> nonActiveVirtualLinks;
+	private static Collection<VirtualLink> activeVirtualLinks;
+	private static Collection<VirtualLink> nonActiveVirtualLinks;
+	private static Host site;
+	private static User systemUser;
 
 	@BeforeClass
 	public static void prepare() throws Exception {
@@ -48,10 +50,10 @@ public class VirtualLinkAPITest extends IntegrationTestBase {
 		//Init APIs and test values
 		final VirtualLinkAPI virtualLinkAPI = APILocator.getVirtualLinkAPI();
 		final HostAPI siteAPI = APILocator.getHostAPI();
-		final User systemUser = APILocator.getUserAPI().getSystemUser();
+		systemUser = APILocator.getUserAPI().getSystemUser();
 
 		final String siteName = "demo.dotcms.com";
-		final Host site = siteAPI.findByName(siteName, systemUser, Boolean.FALSE);
+		site = siteAPI.findByName(siteName, systemUser, Boolean.FALSE);
 
 		//Build the test collection
 		activeVirtualLinks.add(
@@ -86,10 +88,6 @@ public class VirtualLinkAPITest extends IntegrationTestBase {
 
 		//Initialize test data
 		final VirtualLinkAPI virtualLinkAPI = APILocator.getVirtualLinkAPI();
-		final HostAPI siteAPI = APILocator.getHostAPI();
-		final User systemUser = APILocator.getUserAPI().getSystemUser();
-		final String siteName = "demo.dotcms.com";
-		final Host site = siteAPI.findByName(siteName, systemUser, Boolean.FALSE);
 
 		// Get all the ACTIVE vanity urls on this host
 		List<VirtualLink> currentVirtualLinks = virtualLinkAPI.getVirtualLinks(StringUtils.EMPTY,
@@ -110,10 +108,6 @@ public class VirtualLinkAPITest extends IntegrationTestBase {
 
 		//Initialize test data
 		final VirtualLinkAPI virtualLinkAPI = APILocator.getVirtualLinkAPI();
-		final HostAPI siteAPI = APILocator.getHostAPI();
-		final User systemUser = APILocator.getUserAPI().getSystemUser();
-		final String siteName = "demo.dotcms.com";
-		final Host site = siteAPI.findByName(siteName, systemUser, Boolean.FALSE);
 
 		// Get all the ACTIVE vanity urls on the given list of hosts
 		List<VirtualLink> currentVirtualLinks = virtualLinkAPI.getVirtualLinks(StringUtils.EMPTY, list(site),
@@ -133,10 +127,6 @@ public class VirtualLinkAPITest extends IntegrationTestBase {
 
 		//Initialize test data
 		final VirtualLinkAPI virtualLinkAPI = APILocator.getVirtualLinkAPI();
-		final HostAPI siteAPI = APILocator.getHostAPI();
-		final User systemUser = APILocator.getUserAPI().getSystemUser();
-		final String siteName = "demo.dotcms.com";
-		final Host site = siteAPI.findByName(siteName, systemUser, Boolean.FALSE);
 
 		// Get all the ACTIVE vanity urls on the given list of hosts
 		List<VirtualLink> currentVirtualLinks = virtualLinkAPI.getVirtualLinks(StringUtils.EMPTY, list(site),
@@ -156,11 +146,9 @@ public class VirtualLinkAPITest extends IntegrationTestBase {
 
 		//Initialize test data
 		final VirtualLinkAPI virtualLinkAPI = APILocator.getVirtualLinkAPI();
-		final HostAPI siteAPI = APILocator.getHostAPI();
 		final List<User> limitedUsers = APILocator.getUserAPI().getUsersByNameOrEmail("chris@dotcms.com", 1, 1);
 		final User limitedUser = limitedUsers.get(0);
-		final String siteName = "demo.dotcms.com";
-		final Host site = siteAPI.findByName(siteName, limitedUser, Boolean.FALSE);
+
 		long timeInMills = System.currentTimeMillis();
 		long timeInMills2 = timeInMills - 5;
 
@@ -181,11 +169,9 @@ public class VirtualLinkAPITest extends IntegrationTestBase {
 
 		//Initialize test data
 		final VirtualLinkAPI virtualLinkAPI = APILocator.getVirtualLinkAPI();
-		final HostAPI siteAPI = APILocator.getHostAPI();
 		final List<User> limitedUsers = APILocator.getUserAPI().getUsersByNameOrEmail("chris@dotcms.com", 1, 1);
 		final User limitedUser = limitedUsers.get(0);
-		final String siteName = "demo.dotcms.com";
-		final Host site = siteAPI.findByName(siteName, limitedUser, Boolean.FALSE);
+
 		long timeInMills = System.currentTimeMillis();
 
 		final VirtualLink vanityUrl = virtualLinkAPI.create("Test create Vanity URL " + timeInMills,
@@ -251,10 +237,6 @@ public class VirtualLinkAPITest extends IntegrationTestBase {
 
 		//Initialize test data
 		final VirtualLinkAPI virtualLinkAPI = APILocator.getVirtualLinkAPI();
-		final HostAPI siteAPI = APILocator.getHostAPI();
-		final User systemUser = APILocator.getUserAPI().getSystemUser();
-		final String siteName = "demo.dotcms.com";
-		final Host site = siteAPI.findByName(siteName, systemUser, Boolean.FALSE);
 
 		final String url = "/CASe-SENSItiVE-test1";
 		final String completeUrl = site.getHostname() + VirtualLinkAPI.URL_SEPARATOR + url;
@@ -270,23 +252,18 @@ public class VirtualLinkAPITest extends IntegrationTestBase {
 
 		//Initialize test data
 		final VirtualLinkAPI virtualLinkAPI = APILocator.getVirtualLinkAPI();
-		final HostAPI siteAPI = APILocator.getHostAPI();
-		final User systemUser = APILocator.getUserAPI().getSystemUser();
-		final String siteName = "demo.dotcms.com";
-		final Host site = siteAPI.findByName(siteName, systemUser, Boolean.FALSE);
-
-		// First we need to get all the virtual links in the host
-		List<VirtualLink> currentVirtualLinks = virtualLinkAPI.getHostVirtualLinks(site);
-		assertNotNull(currentVirtualLinks);
-		assertFalse(currentVirtualLinks.isEmpty());
 
 		//And now we need search just for the active ones
-		final List<VirtualLink> activeVanityUrls = virtualLinkAPI.getActiveVirtualLinks();
+		final Collection<VirtualLink> activeVanityUrls = virtualLinkAPI.getActiveVirtualLinks();
 
 		// Verify what we found
 		assertNotNull(activeVanityUrls);
 		assertFalse(activeVanityUrls.isEmpty());
-		assertTrue(currentVirtualLinks.size() > activeVanityUrls.size());
+
+		//Only active VirtualLinks should be returned
+		for ( VirtualLink virtualLink : activeVanityUrls ) {
+			assertTrue(virtualLink.isActive());
+		}
 	}
 
 	/*@Test
@@ -312,11 +289,10 @@ public class VirtualLinkAPITest extends IntegrationTestBase {
 
 	@Test
 	public void saveAndDelete() throws DotDataException, DotSecurityException {
+
+		//Initialize test data
 		final VirtualLinkAPI virtualLinkAPI = APILocator.getVirtualLinkAPI();
-		final HostAPI siteAPI = APILocator.getHostAPI();
-		final User systemUser = APILocator.getUserAPI().getSystemUser();
-		final String siteName = "demo.dotcms.com";
-		final Host site = siteAPI.findByName(siteName, systemUser, Boolean.FALSE);
+
 		long timeInMills = System.currentTimeMillis();
 		final String url = "/test-url-" + timeInMills;
 
@@ -393,7 +369,6 @@ public class VirtualLinkAPITest extends IntegrationTestBase {
 
 			//Init APIs and test values
 			final VirtualLinkAPI virtualLinkAPI = APILocator.getVirtualLinkAPI();
-			final User systemUser = APILocator.getUserAPI().getSystemUser();
 
 			//Clean up all the created test data
 			Iterator<VirtualLink> virtualLinksIterator = activeVirtualLinks.iterator();
