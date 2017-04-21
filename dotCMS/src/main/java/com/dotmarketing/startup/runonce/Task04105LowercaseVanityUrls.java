@@ -6,7 +6,7 @@ import com.dotmarketing.startup.AbstractJDBCStartupTask;
 
 /**
  * This upgrade task will perform an update operation on all the records of the
- * {@code virtual_link} table. The values of the {@code url} column will be
+ * {@code virtual_link} table. The values of the {@code url} and {@code uri} columns will be
  * lower-cased in order to take advantage of the performance improvements
  * provided by database indexes.
  * 
@@ -17,6 +17,8 @@ import com.dotmarketing.startup.AbstractJDBCStartupTask;
  */
 public class Task04105LowercaseVanityUrls extends AbstractJDBCStartupTask {
 
+    private final String SQL_QUERY ="UPDATE virtual_link SET url = LOWER(url), uri = LOWER(uri);";
+
     @Override
     public boolean forceRun() {
         return true;
@@ -24,27 +26,27 @@ public class Task04105LowercaseVanityUrls extends AbstractJDBCStartupTask {
 
     @Override
     public String getPostgresScript() {
-        return "UPDATE virtual_link SET url = LOWER(url);";
+        return SQL_QUERY;
     }
 
     @Override
     public String getMySQLScript() {
-        return "UPDATE virtual_link SET url = LOWER(url);";
+        return SQL_QUERY;
     }
 
     @Override
     public String getOracleScript() {
-        return "UPDATE virtual_link SET url = LOWER(url);";
+        return SQL_QUERY;
     }
 
     @Override
     public String getMSSQLScript() {
-        return "UPDATE virtual_link SET url = LOWER(url);";
+        return SQL_QUERY;
     }
 
     @Override
     public String getH2Script() {
-        return "UPDATE virtual_link SET url = LOWER(url);";
+        return SQL_QUERY;
     }
 
     @Override

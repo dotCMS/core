@@ -109,7 +109,7 @@ public class VirtualLinkFactoryImpl implements VirtualLinkFactory {
 		java.util.List<VirtualLink> result = null;
 		if(!UtilMethods.isSet(uri)) return null;
 
-		String query = "from inode in class com.dotmarketing.portlets.virtuallinks.model.VirtualLink where type='virtual_link' and lower(uri) = ?";
+		String query = "from inode in class com.dotmarketing.portlets.virtuallinks.model.VirtualLink where type='virtual_link' and uri = ?";
 		try {
 			dh.setQuery(query);
 			dh.setParam(uri.toLowerCase());
@@ -247,9 +247,15 @@ public class VirtualLinkFactoryImpl implements VirtualLinkFactory {
 
 	@Override
 	public void save(VirtualLink vanityUrl) {
-		final String completeUrl = vanityUrl.getUrl();
+
+		final String completeUrl = vanityUrl.getUrl().toLowerCase();
+		final String uri = vanityUrl.getUri().toLowerCase();
 		final String url = completeUrl.split(VirtualLinkAPI.URL_SEPARATOR)[1];
-		VirtualLinksCache.removePathFromCache(url);
+
+		// Overriding the given url and uri in order to apply the lower case value
+		vanityUrl.setUrl(completeUrl);
+		vanityUrl.setUri(uri);
+
 		try {
 			HibernateUtil.saveOrUpdate(vanityUrl);
 		} catch (DotHibernateException e) {
@@ -258,6 +264,7 @@ public class VirtualLinkFactoryImpl implements VirtualLinkFactory {
 							vanityUrl.getTitle(), vanityUrl.getUrl()),
 					e);
 		}
+
 		VirtualLinksCache.removePathFromCache(url);
 		VirtualLinksCache.addPathToCache(vanityUrl);
 	}
@@ -267,7 +274,7 @@ public class VirtualLinkFactoryImpl implements VirtualLinkFactory {
 		InodeFactory.deleteInode(vanityUrl);
 		// Removes this URL from cache
 		if (UtilMethods.isSet(vanityUrl.getUrl())) {
-			VirtualLinksCache.removePathFromCache(vanityUrl.getUrl());
+			VirtualLinksCache.removePathFromCache(vanityUrl.getUrl().toLowerCase());
 		}
 	}
 	
