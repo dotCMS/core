@@ -100,4 +100,4 @@ cp core/dotCMS/build/test-results/integrationTest/*.xml tests
 
 
 # Create output zip file
-zip ../$OUTPUT_FILE tests/**
+zip -r ../$OUTPUT_FILE tests
