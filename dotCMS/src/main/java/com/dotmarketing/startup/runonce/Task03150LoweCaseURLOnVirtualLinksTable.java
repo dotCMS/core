@@ -12,7 +12,7 @@ import com.dotmarketing.startup.AbstractJDBCStartupTask;
  */
 public class Task03150LoweCaseURLOnVirtualLinksTable extends AbstractJDBCStartupTask {
 
-	private final String SQL_QUERY ="UPDATE virtual_link SET url=LOWER(url), uri=LOWER(uri);";
+	private final String SQL_QUERY ="UPDATE virtual_link SET url=LOWER(url);";
 	@Override
 	public boolean forceRun() {
 		return true;        
