@@ -40,7 +40,6 @@ public class DotParse extends DotDirective {
   String resolveTemplate(final Context context, final Writer writer, final RenderParams params,final String argument) {
     String templatePath = argument;
     boolean live = params.live;
-    Template t = null;
     Host host = params.currentHost;;
     User user = params.user;
     try {
