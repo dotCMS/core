@@ -43,14 +43,12 @@ public class ContentletDetail extends DotDirective {
       throw new DotRuntimeException(e1);
     }
 
-    /*
-     * check to see if the argument will be changed by the event cartridge
-     */
-    String templatePath = (params.live) ? "/live/" + argument + "_" + cv.getLang() + "." + EXTENSION
-        : "/working/" + argument + "_" + cv.getLang() + "." + EXTENSION;
+
+    return  (params.live) 
+        ? "/live/"      + argument + "_" + cv.getLang() + "." + EXTENSION
+        : "/working/"   + argument + "_" + cv.getLang() + "." + EXTENSION;
 
 
-    return templatePath;
 
   }
 }
