@@ -1,6 +1,8 @@
 package com.dotcms.cache.transport;
 
 import com.dotcms.cluster.bean.Server;
+import com.dotcms.cluster.business.HazelcastUtil;
+import com.dotcms.cluster.business.HazelcastUtil.HazelcastInstanceType;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -35,17 +37,17 @@ public abstract class AbstractHazelcastCacheTransport implements CacheTransport 
 
     private final String topicName = "dotCMSClusterCacheInvalidation";
     private String topicId;
-    
+
     private boolean isInitialized;
 
-    protected abstract HazelcastInstance getHazelcastInstance();
+    protected abstract HazelcastInstanceType getHazelcastInstanceType();
     
     @Override
     public void init(Server localServer) throws CacheTransportException {
         Logger.info(this,"Starting Hazelcast Cache Transport");
         Logger.debug(this,"Calling HazelUtil to ensure Hazelcast member is up");
 
-        HazelcastInstance hazel = getHazelcastInstance();
+        HazelcastInstance hazel = getHazelcastInstance(true);
 
         MessageListener<Object> messageListener = new MessageListener<Object>() {
             @Override
@@ -213,6 +215,15 @@ public abstract class AbstractHazelcastCacheTransport implements CacheTransport 
     		isInitialized = false;
     	}
     }
+
+    protected HazelcastInstance getHazelcastInstance() {
+    	return getHazelcastInstance(false);
+    }
+
+    protected HazelcastInstance getHazelcastInstance(boolean reInitialize) {
+    	return new HazelcastUtil().getHazel(getHazelcastInstanceType(), reInitialize);
+    }
+
 
     @Override
     public CacheTransportInfo getInfo() {

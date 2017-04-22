@@ -45,8 +45,11 @@ public class HazelcastUtil {
     final String syncMe = "hazelSync";
 
     public HazelcastInstance getHazel(HazelcastInstanceType instanceType){
+    	return getHazel(instanceType, false);
+    }
+    public HazelcastInstance getHazel(HazelcastInstanceType instanceType, boolean reInitialize){
         try{
-            initMember(instanceType);
+            initMember(instanceType, reInitialize);
         }catch (Exception e) {
             Logger.error(HazelcastUtil.class, "Could not initialize Hazelcast Member", e);
         }
@@ -70,15 +73,18 @@ public class HazelcastUtil {
         }
     }
 
-    private void initMember(HazelcastInstanceType instanceType) {
+    private void initMember(HazelcastInstanceType instanceType, boolean reInitialize) {
 
-        if (_memberInstances.get(instanceType) == null) {
+        if (_memberInstances.get(instanceType) == null || reInitialize) {
             long start = System.currentTimeMillis();
             synchronized (syncMe) {
-                if (_memberInstances.get(instanceType) == null) {
+                if (_memberInstances.get(instanceType) == null || reInitialize) {
                     Logger.info(this, "Setting Up HazelCast ("+ instanceType +")");
 
-                    HazelcastInstance memberInstance = null;
+                    HazelcastInstance memberInstance = _memberInstances.get(instanceType);
+                    if (memberInstance != null) {
+                    	memberInstance.shutdown();
+                    }
 
                     if (instanceType == HazelcastInstanceType.EMBEDDED) {
 
