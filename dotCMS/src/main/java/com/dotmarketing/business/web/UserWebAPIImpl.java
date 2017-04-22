@@ -3,6 +3,8 @@ package com.dotmarketing.business.web;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.UserAPIImpl;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.WebKeys;
@@ -19,7 +21,23 @@ public class UserWebAPIImpl extends UserAPIImpl implements UserWebAPI {
 	public UserWebAPIImpl() {
 		
 	}
-
+	
+    @Override
+    public User getUser(HttpServletRequest request) {
+      try{
+        User user = PortalUtil.getUser(request);
+        if(user == null){
+          user = this.getLoggedInUser(request.getSession(false));
+        }
+        if(user==null){
+          user =  APILocator.getUserAPI().getAnonymousUser();
+        }
+        return user;
+      }catch(Exception e){
+        throw new DotStateException(e);
+      }
+    }
+    
 	@Override
 	public User getLoggedInUser(HttpServletRequest request)
 			throws DotRuntimeException, PortalException, SystemException {

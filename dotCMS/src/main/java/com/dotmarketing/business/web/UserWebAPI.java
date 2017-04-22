@@ -63,4 +63,14 @@ public interface UserWebAPI extends UserAPI {
 	 * @throws PortalException 
 	 */
 	public abstract boolean isLoggedToFrontend(HttpServletRequest req) throws DotRuntimeException, PortalException, SystemException;
+    
+	/**
+     * Returns user if available in the request, throws DotStateException
+     * @param req
+     * @return  
+     * @throws DotRuntimeException
+     * @throws SystemException 
+     * @throws PortalException 
+     */
+	public User getUser(HttpServletRequest request);
 }

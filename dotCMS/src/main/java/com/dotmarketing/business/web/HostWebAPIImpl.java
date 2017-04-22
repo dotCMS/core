@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPIImpl;
@@ -34,6 +35,19 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
 	public Host getCurrentHost(ActionRequest req) throws DotDataException, DotSecurityException, PortalException, SystemException {
 		return getCurrentHost(((ActionRequestImpl)req).getHttpServletRequest());
 	}
+	
+	@Override
+	public Host getHost(HttpServletRequest request)  {
+	     try{
+	       return getCurrentHost(request);
+	     }catch(Exception e){
+	       throw new DotStateException(e);
+	     }
+	  
+	  
+	}
+	
+	
 	
 	public Host getCurrentHost(HttpServletRequest request) throws DotDataException, DotSecurityException, PortalException, SystemException {
 		Host host = null;
