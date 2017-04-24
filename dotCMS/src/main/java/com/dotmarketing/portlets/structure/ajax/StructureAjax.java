@@ -1,15 +1,8 @@
 package com.dotmarketing.portlets.structure.ajax;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.repackage.org.jboss.util.Strings;
@@ -22,7 +15,6 @@ import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -45,6 +37,11 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.*;
+
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
 
 /**
@@ -211,7 +208,16 @@ public class StructureAjax {
 		if(!InodeUtils.isSet(structureInode))
 			return new ArrayList<Map>();
 
-		Structure st = (Structure) InodeFactory.getInode(structureInode, Structure.class);
+		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+
+		//Search for the given ContentType inode
+		Structure st = null;
+		ContentType foundContentType = contentTypeAPI.find(structureInode);
+		if ( null != foundContentType ) {
+			//Transform the found content type to a Structure
+			st = new StructureTransformer(foundContentType).asStructure();
+		}
+
 
 		List<Map> catsMaps = new ArrayList<Map>();
 

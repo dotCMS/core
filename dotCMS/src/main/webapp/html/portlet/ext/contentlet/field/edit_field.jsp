@@ -376,13 +376,14 @@
         <%}%>
         <script type="text/javascript">
             function toggleExpire(velocityVarName) {
-                var never = dijit.byId("fieldNeverExpire").getValue();
+                var neverExpireField = dijit.byId("fieldNeverExpire");
+                var never = neverExpireField.getValue();
                 if (never) {
                     dijit.byId(velocityVarName+"Date").set("value", null);
                     dijit.byId(velocityVarName+"Time").set("value", null);
-                    document.forms["fm"].elements["fieldNeverExpire"].value ="true";
+                    neverExpireField.set('value', true);
                 }else{
-                    document.forms["fm"].elements["fieldNeverExpire"].value ="false";
+                    neverExpireField.set('value', true);
                 }
                 dijit.byId(velocityVarName+"Date").disabled = never;
                 dijit.byId(velocityVarName+"Time").disabled = never;

@@ -45,12 +45,12 @@ def taskDescription = """
 
     Examples of use:
 
-         dotcms jar:
+        dotcms jar:
             Name convention: dotcms_version_hash.jar -> dotcms_3.0_a434224.jar
             As snapshot: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms -PincludeDependencies=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/dotcms_3.0_a434224.jar
             As release: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms -PincludeDependencies=true -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/dotcms_3.0_a434224.jar
 
-         Enterprise jar
+        Enterprise jar
             Name convention: ee_dotcmsversion.jar -> ee_3.6.jar
             As snapshot: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/ee_3.6.jar
             As release: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/ee_3.6.jar
@@ -78,7 +78,7 @@ def taskDescription = """
 /**
  * Override both the Gradle out-of-the-box 'help' task
  */
-task help(overwrite:true) << {
+task help(overwrite:true) {
 
     print """
     Welcome to Gradle $gradle.gradleVersion.
@@ -254,8 +254,10 @@ defaultTasks 'help', 'tasks'
 //Tasks generated will be called: uploadEnterprise, uploadLicense, uploadDotcms, uploadStarter and uploadAntTooling
 //respectively
 ['Enterprise', 'License', 'Dotcms', 'Starter', 'AntTooling'].each { taskName ->
-    task "upload$taskName"() << {
-        updateSubmoduleReference()
+    task "upload$taskName"() {
+        doLast {
+            updateSubmoduleReference()
+        }
     }
 }
 
@@ -342,18 +344,22 @@ Creates and uploads a snapshot or release version of the core project to the art
 
 Parameters:
 
-    release: (true/false)           - true if is a release upload, false if is a snapshot
+    release: (true/false)               - true if is a release upload, false if is a snapshot
         -> Default false
-    username:                       - user name of the user with upload privileges
+    username:                           - user name of the user with upload privileges
         -> Required
-    password:                       - password of the user with upload privileges
+    password:                           - password of the user with upload privileges
         -> Required
+    includeDependencies: (true/false)   - It will include the complete set of dependencies in the pom file
+                                          (required for the dotcms jar).
+        -> Default false                  The set of dependencies is given by the dependencies.gradle
+        
 
 Example of use:
 
 Name convention: dotcms_version_hash.jar -> dotcms_3.6_a434224.jar
-As snapshot: ./gradlew -b deploy.gradle uploadDotcms -Pusername=username -Ppassword=XYZ 
-As release: ./gradlew -b deploy.gradle uploadDotcms -Prelease=true -Pusername=username -Ppassword=XYZ
+As snapshot: ./gradlew -b deploy.gradle uploadDotcms -Pusername=username -Ppassword=XYZ -PincludeDependencies=true
+As release: ./gradlew -b deploy.gradle uploadDotcms -Prelease=true -Pusername=username -Ppassword=XYZ -PincludeDependencies=true
 """
 
 uploadDotcms.group='dotCMS Upload Version'

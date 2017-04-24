@@ -90,7 +90,7 @@ public class PushedAssetsAPIImpl implements PushedAssetsAPI {
 	
 	
 	@Override
-	public PushedAsset getLastPushForAsset(String assetId, String environmentId)  throws DotDataException{
+	public PushedAsset getLastPushForAsset(String assetId, String environmentId, String endpointIds)  throws DotDataException{
 		if(!UtilMethods.isSet(environmentId) ||!UtilMethods.isSet(assetId)) {
 			return null;
 		}
@@ -99,7 +99,7 @@ public class PushedAssetsAPIImpl implements PushedAssetsAPI {
 		
 		
 		
-		return pushedAssetsFactory.getLastPushForAsset(assetId,environmentId);
+		return pushedAssetsFactory.getLastPushForAsset(assetId,environmentId,endpointIds);
 		
 	}
 

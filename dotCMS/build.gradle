@@ -19,6 +19,11 @@ plugins {
 }
 
 node {
+    // Version of node to use.
+    version = nodeVersion
+
+    // Base URL for fetching node distributions (change if you have a mirror).
+    distBaseUrl = 'https://nodejs.org/dist'
     // If true, it will download node using above parameters.
     // If false, it will try to use globally installed node.
     download = true
@@ -313,51 +318,53 @@ clonePullTomcatDist.group='dotCMS Util'
 clonePullTomcatDist.description='Clones or pull /tomcat8 folder to be used on on the distribution.'
 
 //Creates the final distribution files for dotCMS.
-task createDist(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) << {
+task createDist(dependsOn: ['clonePullTomcatDist', 'deployWarTomcatDist']) {
 
-    copy {
-        from "$rootDir/../bin"
-        into "$distLocation$distBinLocation"
-        filesMatching('build.con*') {
-            expand(project.properties)
+    doLast {
+        copy {
+            from "$rootDir/../bin"
+            into "$distLocation$distBinLocation"
+            filesMatching('build.con*') {
+                expand(project.properties)
+            }
         }
-    }
 
-    copy {
-        from "$rootDir/../"
-        into "$distLocation$distBinLocation/ant"
-        include "build.xml"
-    }
+        copy {
+            from "$rootDir/../"
+            into "$distLocation$distBinLocation/ant"
+            include "build.xml"
+        }
 
-    copy {
-        into "$distLocation$confDistLocation"
-        from sourceSets.main.resources
-        exclude "com", "org", "release.properties"
-    }
+        copy {
+            into "$distLocation$confDistLocation"
+            from sourceSets.main.resources
+            exclude "com", "org", "release.properties"
+        }
 
-    copy {
-        into "$distLocation$pluginsDistLocation"
-        from "src/main/plugins"
-        exclude "**/.git"
-    }
+        copy {
+            into "$distLocation$pluginsDistLocation"
+            from "src/main/plugins"
+            exclude "**/.git"
+        }
 
-    copy {
-        into "$distLocation$docsDistLocation"
-        from  "$rootDir/../docs"
-    }
+        copy {
+            into "$distLocation$docsDistLocation"
+            from "$rootDir/../docs"
+        }
 
-    replaceText("$distLocation$distBinLocation/build.conf", "#SERVER_FOLDER", "SERVER_FOLDER")
+        replaceText("$distLocation$distBinLocation/build.conf", "#SERVER_FOLDER", "SERVER_FOLDER")
 
-    replaceText("$distLocation$distBinLocation/build.conf", "#HOME_FOLDER", "HOME_FOLDER")
+        replaceText("$distLocation$distBinLocation/build.conf", "#HOME_FOLDER", "HOME_FOLDER")
 
-    replaceText("$distLocation$distBinLocation/build.conf", "#target.root", "target.root")
+        replaceText("$distLocation$distBinLocation/build.conf", "#target.root", "target.root")
 
-    replaceText("$distLocation$distBinLocation/build.conf.bat", "rem set", "set")
+        replaceText("$distLocation$distBinLocation/build.conf.bat", "rem set", "set")
 
-    replaceText("$distLocation$distBinLocation/build.conf.bat", "/", "\\\\")
+        replaceText("$distLocation$distBinLocation/build.conf.bat", "/", "\\\\")
 
-    if ("$distUpdate".toBoolean()){
-        delete "$tomcatDistBase$webAppRootFolder/starter.zip"
+        if ("$distUpdate".toBoolean()) {
+            delete "$tomcatDistBase$webAppRootFolder/starter.zip"
+        }
     }
 
 }
@@ -438,36 +445,36 @@ customDistWar.description='Builds a dotCMS as a war. (Task mean to be use from a
 
 // This task finds all th plugins and runs 'ant build' inside each one.
 // In order to compile everything it need the dependency jars in a folder ($buildDir/pluginsLib)
-task buildPlugins(dependsOn: 'jar') << {
-    delete "$buildDir/pluginsLib"
+task buildPlugins(dependsOn: 'jar') {
+    doLast {
+        delete "$buildDir/pluginsLib"
 
-    copy {
-        into "$buildDir/pluginsLib"
-        from configurations.compile
-        from "$buildDir/libs/"
-    }
-
-    def pluginsFolder = new File("src/main/plugins");
-
-    if( !pluginsFolder.exists() ) {
-        pluginsFolder = new File("../plugins");
-    }
-
-    pluginsFolder.eachDir() {
-        def pluginPath = it
-        println "Compile Plugin: " + pluginPath
-
-        javaexec {
-            workingDir pluginPath
-            main="-jar";
-            args = [
-                    "$rootDir/../bin/ant/ant-launcher.jar",
-                    "-buildfile",
-                    pluginPath.getAbsolutePath() + "/build.xml"
-            ]
+        copy {
+            into "$buildDir/pluginsLib"
+            from configurations.compile
+            from "$buildDir/libs/"
         }
 
+        def pluginsFolder = new File("src/main/plugins");
 
+        if (!pluginsFolder.exists()) {
+            pluginsFolder = new File("../plugins");
+        }
+
+        pluginsFolder.eachDir() {
+            def pluginPath = it
+            println "Compile Plugin: " + pluginPath
+
+            javaexec {
+                workingDir pluginPath
+                main = "-jar";
+                args = [
+                        "$rootDir/../bin/ant/ant-launcher.jar",
+                        "-buildfile",
+                        pluginPath.getAbsolutePath() + "/build.xml"
+                ]
+            }
+        }
     }
 }
 buildPlugins.group='dotCMS Development'
@@ -502,41 +509,44 @@ deployConfig.description='This task will copy what is used to be src-conf to web
 // 2. Loop over each plugin and copy the .jar file into WEB-INF/lib
 // 3. Call the and task def com.dotmarketing.plugin.ant.DeployTask to merge
 //    all the properties/files from the static plugins.
-task deployPlugins(dependsOn: ['buildPlugins']) << {
+task deployPlugins(dependsOn: ['buildPlugins']) {
 
-    def pluginsFolder = new File("src/main/plugins")
-    def webAppFolder = 'src/main/webapp'
+    doLast {
 
-    if( !pluginsFolder.exists() ) {
-        pluginsFolder = new File("../plugins");
-        webAppFolder = "$dotcmsDistBase$webAppRootFolder"
-    }
+        def pluginsFolder = new File("src/main/plugins")
+        def webAppFolder = 'src/main/webapp'
 
-    copy {
-        from "$pluginsFolder.path"
-        into "$webAppFolder/WEB-INF/classes"
-        include 'plugins.xml'
-    }
-
-    //<target name="deploy-plugin"/>
-    pluginsFolder.eachDir() {
-        def pluginPath = it
-        copy {
-            from pluginPath.getPath() + '/build/jar'
-            into "$webAppFolder/WEB-INF/lib"
-            include '*.jar'
+        if (!pluginsFolder.exists()) {
+            pluginsFolder = new File("../plugins");
+            webAppFolder = "$dotcmsDistBase$webAppRootFolder"
         }
+
+        copy {
+            from "$pluginsFolder.path"
+            into "$webAppFolder/WEB-INF/classes"
+            include 'plugins.xml'
+        }
+
+        //<target name="deploy-plugin"/>
+        pluginsFolder.eachDir() {
+            def pluginPath = it
+            copy {
+                from pluginPath.getPath() + '/build/jar'
+                into "$webAppFolder/WEB-INF/lib"
+                include '*.jar'
+            }
+        }
+
+        ant.taskdef(
+                name: 'pluginDeployTask',
+                classname: 'com.dotmarketing.plugin.ant.DeployTask',
+                classpath: configurations.compile.asPath)
+
+        ant.pluginDeployTask(
+                distributionPath: '../',
+                dotcmsHome: "$webAppFolder",
+                plugins: "$webAppFolder/WEB-INF/lib")
     }
-
-    ant.taskdef(
-            name: 'pluginDeployTask',
-            classname: 'com.dotmarketing.plugin.ant.DeployTask',
-            classpath: configurations.compile.asPath)
-
-    ant.pluginDeployTask(
-            distributionPath: '../',
-            dotcmsHome: "$webAppFolder",
-            plugins: "$webAppFolder/WEB-INF/lib")
 }
 deployPlugins.group='dotCMS Development'
 deployPlugins.description='Builds and deploys all the plugins under /plugins folder.'
@@ -545,98 +555,103 @@ deployPlugins.description='Builds and deploys all the plugins under /plugins fol
 // 1. Call the and task def com.dotmarketing.plugin.ant.UndeployTask to remove
 //    all the properties/files from the static plugins.
 // 2. Delete plugin.xml from classes and the html of the static plugins.
-task undeployPlugins << {
+task undeployPlugins() {
 
-    def webAppFolder = 'src/main/webapp'
+    doLast {
+        def webAppFolder = 'src/main/webapp'
 
-    if( !new File("$webAppFolder").exists() ) {
-        webAppFolder = "$dotcmsDistBase$webAppRootFolder"
+        if( !new File("$webAppFolder").exists() ) {
+            webAppFolder = "$dotcmsDistBase$webAppRootFolder"
+        }
+
+
+        ant.taskdef(
+                name: 'pluginUndeployTask',
+                classname: 'com.dotmarketing.plugin.ant.UndeployTask',
+                classpath: configurations.compile.asPath)
+        ant.pluginUndeployTask(
+                distributionPath: '../',
+                dotcmsHome: "$webAppFolder",
+                plugins: "$webAppFolder/WEB-INF/lib")
+
+        delete fileTree("$webAppFolder/WEB-INF/lib") {
+            include '**/plugin-*.jar'
+            include '**/pluginlib-*.jar'
+        }
+        delete "$webAppFolder/WEB-INF/classes/plugins.xml"
+        delete "$webAppFolder/html/plugins"
     }
-
-
-    ant.taskdef(
-            name: 'pluginUndeployTask',
-            classname: 'com.dotmarketing.plugin.ant.UndeployTask',
-            classpath: configurations.compile.asPath)
-    ant.pluginUndeployTask(
-            distributionPath: '../',
-            dotcmsHome: "$webAppFolder",
-            plugins: "$webAppFolder/WEB-INF/lib")
-
-    delete fileTree("$webAppFolder/WEB-INF/lib") {
-        include '**/plugin-*.jar'
-        include '**/pluginlib-*.jar'
-    }
-    delete "$webAppFolder/WEB-INF/classes/plugins.xml"
-    delete "$webAppFolder/html/plugins"
 }
 undeployPlugins.group='dotCMS Development'
 undeployPlugins.description='Undeploys all plugins, returns overridden files to default state. This task does not need to be executed as a pre-condition of deployPlugins because that task executes it automatically.'
 
 //Creates a backup of assets, dotsecure, META-INF and H2_Database
-task backupWarTomcatData << {
-    delete "$tomcatInstallLocation/temp"
+task backupWarTomcatData() {
+    doLast {
+        delete "$tomcatInstallLocation/temp"
 
-    copy{
-        into "$tomcatInstallLocation/temp/assets"
-        from "$tomcatInstallLocation$webAppRootFolder/assets"
-        include "**/*"
-    }
+        copy {
+            into "$tomcatInstallLocation/temp/assets"
+            from "$tomcatInstallLocation$webAppRootFolder/assets"
+            include "**/*"
+        }
 
-    copy{
-        into "$tomcatInstallLocation/temp/dotsecure"
-        from "$tomcatInstallLocation$webAppRootFolder/dotsecure"
-        include "**/*"
-    }
+        copy {
+            into "$tomcatInstallLocation/temp/dotsecure"
+            from "$tomcatInstallLocation$webAppRootFolder/dotsecure"
+            include "**/*"
+        }
 
-    copy{
-        into "$tomcatInstallLocation/temp/META-INF"
-        from "$tomcatInstallLocation$webAppRootFolder/META-INF"
-        include "**/*"
-    }
+        copy {
+            into "$tomcatInstallLocation/temp/META-INF"
+            from "$tomcatInstallLocation$webAppRootFolder/META-INF"
+            include "**/*"
+        }
 
-    copy{
-        into "$tomcatInstallLocation/temp/h2"
-        from "$tomcatInstallLocation$webAppRootFolder/WEB-INF/H2_DATABASE"
-        include "*.db"
+        copy {
+            into "$tomcatInstallLocation/temp/h2"
+            from "$tomcatInstallLocation$webAppRootFolder/WEB-INF/H2_DATABASE"
+            include "*.db"
+        }
     }
 }
 backupWarTomcatData.group='dotCMS Util'
 backupWarTomcatData.description='Creates a backup of assets, dotsecure, META-INF and H2_Database.'
 
 //Restores content of assets, dotsecure, META-INF and H2_Database (copy back to webapps/ROOT)
-task restoreBackupWarTomcatData << {
+task restoreBackupWarTomcatData() {
+    doLast {
+        delete "$tomcatInstallLocation$webAppRootFolder/assets"
+        copy {
+            from "$tomcatInstallLocation/temp/assets"
+            into "$tomcatInstallLocation$webAppRootFolder/assets"
+            include "**/*"
+        }
 
-    delete "$tomcatInstallLocation$webAppRootFolder/assets"
-    copy{
-        from "$tomcatInstallLocation/temp/assets"
-        into "$tomcatInstallLocation$webAppRootFolder/assets"
-        include "**/*"
+        delete "$tomcatInstallLocation$webAppRootFolder/dotsecure"
+        copy {
+            from "$tomcatInstallLocation/temp/dotsecure"
+            into "$tomcatInstallLocation$webAppRootFolder/dotsecure"
+            include "**/*"
+        }
+
+        delete "$tomcatInstallLocation$webAppRootFolder/META-INF"
+        copy {
+            from "$tomcatInstallLocation/temp/META-INF"
+            into "$tomcatInstallLocation$webAppRootFolder/META-INF"
+            include "**/*"
+        }
+
+        delete "$tomcatInstallLocation$webAppRootFolder/WEB-INF/H2_DATABASE"
+        copy {
+            from "$tomcatInstallLocation/temp/h2"
+            into "$tomcatInstallLocation$webAppRootFolder/WEB-INF/H2_DATABASE"
+            include "*.db"
+        }
+
+        FileUtils.cleanDirectory(new File("$tomcatInstallLocation/temp"));
+        delete "$tomcatInstallLocation$webAppRootFolder/WEB-INF/classes/com"
     }
-
-    delete "$tomcatInstallLocation$webAppRootFolder/dotsecure"
-    copy{
-        from "$tomcatInstallLocation/temp/dotsecure"
-        into "$tomcatInstallLocation$webAppRootFolder/dotsecure"
-        include "**/*"
-    }
-
-    delete "$tomcatInstallLocation$webAppRootFolder/META-INF"
-    copy{
-        from "$tomcatInstallLocation/temp/META-INF"
-        into "$tomcatInstallLocation$webAppRootFolder/META-INF"
-        include "**/*"
-    }
-
-    delete "$tomcatInstallLocation$webAppRootFolder/WEB-INF/H2_DATABASE"
-    copy{
-        from "$tomcatInstallLocation/temp/h2"
-        into "$tomcatInstallLocation$webAppRootFolder/WEB-INF/H2_DATABASE"
-        include "*.db"
-    }
-
-    FileUtils.cleanDirectory(new File("$tomcatInstallLocation/temp"));
-    delete "$tomcatInstallLocation$webAppRootFolder/WEB-INF/classes/com"
 }
 restoreBackupWarTomcatData.group='dotCMS Util'
 restoreBackupWarTomcatData.description='Restores content of assets, dotsecure, META-INF and H2_Database.'
@@ -781,6 +796,7 @@ task cleanNodeModules(type: Delete) {
 task copyNodeModules(type: Copy) {
     dependsOn 'makeDotAdminFolder'
 
+    delete "./src/main/webapp/$angularFolder"
     from (file("./node_modules/dotcms-ui"))
     into("./src/main/webapp/$angularFolder")
 

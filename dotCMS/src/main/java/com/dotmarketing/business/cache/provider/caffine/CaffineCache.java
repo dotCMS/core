@@ -17,6 +17,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.collect.ImmutableSet;
 
 
 public class CaffineCache extends CacheProvider {
@@ -26,12 +27,10 @@ public class CaffineCache extends CacheProvider {
     private Boolean isInitialized = false;
 
     static final String DEFAULT_CACHE = CacheProviderAPI.DEFAULT_CACHE;
-    static final String LIVE_CACHE_PREFIX = CacheProviderAPI.LIVE_CACHE_PREFIX;
-    static final String WORKING_CACHE_PREFIX = CacheProviderAPI.WORKING_CACHE_PREFIX;
 
     private final ConcurrentHashMap<String, Cache<String, Object>> groups =
             new ConcurrentHashMap<>();
-    private final HashSet<String> availableCaches = new HashSet<>();
+    private Set<String> availableCaches;
 
 
     @Override
@@ -46,8 +45,8 @@ public class CaffineCache extends CacheProvider {
 
     @Override
     public void init() {
-
-        availableCaches.add(DEFAULT_CACHE);
+        HashSet<String> _availableCaches = new HashSet<>();
+        _availableCaches.add(DEFAULT_CACHE);
 
         Iterator<String> it = Config.getKeys();
         while (it.hasNext()) {
@@ -62,14 +61,14 @@ public class CaffineCache extends CacheProvider {
                 String cacheName = key.split("\\.")[1];
                 if (key.endsWith(".size")) {
                     int inMemory = Config.getIntProperty(key, 0);
-                    availableCaches.add(cacheName.toLowerCase());
+                    _availableCaches.add(cacheName.toLowerCase());
                     Logger.info(this.getClass(),
                             "***\t Cache Config Memory : " + cacheName + ": " + inMemory);
                 }
 
             }
         }
-
+        this.availableCaches = ImmutableSet.copyOf(_availableCaches);
         isInitialized = true;
     }
 
@@ -179,22 +178,10 @@ public class CaffineCache extends CacheProvider {
             stats.addStat(CacheStats.REGION_DEFAULT, isDefault + "");
 
             int configured = isDefault ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".size")
-                    : (Config.getIntProperty("cache." + group + ".size", -1) != -1)
-                            ? Config.getIntProperty("cache." + group + ".size")
-                            : (group.startsWith(WORKING_CACHE_PREFIX) && Config.getIntProperty(
-                                    "cache." + WORKING_CACHE_PREFIX + ".size", -1) != -1)
-                                            ? Config.getIntProperty(
-                                                    "cache." + WORKING_CACHE_PREFIX + ".size")
-                                            : (group.startsWith(LIVE_CACHE_PREFIX)
-                                                    && Config.getIntProperty(
-                                                            "cache." + LIVE_CACHE_PREFIX + ".size",
-                                                            -1) != -1)
-                                                                    ? Config.getIntProperty(
-                                                                            "cache." + LIVE_CACHE_PREFIX
-                                                                                    + ".size")
-                                                                    : Config.getIntProperty(
-                                                                            "cache." + DEFAULT_CACHE
-                                                                                    + ".size");
+                : (Config.getIntProperty("cache." + group + ".size", -1) != -1)
+                  ? Config.getIntProperty("cache." + group + ".size")
+                      : Config.getIntProperty("cache." + DEFAULT_CACHE + ".size");
+
 
             com.github.benmanes.caffeine.cache.stats.CacheStats cstats = foundCache.stats();
             stats.addStat(CacheStats.REGION, group);
@@ -238,28 +225,11 @@ public class CaffineCache extends CacheProvider {
                     boolean separateCache = (Config.getBooleanProperty(
                             "cache.separate.caches.for.non.defined.regions", true)
                             || availableCaches.contains(cacheName)
-                            || DEFAULT_CACHE.equals(cacheName)
-                            || cacheName.startsWith(LIVE_CACHE_PREFIX)
-                            || cacheName.startsWith(WORKING_CACHE_PREFIX));
+                            || DEFAULT_CACHE.equals(cacheName));
 
                     if (separateCache) {
-                        int size;
-                        if (cacheName.startsWith(LIVE_CACHE_PREFIX)) {
-                            size = Config.getIntProperty("cache." + cacheName + ".size", -1);
-                            if (size < 0) {
-                                size = Config.getIntProperty("cache." + LIVE_CACHE_PREFIX + ".size",
-                                        -1);
-                            }
-                        } else if (cacheName.startsWith(WORKING_CACHE_PREFIX)) {
-                            size = Config.getIntProperty("cache." + cacheName + ".size", -1);
-                            if (size < 0) {
-                                size = Config.getIntProperty(
-                                        "cache." + WORKING_CACHE_PREFIX + ".size", -1);
-                            }
-                        } else {
-                            size = Config.getIntProperty("cache." + cacheName + ".size", -1);
-                        }
-
+                        int size = Config.getIntProperty("cache." + cacheName + ".size", -1);
+                        
                         if (size == -1) {
                             size = Config.getIntProperty("cache." + DEFAULT_CACHE + ".size", 100);
                         }

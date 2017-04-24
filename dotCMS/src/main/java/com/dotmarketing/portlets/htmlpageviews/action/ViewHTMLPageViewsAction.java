@@ -16,11 +16,10 @@ import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.virtuallinks.factories.VirtualLinkFactory;
+import com.dotmarketing.portlets.virtuallinks.business.VirtualLinkAPI;
 import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -31,24 +30,36 @@ import com.liferay.portal.util.Constants;
 import com.liferay.util.servlet.SessionMessages;
 
 /**
- * <a href="ViewQuestionsAction.java.html"> <b><i>View Source </i> </b> </a>
  * 
- * @author Maria Ahues
- * @version $Revision: 1.5 $
+ * @author root
+ * @version 1.x
+ * @since Mar 22, 2012
  *  
  */
 public class ViewHTMLPageViewsAction extends DotPortletAction {
 
 	protected HostWebAPI hostAPI = WebAPILocator.getHostWebAPI();
+	protected VirtualLinkAPI virtualLinkAPI = APILocator.getVirtualLinkAPI();
 
-	/*
-     * @see com.liferay.portal.struts.PortletAction#render(com.dotcms.repackage.org.apache.struts.action.ActionMapping,
-     *      com.dotcms.repackage.org.apache.struts.action.ActionForm, com.dotcms.repackage.javax.portlet.PortletConfig,
-     *      com.dotcms.repackage.javax.portlet.RenderRequest, com.dotcms.repackage.javax.portlet.RenderResponse)
-     */
+	/**
+	 * 
+	 * @param mapping
+	 *            - Contains the mapping of a particular request to an instance
+	 *            of a particular action class.
+	 * @param form
+	 *            - The form containing the information selected by the user in
+	 *            the UI.
+	 * @param config
+	 *            - The configuration parameters for this portlet.
+	 * @param req
+	 *            - The HTTP Request wrapper.
+	 * @param res
+	 *            - The HTTP Response wrapper.
+	 * @throws Exception
+	 * 
+	 */
     public ActionForward render(ActionMapping mapping, ActionForm form, PortletConfig config, RenderRequest req,
             RenderResponse res) throws Exception {
-
         Logger.debug(this, "Running ViewHTMLPagesAction!!!!");
 
         try {
@@ -59,9 +70,6 @@ public class ViewHTMLPageViewsAction extends DotPortletAction {
                 return mapping.findForward("portlet.ext.htmlpageviews.view");
             } else {
                 //Mailing lists
-
-
-
                 /** @see com.dotmarketing.portal.struts.DotPortletAction._viewWebAssets * */
                 _viewWebAssets(req, user);
                 return mapping.findForward("portlet.ext.htmlpageviews.view_htmlpage_views");
@@ -72,12 +80,16 @@ public class ViewHTMLPageViewsAction extends DotPortletAction {
         }
     }
 
- 
-
-    //Needs to be implemented instead of using parent method because we use
-    // template to search for HTMLPages
+	/**
+	 * Needs to be implemented instead of using parent method because we use
+	 * template to search for HTMLPages.
+	 * 
+	 * @param req
+	 *            - The HTTP Request wrapper.
+	 * @param user
+	 * @throws Exception
+	 */
     private void _viewWebAssets(RenderRequest req, User user) throws Exception {
-
     	User systemUser = APILocator.getUserAPI().getSystemUser();
     	
         String uri = null;
@@ -114,16 +126,14 @@ public class ViewHTMLPageViewsAction extends DotPortletAction {
             IHTMLPage myHTMLPage = (IHTMLPage) APILocator.getVersionableAPI().findLiveVersion(id, APILocator.getUserAPI().getSystemUser(),false);
             req.setAttribute("htmlPage", myHTMLPage);
             if (!InodeUtils.isSet(id.getInode())) {
-
                 VirtualLink vl = null;
                 try{
-                	vl = VirtualLinkFactory.getVirtualLinkByURL(uri);
+                	vl = this.virtualLinkAPI.getVirtualLinkByURL(uri);
                 }
                 catch(DotHibernateException dhe){
                 	Logger.debug(VirtualLinksCache.class, "failed to find: " + uri);  
                 }
                 if (vl != null && !InodeUtils.isSet(vl.getInode())) {
-
                     myHTMLPage.setTitle(LanguageUtil.get(user, "message.htmlpageviews.pagenotfound"));
                     SessionMessages.add(req, "message", "message.htmlpageviews.pagenotfound");
                 } else {
@@ -133,10 +143,7 @@ public class ViewHTMLPageViewsAction extends DotPortletAction {
         }
         
         req.setAttribute("uri", uri);        
- 
         Logger.debug(this, "Done with ViewHTMLPageViewsAction");
-
     }
-
  
 }

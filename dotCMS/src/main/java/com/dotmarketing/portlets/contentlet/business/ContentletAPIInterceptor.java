@@ -1,6 +1,3 @@
-/**
- *
- */
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.business.DotMappingException;
@@ -37,6 +34,14 @@ import java.io.Serializable;
 import java.util.*;
 
 /**
+ * This interceptor class allows developers to execute Java <b>code</b> before
+ * and/or <b>after</b> calling the original {@link ContentletAPI} methods in
+ * dotCMS. This way, the default process can be customizable and your own
+ * routines can be triggered when calling a method in the API. For example,
+ * contentlet information can be changed before being saved depending on
+ * specific criteria, or an e-mail can be sent after a content with a specific
+ * content type is saved.
+ * 
  * @author Jason Tesser
  * @since 1.6.5c
  *
@@ -47,14 +52,14 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	private List<ContentletAPIPostHook> postHooks = new ArrayList<ContentletAPIPostHook>();
 	private ContentletAPI conAPI;
 
+	/**
+	 * Default class constructor.
+	 */
 	public ContentletAPIInterceptor() {
 		conAPI = APILocator.getContentletAPIImpl();
 	}
 
-
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#addLinkToContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet,java.lang.String, java.lang.String, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public void addLinkToContentlet(Contentlet contentlet, String linkInode,String relationName, User user, boolean respectFrontendRoles)	throws DotSecurityException, DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.addLinkToContentlet(contentlet, linkInode, relationName, user, respectFrontendRoles);
@@ -69,9 +74,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#archive(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public void archive(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.archive(contentlet, user, respectFrontendRoles);
@@ -86,9 +89,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#archive(java.util.List, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public void archive(List<Contentlet> contentlets, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.archive(contentlets, user, respectFrontendRoles);
@@ -103,9 +104,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.Map, java.util.List, java.util.List, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public Contentlet checkin(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,List<Category> cats, List<Permission> permissions, User user,	boolean respectFrontendRoles) throws IllegalArgumentException,		DotDataException, DotSecurityException,		DotContentletStateException, DotContentletValidationException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkin(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles);
@@ -121,9 +120,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.structure.model.ContentletRelationships, java.util.List, java.util.List, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public Contentlet checkin(Contentlet currentContentlet,	ContentletRelationships relationshipsData, List<Category> cats,	List<Permission> selectedPermissions, User user,	boolean respectFrontendRoles) throws IllegalArgumentException,	DotDataException, DotSecurityException,	DotContentletStateException, DotContentletValidationException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkin(currentContentlet, relationshipsData, cats, selectedPermissions, user, respectFrontendRoles);
@@ -139,9 +136,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.structure.model.ContentletRelationships, java.util.List, java.util.List, com.liferay.portal.model.User, boolean, boolean)
-	 */
+	@Override
 	public Contentlet checkin(Contentlet currentContentlet, ContentletRelationships relationshipsData, List<Category> cats,
 							  List<Permission> selectedPermissions, User user, boolean respectFrontendRoles, boolean generateSystemEvent) throws IllegalArgumentException, DotDataException, DotSecurityException, DotContentletStateException, DotContentletValidationException {
 		for ( ContentletAPIPreHook pre : preHooks ) {
@@ -158,9 +153,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.List, java.util.List, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public Contentlet checkin(Contentlet contentlet, List<Category> cats,List<Permission> permissions, User user,boolean respectFrontendRoles) throws IllegalArgumentException,	DotDataException, DotSecurityException,	DotContentletStateException, DotContentletValidationException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkin(contentlet, cats, permissions, user, respectFrontendRoles);
@@ -176,9 +169,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.List, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public Contentlet checkin(Contentlet contentlet,List<Permission> permissions, User user,boolean respectFrontendRoles) throws IllegalArgumentException,	DotDataException, DotSecurityException,DotContentletStateException, DotContentletValidationException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkin(contentlet, permissions, user, respectFrontendRoles);
@@ -194,9 +185,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean, java.util.List)
-	 */
+	@Override
 	public Contentlet checkin(Contentlet contentlet, User user,boolean respectFrontendRoles, List<Category> cats) throws IllegalArgumentException, DotDataException,DotSecurityException, DotContentletStateException,	DotContentletValidationException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkin(contentlet, user, respectFrontendRoles, cats);
@@ -212,9 +201,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.Map, java.util.List, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public Contentlet checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships,List<Category> cats, User user, boolean respectFrontendRoles)throws IllegalArgumentException, DotDataException,	DotSecurityException, DotContentletStateException,DotContentletValidationException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles);
@@ -230,9 +217,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public Contentlet checkin(Contentlet contentlet, User user,	boolean respectFrontendRoles) throws IllegalArgumentException, DotDataException, DotSecurityException,	DotContentletStateException, DotContentletValidationException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkin(contentlet, user, respectFrontendRoles);
@@ -248,9 +233,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#checkin(com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.Map, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public Contentlet checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, User user, boolean respectFrontendRoles)	throws IllegalArgumentException, DotDataException,	DotSecurityException, DotContentletStateException,	DotContentletValidationException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkin(contentlet, contentRelationships, user, respectFrontendRoles);
@@ -266,9 +249,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#checkinWithoutVersioning(com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.Map, java.util.List, java.util.List, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public Contentlet checkinWithoutVersioning(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships,	List<Category> cats, List<Permission> permissions, User user,	boolean respectFrontendRoles) throws DotDataException,	DotSecurityException, DotContentletStateException, DotContentletValidationException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkinWithoutVersioning(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles);
@@ -284,9 +265,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#checkout(String, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public Contentlet checkout(String contentletInode, User user,	boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkout(contentletInode, user, respectFrontendRoles);
@@ -302,9 +281,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#checkout(java.util.List, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public List<Contentlet> checkout(List<Contentlet> contentlets, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkout(contentlets, user, respectFrontendRoles);
@@ -320,9 +297,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#checkout(java.lang.String, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public List<Contentlet> checkoutWithQuery(String luceneQuery, User user,	boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkoutWithQuery(luceneQuery, user, respectFrontendRoles);
@@ -338,9 +313,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#checkout(java.lang.String, com.liferay.portal.model.User, boolean, int, int)
-	 */
+	@Override
 	public List<Contentlet> checkout(String luceneQuery, User user, boolean respectFrontendRoles, int offset, int limit) throws DotDataException, DotSecurityException,	DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.checkout(luceneQuery, user, respectFrontendRoles, offset, limit);
@@ -356,9 +329,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#cleanField(com.dotmarketing.portlets.structure.model.Structure, com.dotmarketing.portlets.structure.model.Field, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public void cleanField(Structure structure, Field field, User user,	boolean respectFrontendRoles) throws DotSecurityException,	DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.cleanField(structure, field, user, respectFrontendRoles);
@@ -373,7 +344,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-
+	@Override
 	public void cleanHostField(Structure structure, User user, boolean respectFrontendRoles)
 			throws DotSecurityException, DotDataException, DotMappingException {
 		for(ContentletAPIPreHook pre : preHooks){
@@ -389,9 +360,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#convertContentletToFatContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.contentlet.business.Contentlet)
-	 */
+	@Override
 	public com.dotmarketing.portlets.contentlet.business.Contentlet convertContentletToFatContentlet(Contentlet cont,com.dotmarketing.portlets.contentlet.business.Contentlet fatty)	throws DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.convertContentletToFatContentlet(cont, fatty);
@@ -407,9 +376,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#convertFatContentletToContentlet(com.dotmarketing.portlets.contentlet.business.Contentlet)
-	 */
+	@Override
 	public Contentlet convertFatContentletToContentlet(com.dotmarketing.portlets.contentlet.business.Contentlet fatty) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.convertFatContentletToContentlet(fatty);
@@ -425,9 +392,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#copyProperties(com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.Map)
-	 */
+	@Override
 	public void copyProperties(Contentlet contentlet, Map<String, Object> properties) throws DotContentletStateException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.copyProperties(contentlet, properties);
@@ -442,9 +407,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#delete(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public boolean delete(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException,	DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.delete(contentlet, user, respectFrontendRoles);
@@ -461,9 +424,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return noErrors;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#delete(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean, boolean)
-	 */
+	@Override
 	public boolean delete(Contentlet contentlet, User user, boolean respectFrontendRoles, boolean allVersions)	throws DotDataException, DotSecurityException,DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.delete(contentlet, user, respectFrontendRoles, allVersions);
@@ -480,9 +441,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return delete;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#destroy(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public boolean destroy(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException,	DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.destroy(contentlet, user, respectFrontendRoles);
@@ -499,9 +458,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return noErrors;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#destroy(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public boolean destroy(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException,	DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.destroy(contentlets, user, respectFrontendRoles);
@@ -518,13 +475,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return noErrors;
 	}
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * com.dotmarketing.portlets.contentlet.business.ContentletAPI#deleteByHost
-     * (com.dotmarketing.beans.Host, com.liferay.portal.model.User, boolean)
-     */
+	@Override
     public boolean deleteByHost(Host host, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException, DotContentletStateException {
         for (ContentletAPIPreHook pre : preHooks) {
@@ -543,9 +494,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         return noErrors;
     }
 
-	/* (non-Javadoc)
-     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#delete(java.util.List, com.liferay.portal.model.User, boolean)
-     */
+    @Override
     public boolean delete(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
         for(ContentletAPIPreHook pre : preHooks){
             boolean preResult = pre.delete(contentlets, user, respectFrontendRoles);
@@ -562,9 +511,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         return noErrors;
     }
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#delete(java.util.List, com.liferay.portal.model.User, boolean, boolean)
-	 */
+    @Override
 	public void delete(List<Contentlet> contentlets, User user,	boolean respectFrontendRoles, boolean allVersions) throws DotDataException, DotSecurityException,	DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.delete(contentlets, user, respectFrontendRoles, allVersions);
@@ -579,9 +526,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#deleteOldContent(java.util.Date, int)
-	 */
+	@Override
 	public int deleteOldContent(Date deleteFrom) throws DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.deleteOldContent(deleteFrom);
@@ -597,9 +542,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#deleteRelatedContent(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.structure.model.Relationship, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public void deleteRelatedContent(Contentlet contentlet, Relationship relationship, User user, boolean respectFrontendRoles)	throws DotDataException, DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.deleteRelatedContent(contentlet, relationship, user, respectFrontendRoles);
@@ -614,9 +557,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#deleteRelatedContent(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.structure.model.Relationship, boolean, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public void deleteRelatedContent(Contentlet contentlet, Relationship relationship, boolean hasParent, User user, boolean respectFrontendRoles) throws DotDataException,	DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.deleteRelatedContent(contentlet, relationship, hasParent, user, respectFrontendRoles);
@@ -631,9 +572,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#find(java.lang.String, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public Contentlet find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.find(inode, user, respectFrontendRoles);
@@ -649,27 +588,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#find(long, com.liferay.portal.model.User, boolean)
-	 */
-	/*public Contentlet find(long inode, User user, boolean respectFrontendRoles)	throws DotDataException, DotSecurityException {
-		for(ContentletAPIPreHook pre : preHooks){
-			boolean preResult = pre.find(inode, user, respectFrontendRoles);
-			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
-			}
-		}
-		Contentlet c = conAPI.find(inode, user, respectFrontendRoles);
-		for(ContentletAPIPostHook post : postHooks){
-			post.find(inode, user, respectFrontendRoles,c);
-		}
-		return c;
-	}*/
-
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#find(com.dotmarketing.portlets.categories.model.Category, long, boolean, java.lang.String, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public List<Contentlet> find(Category category, long languageId, boolean live, String orderBy, User user, boolean respectFrontendRoles) throws DotDataException,	DotContentletStateException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.find(category, languageId, live, orderBy, user, respectFrontendRoles);
@@ -685,9 +604,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#find(java.util.List, long, boolean, java.lang.String, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public List<Contentlet> find(List<Category> categories, long languageId, boolean live, String orderBy, User user,boolean respectFrontendRoles) throws DotDataException,	DotContentletStateException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.find(categories, languageId, live, orderBy, user, respectFrontendRoles);
@@ -703,9 +620,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#findAllContent(int, int)
-	 */
+	@Override
 	public List<Contentlet> findAllContent(int offset, int limit) throws DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findAllContent(offset, limit);
@@ -721,9 +636,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#findAllUserVersions(com.dotmarketing.beans.Identifier, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public List<Contentlet> findAllUserVersions(Identifier identifier,User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findAllUserVersions(identifier, user, respectFrontendRoles);
@@ -739,9 +652,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#findAllVersions(com.dotmarketing.beans.Identifier, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public List<Contentlet> findAllVersions(Identifier identifier, User user,boolean respectFrontendRoles) throws DotSecurityException,	DotDataException, DotStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findAllVersions(identifier, user, respectFrontendRoles);
@@ -757,9 +668,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#findByStructure(com.dotmarketing.portlets.structure.model.Structure, com.liferay.portal.model.User, boolean, int, int)
-	 */
+	@Override
 	public List<Contentlet> findByStructure(Structure structure, User user,	boolean respectFrontendRoles, int limit, int offset)	throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findByStructure(structure, user, respectFrontendRoles, limit, offset);
@@ -775,9 +684,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#findByStructure(java.lang.String, com.liferay.portal.model.User, boolean, int, int)
-	 */
+	@Override
 	public List<Contentlet> findByStructure(String structureInode, User user,	boolean respectFrontendRoles, int limit, int offset)	throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findByStructure(structureInode, user, respectFrontendRoles, limit, offset);
@@ -793,9 +700,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#findContentletByIdentifier(java.lang.String, boolean, long, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public Contentlet findContentletByIdentifier(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles)	throws DotDataException, DotSecurityException,	DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findContentletByIdentifier(identifier, live, languageId, user, respectFrontendRoles);
@@ -811,9 +716,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#findContentletForLanguage(long, com.dotmarketing.beans.Identifier)
-	 */
+	@Override
 	public Contentlet findContentletForLanguage(long languageId, Identifier contentletId) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findContentletForLanguage(languageId, contentletId);
@@ -829,9 +732,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#findContentlets(java.util.List)
-	 */
+	@Override
 	public List<Contentlet> findContentlets(List<String> inodes) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findContentlets(inodes);
@@ -847,7 +748,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-
+	@Override
 	public List<Contentlet> findContentletsByFolder(Folder parentFolder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findContentletsByFolder(parentFolder, user, respectFrontendRoles);
@@ -863,6 +764,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
+	@Override
 	public List<Contentlet> findContentletsByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findContentletsByHost(parentHost, user, respectFrontendRoles);
@@ -878,6 +780,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
+	@Override
     public List<Contentlet> findContentletsByHost(Host parentHost,
             List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user,
             boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -901,6 +804,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         return c;
     }
 
+    @Override
 	public List<Contentlet> findContentletsByHostBaseType(Host parentHost,
 												  List<Integer> includingBaseTypes, User user,
 												  boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -924,9 +828,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#findContentletsByIdentifiers(java.lang.String[], boolean, long, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public List<Contentlet> findContentletsByIdentifiers(String[] identifiers, boolean live, long languageId, User user,	boolean respectFrontendRoles) throws DotDataException,	DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findContentletsByIdentifiers(identifiers, live, languageId, user, respectFrontendRoles);
@@ -942,9 +844,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#findFieldValues(java.lang.String, com.dotmarketing.portlets.structure.model.Field, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public List<String> findFieldValues(String structureInode, Field field,User user, boolean respectFrontEndRoles) throws DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findFieldValues(structureInode, field, user, respectFrontEndRoles);
@@ -960,10 +860,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-   /*
-    * (non-Javadoc)
-    * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#findPageContentlets(java.lang.String, java.lang.String, java.lang.String, boolean, long, com.liferay.portal.model.User, boolean)
-    */
+	@Override
 	public List<Contentlet> findPageContentlets(String HTMLPageIdentifier,String containerIdentifier, String orderby, boolean working,	long languageId, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findPageContentlets(HTMLPageIdentifier, containerIdentifier, orderby, working, languageId, user, respectFrontendRoles);
@@ -979,9 +876,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#getAllLanguages(com.dotmarketing.portlets.contentlet.model.Contentlet, java.lang.Boolean, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public List<Contentlet> getAllLanguages(Contentlet contentlet, Boolean isLiveContent, User user, boolean respectFrontendRoles)	throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getAllLanguages(contentlet, isLiveContent, user, respectFrontendRoles);
@@ -997,10 +892,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#getAllRelationships(java.lang.String, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public ContentletRelationships getAllRelationships(String contentletInode, User user, boolean respectFrontendRoles) throws DotDataException,	DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getAllRelationships(contentletInode, user, respectFrontendRoles);
@@ -1016,9 +908,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#getAllRelationships(com.dotmarketing.portlets.contentlet.model.Contentlet)
-	 */
+	@Override
 	public ContentletRelationships getAllRelationships(Contentlet contentlet) throws DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getAllRelationships(contentlet);
@@ -1034,10 +924,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#getBinaryFile(java.lang.String, java.lang.String, com.liferay.portal.model.User)
-	 */
+	@Override
 	public File getBinaryFile(String contentletInode,	String velocityVariableName, User user) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getBinaryFile(contentletInode, velocityVariableName, user);
@@ -1053,9 +940,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#getContentletReferences(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public List<Map<String, Object>> getContentletReferences(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException,	DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getContentletReferences(contentlet, user, respectFrontendRoles);
@@ -1071,9 +956,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#getFieldValue(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.structure.model.Field)
-	 */
+	@Override
 	public Object getFieldValue(Contentlet contentlet, Field theField) {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getFieldValue(contentlet, theField);
@@ -1089,9 +972,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#getName(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public String getName(Contentlet contentlet, User user,	boolean respectFrontendRoles) throws DotSecurityException, DotContentletStateException, DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getName(contentlet, user, respectFrontendRoles);
@@ -1107,9 +988,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#getNextReview(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public Date getNextReview(Contentlet content, User user, boolean respectFrontendRoles) throws DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getNextReview(content, user, respectFrontendRoles);
@@ -1125,9 +1004,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#getRelatedContent(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.structure.model.Relationship, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public List<Contentlet> getRelatedContent(Contentlet contentlet,Relationship rel, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getRelatedContent(contentlet, rel, user, respectFrontendRoles);
@@ -1143,9 +1020,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#getRelatedContent(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.structure.model.Relationship, boolean, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user,	boolean respectFrontendRoles) throws DotDataException,	DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getRelatedContent(contentlet, rel,pullByParent, user, respectFrontendRoles);
@@ -1161,9 +1036,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#getRelatedIdentifier(com.dotmarketing.portlets.contentlet.model.Contentlet, java.lang.String, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public Identifier getRelatedIdentifier(Contentlet contentlet, String relationshipType, User user, boolean respectFrontendRoles)	throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getRelatedIdentifier(contentlet, relationshipType, user, respectFrontendRoles);
@@ -1179,9 +1052,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#getRelatedLinks(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public List<Link> getRelatedLinks(Contentlet contentlet, User user,	boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getRelatedLinks(contentlet, user, respectFrontendRoles);
@@ -1197,9 +1068,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#indexSearch(java.lang.String, int, int, java.lang.String, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public List<ContentletSearch> searchIndex(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles)	throws DotSecurityException, DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.searchIndex(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles);
@@ -1215,9 +1084,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#isContentEqual(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public boolean isContentEqual(Contentlet contentlet1, Contentlet contentlet2, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.isContentEqual(contentlet1, contentlet2, user, respectFrontendRoles);
@@ -1233,10 +1100,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#isContentlet(java.lang.String)
-	 */
+	@Override
 	public boolean isContentlet(String inode) throws DotDataException, DotRuntimeException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.isContentlet(inode);
@@ -1252,9 +1116,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#isFieldTypeBoolean(com.dotmarketing.portlets.structure.model.Field)
-	 */
+	@Override
 	public boolean isFieldTypeBoolean(Field field) {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.isFieldTypeBoolean(field);
@@ -1270,9 +1132,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#isFieldTypeDate(com.dotmarketing.portlets.structure.model.Field)
-	 */
+	@Override
 	public boolean isFieldTypeDate(Field field) {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.isFieldTypeDate(field);
@@ -1288,9 +1148,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#isFieldTypeFloat(com.dotmarketing.portlets.structure.model.Field)
-	 */
+	@Override
 	public boolean isFieldTypeFloat(Field field) {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.isFieldTypeFloat(field);
@@ -1306,9 +1164,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#isFieldTypeLong(com.dotmarketing.portlets.structure.model.Field)
-	 */
+	@Override
 	public boolean isFieldTypeLong(Field field) {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.isFieldTypeLong(field);
@@ -1324,9 +1180,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#isFieldTypeString(com.dotmarketing.portlets.structure.model.Field)
-	 */
+	@Override
 	public boolean isFieldTypeString(Field field) {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.isFieldTypeString(field);
@@ -1342,9 +1196,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#lock(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public void lock(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.lock(contentlet, user, respectFrontendRoles);
@@ -1359,9 +1211,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#publish(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public void publish(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotContentletStateException,	DotContentletStateException, DotStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.publish(contentlet, user, respectFrontendRoles);
@@ -1376,9 +1226,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#publish(java.util.List, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public void publish(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.publish(contentlets, user, respectFrontendRoles);
@@ -1393,9 +1241,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#publishRelatedHtmlPages(com.dotmarketing.portlets.contentlet.model.Contentlet)
-	 */
+	@Override
 	public void publishRelatedHtmlPages(Contentlet contentlet) {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.publishRelatedHtmlPages(contentlet);
@@ -1414,10 +1260,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#reindex()
-	 */
-	@SuppressWarnings("deprecation")
+	@Override
 	public void reindex() throws DotReindexStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.reindex();
@@ -1432,10 +1275,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#reindex(com.dotmarketing.portlets.structure.model.Structure)
-	 */
-	@SuppressWarnings("deprecation")
+	@Override
 	public void reindex(Structure structure) throws DotReindexStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.reindex(structure);
@@ -1450,9 +1290,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#reindex(com.dotmarketing.portlets.contentlet.model.Contentlet)
-	 */
+	@Override
 	@SuppressWarnings("deprecation")
 	public void reindex(Contentlet contentlet) throws DotReindexStateException, DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
@@ -1468,6 +1306,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
+	@Override
 	public void refresh(Structure structure) throws DotReindexStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.refresh(structure);
@@ -1480,9 +1319,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPostHook post : postHooks){
 			post.refresh(structure);
 		}
-
 	}
 
+	@Override
 	public void refresh(Contentlet contentlet) throws DotReindexStateException,
 			DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
@@ -1496,9 +1335,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPostHook post : postHooks){
 			post.refresh(contentlet);
 		}
-
 	}
 
+	@Override
 	public void refreshAllContent() throws DotReindexStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.refreshAllContent();
@@ -1513,6 +1352,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
+	@Override
 	public void refreshContentUnderHost(Host host) throws DotReindexStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.refreshContentUnderHost(host);
@@ -1525,12 +1365,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPostHook post : postHooks){
 			post.refreshContentUnderHost(host);
 		}
-
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#relateContent(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.structure.model.Relationship, java.util.List, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public void relateContent(Contentlet contentlet, Relationship rel, List<Contentlet> related, User user, boolean respectFrontendRoles)	throws DotDataException, DotSecurityException,	DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.relateContent(contentlet, rel, related, user, respectFrontendRoles);
@@ -1545,9 +1382,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#relateContent(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public void relateContent(Contentlet contentlet, ContentletRelationshipRecords related, User user, boolean respectFrontendRoles) throws DotDataException,	DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.relateContent(contentlet, related, user, respectFrontendRoles);
@@ -1562,9 +1397,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#restoreVersion(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public void restoreVersion(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException,	DotContentletStateException, DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.restoreVersion(contentlet, user, respectFrontendRoles);
@@ -1579,9 +1412,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#search(java.lang.String, int, int, java.lang.String, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public List<Contentlet> search(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles)	throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.search(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles);
@@ -1597,9 +1428,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#search(java.lang.String, int, int, java.lang.String, com.liferay.portal.model.User, boolean, int)
-	 */
+	@Override
 	public List<Contentlet> search(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException,	DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.search(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles,requiredPermission);
@@ -1617,7 +1446,6 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
 	@Override
 	public void addPermissionsToQuery ( StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException {
-
 		for ( ContentletAPIPreHook pre : preHooks ) {
 			boolean preResult = pre.addPermissionsToQuery( buffy, user, roles, respectFrontendRoles );
 			if ( !preResult ) {
@@ -1631,9 +1459,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#setContentletProperty(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.structure.model.Field, java.lang.Object)
-	 */
+	@Override
 	public void setContentletProperty(Contentlet contentlet, Field field, Object value) throws DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.setContentletProperty(contentlet, field, value);
@@ -1648,9 +1474,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#unarchive(java.util.List, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public void unarchive(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.unarchive(contentlets, user, respectFrontendRoles);
@@ -1665,9 +1489,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#unarchive(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public void unarchive(Contentlet contentlet, User user,	boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.unarchive(contentlet, user, respectFrontendRoles);
@@ -1682,9 +1504,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#unlock(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public void unlock(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException,	DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.unlock(contentlet, user, respectFrontendRoles);
@@ -1699,9 +1519,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#unpublish(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public void unpublish(Contentlet contentlet, User user,	boolean respectFrontendRoles) throws DotDataException,	DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.unpublish(contentlet, user, respectFrontendRoles);
@@ -1716,9 +1534,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#unpublish(java.util.List, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public void unpublish(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.unpublish(contentlets, user, respectFrontendRoles);
@@ -1733,9 +1549,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#validateContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.List)
-	 */
+	@Override
 	public void validateContentlet(Contentlet contentlet, List<Category> cats) throws DotContentletValidationException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.validateContentlet(contentlet, cats);
@@ -1750,9 +1564,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#validateContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.Map, java.util.List)
-	 */
+	@Override
 	public void validateContentlet(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships,	List<Category> cats) throws DotContentletValidationException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.validateContentlet(contentlet, contentRelationships, cats);
@@ -1767,9 +1579,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#validateContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.structure.model.ContentletRelationships, java.util.List)
-	 */
+	@Override
 	public void validateContentlet(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats) throws DotContentletValidationException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.validateContentlet(contentlet, contentRelationships, cats);
@@ -1784,13 +1594,14 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
+	@Override
 	public void addPreHook(String className) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		Object o = Class.forName(className).newInstance();
         addPreHook( o );
     }
 
+	@Override
     public void addPreHook ( Object preHook ) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-
         if ( preHook instanceof ContentletAPIPreHook ) {
             preHooks.add( (ContentletAPIPreHook) preHook );
 		}else {
@@ -1798,6 +1609,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
+    @Override
 	public void addPostHook(String className, int indexToAddAt) throws InstantiationException, IllegalAccessException, ClassNotFoundException{
 		Object o = Class.forName(className).newInstance();
 		if(o instanceof ContentletAPIPostHook){
@@ -1807,13 +1619,14 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
+	@Override
 	public void addPostHook(String className) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		Object o = Class.forName(className).newInstance();
         addPostHook( o );
     }
 
+	@Override
     public void addPostHook ( Object postHook ) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-
         if ( postHook instanceof ContentletAPIPostHook ) {
             postHooks.add( (ContentletAPIPostHook) postHook );
 		}else {
@@ -1821,6 +1634,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
+    @Override
 	public void addPreHook(String className, int indexToAddAt)	throws InstantiationException, IllegalAccessException,ClassNotFoundException {
 		Object o = Class.forName(className).newInstance();
 		if(o instanceof ContentletAPIPreHook){
@@ -1830,14 +1644,17 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
+	@Override
     public void delPreHook ( int indexToRemAt ) {
         preHooks.remove( indexToRemAt );
     }
 
+    @Override
     public void delPreHook ( Object preHook ) {
         preHooks.remove( preHook );
     }
 
+    @Override
     public void delPreHookByClassName ( String className ) {
 
         Iterator<ContentletAPIPreHook> iterator = preHooks.iterator();
@@ -1850,16 +1667,18 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         }
     }
 
+    @Override
     public void delPostHook ( int indexToRemAt ) {
         postHooks.remove( indexToRemAt );
     }
 
+    @Override
     public void delPostHook ( Object postHook ) {
         postHooks.remove( postHook );
     }
 
+    @Override
     public void delPostHookByClassName ( String className ) {
-
         Iterator<ContentletAPIPostHook> iterator = postHooks.iterator();
 
         while ( iterator.hasNext() ) {
@@ -1870,6 +1689,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         }
     }
 
+    @Override
 	public List<String> getPreHooks() {
 		List<String> result = new ArrayList<String>();
 		for (ContentletAPIPreHook hook : preHooks) {
@@ -1878,6 +1698,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return result;
 	}
 
+	@Override
 	public List<String> getPostHooks() {
 		List<String> result = new ArrayList<String>();
 		for (ContentletAPIPostHook hook : postHooks) {
@@ -1886,6 +1707,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return result;
 	}
 
+	@Override
 	public long contentletCount() throws DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.contentletCount();
@@ -1901,6 +1723,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
+	@Override
 	public long contentletIdentifierCount() throws DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.contentletIdentifierCount();
@@ -1916,13 +1739,14 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
+	@Override
 	public void deleteAllVersionsandBackup(List<Contentlet> contentlets,
 			User user, boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException, DotContentletStateException {
-
-
+		// Not implemented
 	}
 
+	@Override
 	public List<Contentlet> getSiblings(String identifier)
 			throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
@@ -1940,6 +1764,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return contents;
 	}
 
+	@Override
 	public List<Map<String, Serializable>> DBSearch(Query query, User user,boolean respectFrontendRoles) throws ValidationException,
 			DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
@@ -1956,7 +1781,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-
+	@Override
 	public Contentlet copyContentlet(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.copyContentlet(contentlet, user, respectFrontendRoles);
@@ -1972,6 +1797,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
+	@Override
 	public Contentlet copyContentlet(Contentlet contentlet, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.copyContentlet(contentlet, host, user, respectFrontendRoles);
@@ -1987,6 +1813,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
+	@Override
 	public Contentlet copyContentlet(Contentlet contentlet, Folder folder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.copyContentlet(contentlet, folder, user, respectFrontendRoles);
@@ -2002,6 +1829,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
+	@Override
 	public Contentlet copyContentlet(Contentlet contentlet, Folder folder, User user, boolean appendCopyToFileName, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.copyContentlet(contentlet, folder, user, appendCopyToFileName, respectFrontendRoles);
@@ -2017,6 +1845,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
+	@Override
 	public boolean isInodeIndexed(String inode) {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.isInodeIndexed(inode);
@@ -2032,6 +1861,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
+	@Override
 	public boolean isInodeIndexed(String inode,boolean live) {
         for(ContentletAPIPreHook pre : preHooks){
             boolean preResult = pre.isInodeIndexed(inode,live);
@@ -2047,6 +1877,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         return c;
     }
 
+	@Override
 	public boolean isInodeIndexed(String inode, int secondsToWait) {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.isInodeIndexed(inode,secondsToWait);
@@ -2062,6 +1893,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
+	@Override
 	public void UpdateContentWithSystemHost(String hostIdentifier)throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.UpdateContentWithSystemHost(hostIdentifier);
@@ -2076,6 +1908,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
+	@Override
 	public void removeUserReferences(String userId)throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.removeUserReferences(userId);
@@ -2088,9 +1921,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPostHook post : postHooks){
 			post.removeUserReferences(userId);
 		}
-
 	}
 
+	@Override
 	public String getUrlMapForContentlet(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.getUrlMapForContentlet(contentlet, user, respectFrontendRoles);
@@ -2107,6 +1940,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return result;
 	}
 
+	@Override
 	public void deleteVersion(Contentlet contentlet, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.deleteVersion(contentlet,user,respectFrontendRoles);
@@ -2119,13 +1953,10 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPostHook post : postHooks){
 			post.deleteVersion(contentlet, user, respectFrontendRoles);
 		}
-
-
 	}
 
+	@Override
 	public Contentlet saveDraft(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException{
-
-
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.saveDraft(contentlet,contentRelationships, cats,permissions, user, respectFrontendRoles);
 			if(!preResult){
@@ -2141,9 +1972,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return savedContentlet;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#searchByIdentifier(java.lang.String, int, int, java.lang.String, com.liferay.portal.model.User, boolean)
-	 */
+	@Override
 	public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles)	throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles);
@@ -2159,9 +1988,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#searchByIdentifier(java.lang.String, int, int, java.lang.String, com.liferay.portal.model.User, boolean, int)
-	 */
+	@Override
 	public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException,	DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles,requiredPermission);
@@ -2177,9 +2004,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#searchByIdentifier(java.lang.String, int, int, java.lang.String, com.liferay.portal.model.User, boolean, int, boolean)
-	 */
+	@Override
 	public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission, boolean anyLanguage) throws DotDataException,	DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.searchByIdentifier(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles,requiredPermission,anyLanguage);
@@ -2195,6 +2020,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
+	@Override
 	public void refreshContentUnderFolder(Folder folder)
 			throws DotReindexStateException {
 		for(ContentletAPIPreHook pre : preHooks){
@@ -2210,8 +2036,8 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
+	@Override
 	public void refreshContentUnderFolderPath ( String hostId, String folderPath ) throws DotReindexStateException {
-
 		for ( ContentletAPIPreHook pre : preHooks ) {
 			boolean preResult = pre.refreshContentUnderFolderPath(hostId, folderPath);
 			if ( !preResult ) {
@@ -2225,6 +2051,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
+	@Override
 	public void removeFolderReferences(Folder folder) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.removeFolderReferences(folder);
@@ -2239,6 +2066,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
+	@Override
 	public boolean canLock(Contentlet contentlet, User user) throws   DotLockException {
 		boolean ret = true;
 		for(ContentletAPIPreHook pre : preHooks){
@@ -2256,7 +2084,8 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 		return ret;
 	}
-	
+
+	@Override
 	public boolean canLock(Contentlet contentlet, User user, boolean respectFrondEnd) throws   DotLockException {
 		boolean ret = true;
 		for(ContentletAPIPreHook pre : preHooks){
@@ -2275,6 +2104,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return ret;
 	}
 
+	@Override
 	public Map<Relationship, List<Contentlet>> findContentRelationships(
 			Contentlet contentlet, User user) throws DotDataException,
 			DotSecurityException {
@@ -2292,6 +2122,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
+	@Override
     public Object loadField(String inode, Field field) throws DotDataException {
         for(ContentletAPIPreHook pre : preHooks){
             boolean preResult = pre.loadField(inode,field);
@@ -2428,7 +2259,6 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for(ContentletAPIPostHook post : postHooks){
 			post.updateUserReferences(userToReplace,replacementUserId, user);
 		}
-		
 	}
     
 }

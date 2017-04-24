@@ -21,12 +21,11 @@
 <%
     String path = OSGIUtil.getInstance().getFelixUndeployPath();
 
-    String f = FileUtil.getRealPath( path );
-    if ( f == null ) {
+    if ( path == null ) {
         return;
     }
 
-    File d = new File( f );
+    File d = new File( path );
     String[] a = d.list();
     if ( a == null ) {
         a = new String[0];
