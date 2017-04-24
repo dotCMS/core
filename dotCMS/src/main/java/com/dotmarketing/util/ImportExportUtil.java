@@ -1385,11 +1385,7 @@ public class ImportExportUtil {
                                 }
                                 HibernateUtil.commitTransaction();
                             }else{
-								if (obj instanceof Folder) {
-									Folder folder = Folder.class.cast(obj);
-									folder.setName(folder.getName().toLowerCase());
-									HibernateUtil.saveWithPrimaryKey(obj, prop);
-								} else if (obj instanceof VirtualLink) {
+								if (obj instanceof VirtualLink) {
 									// Lower-case all URLs in Vanity URLs
 									VirtualLink vanityUrl = VirtualLink.class.cast(obj);
 									String[] url = vanityUrl.getUrl().split(VirtualLinkAPI.URL_SEPARATOR);
