@@ -9,6 +9,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.org.apache.commons.lang.builder.HashCodeBuilder;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
@@ -182,7 +183,17 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     	structure = CacheLocator.getContentTypeCache().getStructureByInode(getStructureInode());
         return structure;
     }
+    
+    /**
+     */
+    public ContentType getContentType() {
 
+      try {
+        return APILocator.getContentTypeAPI(APILocator.systemUser()).find((getStructureInode()));
+      } catch (DotDataException | DotSecurityException e) {
+        throw new DotRuntimeException(e);
+      }
+    }
     public boolean hasAssetNameExtension() {
         boolean hasExtension = false;
         if (getStructure() != null

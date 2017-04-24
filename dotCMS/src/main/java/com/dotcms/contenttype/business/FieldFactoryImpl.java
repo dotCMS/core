@@ -55,7 +55,9 @@ public class FieldFactoryImpl implements FieldFactory {
 
   @Override
   public Field byContentTypeFieldVar(ContentType type, String var) throws DotDataException {
-    return byContentTypeIdFieldVar(type.id(), var);
+    
+    return type.fieldMap().get(var);
+
   }
 
   @Override

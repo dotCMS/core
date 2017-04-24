@@ -337,7 +337,10 @@ public class APILocator extends Locator<APIIndex>{
 	public static com.dotmarketing.portlets.structure.business.FieldAPI getFieldAPI(){
 		return (com.dotmarketing.portlets.structure.business.FieldAPI)getInstance(APIIndex.FIELD_API);
 	}
-
+	
+    public static com.dotcms.contenttype.business.FieldAPI  getFieldAPI2(){
+      return new com.dotcms.contenttype.business.FieldAPIImpl();
+  }
 	/**
 	 * Creates a single instance of the {@link PortletAPI} class.
 	 *

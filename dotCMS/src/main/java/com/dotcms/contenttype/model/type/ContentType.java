@@ -3,7 +3,9 @@ package com.dotcms.contenttype.model.type;
 import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.elasticsearch.common.Nullable;
 
@@ -32,6 +34,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import com.google.common.collect.ImmutableMap;
 
 
 @JsonTypeInfo(
@@ -179,7 +182,15 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     }
     return innerFields;
   }
-
+  @JsonIgnore
+  @Value.Lazy
+  public Map<String, Field> fieldMap() {
+    Map<String, Field> fmap = new HashMap<>();
+    for (Field f : this.fields()) {
+      fmap.put(f.variable(), f);
+    }
+    return ImmutableMap.copyOf(fmap);
+  }
   private List<Field> innerFields = null;
 
   public void constructWithFields(List<Field> fields) {
