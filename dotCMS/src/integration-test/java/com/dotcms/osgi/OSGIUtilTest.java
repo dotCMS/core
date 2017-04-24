@@ -4,12 +4,15 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.OSGIUtil;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.mockito.Mockito;
+
+import java.io.File;
 
 import javax.servlet.ServletContextEvent;
 
@@ -80,16 +83,19 @@ public class OSGIUtilTest {
      */
     @Test
     public void test03CustomFelixDeployPath() throws Exception {
-        String deployPath = Config.getStringProperty("context.path.felix", "/WEB-INF/felix");
-        deployPath = deployPath.replace("/WEB-INF/felix", "/WEB-INF/customfelix/load");
-        Config.setProperty("felix.felix.fileinstall.dir", deployPath);
+        String felixPath = Config.getStringProperty("context.path.felix", "/WEB-INF/felix");
+        felixPath = felixPath.replace("/WEB-INF/felix", "/WEB-INF/customfelix");
+        Config.setProperty("felix.felix.base.dir", felixPath);
 
         restartOSGI();
 
-        deployPath = OSGIUtil.getInstance().getFelixDeployPath();
+        String deployFelixPath = OSGIUtil.getInstance().getFelixDeployPath();
 
-        Assert.assertNotNull(deployPath);
-        assertThat("Path ends with /WEB-INF/customfelix/load", deployPath.endsWith("/WEB-INF/customfelix/load"));
+        Assert.assertNotNull(deployFelixPath);
+        assertThat("Path ends with /WEB-INF/customfelix/load",
+            deployFelixPath.endsWith("/WEB-INF/customfelix/load"));
+
+        removeFolder(deployFelixPath);
     }
 
     /**
@@ -97,17 +103,32 @@ public class OSGIUtilTest {
      */
     @Test
     public void test04CustomFelixUndeployPath() throws Exception {
-        String undeployPath = Config.getStringProperty("context.path.felix", "/WEB-INF/felix");
-        undeployPath = undeployPath.replace("/WEB-INF/felix", "/WEB-INF/customfelix/undeployed");
-        Config.setProperty("felix.felix.undeployed.dir", undeployPath);
+        String felixPath = Config.getStringProperty("context.path.felix", "/WEB-INF/felix");
+        felixPath = felixPath.replace("/WEB-INF/felix", "/WEB-INF/customfelix");
+        Config.setProperty("felix.felix.base.dir", felixPath);
 
         restartOSGI();
 
-        undeployPath = OSGIUtil.getInstance().getFelixUndeployPath();
+        String undeployFelixPath = OSGIUtil.getInstance().getFelixUndeployPath();
 
-        Assert.assertNotNull(undeployPath);
+        Assert.assertNotNull(undeployFelixPath);
         assertThat("Path ends with /WEB-INF/customfelix/undeployed",
-            undeployPath.endsWith("/WEB-INF/customfelix/undeployed"));
+            undeployFelixPath.endsWith("/WEB-INF/customfelix/undeployed"));
+
+        removeFolder(felixPath);
     }
 
+    /**
+     * Remove created path
+     *
+     * @param path The path to remove
+     */
+    private void removeFolder(String path) {
+        try {
+            File directory = new File(path);
+            FileUtils.deleteDirectory(directory);
+        } catch (Exception ex) {
+            return;
+        }
+    }
 }
