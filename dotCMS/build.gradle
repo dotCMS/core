@@ -19,6 +19,11 @@ plugins {
 }
 
 node {
+    // Version of node to use.
+    version = '7.9.0'
+
+    // Base URL for fetching node distributions (change if you have a mirror).
+    distBaseUrl = 'https://nodejs.org/dist'
     // If true, it will download node using above parameters.
     // If false, it will try to use globally installed node.
     download = true
@@ -791,6 +796,7 @@ task cleanNodeModules(type: Delete) {
 task copyNodeModules(type: Copy) {
     dependsOn 'makeDotAdminFolder'
 
+    delete "./src/main/webapp/$angularFolder"
     from (file("./node_modules/dotcms-ui"))
     into("./src/main/webapp/$angularFolder")
 
