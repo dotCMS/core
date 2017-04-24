@@ -430,22 +430,14 @@ public class UserResource implements Serializable {
 	@JSONP
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-	public final Response loginAsData(@Context final HttpServletRequest request) {
+	public final Response loginAsData(@Context final HttpServletRequest request, @QueryParam("filter") String filter,
+			@QueryParam("includeUsersNumber") boolean includeUsersNumber) {
 		Response response = null;
 		try {
-			List<Map<String, Object>> loginAsUsers = this.helper.getLoginAsUsers();
-			Iterator<Map<String, Object>> iter = loginAsUsers.iterator();
 			InitDataObject initData = webResource.init(null, true, request, true, null);
 			User currentUser = initData.getUser();
-			String currentUserId = currentUser != null ? currentUser.getUserId() : StringUtils.EMPTY;
-			while (iter.hasNext()) {
-				Map<String, Object> user = iter.next();
-				// Removes the currently logged-in user from the result list
-				if (currentUserId.equalsIgnoreCase(user.get("userId").toString())) {
-					iter.remove();
-				}
-			}
-			response = Response.ok(new ResponseEntityView(map("users", loginAsUsers))).build();
+
+			response = Response.ok(this.helper.getLoginAsUsers(currentUser, filter, includeUsersNumber)).build();
 		} catch (Exception e) {
 			SecurityLogger.logInfo(UserResource.class, "An error occurred when processing the request. " + e.getMessage());
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
