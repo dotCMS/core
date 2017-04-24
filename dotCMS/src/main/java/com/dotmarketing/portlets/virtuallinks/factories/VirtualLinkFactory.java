@@ -1,91 +1,50 @@
 package com.dotmarketing.portlets.virtuallinks.factories;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CREATE_VIRTUAL_LINKS;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.virtuallinks.business.VirtualLinkAPI;
+import com.dotmarketing.portlets.virtuallinks.business.VirtualLinkFactoryImpl;
 import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
-import com.dotmarketing.util.Logger;
-import com.liferay.portal.model.User;
 
 /**
+ * A static Virtual Link Factory wrapper used for specific purposes only. <b>NOT
+ * FOR COMMON USE. IT WILL BE REMOVED/REFACTORED IN THE FUTURE</b>.
  * 
  * @author will
+ * @deprecated This class is a static wrapper of the
+ *             {@link com.dotmarketing.portlets.virtuallinks.business.VirtualLinkFactory}
+ *             class needed by the {@link VirtualLinksCache} during the startup
+ *             process in order to avoid errors. This class <b>MUST NOT</b> be
+ *             used as a Virtual Link Factory neither for dotCMS code nor for
+ *             custom code. Please refer to the {@link VirtualLinkAPI} if you
+ *             want to interact with Vanity URLs.
  */
 public class VirtualLinkFactory {
-    
-    @SuppressWarnings("unchecked")
+
 	public static java.util.List<VirtualLink> getIncomingVirtualLinks(String uri) {
-    	java.util.List<VirtualLink> result = null;
-        HibernateUtil dh = new HibernateUtil(VirtualLink.class);
-        try {
-			dh.setQuery("from inode in class com.dotmarketing.portlets.virtuallinks.model.VirtualLink where type='virtual_link' and uri = ? and active = "
-			        + com.dotmarketing.db.DbConnectionFactory.getDBTrue());
-			dh.setParam(uri.toLowerCase());
-			result = dh.list();
-		} catch (DotHibernateException e) {
-			Logger.error(VirtualLinkFactory.class, "getIncomingVirtualLinks failed:" + e, e);
-		}
-        return result;
+    	return new VirtualLinkFactoryImpl().getIncomingVirtualLinks(uri);
     }
 
     public static VirtualLink getVirtualLinkByURL(String url) throws DotHibernateException {
-        HibernateUtil dh = new HibernateUtil(VirtualLink.class);
-        dh.setQuery("from inode in class com.dotmarketing.portlets.virtuallinks.model.VirtualLink where lower(url) = ?");
-        dh.setParam(url.toLowerCase());
-        return (VirtualLink) dh.load();
+    	return new VirtualLinkFactoryImpl().getVirtualLinkByURL(url);
     }
 
-    @SuppressWarnings("unchecked")
 	public static java.util.List<VirtualLink> getVirtualLinks() {
-        HibernateUtil dh = new HibernateUtil(VirtualLink.class);
-        List<VirtualLink> list  =null; 
-        try {
-			dh.setQuery("from inode in class com.dotmarketing.portlets.virtuallinks.model.VirtualLink where type='virtual_link' and active = "
-			        + com.dotmarketing.db.DbConnectionFactory.getDBTrue());
-			list = dh.list();
-		} catch (DotHibernateException e) {
-		 Logger.error(VirtualLinkFactory.class, "getVirtualLinks failed:" + e, e);
-		}
-        return list;
+    	return new VirtualLinkFactoryImpl().getActiveVirtualLinks();
     }
 
     public static VirtualLink newInstance() {
         VirtualLink vl = new VirtualLink();
         vl.setActive(true);
         return vl;
-
     }
 
     public static VirtualLink getVirtualLink(String inode) {
-        return (VirtualLink) InodeFactory.getInode(inode, VirtualLink.class);
+    	return new VirtualLinkFactoryImpl().getVirtualLink(inode);
     }
 
 	public static java.util.List<VirtualLink> getVirtualLinks(String condition,String orderby) {
-		HibernateUtil dh = new HibernateUtil(VirtualLink.class);
-		List<VirtualLink> list=null;
-		String query ="from inode in class com.dotmarketing.portlets.virtuallinks.model.VirtualLink where type='virtual_link' ";
-			if(condition!=null)
-				query += " and (lower(url) like '%"+condition.toLowerCase()+"%' "+ "or lower(title) like '%"+condition.toLowerCase()+"%')";
-			query += " and active = "+com.dotmarketing.db.DbConnectionFactory.getDBTrue();
-			if(orderby!=null)
-				query += " order by "+orderby;
-        try {
-			dh.setQuery(query);
-			list = dh.list();
-		} catch (DotHibernateException e) {
-			Logger.error(VirtualLinkFactory.class, "getVirtualLinks failed:" + e, e);
-		}
-        return list;
+		return new VirtualLinkFactoryImpl().getVirtualLinks(condition, orderby);
 	}
 
 }
