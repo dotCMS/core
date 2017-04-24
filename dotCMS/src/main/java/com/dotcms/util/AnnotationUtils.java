@@ -1,7 +1,5 @@
 package com.dotcms.util;
 
-import com.dotcms.repackage.org.apache.commons.collections.keyvalue.MultiKey;
-import com.dotcms.repackage.org.hibernate.validator.internal.util.ConcurrentReferenceHashMap;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -10,6 +8,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import com.dotcms.repackage.org.apache.commons.collections.keyvalue.MultiKey;
+
 
 /**
  * Utils for Annotations
@@ -17,8 +19,8 @@ import java.util.Map;
  */
 public class AnnotationUtils {
 
-    private static final Map<MultiKey, String []> attributesAnnotatedByCacheMap =
-            new ConcurrentReferenceHashMap<>(256);
+    private static final Map<com.dotcms.repackage.org.apache.commons.collections.keyvalue.MultiKey, String []> attributesAnnotatedByCacheMap =
+            new ConcurrentHashMap<MultiKey, String[]>(256);
 
     /**
      * Determinate if the bean is annotated by specified annotation
@@ -26,9 +28,9 @@ public class AnnotationUtils {
      * @param annotationType Class
      * @return boolean
      */
-    public boolean isBeanAnnotatedBy (Object bean, Class<? extends Annotation> annotationType) {
+    public static boolean isBeanAnnotatedBy (final Object bean, final Class<? extends Annotation> annotationType) {
 
-        return this.isBeanAnnotatedBy(bean.getClass(), annotationType);
+        return isBeanAnnotatedBy(bean.getClass(), annotationType);
     } // isBeanAnnotatedBy.
 
     /**
@@ -37,7 +39,7 @@ public class AnnotationUtils {
      * @param annotationType Class
      * @return boolean
      */
-    public boolean isBeanAnnotatedBy (Class beanClass, Class<? extends Annotation> annotationType) {
+    public static boolean isBeanAnnotatedBy (final Class beanClass, final Class<? extends Annotation> annotationType) {
 
         for (Annotation annotation : Arrays.asList(beanClass.getDeclaredAnnotations())) {
             if (annotation.annotationType().equals(annotationType)) {
@@ -48,23 +50,40 @@ public class AnnotationUtils {
     } // isBeanAnnotatedBy.
 
     /**
+     * Returns the annotation for the beanClass, if the bean is not annotated returns null.
+     * @param beanClass Class
+     * @param annotationType Class
+     * @return boolean
+     */
+    public static <T extends Annotation> T getBeanAnnotation (final Class beanClass, final Class<T> annotationType) {
+
+        for (Annotation annotation : Arrays.asList(beanClass.getDeclaredAnnotations())) {
+            if (annotation.annotationType().equals(annotationType)) {
+                return (T)annotation;
+            }
+        }
+        return null;
+    } // isBeanAnnotatedBy.
+
+
+    /**
      * Get the Attributes names annotated by annotationType
-     * @param bean
-     * @param annotationType
+     * @param bean Object
+     * @param annotationType Class
      * @return array of string with the attr names
      */
-    public String [] getAttributesAnnotatedBy (Object bean, Class<? extends Annotation> annotationType) {
+    public static String [] getAttributesAnnotatedBy (final Object bean, final Class<? extends Annotation> annotationType) {
 
-        return this.getAttributesAnnotatedBy(bean.getClass(), annotationType);
+        return getAttributesAnnotatedBy(bean.getClass(), annotationType);
     } // getAttributesAnnotatedBy.
 
     /**
      * Get the Attributes names annotated by annotationType
-     * @param beanClass
-     * @param annotationType
+     * @param beanClass Class
+     * @param annotationType Class
      * @return array of string with the attr names
      */
-    public String [] getAttributesAnnotatedBy (Class beanClass, Class<? extends Annotation> annotationType) {
+    public static String [] getAttributesAnnotatedBy (final Class beanClass, final Class<? extends Annotation> annotationType) {
 
         final MultiKey multiKey =
                 new MultiKey(beanClass, annotationType);
@@ -79,7 +98,7 @@ public class AnnotationUtils {
             final List<String> fieldList = new ArrayList<String>();
             for (Field field : beanClass.getDeclaredFields()) {
 
-                if (this.isFieldAnnotatedBy(field, annotationType)) {
+                if (isFieldAnnotatedBy(field, annotationType)) {
 
                     fieldList.add(field.getName());
                 }
@@ -96,11 +115,78 @@ public class AnnotationUtils {
 
     /**
      * Returns true if the field is annotated by annotationType
+     * @param fieldName String
+     * @param beanClass Class
+     * @param annotationType Class
+     * @return boolean true if it is annotated by annotationType
+     */
+    public static boolean isFieldAnnotatedBy (final String fieldName, final Class beanClass,
+                                              final Class<? extends Annotation> annotationType) {
+
+        Field field = null;
+
+        try {
+
+            field = beanClass.getDeclaredField(fieldName);
+            return isFieldAnnotatedBy(field, annotationType);
+        } catch (NoSuchFieldException e) {
+            // Quiet
+        }
+
+        return false;
+    } // isFieldAnnotatedBy.
+
+    /**
+     * Get the Annotation for the field, null if does not exists.
+     * @param fieldName Object
+     * @param beanClass Class
+     * @param annotationType Class
+     * @return array of string with the attr names
+     */
+    public static <T extends Annotation> T getAttributeAnnotation (final String fieldName, final Class beanClass,
+                                                                   final Class<T> annotationType) {
+
+        Field field = null;
+
+        try {
+
+            field = beanClass.getDeclaredField(fieldName);
+            return (T)getAttributeAnnotation(field, annotationType);
+        } catch (NoSuchFieldException e) {
+            // Quiet
+        }
+
+        return null;
+    } // getAttributeAnnotation.
+
+    /**
+     * Get the Annotation for the field, null if does not exists.
+     * @param field Object
+     * @param annotationType Class
+     * @return array of string with the attr names
+     */
+    public static Annotation getAttributeAnnotation (final Field field, final Class<? extends Annotation> annotationType) {
+
+        final Annotation [] annotations = field.getDeclaredAnnotations();
+
+        for (Annotation annotation : annotations) {
+
+            if (annotation.annotationType().equals(annotationType)) {
+
+                return annotation;
+            }
+        }
+
+        return null;
+    } // getAttributeAnnotation.
+
+    /**
+     * Returns true if the field is annotated by annotationType
      * @param field
      * @param annotationType
      * @return boolean true if it is annotated by annotationType
      */
-    public boolean isFieldAnnotatedBy (Field field, Class<? extends Annotation> annotationType) {
+    public static boolean isFieldAnnotatedBy (final Field field, final Class<? extends Annotation> annotationType) {
 
         final Annotation [] annotations = field.getDeclaredAnnotations();
 
@@ -115,7 +201,13 @@ public class AnnotationUtils {
         return false;
     } // isFieldAnnotatedBy.
 
-    public boolean isMethodAnnotatedBy(Method method, Class<? extends Annotation> annotationType) {
+    /**
+     * Returns true if the method is annotated by annotationType
+     * @param method Methos
+     * @param annotationType Class
+     * @return boolean true if it is annotated by annotationType
+     */
+    public static boolean isMethodAnnotatedBy(final Method method, final Class<? extends Annotation> annotationType) {
 
         final Annotation [] annotations = method.getDeclaredAnnotations();
 
@@ -128,9 +220,15 @@ public class AnnotationUtils {
         }
 
         return false;
-    }
+    } // isMethodAnnotatedBy.
 
-    public Annotation getMethodAnnotatedBy(Method method, Class<? extends Annotation> annotationType) {
+    /**
+     * Gets the Annotation for the method, null if does not exists.
+     * @param method Method
+     * @param annotationType Class
+     * @return Annotation
+     */
+    public static <T extends Annotation> T getMethodAnnotation(final Method method, final Class<T> annotationType) {
 
         final Annotation [] annotations = method.getDeclaredAnnotations();
 
@@ -138,11 +236,11 @@ public class AnnotationUtils {
 
             if (annotation.annotationType().equals(annotationType)) {
 
-                return annotation;
+                return (T)annotation;
             }
         }
 
         return null;
-    }
+    } // getMethodAnnotatedBy.
 
 } // E:O:F:AnnotationUtils,
