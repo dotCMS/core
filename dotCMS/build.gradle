@@ -20,7 +20,7 @@ plugins {
 
 node {
     // Version of node to use.
-    version = '7.9.0'
+    version = nodeVersion
 
     // Base URL for fetching node distributions (change if you have a mirror).
     distBaseUrl = 'https://nodejs.org/dist'
