@@ -796,6 +796,7 @@ task cleanNodeModules(type: Delete) {
 task copyNodeModules(type: Copy) {
     dependsOn 'makeDotAdminFolder'
 
+    delete "./src/main/webapp/$angularFolder"
     from (file("./node_modules/dotcms-ui"))
     into("./src/main/webapp/$angularFolder")
 
