@@ -226,6 +226,8 @@ public class TaskLocatorUtil {
         ret.add(Task03800AddIndexLowerStructureTable.class);
         ret.add(Task04100DeleteUnusedJobEntries.class);
         ret.add(Task04105LowercaseVanityUrls.class);
+        ret.add(Task04110AddColumnsPublishingPushedAssetsTable.class);
+
         return ret;
     }
 
