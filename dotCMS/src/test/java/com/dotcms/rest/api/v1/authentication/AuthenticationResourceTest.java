@@ -2,7 +2,7 @@ package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.api.web.WebSessionContext;
-import com.dotcms.cms.login.LoginService;
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
@@ -81,7 +81,7 @@ public class AuthenticationResourceTest extends UnitTestBase {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
-        final LoginService loginService     = mock(LoginService.class);
+        final LoginServiceAPI loginService     = mock(LoginServiceAPI.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
         final ResponseUtil responseUtil = ResponseUtil.INSTANCE;
         final LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
@@ -133,7 +133,7 @@ public class AuthenticationResourceTest extends UnitTestBase {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
-        final LoginService loginService     = mock(LoginService.class);
+        final LoginServiceAPI loginService     = mock(LoginServiceAPI.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
         final ResponseUtil responseUtil = ResponseUtil.INSTANCE;
         final LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
@@ -179,7 +179,7 @@ public class AuthenticationResourceTest extends UnitTestBase {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
-        final LoginService loginService     = mock(LoginService.class);
+        final LoginServiceAPI loginService     = mock(LoginServiceAPI.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
         final LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
         final AuthenticationHelper authenticationHelper = new AuthenticationHelper(loginAsAPI, loginService);
@@ -224,7 +224,7 @@ public class AuthenticationResourceTest extends UnitTestBase {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
-        final LoginService loginService     = mock(LoginService.class);
+        final LoginServiceAPI loginService     = mock(LoginServiceAPI.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
         final LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
         final AuthenticationHelper authenticationHelper = new AuthenticationHelper(loginAsAPI, loginService);
@@ -269,7 +269,7 @@ public class AuthenticationResourceTest extends UnitTestBase {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
-        final LoginService loginService     = mock(LoginService.class);
+        final LoginServiceAPI loginService     = mock(LoginServiceAPI.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
         final LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
         final AuthenticationHelper authenticationHelper = new AuthenticationHelper(loginAsAPI, loginService);
@@ -315,7 +315,7 @@ public class AuthenticationResourceTest extends UnitTestBase {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
-        final LoginService loginService     = mock(LoginService.class);
+        final LoginServiceAPI loginService     = mock(LoginServiceAPI.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
         final LoginAsAPI loginAsAPI = mock(LoginAsAPI.class);
         final AuthenticationHelper authenticationHelper = new AuthenticationHelper(loginAsAPI, loginService);
@@ -363,7 +363,7 @@ public class AuthenticationResourceTest extends UnitTestBase {
         HttpServletRequest mockHttpRequest = RestUtilTest.getMockHttpRequest();
 
         LoginAsAPI loginAsAPI = mock( LoginAsAPI.class );
-        LoginService loginService = mock( LoginService.class );
+        LoginServiceAPI loginService = mock( LoginServiceAPI.class );
 
         User user = UserUtilTest.createUser();
         when( loginService.getLoggedInUser( mockHttpRequest ) ).thenReturn( user );
@@ -390,7 +390,7 @@ public class AuthenticationResourceTest extends UnitTestBase {
         HttpServletRequest mockHttpRequest = RestUtilTest.getMockHttpRequest();
         LoginAsAPI loginAsAPI = mock( LoginAsAPI.class );
 
-        LoginService loginService = mock( LoginService.class );
+        LoginServiceAPI loginService = mock( LoginServiceAPI.class );
 
         User user = UserUtilTest.createUser();
         User loginAsUser = UserUtilTest.createUser();

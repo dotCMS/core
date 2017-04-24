@@ -11,10 +11,8 @@ package com.dotmarketing.filters;
 import com.dotcms.filters.interceptor.AbstractWebInterceptorSupportFilter;
 import com.dotcms.filters.interceptor.dotcms.DefaultFrontEndLoginRequiredWebInterceptor;
 
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
 
 /**
  * This Filter is in charge if checking if the user is logged in or not.

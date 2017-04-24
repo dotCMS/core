@@ -145,7 +145,7 @@ public class OSGIAJAX extends OSGIBaseAJAX {
                     File felixFolder  = (felixBaseFolder.startsWith("/WEB-INF")) ?
                         new File(Config.CONTEXT.getRealPath(felixBaseFolder)) :
                         new File(com.dotmarketing.util.FileUtil.getAbsolutlePath(felixBaseFolder));
-                    File osgiJar = new File(FileUtil.getRealPath( felixBaseFolder + "/load/" + fname ) );
+                    File osgiJar = new File(felixBaseFolder + "/load/" + fname  ); // todo: do not commit this hack
 
 
                     if ( !felixFolder.exists() 

@@ -56,13 +56,13 @@ import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
  * @version 3.7
  * @since Jun 20, 2016
  */
-public class LoginServiceFactory implements Serializable {
+public class LoginServiceAPIFactory implements Serializable {
 
 	/**
-	 * Used to keep the instance of the {@link LoginService}. Should be volatile
+	 * Used to keep the instance of the {@link LoginServiceAPI}. Should be volatile
 	 * to avoid thread-caching
 	 */
-    private volatile LoginService loginService = null;
+    private volatile LoginServiceAPI loginService = null;
 
 	/**
 	 * Get the login service implementation from the
@@ -70,12 +70,12 @@ public class LoginServiceFactory implements Serializable {
 	 */
     public static final String LOGIN_SERVICE_IMPLEMENTATION_KEY = "login.service.implementation";
 
-    private LoginServiceFactory() {
+    private LoginServiceAPIFactory() {
         // singleton
     }
 
     private static class SingletonHolder {
-        private static final LoginServiceFactory INSTANCE = new LoginServiceFactory();
+        private static final LoginServiceAPIFactory INSTANCE = new LoginServiceAPIFactory();
     }
 
 	/**
@@ -83,17 +83,17 @@ public class LoginServiceFactory implements Serializable {
 	 * 
 	 * @return EncryptorFactory
 	 */
-    public static LoginServiceFactory getInstance() {
+    public static LoginServiceAPIFactory getInstance() {
 
-        return LoginServiceFactory.SingletonHolder.INSTANCE;
+        return LoginServiceAPIFactory.SingletonHolder.INSTANCE;
     } // getInstance.
 
     /**
      * Returns the custom Login Service, or the default implementation.
      * 
-     * @return The {@link LoginService}.
+     * @return The {@link LoginServiceAPI}.
      */
-    public LoginService getLoginService () {
+    public LoginServiceAPI getLoginService () {
 
         String loginServiceFactoryClass = null;
 
@@ -109,31 +109,31 @@ public class LoginServiceFactory implements Serializable {
 
                     if (UtilMethods.isSet(loginServiceFactoryClass)) {
 
-                        if (Logger.isDebugEnabled(LoginServiceFactory.class)) {
+                        if (Logger.isDebugEnabled(LoginServiceAPIFactory.class)) {
 
-                            Logger.debug(LoginServiceFactory.class,
+                            Logger.debug(LoginServiceAPIFactory.class,
                                     "Using the login service class: " + loginServiceFactoryClass);
                         }
 
                         this.loginService =
-                                (LoginService) ReflectionUtils.newInstance(loginServiceFactoryClass);
+                                (LoginServiceAPI) ReflectionUtils.newInstance(loginServiceFactoryClass);
 
                         if (null == this.loginService) {
 
-                            if (Logger.isDebugEnabled(LoginServiceFactory.class)) {
+                            if (Logger.isDebugEnabled(LoginServiceAPIFactory.class)) {
 
-                                Logger.debug(LoginServiceFactory.class,
+                                Logger.debug(LoginServiceAPIFactory.class,
                                         "Could not used this class: " + loginServiceFactoryClass +
                                                 ", using the default implementations");
                             }
 
                             this.loginService =
-                                    new LoginServiceFactory.LoginServiceImpl();
+                                    new LoginServiceAPIFactory.LoginServiceImpl();
                         }
                     } else {
 
                         this.loginService =
-                                new LoginServiceFactory.LoginServiceImpl();
+                                new LoginServiceAPIFactory.LoginServiceImpl();
                     }
                 }
             }
@@ -145,9 +145,9 @@ public class LoginServiceFactory implements Serializable {
     /**
      * Default implementation
      */
-    private final class LoginServiceImpl implements LoginService {
+    private final class LoginServiceImpl implements LoginServiceAPI {
 
-        private final Log log = LogFactory.getLog(LoginService.class);
+        private final Log log = LogFactory.getLog(LoginServiceAPI.class);
         private final UserWebAPI userWebAPI;
         private final JsonWebTokenUtils jsonWebTokenUtils;
         private final HttpServletRequestThreadLocal httpServletRequestThreadLocal;
@@ -220,7 +220,7 @@ public class LoginServiceFactory implements Serializable {
         @Override
         public boolean isLoggedIn(final HttpServletRequest req) {
 
-            return LoginService.super.isLoggedIn(req);
+            return LoginServiceAPI.super.isLoggedIn(req);
         }
 
         @Override
@@ -339,11 +339,7 @@ public class LoginServiceFactory implements Serializable {
             ses.removeAttribute("_failedLoginName");
 
             //JWT we crT always b/c in the future we want to use it not only for the remember me, but also for restful authentication.
-            int jwtMaxAge = rememberMe ? Config.getIntProperty(
-                    JSON_WEB_TOKEN_DAYS_MAX_AGE,
-                    JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT) : -1;
-
-            this.processJsonWebToken(req, res, user, jwtMaxAge);
+            this.doRememberMe(req, res, user, rememberMe);
 
             EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGIN_EVENTS_PRE), req, res);
             EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGIN_EVENTS_POST), req, res);
@@ -390,13 +386,41 @@ public class LoginServiceFactory implements Serializable {
                                final HttpServletRequest request,
                                final HttpServletResponse response) throws NoSuchUserException {
 
-            return LoginService.super.doLogin(form, request, response);
+            return LoginServiceAPI.super.doLogin(form, request, response);
         }
 
         @Override
-        public boolean doCookieLogin(final String encryptedId, final HttpServletRequest request, final HttpServletResponse response) {
+        public void doRememberMe(final HttpServletRequest req,
+                                 final HttpServletResponse res,
+                                 final User user,
+                                 final boolean rememberMe) {
 
-            final boolean doCookieLogin = LoginService.super.doCookieLogin(encryptedId, request, response);
+            int jwtMaxAge = rememberMe ? Config.getIntProperty(
+                    JSON_WEB_TOKEN_DAYS_MAX_AGE,
+                    JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT) : -1;
+
+            this.doRememberMe(req, res, user, jwtMaxAge);
+        } // doRememberMe.
+
+        @Override
+        public void doRememberMe(final HttpServletRequest req,
+                                 final HttpServletResponse res,
+                                 final User user,
+                                 final int maxAge) {
+
+            try {
+
+                this.processJsonWebToken(req, res, user, maxAge);
+            } catch (Exception e) {
+
+                Logger.debug(this, e.getMessage(), e);
+            }
+        } // doRememberMe.
+
+        @Override
+        public boolean doCookieLogin(final String encryptedId, final HttpServletRequest request, final HttpServletResponse response) {
+            // note: keep in mind we are doing BE and FE login, not sure if this is right
+            final boolean doCookieLogin = LoginServiceAPI.super.doCookieLogin(encryptedId, request, response);
 
             if (doCookieLogin) {
 
@@ -415,7 +439,7 @@ public class LoginServiceFactory implements Serializable {
         public boolean doLogin(final String userName, final String password, final boolean rememberMe,
                                final HttpServletRequest request, final HttpServletResponse response) throws NoSuchUserException {
 
-            return LoginService.super.doLogin(userName, password, rememberMe, request, response);
+            return LoginServiceAPI.super.doLogin(userName, password, rememberMe, request, response);
         }
 
         @Override
@@ -424,19 +448,19 @@ public class LoginServiceFactory implements Serializable {
                                final HttpServletResponse response,
                                final boolean skipPasswordCheck) throws NoSuchUserException {
 
-            return LoginService.super.doLogin(userName, password, rememberMe, request, response, skipPasswordCheck);
+            return LoginServiceAPI.super.doLogin(userName, password, rememberMe, request, response, skipPasswordCheck);
         }
 
         @Override
         public boolean doLogin(final String userName, final String password) throws NoSuchUserException {
 
-            return LoginService.super.doLogin(userName, password);
+            return LoginServiceAPI.super.doLogin(userName, password);
         }
 
         @Override
         public void doLogout(final HttpServletRequest request, final HttpServletResponse response) {
 
-            LoginService.super.doLogout(request, response);
+            LoginServiceAPI.super.doLogout(request, response);
         }
 
         @Override
@@ -472,4 +496,4 @@ public class LoginServiceFactory implements Serializable {
 
 
 
-} // E:O:F:LoginServiceFactory.
+} // E:O:F:LoginServiceAPIFactory.

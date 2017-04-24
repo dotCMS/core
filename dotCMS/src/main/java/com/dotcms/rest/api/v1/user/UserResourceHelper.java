@@ -1,18 +1,8 @@
 package com.dotcms.rest.api.v1.user;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
 import com.dotcms.api.system.user.UserService;
 import com.dotcms.api.system.user.UserServiceFactory;
-import com.dotcms.cms.login.LoginService;
-import com.dotcms.cms.login.LoginServiceFactory;
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
 import com.dotcms.util.SecurityUtils;
@@ -37,6 +27,14 @@ import com.liferay.util.StringPool;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Provides utility methods to interact with information of dotCMS users and
@@ -58,7 +56,7 @@ public class UserResourceHelper implements Serializable {
 	private final UserWebAPI userWebAPI;
 	private final PermissionAPI permissionAPI;
 	private final UserProxyAPI userProxyAPI;
-	private final LoginService loginService;
+	private final LoginServiceAPI loginService;
 
 	@VisibleForTesting
 	public UserResourceHelper (	final UserService userService,
@@ -69,7 +67,7 @@ public class UserResourceHelper implements Serializable {
 			final UserWebAPI userWebAPI,
 			final PermissionAPI permissionAPI,
 			final UserProxyAPI userProxyAPI,
-			final LoginService loginService) {
+			final LoginServiceAPI loginService) {
 
 		this.userService = userService;
 		this.roleAPI = roleAPI;
@@ -103,7 +101,7 @@ public class UserResourceHelper implements Serializable {
 		this.userWebAPI = WebAPILocator.getUserWebAPI();
 		this.permissionAPI = APILocator.getPermissionAPI();
 		this.userProxyAPI = APILocator.getUserProxyAPI();
-		this.loginService = LoginServiceFactory.getInstance().getLoginService();
+		this.loginService = APILocator.getLoginServiceAPI();
 	}
 
 	/**
