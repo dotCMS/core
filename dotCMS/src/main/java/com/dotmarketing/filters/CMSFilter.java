@@ -17,10 +17,13 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.util.*;
+
 import org.apache.commons.logging.LogFactory;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -72,7 +75,7 @@ public class CMSFilter implements Filter {
 		this.requestThreadLocal.setRequest(request);
 
 		final String uri = (request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null) ? (String) request.getAttribute(CMS_FILTER_URI_OVERRIDE)
-				: URLDecoder.decode(request.getRequestURI(), "UTF-8");
+				: URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
 
 		String xssRedirect = xssCheck(uri, request.getQueryString());
 		if(xssRedirect!=null){
@@ -130,6 +133,14 @@ public class CMSFilter implements Filter {
 
 		String rewrite = null;
 		String queryString = request.getQueryString();
+		
+        int VANITY_URL_REDIRECT_CODE = Config.getIntProperty("VANITY_URL_REDIRECT_CODE", HttpStatus.SC_MOVED_PERMANENTLY);
+
+        if (VANITY_URL_REDIRECT_CODE != HttpStatus.SC_MOVED_PERMANENTLY && VANITY_URL_REDIRECT_CODE != HttpStatus.SC_MOVED_TEMPORARILY){
+            //If an unsupported redirect code is set on config, fallback to 301
+            VANITY_URL_REDIRECT_CODE = HttpStatus.SC_MOVED_PERMANENTLY;
+        }
+        
 		// if a vanity URL
 		if (iAm == IAm.VANITY_URL) {
 
@@ -139,6 +150,7 @@ public class CMSFilter implements Filter {
 				rewrite = VirtualLinksCache.getPathFromCache(("/".equals(uri) ? "/cmsHomePage" : uri.endsWith("/")?uri.substring(0, uri.length() - 1):uri));
 			}
 			if (UtilMethods.isSet(rewrite) && rewrite.contains("//")) {
+			    response.setStatus(VANITY_URL_REDIRECT_CODE);
 				response.sendRedirect(rewrite);
 
 				closeDbSilently();
@@ -175,7 +187,7 @@ public class CMSFilter implements Filter {
 					response.setHeader("Location", undecodeUri +"/" );
 
 				}
-				response.setStatus(301);
+				response.setStatus(HttpStatus.SC_MOVED_PERMANENTLY);
 				closeDbSilently();
 				return;
 			} else {
