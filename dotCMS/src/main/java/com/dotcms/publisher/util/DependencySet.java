@@ -96,6 +96,17 @@ public class DependencySet extends HashSet<String> {
 				//Add environment endpoints and publisher to map
 				environmentsEndpointsAndPublisher.put(env.getId()+ENDPOINTS_SUFFIX, endpointIds);
 				environmentsEndpointsAndPublisher.put(env.getId()+PUBLISHER_SUFFIX, publisher);
+				
+			}
+			//Search and remove all the environments that are not going to be used by this dependencySet
+			List<Environment> removeEnvironmentsList = new ArrayList<Environment>();
+			for (Environment env : envs) {
+				if(StringUtils.isEmpty(environmentsEndpointsAndPublisher.get(env.getId()+ENDPOINTS_SUFFIX))){
+					removeEnvironmentsList.add(env);
+				}
+			}
+			if(!removeEnvironmentsList.isEmpty()){
+				envs.removeAll(removeEnvironmentsList);
 			}
 		} catch (SecurityException | IllegalArgumentException e) {
 			Logger.error(getClass(), "Can't get environments endpoints and publishers", e);
