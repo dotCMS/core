@@ -32,7 +32,7 @@ public class H22CacheTest {
 					+ "C"
 					+ "ASDSADFDDSFasfddsadasdsadsadasdq3r4efwqrrqwerqewrqewrqreqwreqwrqewrqwerqewrqewrqwerqwerqwerqewr43545324542354235243524354325423qwerewds fds fds gf eqgq ewg qeg qe wg egw	ww	eeR ASdsadsadadsadsadsadaqrewq43223t14@#$#@^%$%&%#$sfwf	erqwfewfqewfgqewdsfqewtr243fq43f4q444fa4ferfrearge");;
 	final String CANT_CACHE_KEYNAME = "CantCacheMe";
-	final int numberOfPuts = 10000;
+	final int numberOfPuts = 5000;
 	final int numberOfThreads = 40;
 	final int numberOfGroups = 100;
 	final int maxCharOfObjects = 100;
