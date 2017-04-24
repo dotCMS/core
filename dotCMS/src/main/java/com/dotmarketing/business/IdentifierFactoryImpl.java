@@ -48,24 +48,7 @@ import com.liferay.portal.model.User;
 public class IdentifierFactoryImpl extends IdentifierFactory {
 
 	private IdentifierCache ic = CacheLocator.getIdentifierCache();
-	private UserAPI userAPI = null;
-	HostAPI siteAPI = null;
-	IdentifierAPI identifierAPI = null;
 
-	/**
-	 * Default class constructor.
-	 */
-	public IdentifierFactoryImpl() {
-		this(APILocator.getUserAPI(), APILocator.getHostAPI(), APILocator.getIdentifierAPI());
-	}
-
-	@VisibleForTesting
-	public IdentifierFactoryImpl(UserAPI userAPI, HostAPI siteAPI, IdentifierAPI identifierAPI) {
-		this.userAPI = userAPI;
-		this.siteAPI = siteAPI;
-		this.identifierAPI = identifierAPI;
-	}
-	
 	@Override
 	protected List<Identifier> findByURIPattern(String assetType, String uri,boolean hasLive, boolean pullDeleted,boolean include,Host host)throws DotDataException {
 		return findByURIPattern(assetType, uri, hasLive, pullDeleted,include, host, null, null);
@@ -302,10 +285,10 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 
 	@Override
 	protected Identifier createNewIdentifier(Versionable versionable, Folder folder, String existingId) throws DotDataException {
-		User systemUser = this.userAPI.getSystemUser();
+		User systemUser = APILocator.getUserAPI().getSystemUser();
 		String uuid=existingId;
 		Identifier identifier = new Identifier();
-		Identifier parentId = this.identifierAPI.find(folder);
+		Identifier parentId = APILocator.getIdentifierAPI().find(folder);
 		if(versionable instanceof Folder) {
 			identifier.setAssetType(Identifier.ASSET_TYPE_FOLDER);
 			identifier.setAssetName(((Folder) versionable).getName().toLowerCase());
@@ -342,12 +325,12 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		}
 		Host site;
 		try {
-			site = this.siteAPI.findParentHost(folder, systemUser, false);
+			site = APILocator.getHostAPI().findParentHost(folder, systemUser, false);
 		} catch (DotSecurityException e) {
 			throw new DotStateException(
 					String.format("Parent site of folder '%s' could not be found.", folder.getName()));
 		}
-		if(Identifier.ASSET_TYPE_FOLDER.equals(identifier.getAssetType()) && this.siteAPI.findSystemHost().getIdentifier().equals(site.getIdentifier())){
+		if(Identifier.ASSET_TYPE_FOLDER.equals(identifier.getAssetType()) && APILocator.getHostAPI().findSystemHost().getIdentifier().equals(site.getIdentifier())){
 			throw new DotStateException("A folder cannot be saved on the system host.");
 			
 		}
