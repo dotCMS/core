@@ -37,11 +37,11 @@ import com.dotmarketing.util.Logger;
  *
  * For example, a method with the following signature:
  *
- * public void method(String a, StringBuffer b)
+ * public void method(String a, StringBuilder b)
  *
  * would be mapped by the key:
  *
- * "method" + "java.lang.String" + "java.lang.StringBuffer"
+ * "method" + "java.lang.String" + "java.lang.StringBuilder"
  *
  * This mapping is performed for all the methods in a class
  * and stored for
@@ -89,7 +89,7 @@ public class Introspector extends IntrospectorBase
              *  whoops.  Ambiguous.  Make a nice log message and return null...
              */
 
-            StringBuffer msg = new StringBuffer("Introspection Error : Ambiguous method invocation ")
+            StringBuilder msg = new StringBuilder("Introspection Error : Ambiguous method invocation ")
                     .append(name)
                     .append("(");
 

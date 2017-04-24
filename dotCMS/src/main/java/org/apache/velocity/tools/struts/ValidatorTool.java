@@ -366,7 +366,7 @@ public class ValidatorTool implements ViewTool {
      */
     public String getStaticJavascript() throws Exception
     {
-        StringBuffer results = new StringBuffer();
+        StringBuilder results = new StringBuilder();
 
         results.append(getStartElement());
         if (this.htmlComment)
@@ -406,7 +406,7 @@ public class ValidatorTool implements ViewTool {
      */
     protected String getJavascript(String formName, boolean getStatic) throws Exception
     {
-        StringBuffer results = new StringBuffer();
+        StringBuilder results = new StringBuilder();
 
         Locale locale = StrutsUtils.getLocale(request, session);
 
@@ -443,7 +443,7 @@ public class ValidatorTool implements ViewTool {
                                           Locale locale,
                                           Form form)
     {
-        StringBuffer results = new StringBuffer();
+        StringBuilder results = new StringBuilder();
 
         MessageResources messages =
             StrutsUtils.getMessageResources(request, app);
@@ -608,7 +608,7 @@ public class ValidatorTool implements ViewTool {
         }
 
         // guess at how many chars we'll be adding...
-        StringBuffer out = new StringBuffer(length + 4);
+        StringBuilder out = new StringBuilder(length + 4);
         // run through the string escaping sensitive chars
         for (int i=0; i < length; i++)
         {
@@ -636,13 +636,13 @@ public class ValidatorTool implements ViewTool {
     {
         String methodOperator = " && ";
 
-        StringBuffer methods = null;
+        StringBuilder methods = null;
         for (Iterator i = actions.iterator(); i.hasNext();)
         {
             ValidatorAction va = (ValidatorAction)i.next();
             if (methods == null)
             {
-                methods = new StringBuffer(va.getMethod());
+                methods = new StringBuilder(va.getMethod());
             }
             else
             {
@@ -719,7 +719,7 @@ public class ValidatorTool implements ViewTool {
      */
     protected String getJavascriptBegin(String methods)
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         String name = jsFormName.replace('/', '_'); // remove any '/' characters
         name = jsFormName.substring(0, 1).toUpperCase() +
                       jsFormName.substring(1, jsFormName.length());
@@ -779,7 +779,7 @@ public class ValidatorTool implements ViewTool {
      */
     protected String getJavascriptStaticMethods(ValidatorResources resources)
     {
-        StringBuffer sb = new StringBuffer("\n\n");
+        StringBuilder sb = new StringBuilder("\n\n");
 
         Iterator actions = resources.getValidatorActions().values().iterator();
         while (actions.hasNext())
@@ -805,7 +805,7 @@ public class ValidatorTool implements ViewTool {
      */
     protected String getJavascriptEnd()
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("\n");
 
         if (!this.xhtml && this.htmlComment)
@@ -830,7 +830,7 @@ public class ValidatorTool implements ViewTool {
      */
     private String getStartElement()
     {
-        StringBuffer start = new StringBuffer("<script type=\"text/javascript\"");
+        StringBuilder start = new StringBuilder("<script type=\"text/javascript\"");
 
         // there is no language attribute in xhtml
         if (!this.xhtml)

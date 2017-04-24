@@ -94,9 +94,9 @@ import com.liferay.portal.model.User;
  */
 public class ESContentFactoryImpl extends ContentletFactory {
 
-	private ContentletCache cc = CacheLocator.getContentletCache();
-	private ESClient client = null;
-	private LanguageAPI langAPI = APILocator.getLanguageAPI();
+	private ContentletCache cc ;
+	private ESClient client;
+	private LanguageAPI langAPI;
 
 	private static final Contentlet cache404Content= new Contentlet();
 	public static final String CACHE_404_CONTENTLET="CACHE_404_CONTENTLET";
@@ -106,6 +106,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	 * Elastic index.
 	 */
 	public ESContentFactoryImpl() {
+	    cc = CacheLocator.getContentletCache();
+	    langAPI =  APILocator.getLanguageAPI();
 		client = new ESClient();
 		cache404Content.setInode(CACHE_404_CONTENTLET);
 	}

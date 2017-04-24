@@ -400,7 +400,7 @@ public abstract class AbstractPagerTool implements ViewTool
      */
     public String getPageDescription()
     {
-        StringBuffer out = new StringBuffer();
+        StringBuilder out = new StringBuilder();
         int first = index + 1;
         int total = getItems().size();
         if (first >= total)

@@ -183,7 +183,7 @@ public class TexenTask
 
     public void setTemplatePath(String templatePath) throws Exception
     {
-        StringBuffer resolvedPath = new StringBuffer();
+        StringBuilder resolvedPath = new StringBuilder();
         StringTokenizer st = new StringTokenizer(templatePath, ",");
         while ( st.hasMoreTokens() )
         {

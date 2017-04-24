@@ -132,7 +132,7 @@ public class MethodInvocationException extends VelocityException implements Exte
      */
     public String getMessage()
     {
-        StringBuffer message = new StringBuffer();
+        StringBuilder message = new StringBuilder();
         message.append(super.getMessage());
         message.append(" at ");
         message.append(formatFileString(templateName, lineNumber, columnNumber));
