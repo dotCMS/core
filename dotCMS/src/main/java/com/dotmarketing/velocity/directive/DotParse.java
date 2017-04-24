@@ -2,7 +2,6 @@ package com.dotmarketing.velocity.directive;
 
 import java.io.Writer;
 
-import org.apache.velocity.Template;
 import org.apache.velocity.context.Context;
 
 import com.dotmarketing.beans.Host;
@@ -37,7 +36,7 @@ public class DotParse extends DotDirective {
 
 
   @Override
-  String resolveTemplate(final Context context, final Writer writer, final RenderParams params,final String argument) {
+  String resolveTemplatePath(final Context context, final Writer writer, final RenderParams params,final String argument) {
     String templatePath = argument;
     boolean live = params.live;
     Host host = params.currentHost;;

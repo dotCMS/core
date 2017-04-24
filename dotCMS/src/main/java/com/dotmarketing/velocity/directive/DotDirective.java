@@ -11,9 +11,7 @@ import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
-import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.exception.VelocityException;
-import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.directive.InputBase;
 import org.apache.velocity.runtime.directive.StopCommand;
@@ -27,71 +25,32 @@ abstract class DotDirective extends InputBase {
 
 
   private static final long serialVersionUID = 1L;
-  private int maxDepth;
 
   public final String getScopeName() {
     return "template";
   }
-
 
   public final int getType() {
     return LINE;
   }
 
 
-  public void init(RuntimeServices rs, InternalContextAdapter context, Node node) throws TemplateInitException {
-    super.init(rs, context, node);
-    RuntimeServices rsvc = VelocityUtil.getEngine().getRuntimeServices();
+  abstract String resolveTemplatePath(Context context, Writer writer, RenderParams params, String argument);
 
-    this.maxDepth = rsvc.getInt(RuntimeConstants.PARSE_DIRECTIVE_MAXDEPTH, 10);
-  }
-
-
-  final public boolean render(InternalContextAdapter context, Writer writer, Node node)
-      throws IOException, ResourceNotFoundException, ParseErrorException, MethodInvocationException {
-
-    HttpServletRequest request = (HttpServletRequest) context.get("request");
-    Object value = node.jjtGetChild(0).value(context);
-    String argument = value == null ? null : value.toString();
-
-    RenderParams params = request.getAttribute(RenderParams.RENDER_PARAMS_ATTRIBUTE) != null
-        ? (RenderParams) request.getAttribute(RenderParams.RENDER_PARAMS_ATTRIBUTE) : new RenderParams(request);
-
-    String templatePath = this.resolveTemplate(context, writer, params, argument);
-
-    return this.renderTemplate(context, writer, templatePath);
-
-  }
-
-
-
-  public boolean renderTemplate(InternalContextAdapter context, final Writer writer, final String templatePath)
-      throws IOException, ResourceNotFoundException, ParseErrorException, MethodInvocationException {
-
-    RuntimeServices rsvc = VelocityUtil.getEngine().getRuntimeServices();
-    Template t;
-
-
+  final Template loadTemplate(InternalContextAdapter context,  String templatePath){
+    
     try {
-      t = rsvc.getTemplate(templatePath, getInputEncoding(context));
+      RuntimeServices rsvc = VelocityUtil.getEngine().getRuntimeServices();
+      return rsvc.getTemplate(templatePath, getInputEncoding(context));
     } catch (ResourceNotFoundException rnfe) {
-      /*
-       * the arg wasn't found. Note it and throw
-       */
       Logger.error(this, this.getName() + ": cannot find template '" + templatePath + "', called at "
           + VelocityException.formatFileString(this));
       throw rnfe;
     } catch (ParseErrorException pee) {
-      /*
-       * the arg was found, but didn't parse - syntax error note it and throw
-       */
       Logger.error(this, this.getName() + ": syntax error in template '" + templatePath + "', called at "
           + VelocityException.formatFileString(this));
       throw pee;
     }
-    /**
-     * pass through application level runtime exceptions
-     */
     catch (RuntimeException e) {
       Logger.error(this, "Exception rendering " + this.getName() + " (" + templatePath + ") at "
           + VelocityException.formatFileString(this));
@@ -102,11 +61,29 @@ abstract class DotDirective extends InputBase {
       Logger.error(this, msg, e);
       throw new VelocityException(msg, e);
     }
+  }
+
+  final public boolean render(InternalContextAdapter context, Writer writer, Node node)
+      throws IOException, ResourceNotFoundException, ParseErrorException, MethodInvocationException {
+
+    HttpServletRequest request = (HttpServletRequest) context.get("request");
+    Object value = node.jjtGetChild(0).value(context);
+    String argument = value == null ? null : value.toString();
+
+    RenderParams params = new RenderParams(request);
+
+    String templatePath = this.resolveTemplatePath(context, writer, params, argument);
+    Template t = loadTemplate(context, templatePath);
+    return this.renderTemplate(context, writer, t, templatePath);
+
+  }
 
 
-    /*
-     * and render it
-     */
+
+  final boolean renderTemplate(InternalContextAdapter context, final Writer writer, final Template t, final String templatePath)
+      throws IOException, ResourceNotFoundException, ParseErrorException, MethodInvocationException {
+
+
     try {
       preRender(context);
       context.pushCurrentTemplateName(templatePath);
@@ -144,7 +121,6 @@ abstract class DotDirective extends InputBase {
     return true;
   }
 
-  abstract String resolveTemplate(Context context, Writer writer, RenderParams params, String argument);
 
 
 

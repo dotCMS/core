@@ -104,7 +104,7 @@ public class ReleaseInfo {
 
 	public static final String getVersion() {
 		
-		return instance.version;
+		return ("${dotcmsReleaseVersion}".equals(instance.version)) ? "1" :instance.version;
 	}
 
 	public static final String getCodeName() {

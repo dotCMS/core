@@ -362,7 +362,7 @@ public class IteratorTool implements Iterator {
      */
     public String toString()
     {
-        StringBuffer out = new StringBuffer(this.getClass().getName());
+        StringBuilder out = new StringBuilder(this.getClass().getName());
         if (this.wrapped != null)
         {
             out.append('(');

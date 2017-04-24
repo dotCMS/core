@@ -18,15 +18,26 @@ public class RenderParams {
 
 
   public RenderParams(HttpServletRequest request) {
-    live = PageRequestModeUtil.isLive(request);
-    user = WebAPILocator.getUserWebAPI().getUser(request);
-    language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
-    currentHost = WebAPILocator.getHostWebAPI().getHost(request);
-    editMode = PageRequestModeUtil.isEditMode(request);
-    request.setAttribute(RENDER_PARAMS_ATTRIBUTE, this);
+    this(request, (RenderParams) request.getAttribute(RENDER_PARAMS_ATTRIBUTE));
 
+  }
 
-
+  RenderParams(HttpServletRequest request, RenderParams params) {
+    if (params != null) {
+      this.live = params.live;
+      this.user = params.user;
+      this.language = params.language;
+      this.currentHost = params.currentHost;
+      this.editMode = params.editMode;
+    } else {
+      live = PageRequestModeUtil.isLive(request);
+      user = WebAPILocator.getUserWebAPI().getUser(request);
+      language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
+      currentHost = WebAPILocator.getHostWebAPI().getHost(request);
+      editMode = PageRequestModeUtil.isEditMode(request);
+      request.setAttribute(RENDER_PARAMS_ATTRIBUTE, this);
+    }
+    
   }
 
 

@@ -386,7 +386,7 @@ public class VelocimacroFactory
 
         if (Logger.isDebugEnabled(this.getClass()))
         {
-            StringBuffer msg = new StringBuffer("added ");
+            StringBuilder msg = new StringBuilder("added ");
             Macro.macroToString(msg, argArray);
             msg.append(" : source = ").append(sourceTemplate);
             Logger.debug(this,msg.toString());

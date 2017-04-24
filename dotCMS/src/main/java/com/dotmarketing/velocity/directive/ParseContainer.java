@@ -8,12 +8,13 @@ import org.apache.velocity.exception.TemplateInitException;
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.parser.node.Node;
 
+import com.dotmarketing.util.Config;
+
 public class ParseContainer extends DotDirective {
 
 
-  /**
-   * 
-   */
+  final static String EXTENSION = Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION", "container");
+
   private static final long serialVersionUID = 1L;
 
 
@@ -32,9 +33,11 @@ public class ParseContainer extends DotDirective {
 
 
   @Override
-  String resolveTemplate(final Context context, final Writer writer, final RenderParams params, final String argument) {
+  String resolveTemplatePath(final Context context, final Writer writer, final RenderParams params, final String argument) {
 
-    return (params.live) ? "/live/" + argument + ".container" : "/working/" + argument + ".container";
+    return (params.live) 
+        ? "/live/" + argument + "." + EXTENSION
+        : "/working/" + argument + "." + EXTENSION;
 
 
 

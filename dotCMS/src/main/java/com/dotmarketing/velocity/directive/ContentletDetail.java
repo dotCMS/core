@@ -27,7 +27,7 @@ public class ContentletDetail extends DotDirective {
 
 
   @Override
-  String resolveTemplate(final Context context, final Writer writer, final RenderParams params, final String argument) {
+  String resolveTemplatePath(final Context context, final Writer writer, final RenderParams params, final String argument) {
 
     ContentletVersionInfo cv = null;
 
