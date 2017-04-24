@@ -71,6 +71,7 @@ import {SiteSelectorComponent} from './view/components/site-selector/dot-site-se
 import {ToolbarAddContenletComponent, ToolbarAddContenletBodyComponent} from './view/components/toolbar-add-contentlet/toolbar-add-contentlet';
 import {ToolbarNotifications} from './view/components/toolbar-notifications/toolbar-notifications';
 import {ToolbarUserComponent} from './view/components/toolbar-user/toolbar-user';
+import {GravatarComponent} from './view/components/_common/gravatar/gravatar.component';
 
 export const COMPONENTS = [
     ...RULES_ENGINE_COMPONENTS,
@@ -102,7 +103,8 @@ export const COMPONENTS = [
     ToolbarAddContenletBodyComponent,
     ToolbarAddContenletComponent,
     ToolbarNotifications,
-    ToolbarUserComponent
+    ToolbarUserComponent,
+    GravatarComponent
 ];
 
 // CUSTOM PIPES

@@ -1,0 +1,6 @@
+<div  class="gravatar">
+    <img src="{{avatarUrl}}" class="gravatar__avatar" *ngIf="gravatarProfile" [ngStyle]="gravatarProfileStyles">
+    <div class="gravatar_placeholder" *ngIf="!gravatarProfile" [ngStyle]="gravatarPlaceholderStyles">
+        {{gravatarPlaceholder}}
+    </div>
+</div>
