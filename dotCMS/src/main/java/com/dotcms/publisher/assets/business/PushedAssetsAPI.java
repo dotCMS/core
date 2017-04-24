@@ -64,8 +64,16 @@ public interface PushedAssetsAPI {
 	public List<PushedAsset> getPushedAssets(String assetId)  throws DotDataException;
 
 
-
-	public PushedAsset getLastPushForAsset(String assetId, String environmentId)  throws DotDataException;
+	/**
+	 * return the most recent pushed asset entry for a given assetId, environmentId and endpointIds. 
+	 * If there is no register then return null
+	 * @param assetId the id of the asset
+	 * @param environmentId the id of the environment
+	 * @param endpointIds the ids of the environment used
+	 * @return the most recent register of the pushed asset
+	 * @throws DotDataException
+	 */
+	public PushedAsset getLastPushForAsset(String assetId, String environmentId, String endpointIds)  throws DotDataException;
 
 
 	

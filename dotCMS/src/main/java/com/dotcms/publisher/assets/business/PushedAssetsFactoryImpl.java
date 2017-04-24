@@ -21,6 +21,8 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 		db.addParam(asset.getAssetType());
 		db.addParam(asset.getPushDate());
 		db.addParam(asset.getEnvironmentId());
+		db.addParam(asset.getEndpointIds());
+		db.addParam(asset.getPublisher());
 		db.loadResult();
 		cache.removePushedAssetById(asset.getAssetId(), asset.getEnvironmentId());
 	}
@@ -139,7 +141,7 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 	}
 	
 	
-	public PushedAsset getLastPushForAsset(String assetId, String environmentId)  throws DotDataException{
+	public PushedAsset getLastPushForAsset(String assetId, String environmentId, String endpointIds)  throws DotDataException{
 		
 		PushedAsset asset = cache.getPushedAsset(assetId, environmentId);
 		if(asset==null){
@@ -147,6 +149,7 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 			dc.setSQL(SELECT_ASSET_LAST_PUSHED);
 			dc.addParam(assetId);
 			dc.addParam(environmentId);
+			dc.addParam(endpointIds);
 			dc.setMaxRows(1);
 			List<Map<String, Object>> res = dc.loadObjectResults();
 	
