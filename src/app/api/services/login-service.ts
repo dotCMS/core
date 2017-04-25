@@ -355,7 +355,7 @@ export class LoginService {
     private loadLoginAsUsersList(includeNUsers: boolean, filter: string): Observable<any> {
         return this.coreWebService.requestView({
             method: RequestMethod.Get,
-            url: `${this.urls.loginAsUserList}?includeUsersNumber=${includeNUsers}&filter=${filter}`
+            url: `${this.urls.loginAsUserList}?includeUsersCount=${includeNUsers}&filter=${filter}`
         }).pluck('entity');
     }
 }
