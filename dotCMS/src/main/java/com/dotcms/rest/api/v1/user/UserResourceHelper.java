@@ -301,7 +301,7 @@ public class UserResourceHelper implements Serializable {
 	 * @return A list of Map, each Map represent a {@link User}
 	 * @throws Exception if anything if wrong
 	 */
-	public ResponseEntityView getLoginAsUsers(User currentUser, String filter, boolean includeUsersNumber) throws Exception {
+	public ResponseEntityView getLoginAsUsers(User currentUser, String filter, boolean includeUsersCount) throws Exception {
 
 		List<User> users = userAPI.getUsersByName(filter, 1, 100, currentUser, false);
 
@@ -325,7 +325,7 @@ public class UserResourceHelper implements Serializable {
 
 		Map<String, Object> mapResponse = map("users", userList);
 
-		if (includeUsersNumber) {
+		if (includeUsersCount) {
 			long countUsersByNameOrEmail = userAPI.getCountUsersByNameOrEmail(StringPool.BLANK);
 			mapResponse.put("nUsers", countUsersByNameOrEmail);
 		}
