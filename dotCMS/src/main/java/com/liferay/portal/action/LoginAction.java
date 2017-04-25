@@ -22,12 +22,9 @@
 
 package com.liferay.portal.action;
 
-import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
-import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
-import com.dotcms.cms.login.LoginService;
-import com.dotcms.cms.login.LoginServiceFactory;
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.action.Action;
@@ -35,33 +32,24 @@ import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
-import com.dotcms.util.marshal.MarshalFactory;
-import com.dotcms.util.marshal.MarshalUtils;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotInvalidPasswordException;
 import com.dotmarketing.business.Layout;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.PreviewFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.*;
 import com.liferay.portal.auth.AuthException;
-import com.liferay.portal.auth.Authenticator;
-import com.liferay.portal.auth.PrincipalFinder;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.ejb.UserManagerFactory;
 import com.liferay.portal.ejb.UserManagerImpl;
 import com.liferay.portal.ejb.UserManagerUtil;
-import com.liferay.portal.events.EventsProcessor;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.*;
-import com.liferay.util.CookieUtil;
-import com.liferay.util.InstancePool;
+import com.liferay.portal.util.Constants;
+import com.liferay.portal.util.PortalUtil;
+import com.liferay.portal.util.WebKeys;
 import com.liferay.util.ParamUtil;
 import com.liferay.util.Validator;
 import com.liferay.util.servlet.SessionErrors;
@@ -71,13 +59,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
-
-import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
-
-import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
 
 /**
  * <a href="LoginAction.java.html"><b><i>View Source</i></b></a>
@@ -88,8 +71,8 @@ import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
  */
 public class LoginAction extends Action {
 
-	private final LoginService loginService =
-			LoginServiceFactory.getInstance().getLoginService();
+	private final LoginServiceAPI loginService =
+			APILocator.getLoginServiceAPI();
 
 	/**
 	 * Determines the action to execute based on the command issued by the user.

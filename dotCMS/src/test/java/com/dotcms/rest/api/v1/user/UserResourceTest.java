@@ -18,11 +18,11 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.cms.login.LoginServiceAPI;
 import org.junit.Test;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.api.system.user.UserService;
-import com.dotcms.cms.login.LoginService;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.ErrorResponseHelper;
@@ -117,7 +117,7 @@ public class UserResourceTest extends UnitTestBase {
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
         final PermissionAPI permissionAPI= mock(PermissionAPI.class);
         final UserProxyAPI userProxyAPI= mock(UserProxyAPI.class);
-        final LoginService loginService= mock(LoginService.class);
+        final LoginServiceAPI loginService= mock(LoginServiceAPI.class);
         final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
 
@@ -180,7 +180,7 @@ public class UserResourceTest extends UnitTestBase {
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
         final PermissionAPI permissionAPI= mock(PermissionAPI.class);
         final UserProxyAPI userProxyAPI= mock(UserProxyAPI.class);
-        final LoginService loginService= mock(LoginService.class);
+        final LoginServiceAPI loginService= mock(LoginServiceAPI.class);
         final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
 
@@ -246,7 +246,7 @@ public class UserResourceTest extends UnitTestBase {
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
         final PermissionAPI permissionAPI= mock(PermissionAPI.class);
         final UserProxyAPI userProxyAPI= mock(UserProxyAPI.class);
-        final LoginService loginService= mock(LoginService.class);
+        final LoginServiceAPI loginService= mock(LoginServiceAPI.class);
         final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
 
@@ -300,7 +300,7 @@ public class UserResourceTest extends UnitTestBase {
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
         final PermissionAPI permissionAPI= mock(PermissionAPI.class);
         final UserProxyAPI userProxyAPI= mock(UserProxyAPI.class);
-        final LoginService loginService= mock(LoginService.class);
+        final LoginServiceAPI loginService= mock(LoginServiceAPI.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
 
         final UserResourceHelper userHelper  = new UserResourceHelper(userService, roleAPI, userAPI, layoutAPI, hostWebAPI,

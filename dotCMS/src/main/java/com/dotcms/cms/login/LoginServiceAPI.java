@@ -1,40 +1,16 @@
 package com.dotcms.cms.login;
 
-import java.io.Serializable;
-import java.util.Locale;
+import com.dotmarketing.cms.login.factories.LoginFactory;
+import com.dotmarketing.cms.login.struts.LoginForm;
+import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.Serializable;
 
-import com.dotcms.repackage.org.apache.struts.Globals;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cms.login.factories.LoginFactory;
-import com.dotmarketing.cms.login.struts.LoginForm;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.PreviewFactory;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.NoSuchUserException;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.auth.AuthException;
-import com.liferay.portal.auth.Authenticator;
-import com.liferay.portal.auth.PrincipalFinder;
-import com.liferay.portal.ejb.UserLocalManagerUtil;
-import com.liferay.portal.ejb.UserManagerUtil;
-import com.liferay.portal.events.EventsProcessor;
-import com.liferay.portal.model.Company;
-import com.liferay.portal.model.User;
-import com.liferay.portal.util.CookieKeys;
-import com.liferay.portal.util.PortalUtil;
-import com.liferay.portal.util.PropsUtil;
-import com.liferay.portal.util.WebKeys;
-import com.liferay.util.CookieUtil;
-import com.liferay.util.InstancePool;
+import static com.dotcms.util.FunctionUtils.ifTrue;
 
 /**
  * Encapsulates the login services This class is just a wrapper to encapsulate
@@ -46,7 +22,7 @@ import com.liferay.util.InstancePool;
  * @version 3.7
  * @since Jun 20, 2016
  */
-public interface LoginService extends Serializable {
+public interface LoginServiceAPI extends Serializable {
 
     public static final String JSON_WEB_TOKEN_DAYS_MAX_AGE = "json.web.token.days.max.age";
 
@@ -97,8 +73,8 @@ public interface LoginService extends Serializable {
                              final HttpServletRequest req, final HttpServletResponse res) throws Exception ;
 
 	/**
-	 * 
-	 * @param form
+	 * Basically a call of a {@link LoginFactory#doLogin(LoginForm, HttpServletRequest, HttpServletResponse)}
+	 * @param form {@link LoginForm}
 	 * @param request
 	 * @param response
 	 * @return
@@ -112,16 +88,60 @@ public interface LoginService extends Serializable {
     }
 
     /**
-     * 
-     * @param encryptedId
-     * @param request
-     * @param response
-     * @return
+     * Do the remember me, usually a cookie approach with a specific strategy such as JWT
+     * If the param rememberMe is true, the remember will create a cookie for a configurable time, otherwise will be removed after the session.
+     * @param req {@link HttpServletRequest}
+     * @param res {@link HttpServletResponse}
+     * @param user {@link User}
+     * @param rememberMe {@link Boolean}
+     */
+    void doRememberMe(final HttpServletRequest req,
+                      final HttpServletResponse res,
+                      final User user,
+                      final boolean rememberMe);
+
+    /**
+     * Do the remember me, usually a cookie approach with a specific strategy such as JWT
+     *
+     * @param req {@link HttpServletRequest}
+     * @param res {@link HttpServletResponse}
+     * @param user {@link User}
+     * @param maxAge {@link Integer} if maxAge is negative, means the cookie will be create just for the session.
+     */
+    void doRememberMe(final HttpServletRequest req,
+                      final HttpServletResponse res,
+                      final User user,
+                      final int maxAge);
+
+    /**
+     * Do the login based one on a encryptedId, usually a strategy to follow on a cookie.
+     * @param encryptedId {@link String}
+     * @param request {@link HttpServletRequest}
+     * @param response {@link HttpServletResponse}
+     * @return Boolean
      */
     default boolean doCookieLogin(final String encryptedId, final HttpServletRequest request, final HttpServletResponse response) {
 
         return LoginFactory.doCookieLogin(encryptedId, request, response);
     }
+
+    /**
+     * Do the login based one on a encryptedId, usually a strategy to follow on a cookie.
+     * @param encryptedId {@link String}
+     * @param request {@link HttpServletRequest}
+     * @param response {@link HttpServletResponse}
+     * @param rememberMe {@link Boolean} if it is true the cookie for remember me will be created.
+     * @return Boolean
+     */
+    default boolean doCookieLogin(final String encryptedId,
+                                  final HttpServletRequest request,
+                                  final HttpServletResponse response,
+                                  final boolean rememberMe) {
+
+        return
+                ifTrue(this.doCookieLogin(encryptedId, request, response),
+                        () -> this.doRememberMe(request, response, this.getLoggedInUser(request), rememberMe));
+    } // doCookieLogin.
 
     /**
      * 
@@ -214,4 +234,4 @@ public interface LoginService extends Serializable {
      * @return login user, if a user is login otherwise return System User
      */
     User getLoggedInUser( );
-} // E:O:F:LoginService.
+} // E:O:F:LoginServiceAPI.
