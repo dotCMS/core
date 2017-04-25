@@ -431,13 +431,13 @@ public class UserResource implements Serializable {
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public final Response loginAsData(@Context final HttpServletRequest request, @QueryParam("filter") String filter,
-			@QueryParam("includeUsersNumber") boolean includeUsersNumber) {
+			@QueryParam("includeUsersCount") boolean includeUsersCount) {
 		Response response = null;
 		try {
 			InitDataObject initData = webResource.init(null, true, request, true, null);
 			User currentUser = initData.getUser();
 
-			response = Response.ok(this.helper.getLoginAsUsers(currentUser, filter, includeUsersNumber)).build();
+			response = Response.ok(this.helper.getLoginAsUsers(currentUser, filter, includeUsersCount)).build();
 		} catch (Exception e) {
 			SecurityLogger.logInfo(UserResource.class, "An error occurred when processing the request. " + e.getMessage());
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
