@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, ViewEncapsulation, ElementRef, trigger, style, state, transition, animate } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ViewEncapsulation, ElementRef, trigger, style, transition, animate } from '@angular/core';
 
 @Component({
     animations: [
@@ -27,6 +27,7 @@ import { Component, EventEmitter, Input, Output, ViewEncapsulation, ElementRef, 
 export class DropdownComponent {
     @Input() disabled= false;
     @Input() icon = null;
+    @Input() gravatar = null;
     @Input() title = null;
     @Input() alignRight = false;
     @Input() inverse = false;

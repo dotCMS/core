@@ -1,5 +1,5 @@
 <dot-dropdown-component
-    icon="fa-user"
+    [gravatar]="auth.loginAsUser === null ? auth.user.emailAddress : auth.loginAsUser.emailAddress"
     inverse="true"
     alignRight="true"
     *ngIf="auth.user"
@@ -7,10 +7,12 @@
     (open)="iframeOverlayService.show()"
     (close)="iframeOverlayService.hide()">
     <div class="toolbar-user__content">
-        <gravatar size="70" [email]="auth.loginAsUser === null ? auth.user.emailAddress : auth.loginAsUser.emailAddress"></gravatar>
         <header class="toolbar-user__header">
-            <h5 class="toolbar-user__user-name" id="dot-toolbar-user-name">{{auth.loginAsUser ? auth.loginAsUser.name || auth.loginAsUser.fullName : auth.user.name || auth.user.fullName}}</h5>
-            <p class="toolbar-user__email" id="dot-toolbar-email">{{auth.loginAsUser ? auth.loginAsUser.emailAddress : auth.user.emailAddress}}</p>
+            <gravatar class="toolbar-user__header-gravatar" size="40" [email]="auth.loginAsUser === null ? auth.user.emailAddress : auth.loginAsUser.emailAddress"></gravatar>
+            <div class="toolbar-user__header-info">
+                <h5 class="toolbar-user__user-name" id="dot-toolbar-user-name">{{auth.loginAsUser ? auth.loginAsUser.name || auth.loginAsUser.fullName : auth.user.name || auth.user.fullName}}</h5>
+                <p class="toolbar-user__email" id="dot-toolbar-email">{{auth.loginAsUser ? auth.loginAsUser.emailAddress : auth.user.emailAddress}}</p>
+            </div>
         </header>
         <ul class="toolbar-user__menu" id="dot-toolbar-user-menu">
             <li class="user-menu__item"><a href="#" (click)='toggleMyAccount()' *ngIf="!auth.loginAsUser" id="dot-toolbar-user-link-my-account" messagekey>my-account</a></li>

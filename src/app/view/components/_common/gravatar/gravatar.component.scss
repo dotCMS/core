@@ -1,21 +1,18 @@
 @import "../../../../../styles/variables";
 
-.gravatar {
-    display: flex;
-    justify-content: center;
-    padding: $basic-padding*2 0;
-    align-items: center;
+:host {
+    display: inline-block;
 }
 
 .gravatar__avatar {
-    border: 1px solid $gray-light;
     border-radius: 50%;
+    display: block;
 }
 
 .gravatar__placeholder {
-    border: 1px solid $gray-light;
     border-radius: 50%;
-    background-color: $blue;
+    background-color: $brand-secondary;
     color: $white;
+    line-height: 1.2em;
     text-align: center;
 }

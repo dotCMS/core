@@ -15,6 +15,11 @@
     .toolbar-user__header {
         background: $gray-lightest;
         padding: $basic-padding $basic-padding * 2;
+        display: flex;
+    }
+
+    .toolbar-user__header-gravatar {
+        margin-right: $basic-padding;
     }
 
     .toolbar-user__menu {
