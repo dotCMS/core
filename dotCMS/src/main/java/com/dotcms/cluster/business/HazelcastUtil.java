@@ -11,8 +11,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 
 import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -81,9 +79,15 @@ public class HazelcastUtil {
                 if (_memberInstances.get(instanceType) == null || reInitialize) {
                     Logger.info(this, "Setting Up HazelCast ("+ instanceType +")");
 
-                    HazelcastInstance memberInstance = _memberInstances.get(instanceType);
+                    HazelcastInstance memberInstance = _memberInstances.remove(instanceType);
                     if (memberInstance != null) {
-                    	memberInstance.shutdown();
+                    	try {
+                    		Thread.sleep(1000);
+                    	} catch (InterruptedException e) {
+                    		Logger.error(this, "Error waiting instance to become vacant", e);
+                    	} finally {
+                    		memberInstance.shutdown();
+                    	}
                     }
 
                     if (instanceType == HazelcastInstanceType.EMBEDDED) {
@@ -98,14 +102,6 @@ public class HazelcastUtil {
                     _memberInstances.put(instanceType, memberInstance);
 
         		    Logger.info(this, "Initialized Hazelcast member "+ memberInstance);
-
-        		    try {
-        		    	throw new Exception();
-        		    } catch(Exception e) {
-        		    	StringWriter sw = new StringWriter();
-        		    	e.printStackTrace(new PrintWriter(sw));
-        		    	Logger.info(this, "Location:"+ sw.toString());
-        		    }
                 }
             }
             System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_HAZEL, String.valueOf(System.currentTimeMillis() - start));
