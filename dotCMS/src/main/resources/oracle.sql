@@ -2417,7 +2417,9 @@ create table publishing_pushed_assets(
 	asset_id varchar2(36) NOT NULL,
 	asset_type varchar2(255) NOT NULL,
 	push_date TIMESTAMP,
-	environment_id varchar2(36) NOT NULL
+	environment_id varchar2(36) NOT NULL,
+	endpoint_ids nclob,
+	publisher nclob
 );
 
 CREATE INDEX idx_pushed_assets_1 ON publishing_pushed_assets (bundle_id);

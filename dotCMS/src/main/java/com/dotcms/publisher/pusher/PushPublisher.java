@@ -74,6 +74,8 @@ public class PushPublisher extends Publisher {
         if ( LicenseUtil.getLevel() < 300 ) {
             throw new RuntimeException( "need an enterprise pro license to run this bundler" );
         }
+        
+        config.setStatic(false);
         this.config = super.init( config );
         return this.config;
     }

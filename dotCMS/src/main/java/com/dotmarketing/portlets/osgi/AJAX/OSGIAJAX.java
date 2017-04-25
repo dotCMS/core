@@ -139,14 +139,10 @@ public class OSGIAJAX extends OSGIBaseAJAX {
                         break;
                     }
 
+                    String felixDeployFolder = OSGIUtil.getInstance().getFelixDeployPath();
 
-                    String felixBaseFolder = OSGIUtil.getInstance().getFelixBasePath();
-
-                    File felixFolder  = (felixBaseFolder.startsWith("/WEB-INF")) ?
-                        new File(Config.CONTEXT.getRealPath(felixBaseFolder)) :
-                        new File(com.dotmarketing.util.FileUtil.getAbsolutlePath(felixBaseFolder));
-                    File osgiJar = new File(felixBaseFolder + "/load/" + fname);
-
+                    File felixFolder = new File(felixDeployFolder);
+                    File osgiJar = new File(felixDeployFolder + File.separator + fname);
 
                     if ( !felixFolder.exists() 
                             ||   !osgiJar.getCanonicalPath().startsWith(felixFolder.getCanonicalPath())) {

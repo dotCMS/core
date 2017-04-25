@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
 
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -463,8 +466,16 @@ public class DotResourceLoader extends ResourceLoader {
         {
             try
             {
-                //Integer.parseInt(x);
-                Structure  structure = (Structure) InodeFactory.getInode(x, Structure.class);
+                ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+                Structure structure = null;
+
+                //Search for the given ContentType inode
+                ContentType foundContentType = contentTypeAPI.find(x);
+                if ( null != foundContentType ) {
+                    //Transform the found content type to a Structure
+                    structure = new StructureTransformer(foundContentType).asStructure();
+                }
+
                 result = StructureServices.buildVelocity(structure);
             }
             catch(NumberFormatException e)

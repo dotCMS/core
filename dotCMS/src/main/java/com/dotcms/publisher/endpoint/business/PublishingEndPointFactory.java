@@ -19,7 +19,7 @@ public abstract class PublishingEndPointFactory {
 
 	// this query is for show the end point list on UI
 	protected static String GET_END_POINTS 						= 	"SELECT id, group_id, server_name, address, port, protocol, enabled, auth_key, sending " +
-			"FROM publishing_end_point order by group_id, server_name";
+			"FROM publishing_end_point order by id, group_id, server_name";
 
 	// this query is for store a new end point
 	protected static String SET_END_POINT						=	"INSERT INTO publishing_end_point VALUES (?,?,?,?,?,?,?,?,?)";

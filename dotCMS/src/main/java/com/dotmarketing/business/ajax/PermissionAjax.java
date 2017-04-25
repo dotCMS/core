@@ -1,18 +1,17 @@
 package com.dotmarketing.business.ajax;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
+import com.dotcms.uuid.shorty.ShortType;
+import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Permission;
@@ -119,6 +118,8 @@ public class PermissionAjax {
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		HostAPI hostAPI = APILocator.getHostAPI();
 		User systemUser = APILocator.getUserAPI().getSystemUser();
+		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
+
 		String roleId = p.getRoleId();
 		Map<String, Object> roleMap = roles.get(roleId);
 		if(roleMap == null) {
@@ -138,7 +139,23 @@ public class PermissionAjax {
 					Permissionable permParent = inodeCache.get(p.getInode());
 					if(permParent == null) {
 						// because identifiers are not Inodes, we need to do a double lookup
-						permParent = InodeFactory.getInode(assetInode, Inode.class);
+
+						//Using the ShortyAPI to identify the nature of this inode
+						Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(assetInode);
+
+						//Hibernate won't handle structures, thats why we need a special case here
+						if ( ShortType.STRUCTURE == shortOpt.get().subType ) {
+
+							//Search for the given ContentType inode
+							ContentType foundContentType = contentTypeAPI.find(assetInode);
+							if ( null != foundContentType ) {
+								//Transform the found content type to a Structure
+								permParent = new StructureTransformer(foundContentType).asStructure();
+							}
+						} else {
+							permParent = InodeFactory.getInode(assetInode, Inode.class);
+						}
+
 						if(permParent !=null || InodeUtils.isSet(permParent.getPermissionId())){
 							inodeCache.put(permParent.getPermissionId(), permParent);
 
