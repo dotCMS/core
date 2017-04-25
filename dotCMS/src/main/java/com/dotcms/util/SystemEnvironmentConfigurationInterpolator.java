@@ -62,20 +62,20 @@ public class SystemEnvironmentConfigurationInterpolator implements Configuration
                 if (null != key) {
 
                     value = originalConfiguration.getProperty(key.toString());
-                    if (isInterpolable(value)) {
-
-                        newConfiguration.addProperty(key.toString(),
-                                StringUtils.interpolate(value.toString(), SYSTEM_ENV_LAZY_MAP));
-                    } else {
-
-                        newConfiguration.addProperty(key.toString(), value);
-                    }
+                    newConfiguration.addProperty(key.toString(), this.interpolate(value.toString()));
                 }
             }
         }
 
         return newConfiguration;
     }
+
+    @Override
+    public String interpolate (final String value) {
+
+        return (isInterpolable(value))?
+                    StringUtils.interpolate(value, SYSTEM_ENV_LAZY_MAP):value;
+    } // interpolate.
 
     /**
      * Something is interpolable basically if it is a not null string
@@ -85,7 +85,7 @@ public class SystemEnvironmentConfigurationInterpolator implements Configuration
     private boolean isInterpolable(final Object value) {
 
         return (null != value) && (value instanceof String) && String.class.cast(value).contains("{") && String.class.cast(value).contains("}");
-    }
+    } // isInterpolable.
 
     /**
      * Just a Decorator of a hashmap to get a lazy resolution of the system and env properties for interpolation
