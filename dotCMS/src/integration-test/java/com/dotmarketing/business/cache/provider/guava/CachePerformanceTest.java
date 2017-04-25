@@ -17,8 +17,8 @@ import org.junit.Test;
 import com.dotcms.repackage.org.apache.commons.lang.RandomStringUtils;
 import com.dotcms.repackage.org.apache.log4j.Logger;
 import com.dotmarketing.business.cache.provider.CacheProvider;
-import com.dotmarketing.business.cache.provider.hazelcast.HazelCastClientProvider;
-import com.dotmarketing.business.cache.provider.hazelcast.HazelCastEmbeddedProvider;
+import com.dotmarketing.business.cache.provider.hazelcast.HazelcastCacheProviderClient;
+import com.dotmarketing.business.cache.provider.hazelcast.HazelcastCacheProviderEmbedded;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 
@@ -39,8 +39,8 @@ public class CachePerformanceTest {
 
   private final long startTime = System.currentTimeMillis();
 //  Class provider = GuavaCache.class;
-  Class provider = HazelCastEmbeddedProvider.class;
-  //Class provider = HazelCastClientProvider.class;
+  Class provider = HazelcastCacheProviderEmbedded.class;
+  //Class provider = HazelcastCacheProviderClient.class;
 
   @Test
   public void testInit() throws Exception {
@@ -172,7 +172,7 @@ public class CachePerformanceTest {
 
   }
 
-  void breakCache(HazelCastEmbeddedProvider cache) throws SQLException {
+  void breakCache(HazelcastCacheProviderEmbedded cache) throws SQLException {
 
   }
 
