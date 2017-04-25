@@ -45,7 +45,7 @@ import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
 
 /**
- * {@link SiteBrowserResource} test
+ * {@link UserResource} test
  * @author jsanca
  */
 public class UserResourceTest extends UnitTestBase {
@@ -288,6 +288,8 @@ public class UserResourceTest extends UnitTestBase {
 
     @Test
     public void testLoginAsData() throws Exception {
+        String userFilter = "filter";
+
     	HttpServletRequest request = RestUtilTest.getMockHttpRequest();
         final UserService userService = mock(UserService.class);
         final RoleAPI roleAPI  = mock( RoleAPI.class );
@@ -329,7 +331,7 @@ public class UserResourceTest extends UnitTestBase {
 
         List<User> users = list(user1, user2);
 
-        when(userAPI.getUsersByNameOrEmailOrUserID("", 1, 30, false, false)).thenReturn( users );
+        when(userAPI.getUsersByName(userFilter, 1, 100, user3,false)).thenReturn( users );
 
         List<String> rolesId = new ArrayList<>();
         rolesId.add( "admin.role.id" );
@@ -352,7 +354,7 @@ public class UserResourceTest extends UnitTestBase {
         UserResource userResource =
                 new UserResource(webResource, userAPI, userHelper, errorHelper);
 
-        Response response = userResource.loginAsData(request);
+        Response response = userResource.loginAsData(request, userFilter, true);
 
         RestUtilTest.verifySuccessResponse( response );
 

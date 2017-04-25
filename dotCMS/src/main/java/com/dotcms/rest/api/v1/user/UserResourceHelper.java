@@ -1,9 +1,18 @@
 package com.dotcms.rest.api.v1.user;
 
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
+
+import java.io.Serializable;
+import java.util.*;
+
 import com.dotcms.api.system.user.UserService;
 import com.dotcms.api.system.user.UserServiceFactory;
-import com.dotcms.cms.login.LoginServiceAPI;
+import com.dotcms.cms.login.LoginService;
+import com.dotcms.cms.login.LoginServiceFactory;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
 import com.dotcms.util.SecurityUtils;
 import com.dotcms.util.SecurityUtils.DelayStrategy;
@@ -27,14 +36,6 @@ import com.liferay.util.StringPool;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Provides utility methods to interact with information of dotCMS users and
@@ -56,7 +57,7 @@ public class UserResourceHelper implements Serializable {
 	private final UserWebAPI userWebAPI;
 	private final PermissionAPI permissionAPI;
 	private final UserProxyAPI userProxyAPI;
-	private final LoginServiceAPI loginService;
+	private final LoginService loginService;
 
 	@VisibleForTesting
 	public UserResourceHelper (	final UserService userService,
@@ -67,7 +68,7 @@ public class UserResourceHelper implements Serializable {
 			final UserWebAPI userWebAPI,
 			final PermissionAPI permissionAPI,
 			final UserProxyAPI userProxyAPI,
-			final LoginServiceAPI loginService) {
+			final LoginService loginService) {
 
 		this.userService = userService;
 		this.roleAPI = roleAPI;
@@ -101,7 +102,7 @@ public class UserResourceHelper implements Serializable {
 		this.userWebAPI = WebAPILocator.getUserWebAPI();
 		this.permissionAPI = APILocator.getPermissionAPI();
 		this.userProxyAPI = APILocator.getUserProxyAPI();
-		this.loginService = APILocator.getLoginServiceAPI();
+		this.loginService = LoginServiceFactory.getInstance().getLoginService();
 	}
 
 	/**
@@ -300,25 +301,36 @@ public class UserResourceHelper implements Serializable {
 	 * @return A list of Map, each Map represent a {@link User}
 	 * @throws Exception if anything if wrong
 	 */
-	public List<Map<String, Object>> getLoginAsUsers() throws Exception {
+	public ResponseEntityView getLoginAsUsers(User currentUser, String filter, boolean includeUsersCount) throws Exception {
 
-		List<User> users = userAPI.getUsersByNameOrEmailOrUserID(StringPool.BLANK, 1, 30, false, false);
+		List<User> users = userAPI.getUsersByName(filter, 1, 100, currentUser, false);
 
 		List<Map<String, Object>> userList = new ArrayList<>();
 		List<String> rolesId = list( roleAPI.loadRoleByKey(Role.ADMINISTRATOR).getId(), roleAPI.loadCMSAdminRole().getId() );
 
-		for (User user : users) {
-			Map<String, Object> userMap = user.toMap();
-			String id = user.getUserId();
-			boolean hasPermissions = roleAPI.doesUserHaveRoles(id, rolesId);
+		String currentUserId = currentUser != null ? currentUser.getUserId() : StringUtils.EMPTY;
 
-			if ( hasPermissions ){
-				userMap.put("requestPassword", true);
+		for (User user : users) {
+			if (!currentUserId.equalsIgnoreCase(user.getUserId())) {
+				Map<String, Object> userMap = user.toMap();
+				String id = user.getUserId();
+				boolean hasPermissions = roleAPI.doesUserHaveRoles(id, rolesId);
+
+				if (hasPermissions) {
+					userMap.put("requestPassword", true);
+				}
+				userList.add(userMap);
 			}
-			userList.add(userMap);
 		}
 
-		return userList;
+		Map<String, Object> mapResponse = map("users", userList);
+
+		if (includeUsersCount) {
+			long countUsersByNameOrEmail = userAPI.getCountUsersByNameOrEmail(StringPool.BLANK);
+			mapResponse.put("nUsers", countUsersByNameOrEmail);
+		}
+
+		return new ResponseEntityView(mapResponse );
 	}
 
 	/**
