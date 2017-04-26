@@ -17,6 +17,7 @@ import com.dotcms.contenttype.model.field.FileField;
 import com.dotcms.contenttype.model.field.HiddenField;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.MultiSelectField;
@@ -136,9 +137,8 @@ public class FieldAPIImpl implements FieldAPI {
 
       ContentType type = tapi.find(field.contentTypeId()) ;
       APILocator.getPermissionAPI().checkPermission(type, PermissionLevel.PUBLISH, user);
-      
 
-      return fac.save(var);
+      return fac.save(ImmutableFieldVariable.builder().from(var).userId(user.getUserId()).build());
   }
 
   @Override
