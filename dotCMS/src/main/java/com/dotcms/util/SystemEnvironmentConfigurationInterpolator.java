@@ -73,6 +73,10 @@ public class SystemEnvironmentConfigurationInterpolator implements Configuration
 
     private Object interpolate(final Object value) {
 
+        if ( null == value ) {
+            return null;
+        }
+
         return value instanceof String ? this.interpolate(value.toString()) :
                 doObjectInterpolation(value);
     } // interpolate.
