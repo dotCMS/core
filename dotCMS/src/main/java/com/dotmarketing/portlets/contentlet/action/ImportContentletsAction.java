@@ -327,7 +327,7 @@ public class ImportContentletsAction extends DotPortletAction {
 		for(int i = 0; i < fields.size(); i++) {
 			Field field = fields.get(i);
 			if (ImportUtil.isImportableField(field)) {
-				String fieldName = field.getFieldName();
+				String fieldName = field.getVelocityVarName();
 				if(fieldName.contains(","))
 					out.print("\"" + fieldName + "\"");
 				else

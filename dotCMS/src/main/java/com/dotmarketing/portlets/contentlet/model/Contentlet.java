@@ -169,6 +169,14 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         map.put(LANGUAGEID_KEY, languageId);
     }
 
+    public String getContentTypeId() {
+      return (String) map.get(STRUCTURE_INODE_KEY);
+    }
+    /**@deprecated as of 4.1 
+     * use instead:
+     * {@link #getContentTypeId()}
+     */
+    @Deprecated 
     public String getStructureInode() {
         return (String) map.get(STRUCTURE_INODE_KEY);
     }
@@ -176,24 +184,22 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public void setStructureInode(String structureInode) {
     	map.put(STRUCTURE_INODE_KEY, structureInode);
     }
-    /**
+    
+    /* @deprecated as of 4.1 
+     * use instead:
+     * <blockquote>
+     * <pre>
+     * APILocator.getContentTypeAPI(user).find(content.getStructureInode());
+     * </pre>
+     * </blockquote>
      */
+    @Deprecated
     public Structure getStructure() {
     	Structure structure = null;
     	structure = CacheLocator.getContentTypeCache().getStructureByInode(getStructureInode());
         return structure;
     }
     
-    /**
-     */
-    public ContentType getContentType() {
-
-      try {
-        return APILocator.getContentTypeAPI(APILocator.systemUser()).find((getStructureInode()));
-      } catch (DotDataException | DotSecurityException e) {
-        throw new DotRuntimeException(e);
-      }
-    }
     public boolean hasAssetNameExtension() {
         boolean hasExtension = false;
         if (getStructure() != null
