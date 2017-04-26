@@ -243,7 +243,7 @@
 					<label form="protocol"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Type") %>:</label>
 				</dt>
 				<dd>
-					<select dojoType="dijit.form.Select" name="protocol" id="protocol" style="width:100px;" onchange="onChangeProtocolTypeSelectCheck();">
+					<select dojoType="dijit.form.Select" name="protocol" id="protocol" onchange="onChangeProtocolTypeSelectCheck();">
 						<% if( ! com.dotmarketing.util.UtilMethods.isSet( currentEndpoint.getProtocol() ) ) { %>
 							<option disabled="disabled" selected="selected" value=""><%= LanguageUtil.get(pageContext, "publisher_Endpoint_type_placeholder") %></option>
 						<%} %>

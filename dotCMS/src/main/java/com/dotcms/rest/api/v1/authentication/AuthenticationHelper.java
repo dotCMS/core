@@ -1,8 +1,7 @@
 package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.api.web.WebSessionContext;
-import com.dotcms.cms.login.LoginService;
-import com.dotcms.cms.login.LoginServiceFactory;
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.LoginAsAPI;
@@ -22,7 +21,7 @@ import static com.dotcms.util.CollectionsUtils.map;
 class AuthenticationHelper {
 
     private final LoginAsAPI loginAsAPI;
-    private final LoginService loginService;
+    private final LoginServiceAPI loginService;
 
     private static class SingletonHolder {
         private static final AuthenticationHelper INSTANCE = new AuthenticationHelper();
@@ -33,11 +32,11 @@ class AuthenticationHelper {
     }
 
     private AuthenticationHelper() {
-        this( APILocator.getLoginAsAPI(), LoginServiceFactory.getInstance().getLoginService() );
+        this( APILocator.getLoginAsAPI(), APILocator.getLoginServiceAPI() );
     }
 
     @VisibleForTesting
-    protected AuthenticationHelper(LoginAsAPI loginAsAPI, LoginService loginService) {
+    protected AuthenticationHelper(LoginAsAPI loginAsAPI, LoginServiceAPI loginService) {
         this.loginAsAPI = loginAsAPI;
         this.loginService = loginService;
     }

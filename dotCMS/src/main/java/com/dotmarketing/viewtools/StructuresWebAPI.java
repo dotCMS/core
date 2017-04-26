@@ -257,6 +257,7 @@ public class StructuresWebAPI implements ViewTool {
 	 *            false If you find the relations where the contentlet is child
 	 * @return A list of relationship objects
 	 */
+	@Deprecated
 	public List<Relationship> getRelationshipsOfStructure(Structure st, boolean hasParent) {
 		return getRelationshipsOfStructure(st.getInode(), hasParent);
 	}
@@ -266,6 +267,7 @@ public class StructuresWebAPI implements ViewTool {
 		return getRelationshipsOfStructure(((Long) structureInode).toString(), hasParent);
 	}
 
+	@Deprecated
 	public List<Relationship> getRelationshipsOfStructure(String structureInode, boolean hasParent) {
 		Structure st = (Structure) InodeFactory.getInode(structureInode, Structure.class);
 		return FactoryLocator.getRelationshipFactory().byContentType(st, hasParent);

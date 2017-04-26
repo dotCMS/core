@@ -84,11 +84,13 @@ context.path.felix=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/felix
 
 # Create output directory
 mkdir tests
-
+mkdir tests/logs
 
 # Run End-2-End tests
 ant -f build-tests.xml test-dotcms
 cp dotserver/tomcat/webapps/ROOT/dotsecure/logs/test/*.xml tests
+cp dotserver/tomcat/webapps/ROOT/dotsecure/logs/*.log tests/logs
+cp dotserver/tomcat/logs/* tests/logs
 
 # Run Integration tests
 cd core/dotCMS
@@ -98,4 +100,4 @@ cp core/dotCMS/build/test-results/integrationTest/*.xml tests
 
 
 # Create output zip file
-zip ../$OUTPUT_FILE tests/*.*
+zip -r ../$OUTPUT_FILE tests

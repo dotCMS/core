@@ -5,7 +5,7 @@ import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
-import com.dotcms.cms.login.LoginService;
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
 import com.dotcms.util.security.Encryptor;
@@ -60,7 +60,7 @@ public class JsonWebTokenInterceptorTest extends UnitTestBase {
         final HttpServletRequest   request  = mock(HttpServletRequest.class);
         final HttpServletResponse  response = mock(HttpServletResponse.class);
         final HttpSession          session  = mock(HttpSession.class);
-        final LoginService    loginService  = mock(LoginService.class);
+        final LoginServiceAPI loginService  = mock(LoginServiceAPI.class);
 
         final JsonWebTokenInterceptor jsonWebTokenInterceptor =
                 new JsonWebTokenInterceptor(null, null, null, null, loginService, null);
@@ -96,7 +96,7 @@ public class JsonWebTokenInterceptorTest extends UnitTestBase {
         final HttpServletRequest   request  = mock(HttpServletRequest.class);
         final HttpServletResponse  response = mock(HttpServletResponse.class);
         final HttpSession          session  = mock(HttpSession.class);
-        final LoginService    loginService  = mock(LoginService.class);
+        final LoginServiceAPI loginService  = mock(LoginServiceAPI.class);
 
         boolean allowHttp = Config.getBooleanProperty(JsonWebTokenInterceptor.JSON_WEB_TOKEN_ALLOW_HTTP, false);
         if (allowHttp) {
@@ -140,7 +140,7 @@ public class JsonWebTokenInterceptorTest extends UnitTestBase {
         final HttpSession          session  = mock(HttpSession.class);
         final JsonWebTokenService  jsonWebTokenService =
                                               mock(JsonWebTokenService.class);
-        final LoginService    loginService  = mock(LoginService.class);
+        final LoginServiceAPI loginService  = mock(LoginServiceAPI.class);
 
         final JsonWebTokenInterceptor jsonWebTokenInterceptor =
                 new JsonWebTokenInterceptor(null, null, null, null, loginService, null);
@@ -194,7 +194,7 @@ public class JsonWebTokenInterceptorTest extends UnitTestBase {
                                               mock(MarshalUtils.class);
         final JsonWebTokenService jsonWebTokenService =
                 JsonWebTokenFactory.getInstance().getJsonWebTokenService();
-        final LoginService    loginService  = mock(LoginService.class);
+        final LoginServiceAPI loginService  = mock(LoginServiceAPI.class);
         final UserAPI         userAPI       = mock(UserAPI.class);
 
         final JsonWebTokenInterceptor jsonWebTokenInterceptor =
@@ -271,7 +271,7 @@ public class JsonWebTokenInterceptorTest extends UnitTestBase {
                                     mock(CompanyLocalManager.class);
         final UserAPI userAPI     = mock(UserAPI.class);
         final Encryptor encryptor = mock(Encryptor.class);
-        final LoginService loginService = mock(LoginService.class);
+        final LoginServiceAPI loginService = mock(LoginServiceAPI.class);
         final JsonWebTokenInterceptor jsonWebTokenInterceptor =
                 new JsonWebTokenInterceptor(jsonWebTokenService, MarshalFactory.getInstance().getMarshalUtils(), null, null, loginService, userAPI);
 
@@ -384,7 +384,7 @@ public class JsonWebTokenInterceptorTest extends UnitTestBase {
                 mock(CompanyLocalManager.class);
         final UserAPI userAPI     = mock(UserAPI.class);
         final Encryptor encryptor = mock(Encryptor.class);
-        final LoginService loginService = mock(LoginService.class);
+        final LoginServiceAPI loginService = mock(LoginServiceAPI.class);
         final JsonWebTokenInterceptor jsonWebTokenInterceptor =
                 new JsonWebTokenInterceptor(jsonWebTokenService, MarshalFactory.getInstance().getMarshalUtils(), null, null, loginService, null);
 

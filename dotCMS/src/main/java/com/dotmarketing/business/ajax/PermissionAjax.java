@@ -1,18 +1,17 @@
 package com.dotmarketing.business.ajax;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
+import com.dotcms.uuid.shorty.ShortType;
+import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Permission;
@@ -119,6 +118,8 @@ public class PermissionAjax {
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		HostAPI hostAPI = APILocator.getHostAPI();
 		User systemUser = APILocator.getUserAPI().getSystemUser();
+		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
+
 		String roleId = p.getRoleId();
 		Map<String, Object> roleMap = roles.get(roleId);
 		if(roleMap == null) {
@@ -138,7 +139,28 @@ public class PermissionAjax {
 					Permissionable permParent = inodeCache.get(p.getInode());
 					if(permParent == null) {
 						// because identifiers are not Inodes, we need to do a double lookup
-						permParent = InodeFactory.getInode(assetInode, Inode.class);
+
+						if ( Host.SYSTEM_HOST.equals(assetInode) ) {
+							permParent = hostAPI.find(assetInode, systemUser, false);
+						} else {
+
+							//Using the ShortyAPI to identify the nature of this inode
+							Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(assetInode);
+
+							//Hibernate won't handle structures, thats why we need a special case here
+							if ( ShortType.STRUCTURE == shortOpt.get().subType ) {
+
+								//Search for the given ContentType inode
+								ContentType foundContentType = contentTypeAPI.find(assetInode);
+								if ( null != foundContentType ) {
+									//Transform the found content type to a Structure
+									permParent = new StructureTransformer(foundContentType).asStructure();
+								}
+							} else {
+								permParent = InodeFactory.getInode(assetInode, Inode.class);
+							}
+						}
+
 						if(permParent !=null || InodeUtils.isSet(permParent.getPermissionId())){
 							inodeCache.put(permParent.getPermissionId(), permParent);
 
@@ -162,6 +184,10 @@ public class PermissionAjax {
 						roleMap.put("inheritedFromType", "category");
 						roleMap.put("inheritedFromPath", ((Category)permParent).getCategoryName());
 						roleMap.put("inheritedFromId", ((Category)permParent).getInode());
+					} else if ( permParent instanceof Host ) {
+						roleMap.put("inheritedFromType", "host");
+						roleMap.put("inheritedFromPath", ((Host) permParent).getHostname());
+						roleMap.put("inheritedFromId", ((Host) permParent).getIdentifier());
 					} else {
 						Host host = hostAPI.find(assetInode, systemUser, false);
 						if(host != null) {
@@ -390,6 +416,15 @@ public class PermissionAjax {
 				// Do nothing as "perm" is left as null
 				// Code above is trying to lookup a Content-Type by using an id
 				// that might not correspond to a Content-Type (assetId)
+			}
+		}
+
+		if ( perm == null ) {
+			try {
+				// Now trying with categories
+				perm = APILocator.getCategoryAPI().find(assetId, user, respectFrontendRoles);
+			} catch (NotFoundInDbException e) {
+				// Do nothing
 			}
 		}
 

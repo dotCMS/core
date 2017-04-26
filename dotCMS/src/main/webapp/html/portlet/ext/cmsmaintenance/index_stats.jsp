@@ -329,12 +329,10 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
       </form>
       <br/>
       <button id="uploadSnapshotSubmit" data-dojo-type="dijit.form.Button" type="button">
-          <span class="uploadIcon"></span>
           <%= LanguageUtil.get(pageContext,"Upload-File") %>
               <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">doRestoreIndexSnapshot();</script>
       </button>
-      <button data-dojo-type="dijit.form.Button" type="button">
-          <span class="deleteIcon"></span>
+      <button data-dojo-type="dijit.form.Button" type="button" class="dijitButtonFlat">
           <%= LanguageUtil.get(pageContext,"Close") %>
               <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">hideRestoreSnapshotIndex();</script>
            </button>
