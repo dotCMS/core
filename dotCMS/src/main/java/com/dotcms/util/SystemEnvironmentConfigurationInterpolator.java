@@ -4,6 +4,7 @@ import com.dotcms.repackage.org.apache.commons.configuration.Configuration;
 import com.dotcms.repackage.org.apache.commons.configuration.PropertiesConfiguration;
 import com.dotmarketing.util.StringUtils;
 
+import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -62,13 +63,44 @@ public class SystemEnvironmentConfigurationInterpolator implements Configuration
                 if (null != key) {
 
                     value = originalConfiguration.getProperty(key.toString());
-                    newConfiguration.addProperty(key.toString(), this.interpolate(value.toString()));
+                    newConfiguration.addProperty(key.toString(), this.interpolate(value));
                 }
             }
         }
 
         return newConfiguration;
     }
+
+    private Object interpolate(final Object value) {
+
+        return value instanceof String ? this.interpolate(value.toString()) :
+                doObjectInterpolation(value);
+    } // interpolate.
+
+    private Object doObjectInterpolation(final Object value) {
+
+        if ( value.getClass().isArray() ) {
+
+            return interpolateObjectArray(value);
+        }
+
+        // other cases.
+
+        return value;
+    } // doObjectInterpolation.
+
+    private Object interpolateObjectArray(final Object array) {
+
+        final int length = Array.getLength(array);
+        final Object[] newArray = new Object[length];
+
+        for ( int i = 0; i < length; i++ ) {
+
+            newArray[i] = this.interpolate(Array.get(array, i));
+        }
+
+        return newArray;
+    } // interpolateObjectArray.
 
     @Override
     public String interpolate (final String value) {
