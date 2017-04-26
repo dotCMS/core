@@ -18,4 +18,11 @@ public interface ConfigurationInterpolator extends Serializable {
      * @return Configuration
      */
     Configuration interpolate (Configuration originalConfiguration);
+
+    /**
+     * Do the interpolation for a single string
+     * @param value String
+     * @return String
+     */
+    String interpolate (final String value);
 } // E:O:F:ConfigurationInterpolator.

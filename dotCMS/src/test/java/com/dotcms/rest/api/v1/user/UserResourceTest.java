@@ -18,11 +18,11 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.cms.login.LoginServiceAPI;
 import org.junit.Test;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.api.system.user.UserService;
-import com.dotcms.cms.login.LoginService;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.ErrorResponseHelper;
@@ -45,7 +45,7 @@ import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
 
 /**
- * {@link SiteBrowserResource} test
+ * {@link UserResource} test
  * @author jsanca
  */
 public class UserResourceTest extends UnitTestBase {
@@ -117,7 +117,7 @@ public class UserResourceTest extends UnitTestBase {
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
         final PermissionAPI permissionAPI= mock(PermissionAPI.class);
         final UserProxyAPI userProxyAPI= mock(UserProxyAPI.class);
-        final LoginService loginService= mock(LoginService.class);
+        final LoginServiceAPI loginService= mock(LoginServiceAPI.class);
         final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
 
@@ -180,7 +180,7 @@ public class UserResourceTest extends UnitTestBase {
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
         final PermissionAPI permissionAPI= mock(PermissionAPI.class);
         final UserProxyAPI userProxyAPI= mock(UserProxyAPI.class);
-        final LoginService loginService= mock(LoginService.class);
+        final LoginServiceAPI loginService= mock(LoginServiceAPI.class);
         final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
 
@@ -246,7 +246,7 @@ public class UserResourceTest extends UnitTestBase {
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
         final PermissionAPI permissionAPI= mock(PermissionAPI.class);
         final UserProxyAPI userProxyAPI= mock(UserProxyAPI.class);
-        final LoginService loginService= mock(LoginService.class);
+        final LoginServiceAPI loginService= mock(LoginServiceAPI.class);
         final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
 
@@ -288,6 +288,8 @@ public class UserResourceTest extends UnitTestBase {
 
     @Test
     public void testLoginAsData() throws Exception {
+        String userFilter = "filter";
+
     	HttpServletRequest request = RestUtilTest.getMockHttpRequest();
         final UserService userService = mock(UserService.class);
         final RoleAPI roleAPI  = mock( RoleAPI.class );
@@ -298,7 +300,7 @@ public class UserResourceTest extends UnitTestBase {
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
         final PermissionAPI permissionAPI= mock(PermissionAPI.class);
         final UserProxyAPI userProxyAPI= mock(UserProxyAPI.class);
-        final LoginService loginService= mock(LoginService.class);
+        final LoginServiceAPI loginService= mock(LoginServiceAPI.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
 
         final UserResourceHelper userHelper  = new UserResourceHelper(userService, roleAPI, userAPI, layoutAPI, hostWebAPI,
@@ -329,7 +331,7 @@ public class UserResourceTest extends UnitTestBase {
 
         List<User> users = list(user1, user2);
 
-        when(userAPI.getUsersByNameOrEmailOrUserID("", 1, 30, false, false)).thenReturn( users );
+        when(userAPI.getUsersByName(userFilter, 1, 100, user3,false)).thenReturn( users );
 
         List<String> rolesId = new ArrayList<>();
         rolesId.add( "admin.role.id" );
@@ -352,7 +354,7 @@ public class UserResourceTest extends UnitTestBase {
         UserResource userResource =
                 new UserResource(webResource, userAPI, userHelper, errorHelper);
 
-        Response response = userResource.loginAsData(request);
+        Response response = userResource.loginAsData(request, userFilter, true);
 
         RestUtilTest.verifySuccessResponse( response );
 

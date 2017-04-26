@@ -15,6 +15,7 @@ import com.dotcms.rest.api.v1.authentication.ResetPasswordResource;
 import com.dotcms.rest.api.v1.browsertree.BrowserTreeResource;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
 import com.dotcms.rest.api.v1.contenttype.FieldResource;
+import com.dotcms.rest.api.v1.contenttype.FieldVariableResource;
 import com.dotcms.rest.api.v1.event.EventsResource;
 import com.dotcms.rest.api.v1.languages.LanguagesResource;
 import com.dotcms.rest.api.v1.menu.MenuResource;
@@ -104,6 +105,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(SiteResource.class);
 					REST_CLASSES.add(ContentTypeResource.class);
 					REST_CLASSES.add(FieldResource.class);
+					REST_CLASSES.add(FieldVariableResource.class);
 					REST_CLASSES.add(ResetPasswordResource.class);
 					REST_CLASSES.add(RoleResource.class);
 					REST_CLASSES.add(CreateJsonWebTokenResource.class);
