@@ -362,16 +362,17 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 						journalAPI.addCacheEntry(k, g);
 					} else if ( useTransportChannel ) {
 
-						if ( getTransport() != null ) {
-							try {
-								getTransport().send(k + ":" + g);
-							} catch ( Exception e ) {
-								Logger.error(ChainableCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
-							}
-						} else {
-							throw new CacheTransportException("No Cache transport implementation is defined");
+						if (! cacheProviderAPI.isGroupDistributed( group )) {
+							if ( getTransport() != null) {
+								try {
+									getTransport().send(k + ":" + g);
+								} catch ( Exception e ) {
+									Logger.error(ChainableCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
+								}
+							} else {
+								throw new CacheTransportException("No Cache transport implementation is defined");
+							}							
 						}
-
 					}
 				} catch (DotDataException e) {
 					Logger.error(this, "Unable to add journal entry for cluster", e);

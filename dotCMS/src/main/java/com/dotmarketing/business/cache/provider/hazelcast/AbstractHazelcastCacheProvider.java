@@ -34,6 +34,11 @@ public abstract class AbstractHazelcastCacheProvider extends CacheProvider {
     }
 
     @Override
+    public boolean isDistributed() {
+    	return true;
+    }
+
+    @Override
     public void init()  {
         Logger.debug(this,"Calling HazelUtil to ensure Hazelcast member is up");
         getHazelcastInstance();
