@@ -141,11 +141,17 @@ public class OSGIUtil {
         // we need gosh to not expecting stdin to work
         configProps.setProperty( "gosh.args", "--noi" );
 
+        /*
+        // The following is commented out since it is not affecting any OSGI functionality
+        // Nevertheless the following code allows the system to include additional Felix and OSGI properties by using a
+        // felix.system.properties key (could be a path)
+
         // Load system properties.
-        Main.loadSystemProperties();
+        Main.loadSystemProperties(); // will load any property by using the felix.system.properties value
 
         // Copy framework properties from the system properties.
-        Main.copySystemProperties( propertiesToMap( configProps ) );
+        Main.copySystemProperties( propertiesToMap( configProps ) ); // will copy any system property to the config props
+        */
 
         try {
             // Create an instance and initialize the framework.
@@ -245,8 +251,14 @@ public class OSGIUtil {
             String key = it.next();
             if ( key == null ) continue;
             if ( key.startsWith( "felix." ) ) {
-                properties.put( key.substring( 6 ), Config.getStringProperty( key ) );
-                Logger.info( this, "Loading property  " + key.substring( 6 ) + "=" + Config.getStringProperty( key ) );
+                if ( key.equals(FELIX_BASE_DIR) ) {
+                    // Allow the property in the file to be felix.base.dir
+                    properties.put( key, Config.getStringProperty( key ) );
+                    Logger.info( this, "Loading property  " + key + "=" + Config.getStringProperty( key ) );
+                } else {
+                    properties.put( key.substring( 6 ), Config.getStringProperty( key ) );
+                    Logger.info( this, "Loading property  " + key.substring( 6 ) + "=" + Config.getStringProperty( key ) );
+                }
             }
         }
         return properties;
