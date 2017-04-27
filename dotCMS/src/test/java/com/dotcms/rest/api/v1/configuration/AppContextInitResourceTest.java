@@ -7,7 +7,7 @@ import static org.mockito.Mockito.when;
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.UnitTestBase;
-import com.dotcms.cms.login.LoginService;
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
@@ -57,7 +57,7 @@ public class AppContextInitResourceTest extends UnitTestBase {
 
 		when(configurationHelper.getConfigProperties( mockHttpRequest )).thenReturn(configData);
 
-		LoginService loginService = mock( LoginService.class );
+		LoginServiceAPI loginService = mock( LoginServiceAPI.class );
 
 		User user = UserUtilTest.createUser();
 		when( loginService.getLoggedInUser( mockHttpRequest ) ).thenReturn( user );

@@ -1,21 +1,9 @@
 package com.dotcms.rest.api.v1.authentication;
 
-import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Locale;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
-import com.dotcms.cms.login.LoginService;
-import com.dotcms.cms.login.LoginServiceFactory;
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.POST;
 import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
@@ -25,12 +13,9 @@ import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotmarketing.business.ApiProvider;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.*;
 import com.liferay.portal.auth.AuthException;
@@ -42,6 +27,15 @@ import com.liferay.portal.language.LanguageWrapper;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * This resource does the authentication, if the authentication is successfully
@@ -60,7 +54,7 @@ public class AuthenticationResource implements Serializable {
     static final String LOGIN_AS_USER = "loginAsUser";
 
     private final UserLocalManager userLocalManager;
-    private final LoginService loginService;
+    private final LoginServiceAPI loginService;
     private final ResponseUtil responseUtil;
 
     private final AuthenticationHelper authenticationHelper;
@@ -69,14 +63,14 @@ public class AuthenticationResource implements Serializable {
      * Default constructor.
      */
     public AuthenticationResource() {
-        this(LoginServiceFactory.getInstance().getLoginService(),
+        this(APILocator.getLoginServiceAPI(),
                 UserLocalManagerFactory.getManager(),
                 ResponseUtil.INSTANCE,
                 AuthenticationHelper.getInstance());
     }
 
     @VisibleForTesting
-    protected AuthenticationResource(final LoginService loginService,
+    protected AuthenticationResource(final LoginServiceAPI loginService,
                                      final UserLocalManager userLocalManager,
                                      final ResponseUtil responseUtil,
                                      AuthenticationHelper authenticationHelper) {

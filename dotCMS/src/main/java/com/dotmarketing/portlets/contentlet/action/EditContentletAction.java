@@ -17,9 +17,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.api.system.event.Visibility;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.notifications.business.NotificationAPI;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -31,6 +36,7 @@ import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
+import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -42,11 +48,14 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PublishStateException;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -124,17 +133,45 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	private HostWebAPI hostWebAPI;
 	private TagAPI tagAPI;
 	private String currentHost;
+	private NotificationAPI notificationAPI;
+	private UserAPI userAPI;
+	private RoleAPI roleAPI;
 
 	/**
 	 * Default constructor that initializes all the required dotCMS APIs.
 	 */
 	public EditContentletAction() {
-		catAPI = APILocator.getCategoryAPI();
-		perAPI = APILocator.getPermissionAPI();
-		conAPI = APILocator.getContentletAPI();
-		fAPI = APILocator.getFieldAPI();
-		hostWebAPI = WebAPILocator.getHostWebAPI();
-		tagAPI = APILocator.getTagAPI();
+		this( APILocator.getCategoryAPI(),
+		APILocator.getPermissionAPI(),
+		APILocator.getContentletAPI(),
+		APILocator.getFieldAPI(),
+		WebAPILocator.getHostWebAPI(),
+		APILocator.getTagAPI(),
+		APILocator.getNotificationAPI(),
+		APILocator.getUserAPI(),
+		APILocator.getRoleAPI());
+	}
+	
+	@VisibleForTesting
+	public EditContentletAction(final CategoryAPI catAPI,
+						 final PermissionAPI perAPI,
+						 final ContentletAPI conAPI,
+						 final FieldAPI fAPI,
+						 final HostWebAPI hostWebAPI,
+						 final TagAPI tagAPI,
+						 final NotificationAPI notificationAPI,
+                         final UserAPI userAPI,
+						 final RoleAPI roleAPI) {
+
+		this.catAPI = catAPI;
+		this.perAPI = perAPI;
+		this.conAPI = conAPI;
+		this.fAPI= fAPI;
+		this.hostWebAPI = hostWebAPI;
+		this.tagAPI = tagAPI;
+		this.notificationAPI = notificationAPI;
+        this.userAPI = userAPI;
+		this.roleAPI = roleAPI;
 	}
 
 	private Contentlet contentletToEdit;
@@ -2808,7 +2845,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 		HttpServletRequest httpReq = ((ActionRequestImpl) req).getHttpServletRequest();
 
-		Logger.debug(this, "Calling Batch Reindex Method");
+		Logger.info(this, "Calling Batch Reindex Method");
 		String [] inodes = req.getParameterValues("publishInode");
 
 		if (Boolean.parseBoolean(req.getParameter("fullCommand"))) {
@@ -2839,6 +2876,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 			public void reindex() throws DotContentletStateException, DotStateException, DotSecurityException, DotDataException {
 				//DistributedJournalAPI jAPI = APILocator.getDistributedJournalAPI();
+				int count = 0;
 				for(String inode  : inodes){
 
 					Contentlet contentlet = new Contentlet();
@@ -2847,18 +2885,35 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 						if(contentlet != null && UtilMethods.isSet(contentlet.getInode())){
 							contentlet.setLowIndexPriority(true);
 							conAPI.reindex(contentlet);
+							count++;
 						}else{
 							Logger.error(this, "Unable to find contentlet with inode " + inode);
+							try {
+								sendNotification("notification.reindex.error.title","notification.batch.reindexing.error.processrecord",  new Object[] {inode}, null, false);
+							} catch ( DotDataException | LanguageException e ) {
+								Logger.error(this, "Error creating a system notification informing about problems in the batch indexing process.", e);
+							}
 							//new ESIndexAPI().removeContentFromIndex(contentlet);
 							// TODO: implement a way to clean the index in this case
 							continue;
 						}
 					}catch (DotDataException ex){
 						Logger.error(this, "Unable to find contentlet with inode " + inode);
+						try {
+							sendNotification("notification.reindex.error.title","notification.batch.reindexing.error.processrecord",  new Object[] {inode}, null, false);
+						} catch ( DotDataException | LanguageException e ) {
+							Logger.error(this, "Error creating a system notification informing about problems in the batch indexing process.", e);
+						}
 						//jAPI.addContentIndexEntryToDelete(inode);
 						continue;
 					}
 				}
+				try {
+					sendNotification("notification.reindex.error.title","notification.batch.reindexing.success", null, null, false);
+				} catch ( DotDataException | LanguageException e ) {
+					Logger.error(this, "Error creating a system notification informing about problems in the batch indexing process.", e);
+				}
+				Logger.info(this, "Finished Batch Reindexed . Processed "+count+" / "+inodes.length+" contents");
 			}
 		}
 
@@ -3184,4 +3239,50 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 	}
 
+	/**
+	 * Generates a new notification displayed at the top left side of the
+	 * back-end page in dotCMS. This utility method allows you to send reports
+	 * to the user regarding the operations performed during the re-index,
+	 * whether they succeeded or failed.
+	 * 
+	 * @param title
+	 *            - The message title that should be present in the language
+	 *            properties files.
+	 * @param key
+	 *            - The message key that should be present in the language
+	 *            properties files.
+	 * @param msgParams
+	 *            - The parameters, if any, that will replace potential
+	 *            placeholders in the message. E.g.: "This is {0} test."
+	 * @param defaultMsg
+	 *            - If set, the default message in case the key does not exist
+	 *            in the properties file. Otherwise, the message key will be
+	 *            returned.
+     * @param error - true if we want to send an error notification
+     * @throws DotDataException
+	 *             The notification could not be posted to the system.
+	 * @throws LanguageException
+	 *             The language properties could not be retrieved.
+	 */
+	protected void sendNotification(final String title, final String key, final Object[] msgParams, final String defaultMsg, boolean error)
+			throws DotDataException, LanguageException {
+
+        NotificationLevel notificationLevel = error? NotificationLevel.ERROR: NotificationLevel.INFO;
+
+		//Search for the CMS Admin role and System User
+		final Role cmsAdminRole = roleAPI.loadCMSAdminRole();
+		final User systemUser = userAPI.getSystemUser();
+
+		this.notificationAPI.generateNotification(
+				new I18NMessage(title), // title = Reindex Notification
+				new I18NMessage(key, defaultMsg, msgParams),
+				null, // no actions
+                notificationLevel,
+				NotificationType.GENERIC,
+				Visibility.ROLE,
+				cmsAdminRole.getId(),
+				systemUser.getUserId(),
+				systemUser.getLocale()
+		);
+	}
 }

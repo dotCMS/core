@@ -22,6 +22,9 @@
 
 package com.liferay.util;
 
+import com.dotcms.util.ConfigurationInterpolator;
+import com.dotcms.util.SystemEnvironmentConfigurationInterpolator;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Iterator;
@@ -36,6 +39,9 @@ import java.util.Properties;
  *
  */
 public class PropertiesUtil {
+
+	private static ConfigurationInterpolator interpolator =
+			SystemEnvironmentConfigurationInterpolator.INSTANCE;
 
 	public static void copyProperties(Properties from, Properties to) {
 		Iterator itr = from.entrySet().iterator();
@@ -69,9 +75,17 @@ public class PropertiesUtil {
 		while (itr.hasNext()) {
 			Map.Entry entry = (Map.Entry)itr.next();
 
-			map.put(entry.getKey(), entry.getValue());
+			if (null != entry.getValue()) {
+
+				map.put(entry.getKey(), interpolator.interpolate(entry.getValue().toString()));
+			} else {
+
+				map.put(entry.getKey(), entry.getValue());
+			}
 		}
 	}
+
+
 
 	public static void load(Properties p, String s) throws IOException {
 		s = UnicodeFormatter.toString(s);
