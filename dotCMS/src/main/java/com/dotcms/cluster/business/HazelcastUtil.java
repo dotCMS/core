@@ -1,5 +1,6 @@
 package com.dotcms.cluster.business;
 
+import com.dotcms.repackage.org.apache.commons.lang.NotImplementedException;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -29,7 +30,7 @@ public class HazelcastUtil {
 	    EMBEDDED("hazelcast-embedded.xml"),
 	    CLIENT("hazelcast-client.xml");
 
-	    private String path;
+	    private final String path;
 
 	    HazelcastInstanceType(String path) {
 	        this.path = path;
@@ -92,14 +93,7 @@ public class HazelcastUtil {
                     	}
                     }
 
-                    if (instanceType == HazelcastInstanceType.EMBEDDED) {
-
-                    	memberInstance = newHazelcastInstanceEmbedded(instanceType.getPath());
-
-                    } else if (instanceType == HazelcastInstanceType.CLIENT) {
-
-                    	memberInstance = newHazelcastInstanceClient(instanceType.getPath());
-                    }
+                    memberInstance = HazelcastInstanceFactory.getInstance().createHazelcastInstance(instanceType);
 
                     _memberInstances.put(instanceType, memberInstance);
 
@@ -110,85 +104,111 @@ public class HazelcastUtil {
         }
     }
 
-	private HazelcastInstance newHazelcastInstanceEmbedded(String xmlPath) {
+    private static class HazelcastInstanceFactory {
 
-		InputStream is = getClass().getClassLoader().getResourceAsStream(xmlPath);
+    	private static final HazelcastInstanceFactory INSTANCE = new HazelcastInstanceFactory();
 
-		try {
-		    XmlConfigBuilder builder = new XmlConfigBuilder(is);
+    	private HazelcastInstanceFactory() {}
 
-		    com.hazelcast.config.Config config = builder.build();
-
-		    if (Config.getBooleanProperty("CLUSTER_HAZELCAST_AUTOWIRE", true)) {
-
-		    	Map<String, Object> properties = buildPropertiesEmbedded();
-
-			    if (UtilMethods.isSet( properties.get(PROPERTY_HAZELCAST_NETWORK_BIND_PORT) ) &&
-			    	UtilMethods.isSet( properties.get(PROPERTY_HAZELCAST_NETWORK_TCP_MEMBERS) ) )
-			    {
-				    config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
-
-				    config.getNetworkConfig().setPort(Integer.parseInt((String) properties.get(PROPERTY_HAZELCAST_NETWORK_BIND_PORT)));
-
-			        for(String member : (String[]) properties.get(PROPERTY_HAZELCAST_NETWORK_TCP_MEMBERS)) {
-			        	config.getNetworkConfig().getJoin().getTcpIpConfig().addMember(member);
-			        }
-			    }
-		    }
-
-		    return Hazelcast.newHazelcastInstance(config);
-		} finally {
-
-			CloseUtils.closeQuietly(is);
-		}
-	}
-
-	private HazelcastInstance newHazelcastInstanceClient(String xmlPath) {
-
-		InputStream is = getClass().getClassLoader().getResourceAsStream(xmlPath);
-
-		try {
-			XmlClientConfigBuilder builder = new XmlClientConfigBuilder(is);
-
-		    com.hazelcast.client.config.ClientConfig config = builder.build();
-
-		    return HazelcastClient.newHazelcastClient(config);
-		} finally {
-
-			CloseUtils.closeQuietly(is);
-		}
-	}
-
-    private Map<String, Object> buildPropertiesEmbedded(){
-        Map<String, Object> properties = new HashMap<>();
-
-        // Bind Address
-        String bindAddressProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_BIND_ADDRESS, null);
-        if (UtilMethods.isSet(bindAddressProperty)) {
-        	properties.put(HazelcastUtil.PROPERTY_HAZELCAST_NETWORK_BIND_ADDRESS, bindAddressProperty);
+        public static HazelcastInstanceFactory getInstance() {
+            return INSTANCE;
         }
 
-        // Bind Port
-        String bindPortProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_BIND_PORT, null);
-        if (UtilMethods.isSet(bindPortProperty)) {
-        	properties.put(HazelcastUtil.PROPERTY_HAZELCAST_NETWORK_BIND_PORT, bindPortProperty);
+
+        public HazelcastInstance createHazelcastInstance(HazelcastInstanceType instanceType) {
+        	switch (instanceType) {
+        		case EMBEDDED:
+                	return createHazelcastInstanceEmbedded(instanceType.getPath());
+
+        		case CLIENT:
+        			return createHazelcastInstanceClient(instanceType.getPath());
+
+        		default:
+        			throw new NotImplementedException("Creation for Hazelcast instance ("+ instanceType +") not implemented" );
+        	}
         }
 
-        // Initial Hosts
-        String initialHostsProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_TCP_INITIAL_HOSTS, null);
-        if (UtilMethods.isSet(initialHostsProperty)) {
 
-        	String[] initialHosts = initialHostsProperty.split(",");
+    	private HazelcastInstance createHazelcastInstanceEmbedded(String xmlPath) {
 
-        	for(int i = 0; i < initialHosts.length; i++){
-				String initialHost = initialHosts[i].trim();
+    		InputStream is = getClass().getClassLoader().getResourceAsStream(xmlPath);
 
-				initialHosts[i] = initialHost.replaceAll("^(.*)\\[(.*)\\]$", "$1:$2");
-			}
+    		try {
+    		    XmlConfigBuilder builder = new XmlConfigBuilder(is);
 
-        	properties.put(HazelcastUtil.PROPERTY_HAZELCAST_NETWORK_TCP_MEMBERS, initialHosts);
-        }
+    		    com.hazelcast.config.Config config = builder.build();
 
-        return properties;
+    		    if (Config.getBooleanProperty("CLUSTER_HAZELCAST_AUTOWIRE", true)) {
+
+    		    	Map<String, Object> properties = buildPropertiesEmbedded();
+
+    			    if (UtilMethods.isSet( properties.get(PROPERTY_HAZELCAST_NETWORK_BIND_PORT) ) &&
+    			    	UtilMethods.isSet( properties.get(PROPERTY_HAZELCAST_NETWORK_TCP_MEMBERS) ) )
+    			    {
+    				    config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
+
+    				    config.getNetworkConfig().setPort(Integer.parseInt((String) properties.get(PROPERTY_HAZELCAST_NETWORK_BIND_PORT)));
+
+    			        for(String member : (String[]) properties.get(PROPERTY_HAZELCAST_NETWORK_TCP_MEMBERS)) {
+    			        	config.getNetworkConfig().getJoin().getTcpIpConfig().addMember(member);
+    			        }
+    			    }
+    		    }
+
+    		    return Hazelcast.newHazelcastInstance(config);
+    		} finally {
+
+    			CloseUtils.closeQuietly(is);
+    		}
+    	}
+
+    	private HazelcastInstance createHazelcastInstanceClient(String xmlPath) {
+
+    		InputStream is = getClass().getClassLoader().getResourceAsStream(xmlPath);
+
+    		try {
+    			XmlClientConfigBuilder builder = new XmlClientConfigBuilder(is);
+
+    		    com.hazelcast.client.config.ClientConfig config = builder.build();
+
+    		    return HazelcastClient.newHazelcastClient(config);
+    		} finally {
+
+    			CloseUtils.closeQuietly(is);
+    		}
+    	}
+
+        private Map<String, Object> buildPropertiesEmbedded(){
+            Map<String, Object> properties = new HashMap<>();
+
+            // Bind Address
+            String bindAddressProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_BIND_ADDRESS, null);
+            if (UtilMethods.isSet(bindAddressProperty)) {
+            	properties.put(HazelcastUtil.PROPERTY_HAZELCAST_NETWORK_BIND_ADDRESS, bindAddressProperty);
+            }
+
+            // Bind Port
+            String bindPortProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_BIND_PORT, null);
+            if (UtilMethods.isSet(bindPortProperty)) {
+            	properties.put(HazelcastUtil.PROPERTY_HAZELCAST_NETWORK_BIND_PORT, bindPortProperty);
+            }
+
+            // Initial Hosts
+            String initialHostsProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_TCP_INITIAL_HOSTS, null);
+            if (UtilMethods.isSet(initialHostsProperty)) {
+
+            	String[] initialHosts = initialHostsProperty.split(",");
+
+            	for(int i = 0; i < initialHosts.length; i++){
+    				String initialHost = initialHosts[i].trim();
+
+    				initialHosts[i] = initialHost.replaceAll("^(.*)\\[(.*)\\]$", "$1:$2");
+    			}
+
+            	properties.put(HazelcastUtil.PROPERTY_HAZELCAST_NETWORK_TCP_MEMBERS, initialHosts);
+            }
+
+            return properties;
+        }    	
     }
 }
