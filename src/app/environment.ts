@@ -39,10 +39,11 @@ import {StringFormat} from './api/util/stringFormat';
 import {StringUtils} from './api/util/string.utils';
 import {UserModel} from './api/auth/UserModel';
 import {GravatarService} from './api/services/gravatar-service';
+import { ColorUtil } from './api/util/ColorUtil';
+import { BrowserUtil } from './api/util/browser-util';
 
 // ROUTING
 import { LocationStrategy, HashLocationStrategy } from '@angular/common';
-import { ColorUtil } from './api/util/ColorUtil';
 
 // Environment Providers
 const RULES_ENGINE_SERVICES = [
@@ -60,7 +61,9 @@ let PROVIDERS: any[] = [
   AccountService,
   ApiRoot,
   BundleService,
+  BrowserUtil,
   Config,
+  ColorUtil,
   CoreWebService,
   DotRouterService,
   DotcmsConfig,
@@ -82,7 +85,6 @@ let PROVIDERS: any[] = [
   StringFormat,
   StringUtils,
   UserModel,
-  ColorUtil,
   {provide: LocationStrategy, useClass: HashLocationStrategy}
 ];
 

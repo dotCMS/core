@@ -43,6 +43,7 @@ export class WebSocketProtocol extends Protocol {
                 self.socket = this.protocols ? new WebSocket(this.url.url, this.protocols) : new WebSocket(this.url.url);
 
                 self.socket.onopen = (ev: Event) => {
+                    this.loggerService.debug('Web socket connected', this.url.url);
                     this._open.next(ev);
                 };
 
@@ -98,7 +99,7 @@ export class WebSocketProtocol extends Protocol {
     }
 
     close(force: boolean): WebSocketProtocol {
-        if (force || !this.socket.bufferedAmount) {
+        if (this.socket && (force || !this.socket.bufferedAmount)) {
             this.socket.close();
         }
         return this;
