@@ -13,6 +13,7 @@ import com.hazelcast.core.HazelcastInstance;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by jasontesser on 4/5/17.
@@ -38,7 +39,7 @@ public class HazelcastUtil {
 	    }
 	}
 
-    private static Map<HazelcastInstanceType, HazelcastInstance> _memberInstances = new HashMap<>();
+    private static Map<HazelcastInstanceType, HazelcastInstance> _memberInstances = new ConcurrentHashMap<>();
 
     final String syncMe = "hazelSync";
 

@@ -21,6 +21,7 @@ import java.net.InetSocketAddress;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -30,15 +31,15 @@ public abstract class AbstractHazelcastCacheTransport implements CacheTransport 
 
     private Map<String, Map<String, Boolean>> cacheStatus;
 
-    private AtomicLong receivedMessages = new AtomicLong(0);
-    private AtomicLong receivedBytes = new AtomicLong(0);
-    private AtomicLong sentMessages = new AtomicLong(0);
-    private AtomicLong sentBytes = new AtomicLong(0);
+    private final AtomicLong receivedMessages = new AtomicLong(0);
+    private final AtomicLong receivedBytes = new AtomicLong(0);
+    private final AtomicLong sentMessages = new AtomicLong(0);
+    private final AtomicLong sentBytes = new AtomicLong(0);
 
     private final String topicName = "dotCMSClusterCacheInvalidation";
     private String topicId;
 
-    private boolean isInitialized;
+    private final AtomicBoolean isInitialized = new AtomicBoolean(false);
 
     protected abstract HazelcastInstanceType getHazelcastInstanceType();
     
@@ -65,7 +66,7 @@ public abstract class AbstractHazelcastCacheTransport implements CacheTransport 
         };
         topicId = hazel.getTopic(topicName).addMessageListener(messageListener);
 
-        isInitialized = true;
+        isInitialized.set(true);
     }
 
     public void receive(String msg){
@@ -209,10 +210,10 @@ public abstract class AbstractHazelcastCacheTransport implements CacheTransport 
 
     @Override
     public void shutdown() throws CacheTransportException {
-    	if (isInitialized) {
+    	if (isInitialized.get()) {
     		getHazelcastInstance().getTopic(topicName).removeMessageListener(topicId);
 
-    		isInitialized = false;
+    		isInitialized.set(false);
     	}
     }
 
