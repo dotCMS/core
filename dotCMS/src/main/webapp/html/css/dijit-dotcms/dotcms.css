@@ -3662,6 +3662,9 @@ html, body {
   padding: 0 16px;
   border: none;
 }
+.dijitSelect .dijitButtonContents.dijitSelectFixedWidth .dijitSelect .dijitButtonContents {
+  width: auto;
+}
 .dijitSelect .dijitArrowButton {
   border-left: solid 1px #C5C5C5;
   width: 32px;
@@ -7415,6 +7418,14 @@ div#_dotHelpMenu {
   margin-left: 230px;
   border-left: 1px solid #ccc;
   padding-left: 15px;
+}
+
+.lockIcon {
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -220px;
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  vertical-align: top;
 }
 
 .navbar ul {
