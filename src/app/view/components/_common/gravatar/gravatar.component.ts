@@ -40,6 +40,7 @@ export class GravatarComponent {
                 this.gravatarPlaceholderStyles = {
                     'font-size': this.size - ((this.size * 25) / 100) + 'px',
                     'height': this.size + 'px',
+                    'line-height': this.size + 'px',
                     'width': this.size + 'px'
                 };
             }
