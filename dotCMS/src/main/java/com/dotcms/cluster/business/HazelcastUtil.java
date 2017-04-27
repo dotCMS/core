@@ -138,7 +138,7 @@ public class HazelcastUtil {
 
     		    com.hazelcast.config.Config config = builder.build();
 
-    		    if (Config.getBooleanProperty("CLUSTER_HAZELCAST_AUTOWIRE", true)) {
+    		    if (Config.getBooleanProperty("AUTOWIRE_CLUSTER_TRANSPORT", true)) {
 
     		    	Map<String, Object> properties = buildPropertiesEmbedded();
 

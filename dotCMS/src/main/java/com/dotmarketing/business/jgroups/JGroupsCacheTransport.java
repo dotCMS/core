@@ -41,12 +41,8 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
 
             cacheStatus = new LRUMap(100);
 
-            String cacheProtocol;
-            if ( Config.getBooleanProperty("CLUSTER_AUTOWIRE", true) ) {
-                cacheProtocol = Config.getStringProperty("CACHE_PROTOCOL", "tcp");
-            } else {
-                cacheProtocol = Config.getStringProperty("CACHE_PROTOCOL", "tcp");
-            }
+            String cacheProtocol = Config.getStringProperty("CACHE_PROTOCOL", "tcp");
+
             String cacheFile = "cache-jgroups-" + cacheProtocol + ".xml";
             Logger.info(this, "***\t Going to load JGroups with this Classpath file " + cacheFile);
 

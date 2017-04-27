@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.business;
 
+import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ServerAPI;
@@ -96,11 +97,11 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
 			journalAPI = APILocator.getDistributedJournalAPI();
 			ServerAPI serverAPI = APILocator.getServerAPI();
-			
+
 			String cacheProtocol, bindAddr, bindPort, cacheTCPInitialHosts, mCastAddr, mCastPort, preferIPv4;
 
-			if(Config.getBooleanProperty("CLUSTER_AUTOWIRE",true)) {
-			    Logger.info(this, "Using automatic port placement as CLUSTER_AUTOWIRE is ON");
+			if(ClusterUtils.isTransportAutoWire()) {
+			    Logger.info(this, "Using automatic port placement as either CLUSTER_AUTOWIRE or AUTOWIRE_CLUSTER_TRANSPORT are ON");
 
 				String bindAddressFromProperty = Config.getStringProperty("CACHE_BINDADDRESS", null, false);
 
@@ -170,8 +171,8 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
                 preferIPv4 = Config.getStringProperty("CACHE_FORCE_IPV4", "true");
 			}
 			else {
-			    Logger.info(this, "Using manual port placement as CLUSTER_AUTOWIRE is OFF");
-			    
+				Logger.info(this, "Using manual port placement as both CLUSTER_AUTOWIRE and AUTOWIRE_CLUSTER_TRANSPORT are OFF");
+
 			    cacheProtocol = Config.getStringProperty("CACHE_PROTOCOL", "tcp");
 			    bindAddr = Config.getStringProperty("CACHE_BINDADDRESS", null);
 			    bindPort = Config.getStringProperty("CACHE_BINDPORT", null);
