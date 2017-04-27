@@ -348,9 +348,13 @@ public abstract class GenericBundleActivator implements BundleActivator {
      * @throws Exception
      */
     protected void addClassTodotCMSClassLoader ( String className ) throws Exception {
+
+        //Search for the class we want to inject using the felix plugin class loader
+        Class clazz = Class.forName( className.trim(), false, getFelixClassLoader() );
+
         ByteBuddyAgent.install();
         new ByteBuddy()
-                .rebase(Class.forName(className.trim()), ClassFileLocator.ForClassLoader.of(getFelixClassLoader()))
+                .rebase(clazz, ClassFileLocator.ForClassLoader.of(getFelixClassLoader()))
                 .name(className.trim())
                 .make()
                 .load(getContextClassLoader(),ClassReloadingStrategy.fromInstalledAgent());
