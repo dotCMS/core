@@ -75,7 +75,7 @@ class ActivatorUtil {
         }
 
         //Now cleaning the resources under the velocity folder
-        resourcesPath = servletContext.getRealPath( VelocityUtil.getVelocityRootPath() + getBundleFolder( context, "/" ) );
+        resourcesPath = VelocityUtil.getVelocityRootPath() + getBundleFolder( context, "/" );
         resources = new File( resourcesPath );
         if ( resources.exists() ) {
             FileUtil.deltree( resources );
@@ -91,8 +91,7 @@ class ActivatorUtil {
      */
     static void moveVelocityResources ( BundleContext context, String referenceResourcePath ) throws Exception {
 
-        ServletContext servletContext = Config.CONTEXT;
-        String destinationPath = servletContext.getRealPath( VelocityUtil.getVelocityRootPath() + getBundleFolder( context, "/" ) );
+        String destinationPath = VelocityUtil.getVelocityRootPath() + getBundleFolder( context, "/" );
 
         moveResources( context, referenceResourcePath, destinationPath );
     }
