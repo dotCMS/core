@@ -1,18 +1,23 @@
 package com.dotcms.rest.api.v1.system.websocket;
 
 import com.dotcms.api.system.event.*;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.ForbiddenException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import com.twelvemonkeys.lang.DateUtil;
 
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -36,31 +41,57 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 	public static final String ID = "userId";
 	public static final String USER = "user";
 	public static final String API_WS_V1_SYSTEM_EVENTS = "/api/ws/v1/system/events";
+
+
 	private final Queue<Session> queue;
 	private final UserAPI userAPI;
 	private final SystemEventProcessorFactory systemEventProcessorFactory;
     private final PayloadVerifierFactory payloadVerifierFactory;
     private final static ForbiddenCloseCode FORBIDDEN_CLOSE_CODE = new ForbiddenCloseCode();
 
+	/**
+	 * Configuration for ping pong strategy
+	 */
+	public  static final String     WEB_SOCKET_THREAD_POOL_SUBMITTER_NAME = "longpolling";
+	public  static final String     DOTCMS_WEBSOCKET_MILLIS_PINGPONG      = "dotcms.websocket.millis.pingpong";
+	public  static final String     DOTCMS_WEBSOCKET_USEPINGPONG          = "dotcms.websocket.usepingpong";
+	private static final ByteBuffer PING_RECEIVED                         = ByteBuffer.wrap("PING".getBytes());
+	private static final ByteBuffer PONG_RECEIVED                         = ByteBuffer.wrap("PONG".getBytes());
+	private final boolean      usePingPong;
+	private final long         millisForWaitPingPong;
+	private final DotSubmitter dotSubmitterPingPong;
+
 	public SystemEventsWebSocketEndPoint() {
 
 		this(new ConcurrentLinkedQueue<Session>(),
 				APILocator.getUserAPI(),
                 SystemEventProcessorFactory.getInstance(),
-                PayloadVerifierFactory.getInstance());
+                PayloadVerifierFactory.getInstance(),
+				DotConcurrentFactory.getInstance());
     }
 
 	@VisibleForTesting
 	public SystemEventsWebSocketEndPoint(final Queue<Session> queue,
                                          final UserAPI userAPI,
                                          final SystemEventProcessorFactory systemEventProcessorFactory,
-                                         final PayloadVerifierFactory payloadVerifierFactory) {
+                                         final PayloadVerifierFactory payloadVerifierFactory,
+										 final DotConcurrentFactory dotConcurrentFactory) {
 
-		this.queue      = queue;
-		this.userAPI    = userAPI;
+		this.queue       = queue;
+		this.userAPI     = userAPI;
         this.systemEventProcessorFactory = systemEventProcessorFactory;
-        this.payloadVerifierFactory = payloadVerifierFactory;
-    }
+        this.payloadVerifierFactory      = payloadVerifierFactory;
+        this.usePingPong = Config.getBooleanProperty(DOTCMS_WEBSOCKET_USEPINGPONG, false);
+		if (this.usePingPong) {
+
+			this.millisForWaitPingPong = Config.getLongProperty(DOTCMS_WEBSOCKET_MILLIS_PINGPONG,
+					DateUtil.MINUTE); // by default 1 min
+			this.dotSubmitterPingPong  = dotConcurrentFactory.getSubmitter(WEB_SOCKET_THREAD_POOL_SUBMITTER_NAME);
+		} else {
+			this.millisForWaitPingPong = -1;
+			this.dotSubmitterPingPong  = null;
+		}
+	}
 
 	@OnOpen
 	public void open(final Session session) {
@@ -103,6 +134,9 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 				}
 				throw new IllegalStateException(e);
 			}
+		} else {
+			// if session succesfully we start the ping pong (if it enables)
+			this.doPing(session);
 		}
 	} // open.
 
@@ -115,6 +149,48 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 	public void closedConnection(Session session) {
 		queue.remove(session);
 	}
+
+	@OnMessage
+	public void onPong(final PongMessage pongMessage, final Session session) {
+		// the browser will send the pong message automatically with the same data we sent on the ping.
+		if (PING_RECEIVED.equals(pongMessage.getApplicationData())) {
+
+			this.doPing(session);
+		}
+	} // onPong.
+
+	private void doPing (final Session session) {
+		// wait for N seconds
+		if (null != this.dotSubmitterPingPong) {
+			this.dotSubmitterPingPong.execute(() -> {
+
+				try {
+					// we wait for a N seconds and then send the ping messsage
+					if (this.millisForWaitPingPong > 0) {
+						Thread.sleep(this.millisForWaitPingPong);
+					}
+
+					if (session.isOpen()) {
+						Logger.debug(this, "Doing ping to: " + session);
+						session.getAsyncRemote().sendPing(PING_RECEIVED);
+					} else {
+
+						Logger.debug(this, "Couldn't do the ping to: " + session + ", session is closed");
+					}
+				} catch (InterruptedException e) {
+
+					Logger.debug(this, e.getMessage(), e);
+					Thread.currentThread().interrupt();
+				} catch (Exception e) {
+					if (Logger.isErrorEnabled(this.getClass())) {
+
+						Logger.error(this.getClass(), e.getMessage(), e);
+					}
+				}
+			});
+		}
+	} // doPing.
+
 
 	/**
 	 * Sends the specified {@link SystemEvent} object to all the clients
