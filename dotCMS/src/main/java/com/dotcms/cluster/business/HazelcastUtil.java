@@ -1,5 +1,6 @@
 package com.dotcms.cluster.business;
 
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -137,11 +138,8 @@ public class HazelcastUtil {
 
 		    return Hazelcast.newHazelcastInstance(config);
 		} finally {
-	        try {
-	            is.close();
-	        }catch (Exception e){
-	            Logger.error(Hazelcast.class, "Unable to close inputstream for Hazel xml", e);
-	        }
+
+			CloseUtils.closeQuietly(is);
 		}
 	}
 
@@ -156,11 +154,8 @@ public class HazelcastUtil {
 
 		    return HazelcastClient.newHazelcastClient(config);
 		} finally {
-	        try {
-	            is.close();
-	        }catch (Exception e){
-	            Logger.error(Hazelcast.class, "Unable to close inputstream for Hazel xml", e);
-	        }
+
+			CloseUtils.closeQuietly(is);
 		}
 	}
 
