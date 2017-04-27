@@ -29,7 +29,7 @@ public class HazelcastUtil {
 	    EMBEDDED("hazelcast-embedded.xml"),
 	    CLIENT("hazelcast-client.xml");
 
-	    private String path;
+	    private final String path;
 
 	    HazelcastInstanceType(String path) {
 	        this.path = path;
