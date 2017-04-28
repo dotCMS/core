@@ -236,7 +236,7 @@ public class PermissionAjax {
 				if(individualPermission != null ) {
 					newSetOfPermissions.add(new Permission(asset.getPermissionId(), roleId, Integer.parseInt(individualPermission), true));
 					//If a structure we need to save permissions inheritable by children content
-					if(asset instanceof Structure) {
+					if(asset instanceof Structure || asset instanceof ContentType) {
 						newSetOfPermissions.add(new Permission(Contentlet.class.getCanonicalName(), asset.getPermissionId(), roleId,
 								Integer.parseInt(individualPermission), true));
 					}
