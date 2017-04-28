@@ -222,7 +222,7 @@ public abstract class AbstractHazelcastCacheTransport implements CacheTransport 
     }
 
     protected HazelcastInstance getHazelcastInstance(boolean reInitialize) {
-    	return new HazelcastUtil().getHazel(getHazelcastInstanceType(), reInitialize);
+    	return HazelcastUtil.getInstance().getHazel(getHazelcastInstanceType(), reInitialize);
     }
 
 

@@ -30,7 +30,7 @@ public abstract class AbstractHazelcastCacheProvider extends CacheProvider {
     protected abstract HazelcastInstanceType getHazelcastInstanceType();
 
     protected HazelcastInstance getHazelcastInstance() {
-    	return new HazelcastUtil().getHazel(getHazelcastInstanceType());
+    	return HazelcastUtil.getInstance().getHazel(getHazelcastInstanceType());
     }
 
     @Override

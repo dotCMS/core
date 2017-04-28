@@ -41,9 +41,18 @@ public class HazelcastUtil {
 	    }
 	}
 
-    private static Map<HazelcastInstanceType, HazelcastInstance> _memberInstances = new ConcurrentHashMap<>();
+    private Map<HazelcastInstanceType, HazelcastInstance> _memberInstances = new ConcurrentHashMap<>();
+    private HazelcastInstanceFactory _memberFactory = new HazelcastInstanceFactory();
 
-    final String syncMe = "hazelSync";
+
+	private static final HazelcastUtil INSTANCE = new HazelcastUtil();
+
+	private HazelcastUtil() {}
+
+    public static HazelcastUtil getInstance() {
+        return INSTANCE;
+    }
+
 
     public HazelcastInstance getHazel(HazelcastInstanceType instanceType){
     	return getHazel(instanceType, false);
@@ -59,7 +68,7 @@ public class HazelcastUtil {
 
     public void shutdown(HazelcastInstanceType instanceType){
         if (_memberInstances.get(instanceType) != null) {
-            synchronized (syncMe) {
+            synchronized (this) {
                 if (_memberInstances.get(instanceType) != null) {
                 	_memberInstances.get(instanceType).shutdown();
                 	_memberInstances.remove(instanceType);
@@ -78,7 +87,7 @@ public class HazelcastUtil {
 
         if (_memberInstances.get(instanceType) == null || reInitialize) {
             long start = System.currentTimeMillis();
-            synchronized (syncMe) {
+            synchronized (this) {
                 if (_memberInstances.get(instanceType) == null || reInitialize) {
                     Logger.info(this, "Setting Up HazelCast ("+ instanceType +")");
 
@@ -93,7 +102,7 @@ public class HazelcastUtil {
                     	}
                     }
 
-                    memberInstance = HazelcastInstanceFactory.getInstance().createHazelcastInstance(instanceType);
+                    memberInstance = _memberFactory.createHazelcastInstance(instanceType);
 
                     _memberInstances.put(instanceType, memberInstance);
 
@@ -105,15 +114,6 @@ public class HazelcastUtil {
     }
 
     private static class HazelcastInstanceFactory {
-
-    	private static final HazelcastInstanceFactory INSTANCE = new HazelcastInstanceFactory();
-
-    	private HazelcastInstanceFactory() {}
-
-        public static HazelcastInstanceFactory getInstance() {
-            return INSTANCE;
-        }
-
 
         public HazelcastInstance createHazelcastInstance(HazelcastInstanceType instanceType) {
         	switch (instanceType) {
@@ -127,7 +127,6 @@ public class HazelcastUtil {
         			throw new NotImplementedException("Creation for Hazelcast instance ("+ instanceType +") not implemented" );
         	}
         }
-
 
     	private HazelcastInstance createHazelcastInstanceEmbedded(String xmlPath) {
 
