@@ -18,6 +18,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.DotResourceCache;
 import com.liferay.util.FileUtil;
 
@@ -55,12 +56,6 @@ public class TemplateServices {
     	InputStream result;
     	StringBuilder templateBody = new StringBuilder();
         try {
-            String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
-            if (velocityRootPath.startsWith("/WEB-INF")) {
-                velocityRootPath = FileUtil.getRealPath(velocityRootPath);
-            }
-            velocityRootPath += java.io.File.separator;
-
             String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
             String filePath=folderPath + identifier.getInode() + "." + Config.getStringProperty("VELOCITY_TEMPLATE_EXTENSION");
 
@@ -112,10 +107,7 @@ public class TemplateServices {
     }
     
     public static void removeTemplateFile (Template asset, Identifier identifier, boolean EDIT_MODE) {
-        String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
-        if (velocityRootPath.startsWith("/WEB-INF")) {
-            velocityRootPath = FileUtil.getRealPath(velocityRootPath);
-        }
+        String velocityRootPath = VelocityUtil.getVelocityRootPath();
         velocityRootPath += java.io.File.separator;
 
         String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;

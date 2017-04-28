@@ -23,6 +23,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.DotResourceCache;
 import com.dotmarketing.viewtools.LanguageWebAPI;
 import com.liferay.portal.model.User;
@@ -478,14 +479,6 @@ public class ContentletServices {
 
 		if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
 			try {
-
-				String velocityRootPath= Config.getStringProperty("VELOCITY_ROOT");
-
-				if (velocityRootPath.startsWith("/WEB-INF")) {
-					velocityRootPath= FileUtil.getRealPath(velocityRootPath);
-				}
-				velocityRootPath += java.io.File.separator;
-
 				String veloExt= Config.getStringProperty("VELOCITY_CONTENT_EXTENSION");
 				String baseFilename= String.format("%s_%d.%s", identifier.getInode(), content.getLanguageId(), veloExt);
 
@@ -554,10 +547,7 @@ public class ContentletServices {
 	    CacheLocator.getContentletCache().remove(asset.getInode());
 
 		String folderPath= (!EDIT_MODE) ? "live" + java.io.File.separator : "working" + java.io.File.separator;
-		String velocityRootPath= Config.getStringProperty("VELOCITY_ROOT");
-		if (velocityRootPath.startsWith("/WEB-INF")) {
-			velocityRootPath= FileUtil.getRealPath(velocityRootPath);
-		}
+		String velocityRootPath = VelocityUtil.getVelocityRootPath();
 		velocityRootPath += java.io.File.separator;
 
 		Set<Long> langs = new HashSet<Long>();

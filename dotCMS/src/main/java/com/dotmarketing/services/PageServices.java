@@ -356,13 +356,9 @@ public class PageServices {
 				String languageStr = htmlPage.isContent() ? "_" + ((Contentlet)htmlPage).getLanguageId():"";
 				
 			    String realFolderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
-	            String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
+
 	            String filePath = realFolderPath + identifier.getInode() + languageStr + "." + Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION","dotpage");
-	            if (velocityRootPath.startsWith("/WEB-INF")) {
-	                velocityRootPath = com.liferay.util.FileUtil.getRealPath(velocityRootPath);
-	            }
-	            velocityRootPath += java.io.File.separator;
-			    
+
 				java.io.BufferedOutputStream tmpOut = new java.io.BufferedOutputStream(new java.io.FileOutputStream(new java.io.File(ConfigUtils.getDynamicVelocityPath()+java.io.File.separator + filePath)));
 				//Specify a proper character encoding
 				OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration());
@@ -387,10 +383,7 @@ public class PageServices {
 
 	public static void removePageFile (IHTMLPage htmlPage, Identifier identifier, boolean EDIT_MODE) {
 		String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
-		String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
-		if (velocityRootPath.startsWith("/WEB-INF")) {
-			velocityRootPath = com.liferay.util.FileUtil.getRealPath(velocityRootPath);
-		}
+		String velocityRootPath = VelocityUtil.getVelocityRootPath();
 		String languageStr = htmlPage.isContent() ? "_" + ((Contentlet)htmlPage).getLanguageId():"";
 		String filePath = folderPath + identifier.getInode() + languageStr + "." + Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION","dotpage");
 		velocityRootPath += java.io.File.separator;
