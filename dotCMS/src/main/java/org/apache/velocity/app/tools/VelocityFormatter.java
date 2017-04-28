@@ -146,7 +146,7 @@ public class VelocityFormatter
                               String delim,
                               String finaldelim)
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         int arrayLen = Array.getLength(array);
         for (int i = 0; i < arrayLen; i++)
         {
@@ -203,7 +203,7 @@ public class VelocityFormatter
                                String delim,
                                String finaldelim)
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         int size = list.size();
         for (int i = 0; i < size; i++)
         {

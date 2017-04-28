@@ -491,7 +491,7 @@ public class AnakiaTask extends MatchingTask
         StringTokenizer st = new StringTokenizer(file, "/\\");
         // needs to be -1 cause ST returns 1 even if there are no matches. huh?
         int slashCount = st.countTokens() - 1;
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (int i=0;i<slashCount ;i++ )
         {
             sb.append ("../");

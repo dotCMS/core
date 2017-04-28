@@ -178,7 +178,7 @@ public class Parse extends InputBase
             Object[] templateStack = context.getTemplateNameStack();
             if (templateStack.length >= maxDepth)
             {
-                StringBuffer path = new StringBuffer();
+                StringBuilder path = new StringBuilder();
                 for( int i = 0; i < templateStack.length; ++i)
                 {
                     path.append( " > " + templateStack[i] );

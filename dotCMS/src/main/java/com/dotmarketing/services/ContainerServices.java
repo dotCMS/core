@@ -156,7 +156,7 @@ public class ContainerServices {
 
            		sb.append("#set($CONTENT_INODE = '')");
            		sb.append("#if($contentletId != '') ");
-           	    sb.append("#getContentDetail($contentletId) ");
+           	    sb.append("#contentDetail($contentletId) ");
            	    sb.append("#end");
            	    sb.append("#if($CONTENT_INODE != '')");
 
@@ -234,7 +234,7 @@ public class ContainerServices {
                 if(!containsEndTag)
                 {
                 	sb.append("#if($EDIT_MODE && ${contentletId.indexOf(\".structure\")}==-1)");
-                	    sb.append("#getContentDetail($contentletId)");
+                	    sb.append("#contentDetail($contentletId)");
                 		sb.append("$velutil.mergeTemplate('static/preview_mode/content_controls.vtl')");
                 	sb.append("#end ");
                 	sb.append("#if($EDIT_MODE) ");
