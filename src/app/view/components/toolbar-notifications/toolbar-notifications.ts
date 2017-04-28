@@ -62,7 +62,7 @@ export class ToolbarNotifications extends BaseComponent {
         this.notificationService.getLastNotifications().subscribe(res => {
             this.notificationsUnreadCount = res.entity.count;
             this.notifications = res.entity.notifications;
-            this.existsMoreToLoad = true;
+            this.existsMoreToLoad = this.notificationsUnreadCount > res.entity.notifications.length;
         });
     }
 
