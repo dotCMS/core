@@ -309,8 +309,11 @@ public class BinaryExporterServlet extends HttpServlet {
                         return;
                     }
                 }
-                ContentType type = content.getContentType();
-                com.dotcms.contenttype.model.field.Field field = APILocator.getFieldAPI2().byContentTypeAndVar(type, fieldVarName);
+
+				//Find the contentlet content type
+				ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find((content.getContentTypeId()));
+				//And the file asset field
+				com.dotcms.contenttype.model.field.Field field = APILocator.getContentTypeFieldAPI().byContentTypeAndVar(type, fieldVarName);
 
 				if(field == null){
 					Logger.debug(this,"Field " + fieldVarName + " does not exists within structure " + content.getStructure().getVelocityVarName());
