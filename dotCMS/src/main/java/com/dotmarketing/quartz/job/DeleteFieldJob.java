@@ -4,7 +4,6 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.UUID;
 
-import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
@@ -30,6 +29,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.quartz.DotStatefulJob;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
@@ -57,7 +57,7 @@ import com.liferay.portal.model.User;
  * @since Apr 26, 2016
  *
  */
-public class DeleteFieldJob implements Job {
+public class DeleteFieldJob extends DotStatefulJob {
 
 	public static final String JOB_DATA_MAP_CONTENT_TYPE = "structure";
 	public static final String JOB_DATA_MAP_FIELD = "field";
@@ -159,7 +159,7 @@ public class DeleteFieldJob implements Job {
                         field.getVelocityVarName(), contentType.getInode()));
     }
 
-	/**
+    /**
 	 * Performs the field deletion process based on a set of specific
 	 * parameters. This process involves deleting the Field object and then
 	 * saving the Content Type.
@@ -171,8 +171,9 @@ public class DeleteFieldJob implements Job {
 	 * @throws JobExecutionException
 	 *             An error occurred when deleting the Field.
 	 */
-    public void execute(final JobExecutionContext jobContext) throws JobExecutionException {
-        final JobDataMap map = jobContext.getJobDetail().getJobDataMap();
+	@Override
+	public void run(JobExecutionContext jobContext) throws JobExecutionException {
+		final JobDataMap map = jobContext.getJobDetail().getJobDataMap();
 		Structure contentType = null;
 		if (map.get(JOB_DATA_MAP_CONTENT_TYPE) instanceof Structure) {
 			contentType = Structure.class.cast(map.get(JOB_DATA_MAP_CONTENT_TYPE));
@@ -238,6 +239,6 @@ public class DeleteFieldJob implements Job {
                 DbConnectionFactory.closeConnection();
             }
         }
-    }
+	}
 
 }
