@@ -1593,4 +1593,7 @@ public interface ContentletAPI {
 	 */
 	public ESSearchResults esSearch ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
 
+	
+	public Object getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField);
+
 }

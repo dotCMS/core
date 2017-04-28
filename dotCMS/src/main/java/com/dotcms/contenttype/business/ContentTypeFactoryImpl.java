@@ -62,7 +62,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     if (type == null) {
       type =  LocalTransaction.wrapReturn(() -> {
         ContentType t = (UUIDUtil.isUUID(id)) ? dbById(id) : dbByVar(id);
-        t.fields();
+        t.fieldMap();
         return t;
       });
       Logger.debug(this.getClass(), "found type by db:" + type.name());
