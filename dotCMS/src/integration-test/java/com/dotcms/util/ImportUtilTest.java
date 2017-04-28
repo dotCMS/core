@@ -201,7 +201,7 @@ public class ImportUtilTest extends IntegrationTestBase {
             }
         }
 
-        reader = createTempFile( "Identifier, title, host" + "\r\n" +
+        reader = createTempFile( "Identifier, " + textFieldVarName + ", " + siteFieldVarName + "\r\n" +
                 id1 + ", Test1_edited, " + defaultSite.getIdentifier() + "\r\n" +
                 id2 + ", Test2_edited, " + defaultSite.getIdentifier() + "\r\n" );
         csvreader = new CsvReader( reader );
@@ -222,7 +222,7 @@ public class ImportUtilTest extends IntegrationTestBase {
         //-------------------------LANGUAGE AND KEY FIELDS------------------------
         //------------------------------------------------------------------------
         //Create the csv file to import
-        reader = createTempFile( "languageCode, countryCode, title, host" + "\r\n" +
+        reader = createTempFile( "languageCode, countryCode, " + textFieldVarName + ", " + siteFieldVarName + "\r\n" +
                 "es, ES, Test1_edited, " + defaultSite.getIdentifier() + "\r\n" +
                 "es, ES, Test2_edited, " + defaultSite.getIdentifier() + "\r\n" );
         csvreader = new CsvReader( reader );
