@@ -7420,14 +7420,6 @@ div#_dotHelpMenu {
   padding-left: 15px;
 }
 
-.lockIcon {
-  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -220px;
-  width: 18px;
-  height: 18px;
-  display: inline-block;
-  vertical-align: top;
-}
-
 .navbar ul {
   list-style: none;
   margin: 0;

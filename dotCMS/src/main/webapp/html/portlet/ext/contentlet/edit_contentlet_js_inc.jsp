@@ -985,9 +985,6 @@
         }).placeAt("contentletActionsHanger");
 
         myCp.attr("href",  "/html/portlet/ext/contentlet/contentlet_actions_wrapper.jsp?contentletInode=" + inode);
-        setTimeout(function() {
-            myCp.refresh();
-        }, 1000);
     }
     function toggleLockedMessage(locked, who, when){
         if(dojo.byId("contentLockedInfo")){
