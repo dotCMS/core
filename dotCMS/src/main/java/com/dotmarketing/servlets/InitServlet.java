@@ -192,7 +192,7 @@ public class InitServlet extends HttpServlet {
         if(Config.getBooleanProperty("CACHE_DISK_SHOULD_DELETE_NAVTOOL", false)){
             // deletes all menues that have been generated
             RefreshMenus.deleteMenus();
-        	CacheLocator.getCacheAdministrator().flushGroupLocalOnly("navCache");
+        	CacheLocator.getCacheAdministrator().flushGroupLocalOnly("navCache", false);
         }
 
 

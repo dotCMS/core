@@ -231,23 +231,24 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 	 */
 	public void flushAll() {
 
-		flushAlLocalOnly();
+		flushAlLocalOnly(false);
 
 		try {
 			if (Config.getBooleanProperty("CACHE_CLUSTER_THROUGH_DB", false)) {
 				journalAPI.addCacheEntry("0", ROOT_GOUP);
 			} else if ( useTransportChannel ) {
 
-				if ( getTransport() != null ) {
-					try {
-						getTransport().send("0:" + ROOT_GOUP);
-					} catch ( Exception e ) {
-						Logger.error(ChainableCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
+				if (! cacheProviderAPI.isDistributed()) {
+					if ( getTransport() != null ) {
+						try {
+							getTransport().send("0:" + ROOT_GOUP);
+						} catch ( Exception e ) {
+							Logger.error(ChainableCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
+						}
+					} else {
+						throw new CacheTransportException("No Cache transport implementation is defined");
 					}
-				} else {
-					throw new CacheTransportException("No Cache transport implementation is defined");
 				}
-
 			}
 		} catch (DotDataException e) {
 			Logger.error(this, "Unable to add journal entry for cluster", e);
@@ -269,32 +270,32 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 		}
 		group = group.toLowerCase();
 
-		flushGroupLocalOnly(group);
+		flushGroupLocalOnly(group, false);
 
 		try {
 			if (Config.getBooleanProperty("CACHE_CLUSTER_THROUGH_DB", false)) {
 				journalAPI.addCacheEntry("0", group);
 			} else if ( useTransportChannel ) {
-
-				try {
-					cacheTransport.send("0:" + group);
-				} catch (Exception e) {
-					Logger.error(ChainableCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
+				if (! cacheProviderAPI.isGroupDistributed( group )) {
+					try {
+						cacheTransport.send("0:" + group);
+					} catch (Exception e) {
+						Logger.error(ChainableCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
+					}
 				}
-
 			}
 		} catch (DotDataException e) {
 			Logger.error(this, "Unable to add journal entry for cluster", e);
 		}
 	}
 
-	public void flushAlLocalOnly () {
+	public void flushAlLocalOnly (boolean ignoreDistributed) {
 
 		//Invalidates all the Cache
-		cacheProviderAPI.removeAll();
+		cacheProviderAPI.removeAll(ignoreDistributed);
 	}
 
-	public void flushGroupLocalOnly ( String group ) {
+	public void flushGroupLocalOnly ( String group, boolean ignoreDistributed ) {
 
 		if ( group == null ) {
 			return;
@@ -303,7 +304,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 		group = group.toLowerCase();
 
 		//Invalidates the Cache for the given group
-		cacheProviderAPI.remove(group);
+		cacheProviderAPI.remove(group, ignoreDistributed);
 	}
 
 	public Object get ( String key, String group ) throws DotCacheException {
@@ -356,7 +357,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
 				String k = key.toLowerCase();
 				String g = group.toLowerCase();
-				removeLocalOnly(k, g);
+				removeLocalOnly(k, g, false);
 
 				try {
 					if (Config.getBooleanProperty("CACHE_CLUSTER_THROUGH_DB", false)) {
@@ -392,7 +393,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 		cacheRemoveRunnable.run();
 	}
 
-	public void removeLocalOnly ( final String key, final String group ) {
+	public void removeLocalOnly ( final String key, final String group, boolean ignoreDistributed ) {
 
 		if ( key == null || group == null ) {
 			return;
@@ -401,7 +402,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 		Runnable cacheRemoveRunnable = new Runnable() {
 			public void run () {
 				//Invalidates from Cache a key from a given group
-				cacheProviderAPI.remove(group, key);
+				cacheProviderAPI.remove(group, key, ignoreDistributed);
 			}
 		};
 		cacheRemoveRunnable.run();
@@ -514,12 +515,12 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 			if ( key.equals("0") ) {
 
 				if ( group.equalsIgnoreCase(DotCacheAdministrator.ROOT_GOUP) ) {
-					CacheLocator.getCacheAdministrator().flushAlLocalOnly();
+					CacheLocator.getCacheAdministrator().flushAlLocalOnly(true);
 				} else {
-					CacheLocator.getCacheAdministrator().flushGroupLocalOnly(group);
+					CacheLocator.getCacheAdministrator().flushGroupLocalOnly(group, true);
 				}
 			} else {
-				CacheLocator.getCacheAdministrator().removeLocalOnly(key, group);
+				CacheLocator.getCacheAdministrator().removeLocalOnly(key, group, true);
 			}
 		} else {
 			Logger.error(this, "The cache to locally remove key is invalid. The value was " + message);
