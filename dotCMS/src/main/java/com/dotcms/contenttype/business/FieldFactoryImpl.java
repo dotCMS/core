@@ -353,7 +353,13 @@ public class FieldFactoryImpl implements FieldFactory {
     DotConnect dc = new DotConnect();
     dc.setSQL(sql.selectFieldVar);
     dc.addParam(id);
-    return new DbFieldVariableTransformer(dc.loadObjectResults()).from();
+
+    List<Map<String, Object>> results = dc.loadObjectResults();
+    if (results.size() == 0) {
+      throw new NotFoundInDbException("Field variable with id:" + id + " not found");
+    }
+
+    return new DbFieldVariableTransformer(results).from();
   }
 
   private FieldVariable upsertFieldVariable(final FieldVariable throwAway) throws DotDataException {
@@ -370,12 +376,12 @@ public class FieldFactoryImpl implements FieldFactory {
 
 
 
-    if (!UtilMethods.isSet(throwAway.id()) || throwAway.id().equals(FieldVariable.NOT_PERSISTED)) {
+    if (!UtilMethods.isSet(throwAway.id())) {
       builder.id(UUID.randomUUID().toString());
     }
 
     // at least this will order it
-    if (throwAway.name().equals(FieldVariable.NOT_PERSISTED)) {
+    if (!UtilMethods.isSet(throwAway.name())) {
       builder.name(String.valueOf(System.currentTimeMillis()));
     }
 

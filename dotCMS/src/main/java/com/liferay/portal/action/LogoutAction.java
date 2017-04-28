@@ -22,36 +22,21 @@
 
 package com.liferay.portal.action;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map;
-
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.servlet.jsp.PageContext;
-
-import com.dotcms.cms.login.LoginService;
-import com.dotcms.cms.login.LoginServiceFactory;
-import com.dotmarketing.cms.login.factories.LoginFactory;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.org.apache.struts.action.Action;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
-import com.dotmarketing.util.Logger;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.SecurityLogger;
-import com.liferay.portal.events.EventsProcessor;
-import com.liferay.portal.servlet.PortletSessionPool;
 import com.liferay.portal.util.Constants;
-import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.PortalUtil;
-import com.liferay.portal.util.PropsUtil;
-import com.liferay.util.CookieUtil;
-import com.liferay.util.StringPool;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.jsp.PageContext;
 
 /**
  * <a href="LogoutAction.java.html"><b><i>View Source</i></b></a>
@@ -62,7 +47,7 @@ import com.liferay.util.StringPool;
  */
 public class LogoutAction extends Action {
 
-	private final LoginService loginService = LoginServiceFactory.getInstance().getLoginService();
+	private final LoginServiceAPI loginService = APILocator.getLoginServiceAPI();
 
 	public ActionForward execute(ActionMapping mapping, ActionForm form, HttpServletRequest req, HttpServletResponse res) throws Exception {
 

@@ -144,7 +144,7 @@ public class AnnotationUtils {
      * @return array of string with the attr names
      */
     public static <T extends Annotation> T getAttributeAnnotation (final String fieldName, final Class beanClass,
-                                                     final Class<T> annotationType) {
+                                                                   final Class<T> annotationType) {
 
         Field field = null;
 
@@ -244,4 +244,3 @@ public class AnnotationUtils {
     } // getMethodAnnotatedBy.
 
 } // E:O:F:AnnotationUtils,
-

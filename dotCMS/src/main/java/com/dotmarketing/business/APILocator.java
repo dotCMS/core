@@ -3,8 +3,11 @@ package com.dotmarketing.business;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.api.tree.TreeableAPI;
+import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
+import com.dotcms.cms.login.LoginServiceAPI;
+import com.dotcms.cms.login.LoginServiceAPIFactory;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
@@ -540,6 +543,16 @@ public class APILocator extends Locator<APIIndex>{
 		return (TagAPI) getInstance(APIIndex.TAG_API);
 	}
 
+
+	/**
+	 * Creates a single instance of the {@link LoginServiceAPI} class.
+	 *
+	 * @return The {@link LoginServiceAPI} class.
+	 */
+	public static LoginServiceAPI getLoginServiceAPI(){
+		return (LoginServiceAPI) getInstance(APIIndex.LOGIN_SERVICE_API);
+	}
+
 	/**
 	 * Creates a single instance of the {@link IndiciesAPI} class.
 	 *
@@ -862,6 +875,7 @@ enum APIIndex
 	ROLE_API,
 	USER_API,
 	LOGIN_AS_USER_API,
+	LOGIN_SERVICE_API,
 	RELATIONSHIP_API,
 	FIELD_API,
 	IDENTIFIER_API,
@@ -924,6 +938,7 @@ enum APIIndex
 		case ROLE_API: return new RoleAPIImpl();
 		case USER_API: return new UserAPIImpl();
 		case LOGIN_AS_USER_API: return LoginAsAPIImpl.getInstance();
+		case LOGIN_SERVICE_API: return LoginServiceAPIFactory.getInstance().getLoginService();
 		case EVENT_API: return new EventAPIImpl();
 		case CATEGORY_API: return new CategoryAPIImpl();
 		case CONTENTLET_API: return new  ESContentletAPIImpl();

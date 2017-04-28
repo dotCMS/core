@@ -45,7 +45,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.velocity.VelocityServlet;
 import com.dotmarketing.viewtools.RequestWrapper;
 import com.liferay.portal.model.Company;
-import com.liferay.util.SystemProperties;
+import com.liferay.util.*;
 
 
 public class VelocityUtil {
@@ -586,6 +586,26 @@ public class VelocityUtil {
 		}
 
 		return htmlPage;
+	}
+
+	/**
+	 * Gets the Velocity Root Path. Looks for it on the Config, if not found the it get defaulted to /WEB-INF/velocity
+	 *
+	 * @return String
+	 */
+	public static String getVelocityRootPath() {
+		Logger.debug(VelocityUtil.class, "Fetching the velocity ROOT path...");
+
+		String velocityRootPath;
+
+		velocityRootPath = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
+		if (velocityRootPath.startsWith("/WEB-INF")) {
+			Logger.debug(VelocityUtil.class, "Velocity ROOT Path not found, defaulting it to '/WEB-INF/velocity'");
+			velocityRootPath = com.liferay.util.FileUtil.getRealPath(velocityRootPath);
+		}
+
+		Logger.debug(VelocityUtil.class, String.format("Velocity ROOT path found: %s", velocityRootPath));
+		return velocityRootPath;
 	}
 
 }

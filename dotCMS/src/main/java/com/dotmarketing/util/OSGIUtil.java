@@ -4,6 +4,8 @@ import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.osgi.OSGIProxyServlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
+
+import org.apache.commons.io.FileUtils;
 import org.apache.felix.framework.FrameworkFactory;
 import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.http.proxy.DispatcherTracker;
@@ -34,8 +36,8 @@ public class OSGIUtil {
 
     public static final String BUNDLE_HTTP_BRIDGE_SYMBOLIC_NAME = "org.apache.felix.http.bundle";
     private static final String PROPERTY_OSGI_PACKAGES_EXTRA = "org.osgi.framework.system.packages.extra";
+    private String FELIX_EXTRA_PACKAGES_FILE_GENERATED;
     public String FELIX_EXTRA_PACKAGES_FILE;
-    public String FELIX_EXTRA_PACKAGES_FILE_GENERATED;
 
     private static OSGIUtil instance;
 
@@ -68,80 +70,100 @@ public class OSGIUtil {
 
         servletContextEvent = context;
 
-        String felixDirectory = context.getServletContext().getRealPath( "/WEB-INF/felix" );
+        // load all properties and set base directory
+        Properties configProps = loadConfig();
+
+        // fetch the 'felix.base.dir' property and check if exists. On the props file the prop needs to be set as felix.felix.base.dir
+        String felixDirectory = configProps.getProperty(FELIX_BASE_DIR);
+        if (UtilMethods.isSet(felixDirectory)) {
+            // verify folder exists and if not create it
+            if (!verifyOrCreateFelixFolder(felixDirectory)) {
+                // override the property to default
+                felixDirectory = context.getServletContext().getRealPath("/WEB-INF/felix");
+            }
+        } else {
+            // override the property to default
+            felixDirectory = context.getServletContext().getRealPath("/WEB-INF/felix");
+        }
+
+        // Set the base dir property
+        configProps.put(FELIX_BASE_DIR, felixDirectory);
+        Logger.info(this, "Felix dir: " + felixDirectory);
+
+        // Set all required paths
         FELIX_EXTRA_PACKAGES_FILE = felixDirectory + File.separator + "osgi-extra.conf";
         FELIX_EXTRA_PACKAGES_FILE_GENERATED = felixDirectory + File.separator + "osgi-extra-generated.conf";
 
-        Logger.info( this, "Felix dir: " + felixDirectory );
+        // All of the following paths will always be part of dotCMS core conf (by default)
         String bundleDir = felixDirectory + File.separator + "bundle";
         String cacheDir = felixDirectory + File.separator + "felix-cache";
         String autoLoadDir = felixDirectory + File.separator + "load";
         String undeployedDir = felixDirectory + File.separator + "undeployed";
 
-        Properties configProps;
+        // Verify bundle dir is created and set the prop
+        verifyOrCreateFelixFolder(bundleDir);
+        configProps.setProperty(AutoProcessor.AUTO_DEPLOY_DIR_PROPERTY, bundleDir);
+
+        // Verify cache dir and set the prop
+        verifyOrCreateFelixFolder(cacheDir);
+        configProps.setProperty(org.osgi.framework.Constants.FRAMEWORK_STORAGE, cacheDir);
+
+        // Verify load dir and set the prop
+        verifyOrCreateFelixFolder(autoLoadDir);
+        configProps.put(FELIX_FILEINSTALL_DIR, autoLoadDir);
+
+        // Verify undeploy dir and set the prop
+        verifyOrCreateFelixFolder(undeployedDir);
+        configProps.put(FELIX_UNDEPLOYED_DIR, undeployedDir);
+
+        // Verify the bundles are in the right place
+        verifyBundles(bundleDir, context);
+
+        // Create host activator;
+        List<BundleActivator> list = new ArrayList<BundleActivator>();
+        HostActivator hostActivator = HostActivator.instance();
+        hostActivator.setServletContext(context.getServletContext());
+        list.add(hostActivator);
+        configProps.put(FelixConstants.SYSTEMBUNDLE_ACTIVATORS_PROP, list);
+
+        // Set all OSGI Packages
         String extraPackages;
         try {
-            configProps = loadConfig();
             extraPackages = getExtraOSGIPackages();
         } catch ( IOException e ) {
             Logger.error( this, "Error loading the OSGI framework properties: " + e );
             throw new RuntimeException( e );
         }
 
-        //Setting the OSGI extra packages property
+        // Setting the OSGI extra packages property
         configProps.setProperty( PROPERTY_OSGI_PACKAGES_EXTRA, extraPackages );
+
         // we need gosh to not expecting stdin to work
         configProps.setProperty( "gosh.args", "--noi" );
 
-        // (2) Load system properties.
-        Main.loadSystemProperties();
+        /*
+        // The following is commented out since it is not affecting any OSGI functionality
+        // Nevertheless the following code allows the system to include additional Felix and OSGI properties by using a
+        // felix.system.properties key (could be a path)
 
-        // (4) Copy framework properties from the system properties.
-        Main.copySystemProperties( propertiesToMap( configProps ) );
+        // Load system properties.
+        Main.loadSystemProperties(); // will load any property by using the felix.system.properties value
 
-        // (5) Use the specified auto-deploy directory over default.
-        if ( bundleDir != null ) {
-            configProps.setProperty( AutoProcessor.AUTO_DEPLOY_DIR_PROPERTY, bundleDir );
-        }
-
-        // (6) Use the specified bundle cache directory over default.
-        if ( cacheDir != null ) {
-            configProps.setProperty( org.osgi.framework.Constants.FRAMEWORK_STORAGE, cacheDir );
-        }
-
-        // Create host activator;
-        List<BundleActivator> list = new ArrayList<BundleActivator>();
-        HostActivator hostActivator = HostActivator.instance();
-        hostActivator.setServletContext( context.getServletContext() );
-        list.add( hostActivator );
-        configProps.put( FelixConstants.SYSTEMBUNDLE_ACTIVATORS_PROP, list );
-
-        String felixBaseDirPath = configProps.getProperty(FELIX_BASE_DIR);
-        if (felixBaseDirPath == null || !new File(felixBaseDirPath).isDirectory()) {
-            configProps.put(FELIX_BASE_DIR, felixDirectory);
-        }
-
-        String felixFileInstallDirPath = configProps.getProperty(FELIX_FILEINSTALL_DIR);
-	if (felixFileInstallDirPath == null || !new File(felixFileInstallDirPath).isDirectory()) {
-	    configProps.put(FELIX_FILEINSTALL_DIR, autoLoadDir);
-	}
-
-        String felixUndeployedDirPath = configProps.getProperty(FELIX_UNDEPLOYED_DIR);
-        if (felixUndeployedDirPath == null || !new File(felixUndeployedDirPath).isDirectory()) {
-            configProps.put(FELIX_UNDEPLOYED_DIR, undeployedDir);
-        }
+        // Copy framework properties from the system properties.
+        Main.copySystemProperties( propertiesToMap( configProps ) ); // will copy any system property to the config props
+        */
 
         try {
-            // (8) Create an instance and initialize the framework.
+            // Create an instance and initialize the framework.
             FrameworkFactory factory = getFrameworkFactory();
             felixFramework = factory.newFramework( configProps );
             felixFramework.init();
 
-            // (9) Use the system bundle context to process the auto-deploy
+            // Use the system bundle context to process the auto-deploy
             // and auto-install/auto-start properties.
             AutoProcessor.process( configProps, felixFramework.getBundleContext() );
 
-            // (10) Start the framework.
+            // Start the framework.
             felixFramework.start();
             Logger.info( this, "osgi felix framework started" );
         } catch ( Exception ex ) {
@@ -180,7 +202,8 @@ public class OSGIUtil {
 
                 // Stop felix
                 felixFramework.stop();
-                // (11) Wait for framework to stop to exit the VM.
+
+                // Wait for framework to stop to exit the VM.
                 felixFramework.waitForStop(0);
             }
 
@@ -228,8 +251,14 @@ public class OSGIUtil {
             String key = it.next();
             if ( key == null ) continue;
             if ( key.startsWith( "felix." ) ) {
-                properties.put( key.substring( 6 ), Config.getStringProperty( key ) );
-                Logger.info( this, "Loading property  " + key.substring( 6 ) + "=" + Config.getStringProperty( key ) );
+                if ( key.equals(FELIX_BASE_DIR) ) {
+                    // Allow the property in the file to be felix.base.dir
+                    properties.put( key, Config.getStringProperty( key ) );
+                    Logger.info( this, "Loading property  " + key + "=" + Config.getStringProperty( key ) );
+                } else {
+                    properties.put( key.substring( 6 ), Config.getStringProperty( key ) );
+                    Logger.info( this, "Loading property  " + key.substring( 6 ) + "=" + Config.getStringProperty( key ) );
+                }
             }
         }
         return properties;
@@ -328,105 +357,68 @@ public class OSGIUtil {
         return propertiesMap;
     }
 
-
     /**
-     * Fetches the Felix Base, Deploy or Undeploy path.
-     * First it looks for the $env property on the <@link>com.dotmarketing.util.Config</@link> as 'FELIX_BASE_PATH', 'FELIX_DEPLOY_PATH' or 'FELIX_UNDEPLOYED_PATH'.
-     * If found then converts it to the real path.
-     * If not found, searches for the property on the bundle context and if it fails then it sets it manually.
+     * Fetches the Felix Path based on the input param property value.
+     * If property is not found, then the felix path will be set manually, specified by manual default path param.
      *
-     * @param deploy    Indicates whether it's trying to fetch the deploy or undeployed path. If deploy = true, the fetch the deploy path, if false then fetch the undeploy path
-     * @param base      Fetch base folder, if this property exists, then it overrides the deploy param
+     * @param felixDirProperty  Property to be fetched from the bundle context.
+     * @param manualDefaultPath Property to set manual path by default, in case the property is not found
      * @return String
      */
-    private String getFelixPath(boolean deploy, boolean base) {
+    private String getFelixPath(String felixDirProperty, String manualDefaultPath) {
         String felixPath;
 
-        String envProperty, felixDir, manualPath;
-        if (!base) {
-            if (deploy) {
-                envProperty = "FELIX_DEPLOY_PATH";
-                felixDir = FELIX_FILEINSTALL_DIR;
-                manualPath = "load";
-            } else {
-                envProperty = "FELIX_UNDEPLOY_PATH";
-                felixDir = FELIX_UNDEPLOYED_DIR;
-                manualPath = "undeployed";
-            }
+        try {
+            felixPath = getBundleContext().getProperty(felixDirProperty);
+        } catch (Exception ex) {
+            Logger.error(this, String.format("Unable to find the felix '%s' folder path from OSGI bundle context. Trying to fetch it from Config.CONTEXT as real path from '/WEB-INF/felix/%s'", manualDefaultPath, manualDefaultPath), ex);
 
-            Logger.debug(this, "Fetching $env property '" + envProperty + "'");
-            String felixEnvProperty = Config.getStringProperty(envProperty, null);
-
-            if (felixEnvProperty == null || felixEnvProperty.isEmpty() || felixEnvProperty.equals("null")) {
-                Logger.debug(this, "'" + envProperty + "' not found. Fetching path from felix bundle context.");
-
-                try {
-                    felixPath = getBundleContext().getProperty(felixDir);
-                } catch (Exception ex) {
-                    Logger.error(this, String.format("Unable to find the felix '%s' folder path from OSGI bundle context. Trying to fetch it from Config.CONTEXT as real path from '/WEB-INF/felix/%s'", manualPath, manualPath), ex);
-
-                    try {
-                        felixPath = Config.CONTEXT.getRealPath("/WEB-INF/felix/" + manualPath);
-                    } catch (Exception ex2) {
-                        Logger.error(this, String.format("Unable to find the felix '%s' folder real path from Config.CONTEXT. Setting it manually to '/WEB-INF/felix/%s'", manualPath, manualPath), ex2);
-                        felixPath = "/WEB-INF/felix/" + manualPath;
-                    }
-                }
-            } else {
-                Logger.debug(this, "'" + envProperty + "' found. Fetching the real path.");
-
-                try {
-                    felixPath = Config.CONTEXT.getRealPath(felixEnvProperty);
-                } catch (Exception ex) {
-                    Logger.error(this, String.format("Unable to find the felix '%s' folder real path from Config.CONTEXT. Setting it manually to '/WEB-INF/felix/%s'", manualPath, manualPath), ex);
-                    felixPath = "/WEB-INF/felix/" + manualPath;
-                }
-            }
-
-            if (felixPath == null) {
-                Logger.error(this, String.format("Path '%s' was not successfully set. Setting it manually to '/WEB-INF/felix/%s'", manualPath, manualPath));
-                felixPath = "/WEB-INF/felix/" + manualPath;
-            }
-        } else {
-            envProperty = "FELIX_BASE_PATH";
-
-            Logger.debug(this, "Fetching $env property '" + envProperty + "'");
-            String felixEnvProperty = Config.getStringProperty(envProperty, null);
-
-            if (felixEnvProperty == null || felixEnvProperty.isEmpty() || felixEnvProperty.equals("null")) {
-                try {
-                    felixPath = OSGIUtil.getInstance().getBundleContext().getProperty(FELIX_BASE_DIR);
-                } catch (Exception ex) {
-                    Logger.error(this, "Unable to find the felix base folder path from OSGI bundle context. Setting it manually to /WEB-INF/felix", ex);
-                    felixPath = "/WEB-INF/felix";
-                }
-            } else {
-                Logger.debug(this, "'" + envProperty + "' found. Fetching the real path.");
-
-                try {
-                    felixPath = Config.CONTEXT.getRealPath(felixEnvProperty);
-                } catch (Exception ex) {
-                    Logger.error(this, "Unable to find the felix base folder real path from Config.CONTEXT. Setting it manually to '/WEB-INF/felix'", ex);
-                    felixPath = "/WEB-INF/felix";
-                }
-            }
-
-            if (felixPath == null) {
-                Logger.error(this, "Path was not successfully set. Setting it manually to '/WEB-INF/felix'");
-                felixPath = "/WEB-INF/felix";
+            try {
+                felixPath = Config.CONTEXT.getRealPath("/WEB-INF/felix/" + manualDefaultPath);
+            } catch (Exception ex2) {
+                Logger.error(this, String.format("Unable to find the felix '%s' folder real path from Config.CONTEXT. Setting it manually to '/WEB-INF/felix/%s'", manualDefaultPath, manualDefaultPath), ex2);
+                felixPath = "/WEB-INF/felix/" + manualDefaultPath;
             }
         }
+
+        if (felixPath == null) {
+            Logger.error(this, String.format("Path '%s' was not successfully set. Setting it manually to '/WEB-INF/felix/%s'", manualDefaultPath, manualDefaultPath));
+            felixPath = "/WEB-INF/felix/" + manualDefaultPath;
+        }
+
+        createFolder(felixPath);
 
         return felixPath;
     }
 
     /**
-     * Fetches the Felix Base path
+     * Verifies the folder exists.
+     * If it does not exists then tries to create it
      *
-     * @return String
+     * @param path The path to verify
+     * @return boolean true when path exists or it was created successfully
      */
-    public String getFelixBasePath() {
-        return getFelixPath(false, true);
+    private boolean verifyOrCreateFelixFolder(String path) {
+        return new File(path).exists() || createFolder(path);
+    }
+
+    /**
+     * Create the path if it does not exist. Required for felix install and undeploy folder
+     *
+     * @param path The path to create
+     * @return boolean
+     */
+    private boolean createFolder(String path) {
+        boolean created = false;
+        File directory = new File(path);
+        if (!directory.exists()) {
+            Logger.debug(this, String.format("Felix directory %s does not exist. Trying to create it...", path));
+            created = directory.mkdirs();
+            if (!created) {
+                Logger.error(this, String.format("Unable to create Felix directory: %s", path));
+            }
+        }
+        return created;
     }
 
     /**
@@ -435,7 +427,7 @@ public class OSGIUtil {
      * @return String
      */
     public String getFelixDeployPath() {
-        return getFelixPath(true, false);
+        return getFelixPath(FELIX_FILEINSTALL_DIR, "load");
     }
 
     /**
@@ -444,6 +436,44 @@ public class OSGIUtil {
      * @return String
      */
     public String getFelixUndeployPath() {
-        return getFelixPath(false, false);
+        return getFelixPath(FELIX_UNDEPLOYED_DIR, "undeployed");
+    }
+
+    /**
+     * Verify the bundles are in the right place if the default path has been overwritten
+     * If bundle path is different to the default one then move all bundles to the new directory and get rid of the default one
+     *
+     * @param bundlePath The bundle path to move items
+     * @param context The servlet context
+     */
+    private void verifyBundles(String bundlePath, ServletContextEvent context) {
+        String baseDirectory = context.getServletContext().getRealPath("/WEB-INF");
+        String defaultFelixPath = baseDirectory + File.separator + "felix";
+        String defaultBundlePath = defaultFelixPath + File.separator + "bundle";
+
+        if (UtilMethods.isSet(bundlePath)) {
+            if (!bundlePath.trim().equals(defaultBundlePath)) {
+                File bundleDirectory = new File(bundlePath);
+                File defaultBundleDirectory = new File(defaultBundlePath);
+
+                if (defaultBundleDirectory.exists() && bundleDirectory.exists()) {
+                    try {
+                        // copy all bundles
+                        FileUtils.copyDirectory(defaultBundleDirectory, bundleDirectory);
+
+                        // delete felix default folder since we don't need it
+                        File defaultFelixDirectory = new File(defaultFelixPath);
+                        if (defaultFelixDirectory.exists()) {
+                            FileUtils.deleteDirectory(defaultFelixDirectory);
+                        }
+                    } catch (IOException ioex) {
+                        String errorMessage = String.format("There was a problem moving felix bundles from '%s' to '%s'", defaultBundlePath, bundlePath);
+                        Logger.error(this, errorMessage);
+                        throw new RuntimeException(errorMessage, ioex);
+                    }
+                }
+            }
+        }
+
     }
 }

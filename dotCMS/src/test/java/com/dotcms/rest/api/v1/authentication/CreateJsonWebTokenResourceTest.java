@@ -2,7 +2,7 @@ package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
-import com.dotcms.cms.login.LoginService;
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
@@ -97,7 +97,7 @@ public class CreateJsonWebTokenResourceTest extends UnitTestBase {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
-        final LoginService loginService     = mock(LoginService.class);
+        final LoginServiceAPI loginService     = mock(LoginServiceAPI.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
         final ResponseUtil responseUtil = ResponseUtil.INSTANCE;
         final String userId = "admin@dotcms.com";
@@ -149,7 +149,7 @@ public class CreateJsonWebTokenResourceTest extends UnitTestBase {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
-        final LoginService loginService     = mock(LoginService.class);
+        final LoginServiceAPI loginService     = mock(LoginServiceAPI.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
         final ResponseUtil authenticationHelper = ResponseUtil.INSTANCE;
         final String userId = "admin@dotcms.com";
@@ -195,7 +195,7 @@ public class CreateJsonWebTokenResourceTest extends UnitTestBase {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
-        final LoginService loginService     = mock(LoginService.class);
+        final LoginServiceAPI loginService     = mock(LoginServiceAPI.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
         final String userId = "admin@dotcms.com";
         final String pass   = "pass";
@@ -240,7 +240,7 @@ public class CreateJsonWebTokenResourceTest extends UnitTestBase {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
-        final LoginService loginService     = mock(LoginService.class);
+        final LoginServiceAPI loginService     = mock(LoginServiceAPI.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
         final String userId = "admin@dotcms.com";
         final String pass   = "pass";
@@ -285,7 +285,7 @@ public class CreateJsonWebTokenResourceTest extends UnitTestBase {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
-        final LoginService loginService     = mock(LoginService.class);
+        final LoginServiceAPI loginService     = mock(LoginServiceAPI.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
         final String userId = "admin@dotcms.com";
         final String pass   = "pass";
@@ -331,7 +331,7 @@ public class CreateJsonWebTokenResourceTest extends UnitTestBase {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
-        final LoginService loginService     = mock(LoginService.class);
+        final LoginServiceAPI loginService     = mock(LoginServiceAPI.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
         final String userId = "admin@dotcms.com";
@@ -385,7 +385,7 @@ public class CreateJsonWebTokenResourceTest extends UnitTestBase {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
-        final LoginService loginService     = mock(LoginService.class);
+        final LoginServiceAPI loginService     = mock(LoginServiceAPI.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
         final String userId = "admin@dotcms.com";
@@ -434,7 +434,7 @@ public class CreateJsonWebTokenResourceTest extends UnitTestBase {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
-        final LoginService loginService     = mock(LoginService.class);
+        final LoginServiceAPI loginService     = mock(LoginServiceAPI.class);
         final UserLocalManager userLocalManager = mock(UserLocalManager.class);
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
         final String userId = "admin@dotcms.com";

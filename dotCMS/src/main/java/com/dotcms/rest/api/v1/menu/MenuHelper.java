@@ -11,6 +11,7 @@ import com.liferay.portal.util.WebKeys;
 import com.liferay.portlet.JSPPortlet;
 import com.liferay.portlet.PortletURLImpl;
 import com.liferay.portlet.StrutsPortlet;
+import com.liferay.portlet.VelocityPortlet;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -109,7 +110,9 @@ public class MenuHelper implements Serializable {
 
             Logger.debug(MenuResource.class, "### getPortletId" + menuContext.getPortletId());
             Logger.debug(MenuResource.class, "### portletClass" + portletClass);
-            if (StrutsPortlet.class.isAssignableFrom(classs) || JSPPortlet.class.isAssignableFrom(classs)) {
+            if ( StrutsPortlet.class.isAssignableFrom(classs)
+                    || JSPPortlet.class.isAssignableFrom(classs)
+                    || VelocityPortlet.class.isAssignableFrom(classs) ) {
                 PortletURLImpl portletURLImpl = new PortletURLImpl(menuContext.getHttpServletRequest(),
                         menuContext.getPortletId(), menuContext.getLayout().getId(), false);
                 return portletURLImpl.toString() + "&dm_rlout=1&r=" + System.currentTimeMillis();

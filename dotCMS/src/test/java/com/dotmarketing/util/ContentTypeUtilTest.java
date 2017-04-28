@@ -16,7 +16,7 @@ import org.junit.Test;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.cms.login.LoginService;
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.business.Layout;
@@ -35,7 +35,7 @@ public class ContentTypeUtilTest extends UnitTestBase {
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpSession session = mock(HttpSession.class);
         LayoutAPI layoutAPI = mock(LayoutAPI.class);
-        LoginService loginService = mock(LoginService.class);
+        LoginServiceAPI loginService = mock(LoginServiceAPI.class);
         LanguageAPI languageAPI = mock(LanguageAPI.class);
         User user = mock(User.class);
         Structure structure = mock(Structure.class);

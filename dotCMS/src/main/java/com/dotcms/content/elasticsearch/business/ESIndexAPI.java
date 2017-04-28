@@ -516,6 +516,26 @@ public class ESIndexAPI {
     public  void moveIndexBackToCluster(String index) throws IOException {
         Client client=new ESClient().getClient();
         int nreplicas=Config.getIntProperty("es.index.number_of_replicas",0);
+	
+	if (Config.getBooleanProperty("CLUSTER_AUTOWIRE", true)
+		&& Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS",true)){
+		int serverCount;
+
+		try {
+			serverCount = APILocator.getServerAPI().getAliveServersIds().length;
+		} catch (DotDataException e) {
+			Logger.error(this.getClass(), "Error getting live server list for server count, using 1 as default.");
+			serverCount = 1;
+		}
+		// formula is (live server count (including the ones that are down but not yet timed out) - 1)
+
+		if(serverCount>0) {
+			nreplicas = serverCount - 1;
+		}  else {
+			nreplicas = 0;
+		}
+	}
+	   
         UpdateSettingsResponse resp=client.admin().indices().updateSettings(
           new UpdateSettingsRequest(index).settings(
                 jsonBuilder().startObject()

@@ -1,8 +1,7 @@
 package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
-import com.dotcms.cms.login.LoginService;
-import com.dotcms.cms.login.LoginServiceFactory;
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.POST;
 import com.dotcms.repackage.javax.ws.rs.Path;
@@ -51,7 +50,7 @@ public class CreateJsonWebTokenResource implements Serializable {
 
     private final static int JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS_DEFAULT_VALUE = 30;
     private final UserLocalManager         userLocalManager;
-    private final LoginService             loginService;
+    private final LoginServiceAPI loginService;
     private final ResponseUtil             responseUtil;
     private final JsonWebTokenUtils        jsonWebTokenUtils;
     private final SecurityLoggerServiceAPI securityLoggerServiceAPI;
@@ -60,7 +59,7 @@ public class CreateJsonWebTokenResource implements Serializable {
      * Default constructor.
      */
     public CreateJsonWebTokenResource() {
-        this(LoginServiceFactory.getInstance().getLoginService(),
+        this(APILocator.getLoginServiceAPI(),
                 UserLocalManagerFactory.getManager(),
                 ResponseUtil.INSTANCE,
                 JsonWebTokenUtils.getInstance(),
@@ -69,7 +68,7 @@ public class CreateJsonWebTokenResource implements Serializable {
     }
 
     @VisibleForTesting
-    protected CreateJsonWebTokenResource(final LoginService loginService,
+    protected CreateJsonWebTokenResource(final LoginServiceAPI loginService,
                                      final UserLocalManager userLocalManager,
                                      final ResponseUtil responseUtil,
                                      final JsonWebTokenUtils     jsonWebTokenUtils,
@@ -111,8 +110,8 @@ public class CreateJsonWebTokenResource implements Serializable {
                 final int jwtMaxAge = createTokenForm.getExpirationDays() > 0 ?
                         this.getExpirationDays (createTokenForm.getExpirationDays()):
                         Config.getIntProperty(
-                            LoginService.JSON_WEB_TOKEN_DAYS_MAX_AGE,
-                            LoginService.JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT);
+                            LoginServiceAPI.JSON_WEB_TOKEN_DAYS_MAX_AGE,
+                            LoginServiceAPI.JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT);
 
                 this.securityLoggerServiceAPI.logInfo(this.getClass(),
                         "A Json Web Token " + userId.toLowerCase() + " has been created from IP: " +
@@ -164,7 +163,7 @@ public class CreateJsonWebTokenResource implements Serializable {
 
 
         final int jsonWebTokenMaxAllowedExpirationDay =
-                Config.getIntProperty(LoginService.JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS,
+                Config.getIntProperty(LoginServiceAPI.JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS,
                         JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS_DEFAULT_VALUE);
 
         final int maxAllowedExpirationDays =

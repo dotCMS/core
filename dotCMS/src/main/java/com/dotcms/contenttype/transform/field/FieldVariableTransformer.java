@@ -78,9 +78,7 @@ public class FieldVariableTransformer {
 
         
         
-        String id = (UtilMethods.isSet(oldVar.getId()))
-                ? oldVar.getId() 
-                        : FieldVariable.NOT_PERSISTED;
+        String id = oldVar.getId();
 
         return ImmutableFieldVariable.builder()
                 .fieldId( oldVar.getFieldId())

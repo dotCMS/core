@@ -1,19 +1,11 @@
 package com.dotcms.filters.interceptor.jwt;
 
-import java.io.IOException;
-import java.util.Date;
-
-import javax.servlet.ServletRequest;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.auth.providers.jwt.beans.DotCMSSubjectBean;
 import com.dotcms.auth.providers.jwt.beans.JWTBean;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
-import com.dotcms.cms.login.LoginService;
-import com.dotcms.cms.login.LoginServiceFactory;
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -35,7 +27,12 @@ import com.liferay.portal.ejb.CompanyLocalManagerFactory;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.CookieKeys;
-import com.liferay.portal.util.PortalUtil;
+
+import javax.servlet.ServletRequest;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Date;
 
 /**
  * This Interceptor is useful to active the remember me using JWT It is going to
@@ -60,7 +57,7 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
 
     private Encryptor encryptor;
 
-    private LoginService loginService;
+    private LoginServiceAPI loginService;
 
 
 	private UserAPI userAPI;
@@ -71,7 +68,7 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
 				MarshalFactory.getInstance().getMarshalUtils(),
 				CompanyLocalManagerFactory.getManager(),
 				EncryptorFactory.getInstance().getEncryptor(),
-				LoginServiceFactory.getInstance().getLoginService(),
+				APILocator.getLoginServiceAPI(),
 				APILocator.getUserAPI()
 				);
 	}
@@ -81,7 +78,7 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
 								   final MarshalUtils marshalUtils,
 								   final CompanyLocalManager companyLocalManager,
 								   final Encryptor encryptor,
-								   final LoginService loginService,
+								   final LoginServiceAPI loginService,
 								   final UserAPI userAPI) {
 
 		this.jsonWebTokenService = jsonWebTokenService;
@@ -143,12 +140,12 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
     }
 
 	/**
-	 * Sets the {@link LoginService} by dependency injection.
+	 * Sets the {@link LoginServiceAPI} by dependency injection.
 	 * 
 	 * @param loginService
-	 *            - The {@link LoginService}.
+	 *            - The {@link LoginServiceAPI}.
 	 */
-    public void setLoginService(final LoginService loginService) {
+    public void setLoginService(final LoginServiceAPI loginService) {
         this.loginService = loginService;
     }
 

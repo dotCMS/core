@@ -3658,21 +3658,12 @@ html, body {
   border: solid 1px #C5C5C5;
   color: #161616;
 }
-.dijitSelect #select-arrow, .dijitSelect .dijitArrowButton > .dijitArrowButtonInner, .dijitSelect .dijitSelectHover .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectHover .dijitSelect .dijitArrowButton > .dijitArrowButtonInner, .dijitSelect .dijitSelectActive .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectActive .dijitSelect .dijitArrowButton > .dijitArrowButtonInner, .dijitSelect .dijitSelectOpened .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectOpened .dijitSelect .dijitArrowButton > .dijitArrowButtonInner {
-  float: none;
-  height: 0 !important;
-  margin: 0;
-  position: static;
-}
-
-.dijitSelect {
-  background-color: #fff;
-  border: solid 1px #C5C5C5;
-  color: #161616;
-}
 .dijitSelect .dijitButtonContents {
   padding: 0 16px;
   border: none;
+}
+.dijitSelect .dijitButtonContents.dijitSelectFixedWidth .dijitSelect .dijitButtonContents {
+  width: auto;
 }
 .dijitSelect .dijitArrowButton {
   border-left: solid 1px #C5C5C5;
@@ -8791,6 +8782,9 @@ Styles for commons fields along the backend
 }
 #inline-form > .checkbox label, .fileSelectorControls > .checkbox label, .inline-form > .checkbox label, #inline-form > .radio label, .fileSelectorControls > .radio label, .inline-form > .radio label {
   line-height: 1;
+}
+#inline-form > .checkbox, .fileSelectorControls > .checkbox, .inline-form > .checkbox {
+  flex: none;
 }
 #inline-form .dijit, .fileSelectorControls .dijit, .inline-form .dijit {
   margin-right: 8px;

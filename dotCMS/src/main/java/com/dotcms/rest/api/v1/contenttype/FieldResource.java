@@ -37,21 +37,14 @@ import com.liferay.portal.model.User;
 @Path("/v1/contenttype/{typeId}/fields")
 public class FieldResource implements Serializable {
 	private final WebResource webResource;
-	private final FieldHelper fieldHelper;
 
 	public FieldResource() {
-		this(FieldHelper.getInstance(), new WebResource());
+		this(new WebResource());
 	}
 
 	@VisibleForTesting
-	public FieldResource(final FieldHelper fieldHelper, final WebResource webresource) {
+	public FieldResource(final WebResource webresource) {
 		this.webResource = webresource;
-		this.fieldHelper = fieldHelper;
-	}
-
-	@VisibleForTesting
-	public FieldResource(final FieldHelper fieldHelper) {
-		this(fieldHelper, new WebResource());
 	}
 
 	private static final long serialVersionUID = 1L;

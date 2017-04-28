@@ -1,25 +1,12 @@
 package com.dotcms.rest.api.v1.system;
 
 import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.cms.login.LoginService;
-import com.dotcms.cms.login.LoginServiceFactory;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.api.v1.menu.MenuResource;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.LoginAsAPI;
-import com.dotcms.api.web.WebSessionContext;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageRuntimeException;
-import com.liferay.portal.model.User;
 
 import static com.dotcms.util.CollectionsUtils.map;
 

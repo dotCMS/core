@@ -140,20 +140,25 @@ public class PermissionAjax {
 					if(permParent == null) {
 						// because identifiers are not Inodes, we need to do a double lookup
 
-						//Using the ShortyAPI to identify the nature of this inode
-						Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(assetInode);
-
-						//Hibernate won't handle structures, thats why we need a special case here
-						if ( ShortType.STRUCTURE == shortOpt.get().subType ) {
-
-							//Search for the given ContentType inode
-							ContentType foundContentType = contentTypeAPI.find(assetInode);
-							if ( null != foundContentType ) {
-								//Transform the found content type to a Structure
-								permParent = new StructureTransformer(foundContentType).asStructure();
-							}
+						if ( Host.SYSTEM_HOST.equals(assetInode) ) {
+							permParent = hostAPI.find(assetInode, systemUser, false);
 						} else {
-							permParent = InodeFactory.getInode(assetInode, Inode.class);
+
+							//Using the ShortyAPI to identify the nature of this inode
+							Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(assetInode);
+
+							//Hibernate won't handle structures, thats why we need a special case here
+							if ( ShortType.STRUCTURE == shortOpt.get().subType ) {
+
+								//Search for the given ContentType inode
+								ContentType foundContentType = contentTypeAPI.find(assetInode);
+								if ( null != foundContentType ) {
+									//Transform the found content type to a Structure
+									permParent = new StructureTransformer(foundContentType).asStructure();
+								}
+							} else {
+								permParent = InodeFactory.getInode(assetInode, Inode.class);
+							}
 						}
 
 						if(permParent !=null || InodeUtils.isSet(permParent.getPermissionId())){
@@ -179,6 +184,10 @@ public class PermissionAjax {
 						roleMap.put("inheritedFromType", "category");
 						roleMap.put("inheritedFromPath", ((Category)permParent).getCategoryName());
 						roleMap.put("inheritedFromId", ((Category)permParent).getInode());
+					} else if ( permParent instanceof Host ) {
+						roleMap.put("inheritedFromType", "host");
+						roleMap.put("inheritedFromPath", ((Host) permParent).getHostname());
+						roleMap.put("inheritedFromId", ((Host) permParent).getIdentifier());
 					} else {
 						Host host = hostAPI.find(assetInode, systemUser, false);
 						if(host != null) {
@@ -227,7 +236,7 @@ public class PermissionAjax {
 				if(individualPermission != null ) {
 					newSetOfPermissions.add(new Permission(asset.getPermissionId(), roleId, Integer.parseInt(individualPermission), true));
 					//If a structure we need to save permissions inheritable by children content
-					if(asset instanceof Structure) {
+					if(asset instanceof Structure || asset instanceof ContentType) {
 						newSetOfPermissions.add(new Permission(Contentlet.class.getCanonicalName(), asset.getPermissionId(), roleId,
 								Integer.parseInt(individualPermission), true));
 					}
