@@ -50,6 +50,9 @@ public class VelocityUtilTest {
 
         Assert.assertNotNull(customVelocityPath);
         assertThat("Path ends with /WEB-INF/customvelocity", customVelocityPath.endsWith("/WEB-INF/customvelocity"));
+
+        // restore the default value (used on other tests)
+        Config.setProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
     }
 
 }
