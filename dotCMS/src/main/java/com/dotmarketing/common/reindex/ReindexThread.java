@@ -662,6 +662,7 @@ public class ReindexThread extends Thread {
 	    }
 	    catch(Exception ex) {
 	        HibernateUtil.rollbackTransaction();
+	        throw(ex);
 	    }
 	    finally {
 	        HibernateUtil.closeSession();
