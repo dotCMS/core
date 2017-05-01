@@ -9,7 +9,6 @@ import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.mockito.Mockito;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -51,6 +50,8 @@ public class VelocityUtilTest {
 
         // restore the default value (used on other tests)
         Config.setProperty("VELOCITY_ROOT", originalVelocityPath);
+        String velocityRoot = Config.getStringProperty("VELOCITY_ROOT");
+        assertThat("Path velocity root has been successfully restored", originalVelocityPath.equals(velocityRoot));
     }
 
 }
