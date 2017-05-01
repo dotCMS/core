@@ -22,8 +22,6 @@ public class VelocityUtilTest {
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
-        Mockito.when(Config.CONTEXT.getRealPath("/WEB-INF/velocity"))
-            .thenReturn(Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity"));
     }
 
     /**
@@ -42,8 +40,8 @@ public class VelocityUtilTest {
      */
     @Test
     public void test02CustomVelocityPath() throws Exception {
-        String velocityPath = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
-        velocityPath = velocityPath.replace("/WEB-INF/velocity", "/WEB-INF/customvelocity");
+        String originalVelocityPath = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
+        String velocityPath = originalVelocityPath.replace("/WEB-INF/velocity", "/WEB-INF/customvelocity");
         Config.setProperty("VELOCITY_ROOT", velocityPath);
 
         String customVelocityPath = VelocityUtil.getVelocityRootPath();
@@ -52,7 +50,7 @@ public class VelocityUtilTest {
         assertThat("Path ends with /WEB-INF/customvelocity", customVelocityPath.endsWith("/WEB-INF/customvelocity"));
 
         // restore the default value (used on other tests)
-        Config.setProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
+        Config.setProperty("VELOCITY_ROOT", originalVelocityPath);
     }
 
 }
