@@ -124,7 +124,7 @@
 
 <!-- START FILTER POPUP -->
 <div id="filtersBox" class="filtersBox shadowBox" style="display: none;">
-	<div class="dijitDialogTitleBar">
+	<div>
 		<div id="closeFiltersButton" class="closeFilter" onclick="closeFiltersBox()"></div>
 		<div class="clear"></div>
 	</div>
