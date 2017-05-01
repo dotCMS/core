@@ -49,7 +49,8 @@ import com.dotmarketing.util.PushPublishLogger;
  * <li><b>Bundle status update:</b> Each bundle is associated to an environment,
  * which contains one or more end-points. This job will connect to one or all of
  * them to verify the deployment status of the bundle in order to update its
- * status in the sender server. Examples of status can be:
+ * status in the sender server. Examples of status can be (please see the
+ * {@link Status} class to see all the available status options):
  * <ul>
  * <li><code>Success</code></li>
  * <li><code>Bundle sent</code></li>
@@ -57,12 +58,11 @@ import com.dotmarketing.util.PushPublishLogger;
  * <li><code>Failed to send to all environments</code></li>
  * <li>etc.</li>
  * </ul>
- * Please see the {@link Status} class to see all the available status options.
  * </li>
- * <li><code>Pending bundle push:</code> Besides auditing the different bundles
- * that are being sent, this job will take the bundles that are in the
- * publishing queue, identifies its assets (i.e., pages, contentlets, folders,
- * etc.) and sends them to publishing mechanism.</li>
+ * <li><b>Pending bundle push:</b> Besides auditing the different bundles that
+ * are being sent, this job will take the bundles that are in the publishing
+ * queue, identifies its assets (i.e., pages, contentlets, folders, etc.) and
+ * sends them to publishing mechanism.</li>
  * </ol>
  * 
  * @author Alberto
@@ -124,10 +124,9 @@ public class PublisherQueueJob implements StatefulJob {
 							PushPublishLogger.log(this.getClass(), "Pre-publish work started.");
 							tempBundleContents = pubAPI.getQueueElementsByBundleId(tempBundleId);
 
-							//Setting Audit objects
-							//History
+							//Setting Audit objects History
 							historyPojo = new PublishAuditHistory();
-							//Retriving assets
+							//Retrieving assets
 							Map<String, String> assets = new HashMap<String, String>();
 							List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>();
 
@@ -263,7 +262,12 @@ public class PublisherQueueJob implements StatefulJob {
 									} catch (Exception e) {
 										// An error occurred when retrieving the end-point's audit info. 
 										// Usually caused by a network problem.
-										Logger.error(PublisherQueueJob.class, e.getMessage(), e);
+										Logger.error(PublisherQueueJob.class,
+												String.format(
+														"An error occurred when accessing end-point '%s' with IP %s: %s",
+														targetEndpoint.getServerName(), targetEndpoint.getAddress(),
+														e.getMessage()),
+												e);
 										String failedAuditUpdate = "failed-remote-group-" + System.currentTimeMillis();
 										EndpointDetail detail = new EndpointDetail();
 										detail.setStatus(Status.FAILED_TO_PUBLISH.getCode());
