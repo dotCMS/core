@@ -41,13 +41,13 @@ public class VelocityUtilTest {
     @Test
     public void test02CustomVelocityPath() throws Exception {
         String originalVelocityPath = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
-        String velocityPath = originalVelocityPath.replace("/WEB-INF/velocity", "/WEB-INF/customvelocity");
-        Config.setProperty("VELOCITY_ROOT", velocityPath);
+        String newVelocityPath = "/WEB-INF/customVelocity";
+        Config.setProperty("VELOCITY_ROOT", newVelocityPath);
 
         String customVelocityPath = VelocityUtil.getVelocityRootPath();
 
         Assert.assertNotNull(customVelocityPath);
-        assertThat("Path ends with /WEB-INF/customvelocity", customVelocityPath.endsWith("/WEB-INF/customvelocity"));
+        assertThat("Path ends with /WEB-INF/customVelocity", customVelocityPath.endsWith("/WEB-INF/customVelocity"));
 
         // restore the default value (used on other tests)
         Config.setProperty("VELOCITY_ROOT", originalVelocityPath);
