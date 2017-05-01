@@ -9,7 +9,6 @@ import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.mockito.Mockito;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -22,8 +21,6 @@ public class VelocityUtilTest {
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
-        Mockito.when(Config.CONTEXT.getRealPath("/WEB-INF/velocity"))
-            .thenReturn(Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity"));
     }
 
     /**
@@ -42,17 +39,19 @@ public class VelocityUtilTest {
      */
     @Test
     public void test02CustomVelocityPath() throws Exception {
-        String velocityPath = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
-        velocityPath = velocityPath.replace("/WEB-INF/velocity", "/WEB-INF/customvelocity");
-        Config.setProperty("VELOCITY_ROOT", velocityPath);
+        String originalVelocityPath = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
+        String newVelocityPath = "/WEB-INF/customVelocity";
+        Config.setProperty("VELOCITY_ROOT", newVelocityPath);
 
         String customVelocityPath = VelocityUtil.getVelocityRootPath();
 
         Assert.assertNotNull(customVelocityPath);
-        assertThat("Path ends with /WEB-INF/customvelocity", customVelocityPath.endsWith("/WEB-INF/customvelocity"));
+        assertThat("Path ends with /WEB-INF/customVelocity", customVelocityPath.endsWith("/WEB-INF/customVelocity"));
 
         // restore the default value (used on other tests)
-        Config.setProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
+        Config.setProperty("VELOCITY_ROOT", originalVelocityPath);
+        String velocityRoot = Config.getStringProperty("VELOCITY_ROOT");
+        assertThat("Path velocity root has been successfully restored", originalVelocityPath.equals(velocityRoot));
     }
 
 }
