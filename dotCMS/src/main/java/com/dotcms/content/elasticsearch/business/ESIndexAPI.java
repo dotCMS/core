@@ -518,7 +518,7 @@ public class ESIndexAPI {
         Client client=new ESClient().getClient();
         int nreplicas=Config.getIntProperty("es.index.number_of_replicas",0);
 	
-	if (ClusterUtils.isESAutoWire()){
+	if (ClusterUtils.isESAutoWireReplicas()){
 		int serverCount;
 
 		try {
@@ -586,7 +586,7 @@ public class ESIndexAPI {
 		Map map = new ObjectMapper().readValue(settings, LinkedHashMap.class);
 		map.put("number_of_shards", shards);
 
-		if (ClusterUtils.isESAutoWire()){
+		if (ClusterUtils.isESAutoWireReplicas()){
 			int serverCount;
 
 			try {
@@ -703,7 +703,7 @@ public class ESIndexAPI {
 	 */
     public  synchronized void updateReplicas (String indexName, int replicas) throws DotDataException {
 
-    	if (ClusterUtils.isESAutoWire()){
+    	if (ClusterUtils.isESAutoWireReplicas()){
     		AdminLogger.log(this.getClass(),"updateReplicas", "Error on updateReplica. Replicas are configured to be handled by dotCMS.");
     		throw new DotDataException("Error on updateReplica. Replicas are configured to be handled by dotCMS.");
     	}
