@@ -2304,4 +2304,52 @@ public class ContentletAPITest extends ContentletBaseTest {
 		TemplateDataGen.remove(template);
 		
     }
+
+    /**
+     * This JUnit is to check the fix on Issue 10797 (https://github.com/dotCMS/core/issues/10797)
+     * It executes the following:
+     * 1) create a new structure
+     * 2) create a new field
+     * 3) create a contentlet
+     * 4) set the contentlet property
+     * 5) check the contentlet
+     * 6) deletes it all in the end
+     *
+     * @throws Exception Any exception that may happen
+     */
+    @Test
+    public void test_validateContentlet_contentWithTabDividerField() throws Exception {
+        Structure testStructure = null;
+        Field tabDividerField = null;
+
+        try {
+            // Create test structure
+            testStructure = createStructure("Tab Divider Test Structure_" + String.valueOf(new Date().getTime()) + "tab_divider", "tab_divider_test_structure_" + String.valueOf(new Date().getTime()) + "tab_divider");
+
+            // Create tab divider field
+            tabDividerField = new Field("JUnit Test TabDividerField", FieldType.TAB_DIVIDER, Field.DataType.SECTION_DIVIDER, testStructure, false, true, true, 1, false, false, false);
+            tabDividerField = FieldFactory.saveField(tabDividerField);
+
+            // Create the test contentlet
+            Contentlet testContentlet = new Contentlet();
+            testContentlet.setStructureInode(testStructure.getInode());
+
+            // Set the contentlet property
+            contentletAPI.setContentletProperty(testContentlet, tabDividerField, "tabDividerFieldValue");
+
+            // Checking the contentlet
+            testContentlet = contentletAPI.checkin(testContentlet, user, false);
+            contentletAPI.isInodeIndexed(testContentlet.getInode());
+        } catch (Exception ex) {
+            Logger.error(this, "An error occurred during test_validateContentlet_contentWithTabDividerField", ex);
+            throw ex;
+        } finally {
+            // Delete field
+            FieldFactory.deleteField(tabDividerField);
+
+            // Delete structure
+            APILocator.getStructureAPI().delete(testStructure, user);
+        }
+    }
+
 }
