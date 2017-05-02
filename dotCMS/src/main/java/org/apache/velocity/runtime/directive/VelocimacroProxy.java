@@ -187,7 +187,7 @@ public class VelocimacroProxy extends Directive
         {
             Object[] stack = vmc.getMacroNameStack();
 
-            StringBuffer out = new StringBuffer(100)
+            StringBuilder out = new StringBuilder(100)
                 .append("Max calling depth of ").append(maxCallDepth)
                 .append(" was exceeded in macro '").append(macroName)
                 .append("' with Call Stack:");

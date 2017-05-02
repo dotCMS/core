@@ -1,6 +1,7 @@
 package com.dotmarketing.services;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
@@ -34,6 +35,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.DotResourceCache;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -402,14 +404,6 @@ public class ContentletMapServices {
 
 		if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
 			try {
-
-				String velocityRootPath=Config.getStringProperty("VELOCITY_ROOT");
-
-				if (velocityRootPath.startsWith("/WEB-INF")) {
-					velocityRootPath=FileUtil.getRealPath(velocityRootPath);
-				}
-				velocityRootPath += java.io.File.separator;
-
 				String veloExt=Config.getStringProperty("VELOCITY_CONTENT_MAP_EXTENSION");
 				String baseFilename=String.format("%s_%d.%s", content.getIdentifier(), content.getLanguageId(), veloExt);
 
@@ -466,7 +460,9 @@ public class ContentletMapServices {
 
 	private static void removeContentletMapFile(Contentlet asset, Identifier identifier, boolean EDIT_MODE) {
 		String folderPath=(!EDIT_MODE) ? "live/" : "working/";
-		String velocityRoot=FileUtil.getRealPath("/WEB-INF/velocity/") + folderPath;
+
+		String velocityRootPath = VelocityUtil.getVelocityRootPath();
+		String velocityRoot = velocityRootPath + File.separator + folderPath;
 	
 		String filePath=  folderPath + identifier.getInode() + "_" + asset.getLanguageId() + "." + Config.getStringProperty("VELOCITY_CONTENT_MAP_EXTENSION");
 		java.io.File f=new java.io.File (velocityRoot + filePath);

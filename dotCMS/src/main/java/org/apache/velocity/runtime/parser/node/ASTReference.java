@@ -300,7 +300,7 @@ public class ASTReference extends SimpleNode implements TokenImageSaver
                 }
                 else
                 {
-                    StringBuffer name = new StringBuffer(getDollarBang()).append(rootString);
+                    StringBuilder name = new StringBuilder(getDollarBang()).append(rootString);
                     for (int i = 0; i <= failedChild; i++)
                     {
                         Node node = jjtGetChild(i);

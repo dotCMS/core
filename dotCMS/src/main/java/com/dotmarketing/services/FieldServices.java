@@ -23,6 +23,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.DotResourceCache;
 import com.liferay.util.FileUtil;
 
@@ -66,12 +67,6 @@ public class FieldServices {
 		}
 		
 		 if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
-			String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
-			if (velocityRootPath.startsWith("/WEB-INF")) {
-			    velocityRootPath = FileUtil.getRealPath(velocityRootPath);
-			}
-			velocityRootPath += java.io.File.separator;
-			
 			String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
 			String filePath=folderPath + contentInode + "_" + fieldInode + "." + Config.getStringProperty("VELOCITY_FIELD_EXTENSION");
             //Specify a proper character encoding
@@ -99,10 +94,7 @@ public class FieldServices {
 	}
 	
 	public static void removeFieldFile (String fieldInode, String contentInode, boolean EDIT_MODE) {
-        String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
-        if (velocityRootPath.startsWith("/WEB-INF")) {
-            velocityRootPath = FileUtil.getRealPath(velocityRootPath);
-        }
+        String velocityRootPath = VelocityUtil.getVelocityRootPath();
         velocityRootPath += java.io.File.separator;
         String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
         String filePath=folderPath + contentInode + "_" + fieldInode + "." + Config.getStringProperty("VELOCITY_FIELD_EXTENSION");

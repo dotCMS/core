@@ -249,7 +249,7 @@ public class Scope extends AbstractMap
 
         public String toString()
         {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             if (directive != null)
             {
                 sb.append('#');

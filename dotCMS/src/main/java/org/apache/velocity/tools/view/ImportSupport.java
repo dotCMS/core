@@ -90,7 +90,7 @@ public abstract class ImportSupport {
         {
             // for absolute URLs, delegate to our peer
             BufferedReader r = new BufferedReader(acquireReader(url, timeout, headers));
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             int i;
             // under JIT, testing seems to show this simple loop is as fast
             // as any of the alternatives
@@ -457,7 +457,7 @@ public abstract class ImportSupport {
      */
     public static String stripSession(String url)
     {
-        StringBuffer u = new StringBuffer(url);
+        StringBuilder u = new StringBuilder(url);
         int sessionStart;
         while ((sessionStart = u.toString().indexOf(";jsessionid=")) != -1)
         {

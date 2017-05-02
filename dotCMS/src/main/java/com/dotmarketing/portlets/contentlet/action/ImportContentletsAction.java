@@ -1,6 +1,11 @@
 package com.dotmarketing.portlets.contentlet.action;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
@@ -39,25 +44,33 @@ import com.liferay.util.servlet.SessionMessages;
 import com.liferay.util.servlet.UploadPortletRequest;
 
 /**
- * This action class import content from csv/text files. 
- * The csv file should contains as first line the required headers that match the structure fields
- *  
+ * This action class import content from csv/text files. The csv file should
+ * contains as first line the required headers that match the structure fields
+ * 
  * @author david
  * 
  */
 public class ImportContentletsAction extends DotPortletAction {
 
-
 	private final static String languageCodeHeader = "languageCode";
 	private final static String countryCodeHeader = "countryCode";
 	public static final String ENCODE_TYPE = "encodeType";
 
-
 	/**
-	 * @param permissionAPI the permissionAPI to set
+	 * Handles all the actions associated to importing contentlets.
+	 * 
+	 * @param mapping
+	 *            -
+	 * @param form
+	 *            - The form containing the information selected by the user in
+	 *            the UI.
+	 * @param config
+	 *            - The configuration parameters for this portlet.
+	 * @param req
+	 *            - The Struts wrapper for the HTTP Request object.
+	 * @param res
+	 *            - The Struts wrapper for the HTTP Response object.
 	 */
-
-
 	public void processAction(ActionMapping mapping, final ActionForm form, final PortletConfig config, final ActionRequest req, final ActionResponse res) throws Exception {
 		Logger.debug(this, "Import Contentlets Action");
 		
@@ -75,7 +88,6 @@ public class ImportContentletsAction extends DotPortletAction {
 		
 		
 		String cmd = req.getParameter(Constants.CMD);
-		String referer = req.getParameter("referer");
 		
 		Logger.debug(this, "ImportContentletsAction cmd=" + cmd);
 		
@@ -195,7 +207,6 @@ public class ImportContentletsAction extends DotPortletAction {
 							int countryCodeHeaderColumn = -1;
 							
 							byte[] bytes = (byte[]) httpReq.getSession().getAttribute("file_to_import");
-							File file= (File)httpReq.getSession().getAttribute("csvFile");
 							ImportContentletsForm importContentletsForm = (ImportContentletsForm) form;
 							String eCode = (String) httpReq.getSession().getAttribute(ENCODE_TYPE);
 							if (importContentletsForm.getLanguage() == -1)
@@ -223,7 +234,6 @@ public class ImportContentletsAction extends DotPortletAction {
 							}
 							HttpSession session = ((ActionRequestImpl)req).getHttpServletRequest().getSession();
 							User user = _getUser(req);
-							//long importId = ImportAuditUtil.createAuditRecord(user.getUserId(), (String)httpReq.getSession().getAttribute("fileName"));
 							
 			
 							HashMap<String, List<String>> importresults=null;
@@ -269,7 +279,6 @@ public class ImportContentletsAction extends DotPortletAction {
 						}
 					}
 				};
-				//t.setName("ImportContentletThread");
 				t.start();
 				req.setAttribute("previewResults", (HashMap<String, List<String>>) session.getAttribute("previewResults"));
 				req.setAttribute("importId", importId);
@@ -291,6 +300,12 @@ public class ImportContentletsAction extends DotPortletAction {
 
 	}
 
+	/**
+	 * 
+	 * @param session
+	 * @param file
+	 * @throws IOException
+	 */
 	private void detectEncodeType(final HttpSession session, final File file) throws IOException {
 
 		String encodeType=null;
@@ -309,11 +324,27 @@ public class ImportContentletsAction extends DotPortletAction {
             detector.reset();
             fis.close();
         }
-	} // detectEncodeType.
+	}
 
-	// /// ************** ALL METHODS HERE *************************** ////////
+	/**
+	 * Provides the user a CSV template based on the selected Content Type. This
+	 * assists users in the process of adding new content to dotCMS as it
+	 * already provides the correct column headers required by the content
+	 * import process.
+	 * 
+	 * @param req
+	 *            - The Struts wrapper for the HTTP Request object.
+	 * @param res
+	 *            - The Struts wrapper for the HTTP Response object.
+	 * @param config
+	 *            - The configuration parameters for this portlet.
+	 * @param form
+	 *            - The form containing the information selected by the user in
+	 *            the UI.
+	 * @throws Exception
+	 *             The CSV template could not be generated.
+	 */
 	private void _downloadCSVTemplate(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form) throws Exception {
-
 		ActionResponseImpl resImpl = (ActionResponseImpl)res;
 		HttpServletResponse httpRes = resImpl.getHttpServletResponse();
 
@@ -327,13 +358,15 @@ public class ImportContentletsAction extends DotPortletAction {
 		for(int i = 0; i < fields.size(); i++) {
 			Field field = fields.get(i);
 			if (ImportUtil.isImportableField(field)) {
-				String fieldName = field.getFieldName();
-				if(fieldName.contains(","))
-					out.print("\"" + fieldName + "\"");
-				else
-					out.print(fieldName);
-				if(i < fields.size() - 1) 
+				String fieldVariableName = field.getVelocityVarName();
+				if(fieldVariableName.contains(",")) {
+					out.print("\"" + fieldVariableName + "\"");
+				} else {
+					out.print(fieldVariableName);
+				}
+				if(i < fields.size() - 1) { 
 					out.print(",");
+				}
 			}
 		}
 		out.print("\n");
@@ -343,14 +376,12 @@ public class ImportContentletsAction extends DotPortletAction {
 			if (ImportUtil.isImportableField(field)) {
 				if (field.getFieldType().equals(Field.FieldType.DATE.toString())) {
 					out.print("\"MM/dd/yyyy\"");
-				}        	
-				else if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
+				} else if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
 					out.print("\"MM/dd/yyyy hh:mm aa\"");
-				}         	
-				else if (field.getFieldType().equals(Field.FieldType.TIME.toString())) {
+				} else if (field.getFieldType().equals(Field.FieldType.TIME.toString())) {
 					out.print("\"hh:mm aa\"");
 				}else if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
-						out.print("\"Host/Folder Identifier\"");
+					out.print("\"Host/Folder Identifier\"");
 				}else if (field.getFieldType().equals(Field.FieldType.CATEGORY.toString())) {
 					out.print("\"Category Unique Key\"");
 				}else if (field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())){
@@ -358,47 +389,107 @@ public class ImportContentletsAction extends DotPortletAction {
 				}    else {
 					out.print("\"XXX\"");
 				}
-				if(i < fields.size() - 1) 
+				if(i < fields.size() - 1) {
 					out.print(",");
+				}
 			}
 		}
-
 		out.flush();
 		out.close();
 		HibernateUtil.closeSession();
 	}
 
+	/**
+	 * Reads and analyzes the content of the CSV import file in order to
+	 * determine potential errors, inconsistencies or warnings, and provide the
+	 * user with useful information regarding the contents of the file.
+	 * 
+	 * @param importId
+	 *            - The ID of this data import.
+	 * @param req
+	 *            - The Struts wrapper for the HTTP Request object.
+	 * @param res
+	 *            - The Struts wrapper for the HTTP Response object.
+	 * @param config
+	 *            - The configuration parameters for this portlet.
+	 * @param form
+	 *            - The form containing the information selected by the user in
+	 *            the UI.
+	 * @param user
+	 *            - The {@link User} performing this action.
+	 * @param bytes
+	 *            - The byte array representation of the CSV file.
+	 * @param csvHeaders
+	 *            - The headers that make up the CSV file.
+	 * @param csvreader
+	 *            - The actual data contained in the CSV file.
+	 * @param languageCodeHeaderColumn
+	 *            - The column name containing the language code.
+	 * @param countryCodeHeaderColumn
+	 *            - The column name containing the country code.
+	 * @param reader
+	 *            - The character streams reader.
+	 * @throws Exception
+	 *             An error occurred when analyzing the CSV file.
+	 */
 	private void _generatePreview(long importId, ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user, byte[] bytes, String[] csvHeaders, CsvReader csvreader, int languageCodeHeaderColumn, int countryCodeHeaderColumn, Reader reader) throws Exception {
-
 		// wraps request to get session object
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
 		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 		HttpSession session = httpReq.getSession();
-
 		httpReq.getSession().setAttribute("file_to_import", bytes);
 		httpReq.getSession().setAttribute("form_to_import", form);
-
 		ImportContentletsForm importForm = (ImportContentletsForm) form;
 		httpReq.getSession().setAttribute("fileName", importForm.getFileName());
-		String currentHostId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
-		HashMap<String, List<String>> results = ImportUtil.importFile(importId, currentHostId, importForm.getStructure(), importForm.getFields(), true, (importForm.getLanguage() == -1), user, importForm.getLanguage(), csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader);
-
+		String currentSiteId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+		HashMap<String, List<String>> results = ImportUtil.importFile(importId, currentSiteId, importForm.getStructure(), importForm.getFields(), true, (importForm.getLanguage() == -1), user, importForm.getLanguage(), csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader);
 		req.setAttribute("previewResults", results);
 	}
 
+	/**
+	 * Executes the content import process after the review process has been run
+	 * and displayed to the user.
+	 * 
+	 * @param importId
+	 *            - The ID of this data import.
+	 * @param req
+	 *            - The Struts wrapper for the HTTP Request object.
+	 * @param res
+	 *            - The Struts wrapper for the HTTP Response object.
+	 * @param config
+	 *            - The configuration parameters for this portlet.
+	 * @param form
+	 *            - The form containing the information selected by the user in
+	 *            the UI.
+	 * @param user
+	 *            - The {@link User} performing this action.
+	 * @param csvHeaders
+	 *            - The headers that make up the CSV file.
+	 * @param csvreader
+	 *            - The actual data contained in the CSV file.
+	 * @param languageCodeHeaderColumn
+	 *            - The column name containing the language code.
+	 * @param countryCodeHeaderColumn
+	 *            - The column name containing the country code.
+	 * @param reader
+	 *            - The character streams reader.
+	 * @return The status of the content import performed by dotCMS. This
+	 *         provides information regarding inconsistencies, errors, warnings
+	 *         and/or precautions to the user.
+	 * @throws Exception
+	 *             An error occurred when adding/updating data to the content
+	 *             repository.
+	 */
 	private HashMap<String, List<String>> _processFile(long importId,ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user, String[] csvHeaders, CsvReader csvreader, int languageCodeHeaderColumn, int countryCodeHeaderColumn, Reader reader)
 	throws Exception {
-
 		// wraps request to get session object
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
 		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 		HttpSession session = httpReq.getSession();
 		ImportContentletsForm importForm = (ImportContentletsForm) httpReq.getSession().getAttribute("form_to_import");
-		String currentHostId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
-	 	HashMap<String, List<String>> results = ImportUtil.importFile(importId, currentHostId, importForm.getStructure(), importForm.getFields(), false, (importForm.getLanguage() == -1), user, importForm.getLanguage(), csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader);
-	 	//req.setAttribute("importResults", results);
+		String currentSiteId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+	 	HashMap<String, List<String>> results = ImportUtil.importFile(importId, currentSiteId, importForm.getStructure(), importForm.getFields(), false, (importForm.getLanguage() == -1), user, importForm.getLanguage(), csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader);
 	 	return results;
-		
 	}
 
 }

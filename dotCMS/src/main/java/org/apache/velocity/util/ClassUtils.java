@@ -223,7 +223,7 @@ public class ClassUtils {
         if (strictRef)
         {
           // Create a parameter list for the exception error message
-          StringBuffer plist = new StringBuffer();
+          StringBuilder plist = new StringBuilder();
           for (int i = 0; i < params.length; i++)
           {
             Class param = paramClasses[i];

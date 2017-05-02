@@ -37,14 +37,18 @@ public interface ContentletAPIPreHook {
 	 * @param limit can be 0 of no limit
 	 * @return false if the hook should stop the transaction
 	 */
-	public boolean findAllContent(int offset, int limit);
+	public default boolean findAllContent(int offset, int limit){
+      return true;
+    }
 	
 	/**
 	 * Finds a Contentlet Object given the inode
 	 * @param inode
 	 * @return false if the hook should stop the transaction
 	 */
-	public boolean find(String inode, User user, boolean respectFrontendRoles);
+	public default boolean find(String inode, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Returns a live Contentlet Object for a given language 
@@ -52,7 +56,9 @@ public interface ContentletAPIPreHook {
 	 * @param inode
 	 * @return
 	 */
-	public boolean findContentletForLanguage(long languageId, Identifier contentletId);
+	public default boolean findContentletForLanguage(long languageId, Identifier contentletId){
+      return true;
+    }
 	
 	/**
 	 * Returns all Contentlets for a specific structure
@@ -65,7 +71,9 @@ public interface ContentletAPIPreHook {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public boolean findByStructure(Structure structure, User user, boolean respectFrontendRoles, int limit, int offset);
+	public default boolean findByStructure(Structure structure, User user, boolean respectFrontendRoles, int limit, int offset){
+      return true;
+    }
 	
 	/**
 	 * Returns all Contentlets for a specific structure
@@ -76,7 +84,9 @@ public interface ContentletAPIPreHook {
 	 * @param offset
 	 * @return
 	 */
-	public boolean findByStructure(String structureInode, User user, boolean respectFrontendRoles, int limit, int offset);
+	public default boolean findByStructure(String structureInode, User user, boolean respectFrontendRoles, int limit, int offset){
+      return true;
+    }
 	
 	/**
 	 * Retrieves a contentlet from the database based on its identifier
@@ -84,7 +94,9 @@ public interface ContentletAPIPreHook {
 	 * @param live Retrieves the live version if false retrieves the working version
 	 * @return
 	 */
-	public boolean findContentletByIdentifier(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles);
+	public default boolean findContentletByIdentifier(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * Retrieves a contentlet list from the database based on a identifiers array
@@ -95,28 +107,36 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles	
 	 * @return 
 	 */
-	public boolean findContentletsByIdentifiers(String[] identifiers, boolean live, long languageId, User user, boolean respectFrontendRoles);
+	public default boolean findContentletsByIdentifiers(String[] identifiers, boolean live, long languageId, User user, boolean respectFrontendRoles){
+      return true;
+    }
 		
 	/**
 	 * Gets a list of Contentlets from a passed in list of inodes.  
 	 * @param inodes
 	 * @return
 	 */
-	public boolean findContentlets(List<String> inodes) throws DotDataException;
+	public default boolean findContentlets(List<String> inodes) throws DotDataException{
+      return true;
+    }
 
 	/**
 	 * Gets a list of Contentlets from a given parent folder  
 	 * @param parentFolder
 	 * @return
 	 */
-	public boolean findContentletsByFolder(Folder parentFolder, User user, boolean respectFrontendRoles);
+	public default boolean findContentletsByFolder(Folder parentFolder, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * Gets a list of Contentlets from a given parent host  
 	 * @param parentHost
 	 * @return
 	 */
-	public boolean findContentletsByHost(Host parentHost, User user, boolean respectFrontendRoles);
+	public default boolean findContentletsByHost(Host parentHost, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
      * Gets a list of Contentlets from a given parent host, retrieves the working version of content. The difference between this method and the other one
@@ -131,41 +151,53 @@ public interface ContentletAPIPreHook {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-	public boolean findContentletsByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	public default boolean findContentletsByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException{
+      return true;
+    }
 
 
 	/**
 	 * Pre Hook for {@link ContentletAPI#findContentletsByHostBaseType(Host, List, User, boolean)}
      */
-	boolean findContentletsByHostBaseType(Host parentHost, List<Integer> includingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	public default boolean findContentletsByHostBaseType(Host parentHost, List<Integer> includingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException{
+      return true;
+    }
 
 	/**
 	 * Makes a copy of a contentlet. 
 	 * @param currentContentlet
 	 * @return
 	 */
-	public boolean copyContentlet(Contentlet currentContentlet, User user, boolean respectFrontendRoles);
+	public default boolean copyContentlet(Contentlet currentContentlet, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * Makes a copy of a contentlet. 
 	 * @param currentContentlet
 	 * @return
 	 */
-	public boolean copyContentlet(Contentlet currentContentlet, Host host, User user, boolean respectFrontendRoles);
+	public default boolean copyContentlet(Contentlet currentContentlet, Host host, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * Makes a copy of a contentlet. 
 	 * @param currentContentlet
 	 * @return
 	 */
-	public boolean copyContentlet(Contentlet currentContentlet, Folder folder, User user, boolean respectFrontendRoles);
+	public default boolean copyContentlet(Contentlet currentContentlet, Folder folder, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * Makes a copy of a contentlet with choice to append copy to the filename. 
 	 * @param currentContentlet
 	 * @return
 	 */
-	public boolean copyContentlet(Contentlet currentContentlet, Folder folder, User user, boolean appendCopyToFileName, boolean respectFrontendRoles);
+	public default boolean copyContentlet(Contentlet currentContentlet, Folder folder, User user, boolean appendCopyToFileName, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * The search here takes a lucene query and pulls Contentlets for you.  You can pass sortBy as null if you do not 
@@ -180,7 +212,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean search(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles);
+	public default boolean search(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * The search here takes a lucene query and pulls Contentlets for you.  You can pass sortBy as null if you do not 
@@ -196,7 +230,9 @@ public interface ContentletAPIPreHook {
 	 * @param requiredPermission
 	 * @return
 	 */
-	public boolean search(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission);
+	public default boolean search(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission){
+      return true;
+    }
 
 	/**
 	 * The search here takes a lucene query and pulls LuceneHits for you.  You can pass sortBy as null if you do not 
@@ -211,13 +247,17 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean searchIndex(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles);
+	public default boolean searchIndex(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Publishes all related HTMLPage
 	 * @param contentlet
 	 */
-	public boolean publishRelatedHtmlPages(Contentlet contentlet);
+	public default boolean publishRelatedHtmlPages(Contentlet contentlet){
+      return true;
+    }
 	
 	/**
 	 * Will get all the contentlets for a structure and set the default values for a field on the contentlet.  
@@ -229,7 +269,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean cleanField(Structure structure, Field field, User user, boolean respectFrontendRoles);
+	public default boolean cleanField(Structure structure, Field field, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * Will get all the contentlets for a structure and set the default values for the host fields  
@@ -241,7 +283,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean cleanHostField(Structure structure, User user, boolean respectFrontendRoles);
+	public default boolean cleanHostField(Structure structure, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Finds the next date that a contentlet must be reviewed
@@ -250,7 +294,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean getNextReview(Contentlet content, User user, boolean respectFrontendRoles);
+	public default boolean getNextReview(Contentlet content, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * Retrieves all references for a Contentlet. The result is an ArrayList of type Map whose key will 
@@ -260,7 +306,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean getContentletReferences(Contentlet contentlet, User user, boolean respectFrontendRoles);
+	public default boolean getContentletReferences(Contentlet contentlet, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Gets the value of a field with a given contentlet 
@@ -270,7 +318,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean getFieldValue(Contentlet contentlet, Field theField);
+	public default boolean getFieldValue(Contentlet contentlet, Field theField){
+      return true;
+    }
 
 	/**
 	 * Adds a relationship to a contentlet
@@ -280,7 +330,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean addLinkToContentlet(Contentlet contentlet, String linkInode, String relationName, User user, boolean respectFrontendRoles);
+	public default boolean addLinkToContentlet(Contentlet contentlet, String linkInode, String relationName, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Adds a relationship to a contentlet
@@ -290,7 +342,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean addFileToContentlet(Contentlet contentlet, String fileInode, String relationName, User user, boolean respectFrontendRoles);
+	public default boolean addFileToContentlet(Contentlet contentlet, String fileInode, String relationName, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Adds a relationship to a contentlet
@@ -300,7 +354,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean addImageToContentlet(Contentlet contentlet, String imageInode, String relationName, User user, boolean respectFrontendRoles);
+	public default boolean addImageToContentlet(Contentlet contentlet, String imageInode, String relationName, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * Returns the contentlets on a given page.  Will only return contentlets the user has permission to read/use
@@ -315,28 +371,36 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean findPageContentlets(String HTMLPageIdentifier, String containerIdentifier, String orderby, boolean working, long languageId, User user, boolean respectFrontendRoles);
+	public default boolean findPageContentlets(String HTMLPageIdentifier, String containerIdentifier, String orderby, boolean working, long languageId, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * Returns all contentlet's relationships for a given contentlet inode 
 	 * @param contentletInode
 	 * @return a ContentletRelationships object containing all relationships for the contentlet
 	 */
-	public boolean getAllRelationships(String contentletInode, User user, boolean respectFrontendRoles);
+	public default boolean getAllRelationships(String contentletInode, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * Returns all contentlet's relationships for a given contentlet object 
 	 * @param contentlet
 	 * @return a ContentletRelationships object containing all relationships for the contentlet
 	 */
-	public boolean getAllRelationships(Contentlet contentlet);
+	public default boolean getAllRelationships(Contentlet contentlet){
+      return true;
+    }
 
 	/**
 	 * Returns a contentlet's siblings for a given contentlet object.
 	 * @param contentlet
 	 * @return a ContentletRelationships object containing all relationships for the contentlet
 	 */
-	public boolean getAllLanguages(Contentlet contentlet, Boolean isLiveContent, User user, boolean respectFrontendRoles);
+	public default boolean getAllLanguages(Contentlet contentlet, Boolean isLiveContent, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * 
@@ -346,7 +410,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean isContentEqual(Contentlet contentlet1,Contentlet contentlet2, User user, boolean respectFrontendRoles);
+	public default boolean isContentEqual(Contentlet contentlet1,Contentlet contentlet2, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * This method archives the given contentlet
@@ -354,7 +420,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean archive(Contentlet contentlet, User user, boolean respectFrontendRoles);
+	public default boolean archive(Contentlet contentlet, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * This method completely deletes the given contentlet from the system
@@ -362,7 +430,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean delete(Contentlet contentlet, User user, boolean respectFrontendRoles);
+	public default boolean delete(Contentlet contentlet, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * This method completely deletes the given contentlet from the system. It was added for the jira issue
@@ -372,7 +442,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @param allVersions
 	 */
-	public boolean delete(Contentlet contentlet, User user, boolean respectFrontendRoles, boolean allVersions);
+	public default boolean delete(Contentlet contentlet, User user, boolean respectFrontendRoles, boolean allVersions){
+      return true;
+    }
 
 	/**
 	 * Destroys the specified {@link Contentlet}. This method will automatically
@@ -394,7 +466,9 @@ public interface ContentletAPIPreHook {
 	 *             The specified user does not have the required permissions to
 	 *             perform this action.
 	 */
-	public boolean destroy(Contentlet contentlet, User user, boolean respectFrontendRoles);
+	public default boolean destroy(Contentlet contentlet, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * Destroys the specified list of {@link Contentlet} objects . This method
@@ -416,7 +490,9 @@ public interface ContentletAPIPreHook {
 	 *             The specified user does not have the required permissions to
 	 *             perform this action.
 	 */
-	public boolean destroy(List<Contentlet> contentlets, User user, boolean respectFrontendRoles);
+	public default boolean destroy(List<Contentlet> contentlets, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Publishes a piece of content. 
@@ -425,7 +501,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean publish(Contentlet contentlet, User user, boolean respectFrontendRoles);
+	public default boolean publish(Contentlet contentlet, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Publishes a piece of content. 
@@ -434,7 +512,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean publish(List<Contentlet> contentlets, User user, boolean respectFrontendRoles);
+	public default boolean publish(List<Contentlet> contentlets, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * This method unpublishes the given contentlet
@@ -442,7 +522,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean unpublish(Contentlet contentlet, User user, boolean respectFrontendRoles);
+	public default boolean unpublish(Contentlet contentlet, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * This method unpublishes the given contentlet
@@ -450,7 +532,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean unpublish(List<Contentlet> contentlets, User user, boolean respectFrontendRoles);
+	public default boolean unpublish(List<Contentlet> contentlets, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * This method archives the given contentlets
@@ -458,14 +542,18 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean archive(List<Contentlet> contentlets, User user, boolean respectFrontendRoles);
+	public default boolean archive(List<Contentlet> contentlets, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	/**
 	 * This method unarchives the given contentlets
 	 * @param contentlets
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean unarchive(List<Contentlet> contentlets, User user, boolean respectFrontendRoles);
+	public default boolean unarchive(List<Contentlet> contentlets, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * This method unarchives the given contentlet
@@ -473,7 +561,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean unarchive(Contentlet contentlet, User user, boolean respectFrontendRoles);
+	public default boolean unarchive(Contentlet contentlet, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * This method completely deletes the given contentlet from the system
@@ -481,7 +571,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean delete(List<Contentlet> contentlets, User user, boolean respectFrontendRoles);
+	public default boolean delete(List<Contentlet> contentlets, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
     /**
      * This method completely deletes contentlets from a given host
@@ -489,7 +581,9 @@ public interface ContentletAPIPreHook {
      * @param user
      * @param respectFrontendRoles
      */
-    public boolean deleteByHost(Host host, User user, boolean respectFrontendRoles);
+    public default boolean deleteByHost(Host host, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * This method completely deletes the given contentlet from the system. It was added for the jira issue
@@ -499,7 +593,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @param allVersions
 	 */
-	public boolean delete(List<Contentlet> contentlets, User user, boolean respectFrontendRoles, boolean allVersions);
+	public default boolean delete(List<Contentlet> contentlets, User user, boolean respectFrontendRoles, boolean allVersions){
+      return true;
+    }
 	
 	/**
 	 * Deletes all related content from passed in contentlet and relationship 
@@ -508,7 +604,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean deleteRelatedContent(Contentlet contentlet, Relationship relationship, User user, boolean respectFrontendRoles);
+	public default boolean deleteRelatedContent(Contentlet contentlet, Relationship relationship, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Deletes all related content from passed in contentlet and relationship 
@@ -517,7 +615,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean deleteRelatedContent(Contentlet contentlet, Relationship relationship, boolean hasParent, User user, boolean respectFrontendRoles);
+	public default boolean deleteRelatedContent(Contentlet contentlet, Relationship relationship, boolean hasParent, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Associates the given list of contentlets using the relationship this
@@ -529,7 +629,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean relateContent(Contentlet contentlet, Relationship rel,List<Contentlet> related, User user, boolean respectFrontendRoles);
+	public default boolean relateContent(Contentlet contentlet, Relationship rel,List<Contentlet> related, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * Associates the given list of contentlets using the relationship this
@@ -541,7 +643,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean relateContent(Contentlet contentlet, ContentletRelationshipRecords related, User user, boolean respectFrontendRoles);
+	public default boolean relateContent(Contentlet contentlet, ContentletRelationshipRecords related, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * Gets all related content, if this method is invoked with a same structures (where the parent and child structures are the same type) 
@@ -552,7 +656,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean getRelatedContent(Contentlet contentlet, Relationship rel, User user, boolean respectFrontendRoles);
+	public default boolean getRelatedContent(Contentlet contentlet, Relationship rel, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * Gets all related content from a same structures (where the parent and child structures are the same type) 
@@ -570,7 +676,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles);
+	public default boolean getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * 
@@ -578,7 +686,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean unlock(Contentlet contentlet, User user, boolean respectFrontendRoles);
+	public default boolean unlock(Contentlet contentlet, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * Use to lock a contentlet
@@ -586,30 +696,40 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean lock(Contentlet contentlet, User user, boolean respectFrontendRoles);
+	public default boolean lock(Contentlet contentlet, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Reindex all content
 	 */
-	public boolean reindex();
+	public default boolean reindex(){
+      return true;
+    }
 	
 	/**
 	 * reindex content for a given structure
 	 * @param structure
 	 */
-	public boolean reindex(Structure structure);
+	public default boolean reindex(Structure structure){
+      return true;
+    }
 	
 	/**
 	 * reindex a single content
 	 * @param contentlet
 	 */
-	public boolean reindex(Contentlet contentlet);
+	public default boolean reindex(Contentlet contentlet){
+      return true;
+    }
 	
 	/**
 	 * Used to reindex content for the specific server the code executes on at runtime in a cluster
 	 * @throws DotDataException
 	 */
-	public boolean reIndexForServerNode(); 
+	public default boolean reIndexForServerNode(){
+      return true;
+    } 
 	
 	/**
 	 * Get all the files relates to the contentlet
@@ -618,7 +738,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean getRelatedFiles(Contentlet contentlet, User user, boolean respectFrontendRoles);
+	public default boolean getRelatedFiles(Contentlet contentlet, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Gets a file with a specific relationship type to the passed in contentlet
@@ -628,7 +750,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean getRelatedIdentifier(Contentlet contentlet, String relationshipType, User user, boolean respectFrontendRoles);
+	public default boolean getRelatedIdentifier(Contentlet contentlet, String relationshipType, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Gets all related links to the contentlet
@@ -637,7 +761,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean getRelatedLinks(Contentlet contentlet, User user, boolean respectFrontendRoles);
+	public default boolean getRelatedLinks(Contentlet contentlet, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Allows you to checkout a content so it can be altered and checked in
@@ -646,7 +772,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean checkout(String contentletInode, User user, boolean respectFrontendRoles);
+	public default boolean checkout(String contentletInode, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Allows you to checkout contents so it can be altered and checked in 
@@ -655,7 +783,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean checkout(List<Contentlet> contentlets, User user, boolean respectFrontendRoles);
+	public default boolean checkout(List<Contentlet> contentlets, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Allows you to checkout contents based on a lucene query so it can be altered and checked in 
@@ -664,7 +794,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean checkoutWithQuery(String luceneQuery, User user, boolean respectFrontendRoles);
+	public default boolean checkoutWithQuery(String luceneQuery, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Allows you to checkout contents based on a lucene query so it can be altered and checked in, in a paginated fashion 
@@ -675,7 +807,9 @@ public interface ContentletAPIPreHook {
 	 * @param limit
 	 * @return
 	 */
-	public boolean checkout(String luceneQuery, User user, boolean respectFrontendRoles, int offset, int limit);
+	public default boolean checkout(String luceneQuery, User user, boolean respectFrontendRoles, int offset, int limit){
+      return true;
+    }
 	
 	/**
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.  
@@ -686,7 +820,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles);
+	public default boolean checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.  
@@ -701,7 +837,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean checkin(Contentlet currentContentlet, ContentletRelationships relationshipsData, List<Category> cats, List<Permission> selectedPermissions, User user,	boolean respectFrontendRoles);
+	public default boolean checkin(Contentlet currentContentlet, ContentletRelationships relationshipsData, List<Category> cats, List<Permission> selectedPermissions, User user,	boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.  
@@ -711,7 +849,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean checkin(Contentlet contentlet, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles);
+	public default boolean checkin(Contentlet contentlet, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.  
@@ -720,7 +860,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean checkin(Contentlet contentlet, List<Permission> permissions, User user,boolean respectFrontendRoles);
+	public default boolean checkin(Contentlet contentlet, List<Permission> permissions, User user,boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.  
@@ -731,7 +873,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean checkin(Contentlet contentlet ,User user,boolean respectFrontendRoles,List<Category> cats);
+	public default boolean checkin(Contentlet contentlet ,User user,boolean respectFrontendRoles,List<Category> cats){
+      return true;
+    }
 	
 	/**
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.  
@@ -741,7 +885,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats, User user,boolean respectFrontendRoles);
+	public default boolean checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats, User user,boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.  
@@ -749,7 +895,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean checkin(Contentlet contentlet, User user,boolean respectFrontendRoles);
+	public default boolean checkin(Contentlet contentlet, User user,boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Will check in a new version of you contentlet. The inode of your contentlet must be 0.  
@@ -758,7 +906,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, User user,boolean respectFrontendRoles);
+	public default boolean checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, User user,boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Will check in a update of your contentlet without generate a new version. The inode of your contentlet must be different from 0.  
@@ -767,7 +917,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean checkinWithoutVersioning(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles);
+	public default boolean checkinWithoutVersioning(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Will make the passed in contentlet the working copy. 
@@ -775,7 +927,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean restoreVersion(Contentlet contentlet, User user, boolean respectFrontendRoles);
+	public default boolean restoreVersion(Contentlet contentlet, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Retrieves all versions for a contentlet identifier
@@ -785,7 +939,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean findAllVersions(Identifier identifier, User user, boolean respectFrontendRoles);
+	public default boolean findAllVersions(Identifier identifier, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Retrieves all versions for a contentlet identifier checked in by a real user meaning not the system user
@@ -794,7 +950,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean findAllUserVersions(Identifier identifier, User user, boolean respectFrontendRoles);
+	public default boolean findAllUserVersions(Identifier identifier, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Meant to get the title or name of a contentlet
@@ -803,21 +961,27 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean getName(Contentlet contentlet, User user, boolean respectFrontendRoles);
+	public default boolean getName(Contentlet contentlet, User user, boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Copies properties from the map to the contentlet
 	 * @param contentlet contentlet to copy to
 	 * @param properties
 	 */
-	public boolean copyProperties(Contentlet contentlet, Map<String, Object> properties);
+	public default boolean copyProperties(Contentlet contentlet, Map<String, Object> properties){
+      return true;
+    }
 	
 	/**
 	 * Use to check if the inode id is a contentlet
 	 * @param inode id to check
 	 * @return
 	 */
-	public boolean isContentlet(String inode);
+	public default boolean isContentlet(String inode){
+      return true;
+    }
 	
 	/**
 	 * Will return all content assigned to a specified Category
@@ -829,7 +993,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean find(Category category, long languageId, boolean live, String orderBy, User user, boolean respectFrontendRoles);
+	public default boolean find(Category category, long languageId, boolean live, String orderBy, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * Will return all content assigned to a specified Categories
@@ -842,7 +1008,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean find(List<Category> categories,long languageId, boolean live, String orderBy, User user, boolean respectFrontendRoles);
+	public default boolean find(List<Category> categories,long languageId, boolean live, String orderBy, User user, boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * Use to set contentlet properties.  The value should be String, the proper type of the property
@@ -852,14 +1020,18 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean setContentletProperty(Contentlet contentlet, Field field, Object value);
+	public default boolean setContentletProperty(Contentlet contentlet, Field field, Object value){
+      return true;
+    }
 	
 	/**
 	 * Use to validate your contentlet.
 	 * @param contentlet
 	 * @param categories
 	 */
-	public boolean validateContentlet(Contentlet contentlet,List<Category> cats); 
+	public default boolean validateContentlet(Contentlet contentlet,List<Category> cats){
+      return true;
+    } 
 	
 	/**
 	 * Use to validate your contentlet.
@@ -868,7 +1040,9 @@ public interface ContentletAPIPreHook {
 	 * @param categories
 	 * Use the notValidFields property of the exception to get which fields where not valid
 	 */
-	public boolean validateContentlet(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,List<Category> cats); 
+	public default boolean validateContentlet(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,List<Category> cats){
+      return true;
+    } 
 	
 	/**
 	 * Use to validate your contentlet.
@@ -876,56 +1050,72 @@ public interface ContentletAPIPreHook {
 	 * @param contentRelationships
 	 * @param categories
 	 */
-	public boolean validateContentlet(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats); 
+	public default boolean validateContentlet(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats){
+      return true;
+    } 
 	
 	/**
 	 * Use to determine if if the field value is a String value withing the contentlet object
 	 * @param field
 	 * @return
 	 */
-	public boolean isFieldTypeString(Field field);
+	public default boolean isFieldTypeString(Field field){
+      return true;
+    }
 	
 	/**
 	 * Use to determine if if the field value is a Date value withing the contentlet object
 	 * @param field
 	 * @return
 	 */
-	public boolean isFieldTypeDate(Field field);
+	public default boolean isFieldTypeDate(Field field){
+      return true;
+    }
 	
 	/**
 	 * Use to determine if if the field value is a Long value withing the contentlet object
 	 * @param field
 	 * @return
 	 */
-	public boolean isFieldTypeLong(Field field);
+	public default boolean isFieldTypeLong(Field field){
+      return true;
+    }
 	
 	/**
 	 * Use to determine if if the field value is a Boolean value withing the contentlet object
 	 * @param field
 	 * @return
 	 */
-	public boolean isFieldTypeBoolean(Field field);
+	public default boolean isFieldTypeBoolean(Field field){
+      return true;
+    }
 	
 	/**
 	 * Use to determine if if the field value is a Float value withing the contentlet object
 	 * @param field
 	 * @return
 	 */
-	public boolean isFieldTypeFloat(Field field);
+	public default boolean isFieldTypeFloat(Field field){
+      return true;
+    }
 
 	/**
 	 * Converts a "fat" (legacy) contentlet into a new contentlet.
 	 * @param Fat contentlet to be converted.
 	 * @return
 	 */
-	public boolean convertFatContentletToContentlet (com.dotmarketing.portlets.contentlet.business.Contentlet fatty);
+	public default boolean convertFatContentletToContentlet (com.dotmarketing.portlets.contentlet.business.Contentlet fatty){
+      return true;
+    }
 	
 	/**
 	 * Converts a "light" contentlet into a "fat" (legacy) contentlet.
 	 * @param A "light" contentlet to be converted.
 	 * @return
 	 */
-	public boolean convertContentletToFatContentlet (Contentlet cont, com.dotmarketing.portlets.contentlet.business.Contentlet fatty);
+	public default boolean convertContentletToFatContentlet (Contentlet cont, com.dotmarketing.portlets.contentlet.business.Contentlet fatty){
+      return true;
+    }
     
 	/**
 	 * Applies permission to the child contentlets of the structure
@@ -934,14 +1124,18 @@ public interface ContentletAPIPreHook {
 	 * @param permissions
 	 * @param respectFrontendRoles
 	 */
-	public boolean applyStructurePermissionsToChildren(Structure structure, User user, List<Permission> permissions, boolean respectFrontendRoles);
+	public default boolean applyStructurePermissionsToChildren(Structure structure, User user, List<Permission> permissions, boolean respectFrontendRoles){
+      return true;
+    }
 	
    /**
     * 
     * @param deleteFrom
     * @return
     */
-	public boolean deleteOldContent(Date deleteFrom);
+	public default boolean deleteOldContent(Date deleteFrom){
+      return true;
+    }
 	
 	/**
 	 * 
@@ -949,7 +1143,9 @@ public interface ContentletAPIPreHook {
 	 * @param offset
 	 * @return
 	 */
-	public boolean findFieldValues(String structureInode, Field field, User user, boolean respectFrontEndRoles);
+	public default boolean findFieldValues(String structureInode, Field field, User user, boolean respectFrontEndRoles){
+      return true;
+    }
 	
 	/**
 	 * Fetches the File Name stored under the contentlet and field
@@ -957,21 +1153,27 @@ public interface ContentletAPIPreHook {
 	 * @param velocityVariableName
 	 * @return 
 	 */
-	public boolean getBinaryFile(String contentletInode,String velocityVariableName,User user);
+	public default boolean getBinaryFile(String contentletInode,String velocityVariableName,User user){
+      return true;
+    }
 
 	/**
 	 * gets the number of contentlets in the system. This number includes all versions not distinct identifiers
 	 * @return
 	 * @throws DotDataException
 	 */
-	public boolean contentletCount() throws DotDataException;
+	public default boolean contentletCount() throws DotDataException{
+      return true;
+    }
 	
 	/**
 	 * gets the number of contentlet identifiers in the system. This number includes all versions not distinct identifiers
 	 * @return
 	 * @throws DotDataException
 	 */
-	public boolean contentletIdentifierCount() throws DotDataException;
+	public default boolean contentletIdentifierCount() throws DotDataException{
+      return true;
+    }
 
 	/**
 	 * 
@@ -979,27 +1181,35 @@ public interface ContentletAPIPreHook {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public boolean removeContentletFromIndex(String contentletInodeOrIdentifier) throws DotDataException;
+	public default boolean removeContentletFromIndex(String contentletInodeOrIdentifier) throws DotDataException{
+      return true;
+    }
 
 	/**
 	 * 
 	 * @param structure
 	 * @return
 	 */
-	public boolean refresh(Structure structure);
+	public default boolean refresh(Structure structure){
+      return true;
+    }
 
 	/**
 	 * 
 	 * @param content
 	 * @return
 	 */
-	public boolean refresh(Contentlet content);
+	public default boolean refresh(Contentlet content){
+      return true;
+    }
 
 	/**
 	 * 
 	 * @return
 	 */
-	public boolean refreshAllContent();
+	public default boolean refreshAllContent(){
+      return true;
+    }
 
 	/**
 	 * 
@@ -1007,7 +1217,9 @@ public interface ContentletAPIPreHook {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public boolean getSiblings(String identifier)throws DotDataException ;
+	public default boolean getSiblings(String identifier)throws DotDataException {
+      return true;
+    }
 
 	/**
 	 * 
@@ -1019,7 +1231,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-    public boolean checkinWithNoIndex(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles);
+    public default boolean checkinWithNoIndex(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Will check in a new version of you contentlet without indexing. The inode of your contentlet must be not set.  
@@ -1034,7 +1248,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean checkinWithNoIndex(Contentlet currentContentlet, ContentletRelationships relationshipsData, List<Category> cats, List<Permission> selectedPermissions, User user,	boolean respectFrontendRoles);
+	public default boolean checkinWithNoIndex(Contentlet currentContentlet, ContentletRelationships relationshipsData, List<Category> cats, List<Permission> selectedPermissions, User user,	boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Will check in a new version of you contentlet without indexing. The inode of your contentlet must be not set.  
@@ -1044,7 +1260,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean checkinWithNoIndex(Contentlet contentlet, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles);
+	public default boolean checkinWithNoIndex(Contentlet contentlet, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Will check in a new version of you contentlet without indexing. The inode of your contentlet must be not set.  
@@ -1053,7 +1271,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean checkinWithNoIndex(Contentlet contentlet, List<Permission> permissions, User user,boolean respectFrontendRoles);
+	public default boolean checkinWithNoIndex(Contentlet contentlet, List<Permission> permissions, User user,boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Will check in a new version of you contentlet without indexing. The inode of your contentlet must be not set.  
@@ -1064,7 +1284,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean checkinWithNoIndex(Contentlet contentlet ,User user,boolean respectFrontendRoles,List<Category> cats);
+	public default boolean checkinWithNoIndex(Contentlet contentlet ,User user,boolean respectFrontendRoles,List<Category> cats){
+      return true;
+    }
 	
 	/**
 	 * Will check in a new version of you contentlet without indexing. The inode of your contentlet must be not set.  
@@ -1074,7 +1296,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean checkinWithNoIndex(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats, User user,boolean respectFrontendRoles);
+	public default boolean checkinWithNoIndex(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats, User user,boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Will check in a new version of you contentlet without indexing. The inode of your contentlet must be not set.  
@@ -1082,7 +1306,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean checkinWithNoIndex(Contentlet contentlet, User user,boolean respectFrontendRoles);
+	public default boolean checkinWithNoIndex(Contentlet contentlet, User user,boolean respectFrontendRoles){
+      return true;
+    }
 	
 	/**
 	 * Will check in a new version of you contentlet without indexing The inode of your contentlet must be not set.  
@@ -1091,7 +1317,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean checkinWithNoIndex(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, User user,boolean respectFrontendRoles);
+	public default boolean checkinWithNoIndex(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, User user,boolean respectFrontendRoles){
+      return true;
+    }
 
 	/**
 	 * 
@@ -1102,14 +1330,18 @@ public interface ContentletAPIPreHook {
 	 * @throws ValidationException
 	 * @throws DotDataException
 	 */
-	public boolean DBSearch(Query query, User user,boolean respectFrontendRoles) throws ValidationException,DotDataException;
+	public default boolean DBSearch(Query query, User user,boolean respectFrontendRoles) throws ValidationException,DotDataException{
+      return true;
+    }
 	
 	/**
 	 * Method will time out after 30 seconds returning false
 	 * @param inode
 	 * @return
 	 */
-	public boolean isInodeIndexed(String inode);
+	public default boolean isInodeIndexed(String inode){
+      return true;
+    }
 
 	/**
 	 * 
@@ -1117,7 +1349,9 @@ public interface ContentletAPIPreHook {
 	 * @param live
 	 * @return
 	 */
-	public boolean isInodeIndexed(String inode,boolean live);
+	public default boolean isInodeIndexed(String inode,boolean live){
+      return true;
+    }
 
 	/**
 	 * Method will time out after 30 seconds returning false
@@ -1125,19 +1359,25 @@ public interface ContentletAPIPreHook {
 	 * @param secondsToWait - how long to wait before timing out
 	 * @return
 	 */
-	public boolean isInodeIndexed(String inode, int secondsToWait);
+	public default boolean isInodeIndexed(String inode, int secondsToWait){
+      return true;
+    }
 
 	/**
 	 * Method will update hostInode of content to systemhost
 	 * @param identifier
 	 */	
-	public boolean UpdateContentWithSystemHost(String hostIdentifier)throws DotDataException;
+	public default boolean UpdateContentWithSystemHost(String hostIdentifier)throws DotDataException{
+      return true;
+    }
 
 	/**
 	 * Method will remove User References of the given userId in Contentlet  
 	 * @param userId
 	 */	
-	public boolean removeUserReferences(String userId)throws DotDataException;
+	public default boolean removeUserReferences(String userId)throws DotDataException{
+      return true;
+    }
 	
 	/**
 	 * Method will replace User References of the given userId in Contentlets
@@ -1147,7 +1387,9 @@ public interface ContentletAPIPreHook {
 	 * @param replacementUserId Replacement User Id
 	 * @param user the user requesting the operation
 	 */
-	public boolean updateUserReferences(User userToReplace,String replacementUserId, User user)throws DotDataException;
+	public default boolean updateUserReferences(User userToReplace,String replacementUserId, User user)throws DotDataException{
+      return true;
+    }
 
 	/**
 	 * Return the URL Map for the specified content if the structure associated to the content has the URL Map Pattern set.
@@ -1157,7 +1399,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public boolean getUrlMapForContentlet(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException;
+	public default boolean getUrlMapForContentlet(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException{
+      return true;
+    }
 	
 	/**
 	 * Deletes the given version of the contentlet from the system
@@ -1166,7 +1410,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public boolean deleteVersion(Contentlet contentlet, User user,	boolean respectFrontendRoles) throws DotDataException,DotSecurityException;
+	public default boolean deleteVersion(Contentlet contentlet, User user,	boolean respectFrontendRoles) throws DotDataException,DotSecurityException{
+      return true;
+    }
 
 	/**
 	 * Checks if the version you are saving is live=false.  If it is, this method will save 
@@ -1183,7 +1429,9 @@ public interface ContentletAPIPreHook {
 	 * @throws DotContentletStateException If inode null
 	 * @throws DotContentletValidationException If content is not valid
 	 */
-	public boolean  saveDraft(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException;
+	public default boolean  saveDraft(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException{
+      return true;
+    }
 
 	/**
 	 * The search here takes a lucene query and pulls Contentlets for you, using the identifier of the contentlet.You can pass sortBy as null if you do not 
@@ -1200,7 +1448,9 @@ public interface ContentletAPIPreHook {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public boolean searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	public default boolean searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException{
+      return true;
+    }
 	
 	/**
 	 * The search here takes a lucene query and pulls Contentlets for you, using the identifier of the contentlet.You can pass sortBy as null if you do not 
@@ -1218,7 +1468,9 @@ public interface ContentletAPIPreHook {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public boolean searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException, DotSecurityException;
+	public default boolean searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException, DotSecurityException{
+      return true;
+    }
 
 	/**
 	 * The search here takes a lucene query and pulls Contentlets for you, using the identifier of the contentlet.You can pass sortBy as null if you do not 
@@ -1238,7 +1490,9 @@ public interface ContentletAPIPreHook {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public boolean searchByIdentifier(String luceneQuery, int limit,int offset, String sortBy, User user, boolean respectFrontendRoles,	int requiredPermission, boolean anyLanguage) throws DotDataException, DotSecurityException;
+	public default boolean searchByIdentifier(String luceneQuery, int limit,int offset, String sortBy, User user, boolean respectFrontendRoles,	int requiredPermission, boolean anyLanguage) throws DotDataException, DotSecurityException{
+      return true;
+    }
 	
 	/**
 	 * Reindexes content under a given host + refreshes the content from cache
@@ -1246,7 +1500,9 @@ public interface ContentletAPIPreHook {
 	 * @return 
 	 * @throws DotReindexStateException
 	 */
-	public boolean refreshContentUnderHost(Host host)throws DotReindexStateException;
+	public default boolean refreshContentUnderHost(Host host)throws DotReindexStateException{
+      return true;
+    }
 	
 	/**
 	 * Reindexes content under a given folder + refreshes the content from cache
@@ -1254,7 +1510,9 @@ public interface ContentletAPIPreHook {
 	 * @return 
 	 * @throws DotReindexStateException
 	 */
-	public boolean refreshContentUnderFolder(Folder folder)throws DotReindexStateException;
+	public default boolean refreshContentUnderFolder(Folder folder)throws DotReindexStateException{
+      return true;
+    }
 
 	/**
 	 * Reindexes content under a given folder path
@@ -1263,14 +1521,18 @@ public interface ContentletAPIPreHook {
 	 * @param folderPath
 	 * @throws DotReindexStateException
 	 */
-	public boolean refreshContentUnderFolderPath ( String hostId, String folderPath ) throws DotReindexStateException;
+	public default boolean refreshContentUnderFolderPath ( String hostId, String folderPath ) throws DotReindexStateException{
+      return true;
+    }
 
 	/**
 	 * Will update contents that reference the given folder to point to it's parent folder, if it's a top folder it will set folder to be SYSTEM_FOLDER
 	 * @param folder
 	 * @throws DotDataException
 	 */
-	public boolean removeFolderReferences(Folder folder) throws DotDataException;
+	public default boolean removeFolderReferences(Folder folder) throws DotDataException{
+      return true;
+    }
 
 	/**
 	 * 
@@ -1279,7 +1541,9 @@ public interface ContentletAPIPreHook {
 	 * @return
 	 * @throws DotLockException
 	 */
-	public boolean canLock(Contentlet contentlet, User user) throws   DotLockException;
+	public default boolean canLock(Contentlet contentlet, User user) throws   DotLockException{
+      return true;
+    }
 
 	/**
 	 * 
@@ -1288,7 +1552,9 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-    public boolean searchIndexCount(String luceneQuery, User user, boolean respectFrontendRoles);
+    public default boolean searchIndexCount(String luceneQuery, User user, boolean respectFrontendRoles){
+      return true;
+    }
     
 	/**
 	 * Returns the ContentRelationships Map for the specified content.
@@ -1297,7 +1563,9 @@ public interface ContentletAPIPreHook {
 	 * @param user
 	 * @return Map with the ContentRelationships. Empty Map if the content doesn't have associated relationships.
 	 */
-	public boolean findContentRelationships(Contentlet contentlet, User user) throws DotDataException, DotSecurityException;
+	public default boolean findContentRelationships(Contentlet contentlet, User user) throws DotDataException, DotSecurityException{
+      return true;
+    }
 
 	/**
 	 * 
@@ -1306,7 +1574,9 @@ public interface ContentletAPIPreHook {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public boolean loadField(String inode, Field field) throws DotDataException;
+	public default boolean loadField(String inode, Field field) throws DotDataException{
+      return true;
+    }
 
 	/**
 	 * 
@@ -1315,8 +1585,10 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-    public boolean indexCount(String luceneQuery, User user,
-            boolean respectFrontendRoles);
+    public default boolean indexCount(String luceneQuery, User user,
+            boolean respectFrontendRoles){
+      return true;
+    }
 
     /**
      * Gets the top viewed content for a particular structure for a specified date interval
@@ -1327,7 +1599,9 @@ public interface ContentletAPIPreHook {
      * @param user
      * @return
      */
-	public boolean getMostViewedContent(String structureVariableName, String startDate, String endDate, User user);
+	public default boolean getMostViewedContent(String structureVariableName, String startDate, String endDate, User user){
+      return true;
+    }
 
 	/**
 	 * 
@@ -1340,7 +1614,9 @@ public interface ContentletAPIPreHook {
 	 * @throws DotContentletStateException
 	 * @throws DotStateException
 	 */
-    public boolean publishAssociated(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException;
+    public default boolean publishAssociated(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException{
+      return true;
+    }
 
     /**
      * 
@@ -1352,7 +1628,9 @@ public interface ContentletAPIPreHook {
      * @throws DotContentletStateException
      * @throws DotStateException
      */
-    public boolean publishAssociated(Contentlet contentlet, boolean isNew) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException;
+    public default boolean publishAssociated(Contentlet contentlet, boolean isNew) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException{
+      return true;
+    }
 
     /**
      * 
@@ -1364,7 +1642,9 @@ public interface ContentletAPIPreHook {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    public boolean esSearchRaw(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException;
+    public default boolean esSearchRaw(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException{
+      return true;
+    }
 
     /**
      * 
@@ -1376,7 +1656,9 @@ public interface ContentletAPIPreHook {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-	public boolean esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException;
+	public default boolean esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException{
+      return true;
+    }
 
 	/**
 	 * 
@@ -1388,6 +1670,14 @@ public interface ContentletAPIPreHook {
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	public boolean addPermissionsToQuery ( StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
+	public default boolean addPermissionsToQuery ( StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException{
+      return true;
+    }
 
+	
+	
+    public default boolean getFieldValue(Contentlet contentlet, com.dotcms.contenttype.model.field.Field theField) {
+      return true;
+    }
+	
 }
