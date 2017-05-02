@@ -133,9 +133,7 @@ public class OSGIUtil {
     Properties felixProps = loadConfig();
 
     // fetch the 'felix.base.dir' property and check if exists. On the props file the prop needs to
-
     for(String key :FELIX_DIRECTORIES ){
-      
       if( new File(felixProps.getProperty(key)).mkdirs()){
         Logger.info(this.getClass(), "Building Directory:" +felixProps.getProperty(key) );
       }
@@ -270,16 +268,12 @@ public class OSGIUtil {
     Properties properties = defaultProperties();
     Iterator<String> it = Config.getKeys();
     while (it.hasNext()) {
-      String key = it.next();
-      if (key == null)
-        continue;
-      if (key.startsWith("felix.felix.")) {
-        properties.put(key.substring(6), Config.getStringProperty(key));
-        Logger.info(this, "Loading property  " + key + "=" + properties.getProperty(key));
-      } else if (key.startsWith("felix.")) {
-        // Allow the property in the file to be felix.base.dir
-        properties.put(key, Config.getStringProperty(key));
-        Logger.info(this, "Loading property  " + key + "=" + properties.getProperty(key));
+      final String key = it.next();
+      if(key != null && key.startsWith("felix.")) {
+        String value = (UtilMethods.isSet(Config.getStringProperty(key, null))) ? Config.getStringProperty(key) : null;
+        String felixKey =  key.substring(6) ;
+        properties.put(felixKey, value);
+        Logger.info(OSGIUtil.class, "Found property  " + felixKey + "=" + value);
       }
     }
     return properties;
@@ -361,24 +355,7 @@ public class OSGIUtil {
     return extraPackages;
   }
 
-  /**
-   * Transform a given Properties object into a Map
-   *
-   * @param props
-   * @return
-   */
-  private Map<String, String> propertiesToMap(Properties props) {
 
-    HashMap<String, String> propertiesMap = new HashMap<String, String>();
-
-    Enumeration<Object> e = props.keys();
-    while (e.hasMoreElements()) {
-      String s = (String) e.nextElement();
-      propertiesMap.put(s, props.getProperty(s));
-    }
-
-    return propertiesMap;
-  }
 
   /**
    * Fetches the Felix Path based on the input param property value. If property is not found, then
@@ -424,15 +401,6 @@ public class OSGIUtil {
     return felixPath;
   }
 
-  /**
-   * Verifies the folder exists. If it does not exists then tries to create it
-   *
-   * @param path The path to verify
-   * @return boolean true when path exists or it was created successfully
-   */
-  private boolean verifyOrCreateFelixFolder(String path) {
-    return new File(path).exists() || createFolder(path);
-  }
 
   /**
    * Create the path if it does not exist. Required for felix install and undeploy folder
