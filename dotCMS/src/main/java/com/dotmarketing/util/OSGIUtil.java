@@ -79,11 +79,11 @@ public class OSGIUtil {
             // verify folder exists and if not create it
             if (!verifyOrCreateFelixFolder(felixDirectory)) {
                 // override the property to default
-                felixDirectory = context.getServletContext().getRealPath("/WEB-INF/felix");
+                felixDirectory = context.getServletContext().getRealPath("/WEB-INF") + File.separator + "felix";
             }
         } else {
             // override the property to default
-            felixDirectory = context.getServletContext().getRealPath("/WEB-INF/felix");
+            felixDirectory = context.getServletContext().getRealPath("/WEB-INF") + File.separator + "felix";
         }
 
         // Set the base dir property
@@ -374,7 +374,7 @@ public class OSGIUtil {
             Logger.error(this, String.format("Unable to find the felix '%s' folder path from OSGI bundle context. Trying to fetch it from Config.CONTEXT as real path from '/WEB-INF/felix/%s'", manualDefaultPath, manualDefaultPath), ex);
 
             try {
-                felixPath = Config.CONTEXT.getRealPath("/WEB-INF/felix/" + manualDefaultPath);
+                felixPath = Config.CONTEXT.getRealPath("/WEB-INF") + File.separator + "felix" + File.separator + manualDefaultPath;
             } catch (Exception ex2) {
                 Logger.error(this, String.format("Unable to find the felix '%s' folder real path from Config.CONTEXT. Setting it manually to '/WEB-INF/felix/%s'", manualDefaultPath, manualDefaultPath), ex2);
                 felixPath = "/WEB-INF/felix/" + manualDefaultPath;
@@ -474,6 +474,6 @@ public class OSGIUtil {
                 }
             }
         }
-
     }
+
 }
