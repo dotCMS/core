@@ -192,12 +192,6 @@
         <cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>
 
     </map>
-
-    <map name="adminconfigpool">
-        <in-memory-format>OBJECT</in-memory-format>
-        <max-size>271</max-size>
-        <eviction-policy>LFU</eviction-policy>
-    </map>
     
     <map name="contentletcache">
         <max-size>5000</max-size>
