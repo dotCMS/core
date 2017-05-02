@@ -1,5 +1,6 @@
 package com.dotcms.cluster.business;
 
+import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.repackage.org.apache.commons.lang.NotImplementedException;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.util.Config;
@@ -137,7 +138,7 @@ public class HazelcastUtil {
 
     		    com.hazelcast.config.Config config = builder.build();
 
-    		    if (Config.getBooleanProperty("AUTOWIRE_CLUSTER_TRANSPORT", true)) {
+    		    if (ClusterUtils.isTransportAutoWire()) {
 
     		    	Map<String, Object> properties = buildPropertiesEmbedded();
 

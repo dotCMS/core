@@ -324,10 +324,16 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
     			return Integer.parseInt(usedPort);
     		}
 
+
     		@Override
     		public boolean isOpen() {
     			return channel.isOpen();
     		}
+
+    		@Override
+    		public int getNumberOfNodes() {
+    			return view.getMembers().size();
+        	}
 
 
     		@Override

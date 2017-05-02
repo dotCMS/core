@@ -144,11 +144,11 @@ public class ESClient {
 
     /**
      * Returns the settings of the replicas configuration for the indices client, this configuration depends on the
-     * <strong>CLUSTER_AUTOWIRE</strong> and <strong>AUTOWIRE_MANAGE_ES_REPLICAS</strong> properties.
+     * <strong>AUTOWIRE_CLUSTER_ES</strong> and <strong>AUTOWIRE_MANAGE_ES_REPLICAS</strong> properties.
      * <br>
      * <br>
      *
-     * If <strong>CLUSTER_AUTOWIRE == true and AUTOWIRE_MANAGE_ES_REPLICAS == true</strong> the number of replicas will
+     * If <strong>AUTOWIRE_CLUSTER_ES == true and AUTOWIRE_MANAGE_ES_REPLICAS == true</strong> the number of replicas will
      * be handled by the AUTOWIRE.
      *
      * @return The replicas settings

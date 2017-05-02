@@ -101,7 +101,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 			String cacheProtocol, bindAddr, bindPort, cacheTCPInitialHosts, mCastAddr, mCastPort, preferIPv4;
 
 			if(ClusterUtils.isTransportAutoWire()) {
-			    Logger.info(this, "Using automatic port placement as either CLUSTER_AUTOWIRE or AUTOWIRE_CLUSTER_TRANSPORT are ON");
+			    Logger.info(this, "Using automatic port placement as AUTOWIRE_CLUSTER_TRANSPORT is ON");
 
 				String bindAddressFromProperty = Config.getStringProperty("CACHE_BINDADDRESS", null, false);
 
@@ -171,7 +171,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
                 preferIPv4 = Config.getStringProperty("CACHE_FORCE_IPV4", "true");
 			}
 			else {
-				Logger.info(this, "Using manual port placement as both CLUSTER_AUTOWIRE and AUTOWIRE_CLUSTER_TRANSPORT are OFF");
+				Logger.info(this, "Using manual port placement as AUTOWIRE_CLUSTER_TRANSPORT is OFF");
 
 			    cacheProtocol = Config.getStringProperty("CACHE_PROTOCOL", "tcp");
 			    bindAddr = Config.getStringProperty("CACHE_BINDADDRESS", null);

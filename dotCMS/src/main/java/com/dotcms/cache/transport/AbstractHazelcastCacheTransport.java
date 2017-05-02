@@ -246,10 +246,16 @@ public abstract class AbstractHazelcastCacheTransport implements CacheTransport 
     			return ((InetSocketAddress) hazel.getLocalEndpoint().getSocketAddress()).getPort();
     		}
 
+
     		@Override
     		public boolean isOpen() {
     			return hazel.getLifecycleService().isRunning();
     		}
+
+    		@Override
+    		public int getNumberOfNodes() {
+        		return hazel.getCluster().getMembers().size();
+        	}
 
 
     		@Override

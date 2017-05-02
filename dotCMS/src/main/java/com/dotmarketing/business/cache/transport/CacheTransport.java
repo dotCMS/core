@@ -56,6 +56,7 @@ public interface CacheTransport {
     	int getPort();
 
     	boolean isOpen();
+    	int getNumberOfNodes();
 
     	long getReceivedBytes();
     	long getReceivedMessages();
