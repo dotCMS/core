@@ -4693,30 +4693,34 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotSecurityException("Unauthorized Access");
 
 
-        java.io.File binaryFile = null ;
+        java.io.File binaryFile = null;
+        String binaryFilePath = null;
         /*** THIS LOGIC IS DUPED IN THE CONTENTLET POJO.  IF YOU CHANGE HERE, CHANGE THERE **/
-        try{
-        java.io.File binaryFilefolder = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
-                + java.io.File.separator
-                + contentletInode.charAt(0)
-                + java.io.File.separator
-                + contentletInode.charAt(1)
-                + java.io.File.separator
-                + contentletInode
-                + java.io.File.separator
-                + velocityVariableName);
-                //if(binaryFilefolder.exists()){
+        try {
+
+            binaryFilePath = APILocator.getFileAssetAPI().getRealAssetsRootPath()
+                    + java.io.File.separator
+                    + contentletInode.charAt(0)
+                    + java.io.File.separator
+                    + contentletInode.charAt(1)
+                    + java.io.File.separator
+                    + contentletInode
+                    + java.io.File.separator
+                    + velocityVariableName;
+            java.io.File binaryFilefolder = new java.io.File(binaryFilePath);
+
+            if ( binaryFilefolder.exists() ) {
                 java.io.File[] files = binaryFilefolder.listFiles(new BinaryFileFilter());
 
-                if(files.length > 0){
-                	binaryFile = files[0];
+                if ( files.length > 0 ) {
+                    binaryFile = files[0];
                 }
-
-            //}
-        }catch(Exception e){
-            Logger.error(this,"Error occured while retrieving binary file name : getBinaryFileName(). ContentletInode : "+contentletInode+"  velocityVaribleName : "+velocityVariableName );
-            Logger.debug(this,"Error occured while retrieving binary file name : getBinaryFileName(). ContentletInode : "+contentletInode+"  velocityVaribleName : "+velocityVariableName, e);
-            throw new DotDataException("File System error.");
+            }
+        } catch (Exception e) {
+            Logger.error(this, "Error occured while retrieving binary file name : getBinaryFileName(). ContentletInode : " + contentletInode
+                    + "  velocityVaribleName : " + velocityVariableName
+                    + "  path : " + binaryFilePath);
+            throw new DotDataException("File System error.", e);
         }
         return binaryFile;
     }
@@ -4884,7 +4888,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             newContentlet.setBinary(tempField.getVelocityVarName(), destFile);
                         }
                     } catch (Exception e) {
-                        throw new DotDataException("Error copying binary file: '" + fieldValue + "'");
+                        throw new DotDataException("Error copying binary file: '" + fieldValue + "'", e);
                     }
                 }
 
