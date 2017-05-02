@@ -12,6 +12,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
 
@@ -48,7 +49,7 @@ public class DotParse extends DotDirective {
         templatePath = templatePath.substring(hostIndicator.length(), templatePath.length());
         String hostName = templatePath.substring(0, templatePath.indexOf('/'));
         templatePath = templatePath.substring(templatePath.indexOf('/'), templatePath.length());
-        host = APILocator.getHostAPI().findByName(hostName, user, live);
+        host = APILocator.getHostAPI().resolveHostName(hostName, user, live);
       }
 
       long lang = params.language.getId();
@@ -83,6 +84,9 @@ public class DotParse extends DotDirective {
 
       return asset.getFileAsset().getAbsolutePath();
     } catch (Exception e) {
+      Logger.warn(this.getClass(), " - unable to resolve " + templatePath + " getting this: "+ e.getMessage() );
+      if(e.getStackTrace().length>0)
+        Logger.warn(this.getClass(), " - at " + e.getStackTrace()[0]);
       throw new DotStateException(e);
     }
   }
