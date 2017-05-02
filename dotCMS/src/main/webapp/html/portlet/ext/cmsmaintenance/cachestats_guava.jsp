@@ -22,6 +22,7 @@
     </a>
 </div>
 <%}%>
+<link rel="stylesheet" href="/html/js/sortable-0.8.0/css/sortable-theme-minimal.css" />
 <script src="/html/js/sortable-0.8.0/js/sortable.min.js"></script>
 <div style="padding-bottom:30px;">
     <table class="listingTable shadowBox" style="width:400px">
@@ -65,7 +66,7 @@
 <h2 style="text-align:left"><%= providerStat.getProviderName() %></h2>
 
 
-<table class="listingTable " data-sortable id="sortme<%=providerStat.hashCode()%>" style="margin-bottom:50px;">
+<table class="listingTable" data-sortable id="sortme<%=providerStat.hashCode()%>" style="margin-bottom:50px;">
     <thead style="cursor: pointer;">
     	<% for (String col : statColumns) { %>
     		<th style="text-align:left"><%= LanguageUtil.get(pageContext, col) %></th>
