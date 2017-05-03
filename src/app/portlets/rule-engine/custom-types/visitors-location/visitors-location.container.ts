@@ -21,6 +21,7 @@ interface VisitorsLocationParams {
   preferredDisplayUnits: Param<string>;
 }
 
+// tslint:disable-next-line:no-unused-variable
 const UNITS = {
   km: {
     toKm: ((len) => len),

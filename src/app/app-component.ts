@@ -1,6 +1,5 @@
-import {Component, ViewEncapsulation, Input} from '@angular/core';
+import {Component, ViewEncapsulation} from '@angular/core';
 import {DotcmsConfig} from './api/services/system/dotcms-config';
-import {LoginService} from './api/services/login-service';
 import {NotLicensedService} from './api/services/not-licensed-service';
 
 @Component({

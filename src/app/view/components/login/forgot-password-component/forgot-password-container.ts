@@ -1,5 +1,4 @@
 import {Component, ViewEncapsulation} from '@angular/core';
-import {ForgotPasswordComponent} from './forgot-password-component';
 import {LoginService} from '../../../../api/services/login-service';
 import {ResponseView} from '../../../../api/services/response-view';
 import {DotRouterService} from '../../../../api/services/dot-router-service';

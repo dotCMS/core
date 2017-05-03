@@ -3,7 +3,7 @@ import {Protocol, Url} from './protocol';
 import {DotcmsConfig} from '../system/dotcms-config';
 import {LoggerService} from '../logger.service';
 import {EventsSocket} from './socket';
-import {Observable, Subject} from 'rxjs/Rx';
+import {Observable} from 'rxjs/Rx';
 import {CoreWebService} from '../core-web-service';
 
 @Injectable()

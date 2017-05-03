@@ -1,13 +1,9 @@
-import {DotcmsConfig} from './system/dotcms-config';
 import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs/Rx';
-import {WebSocketProtocol} from './protocol/websockets-protocol';
 import {LoggerService} from './logger.service';
 import {Subject} from 'rxjs/Subject';
 import {Protocol} from './protocol/protocol';
 import {SocketFactory} from './protocol/socket-factory';
-import {CoreWebService} from './core-web-service';
-import {RequestMethod, Http} from '@angular/http';
 
 @Injectable()
 export class DotcmsEventsService {
@@ -44,10 +40,10 @@ export class DotcmsEventsService {
                         }
                         this.subjects[data.event].next(data.payload);
                     },
-                    function (e): void {
+                     (e) => {
                         this.loggerService.debug('Error in the System Events service: ' + e.message);
                     },
-                    function (): void {
+                    () => {
                         this.loggerService.debug('Completed');
                     }
                 );

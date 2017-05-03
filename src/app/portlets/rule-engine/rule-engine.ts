@@ -30,7 +30,8 @@ import './semantic/assets/semantic.js';
     <div flex layout="row" layout-align="space-between center">
       <div flex layout="row" layout-align="space-between center" class="ui icon input">
         <i class="filter icon"></i>
-        <input class="cw-rule-filter" type="text" placeholder="{{rsrc('inputs.filter.placeholder') | async}}" [value]="filterText" (keyup)="filterText = $event.target.value">
+        <input class="cw-rule-filter" type="text" placeholder="{{rsrc('inputs.filter.placeholder') | async}}" 
+          [value]="filterText" (keyup)="filterText = $event.target.value">
       </div>
       <div flex="2"></div>
       <button class="ui button cw-button-add" aria-label="Create a new rule" (click)="addRule()">
@@ -39,11 +40,14 @@ import './semantic/assets/semantic.js';
     </div>
     <div class="cw-filter-links">
       <span>{{rsrc('inputs.filter.status.show.label') | async}}:</span>
-      <a href="javascript:void(0)" class="cw-filter-link" [class.active]="!isFilteringField('enabled')" (click)="setFieldFilter('enabled',null)">{{rsrc('inputs.filter.status.all.label') | async}}</a>
+      <a href="javascript:void(0)" class="cw-filter-link" [class.active]="!isFilteringField('enabled')" 
+        (click)="setFieldFilter('enabled',null)">{{rsrc('inputs.filter.status.all.label') | async}}</a>
       <span>&#124;</span>
-      <a href="javascript:void(0)" class="cw-filter-link" [class.active]="isFilteringField('enabled',true)" (click)="setFieldFilter('enabled',true)">{{rsrc('inputs.filter.status.active.label') | async}}</a>
+      <a href="javascript:void(0)" class="cw-filter-link" [class.active]="isFilteringField('enabled',true)" 
+        (click)="setFieldFilter('enabled',true)">{{rsrc('inputs.filter.status.active.label') | async}}</a>
       <span>&#124;</span>
-      <a href="javascript:void(0)" class="cw-filter-link" [class.active]="isFilteringField('enabled',false)" (click)="setFieldFilter('enabled',false)">{{rsrc('inputs.filter.status.inactive.label') | async}}</a>
+      <a href="javascript:void(0)" class="cw-filter-link" [class.active]="isFilteringField('enabled',false)" 
+        (click)="setFieldFilter('enabled',false)">{{rsrc('inputs.filter.status.inactive.label') | async}}</a>
     </div>
   </div>
   <rule *ngFor="let rule of rules" [rule]="rule" [hidden]="isFiltered(rule) == true"

@@ -20,7 +20,8 @@
         "interface-name": false,
         "jsdoc-format": true,
         "label-position": true,
-        "max-line-length": false,
+        "max-file-line-count": [true, 400],
+        "max-line-length": [true, 150],
         "member-access": false,
         "member-ordering": [
             true,
@@ -29,17 +30,13 @@
             "variables-before-functions"
         ],
         "no-any": false,
+        "only-arrow-functions":  true,
         "no-arg": true,
         "no-bitwise": false,
         "no-conditional-assignment": false,
         "no-consecutive-blank-lines": true,
         "no-console": [
-            true,
-            "debug",
-            "info",
-            "time",
-            "timeEnd",
-            "trace"
+            true
         ],
         "no-construct": true,
         "no-constructor-vars": false,
@@ -108,7 +105,9 @@
             "check-decl",
             "check-operator",
             "check-separator",
-            "check-type"
+            "check-type",
+            "check-module",
+            "check-typecast"
         ]
     }
 }

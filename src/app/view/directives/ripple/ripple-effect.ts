@@ -1,12 +1,8 @@
 import {
     Directive,
     ElementRef,
-    Input,
     HostListener,
-    Renderer,
-    AnimationPlayer,
-    AnimationStyles,
-    AnimationKeyframe
+    Renderer
 } from '@angular/core';
 import { ColorUtil } from '../../../api/util/ColorUtil';
 
@@ -14,7 +10,11 @@ import { ColorUtil } from '../../../api/util/ColorUtil';
  * Directives to ripple effects.
  * How to use:
  * <code>
- *  <button ripple pButton id="login-component-login-submit-button" *ngIf="!isLoginInProgress" (click)="logInUser()" [label]="loginButton"></button>
+ *  <button ripple pButton
+ *          id="login-component-login-submit-button"
+ *          *ngIf="!isLoginInProgress" (click)="logInUser()"
+ *          [label]="loginButton">
+ * </button>
  * </code>
  */
 @Directive({

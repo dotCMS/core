@@ -59,9 +59,9 @@ export class ConditionComponent {
   @Input() conditionTypes: {[key: string]: ServerSideTypeModel} = {};
   @Input() conditionTypePlaceholder = '';
 
-  @Output() updateConditionType: EventEmitter<{type: string, payload: {condition: ConditionModel, value: string, index: number}}> = new EventEmitter(false);
-  @Output() updateConditionParameter: EventEmitter<{type: string, payload: {condition: ConditionModel, name: string, value: string, index: number}}> = new EventEmitter(false);
-  @Output() updateConditionOperator: EventEmitter<{type: string, payload: {condition: ConditionModel, value: string, index: number}}> = new EventEmitter(false);
+  @Output() updateConditionType: EventEmitter<{type: string, payload: Payload}> = new EventEmitter(false);
+  @Output() updateConditionParameter: EventEmitter<{type: string, payload: Payload}> = new EventEmitter(false);
+  @Output() updateConditionOperator: EventEmitter<{type: string, payload: Payload}> = new EventEmitter(false);
 
   @Output() deleteCondition: EventEmitter<{type: string, payload: {condition: ConditionModel}}> = new EventEmitter(false);
 
@@ -96,7 +96,10 @@ export class ConditionComponent {
 
   onTypeChange(type: string): void {
     console.log('ConditionComponent', 'onTypeChange');
-    this.updateConditionType.emit({type: RULE_CONDITION_UPDATE_TYPE, payload: {condition: this.condition, value: type, index: this.index}});
+    this.updateConditionType.emit({
+      payload: {condition: this.condition, value: type, index: this.index},
+      type: RULE_CONDITION_UPDATE_TYPE
+    });
   }
 
   onParameterValuesChange(event: {name: string, value: string}[]): void {
@@ -105,7 +108,10 @@ export class ConditionComponent {
 
   onParameterValueChange(event: {name: string, value: string}): void {
     console.log('ConditionComponent', 'onParameterValueChange');
-    this.updateConditionParameter.emit({type: RULE_CONDITION_UPDATE_PARAMETER, payload: {condition: this.condition, name: event.name, value: event.value, index: this.index}});
+    this.updateConditionParameter.emit({
+      payload: {condition: this.condition, name: event.name, value: event.value, index: this.index},
+      type: RULE_CONDITION_UPDATE_PARAMETER
+    });
   }
 
   toggleOperator(): void {
@@ -116,4 +122,11 @@ export class ConditionComponent {
   onDeleteConditionClicked(): void {
     this.deleteCondition.emit({type: RULE_CONDITION_DELETE, payload: {condition: this.condition}});
   }
+}
+
+interface Payload {
+  condition: ConditionModel;
+  index?: number;
+  name?: string;
+  value: string;
 }

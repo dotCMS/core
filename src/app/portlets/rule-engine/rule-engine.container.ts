@@ -1,7 +1,8 @@
+// tslint:disable-next-line:max-file-line-count
 import {Component, EventEmitter, ViewEncapsulation} from '@angular/core';
 import {
     RuleModel, RuleService, ConditionGroupModel, ConditionModel, ActionModel,
-    RuleEngineState, RULE_CONDITION_CREATE
+    RuleEngineState
 } from '../../api/rule-engine/Rule';
 import {CwChangeEvent} from '../../api/util/CwEvent';
 import {ServerSideFieldModel, ServerSideTypeModel} from '../../api/rule-engine/ServerSideFieldModel';
@@ -12,8 +13,10 @@ import {I18nService} from '../../api/system/locale/I18n';
 import {Observable} from 'rxjs/Observable';
 import {CwError} from '../../api/system/http-response-util';
 import {BundleService, IPublishEnvironment} from '../../api/services/bundle-service';
-import {ActivatedRoute} from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
+import { HttpCode } from '../../api/util/http-code';
 
+// tslint:disable-next-line:no-unused-variable
 const I8N_BASE = 'api.sites.ruleengine';
 
 export interface ParameterChangeEvent extends CwChangeEvent {
@@ -30,9 +33,30 @@ export interface TypeChangeEvent extends CwChangeEvent {
   index: number;
 }
 
-export interface RuleActionEvent {type: string; payload: {rule?: RuleModel, value?: string|boolean}; }
-export interface RuleActionActionEvent extends RuleActionEvent {payload: {rule?: RuleModel, value?: string|boolean, ruleAction?: ActionModel, index?: number, name?: string}; }
-export interface ConditionGroupActionEvent extends RuleActionEvent {payload: {rule?: RuleModel, value?: string|boolean, conditionGroup?: ConditionGroupModel, index?: number, priority?: number}; }
+export interface RuleActionEvent {
+  type: string;
+  payload: {
+    rule?: RuleModel,
+    value?: string|boolean
+  };
+}
+export interface RuleActionActionEvent extends RuleActionEvent {
+  payload: {
+    rule?: RuleModel,
+    value?: string|boolean,
+    ruleAction?: ActionModel,
+    index?: number, name?: string
+  };
+}
+export interface ConditionGroupActionEvent extends RuleActionEvent {
+  payload: {
+    rule?: RuleModel,
+    value?: string|boolean,
+    conditionGroup?: ConditionGroupModel,
+    index?: number,
+    priority?: number
+  };
+}
 export interface ConditionActionEvent extends RuleActionEvent {
   payload: {
     rule?: RuleModel,
@@ -162,24 +186,24 @@ export class RuleEngineContainer {
   }
 
   onUpdateEnabledState(event: RuleActionEvent): void {
-    event.payload.rule.enabled = <boolean>event.payload.value;
+    event.payload.rule.enabled = <boolean> event.payload.value;
     this.patchRule(event.payload.rule, false);
   }
 
   onUpdateRuleName(event: RuleActionEvent): void {
-    event.payload.rule.name = <string>event.payload.value;
+    event.payload.rule.name = <string> event.payload.value;
     this.patchRule(event.payload.rule, false);
   }
 
   onUpdateFireOn(event: RuleActionEvent): void {
     console.log('RuleEngineContainer', 'onUpdateFireOn', event);
-    event.payload.rule.fireOn = <string>event.payload.value;
+    event.payload.rule.fireOn = <string> event.payload.value;
     this.patchRule(event.payload.rule, false);
   }
 
   onUpdateExpandedState(event: RuleActionEvent): void {
     let rule = event.payload.rule;
-    rule._expanded = <boolean>event.payload.value;
+    rule._expanded = <boolean> event.payload.value;
     if (rule._expanded) {
       let obs2: Observable<ConditionGroupModel>;
       if (rule._conditionGroups.length === 0) {
@@ -275,7 +299,7 @@ export class RuleEngineContainer {
       let ruleAction = event.payload.ruleAction;
       let rule = event.payload.rule;
       let idx = event.payload.index;
-      let type: ServerSideTypeModel = this._ruleService._ruleActionTypes[<string>event.payload.value];
+      let type: ServerSideTypeModel = this._ruleService._ruleActionTypes[<string> event.payload.value];
       rule._ruleActions[idx] = new ActionModel(ruleAction.key, type, ruleAction.priority);
       this.patchAction(rule, ruleAction);
     } catch (e) {
@@ -303,7 +327,7 @@ export class RuleEngineContainer {
   onUpdateConditionGroupOperator(event: ConditionGroupActionEvent): void {
     console.log('RuleEngineContainer', 'onUpdateConditionGroupOperator');
     let group = event.payload.conditionGroup;
-    group.operator = <string>event.payload.value;
+    group.operator = <string> event.payload.value;
     if (group.key != null) {
       this.patchConditionGroup(event.payload.rule, group);
       this.patchRule(event.payload.rule);
@@ -340,7 +364,7 @@ export class RuleEngineContainer {
       let group = event.payload.conditionGroup;
       let rule = event.payload.rule;
       let idx = event.payload.index;
-      let type: ServerSideTypeModel = this._ruleService._conditionTypes[<string>event.payload.value];
+      let type: ServerSideTypeModel = this._ruleService._conditionTypes[<string> event.payload.value];
       // replace the condition rather than mutate it to force event for 'onPush' NG2 components.
       condition = new ConditionModel({_type: type, id: condition.key, operator: condition.operator, priority: condition.priority});
       group._conditions[idx] = condition;
@@ -360,7 +384,7 @@ export class RuleEngineContainer {
   onUpdateConditionOperator(event: ConditionActionEvent): void {
     console.log('RuleEngineContainer', 'onUpdateConditionOperator');
     let condition = event.payload.condition;
-    condition.operator = <string>event.payload.value;
+    condition.operator = <string> event.payload.value;
     this.patchCondition(event.payload.rule, event.payload.conditionGroup, condition);
   }
 
@@ -518,6 +542,7 @@ export class RuleEngineContainer {
     return a.priority - b.priority;
   }
 
+  // tslint:disable-next-line:no-unused-variable
   private preCacheCommonResources(resources: I18nService): void {
     resources.get('api.sites.ruleengine').subscribe((rsrc) => {});
     resources.get('api.ruleengine.system').subscribe((rsrc) => {});
@@ -550,7 +575,7 @@ export class RuleEngineContainer {
   private _handle403Error(e: CwError): boolean {
     let handled = false;
     try {
-      if (e && e.response.status === 403) {
+      if (e && e.response.status === HttpCode.FORBIDDEN) {
         let errorJson = e.response.json();
         if (errorJson && errorJson.error) {
           this.state.globalError = errorJson.error.replace('dotcms.api.error.forbidden: ', '');

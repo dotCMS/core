@@ -45,6 +45,7 @@ export class ToolbarAddContenletComponent extends BaseComponent {
     @ViewChild(DropdownComponent) dropdown: DropdownComponent;
 
     private types: StructureTypeView[];
+    // tslint:disable-next-line:no-unused-variable
     private typesIcons: any = {
         'Content': 'fa-table',
         'File': 'fa-picture-o',

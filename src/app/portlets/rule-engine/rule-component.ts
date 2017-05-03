@@ -5,7 +5,6 @@ import {Observable} from 'rxjs/Rx';
 import {
     RuleModel, RULE_UPDATE_ENABLED_STATE,
     RULE_UPDATE_NAME,
-    RULE_UPDATE_FIRE_ON,
     RULE_DELETE,
     RULE_RULE_ACTION_UPDATE_TYPE,
     RULE_RULE_ACTION_UPDATE_PARAMETER,
@@ -25,6 +24,7 @@ import {ServerSideTypeModel} from '../../api/rule-engine/ServerSideFieldModel';
 import {IPublishEnvironment} from '../../api/services/bundle-service';
 
 const I8N_BASE = 'api.sites.ruleengine';
+// tslint:disable-next-line:no-unused-variable
 let rsrc = {
   fireOn: {
     EVERY_PAGE: 'Every Page',
@@ -47,7 +47,8 @@ let rsrc = {
       [assetId]="rule.id || rule.key"
       [hidden]="!showPushPublishDialog"
       (close)="showPushPublishDialog = false; showMoreMenu = false"></cw-push-publish-dialog-container>
-  <div class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled" [class.cw-saving]="saving" [class.cw-saved]="saved" [class.cw-out-of-sync]="!saved && !saving">
+  <div class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled" 
+    [class.cw-saving]="saving" [class.cw-saved]="saved" [class.cw-out-of-sync]="!saved && !saving">
   <div flex layout="row" class="cw-header" *ngIf="!hidden" (click)="setRuleExpandedState(!rule._expanded)">
     <div flex="70" layout="row" layout-align="start center" class="cw-header-info" >
       <i flex="none" class="caret icon cw-rule-caret large" [class.right]="!rule._expanded" [class.down]="rule._expanded" aria-hidden="true"></i>
@@ -58,7 +59,9 @@ let rsrc = {
                      formControlName="name"
                      (click)="$event.stopPropagation()">
       </cw-input-text>
-      <div flex="50" [hidden]="!formModel.controls['name'].touched || formModel.controls['name'].valid" class="name cw-warn basic label">Name is required</div>
+      <div flex="50" [hidden]="!formModel.controls['name'].touched || formModel.controls['name'].valid" 
+        class="name cw-warn basic label">Name is required
+      </div>
       </div>
       <span class="cw-fire-on-label" *ngIf="!hideFireOn">{{rsrc('inputs.fireOn.label') | async}}</span>
       <cw-input-dropdown flex="none"
@@ -87,14 +90,19 @@ let rsrc = {
           <button class="ui button cw-delete-rule" aria-label="More Actions" (click)="showMoreMenu = !showMoreMenu; $event.stopPropagation()">
             <i class="ellipsis vertical icon"></i>
           </button>
-          <button class="ui button cw-add-group" arial-label="Add Group" (click)="onCreateConditionGroupClicked(); setRuleExpandedState(true); $event.stopPropagation()" [disabled]="!rule.isPersisted()">
+          <button class="ui button cw-add-group" arial-label="Add Group" 
+            (click)="onCreateConditionGroupClicked(); setRuleExpandedState(true); $event.stopPropagation()" [disabled]="!rule.isPersisted()">
+
             <i class="plus icon" aria-hidden="true"></i>
           </button>
         </div>
       </div>
       <div class="ui vertical menu" *ngIf="showMoreMenu">
-        <a class="item" *ngIf="(rule.id || rule.key) &&  !apiRoot.hideRulePushOptions" (click)="showAddToBundleDialog = true; $event.stopPropagation()">Add to bundle</a>
-        <a class="item" *ngIf="environmentStores.length > 0 && (rule.id || rule.key) &&  !apiRoot.hideRulePushOptions" (click)="showPushPublishDialog = true; $event.stopPropagation()">Push Publish</a>
+        <a class="item" *ngIf="(rule.id || rule.key) &&  !apiRoot.hideRulePushOptions" 
+          (click)="showAddToBundleDialog = true; $event.stopPropagation()">Add to bundle</a>
+
+        <a class="item" *ngIf="environmentStores.length > 0 && (rule.id || rule.key) &&  !apiRoot.hideRulePushOptions"
+          (click)="showPushPublishDialog = true; $event.stopPropagation()">Push Publish</a>
         <a class="item" (click)="deleteRuleClicked($event)">Delete rule</a>
       </div>
     </div>
@@ -126,7 +134,8 @@ let rsrc = {
               (deleteRuleAction)="onDeleteRuleAction($event)"></rule-action>
           <div class="cw-btn-group cw-add-btn">
             <div class="ui basic icon buttons" *ngIf="i === (ruleActions.length - 1)">
-              <button class="cw-button-add-item ui button" arial-label="Add Action" (click)="onCreateRuleAction();" [disabled]="!ruleAction.isPersisted()">
+              <button class="cw-button-add-item ui button" arial-label="Add Action" 
+                (click)="onCreateRuleAction();" [disabled]="!ruleAction.isPersisted()">
                 <i class="plus icon" aria-hidden="true"></i>
               </button>
             </div>
@@ -179,8 +188,11 @@ class RuleComponent {
   private fireOn: any;
   private _rsrcCache: {[key: string]: Observable<string>};
 
+  // tslint:disable-next-line:no-unused-variable
   private showMoreMenu = false;
+  // tslint:disable-next-line:no-unused-variable
   private showAddToBundleDialog = false;
+  // tslint:disable-next-line:no-unused-variable
   private showPushPublishDialog = false;
   private actionTypePlaceholder = '';
   private conditionTypePlaceholder = '';
@@ -243,8 +255,9 @@ class RuleComponent {
   ngOnChanges(change): void {
     if (change.rule) {
       let rule = this.rule;
-      let ctrl: FormControl = <FormControl>this.formModel.controls['name'];
+      let ctrl: FormControl = <FormControl> this.formModel.controls['name'];
       ctrl.patchValue(this.rule.name, {});
+
       ctrl.valueChanges.debounceTime(250).subscribe((name: string) => {
         if (ctrl.valid) {
           this.updateName.emit({payload: {rule: this.rule, value: name}, type: RULE_UPDATE_NAME});
@@ -320,22 +333,34 @@ class RuleComponent {
   }
 
   onUpdateConditionGroupOperator(event: {type: string, payload: {value: string, index: number}}, conditionGroup: ConditionGroupModel): void {
-    this.updateConditionGroupOperator.emit( { payload: Object.assign({conditionGroup: conditionGroup, rule: this.rule}, event.payload), type: RULE_CONDITION_UPDATE_TYPE } );
+    this.updateConditionGroupOperator.emit( {
+      payload: Object.assign({conditionGroup: conditionGroup, rule: this.rule}, event.payload),
+      type: RULE_CONDITION_UPDATE_TYPE
+    } );
   }
 
   onUpdateConditionType(event: {type: string, payload: {value: string, index: number}}, conditionGroup: ConditionGroupModel): void {
     console.log('RuleComponent', 'onUpdateConditionType');
-    this.updateConditionType.emit( { payload: Object.assign({conditionGroup: conditionGroup, rule: this.rule}, event.payload), type: RULE_CONDITION_UPDATE_TYPE } );
+    this.updateConditionType.emit( {
+      payload: Object.assign({conditionGroup: conditionGroup, rule: this.rule}, event.payload),
+      type: RULE_CONDITION_UPDATE_TYPE
+    } );
   }
 
   onUpdateConditionParameter(event, conditionGroup: ConditionGroupModel): void {
     console.log('RuleComponent', 'onUpdateConditionParameter');
-    this.updateConditionParameter.emit( { payload: Object.assign({conditionGroup: conditionGroup, rule: this.rule}, event.payload), type: RULE_CONDITION_UPDATE_PARAMETER } );
+    this.updateConditionParameter.emit( {
+      payload: Object.assign({conditionGroup: conditionGroup, rule: this.rule}, event.payload),
+      type: RULE_CONDITION_UPDATE_PARAMETER
+    } );
   }
 
   onUpdateConditionOperator(event, conditionGroup: ConditionGroupModel): void {
     console.log('RuleComponent', 'onUpdateConditionOperator');
-    this.updateConditionOperator.emit( { payload: Object.assign({conditionGroup: conditionGroup, rule: this.rule}, event.payload), type: RULE_CONDITION_UPDATE_OPERATOR } );
+    this.updateConditionOperator.emit( {
+      payload: Object.assign({conditionGroup: conditionGroup, rule: this.rule}, event.payload),
+      type: RULE_CONDITION_UPDATE_OPERATOR
+    } );
   }
 
   deleteRuleClicked(event: any): void {

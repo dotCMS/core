@@ -5,6 +5,7 @@ import {Protocol, Url} from './protocol';
 
 export class WebSocketProtocol extends Protocol {
 
+    private static readonly AVAILABLE_FOR_USER_WS_CLOSE_STATUS = 4000;
     private socket: WebSocket;
 
     private sendQueue = [];
@@ -19,7 +20,7 @@ export class WebSocketProtocol extends Protocol {
     };
 
     private normalCloseCode = 1000;
-    private reconnectableStatusCodes = [4000];
+    private reconnectableStatusCodes = [WebSocketProtocol.AVAILABLE_FOR_USER_WS_CLOSE_STATUS];
     private dataStream: Subject<any>;
     private internalConnectionState: number;
     private reconnectIfNotNormalClose: boolean;
@@ -72,17 +73,16 @@ export class WebSocketProtocol extends Protocol {
     }
 
     send(data): Promise<any> {
-        let self = this;
         if (this.getReadyState() !== this.readyStateConstants.OPEN && this.getReadyState() !== this.readyStateConstants.CONNECTING) {
             this.connect();
         }
         // TODO: change this for an observer
         return new Promise((resolve, reject) => {
-            if (self.socket.readyState === self.readyStateConstants.RECONNECT_ABORTED) {
+            if (this.socket.readyState === this.readyStateConstants.RECONNECT_ABORTED) {
                 reject('EventsSocket connection has been closed');
             } else {
-                self.sendQueue.push({message: data});
-                self.fireQueue();
+                this.sendQueue.push({message: data});
+                this.fireQueue();
             }
         });
     }
@@ -111,7 +111,6 @@ export class WebSocketProtocol extends Protocol {
         }
 
         this.internalConnectionState = state;
-
     }
 
     /**

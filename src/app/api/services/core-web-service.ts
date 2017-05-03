@@ -10,7 +10,8 @@ import {
 import {ApiRoot} from '../persistence/ApiRoot';
 import {ResponseView} from './response-view';
 import {LoggerService} from './logger.service';
-import {BrowserUtil} from '../util/browser-util';
+import { BrowserUtil } from '../util/browser-util';
+import { HttpCode } from '../util/http-code';
 
 export const RULE_CREATE = 'RULE_CREATE';
 export const RULE_DELETE = 'RULE_DELETE';
@@ -54,15 +55,18 @@ export class CoreWebService {
         .catch((response: Response, original: Observable<any>): Observable<any> => {
           if (response) {
             this.handleHttpError(response);
-            if (response.status === 500) {
+            if (response.status === HttpCode.SERVER_ERROR) {
               if (response.text() && response.text().indexOf('ECONNREFUSED') >= 0) {
-                throw new CwError(NETWORK_CONNECTION_ERROR, CLIENTS_ONLY_MESSAGES[NETWORK_CONNECTION_ERROR], request, response, source);
+                throw new CwError(NETWORK_CONNECTION_ERROR, CLIENTS_ONLY_MESSAGES[NETWORK_CONNECTION_ERROR],
+                  request, response, source);
               } else {
-                throw new CwError(SERVER_RESPONSE_ERROR, response.headers.get('error-message'), request, response, source);
+                throw new CwError(SERVER_RESPONSE_ERROR, response.headers.get('error-message'), request,
+                  response, source);
               }
-            }  else if (response.status === 404) {
+            }  else if (response.status === HttpCode.NOT_FOUND) {
               this.loggerService.error('Could not execute request: 404 path not valid.', options.url);
-              throw new CwError(UNKNOWN_RESPONSE_ERROR, response.headers.get('error-message'), request, response, source);
+              throw new CwError(UNKNOWN_RESPONSE_ERROR, response.headers.get('error-message'), request,
+                response, source);
             }
           }
           return null;

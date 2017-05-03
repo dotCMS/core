@@ -1,5 +1,5 @@
 ///<reference path="../../../../../node_modules/@angular/router/src/router_state.d.ts"/>
-import {Component, ElementRef, ViewEncapsulation, ViewChild} from '@angular/core';
+import {Component, ElementRef, ViewEncapsulation} from '@angular/core';
 import {LoginService} from '../../../api/services/login-service';
 import {ActivatedRoute} from '@angular/router';
 import {RoutingService} from '../../../api/services/routing-service';
@@ -50,16 +50,18 @@ export class IframeLegacyComponent extends SiteChangeListener {
         this.initComponent();
 
         let events: string[] = ['SAVE_FOLDER', 'UPDATE_FOLDER', 'DELETE_FOLDER', 'SAVE_PAGE_ASSET', 'UPDATE_PAGE_ASSET',
-            'ARCHIVE_PAGE_ASSET', 'UN_ARCHIVE_PAGE_ASSET', 'DELETE_PAGE_ASSET', 'PUBLISH_PAGE_ASSET', 'UN_PUBLISH_PAGE_ASSET',
-            'SAVE_FILE_ASSET', 'UPDATE_FILE_ASSET', 'ARCHIVE_FILE_ASSET', 'UN_ARCHIVE_FILE_ASSET', 'DELETE_FILE_ASSET',
-            'PUBLISH_FILE_ASSET', 'UN_PUBLISH_FILE_ASSET', 'SAVE_LINK', 'UPDATE_LINK', 'ARCHIVE_LINK', 'UN_ARCHIVE_LINK',
-            'MOVE_LINK', 'COPY_LINK', 'DELETE_LINK', 'PUBLISH_LINK', 'UN_PUBLISH_LINK', 'MOVE_FOLDER', 'COPY_FOLDER',
-            'MOVE_FILE_ASSET', 'COPY_FILE_ASSET', 'MOVE_PAGE_ASSET', 'COPY_PAGE_ASSET'
+            'ARCHIVE_PAGE_ASSET', 'UN_ARCHIVE_PAGE_ASSET', 'DELETE_PAGE_ASSET', 'PUBLISH_PAGE_ASSET',
+            'UN_PUBLISH_PAGE_ASSET', 'SAVE_FILE_ASSET', 'UPDATE_FILE_ASSET', 'ARCHIVE_FILE_ASSET',
+            'UN_ARCHIVE_FILE_ASSET', 'DELETE_FILE_ASSET', 'PUBLISH_FILE_ASSET', 'UN_PUBLISH_FILE_ASSET', 'SAVE_LINK',
+            'UPDATE_LINK', 'ARCHIVE_LINK', 'UN_ARCHIVE_LINK', 'MOVE_LINK', 'COPY_LINK', 'DELETE_LINK', 'PUBLISH_LINK',
+            'UN_PUBLISH_LINK', 'MOVE_FOLDER', 'COPY_FOLDER', 'MOVE_FILE_ASSET', 'COPY_FILE_ASSET', 'MOVE_PAGE_ASSET',
+            'COPY_PAGE_ASSET'
         ];
 
         this.dotcmsEventsService.subscribeToEvents(events).subscribe( eventTypeWrapper => {
             if (this.routingService.currentPortletId === 'site-browser') {
-                this.loggerService.debug('Capturing Site Browser event', eventTypeWrapper.eventType, eventTypeWrapper.data);
+                this.loggerService.debug('Capturing Site Browser event', eventTypeWrapper.eventType,
+                    eventTypeWrapper.data);
                 // TODO: When we finish the migration of the site browser this event will be handle.....
             }
         });
@@ -107,7 +109,8 @@ export class IframeLegacyComponent extends SiteChangeListener {
         this.loadingInProgress = true;
 
         urlWithParameters += urlWithParameters.indexOf('?') === -1 ? '?' : '&';
-        urlWithParameters += urlWithParameters.indexOf('in_frame') === -1 ? 'in_frame=true&frame=detailFrame&container=true' : '';
+        urlWithParameters += urlWithParameters.indexOf('in_frame') === -1 ?
+            'in_frame=true&frame=detailFrame&container=true' : '';
 
         return this.sanitizer.bypassSecurityTrustResourceUrl(urlWithParameters);
     }

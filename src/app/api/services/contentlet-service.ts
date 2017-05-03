@@ -1,6 +1,4 @@
-import {ApiRoot} from '../persistence/ApiRoot';
 import {CoreWebService} from './core-web-service';
-import {Http} from '@angular/http';
 import {Injectable} from '@angular/core';
 import {LoginService} from './login-service';
 import {Observable} from 'rxjs/Rx';
@@ -30,7 +28,8 @@ export class ContentletService {
             let structureTypeView: StructureTypeView = this.getStructureTypeView(contentTypeViewUpdated.type);
 
             structureTypeView.types = structureTypeView.types.map(
-                contentTypeView => contentTypeView.inode === contentTypeViewUpdated.inode ? contentTypeViewUpdated : contentTypeView);
+                contentTypeView => contentTypeView.inode === contentTypeViewUpdated.inode ? contentTypeViewUpdated
+                    : contentTypeView);
 
             this._structureTypeView$.next(this.structureTypeView);
         });

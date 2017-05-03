@@ -15,10 +15,11 @@ import {IframeOverlayService} from '../../../api/services/iframe-overlay-service
     templateUrl: 'dot-site-selector-component.html',
 })
 export class SiteSelectorComponent extends BaseComponent {
+    private static readonly MIN_CHARECTERS_TO_SERACH = 3;
+
     private currentSite: any;
     private sites: Site[];
     private sitesCounter: number;
-    private message: string;
     private filteredSitesResults: Array<any>;
     private paginationPage = 1;
     private paginationPerPage: number;
@@ -70,7 +71,7 @@ export class SiteSelectorComponent extends BaseComponent {
         /**
          * only execute the search if there is at least 3 characters
          */
-        if (event.query.length >= 3) {
+        if (event.query.length >= SiteSelectorComponent.MIN_CHARECTERS_TO_SERACH) {
             /**
              * If the query change then clean the paginationPage
              * and paginationQuery variables
@@ -119,7 +120,9 @@ export class SiteSelectorComponent extends BaseComponent {
         /**
          * Call the web resource to get the subset of site results
          */
-        this.siteService.paginateSites(this.paginationQuery, false, this.paginationPage, this.paginationPerPage).subscribe(response => {
+        this.siteService.paginateSites(this.paginationQuery, false, this.paginationPage,
+                                            this.paginationPerPage).subscribe(response => {
+
             let results = response.sites.results;
 
             if (results.length) {

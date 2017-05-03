@@ -1,5 +1,5 @@
-import {Component, ViewEncapsulation, ElementRef, ViewChild} from '@angular/core';
-import {RoutingService, Menu, MenuItem} from '../../../api/services/routing-service';
+import {Component, ViewEncapsulation} from '@angular/core';
+import {RoutingService, Menu} from '../../../api/services/routing-service';
 
 @Component({
     encapsulation: ViewEncapsulation.None,

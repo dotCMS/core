@@ -1,5 +1,4 @@
 import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from '@angular/core';
-import {AddToBundleDialogComponent} from './add-to-bundle-dialog-component';
 import {BehaviorSubject} from 'rxjs/Rx';
 import {BundleService, IBundle} from '../../../api/services/bundle-service';
 

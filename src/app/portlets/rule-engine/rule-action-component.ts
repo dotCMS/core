@@ -80,7 +80,10 @@ export class RuleActionComponent {
 
   onParameterValueChange(event: {name: string, value: string}): void {
     console.log('RuleActionComponent', 'onParameterValueChange', event);
-    this.updateRuleActionParameter.emit({type: RULE_RULE_ACTION_UPDATE_PARAMETER, payload: {ruleAction: this.action, name: event.name, value: event.value, index: this.index}});
+    this.updateRuleActionParameter.emit({
+      payload: {ruleAction: this.action, name: event.name, value: event.value, index: this.index},
+      type: RULE_RULE_ACTION_UPDATE_PARAMETER,
+    });
   }
 
   onDeleteRuleActionClicked(): void {

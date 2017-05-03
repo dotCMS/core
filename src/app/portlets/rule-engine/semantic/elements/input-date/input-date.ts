@@ -55,7 +55,7 @@ export class InputDate implements ControlValueAccessor {
 
   private static _defaultValue(): string {
     let d = new Date();
-    let off = d.getTimezoneOffset();
+
     d.setHours(0);
     d.setMinutes(0);
     d.setSeconds(0);

@@ -1,6 +1,6 @@
 import {BaseComponent} from '../_common/_base/base-component';
 import {Component, Output, EventEmitter, Input, ViewEncapsulation, ViewChild} from '@angular/core';
-import {LoginService, User} from '../../../api/services/login-service';
+import {LoginService} from '../../../api/services/login-service';
 import {MessageService} from '../../../api/services/messages-service';
 import {DotRouterService} from '../../../api/services/dot-router-service';
 import {AutoComplete} from 'primeng/primeng';
@@ -17,7 +17,6 @@ export class LoginAsComponent extends BaseComponent {
     @Input() visible: boolean;
 
     private needPassword = false;
-    private userLists: Array<User>;
     private filteredLoginAsUsersResults: Array<any>;
 
     @ViewChild(AutoComplete) private autoCompleteComponent: AutoComplete;

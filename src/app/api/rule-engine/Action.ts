@@ -8,8 +8,10 @@ import {
     UNKNOWN_RESPONSE_ERROR, CwError, SERVER_RESPONSE_ERROR,
     NETWORK_CONNECTION_ERROR, CLIENTS_ONLY_MESSAGES
 } from '../system/http-response-util';
-import {LoggerService} from '../services/logger.service';
+import { LoggerService } from '../services/logger.service';
+import { HttpCode } from '../util/http-code';
 
+// tslint:disable-next-line:no-unused-variable
 let noop = (...arg: any[]) => {
 };
 
@@ -54,7 +56,7 @@ export class ActionService {
     return this._http.get(path, opts).map((res: Response) => {
       return res.json();
     }).catch((err: any, source: Observable<any>) => {
-      if (err && err.status === 404) {
+      if (err && err.status === HttpCode.NOT_FOUND) {
         this.loggerService.error('Could not retrieve ' + this._typeName + ' : 404 path not valid.', path);
       } else if (err) {
         this.loggerService.debug('Could not retrieve' + this._typeName + ': Response status code: ', err.status, 'error:', err, path);
@@ -77,7 +79,6 @@ export class ActionService {
   }
 
   get(ruleKey: string, key: string, ruleActionTypes?: {[key: string]: ServerSideTypeModel}): Observable<ActionModel> {
-    let result: Observable<ActionModel>;
     return this.makeRequest(key).map( (json) => {
       json.id = key;
       json.key = key;
@@ -88,7 +89,8 @@ export class ActionService {
   createRuleAction(ruleId: string, model: ActionModel): Observable<any> {
     this.loggerService.debug('Action', 'add', model);
     if (!model.isValid()) {
-      throw new Error('This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.');
+      throw new Error(`This should be thrown from a checkValid function on the model, 
+                        and should provide the info needed to make the user aware of the fix.`);
     }
     let json = ActionService.toJson(model);
     json.owningRule = ruleId;
@@ -106,7 +108,8 @@ export class ActionService {
   updateRuleAction(ruleId: string, model: ActionModel): Observable<ActionModel> {
     this.loggerService.debug('actionService', 'save');
     if (!model.isValid()) {
-      throw new Error('This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.');
+      throw new Error(`This should be thrown from a checkValid function on the model, 
+                        and should provide the info needed to make the user aware of the fix.`);
     }
     if (!model.isPersisted()) {
       this.createRuleAction(ruleId, model);
@@ -141,13 +144,13 @@ export class ActionService {
   private _catchRequestError(operation):  (response: Response, original: Observable<any>) => Observable<any>  {
     return (response: Response, original: Observable<any>): Observable<any> => {
       if (response) {
-        if (response.status === 500) {
+        if (response.status === HttpCode.SERVER_ERROR) {
           if (response.text() && response.text().indexOf('ECONNREFUSED') >= 0) {
             throw new CwError(NETWORK_CONNECTION_ERROR, CLIENTS_ONLY_MESSAGES[NETWORK_CONNECTION_ERROR]);
           } else {
             throw new CwError(SERVER_RESPONSE_ERROR, response.headers.get('error-message'));
           }
-        } else if (response.status === 404) {
+        } else if (response.status === HttpCode.NOT_FOUND) {
           this.loggerService.error('Could not execute request: 404 path not valid.');
           throw new CwError(UNKNOWN_RESPONSE_ERROR, response.headers.get('error-message'));
         } else {

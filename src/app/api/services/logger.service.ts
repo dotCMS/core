@@ -74,7 +74,6 @@ export class LoggerService {
     }
 
     private cleanCaller (caller: string): string {
-
         return (caller) ? caller.trim().substr(3) : 'unknown';
     }
 

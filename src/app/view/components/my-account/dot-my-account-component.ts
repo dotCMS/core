@@ -34,7 +34,9 @@ export class MyAccountComponent extends BaseComponent {
              messageService: MessageService, private stringFormat: StringFormat) {
         super(['my-account', 'modes.Close', 'save', 'error.form.mandatory', 'errors.email', 'First-Name',
             'Last-Name', 'email-address', 'new-password', 're-enter-new-password', 'error.forgot.password.passwords.dont.match',
-            'message.createaccount.success', 'Error-communicating-with-server-Please-try-again', 'change-password', 'current-password'], messageService);
+            'message.createaccount.success', 'Error-communicating-with-server-Please-try-again', 'change-password',
+            'current-password'], messageService);
+
         this.passwordMatch = false;
         this.changePasswordOption = false;
         this.loginService.watchUser(this.loadUser.bind(this));
@@ -52,6 +54,7 @@ export class MyAccountComponent extends BaseComponent {
         this.changePasswordOption = !this.changePasswordOption;
     }
 
+    // tslint:disable-next-line:no-unused-variable
     private getRequiredMessage(item): string {
         return this.stringFormat.formatMessage(this.i18nMessages['error.form.mandatory'], item);
     }
@@ -66,6 +69,7 @@ export class MyAccountComponent extends BaseComponent {
         this.passwordConfirm = null;
     }
 
+    // tslint:disable-next-line:no-unused-variable
     private save(): void {
         this.accountService.updateUser(this.accountUser).subscribe(response => {
             // TODO: replace the alert with a Angular components

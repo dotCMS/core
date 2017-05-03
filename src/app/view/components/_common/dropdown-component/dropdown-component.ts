@@ -44,6 +44,7 @@ export class DropdownComponent {
         this.show = false;
     }
 
+    // tslint:disable-next-line:no-unused-variable
     private onToggle(): void {
         this.show = !this.show;
 
@@ -57,6 +58,7 @@ export class DropdownComponent {
     }
 
     // TODO: we need doing this globally for all the components that need to detect if the click was outside it.
+    // tslint:disable-next-line:no-unused-variable
     private handleClick($event): void {
         let clickedComponent = $event.target;
         let inside = false;

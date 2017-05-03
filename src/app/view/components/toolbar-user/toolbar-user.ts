@@ -6,7 +6,6 @@ import {LoginService, Auth} from '../../../api/services/login-service';
 import {MessageService} from '../../../api/services/messages-service';
 import {LoggerService} from '../../../api/services/logger.service';
 import {IframeOverlayService} from '../../../api/services/iframe-overlay-service';
-import { GravatarComponent } from '../_common/gravatar/gravatar.component';
 
 @Component({
     selector: 'toolbar-user',

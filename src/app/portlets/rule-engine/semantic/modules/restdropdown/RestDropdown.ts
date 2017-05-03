@@ -5,7 +5,7 @@ import {Http} from '@angular/http';
 
 import {Verify} from '../../../../../api/validation/Verify';
 import {ApiRoot} from '../../../../../api/persistence/ApiRoot';
-import {Observer, Observable} from 'rxjs';
+import {Observable} from 'rxjs';
 import _ from 'lodash';
 
 @Component({

@@ -36,7 +36,7 @@ export class ColorUtil {
      */
 
     public isBrightness(color): boolean {
-        return this.getBrightness(color) > 130;
+        return this.getBrightness(color) > 138;
     }
 
     /**
@@ -48,7 +48,6 @@ export class ColorUtil {
             return rgb;
         } else {
             rgb = rgb.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(\d+(\.\d+)?))?\)$/);
-
             return '#' + this.hex(rgb[1]) + this.hex(rgb[2]) + this.hex(rgb[3]);
         }
     }

@@ -34,6 +34,7 @@ const UNITS = {
     mi: ((len) => len  ),
   },
 };
+// tslint:disable-next-line:no-unused-variable
 const I8N_BASE = 'api.sites.ruleengine';
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,

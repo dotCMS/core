@@ -8,7 +8,8 @@ import {Observable} from 'rxjs/Rx';
 import {Router} from '@angular/router';
 import {Subject} from 'rxjs/Subject';
 import {DotcmsEventsService} from './dotcms-events-service';
-import {LoggerService} from './logger.service';
+import { LoggerService } from './logger.service';
+import { HttpCode } from '../util/http-code';
 
 /**
  * This Service get the server configuration to display in the login component
@@ -31,7 +32,7 @@ export class LoginService {
                 private dotcmsEventsService: DotcmsEventsService,
                 private loggerService: LoggerService) {
 
-        this._loginAsUsersList$ = <Subject<User[]>>new Subject();
+        this._loginAsUsersList$ = <Subject<User[]>> new Subject();
         this.loginAsUserList = [];
         this.urls = {
             changePassword: 'v1/changePassword',
@@ -45,7 +46,7 @@ export class LoginService {
             userAuth: 'v1/authentication'
         };
 
-        coreWebService.subscribeTo(401).subscribe(() => this.logOutUser().subscribe(() => {}));
+        coreWebService.subscribeTo(HttpCode.UNAUTHORIZED).subscribe(() => this.logOutUser().subscribe(() => {}));
 
         // when the session is expired/destroyed
         dotcmsEventsService.subscribeTo('SESSION_DESTROYED').pluck('data').subscribe( date => {
@@ -64,6 +65,7 @@ export class LoginService {
     }
 
     get auth$(): Observable<Auth> {
+
         return this._auth$.asObservable();
     }
 
@@ -126,7 +128,6 @@ export class LoginService {
      * @returns {Observable<User[]>}
      */
     public getLoginAsUsersList(filter: string): Observable<User[]> {
-
         return Observable.create(observer => {
 
             let needLoadUsers = this.loginAsUserList.length === 0 || this.nUsers > this.loginAsUserList.length;
@@ -289,8 +290,6 @@ export class LoginService {
      * or if there is an error
      */
     public recoverPassword(login: string): Observable<any> {
-        let body = JSON.stringify({'userId': login});
-
         return this.coreWebService.requestView({
             body: {'userId': login},
             method: RequestMethod.Post,

@@ -13,6 +13,7 @@ import { AppModule } from './app/app.module';
 /*
  * Bootstrap our Angular app with a top level NgModule
  */
+// tslint:disable-next-line:only-arrow-functions
 export function main(): Promise<any> {
   return platformBrowserDynamic()
     .bootstrapModule(AppModule)

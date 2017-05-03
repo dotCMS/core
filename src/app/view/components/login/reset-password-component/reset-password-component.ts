@@ -38,7 +38,8 @@ export class ResetPasswordComponent {
     private password = '';
     private confirmPassword = '';
 
-    private i18nMessages: Array<string> = [ 'error.form.mandatory', 'reset-password', 'enter-password', 're-enter-password', 'change-password', 'reset-password-success', 'reset-password-confirmation-do-not-match'];
+    private i18nMessages: Array<string> = [ 'error.form.mandatory', 'reset-password', 'enter-password', 're-enter-password', 'change-password',
+                                            'reset-password-success', 'reset-password-confirmation-do-not-match'];
 
     constructor(private loginService: LoginService, private loggerService: LoggerService) {}
 
@@ -71,6 +72,7 @@ export class ResetPasswordComponent {
         }
     }
 
+    // tslint:disable-next-line:no-unused-variable
     private cleanConfirmPassword(): void {
         this.clean();
         this.confirmPassword = '';

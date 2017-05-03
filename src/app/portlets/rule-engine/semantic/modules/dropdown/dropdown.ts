@@ -3,6 +3,7 @@ import { Host, AfterViewInit, OnDestroy, Output, Input, ChangeDetectionStrategy 
 import {ControlValueAccessor, NgControl} from '@angular/forms';
 import {BehaviorSubject, Observable} from 'rxjs/Rx';
 import _ from 'lodash';
+import { KeyCode } from '../../../../../api/util/key-util';
 
 /**
  * Angular 2 wrapper around Semantic UI Dropdown Module.
@@ -183,13 +184,15 @@ export class Dropdown implements AfterViewInit, OnDestroy, ControlValueAccessor 
         }
         return this.onHide();
       },
-      onLabelCreate: function(value, text): any {
+      // tslint:disable-next-line:only-arrow-functions
+      onLabelCreate:  function(value, text): any {
         let $label = this;
         return self.onLabelCreate($label, value, text);
       },
       onLabelSelect: ($selectedLabels) => {
         return this.onLabelSelect($selectedLabels);
       },
+      // tslint:disable-next-line:only-arrow-functions
       onNoResults: function (searchValue): any {
         if (!this.allowAdditions) {
             badSearch = searchValue;
@@ -284,6 +287,7 @@ export class Dropdown implements AfterViewInit, OnDestroy, ControlValueAccessor 
 
   private applyValue(value): void {
     let count = 0;
+
     Observable.interval(10).takeWhile(() => {
       count++;
       if (count > 100) {
@@ -300,10 +304,6 @@ export class Dropdown implements AfterViewInit, OnDestroy, ControlValueAccessor 
     });
   }
 
-  private isMultiSelect(): boolean {
-    return this.maxSelections > 1;
-  }
-
   /**
    * Fixes an issue with up and down arrows triggering a search in the dropdown, which auto selects the first result
    * after a short buffering period.
@@ -315,7 +315,7 @@ export class Dropdown implements AfterViewInit, OnDestroy, ControlValueAccessor 
     let enterEvent = this.enter;
     $searchField.on('keyup', (event: any) => {
       if (DO_NOT_SEARCH_ON_THESE_KEY_EVENTS[event.keyCode]) {
-        if (event.keyCode === 13 && enterEvent) {
+        if (event.keyCode === KeyCode.ENTER && enterEvent) {
           enterEvent.emit(true);
         }
 

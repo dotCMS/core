@@ -3,12 +3,12 @@ import {Observable} from 'rxjs/Rx';
 import {Http, Response} from '@angular/http';
 import {Injectable} from '@angular/core';
 import {ApiRoot} from '../persistence/ApiRoot';
-import {ConditionGroupModel, IConditionGroup} from './Rule';
+import { ConditionGroupModel, IConditionGroup } from './Rule';
+import { HttpCode } from '../util/http-code';
 
 @Injectable()
 export class ConditionGroupService {
 
-  private static _PATH = 'api/v1/ruleengine/rules';
   private _typeName = 'Condition Group';
 
   private _apiRoot: ApiRoot;
@@ -45,7 +45,7 @@ export class ConditionGroupService {
       console.log('ConditionGroupService', 'makeRequest-Response', json);
       return json;
     }).catch((err: any, source: Observable<any>) => {
-      if (err && err.status === 404) {
+      if (err && err.status === HttpCode.NOT_FOUND) {
         console.error('Could not retrieve ' + this._typeName + ' : 404 path not valid.', path);
       } else if (err) {
         console.log('Could not retrieve' + this._typeName + ': Response status code: ', err.status, 'error:', err, path);
@@ -81,7 +81,8 @@ export class ConditionGroupService {
   createConditionGroup(ruleId: string, model: ConditionGroupModel): Observable<any> {
     console.log('ConditionGroupService', 'add', model);
     if (!model.isValid()) {
-      throw new Error('This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.');
+      throw new Error(`This should be thrown from a checkValid function on the model, 
+                        and should provide the info needed to make the user aware of the fix`);
     }
     let json = ConditionGroupService.toJson(model);
     let opts = this._apiRoot.getDefaultRequestOptions();
@@ -98,7 +99,8 @@ export class ConditionGroupService {
   updateConditionGroup(ruleId: string, model: ConditionGroupModel): Observable<ConditionGroupModel> {
     console.log('ConditionGroupService', 'save');
     if (!model.isValid()) {
-      throw new Error('This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.');
+      throw new Error(`This should be thrown from a checkValid function on the model, 
+                        and should provide the info needed to make the user aware of the fix.`);
     }
     if (!model.isPersisted()) {
       this.createConditionGroup(ruleId, model);
@@ -131,7 +133,7 @@ export class ConditionGroupService {
 
   private _catchRequestError(operation): Func {
     return (err: any) => {
-      if (err && err.status === 404) {
+      if (err && err.status === HttpCode.NOT_FOUND) {
         console.log('Could not ' + operation + ' Condition: URL not valid.');
       } else if (err) {
         console.log('Could not ' + operation + ' Condition.', 'response status code: ', err.status, 'error:', err);

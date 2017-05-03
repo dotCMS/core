@@ -82,7 +82,8 @@ export class EventsSocket extends Protocol {
                     this.closedOnLogout = false;
                     this.protocolImpl = null; // Cleaning up the socket as we explicitly closed the socket
 
-                } else if (this.status === CONNECTION_STATUS.CONNECTED) { // Something happened and we need to try a reconnection
+                } else if (this.status === CONNECTION_STATUS.CONNECTED) {
+                    // Something happened and we need to try a reconnection
                     this.reconnect();
                 }
 

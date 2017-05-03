@@ -2,7 +2,8 @@ import {Component, ViewEncapsulation} from '@angular/core';
 import {HttpRequestUtils} from '../../../../api/util/httpRequestUtils';
 import {LoginService} from '../../../../api/services/login-service';
 import {DotRouterService} from '../../../../api/services/dot-router-service';
-import {LoggerService} from '../../../../api/services/logger.service';
+import { LoggerService } from '../../../../api/services/logger.service';
+import { HttpCode } from '../../../../api/util/http-code';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -49,7 +50,7 @@ export class LoginContainer {
             this.router.goToMain();
          }, (error) => {
 
-            if (error.response.status === 400 || error.response.status === 401) {
+            if (error.response.status === HttpCode.BAD_REQUEST || error.response.status === HttpCode.UNAUTHORIZED) {
                 this.message = error.errorsMessages;
             } else {
                 this.loggerService.debug(error);

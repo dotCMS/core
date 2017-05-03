@@ -38,8 +38,6 @@ export abstract class Protocol {
     protected _message: Subject<any> = new Subject<any>();
     protected _error: Subject<any> = new Subject<any>();
 
-    private reconnectAttempts = 0;
-
     constructor(protected loggerService: LoggerService, private protocolConfig?: ProtocolConfig ) {
         if (!protocolConfig) {
             this.protocolConfig = {
@@ -70,9 +68,6 @@ export abstract class Protocol {
 
     protected reconnect(): void {
         this.destroy();
-        /*let backoffDelay = this.getBackoffDelay(++this.reconnectAttempts);
-        let backoffDelaySeconds = backoffDelay / 1000;
-        this.loggerService.debug('Reconnecting in ' + backoffDelaySeconds + ' seconds');*/
         setTimeout( this.start(), 0);
     }
 

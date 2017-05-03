@@ -19,6 +19,7 @@ export class LoginPageComponent {
     constructor(private loginService: LoginService, private loggerService: LoggerService) {
     }
 
+    // tslint:disable-next-line:no-unused-variable
     private ngOnInit(): void {
 
         this.loginService.getLoginFormInfo('', []).subscribe((data) => {

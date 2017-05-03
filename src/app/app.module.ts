@@ -28,7 +28,6 @@ import {CheckboxModule} from 'primeng/primeng';
 import {ButtonModule} from 'primeng/primeng';
 import {DropdownModule} from 'primeng/primeng';
 import {AutoCompleteModule} from 'primeng/primeng';
-import {MainCoreLegacyComponent} from './view/components/main-core-legacy/main-core-legacy-component';
 import {ToolbarModule} from 'primeng/primeng';
 import {DialogModule} from 'primeng/primeng';
 import {RadioButtonModule} from 'primeng/primeng';
@@ -100,6 +99,7 @@ export class AppModule {
     if (!store || !store.state) {
       return;
     }
+    
     console.log('HMR store', JSON.stringify(store, null, 2));
     // set state
     this.appState._state = store.state;

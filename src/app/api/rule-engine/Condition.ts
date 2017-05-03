@@ -4,8 +4,10 @@ import {Observable} from 'rxjs/Rx';
 import {ApiRoot} from '../persistence/ApiRoot';
 import {ServerSideTypeModel} from './ServerSideFieldModel';
 import {Http, Response} from '@angular/http';
-import {ConditionGroupModel, ConditionModel, ICondition} from './Rule';
+import { ConditionGroupModel, ConditionModel, ICondition } from './Rule';
+import { HttpCode } from '../util/http-code';
 
+// tslint:disable-next-line:no-unused-variable
 let noop = (...arg: any[]) => {
 };
 
@@ -55,7 +57,7 @@ export class ConditionService {
     return this._http.get(this._baseUrl + '/' + childPath, opts).map((res: Response) => {
       return res.json();
     }).catch((err: any, source: Observable<any>) => {
-      if (err && err.status === 404) {
+      if (err && err.status === HttpCode.NOT_FOUND) {
         console.log('Could not retrieve Condition Types: URL not valid.');
       } else if (err) {
         console.log('Could not retrieve Condition Types.', 'response status code: ', err.status, 'error:', err);
@@ -87,7 +89,8 @@ export class ConditionService {
   add(groupId: string, model: ConditionModel): Observable<any> {
     // console.log("api.rule-engine.ConditionService", "add", model)
     if (!model.isValid()) {
-      throw new Error('This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.');
+      throw new Error(`This should be thrown from a checkValid function on the model, 
+                        and should provide the info needed to make the user aware of the fix.`);
     }
     let json = ConditionService.toJson(model);
     json.owningGroup = groupId;
@@ -103,7 +106,8 @@ export class ConditionService {
   save(groupId: string, model: ConditionModel): Observable<ConditionModel> {
     console.log('api.rule-engine.ConditionService', 'save', model);
     if (!model.isValid()) {
-      throw new Error('This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.');
+      throw new Error(`This should be thrown from a checkValid function on the model, 
+                        and should provide the info needed to make the user aware of the fix.`);
     }
     if (!model.isPersisted()) {
       this.add(groupId, model);
@@ -129,7 +133,7 @@ export class ConditionService {
 
   private _catchRequestError(operation): (any) => Observable<any> {
     return (err: any) => {
-      if (err && err.status === 404) {
+      if (err && err.status === HttpCode.NOT_FOUND) {
         console.log('Could not ' + operation + ' Condition: URL not valid.');
       } else if (err) {
         console.log('Could not ' + operation + ' Condition.', 'response status code: ', err.status, 'error:', err);

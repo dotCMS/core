@@ -118,6 +118,7 @@ export class ServersideCondition {
     return input && input.name === 'comparison';
   }
 
+  // tslint:disable-next-line:no-unused-variable
   private static getSelectedOption(input, value): any {
     let opt = null;
     let optAry = input.options.filter((e) => { return e.value === value; } );
@@ -240,6 +241,7 @@ export class ServersideCondition {
   }
 
   private getDateTimeInput(param, paramDef, i18nBaseKey: string): any {
+    // tslint:disable-next-line:no-unused-variable
     let rsrcKey = i18nBaseKey + '.inputs.' + paramDef.key;
     return {
       control: ServerSideFieldModel.createNgControl(this.componentInstance, param.key),
@@ -251,7 +253,7 @@ export class ServersideCondition {
   }
 
   private getRestDropdownInput(param, paramDef, i18nBaseKey: string): any {
-    let inputType: CwRestDropdownInputModel = <CwRestDropdownInputModel>paramDef.inputType;
+    let inputType: CwRestDropdownInputModel = <CwRestDropdownInputModel> paramDef.inputType;
     let rsrcKey = i18nBaseKey + '.inputs.' + paramDef.key;
     let placeholderKey = rsrcKey + '.placeholder';
 
@@ -281,7 +283,7 @@ export class ServersideCondition {
   }
 
   private getDropdownInput(param: ParameterModel, paramDef: ParameterDefinition, i18nBaseKey: string): CwComponent {
-    let inputType: CwDropdownInputModel = <CwDropdownInputModel>paramDef.inputType;
+    let inputType: CwDropdownInputModel = <CwDropdownInputModel> paramDef.inputType;
     let opts = [];
     let options = inputType.options;
     let rsrcKey = i18nBaseKey + '.inputs.' + paramDef.key;
@@ -339,7 +341,7 @@ export class ServersideCondition {
 
   private applyRhsCount(selectedComparison: string): void {
     let comparisonDef = this.componentInstance.getParameterDef('comparison');
-    let comparisonType: CwDropdownInputModel = <CwDropdownInputModel>comparisonDef.inputType;
+    let comparisonType: CwDropdownInputModel = <CwDropdownInputModel> comparisonDef.inputType;
     let selectedComparisonDef = comparisonType.options[selectedComparison];
     this._rhArgCount = ServersideCondition.getRightHandArgCount(selectedComparisonDef);
   }

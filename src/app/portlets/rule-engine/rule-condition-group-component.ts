@@ -39,7 +39,8 @@ import {
                       ></rule-condition>
       <div class="cw-btn-group cw-add-btn">
         <div class="ui basic icon buttons" *ngIf="i === (group?._conditions.length - 1)">
-          <button class="cw-button-add-item ui button" arial-label="Add Condition" (click)="onCreateCondition()" [disabled]="!condition.isPersisted()">
+          <button class="cw-button-add-item ui button" arial-label="Add Condition" 
+            (click)="onCreateCondition()" [disabled]="!condition.isPersisted()">
             <i class="plus icon" aria-hidden="true"></i>
           </button>
         </div>
@@ -99,6 +100,9 @@ export class ConditionGroupComponent {
 
   toggleGroupOperator(): void {
     let value = this.group.operator === 'AND' ? 'OR' : 'AND';
-    this.updateConditionGroupOperator.emit( <ConditionActionEvent> {payload: {conditionGroup: this.group, index: this.groupIndex, type: RULE_CONDITION_GROUP_UPDATE_OPERATOR, value: value}});
+    this.updateConditionGroupOperator.emit( <ConditionActionEvent> {
+        payload: {conditionGroup: this.group, index: this.groupIndex,
+        type: RULE_CONDITION_GROUP_UPDATE_OPERATOR, value: value}
+      });
   }
 }

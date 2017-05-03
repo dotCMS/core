@@ -1,5 +1,6 @@
+// tslint:disable-next-line:max-file-line-count
 import {Injectable} from '@angular/core';
-import {Http, RequestMethod} from '@angular/http';
+import {RequestMethod} from '@angular/http';
 import {Observable, BehaviorSubject} from 'rxjs/Rx';
 
 import {ApiRoot} from '../persistence/ApiRoot';
@@ -8,7 +9,6 @@ import {I18nService} from '../system/locale/I18n';
 import {CoreWebService} from '../services/core-web-service';
 import {SiteService} from '../services/site-service';
 import {Subject} from 'rxjs/Subject';
-import {Site} from '../services/site-service';
 import {CwError} from '../system/http-response-util';
 
 export const RULE_CREATE = 'RULE_CREATE';
@@ -36,6 +36,7 @@ export const RULE_CONDITION_UPDATE_PARAMETER = 'RULE_CONDITION_UPDATE_PARAMETER'
 export const RULE_CONDITION_UPDATE_OPERATOR = 'RULE_CONDITION_UPDATE_OPERATOR';
 
 let idCounter = 1000;
+// tslint:disable-next-line:only-arrow-functions
 export function getNextId(): string {
   return 'tempId' + ++idCounter;
 }
@@ -249,7 +250,9 @@ export class RuleService {
 
   private _rules$: Subject<RuleModel[]> = new Subject();
 
+  // tslint:disable-next-line:no-unused-variable
   private _ruleActions: {[key: string]: ActionModel} = {};
+  // tslint:disable-next-line:no-unused-variable
   private _conditions: {[key: string]: ConditionModel} = {};
 
   private _ruleActionTypesAry: ServerSideTypeModel[] = [];

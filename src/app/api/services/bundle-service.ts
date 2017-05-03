@@ -1,9 +1,8 @@
 import {Injectable} from '@angular/core';
-import {Http, RequestMethod} from '@angular/http';
+import {RequestMethod} from '@angular/http';
 import {Observable, BehaviorSubject} from 'rxjs/Rx';
 
 import {ApiRoot} from '../persistence/ApiRoot';
-import {I18nService} from '../system/locale/I18n';
 import {CoreWebService} from '../services/core-web-service';
 
 export interface IUser {
@@ -32,7 +31,6 @@ export class BundleService {
   private _pushRuleUrl: string;
 
   private bundles$: BehaviorSubject<IBundle[]> = new BehaviorSubject([]);
-  private environments$: BehaviorSubject<IDBEnvironment[]> = new BehaviorSubject([]);
   private _bundlesAry: IBundle[] = [];
   private _environmentsAry: IPublishEnvironment[] = [];
 
@@ -49,9 +47,11 @@ export class BundleService {
   constructor(public _apiRoot: ApiRoot, private coreWebService: CoreWebService) {
     this._bundleStoreUrl = `${this._apiRoot.baseUrl}api/bundle/getunsendbundles/userid`;
     this._loggedUserUrl = `${this._apiRoot.baseUrl}api/v1/users/current/`;
-    this._addToBundleUrl = `${this._apiRoot.baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle`;
+    this._addToBundleUrl =
+      `${this._apiRoot.baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle`;
     this._pushEnvironementsUrl = `${this._apiRoot.baseUrl}api/environment/loadenvironments/roleId`;
-    this._pushRuleUrl = `${this._apiRoot.baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish`;
+    this._pushRuleUrl =
+      `${this._apiRoot.baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish`;
   }
 
   getLoggedUser(): Observable<IUser> {
@@ -105,7 +105,9 @@ export class BundleService {
     });
   }
 
-  addRuleToBundle(ruleId: string, bundle: IBundle): Observable<{errorMessages: string[], total: number, errors: number}> {
+  addRuleToBundle(ruleId: string, bundle: IBundle): Observable<{errorMessages: string[],
+                  total: number, errors: number}> {
+
     return this.coreWebService.request({
       body: `assetIdentifier=${ruleId}&bundleName=${bundle.name}&bundleSelect=${bundle.id}`,
       headers: {
@@ -116,7 +118,9 @@ export class BundleService {
     });
   }
 
-  pushPublishRule(ruleId: string, environmentId: string): Observable<{errorMessages: string[], total: number, bundleId: string, errors: number}> {
+  pushPublishRule(ruleId: string, environmentId: string): Observable<{errorMessages: string[],
+                  total: number, bundleId: string, errors: number}> {
+
     return this.coreWebService.request({
       body: this.getPublishRuleData(ruleId, environmentId),
           headers: {

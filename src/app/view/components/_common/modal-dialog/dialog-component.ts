@@ -1,11 +1,14 @@
-import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from '@angular/core';
+import { Component, ChangeDetectionStrategy, Input, Output, EventEmitter } from '@angular/core';
+import { KeyCode } from '../../../../api/util/key-util';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'cw-modal-dialog',
   template: `
   <div class="ui dimmer modals page transition visible active" *ngIf="!hidden" (click)="onCancel($event)">
-    <div class="ui modal cw-modal-dialog" style="height:{{height}};width:{{width}};max-height:{{maxHeight}};max-width:{{maxWidth}}" (click)="$event.stopPropagation()">
+    <div class="ui modal cw-modal-dialog" 
+      style="height:{{height}};width:{{width}};max-height:{{maxHeight}};max-width:{{maxWidth}}" (click)="$event.stopPropagation()">
+      
       <div class="header">{{headerText}}</div>
       <div flex layout-fill layout="column" class="content">
         <div *ngIf="errorMessage != null" class="ui negative message">{{errorMessage}}</div>
@@ -63,11 +66,11 @@ export class ModalDialogComponent {
   private addEscapeListener(): void {
     if (!this._keyListener) {
       this._keyListener = (e) => {
-        if (e.keyCode === 27) { // escape
+        if (e.keyCode === KeyCode.ESCAPE) {
           e.preventDefault();
           e.stopPropagation();
           this.cancel.emit(false);
-        } else if (e.keyCode === 13) { // enter
+        } else if (e.keyCode === KeyCode.ENTER) {
           e.stopPropagation();
           e.preventDefault();
           this.ok.emit(true);

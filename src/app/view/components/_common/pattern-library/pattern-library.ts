@@ -10,10 +10,14 @@ import {SelectItem, AutoComplete} from 'primeng/primeng';
 })
 
 export class PatternLibrary {
+    // tslint:disable-next-line:no-unused-variable
     private checkBoxValues: string[] = ['val3'];
+    // tslint:disable-next-line:no-unused-variable
     private radioBoxValues: string[] = ['val3'];
+    // tslint:disable-next-line:no-unused-variable
     private radioBoxDisabledValues: string[] = ['val'];
     private cities: SelectItem[];
+    // tslint:disable-next-line:no-unused-variable
     private selectedCity: string;
     private autocompleteResults: Array<string> = [];
     private displayDialog = false;

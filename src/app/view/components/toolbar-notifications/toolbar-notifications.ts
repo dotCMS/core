@@ -14,7 +14,6 @@ import {DropdownComponent} from '../_common/dropdown-component/dropdown-componen
     templateUrl: 'toolbar-notifications.html'
 })
 export class ToolbarNotifications extends BaseComponent {
-    private static readonly MAX_NOTIFICATIONS_TO_SHOW = 25;
 
     @ViewChild(DropdownComponent) dropdown: DropdownComponent;
     private elementRef;
@@ -45,6 +44,7 @@ export class ToolbarNotifications extends BaseComponent {
         this.dropdown.closeIt();
     }
 
+    // tslint:disable-next-line:no-unused-variable
     private dismissAllNotifications(): void {
         let items = this.notifications.map(item => item.id);
         this.notificationService.dismissNotifications({'items': items}).subscribe(res => {
@@ -66,6 +66,7 @@ export class ToolbarNotifications extends BaseComponent {
         });
     }
 
+    // tslint:disable-next-line:no-unused-variable
     private loadMore(): void {
         this.notificationService.getAllNotifications().subscribe(res => {
             this.notificationsUnreadCount = res.entity.count;
@@ -82,6 +83,7 @@ export class ToolbarNotifications extends BaseComponent {
 
     }
 
+    // tslint:disable-next-line:no-unused-variable
     private onDismissNotification($event): void {
         let notificationId = $event.id;
 
@@ -112,6 +114,7 @@ export class ToolbarNotifications extends BaseComponent {
         });
     }
 
+    // tslint:disable-next-line:no-unused-variable
     private toggleNotifications(): void {
         this.showNotifications = !this.showNotifications;
 

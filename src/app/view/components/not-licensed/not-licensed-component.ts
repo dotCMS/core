@@ -1,5 +1,4 @@
-import {Component, EventEmitter, Output, ViewEncapsulation, Input} from '@angular/core';
-import {BaseComponent} from '../_common/_base/base-component';
+import {Component, ViewEncapsulation} from '@angular/core';
 
 @Component({
     encapsulation: ViewEncapsulation.None,

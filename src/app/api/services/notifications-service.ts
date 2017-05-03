@@ -1,7 +1,6 @@
 import {Injectable} from '@angular/core';
 import {CoreWebService} from '../services/core-web-service';
-import {Http, RequestMethod} from '@angular/http';
-import {ApiRoot} from '../persistence/ApiRoot';
+import {RequestMethod} from '@angular/http';
 import {Observable} from 'rxjs/Rx';
 
 export interface INotification {

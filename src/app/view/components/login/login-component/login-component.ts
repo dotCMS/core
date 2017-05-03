@@ -127,7 +127,9 @@ export class LoginComponent {
             let entity = data.entity;
 
             this.loginLabel = dataI18n.Login;
-            this.emailAddressLabel = 'emailAddress' === entity.authorizationType ? this.userIdOrEmailLabel = dataI18n['email-address'] : this.userIdOrEmailLabel = dataI18n['user-id'];
+            this.emailAddressLabel = 'emailAddress' === entity.authorizationType ? this.userIdOrEmailLabel = dataI18n['email-address'] :
+                this.userIdOrEmailLabel = dataI18n['user-id'];
+
             this.passwordLabel = dataI18n.password;
             this.rememberMeLabel = dataI18n['remember-me'];
             this.loginButton = dataI18n['sign-in'].toUpperCase();

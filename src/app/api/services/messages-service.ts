@@ -4,7 +4,7 @@ import {FormatDateService} from './format-date-service';
 import {Injectable} from '@angular/core';
 import {LoginService, User} from './login-service';
 import {Observable} from 'rxjs/Observable';
-import {RequestMethod, Http} from '@angular/http';
+import {RequestMethod} from '@angular/http';
 import {Subject} from 'rxjs/Subject';
 
 @Injectable()
@@ -85,7 +85,7 @@ export class MessageService {
             'relativetime.yy'
         ];
         this.getMessages(relativeDateKeys).subscribe(res => {
-            let relativeDateMessages = _.mapKeys(res, function(value, key: string): string {
+            let relativeDateMessages = _.mapKeys(res, (value, key: string) => {
                 return key.replace('relativetime.', '');
             });
             this.formatDateService.setLang(this.lang.split('_')[0], relativeDateMessages);

@@ -1,5 +1,3 @@
-
-import {Injectable} from '@angular/core';
 import {Protocol, QueryParams, Url} from './protocol';
 import {LoggerService} from '../logger.service';
 import {CoreWebService} from '../core-web-service';

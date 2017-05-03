@@ -1,7 +1,6 @@
 import {Router, ActivatedRoute} from '@angular/router';
 import {Component, ViewEncapsulation} from '@angular/core';
 import {LoginService} from '../../../../api/services/login-service';
-import {ResetPasswordComponent} from './reset-password-component';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -19,7 +18,6 @@ import {ResetPasswordComponent} from './reset-password-component';
 export class ResetPasswordContainer {
 
     private message = '';
-    private login = '';
     private token = '';
 
     private changePasswordSuccessfully: string;
@@ -31,8 +29,6 @@ export class ResetPasswordContainer {
 
         this.loginService.getLoginFormInfo('', ['message.forgot.password.password.updated']).subscribe((data) => {
             let dataI18n = data.i18nMessagesMap;
-            let entity = data.entity;
-
             this.changePasswordSuccessfully = dataI18n['message.forgot.password.password.updated'];
         }, (error) => {
             console.log(error);

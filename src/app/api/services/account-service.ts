@@ -1,6 +1,4 @@
-import {ApiRoot} from '../persistence/ApiRoot';
 import {CoreWebService} from './core-web-service';
-import {Http} from '@angular/http';
 import {Observable} from 'rxjs/Rx';
 import {RequestMethod} from '@angular/http';
 import {ResponseView} from './response-view';

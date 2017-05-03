@@ -1,7 +1,5 @@
 import {BaseComponent} from '../_base/base-component';
-import {CapitalizePipe} from '../../../../api/pipes/capitalize-pipe';
 import {Component, ViewEncapsulation, Input, Output, EventEmitter} from '@angular/core';
-import {CustomTimeComponent} from '../custom-time/custom-time';
 import {INotification} from '../../../../api/services/notifications-service';
 import {MessageService} from '../../../../api/services/messages-service';
 
@@ -32,8 +30,11 @@ export class NotificationsItem extends BaseComponent {
     ngOnInit(): void {
         // TODO: hand more than one action
         let actions = this.data.actions ? this.data.actions[0] : null;
-        this.showLinkAction = actions && actions.actionType === 'LINK' && (actions.text || actions.text !== '') && actions.action && actions.action !== '';
-        this.showTitleLinked = actions && actions.actionType === 'LINK' && (!actions.text || actions.text === '') && actions.action && actions.action !== '';
+        this.showLinkAction = actions && actions.actionType === 'LINK' &&
+            (actions.text || actions.text !== '') && actions.action && actions.action !== '';
+
+        this.showTitleLinked = actions && actions.actionType === 'LINK'
+            && (!actions.text || actions.text === '') && actions.action && actions.action !== '';
     }
 
     getIconName(val: string): string {

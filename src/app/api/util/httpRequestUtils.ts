@@ -33,7 +33,6 @@ export class HttpRequestUtils {
         let results = regex.exec(window.location.href);
 
         if (results && results[2]) {
-
             value = decodeURIComponent(results[2].replace(/\+/g, ' '));
         }
 

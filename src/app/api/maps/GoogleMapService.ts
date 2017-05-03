@@ -9,7 +9,7 @@ export interface GCircle {
 
 window['mapsApi$'] = new BehaviorSubject({ready: false});
 
-window['mapsApiReady'] = function() {
+window['mapsApiReady'] = () => {
   window['mapsApi$'].next({ready: true});
   window['mapsApi$'].complete();
 };

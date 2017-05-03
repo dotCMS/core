@@ -1,5 +1,4 @@
 import {Component, ChangeDetectionStrategy, Input, Output, EventEmitter} from '@angular/core';
-import {PushPublishDialogComponent} from './push-publish-dialog-component';
 import {BehaviorSubject} from 'rxjs/Rx';
 import {BundleService, IPublishEnvironment} from '../../../api/services/bundle-service';
 
