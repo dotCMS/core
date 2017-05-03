@@ -1,26 +1,13 @@
 .ui-autocomplete {
-    background-color: $white;
-    border: $field-normal-border;
-    border-radius: $border-radius;
-
-    &:hover {
-        border: $field-hover-border;
-
-        .fa {
-            color: $brand-primary;
-        }
-    }
-
-    .ui-inputwrapper-focus & {
-        border: $field-active-border;
-    }
-
-    .ui-button.ui-autocomplete-dropdown {
+    .ui-button {
+        @extend #inputtext-normal-border;
+        background: none;
+        border-radius: 0;
         height: $field-height;
 
-        &.ui-state-default {
-            box-shadow: none;
+        &:active, &:focus {
             background: none;
+            @extend #inputtext-active-border;
         }
     }
 
@@ -30,11 +17,14 @@
         &::-ms-clear {
             display: none;
         }
-
-        .ui-corner-all {
-            border-radius: $border-radius;
-        }
     }
+}
+
+.ui-inputwrapper-focus .ui-button,
+.ui-inputwrapper-focus .ui-button:hover,
+.ui-inputwrapper-focus .ui-button:active,
+.ui-inputwrapper-focus .ui-button:focus {
+    @extend #inputtext-active-border;
 }
 
 .ui-autocomplete-panel {

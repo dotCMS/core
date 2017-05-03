@@ -3,7 +3,7 @@ import {AccountService, AccountUser} from '../../../api/services/account-service
 import {Component, EventEmitter, Output, ViewEncapsulation, Input} from '@angular/core';
 import {LoginService, User, Auth} from '../../../api/services/login-service';
 import {MessageService} from '../../../api/services/messages-service';
-import {StringFormat} from '../../../api/util/stringFormat';
+import { StringFormat } from '../../../api/util/stringFormat';
 
 @Component({
     encapsulation: ViewEncapsulation.None,

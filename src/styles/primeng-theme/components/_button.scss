@@ -1,25 +1,26 @@
 @mixin button-state($props) {
     background: map-get($props, background);
-    color:  map-get($props, color);
     border: map-get($props, border);
     box-shadow: map-get($props, shadow);
+    color: map-get($props, color);
 }
 
 .ui-button {
     height: $field-height;
     margin-right: 0;
     outline: none;
+    transition: background-color $field-animation-speed ease-in,
+                box-shadow $field-animation-speed ease-in,
+                color $field-animation-speed ease-in;
 
     @each $button, $states in $buttons-map {
         @if ($button == "basic") {
 
             @each $label, $props in $states {
-                @if ($label == "hover" or $label == "active" or $label == "disabled") {
-                    &:not(.ui-state-disabled):#{$label} {
-                        @include button-state($props)
-                    }
+                @if ($label == "default") {
+                    @include button-state($props)
                 } @else {
-                    &:not(.ui-state-disabled).ui-state-#{$label} {
+                    &:#{$label} {
                         @include button-state($props)
                     }
                 }
@@ -29,12 +30,10 @@
 
             &[#{$button}] {
                 @each $label, $props in $states {
-                    @if ($label == "hover" or $label == "active" or $label == "disabled") {
-                        &:#{$label} {
-                            @include button-state($props)
-                        }
+                    @if ($label == "default") {
+                        @include button-state($props)
                     } @else {
-                        &.ui-state-#{$label} {
+                        &:#{$label} {
                             @include button-state($props)
                         }
                     }

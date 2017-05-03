@@ -117,8 +117,10 @@ export const PIPES = [
 // CUSTOM DIRECTIVES
 import { MessageKeyDirective } from './view/directives/message-keys';
 import { DotRippleEffectDirective } from './view/directives/ripple/ripple-effect';
+import { MaterialDesignTextfield } from './view/directives/md-inputtext/md-inputtext';
 
 export const DIRECTIVES = [
     MessageKeyDirective,
-    DotRippleEffectDirective
+    DotRippleEffectDirective,
+    MaterialDesignTextfield
 ];

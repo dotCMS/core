@@ -89,6 +89,7 @@ module.exports = function (options) {
 
       library: 'ac_[name]',
       libraryTarget: 'var',
+      publicPath: `http://localhost:${PORT}/`
     },
 
     module: {
@@ -125,7 +126,7 @@ module.exports = function (options) {
          */
         {
           test: /\.scss$/,
-          use: ['style-loader', 'css-loader', 'sass-loader'],
+          use: ['style-loader', 'css-loader?sourceMap', 'sass-loader?sourceMap'],
           include: [helpers.root('src', 'styles')]
         },
 

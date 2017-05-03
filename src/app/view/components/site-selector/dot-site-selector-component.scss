@@ -8,7 +8,6 @@
 
   .ui-autocomplete {
     background: none;
-    border: none;
 
     &:hover {
       background-color: rgba($white, 0.1);
@@ -17,9 +16,14 @@
 
   .ui-inputtext {
     background: none;
+    box-shadow: none;
     color: $white;
     font-size: $font-size-large;
     text-overflow: ellipsis;
+  }
+
+  .ui-button, .ui-button:hover, .ui-button:active, .ui-button:focus {
+    box-shadow: none;
   }
   
   .fa {

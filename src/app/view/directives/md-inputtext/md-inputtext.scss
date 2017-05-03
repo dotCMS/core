@@ -1,0 +1,30 @@
+.md-inputtext {
+    display: inline-block;
+    position: relative;
+    padding-top: $basic-padding * 2;
+
+    label {
+        color: $field-placeholder-color;
+        left: 0;
+        pointer-events: none;
+        position: absolute;
+        top: $basic-padding * 3;
+        transition: color $field-animation-speed ease-in,
+                    font-size $field-animation-speed ease-in,
+                    top $field-animation-speed ease-in;
+    }
+    
+    input,
+    textarea {
+        width: 100%;
+
+        &.ui-state-filled,
+        &:focus {
+            & ~ label {
+                top: 0;
+                font-size: $font-size-small;
+                color: $brand-primary;
+            }
+        }
+    }
+}

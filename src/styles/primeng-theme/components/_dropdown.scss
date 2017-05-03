@@ -1,25 +1,24 @@
-/* DropDown */
-
 .ui-dropdown {
 
     &:not(.ui-state-disabled) {
         &:hover,
         &:active {
             @extend #field-hover-state;
+        }
 
+        &:active {
             .fa {
-                color: $field-hover-border-color;
+                color: $brand-primary;
             }
 
             .ui-dropdown-trigger {
-                border-color: $field-hover-border-color;
+                border-color: $brand-primary;
             }
         }
     }
 
     &.ui-state-disabled {
         .ui-dropdown-trigger {
-            border-left: $field-disabled-border;
             color: $field-disabled-textcolor;
         }
 
@@ -38,16 +37,6 @@
 
         .fa {
             margin: 0;
-        }
-
-        &:hover,
-        &:focus {
-            background-color: $white;
-            border-color: $field-hover-border-color;
-
-            .fa {
-                color: $field-hover-border-color;
-            }
         }
     }
 

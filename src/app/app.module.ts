@@ -22,26 +22,28 @@ import { AppState, InternalStateType } from './app.service';
 
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 
-import {InputTextModule} from 'primeng/primeng';
-import {PasswordModule} from 'primeng/primeng';
-import {CheckboxModule} from 'primeng/primeng';
-import {ButtonModule} from 'primeng/primeng';
-import {DropdownModule} from 'primeng/primeng';
 import {AutoCompleteModule} from 'primeng/primeng';
-import {ToolbarModule} from 'primeng/primeng';
+import {ButtonModule} from 'primeng/primeng';
+import {CheckboxModule} from 'primeng/primeng';
 import {DialogModule} from 'primeng/primeng';
+import {DropdownModule} from 'primeng/primeng';
+import {InputTextModule} from 'primeng/primeng';
+import {InputTextareaModule} from 'primeng/primeng';
+import {PasswordModule} from 'primeng/primeng';
 import {RadioButtonModule} from 'primeng/primeng';
+import {ToolbarModule} from 'primeng/primeng';
 
 const NGFACES_MODULES = [
-  InputTextModule,
-  PasswordModule,
-  CheckboxModule,
-  RadioButtonModule,
-  ButtonModule,
-  DropdownModule,
   AutoCompleteModule,
-  ToolbarModule,
-  DialogModule
+  ButtonModule,
+  CheckboxModule,
+  DialogModule,
+  DropdownModule,
+  InputTextModule,
+  InputTextareaModule,
+  PasswordModule,
+  RadioButtonModule,
+  ToolbarModule
 ];
 
 /*
@@ -99,7 +101,7 @@ export class AppModule {
     if (!store || !store.state) {
       return;
     }
-    
+
     console.log('HMR store', JSON.stringify(store, null, 2));
     // set state
     this.appState._state = store.state;

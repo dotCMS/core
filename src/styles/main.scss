@@ -2,7 +2,6 @@
 @import "mixins";
 @import "grids";
 @import "typography";
-@import "material-design";
 
 // FONT AWESOME
 @import "../../node_modules/font-awesome/css/font-awesome.css";
@@ -11,7 +10,9 @@
 @import "../../node_modules/primeng/resources/primeng.css";
 @import "primeng-theme/base";
 
+// DIRECTIVES
 @import '../app/view/directives/ripple/ripple-effects.scss';
+@import '../app/view/directives/md-inputtext/md-inputtext.scss';
 
 *, *:before, *:after {
     box-sizing: border-box;
@@ -68,7 +69,7 @@ $rules-engine-fonts-url: "../app/view/components/rule-engine/styles/fonts" ;
 
 // TODO: we need a file for this classes
 .form-group {
-    margin: $basic-padding 0;
+    margin: $basic-padding * 2 0;
 
     &:last-child {
         margin-bottom: 0;

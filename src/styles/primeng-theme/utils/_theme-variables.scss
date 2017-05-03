@@ -1,37 +1,44 @@
 @import "../../variables";
 
 // Common
-$field-animation-speed: .1s;
-$field-border-color: $gray-lighter;
+$field-animation-speed: 100ms;
+$field-bgcolor: transparent;
+$field-border-color: $gray-light;
 $field-border-radius: $border-radius;
 $field-border-size: 1px;
 $field-padding: $basic-padding;
 $field-placeholder-color: rgba($gray-dark, .4);
 
-$field-normal-bgcolor: $white;
-$field-normal-textcolor: $body-font-color;
-$field-normal-border: solid $field-border-size $gray-light;
-$field-normal-arrow-color: $gray;
 
-$field-hover-border-color: $brand-primary;
-$field-hover-bgcolor: $white;
+// Fields
+$field-normal-bgcolor: $field-bgcolor;
+$field-normal-textcolor: $body-font-color;
+$field-normal-border-size: $field-border-size;
+$field-normal-border-color: $field-border-color;
+$field-normal-arrow-color: $field-border-color;
+
+$field-hover-bgcolor: $field-bgcolor;
 $field-hover-textcolor: $body-font-color;
-$field-hover-border: solid $field-border-size $field-hover-border-color;
+$field-hover-border-size: $field-border-size;
+$field-hover-border-color: $field-border-color;
 $field-hover-arrow-color: $brand-primary;
 
-$field-active-bgcolor: $brand-primary;
+$field-active-bgcolor: $field-bgcolor;
 $field-active-textcolor: $body-font-color;
-$field-active-border: $field-hover-border;
+$field-active-border-size: 2px;
+$field-active-border-color: $brand-primary;
 $field-active-arrow-color: $brand-primary;
 
-$field-disabled-bgcolor: $white;
+$field-disabled-bgcolor: $field-bgcolor;
 $field-disabled-textcolor: $gray-light;
-$field-disabled-border: solid $field-border-size #E3E4E6;
+$field-disabled-border-size: $field-border-size;
+$field-disabled-border-color: $gray-lighter;
 $field-disabled-arrow-color: $gray-light;
 
-$field-focused-bgcolor: $gray-lighter;
-$field-focused-textcolor: $gray-dark;
-$field-focused-border: $field-hover-border;
+$field-focused-bgcolor: $field-bgcolor;
+$field-focused-textcolor: $body-font-color;
+$field-focused-border-color: 2px;
+$field-focused-arrow-color: $brand-primary;
 $field-focused-arrow-color: $brand-primary;
 
 // BUTTONS
