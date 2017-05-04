@@ -2,6 +2,7 @@ package com.dotmarketing.util;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
+import java.io.File;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Date;
@@ -601,7 +602,9 @@ public class VelocityUtil {
 		velocityRootPath = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
 		if (velocityRootPath.startsWith("/WEB-INF")) {
 			Logger.debug(VelocityUtil.class, "Velocity ROOT Path not found, defaulting it to '/WEB-INF/velocity'");
-			velocityRootPath = com.liferay.util.FileUtil.getRealPath(velocityRootPath);
+			String startPath = velocityRootPath.substring(0, 8);
+			String endPath = velocityRootPath.substring(9, velocityRootPath.length());
+			velocityRootPath = com.liferay.util.FileUtil.getRealPath(startPath) + File.separator + endPath;
 		}
 
 		Logger.debug(VelocityUtil.class, String.format("Velocity ROOT path found: %s", velocityRootPath));
