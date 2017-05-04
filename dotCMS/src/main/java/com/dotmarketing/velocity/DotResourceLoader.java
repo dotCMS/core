@@ -98,13 +98,15 @@ public class DotResourceLoader extends ResourceLoader {
 
         String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
         if (velocityRootPath.startsWith("/WEB-INF")) {
-            velocityRootPath = FileUtil.getRealPath(velocityRootPath);
+            String startPath = velocityRootPath.substring(0, 8);
+            String endPath = velocityRootPath.substring(9, velocityRootPath.length());
+            velocityRootPath = FileUtil.getRealPath(startPath) + File.separator + endPath;
         } else {
             // verify folder exists or create it
             verifyOrCreateVelocityRootPath(velocityRootPath);
 
             // verify and move velocity contents
-            verifyAndMoveVelocityContents(velocityRootPath, FileUtil.getRealPath("/WEB-INF/velocity"));
+            verifyAndMoveVelocityContents(velocityRootPath, FileUtil.getRealPath("/WEB-INF") + File.separator + "velocity");
         }
 
         VELOCITY_ROOT = velocityRootPath + File.separator;
