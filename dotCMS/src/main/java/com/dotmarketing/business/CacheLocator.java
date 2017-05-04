@@ -93,11 +93,11 @@ public class CacheLocator extends Locator<CacheIndex>{
 		public Set<String> getGroups () {return dotcache.getGroups();}
 		public void flushAll() { dotcache.flushAll(); }
         public void flushGroup(String group) { dotcache.flushGroup(group); }
-        public void flushAlLocalOnly() { dotcache.flushAlLocalOnly(); }
-        public void flushGroupLocalOnly(String group) { dotcache.flushGroupLocalOnly(group); }
+        public void flushAlLocalOnly(boolean ignoreDistributed) { dotcache.flushAlLocalOnly(ignoreDistributed); }
+        public void flushGroupLocalOnly(String group, boolean ignoreDistributed) { dotcache.flushGroupLocalOnly(group, ignoreDistributed); }
         public Object get(String key, String group) throws DotCacheException { return dotcache.get(key, group); }
         public void remove(String key, String group) { dotcache.remove(key,group); }
-        public void removeLocalOnly(String key, String group) { dotcache.removeLocalOnly(key, group); }
+        public void removeLocalOnly(String key, String group, boolean ignoreDistributed) { dotcache.removeLocalOnly(key, group, ignoreDistributed); }
         public void shutdown() { dotcache.shutdown(); }
         public List<CacheProviderStats> getCacheStatsList() { return dotcache.getCacheStatsList(); }
 		public CacheTransport getTransport () {return dotcache.getTransport();}
