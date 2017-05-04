@@ -10,14 +10,8 @@ import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.monitor.NearCacheStats;
-
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 
 /**
  * Created by jasontesser on 3/14/17.
@@ -27,7 +21,11 @@ public abstract class AbstractHazelcastCacheProvider extends CacheProvider {
 	private static final long serialVersionUID = 1L;
     protected Boolean initialized = false;
 
+
     protected abstract HazelcastInstanceType getHazelcastInstanceType();
+
+    protected abstract CacheStats getStats(String group);
+
 
     protected HazelcastInstance getHazelcastInstance() {
     	return HazelcastUtil.getInstance().getHazel(getHazelcastInstanceType());
@@ -106,27 +104,10 @@ public abstract class AbstractHazelcastCacheProvider extends CacheProvider {
     public CacheProviderStats getStats() {
         CacheStats providerStats = new CacheStats();
         CacheProviderStats ret = new CacheProviderStats(providerStats,getName());
-        Set<String> currentGroups = getGroups();
-        NumberFormat nf = DecimalFormat.getInstance();
-        for (String group : currentGroups) {
-            CacheStats stats = new CacheStats();
 
-            LocalMapStats local = getHazelcastInstance().getMap(group).getLocalMapStats();
-            NearCacheStats near = local.getNearCacheStats();
-            long size = getHazelcastInstance().getMap(group).keySet().size();
-            long mem = local.getOwnedEntryMemoryCost();
-            long perObject = (size==0) ? 0 : mem/size;
-            String x = UtilMethods.prettyMemory(mem);
-            long totalTime = local.getTotalGetLatency();
-            long avgTime = (local.getGetOperationCount() ==0) ? 0  :  local.getTotalGetLatency() / local.getGetOperationCount() ;
-            stats.addStat(CacheStats.REGION, group);
-            stats.addStat(CacheStats.REGION_SIZE, nf.format(size));
-            stats.addStat(CacheStats.REGION_MEM_PER_OBJECT, UtilMethods.prettyByteify(perObject ));
-            stats.addStat(CacheStats.REGION_HITS, local.getHits());
-            stats.addStat(CacheStats.REGION_AVG_LOAD_TIME, nf.format(avgTime/1000000) + " ms"); 
-            stats.addStat(CacheStats.REGION_MEM_TOTAL_PRETTY, x);
+        for (String group : getGroups()) {
 
-            ret.addStatRecord(stats);
+            ret.addStatRecord(getStats(group));
         }
 
         return ret;
