@@ -760,6 +760,11 @@
 		<portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
 	</portlet>
 
+	<portlet>
+		<portlet-name>content-types-angular</portlet-name>
+		<display-name>Content Types Angular</display-name>
+		<portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+	</portlet>
 
 	<custom-window-state>
 		<window-state>exclusive</window-state>
