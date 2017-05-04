@@ -49,6 +49,11 @@ public class GuavaCache extends CacheProvider {
     }
 
     @Override
+    public boolean isDistributed() {
+    	return false;
+    }
+
+    @Override
     public void init () {
 
         availableCaches.add(DEFAULT_CACHE);

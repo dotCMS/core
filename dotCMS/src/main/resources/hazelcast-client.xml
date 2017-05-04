@@ -145,13 +145,7 @@
         <in-memory-format>OBJECT</in-memory-format>
         <local-update-policy>INVALIDATE</local-update-policy>
     </near-cache>
-    
-    <near-cache name="adminconfigpool">
-        <max-size>100</max-size>
-        <eviction-policy>LFU</eviction-policy>
-        <in-memory-format>OBJECT</in-memory-format>
-    </near-cache>
-    
+
     <near-cache name="contentletcache">
         <max-size>5000</max-size>
         <eviction-policy>LFU</eviction-policy>

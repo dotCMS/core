@@ -43,6 +43,10 @@ public class NullTransport implements CacheTransport {
     
   }
 
+  @Override
+  public CacheTransportInfo getInfo(){
+	  return null;
+  }
 
 
 }
