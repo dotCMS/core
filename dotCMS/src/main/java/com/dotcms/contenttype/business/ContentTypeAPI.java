@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.business;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.dotcms.contenttype.model.field.Field;
@@ -254,5 +255,5 @@ public interface ContentTypeAPI {
       throws DotDataException;
 
 
-
+  Map<String, Long> getEntriesByContentTypes() throws DotDataException;
 }
