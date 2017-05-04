@@ -72,17 +72,20 @@ import {ToolbarAddContenletComponent, ToolbarAddContenletBodyComponent} from './
 import {ToolbarNotifications} from './view/components/toolbar-notifications/toolbar-notifications';
 import {ToolbarUserComponent} from './view/components/toolbar-user/toolbar-user';
 import {GravatarComponent} from './view/components/_common/gravatar/gravatar.component';
+import {ContentTypesPortletComponent} from './portlets/content-types/content-types-component';
 
 export const COMPONENTS = [
     ...RULES_ENGINE_COMPONENTS,
     Accordion,
     AccordionGroup,
+    ContentTypesPortletComponent,
     CustomTimeComponent,
     DotLoadingIndicator,
     DropdownComponent,
     ForgotPasswordComponent,
     ForgotPasswordContainer,
     GlobalSearch,
+    GravatarComponent,
     IframeLegacyComponent,
     LogOutContainer,
     LoginAsComponent,
@@ -103,8 +106,7 @@ export const COMPONENTS = [
     ToolbarAddContenletBodyComponent,
     ToolbarAddContenletComponent,
     ToolbarNotifications,
-    ToolbarUserComponent,
-    GravatarComponent
+    ToolbarUserComponent
 ];
 
 // CUSTOM PIPES
