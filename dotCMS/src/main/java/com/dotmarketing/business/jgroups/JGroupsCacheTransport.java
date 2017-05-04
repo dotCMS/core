@@ -9,11 +9,10 @@ import com.dotmarketing.business.*;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.velocity.DotResourceCache;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.struts.MultiMessageResources;
 
 import java.util.Date;
@@ -34,18 +33,16 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
 
         Logger.info(this, "***\t Setting up JChannel");
 
+        setProperties();
+
         try {
             ServerAPI serverAPI = APILocator.getServerAPI();
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
             cacheStatus = new LRUMap(100);
 
-            String cacheProtocol;
-            if ( Config.getBooleanProperty("CLUSTER_AUTOWIRE", true) ) {
-                cacheProtocol = Config.getStringProperty("CACHE_PROTOCOL", "tcp");
-            } else {
-                cacheProtocol = Config.getStringProperty("CACHE_PROTOCOL", "tcp");
-            }
+            String cacheProtocol = Config.getStringProperty("CACHE_PROTOCOL", "tcp");
+
             String cacheFile = "cache-jgroups-" + cacheProtocol + ".xml";
             Logger.info(this, "***\t Going to load JGroups with this Classpath file " + cacheFile);
 
@@ -79,6 +76,38 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
         }
     }
 
+    private void setProperties(){
+        // Bind Address
+        String bindAddressProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_BIND_ADDRESS, null);
+        if (UtilMethods.isSet(bindAddressProperty)) {
+        	System.setProperty("jgroups.bind_addr", bindAddressProperty);
+        }
+
+        // Bind Port
+        String bindPortProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_BIND_PORT, null);
+        if (UtilMethods.isSet(bindPortProperty)) {
+        	System.setProperty("jgroups.bind_port", bindPortProperty);
+        }
+
+        // Initial Hosts
+        String initialHostsProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_TCP_INITIAL_HOSTS, null);
+        if (UtilMethods.isSet(initialHostsProperty)) {
+        	System.setProperty("jgroups.tcpping.initial_hosts",	initialHostsProperty);
+        }
+
+        // Multicast Address
+        String multiCastAddressProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_UDP_MCAST_ADDRESS, null);
+        if (UtilMethods.isSet(multiCastAddressProperty)) {
+        	System.setProperty("jgroups.udp.mcast_addr", multiCastAddressProperty);
+        }
+
+        // Multicast Port
+        String multiCastPortProperty = Config.getStringProperty(WebKeys.DOTCMS_CACHE_TRANSPORT_UDP_MCAST_PORT, null);
+        if (UtilMethods.isSet(multiCastPortProperty)) {
+        	System.setProperty("jgroups.udp.mcast_port", multiCastPortProperty);
+        }
+    }
+    
     @Override
     public void send ( String message ) throws CacheTransportException {
 
@@ -270,4 +299,62 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
         return channel;
     }
 
+    @Override
+    public CacheTransportInfo getInfo() {
+    	View view = getView();
+
+    	return (view == null) ? null : new CacheTransportInfo(){
+    		@Override
+    		public String getClusterName() {
+    			return channel.getClusterName();
+    		}
+
+    		@Override
+        	public String getAddress() {
+    			return channel.getAddressAsString();
+    		}
+
+    		@Override
+    		public int getPort() {
+                Address channelAddress = channel.getAddress();
+                PhysicalAddress physicalAddr = (PhysicalAddress) channel.down(new Event(Event.GET_PHYSICAL_ADDRESS, channelAddress));
+                String[] addrParts = physicalAddr.toString().split(":");
+                String usedPort = addrParts[addrParts.length - 1];
+
+    			return Integer.parseInt(usedPort);
+    		}
+
+
+    		@Override
+    		public boolean isOpen() {
+    			return channel.isOpen();
+    		}
+
+    		@Override
+    		public int getNumberOfNodes() {
+    			return view.getMembers().size();
+        	}
+
+
+    		@Override
+    		public long getReceivedBytes() {
+    			return channel.getReceivedBytes();
+    		}
+
+    		@Override
+    		public long getReceivedMessages() {
+    			return channel.getReceivedMessages();
+    		}
+
+    		@Override
+    		public long getSentBytes() {
+    			return channel.getSentBytes();
+    		}
+
+    		@Override
+    		public long getSentMessages() {
+    			return channel.getSentMessages();
+    		}
+    	};
+    }
 }

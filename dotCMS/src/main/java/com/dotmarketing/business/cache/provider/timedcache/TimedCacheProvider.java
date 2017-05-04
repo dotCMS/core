@@ -56,6 +56,11 @@ public class TimedCacheProvider extends CacheProvider {
 	}
 
 	@Override
+    public boolean isDistributed() {
+    	return false;
+    }
+
+	@Override
 	public void init() {
 		groups.clear();
 		Logger.info(this.getClass(), "===== Initializing [" + getName() + "].");

@@ -83,6 +83,7 @@ import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.snapshots.SnapshotInfo;
 
+import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -517,8 +518,7 @@ public class ESIndexAPI {
         Client client=new ESClient().getClient();
         int nreplicas=Config.getIntProperty("es.index.number_of_replicas",0);
 	
-	if (Config.getBooleanProperty("CLUSTER_AUTOWIRE", true)
-		&& Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS",true)){
+	if (ClusterUtils.isESAutoWireReplicas()){
 		int serverCount;
 
 		try {
@@ -586,8 +586,7 @@ public class ESIndexAPI {
 		Map map = new ObjectMapper().readValue(settings, LinkedHashMap.class);
 		map.put("number_of_shards", shards);
 
-		if (Config.getBooleanProperty("CLUSTER_AUTOWIRE", true)
-			&& Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS",true)){
+		if (ClusterUtils.isESAutoWireReplicas()){
 			int serverCount;
 
 			try {
@@ -704,8 +703,7 @@ public class ESIndexAPI {
 	 */
     public  synchronized void updateReplicas (String indexName, int replicas) throws DotDataException {
 
-    	if ( Config.getBooleanProperty("CLUSTER_AUTOWIRE", true) &&
-				Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS", true)){
+    	if (ClusterUtils.isESAutoWireReplicas()){
     		AdminLogger.log(this.getClass(),"updateReplicas", "Error on updateReplica. Replicas are configured to be handled by dotCMS.");
     		throw new DotDataException("Error on updateReplica. Replicas are configured to be handled by dotCMS.");
     	}
