@@ -116,9 +116,13 @@ public class NotificationResource {
             // Let's mark the new notifications as read: todo: should it work in that way?
             //notificationAPI.markNotificationsAsRead(user.getUserId());
 
+            Long notificationsCount = allUsers ?
+                    this.notificationAPI.getNotificationsCount() :
+                    this.notificationAPI.getNotificationsCount(user.getUserId());
+
             // Let's get the total count
-            final Long total = allUsers ?
-                    this.notificationAPI.getNotificationsCount():
+            final Long totalUnreadNotifications = allUsers ?
+                    this.notificationAPI.getNotificationsCount() :
                     this.notificationAPI.getNewNotificationsCount(user.getUserId());
 
             final List<Notification> notifications = allUsers ?
@@ -139,8 +143,9 @@ public class NotificationResource {
                 });
             }
 
-            return Response.ok(new ResponseEntityView(map("count", total, "notifications", notificationsResult)))
-                    .header("Content-Range", "items " + offset + "-" + limit + "/" + total)
+            return Response.ok(new ResponseEntityView(map("totalUnreadNotifications", totalUnreadNotifications,
+                    "notifications", notificationsResult, "total", notificationsCount)))
+                    .header("Content-Range", "items " + offset + "-" + limit + "/" + totalUnreadNotifications)
                     .build(); // 200
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 
