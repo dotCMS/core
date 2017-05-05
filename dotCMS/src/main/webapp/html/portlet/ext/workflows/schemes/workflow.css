@@ -75,12 +75,6 @@ ol.wfStepsList li:first-child{border-top:1px dashed #ccc;}
 .wfWhoCanUseDiv{
 	padding:10px;	
 }
-#actionletsTbl{
-	width:80%;
-	margin:auto;
-	margin-bottom:20px;
-	margin-top:20px;
-}
 
 .saveButtonHide{
 	//visibility:hidden;	
