@@ -8,17 +8,14 @@ import java.util.Map;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
-import com.dotcms.contenttype.transform.JsonHelper;
 import com.dotcms.contenttype.transform.JsonTransformer;
-import com.dotcms.contenttype.transform.SerialWrapper;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotcms.repackage.org.apache.commons.collections.map.HashedMap;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
 public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
@@ -39,8 +36,7 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
       JSONObject jo = new JSONObject(json);
       if (jo.has("fields")) {
         l = fromJsonArray(jo.getJSONArray("fields"));
-      }
-      else{
+      } else {
         l.add(fromJsonStr(json));
       }
     } catch (Exception e) {
@@ -74,14 +70,12 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
     List<Field> fields = new ArrayList<>();
     for (int i = 0; i < jarr.length(); i++) {
       JSONObject jo = jarr.getJSONObject(i);
-
       jo.remove("acceptedDataTypes");
       Field f = fromJsonStr(jo.toString());
       if (jo.has("fieldVariables")) {
         String varStr = jo.getJSONArray("fieldVariables").toString();
         List<FieldVariable> vars = mapper.readValue(varStr,
             mapper.getTypeFactory().constructCollectionType(List.class, ImmutableFieldVariable.class));
-
         f.constructFieldVariables(vars);
       }
       fields.add(f);
@@ -114,21 +108,7 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
 
   @Override
   public JSONObject jsonObject() {
-    try {
-      JSONObject jo = new JSONObject(mapper.writeValueAsString(from()));
-      jo.remove("acceptedDataTypes");
-      //jo.remove("iDate");
-      jo.remove("dbColumn");
-      
-      
-      return jo;
-      
-      
-      
-      
-    } catch (JSONException | JsonProcessingException e) {
-      throw new DotStateException(e);
-    }
+    return new JSONObject(mapObject());
   }
 
   @Override
@@ -142,28 +122,32 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
   }
 
   public List<Map<String, Object>> mapList() {
-	  List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
-	  for (Field field : asList()) {
-		  list.add(new JsonFieldTransformer(field).mapObject());
-	  }
-	  return list;
+    List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+    for (Field field : asList()) {
+      list.add(new JsonFieldTransformer(field).mapObject());
+    }
+    return list;
   }
 
   public Map<String, Object> mapObject() {
-	  try {
-		  Map<String, Object> map = mapper.readValue(
-			mapper.writeValueAsString(from()),
-			new TypeReference<Map<String, String>>(){}
-		  );
-
-		  map.remove("acceptedDataTypes");
-		  map.remove("iDate");
-		  map.remove("dbColumn");
-
-		  return map;
-      } catch (IOException e) {
-        throw new DotStateException(e);
+    try {
+      Field f = from();
+      Map<String, Object> field = mapper.convertValue(f, HashedMap.class);
+      List<Map<String, Object>> vars = new ArrayList<>();
+      for (FieldVariable fieldVar : f.fieldVariables()) {
+        Map<String, Object> var = mapper.convertValue(fieldVar, HashedMap.class);
+        var.remove("clazz");
+        var.remove("userId");
+        vars.add(var);
       }
+      field.put("fieldVariables", vars);
+      field.remove("acceptedDataTypes");
+      field.remove("dbColumn");
+
+      return field;
+    } catch (Exception e) {
+      throw new DotStateException(e);
+    }
   }
 }
 
