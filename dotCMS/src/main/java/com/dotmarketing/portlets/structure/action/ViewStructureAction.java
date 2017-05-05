@@ -1,10 +1,12 @@
 package com.dotmarketing.portlets.structure.action;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
@@ -35,13 +37,13 @@ import com.liferay.portal.model.User;
  */
 public class ViewStructureAction extends DotPortletAction {
 
-	private StructureAPI structureAPI = APILocator.getStructureAPI();
+	private StructureAPI structureAPI;
 
 	/**
 	 * Default class constructor for Struts.
 	 */
 	public ViewStructureAction() {
-
+        this(APILocator.getStructureAPI());
 	}
 
 	/**
@@ -52,7 +54,7 @@ public class ViewStructureAction extends DotPortletAction {
 	 */
 	@VisibleForTesting
 	public ViewStructureAction(StructureAPI structureAPI) {
-		this.structureAPI = structureAPI;
+        this.structureAPI = structureAPI;
 	}
 	
 	/**
@@ -199,6 +201,11 @@ public class ViewStructureAction extends DotPortletAction {
 
             req.setAttribute(countWebKey, new Integer(count));
             req.setAttribute(viewWebKey, contentTypes);
+
+            Map<String, Long> entriesByContentTypes = APILocator.getContentTypeAPI(user, true).getEntriesByContentTypes();
+            req.setAttribute(com.dotmarketing.util.WebKeys.Structure.ENTRIES_NUMBER, entriesByContentTypes);
+
+
             if (UtilMethods.isSet(req.getParameter("direction"))) {
                 if ("asc".equals(req.getParameter("direction"))) {
                     req.setAttribute("direction", "desc");

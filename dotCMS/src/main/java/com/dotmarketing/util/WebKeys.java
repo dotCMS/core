@@ -597,6 +597,7 @@ public final class WebKeys {
     	public static final String STRUCTURE_ENTITY = "structure_entity";
     	public static final String STRUCTURE_TYPE = "Structure Type";
     	public static final String STRUCTURE_EDIT_TYPE = "structure_edit_type";
+        public static final String  ENTRIES_NUMBER = "entries_number";
     }
 
     public static class Relationship

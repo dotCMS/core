@@ -18,6 +18,7 @@
     java.util.Map params = new java.util.HashMap();
     String referer = com.dotmarketing.util.PortletURLUtil.getActionURL( request, WindowState.MAXIMIZED.toString(), params );
     List structures = (List) request.getAttribute( com.dotmarketing.util.WebKeys.Structure.STRUCTURES );
+	Map<String, Long> entriesNumber = (Map<String, Long>) request.getAttribute( com.dotmarketing.util.WebKeys.Structure.ENTRIES_NUMBER );
 
 	int pageNumber = 1;
 	if (request.getParameter("pageNumber") != null) {
@@ -366,11 +367,12 @@ var deleteLabel = "";
 			if (structures.size() > 0) {
 			for (int i = 0; i < structures.size(); i++) {
 				Structure structure = (Structure) structures.get(i);
-	
-	
-	
-	
-				%>
+				String key = structure.getVelocityVarName().toLowerCase();
+				Long contentTypeEntriesNumber = entriesNumber.get(key) == null ? 0l :
+						entriesNumber.get(key);
+
+
+			%>
 	
 				<tr id="tr<%=structure.getInode()%>" class="alternate_1" onclick="editStructure('<%=structure.getInode()%>');">
 					<td>
@@ -396,7 +398,7 @@ var deleteLabel = "";
 						<a href="<portlet:renderURL>
 						<portlet:param name='struts_action' value='/ext/contentlet/view_contentlets' />
 						<portlet:param name='structure_id' value='<%=structure.getInode()%>' /></portlet:renderURL>">
-						<%= LanguageUtil.get(pageContext, "view") %></a>
+						<%= LanguageUtil.get(pageContext, "view") + " (" + contentTypeEntriesNumber + ")"%></a>
 					</td>
 					<td align="center">
 						<a href="<portlet:renderURL>
