@@ -43,6 +43,11 @@ public class RedisProvider extends CacheProvider {
     }
 
     @Override
+    public boolean isDistributed() {
+    	return true;
+    }
+
+    @Override
     public void init () {
 
         Logger.info(this.getClass(), "*** Initializing [" + getName() + "].");

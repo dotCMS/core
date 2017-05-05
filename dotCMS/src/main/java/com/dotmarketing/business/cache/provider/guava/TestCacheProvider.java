@@ -29,6 +29,11 @@ public class TestCacheProvider extends CacheProvider {
     }
 
     @Override
+    public boolean isDistributed() {
+    	return false;
+    }
+
+    @Override
     public void init () {
         isInitialized = true;
         Logger.info(this.getClass(), "===== Initializing [" + getName() + "].");

@@ -39,16 +39,8 @@
             <ports>0</ports>
         </outbound-ports>
         <join>
-            <multicast enabled="true">
-                <multicast-group>224.2.2.3</multicast-group>
-                <multicast-port>54327</multicast-port>
-            </multicast>
-            <tcp-ip enabled="false">
-                <interface>127.0.0.1</interface>
-                <member-list>
-                    <member>127.0.0.1</member>
-                </member-list>
-            </tcp-ip>
+            <multicast enabled="false" />
+            <tcp-ip enabled="false" />
             <aws enabled="false">
                 <access-key>my-access-key</access-key>
                 <secret-key>my-secret-key</secret-key>
@@ -93,6 +85,12 @@
         <!--Queue capacity. 0 means Integer.MAX_VALUE.-->
         <queue-capacity>0</queue-capacity>
     </executor-service>
+
+    <topic name="dotCMSClusterCacheInvalidation">
+        <global-ordering-enabled>false</global-ordering-enabled>
+        <statistics-enabled>false</statistics-enabled>
+    </topic>
+
     <queue name="default">
         <!--
             Maximum size of the queue. When a JVM's local queue size reaches the maximum,
@@ -193,12 +191,6 @@
         -->
         <cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>
 
-    </map>
-	   
-    <map name="adminconfigpool">
-        <in-memory-format>OBJECT</in-memory-format>
-        <max-size>271</max-size>
-        <eviction-policy>LFU</eviction-policy>
     </map>
     
     <map name="contentletcache">

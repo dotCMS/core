@@ -44,6 +44,11 @@ public class CaffineCache extends CacheProvider {
     }
 
     @Override
+    public boolean isDistributed() {
+    	return false;
+    }
+
+    @Override
     public void init() {
         HashSet<String> _availableCaches = new HashSet<>();
         _availableCaches.add(DEFAULT_CACHE);

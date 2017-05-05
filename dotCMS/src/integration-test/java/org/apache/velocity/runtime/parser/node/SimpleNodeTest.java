@@ -24,7 +24,7 @@ public class SimpleNodeTest {
 
     @Test
     public void serializeTest() throws Exception {
-        CacheLocator.getCacheAdministrator().flushAlLocalOnly();
+        CacheLocator.getCacheAdministrator().flushAlLocalOnly(true);
         
         VelocityEngine engine=VelocityUtil.getEngine();
         
