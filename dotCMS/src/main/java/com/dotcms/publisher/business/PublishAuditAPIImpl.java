@@ -13,19 +13,34 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Logger;
 
-
+/**
+ * Implementation class for the {@link PublishAuditAPI}.
+ * 
+ * @author Alberto
+ * @version N/A
+ * @since Oct 18, 2012
+ *
+ */
 public class PublishAuditAPIImpl extends PublishAuditAPI {
 	
 	private static PublishAuditAPIImpl instance= null;
 	private PublishAuditStatusMapper mapper = null;
-	
+
+	/**
+	 * Returns a singleton instance of the {@link PublishAuditAPI}.
+	 * 
+	 * @return A unique instance of {@link PublishAuditAPI}.
+	 */
 	public static PublishAuditAPIImpl getInstance() {
-		if(instance==null)
+		if (instance == null) {
 			instance = new PublishAuditAPIImpl();
-		
+		}
 		return instance;
 	}
-	
+
+	/**
+	 * Protected class constructor.
+	 */
 	protected PublishAuditAPIImpl(){
 		// Exists only to defeat instantiation.
 		mapper = new PublishAuditStatusMapper();
@@ -41,7 +56,6 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	private final String MANDATORY_PLACE_HOLDER = "?,?,?,?,?" ;
 
 	private final String INSERTSQL="insert into publishing_queue_audit("+MANDATORY_FIELDS+") values("+MANDATORY_PLACE_HOLDER+")";
-	
 	
 	@Override
 	public void insertPublishAuditStatus(PublishAuditStatus pa)
@@ -99,11 +113,11 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
             }
             dc.addParam(newStatus.getCode());
 			
-			if(history != null)
+			if(history != null) {
 				dc.addParam(history.getSerialized());
-			else
+			} else {
 				dc.addParam("");
-
+			}
             if ( updateDates ) {
                 dc.addParam( new Date() );
                 dc.addParam( new Date() );
@@ -177,11 +191,12 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			dc.addParam(bundleId);
 			
 			List<Map<String, Object>> res = dc.loadObjectResults();
-			if(res.size() > 1)
+			if(res.size() > 1) {
 				throw new DotPublisherException("Found duplicate bundle status");
-			else {
-				if(!res.isEmpty())
+			} else {
+				if(!res.isEmpty()) {
 					return mapper.mapObject(res.get(0));
+				}
 				return null;
 			}
 		}catch(Exception e){
@@ -195,7 +210,8 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	private final String SELECTSQLALL=
 			"SELECT * "+
 			"FROM publishing_queue_audit order by status_updated desc";
-	
+
+	@Override
 	public List<PublishAuditStatus> getAllPublishAuditStatus() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
@@ -209,7 +225,8 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			DbConnectionFactory.closeConnection();
 		}
 	}
-	
+
+	@Override
 	public List<PublishAuditStatus> getAllPublishAuditStatus(Integer limit, Integer offset) throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
@@ -225,12 +242,12 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		}
 	}
 	
-	
 	private final String SELECTSQLMAXDATE=
 			"select max(c.create_date) as max_date "+
 			"from publishing_queue_audit c " +
 			"where c.status != ? ";
-	
+
+	@Override
 	public Date getLastPublishAuditStatusDate() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
@@ -240,8 +257,9 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			
 			List<Map<String, Object>> res = dc.loadObjectResults();
 			
-			if(!res.isEmpty())
+			if(!res.isEmpty()) {
 				return (Date) res.get(0).get("max_date");
+			}
 			return null;
 			
 		}catch(Exception e){
@@ -253,7 +271,8 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	private final String SELECTSQLALLCOUNT=
 			"SELECT count(*) as count "+
 			"FROM publishing_queue_audit ";
-	
+
+	@Override
 	public Integer countAllPublishAuditStatus() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
@@ -268,18 +287,19 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	private final String SELECTSQLPENDING=
 			"SELECT * "+
 			"FROM publishing_queue_audit " +
-			"WHERE status = ? or status = ? or status = ? or status = ? or status = ?";
-	
+			"WHERE status = ? or status = ? or status = ? or status = ? or status = ? or status = ?";
+
+	@Override
 	public List<PublishAuditStatus> getPendingPublishAuditStatus() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
 			dc.setSQL(SELECTSQLPENDING);
-			
 			dc.addParam(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
 			dc.addParam(PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS.getCode());
 			dc.addParam(PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS.getCode());
 			dc.addParam(PublishAuditStatus.Status.RECEIVED_BUNDLE.getCode());
 			dc.addParam(PublishAuditStatus.Status.PUBLISHING_BUNDLE.getCode());
+			dc.addParam(PublishAuditStatus.Status.WAITING_FOR_PUBLISHING.getCode());
 			return mapper.mapRows(dc.loadObjectResults());
 		}catch(Exception e){
 			Logger.debug(PublisherUtil.class,e.getMessage(),e);
@@ -287,10 +307,12 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		}
 	}
 
+	@Override
     public PublishAuditStatus updateAuditTable ( String endpointId, String groupId, String bundleFolder ) throws DotPublisherException {
         return updateAuditTable( endpointId, groupId, bundleFolder, false );
     }
 
+	@Override
     public PublishAuditStatus updateAuditTable ( String endpointId, String groupId, String bundleFolder, Boolean updateDates ) throws DotPublisherException {
 
 		//Status
@@ -316,4 +338,5 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		
 		return status;
 	}
+
 }
