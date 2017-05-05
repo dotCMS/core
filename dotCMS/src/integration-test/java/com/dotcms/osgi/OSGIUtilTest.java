@@ -5,12 +5,12 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.OSGIUtil;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.mockito.Mockito;
 
 import java.io.File;
 
@@ -24,11 +24,25 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class OSGIUtilTest {
 
+    private static String FELIX_BASE_DIR;
+    private static final String FELIX_BASE_DIR_KEY = "felix.base.dir";
+
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
+
+        FELIX_BASE_DIR = Config.getStringProperty(FELIX_BASE_DIR_KEY, Config.CONTEXT.getRealPath("/WEB-INF") + File.separator + "felix");
+
         // Initialize OSGI
         initializeOSGIFramework();
+    }
+
+    @AfterClass
+    public static void restartOSGIAfterFinishing() {
+        Config.setProperty(FELIX_BASE_DIR_KEY, FELIX_BASE_DIR);
+
+        // Restores original state of the OSGi framework
+        restartOSGi();
     }
 
     /**
@@ -36,8 +50,6 @@ public class OSGIUtilTest {
      */
     private static void initializeOSGIFramework() {
         try {
-            Mockito.when(Config.CONTEXT.getRealPath("/WEB-INF/felix"))
-                .thenReturn(Config.getStringProperty("context.path.felix", "/WEB-INF/felix"));
             ServletContextEvent context = new ServletContextEvent(Config.CONTEXT);
             OSGIUtil.getInstance().initializeFramework(context);
         } catch (Exception ex) {
@@ -48,7 +60,7 @@ public class OSGIUtilTest {
     /**
      * Restart the OSGI Framework
      */
-    private void restartOSGI() {
+    private static void restartOSGi() {
         //First we need to stop the framework
         OSGIUtil.getInstance().stopFramework();
 
@@ -83,19 +95,21 @@ public class OSGIUtilTest {
      */
     @Test
     public void test03CustomFelixDeployPath() throws Exception {
-        String felixPath = Config.getStringProperty("context.path.felix", "/WEB-INF/felix");
-        felixPath = felixPath.replace("/WEB-INF/felix", "/WEB-INF/customfelix");
-        Config.setProperty("felix.felix.base.dir", felixPath);
+        String contextFelixPath = Config.getStringProperty("context.path.felix", "/WEB-INF/felix");
+        String customFelixPath = contextFelixPath.replace("/WEB-INF/felix", "/WEB-INF/customfelix");
+        Config.setProperty(FELIX_BASE_DIR_KEY, customFelixPath);
 
-        restartOSGI();
+        restartOSGi();
 
         String deployFelixPath = OSGIUtil.getInstance().getFelixDeployPath();
 
         Assert.assertNotNull(deployFelixPath);
-        assertThat("Path ends with /WEB-INF/customfelix/load",
-            deployFelixPath.endsWith("/WEB-INF/customfelix/load"));
+        assertThat("Path ends with /WEB-INF/customfelix/load", deployFelixPath.endsWith("/WEB-INF/customfelix/load"));
 
         removeFolder(deployFelixPath);
+        removeFolder(customFelixPath);
+
+        Config.setProperty(FELIX_BASE_DIR_KEY, FELIX_BASE_DIR);
     }
 
     /**
@@ -103,19 +117,21 @@ public class OSGIUtilTest {
      */
     @Test
     public void test04CustomFelixUndeployPath() throws Exception {
-        String felixPath = Config.getStringProperty("context.path.felix", "/WEB-INF/felix");
-        felixPath = felixPath.replace("/WEB-INF/felix", "/WEB-INF/customfelix");
-        Config.setProperty("felix.felix.base.dir", felixPath);
+        String contextFelixPath = Config.getStringProperty("context.path.felix", "/WEB-INF/felix");
+        String customFelixPath = contextFelixPath.replace("/WEB-INF/felix", "/WEB-INF/customfelix");
+        Config.setProperty(FELIX_BASE_DIR_KEY, customFelixPath);
 
-        restartOSGI();
+        restartOSGi();
 
         String undeployFelixPath = OSGIUtil.getInstance().getFelixUndeployPath();
 
         Assert.assertNotNull(undeployFelixPath);
-        assertThat("Path ends with /WEB-INF/customfelix/undeployed",
-            undeployFelixPath.endsWith("/WEB-INF/customfelix/undeployed"));
+        assertThat("Path ends with /WEB-INF/customfelix/undeployed", undeployFelixPath.endsWith("/WEB-INF/customfelix/undeployed"));
 
-        removeFolder(felixPath);
+        removeFolder(undeployFelixPath);
+        removeFolder(customFelixPath);
+
+        Config.setProperty(FELIX_BASE_DIR_KEY, FELIX_BASE_DIR);
     }
 
     /**

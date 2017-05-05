@@ -1,10 +1,6 @@
 package com.dotcms.contenttype.business;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import org.elasticsearch.action.search.SearchResponse;
 
@@ -413,7 +409,37 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
   }
 
+  public Map<String, Long> getEntriesByContentTypes() throws DotDataException {
+    String query = "{" +
+              "  \"aggs\" : {" +
+              "    \"entries\" : {" +
+              "       \"terms\" : { \"field\" : \"contenttype\" }" +
+              "     }" +
+              "   }," +
+              "   size:0" +
+            "}";
 
+    try {
+      SearchResponse raw = APILocator.getEsSearchAPI().esSearchRaw(query.toLowerCase(), false, user, false);
+
+      JSONObject jo = new JSONObject(raw.toString()).getJSONObject("aggregations").getJSONObject("entries");
+      JSONArray ja = jo.getJSONArray("buckets");
+
+      Map<String, Long> result = new HashMap<>();
+
+      for (int i = 0; i < ja.size(); i++) {
+        JSONObject jsonObject = ja.getJSONObject(i);
+        String contentTypeName = jsonObject.getString("key");
+        long count = jsonObject.getLong("doc_count");
+
+        result.put(contentTypeName, count);
+      }
+
+      return result;
+    } catch (Exception e) {
+      throw new DotStateException(e);
+    }
+  }
 
   @Override
   public List<ContentType> search(String condition, String orderBy, int limit, int offset) throws DotDataException {

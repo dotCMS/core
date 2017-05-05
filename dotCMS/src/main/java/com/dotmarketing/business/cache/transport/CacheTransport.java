@@ -45,4 +45,22 @@ public interface CacheTransport {
      */
     void shutdown () throws CacheTransportException;
 
+    /**
+     * Returns stats about the cache transport
+     */
+    CacheTransportInfo getInfo();
+
+    public interface CacheTransportInfo {
+    	String getClusterName();
+    	String getAddress();
+    	int getPort();
+
+    	boolean isOpen();
+    	int getNumberOfNodes();
+
+    	long getReceivedBytes();
+    	long getReceivedMessages();
+    	long getSentBytes();
+    	long getSentMessages();
+    }
 }

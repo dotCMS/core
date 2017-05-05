@@ -9,7 +9,6 @@ import com.dotcms.repackage.org.apache.commons.lang.SystemUtils;
 import org.apache.lucene.search.BooleanQuery;
 
 import com.dotcms.util.GeoIp2CityDbUtil;
-import com.dotcms.workflow.EscalationThread;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -48,10 +47,8 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
 import java.net.*;
 import java.net.URLEncoder;
-import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
@@ -77,10 +74,8 @@ public class InitServlet extends HttpServlet {
         Logger.info(this, "dotCMS shutting down Elastic Search");
     	new ESClient().shutDownNode();
         Logger.info(this, "dotCMS shutting down Hazelcast");
-    	new HazelcastUtil().shutdown();
+        HazelcastUtil.getInstance().shutdown();
         Logger.info(this, "dotCMS shutting down");
-
-
     }
 
     public static Date startupDate;
@@ -197,7 +192,7 @@ public class InitServlet extends HttpServlet {
         if(Config.getBooleanProperty("CACHE_DISK_SHOULD_DELETE_NAVTOOL", false)){
             // deletes all menues that have been generated
             RefreshMenus.deleteMenus();
-        	CacheLocator.getCacheAdministrator().flushGroupLocalOnly("navCache");
+        	CacheLocator.getCacheAdministrator().flushGroupLocalOnly("navCache", false);
         }
 
 

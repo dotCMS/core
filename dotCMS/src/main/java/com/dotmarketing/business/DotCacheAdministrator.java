@@ -45,14 +45,16 @@ public interface DotCacheAdministrator  {
 	
 	/**
 	 * Flushes all cache on the local server only
+	 * Depending on value for ignoreDistributed flag, it won't flush the groups when distributed
 	 */
-	void flushAlLocalOnly ();
+	void flushAlLocalOnly (boolean ignoreDistributed);
 	
 	/**
 	 * Flushes all items that belong to the specified group on the local server only
+	 * Depending on value for ignoreDistributed flag, it won't flush the group when distributed
 	 * @param group
 	 */
-	void flushGroupLocalOnly ( String group );
+	void flushGroupLocalOnly ( String group, boolean ignoreDistributed );
 	
 	/**
 	 * Get an object from the cache
@@ -76,13 +78,14 @@ public interface DotCacheAdministrator  {
 	 * @param key
 	 */
 	void remove ( String key, String group );
-	
+
 	/**
-	 * Remove an object from the cache on the local server only
+	 * Remove an object from the cache on the local server only.
+	 * Depending on value for ignoreDistributed flag, it won't remove the object when distributed
 	 * @param key
 	 */
-	void removeLocalOnly ( String key, String group );
-	
+	void removeLocalOnly ( String key, String group, boolean ignoreDistributed );
+
 	/**
 	 * Should be called on shutdown of the dotcms
 	 */

@@ -95,6 +95,11 @@ public class H22Cache extends CacheProvider {
 		return "H22Cache";
 	}
 
+    @Override
+    public boolean isDistributed() {
+    	return false;
+    }
+
 	@Override
 	public void init() throws Exception {
 

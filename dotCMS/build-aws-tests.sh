@@ -51,7 +51,8 @@ sed -i "s,{password},$DB_PASSWORD,g" dotserver/tomcat/webapps/ROOT/META-INF/cont
 sed -i "s,{valquery},$DB_VALIDATION_QUERY,g" dotserver/tomcat/webapps/ROOT/META-INF/context.xml
 
 sed -i "s,dotCMSContentIndex,$ESCLUSTER,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotcms-config-cluster.properties
-sed -i "s,CLUSTER_AUTOWIRE=true,CLUSTER_AUTOWIRE=false,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotcms-config-cluster.properties
+sed -i "s,AUTOWIRE_CLUSTER_TRANSPORT=true,AUTOWIRE_CLUSTER_TRANSPORT=false,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotcms-config-cluster.properties
+sed -i "s,AUTOWIRE_CLUSTER_ES=true,AUTOWIRE_CLUSTER_ES=false,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotcms-config-cluster.properties
 
 sed -i "s,PUBLISHER_QUEUE_MAX_TRIES=3,PUBLISHER_QUEUE_MAX_TRIES=1,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotmarketing-config.properties
 
@@ -66,7 +67,10 @@ sed -i "s,^es.path.work *=.*$,es.path.work=$PWD/dotserver/tomcat/webapps/ROOT/do
 sed -i "s,^es.path.repo *=.*$,es.path.repo=$PWD/dotserver/tomcat/webapps/ROOT/dotsecure/esdata/essnapshot/snaphosts,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
 sed -i "s,^es.path.logs *=.*$,es.path.logs=$PWD/dotserver/tomcat/webapps/ROOT/dotsecure/logs,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
 echo "
-CLUSTER_AUTOWIRE=false
+AUTOWIRE_CLUSTER_TRANSPORT=false
+" >> core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
+echo "
+AUTOWIRE_CLUSTER_ES=false
 " >> core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
 
 sed -i "s,^ASSET_REAL_PATH *=.*$,ASSET_REAL_PATH=$PWD/dotserver/tomcat/webapps/ROOT/assets,g" core/dotCMS/src/integration-test/resources/it-dotmarketing-config.properties

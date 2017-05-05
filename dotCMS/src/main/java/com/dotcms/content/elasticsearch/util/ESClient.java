@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ServerAPI;
@@ -143,11 +144,11 @@ public class ESClient {
 
     /**
      * Returns the settings of the replicas configuration for the indices client, this configuration depends on the
-     * <strong>CLUSTER_AUTOWIRE</strong> and <strong>AUTOWIRE_MANAGE_ES_REPLICAS</strong> properties.
+     * <strong>AUTOWIRE_CLUSTER_ES</strong> and <strong>AUTOWIRE_MANAGE_ES_REPLICAS</strong> properties.
      * <br>
      * <br>
      *
-     * If <strong>CLUSTER_AUTOWIRE == true and AUTOWIRE_MANAGE_ES_REPLICAS == true</strong> the number of replicas will
+     * If <strong>AUTOWIRE_CLUSTER_ES == true and AUTOWIRE_MANAGE_ES_REPLICAS == true</strong> the number of replicas will
      * be handled by the AUTOWIRE.
      *
      * @return The replicas settings
@@ -157,8 +158,7 @@ public class ESClient {
 
 		Optional<UpdateSettingsRequest> updateSettingsRequest = Optional.empty();
 
-        if (Config.getBooleanProperty("CLUSTER_AUTOWIRE", true)
-            && Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS",true)){
+        if (ClusterUtils.isESAutoWireReplicas()){
             int serverCount;
 
             try {
@@ -219,7 +219,7 @@ public class ESClient {
 	    ServerAPI serverAPI = APILocator.getServerAPI();
 	    Server currentServer=null;
 
-        if(Config.getBooleanProperty("CLUSTER_AUTOWIRE",true)) {
+        if(ClusterUtils.isESAutoWire()) {
 
 			String serverId = ConfigUtils.getServerId();
 			//This line is added because when someone add a license the node is already up and working and reset the existing port
