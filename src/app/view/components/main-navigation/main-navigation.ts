@@ -29,7 +29,8 @@ export class MainNavigation {
         routingService.currentPortlet$.subscribe(id => {
             this.open = !this.open;
             this.menuItemIdActive = id;
-            this.menuActiveTabName = this.getMenuSelected(id).tabName;
+            let menuSelected = this.getMenuSelected(id);
+            this.menuActiveTabName = menuSelected ? menuSelected.tabName : null;
         });
     }
 
