@@ -92,7 +92,7 @@ public class ContentTypeImportExportUtil {
                 List<ContentType> exporting = tapi.search(null, "mod_date", limit, offset);
                 for (ContentType contentType : exporting) {
 
-            		List<Field> fields = new LegacyFieldTransformer(FieldsCache.getFieldsByStructureInode(contentType.inode())).asList();
+            		List<Field> fields = contentType.fields();
 
             		List<FieldVariable> fieldVariables=new ArrayList<FieldVariable>();
                     for(Field ff : fields) {
