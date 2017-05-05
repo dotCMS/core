@@ -2,6 +2,7 @@ package com.dotcms.contenttype.transform.field;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -10,7 +11,6 @@ import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.transform.JsonTransformer;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotcms.repackage.org.apache.commons.collections.map.HashedMap;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
@@ -132,15 +132,8 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
   public Map<String, Object> mapObject() {
     try {
       Field f = from();
-      Map<String, Object> field = mapper.convertValue(f, HashedMap.class);
-      List<Map<String, Object>> vars = new ArrayList<>();
-      for (FieldVariable fieldVar : f.fieldVariables()) {
-        Map<String, Object> var = mapper.convertValue(fieldVar, HashedMap.class);
-        var.remove("clazz");
-        var.remove("userId");
-        vars.add(var);
-      }
-      field.put("fieldVariables", vars);
+      Map<String, Object> field = mapper.convertValue(f, HashMap.class);
+      field.put("fieldVariables", new JsonFieldVariableTransformer(f.fieldVariables()).mapList());
       field.remove("acceptedDataTypes");
       field.remove("dbColumn");
 
