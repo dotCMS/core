@@ -23,6 +23,7 @@ public class NewNotificationCacheImpl extends NewNotificationCache implements Se
     private static final String COUNT_ALL = "All";
     private static final String COUNT_USER = "User";
     private final static String PRIMARY_GROUP = "NewNotificationCache";
+    private final static String ALL_NOTIFICATION_GROUP = "NotificationCache";
     private final static String COUNT_PREFIX = "Count";
     private final static String NOTIFICATION_PREFIX = "Notification";
     private static final String ALL_NOTIFICATIONS = "AllNotifications";
@@ -42,6 +43,11 @@ public class NewNotificationCacheImpl extends NewNotificationCache implements Se
     private String getCountUserPrimaryKey(final String userId) {
 
         return PRIMARY_GROUP + COUNT_PREFIX + userId;
+    }
+
+    private String getCountAllNotificationUserPrimaryKey(final String userId) {
+
+        return ALL_NOTIFICATION_GROUP + COUNT_PREFIX + userId;
     }
 
     @Override
@@ -224,7 +230,7 @@ public class NewNotificationCacheImpl extends NewNotificationCache implements Se
 
         Long count = null;
         final String primaryKey   =
-            this.getUserCountPrimaryKey(userId);
+            this.getCountAllNotificationUserPrimaryKey(userId);
 
         try {
 
