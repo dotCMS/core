@@ -144,8 +144,19 @@ public class RuntimeMacro extends Directive
     {
         super.init(rs, context, node);
         
-        this.node = node;
         
+        Token tok = node.getFirstToken();
+        Token t = node.getLastToken();
+        StringBuilder sb = new StringBuilder();
+        while(tok!=null){
+          sb.append(tok.image);
+          if(tok.equals(t))break;
+          tok=tok.next;
+        }
+        literal = sb.toString();  
+
+        
+            
         /**
          * Apply strictRef setting only if this really looks like a macro,
          * so strict mode doesn't balk at things like #E0E0E0 in a template.
@@ -154,7 +165,7 @@ public class RuntimeMacro extends Directive
          * may end with '\n'
          */
 
-        Token t = node.getLastToken();
+        
         if (t.image.startsWith(")") || t.image.startsWith("#end"))
         {
             RuntimeServices rsvc=VelocityUtil.getEngine().getRuntimeServices();

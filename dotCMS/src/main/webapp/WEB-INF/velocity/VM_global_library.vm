@@ -1,7 +1,13 @@
 ####Creates the Horizontal Menu based on the path
 
-#macro(fixBreaks $stringToFix)
-	${UtilMethods.fixBreaks($stringToFix)}
+
+
+#macro(testMacro $testContent)
+	TEST MACRO: $testContent
+#end
+
+#macro(testMacro2)
+	TEST MACRO 2
 #end
 
 
