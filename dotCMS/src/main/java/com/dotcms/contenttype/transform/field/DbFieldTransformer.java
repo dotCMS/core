@@ -179,8 +179,10 @@ public class DbFieldTransformer implements FieldTransformer {
 			}
 
 		};
-
-		return new ImplClassFieldTransformer(field).from();
+		Field newField = new ImplClassFieldTransformer(field).from();
+		//hydrate field variables
+		newField.fieldVariables();
+		return newField;
 
 	}
 

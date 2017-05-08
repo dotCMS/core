@@ -76,7 +76,7 @@ public class ContentTypeResource implements Serializable {
       retTypes.add(APILocator.getContentTypeAPI(user, true).save(type, type.fields()));
     }
     
-    return Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(retTypes).jsonArray().toString())).build();
+    return Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(retTypes).mapObject())).build();
 
   }
 
@@ -112,7 +112,6 @@ public class ContentTypeResource implements Serializable {
     joe.put("deleted", type.id());
 
 
-
     Response response = Response.ok(joe.toString()).build();
     return response;
   }
@@ -131,7 +130,7 @@ public class ContentTypeResource implements Serializable {
     Response response = Response.status(404).build();
     try {
       ContentType type = tapi.find(id);
-      response = Response.ok(new JsonContentTypeTransformer(type).jsonObject().toString()).build();
+      response = Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(type).mapObject())).build();
     } catch (NotFoundInDbException nfdb2) {
       // nothing to do here, will throw a 404
     }
