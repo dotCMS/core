@@ -17,11 +17,8 @@ import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.field.FieldVariableTransformer;
-import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -33,7 +30,6 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.liferay.portal.model.User;
 
 public class ContentTypeImportExportUtil {
 
@@ -92,14 +88,12 @@ public class ContentTypeImportExportUtil {
                 List<ContentType> exporting = tapi.search(null, "mod_date", limit, offset);
                 for (ContentType contentType : exporting) {
 
-            		List<Field> fields = new LegacyFieldTransformer(FieldsCache.getFieldsByStructureInode(contentType.inode())).asList();
+            		List<Field> fields = contentType.fields();
 
             		List<FieldVariable> fieldVariables=new ArrayList<FieldVariable>();
                     for(Field ff : fields) {
                         fieldVariables.addAll(
-                            new FieldVariableTransformer(
-                            	APILocator.getFieldAPI().getFieldVariablesForField(ff.inode(), APILocator.getUserAPI().getSystemUser(), false)
-                            ).newFieldList()
+                            APILocator.getContentTypeFieldAPI().loadVariables(ff)
                         );
                     }
 
