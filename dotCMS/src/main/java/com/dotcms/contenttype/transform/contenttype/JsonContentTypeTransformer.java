@@ -1,14 +1,14 @@
 package com.dotcms.contenttype.transform.contenttype;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.transform.JsonHelper;
 import com.dotcms.contenttype.transform.JsonTransformer;
-import com.dotcms.contenttype.transform.SerialWrapper;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.Host;
@@ -140,7 +140,27 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
     return jarr;
   }
 
+  public List<Map<String, Object>> mapList() {
+    List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+    for (ContentType type : asList()) {
+      list.add(new JsonContentTypeTransformer(type).mapObject());
+    }
+    return list;
+  }
 
+  public Map<String, Object> mapObject() {
+    try {
+      ContentType type = from();
+      Map<String, Object> typeMap = mapper.convertValue(type, HashMap.class);
+      typeMap.put("fields", new JsonFieldTransformer(type.fields()).mapList());
+      typeMap.remove("acceptedDataTypes");
+      typeMap.remove("dbColumn");
+
+      return typeMap;
+    } catch (Exception e) {
+      throw new DotStateException(e);
+    }
+  }
 
 }
 
