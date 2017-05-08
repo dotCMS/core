@@ -398,7 +398,7 @@ var deleteLabel = "";
 						<a href="<portlet:renderURL>
 						<portlet:param name='struts_action' value='/ext/contentlet/view_contentlets' />
 						<portlet:param name='structure_id' value='<%=structure.getInode()%>' /></portlet:renderURL>">
-						<%= LanguageUtil.get(pageContext, "view") + " (" + contentTypeEntriesNumber + ")"%></a>
+						<%= contentTypeEntriesNumber %></a>
 					</td>
 					<td align="center">
 						<a href="<portlet:renderURL>
