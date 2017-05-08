@@ -224,7 +224,11 @@ public class FieldAPIImpl implements FieldAPI {
   
   @Override
   public Field byContentTypeIdAndVar(String id, String fieldVar) throws DotDataException {
-    return fac.byContentTypeIdFieldVar(id, fieldVar);
+    try {
+      return APILocator.getContentTypeAPI(APILocator.systemUser()).find(id).fieldMap().get(fieldVar);
+    } catch (Exception e) {
+      throw new DotDataException(e);
+    }
   }
   
   @Override
