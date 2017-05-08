@@ -306,24 +306,20 @@
 					<div class="view-actions__arrow-right"> 
 						<i class="fa fa-arrow-circle-o-right" aria-hidden="true"></i>
 					</div>
-					<div class="view-actions__edit-actions">
-						<%if(action!=null && !action.isNew()) {%>
-						<span id="deleteButtonDiv" class="saveButtonHide">
-							<a onClick="actionAdmin.deleteAction('<%=action.getId() %>');">
+					<div class="content-edit-actions">
+						<div>
+							<%if(action!=null && !action.isNew()) {%>
+							<a id="deleteButtonDiv" class="saveButtonHide" onClick="actionAdmin.deleteAction('<%=action.getId() %>');">
 								<%=LanguageUtil.get(pageContext, "Delete")%>
 							</a>
-						</span>
-						<%} %>
-				
-						<span id="saveButtonDiv" class="saveButtonHide">
-							<a onClick="actionAdmin.saveAction('<%=stepId %>');">
+							<%} %>
+							<a id="saveButtonDiv" class="saveButtonHide" onClick="actionAdmin.saveAction('<%=stepId %>');">
 								<%=LanguageUtil.get(pageContext, "Save")%>
 							</a>
-						</span>
-						
-						<a onClick='mainAdmin.show(stepAdmin.baseJsp + "?schemeId=<%=schemeId%>")'>
-							<%=LanguageUtil.get(pageContext, "Cancel")%>
-						</a>
+							<a onClick='mainAdmin.show(stepAdmin.baseJsp + "?schemeId=<%=schemeId%>")'>
+								<%=LanguageUtil.get(pageContext, "Cancel")%>
+							</a>
+						</div>
 					</div>
 				</div>
 			</div>
