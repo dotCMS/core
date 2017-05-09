@@ -170,6 +170,7 @@ public abstract class Field implements FieldIf, Serializable {
     return false;
   }
 
+  @JsonIgnore
   @Value.Lazy
   public List<FieldVariable> fieldVariables() {
     if (innerFieldVariables == null) {
