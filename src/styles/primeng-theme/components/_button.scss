@@ -43,10 +43,13 @@
         }
     }
 
-    &[iconButton] {
-        border-radius: $field-height / 2;
+    &[iconButton], &[actionButton] {
+        border-radius: 50%;
         border: none;
         transition: background-color $basic-speed;
+    }
+
+    &[iconButton] {
         width: $field-height;
 
         &.inverse {
@@ -63,6 +66,35 @@
         }
 
         &[disabled] {
+            color: $body-font-color;
+            opacity: 0.25;
+        }
+    }
+
+    &[actionButton] {
+        color: $floating-action-button-color;
+        font-size: $floating-action-button-icon-size;
+        height: $floating-action-button-height;
+        width: $floating-action-button-height;
+
+        &.ui-state-default {
+            background: $blue;
+        }
+
+        &:not([disabled]):hover {
+            background: $floating-action-button-bg-hover;
+        }
+
+        &:not([disabled]):active {
+            background: $floating-action-button-bg-active;
+        }
+
+        &:not([disabled]):focus {
+            background: $floating-action-button-bg-focus;
+        }
+
+        &[disabled] {
+            background: $gray;
             color: $body-font-color;
             opacity: 0.25;
         }

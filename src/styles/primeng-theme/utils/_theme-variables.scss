@@ -176,6 +176,13 @@ $buttons-map: (
     )
 );
 
+// FLOATING ACTION BUTTON
+$floating-action-button-height: 56px;
+$floating-action-button-icon-size: $font-size-large;
+$floating-action-button-color: $white;
+$floating-action-button-bg-hover: darken($blue, 10%);
+$floating-action-button-bg-active: darken($blue, 20%);
+$floating-action-button-bg-focus: darken($blue, 10%);
 
 // CHECKBOX AND RADIO BUTTON
 $check-border-width: 1px;
