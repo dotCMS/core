@@ -324,8 +324,8 @@ export class RuleService {
   constructor(public _apiRoot: ApiRoot, private _resources: I18nService, private siteService: SiteService,
               private coreWebService: CoreWebService) {
 
-    this._rulesEndpointUrl = `${this._apiRoot.defaultSiteUrl}/ruleengine/rules`;
-    this._actionsEndpointUrl = `${this._apiRoot.defaultSiteUrl}/ruleengine/actions`;
+    this._rulesEndpointUrl = `/ruleengine/rules`;
+    this._actionsEndpointUrl = `/ruleengine/actions`;
     this._conditionTypesEndpointUrl = `${this._apiRoot.baseUrl}api/v1/system/ruleengine/conditionlets`;
     this._ruleActionTypesEndpointUrl = `${this._apiRoot.baseUrl}api/v1/system/ruleengine/actionlets`;
 
@@ -342,7 +342,7 @@ export class RuleService {
     return this.coreWebService.request({
       body: RuleService.fromClientRuleTransformFn(body),
       method: RequestMethod.Post,
-      url: this._rulesEndpointUrl
+      url: `${this._apiRoot.baseUrl}api/v1/sites/${this.siteService.currentSite.identifier}${this._rulesEndpointUrl}`
     }).map((result: RuleModel) => {
       body.key = result['id']; // @todo:ggranum type the POST result correctly.
       return Object.assign({}, DEFAULT_RULE, body, result);
@@ -352,7 +352,7 @@ export class RuleService {
   deleteRule(ruleId: string): Observable<{success: boolean}|CwError> {
     return this.coreWebService.request({
       method: RequestMethod.Delete,
-      url: `${this._rulesEndpointUrl}/${ruleId}`
+      url: `${this._apiRoot.baseUrl}api/v1/sites/${this.siteService.currentSite.identifier}${this._rulesEndpointUrl}/${ruleId}`
     }).map((result) => {
       return {success: true};
     });
@@ -377,7 +377,7 @@ export class RuleService {
   loadRule(id: string): Observable<RuleModel|CwError> {
     return this.coreWebService.request({
       method: RequestMethod.Get,
-      url: `${this._rulesEndpointUrl}/${id}`
+      url: `${this._apiRoot.baseUrl}api/v1/sites/${this.siteService.currentSite.identifier}${this._rulesEndpointUrl}/${id}`
     }).map((result) => {
       return Object.assign({key: id}, DEFAULT_RULE, result);
     });
@@ -391,7 +391,7 @@ export class RuleService {
       result = this.coreWebService.request({
         body: RuleService.fromClientRuleTransformFn(rule),
         method: RequestMethod.Put,
-        url: `${this._rulesEndpointUrl}/${id}`
+        url: `${this._apiRoot.baseUrl}api/v1/sites/${this.siteService.currentSite.identifier}${this._rulesEndpointUrl}/${id}`
       }).map((result) => {
         let r = Object.assign({}, DEFAULT_RULE, result);
         r.id = id;
