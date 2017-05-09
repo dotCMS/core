@@ -188,17 +188,6 @@ public interface ContentTypeAPI {
   void moveToSystemFolder(Folder folder) throws DotDataException;
 
   /**
-   * Saves a list of Fields to a specific Content Type. If the field is already in the Content Type it does not add it.
-   * 
-   * @param type Content Type that is going to be modified
-   * @param fields List of Fields that will be added to the Content Type
-   * @return Content Type with the new fields
-   * @throws DotDataException Error occurred when performing the action.
-   * @throws DotSecurityException The user does not have permissions to perform this action.
-   */
-  ContentType save(ContentType type, List<Field> fields) throws DotDataException, DotSecurityException;
-
-  /**
    * Saves a new Content Type.
    * 
    * @param type Content Type that is going to be modified

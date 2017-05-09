@@ -357,7 +357,14 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
     // set up default fields
     if (!existsInDb) {
-    	List<Field> fields = (saveType.fields().isEmpty()) ? retType.requiredFields() : saveType.fields();
+    	List<Field> fields = new ArrayList<Field>(saveType.fields());
+
+        for (Field ff : retType.requiredFields()) {
+          Optional<Field> optional = fields.stream().filter(x -> ff.variable().equalsIgnoreCase(x.variable())).findFirst();
+          if (!optional.isPresent()) {
+            fields.add(ff);
+          }
+        }
 
         FieldAPI fapi = new FieldAPIImpl().instance();
         for (Field f : fields) {
