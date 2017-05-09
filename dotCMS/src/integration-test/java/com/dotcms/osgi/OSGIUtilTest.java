@@ -2,6 +2,7 @@ package com.dotcms.osgi;
 
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
 
 import org.apache.commons.io.FileUtils;
@@ -60,11 +61,21 @@ public class OSGIUtilTest {
     }
 
     /**
-     * Restart the OSGI Framework
+     * Restart the OSGI Framework. Copies/Restores all files
+     *
+     * @param  felixBasePath The default felix base path
+     * @param newDirectory The new directory to copy the files from
      */
-    private static void restartOSGi(String felixBasePath) {
-        Config.setProperty(FELIX_BASE_DIR_KEY, felixBasePath);
-        restartOSGi();
+    private static void restartOSGi(String felixBasePath, String newDirectory) {
+        try {
+            Config.setProperty(FELIX_BASE_DIR_KEY, felixBasePath);
+
+            FileUtils.copyDirectory(new File(newDirectory), new File(felixBasePath));
+
+            restartOSGi();
+        } catch (Exception ex) {
+            Logger.error(OSGIUtilTest.class, "Error restarting OSGI", ex);
+        }
     }
 
     /**
@@ -105,10 +116,10 @@ public class OSGIUtilTest {
         Assert.assertNotNull(deployFelixPath);
         assertThat("Path ends with /WEB-INF/customfelix/load", deployFelixPath.endsWith("/WEB-INF/customfelix/load"));
 
+        restartOSGi(contextFelixPath, customFelixPath);
+
         removeFolder(deployFelixPath);
         removeFolder(customFelixPath);
-
-        restartOSGi(contextFelixPath);
     }
 
     /**
@@ -127,10 +138,39 @@ public class OSGIUtilTest {
         Assert.assertNotNull(undeployFelixPath);
         assertThat("Path ends with /WEB-INF/customfelix/undeployed", undeployFelixPath.endsWith("/WEB-INF/customfelix/undeployed"));
 
+        restartOSGi(contextFelixPath, customFelixPath);
+
         removeFolder(undeployFelixPath);
         removeFolder(customFelixPath);
+    }
 
-        restartOSGi(contextFelixPath);
+    /**
+     * Test the base directory exists using the servlet context
+     */
+    @Test
+    public void test05GetBaseDirectoryFromServletContext() throws Exception {
+        ServletContextEvent context = new ServletContextEvent(Config.CONTEXT);
+
+        String baseDirectory = OSGIUtil.getInstance().getBaseDirectory(context);
+        assertThat("WEB-INF Base Directory exists", new File(baseDirectory).exists());
+    }
+
+    /**
+     * Test the base directory exists using the Config.CONTEXT
+     */
+    @Test
+    public void test06GetBaseDirectoryFromConfigContext() throws Exception {
+        String baseDirectory = OSGIUtil.getInstance().getBaseDirectory(null);
+        assertThat("WEB-INF Base Directory exists", new File(baseDirectory).exists());
+    }
+
+    /**
+     * Test the parse base directory from 'felix.base.dir' property
+     */
+    @Test
+    public void test07ParseBaseDirectory() throws Exception {
+        String baseDirectory = OSGIUtil.getInstance().parseBaseDirectoryFromConfig();
+        assertThat("WEB-INF Path exists", new File(baseDirectory).exists());
     }
 
     /**
