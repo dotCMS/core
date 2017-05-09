@@ -2,6 +2,7 @@ package com.dotcms.osgi;
 
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
 
 import org.apache.commons.io.FileUtils;
@@ -60,11 +61,21 @@ public class OSGIUtilTest {
     }
 
     /**
-     * Restart the OSGI Framework
+     * Restart the OSGI Framework. Copies/Restores all files
+     *
+     * @param  felixBasePath The default felix base path
+     * @param newDirectory The new directory to copy the files from
      */
-    private static void restartOSGi(String felixBasePath) {
-        Config.setProperty(FELIX_BASE_DIR_KEY, felixBasePath);
-        restartOSGi();
+    private static void restartOSGi(String felixBasePath, String newDirectory) {
+        try {
+            Config.setProperty(FELIX_BASE_DIR_KEY, felixBasePath);
+
+            FileUtils.copyDirectory(new File(newDirectory), new File(felixBasePath));
+
+            restartOSGi();
+        } catch (Exception ex) {
+            Logger.error(OSGIUtilTest.class, "Error restarting OSGI", ex);
+        }
     }
 
     /**
@@ -105,10 +116,10 @@ public class OSGIUtilTest {
         Assert.assertNotNull(deployFelixPath);
         assertThat("Path ends with /WEB-INF/customfelix/load", deployFelixPath.endsWith("/WEB-INF/customfelix/load"));
 
+        restartOSGi(contextFelixPath, customFelixPath);
+
         removeFolder(deployFelixPath);
         removeFolder(customFelixPath);
-
-        restartOSGi(contextFelixPath);
     }
 
     /**
@@ -127,10 +138,10 @@ public class OSGIUtilTest {
         Assert.assertNotNull(undeployFelixPath);
         assertThat("Path ends with /WEB-INF/customfelix/undeployed", undeployFelixPath.endsWith("/WEB-INF/customfelix/undeployed"));
 
+        restartOSGi(contextFelixPath, customFelixPath);
+
         removeFolder(undeployFelixPath);
         removeFolder(customFelixPath);
-
-        restartOSGi(contextFelixPath);
     }
 
     /**
