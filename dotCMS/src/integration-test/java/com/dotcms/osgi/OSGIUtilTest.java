@@ -145,6 +145,35 @@ public class OSGIUtilTest {
     }
 
     /**
+     * Test the base directory exists using the servlet context
+     */
+    @Test
+    public void test05GetBaseDirectoryFromServletContext() throws Exception {
+        ServletContextEvent context = new ServletContextEvent(Config.CONTEXT);
+
+        String baseDirectory = OSGIUtil.getInstance().getBaseDirectory(context);
+        assertThat("WEB-INF Base Directory exists", new File(baseDirectory).exists());
+    }
+
+    /**
+     * Test the base directory exists using the Config.CONTEXT
+     */
+    @Test
+    public void test06GetBaseDirectoryFromConfigContext() throws Exception {
+        String baseDirectory = OSGIUtil.getInstance().getBaseDirectory(null);
+        assertThat("WEB-INF Base Directory exists", new File(baseDirectory).exists());
+    }
+
+    /**
+     * Test the parse base directory from 'felix.base.dir' property
+     */
+    @Test
+    public void test07ParseBaseDirectory() throws Exception {
+        String baseDirectory = OSGIUtil.getInstance().parseBaseDirectoryFromConfig();
+        assertThat("WEB-INF Path exists", new File(baseDirectory).exists());
+    }
+
+    /**
      * Remove created path
      *
      * @param path The path to remove
