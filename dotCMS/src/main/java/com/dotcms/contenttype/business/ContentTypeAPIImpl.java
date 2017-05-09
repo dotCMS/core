@@ -186,42 +186,6 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
 
 
-  @Override
-  public ContentType save(final ContentType type, final List<Field> fields)
-      throws DotDataException, DotSecurityException {
-    return LocalTransaction.wrapReturn(() -> {
-      Preconditions.checkNotNull(fields);
-
-      // Im not smart enough to use lamdas
-      List<Field> saveFields = new ArrayList<>();
-
-      for (Field test : fields) {
-        Optional<Field> optional =
-            type.requiredFields().stream().filter(x -> test.variable().equalsIgnoreCase(x.variable())).findFirst();
-        if (!optional.isPresent()) {
-          saveFields.add(test);
-        }
-      }
-
-
-      ContentType retType = save(type);
-      int i = 0;
-
-
-      for (Field field : saveFields) {
-        field = FieldBuilder.builder(field).contentTypeId(retType.id()).sortOrder(i++).build();
-        ffac.save(field);
-      }
-
-
-
-
-
-      return retType;
-    });
-  }
-
-
 
   public void validateFields(ContentType type) {
 
