@@ -11,18 +11,13 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.Consumes;
-import com.dotcms.repackage.javax.ws.rs.DELETE;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.RESTParams;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
@@ -31,10 +26,16 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringUtil;
 
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.ConversionUtils.toInt;
+import java.util.Map;
 
 @Path("/v1/contenttype")
 public class ContentTypeResource implements Serializable {
@@ -160,4 +161,74 @@ public class ContentTypeResource implements Serializable {
 
     return response;
   } // getTypes.
+
+  /**
+   * Return a list of {@link ContentType}, entity response syntax:.
+   *
+   * <code>
+   *  {
+   *      contentTypes: array of ContentType
+   *      total: total number of content types
+   *  }
+   * <code/>
+   *
+   * Url sintax: contenttype/query/query-string/limit/n-limit/offset/n-offset/orderby/fieldname-order_direction
+   *
+   * where:
+   *
+   * <ul>
+   *     <li>query-string: just return ContentTypes who content this pattern</li>
+   *     <li>n-limit: limit of items to return</li>
+   *     <li>n-offset: offset</li>
+   *     <li>fieldname: field to order by</li>
+   *     <li>order_direction: asc for upward order and desc for downward order</li>
+   * </ul>
+   *
+   * Url example: v1/contenttype/query/New%20L/limit/4/offset/5/orderby/name-asc
+   *
+   * @param request
+   * @param params
+   * @return
+   */
+  @GET
+  @Path ("/{params:.*}")
+  @JSONP
+  @NoCache
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+  public final Response getContentTypes(@Context final HttpServletRequest request,
+                                        @PathParam ("params") final String params) {
+
+    final InitDataObject initData = webResource.init(params, false, request, true, null);
+
+    Response response = null;
+
+    final User user = initData.getUser();
+    /* Limit and Offset Parameters Handling, if not passed, using default */
+    final String limitStr = initData.getParamsMap().get(RESTParams.LIMIT.getValue());
+    final String offsetStr = initData.getParamsMap().get(RESTParams.OFFSET.getValue());
+
+    int limit  = toInt(limitStr, -1);
+    int offset = toInt(offsetStr, -1);
+
+    String orderbyParams = initData.getParamsMap().get(RESTParams.ORDERBY.getValue());
+    String[] split = orderbyParams != null ? orderbyParams.split("-") : null;
+    String orderby = (split == null || "name".equals(split[0])) ? "upper(name)" : split[0];
+    String direction = (split == null || split.length < 2) ? "asc" : split[1];
+
+    String filterBy = initData.getParamsMap().get(RESTParams.QUERY.getValue());
+    String queryCondition = filterBy == null ? "" : String.format("(name like '%%%s%%')", filterBy);
+
+    try {
+      List<Map<String, Object>> types = contentTypeHelper.getContentTypes(user, queryCondition, offset, limit, orderby, direction);
+      long contentTypesCount = contentTypeHelper.getContentTypesCount();
+      response = Response.ok(new ResponseEntityView( map("contentTypes", types, "total", contentTypesCount)))
+              .build();
+    } catch (Exception e) {
+
+      response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+    }
+
+    return response;
+  }
 }
