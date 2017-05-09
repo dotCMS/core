@@ -120,7 +120,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 1", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("THE HINT", field.hint());
 
@@ -142,7 +142,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField11\","+
+						"	\"variable\" : \"theField1\","+
 						"	\"sortOrder\":\"12\","+
 
 						"	\"hint\" : \"THE HINT 2\","+
@@ -157,7 +157,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("THE HINT 2", field.hint());
 
@@ -205,7 +205,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 1", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("3297fcca-d88a-45a7-aef4-7960bc6964aa", field.values());
 					assertEquals("THE HINT", field.hint());
@@ -230,7 +230,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField11\","+
+						"	\"variable\" : \"theField1\","+
 						"	\"sortOrder\":\"12\","+
 
 						"	\"values\" : \"3d5d641b-e5fd-409e-a283-b6fe7ab780d1\","+
@@ -248,7 +248,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("3d5d641b-e5fd-409e-a283-b6fe7ab780d1", field.values());
 					assertEquals("THE HINT 2", field.hint());
@@ -300,7 +300,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.TEXT, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 1", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("Canada|CA\r\nMexico|MX\r\nUSA|US", field.values());
 					assertEquals("THE DEFAULT VALUE", field.defaultValue());
@@ -327,7 +327,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField11\","+
+						"	\"variable\" : \"theField1\","+
 						"	\"sortOrder\":\"12\","+
 
 						"	\"values\" : \"CostaRica|CR\\r\\nVenezuela|VN\","+
@@ -346,7 +346,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.TEXT, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("CostaRica|CR\r\nVenezuela|VN", field.values());
 					assertEquals("THE DEFAULT VALUE 2", field.defaultValue());
@@ -395,7 +395,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 1", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("THE VALUE", field.values());
 					assertEquals("THE HINT", field.hint());
@@ -416,7 +416,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField11\","+
+						"	\"variable\" : \"theField1\","+
 						"	\"sortOrder\":\"12\","+
 
 						"	\"values\" : \"THE VALUE 2\","+
@@ -430,7 +430,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("THE VALUE 2", field.values());
 					assertEquals("THE HINT 2", field.hint());
@@ -481,7 +481,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.LONG_TEXT, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 1", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("THE VALUE", field.values());
 					assertEquals("THE DEFAULT VALUE", field.defaultValue());
@@ -510,7 +510,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField11\","+
+						"	\"variable\" : \"theField1\","+
 						"	\"sortOrder\":\"12\","+
 
 						"	\"values\" : \"THE VALUE 2\","+
@@ -532,7 +532,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.LONG_TEXT, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("THE VALUE 2", field.values());
 					assertEquals("THE DEFAULT VALUE 2", field.defaultValue());
@@ -588,7 +588,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.DATE, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 1", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("1995-12-05", field.defaultValue());
 					assertEquals("THE HINT", field.hint());
@@ -614,7 +614,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField11\","+
+						"	\"variable\" : \"theField1\","+
 						"	\"sortOrder\":\"12\","+
 
 						"	\"defaultValue\" : \"1980-03-31\","+
@@ -633,7 +633,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.DATE, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("1980-03-31", field.defaultValue());
 					assertEquals("THE HINT 2", field.hint());
@@ -686,7 +686,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.DATE, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 1", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("2005-12-01 15:22:00", field.defaultValue());
 					assertEquals("THE HINT", field.hint());
@@ -712,7 +712,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField11\","+
+						"	\"variable\" : \"theField1\","+
 						"	\"sortOrder\":\"12\","+
 
 						"	\"defaultValue\" : \"1980-03-31 09:15:00\","+
@@ -731,7 +731,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.DATE, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("1980-03-31 09:15:00", field.defaultValue());
 					assertEquals("THE HINT 2", field.hint());
@@ -780,7 +780,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.TEXT, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 1", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("THE HINT", field.hint());
 
@@ -802,7 +802,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField11\","+
+						"	\"variable\" : \"theField1\","+
 						"	\"sortOrder\":\"12\","+
 
 						"	\"hint\" : \"THE HINT 2\","+
@@ -817,7 +817,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.TEXT, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("THE HINT 2", field.hint());
 
@@ -860,7 +860,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 1", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("THE VALUE", field.values());
 
@@ -880,7 +880,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField11\","+
+						"	\"variable\" : \"theField1\","+
 						"	\"sortOrder\":\"12\","+
 
 						"	\"values\" : \"THE VALUE 2\""+
@@ -893,7 +893,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("THE VALUE 2", field.values());
 
@@ -937,7 +937,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 1", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("THE HINT", field.hint());
 
@@ -960,7 +960,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField11\","+
+						"	\"variable\" : \"theField1\","+
 						"	\"sortOrder\":\"12\","+
 
 						"	\"hint\" : \"THE HINT 2\","+
@@ -976,7 +976,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("THE HINT 2", field.hint());
 
@@ -1022,7 +1022,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.TEXT, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 1", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("THE HINT", field.hint());
 
@@ -1044,7 +1044,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField11\","+
+						"	\"variable\" : \"theField1\","+
 						"	\"sortOrder\":\"12\","+
 
 						"	\"hint\" : \"THE HINT 2\","+
@@ -1059,7 +1059,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.TEXT, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("THE HINT 2", field.hint());
 
@@ -1105,7 +1105,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.LONG_TEXT, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 1", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("THE HINT", field.hint());
 
@@ -1128,7 +1128,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField11\","+
+						"	\"variable\" : \"theField1\","+
 						"	\"sortOrder\":\"12\","+
 
 						"	\"hint\" : \"THE HINT 2\","+
@@ -1144,7 +1144,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.LONG_TEXT, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("THE HINT 2", field.hint());
 
@@ -1187,7 +1187,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 1", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertFalse(field.readOnly());
 					assertFalse(field.fixed());
@@ -1205,7 +1205,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField11\","+
+						"	\"variable\" : \"theField1\","+
 						"	\"sortOrder\":\"12\""+
 					"	}";
 				}
@@ -1216,7 +1216,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertFalse(field.readOnly());
 					assertFalse(field.fixed());
@@ -1262,7 +1262,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.LONG_TEXT, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 1", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("Canada|CA\r\nMexico|MX\r\nUSA|US", field.values());
 					assertEquals("THE DEFAULT VALUE", field.defaultValue());
@@ -1290,7 +1290,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField11\","+
+						"	\"variable\" : \"theField1\","+
 						"	\"sortOrder\":\"12\","+
 
 						"	\"values\" : \"CostaRica|CR\\r\\nVenezuela|VN\","+
@@ -1310,7 +1310,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.LONG_TEXT, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("CostaRica|CR\r\nVenezuela|VN", field.values());
 					assertEquals("THE DEFAULT VALUE 2", field.defaultValue());
@@ -1358,7 +1358,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 1", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertFalse(field.readOnly());
 					assertFalse(field.fixed());
@@ -1376,7 +1376,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField11\","+
+						"	\"variable\" : \"theField1\","+
 						"	\"sortOrder\":\"12\""+
 					"	}";
 				}
@@ -1387,7 +1387,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertFalse(field.readOnly());
 					assertFalse(field.fixed());
@@ -1433,7 +1433,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.TEXT, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 1", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("Canada|CA\r\nMexico|MX\r\nUSA|US", field.values());
 					assertEquals("THE DEFAULT VALUE", field.defaultValue());
@@ -1461,7 +1461,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField11\","+
+						"	\"variable\" : \"theField1\","+
 						"	\"sortOrder\":\"12\","+
 
 						"	\"values\" : \"CostaRica|CR\\r\\nVenezuela|VN\","+
@@ -1481,7 +1481,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.TEXT, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("CostaRica|CR\r\nVenezuela|VN", field.values());
 					assertEquals("THE DEFAULT VALUE 2", field.defaultValue());
@@ -1529,7 +1529,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 1", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertFalse(field.readOnly());
 					assertFalse(field.fixed());
@@ -1547,7 +1547,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField11\","+
+						"	\"variable\" : \"theField1\","+
 						"	\"sortOrder\":\"12\""+
 					"	}";
 				}
@@ -1558,7 +1558,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertFalse(field.readOnly());
 					assertFalse(field.fixed());
@@ -1605,7 +1605,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.TEXT, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 1", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("Canada|CA\r\nMexico|MX\r\nUSA|US", field.values());
 					assertEquals("THE DEFAULT VALUE", field.defaultValue());
@@ -1634,7 +1634,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField11\","+
+						"	\"variable\" : \"theField1\","+
 						"	\"sortOrder\":\"12\","+
 
 						"	\"values\" : \"CostaRica|CR\\r\\nVenezuela|VN\","+
@@ -1655,7 +1655,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.TEXT, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("CostaRica|CR\r\nVenezuela|VN", field.values());
 					assertEquals("THE DEFAULT VALUE 2", field.defaultValue());
@@ -1704,7 +1704,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 1", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertFalse(field.readOnly());
 					assertFalse(field.fixed());
@@ -1722,7 +1722,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField11\","+
+						"	\"variable\" : \"theField1\","+
 						"	\"sortOrder\":\"12\""+
 					"	}";
 				}
@@ -1733,7 +1733,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertFalse(field.readOnly());
 					assertFalse(field.fixed());
@@ -1777,7 +1777,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 1", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("THE DEFAULT VALUE", field.defaultValue());
 					assertEquals("THE HINT", field.hint());
@@ -1802,7 +1802,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField11\","+
+						"	\"variable\" : \"theField1\","+
 						"	\"sortOrder\":\"12\","+
 
 						"	\"defaultValue\" : \"THE DEFAULT VALUE 2\","+
@@ -1820,7 +1820,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("THE DEFAULT VALUE 2", field.defaultValue());
 					assertEquals("THE HINT 2", field.hint());
@@ -1874,7 +1874,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.TEXT, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 1", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("THE DEFAULT VALUE", field.defaultValue());
 					assertEquals("THE VALIDATION REGEX", field.regexCheck());
@@ -1902,7 +1902,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField11\","+
+						"	\"variable\" : \"theField1\","+
 						"	\"sortOrder\":\"12\","+
 
 						"	\"defaultValue\" : \"THE DEFAULT VALUE 2\","+
@@ -1923,7 +1923,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.TEXT, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("THE DEFAULT VALUE 2", field.defaultValue());
 					assertEquals("THE VALIDATION REGEX 2", field.regexCheck());
@@ -1978,7 +1978,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.LONG_TEXT, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 1", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("THE DEFAULT VALUE", field.defaultValue());
 					assertEquals("THE VALIDATION REGEX", field.regexCheck());
@@ -2004,7 +2004,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField11\","+
+						"	\"variable\" : \"theField1\","+
 						"	\"sortOrder\":\"12\","+
 
 						"	\"defaultValue\" : \"THE DEFAULT VALUE 2\","+
@@ -2023,7 +2023,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.LONG_TEXT, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("THE DEFAULT VALUE 2", field.defaultValue());
 					assertEquals("THE VALIDATION REGEX 2", field.regexCheck());
@@ -2076,7 +2076,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.DATE, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 1", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("20:11:02", field.defaultValue());
 					assertEquals("THE HINT", field.hint());
@@ -2102,7 +2102,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField11\","+
+						"	\"variable\" : \"theField1\","+
 						"	\"sortOrder\":\"12\","+
 
 						"	\"defaultValue\" : \"09:15:00\","+
@@ -2121,7 +2121,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.DATE, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("09:15:00", field.defaultValue());
 					assertEquals("THE HINT 2", field.hint());
@@ -2174,7 +2174,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.LONG_TEXT, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 1", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("THE DEFAULT VALUE", field.defaultValue());
 					assertEquals("THE VALIDATION REGEX", field.regexCheck());
@@ -2200,7 +2200,7 @@ public class FieldResourceTest {
 						"	\"name\" : \"The Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField11\","+
+						"	\"variable\" : \"theField1\","+
 						"	\"sortOrder\":\"12\","+
 
 						"	\"defaultValue\" : \"THE DEFAULT VALUE 2\","+
@@ -2219,7 +2219,7 @@ public class FieldResourceTest {
 					assertEquals(DataTypes.LONG_TEXT, field.dataType());
 					assertNotNull(field.id());
 					assertEquals("The Field 2", field.name());
-					assertEquals("theField11", field.variable());
+					assertEquals("theField1", field.variable());
 
 					assertEquals("THE DEFAULT VALUE 2", field.defaultValue());
 					assertEquals("THE VALIDATION REGEX 2", field.regexCheck());
