@@ -66,7 +66,7 @@ public class ContentTypeResource implements Serializable {
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public final Response saveType(@Context final HttpServletRequest req, final String json)
+	public final Response createType(@Context final HttpServletRequest req, final String json)
 			throws DotDataException, DotSecurityException {
 		final InitDataObject initData = this.webResource.init(null, true, req, true, null);
 		final User user = initData.getUser();
@@ -83,7 +83,7 @@ public class ContentTypeResource implements Serializable {
 
 		// Persist input
 		for (ContentType type :typesToSave) {
-			retTypes.add(APILocator.getContentTypeAPI(user, true).save(type, type.fields()));
+			retTypes.add(APILocator.getContentTypeAPI(user, true).save(type));
 		}
 
 		return Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(retTypes).mapList())).build();
@@ -172,7 +172,7 @@ public class ContentTypeResource implements Serializable {
 		joe.put("deleted", type.id());
 
 
-		Response response = Response.ok(joe.toString()).build();
+		Response response = Response.ok(new ResponseEntityView(joe.toString())).build();
 		return response;
 	}
 
