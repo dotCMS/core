@@ -5,12 +5,12 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.OSGIUtil;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.mockito.Mockito;
 
 import java.io.File;
 
@@ -24,25 +24,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class OSGIUtilTest {
 
-    private static String FELIX_BASE_DIR;
     private static final String FELIX_BASE_DIR_KEY = "felix.base.dir";
 
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
 
-        FELIX_BASE_DIR = Config.getStringProperty(FELIX_BASE_DIR_KEY, Config.CONTEXT.getRealPath("/WEB-INF") + File.separator + "felix");
+        Mockito.when(Config.CONTEXT.getRealPath("/WEB-INF/felix")).thenReturn(Config.getStringProperty("context.path.felix","/WEB-INF/felix"));
 
         // Initialize OSGI
         initializeOSGIFramework();
-    }
-
-    @AfterClass
-    public static void restartOSGIAfterFinishing() {
-        Config.setProperty(FELIX_BASE_DIR_KEY, FELIX_BASE_DIR);
-
-        // Restores original state of the OSGi framework
-        restartOSGi();
     }
 
     /**
@@ -66,6 +57,14 @@ public class OSGIUtilTest {
 
         //Now we need to initialize it
         initializeOSGIFramework();
+    }
+
+    /**
+     * Restart the OSGI Framework
+     */
+    private static void restartOSGi(String felixBasePath) {
+        Config.setProperty(FELIX_BASE_DIR_KEY, felixBasePath);
+        restartOSGi();
     }
 
     /**
@@ -109,7 +108,7 @@ public class OSGIUtilTest {
         removeFolder(deployFelixPath);
         removeFolder(customFelixPath);
 
-        Config.setProperty(FELIX_BASE_DIR_KEY, FELIX_BASE_DIR);
+        restartOSGi(contextFelixPath);
     }
 
     /**
@@ -131,7 +130,7 @@ public class OSGIUtilTest {
         removeFolder(undeployFelixPath);
         removeFolder(customFelixPath);
 
-        Config.setProperty(FELIX_BASE_DIR_KEY, FELIX_BASE_DIR);
+        restartOSGi(contextFelixPath);
     }
 
     /**
