@@ -490,25 +490,41 @@ public class OSGIUtil {
      * @param context The servlet context
      * @return String
      */
-    private String getBaseDirectory(ServletContextEvent context) {
-        String baseDirectory = context.getServletContext().getRealPath("/WEB-INF");
+    public String getBaseDirectory(ServletContextEvent context) {
+        String baseDirectory = null;
+        if (context != null) {
+            baseDirectory = context.getServletContext().getRealPath("/WEB-INF");
+        }
+
         if (!UtilMethods.isSet(baseDirectory)) {
             baseDirectory = Config.CONTEXT.getRealPath("/WEB-INF");
 
             if (!UtilMethods.isSet(baseDirectory)) {
-                baseDirectory = Config.getStringProperty(FELIX_BASE_DIR, "/WEB-INF");
-                if (baseDirectory.endsWith("/WEB-INF")) {
-                    baseDirectory = baseDirectory.substring(0, baseDirectory.indexOf(("/WEB-INF")) + 8);
-                }
-            } else {
-                String errorMessage = "The default WEB-INF base directory is not found. Value is null";
-                Logger.error(this, errorMessage);
-
-                throw new RuntimeException(errorMessage);
+                baseDirectory = parseBaseDirectoryFromConfig();
             }
+        }
+
+        if (!UtilMethods.isSet(baseDirectory)) {
+            String errorMessage = "The default WEB-INF base directory is not found. Value is null";
+            Logger.error(this, errorMessage);
+
+            throw new RuntimeException(errorMessage);
         }
 
         return baseDirectory;
     }
 
+    /**
+     * Parses the base directory from config
+     *
+     * @return String
+     */
+    public String parseBaseDirectoryFromConfig() {
+        String baseDirectory = Config.getStringProperty(FELIX_BASE_DIR, "/WEB-INF");
+        if (baseDirectory.endsWith("/WEB-INF")) {
+            baseDirectory = baseDirectory.substring(0, baseDirectory.indexOf(("/WEB-INF")) + 8);
+        }
+
+        return baseDirectory;
+    }
 }
