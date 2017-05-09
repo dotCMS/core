@@ -276,7 +276,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         con.setModDate(fatty.getModDate());
         con.setReviewInterval(fatty.getReviewInterval());
 
-
+        con.setTags();
 
 	     if(UtilMethods.isSet(fatty.getIdentifier())){
 	        IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
