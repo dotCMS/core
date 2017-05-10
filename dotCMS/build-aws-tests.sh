@@ -85,6 +85,9 @@ TOOLBOX_MANAGER_PATH=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/toolbox.xml
 echo "
 context.path.felix=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/felix
 " >> core/dotCMS/src/integration-test/resources/it-dotmarketing-config.properties
+echo "
+felix.base.dir=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/felix
+" >> core/dotCMS/src/integration-test/resources/it-dotmarketing-config.properties
 
 
 # Create output directory
