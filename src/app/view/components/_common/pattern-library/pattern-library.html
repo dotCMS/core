@@ -33,6 +33,16 @@
                     <p class="section_desc">16px / 24px - Regular</p>
                 </article>
             </div>
+            <h3 class="section__title">Data Table</h3>
+            <article>
+                <p-dataTable [value]="dataTableDummyData" [rows]="6" [paginator]="true" [pageLinks]="5">
+                    <p-column selectionMode="multiple"></p-column>
+                    <p-column field="vin" header="Vin" [sortable]="true"></p-column>
+                    <p-column field="year" header="Year" [sortable]="true"></p-column>
+                    <p-column field="brand" header="Brand" [sortable]="true"></p-column>
+                    <p-column field="color" header="Color" [sortable]="true"></p-column>
+                </p-dataTable>
+            </article>
         </div>
 
         <div class="col-sm-6 col-md-offset-1 section-fields">

@@ -218,3 +218,19 @@ $radio-normal-border: solid $field-border-size $black;
 
 $radio-hover-bgcolor: $white;
 $radio-hover-border: $check-checked-border;
+
+// DATATABLE
+$datatable-cell-padding: $basic-padding * 2 $basic-padding;
+$datatable-cell-border: 1px solid $gray-lighter;
+$datatable-head-active-bgcolor: $gray-light;
+$datatable-head-active-color: $gray-dark;
+$datatable-selected-row-bgcolor: $gray-lighter;
+$datatable-row-color: $gray-dark;
+$datatable-row-bgcolor: $white;
+
+// PAGINATOR
+$paginator-page-selected-bgcolor: $blue;
+$paginator-page-selected-border-color: $blue;
+$paginator-page-hover-bgcolor: $gray-light;
+$paginator-page-border-radius: 10px;
+$paginator-page-size: 21px;

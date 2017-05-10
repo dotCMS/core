@@ -10,6 +10,8 @@ import {SelectItem, AutoComplete} from 'primeng/primeng';
 })
 
 export class PatternLibrary {
+    public dataTableDummyData;
+
     // tslint:disable-next-line:no-unused-variable
     private checkBoxValues: string[] = ['val3'];
     // tslint:disable-next-line:no-unused-variable
@@ -32,6 +34,28 @@ export class PatternLibrary {
         this.cities.push({label: 'London', value: {id: 3, name: 'London', code: 'LDN'}});
         this.cities.push({label: 'Istanbul', value: {id: 4, name: 'Istanbul', code: 'IST'}});
         this.cities.push({label: 'Paris', value: {id: 5, name: 'Paris', code: 'PRS'}});
+    }
+
+    ngOnInit(): any {
+
+        // Fake data for datatable
+        this.dataTableDummyData = [
+            {vin: 'a1653d4d', brand: 'VW', year: 1998, color: 'White'},
+            {vin: 'ddeb9b10', brand: 'Mercedes', year: 1985, color: 'Green'},
+            {vin: 'd8ebe413', brand: 'Jaguar', year: 1979, color: 'Silver'},
+            {vin: 'aab227b7', brand: 'Audi', year: 1970, color: 'Black'},
+            {vin: '631f7412', brand: 'Volvo', year: 1992, color: 'Red'},
+            {vin: 'a1653d4d', brand: 'VW 2', year: 1998, color: 'White'},
+            {vin: 'ddeb9b10', brand: 'Mercedes 2', year: 1985, color: 'Green'},
+            {vin: 'd8ebe413', brand: 'Jaguar 2', year: 1979, color: 'Silver'},
+            {vin: 'aab227b7', brand: 'Audi 2', year: 1970, color: 'Black'},
+            {vin: '631f7412', brand: 'Volvo 2', year: 1992, color: 'Red'},
+            {vin: 'a1653d4d', brand: 'VW 3', year: 1998, color: 'White'},
+            {vin: 'ddeb9b10', brand: 'Mercedes 3', year: 1985, color: 'Green'},
+            {vin: 'd8ebe413', brand: 'Jaguar 3', year: 1979, color: 'Silver'},
+            {vin: 'aab227b7', brand: 'Audi 3', year: 1970, color: 'Black'},
+            {vin: '631f7412', brand: 'Volvo 3', year: 1992, color: 'Red'}
+        ];
     }
 
     autocompleteComplete($event): void {

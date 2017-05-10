@@ -1,0 +1,49 @@
+.ui-datatable {
+    .ui-datatable-thead > tr > th,
+    .ui-datatable-tfoot > tr > td,
+    .ui-datatable-data > tr > td {
+        border-width: 0px;
+        padding: $datatable-cell-padding;
+    }
+
+    .ui-datatable-data > tr > td {
+        border-bottom: $datatable-cell-border;
+    }
+
+    .ui-sortable-column {
+        .fa-sort:before {
+            content: "";
+        }
+
+        .fa-sort-asc:before {
+            content: "\f063";
+        }
+
+        .fa-sort-desc:before {
+            content: "\f062";
+        }
+    }
+
+    .ui-selection-column {
+        width: 28px;
+    }
+
+    .ui-widget-content .ui-state-highlight {
+        background: $datatable-selected-row-bgcolor;
+        color: $datatable-row-color;
+    }
+
+    .ui-datatable-odd {
+        background: $datatable-row-bgcolor;
+    }
+
+    th.ui-state-active {
+        background: $datatable-head-active-bgcolor;
+        color: $datatable-head-active-color;
+    }
+
+    .ui-paginator {
+        padding-top: $basic-padding * 2;
+        padding-bottom: $basic-padding * 2;
+    }
+}
