@@ -43,7 +43,7 @@ public abstract class FileAssetContentType extends ContentType implements UrlMap
 				ImmutableHostFolderField.builder()
 				.name("Site or Folder")
 				.dataType(DataTypes.SYSTEM)
-				.variable("siteOrFolder")
+				.variable("hostFolder")
 				.sortOrder(fields.size())
 				.required(true)
 				.fixed(true)
