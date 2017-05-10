@@ -155,15 +155,19 @@ public class ContentTypeHelper implements Serializable {
             throws DotDataException {
         List<Structure> structures = this.structureAPI.find(user, false, false, query, orderby,
                 limit, offset, direction);
-        Map<String, Long> entriesByContentTypes = APILocator.getContentTypeAPI(user, true).getEntriesByContentTypes();
+        Map<String, Long> entriesByContentTypes = getEntriesByContentTypes(user);
 
         List<Map<String, Object>> result = structures.stream()
                 .map(contentType -> {
                     Map<String, Object> map = contentType.getMap();
-                    String key = contentType.getVelocityVarName().toLowerCase();
-                    Long contentTypeEntriesNumber = entriesByContentTypes.get(key) == null ? 0l :
-                            entriesByContentTypes.get(key);
-                    map.put(N_ENTRIES_FIELD_NAME, contentTypeEntriesNumber);
+
+                    if (entriesByContentTypes != null) {
+                        String key = contentType.getVelocityVarName().toLowerCase();
+                        Long contentTypeEntriesNumber = entriesByContentTypes.get(key) == null ? 0l :
+                                entriesByContentTypes.get(key);
+                        map.put(N_ENTRIES_FIELD_NAME, contentTypeEntriesNumber);
+                    }
+
                     return map;
                 })
                 .collect(Collectors.toList());
@@ -177,6 +181,14 @@ public class ContentTypeHelper implements Serializable {
         }
 
         return result;
+    }
+
+    private Map<String, Long> getEntriesByContentTypes(User user) {
+        try {
+            return APILocator.getContentTypeAPI(user, true).getEntriesByContentTypes();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public long getContentTypesCount() throws DotDataException {

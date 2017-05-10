@@ -240,7 +240,7 @@ public class ContentTypeResource implements Serializable {
 	 *  }
 	 * <code/>
 	 *
-	 * Url sintax: contenttype/query/query-string/limit/n-limit/offset/n-offset/orderby/fieldname-order_direction
+	 * Url sintax: contenttype?query=query-string&limit=n-limit&offset=n-offset&orderby=fieldname-order_direction
 	 *
 	 * where:
 	 *
@@ -255,37 +255,30 @@ public class ContentTypeResource implements Serializable {
 	 * Url example: v1/contenttype/query/New%20L/limit/4/offset/5/orderby/name-asc
 	 *
 	 * @param request
-	 * @param params
 	 * @return
 	 */
 	@GET
-	@Path ("/{params:.*}")
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final Response getContentTypes(@Context final HttpServletRequest request,
-										  @PathParam ("params") final String params) {
+										  @DefaultValue("-1") @QueryParam("limit") int limit,
+										  @DefaultValue("-1") @QueryParam("offset") int offset,
+										  @QueryParam("query") String query,
+										  @DefaultValue("upper(name)") @QueryParam("orderby") String orderbyParams) {
 
-		final InitDataObject initData = webResource.init(params, false, request, true, null);
+		final InitDataObject initData = webResource.init(null, true, request, true, null);
 
 		Response response = null;
 
 		final User user = initData.getUser();
-    	/* Limit and Offset Parameters Handling, if not passed, using default */
-		final String limitStr = initData.getParamsMap().get(RESTParams.LIMIT.getValue());
-		final String offsetStr = initData.getParamsMap().get(RESTParams.OFFSET.getValue());
 
-		int limit  = toInt(limitStr, -1);
-		int offset = toInt(offsetStr, -1);
+		String[] split = orderbyParams.split("-");
+		String orderby = "name".equals(split[0]) ? "upper(name)" : split[0];
+		String direction = split.length < 2 ? "asc" : split[1];
 
-		String orderbyParams = initData.getParamsMap().get(RESTParams.ORDERBY.getValue());
-		String[] split = orderbyParams != null ? orderbyParams.split("-") : null;
-		String orderby = (split == null || "name".equals(split[0])) ? "upper(name)" : split[0];
-		String direction = (split == null || split.length < 2) ? "asc" : split[1];
-
-		String filterBy = initData.getParamsMap().get(RESTParams.QUERY.getValue());
-		String queryCondition = filterBy == null ? "" : String.format("(name like '%%%s%%')", filterBy);
+		String queryCondition = query == null ? "" : String.format("(name like '%%%s%%')", query);
 
 		try {
 			List<Map<String, Object>> types = contentTypeHelper.getContentTypes(user, queryCondition, offset, limit, orderby, direction);
