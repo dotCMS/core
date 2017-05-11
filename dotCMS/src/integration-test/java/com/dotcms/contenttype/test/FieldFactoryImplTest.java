@@ -84,11 +84,12 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 
 
 		for (Field field : fields) {
-			List<FieldVariable> vars = FactoryLocator.getFieldFactory().loadVariables(field);
+			List<FieldVariable> vars = field.fieldVariables();
 			for(FieldVariable var : vars){
 				fieldApi.delete(var);
 			}
-			vars = fieldApi.loadVariables(field);
+
+			vars = FactoryLocator.getFieldFactory().loadVariables(field);
 
 			assertThat("No field vars for field " + field, vars.size() ==0);
 
@@ -103,9 +104,9 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 						.build();
 
 				var = fieldApi.save(var, APILocator.systemUser());
-				assertThat("field var saved correctly " + var,var.equals(fieldApi.loadVariable(var.id())));
+				assertThat("field var saved correctly " + var, var.equals(FactoryLocator.getFieldFactory().loadVariable(var.id())));
 
-				vars = fieldApi.loadVariables(field);
+				vars = FactoryLocator.getFieldFactory().loadVariables(field);
 				assertThat("field var added for field " + field, vars.size() ==i+1);
 
 			}
@@ -115,7 +116,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 
 			for(FieldVariable var : vars){
 				fieldApi.delete(var);
-				assertThat("field deleted correctly " + var,--mySize ==  fieldApi.loadVariables(field).size());
+				assertThat("field deleted correctly " + var,--mySize == FactoryLocator.getFieldFactory().loadVariables(field).size());
 			}
 		}
 	}

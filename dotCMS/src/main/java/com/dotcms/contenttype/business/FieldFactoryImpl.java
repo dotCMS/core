@@ -129,6 +129,16 @@ public class FieldFactoryImpl implements FieldFactory {
       return null;
     });
 
+    Field f = byId(fieldVar.fieldId());
+    ContentType t;
+    try {
+      t = APILocator.getContentTypeAPI(APILocator.systemUser()).find(f.contentTypeId());
+      if (t != null) {
+        CacheLocator.getContentTypeCache2().remove(t);
+      }
+    } catch (DotSecurityException e) {
+      throw new DotStateException(e);
+    }
   }
 
   @Override
