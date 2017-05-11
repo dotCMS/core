@@ -69,7 +69,6 @@ public class JsonFieldVariableTransformer {
   public Map<String, Object> mapObject() {
 
     Map<String, Object> map = mapper.convertValue(this.from(), HashMap.class);
-    map.remove("clazz");
     map.remove("modDate");
     map.remove("name");
     map.remove("userId");

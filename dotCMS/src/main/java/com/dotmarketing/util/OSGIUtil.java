@@ -451,7 +451,8 @@ public class OSGIUtil {
      */
     private void verifyBundles(Properties props, ServletContextEvent context) {
         String bundlePath = props.getProperty(AUTO_DEPLOY_DIR_PROPERTY);
-        String baseDirectory = context.getServletContext().getRealPath("/WEB-INF");
+        String baseDirectory = getBaseDirectory(context);
+
         String defaultFelixPath = baseDirectory + File.separator + "felix";
         String defaultBundlePath = defaultFelixPath + File.separator + "bundle";
 
@@ -480,4 +481,50 @@ public class OSGIUtil {
         }
     }
 
+    /**
+     * Gets the base directory, fetching it from the real path on the servlet context.
+     * If not found, it tries to fetch it from configuration context.
+     * If still not found, it fetches it from the 'felix.base.dir' property
+     * If value is null an exception is thrown.
+     *
+     * @param context The servlet context
+     * @return String
+     */
+    public String getBaseDirectory(ServletContextEvent context) {
+        String baseDirectory = null;
+        if (context != null) {
+            baseDirectory = context.getServletContext().getRealPath("/WEB-INF");
+        }
+
+        if (!UtilMethods.isSet(baseDirectory)) {
+            baseDirectory = Config.CONTEXT.getRealPath("/WEB-INF");
+
+            if (!UtilMethods.isSet(baseDirectory)) {
+                baseDirectory = parseBaseDirectoryFromConfig();
+            }
+        }
+
+        if (!UtilMethods.isSet(baseDirectory)) {
+            String errorMessage = "The default WEB-INF base directory is not found. Value is null";
+            Logger.error(this, errorMessage);
+
+            throw new RuntimeException(errorMessage);
+        }
+
+        return baseDirectory;
+    }
+
+    /**
+     * Parses the base directory from config
+     *
+     * @return String
+     */
+    public String parseBaseDirectoryFromConfig() {
+        String baseDirectory = Config.getStringProperty(FELIX_BASE_DIR, "/WEB-INF");
+        if (baseDirectory.endsWith("/WEB-INF")) {
+            baseDirectory = baseDirectory.substring(0, baseDirectory.indexOf(("/WEB-INF")) + 8);
+        }
+
+        return baseDirectory;
+    }
 }

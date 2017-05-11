@@ -2,6 +2,8 @@ package com.dotmarketing.velocity.directive;
 
 import java.io.Writer;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.velocity.context.Context;
 
 import com.dotmarketing.beans.Host;
@@ -9,6 +11,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
@@ -42,6 +45,8 @@ public class DotParse extends DotDirective {
     boolean live = params.live;
     Host host = params.currentHost;;
     User user = params.user;
+    HttpServletRequest request = (HttpServletRequest) context.get("request");
+    
     try {
 
       // if we have a host
@@ -72,8 +77,8 @@ public class DotParse extends DotDirective {
       FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(c);
       
       
-      // add the edit control
-      if (!context.containsKey("dontShowIcon") && params.editMode) {
+      // add the edit control if we have run through a page render
+      if (!context.containsKey("dontShowIcon") && params.editMode &&  (request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE)!=null)) {
         if (APILocator.getPermissionAPI().doesUserHavePermission(c, PermissionAPI.PERMISSION_READ, user)) {
           String editIcon = new String(EDIT_ICON).replace("${_dotParseInode}", c.getInode()).replace("${_dotParsePath}",
               id.getParentPath());

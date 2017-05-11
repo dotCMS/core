@@ -2,15 +2,16 @@ package com.dotcms.osgi;
 
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.mockito.Mockito;
 
 import java.io.File;
 
@@ -24,25 +25,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class OSGIUtilTest {
 
-    private static String FELIX_BASE_DIR;
     private static final String FELIX_BASE_DIR_KEY = "felix.base.dir";
 
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
 
-        FELIX_BASE_DIR = Config.getStringProperty(FELIX_BASE_DIR_KEY, Config.CONTEXT.getRealPath("/WEB-INF") + File.separator + "felix");
+        Mockito.when(Config.CONTEXT.getRealPath("/WEB-INF/felix")).thenReturn(Config.getStringProperty("context.path.felix","/WEB-INF/felix"));
 
         // Initialize OSGI
         initializeOSGIFramework();
-    }
-
-    @AfterClass
-    public static void restartOSGIAfterFinishing() {
-        Config.setProperty(FELIX_BASE_DIR_KEY, FELIX_BASE_DIR);
-
-        // Restores original state of the OSGi framework
-        restartOSGi();
     }
 
     /**
@@ -66,6 +58,24 @@ public class OSGIUtilTest {
 
         //Now we need to initialize it
         initializeOSGIFramework();
+    }
+
+    /**
+     * Restart the OSGI Framework. Copies/Restores all files
+     *
+     * @param  felixBasePath The default felix base path
+     * @param newDirectory The new directory to copy the files from
+     */
+    private static void restartOSGi(String felixBasePath, String newDirectory) {
+        try {
+            Config.setProperty(FELIX_BASE_DIR_KEY, felixBasePath);
+
+            FileUtils.copyDirectory(new File(newDirectory), new File(felixBasePath));
+
+            restartOSGi();
+        } catch (Exception ex) {
+            Logger.error(OSGIUtilTest.class, "Error restarting OSGI", ex);
+        }
     }
 
     /**
@@ -106,10 +116,10 @@ public class OSGIUtilTest {
         Assert.assertNotNull(deployFelixPath);
         assertThat("Path ends with /WEB-INF/customfelix/load", deployFelixPath.endsWith("/WEB-INF/customfelix/load"));
 
+        restartOSGi(contextFelixPath, customFelixPath);
+
         removeFolder(deployFelixPath);
         removeFolder(customFelixPath);
-
-        Config.setProperty(FELIX_BASE_DIR_KEY, FELIX_BASE_DIR);
     }
 
     /**
@@ -128,10 +138,39 @@ public class OSGIUtilTest {
         Assert.assertNotNull(undeployFelixPath);
         assertThat("Path ends with /WEB-INF/customfelix/undeployed", undeployFelixPath.endsWith("/WEB-INF/customfelix/undeployed"));
 
+        restartOSGi(contextFelixPath, customFelixPath);
+
         removeFolder(undeployFelixPath);
         removeFolder(customFelixPath);
+    }
 
-        Config.setProperty(FELIX_BASE_DIR_KEY, FELIX_BASE_DIR);
+    /**
+     * Test the base directory exists using the servlet context
+     */
+    @Test
+    public void test05GetBaseDirectoryFromServletContext() throws Exception {
+        ServletContextEvent context = new ServletContextEvent(Config.CONTEXT);
+
+        String baseDirectory = OSGIUtil.getInstance().getBaseDirectory(context);
+        assertThat("WEB-INF Base Directory exists", new File(baseDirectory).exists());
+    }
+
+    /**
+     * Test the base directory exists using the Config.CONTEXT
+     */
+    @Test
+    public void test06GetBaseDirectoryFromConfigContext() throws Exception {
+        String baseDirectory = OSGIUtil.getInstance().getBaseDirectory(null);
+        assertThat("WEB-INF Base Directory exists", new File(baseDirectory).exists());
+    }
+
+    /**
+     * Test the parse base directory from 'felix.base.dir' property
+     */
+    @Test
+    public void test07ParseBaseDirectory() throws Exception {
+        String baseDirectory = OSGIUtil.getInstance().parseBaseDirectoryFromConfig();
+        assertThat("WEB-INF Path exists", new File(baseDirectory).exists());
     }
 
     /**

@@ -15,6 +15,7 @@ import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.DELETE;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.PUT;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
@@ -31,133 +32,264 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 
+import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.rest.RESTParams;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringUtil;
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.ConversionUtils.toInt;
+import java.util.Map;
 
 @Path("/v1/contenttype")
 public class ContentTypeResource implements Serializable {
-  private final WebResource webResource;
-  private final ContentTypeHelper contentTypeHelper;
+	private final WebResource webResource;
+	private final ContentTypeHelper contentTypeHelper;
 
-  public ContentTypeResource() {
-    this(ContentTypeHelper.getInstance(), new WebResource());
-  }
+	public ContentTypeResource() {
+		this(ContentTypeHelper.getInstance(), new WebResource());
+	}
 
-  @VisibleForTesting
-  public ContentTypeResource(final ContentTypeHelper contentletHelper, final WebResource webresource) {
-    this.webResource = webresource;
-    this.contentTypeHelper = contentletHelper;
-  }
+	@VisibleForTesting
+	public ContentTypeResource(final ContentTypeHelper contentletHelper, final WebResource webresource) {
+		this.webResource = webresource;
+		this.contentTypeHelper = contentletHelper;
+	}
 
-  @VisibleForTesting
-  public ContentTypeResource(final ContentTypeHelper contentletHelper) {
-    this(contentletHelper, new WebResource());
-  }
+	@VisibleForTesting
+	public ContentTypeResource(final ContentTypeHelper contentletHelper) {
+		this(contentletHelper, new WebResource());
+	}
 
-  private static final long serialVersionUID = 1L;
-
-
-  @POST
-  @JSONP
-  @NoCache
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  public final Response saveType(@Context final HttpServletRequest req, final String json)
-      throws DotDataException, DotSecurityException {
-    final InitDataObject initData = this.webResource.init(null, true, req, true, null);
-    final User user = initData.getUser();
-    List<ContentType> typesToSave = new JsonContentTypeTransformer(json).asList();
-    
-    List<ContentType> retTypes = new ArrayList<>();
-
-    for (ContentType type :typesToSave ) {
-      retTypes.add(APILocator.getContentTypeAPI(user, true).save(type, type.fields()));
-    }
-    
-    return Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(retTypes).mapObject())).build();
-
-  }
-
-  @DELETE
-  @Path("/id/{id}")
-  @JSONP
-  @NoCache
-  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  public Response deleteType(@PathParam("id") final String id, @Context final HttpServletRequest req)
-      throws DotDataException, DotSecurityException, JSONException {
-
-    final InitDataObject initData = this.webResource.init(null, true, req, true, null);
-    final User user = initData.getUser();
-
-    ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
+	private static final long serialVersionUID = 1L;
 
 
-    ContentType type = null;
-    try {
-      type = tapi.find(id);
-    } catch (NotFoundInDbException nfdb) {
-      try {
-        type = tapi.find(id);
-      } catch (NotFoundInDbException nfdb2) {
-        return Response.status(404).build();
-      }
-    }
+	@POST
+	@JSONP
+	@NoCache
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public final Response createType(@Context final HttpServletRequest req, final String json)
+			throws DotDataException, DotSecurityException {
+		final InitDataObject initData = this.webResource.init(null, true, req, true, null);
+		final User user = initData.getUser();
+		List<ContentType> typesToSave = new JsonContentTypeTransformer(json).asList();
 
-    tapi.delete(type);
+		// Validate input
+		for (ContentType type : typesToSave) {
+			if (UtilMethods.isSet(type.id())) {
+				return ExceptionMapperUtil.createResponse(null, "Field 'id' should not be set");
+			}
+		}
 
+		List<ContentType> retTypes = new ArrayList<>();
 
-    JSONObject joe = new JSONObject();
-    joe.put("deleted", type.id());
+		// Persist input
+		for (ContentType type :typesToSave) {
+			retTypes.add(APILocator.getContentTypeAPI(user, true).save(type));
+		}
 
+		return Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(retTypes).mapList())).build();
 
-    Response response = Response.ok(joe.toString()).build();
-    return response;
-  }
-
-  @GET
-  @Path("/id/{id}")
-  @JSONP
-  @NoCache
-  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  public Response getType(@PathParam("id") final String id, @Context final HttpServletRequest req)
-      throws DotDataException, DotSecurityException {
-
-    final InitDataObject initData = this.webResource.init(null, false, req, false, null);
-    final User user = initData.getUser();
-    ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
-    Response response = Response.status(404).build();
-    try {
-      ContentType type = tapi.find(id);
-      response = Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(type).mapObject())).build();
-    } catch (NotFoundInDbException nfdb2) {
-      // nothing to do here, will throw a 404
-    }
+	}
 
 
-    return response;
-  }
+	@PUT
+	@Path("/id/{id}")
+	@JSONP
+	@NoCache
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+	public Response updateType(@PathParam("id") final String id, final String json,
+							   @Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
+
+		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+		final User user = initData.getUser();
+		final ContentTypeAPI capi = APILocator.getContentTypeAPI(user, true);
+
+		Response response = null;
+
+		try {
+			ContentType contentType = new JsonContentTypeTransformer(json).from();
+			if (!UtilMethods.isSet(contentType.id())) {
+
+				response = ExceptionMapperUtil.createResponse(null, "Field 'id' should be set");
+
+			} else {
+
+				ContentType currentContentType = capi.find(id);
+
+				if (!currentContentType.id().equals(contentType.id())) {
+
+					response = ExceptionMapperUtil.createResponse(null, "Field id '"+ id +"' does not match a content-type with id '"+ contentType.id() +"'");
+
+				} else {
+
+					contentType = capi.save(contentType);
+
+					response = Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(contentType).mapObject())).build();
+				}
+			}
+		} catch (NotFoundInDbException e) {
+
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+
+		} catch (Exception e) {
+
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
+
+		return response;
+	}
 
 
-  @GET
-  @Path("/basetypes")
-  @JSONP
-  @InitRequestRequired
-  @NoCache
-  @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-  public final Response getRecentBaseTypes(@Context final HttpServletRequest request) {
+	@DELETE
+	@Path("/id/{id}")
+	@JSONP
+	@NoCache
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public Response deleteType(@PathParam("id") final String id, @Context final HttpServletRequest req)
+			throws DotDataException, DotSecurityException, JSONException {
 
-    Response response = null;
+		final InitDataObject initData = this.webResource.init(null, true, req, true, null);
+		final User user = initData.getUser();
 
-    try {
-      List<BaseContentTypesView> types = contentTypeHelper.getTypes(request);
-      response = Response.ok(new ResponseEntityView(types)).build();
-    } catch (Exception e) { // this is an unknown error, so we report as a 500.
+		ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
 
-      response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-    }
 
-    return response;
-  } // getTypes.
+		ContentType type = null;
+		try {
+			type = tapi.find(id);
+		} catch (NotFoundInDbException nfdb) {
+			try {
+				type = tapi.find(id);
+			} catch (NotFoundInDbException nfdb2) {
+				return Response.status(404).build();
+			}
+		}
+
+		tapi.delete(type);
+
+
+		JSONObject joe = new JSONObject();
+		joe.put("deleted", type.id());
+
+
+		Response response = Response.ok(new ResponseEntityView(joe.toString())).build();
+		return response;
+	}
+
+
+	@GET
+	@Path("/id/{id}")
+	@JSONP
+	@NoCache
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public Response getType(@PathParam("id") final String id, @Context final HttpServletRequest req)
+			throws DotDataException, DotSecurityException {
+
+		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
+		final User user = initData.getUser();
+		ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
+		Response response = Response.status(404).build();
+		try {
+			ContentType type = tapi.find(id);
+			response = Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(type).mapObject())).build();
+		} catch (NotFoundInDbException nfdb2) {
+			// nothing to do here, will throw a 404
+		}
+
+
+		return response;
+	}
+
+
+	@GET
+	@Path("/basetypes")
+	@JSONP
+	@InitRequestRequired
+	@NoCache
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public final Response getRecentBaseTypes(@Context final HttpServletRequest request) {
+
+		Response response = null;
+
+		try {
+			List<BaseContentTypesView> types = contentTypeHelper.getTypes(request);
+			response = Response.ok(new ResponseEntityView(types)).build();
+		} catch (Exception e) { // this is an unknown error, so we report as a 500.
+
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
+
+		return response;
+	} // getTypes.
+
+	/**
+	 * Return a list of {@link ContentType}, entity response syntax:.
+	 *
+	 * <code>
+	 *  {
+	 *      contentTypes: array of ContentType
+	 *      total: total number of content types
+	 *  }
+	 * <code/>
+	 *
+	 * Url sintax: contenttype?query=query-string&limit=n-limit&offset=n-offset&orderby=fieldname-order_direction
+	 *
+	 * where:
+	 *
+	 * <ul>
+	 *     <li>query-string: just return ContentTypes who content this pattern</li>
+	 *     <li>n-limit: limit of items to return</li>
+	 *     <li>n-offset: offset</li>
+	 *     <li>fieldname: field to order by</li>
+	 *     <li>order_direction: asc for upward order and desc for downward order</li>
+	 * </ul>
+	 *
+	 * Url example: v1/contenttype/query/New%20L/limit/4/offset/5/orderby/name-asc
+	 *
+	 * @param request
+	 * @return
+	 */
+	@GET
+	@JSONP
+	@NoCache
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public final Response getContentTypes(@Context final HttpServletRequest request,
+										  @DefaultValue("-1") @QueryParam("limit") int limit,
+										  @DefaultValue("-1") @QueryParam("offset") int offset,
+										  @QueryParam("query") String query,
+										  @DefaultValue("upper(name)") @QueryParam("orderby") String orderbyParams) {
+
+		final InitDataObject initData = webResource.init(null, true, request, true, null);
+
+		Response response = null;
+
+		final User user = initData.getUser();
+
+		String[] split = orderbyParams.split("-");
+		String orderby = "name".equals(split[0]) ? "upper(name)" : split[0];
+		String direction = split.length < 2 ? "asc" : split[1];
+
+		String queryCondition = query == null ? "" : String.format("(name like '%%%s%%')", query);
+
+		try {
+			List<Map<String, Object>> types = contentTypeHelper.getContentTypes(user, queryCondition, offset, limit, orderby, direction);
+			long contentTypesCount = contentTypeHelper.getContentTypesCount();
+			response = Response.ok(new ResponseEntityView( map("contentTypes", types, "total", contentTypesCount)))
+					.build();
+		} catch (Exception e) {
+
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
+
+		return response;
+	}
 }
