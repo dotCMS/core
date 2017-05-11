@@ -1,7 +1,7 @@
 @import "../../variables";
 
 // Common
-$field-animation-speed: 100ms;
+$field-animation-speed: $basic-speed;
 $field-bgcolor: transparent;
 $field-border-color: $gray-light;
 $field-border-radius: $border-radius;
@@ -12,68 +12,62 @@ $field-placeholder-color: rgba($gray-dark, .4);
 
 // Fields
 $field-normal-bgcolor: $field-bgcolor;
-$field-normal-textcolor: $body-font-color;
+$field-normal-color: $body-font-color;
 $field-normal-border-size: $field-border-size;
 $field-normal-border-color: $field-border-color;
-$field-normal-arrow-color: $field-border-color;
 
 $field-hover-bgcolor: $field-bgcolor;
-$field-hover-textcolor: $body-font-color;
+$field-hover-color: $body-font-color;
 $field-hover-border-size: $field-border-size;
 $field-hover-border-color: $field-border-color;
-$field-hover-arrow-color: $brand-primary;
 
 $field-active-bgcolor: $field-bgcolor;
-$field-active-textcolor: $body-font-color;
+$field-active-color: $body-font-color;
 $field-active-border-size: 2px;
 $field-active-border-color: $brand-primary;
-$field-active-arrow-color: $brand-primary;
 
 $field-disabled-bgcolor: $field-bgcolor;
-$field-disabled-textcolor: $gray-light;
+$field-disabled-color: $gray-light;
 $field-disabled-border-size: $field-border-size;
 $field-disabled-border-color: $gray-lighter;
-$field-disabled-arrow-color: $gray-light;
-
-$field-focused-bgcolor: $field-bgcolor;
-$field-focused-textcolor: $body-font-color;
-$field-focused-border-color: 2px;
-$field-focused-arrow-color: $brand-primary;
-$field-focused-arrow-color: $brand-primary;
 
 // BUTTONS
-$button-border: solid 1px transparent;
+$button-border: 0;
 $button-padding: $field-padding * 2;
+$button-height: $field-height;
+$button-disabled-color: $body-font-color;
+$button-radius: $field-border-radius;
+$button-inverted-color: $white;
 
 $buttons-map: (
     basic: (
         default: (
             background: $white,
-            color: $field-normal-textcolor,
+            color: $field-normal-color,
             border: $button-border,
             shadow: $md-shadow-1
         ),
         hover: (
-            background: $field-hover-bgcolor,
-            color: $field-hover-textcolor,
+            background: $white,
+            color: $field-hover-color,
             border: $button-border,
             shadow: $md-shadow-2
         ),
         focus: (
-            background: $field-hover-bgcolor,
-            color: $field-hover-textcolor,
+            background: $white,
+            color: $field-hover-color,
             border: $button-border,
             shadow: $md-shadow-2
         ),
         active: (
             background: $white,
-            color: $field-normal-textcolor,
+            color: $field-normal-color,
             border: $button-border,
             shadow: $md-shadow-1
         ),
         disabled: (
             background: $gray-lighter,
-            color: $field-disabled-textcolor,
+            color: $field-disabled-color,
             border: $button-border,
             shadow: none
         )
@@ -86,7 +80,7 @@ $buttons-map: (
             shadow: none
         ),
         hover: (
-            background: $gray-lighter,
+            background: rgba($black, 0.1),
             color: $body-font-color,
             border: $button-border,
             shadow: none
@@ -99,13 +93,13 @@ $buttons-map: (
         ),
         active: (
             background: transparent,
-            color: $field-active-textcolor,
+            color: $field-active-color,
             border: $button-border,
             shadow: none
         ),
         disabled: (
             background: transparent,
-            color: $field-disabled-textcolor,
+            color: $field-disabled-color,
             border: $button-border,
             shadow: none
         ),
@@ -184,6 +178,14 @@ $floating-action-button-bg-hover: darken($blue, 10%);
 $floating-action-button-bg-active: darken($blue, 20%);
 $floating-action-button-bg-focus: darken($blue, 10%);
 
+// DROPDOWN
+$dropdown-active-color: $field-active-color;
+$dropdown-disabled-color: $field-disabled-color;
+$dropdown-height: $field-height;
+
+// AUTOCOMPLETE
+$autocomplete-height: $field-height;
+
 // CHECKBOX AND RADIO BUTTON
 $check-border-width: 1px;
 $check-radius: 2px;
@@ -203,6 +205,8 @@ $check-normal-border: solid $field-border-size $black;
 
 $check-hover-bgcolor: $white;
 $check-hover-border: $check-checked-border;
+
+$radio-size: $check-size;
 
 $radio-checked-bgcolor: $white;
 $radio-checked-border: solid $check-border-width $brand-primary;
@@ -234,3 +238,7 @@ $paginator-page-selected-border-color: $blue;
 $paginator-page-hover-bgcolor: $gray-light;
 $paginator-page-border-radius: 10px;
 $paginator-page-size: 21px;
+
+// TOOLBAR
+$toolbar-background: $brand-primary;
+$toolbar-color: $white;

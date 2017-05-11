@@ -1,12 +1,5 @@
-@mixin button-state($props) {
-    background: map-get($props, background);
-    border: map-get($props, border);
-    box-shadow: map-get($props, shadow);
-    color: map-get($props, color);
-}
-
-.ui-button {
-    height: $field-height;
+#buttons {
+    height: $button-height;
     margin-right: 0;
     outline: none;
     transition: background-color $field-animation-speed ease-in,
@@ -17,43 +10,47 @@
         @if ($button == "basic") {
 
             @each $label, $props in $states {
-                @if ($label == "default") {
-                    @include button-state($props)
-                } @else {
-                    &:#{$label} {
-                        @include button-state($props)
-                    }
-                }
+                @include button-properties($label, $props)
             }
 
         } @else {
 
             &[#{$button}] {
                 @each $label, $props in $states {
-                    @if ($label == "default") {
-                        @include button-state($props)
-                    } @else {
-                        &:#{$label} {
-                            @include button-state($props)
-                        }
-                    }
+                    @include button-properties($label, $props)
                 }
             }
 
         }
     }
+}
+
+.ui-button {
+    @extend #buttons;
 
     &[iconButton], &[actionButton] {
         border-radius: 50%;
         border: none;
-        transition: background-color $basic-speed;
+        transition: background-color $field-animation-speed;
+
+        &[disabled] {
+            opacity: 0.25;
+
+            .ui-button-text,
+            .ui-c {
+                color: $button-disabled-color;
+            }
+        }
     }
 
     &[iconButton] {
-        width: $field-height;
+        width: $button-height;
 
-        &.inverse {
-            color: $white;
+        &:not([disabled]).inverse {
+            .ui-button-text,
+            .ui-c {
+                color: $white;
+            }
         }
 
         &.ui-state-default {
@@ -64,18 +61,17 @@
         &:not([disabled]):hover {
             background: rgba($black, 0.1);
         }
-
-        &[disabled] {
-            color: $body-font-color;
-            opacity: 0.25;
-        }
     }
 
     &[actionButton] {
-        color: $floating-action-button-color;
         font-size: $floating-action-button-icon-size;
         height: $floating-action-button-height;
         width: $floating-action-button-height;
+
+        .ui-button-text,
+        .ui-c {
+            color: $floating-action-button-color;
+        }
 
         &.ui-state-default {
             background: $blue;
@@ -95,8 +91,6 @@
 
         &[disabled] {
             background: $gray;
-            color: $body-font-color;
-            opacity: 0.25;
         }
     }
 }
@@ -114,6 +108,4 @@
     .ui-button-text-icon-right & {
         padding: 0 $basic-padding * 3.5 0 $button-padding;
     }
-
 }
-

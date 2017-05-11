@@ -1,0 +1,16 @@
+.ui-menu {
+    background: $white;
+    padding: 0;
+    
+    &.ui-menu-dynamic {
+        z-index: 1003; // Same as dropdown default
+    }
+
+    .ui-menuitem {
+        @extend #dropdown-item;
+    }
+
+    .ui-menuitem-link {
+        padding: 0;
+    }
+}

@@ -1,10 +1,3 @@
-@mixin btn ($shadow: none, $bg: $button-normal-bgcolor, $border: $button-normal-border, $color: $button-normal-textcolor) {
-  background-color: $bg;
-  border: $border;
-  box-shadow: $shadow;
-  color: $color;
-}
-
 @mixin placeholder($color) {
   &::-webkit-input-placeholder {
     color: $color
@@ -21,5 +14,40 @@
   &:-ms-input-placeholder {
     color: $color
   }
+}
 
+// BUTTONS & SPLIT BUTTONS
+
+@mixin button-state($props) {
+    background: map-get($props, background);
+    border: map-get($props, border);
+    box-shadow: map-get($props, shadow);
+
+    .ui-button-text,
+    .ui-c {
+        color: map-get($props, color);
+    }
+
+    .ui-button {
+        .ui-button-text,
+        .ui-c {
+            color: map-get($props, color);
+        }
+    }
+}
+
+@mixin button-properties($label, $props) {
+    @if ($label == "default") {
+        @include button-state($props)
+    } @else {
+        @if ($label == "disabled") {
+            &[#{$label}] {
+                @include button-state($props)
+            }
+        } @else {
+            &:#{$label} {
+                @include button-state($props)
+            }
+        } 
+    }
 }

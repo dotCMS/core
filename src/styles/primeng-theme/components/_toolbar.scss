@@ -1,7 +1,7 @@
 .ui-toolbar {
   align-items: center;
-  background-color: $brand-primary;
-  color: $white;
+  background-color: $toolbar-background;
+  color: $toolbar-color;
   display: flex;
   height: $toolbar-height;
   padding: 0 $basic-padding * 2;
@@ -11,6 +11,6 @@
   }
 
   .btn {
-    color: $white;
+    color: $toolbar-background;
   }
 }

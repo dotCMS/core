@@ -3,7 +3,7 @@
         @extend #inputtext-normal-border;
         background: none;
         border-radius: 0;
-        height: $field-height;
+        height: $autocomplete-height;
 
         &:active, &:focus {
             background: none;

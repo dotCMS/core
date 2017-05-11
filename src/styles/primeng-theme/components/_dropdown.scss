@@ -1,3 +1,12 @@
+#dropdown-item {
+    margin: 0;
+    padding: $basic-padding;
+
+    &:hover {
+        @extend #ui-hover-state;
+    }
+}
+
 .ui-dropdown {
 
     &:not(.ui-state-disabled) {
@@ -8,23 +17,23 @@
 
         &:active {
             .fa {
-                color: $brand-primary;
+                color: $dropdown-active-color;
             }
 
             .ui-dropdown-trigger {
-                border-color: $brand-primary;
+                border-color: $dropdown-active-color;
             }
         }
     }
 
     &.ui-state-disabled {
         .ui-dropdown-trigger {
-            color: $field-disabled-textcolor;
+            color: $dropdown-disabled-color;
         }
 
         .ui-dropdown-label {
             &:hover {
-                color: $field-disabled-textcolor;
+                color: $dropdown-disabled-color;
             }
         }
     }
@@ -33,7 +42,7 @@
         align-items: center;
         display: flex;
         justify-content: center;
-        width: $field-height;
+        width: $dropdown-height;
 
         .fa {
             margin: 0;
@@ -42,8 +51,8 @@
 
     .ui-dropdown-label {
         border: 0;
-        line-height: $field-height;
-        padding-right: $field-height + $basic-padding;
+        line-height: $dropdown-height;
+        padding-right: $dropdown-height + $basic-padding;
     }
 }
 
@@ -57,12 +66,7 @@
     }
 
     .ui-dropdown-item {
-        margin: 0;
-        padding: $basic-padding;
-
-        &:hover {
-            @extend #ui-hover-state;
-        }
+        @extend #dropdown-item;
 
         &.ui-corner-all {
             border-radius: 0;

@@ -58,13 +58,13 @@ $icon-size: $check-size - $check-border-width * 2;
 .ui-radiobutton {
     .ui-radiobutton-icon {
         @extend #check-icon;
-        color: $brand-primary;
+        color: $radio-checked-color;
         font-size: 8px;
     }
 
     .ui-radiobutton-box {
-        height: $check-size;
-        width: $check-size;
+        height: $radio-size;
+        width: $radio-size;
 
         &.ui-state-default {
             background: $radio-normal-bgcolor;

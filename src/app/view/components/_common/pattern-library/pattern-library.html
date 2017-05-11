@@ -47,18 +47,69 @@
 
         <div class="col-sm-6 col-md-offset-1 section-fields">
             <div class="section-buttons">
-                <h3 class="section__title">Buttons</h3>
+                <h3 class="section__title">Buttons & SplitButtons</h3>
                 <article>
                     <h4 class="section__subtitle">Normal buttons</h4>
                     <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
-                    <button pButton label="Normal"></button>
-                    <button pButton disabled label="Disabled"></button>
+                    <p>
+                        <button pButton label="Normal"></button>
+                        <button pButton disabled label="Disabled"></button>
+                    </p>
+                    <p>
+                        <p-splitButton label="Normal" [model]="splitButtonItems"></p-splitButton>
+                        <p-splitButton disabled="true" label="Disabled" [model]="splitButtonItems"></p-splitButton>
+                    </p>
                 </article>
                 <article>
                     <h4 class="section__subtitle">Icon and label buttons</h4>
                     <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
-                    <button pButton label="Left" icon="fa-check" iconPos="left"></button>
-                    <button pButton label="Right" icon="fa-check" iconPos="right"></button>
+                    <p>
+                        <button pButton label="Left" icon="fa-check" iconPos="left"></button>
+                        <button pButton label="Right" icon="fa-check" iconPos="right"></button>
+                    </p>
+                    <p>
+                        <p-splitButton label="Normal" icon="fa-check" [model]="splitButtonItems"></p-splitButton>
+                    </p>
+                </article>
+                <article>
+                    <h4 class="section__subtitle">Flat buttons</h4>
+                    <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
+                    <p>
+                        <button pButton flat label="Flat"></button>
+                        <button pButton flat disabled label="Disabled"></button>
+                    </p>
+                    <p>
+                        <p-splitButton flat label="Flat" [model]="splitButtonItems"></p-splitButton>
+                        <p-splitButton flat disabled="true" label="Disabled" [model]="splitButtonItems"></p-splitButton>
+                    </p>
+
+                    <p style="background-color: #0E80CB; padding: 8px">
+                        <p-splitButton flat label="Flat" class="inverted" [model]="splitButtonItems"></p-splitButton>
+                    </p>
+                </article>
+                <article>
+                    <h4 class="section__subtitle">Primary Button</h4>
+                    <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
+                    <p>
+                        <button pButton primary label="Primary"></button>
+                        <button pButton primary disabled label="Disabled"></button>
+                    </p>
+                    <p>
+                        <p-splitButton primary label="Primary" [model]="splitButtonItems"></p-splitButton>
+                        <p-splitButton primary disabled="true" label="Disabled" [model]="splitButtonItems"></p-splitButton>
+                    </p>
+                </article>
+                <article>
+                    <h4 class="section__subtitle">Negative Button</h4>
+                    <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
+                    <p>
+                        <button pButton secondary label="Secondary"></button>
+                        <button pButton secondary disabled label="Disabled"></button>
+                    </p>
+                    <p>
+                        <p-splitButton secondary label="Secondary" [model]="splitButtonItems"></p-splitButton>
+                        <p-splitButton secondary disabled="true" label="Disabled" [model]="splitButtonItems"></p-splitButton>
+                    </p>
                 </article>
                 <article>
                     <h4 class="section__subtitle">Normal icon buttons</h4>
@@ -75,28 +126,10 @@
                     <button pButton iconButton disabled="disabled" icon="fa-plus"></button>
                 </article>
                 <article>
-                    <h4 class="section__subtitle">Flat buttons</h4>
-                    <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
-                    <button pButton flat label="Flat"></button>
-                    <button pButton flat disabled label="Disabled"></button>
-                </article>
-                <article>
                     <h4 class="section__subtitle">Action buttons</h4>
                     <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
                     <button pButton actionButton icon="fa-plus"></button>
                     <button pButton actionButton disabled="disabled" icon="fa-plus"></button>
-                </article>
-                <article>
-                    <h4 class="section__subtitle">Primary Button</h4>
-                    <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
-                    <button pButton primary label="Primary"></button>
-                    <button pButton primary disabled label="Disabled"></button>
-                </article>
-                <article>
-                    <h4 class="section__subtitle">Negative Button</h4>
-                    <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
-                    <button pButton secondary label="Secondary"></button>
-                    <button pButton secondary disabled label="Disabled"></button>
                 </article>
             </div>
             <div class="section-fields">

@@ -37,7 +37,7 @@ $sidebar-width: 190px;
   position: fixed;
   top: 0;
   width: 100%;
-  z-index: 1;
+  z-index: 1004; // Menu and dropdown options in primeng use 1003.
 }
 
 .layout__toolbar-inner {
@@ -51,6 +51,12 @@ $sidebar-width: 190px;
   display: flex;
   flex-direction: row;
   align-items: center;
+}
+
+.toolbar__actions {
+  toolbar-user {
+    margin: 0 $basic-padding;
+  }
 }
 
 .toolbar__host {

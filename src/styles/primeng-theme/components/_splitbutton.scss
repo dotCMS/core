@@ -1,0 +1,30 @@
+p-splitbutton {
+    display: inline-block;
+    border-radius: $button-radius;
+    @extend #buttons;
+
+    &[flat].inverted,
+    &[flat].inverted:hover {
+        .ui-button-text,
+        .ui-c {
+            color: $button-inverted-color;
+        }
+    }
+    
+}
+
+.ui-splitbutton {
+  .ui-button {
+    background: none;
+    box-shadow: none;
+    border: none;
+    vertical-align: middle;
+  }
+
+  .ui-button-text-only,
+    .ui-button-text-icon-left {
+        .ui-button-text {
+            padding-right: 0;
+        }
+    }
+}

@@ -51,7 +51,6 @@ a {
 }
 
 // This is legacy code, needs to once we refactor rule-engine component and remove semantic-ui
-$rules-engine-fonts-url: "../app/view/components/rule-engine/styles/fonts" ;
 @font-face {
     font-family: 'Icons';
     src: url("${rules-engine-fonts-url}/icons.eot");

@@ -22,29 +22,29 @@ input, select, textarea, button {
 #field-default-state {
     background: $field-normal-bgcolor;
     border: none;
-    color: $field-normal-textcolor;
+    color: $field-normal-color;
     font-weight: normal;
 }
 
 #field-hover-state {
     background: $field-hover-bgcolor;
-    color: $field-hover-textcolor;
+    color: $field-hover-color;
 }
 
 #field-active-state {
     background: $field-active-bgcolor;
-    color: $field-active-textcolor;
+    color: $field-active-color;
 }
 
 #field-disabled-state {
     background-image: none;
     background: $field-disabled-bgcolor;
-    color: $field-disabled-textcolor;
+    color: $field-disabled-color;
 }
 
 #ui-hover-state {
     background: $gray-lighter;
-    color: $field-hover-textcolor;
+    color: $field-hover-color;
 }
 
 .ui-state-default {
@@ -52,12 +52,12 @@ input, select, textarea, button {
 }
 
 .ui-state-default a {
-    color: $field-normal-textcolor;
+    color: $field-normal-color;
     text-decoration: none;
 
     &:link,
     &:visited {
-        color: $field-normal-textcolor;
+        color: $field-normal-color;
         text-decoration: none;
     }
 }
@@ -82,15 +82,15 @@ input, select, textarea, button {
     border-color: $field-active-border-color;
     border-width: $field-active-border-size;
     background: $field-active-bgcolor;
-    color: $field-active-textcolor;
+    color: $field-active-color;
 }
 
 .ui-state-active a {
-    color: $field-active-textcolor;
+    color: $field-active-color;
     text-decoration: none;
 
     &:link, &:visited {
-        color: $field-active-textcolor;
+        color: $field-active-color;
         text-decoration: none;
     }
 }
@@ -597,49 +597,6 @@ input, select, textarea, button {
                 color: #555555;
             }
         }
-    }
-}
-
-/* Menus */
-
-.ui-menu {
-    border: 1px solid #d9d9d9;
-    color: #1b1d1f;
-    background: #f6f7f9 0 0 repeat-x;
-    /* Old browsers */
-    background: -moz-linear-gradient(top, #f6f7f9 0%, #ebedf0 100%);
-    /* FF3.6+ */
-    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #f6f7f9), color-stop(100%, #ebedf0));
-    /* Chrome,Safari4+ */
-    background: -webkit-linear-gradient(top, #f6f7f9 0%, #ebedf0 100%);
-    /* Chrome10+,Safari5.1+ */
-    background: -o-linear-gradient(top, #f6f7f9 0%, #ebedf0 100%);
-    /* Opera11.10+ */
-    background: -ms-linear-gradient(top, #f6f7f9 0%, #ebedf0 100%);
-    /* IE10+ */
-    background: linear-gradient(to bottom, #f6f7f9 0%, #ebedf0 100%);
-    /* W3C */
-    .ui-menu-child {
-        border: 1px solid #d9d9d9;
-        color: #1b1d1f;
-        background: #f6f7f9 0 0 repeat-x;
-        /* Old browsers */
-        background: -moz-linear-gradient(top, #f6f7f9 0%, #ebedf0 100%);
-        /* FF3.6+ */
-        background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #f6f7f9), color-stop(100%, #ebedf0));
-        /* Chrome,Safari4+ */
-        background: -webkit-linear-gradient(top, #f6f7f9 0%, #ebedf0 100%);
-        /* Chrome10+,Safari5.1+ */
-        background: -o-linear-gradient(top, #f6f7f9 0%, #ebedf0 100%);
-        /* Opera11.10+ */
-        background: -ms-linear-gradient(top, #f6f7f9 0%, #ebedf0 100%);
-        /* IE10+ */
-        background: linear-gradient(to bottom, #f6f7f9 0%, #ebedf0 100%);
-        /* W3C */
-    }
-    a.ui-state-hover {
-        background-color: #a6a6a6;
-        color: #ffffff;
     }
 }
 

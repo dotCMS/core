@@ -31,6 +31,7 @@ import {InputTextModule} from 'primeng/primeng';
 import {InputTextareaModule} from 'primeng/primeng';
 import {PasswordModule} from 'primeng/primeng';
 import {RadioButtonModule} from 'primeng/primeng';
+import {SplitButtonModule} from 'primeng/primeng';
 import {ToolbarModule} from 'primeng/primeng';
 import {DataTableModule, SharedModule} from 'primeng/primeng';
 
@@ -46,6 +47,7 @@ const NGFACES_MODULES = [
   PasswordModule,
   RadioButtonModule,
   SharedModule,
+  SplitButtonModule,
   ToolbarModule
 ];
 

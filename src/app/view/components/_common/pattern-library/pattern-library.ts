@@ -23,6 +23,7 @@ export class PatternLibrary {
     private selectedCity: string;
     private autocompleteResults: Array<string> = [];
     private displayDialog = false;
+    private splitButtonItems: [any];
 
     @ViewChild(AutoComplete) private autoCompleteComponent: AutoComplete;
 
@@ -34,6 +35,12 @@ export class PatternLibrary {
         this.cities.push({label: 'London', value: {id: 3, name: 'London', code: 'LDN'}});
         this.cities.push({label: 'Istanbul', value: {id: 4, name: 'Istanbul', code: 'IST'}});
         this.cities.push({label: 'Paris', value: {id: 5, name: 'Paris', code: 'PRS'}});
+        this.splitButtonItems = [
+            {label: 'Update', icon: 'fa-refresh', command: () => {}},
+            {label: 'Delete', icon: 'fa-close', command: () => {}},
+            {label: 'Angular.io', icon: 'fa-link', url: 'http://angular.io'},
+            {label: 'Theming', icon: 'fa-paint-brush', routerLink: ['/theming']}
+        ];
     }
 
     ngOnInit(): any {
