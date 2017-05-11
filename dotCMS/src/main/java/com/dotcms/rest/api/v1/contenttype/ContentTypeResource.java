@@ -37,6 +37,14 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 
+import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.rest.RESTParams;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringUtil;
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.ConversionUtils.toInt;
+import java.util.Map;
 
 @Path("/v1/contenttype")
 public class ContentTypeResource implements Serializable {
@@ -98,7 +106,7 @@ public class ContentTypeResource implements Serializable {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response updateType(@PathParam("id") final String id, final String json,
-			@Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
+							   @Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
 
 		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
 		final User user = initData.getUser();
@@ -221,4 +229,67 @@ public class ContentTypeResource implements Serializable {
 
 		return response;
 	} // getTypes.
+
+	/**
+	 * Return a list of {@link ContentType}, entity response syntax:.
+	 *
+	 * <code>
+	 *  {
+	 *      contentTypes: array of ContentType
+	 *      total: total number of content types
+	 *  }
+	 * <code/>
+	 *
+	 * Url sintax: contenttype?query=query-string&limit=n-limit&offset=n-offset&orderby=fieldname-order_direction
+	 *
+	 * where:
+	 *
+	 * <ul>
+	 *     <li>query-string: just return ContentTypes who content this pattern</li>
+	 *     <li>n-limit: limit of items to return</li>
+	 *     <li>n-offset: offset</li>
+	 *     <li>fieldname: field to order by</li>
+	 *     <li>order_direction: asc for upward order and desc for downward order</li>
+	 * </ul>
+	 *
+	 * Url example: v1/contenttype/query/New%20L/limit/4/offset/5/orderby/name-asc
+	 *
+	 * @param request
+	 * @return
+	 */
+	@GET
+	@JSONP
+	@NoCache
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public final Response getContentTypes(@Context final HttpServletRequest request,
+										  @DefaultValue("-1") @QueryParam("limit") int limit,
+										  @DefaultValue("-1") @QueryParam("offset") int offset,
+										  @QueryParam("query") String query,
+										  @DefaultValue("upper(name)") @QueryParam("orderby") String orderbyParams) {
+
+		final InitDataObject initData = webResource.init(null, true, request, true, null);
+
+		Response response = null;
+
+		final User user = initData.getUser();
+
+		String[] split = orderbyParams.split("-");
+		String orderby = "name".equals(split[0]) ? "upper(name)" : split[0];
+		String direction = split.length < 2 ? "asc" : split[1];
+
+		String queryCondition = query == null ? "" : String.format("(name like '%%%s%%')", query);
+
+		try {
+			List<Map<String, Object>> types = contentTypeHelper.getContentTypes(user, queryCondition, offset, limit, orderby, direction);
+			long contentTypesCount = contentTypeHelper.getContentTypesCount();
+			response = Response.ok(new ResponseEntityView( map("contentTypes", types, "total", contentTypesCount)))
+					.build();
+		} catch (Exception e) {
+
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
+
+		return response;
+	}
 }
