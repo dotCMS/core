@@ -92,9 +92,7 @@ public class ContentTypeImportExportUtil {
 
             		List<FieldVariable> fieldVariables=new ArrayList<FieldVariable>();
                     for(Field ff : fields) {
-                        fieldVariables.addAll(
-                            APILocator.getContentTypeFieldAPI().loadVariables(ff)
-                        );
+                        fieldVariables.addAll(ff.fieldVariables());
                     }
 
                 	mapper.writeValue(jg, new ContentTypeWrapper(contentType,fields,fieldVariables));
