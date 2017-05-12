@@ -256,16 +256,6 @@ public void delete(FieldVariable fieldVar) throws DotDataException {
     fac.delete(fieldVar);
     
 }
-
-@Override
-public List<FieldVariable> loadVariables(Field field) throws DotDataException {
-    return fac.loadVariables(field);
-}
-
-@Override
-public FieldVariable loadVariable(String id) throws DotDataException {
-    return fac.loadVariable(id);
-}
   
   
   

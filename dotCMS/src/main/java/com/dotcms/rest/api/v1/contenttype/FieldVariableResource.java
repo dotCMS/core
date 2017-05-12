@@ -162,7 +162,7 @@ public class FieldVariableResource implements Serializable {
 		try {
 			Field field = fapi.find(fieldId);
 
-			List<FieldVariable> fieldVariables = fapi.loadVariables(field);
+			List<FieldVariable> fieldVariables = field.fieldVariables();
 
 			response = Response.ok(new ResponseEntityView(new JsonFieldVariableTransformer(fieldVariables).mapList())).build();
 
@@ -196,7 +196,7 @@ public class FieldVariableResource implements Serializable {
 		try {
 			Field field = fapi.byContentTypeIdAndVar(typeId, fieldVar);
 
-			List<FieldVariable> fieldVariables = fapi.loadVariables(field);
+			List<FieldVariable> fieldVariables = field.fieldVariables();
 
 			response = Response.ok(new ResponseEntityView(new JsonFieldVariableTransformer(fieldVariables).mapList())).build();
 
@@ -230,7 +230,7 @@ public class FieldVariableResource implements Serializable {
 
 			Field field = fapi.find(fieldId);
 
-			FieldVariable fieldVariable = fapi.loadVariable(fieldVarId);
+			FieldVariable fieldVariable = getFieldVariable(field, fieldVarId);
 
 			if (!field.id().equals(fieldVariable.fieldId())) {
 
@@ -270,7 +270,7 @@ public class FieldVariableResource implements Serializable {
 
 			Field field = fapi.byContentTypeIdAndVar(typeId, fieldVar);
 
-			FieldVariable fieldVariable = fapi.loadVariable(fieldVarId);
+			FieldVariable fieldVariable = getFieldVariable(field, fieldVarId);
 
 			if (!field.id().equals(fieldVariable.fieldId())) {
 
@@ -325,7 +325,7 @@ public class FieldVariableResource implements Serializable {
 
 			} else {
 
-				FieldVariable currentFieldVariable = fapi.loadVariable(fieldVarId);
+				FieldVariable currentFieldVariable = getFieldVariable(field, fieldVarId);
 
 				if (!currentFieldVariable.id().equals(fieldVariable.id())) {
 
@@ -381,7 +381,7 @@ public class FieldVariableResource implements Serializable {
 
 			} else {
 
-				FieldVariable currentFieldVariable = fapi.loadVariable(fieldVarId);
+				FieldVariable currentFieldVariable = getFieldVariable(field, fieldVarId);
 
 				if (!currentFieldVariable.id().equals(fieldVariable.id())) {
 
@@ -425,7 +425,7 @@ public class FieldVariableResource implements Serializable {
 
 			Field field = fapi.find(fieldId);
 
-			FieldVariable fieldVariable = fapi.loadVariable(fieldVarId);
+			FieldVariable fieldVariable = getFieldVariable(field, fieldVarId);
 
 			if (!fieldVariable.fieldId().equals(field.id())) {
 
@@ -468,7 +468,7 @@ public class FieldVariableResource implements Serializable {
 
 			Field field = fapi.byContentTypeIdAndVar(typeId, fieldVar);
 
-			FieldVariable fieldVariable = fapi.loadVariable(fieldVarId);
+			FieldVariable fieldVariable = getFieldVariable(field, fieldVarId);
 
 			if (!fieldVariable.fieldId().equals(field.id())) {
 
@@ -491,5 +491,13 @@ public class FieldVariableResource implements Serializable {
 		}
 
 		return response;
+	}
+
+	private FieldVariable getFieldVariable(Field field, String fieldVarId) throws NotFoundInDbException {
+		FieldVariable result = field.fieldVariablesMap().get(fieldVarId);
+		if (result == null) {
+			throw new NotFoundInDbException("Field variable with id:" + fieldVarId + " not found");
+		}
+		return result;
 	}
 }

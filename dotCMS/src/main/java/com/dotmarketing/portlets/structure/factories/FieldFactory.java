@@ -15,6 +15,7 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import static com.dotcms.util.CollectionsUtils.set;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -261,7 +262,7 @@ public class FieldFactory {
 	 */
 	public static FieldVariable getFieldVariable(String id){
 	    try {
-            return new FieldVariableTransformer(fapi().loadVariable(id)).oldField();
+            return new FieldVariableTransformer(FactoryLocator.getFieldFactory().loadVariable(id)).oldField();
         } catch (DotStateException | DotDataException e) {
             Logger.error(FieldFactory.class, e.getMessage());
         }
@@ -308,7 +309,7 @@ public class FieldFactory {
 	public static List<FieldVariable> getFieldVariablesForField (Field field ){
 	       try {
 	           com.dotcms.contenttype.model.field.Field newfield = fapi().find(field.getInode());
-	           List<com.dotcms.contenttype.model.field.FieldVariable > fl = fapi().loadVariables(newfield);
+	           List<com.dotcms.contenttype.model.field.FieldVariable > fl = newfield.fieldVariables();
 	           return new FieldVariableTransformer(fl).oldFieldList();
 	        } catch (DotStateException | DotDataException e) {
 	            Logger.error(FieldFactory.class, e.getMessage());

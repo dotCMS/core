@@ -186,24 +186,6 @@ public interface FieldAPI {
     void delete(FieldVariable fieldVar) throws DotDataException;
 
     /**
-     * Retrieves the Field Variables related to a specific Field.
-     * 
-     * @param field Field to search on 
-     * @return List of Field Variables Objects that are related to a Field
-     * @throws DotDataException Error occurred when performing the action.
-     */
-    List<FieldVariable> loadVariables(Field field) throws DotDataException;
-    
-    /**
-     * Retrieves a Field Variable given its id
-     * 
-     * @param id Id of the field Variable.
-     * @return Field Variable related to the given id.
-     * @throws DotDataException Error occurred when performing the action.
-     */
-    FieldVariable loadVariable(String id) throws DotDataException;
-
-    /**
      * Returns the dataType and the number of the column of that field. e.g bool1
      * Only one Host Field and Tag Field per Content Type is allowed.
      * By default only 25 fields of each dataType is allowed, can be modified by this property db.number.of.contentlet.columns.per.datatype
