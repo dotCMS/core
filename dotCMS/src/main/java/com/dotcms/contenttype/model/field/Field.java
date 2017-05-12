@@ -3,7 +3,9 @@ package com.dotcms.contenttype.model.field;
 import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.elasticsearch.common.Nullable;
 import org.immutables.value.Value;
@@ -22,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import com.google.common.collect.ImmutableMap;
 
 @JsonTypeInfo(
 	use = Id.CLASS,
@@ -184,6 +187,16 @@ public abstract class Field implements FieldIf, Serializable {
 
     return innerFieldVariables;
 
+  }
+
+  @JsonIgnore
+  @Value.Lazy
+  public Map<String, FieldVariable> fieldVariablesMap() {
+    Map<String, FieldVariable> fmap = new HashMap<>();
+    for (FieldVariable fv : this.fieldVariables()) {
+      fmap.put(fv.id(), fv);
+    }
+    return ImmutableMap.copyOf(fmap);
   }
 
   private List<FieldVariable> innerFieldVariables = null;

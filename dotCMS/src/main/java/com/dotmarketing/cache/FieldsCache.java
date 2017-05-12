@@ -126,12 +126,11 @@ public class FieldsCache {
     
 	public static List<FieldVariable> getFieldVariables(Field field) {
         try {
+        	
             return new FieldVariableTransformer(
-                    APILocator.getContentTypeFieldAPI().loadVariables(
-                            new LegacyFieldTransformer(field).from()
-                            )
-                    ).oldFieldList();
-        } catch (DotStateException | DotDataException e) {
+            		new LegacyFieldTransformer(field).from().fieldVariables()        
+            ).oldFieldList();
+        } catch (DotStateException e) {
             throw new DotStateException(e);
         }
     }
