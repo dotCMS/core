@@ -134,7 +134,7 @@ a.dotEditListBox:hover{color:#5981B1 !important;border:1px solid #5981B1 !import
 .dotLightboxSelect{width:225px;height:310px;padding:5px;}
 .dotLightboxListBox{width:500px;height:300px;font-size:100%;overflow:auto;padding:5px;border:1px solid #b8b8b8;margin:10px 0 0 0;}
 .dotLearnMore{display:block;background:url(/html/images/icons/question-balloon.png) no-repeat 0 2px;font-size:11px;padding-left:20px;margin-top:8px;}
-.dotAddPopUp td, .dotLightboxListBox td{padding:3px;}
+.dotAddPopUp td, .dotLightboxListBox td{padding:3px; font-size: 12px}
 #editModeWidgetPopupTableRight{width:100%;padding-top:3px;margin:0;font-size: 12px;}
 
 /* START Form PopUp */
