@@ -102,8 +102,12 @@ abstract class DotDirective extends InputBase {
       /**
        * Log #parse errors so the user can track which file called which.
        */
-      Logger.error(this, "Exception rendering " + this.getName() + " (" + templatePath + ") at "
-          + VelocityException.formatFileString(this)+". Cause of error: "+e.getMessage());
+    	String msg = "Exception rendering" + this.getName() + " (" + templatePath + ") at "
+    	          + VelocityException.formatFileString(this)+(e.getMessage() != null?". Cause of error: "+e.getMessage():"");
+      Logger.error(this, msg);
+      
+      Logger.debug(this, msg, e);
+      
       return false;
     } catch (Exception e) {
       String msg = "Exception rendering" + this.getName() + " (" + templatePath + ") at "
