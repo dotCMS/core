@@ -495,7 +495,13 @@ String getDatabasePropertyIdentifier(Properties properties, String database, Str
 }
 
 String getDatabasePropertyName(Properties properties, String database, String branch) {
-	return getDatabaseProperty(properties, "name", database) + branch.toLowerCase().replace(".", "").replace("-", "")
+	String result = getDatabaseProperty(properties, "name", database);
+
+	if ( ! "ORACLE".equalsIgnoreCase( database ) ) {
+		result += branch.toLowerCase().replace(".", "").replace("-", "");
+	}
+
+	return result;
 }
 
 String getDatabaseProperty(Properties properties, String propertyName, String database) {
