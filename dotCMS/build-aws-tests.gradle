@@ -222,6 +222,10 @@ task createDBInstance(type: AmazonRDSCreateDBInstanceTask) {
 	doFirst {
 		dbInstanceIdentifier = getDatabasePropertyIdentifier( properties, project.database, project.branch )
 
+		if ( ! "MSSQL".equalsIgnoreCase( project.database ) ) {
+			dbName = getDatabasePropertyName( properties, project.database, project.branch )
+		}
+
 		engine = getDatabaseProperty( properties, "engine", project.database )
 		dbInstanceClass = getDatabaseProperty( properties, "instance.class", project.database )
 
@@ -230,10 +234,6 @@ task createDBInstance(type: AmazonRDSCreateDBInstanceTask) {
 		licenseModel = getDatabaseProperty( properties, "license", project.database )
 		publiclyAccessible = getDatabaseProperty( properties, "public", project.database ).toBoolean()
 		allocatedStorage = getDatabaseProperty( properties, "storage", project.database ).toInteger()
-
-		if ( ! "MSSQL".equalsIgnoreCase( project.database ) ) {
-			dbName = getDatabaseProperty( properties, "name", project.database )
-		}
 
 		masterUsername = getDatabaseProperty( properties, "user.master.username", project.database )
 		masterUserPassword = getDatabaseProperty( properties, "user.master.password", project.database )
@@ -280,8 +280,9 @@ task describeDBInstance {
 	doLast {
 		String dbInstanceEndpoint = getDBInstanceEndpoint( getDatabasePropertyIdentifier( properties, project.database, project.branch ) )
 
+		String dbInstanceName = getDatabasePropertyName( properties, project.database, project.branch )
+
 		String dbDriverClassName = getDatabaseProperty( properties, "driver", project.database )
-		String dbInstanceName = getDatabaseProperty( properties, "name", project.database )
 		String dbInstancePort = getDatabaseProperty( properties, "port", project.database )
 		String dbInstanceUsername = getDatabaseProperty( properties, "user.master.username", project.database )
 		String dbInstancePassword = getDatabaseProperty( properties, "user.master.password", project.database )
@@ -491,6 +492,10 @@ task executeScript(dependsOn: [describeInstance, describeDBInstance]) {
 
 String getDatabasePropertyIdentifier(Properties properties, String database, String branch) {
 	return properties.getProperty( "db.instance.identifier.prefix" ) +"-"+ branch.toLowerCase().replace(".", "") +"-"+ database.toLowerCase()
+}
+
+String getDatabasePropertyName(Properties properties, String database, String branch) {
+	return getDatabaseProperty(properties, "name", database) + branch.toLowerCase().replace(".", "").replace("-", "")
 }
 
 String getDatabaseProperty(Properties properties, String propertyName, String database) {
