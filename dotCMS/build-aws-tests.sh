@@ -99,8 +99,12 @@ felix.base.dir=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/felix
 mkdir tests
 mkdir tests/logs
 
-# Run End-2-End tests
+# Run Functional tests
 ant -f build-tests.xml test-dotcms
+if [ ! -d "dotserver/tomcat/webapps/ROOT/dotsecure/logs/test" ]; then
+	# Retry if could not be run
+	ant -f build-tests.xml test-dotcms
+fi
 
 # Copy results and logs of tests
 cp dotserver/tomcat/webapps/ROOT/dotsecure/logs/test/*.xml tests
