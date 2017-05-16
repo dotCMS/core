@@ -378,15 +378,16 @@
             function toggleExpire(velocityVarName) {
                 var neverExpireField = dijit.byId("fieldNeverExpire");
                 var never = neverExpireField.getValue();
+                var dateField = dijit.byId(velocityVarName + "Date");
+                var timeField = dijit.byId(velocityVarName + "Time");
+
                 if (never) {
-                    dijit.byId(velocityVarName+"Date").set("value", null);
-                    dijit.byId(velocityVarName+"Time").set("value", null);
-                    neverExpireField.set('value', true);
-                }else{
-                    neverExpireField.set('value', true);
+                    dateField.set("value", null);
+                    timeField.set("value", null);
                 }
-                dijit.byId(velocityVarName+"Date").disabled = never;
-                dijit.byId(velocityVarName+"Time").disabled = never;
+                neverExpireField.set("value", never);
+                dateField.set('disabled', never);
+                timeField.set('disabled', never);
             }
 
             dojo.addOnLoad(function() {
