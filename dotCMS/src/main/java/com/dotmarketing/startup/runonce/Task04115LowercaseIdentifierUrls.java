@@ -1,15 +1,20 @@
 package com.dotmarketing.startup.runonce;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import com.google.common.collect.Lists;
 
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
 
 /**
  * This upgrade task will perform an update operation on almost all the records
@@ -45,6 +50,15 @@ public class Task04115LowercaseIdentifierUrls implements StartupTask {
 
 	@Override
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
+		//Disable trigger.
+		try {
+			final DotConnect dotConnect = new DotConnect();
+			dotConnect.executeStatement(getDisableTriggerQuery());
+		} catch (SQLException e) {
+			throw new DotDataException(
+                String.format("Error executing Task04115LowercaseIdentifierUrls, trying to DISABLE trigger: %s", e.getMessage()), e);
+		}
+
 		Connection conn = DbConnectionFactory.getConnection();
 		Logger.info(this, "============= Lower-casing Identifier URLs =============");
 		try (PreparedStatement selectPs = conn.prepareStatement(getSelectQuery())) {
@@ -77,6 +91,18 @@ public class Task04115LowercaseIdentifierUrls implements StartupTask {
 		} catch (SQLException e) {
 			throw new DotDataException(
 					String.format("Error executing Task04115LowercaseIdentifierUrls: %s", e.getMessage()), e);
+		} finally {
+			//Enable trigger.
+			try {
+				final DotConnect dotConnect = new DotConnect();
+				final List<String> statements = getEnableTriggerQuery();
+                for (String statement : statements) {
+                    dotConnect.executeStatement(statement);
+                }
+			} catch (SQLException e) {
+				throw new DotDataException(
+					String.format("Error executing Task04115LowercaseIdentifierUrls, trying to ENABLE trigger: %s", e.getMessage()), e);
+			}
 		}
 	}
 
@@ -93,5 +119,38 @@ public class Task04115LowercaseIdentifierUrls implements StartupTask {
 						: DbConnectionFactory.isOracle() ? SELECT_QUERY_ORACLE
 								: DbConnectionFactory.isPostgres() ? SELECT_QUERY_POSTGRES : "";
 	}
+
+	private String getDisableTriggerQuery() {
+		return DbConnectionFactory.isMsSql() ? "ALTER TABLE identifier DISABLE TRIGGER check_identifier_parent_path"
+			: DbConnectionFactory.isMySql() ? "DROP TRIGGER IF EXISTS check_parent_path_when_update;"
+				: DbConnectionFactory.isOracle() ? "ALTER TRIGGER identifier_parent_path_check DISABLE"
+					: DbConnectionFactory.isPostgres() ? "ALTER TABLE identifier DISABLE TRIGGER identifier_parent_path_trigger" : "";
+	}
+
+	private List<String> getEnableTriggerQuery() {
+		return DbConnectionFactory.isMsSql() ? Lists.newArrayList("ALTER TABLE identifier DISABLE TRIGGER check_identifier_parent_path")
+			: DbConnectionFactory.isMySql() ? SQLUtil.tokenize(MY_SQL_CREATE_TRIGGER)
+				: DbConnectionFactory.isOracle() ? Lists.newArrayList("ALTER TRIGGER identifier_parent_path_check ENABLE")
+					: DbConnectionFactory.isPostgres() ? Lists.newArrayList("ALTER TABLE identifier ENABLE TRIGGER identifier_parent_path_trigger")
+                        : Lists.newArrayList("");
+	}
+
+	private final String MY_SQL_CREATE_TRIGGER = "DROP TRIGGER IF EXISTS check_parent_path_when_update;\n"
+        + "CREATE TRIGGER check_parent_path_when_update  BEFORE UPDATE\n"
+        + "on identifier\n"
+        + "FOR EACH ROW\n"
+        + "BEGIN\n"
+        + "DECLARE idCount INT;\n"
+        + "DECLARE canUpdate boolean default false;\n"
+        + " IF @disable_trigger IS NULL THEN\n"
+        + "   select count(id)into idCount from identifier where asset_type='folder' and CONCAT(parent_path,asset_name,'/')= NEW.parent_path and host_inode = NEW.host_inode and id <> NEW.id;\n"
+        + "   IF(idCount > 0 OR NEW.parent_path = '/' OR NEW.parent_path = '/System folder') THEN\n"
+        + "     SET canUpdate := TRUE;\n"
+        + "   END IF;\n"
+        + "   IF(canUpdate = FALSE) THEN\n"
+        + "     delete from Cannot_update_for_this_path_does_not_exist_for_the_given_host;\n"
+        + "   END IF;\n"
+        + " END IF;\n"
+        + "END";
 
 }
