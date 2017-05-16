@@ -67,13 +67,22 @@ public class DotInitScheduler {
 
 	private static ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = null;
 
-	private static ScheduledThreadPoolExecutor getScheduledThreadPoolExecutor() {
+	/**
+	 * Returns the {@link ScheduledThreadPoolExecutor}
+	 * @return ScheduledThreadPoolExecutor
+	 */
+	public static ScheduledThreadPoolExecutor getScheduledThreadPoolExecutor() {
 
 		if (null == scheduledThreadPoolExecutor) {
 
-			final int corePoolSize = Config.getIntProperty(SCHEDULER_COREPOOLSIZE, 10);
+			synchronized (DotInitScheduler.class) {
 
-			scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(corePoolSize);
+				if (null == scheduledThreadPoolExecutor) {
+
+					final int corePoolSize = Config.getIntProperty(SCHEDULER_COREPOOLSIZE, 10);
+					scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(corePoolSize);
+				}
+			}
 		}
 
 		return scheduledThreadPoolExecutor;
