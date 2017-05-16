@@ -8559,7 +8559,6 @@ div#_dotHelpMenu {
 .resetIcon,
 .resolveIcon,
 .resolveWorkflowIcon,
-.saveIcon,
 .saveAssignIcon,
 .scrollPaneIcon,
 .searchIcon,
@@ -10169,8 +10168,8 @@ dd .buttonCaption {
 .closeFilter {
   display: block;
   background: transparent url(/html/js/dojo/custom-build/dijit/themes/dmundra/images/tabClose.png) no-repeat scroll center center;
-  height: 16px;
-  width: 20px;
+  height: 24px;
+  width: 24px;
   cursor: pointer;
   float: right;
 }
