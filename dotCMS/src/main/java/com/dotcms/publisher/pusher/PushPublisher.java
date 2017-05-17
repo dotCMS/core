@@ -46,6 +46,7 @@ import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.dotcms.repackage.javax.ws.rs.client.Client;
 import com.dotcms.repackage.javax.ws.rs.client.Entity;
 import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
@@ -118,28 +119,26 @@ public class PushPublisher extends Publisher {
 		if(LicenseUtil.getLevel()<300) {
 	        throw new RuntimeException("An Enterprise Pro License is required to run this publisher.");
         }
-
 	    PublishAuditHistory currentStatusHistory = null;
 		try {
 			//Compressing bundle
-			File bundleRoot = BundlerUtil.getBundleRoot(config);
-
+			File bundleRoot = BundlerUtil.getBundleRoot(this.config);
 			ArrayList<File> list = new ArrayList<File>(1);
 			list.add(bundleRoot);
-			File bundle = new File(bundleRoot+File.separator+".."+File.separator+config.getId()+".tar.gz");
+			File bundle = new File(bundleRoot+File.separator+".."+File.separator+this.config.getId()+".tar.gz");
 			PushUtils.compressFiles(list, bundle, bundleRoot.getAbsolutePath());
 
-			List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(config.getId());
+			List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(this.config.getId());
 			Client client = RestClientBuilder.newClient();
 
 			//Updating audit table
-			currentStatusHistory = pubAuditAPI.getPublishAuditStatus(config.getId()).getStatusPojo();
+			currentStatusHistory = pubAuditAPI.getPublishAuditStatus(this.config.getId()).getStatusPojo();
 			Map<String, Map<String, EndpointDetail>> endpointsMap = currentStatusHistory.getEndpointsMap();
 			// If not empty, don't overwrite publish history already set via the PublisherQueueJob
 			boolean isHistoryEmpty = endpointsMap.size() == 0;
 			currentStatusHistory.setPublishStart(new Date());
 			PushPublishLogger.log(this.getClass(), "Status Update: Sending to all environments");
-			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.SENDING_TO_ENDPOINTS, currentStatusHistory);
+			pubAuditAPI.updatePublishAuditStatus(this.config.getId(), PublishAuditStatus.Status.SENDING_TO_ENDPOINTS, currentStatusHistory);
 			//Increment numTries
 			currentStatusHistory.addNumTries();
 			// Counters for determining the publishing status
@@ -150,15 +149,26 @@ public class PushPublisher extends Publisher {
 				List<PublishingEndPoint> endpoints = new ArrayList<PublishingEndPoint>();
 				totalEndpoints += (null != allEndpoints) ? allEndpoints.size() : 0;
 				
+				Map<String, EndpointDetail> endpointsDetail = endpointsMap.get(environment.getId());
 				//Filter Endpoints list and push only to those that are enabled and are Dynamic (not S3 at the moment)
 				for(PublishingEndPoint ep : allEndpoints) {
 					if(ep.isEnabled() && getProtocols().contains(ep.getProtocol())) {
-						endpoints.add(ep);
+						
+						if (null == endpointsDetail || endpointsDetail.size() == 0) {
+							endpoints.add(ep);
+						} else {
+							EndpointDetail epDetail = endpointsDetail.get(ep.getId());
+							if (this.config.getDeliveryStrategy().equals(DeliveryStrategy.ALL_ENDPOINTS)
+									|| (this.config.getDeliveryStrategy().equals(DeliveryStrategy.FAILED_ENDPOINTS)
+											&& epDetail.getStatus() != PublishAuditStatus.Status.SUCCESS.getCode())) {
+								endpoints.add(ep);
+							}
+						}
+						
 					}
 				}
 
 				boolean failedEnvironment = false;
-
 				if(!environment.getPushToAll()) {
 					Collections.shuffle(endpoints);
 					if(!endpoints.isEmpty())
@@ -172,15 +182,13 @@ public class PushPublisher extends Publisher {
 	        			form.field("AUTH_TOKEN",
 	        					retriveKeyString(
 	        							PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())));
-
 	        			form.field("GROUP_ID", UtilMethods.isSet(endpoint.getGroupId()) ? endpoint.getGroupId() : endpoint.getId());
-	        			Bundle b=APILocator.getBundleAPI().getBundleById(config.getId());
+	        			Bundle b=APILocator.getBundleAPI().getBundleById(this.config.getId());
 	        			form.field("BUNDLE_NAME", b.getName());
 	        			form.field("ENDPOINT_ID", endpoint.getId());
 	        			form.bodyPart(new FileDataBodyPart("bundle", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
 
                         WebTarget webTarget = client.target(endpoint.toURL()+"/api/bundlePublisher/publish");
-
                         Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).post(Entity.entity(form, form.getMediaType()));
 
 	        			if(response.getStatus() == HttpStatus.SC_OK)
@@ -191,18 +199,18 @@ public class PushPublisher extends Publisher {
 	        			} else {
 
 	        				if(currentStatusHistory.getNumTries()==PublisherQueueJob.MAX_NUM_TRIES) {
-		        				APILocator.getPushedAssetsAPI().deletePushedAssets(config.getId(), environment.getId());
+		        				APILocator.getPushedAssetsAPI().deletePushedAssets(this.config.getId(), environment.getId());
 		        			}
 	        				detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
 	        				detail.setInfo(
 	        						"Returned "+response.getStatus()+ " status code " +
-	        								"for the endpoint "+endpoint.getId()+ "with address "+endpoint.getAddress());
+	        								"for the endpoint " + endpoint.getServerName() + "with address "+endpoint.getAddress());
 	        				failedEnvironment |= true;
 	        			}
 	        		} catch(Exception e) {
 	        			// if the bundle can't be sent after the total num of tries, delete the pushed assets for this bundle
 	        			if(currentStatusHistory.getNumTries()==PublisherQueueJob.MAX_NUM_TRIES) {
-	        				APILocator.getPushedAssetsAPI().deletePushedAssets(config.getId(), environment.getId());
+	        				APILocator.getPushedAssetsAPI().deletePushedAssets(this.config.getId(), environment.getId());
 	        			}
 	        			detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
 	        			String error = 	"An error occured for the endpoint "+ endpoint.getServerName() + " with address "+ endpoint.getAddress() + ". Error: " + e.getMessage();
@@ -220,28 +228,26 @@ public class PushPublisher extends Publisher {
 			if(errorCounter==0) {
 				//Updating audit table
 				PushPublishLogger.log(this.getClass(), "Status Update: Bundle sent");
-				pubAuditAPI.updatePublishAuditStatus(config.getId(),
+				pubAuditAPI.updatePublishAuditStatus(this.config.getId(),
 						PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY, currentStatusHistory);
 			} else {
 				if (errorCounter == totalEndpoints) {
-					pubAuditAPI.updatePublishAuditStatus(config.getId(),
+					pubAuditAPI.updatePublishAuditStatus(this.config.getId(),
 							PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS, currentStatusHistory);
 				} else {
-					pubAuditAPI.updatePublishAuditStatus(config.getId(),
+					pubAuditAPI.updatePublishAuditStatus(this.config.getId(),
 							PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS, currentStatusHistory);
 				}
 			}
-
-			return config;
+			return this.config;
 		} catch (Exception e) {
 			//Updating audit table
 			try {
 				PushPublishLogger.log(this.getClass(), "Status Update: Failed to publish");
-				pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.FAILED_TO_PUBLISH, currentStatusHistory);
+				pubAuditAPI.updatePublishAuditStatus(this.config.getId(), PublishAuditStatus.Status.FAILED_TO_PUBLISH, currentStatusHistory);
 			} catch (DotPublisherException e1) {
 				throw new DotPublishingException(e.getMessage());
 			}
-
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotPublishingException(e.getMessage());
 		}
@@ -274,7 +280,7 @@ public class PushPublisher extends Publisher {
         boolean buildLanguages = false;
         boolean buildRules = false;
         boolean buildAsset = false;
-        List<Class> list = new ArrayList<Class>();
+        List<Class> list = new ArrayList<>();
         for ( PublishQueueElement element : config.getAssets() ) {
             if ( element.getType().equals(PusheableAsset.CATEGORY.getType()) ) {
                 buildCategories = true;
