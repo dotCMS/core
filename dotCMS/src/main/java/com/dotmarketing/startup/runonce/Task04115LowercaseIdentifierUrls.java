@@ -53,7 +53,10 @@ public class Task04115LowercaseIdentifierUrls implements StartupTask {
 		//Disable trigger.
 		try {
 			final DotConnect dotConnect = new DotConnect();
-			dotConnect.executeStatement(getDisableTriggerQuery());
+			final List<String> statements = getDisableTriggerQuery();
+			for (String statement : statements) {
+				dotConnect.executeStatement(statement);
+			}
 		} catch (SQLException e) {
 			throw new DotDataException(
                 String.format("Error executing Task04115LowercaseIdentifierUrls, trying to DISABLE trigger: %s", e.getMessage()), e);
@@ -120,20 +123,24 @@ public class Task04115LowercaseIdentifierUrls implements StartupTask {
 								: DbConnectionFactory.isPostgres() ? SELECT_QUERY_POSTGRES : "";
 	}
 
-	private String getDisableTriggerQuery() {
-		return DbConnectionFactory.isMsSql() ? "ALTER TABLE identifier DISABLE TRIGGER check_identifier_parent_path"
-			: DbConnectionFactory.isMySql() ? "DROP TRIGGER IF EXISTS check_parent_path_when_update"
-				: DbConnectionFactory.isOracle() ? "ALTER TRIGGER identifier_parent_path_check DISABLE"
-					: DbConnectionFactory.isPostgres() ? "ALTER TABLE identifier DISABLE TRIGGER identifier_parent_path_trigger" : "";
+	private List<String> getDisableTriggerQuery() {
+		return DbConnectionFactory.isMsSql() ? SQLUtil.tokenize(MS_SQL_DISABLE_TRIGGER)
+			: DbConnectionFactory.isMySql() ? Lists.newArrayList("DROP TRIGGER IF EXISTS check_parent_path_when_update")
+				: DbConnectionFactory.isOracle() ? Lists.newArrayList("ALTER TRIGGER identifier_parent_path_check DISABLE")
+					: DbConnectionFactory.isPostgres() ? Lists.newArrayList("ALTER TABLE identifier DISABLE TRIGGER identifier_parent_path_trigger")
+						: Lists.newArrayList("");
 	}
 
 	private List<String> getEnableTriggerQuery() {
-		return DbConnectionFactory.isMsSql() ? Lists.newArrayList("ALTER TABLE identifier DISABLE TRIGGER check_identifier_parent_path")
+		return DbConnectionFactory.isMsSql() ? Lists.newArrayList("ALTER TABLE identifier ENABLE TRIGGER check_identifier_parent_path")
 			: DbConnectionFactory.isMySql() ? SQLUtil.tokenize(MY_SQL_CREATE_TRIGGER)
 				: DbConnectionFactory.isOracle() ? Lists.newArrayList("ALTER TRIGGER identifier_parent_path_check ENABLE")
 					: DbConnectionFactory.isPostgres() ? Lists.newArrayList("ALTER TABLE identifier ENABLE TRIGGER identifier_parent_path_trigger")
                         : Lists.newArrayList("");
 	}
+
+	private final String MS_SQL_DISABLE_TRIGGER = "SET TRANSACTION ISOLATION LEVEL READ COMMITTED;\n"
+		+ "ALTER TABLE identifier DISABLE TRIGGER check_identifier_parent_path;";
 
 	private final String MY_SQL_CREATE_TRIGGER = "DROP TRIGGER IF EXISTS check_parent_path_when_update;\n"
         + "CREATE TRIGGER check_parent_path_when_update  BEFORE UPDATE\n"
