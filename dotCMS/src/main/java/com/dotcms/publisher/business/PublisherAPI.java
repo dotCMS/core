@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.liferay.portal.model.User;
 
 /**
@@ -42,32 +43,143 @@ public abstract class PublisherAPI {
 	}
 
 	/**
-	 * Include in the publishing_queue table the identifier used to get contents to publish
+	 * Takes a list of Identifiers associated to any pusheable asset and
+	 * registers each of them into a bundle <b>for push publishing</b>.
+	 * 
+	 * @param identifiers
+	 *            - The list of pusheable assets that will be included in the
+	 *            bundle.
+	 * @param bundleId
+	 *            - The ID of the bundle.
+	 * @param publishDate
+	 *            - The date when the bundle will be pushed (usually, the
+	 *            current date and time).
+	 * @param user
+	 *            - The {@link User} performing this action.
+	 * @return A summary {@link Map} containing the result of the operation,
+	 *         such as, error messages, total assets to push, etc.
+	 * @throws DotPublisherException
+	 *             An error occurred when adding a pusheable asset to the queue.
 	 */
 	public abstract Map<String, Object> addContentsToPublish(List<String> identifiers, String bundleId, Date publishDate, User user) throws DotPublisherException;
 
 	/**
-	 * Include in the publishing_queue table the identifier used to get contents to UN-publish
+	 * Takes a list of Identifiers associated to any pusheable asset and
+	 * registers each of them into a bundle <b>for publishing</b>. When
+	 * re-trying to send a bundle that failed to publish, this method is more
+	 * efficient as it allows you to send it to either <b>ALL</b> or
+	 * <b>FAILED</b> end-points only.
+	 * 
+	 * @param identifiers
+	 *            - The list of pusheable assets that will be included in the
+	 *            bundle.
+	 * @param bundleId
+	 *            - The ID of the bundle.
+	 * @param publishDate
+	 *            - The date when the bundle will be pushed (usually, the
+	 *            current date and time).
+	 * @param user
+	 *            - The {@link User} performing this action.
+	 * @param deliveryStrategy
+	 *            - The {@link DeliveryStrategy} for the contents, i.e., send
+	 *            the bundle to all end-points, or failed end-points only.
+	 * @return A summary {@link Map} containing the result of the operation,
+	 *         such as, error messages, total assets to push, etc.
+	 * @throws DotPublisherException
+	 *             An error occurred when adding a pusheable asset to the queue.
+	 */
+	public abstract Map<String, Object> addContentsToPublish(List<String> identifiers, String bundleId, Date publishDate, User user, DeliveryStrategy deliveryStrategy) throws DotPublisherException;
+
+	/**
+	 * Takes a list of Identifiers associated to any pusheable asset and
+	 * registers each of them into a bundle <b>for un-publishing</b>.
+	 * 
+	 * @param identifiers
+	 *            - The list of pusheable assets that will be included in the
+	 *            bundle for un-publishing.
+	 * @param bundleId
+	 *            - The ID of the bundle.
+	 * @param publishDate
+	 *            - The date when the bundle will be pushed (usually, the
+	 *            current date and time).
+	 * @param user
+	 *            - The {@link User} performing this action.
+	 * @return A summary {@link Map} containing the result of the operation,
+	 *         such as, error messages, total assets to push, etc.
+	 * @throws DotPublisherException
+	 *             An error occurred when adding a pusheable asset to the queue.
 	 */
 	public abstract Map<String, Object> addContentsToUnpublish(List<String> identifiers, String bundleId, Date unpublishDate, User user) throws DotPublisherException;
 
 	/**
-	 * Persists the relationship between a List of assets and the bundle that they were added to
+	 * Takes a list of Identifiers associated to any pusheable asset and
+	 * registers each of them into a bundle <b>for un-publishing</b>. When
+	 * re-trying to send a bundle that failed to un-publish, this method is more
+	 * efficient as it allows you to send it to either <b>ALL</b> or
+	 * <b>FAILED</b> end-points only.
+	 * 
+	 * @param identifiers
+	 *            - The list of pusheable assets that will be included in the
+	 *            bundle.
+	 * @param bundleId
+	 *            - The ID of the bundle.
+	 * @param publishDate
+	 *            - The date when the bundle will be pushed (usually, the
+	 *            current date and time).
+	 * @param user
+	 *            - The {@link User} performing this action.
+	 * @param deliveryStrategy
+	 *            - The {@link DeliveryStrategy} for the contents, i.e., send
+	 *            the bundle to all end-points, or failed end-points only.
+	 * @return A summary {@link Map} containing the result of the operation,
+	 *         such as, error messages, total assets to push, etc.
+	 * @throws DotPublisherException
+	 *             An error occurred when adding a pusheable asset to the queue.
+	 */
+	public abstract Map<String, Object> addContentsToUnpublish(List<String> identifiers, String bundleId, Date unpublishDate, User user, DeliveryStrategy deliveryStrategy) throws DotPublisherException;
+
+	/**
+	 * Persists the relationship between a List of assets and the bundle that
+	 * they were added to.
+	 * 
+	 * @param identifiers
+	 * @param bundleId
+	 * @param user
+	 * @return
+	 * @throws DotPublisherException
 	 */
 	public abstract Map<String, Object> saveBundleAssets(List<String> identifiers, String bundleId, User user) throws DotPublisherException;
 
 	/**
-	 * sets the publish date and the publish operation type to the elements of the publishing queue contained in the bundle with the given bundleId
+	 * Sets the publish date and the publish operation type to the elements of
+	 * the publishing queue contained in the bundle with the given bundleId.
+	 * 
+	 * @param bundleId
+	 * @param publishDate
+	 * @throws DotPublisherException
 	 */
 	public abstract void publishBundleAssets(String bundleId, Date publishDate) throws DotPublisherException;
 
 	/**
-	 * sets the expire date and the unpublish operation type to the elements of the publishing queue contained in the bundle with the given bundleId
+	 * Sets the expire date and the unpublish operation type to the elements of
+	 * the publishing queue contained in the bundle with the given bundleId.
+	 * 
+	 * @param bundleId
+	 * @param expireDate
+	 * @throws DotPublisherException
 	 */
 	public abstract void unpublishBundleAssets(String bundleId, Date expireDate) throws DotPublisherException;
 
 	/**
-	 * sets the publish and expire date and the publish and expire operations types to the elements of the publishing queue contained in the bundle with the given bundleId
+	 * Sets the publish and expire date and the publish and expire operations
+	 * types to the elements of the publishing queue contained in the bundle
+	 * with the given bundleId.
+	 * 
+	 * @param bundleId
+	 * @param publishDate
+	 * @param expireDate
+	 * @param user
+	 * @throws DotPublisherException
 	 */
 	public abstract void publishAndExpireBundleAssets(String bundleId, Date publishDate, Date expireDate, User user) throws DotPublisherException;
 
@@ -216,10 +328,14 @@ public abstract class PublisherAPI {
 	 */
 	public abstract void deleteAllElementsFromPublishQueueTable() throws DotPublisherException;
 
-	/*
-	 * This will immediately fire the publishing quartz job
+	/**
+	 * This will immediately fire the publishing quartz job. Configuration or
+	 * execution parameters for the publishing mechanism can be specified.
+	 * 
+	 * @param dataMap
+	 *            - A {@link Map} containing different configuration or
+	 *            execution parameters for the publisher process.
 	 */
-	
-    public abstract void firePublisherQueueNow() ;
+    public abstract void firePublisherQueueNow(Map<String, Object> dataMap);
 
 }

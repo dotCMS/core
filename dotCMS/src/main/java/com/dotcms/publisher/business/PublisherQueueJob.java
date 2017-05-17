@@ -28,6 +28,7 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.IPublisher;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
 import com.dotcms.repackage.javax.ws.rs.client.Client;
@@ -150,13 +151,16 @@ public class PublisherQueueJob implements StatefulJob {
 							}
 							historyPojo.setAssets(assets);
 
+							final Map<String, Object> jobDataMap = jobExecutionContext.getMergedJobDataMap();
+							DeliveryStrategy deliveryStrategy = DeliveryStrategy.class
+									.cast(jobDataMap.get("deliveryStrategy"));
+							
 							PublisherConfig pconf = new PushPublisherConfig();
 							pconf.setAssets(assetsToPublish);
 
 							//Status
 							status = new PublishAuditStatus(tempBundleId);
 							status.setStatusPojo(historyPojo);
-
 							//Insert in Audit table
 							pubAuditAPI.insertPublishAuditStatus(status);
 
@@ -167,7 +171,7 @@ public class PublisherQueueJob implements StatefulJob {
 							pconf.setStartDate(new Date());
 							pconf.runNow();
 							pconf.setPublishers(new ArrayList<>(getPublishersForBundle(tempBundleId)));
-
+							pconf.setDeliveryStrategy(deliveryStrategy);
 							if ( Integer.parseInt(bundle.get("operation").toString()) == PublisherAPI.ADD_OR_UPDATE_ELEMENT ) {
 								pconf.setOperation(PushPublisherConfig.Operation.PUBLISH);
 							} else {
@@ -367,7 +371,10 @@ public class PublisherQueueJob implements StatefulJob {
 					}
 					Logger.info(this, "===========================================================");
 					Logger.info(this, String.format("For bundle '%s':", bundleAudit.getBundleId()));
-					Logger.info(this, String.format("-> Re-try attempts: %d", localHistory.getNumTries()));
+					if (!bundleStatus.equals(PublishAuditStatus.Status.PUBLISHING_BUNDLE)
+							&& !bundleStatus.equals(PublishAuditStatus.Status.WAITING_FOR_PUBLISHING)) {
+						Logger.info(this, String.format("-> Re-try attempts: %d", localHistory.getNumTries()));
+					}
 					Logger.info(this, String.format("-> Status:          %s", bundleStatus.toString()));
 					Logger.info(this, "===========================================================");
 				} else {
