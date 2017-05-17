@@ -334,15 +334,19 @@ export class RuleService {
     this.loadConditionTypes().subscribe((types: ServerSideTypeModel[]) => this.conditionTypes$.next(types));
 
     this.siteService.switchSite$.subscribe(site => {
-      this.sendLoadRulesRequest(site.identifier);
+      let siteId = this.loadRulesSiteId();
+      if(siteId === site.identifier) {
+        this.sendLoadRulesRequest(site.identifier);
+      }
     });
   }
 
  createRule(body: RuleModel): Observable<RuleModel|CwError> {
+    let siteId = this.loadRulesSiteId();
     return this.coreWebService.request({
       body: RuleService.fromClientRuleTransformFn(body),
       method: RequestMethod.Post,
-      url: `${this._apiRoot.baseUrl}api/v1/sites/${this.siteService.currentSite.identifier}${this._rulesEndpointUrl}`
+      url: `${this._apiRoot.baseUrl}api/v1/sites/${siteId}${this._rulesEndpointUrl}`
     }).map((result: RuleModel) => {
       body.key = result['id']; // @todo:ggranum type the POST result correctly.
       return Object.assign({}, DEFAULT_RULE, body, result);
@@ -350,9 +354,10 @@ export class RuleService {
   }
 
   deleteRule(ruleId: string): Observable<{success: boolean}|CwError> {
+    let siteId = this.loadRulesSiteId();
     return this.coreWebService.request({
       method: RequestMethod.Delete,
-      url: `${this._apiRoot.baseUrl}api/v1/sites/${this.siteService.currentSite.identifier}${this._rulesEndpointUrl}/${ruleId}`
+      url: `${this._apiRoot.baseUrl}api/v1/sites/${siteId}${this._rulesEndpointUrl}/${ruleId}`
     }).map((result) => {
       return {success: true};
     });
@@ -375,9 +380,10 @@ export class RuleService {
   }
 
   loadRule(id: string): Observable<RuleModel|CwError> {
+    let siteId = this.loadRulesSiteId();
     return this.coreWebService.request({
       method: RequestMethod.Get,
-      url: `${this._apiRoot.baseUrl}api/v1/sites/${this.siteService.currentSite.identifier}${this._rulesEndpointUrl}/${id}`
+      url: `${this._apiRoot.baseUrl}api/v1/sites/${siteId}${this._rulesEndpointUrl}/${id}`
     }).map((result) => {
       return Object.assign({key: id}, DEFAULT_RULE, result);
     });
@@ -385,13 +391,14 @@ export class RuleService {
 
   updateRule(id: string, rule: RuleModel): Observable<RuleModel|CwError> {
     let result;
+    let siteId = this.loadRulesSiteId();
     if (!id) {
       result = this.createRule(rule);
     }else {
       result = this.coreWebService.request({
         body: RuleService.fromClientRuleTransformFn(rule),
         method: RequestMethod.Put,
-        url: `${this._apiRoot.baseUrl}api/v1/sites/${this.siteService.currentSite.identifier}${this._rulesEndpointUrl}/${id}`
+        url: `${this._apiRoot.baseUrl}api/v1/sites/${siteId}${this._rulesEndpointUrl}/${id}`
       }).map((result) => {
         let r = Object.assign({}, DEFAULT_RULE, result);
         r.id = id;
@@ -489,5 +496,34 @@ export class RuleService {
       return this.actionAndConditionTypeLoader(this._doLoadConditionTypes(), this._conditionTypes);
     }
     return obs;
+  }
+
+  /**
+   * Return the Site Id or Page Id for the rules operations.
+   * First will check if the realmId parameter is included in the url.
+   * If not then search for the current site Id.
+   * @returns string
+   */
+  private loadRulesSiteId(): string {
+    let siteId;
+    let query = document.location.search.substring(1);
+    if (query === '') {
+      if (document.location.hash.indexOf('?') >= 0) {
+        query = document.location.hash.substr(document.location.hash.indexOf('?') + 1);
+      }
+    }
+
+    /**
+     * Search if the realId parameter is set
+     */
+    siteId = ApiRoot.parseQueryParam(query, 'realmId');
+
+    if (!siteId) {
+      /**
+       * If the realmId parameter is not set get the current Site Id
+       */
+      siteId = `${this.siteService.currentSite.identifier}`;
+    }
+    return siteId;
   }
 }
