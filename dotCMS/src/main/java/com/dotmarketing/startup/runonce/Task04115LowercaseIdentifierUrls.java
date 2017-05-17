@@ -39,7 +39,7 @@ public class Task04115LowercaseIdentifierUrls implements StartupTask {
 	private static final String SELECT_QUERY_POSTGRES = "SELECT id, parent_path, asset_name FROM identifier WHERE parent_path <> '/System folder' AND (parent_path <> LOWER(parent_path) OR asset_name <> LOWER(asset_name))";
 	private static final String SELECT_QUERY_MYSQL = "SELECT id, parent_path, asset_name FROM identifier WHERE parent_path <> '/System folder' AND (CAST(asset_name AS BINARY) RLIKE '[A-Z]' OR CAST(parent_path AS BINARY) RLIKE '[A-Z]')";
 	private static final String SELECT_QUERY_MSSQL = "SELECT id, parent_path, asset_name FROM identifier WHERE (HASHBYTES('SHA1', asset_name) <> HASHBYTES('SHA1', UPPER( asset_name)) AND HASHBYTES('SHA1', asset_name) <> HASHBYTES('SHA1', LOWER(asset_name))) OR (HASHBYTES('SHA1', parent_path) <> HASHBYTES('SHA1', UPPER( parent_path)) AND HASHBYTES('SHA1', parent_path) <> HASHBYTES('SHA1', LOWER(parent_path)) AND parent_path <> '/System folder')";
-	private static final String SELECT_QUERY_ORACLE = "SELECT id, parent_path, asset_name FROM identifier WHERE parent_path <> '/System folder' AND (parent_path <> LOWER(parent_path) OR asset_name <> LOWER(asset_name));";
+	private static final String SELECT_QUERY_ORACLE = "SELECT id, parent_path, asset_name FROM identifier WHERE parent_path <> '/System folder' AND (parent_path <> LOWER(parent_path) OR asset_name <> LOWER(asset_name))";
 
 	private static final String UPDATE_QUERY_GENERIC = "UPDATE identifier SET parent_path = ?, asset_name = ? WHERE id = ?";
 
@@ -122,7 +122,7 @@ public class Task04115LowercaseIdentifierUrls implements StartupTask {
 
 	private String getDisableTriggerQuery() {
 		return DbConnectionFactory.isMsSql() ? "ALTER TABLE identifier DISABLE TRIGGER check_identifier_parent_path"
-			: DbConnectionFactory.isMySql() ? "DROP TRIGGER IF EXISTS check_parent_path_when_update;"
+			: DbConnectionFactory.isMySql() ? "DROP TRIGGER IF EXISTS check_parent_path_when_update"
 				: DbConnectionFactory.isOracle() ? "ALTER TRIGGER identifier_parent_path_check DISABLE"
 					: DbConnectionFactory.isPostgres() ? "ALTER TABLE identifier DISABLE TRIGGER identifier_parent_path_trigger" : "";
 	}
