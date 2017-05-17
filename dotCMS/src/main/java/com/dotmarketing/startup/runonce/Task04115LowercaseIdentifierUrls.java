@@ -1,7 +1,5 @@
 package com.dotmarketing.startup.runonce;
 
-import com.google.common.collect.Lists;
-
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -14,6 +12,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -39,7 +38,7 @@ public class Task04115LowercaseIdentifierUrls implements StartupTask {
 	private static final String SELECT_QUERY_POSTGRES = "SELECT id, parent_path, asset_name FROM identifier WHERE parent_path <> '/System folder' AND (parent_path <> LOWER(parent_path) OR asset_name <> LOWER(asset_name))";
 	private static final String SELECT_QUERY_MYSQL = "SELECT id, parent_path, asset_name FROM identifier WHERE parent_path <> '/System folder' AND (CAST(asset_name AS BINARY) RLIKE '[A-Z]' OR CAST(parent_path AS BINARY) RLIKE '[A-Z]')";
 	private static final String SELECT_QUERY_MSSQL = "SELECT id, parent_path, asset_name FROM identifier WHERE (HASHBYTES('SHA1', asset_name) <> HASHBYTES('SHA1', UPPER( asset_name)) AND HASHBYTES('SHA1', asset_name) <> HASHBYTES('SHA1', LOWER(asset_name))) OR (HASHBYTES('SHA1', parent_path) <> HASHBYTES('SHA1', UPPER( parent_path)) AND HASHBYTES('SHA1', parent_path) <> HASHBYTES('SHA1', LOWER(parent_path)) AND parent_path <> '/System folder')";
-	private static final String SELECT_QUERY_ORACLE = "SELECT id, parent_path, asset_name FROM identifier WHERE parent_path <> '/System folder' AND (parent_path <> LOWER(parent_path) OR asset_name <> LOWER(asset_name));";
+	private static final String SELECT_QUERY_ORACLE = "SELECT id, parent_path, asset_name FROM identifier WHERE parent_path <> '/System folder' AND (parent_path <> LOWER(parent_path) OR asset_name <> LOWER(asset_name))";
 
 	private static final String UPDATE_QUERY_GENERIC = "UPDATE identifier SET parent_path = ?, asset_name = ? WHERE id = ?";
 
@@ -53,7 +52,10 @@ public class Task04115LowercaseIdentifierUrls implements StartupTask {
 		//Disable trigger.
 		try {
 			final DotConnect dotConnect = new DotConnect();
-			dotConnect.executeStatement(getDisableTriggerQuery());
+			final List<String> statements = getDisableTriggerQuery();
+			for (String statement : statements) {
+				dotConnect.executeStatement(statement);
+			}
 		} catch (SQLException e) {
 			throw new DotDataException(
                 String.format("Error executing Task04115LowercaseIdentifierUrls, trying to DISABLE trigger: %s", e.getMessage()), e);
@@ -120,20 +122,24 @@ public class Task04115LowercaseIdentifierUrls implements StartupTask {
 								: DbConnectionFactory.isPostgres() ? SELECT_QUERY_POSTGRES : "";
 	}
 
-	private String getDisableTriggerQuery() {
-		return DbConnectionFactory.isMsSql() ? "ALTER TABLE identifier DISABLE TRIGGER check_identifier_parent_path"
-			: DbConnectionFactory.isMySql() ? "DROP TRIGGER IF EXISTS check_parent_path_when_update;"
-				: DbConnectionFactory.isOracle() ? "ALTER TRIGGER identifier_parent_path_check DISABLE"
-					: DbConnectionFactory.isPostgres() ? "ALTER TABLE identifier DISABLE TRIGGER identifier_parent_path_trigger" : "";
+	private List<String> getDisableTriggerQuery() {
+		return DbConnectionFactory.isMsSql() ? SQLUtil.tokenize(MS_SQL_DISABLE_TRIGGER)
+			: DbConnectionFactory.isMySql() ? Collections.singletonList("DROP TRIGGER IF EXISTS check_parent_path_when_update")
+				: DbConnectionFactory.isOracle() ? Collections.singletonList("ALTER TRIGGER identifier_parent_path_check DISABLE")
+					: DbConnectionFactory.isPostgres() ? Collections.singletonList("ALTER TABLE identifier DISABLE TRIGGER identifier_parent_path_trigger")
+						: Collections.singletonList("");
 	}
 
 	private List<String> getEnableTriggerQuery() {
-		return DbConnectionFactory.isMsSql() ? Lists.newArrayList("ALTER TABLE identifier DISABLE TRIGGER check_identifier_parent_path")
+		return DbConnectionFactory.isMsSql() ? Collections.singletonList("ALTER TABLE identifier ENABLE TRIGGER check_identifier_parent_path")
 			: DbConnectionFactory.isMySql() ? SQLUtil.tokenize(MY_SQL_CREATE_TRIGGER)
-				: DbConnectionFactory.isOracle() ? Lists.newArrayList("ALTER TRIGGER identifier_parent_path_check ENABLE")
-					: DbConnectionFactory.isPostgres() ? Lists.newArrayList("ALTER TABLE identifier ENABLE TRIGGER identifier_parent_path_trigger")
-                        : Lists.newArrayList("");
+				: DbConnectionFactory.isOracle() ? Collections.singletonList("ALTER TRIGGER identifier_parent_path_check ENABLE")
+					: DbConnectionFactory.isPostgres() ? Collections.singletonList("ALTER TABLE identifier ENABLE TRIGGER identifier_parent_path_trigger")
+                        : Collections.singletonList("");
 	}
+
+	private final String MS_SQL_DISABLE_TRIGGER = "SET TRANSACTION ISOLATION LEVEL READ COMMITTED;\n"
+		+ "ALTER TABLE identifier DISABLE TRIGGER check_identifier_parent_path;";
 
 	private final String MY_SQL_CREATE_TRIGGER = "DROP TRIGGER IF EXISTS check_parent_path_when_update;\n"
         + "CREATE TRIGGER check_parent_path_when_update  BEFORE UPDATE\n"
