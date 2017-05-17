@@ -26,7 +26,7 @@
     <!-- Main test target, this tasks will run all the unit tests of the application -->
     <target name="test-dotcms">
         <runservertests
-                testurl="http://localhost:8080"
+                testurl="http://localhost:8080/dotAdmin/"
                 starttarget="tomcat-start"
                 stoptarget="tomcat-stop"
                 testtarget="test-all-junits"
