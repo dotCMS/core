@@ -130,35 +130,31 @@ public class ContentTypeResourceTest {
 		Response response = null;
 		final ContentTypeResource resource = new ContentTypeResource();
 
-		try {
-			assertResponse_OK(
-					response = resource.getContentTypes(getHttpRequest(), -1, -1, null, "name")
-			);
+		assertResponse_OK(
+				response = resource.getContentTypes(getHttpRequest(), -1, -1, null, "name")
+		);
 
-			Map entity = (Map) ((ResponseEntityView) response.getEntity()).getEntity();
-			assertEquals(2, entity.size());
+		Map entity = (Map) ((ResponseEntityView) response.getEntity()).getEntity();
+		assertEquals(2, entity.size());
 
-			long total = (long) entity.get("total");
-			List contentTypes = (List) entity.get("contentTypes");
+		long total = (long) entity.get("totalRecords");
+		List contentTypes = (List) entity.get("items");
 
-			assertEquals(total, contentTypes.size());
+		assertEquals(total, contentTypes.size());
 
-			//limit and offset test
-			response = resource.getContentTypes(getHttpRequest(), (int) (total/2), 5, null, "name");
-			Map lastEntity = (Map) ((ResponseEntityView) response.getEntity()).getEntity();
-			List lastContentTypes = ((List) lastEntity.get("contentTypes"));
-			assertEquals((int) (total/2), lastContentTypes.size());
-			assertEquals(contentTypes.get(5), lastContentTypes.get(0));
+		//limit and offset test
+		response = resource.getContentTypes(getHttpRequest(), (int) (total/2), 5, null, "name");
+		Map lastEntity = (Map) ((ResponseEntityView) response.getEntity()).getEntity();
+		List lastContentTypes = ((List) lastEntity.get("items"));
+		assertEquals((int) (total/2), lastContentTypes.size());
+		assertEquals(contentTypes.get(5), lastContentTypes.get(0));
 
-			//orderby test
-			response = resource.getContentTypes(getHttpRequest(), -1, -1, null, "name asc");
-			lastEntity = (Map) ((ResponseEntityView) response.getEntity()).getEntity();
-			lastContentTypes = ((List) lastEntity.get("contentTypes"));
-			assertEquals(total, lastContentTypes.size());
-			assertEquals(contentTypes.get(contentTypes.size()-1), lastContentTypes.get(0));
-		}catch(Exception e){
-			e.printStackTrace();
-		}
+		//orderby test
+		response = resource.getContentTypes(getHttpRequest(), -1, -1, null, "name-desc");
+		lastEntity = (Map) ((ResponseEntityView) response.getEntity()).getEntity();
+		lastContentTypes = ((List) lastEntity.get("items"));
+		assertEquals(total, lastContentTypes.size());
+		assertEquals(contentTypes.get(contentTypes.size()-1), lastContentTypes.get(0));
 	}
 
 	private static String JSON_CONTENT_TYPE_CREATE =
