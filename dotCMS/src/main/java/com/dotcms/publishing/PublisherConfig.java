@@ -1,5 +1,15 @@
 package com.dotcms.publishing;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotmarketing.beans.Host;
@@ -9,8 +19,14 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
-import java.util.*;
-
+/**
+ * Provides the main configuration parameters of a bundle sent via Push Publish.
+ * 
+ * @author Jason Tesser
+ * @version N/A
+ * @since Mar 23, 2012
+ *
+ */
 public class PublisherConfig implements Map<String, Object>, Cloneable {
 
 	static public String STATIC_SUFFIX = "-static";
@@ -31,7 +47,26 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 		RUN_NOW,INDEX_NAME
 	}
 
+	/**
+	 * Specifies the scope of this publisher configuration in terms of
+	 * end-points that failed or succeeded in receiving contents for a given
+	 * Environment. Depending on user-specified settings, a failed-to-publish or
+	 * successful bundle can be re-sent (for the "Re-Try" option) with the
+	 * following configuration:
+	 * <ul>
+	 * <li>{@code ALL_ENDPOINTS}: The bundle will be sent to ALL end-points,
+	 * even if some of them successfully installed the bundles.</li>
+	 * <li>{@code FAILED_ENDPOINTS}: The bundle will be sent to FAILED
+	 * end-points only. This will improve the performance as the publisher will
+	 * not re-install a successful bundle.</li>
+	 * </ul>
+	 */
+	public enum DeliveryStrategy {
+		ALL_ENDPOINTS, FAILED_ENDPOINTS
+	}
+
 	private Operation operation;
+	private DeliveryStrategy deliveryStrategy = null;
 
 	public void PublisherConfig(Map<String, Object> map){
 		params = map;
@@ -189,17 +224,14 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 	}
 
 	public boolean containsKey(Object key) {
-		// TODO Auto-generated method stub
 		return this.params.containsKey(key);
 	}
 
 	public boolean containsValue(Object value) {
-		// TODO Auto-generated method stub
 		return this.params.containsValue(value);
 	}
 
 	public Set<Entry<String, Object>> entrySet() {
-		// TODO Auto-generated method stub
 		return this.params.entrySet();
 	}
 
@@ -490,4 +522,21 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 	public Object clone() throws CloneNotSupportedException {
 		return super.clone();
 	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public DeliveryStrategy getDeliveryStrategy() {
+		return null != this.deliveryStrategy ? this.deliveryStrategy : DeliveryStrategy.ALL_ENDPOINTS;
+	}
+
+	/**
+	 * 
+	 * @param deliveryStrategy
+	 */
+	public void setDeliveryStrategy(DeliveryStrategy deliveryStrategy) {
+		this.deliveryStrategy = deliveryStrategy;
+	}
+
 }
