@@ -4,6 +4,8 @@
 # Enable echoing commands
 trap 'echo "[$USER@$(hostname) $PWD]\$ $BASH_COMMAND"' DEBUG
 
+export GRADLE_OPTS="-Xmx1024m -Xms256m -XX:MaxPermSize=512m"
+
 
 # Create working directory
 mkdir repo
@@ -50,6 +52,9 @@ sed -i "s,{username},$DB_USERNAME,g" dotserver/tomcat/webapps/ROOT/META-INF/cont
 sed -i "s,{password},$DB_PASSWORD,g" dotserver/tomcat/webapps/ROOT/META-INF/context.xml
 sed -i "s,{valquery},$DB_VALIDATION_QUERY,g" dotserver/tomcat/webapps/ROOT/META-INF/context.xml
 
+sed -i 's,<!-- TEST FRAMEWORK SERVLETS,<!-- TEST FRAMEWORK SERVLETS -->,g' dotserver/tomcat/webapps/ROOT/WEB-INF/web.xml
+sed -i 's,END OF TEST FRAMEWORK SERVLETS -->,<!-- END OF TEST FRAMEWORK SERVLETS -->,g' dotserver/tomcat/webapps/ROOT/WEB-INF/web.xml
+
 sed -i "s,dotCMSContentIndex,$ESCLUSTER,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotcms-config-cluster.properties
 sed -i "s,AUTOWIRE_CLUSTER_TRANSPORT=true,AUTOWIRE_CLUSTER_TRANSPORT=false,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotcms-config-cluster.properties
 sed -i "s,AUTOWIRE_CLUSTER_ES=true,AUTOWIRE_CLUSTER_ES=false,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotcms-config-cluster.properties
@@ -94,8 +99,15 @@ felix.base.dir=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/felix
 mkdir tests
 mkdir tests/logs
 
-# Run End-2-End tests
+# Run Functional tests
 ant -f build-tests.xml test-dotcms
+if [ ! -d "dotserver/tomcat/webapps/ROOT/dotsecure/logs/test" ]; then
+	echo 'Functional tests could not be run'
+
+	exit 1;
+fi
+
+# Copy results and logs of tests
 cp dotserver/tomcat/webapps/ROOT/dotsecure/logs/test/*.xml tests
 cp dotserver/tomcat/webapps/ROOT/dotsecure/logs/*.log tests/logs
 cp dotserver/tomcat/logs/* tests/logs
