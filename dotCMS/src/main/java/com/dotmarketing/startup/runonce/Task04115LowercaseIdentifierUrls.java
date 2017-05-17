@@ -1,7 +1,5 @@
 package com.dotmarketing.startup.runonce;
 
-import com.google.common.collect.Lists;
-
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -14,6 +12,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -125,18 +124,18 @@ public class Task04115LowercaseIdentifierUrls implements StartupTask {
 
 	private List<String> getDisableTriggerQuery() {
 		return DbConnectionFactory.isMsSql() ? SQLUtil.tokenize(MS_SQL_DISABLE_TRIGGER)
-			: DbConnectionFactory.isMySql() ? Lists.newArrayList("DROP TRIGGER IF EXISTS check_parent_path_when_update")
-				: DbConnectionFactory.isOracle() ? Lists.newArrayList("ALTER TRIGGER identifier_parent_path_check DISABLE")
-					: DbConnectionFactory.isPostgres() ? Lists.newArrayList("ALTER TABLE identifier DISABLE TRIGGER identifier_parent_path_trigger")
-						: Lists.newArrayList("");
+			: DbConnectionFactory.isMySql() ? Collections.singletonList("DROP TRIGGER IF EXISTS check_parent_path_when_update")
+				: DbConnectionFactory.isOracle() ? Collections.singletonList("ALTER TRIGGER identifier_parent_path_check DISABLE")
+					: DbConnectionFactory.isPostgres() ? Collections.singletonList("ALTER TABLE identifier DISABLE TRIGGER identifier_parent_path_trigger")
+						: Collections.singletonList("");
 	}
 
 	private List<String> getEnableTriggerQuery() {
-		return DbConnectionFactory.isMsSql() ? Lists.newArrayList("ALTER TABLE identifier ENABLE TRIGGER check_identifier_parent_path")
+		return DbConnectionFactory.isMsSql() ? Collections.singletonList("ALTER TABLE identifier ENABLE TRIGGER check_identifier_parent_path")
 			: DbConnectionFactory.isMySql() ? SQLUtil.tokenize(MY_SQL_CREATE_TRIGGER)
-				: DbConnectionFactory.isOracle() ? Lists.newArrayList("ALTER TRIGGER identifier_parent_path_check ENABLE")
-					: DbConnectionFactory.isPostgres() ? Lists.newArrayList("ALTER TABLE identifier ENABLE TRIGGER identifier_parent_path_trigger")
-                        : Lists.newArrayList("");
+				: DbConnectionFactory.isOracle() ? Collections.singletonList("ALTER TRIGGER identifier_parent_path_check ENABLE")
+					: DbConnectionFactory.isPostgres() ? Collections.singletonList("ALTER TABLE identifier ENABLE TRIGGER identifier_parent_path_trigger")
+                        : Collections.singletonList("");
 	}
 
 	private final String MS_SQL_DISABLE_TRIGGER = "SET TRANSACTION ISOLATION LEVEL READ COMMITTED;\n"
