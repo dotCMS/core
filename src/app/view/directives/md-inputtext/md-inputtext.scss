@@ -26,5 +26,29 @@
                 color: $brand-primary;
             }
         }
+
+        &.ui-state-filled,
+        &.ng-dirty.ng-invalid.ng-touched,
+        &.ng-invalid.ng-touched,
+        &:focus {
+            & ~ label {
+                top: 0;
+                font-size: $font-size-small;
+            }
+        }
+
+        &.ui-state-filled,
+        &:focus {
+            & ~ label {
+                color: $brand-primary;
+            }
+        }
+
+        &.ng-dirty.ng-invalid.ng-touched,
+        &.ng-invalid.ng-touched {
+            & ~ label {
+                color: $red;
+            }
+        }
     }
 }

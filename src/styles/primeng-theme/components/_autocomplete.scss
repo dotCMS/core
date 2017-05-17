@@ -7,7 +7,6 @@
 
         &:active, &:focus {
             background: none;
-            @extend #inputtext-active-border;
         }
     }
 
@@ -16,6 +15,12 @@
 
         &::-ms-clear {
             display: none;
+        }
+
+        &.ui-state-filled {
+            & + .ui-button {
+                @extend #inputtext-active-border;
+            }
         }
     }
 }

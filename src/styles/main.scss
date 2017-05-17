@@ -70,6 +70,23 @@ a {
 .form-group {
     margin: $basic-padding * 2 0;
 
+    & > .md-inputtext,
+    & > .ui-inputtext {
+        width: 100%;
+    }
+
+    & > .inline {
+        display: flex;
+
+        & > * {
+            margin-right: $basic-padding * 2;
+
+            &:last-child {
+                margin-right: 0;
+            }
+        }
+    }
+
     &:last-child {
         margin-bottom: 0;
     }

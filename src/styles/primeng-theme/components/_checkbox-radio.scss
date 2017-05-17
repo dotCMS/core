@@ -10,6 +10,13 @@ $icon-size: $check-size - $check-border-width * 2;
     width: $icon-size;
 }
 
+p-checkbox,
+p-radiobutton {
+    align-items: center;
+    display: flex;
+    margin: $basic-padding / 2 0;
+}
+
 .ui-chkbox {
     .ui-chkbox-icon {
         @extend #check-icon;
@@ -97,5 +104,19 @@ $icon-size: $check-size - $check-border-width * 2;
 
     p-radiobutton[disabled="true"] & {
         color: $radio-disabled-label-color;
+    }
+}
+
+// Validation
+p-checkbox {
+    &.ng-dirty.ng-invalid,
+    &.ng-invalid.ng-touched {
+        .ui-chkbox .ui-chkbox-box.ui-state-default {
+            border: solid 1px $red;
+        }
+
+        .ui-chkbox-label {
+            color: $red;
+        }
     }
 }

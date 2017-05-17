@@ -23,7 +23,8 @@ module.exports = function (config) {
     ],
 
     client: {
-      captureConsole: false
+      captureConsole: false,
+      clearContext: false
     },
 
     /*

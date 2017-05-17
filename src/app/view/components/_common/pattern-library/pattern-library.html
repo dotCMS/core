@@ -133,64 +133,78 @@
                 </article>
             </div>
             <div class="section-fields">
-                <h3 class="section__title">TextFields</h3>
-                <article>
-                    <span md-inputtext label="Placeholder">
-                        <input pInputText type="text" />
-                    </span>
-                </article>
-                <article>
-                    <input pInputText type="text" placeholder="Placeholder" />
-                    <input pInputText type="text" placeholder="Disabled" disabled />
-                </article>
-                
-                <h3 class="section__title">TextArea</h3>
-                <article>
-                    <span md-inputtext label="Placeholder">
-                        <textarea pInputTextarea></textarea>
-                    </span>
-                </article>
-                <article>
-                    <textarea pInputTextarea></textarea>
-                </article>
+                <form #formExample="ngForm" novalidate>
+                    <h3 class="section__title">Form</h3>
+                    <div class="form-group">
+                        <span md-inputtext label="Placeholder">
+                            <input pInputText type="text" id="inputTextFloatingLabel" name="inputTextFloatingLabel" #inputTextFloatingLabel="ngModel" [(ngModel)]="model.inputTextFloatingLabel" required />
+                        </span>
+                        <field-validation-message message="InputText is required" [form]="formExample" [field]="inputTextFloatingLabel"></field-validation-message>
+                    </div>
 
-                <h3 class="section__title">DropDown</h3>
-                <article>
-                    <h4 class="section__subtitle">Normal</h4>
-                    <p-dropdown [options]="cities" [(ngModel)]="selectedCity"></p-dropdown>
-                    <p-dropdown disabled="true" [options]="cities" [(ngModel)]="selectedCity"></p-dropdown>
-                </article>
+                    <div class="form-group">
+                        <input pInputText type="text" id="inputTextRegularField" name="inputTextRegularField" placeholder="Placeholder" #inputTextRegularField="ngModel" [(ngModel)]="model.inputTextRegularField" required />
+                        <field-validation-message message="InputText is required" [form]="formExample" [field]="inputTextRegularField"></field-validation-message>
+                    </div>
 
-                <article>
-                    <h4 class="section__subtitle">With Filter</h4>
-                    <p-dropdown [options]="cities" [(ngModel)]="selectedCity" filter="filter"></p-dropdown>
-                </article>
+                    <div class="form-group">
+                        <input pInputText type="text" placeholder="Disabled" disabled />
+                    </div>
 
-                <h3 class="section__title">Checkbox</h3>
-                <article>
-                    <p><p-checkbox name="checkboxNormal" value="val1" label="Checkbox" [(ngModel)]="checkBoxValues"></p-checkbox></p>
-                    <p><p-checkbox name="checkboxDisabled" value="val2" label="Disabled" disabled="true" [(ngModel)]="checkBoxValues"></p-checkbox></p>
-                    <p><p-checkbox name="checkboxDisabledChecked" value="val3" label="Disabled/Checked" disabled="true" [(ngModel)]="checkBoxValues"></p-checkbox></p>
-                </article>
+                    <div class="form-group">
+                        <span md-inputtext label="Placeholder">
+                            <textarea pInputTextarea name="textareaFloatingLabel" #textareaFloatingLabel="ngModel" [(ngModel)]="model.textareaFloatingLabel" required></textarea>
+                        </span>
+                        <field-validation-message message="TextArea is required" [form]="formExample" [field]="textareaFloatingLabel"></field-validation-message>
+                    </div>
 
-                <h3 class="section__title">Radio Buttons</h3>
-                <article>
-                    <p><p-radioButton name="s" value="val1" label="RadioButton" [(ngModel)]="radioBoxValues"></p-radioButton></p>
-                    <p><p-radioButton name="radioDisabled" value="val2" label="Disabled" disabled="true" [(ngModel)]="radioBoxValues"></p-radioButton></p>
-                    <p><p-radioButton name="radioDisabled" value="val" label="Disabled/Selected" disabled="true" [(ngModel)]="radioBoxDisabledValues"></p-radioButton></p>
-                </article>
+                    <div class="form-group">
+                        <textarea pInputTextarea name="textareaRegularField" #textareaRegularField="ngModel" [(ngModel)]="model.textareaRegularField" required></textarea>
+                        <field-validation-message message="TextArea is required" [form]="formExample" [field]="textareaRegularField"></field-validation-message>
+                    </div>
 
-                <h3 class="section__title">Autocomplete</h3>
-                <article>
-                    <!--TODO: get rid of this let autoComplete when this is fixed: https://github.com/primefaces/primeng/issues/745-->
-                    <p-autoComplete
-                        let autoComplete
-                        [dropdown]="true"
-                        [suggestions]="autocompleteResults"
-                        (completeMethod)="autocompleteComplete($event)"
-                        (onDropdownClick)="autocompleteCompleteDropdownClick($event)">
-                    </p-autoComplete>
-                </article>
+                    <div class="form-group">
+                        <textarea pInputTextarea disabled></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="inline">
+                            <p-dropdown [options]="cities" name="dropdownNormal" #dropdownNormal="ngModel" [(ngModel)]="model.dropdownNormal" required></p-dropdown>
+                            <p-dropdown disabled="true" [options]="cities" ></p-dropdown>
+                        </div>
+                        <field-validation-message message="Dropdown is required" [form]="formExample" [field]="dropdownNormal"></field-validation-message>
+                    </div>
+
+                    <div class="form-group">
+                        <p-dropdown filter="filter" [options]="cities" name="dropdownWithFilter" #dropdownWithFilter="ngModel" [(ngModel)]="model.dropdownWithFilter" required></p-dropdown>
+                    </div>
+
+                    <div class="form-group">
+                        <p-checkbox label="Checkbox" name="checkboxNormal" value="Checkbox Normal" #checkboxNormal="ngModel" [(ngModel)]="model.checkboxValues" required></p-checkbox>
+                        <p-checkbox name="checkboxDisabled" label="Disabled" disabled="true"></p-checkbox>
+                        <p-checkbox name="checkboxDisabledChecked" label="Disabled/Checked" disabled="true"></p-checkbox>
+                    </div>
+
+                    <div class="form-group">
+                        <p-radioButton label="RadioButton" name="radiobuttonNormal" value="Radio Button Normal" #radioButtonNormal="ngModel" [(ngModel)]="model.radioBoxValues" required></p-radioButton>
+                        <p-radioButton name="radioDisabled" value="val2" label="Disabled" disabled="true" [(ngModel)]="radioBoxValues"></p-radioButton>
+                        <p-radioButton name="radioDisabled" value="val" label="Disabled/Selected" disabled="true" [(ngModel)]="radioBoxDisabledValues"></p-radioButton>
+                    </div>
+                    <div class="form-group">
+                        <!--TODO: get rid of this let autoComplete when this is fixed: https://github.com/primefaces/primeng/issues/745-->
+                        <p-autoComplete
+                            let autoComplete
+                            [dropdown]="true"
+                            [suggestions]="autocompleteResults"
+                            (completeMethod)="autocompleteComplete($event)"
+                            (onDropdownClick)="autocompleteCompleteDropdownClick($event)">
+                        </p-autoComplete>
+                    </div>
+
+                    <div class="form-group">
+                        <button pButton type="submit" label="Submit"></button>
+                    </div>
+                </form>
 
                 <h3 class="section__title">Dialog</h3>
                 <article>

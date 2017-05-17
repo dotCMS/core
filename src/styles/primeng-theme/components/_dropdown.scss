@@ -56,6 +56,22 @@
     }
 }
 
+p-dropdown {
+    &.ng-dirty.ng-invalid.ng-touched,
+    &.ng-invalid.ng-touched {
+        .ui-dropdown:not(.ui-dropdown-open) {
+            .ui-inputtext {
+                @extend #inputtext-error-border;
+            }
+
+            .ui-inputtext,
+            .ui-dropdown-trigger {
+                color: $red;
+            }
+        }
+    }
+}
+
 .ui-dropdown-panel {
     .ui-dropdown-filter-container .fa {
         top: 14px;
