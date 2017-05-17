@@ -1,15 +1,5 @@
 package com.dotcms.contenttype.business;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-
-import org.elasticsearch.indices.IndexMissingException;
-
 import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
@@ -46,6 +36,16 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 
+import org.elasticsearch.indices.IndexMissingException;
+
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+
 public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   final ContentTypeSql contentTypeSql;
@@ -56,20 +56,35 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     this.cache = CacheLocator.getContentTypeCache2();
   }
 
-  @Override
-  public ContentType find(String id) throws DotDataException {
-    ContentType type = cache.byVarOrInode(id);
-    if (type == null) {
-      type =  LocalTransaction.wrapReturn(() -> {
-        ContentType t = (UUIDUtil.isUUID(id)) ? dbById(id) : dbByVar(id);
-        t.fieldMap();
-        return t;
-      });
-      Logger.debug(this.getClass(), "found type by db:" + type.name());
-      cache.add(type);
+    @Override
+    public ContentType find(String id) throws DotDataException {
+        ContentType type = cache.byVarOrInode(id);
+        if (type == null) {
+            type =  LocalTransaction.wrapReturn(() -> {
+                ContentType t;
+                /*
+                 1. If the if has UUID format lets try to find the ContentType by id.
+                 2. If not let's try to find it by var name.
+                 3. If the id is a really old inode, it will not have the UUID format but still need to catch that case.
+                 */
+                if ( UUIDUtil.isUUID(id) ){
+                    t = dbById(id);
+                } else {
+                    try {
+                        t = dbByVar(id);
+                    } catch (NotFoundInDbException e){
+                        t = dbById(id);
+                    }
+
+                }
+                t.fieldMap();
+                return t;
+            });
+            Logger.debug(this.getClass(), "found type by db:" + type.name());
+            cache.add(type);
+        }
+        return type;
     }
-    return type;
-  }
 
   @Override
   public List<ContentType> findAll() throws DotDataException {
