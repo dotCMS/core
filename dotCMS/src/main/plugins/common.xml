@@ -24,29 +24,45 @@
         <isset property="target.root"/>
     </condition>
 
+    <path id="jar.classpath">
+
+        <fileset dir="${basedir}/../../../../build/pluginsLib" erroronmissingdir="false">
+            <include name="**/*.jar" />
+        </fileset>
+
+        <!--TODO: Required to find the servlet API jar, that jar is in the app server libs folder-->
+        <fileset dir="${basedir}/../../${target.root.dir}/../../lib" erroronmissingdir="false">
+            <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="${target.root.dir}/../libs/buildlibs" erroronmissingdir="false">
+            <include name="**/*.jar" />
+        </fileset>
+        <!--TODO: Required to find the servlet API jar, that jar is in the app server libs folder-->
+
+        <fileset dir="${target.root.dir}/WEB-INF/lib" erroronmissingdir="false">
+            <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="${basedir}/../../${target.root.dir}/WEB-INF/lib" erroronmissingdir="false">
+            <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="lib">
+            <include name="**/*.jar" />
+        </fileset>
+    	
+    </path>
+	
+    <manifestclasspath property="tem.classpath" jarfile="classpath-tmp.jar">
+        <classpath refid="jar.classpath"/>
+    </manifestclasspath> 
+
+    <jar destfile="classpath-tmp.jar">
+        <manifest>             
+            <attribute name="Class-Path" value="${tem.classpath}"/>
+        </manifest>
+    </jar>
+	
 	<path id="files-classpath">
-		<fileset dir="${basedir}/../../../../build/pluginsLib" erroronmissingdir="false">
-			<include name="**/*.jar" />
-		</fileset>
-
-		<!--TODO: Required to find the servlet API jar, that jar is in the app server libs folder-->
-		<fileset dir="${basedir}/../../${target.root.dir}/../../lib" erroronmissingdir="false">
-			<include name="**/*.jar" />
-		</fileset>
-		<fileset dir="${target.root.dir}/../libs/buildlibs" erroronmissingdir="false">
-			<include name="**/*.jar" />
-		</fileset>
-		<!--TODO: Required to find the servlet API jar, that jar is in the app server libs folder-->
-
-		<fileset dir="${target.root.dir}/WEB-INF/lib" erroronmissingdir="false">
-			<include name="**/*.jar" />
-		</fileset>
-		<fileset dir="${basedir}/../../${target.root.dir}/WEB-INF/lib" erroronmissingdir="false">
-			<include name="**/*.jar" />
-		</fileset>
-		<fileset dir="lib">
-			<include name="**/*.jar" />
-		</fileset>
+		<pathelement path="classpath-tmp.jar"/>
 		<pathelement path="${build.classes}" />
 		<pathelement path="../../build/classes" />
 	</path>
@@ -103,23 +119,10 @@
 			<zipfileset dir="${tinymce.dir}" prefix="tiny_mce" />
 			<zipfileset dir="${dotcms.dir}" prefix="dotcms" excludes="**/thumb.db" />
 		</jar>
+		
+		<delete file="classpath-tmp.jar"></delete>
 
 	</target>
-	
-	<!--
-	<target name="doif" depends="checkFileExists, if_target"/>
-	<target name="checkFileExists">
-	    <condition property="p">
-	       <available file="${classpath.dir}" />
-	    </condition>
-	</target>
-	<target name="if_target" if="p">
-	    <condition property="jar.destfile" value="${basedir}/../../${target.root.dir}/WEB-INF/lib/plugin-${plugin.name}-classpath.jar" else="${target.root.dir}/WEB-INF/lib/plugin-${plugin.name}-classpath.jar">
-	      <isset property="target.root"/>
-	    </condition>
-	    <jar destfile="${jar.destfile}" basedir="${classpath.dir}" />
-	</target>
-	-->
 
 	<target name="clean">
 		<delete dir="${build.dir}" />
