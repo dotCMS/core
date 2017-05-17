@@ -62,10 +62,10 @@ public abstract class Field implements FieldIf, Serializable {
 
   @Value.Check
   public void check() {
-    if (iDate().after(legacyFieldDate)) {
+    /*if (iDate().after(legacyFieldDate)) {
       Preconditions.checkArgument(acceptedDataTypes().contains(dataType()),
           this.getClass().getSimpleName() + " must have DataType:" + acceptedDataTypes());
-    }
+    }*/
   }
 
 
