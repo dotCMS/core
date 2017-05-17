@@ -178,10 +178,24 @@
            return;
        }
 
+       var forcePush = false;
+       var deliveryStrategy = 1;
+       
+       var forcePushInput = dijit.byId("forcePush" + bundleId);
+       if (forcePushInput) {
+           forcePush = forcePushInput.getValue();
+       }
+       var deliveryStratInput = dijit.byId("deliveryStrategy" + bundleId);
+       if (deliveryStratInput) {
+    	   deliveryStrategy = deliveryStratInput.getValue();
+       }
+       
        var xhrArgs = {
            url: "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/retry",
            content: {
-               'bundlesIds': toRetry
+               'bundlesIds': toRetry,
+               'forcePush': forcePush,
+               'deliveryStrategy': deliveryStrategy
            },
            handleAs: "text",
            load: function (data) {
@@ -199,6 +213,7 @@
            }
        };
        dojo.xhrPost(xhrArgs);
+       backToAuditList();
    };
 
 
