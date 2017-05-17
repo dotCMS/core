@@ -258,6 +258,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 					}
 
 					for (Contentlet contenlet : hits) {
+						stringbuf = null;
 						try {
 							if (usePermalinks) {
 								stringbuf = "<url><loc>"
@@ -333,7 +334,10 @@ public class XMLSitemapJob implements Job, StatefulJob {
 										+ modifiedDateStringValue
 										+ "</lastmod><changefreq>daily</changefreq></url>\n";
 							}
-							writeFile(stringbuf);
+
+							if (stringbuf != null) {
+								writeFile(stringbuf);
+							}
 							addRegistryProcessed();
 
 						} catch (Exception e) {
