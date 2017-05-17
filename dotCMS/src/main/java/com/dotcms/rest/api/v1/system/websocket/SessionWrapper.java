@@ -174,4 +174,9 @@ public class SessionWrapper implements Session {
     public Set<Session> getOpenSessions() {
         return this.session.getOpenSessions();
     }
+
+    @Override
+    public String toString() {
+        return (null != this.session)?this.session.toString():"session null wrapper";
+    }
 } // E:O:F:SessionWrapper.
