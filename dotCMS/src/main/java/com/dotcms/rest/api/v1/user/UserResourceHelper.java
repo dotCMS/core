@@ -233,13 +233,19 @@ public class UserResourceHelper implements Serializable {
 		return sessionData;
 	}
 
-	private void checkLoginAsRole(User currentUser) throws DotDataException {
+	/**
+	 * Check if the user has the LOGIN_AS role.
+	 *
+	 * @param user
+	 * @throws DotDataException if the user doesn't have the Login_AS Role.
+	 */
+	private void checkLoginAsRole(User user) throws DotDataException {
 		final Role loginAsRole = this.roleAPI.findRoleByFQN(Role.SYSTEM + " --> " + Role.LOGIN_AS);
-		if (!this.roleAPI.doesUserHaveRole(currentUser, loginAsRole)) {
+		if (!this.roleAPI.doesUserHaveRole(user, loginAsRole)) {
 			// Potential hacking attempt
 			SecurityUtils.delayRequest(10, DelayStrategy.TIME_SEC);
 			throw new DotDataException(
-					"Current user [" + currentUser.getUserId() + "] does not have the proper 'Login As' role.",
+					"Current user [" + user.getUserId() + "] does not have the proper 'Login As' role.",
 					"loginas.error.missingloginasrole");
 		}
 	}

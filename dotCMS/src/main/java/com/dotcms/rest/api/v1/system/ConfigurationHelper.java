@@ -83,10 +83,10 @@ public class ConfigurationHelper implements Serializable {
 						message("notifications_dismissall", locale), // Dismiss all
 						this.getRelativeTimeEntry(locale)
 				),
-				DOTCMS_PAGINATOR_ROWS,
-				Config.getIntProperty(DOTCMS_PAGINATOR_ROWS, 10),
-				DOTCMS_PAGINATOR_LINKS,
-				Config.getIntProperty(DOTCMS_PAGINATOR_LINKS, 5)
+				DOTCMS_PAGINATION_ROWS,
+				Config.getIntProperty(DOTCMS_PAGINATION_ROWS, 10),
+				DOTCMS_PAGINATION_LINKS,
+				Config.getIntProperty(DOTCMS_PAGINATION_LINKS, 5)
 		);
 	}
 
