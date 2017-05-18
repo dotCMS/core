@@ -44,6 +44,7 @@ import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPa
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import com.dotcms.rest.RestClientBuilder;
 import com.dotmarketing.beans.Host;
@@ -309,6 +310,7 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 	 * to avoid issues trying to edit those contents in the receiver node
 	 * @throws Exception 
 	 */
+	@Ignore
 	@Test
 	public void push_archived_issue5086 () throws Exception {
 
@@ -602,6 +604,7 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 	 * Check that content reorder changes in a page are reflected in the push publishing
 	 * @throws Exception 
 	 */
+	@Ignore
 	@Test
 	public void push_container_issue5189 () throws Exception {
 
