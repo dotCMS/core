@@ -71,7 +71,7 @@ public class LegacyFieldTransformer implements FieldTransformer {
 
 		com.dotmarketing.portlets.structure.model.Field old = new com.dotmarketing.portlets.structure.model.Field();
 		old.setDefaultValue(field.defaultValue());
-		old.setFieldContentlet(field.dbColumn());
+		old.setFieldContentlet(LegacyFieldTransformer.buildLegacyFieldContent(field));
 		old.setFieldName(field.name());
 		old.setFieldRelationType(field.relationType());
 		old.setFieldType(field.typeName());
@@ -95,6 +95,14 @@ public class LegacyFieldTransformer implements FieldTransformer {
 		old.setVelocityVarName(field.variable());
 		return old;
 
+	}
+
+	private static String buildLegacyFieldContent(Field field){
+		String fieldContent = field.dbColumn();
+		if(field.typeName().endsWith("BinaryField")){
+			fieldContent = "binary" + field.sortOrder();
+		}
+		return fieldContent;
 	}
 
 	private static Field transformToNew(com.dotmarketing.portlets.structure.model.Field oldField) {
