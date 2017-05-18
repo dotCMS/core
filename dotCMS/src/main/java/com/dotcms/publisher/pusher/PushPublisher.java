@@ -153,18 +153,22 @@ public class PushPublisher extends Publisher {
 				//Filter Endpoints list and push only to those that are enabled and are Dynamic (not S3 at the moment)
 				for(PublishingEndPoint ep : allEndpoints) {
 					if(ep.isEnabled() && getProtocols().contains(ep.getProtocol())) {
-						
+						// If pushing a bundle for the first time, always add
+						// all end-points
 						if (null == endpointsDetail || endpointsDetail.size() == 0) {
 							endpoints.add(ep);
 						} else {
 							EndpointDetail epDetail = endpointsDetail.get(ep.getId());
-							if (this.config.getDeliveryStrategy().equals(DeliveryStrategy.ALL_ENDPOINTS)
-									|| (this.config.getDeliveryStrategy().equals(DeliveryStrategy.FAILED_ENDPOINTS)
-											&& epDetail.getStatus() != PublishAuditStatus.Status.SUCCESS.getCode())) {
+							// If re-trying a bundle or just re-attempting to
+							// install a bundle, send it only to those
+							// end-points whose status IS NOT success
+							if ((DeliveryStrategy.ALL_ENDPOINTS.equals(this.config.getDeliveryStrategy())
+									&& PublishAuditStatus.Status.SUCCESS.getCode() != epDetail.getStatus())
+									|| (DeliveryStrategy.FAILED_ENDPOINTS.equals(this.config.getDeliveryStrategy())
+											&& PublishAuditStatus.Status.SUCCESS.getCode() != epDetail.getStatus())) {
 								endpoints.add(ep);
 							}
 						}
-						
 					}
 				}
 
