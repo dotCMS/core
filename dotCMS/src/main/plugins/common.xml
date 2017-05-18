@@ -49,6 +49,8 @@
         </fileset>
 	</path>
 	
+	<mkdir dir="lib" />
+	
     <manifestclasspath property="tem.classpath" jarfile="classpath-tmp.jar" maxParentLevels="6">
         <classpath refid="jar.classpath"/>
     </manifestclasspath> 
