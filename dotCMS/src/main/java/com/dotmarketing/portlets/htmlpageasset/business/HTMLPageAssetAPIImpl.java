@@ -690,7 +690,9 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
         if (!liveMode) {
             requestProxy.setAttribute(WebKeys.PREVIEW_MODE_SESSION, "true");
+            requestProxy.getSession().setAttribute(WebKeys.PREVIEW_MODE_SESSION, "true");
             requestProxy.setAttribute(WebKeys.ADMIN_MODE_SESSION, "true");
+            requestProxy.getSession().setAttribute(WebKeys.ADMIN_MODE_SESSION, "true");
         }
         boolean signedIn = false;
 
@@ -757,6 +759,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             LanguageWebAPI langWebAPI = WebAPILocator.getLanguageWebAPI();
             langWebAPI.checkSessionLocale(requestProxy);
 
+            requestProxy.getSession().setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
+            requestProxy.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
             context = VelocityUtil.getWebContext(requestProxy, responseProxy);
 
             if (langId != null && langId > 0) {
