@@ -74,11 +74,14 @@ import {ToolbarNotifications} from './view/components/toolbar-notifications/tool
 import {ToolbarUserComponent} from './view/components/toolbar-user/toolbar-user';
 import {GravatarComponent} from './view/components/_common/gravatar/gravatar.component';
 import {ContentTypesPortletComponent} from './portlets/content-types/content-types-component';
+import { ContentTypesCreateEditPortletComponent } from './portlets/content-types-create-edit/content-types-create-edit-component';
+
 
 export const COMPONENTS = [
     ...RULES_ENGINE_COMPONENTS,
     Accordion,
     AccordionGroup,
+    ContentTypesCreateEditPortletComponent,
     ContentTypesPortletComponent,
     CustomTimeComponent,
     DotLoadingIndicator,

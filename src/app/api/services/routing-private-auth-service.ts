@@ -57,16 +57,13 @@ export class RoutingPrivateAuthService implements CanActivate {
     }
 
     private check(url: string): boolean {
-        let isRouteLoaded = true;
         if (url !== '/c/pl') {
-            isRouteLoaded = this.routingService.isPortlet(url);
+            let isRouteLoaded = this.routingService.isPortlet(url);
 
             if (isRouteLoaded) {
                 this.routingService.setCurrentPortlet(url);
-            } else {
-                this.router.goToLogin();
             }
         }
-        return isRouteLoaded;
+        return true;
     }
 }
