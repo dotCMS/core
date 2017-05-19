@@ -114,7 +114,7 @@ cp dotserver/tomcat/logs/* tests/logs
 
 # Run Integration tests
 cd core/dotCMS
-./gradlew integrationTest -PdatabaseType=$DB_TYPE --no-daemon  || true
+./gradlew integrationTest -PdatabaseType=$DB_TYPE --no-daemon || true
 cd ../..
 cp core/dotCMS/build/test-results/integrationTest/*.xml tests
 
