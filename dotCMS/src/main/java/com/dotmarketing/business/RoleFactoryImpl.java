@@ -590,7 +590,7 @@ public class RoleFactoryImpl extends RoleFactory {
 	@Override
 	protected List<String> loadLayoutIdsForRole(Role role) throws DotDataException {
 		List<String> layouts = rc.getLayoutsForRole(role.getId());
-		if(layouts == null || layouts.isEmpty()){
+		if(layouts == null){
 			layouts = new ArrayList<String>();
 			HibernateUtil hu = new HibernateUtil(Role.class);
 			hu.setQuery("from " + LayoutsRoles.class.getName() + " where role_id = ?");
