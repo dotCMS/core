@@ -236,8 +236,8 @@
             }
         %>
         <div class="wysiwyg-wrapper">
-            <div id="<%=field.getVelocityVarName()%>aceEditor" class="classAce aceTall"></div>
-            <textarea  <%= isReadOnly?"readonly=\"readonly\"":"" %>
+            <div id="<%=field.getVelocityVarName()%>aceEditor" class="classAce aceTall" style="display: none"></div>
+            <textarea <%= isReadOnly?"readonly=\"readonly\"":"" %>
                     class="editWYSIWYGField aceText aceTall" 
                     name="<%=field.getFieldContentlet()%>"
                     id="<%=field.getVelocityVarName()%>"><%=UtilMethods.htmlifyString(textValue)%></textarea>
@@ -274,12 +274,12 @@
         </div>
         <script type="text/javascript">
             dojo.addOnLoad(function () {
-                <% if(!wysiwygDisabled) {%>
-                enableWYSIWYG('<%=field.getVelocityVarName()%>', false);
-                <% }else if(wysiwygPlain){ %>
-                toPlainView('<%=field.getVelocityVarName()%>');
-                <% }else {%>
-                toCodeArea('<%=field.getVelocityVarName()%>');
+                <% if (!wysiwygDisabled) { %>
+                    enableWYSIWYG('<%=field.getVelocityVarName()%>', false);
+                <% } else if (wysiwygPlain) { %>
+                    toPlainView('<%=field.getVelocityVarName()%>');
+                <% } else {%>
+                    toCodeArea('<%=field.getVelocityVarName()%>');
                 <% }%>
             });
         </script>
