@@ -20,6 +20,7 @@ import org.apache.velocity.runtime.parser.node.SimpleNode;
 
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.viewtools.VelocityWebUtil;
 
 abstract class DotDirective extends InputBase {
 
@@ -63,6 +64,8 @@ abstract class DotDirective extends InputBase {
     }
   }
 
+  
+  
   final public boolean render(InternalContextAdapter context, Writer writer, Node node)
       throws IOException, ResourceNotFoundException, ParseErrorException, MethodInvocationException {
 
@@ -72,9 +75,15 @@ abstract class DotDirective extends InputBase {
 
     RenderParams params = new RenderParams(request);
 
-    String templatePath = this.resolveTemplatePath(context, writer, params, argument);
-    Template t = loadTemplate(context, templatePath);
-    return this.renderTemplate(context, writer, t, templatePath);
+    try{
+      String templatePath = this.resolveTemplatePath(context, writer, params, argument);
+      Template t = loadTemplate(context, templatePath);
+      return this.renderTemplate(context, writer, t, templatePath);
+    }
+    catch(ResourceNotFoundException rnfe){
+       postRender(context);
+       return true;
+    }
 
   }
 
@@ -102,7 +111,7 @@ abstract class DotDirective extends InputBase {
       /**
        * Log #parse errors so the user can track which file called which.
        */
-    	String msg = "Exception rendering" + this.getName() + " (" + templatePath + ") at "
+    	String msg = "Exception rendering " + this.getName() + " (" + templatePath + ") at "
     	          + VelocityException.formatFileString(this)+(e.getMessage() != null?". Cause of error: "+e.getMessage():"");
       Logger.error(this, msg);
       
@@ -110,7 +119,7 @@ abstract class DotDirective extends InputBase {
       
       return false;
     } catch (Exception e) {
-      String msg = "Exception rendering" + this.getName() + " (" + templatePath + ") at "
+      String msg = "Exception rendering " + this.getName() + " (" + templatePath + ") at "
           + VelocityException.formatFileString(this);
       Logger.error(this, msg, e);
       return false;
