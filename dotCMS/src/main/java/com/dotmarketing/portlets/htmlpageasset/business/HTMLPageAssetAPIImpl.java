@@ -1,28 +1,13 @@
 package com.dotmarketing.portlets.htmlpageasset.business;
 
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.exception.ResourceNotFoundException;
-
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
+import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -63,6 +48,23 @@ import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.velocity.VelocityServlet;
 import com.liferay.portal.model.User;
+
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.exception.ResourceNotFoundException;
+
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 
 
@@ -651,8 +653,12 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     public String getHTML(String uri, Host host, boolean liveMode, String contentId, User user, Long langId,
             String userAgent) throws DotStateException, DotDataException, DotSecurityException {
 
-
-        HttpServletRequest requestProxy = new MockHttpRequest(host.getHostname(), uri).request();
+        HttpServletRequest requestProxy =
+            new MockAttributeRequest(
+                new MockSessionRequest(
+                    new MockHttpRequest(host.getHostname(), uri).request()
+                ).request()
+            ).request();
         HttpServletResponse responseProxy = new BaseResponse().response();
 
         StringWriter out = new StringWriter();
@@ -690,7 +696,9 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
         if (!liveMode) {
             requestProxy.setAttribute(WebKeys.PREVIEW_MODE_SESSION, "true");
+            requestProxy.getSession().setAttribute(WebKeys.PREVIEW_MODE_SESSION, "true");
             requestProxy.setAttribute(WebKeys.ADMIN_MODE_SESSION, "true");
+            requestProxy.getSession().setAttribute(WebKeys.ADMIN_MODE_SESSION, "true");
         }
         boolean signedIn = false;
 
@@ -757,6 +765,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             LanguageWebAPI langWebAPI = WebAPILocator.getLanguageWebAPI();
             langWebAPI.checkSessionLocale(requestProxy);
 
+            requestProxy.getSession().setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
+            requestProxy.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
             context = VelocityUtil.getWebContext(requestProxy, responseProxy);
 
             if (langId != null && langId > 0) {
