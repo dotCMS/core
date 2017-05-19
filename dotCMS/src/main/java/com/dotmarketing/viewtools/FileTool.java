@@ -18,6 +18,7 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
 
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -57,6 +58,10 @@ public class FileTool implements ViewTool {
         }else{
 			return "";
 		}
+	}
+	
+	public IFileAsset getNewFile(){
+	    return new FileAsset(); 
 	}
 
 }
