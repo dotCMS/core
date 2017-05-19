@@ -1,4 +1,4 @@
-import _ from 'lodash';
+
 import {Component, ViewEncapsulation} from '@angular/core';
 import {MessageService} from '../../../../api/services/messages-service';
 
@@ -14,12 +14,21 @@ export class BaseComponent {
     constructor(i18nKeys: string[], private messageService: MessageService) {
         if (messageService !== null) {
             this.messageMapSubscription = this.messageService.getMessages(i18nKeys).subscribe(res => {
-                this.i18nMessages = _.pick(res, i18nKeys);
+                this.i18nMessages = res;
+                this.onMessage();
             });
         }
     }
 
     ngOnDestroy(): void {
         this.messageMapSubscription.unsubscribe();
+    }
+
+    /**
+     * Call when the messages are receive
+     * @memberOf BaseComponent
+     */
+    onMessage(): void {
+
     }
 }

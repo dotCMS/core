@@ -41,6 +41,7 @@ import {UserModel} from './api/auth/UserModel';
 import {GravatarService} from './api/services/gravatar-service';
 import { ColorUtil } from './api/util/ColorUtil';
 import { BrowserUtil } from './api/util/browser-util';
+import { ListingService } from './api/services/listing-service';
 
 // ROUTING
 import { LocationStrategy, HashLocationStrategy } from '@angular/common';
@@ -77,6 +78,7 @@ let PROVIDERS: any[] = [
   MessageService,
   NotLicensedService,
   NotificationsService,
+  ListingService,
   RoutingPrivateAuthService,
   RoutingPublicAuthService,
   RoutingService,

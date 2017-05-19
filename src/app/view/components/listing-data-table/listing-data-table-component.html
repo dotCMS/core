@@ -1,0 +1,17 @@
+<p-dataTable [value]="items" 
+             [rows]="paginatorRows" 
+             [paginator]="true" 
+             [pageLinks]="paginatorLinks" 
+             [lazy]="true"
+             [totalRecords]="totalRecords"
+             (onLazyLoad)="loadDataPaginationEvent($event)">
+
+    <p-column selectionMode="multiple" [style]="{'width':'5%'}"></p-column>
+
+    <p-column *ngFor="let col of columns" 
+              [field]="col.fieldName" 
+              [header]="col.header"
+              [sortable]="col.sortable"
+              [style]="{'width': col.width, 'text-align': getAlign(col)}"> 
+    </p-column>
+</p-dataTable>
