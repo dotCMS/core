@@ -69,8 +69,10 @@ public class FieldFactory {
 	public static List<Field> getFieldsByStructure(String structureInode)
 	{
 	       try {
-	            return new LegacyFieldTransformer(APILocator.getContentTypeFieldAPI().byContentTypeId(structureInode)).asOldFieldList();
-	        } catch (DotStateException | DotDataException e) {
+	            return new LegacyFieldTransformer(
+	                APILocator.getContentTypeAPI(APILocator.systemUser()).find(structureInode).fields()
+	                ).asOldFieldList();
+	        } catch (Exception e) {
 	            return ImmutableList.of();
 	        }
 	}
@@ -109,11 +111,11 @@ public class FieldFactory {
 	 */
 	public static Field getFieldByVariableName(String structureInode, String velocityVarName)
 	{
-	    velocityVarName = StringUtils.camelCaseLower(velocityVarName);
         try {
-            com.dotcms.contenttype.model.field.Field f = fapi().byContentTypeIdAndVar(structureInode, velocityVarName);
+            com.dotcms.contenttype.model.field.Field f = APILocator.getContentTypeAPI(APILocator.systemUser()).find(structureInode).fieldMap().get(velocityVarName);
+
             return new LegacyFieldTransformer(f).asOldField();
-        } catch (DotDataException e) {
+        } catch (Exception e) {
             return new Field();
         }
 	}

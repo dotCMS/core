@@ -1,28 +1,23 @@
 package com.dotcms.rest.api.v1.system.websocket;
 
-import javax.servlet.http.HttpSession;
-import javax.websocket.HandshakeResponse;
-import javax.websocket.server.HandshakeRequest;
-import javax.websocket.server.ServerEndpointConfig;
-import javax.websocket.server.ServerEndpointConfig.Configurator;
-
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
-import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.business.LazyUserAPIWrapper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.glassfish.jersey.server.ContainerRequest;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.web.UserWebAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
+import javax.servlet.http.HttpSession;
+import javax.websocket.HandshakeResponse;
+import javax.websocket.server.HandshakeRequest;
+import javax.websocket.server.ServerEndpointConfig;
+import javax.websocket.server.ServerEndpointConfig.Configurator;
 import java.util.List;
 
 /**
@@ -69,7 +64,7 @@ public class DotCmsWebSocketConfigurator extends Configurator {
 
 		super.modifyHandshake(serverEndpointConfig, request, response);
 
-		User user = null;
+		User user      			   = null;
 		String authorizationHeader = null;
 		final List<String> headers = request.getHeaders().get(ContainerRequest.AUTHORIZATION);
 		final Object session 	   = request.getHttpSession();
@@ -80,25 +75,11 @@ public class DotCmsWebSocketConfigurator extends Configurator {
 			try {
 
 				httpSession = HttpSession.class.cast(session);
-				user = (User) httpSession.getAttribute(WebKeys.CMS_USER);
+				user = (User) httpSession.getAttribute(com.liferay.portal.util.WebKeys.USER);
 
 				if (!UtilMethods.isSet(user)) {
 
 					user = this.getUserFromId(httpSession);
-
-					if (!UtilMethods.isSet(user) && ((null != headers) && (headers.size() > 0))) {
-
-						authorizationHeader = headers.get(0);
-						user = this.authCredentialProcessor.processAuthCredentialsFromJWT
-								(authorizationHeader, (HttpSession) session);
-
-					}
-				}
-
-				if (UtilMethods.isSet(user)) {
-
-					serverEndpointConfig.getUserProperties().put
-							(SystemEventsWebSocketEndPoint.USER, user);
 				}
 			} catch (Exception e) {
 
@@ -106,6 +87,28 @@ public class DotCmsWebSocketConfigurator extends Configurator {
 
 					Logger.error(this.getClass(), e.getMessage(), e);
 				}
+			}
+		}
+
+		try {
+
+			if (!UtilMethods.isSet(user) && ((null != headers) && (headers.size() > 0))) {
+
+				authorizationHeader = headers.get(0);
+				user = this.authCredentialProcessor.processAuthCredentialsFromJWT
+						(authorizationHeader, httpSession);
+			}
+
+			if (UtilMethods.isSet(user)) {
+
+				serverEndpointConfig.getUserProperties().put
+						(SystemEventsWebSocketEndPoint.USER, user);
+			}
+		} catch (Exception e) {
+
+			if (Logger.isErrorEnabled(this.getClass())) {
+
+				Logger.error(this.getClass(), e.getMessage(), e);
 			}
 		}
 	} // modifyHandshake.
@@ -119,7 +122,6 @@ public class DotCmsWebSocketConfigurator extends Configurator {
 		if (UtilMethods.isSet(userId)) {
 
 			user = this.userAPI.loadUserById(userId);
-			httpSession.setAttribute(WebKeys.CMS_USER, user);
 		}
 
 		return user;

@@ -33,6 +33,7 @@ public class CacheProviderStats {
     }
 
     public List<CacheStats> getStats(){
+        Collections.sort(stats, new CacheStatComparator());
         return this.stats;
     }
 
@@ -40,6 +41,31 @@ public class CacheProviderStats {
         return providerName;
     }
 
+    
+    
+
+    
+    
+    class CacheStatComparator implements Comparator<CacheStats> {
+      @Override
+      public int compare(CacheStats x, CacheStats y) {
+
+        try{
+          return x.getStatValue(CacheStats.REGION).toString().compareToIgnoreCase(y.getStatValue(CacheStats.REGION).toString());
+        }
+        catch(Exception e){
+          return 0;
+        }
+        
+        
+      }
+
+
+    }
+    
+    
+    
+    
 }
 
 
