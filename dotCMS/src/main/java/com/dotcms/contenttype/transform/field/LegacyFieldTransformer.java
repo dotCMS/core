@@ -105,7 +105,7 @@ public class LegacyFieldTransformer implements FieldTransformer {
 		return fieldContent;
 	}
 
-	private static Field transformToNew(com.dotmarketing.portlets.structure.model.Field oldField) {
+	private static Field transformToNew(final com.dotmarketing.portlets.structure.model.Field oldField) {
 		final String fieldType = oldField.getFieldType();
 
 		@SuppressWarnings("serial")
@@ -164,7 +164,7 @@ public class LegacyFieldTransformer implements FieldTransformer {
 
 			@Override
 			public DataTypes dataType() {
-				String dbType = oldField.getFieldContentlet().replaceAll("[0-9]", "");
+				String dbType = (oldField.getFieldContentlet()!=null) ? oldField.getFieldContentlet().replaceAll("[0-9]", "") : null;
 				if(!UtilMethods.isSet(dbType)){
 				   return FieldBuilder.instanceOf(LegacyFieldTypes.getImplClass(fieldType)).acceptedDataTypes().get(0);
 				}
