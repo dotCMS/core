@@ -39,11 +39,11 @@ mv dotserver/`ls dotserver | grep  tomcat` dotserver/tomcat
 cp core/dotCMS/build/libs/dotcms_*-*Test.jar dotserver/tomcat/webapps/ROOT/WEB-INF/lib
 cp core/dotCMS/build/libs/test/junit-*.jar dotserver/tomcat/webapps/ROOT/WEB-INF/lib
 
+
 # Uncompress ant/configuration files for tests
 jar xf dotserver/tomcat/webapps/ROOT/WEB-INF/lib/dotcms_*-functionalTest.jar build-tests.xml
 jar xf dotserver/tomcat/webapps/ROOT/WEB-INF/lib/dotcms_*-functionalTest.jar context.xml
 mv context.xml dotserver/tomcat/webapps/ROOT/META-INF/context.xml
-
 
 # Setup configuration files
 sed -i "s,{driver},$DB_DRIVER,g" dotserver/tomcat/webapps/ROOT/META-INF/context.xml
