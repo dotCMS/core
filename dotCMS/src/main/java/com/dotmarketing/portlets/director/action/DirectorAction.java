@@ -103,8 +103,7 @@ public class DirectorAction extends DotPortletAction {
 	 *             database.
 	 */
 	protected void updatePageModDate(IHTMLPage htmlPage, User user) throws DotStateException, DotDataException {
-		updatePageModDate(htmlPage, user, APILocator.getLanguageAPI()
-				.getDefaultLanguage().getId());
+		updatePageModDate(htmlPage, user, htmlPage.getLanguageId());
 	}
 	
 	/**
@@ -747,7 +746,7 @@ public class DirectorAction extends DotPortletAction {
 							iden = APILocator.getIdentifierAPI().find(contentlet);
 							multiTree = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,iden);
 							multiTree.setTreeOrder(x);
-							MultiTreeFactory.saveMultiTree(multiTree);
+							MultiTreeFactory.saveMultiTree(multiTree, htmlPage.getLanguageId());
 							x++;
 						}
 	
@@ -755,7 +754,7 @@ public class DirectorAction extends DotPortletAction {
 							iden = APILocator.getIdentifierAPI().find(c);
 							multiTree = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,iden);
 							multiTree.setTreeOrder(x);
-							MultiTreeFactory.saveMultiTree(multiTree);
+							MultiTreeFactory.saveMultiTree(multiTree, htmlPage.getLanguageId());
 							x++;
 						}
 	
@@ -816,7 +815,7 @@ public class DirectorAction extends DotPortletAction {
 							iden = APILocator.getIdentifierAPI().find(c);
 							multiTree = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,iden);
 							multiTree.setTreeOrder(x);
-							MultiTreeFactory.saveMultiTree(multiTree);
+							MultiTreeFactory.saveMultiTree(multiTree, htmlPage.getLanguageId());
 							x++;
 						}
  
@@ -824,7 +823,7 @@ public class DirectorAction extends DotPortletAction {
 							iden = APILocator.getIdentifierAPI().find(contentlet);
 							multiTree = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,iden);
 							multiTree.setTreeOrder(x);
-							MultiTreeFactory.saveMultiTree(multiTree);
+							MultiTreeFactory.saveMultiTree(multiTree, htmlPage.getLanguageId());
 							x++;
 						}
 	
