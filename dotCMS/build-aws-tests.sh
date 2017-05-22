@@ -21,8 +21,11 @@ if [ -n "$COMMIT" ]; then
 fi
 
 
+
 # Build tests and distro
 cd core/dotCMS
+sed -i "s,^org.gradle.jvmargs=,#org.gradle.jvmargs=,g" gradle.properties
+
 ./gradlew --stop
 ./gradlew clean --no-daemon --refresh-dependencies
 ./gradlew copyTestRuntimeLibs individualTestJar integrationTestJar functionalTestJar --no-daemon
@@ -38,6 +41,7 @@ mv dotserver/`ls dotserver | grep  tomcat` dotserver/tomcat
 # Copy test JARs into distro's tomcat
 cp core/dotCMS/build/libs/dotcms_*-*Test.jar dotserver/tomcat/webapps/ROOT/WEB-INF/lib
 cp core/dotCMS/build/libs/test/junit-*.jar dotserver/tomcat/webapps/ROOT/WEB-INF/lib
+
 
 # Uncompress ant/configuration files for tests
 jar xf dotserver/tomcat/webapps/ROOT/WEB-INF/lib/dotcms_*-functionalTest.jar build-tests.xml
@@ -114,7 +118,7 @@ cp dotserver/tomcat/logs/* tests/logs
 
 # Run Integration tests
 cd core/dotCMS
-./gradlew integrationTest -PdatabaseType=$DB_TYPE --no-daemon  || true
+./gradlew integrationTest -PdatabaseType=$DB_TYPE --no-daemon || true
 cd ../..
 cp core/dotCMS/build/test-results/integrationTest/*.xml tests
 

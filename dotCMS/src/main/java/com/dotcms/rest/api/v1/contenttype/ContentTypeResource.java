@@ -283,7 +283,7 @@ public class ContentTypeResource implements Serializable {
 		try {
 			List<Map<String, Object>> types = contentTypeHelper.getContentTypes(user, queryCondition, offset, limit, orderby, direction);
 			long contentTypesCount = contentTypeHelper.getContentTypesCount();
-			response = Response.ok(new ResponseEntityView( map("contentTypes", types, "total", contentTypesCount)))
+			response = Response.ok(new ResponseEntityView( map("items", types, "totalRecords", contentTypesCount)))
 					.build();
 		} catch (Exception e) {
 

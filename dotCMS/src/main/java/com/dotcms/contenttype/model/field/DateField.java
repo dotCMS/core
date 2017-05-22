@@ -42,8 +42,7 @@ public abstract class DateField extends Field {
 
     @Value.Check
     public void check() {
-        super.check();
-        
+
         Preconditions.checkArgument(new FieldUtil().validDate(defaultValue()), this.getClass().getSimpleName() + " invalid defualt Value:" + defaultValue());
 
     }

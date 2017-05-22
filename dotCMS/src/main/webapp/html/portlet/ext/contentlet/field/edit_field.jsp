@@ -236,8 +236,8 @@
             }
         %>
         <div class="wysiwyg-wrapper">
-            <div id="<%=field.getVelocityVarName()%>aceEditor" class="classAce aceTall"></div>
-            <textarea  <%= isReadOnly?"readonly=\"readonly\"":"" %>
+            <div id="<%=field.getVelocityVarName()%>aceEditor" class="classAce aceTall" style="display: none"></div>
+            <textarea <%= isReadOnly?"readonly=\"readonly\"":"" %>
                     class="editWYSIWYGField aceText aceTall" 
                     name="<%=field.getFieldContentlet()%>"
                     id="<%=field.getVelocityVarName()%>"><%=UtilMethods.htmlifyString(textValue)%></textarea>
@@ -274,12 +274,12 @@
         </div>
         <script type="text/javascript">
             dojo.addOnLoad(function () {
-                <% if(!wysiwygDisabled) {%>
-                enableWYSIWYG('<%=field.getVelocityVarName()%>', false);
-                <% }else if(wysiwygPlain){ %>
-                toPlainView('<%=field.getVelocityVarName()%>');
-                <% }else {%>
-                toCodeArea('<%=field.getVelocityVarName()%>');
+                <% if (!wysiwygDisabled) { %>
+                    enableWYSIWYG('<%=field.getVelocityVarName()%>', false);
+                <% } else if (wysiwygPlain) { %>
+                    toPlainView('<%=field.getVelocityVarName()%>');
+                <% } else {%>
+                    toCodeArea('<%=field.getVelocityVarName()%>');
                 <% }%>
             });
         </script>
@@ -376,23 +376,26 @@
         <%}%>
         <script type="text/javascript">
             function toggleExpire(velocityVarName) {
-                var neverExpireField = dijit.byId("fieldNeverExpire");
-                var never = neverExpireField.getValue();
+                var never = dijit.byId("fieldNeverExpire").getValue();
                 var dateField = dijit.byId(velocityVarName + "Date");
                 var timeField = dijit.byId(velocityVarName + "Time");
 
                 if (never) {
                     dateField.set("value", null);
                     timeField.set("value", null);
+                    document.getElementById("fm").elements["fieldNeverExpire"].value = "true";
+                } else {
+                    document.getElementById("fm").elements["fieldNeverExpire"].value = "false";
                 }
-                neverExpireField.set("value", never);
-                dateField.set('disabled', never);
-                timeField.set('disabled', never);
+
+                dateField.set("disabled", never);
+                timeField.set("disabled", never);
             }
 
             dojo.addOnLoad(function() {
                 toggleExpire('<%=field.getVelocityVarName()%>');
             });
+
         </script>
         <%}
         }

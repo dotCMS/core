@@ -27,7 +27,7 @@ public class FieldsCache {
     }
     public static List<Field> getFieldsByStructureInode(String inode){
         try {
-            return new LegacyFieldTransformer(APILocator.getContentTypeAPI(APILocator.getUserAPI().getSystemUser(), true).find(inode).fields()).asOldFieldList();
+            return new LegacyFieldTransformer(APILocator.getContentTypeAPI(APILocator.systemUser()).find(inode).fields()).asOldFieldList();
         } catch (DotStateException | DotDataException | DotSecurityException e) {
             throw new DotStateException(e);
         }

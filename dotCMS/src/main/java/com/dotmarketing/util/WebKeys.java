@@ -708,4 +708,7 @@ public final class WebKeys {
 	public static final String DOTCMS_CACHE_TRANSPORT_UDP_MCAST_ADDRESS = "dotcms.cache.transport.udp.mcast.address";
 	public static final String DOTCMS_CACHE_TRANSPORT_UDP_MCAST_PORT = "dotcms.cache.transport.udp.mcast.port";
 
+	//Pagination Parameters
+    public static final String DOTCMS_PAGINATION_ROWS = "dotcms.paginator.rows";
+    public static final String DOTCMS_PAGINATION_LINKS = "dotcms.paginator.links";
 }
