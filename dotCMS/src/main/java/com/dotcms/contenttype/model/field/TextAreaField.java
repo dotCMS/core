@@ -26,7 +26,8 @@ public abstract class TextAreaField extends Field {
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){
-		return ImmutableList.of(DataTypes.SYSTEM, DataTypes.LONG_TEXT);
+		//return ImmutableList.of(DataTypes.SYSTEM, DataTypes.LONG_TEXT);
+		return ImmutableList.of(DataTypes.LONG_TEXT);
 	}
 	@Value.Default
 	@Override
