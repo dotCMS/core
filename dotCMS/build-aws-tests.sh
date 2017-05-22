@@ -21,8 +21,11 @@ if [ -n "$COMMIT" ]; then
 fi
 
 
+
 # Build tests and distro
 cd core/dotCMS
+sed -i "s,^org.gradle.jvmargs=,#org.gradle.jvmargs=,g" gradle.properties
+
 ./gradlew --stop
 ./gradlew clean --no-daemon --refresh-dependencies
 ./gradlew copyTestRuntimeLibs individualTestJar integrationTestJar functionalTestJar --no-daemon
