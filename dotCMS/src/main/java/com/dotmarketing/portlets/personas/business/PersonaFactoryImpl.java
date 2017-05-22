@@ -74,8 +74,8 @@ public class PersonaFactoryImpl implements PersonaFactory {
 			dc.addParam(PersonaAPI.DEFAULT_PERSONAS_STRUCTURE_NAME);
 			dc.addParam(PersonaAPI.DEFAULT_PERSONAS_STRUCTURE_DESCRIPTION);
 			dc.addParam(Structure.STRUCTURE_TYPE_PERSONA);
-			dc.addParam(false);
-			dc.addParam(false);
+			dc.addParam(true);
+			dc.addParam(true);
 			dc.addParam(PersonaAPI.DEFAULT_PERSONAS_STRUCTURE_VARNAME);
 			dc.addParam(Host.SYSTEM_HOST);
 			dc.addParam(FolderAPI.SYSTEM_FOLDER);

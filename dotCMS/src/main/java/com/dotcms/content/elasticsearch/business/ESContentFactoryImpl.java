@@ -2298,6 +2298,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	 *             An error occurred when updating the contents.
 	 */
     protected void clearField(String structureInode, Field field) throws DotDataException {
+        // we are not a db field;
+        if(field.getFieldContentlet() == null  || ! (field.getFieldContentlet().matches("^.*\\d+$"))){
+          return;
+        }
         Queries queries = getQueries(field);
         List<String> inodesToFlush = new ArrayList<>();
 
