@@ -194,8 +194,11 @@ public class FieldFactoryImpl implements FieldFactory {
       // assign an inode and db column if needed
       if (throwAwayField.id() == null) {
         builder.id(UUID.randomUUID().toString());
+      }
+      if( throwAwayField.dbColumn()==null){
         builder.dbColumn(nextAvailableColumn(throwAwayField));
       }
+          
 
       if (throwAwayField.sortOrder() < 0) {
         // move to the end of the line
@@ -249,7 +252,9 @@ public class FieldFactoryImpl implements FieldFactory {
     Field retField = builder.build();
 
 
-    
+    if(retField.dbColumn()==null){
+      throw new DotDataException("Unable to save field without a DB Column ('field_contentlet')");
+    }
     
     
     if (oldField == null) {
