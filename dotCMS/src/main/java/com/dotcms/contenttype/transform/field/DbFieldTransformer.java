@@ -94,8 +94,7 @@ public class DbFieldTransformer implements FieldTransformer {
 
 			@Override
 			public DataTypes dataType() {
-				String dbType = map.get("field_contentlet").toString().replaceAll("[0-9]", "");
-				return DataTypes.getDataType(dbType);
+				return DataTypes.getDataType((String) map.get("field_contentlet"));
 			}
 
 			@Override
