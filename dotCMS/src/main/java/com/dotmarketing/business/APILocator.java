@@ -336,6 +336,7 @@ public class APILocator extends Locator<APIIndex>{
 	 * Creates a single instance of the {@link FieldAPI} class.
 	 *
 	 * @return The {@link FieldAPI} class.
+	 * @deprecated
 	 */
 	public static com.dotmarketing.portlets.structure.business.FieldAPI getFieldAPI(){
 		return (com.dotmarketing.portlets.structure.business.FieldAPI)getInstance(APIIndex.FIELD_API);
