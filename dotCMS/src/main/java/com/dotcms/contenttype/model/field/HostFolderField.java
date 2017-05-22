@@ -15,12 +15,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @Value.Immutable
 public abstract class HostFolderField extends Field implements OnePerContentType {
 
-	@Value.Check
-	public void check() {
-		super.check();
-		if(iDate().before(legacyFieldDate))return;
-		Preconditions.checkArgument(indexed(),"Host Folder Fields must be indexed");
-	}
+
 	@Value.Default
 	@Override
 	public boolean indexed() {
