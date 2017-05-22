@@ -381,7 +381,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
           }
         }
 
-        FieldAPI fapi = new FieldAPIImpl().instance();
+        FieldAPI fapi = APILocator.getContentTypeFieldAPI();
         for (Field f : fields) {
           f = FieldBuilder.builder(f).contentTypeId(retType.id()).build();
           try {

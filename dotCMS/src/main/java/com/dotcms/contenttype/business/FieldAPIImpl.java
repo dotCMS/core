@@ -159,6 +159,10 @@ public class FieldAPIImpl implements FieldAPI {
 
 		  perAPI.checkPermission(type, PermissionLevel.PUBLISH, user);
 
+		  Field oldField = fac.byId(field.id());
+		  if(oldField.fixed() || oldField.readOnly()){
+		    throw new DotDataException("You cannot delete a fixed or read only fiedl");
+		  }
 
 		  Structure structure = new StructureTransformer(type).asStructure();
 		  com.dotmarketing.portlets.structure.model.Field legacyField = new LegacyFieldTransformer(field).asOldField();
@@ -193,8 +197,9 @@ public class FieldAPIImpl implements FieldAPI {
 	      }
 
 	      // rebuild contentlets indexes
-	      conAPI.reindex(structure);
-
+	      if(field.indexed()){
+	        conAPI.reindex(structure);
+	      }
 	      // remove the file from the cache
 	      ContentletServices.removeContentletFile(structure);
 	      ContentletMapServices.removeContentletMapFile(structure);

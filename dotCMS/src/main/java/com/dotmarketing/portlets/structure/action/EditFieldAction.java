@@ -10,7 +10,9 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
@@ -346,43 +348,18 @@ public class EditFieldAction extends DotPortletAction {
                 field.setSortOrder(sortOrder + 1);
                 field.setFixed(false);
                 field.setReadOnly(false);
+                field.setFieldContentlet(dataType);
 
-                String fieldVelocityName = VelocityUtil.convertToVelocityVariable(fieldForm.getFieldName(), false);
-                int found = 0;
-                if (VelocityUtil.isNotAllowedVelocityVariableName(fieldVelocityName)) {
-                    found++;
-                }
 
-                String velvar;
-                for (Field f : fields) {
-                    velvar = f.getVelocityVarName();
-                    if (velvar != null) {
-                        if (fieldVelocityName.equals(velvar)) {
-                            found++;
-                        } else if (velvar.contains(fieldVelocityName)) {
-                            String number = velvar.substring(fieldVelocityName.length());
-                            if (RegEX.contains(number, "^[0-9]+$")) {
-                                found++;
-                            }
-                        }
-                    }
-                }
-                if (found > 0) {
-                    fieldVelocityName = fieldVelocityName + Integer.toString(found);
-                }
-
-                if(!validateInternalFieldVelocityVarName(fieldVelocityName)){
-                    fieldVelocityName+="1";
-                }
-
-                field.setVelocityVarName(fieldVelocityName);
             }
 
-            boolean isUpdating = UtilMethods.isSet(field.getInode());
-            // saves this field
-            FieldFactory.saveField(field);
+            com.dotcms.contenttype.model.field.Field newField = new LegacyFieldTransformer(field).from();
+            APILocator.getContentTypeFieldAPI().save(newField, user);
 
-            if(isUpdating) {
+            
+
+
+            if(UtilMethods.isSet(field.getInode())) {
                 ActivityLogger.logInfo(ActivityLogger.class, "Update Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " modified field " + field.getFieldName() + " to " + structure.getName()
                         + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
             } else {
