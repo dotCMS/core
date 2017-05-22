@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.elasticsearch.common.Nullable;
 
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
@@ -98,10 +99,11 @@ public class LegacyFieldTransformer implements FieldTransformer {
 	}
 
 	private static String buildLegacyFieldContent(Field field){
-		String fieldContent = field.dbColumn();
-		if(field.typeName().endsWith("BinaryField")){
-			fieldContent = "binary" + field.sortOrder();
-		}
+		String fieldContent = (field instanceof BinaryField)
+		    ? fieldContent = "binary" + field.sortOrder() 
+		    : (field.dbColumn() !=null)
+		      ? field.dbColumn()
+		          : " system_field";
 		return fieldContent;
 	}
 
