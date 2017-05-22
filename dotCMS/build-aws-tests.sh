@@ -21,8 +21,11 @@ if [ -n "$COMMIT" ]; then
 fi
 
 
+
 # Build tests and distro
 cd core/dotCMS
+sed -i "s,^org.gradle.jvmargs=,#org.gradle.jvmargs=,g" gradle.properties
+
 ./gradlew --stop
 ./gradlew clean --no-daemon --refresh-dependencies
 ./gradlew copyTestRuntimeLibs individualTestJar integrationTestJar functionalTestJar --no-daemon
@@ -44,6 +47,7 @@ cp core/dotCMS/build/libs/test/junit-*.jar dotserver/tomcat/webapps/ROOT/WEB-INF
 jar xf dotserver/tomcat/webapps/ROOT/WEB-INF/lib/dotcms_*-functionalTest.jar build-tests.xml
 jar xf dotserver/tomcat/webapps/ROOT/WEB-INF/lib/dotcms_*-functionalTest.jar context.xml
 mv context.xml dotserver/tomcat/webapps/ROOT/META-INF/context.xml
+
 
 # Setup configuration files
 sed -i "s,{driver},$DB_DRIVER,g" dotserver/tomcat/webapps/ROOT/META-INF/context.xml

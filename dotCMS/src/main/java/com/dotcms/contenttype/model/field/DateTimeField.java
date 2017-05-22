@@ -38,7 +38,6 @@ public abstract class DateTimeField extends Field {
 	
     @Value.Check
     public void check() {
-        super.check();
 
         Preconditions.checkArgument(new FieldUtil().validDateTime(defaultValue()), this.getClass().getSimpleName() + " invalid defualt Value:" + defaultValue());
 

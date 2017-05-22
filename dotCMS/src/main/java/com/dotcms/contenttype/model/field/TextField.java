@@ -25,7 +25,7 @@ public abstract class TextField extends Field {
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){
-		return ImmutableList.of(DataTypes.LONG_TEXT,DataTypes.TEXT, DataTypes.FLOAT, DataTypes.INTEGER);
+		return ImmutableList.of(DataTypes.TEXT,DataTypes.LONG_TEXT, DataTypes.FLOAT, DataTypes.INTEGER);
 	}
 	@Value.Default
 	@Override
