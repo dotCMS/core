@@ -2299,7 +2299,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	 */
     protected void clearField(String structureInode, Field field) throws DotDataException {
         // we are not a db field;
-        if(field.getFieldContentlet() != null && field.getFieldContentlet().matches("^.*\\d+$")){
+        if(field.getFieldContentlet() == null  || ! (field.getFieldContentlet().matches("^.*\\d+$"))){
           return;
         }
         Queries queries = getQueries(field);
