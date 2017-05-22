@@ -23,11 +23,13 @@ public enum DataTypes {
 		return value;
 	}
 
+
 	public static DataTypes getDataType (String value) {
-		if (UtilMethods.isSet(value) || value.contains("_divider") || value.contains("binary") || value.contains("_tab") || value
+		if (!UtilMethods.isSet(value) || value.contains("_divider") || value.contains("binary") || value.contains("_tab") || value
 			.contains("constant")) {
 			return SYSTEM;
 	    }
+		value = value.replaceAll("[0-9]", "");
 		DataTypes[] types = DataTypes.values();
 		for (DataTypes type : types) {
 			if (type.value.equals(value))
