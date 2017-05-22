@@ -188,6 +188,7 @@ public class FieldFactoryImpl implements FieldFactory {
       builder.fixed(oldField.fixed());
       builder.readOnly(oldField.readOnly());
       builder.dataType(oldField.dataType());
+      
     } catch (NotFoundInDbException e) {
       
       // assign an inode and db column if needed
