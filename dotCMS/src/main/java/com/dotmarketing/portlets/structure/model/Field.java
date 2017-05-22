@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.structure.model;
 
 import java.util.Date;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,10 +13,20 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.util.UtilMethods;
-
+/**
+ * 
+ * @deprecated use {@link com.dotcms.contenttype.model.field.Field}
+ *
+ */
+@Deprecated
 public class Field extends Inode implements  FieldIf
 {
-
+  /**
+   * 
+   * @deprecated
+   *
+   */
+  @Deprecated
 	public enum FieldType {
 
 		BUTTON("button"),
@@ -66,6 +77,12 @@ public class Field extends Inode implements  FieldIf
 
 	}
 
+	/**
+	 * 
+	 * @deprecated
+	 *
+	 */
+	@Deprecated
 	public enum DataType {
 
 		BOOL("bool"),
