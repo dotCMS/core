@@ -186,19 +186,17 @@ public class FieldFactoryImpl implements FieldFactory {
     try {
       oldField = selectInDb(throwAwayField.id());
     } catch (NotFoundInDbException e) {
-      // this is a new field
+
     }
 
 
 
     if (oldField == null) {
-      // assign a db column if we need to
-      if (throwAwayField.dbColumn() == null) {
-        builder.dbColumn(nextAvailableColumn(throwAwayField));
-      }
-      // assign an inode if needed
+
+      // assign an inode and db column if needed
       if (throwAwayField.id() == null) {
         builder.id(UUID.randomUUID().toString());
+        builder.dbColumn(nextAvailableColumn(throwAwayField));
       }
 
       if (throwAwayField.sortOrder() < 0) {
