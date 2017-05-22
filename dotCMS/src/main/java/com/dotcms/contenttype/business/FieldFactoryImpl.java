@@ -185,14 +185,11 @@ public class FieldFactoryImpl implements FieldFactory {
     Field oldField = null;
     try {
       oldField = selectInDb(throwAwayField.id());
+      builder.fixed(oldField.fixed());
+      builder.readOnly(oldField.readOnly());
+      builder.dataType(oldField.dataType());
     } catch (NotFoundInDbException e) {
-
-    }
-
-
-
-    if (oldField == null) {
-
+      
       // assign an inode and db column if needed
       if (throwAwayField.id() == null) {
         builder.id(UUID.randomUUID().toString());
@@ -211,8 +208,6 @@ public class FieldFactoryImpl implements FieldFactory {
           ? suggestVelocityVar(throwAwayField.name(), fieldsAlreadyAdded) : throwAwayField.variable();
       builder.variable(tryVar);
 
-      builder.fixed(false);
-      builder.readOnly(false);
     }
 
 
