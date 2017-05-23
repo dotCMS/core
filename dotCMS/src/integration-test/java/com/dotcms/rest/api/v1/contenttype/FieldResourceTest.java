@@ -20,6 +20,7 @@ import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FileField;
 import com.dotcms.contenttype.model.field.HiddenField;
 import com.dotcms.contenttype.model.field.HostFolderField;
@@ -38,6 +39,8 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
@@ -48,6 +51,8 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.UUIDUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 
@@ -58,10 +63,16 @@ public class FieldResourceTest {
 
 	private static final ObjectMapper mapper = new ObjectMapper();
 
+	private static final String typeName="fieldResourceTest" + UUIDUtil.uuid();
 
 	@BeforeClass
 	public static void prepare() throws Exception{
         IntegrationTestInitService.getInstance().init();
+
+        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).variable(typeName).build();
+        type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
+        Field field = FieldBuilder.builder(TextField.class).name("text").contentTypeId(type.id()).build();
+        APILocator.getContentTypeFieldAPI().save(field,APILocator.systemUser());
 	}
 
 
@@ -2335,7 +2346,7 @@ public class FieldResourceTest {
 
 	private static void assertResponse_OK(Response response){
 		assertNotNull(response);
-		assertEquals(response.getStatus(), 200);
+		assertEquals(200, response.getStatus());
 		assertNotNull(response.getEntity());
 		assertTrue(response.getEntity() instanceof ResponseEntityView);
 		assertTrue(
@@ -2346,7 +2357,7 @@ public class FieldResourceTest {
 
 	private static void assertResponse_NOT_FOUND(Response response){
 		assertNotNull(response);
-		assertEquals(response.getStatus(), 404);
+		assertEquals(404, response.getStatus());
 		assertNotNull(response.getEntity());
 	}
 
@@ -2364,10 +2375,10 @@ public class FieldResourceTest {
 		}
 	}
 
-	private static ContentType getContentType() throws DotDataException {
+	private static ContentType getContentType() throws DotDataException, DotSecurityException {
 		User user = APILocator.getUserAPI().getSystemUser();
 
-		return APILocator.getContentTypeAPI(user).search(" velocity_var_name = 'Testimonial'").get(0);
+		return APILocator.getContentTypeAPI(user).find(typeName);
 	}
 
 	private static HttpServletRequest getHttpRequest() {

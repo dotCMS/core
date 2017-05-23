@@ -257,7 +257,7 @@ public class ContentTypeResourceTest {
 
 	private static void assertResponse_OK(Response response){
 		assertNotNull(response);
-		assertEquals(response.getStatus(), 200);
+		assertEquals(200, response.getStatus());
 		assertNotNull(response.getEntity());
 		assertTrue(response.getEntity() instanceof ResponseEntityView);
 		assertTrue(
@@ -268,12 +268,12 @@ public class ContentTypeResourceTest {
 
 	private static void assertResponse_NOT_FOUND(Response response){
 		assertNotNull(response);
-		assertEquals(response.getStatus(), 404);
+		assertEquals(404, response.getStatus());
 	}
 
 	private static void assertResponse_BAD_REQUEST(Response response){
 		assertNotNull(response);
-		assertEquals(response.getStatus(), 400);
+		assertEquals(400, response.getStatus());
 	}
 
 
