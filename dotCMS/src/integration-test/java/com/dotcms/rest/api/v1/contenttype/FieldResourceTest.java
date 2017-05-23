@@ -20,6 +20,7 @@ import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FileField;
 import com.dotcms.contenttype.model.field.HiddenField;
 import com.dotcms.contenttype.model.field.HostFolderField;
@@ -37,7 +38,10 @@ import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.field.WysiwygField;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
@@ -48,6 +52,8 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.UUIDUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 
@@ -58,10 +64,18 @@ public class FieldResourceTest {
 
 	private static final ObjectMapper mapper = new ObjectMapper();
 
+	private static final String typeName="fieldResourceTest " + UUIDUtil.uuid();
 
 	@BeforeClass
 	public static void prepare() throws Exception{
         IntegrationTestInitService.getInstance().init();
+        
+        
+        ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).variable(typeName).build();
+        type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
+        Field field = FieldBuilder.builder(TextField.class).name("text").contentTypeId(type.id()).build();
+        APILocator.getContentTypeFieldAPI().save(field,APILocator.systemUser());
+
 	}
 
 
@@ -916,7 +930,7 @@ public class FieldResourceTest {
 						"	\"clazz\" : \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\","+
 						"	\"contentTypeId\" : \"CONTENT_TYPE_ID\","+
 						"	\"dataType\" : \"SYSTEM\","+
-						"	\"name\" : \"The Field 1\","+
+						"	\"name\" : \"The Host Field 1\","+
 
 						// MANDATORY VALUES
 						"	\"hint\" : \"THE HINT\","+
@@ -936,8 +950,8 @@ public class FieldResourceTest {
 					assertTrue(field instanceof HostFolderField);
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
-					assertEquals("The Field 1", field.name());
-					assertEquals("theField1", field.variable());
+					assertEquals("The Host Field 1", field.name());
+					assertEquals("theHostField1", field.variable());
 
 					assertEquals("THE HINT", field.hint());
 
@@ -957,10 +971,10 @@ public class FieldResourceTest {
 						"	\"contentTypeId\" : \"CONTENT_TYPE_ID\","+
 						"	\"id\" : \"CONTENT_TYPE_FIELD_ID\","+
 						"	\"dataType\" : \"SYSTEM\","+
-						"	\"name\" : \"The Field 2\","+
+						"	\"name\" : \"The Host Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField1\","+
+						"	\"variable\" : \"theHostField2\","+
 						"	\"sortOrder\":\"12\","+
 
 						"	\"hint\" : \"THE HINT 2\","+
@@ -975,8 +989,8 @@ public class FieldResourceTest {
 					assertTrue(field instanceof HostFolderField);
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
-					assertEquals("The Field 2", field.name());
-					assertEquals("theField1", field.variable());
+					assertEquals("The Host Field 2", field.name());
+					assertEquals("theHostField2", field.variable());
 
 					assertEquals("THE HINT 2", field.hint());
 
@@ -1170,7 +1184,7 @@ public class FieldResourceTest {
 						"	\"clazz\" : \"com.dotcms.contenttype.model.field.ImmutableLineDividerField\","+
 						"	\"contentTypeId\" : \"CONTENT_TYPE_ID\","+
 						"	\"dataType\" : \"SYSTEM\","+
-						"	\"name\" : \"The Field 1\","+
+						"	\"name\" : \"The LineDivider Field 1\","+
 
 						// MANDATORY VALUES
 
@@ -1186,8 +1200,8 @@ public class FieldResourceTest {
 					assertTrue(field instanceof LineDividerField);
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
-					assertEquals("The Field 1", field.name());
-					assertEquals("theField1", field.variable());
+					assertEquals("The LineDivider Field 1", field.name());
+					assertEquals("theLinedividerField1", field.variable());
 
 					assertFalse(field.readOnly());
 					assertFalse(field.fixed());
@@ -1512,7 +1526,7 @@ public class FieldResourceTest {
 						"	\"clazz\" : \"com.dotcms.contenttype.model.field.ImmutableRelationshipsTabField\","+
 						"	\"contentTypeId\" : \"CONTENT_TYPE_ID\","+
 						"	\"dataType\" : \"SYSTEM\","+
-						"	\"name\" : \"The Field 1\","+
+						"	\"name\" : \"The Relationship Field 1\","+
 
 						// MANDATORY VALUES
 
@@ -1528,8 +1542,8 @@ public class FieldResourceTest {
 					assertTrue(field instanceof RelationshipsTabField);
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
-					assertEquals("The Field 1", field.name());
-					assertEquals("theField1", field.variable());
+					assertEquals("The Relationship Field 1", field.name());
+					assertEquals("theRelationshipField1", field.variable());
 
 					assertFalse(field.readOnly());
 					assertFalse(field.fixed());
@@ -2364,10 +2378,14 @@ public class FieldResourceTest {
 		}
 	}
 
-	private static ContentType getContentType() throws DotDataException {
+	
+	
+	
+	
+	private static ContentType getContentType() throws DotDataException, DotSecurityException {
 		User user = APILocator.getUserAPI().getSystemUser();
-
-		return APILocator.getContentTypeAPI(user).search(" velocity_var_name = 'Testimonial'").get(0);
+        //return APILocator.getContentTypeAPI(user).search(" velocity_var_name = 'Testimonial'").get(0);
+		return APILocator.getContentTypeAPI(user).find(typeName);
 	}
 
 	private static HttpServletRequest getHttpRequest() {
