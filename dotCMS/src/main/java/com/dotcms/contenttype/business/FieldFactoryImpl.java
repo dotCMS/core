@@ -225,6 +225,7 @@ public class FieldFactoryImpl implements FieldFactory {
       builder.readOnly(oldField.readOnly());
       builder.dataType(oldField.dataType());
       builder.dbColumn(oldField.dbColumn());
+
     } catch (NotFoundInDbException e) {
       List<Field> fieldsAlreadyAdded = byContentTypeId(throwAwayField.contentTypeId());
       // assign an inode and db column if needed
