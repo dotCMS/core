@@ -54,13 +54,15 @@ public class ContentletDetail extends DotDirective {
       throw new ResourceNotFoundException("cannnot find contentlet id " +  argument + " lang:" + params.language);
     }
 
+      boolean showWorking = false;
 
-    return  (params.live) 
-        ? "/live/"      + argument + "_" + cv.getLang() + "." + EXTENSION
-        : "/working/"   + argument + "_" + cv.getLang() + "." + EXTENSION;
+      if (context.get("_show_working_") != null && (boolean)context.get("_show_working_")) {
+          showWorking = true;
+      }
 
-
-
+      return  (params.live && !showWorking)
+          ? "/live/"      + argument + "_" + cv.getLang() + "." + EXTENSION
+          : "/working/"   + argument + "_" + cv.getLang() + "." + EXTENSION;
   }
 }
 
