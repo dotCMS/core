@@ -46,7 +46,8 @@ abstract class DotDirective extends InputBase {
     } catch (ResourceNotFoundException rnfe) {
       Logger.error(this, this.getName() + ": cannot find template '" + templatePath + "', called at "
           + VelocityException.formatFileString(this));
-      throw rnfe;
+      //If the resource doesn't exist return null to show a blank template instead of render error message
+      return null;
     } catch (ParseErrorException pee) {
       Logger.error(this, this.getName() + ": syntax error in template '" + templatePath + "', called at "
           + VelocityException.formatFileString(this));

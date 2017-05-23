@@ -92,7 +92,8 @@ public class DotParse extends DotDirective {
       Logger.warn(this.getClass(), " - unable to resolve " + templatePath + " getting this: "+ e.getMessage() );
       if(e.getStackTrace().length>0)
         Logger.warn(this.getClass(), " - at " + e.getStackTrace()[0]);
-      throw new DotStateException(e);
+      //If the resource doesn't exist return null to show a blank template instead of render error message or $code message
+      return null;
     }
   }
 
