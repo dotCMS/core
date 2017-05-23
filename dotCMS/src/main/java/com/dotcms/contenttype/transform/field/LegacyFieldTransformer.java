@@ -184,7 +184,7 @@ public class LegacyFieldTransformer implements FieldTransformer {
 
 			@Override
 			public String dbColumn() {
-			  return buildNewFieldDbColumn(oldField);
+				return StringUtils.nullEmptyStr(oldField.getFieldContentlet());
 
 			}
 
