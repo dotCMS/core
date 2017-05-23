@@ -5,6 +5,7 @@ import java.io.Writer;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.velocity.context.Context;
+import org.apache.velocity.exception.ResourceNotFoundException;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -71,7 +72,10 @@ public class DotParse extends DotDirective {
       }
       String inode = ((live) ? cv.getLiveInode() : cv.getWorkingInode());
 
-
+      if( null == inode) {
+          String errorMessage = (live) ? "Not found live version of "+templatePath : "Not found working version of "+templatePath;
+          throw new ResourceNotFoundException(errorMessage);
+      }
 
       Contentlet c = APILocator.getContentletAPI().find(inode, params.user, params.live);
       FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(c);
@@ -92,6 +96,12 @@ public class DotParse extends DotDirective {
       Logger.warn(this.getClass(), " - unable to resolve " + templatePath + " getting this: "+ e.getMessage() );
       if(e.getStackTrace().length>0)
         Logger.warn(this.getClass(), " - at " + e.getStackTrace()[0]);
+      
+      //If we didn't find the resource don't change the exception type
+      if( e instanceof ResourceNotFoundException ) {
+        throw (ResourceNotFoundException) e;
+      }
+      
       throw new DotStateException(e);
     }
   }

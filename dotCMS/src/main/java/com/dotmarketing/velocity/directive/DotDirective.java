@@ -83,6 +83,9 @@ abstract class DotDirective extends InputBase {
     catch(ResourceNotFoundException rnfe){
        postRender(context);
        return true;
+    }catch(ParseErrorException pee){
+    	postRender(context);
+        return true;
     }
 
   }
