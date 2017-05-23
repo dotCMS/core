@@ -200,7 +200,32 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
         assertThat("binField system_field db column", field2.dbColumn().matches("system_field"));
 
     }
-	
+    
+    @Test
+    public void testReorderField() throws Exception {
+
+        String uu = UUID.randomUUID().toString();
+
+        BinaryField binField = ImmutableBinaryField.builder().name("test field" + uu).sortOrder(15)
+                .variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint").id(uu).build();
+
+        Field savedField = fieldFactory.save(binField);
+        assertThat("binField sort order ", savedField.sortOrder() == 15);
+        
+        Field loadedField = fieldFactory.byId(savedField.inode());
+        assertThat("loadedField sort order ", loadedField.sortOrder() == 15);
+        
+        
+        Field savedAgain = FieldBuilder.builder(loadedField).sortOrder(50).build();
+        Field savedAgain2 = fieldFactory.save(savedAgain);
+        assertThat("savedAgain2 sort order ", savedAgain2.sortOrder() == 50);
+        
+        
+        //assertThat("binField system_field dataType ", field2.dataType() == DataTypes.SYSTEM);
+        //assertThat("binField system_field db column", field2.dbColumn().matches("system_field"));
+
+    }
+    
 	@Test
 	public void testDataTypeLimit() throws Exception {
 

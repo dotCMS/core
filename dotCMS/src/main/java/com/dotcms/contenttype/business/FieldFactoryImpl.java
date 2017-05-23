@@ -269,11 +269,11 @@ public class FieldFactoryImpl implements FieldFactory {
   private void validateDbColumn(String dbColumn) throws DotDataException {
 
     if(dbColumn==null){
-      throw new DotDataException("Unable to save field without a DB Column ('field_contentlet')");
+      throw new DotDataException("Unable to save field without a DB Column field.field_contentlet");
     }
     
-    if( !DataTypes.SYSTEM.value.equals(dbColumn) && !dbColumn.matches("(text|float|bool|date|text_area|integer)[0-9]+")){
-      throw new DotDataException("Unable to save field without a DB Column ('field_contentlet')");
+    if( !dbColumn.matches("(system_field|(text|float|bool|date|text_area|integer)[0-9]+)")){
+      throw new DotDataException("Unable to save field without a DB Column field.field_contentlet - must match (system_field|(text|float|bool|date|text_area|integer)[0-9]+)");
     }
   }
   
