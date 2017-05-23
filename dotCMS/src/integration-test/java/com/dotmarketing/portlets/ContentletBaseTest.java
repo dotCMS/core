@@ -291,7 +291,7 @@ public class ContentletBaseTest extends IntegrationTestBase {
     protected static long addFields ( Structure jUnitTestStructure ) throws DotHibernateException {
 
         Random random = new Random();
-        long uniqueIdentifier = random.nextLong();
+        long uniqueIdentifier = Math.abs(random.nextLong());
 
         //Create the fields
         Field field = new Field( "JUnit Test Text-" + uniqueIdentifier, Field.FieldType.TEXT, Field.DataType.TEXT, jUnitTestStructure, false, true, false, 1, false, false, false );
@@ -333,7 +333,7 @@ public class ContentletBaseTest extends IntegrationTestBase {
         field = new Field( "JUnit Test Host Folder-" + uniqueIdentifier, Field.FieldType.HOST_OR_FOLDER, Field.DataType.TEXT, jUnitTestStructure, false, false, true, 12, false, false, false );
         FieldFactory.saveField( field );
 
-        field = new Field( "JUnit Test Tag-" + uniqueIdentifier, Field.FieldType.TAG, Field.DataType.TEXT, jUnitTestStructure, false, false, true, 12, false, false, false );
+        field = new Field( "JUnit Test Tag-" + uniqueIdentifier, Field.FieldType.TAG, Field.DataType.SYSTEM, jUnitTestStructure, false, false, true, 12, false, false, false );
         FieldFactory.saveField( field );
 
         return uniqueIdentifier;
