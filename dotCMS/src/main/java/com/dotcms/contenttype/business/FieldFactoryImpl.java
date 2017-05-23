@@ -195,10 +195,9 @@ public class FieldFactoryImpl implements FieldFactory {
       if (throwAwayField.id() == null) {
         builder.id(UUID.randomUUID().toString());
       }
-      if( throwAwayField.dbColumn()==null){
-        builder.dbColumn(nextAvailableColumn(throwAwayField));
-      }
-          
+
+      // if this is a new column assign a db column
+      builder.dbColumn(nextAvailableColumn(throwAwayField));
 
       if (throwAwayField.sortOrder() < 0) {
         // move to the end of the line
@@ -251,10 +250,7 @@ public class FieldFactoryImpl implements FieldFactory {
 
     Field retField = builder.build();
 
-
-    if(retField.dbColumn()==null){
-      throw new DotDataException("Unable to save field without a DB Column ('field_contentlet')");
-    }
+    validateDbColumn(retField.dbColumn());
     
     
     if (oldField == null) {
@@ -269,7 +265,18 @@ public class FieldFactoryImpl implements FieldFactory {
 
     return retField;
   }
+  
+  private void validateDbColumn(String dbColumn) throws DotDataException {
 
+    if(dbColumn==null){
+      throw new DotDataException("Unable to save field without a DB Column ('field_contentlet')");
+    }
+    
+    if( !DataTypes.SYSTEM.value.equals(dbColumn) && !dbColumn.matches("(text|float|bool|date|text_area|integer)[0-9]+")){
+      throw new DotDataException("Unable to save field without a DB Column ('field_contentlet')");
+    }
+  }
+  
   @Override
   public List<Field> selectByContentTypeInDb(String id) throws DotDataException {
     DotConnect dc = new DotConnect();
