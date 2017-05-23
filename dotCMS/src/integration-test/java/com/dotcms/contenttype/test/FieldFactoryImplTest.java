@@ -16,10 +16,12 @@ import org.junit.runners.MethodSorters;
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.exception.OverFieldLimitException;
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.field.ImmutableDateTimeField;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
@@ -138,6 +140,70 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 
 	}
 
+
+	@Test
+	public void testTextDBColumn() throws Exception {
+
+	    String uu = UUID.randomUUID().toString();
+
+	    TextField textField = ImmutableTextField.builder().name("test field" + uu)
+	            .variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint")
+	            .dataType(DataTypes.TEXT).id(uu).build();
+
+	    Field savedField = fieldFactory.save(textField);
+	    String inode = savedField.inode();
+	    Field field2 = fieldFactory.byId(inode);
+	    assertThat("field2 text data type", field2.dataType() == DataTypes.TEXT);
+	    assertThat("field2 text db column", field2.dbColumn().matches("text[0-9]+"));
+	}
+    @Test
+    public void testTextIntColumn() throws Exception {
+
+        String uu = UUID.randomUUID().toString();
+
+        TextField textField = ImmutableTextField.builder().name("test field" + uu)
+                .variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint")
+                .dataType(DataTypes.INTEGER).id(uu).build();
+
+        Field savedField = fieldFactory.save(textField);
+        Field field2 = fieldFactory.byId(savedField.inode());
+        assertThat("field2 int dataType ", field2.dataType() == DataTypes.INTEGER);
+        assertThat("field2 int db column", field2.dbColumn().matches("integer[0-9]+"));
+    }
+    
+    @Test
+    public void testTextFloatColumn() throws Exception {
+
+        String uu = UUID.randomUUID().toString();
+
+        TextField textField = ImmutableTextField.builder().name("test field" + uu)
+                .variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint")
+                .dataType(DataTypes.FLOAT).id(uu).build();
+
+        Field savedField = fieldFactory.save(textField);
+        Field field2 = fieldFactory.byId(savedField.inode());
+        assertThat("field2 float dataType", field2.dataType() == DataTypes.FLOAT);
+        assertThat("field2 float db column", field2.dbColumn().matches("float[0-9]+"));
+    }
+    
+    @Test
+    public void testBinaryFieldDataType() throws Exception {
+
+        String uu = UUID.randomUUID().toString();
+
+        BinaryField binField = ImmutableBinaryField.builder().name("test field" + uu)
+                .variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint").id(uu).build();
+
+        Field savedField = fieldFactory.save(binField);
+        Field field2 = fieldFactory.byId(savedField.inode());
+        assertThat("binField system_field dataType ", field2.dataType() == DataTypes.SYSTEM);
+        assertThat("binField system_field db column", field2.dbColumn().matches("system_field"));
+        
+        
+        
+        
+    }
+	
 	@Test
 	public void testDataTypeLimit() throws Exception {
 
@@ -257,6 +323,14 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 		}
 
 	}
+	
+	
+	
+	
+	
+	
+	
+	
 
 	@Test
 	public void testSuggestVelocityVar() throws Exception {
