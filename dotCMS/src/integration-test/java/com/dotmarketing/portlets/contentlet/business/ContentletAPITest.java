@@ -684,7 +684,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Getting a known binary field for this structure
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
 
-        Field foundBinaryField = FieldFactory.getFieldByVariableName( structure.getInode(), "JUnit Test Binary-" + identifier );
+        Field foundBinaryField = FieldFactory.getFieldByVariableName( structure.getInode(), "junitTestBinary" + identifier );
 
 
         //Getting the current value for this field
@@ -724,7 +724,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Getting a known tag field for this structure
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
-        Field foundTagField = FieldFactory.getFieldByVariableName( structure.getInode(), "JUnit Test Tag-" + identifier );
+        Field foundTagField = FieldFactory.getFieldByVariableName( structure.getInode(), "junitTestTag" + identifier );
 
         //Getting the current value for this field
         List<Tag> value = tagAPI.getTagsByInodeAndFieldVarName(contentlet.getInode(), foundTagField.getVelocityVarName());
@@ -891,7 +891,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Getting a know field for this structure
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
-        Field foundWysiwygField = FieldFactory.getFieldByVariableName( structure.getInode(), "JUnit Test Wysiwyg-" + identifier );
+        Field foundWysiwygField = FieldFactory.getFieldByVariableName( structure.getInode(), "junitTestWysiwyg" + identifier );
 
         //Search the contentlets for this structure
         List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
