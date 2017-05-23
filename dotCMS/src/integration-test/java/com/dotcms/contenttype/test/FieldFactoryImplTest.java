@@ -198,10 +198,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
         Field field2 = fieldFactory.byId(savedField.inode());
         assertThat("binField system_field dataType ", field2.dataType() == DataTypes.SYSTEM);
         assertThat("binField system_field db column", field2.dbColumn().matches("system_field"));
-        
-        
-        
-        
+
     }
 	
 	@Test
@@ -323,13 +320,6 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 		}
 
 	}
-	
-	
-	
-	
-	
-	
-	
 	
 
 	@Test

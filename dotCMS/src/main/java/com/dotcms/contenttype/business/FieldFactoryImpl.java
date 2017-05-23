@@ -275,14 +275,8 @@ public class FieldFactoryImpl implements FieldFactory {
     if( !DataTypes.SYSTEM.value.equals(dbColumn) && !dbColumn.matches("(text|float|bool|date|text_area|integer)[0-9]+")){
       throw new DotDataException("Unable to save field without a DB Column ('field_contentlet')");
     }
-    
-    
-    
-    
-    
-    
-    
   }
+  
   @Override
   public List<Field> selectByContentTypeInDb(String id) throws DotDataException {
     DotConnect dc = new DotConnect();
