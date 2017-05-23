@@ -80,12 +80,9 @@ abstract class DotDirective extends InputBase {
       Template t = loadTemplate(context, templatePath);
       return this.renderTemplate(context, writer, t, templatePath);
     }
-    catch(ResourceNotFoundException rnfe){
+    catch(ResourceNotFoundException | ParseErrorException rnfe){
        postRender(context);
        return true;
-    }catch(ParseErrorException pee){
-    	postRender(context);
-        return true;
     }
 
   }
