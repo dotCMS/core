@@ -927,7 +927,7 @@ public class FieldResourceTest {
 						"	\"clazz\" : \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\","+
 						"	\"contentTypeId\" : \"CONTENT_TYPE_ID\","+
 						"	\"dataType\" : \"SYSTEM\","+
-						"	\"name\" : \"The Field 1\","+
+						"	\"name\" : \"The Host Field 1\","+
 
 						// MANDATORY VALUES
 						"	\"hint\" : \"THE HINT\","+
@@ -947,8 +947,8 @@ public class FieldResourceTest {
 					assertTrue(field instanceof HostFolderField);
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
-					assertEquals("The Field 1", field.name());
-					assertEquals("theField1", field.variable());
+					assertEquals("The Host Field 1", field.name());
+					assertEquals("theHostField1", field.variable());
 
 					assertEquals("THE HINT", field.hint());
 
@@ -968,10 +968,10 @@ public class FieldResourceTest {
 						"	\"contentTypeId\" : \"CONTENT_TYPE_ID\","+
 						"	\"id\" : \"CONTENT_TYPE_FIELD_ID\","+
 						"	\"dataType\" : \"SYSTEM\","+
-						"	\"name\" : \"The Field 2\","+
+						"	\"name\" : \"The Host Field 2\","+
 
 						// MANDATORY VALUES
-						"	\"variable\" : \"theField1\","+
+						"	\"variable\" : \"theHostField2\","+
 						"	\"sortOrder\":\"12\","+
 
 						"	\"hint\" : \"THE HINT 2\","+
@@ -986,8 +986,8 @@ public class FieldResourceTest {
 					assertTrue(field instanceof HostFolderField);
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
-					assertEquals("The Field 2", field.name());
-					assertEquals("theField1", field.variable());
+					assertEquals("The Host Field 2", field.name());
+					assertEquals("theHostField2", field.variable());
 
 					assertEquals("THE HINT 2", field.hint());
 
@@ -1181,7 +1181,7 @@ public class FieldResourceTest {
 						"	\"clazz\" : \"com.dotcms.contenttype.model.field.ImmutableLineDividerField\","+
 						"	\"contentTypeId\" : \"CONTENT_TYPE_ID\","+
 						"	\"dataType\" : \"SYSTEM\","+
-						"	\"name\" : \"The Field 1\","+
+						"	\"name\" : \"The LineDivider Field 1\","+
 
 						// MANDATORY VALUES
 
@@ -1197,8 +1197,8 @@ public class FieldResourceTest {
 					assertTrue(field instanceof LineDividerField);
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
-					assertEquals("The Field 1", field.name());
-					assertEquals("theField1", field.variable());
+					assertEquals("The LineDivider Field 1", field.name());
+					assertEquals("theLinedividerField1", field.variable());
 
 					assertFalse(field.readOnly());
 					assertFalse(field.fixed());
@@ -1523,7 +1523,7 @@ public class FieldResourceTest {
 						"	\"clazz\" : \"com.dotcms.contenttype.model.field.ImmutableRelationshipsTabField\","+
 						"	\"contentTypeId\" : \"CONTENT_TYPE_ID\","+
 						"	\"dataType\" : \"SYSTEM\","+
-						"	\"name\" : \"The Field 1\","+
+						"	\"name\" : \"The Relationship Field 1\","+
 
 						// MANDATORY VALUES
 
@@ -1539,8 +1539,8 @@ public class FieldResourceTest {
 					assertTrue(field instanceof RelationshipsTabField);
 					assertEquals(DataTypes.SYSTEM, field.dataType());
 					assertNotNull(field.id());
-					assertEquals("The Field 1", field.name());
-					assertEquals("theField1", field.variable());
+					assertEquals("The Relationship Field 1", field.name());
+					assertEquals("theRelationshipField1", field.variable());
 
 					assertFalse(field.readOnly());
 					assertFalse(field.fixed());
@@ -2377,7 +2377,6 @@ public class FieldResourceTest {
 
 	private static ContentType getContentType() throws DotDataException, DotSecurityException {
 		User user = APILocator.getUserAPI().getSystemUser();
-
 		return APILocator.getContentTypeAPI(user).find(typeName);
 	}
 

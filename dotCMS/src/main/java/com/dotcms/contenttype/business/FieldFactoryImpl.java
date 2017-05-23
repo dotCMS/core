@@ -13,11 +13,13 @@ import com.dotcms.contenttype.exception.DotDataValidationException;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.exception.OverFieldLimitException;
 import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableConstantField;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable.Builder;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
@@ -153,33 +155,67 @@ public class FieldFactoryImpl implements FieldFactory {
   }
 
 
+  private Field normalizeData(final Field throwAwayField) throws DotDataException {
+    FieldBuilder builder = FieldBuilder.builder(throwAwayField);
+    Field returnField = throwAwayField;
+    
+    if("constant".equals(throwAwayField.dbColumn()) && !(throwAwayField instanceof ConstantField)) {
+      builder = ImmutableConstantField.builder().from(throwAwayField);
+      builder.dbColumn(DataTypes.SYSTEM.value);
+      returnField = builder.build();
+    }
+
+    if(returnField.acceptedDataTypes().size()==1  && returnField.acceptedDataTypes().get(0) == DataTypes.SYSTEM) {
+      builder.dataType( DataTypes.SYSTEM);
+      returnField = builder.build();
+    }
+    // make sure we are setting the db to system
+    if(returnField.dataType() == DataTypes.SYSTEM){
+      builder.dbColumn(DataTypes.SYSTEM.value);
+      returnField = builder.build();
+    }
+    // if this is a new column assign a db column
+    if(returnField.dbColumn()==null){
+      builder.dbColumn(nextAvailableColumn(returnField));
+      returnField = builder.build();
+    }
+    // make sure we are properly indexed
+    if ((returnField.searchable() || returnField.listed()) || returnField.unique()
+        || returnField instanceof HostFolderField || returnField instanceof TagField) {
+      
+      builder.indexed(true);
+      returnField = builder.build();
+    }
+    if (returnField.unique()) {
+      builder.required(true);
+      returnField = builder.build();
+    }
+    
+    return returnField;
+  }
+  
+  
+  
+  
+  
+  
   private Field dbSaveUpdate(final Field throwAwayField) throws DotDataException {
 
 
-    // we only validate new fields
-    if (throwAwayField.modDate().after(FieldAPI.VALIDATE_AFTER)) {
-      if (!throwAwayField.acceptedDataTypes().contains(throwAwayField.dataType())
-          && (throwAwayField.acceptedDataTypes().size() > 0
-              && throwAwayField.acceptedDataTypes().get(0) != DataTypes.SYSTEM)) {
-        throw new DotDataValidationException("Field Type:" + throwAwayField.type() + " does not accept datatype "
-            + throwAwayField.dataType() + ":" + throwAwayField, "field.validation.incorrect.datatype");
-      }
-    }
-    if (throwAwayField.contentTypeId() == null) {
-      throw new DotDataValidationException(
-          "Field Type:" + throwAwayField.type() + " does not have a contenttype.inode set",
-          "field.validation.contenttype.not.set");
-    }
 
-    List<Field> fieldsAlreadyAdded = byContentTypeId(throwAwayField.contentTypeId());
 
+
+
+    
+
+    FieldBuilder builder = FieldBuilder.builder(normalizeData(throwAwayField));
+    
+    
     Date modDate = DateUtils.round(new Date(), Calendar.SECOND);
-    FieldBuilder builder = FieldBuilder.builder(throwAwayField).modDate(modDate);
+    builder.modDate(modDate);
+    
+    
 
-    if (throwAwayField.acceptedDataTypes().size() == 1
-        && throwAwayField.acceptedDataTypes().get(0) == DataTypes.SYSTEM) {
-      builder.dataType(DataTypes.SYSTEM);
-    }
 
 
     Field oldField = null;
@@ -191,14 +227,11 @@ public class FieldFactoryImpl implements FieldFactory {
       builder.dbColumn(oldField.dbColumn());
 
     } catch (NotFoundInDbException e) {
-      
+      List<Field> fieldsAlreadyAdded = byContentTypeId(throwAwayField.contentTypeId());
       // assign an inode and db column if needed
       if (throwAwayField.id() == null) {
         builder.id(UUID.randomUUID().toString());
       }
-
-      // if this is a new column assign a db column
-      builder.dbColumn(nextAvailableColumn(throwAwayField));
 
       if (throwAwayField.sortOrder() < 0) {
         // move to the end of the line
@@ -215,43 +248,9 @@ public class FieldFactoryImpl implements FieldFactory {
     }
 
 
-
-    for (Field f : fieldsAlreadyAdded) {
-      if (f instanceof CategoryField) {
-        if (f.values() != null) {
-          if (f.values().equals(throwAwayField.values())) {
-            if (!f.id().equals(throwAwayField.id())) {
-              throw new DotDataValidationException("This category field already exists on this content type",
-                  "message.category.existing.field");
-            }
-          }
-        }
-      }
-      if (throwAwayField instanceof OnePerContentType) {
-        if (f.id().equals(throwAwayField.id())) {
-          continue;
-        }
-        if (f.type().equals(throwAwayField.type())) {
-          throw new DotDataValidationException("A content type cannot have two:" + throwAwayField.type() + " fields",
-              "contenttype.validation.cannot.have.two.of.fieldtype");
-        }
-      }
-    }
-
-    // make sure we are properly indexed
-    if ((throwAwayField.searchable() || throwAwayField.listed()) || throwAwayField.unique()
-        || throwAwayField instanceof HostFolderField || throwAwayField instanceof TagField) {
-      builder.indexed(true);
-    }
-    if (throwAwayField.unique()) {
-      builder.required(true);
-    }
-
-
-
     Field retField = builder.build();
 
-    validateDbColumn(retField.dbColumn());
+    validateDbColumn(retField);
     
     
     if (oldField == null) {
@@ -267,14 +266,50 @@ public class FieldFactoryImpl implements FieldFactory {
     return retField;
   }
   
-  private void validateDbColumn(String dbColumn) throws DotDataException {
+  private void validateDbColumn(Field field) throws DotDataException {
+    
 
-    if(dbColumn==null){
-      throw new DotDataException("Unable to save field without a DB Column ('field_contentlet')");
+    if (field.contentTypeId() == null) {
+      throw new DotDataValidationException(
+          "Field Type:" + field.type() + " does not have a contenttype.inode set",
+          "field.validation.contenttype.not.set");
     }
     
-    if( !DataTypes.SYSTEM.value.equals(dbColumn) && !dbColumn.matches("(text|float|bool|date|text_area|integer)[0-9]+")){
-      throw new DotDataException("Unable to save field without a DB Column ('field_contentlet')");
+    List<Field> fieldsAlreadyAdded = byContentTypeId(field.contentTypeId());
+    for (Field f : fieldsAlreadyAdded) {
+      if (f instanceof CategoryField) {
+        if (f.values() != null) {
+          if (f.values().equals(field.values())) {
+            if (!f.id().equals(field.id())) {
+              throw new DotDataValidationException("This category field already exists on this content type",
+                  "message.category.existing.field");
+            }
+          }
+        }
+      }
+      if (field instanceof OnePerContentType) {
+        if (f.id().equals(field.id())) {
+          continue;
+        }
+        if (f.type().equals(field.type())) {
+          throw new DotDataValidationException("A content type cannot have two:" + field.type() + " fields",
+              "contenttype.validation.cannot.have.two.of.fieldtype");
+        }
+      }
+    }
+    
+    
+    if (!field.acceptedDataTypes().contains(field.dataType())){
+      throw new DotDataValidationException("Field Type:" + field.type() + " does not accept datatype "
+                + field.dataType() + ":" + field.variable(), "field.validation.incorrect.datatype");
+    
+    }
+    if(field.dbColumn()==null){
+      throw new DotDataValidationException("Unable to save field with a null dbColumn field.field_contentlet:" + field, "message.field.dbcolumn.incorrect");
+    }
+    
+    if( !field.dbColumn().matches("(system_field|(text|float|bool|date|text_area|integer)[0-9]+)")){
+      throw new DotDataValidationException("Unable to save field with DB Column " + field.dbColumn()+ " - must match (system_field|(text|float|bool|date|text_area|integer)[0-9]+) "  + field.name() + " " + field.variable(), "message.field.dbcolumn.incorrect");
     }
   }
   
