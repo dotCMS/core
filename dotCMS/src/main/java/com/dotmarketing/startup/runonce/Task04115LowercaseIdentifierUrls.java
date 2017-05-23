@@ -26,9 +26,12 @@ import java.util.List;
  * <li>The queries are created so that <b>ONLY PATHS AND ASSET NAMES WITH MIXED
  * CASES ARE UPDATED</b>. This improves performance since paths and assets that
  * are already lower-case will not be processed.</li>
+ * <li>Cases where the UPDATE throws an error will be logged as Error and they
+ * will have to be fixed manually.</li>
  * </ul>
  * 
  * @author Jose Castro
+ * @author Oscar Arrieta
  * @version 4.1.0
  * @since Apr 20, 2017
  *
@@ -49,64 +52,96 @@ public class Task04115LowercaseIdentifierUrls implements StartupTask {
 
 	@Override
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
-		//Disable trigger.
-		try {
-			final DotConnect dotConnect = new DotConnect();
-			final List<String> statements = getDisableTriggerQuery();
-			for (String statement : statements) {
-				dotConnect.executeStatement(statement);
-			}
-		} catch (SQLException e) {
-			throw new DotDataException(
-                String.format("Error executing Task04115LowercaseIdentifierUrls, trying to DISABLE trigger: %s", e.getMessage()), e);
-		}
+        try {
+            DbConnectionFactory.getConnection().setAutoCommit(true);
+        } catch (SQLException e) {
+            throw new DotDataException(e.getMessage(), e);
+        }
 
-		Connection conn = DbConnectionFactory.getConnection();
-		Logger.info(this, "============= Lower-casing Identifier URLs =============");
-		try (PreparedStatement selectPs = conn.prepareStatement(getSelectQuery())) {
-			final int BATCH_SIZE = 100;
-			try (ResultSet identifiers = selectPs.executeQuery();) {
-				PreparedStatement updatePs = conn.prepareStatement(UPDATE_QUERY_GENERIC);
-				for (int counter = 1; identifiers.next(); counter++) {
-					final String identifier = identifiers.getString(1);
-					final String originalParentPath = identifiers.getString(2);
-					final String originalAssetName = identifiers.getString(3);
-					// Double-check that '/System folder' must not be modified
-					if ("/system folder".equalsIgnoreCase(originalParentPath)) {
-						continue;
-					}
-					final String parentPathLowercase = originalParentPath.toLowerCase();
-					final String assetNameLowercase = originalAssetName.toLowerCase();
-					updatePs.setString(1, parentPathLowercase);
-					updatePs.setString(2, assetNameLowercase);
-					updatePs.setString(3, identifier);
-					updatePs.addBatch();
-					Logger.info(this, counter + ". " + originalParentPath + originalAssetName);
-					if (counter % BATCH_SIZE == 0) {
-						// Insert records in batches
-						updatePs.executeBatch();
-					}
-				}
-				updatePs.executeBatch();
-				Logger.info(this, "========================================================");
-			}
-		} catch (SQLException e) {
-			throw new DotDataException(
-					String.format("Error executing Task04115LowercaseIdentifierUrls: %s", e.getMessage()), e);
-		} finally {
-			//Enable trigger.
-			try {
-				final DotConnect dotConnect = new DotConnect();
-				final List<String> statements = getEnableTriggerQuery();
+        //Disable trigger.
+        try {
+            final DotConnect dotConnect = new DotConnect();
+            final List<String> statements = getDisableTriggerQuery();
+            for (String statement : statements) {
+                dotConnect.executeStatement(statement);
+            }
+        } catch (SQLException e) {
+            throw new DotDataException(
+                String.format("Error executing Task04115LowercaseIdentifierUrls, trying to DISABLE trigger: %s",
+                    e.getMessage()), e);
+        }
+
+        Connection conn = DbConnectionFactory.getConnection();
+        Logger.info(this, "============= Lower-casing Identifier URLs =============");
+        try (PreparedStatement selectPs = conn.prepareStatement(getSelectQuery())) {
+            //final int BATCH_SIZE = 100;
+            try (ResultSet identifiers = selectPs.executeQuery()) {
+                int counter = 1;
+                int errors = 1;
+                while (identifiers.next()) {
+                    final String identifier = identifiers.getString(1);
+                    final String originalParentPath = identifiers.getString(2);
+                    final String originalAssetName = identifiers.getString(3);
+                    // Double-check that '/System folder' must not be modified
+                    if ("/system folder".equalsIgnoreCase(originalParentPath)) {
+                        continue;
+                    }
+                    final String parentPathLowercase = originalParentPath.toLowerCase();
+                    final String assetNameLowercase = originalAssetName.toLowerCase();
+
+                    DotConnect dotConnect = new DotConnect();
+                    dotConnect.setSQL(UPDATE_QUERY_GENERIC);
+                    dotConnect.addParam(parentPathLowercase);
+                    dotConnect.addParam(assetNameLowercase);
+                    dotConnect.addParam(identifier);
+
+                    Logger.info(this, counter + ". " + originalParentPath + originalAssetName);
+                    try {
+                        dotConnect.loadResult();
+
+                    } catch (Exception e) {
+                        Logger.error(this,
+                            errors + ". Error trying to UPDATE identifier with id: " + identifier
+                                + ", parent_path: " + originalParentPath
+                                + ", asset_name: " + originalAssetName);
+                        errors++;
+                    }
+
+                    counter++;
+                }
+                Logger.info(this, "========================================================");
+
+            } catch (Exception e) { //ResultSet identifiers = selectPs.executeQuery()
+                Logger
+                    .error(this, String.format("Error executing Task04115LowercaseIdentifierUrls: %s", e.getMessage()),
+                        e);
+                throw new DotDataException(
+                    String.format("Error executing Task04115LowercaseIdentifierUrls: %s", e.getMessage()), e);
+            }
+        } catch (Exception e) { //conn.prepareStatement(getSelectQuery())
+            Logger
+                .error(this, String.format("Error executing Task04115LowercaseIdentifierUrls: %s", e.getMessage()),
+                    e);
+            throw new DotDataException(
+                String.format("Error executing Task04115LowercaseIdentifierUrls: %s", e.getMessage()), e);
+        } finally {
+            //Enable trigger.
+            try {
+                final DotConnect dotConnect = new DotConnect();
+                final List<String> statements = getEnableTriggerQuery();
                 for (String statement : statements) {
                     dotConnect.executeStatement(statement);
                 }
-			} catch (SQLException e) {
-				throw new DotDataException(
-					String.format("Error executing Task04115LowercaseIdentifierUrls, trying to ENABLE trigger: %s", e.getMessage()), e);
-			}
-		}
-	}
+            } catch (SQLException e) {
+                Logger.error(this, String
+                    .format("Error executing Task04115LowercaseIdentifierUrls, trying to ENABLE trigger: %s",
+                        e.getMessage()), e);
+                throw new DotDataException(
+                    String.format("Error executing Task04115LowercaseIdentifierUrls, trying to ENABLE trigger: %s",
+                        e.getMessage()), e);
+            }
+        }
+    }
 
 	/**
 	 * Returns the appropriate <code>SELECT</code> query based on the current

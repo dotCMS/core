@@ -19,6 +19,7 @@ import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.exception.BaseRuntimeInternationalizationException;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
@@ -298,15 +299,19 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
   }
 
-  @Override
-  public List<SimpleStructureURLMap> findStructureURLMapPatterns() throws DotDataException {
-    List<SimpleStructureURLMap> res = new ArrayList<SimpleStructureURLMap>();
+    @Override
+    public List<SimpleStructureURLMap> findStructureURLMapPatterns() throws DotDataException {
+        List<SimpleStructureURLMap> res = new ArrayList<>();
 
-    for (ContentType type : fac.findUrlMapped()) {
-      res.add(new SimpleStructureURLMap(type.id(), type.urlMapPattern()));
+        for ( ContentType type : fac.findUrlMapped() ){
+            if (type instanceof UrlMapable){
+                res.add(new SimpleStructureURLMap(type.id(), type.urlMapPattern()));
+            }
+
+        }
+
+        return ImmutableList.copyOf(res);
     }
-    return ImmutableList.copyOf(res);
-  }
 
   @Override
   public void moveToSystemFolder(Folder folder) throws DotDataException {
