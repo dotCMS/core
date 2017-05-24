@@ -168,7 +168,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 
         TextField textField = ImmutableTextField.builder().name("test field" + uu)
                 .variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint")
-                .dataType(DataTypes.INTEGER).dbColumn("int").build();
+                .dataType(DataTypes.INTEGER).dbColumn("bad1").build();
 
         Field savedField = fieldFactory.save(textField);
         String inode = savedField.inode();
@@ -185,7 +185,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 
         SelectField selectField = ImmutableSelectField.builder().name("test field" + uu)
                 .variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint")
-                .dataType(DataTypes.BOOL).dbColumn("bool").values("").build();
+                .dataType(DataTypes.BOOL).dbColumn("notreal").values("").build();
 
         Field savedField = fieldFactory.save(selectField);
         String inode = savedField.inode();
