@@ -7,10 +7,22 @@ trap 'echo "[$USER@$(hostname) $PWD]\$ $BASH_COMMAND"' DEBUG
 export GRADLE_OPTS="-Xmx1024m -Xms256m -XX:MaxPermSize=512m"
 
 
-# Create working directory
-mkdir repo
-cd repo
+echo "Building branch '$BRANCH' and testing against '$DB_TYPE' with build code '$BUILD_CODE' (provisioned is '$BUILD_PROVISIONED')"
 
+
+# Create working directory
+rm -rf repo/$BRANCH
+mkdir -p repo/$BRANCH
+cd repo/$BRANCH
+
+
+# Provision clean database if needed
+if [ "$BUILD_PROVISIONED" == "true" ] && [ "$DB_TYPE" == "postgres" ]; then
+	export PGPASSWORD='$DB_PASSWORD'
+
+	psql -h $DB_HOST -p $DB_PORT -U $DB_USERNAME -c "DROP DATABASE $DB_NAME";
+	psql -h $DB_HOST -p $DB_PORT -U $DB_USERNAME -c "CREATE DATABASE $DB_NAME";
+fi
 
 # Check out branch under working directory
 git clone -b $BRANCH https://github.com/dotCMS/core.git
@@ -21,12 +33,10 @@ if [ -n "$COMMIT" ]; then
 fi
 
 
-
 # Build tests and distro
 cd core/dotCMS
 sed -i "s,^org.gradle.jvmargs=,#org.gradle.jvmargs=,g" gradle.properties
 
-./gradlew --stop
 ./gradlew clean --no-daemon --refresh-dependencies
 ./gradlew copyTestRuntimeLibs individualTestJar integrationTestJar functionalTestJar --no-daemon
 ./gradlew createDist --no-daemon
@@ -49,7 +59,26 @@ jar xf dotserver/tomcat/webapps/ROOT/WEB-INF/lib/dotcms_*-functionalTest.jar con
 mv context.xml dotserver/tomcat/webapps/ROOT/META-INF/context.xml
 
 
+# Setup ports
+#PORT_SEED		= Math.abs( Objects.hash( database, branch )	//Pseudo-unique number based on database/branch combination
+#PORT_BASE		= "2"+ ( ( PORT_SEED % 199 ) + 1 )				//Pseudo-unique number in the range [2001, 2199]
+#PORT_ACTUAL	= PORT_BASE	+ "[0-9]"							//Pseudo-unique number in the range [20010, 21999]
+
+PORT_SEED=$BUILD_CODE
+PORT_BASE=2$(printf "%03d" $(((PORT_SEED % 199) + 1)))
+PORT_TOMCAT_HTTP=${PORT_BASE}0
+PORT_TOMCAT_HTTPS=${PORT_BASE}1
+PORT_TOMCAT_SERVER=${PORT_BASE}3
+PORT_ES_TRANSPORT=${PORT_BASE}4
+
+
 # Setup configuration files
+sed -i "s,8080,$PORT_TOMCAT_HTTP,g" build-tests.xml
+
+sed -i "s,8080,$PORT_TOMCAT_HTTP,g" dotserver/tomcat/conf/server.xml
+sed -i "s,8443,$PORT_TOMCAT_HTTPS,g" dotserver/tomcat/conf/server.xml
+sed -i "s,8005,$PORT_TOMCAT_SERVER,g" dotserver/tomcat/conf/server.xml
+
 sed -i "s,{driver},$DB_DRIVER,g" dotserver/tomcat/webapps/ROOT/META-INF/context.xml
 sed -i "s,{url},$DB_URL,g" dotserver/tomcat/webapps/ROOT/META-INF/context.xml
 sed -i "s,{username},$DB_USERNAME,g" dotserver/tomcat/webapps/ROOT/META-INF/context.xml
@@ -59,6 +88,7 @@ sed -i "s,{valquery},$DB_VALIDATION_QUERY,g" dotserver/tomcat/webapps/ROOT/META-
 sed -i 's,<!-- TEST FRAMEWORK SERVLETS,<!-- TEST FRAMEWORK SERVLETS -->,g' dotserver/tomcat/webapps/ROOT/WEB-INF/web.xml
 sed -i 's,END OF TEST FRAMEWORK SERVLETS -->,<!-- END OF TEST FRAMEWORK SERVLETS -->,g' dotserver/tomcat/webapps/ROOT/WEB-INF/web.xml
 
+sed -i "s,^es.transport.tcp.port *=.*$,es.transport.tcp.port=$PORT_ES_TRANSPORT,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotcms-config-cluster.properties
 sed -i "s,dotCMSContentIndex,$ESCLUSTER,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotcms-config-cluster.properties
 sed -i "s,AUTOWIRE_CLUSTER_TRANSPORT=true,AUTOWIRE_CLUSTER_TRANSPORT=false,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotcms-config-cluster.properties
 sed -i "s,AUTOWIRE_CLUSTER_ES=true,AUTOWIRE_CLUSTER_ES=false,g" dotserver/tomcat/webapps/ROOT/WEB-INF/classes/dotcms-config-cluster.properties
@@ -70,6 +100,7 @@ sed -i "s,^$DB_TYPE.db.base.url=.*$,$DB_TYPE.db.base.url=$DB_URL,g" core/dotCMS/
 sed -i "s,^$DB_TYPE.db.username=.*$,$DB_TYPE.db.username=$DB_USERNAME,g" core/dotCMS/src/integration-test/resources/db-config.properties
 sed -i "s,^$DB_TYPE.db.password=.*$,$DB_TYPE.db.password=$DB_PASSWORD,g" core/dotCMS/src/integration-test/resources/db-config.properties
 
+sed -i "s,^es.transport.tcp.port *=.*$,es.transport.tcp.port=$PORT_ES_TRANSPORT,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
 sed -i "s,^es.cluster.name *=.*$,es.cluster.name=$ESCLUSTER_3x,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
 sed -i "s,^es.path.data *=.*$,es.path.data=$PWD/dotserver/tomcat/webapps/ROOT/dotsecure/esdata,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
 sed -i "s,^es.path.work *=.*$,es.path.work=$PWD/dotserver/tomcat/webapps/ROOT/dotsecure/esdata/work,g" core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
@@ -124,4 +155,4 @@ cp core/dotCMS/build/test-results/integrationTest/*.xml tests
 
 
 # Create output zip file
-zip -r ../$OUTPUT_FILE tests
+zip -r ../../$OUTPUT_FILE tests
