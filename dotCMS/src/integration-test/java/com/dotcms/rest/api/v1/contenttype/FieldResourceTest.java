@@ -38,7 +38,6 @@ import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.field.WysiwygField;
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
@@ -64,18 +63,16 @@ public class FieldResourceTest {
 
 	private static final ObjectMapper mapper = new ObjectMapper();
 
-	private static final String typeName="fieldResourceTest " + UUIDUtil.uuid();
+	private static final String typeName="fieldResourceTest" + UUIDUtil.uuid();
 
 	@BeforeClass
 	public static void prepare() throws Exception{
         IntegrationTestInitService.getInstance().init();
-        
-        
+
         ContentType type = ContentTypeBuilder.builder(SimpleContentType.class).name(typeName).variable(typeName).build();
         type = APILocator.getContentTypeAPI(APILocator.systemUser()).save(type);
         Field field = FieldBuilder.builder(TextField.class).name("text").contentTypeId(type.id()).build();
         APILocator.getContentTypeFieldAPI().save(field,APILocator.systemUser());
-
 	}
 
 
@@ -2349,7 +2346,7 @@ public class FieldResourceTest {
 
 	private static void assertResponse_OK(Response response){
 		assertNotNull(response);
-		assertEquals(response.getStatus(), 200);
+		assertEquals(200, response.getStatus());
 		assertNotNull(response.getEntity());
 		assertTrue(response.getEntity() instanceof ResponseEntityView);
 		assertTrue(
@@ -2360,7 +2357,7 @@ public class FieldResourceTest {
 
 	private static void assertResponse_NOT_FOUND(Response response){
 		assertNotNull(response);
-		assertEquals(response.getStatus(), 404);
+		assertEquals(404, response.getStatus());
 		assertNotNull(response.getEntity());
 	}
 
@@ -2378,13 +2375,8 @@ public class FieldResourceTest {
 		}
 	}
 
-	
-	
-	
-	
 	private static ContentType getContentType() throws DotDataException, DotSecurityException {
 		User user = APILocator.getUserAPI().getSystemUser();
-        //return APILocator.getContentTypeAPI(user).search(" velocity_var_name = 'Testimonial'").get(0);
 		return APILocator.getContentTypeAPI(user).find(typeName);
 	}
 

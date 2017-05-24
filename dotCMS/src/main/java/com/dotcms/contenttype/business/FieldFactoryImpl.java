@@ -32,6 +32,7 @@ import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
@@ -159,8 +160,8 @@ public class FieldFactoryImpl implements FieldFactory {
     FieldBuilder builder = FieldBuilder.builder(throwAwayField);
     Field returnField = throwAwayField;
     
-    if("constant".equals(throwAwayField.dbColumn()) && !(throwAwayField instanceof ConstantField)) {
-      builder = ImmutableConstantField.builder().from(throwAwayField);
+    if("constant".equals(returnField.dbColumn()) && !(returnField instanceof ConstantField)) {
+      builder = ImmutableConstantField.builder().from(returnField);
       builder.dbColumn(DataTypes.SYSTEM.value);
       returnField = builder.build();
     }
@@ -174,8 +175,13 @@ public class FieldFactoryImpl implements FieldFactory {
       builder.dbColumn(DataTypes.SYSTEM.value);
       returnField = builder.build();
     }
-    // if this is a new column assign a db column
-    if(returnField.dbColumn()==null){
+    
+    
+    // if this is a new column validate and assign a db column
+    try{
+      validateDbColumn(returnField);
+    }
+    catch(Throwable e){
       builder.dbColumn(nextAvailableColumn(returnField));
       returnField = builder.build();
     }
@@ -225,6 +231,7 @@ public class FieldFactoryImpl implements FieldFactory {
       builder.readOnly(oldField.readOnly());
       builder.dataType(oldField.dataType());
       builder.dbColumn(oldField.dbColumn());
+
     } catch (NotFoundInDbException e) {
       List<Field> fieldsAlreadyAdded = byContentTypeId(throwAwayField.contentTypeId());
       // assign an inode and db column if needed
