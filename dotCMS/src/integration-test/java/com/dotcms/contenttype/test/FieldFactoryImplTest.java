@@ -24,8 +24,10 @@ import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.field.ImmutableDateTimeField;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableSelectField;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.SelectField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -156,6 +158,44 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 	    assertThat("field2 text data type", field2.dataType() == DataTypes.TEXT);
 	    assertThat("field2 text db column", field2.dbColumn().matches("text[0-9]+"));
 	}
+	
+
+
+    @Test
+    public void testBadIntDBColumn() throws Exception {
+
+        String uu = UUID.randomUUID().toString();
+
+        TextField textField = ImmutableTextField.builder().name("test field" + uu)
+                .variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint")
+                .dataType(DataTypes.INTEGER).dbColumn("bad1").build();
+
+        Field savedField = fieldFactory.save(textField);
+        String inode = savedField.inode();
+        Field field2 = fieldFactory.byId(inode);
+        assertThat("testBadIntDBColumn text data type", field2.dataType() == DataTypes.INTEGER);
+        assertThat("testBadIntDBColumn text db column", field2.dbColumn().matches("integer[0-9]+"));
+    }
+	
+
+    @Test
+    public void testBadBoolDBColumn() throws Exception {
+
+        String uu = UUID.randomUUID().toString();
+
+        SelectField selectField = ImmutableSelectField.builder().name("test field" + uu)
+                .variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint")
+                .dataType(DataTypes.BOOL).dbColumn("notreal").values("").build();
+
+        Field savedField = fieldFactory.save(selectField);
+        String inode = savedField.inode();
+        Field field2 = fieldFactory.byId(inode);
+        assertThat("testBadBoolDBColumn select data type", field2.dataType() == DataTypes.BOOL);
+        assertThat("testBadBoolDBColumn select db column", field2.dbColumn().matches("bool[0-9]+"));
+    }
+    
+	
+	
     @Test
     public void testTextIntColumn() throws Exception {
 
