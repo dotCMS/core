@@ -46,7 +46,7 @@ public abstract class FieldSql {
 			+ "field_name=?, "
 			+ "field_type=?, "
 			+ "field_relation_type=?, "
-			//+ "field_contentlet=?, " no updating this
+			+ "field_contentlet=?, " 
 			+ "required=?, "
 			+ "indexed=?, "
 			+ "listed=?, "
