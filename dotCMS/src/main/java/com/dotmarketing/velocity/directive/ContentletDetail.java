@@ -1,17 +1,16 @@
 package com.dotmarketing.velocity.directive;
 
-import java.io.Writer;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.util.Config;
 
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.util.Config;
+import java.io.Writer;
 
 public class ContentletDetail extends DotDirective {
 
@@ -31,7 +30,7 @@ public class ContentletDetail extends DotDirective {
   @Override
   String resolveTemplatePath(final Context context, final Writer writer, final RenderParams params, final String argument) {
 
-    ContentletVersionInfo cv = null;
+    ContentletVersionInfo cv;
 
     try {
       cv = APILocator.getVersionableAPI().getContentletVersionInfo(argument, params.language.getId());
@@ -54,13 +53,21 @@ public class ContentletDetail extends DotDirective {
       throw new ResourceNotFoundException("cannnot find contentlet id " +  argument + " lang:" + params.language);
     }
 
+      // _show_working_ context variable is used on Container Services. If the time machine date is after the Publish
+      // date of the Contentlet (identifier data) we need to show the working. If not we only show the live.
+      //
+      // #if($UtilMethods.isSet($_ident.sysPublishDate) && $_tmdate.after($_ident.sysPublishDate))
+      //    #set($_show_working_=true)
+      //
+      boolean showWorking = false;
 
-    return  (params.live) 
-        ? "/live/"      + argument + "_" + cv.getLang() + "." + EXTENSION
-        : "/working/"   + argument + "_" + cv.getLang() + "." + EXTENSION;
+      if (context.get("_show_working_") != null && (boolean)context.get("_show_working_")) {
+          showWorking = true;
+      }
 
-
-
+      return  (params.live && !showWorking)
+          ? "/live/"      + argument + "_" + cv.getLang() + "." + EXTENSION
+          : "/working/"   + argument + "_" + cv.getLang() + "." + EXTENSION;
   }
 }
 
