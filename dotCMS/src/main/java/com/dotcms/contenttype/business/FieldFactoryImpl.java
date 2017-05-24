@@ -38,6 +38,7 @@ import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 
@@ -182,6 +183,7 @@ public class FieldFactoryImpl implements FieldFactory {
       validateDbColumn(returnField);
     }
     catch(Throwable e){
+      Logger.warn(this.getClass(), "field db column being updated:" + e.getMessage() );
       builder.dbColumn(nextAvailableColumn(returnField));
       returnField = builder.build();
     }
@@ -214,7 +216,7 @@ public class FieldFactoryImpl implements FieldFactory {
 
     
 
-    FieldBuilder builder = FieldBuilder.builder(normalizeData(throwAwayField));
+    FieldBuilder builder = FieldBuilder.builder(throwAwayField);
     
     
     Date modDate = DateUtils.round(new Date(), Calendar.SECOND);
@@ -252,7 +254,7 @@ public class FieldFactoryImpl implements FieldFactory {
       builder.variable(tryVar);
 
     }
-
+    builder = FieldBuilder.builder(normalizeData(builder.build()));
 
     Field retField = builder.build();
 
@@ -479,6 +481,7 @@ public class FieldFactoryImpl implements FieldFactory {
     dc.addParam(field.name());
     dc.addParam(field.type().getCanonicalName());
     dc.addParam(field.relationType());
+    dc.addParam(field.dbColumn());
     dc.addParam(field.required());
     dc.addParam(field.indexed());
     dc.addParam(field.listed());

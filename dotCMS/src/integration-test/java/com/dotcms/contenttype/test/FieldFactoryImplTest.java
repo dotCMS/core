@@ -14,6 +14,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
+import com.dotcms.contenttype.business.sql.FieldSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.exception.OverFieldLimitException;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -24,9 +25,11 @@ import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.field.ImmutableDateTimeField;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableLineDividerField;
 import com.dotcms.contenttype.model.field.ImmutableSelectField;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.SelectField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -41,6 +44,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.Config;
 
@@ -176,8 +180,87 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
         assertThat("testBadIntDBColumn text data type", field2.dataType() == DataTypes.INTEGER);
         assertThat("testBadIntDBColumn text db column", field2.dbColumn().matches("integer[0-9]+"));
     }
-	
+    
+    
+    @Test
+    public void testBadLegacyDBColumn() throws Exception {
 
+        String uu = UUID.randomUUID().toString();
+
+
+        
+        LineDividerField badLineDividerField = ImmutableLineDividerField.builder()
+            .name("test field" + uu)
+            .id(uu)
+            .variable(TEST_VAR_PREFIX + uu)
+            .contentTypeId(Constants.NEWS).hint("my hint")
+            .dataType(DataTypes.INTEGER)
+            .sortOrder(99)
+            .dbColumn("section_divider1").build();
+        
+        insertRawFieldInDb(badLineDividerField);
+
+        String inode = badLineDividerField.inode();
+        Field fieldFromDB = fieldFactory.byId(inode);
+        assertThat("testBadLegacyDBColumn  data type", fieldFromDB.dataType() == DataTypes.SYSTEM);
+        assertThat("testBadLegacyDBColumn  db column", fieldFromDB.dbColumn().matches("section_divider1"));
+        assertThat("testBadLegacyDBColumn  order column", fieldFromDB.sortOrder() ==99);
+        
+        
+        Field field3 = FieldBuilder.builder(fieldFromDB).sortOrder(10).build();
+        fieldFactory.save(field3);
+        fieldFromDB = fieldFactory.byId(inode);
+        
+        assertThat("testBadLegacyDBColumn  data type", fieldFromDB.dataType() == DataTypes.SYSTEM);
+        assertThat("testBadLegacyDBColumn  db column", fieldFromDB.dbColumn().matches("system_field"));
+        assertThat("testBadLegacyDBColumn  order column", fieldFromDB.sortOrder() ==10);
+        
+        
+    }
+    
+    
+    FieldSql sql =  FieldSql.getInstance();
+    
+
+    private void insertRawFieldInDb(Field field) throws DotDataException {
+      
+      
+      DotConnect dc = new DotConnect();
+      dc.setSQL(sql.insertFieldInode);
+      dc.addParam(field.id());
+      dc.addParam(field.iDate());
+      dc.addParam(field.owner());
+      dc.loadResult();
+      
+      
+
+      
+      
+      dc.setSQL(sql.insertField);
+      dc.addParam(field.id());
+      dc.addParam(field.contentTypeId());
+      dc.addParam(field.name());
+      dc.addParam(field.type().getCanonicalName());
+      dc.addParam(field.relationType());
+      dc.addParam(field.dbColumn());
+      dc.addParam(field.required());
+      dc.addParam(field.indexed());
+      dc.addParam(field.listed());
+      dc.addParam(field.variable());
+      dc.addParam(field.sortOrder());
+      dc.addParam(field.values());
+      dc.addParam(field.regexCheck());
+      dc.addParam(field.hint());
+      dc.addParam(field.defaultValue());
+      dc.addParam(field.fixed());
+      dc.addParam(field.readOnly());
+      dc.addParam(field.searchable());
+      dc.addParam(field.unique());
+      dc.addParam(field.modDate());
+
+      dc.loadResult();
+    }
+    
     @Test
     public void testBadBoolDBColumn() throws Exception {
 
