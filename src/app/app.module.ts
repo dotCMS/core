@@ -33,6 +33,7 @@ import {PasswordModule} from 'primeng/primeng';
 import {RadioButtonModule} from 'primeng/primeng';
 import {SplitButtonModule} from 'primeng/primeng';
 import {ToolbarModule} from 'primeng/primeng';
+import {TabViewModule} from 'primeng/primeng';
 import {DataTableModule, SharedModule} from 'primeng/primeng';
 
 const NGFACES_MODULES = [
@@ -48,7 +49,8 @@ const NGFACES_MODULES = [
   RadioButtonModule,
   SharedModule,
   SplitButtonModule,
-  ToolbarModule
+  ToolbarModule,
+  TabViewModule
 ];
 
 /*

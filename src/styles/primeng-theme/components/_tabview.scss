@@ -1,0 +1,55 @@
+#reset-border-radius {
+    border-radius: 0;
+}
+.ui-tabview {
+    padding: 0;
+
+    &.ui-tabview-top {
+        .ui-tabview-nav li a { 
+            border-bottom: $tabview-item-border;
+
+            &:hover {
+                border-bottom: $tabview-item-selected-border;
+            }
+        }
+    }
+
+    .ui-tabview-nav {
+        .ui-state-default a {
+            color: $tabview-item-color;
+            padding: $tabview-item-padding $tabview-item-padding * 2;
+            text-transform: uppercase;
+        }
+
+        li.ui-tabview-selected a {
+            color: $tabview-item-selected-color;
+            border-bottom: $tabview-item-selected-border;
+        }
+
+        li .ui-tabview-close {
+            color: $tabview-item-color;
+            margin: 0;
+            right: 0;
+            top: 0;
+            position: absolute;
+        }
+    }
+
+    &.ui-corner-all {
+        @extend #reset-border-radius;
+    }
+
+    .ui-tabview-nav {
+        &.ui-corner-all {
+            @extend #reset-border-radius;
+        }
+
+        li {
+            margin: 0;
+        }
+    }
+  
+    .ui-tabview-panel {
+      padding: 0;
+    }
+}

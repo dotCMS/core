@@ -303,28 +303,6 @@ input, select, textarea, button {
     }
 }
 
-/* Tabview */
-
-.ui-tabview {
-    &.ui-widget-content {
-        border: 0px none;
-    }
-    &:not(.ui-ribbon) .ui-tabview-nav {
-        background: transparent;
-    }
-    .ui-tabview-nav > li.ui-state-default {
-        background: #f6f7f9;
-        &.ui-state-hover {
-            background: #ededf0;
-        }
-        &.ui-state-active {
-            background: #ffffff;
-            font-weight: normal;
-            color: #555555;
-        }
-    }
-}
-
 /*
  * jQuery UI Button 1.8.16
  *
