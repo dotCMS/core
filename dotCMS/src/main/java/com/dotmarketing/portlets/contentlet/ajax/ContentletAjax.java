@@ -1,5 +1,23 @@
 package com.dotmarketing.portlets.contentlet.ajax;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotcms.enterprise.LicenseUtil;
@@ -9,7 +27,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -40,7 +57,6 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.portlets.structure.StructureUtil;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
-
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -52,6 +68,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageRequestModeUtil;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
@@ -59,7 +76,6 @@ import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
@@ -71,24 +87,6 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 /**
  * This class handles the communication between the view and the back-end
@@ -1386,6 +1384,19 @@ public class ContentletAjax {
                 if(contentlet.isHTMLPage()) {
                     HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
                     callbackData.put("htmlPageReferer", page.getURI() + "?" + WebKeys.HTMLPAGE_LANGUAGE + "=" + page.getLanguageId() + "&host_id=" + page.getHost());
+                    HttpSession session = req.getSession();
+                    boolean contentLocked = false;
+                    boolean iCanLock = false;
+                    
+                    try{
+                    	contentLocked = page.isLocked();
+                        iCanLock = APILocator.getContentletAPI().canLock(contentlet, user);
+                     }catch(DotLockException e){
+                        iCanLock=false;
+                        contentLocked = false;
+                     }
+                     
+                    PageRequestModeUtil.setBackEndModeInSession(req, contentLocked, iCanLock);
                 }
 
 			}
