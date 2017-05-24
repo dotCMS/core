@@ -10,6 +10,8 @@ buildscript {
 
 configurations {
     compile
+    compileOnly
+    apt
     testCompile
 }
 
@@ -132,7 +134,7 @@ ext {
     }
 
     if (gradle.startParameter.taskNames.contains("uploadDotcms")) {
-        jarName = "dotcms_$dotcmsReleaseVersion"+ "_" + git.head().abbreviatedId
+        jarName = "dotcms_$dotcmsReleaseVersion"
         fileToUpload = "build/libs/$jarName" + ".jar"
         submodulePath = "."
     }
