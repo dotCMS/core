@@ -58,8 +58,13 @@ public class FieldFactoryImpl implements FieldFactory {
 
   @Override
   public Field byContentTypeFieldVar(ContentType type, String var) throws DotDataException {
-    
-    return type.fieldMap().get(var);
+    Field field = type.fieldMap().get(var);
+
+    if(field==null) {
+      throw new NotFoundInDbException("Field variable with var:" + var + " not found");
+    }
+
+    return field;
 
   }
 
