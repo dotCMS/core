@@ -913,18 +913,22 @@ function deleteEnvPushHistory(envId) {
                 <div style="padding:10px 8px; margin: -10px 0; border-left:1px solid #ECEDEE;border-right:1px solid #ECEDEE;">
                     <div class="buttonsGroup">
 
-                        <%if((environment.getPushToAll() || i == 0) && !"awss3".equalsIgnoreCase(endpoint.getProtocol())){%>
+                        
                         <div class="integrityCheckActionsGroup" style="float:right; display:inline-flex;" id="group-<%=endpoint.getId()%>">
-                            <button dojoType="dijit.form.Button" onClick="checkIntegrity('<%=endpoint.getId()%>');" id="checkIntegrityButton<%=endpoint.getId()%>" style="display: none;">
-                                <%= LanguageUtil.get( pageContext, "CheckIntegrity" ) %>
-                            </button>
+                            <%if((environment.getPushToAll() || i == 0) && !"awss3".equalsIgnoreCase(endpoint.getProtocol())){%>
+                                <button dojoType="dijit.form.Button" onClick="checkIntegrity('<%=endpoint.getId()%>');" id="checkIntegrityButton<%=endpoint.getId()%>" style="display: none;">
+                                    <%= LanguageUtil.get( pageContext, "CheckIntegrity" ) %>
+                                </button>
+                            <%} %>
                             <button dojoType="dijit.form.Button" onClick="getIntegrityResult('<%=endpoint.getId()%>');" id="getIntegrityResultsButton<%=endpoint.getId()%>" style="display: none;">
                                 <%= LanguageUtil.get( pageContext, "Preview-Analysis-Results" ) %>
                             </button>
-                            <div id="loadingContent<%=endpoint.getId()%>" class="loadingIntegrityCheck" align="center" style="display: none;">
-                                <font class="bg" size="2"> <b><%= LanguageUtil.get( pageContext, "Loading" ) %></b> <br />
-                                    <img src="/html/images/icons/processing.gif" /></font>
-                            </div>
+                            <%if((environment.getPushToAll() || i == 0) && !"awss3".equalsIgnoreCase(endpoint.getProtocol())){%>
+                                <div id="loadingContent<%=endpoint.getId()%>" class="loadingIntegrityCheck" align="center" style="display: none;">
+                                    <font class="bg" size="2"> <b><%= LanguageUtil.get( pageContext, "Loading" ) %></b> <br />
+                                        <img src="/html/images/icons/processing.gif" /></font>
+                                </div>
+                            <%} %>
                             <button dojoType="dijit.form.Button" onClick="cancelIntegrityCheck('<%=endpoint.getId()%>');" id="cancelCheckIntegrityButton<%=endpoint.getId()%>" style="margin-left:10px; display:none;">
                                 <%= LanguageUtil.get( pageContext, "cancel" ) %>
                             </button>
@@ -932,7 +936,7 @@ function deleteEnvPushHistory(envId) {
                                 <%= LanguageUtil.get( pageContext, "delete" ) %>
                             </button>
                         </div>
-                        <%} %>
+                        
 
                     </div>
 
