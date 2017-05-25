@@ -30,6 +30,7 @@ import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
@@ -38,12 +39,7 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 
 import com.dotcms.repackage.javax.ws.rs.*;
-import com.dotcms.rest.RESTParams;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.util.StringUtil;
 import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.ConversionUtils.toInt;
 import java.util.Map;
 
 @Path("/v1/contenttype")
@@ -78,24 +74,38 @@ public class ContentTypeResource implements Serializable {
 			throws DotDataException, DotSecurityException {
 		final InitDataObject initData = this.webResource.init(null, true, req, true, null);
 		final User user = initData.getUser();
-		List<ContentType> typesToSave = new JsonContentTypeTransformer(json).asList();
 
-		// Validate input
-		for (ContentType type : typesToSave) {
-			if (UtilMethods.isSet(type.id())) {
-				return ExceptionMapperUtil.createResponse(null, "Field 'id' should not be set");
+		Response response = null;
+
+		try {
+			List<ContentType> typesToSave = new JsonContentTypeTransformer(json).asList();
+
+			// Validate input
+			for (ContentType type : typesToSave) {
+				if (UtilMethods.isSet(type.id())) {
+					return ExceptionMapperUtil.createResponse(null, "Field 'id' should not be set");
+				}
 			}
+
+			List<ContentType> retTypes = new ArrayList<>();
+
+			// Persist input
+			for (ContentType type :typesToSave) {
+				retTypes.add(APILocator.getContentTypeAPI(user, true).save(type));
+			}
+
+			response = Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(retTypes).mapList())).build();
+
+		} catch (DotStateException e) {
+
+			response = ExceptionMapperUtil.createResponse(null, "Content-type is not valid ("+ e.getMessage() +")");
+
+		} catch (Exception e) {
+
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
 
-		List<ContentType> retTypes = new ArrayList<>();
-
-		// Persist input
-		for (ContentType type :typesToSave) {
-			retTypes.add(APILocator.getContentTypeAPI(user, true).save(type));
-		}
-
-		return Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(retTypes).mapList())).build();
-
+		return response;
 	}
 
 
@@ -135,6 +145,10 @@ public class ContentTypeResource implements Serializable {
 					response = Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(contentType).mapObject())).build();
 				}
 			}
+		} catch (DotStateException e) {
+
+			response = ExceptionMapperUtil.createResponse(null, "Content-type is not valid ("+ e.getMessage() +")");
+
 		} catch (NotFoundInDbException e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);

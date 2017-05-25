@@ -15,6 +15,7 @@ import org.immutables.value.Value.Default;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
@@ -56,6 +57,8 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
 
   @Value.Check
   protected void check() {
+	Preconditions.checkArgument(StringUtils.isNotEmpty(name()), "Name cannot be empty for " + this.getClass());
+
     if (!(this instanceof UrlMapable)) {
       Preconditions.checkArgument(detailPage() == null, "Detail Page cannot be set for " + this.getClass());
       Preconditions.checkArgument(urlMapPattern() == null, "urlmap cannot be set for " + this.getClass());
