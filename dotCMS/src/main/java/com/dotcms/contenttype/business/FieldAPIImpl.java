@@ -226,13 +226,13 @@ public class FieldAPIImpl implements FieldAPI {
   public Field byContentTypeAndVar(ContentType type, String fieldVar) throws DotDataException {
     return fac.byContentTypeFieldVar(type, fieldVar);
   }
-  
+
   @Override
   public Field byContentTypeIdAndVar(String id, String fieldVar) throws DotDataException {
     try {
-      return APILocator.getContentTypeAPI(APILocator.systemUser()).find(id).fieldMap().get(fieldVar);
-    } catch (Exception e) {
-      throw new DotDataException(e);
+        return byContentTypeAndVar(APILocator.getContentTypeAPI(APILocator.systemUser()).find(id), fieldVar);
+    } catch (DotSecurityException e) {
+        throw new DotDataException(e);
     }
   }
   
