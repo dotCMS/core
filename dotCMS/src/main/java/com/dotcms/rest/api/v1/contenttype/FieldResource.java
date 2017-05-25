@@ -257,15 +257,20 @@ public class FieldResource implements Serializable {
 
 				Field currentField = fapi.byContentTypeIdAndVar(typeId, fieldVar);
 
-				if (!currentField.id().equals(field.id())) {
+				if(currentField!=null) {
 
-					response = ExceptionMapperUtil.createResponse(null, "Field var '"+ fieldVar +"' does not match a field with id '"+ field.id() +"'");
+					if (!currentField.id().equals(field.id())) {
 
+						response = ExceptionMapperUtil.createResponse(null, "Field var '" + fieldVar + "' does not match a field with id '" + field.id() + "'");
+
+					} else {
+
+						field = fapi.save(field, user);
+
+						response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
+					}
 				} else {
-
-					field = fapi.save(field, user);
-	
-					response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
+					response = ExceptionMapperUtil.createResponse(null, "Invalid 'contentTypeId' or 'variable'");
 				}
 			}
 		} catch (NotFoundInDbException e) {
