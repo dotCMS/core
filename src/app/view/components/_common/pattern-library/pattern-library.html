@@ -43,16 +43,16 @@
                     <p-column field="color" header="Color" [sortable]="true"></p-column>
                 </p-dataTable>
             </article>
-            <h3 class="section__title">Tab View</h3>
+            <h3 class="section__title">Action header</h3>
             <article>
-                <p-tabView>
-                    <p-tabPanel header="Header 1" rightIcon="fa-bookmark-o">
-                    </p-tabPanel>
-                    <p-tabPanel header="Header 2" [closable]="true" [selected]="true">
-                    </p-tabPanel>
-                    <p-tabPanel header="Header 3">
-                    </p-tabPanel>
-                </p-tabView>
+                <action-header [selected]="selectedCars.length > 0" [selectedItems]="selectedCars" [actionButtonItems]="buttonActions" [primaryCommand]="actionHeaderLog"></action-header>
+                <p-dataTable [value]="dataTableDummyData" [rows]="6" [paginator]="true" [pageLinks]="5" [(selection)]="selectedCars" dataKey="vin">
+                    <p-column selectionMode="multiple"></p-column>
+                    <p-column field="vin" header="Vin" [sortable]="true"></p-column>
+                    <p-column field="year" header="Year" [sortable]="true"></p-column>
+                    <p-column field="brand" header="Brand" [sortable]="true"></p-column>
+                    <p-column field="color" header="Color" [sortable]="true"></p-column>
+                </p-dataTable>
             </article>
         </div>
 

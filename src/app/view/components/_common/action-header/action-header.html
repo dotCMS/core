@@ -1,0 +1,13 @@
+<div class="action-header" [ngClass]="{'selected': selected}"  [ngStyle]="{'overflow': dynamicOverflow}">
+    <button pButton actionButton icon="fa-plus" (click)="primaryCommand()"></button>
+    <div class="action-header__container" [ngStyle]="{'overflow': dynamicOverflow}">
+        <div class="action-header__global-search">
+            <input pInputText type="text" placeholder="{{i18nMessages['global-search']}}" />
+        </div>
+        <div class="action-header__group-actions">
+            <span class="action-header__selected-items-counter">{{selectedItems.length}} {{i18nMessages['selected']}}</span>
+            <p-splitButton *ngIf="actionButtonItems[0]" flat label="{{actionButtonItems[0].label}}" class="inverted primaryActions" [model]="actionButtonItems[0].model"></p-splitButton>
+            <p-splitButton *ngIf="actionButtonItems[1]" flat label="{{actionButtonItems[1].label}}" class="inverted secondaryActions" [model]="actionButtonItems[1].model"></p-splitButton>
+        </div>
+    </div>
+</div>

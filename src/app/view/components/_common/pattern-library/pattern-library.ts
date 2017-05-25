@@ -9,14 +9,15 @@ import {SelectItem, AutoComplete} from 'primeng/primeng';
 })
 
 export class PatternLibrary {
+    public selectedDummyData = [];
+    public selectedCars = [];
+
     private autocompleteResults: Array<string> = [];
     private cities: SelectItem[];
     private dataTableDummyData: [any];
     private displayDialog = false;
     private model: any = {};
-    // tslint:disable-next-line:no-unused-variable
-    private selectedCity: string;
-    private splitButtonItems: [any];
+    private buttonActions: [any];
 
     @ViewChild(AutoComplete) private autoCompleteComponent: AutoComplete;
 
@@ -28,11 +29,24 @@ export class PatternLibrary {
         this.cities.push({label: 'London', value: {id: 3, name: 'London', code: 'LDN'}});
         this.cities.push({label: 'Istanbul', value: {id: 4, name: 'Istanbul', code: 'IST'}});
         this.cities.push({label: 'Paris', value: {id: 5, name: 'Paris', code: 'PRS'}});
-        this.splitButtonItems = [
-            {label: 'Update', icon: 'fa-refresh', command: () => {}},
-            {label: 'Delete', icon: 'fa-close', command: () => {}},
-            {label: 'Angular.io', icon: 'fa-link', url: 'http://angular.io'},
-            {label: 'Theming', icon: 'fa-paint-brush', routerLink: ['/theming']}
+        this.buttonActions = [
+            {
+                label: 'Group Actions',
+                model: [
+                    {label: 'Update', icon: 'fa-refresh', command: () => {}},
+                    {label: 'Delete', icon: 'fa-close', command: () => {}},
+                    {label: 'Angular.io', icon: 'fa-link', url: 'http://angular.io'},
+                    {label: 'Theming', icon: 'fa-paint-brush', routerLink: ['/theming']}
+                ]
+            },
+            {
+                label: 'Edit Content',
+                model: [
+                    {label: 'Publish', icon: 'fa-refresh', command: () => {}},
+                    {label: 'Unpublish', icon: 'fa-close', command: () => {}},
+                    {label: 'Angular.io', icon: 'fa-link', url: 'http://angular.io'}
+                ]
+            }
         ];
     }
 
@@ -90,5 +104,9 @@ export class PatternLibrary {
 
     showDialog(): void {
         this.displayDialog = true;
+    }
+
+    actionHeaderLog(): void {
+        console.log('Primary command was triggered');
     }
 }
