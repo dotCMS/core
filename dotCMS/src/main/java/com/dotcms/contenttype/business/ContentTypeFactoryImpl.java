@@ -669,9 +669,14 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
           }
         }
 
-        if (!optional.isPresent()) {
-          throw new DotValidationException("ContentType does not have the required Fields: " + test);
-        }
+          if (!optional.isPresent()) {
+              if (Config.getBooleanProperty("THROW_REQUIRED_FIELD_EXCEPTION", false)){
+                  throw new DotValidationException("ContentType does not have the required Fields: " + test);
+              } else {
+                  Logger.warn(this, "ContentType: " + type.name() +" does not have the required Fields: " + test);
+              }
+
+          }
 
       }
     }
