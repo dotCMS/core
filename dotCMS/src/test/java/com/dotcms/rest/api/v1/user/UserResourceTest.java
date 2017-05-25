@@ -347,8 +347,6 @@ public class UserResourceTest extends UnitTestBase {
         when( roleAPI.loadCMSAdminRole() ).thenReturn( loginAsRole );
         when( roleAPI.doesUserHaveRoles(userId1, rolesId) ).thenReturn( true ) ;
         when( roleAPI.doesUserHaveRoles(userId2, rolesId) ).thenReturn( false ) ;
-        when( roleAPI.findRoleByFQN(Role.SYSTEM + " --> " + Role.LOGIN_AS) ).thenReturn( loginAsRole ) ;
-        when( roleAPI.doesUserHaveRole(user3, loginAsRole) ).thenReturn( true ) ;
         when( webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
         when( initDataObject.getUser()).thenReturn(user3);
 
