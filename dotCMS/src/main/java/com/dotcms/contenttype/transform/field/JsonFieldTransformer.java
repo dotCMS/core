@@ -33,22 +33,22 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
     List<Field> l = new ArrayList<>();
     // are we an array?
     try {
-      JSONObject jo = new JSONObject(json);
-      if (jo.has("fields")) {
-        l = fromJsonArray(jo.getJSONArray("fields"));
-      } else {
-        l.add(fromJsonStr(json));
+      JSONArray jarr = new JSONArray(json);
+      if (jarr.size() > 0) {
+        JSONObject jo = jarr.getJSONObject(0);
+        if (jo.has("fields")) {
+          l = fromJsonArray(jo.getJSONArray("fields"));
+        } else {
+          l = fromJsonArrayStr(json);
+        }
       }
     } catch (Exception e) {
       try {
-        JSONArray jarr = new JSONArray(json);
-        if (jarr.size() > 0) {
-          JSONObject jo = jarr.getJSONObject(0);
-          if (jo.has("fields")) {
-            l = fromJsonArray(jo.getJSONArray("fields"));
-          } else {
-            l = fromJsonArrayStr(json);
-          }
+      	JSONObject jo = new JSONObject(json);
+        if (jo.has("fields")) {
+          l = fromJsonArray(jo.getJSONArray("fields"));
+        } else {
+          l.add(fromJsonStr(json));
         }
       } catch (Exception ex) {
         throw new DotStateException(ex);
