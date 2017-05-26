@@ -254,7 +254,9 @@ public interface ContentTypeAPI {
   Map<String, Long> getEntriesByContentTypes() throws DotDataException;
   
   /**
-   * Saves or update a Content Type.
+   * Save or update a Content Type. If the Content Type already exist
+   * then it's going to update the fields with the values set on the fields
+   * parameter
    * 
    * @param type Content Type that is going to be modified
    * @param fields Content Type list of fields
@@ -265,7 +267,9 @@ public interface ContentTypeAPI {
   ContentType save(ContentType type, List<Field> fields) throws DotDataException, DotSecurityException;
   
   /**
-   * Saves or update a Content Type.
+   * Save or update a Content Type. If the Content Type already exist
+   * then it's going to update the fields and fields variables with the values set 
+   * on the fields and fieldVariables parameters 
    * 
    * @param type Content Type that is going to be modified
    * @param fields Content Type list of fields
