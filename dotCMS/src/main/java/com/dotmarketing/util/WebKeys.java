@@ -711,4 +711,7 @@ public final class WebKeys {
 	//Pagination Parameters
     public static final String DOTCMS_PAGINATION_ROWS = "dotcms.paginator.rows";
     public static final String DOTCMS_PAGINATION_LINKS = "dotcms.paginator.links";
+
+    //User validations
+    public static final String DOTCMS_USE_REGEX_TO_VALIDATE_EMAILS = "dotcms.use.regex.to.validate.emails";
 }

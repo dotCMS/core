@@ -22,7 +22,12 @@
 
 package com.liferay.util;
 
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.util.cal.CalendarUtil;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * <a href="Validator.java.html"><b><i>View Source</i></b></a>
@@ -171,10 +176,28 @@ public class Validator {
 	}
 
 	public static boolean isEmailAddress(String ea) {
+		String emailRegex = Config.getStringProperty(WebKeys.DOTCMS_USE_REGEX_TO_VALIDATE_EMAILS, null);
+
 		if (isNull(ea)) {
 			return false;
 		}
 
+
+		if(emailRegex !=null && !emailRegex.isEmpty()){
+			return regexEmailValidation(ea, emailRegex);
+		}else{
+			return defaultEmailValidation(ea);
+		}
+
+	}
+
+	private static boolean regexEmailValidation(String ea, String emailRegex) {
+		Pattern pattern = Pattern.compile(emailRegex);
+		Matcher matcher = pattern.matcher(ea);
+		return matcher.matches();
+	}
+
+	private static boolean defaultEmailValidation (String ea){
 		int eaLength = ea.length();
 
 		if (eaLength < 6) {
@@ -186,9 +209,9 @@ public class Validator {
 
 		ea = ea.toLowerCase();
 
-        int at = ea.indexOf('@');
+		int at = ea.indexOf('@');
 
-        if ((at > 64) || (at == -1) || (at == 0) ||
+		if ((at > 64) || (at == -1) || (at == 0) ||
 			((at <= eaLength) && (at > eaLength - 5))) {
 
 			// 123456789012345678901234@joe.com
@@ -244,7 +267,7 @@ public class Validator {
 			return false;
 		}
 
-        char[] host = ea.substring(at + 1, ea.length()).toCharArray();
+		char[] host = ea.substring(at + 1, ea.length()).toCharArray();
 
 		for (int i = 0; i < host.length; i++) {
 			if ((!isChar(host[i])) &&
@@ -277,7 +300,7 @@ public class Validator {
 			return false;
 		}
 
-        return true;
+		return true;
 	}
 
 	/**

@@ -1,6 +1,7 @@
 
 <%@page import="com.dotmarketing.business.Layout"%>
 <%@page import="com.liferay.portal.util.WebKeys"%>
+<%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 
@@ -386,7 +387,11 @@
 
 		var userEmail;
 		if(emailChanged){
-			var pattern=/^([a-zA-Z0-9_.-])+@([a-zA-Z0-9_.-])+\.([a-zA-Z])+([a-zA-Z])+/;
+		    <%if (Config.getStringProperty(com.dotmarketing.util.WebKeys.DOTCMS_USE_REGEX_TO_VALIDATE_EMAILS, null)!=null){%>
+                var pattern=new RegExp("<%=Config.getStringProperty(com.dotmarketing.util.WebKeys.DOTCMS_USE_REGEX_TO_VALIDATE_EMAILS, null)%>", 'gi');
+            <%}else{%>
+                var pattern=/^[a-zA-Z0-9_!#$%&’*+/=?`{|}~^-]+(?:\\.[a-zA-Z0-9_!#$%&’*+/=?`{|}~^-]+)*@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*$/;
+            <%}%>
 			userEmail = dijit.byId('emailAddress').attr('value');
 			if(!pattern.test(userEmail)){
 				alert(invalidEmail);
