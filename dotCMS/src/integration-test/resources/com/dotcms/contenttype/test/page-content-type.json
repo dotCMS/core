@@ -3,7 +3,7 @@
 	"variable": "SimpleHtmlPage3",
 	"host": "SYSTEM_HOST",
 	"folder": "SYSTEM_FOLDER",
-	"implClass": "com.dotcms.contenttype.model.type.PageContentType",
+	"clazz": "com.dotcms.contenttype.model.type.PageContentType",
 	"fields": [{
 		"dataType": "TEXT",
 		"searchable": true,
@@ -14,7 +14,7 @@
 		"variable": "title",
 		"values": "$velutil.mergeTemplate('/static/htmlpage_assets/title_custom_field.vtl')",
 		"fixed": true,
-		"implClass": "com.dotcms.contenttype.model.field.CustomField"
+		"clazz": "com.dotcms.contenttype.model.field.CustomField"
 
 	}, {
 		"indexed": true,
@@ -24,7 +24,7 @@
 		"required": true,
 		"variable": "hostfolder",
 		"fixed": true,
-		"implClass": "com.dotcms.contenttype.model.field.HostFolderField",
+		"clazz": "com.dotcms.contenttype.model.field.HostFolderField",
 		"fieldVariables": []
 	}, {
 		"dataType": "TEXT",
@@ -35,7 +35,7 @@
 		"name": "Url",
 		"required": true,
 		"variable": "url",
-		"implClass": "com.dotcms.contenttype.model.field.TextField",
+		"clazz": "com.dotcms.contenttype.model.field.TextField",
 		"fieldVariables": []
 	}, {
 		"dataType": "TEXT",
@@ -48,7 +48,7 @@
 		"values": "$velutil.mergeTemplate('/static/htmlpage_assets/cachettl_custom_field.vtl')",
 		"regexCheck": "^[0-9]+$",
 		"fixed": true,
-		"implClass": "com.dotcms.contenttype.model.field.CustomField",
+		"clazz": "com.dotcms.contenttype.model.field.CustomField",
 		"fieldVariables": []
 	}, {
 		"dataType": "TEXT",
@@ -59,7 +59,7 @@
 		"variable": "template",
 		"values": "$velutil.mergeTemplate('/static/htmlpage_assets/template_custom_field.vtl')",
 		"fixed": true,
-		"implClass": "com.dotcms.contenttype.model.field.CustomField",
+		"clazz": "com.dotcms.contenttype.model.field.CustomField",
 		"fieldVariables": []
 	}, {
 		"dataType": "TEXT",
@@ -70,20 +70,20 @@
 		"values": "|true",
 		"defaultValue": "false",
 		"fixed": true,
-		"implClass": "com.dotcms.contenttype.model.field.CheckboxField",
+		"clazz": "com.dotcms.contenttype.model.field.CheckboxField",
 		"fieldVariables": []
 	}, {
 		"dataType": "LONG_TEXT",
 		"name": "Content",
 		"variable": "content",
-		"implClass": "com.dotcms.contenttype.model.field.WysiwygField",
+		"clazz": "com.dotcms.contenttype.model.field.WysiwygField",
 		"fieldVariables": []
 	}, {
 		"dataType": "SYSTEM",
 		"name": "Advanced Properties",
 		"variable": "advancedtab",
 		"dbColumn": "section_divider1",
-		"implClass": "com.dotcms.contenttype.model.field.TabDividerField",
+		"clazz": "com.dotcms.contenttype.model.field.TabDividerField",
 		"fieldVariables": []
 	}, {
 		"dataType": "INTEGER",
@@ -95,7 +95,7 @@
 		"variable": "sortOrder",
 		"defaultValue": "0",
 		"fixed": true,
-		"implClass": "com.dotcms.contenttype.model.field.TextField",
+		"clazz": "com.dotcms.contenttype.model.field.TextField",
 		"fieldVariables": []
 	}, {
 		"dataType": "TEXT",
@@ -104,7 +104,7 @@
 		"name": "Friendly Name",
 		"variable": "friendlyname",
 		"fixed": true,
-		"implClass": "com.dotcms.contenttype.model.field.TextField",
+		"clazz": "com.dotcms.contenttype.model.field.TextField",
 		"fieldVariables": []
 	}, {
 		"dataType": "TEXT",
@@ -117,7 +117,7 @@
 		"values": "$velutil.mergeTemplate('/static/htmlpage_assets/redirect_custom_field.vtl')",
 		"fixed": true,
 
-		"implClass": "com.dotcms.contenttype.model.field.CustomField",
+		"clazz": "com.dotcms.contenttype.model.field.CustomField",
 		"fieldVariables": []
 	}, {
 		"dataType": "TEXT",
@@ -129,7 +129,7 @@
 		"values": "|true",
 		"defaultValue": "false",
 		"fixed": true,
-		"implClass": "com.dotcms.contenttype.model.field.CheckboxField",
+		"clazz": "com.dotcms.contenttype.model.field.CheckboxField",
 		"fieldVariables": []
 	}, {
 		"dataType": "LONG_TEXT",
@@ -138,7 +138,7 @@
 		"name": "SEO Description",
 		"variable": "seodescription",
 		"fixed": true,
-		"implClass": "com.dotcms.contenttype.model.field.TextAreaField",
+		"clazz": "com.dotcms.contenttype.model.field.TextAreaField",
 		"fieldVariables": []
 	}, {
 		"dataType": "LONG_TEXT",
@@ -147,7 +147,7 @@
 		"name": "SEO Keywords",
 		"variable": "seokeywords",
 		"fixed": true,
-		"implClass": "com.dotcms.contenttype.model.field.TextAreaField",
+		"clazz": "com.dotcms.contenttype.model.field.TextAreaField",
 		"fieldVariables": []
 	}, {
 		"dataType": "LONG_TEXT",
@@ -161,7 +161,7 @@
 		"sortOrder": 15,
 		"fixed": true,
 
-		"implClass": "com.dotcms.contenttype.model.field.TextAreaField",
+		"clazz": "com.dotcms.contenttype.model.field.TextAreaField",
 		"fieldVariables": []
 	}]
 }]

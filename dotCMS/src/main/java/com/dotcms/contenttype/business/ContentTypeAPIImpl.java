@@ -24,6 +24,7 @@ import com.dotcms.exception.BaseRuntimeInternationalizationException;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.util.ContentTypeUtil;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -36,6 +37,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
@@ -43,6 +45,7 @@ import com.dotmarketing.quartz.job.IdentifierDateJob;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
@@ -192,10 +195,6 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
 
 
-  public void validateFields(ContentType type) {
-
-    fac.validateFields( type);
-  }
 
 
 
@@ -227,6 +226,19 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     if (!fields.isEmpty())
     	type.constructWithFields(fields);
 
+    // Sets the host:
+    try {
+      HostAPI hapi = APILocator.getHostAPI();
+      Host host = UUIDUtil.isUUID(type.host()) || "SYSTEM_HOST".equalsIgnoreCase(type.host())
+          ? hapi.find(type.host(), APILocator.systemUser(), true)
+          : hapi.resolveHostName(type.host(), APILocator.systemUser(), true);
+      type = ContentTypeBuilder.builder(type).host(host.getIdentifier()).build();
+    } catch (DotDataException | DotSecurityException e) {
+      throw new DotStateException("unable to resolve host:" + type.host(), e);
+    }
+    
+    
+    
     ContentType oldType = type;
     try {
       if (type.id() != null)

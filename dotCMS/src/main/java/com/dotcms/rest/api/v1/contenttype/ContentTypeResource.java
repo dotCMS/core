@@ -32,6 +32,7 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
@@ -74,8 +75,8 @@ public class ContentTypeResource implements Serializable {
 
 		// Validate input
 		for (ContentType type : typesToSave) {
-			if (UtilMethods.isSet(type.id())) {
-				return ExceptionMapperUtil.createResponse(null, "Field 'id' should not be set");
+			if (UtilMethods.isSet(type.id()) && !UUIDUtil.isUUID(type.id())) {
+				return ExceptionMapperUtil.createResponse(null, "ContentType 'id' if set, should be a uuid");
 			}
 		}
 
@@ -106,35 +107,19 @@ public class ContentTypeResource implements Serializable {
 
 		Response response = null;
 
-		try {
-			ContentType contentType = new JsonContentTypeTransformer(json).from();
-			if (!UtilMethods.isSet(contentType.id())) {
+		ContentType contentType = new JsonContentTypeTransformer(json).from();
+		  if (!UtilMethods.isSet(contentType.id())) {
 
-				response = ExceptionMapperUtil.createResponse(null, "Field 'id' should be set");
+			response = ExceptionMapperUtil.createResponse(null, "ContentType 'id' should be set");
 
 			} else {
 
-				ContentType currentContentType = capi.find(id);
+				contentType = capi.save(contentType);
 
-				if (!currentContentType.id().equals(contentType.id())) {
-
-					response = ExceptionMapperUtil.createResponse(null, "Field id '"+ id +"' does not match a content-type with id '"+ contentType.id() +"'");
-
-				} else {
-
-					contentType = capi.save(contentType);
-
-					response = Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(contentType).mapObject())).build();
-				}
+				response = Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(contentType).mapObject())).build();
 			}
-		} catch (NotFoundInDbException e) {
-
-			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
-
-		} catch (Exception e) {
-
-			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-		}
+			
+		
 
 		return response;
 	}

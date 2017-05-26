@@ -68,7 +68,7 @@ public class ContentTypeResourceTest extends ContentTypeBaseTest {
 		Response response = resource.createType(getHttpRequest(), json);
 
 		int x = response.getStatus();
-		assertThat("result:200 with json " + jsonFile, x == 200);
+		assertThat("result:200 with json " + jsonFile + "got :" + x, x == 200);
 	}
 
 	/**
