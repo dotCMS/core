@@ -258,25 +258,25 @@ public interface ContentTypeAPI {
    * then it's going to update the fields with the values set on the fields
    * parameter
    * 
-   * @param type Content Type that is going to be modified
+   * @param contentType Content Type that is going to be modified
    * @param fields Content Type list of fields
    * @return Content Type Object saved.
    * @throws DotDataException Error occurred when performing the action.
    * @throws DotSecurityException The user does not have permissions to perform this action.
    */
-  ContentType save(ContentType type, List<Field> fields) throws DotDataException, DotSecurityException;
+  ContentType save(ContentType contentType, List<Field> fields) throws DotDataException, DotSecurityException;
   
   /**
    * Save or update a Content Type. If the Content Type already exist
    * then it's going to update the fields and fields variables with the values set 
    * on the fields and fieldVariables parameters 
    * 
-   * @param type Content Type that is going to be modified
+   * @param contentType Content Type that is going to be modified
    * @param fields Content Type list of fields
    * @param fieldVariables ContentType list of field variables
    * @return Content Type Object saved.
    * @throws DotDataException Error occurred when performing the action.
    * @throws DotSecurityException The user does not have permissions to perform this action.
    */
-  ContentType save(ContentType type, List<Field> fields, List<FieldVariable> fieldVariables) throws DotDataException, DotSecurityException;
+  ContentType save(ContentType contentType, List<Field> fields, List<FieldVariable> fieldVariables) throws DotDataException, DotSecurityException;
 }
