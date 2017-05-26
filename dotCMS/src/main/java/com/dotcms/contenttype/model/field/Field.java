@@ -15,6 +15,7 @@ import com.dotcms.contenttype.model.component.FieldFormRenderer;
 import com.dotcms.contenttype.model.component.FieldValueRenderer;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
@@ -62,6 +63,8 @@ public abstract class Field implements FieldIf, Serializable {
 
   @Value.Check
   public void check() {
+	Preconditions.checkArgument(StringUtils.isNotEmpty(name()), "Name cannot be empty for " + this.getClass());
+
     /*if (iDate().after(legacyFieldDate)) {
       Preconditions.checkArgument(acceptedDataTypes().contains(dataType()),
           this.getClass().getSimpleName() + " must have DataType:" + acceptedDataTypes());
