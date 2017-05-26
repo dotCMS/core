@@ -12,6 +12,7 @@ import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -51,24 +52,26 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   final PermissionAPI perms;
   final User user;
   final Boolean respectFrontendRoles;
+  final FieldAPI fAPI;
 
 
 
   public ContentTypeAPIImpl(User user, boolean respectFrontendRoles, ContentTypeFactory fac, FieldFactory ffac,
-                            PermissionAPI perms) {
+                            PermissionAPI perms, FieldAPI fAPI) {
     super();
     this.fac = fac;
     this.ffac = ffac;
     this.perms = perms;
     this.user = user;
     this.respectFrontendRoles = respectFrontendRoles;
+    this.fAPI = fAPI;
   }
 
 
 
   public ContentTypeAPIImpl(User user, boolean respectFrontendRoles) {
     this(user, respectFrontendRoles, FactoryLocator.getContentTypeFactory(), FactoryLocator.getFieldFactory(),
-        APILocator.getPermissionAPI());
+        APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI());
   }
 
 
@@ -439,7 +442,58 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   public List<ContentType> findUrlMapped() throws DotDataException {
     return fac.findUrlMapped();
   }
+  
+  @Override
+  public ContentType save(ContentType contentType, List<Field> fields) throws DotDataException, DotSecurityException {
+	  return save(contentType, fields, new ArrayList<FieldVariable>());
+  }
 
+  @Override
+  public ContentType save(ContentType contentType, List<Field> fields, List<FieldVariable> fieldVariables) throws DotDataException, DotSecurityException {
+	  ContentType localContentType = save(contentType);
+	  
+	  //Fields on Receiver
+      List<Field> localFields = localContentType.fields();
+      //Create a copy in order to avoid a possible concurrent modification error
+      List<String> localFieldsVarNames = new ArrayList<String>();
+
+      for (Field localField : localFields) {
+      	localFieldsVarNames.add(localField.variable());
+      }
+
+      //for each field in the pushed structure lets create it if doesn't exists and update its properties if it does
+      for( Field field : fields ) {
+    	  try {
+	    	  Field localField = fAPI.byContentTypeIdAndVar(field.contentTypeId(), field.variable());
+	    	  if ( localField == null || !UtilMethods.isSet( localField.inode() ) ) {
+	    		  fAPI.save(field,APILocator.systemUser());
+	    	  } else {
+	          	  fAPI.delete(localField);
+	          	  fAPI.save(field,APILocator.systemUser());
+	    	  }
+    	  }catch(NotFoundInDbException e){
+    		  //add field, if doesn't exist
+    		  fAPI.save(field,APILocator.systemUser());
+    	  }
+    	  
+    	  localFieldsVarNames.remove( field.variable() );
+    	  for(FieldVariable fieldVariable : fieldVariables) {
+    		  if(fieldVariable.fieldId().equals(field.inode())) {
+    			  fAPI.save(fieldVariable, APILocator.systemUser());
+    		  }
+    	  }
+      }
+
+      if ( localFieldsVarNames.size() > 0 ) {
+          // we have local fields that didn't came
+          // in the pushed structure. lets remove them
+          for ( String localFieldVarName : localFieldsVarNames ) {
+          	fAPI.delete(fAPI.byContentTypeIdAndVar(localContentType.inode(), localFieldVarName));
+          }
+      }
+
+	  return localContentType;
+  }
 
 
 }

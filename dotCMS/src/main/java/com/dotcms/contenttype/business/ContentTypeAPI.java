@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
@@ -251,4 +252,27 @@ public interface ContentTypeAPI {
    * @throws DotDataException
    */
   Map<String, Long> getEntriesByContentTypes() throws DotDataException;
+  
+  /**
+   * Saves or update a Content Type.
+   * 
+   * @param type Content Type that is going to be modified
+   * @param fields Content Type list of fields
+   * @return Content Type Object saved.
+   * @throws DotDataException Error occurred when performing the action.
+   * @throws DotSecurityException The user does not have permissions to perform this action.
+   */
+  ContentType save(ContentType type, List<Field> fields) throws DotDataException, DotSecurityException;
+  
+  /**
+   * Saves or update a Content Type.
+   * 
+   * @param type Content Type that is going to be modified
+   * @param fields Content Type list of fields
+   * @param fieldVariables ContentType list of field variables
+   * @return Content Type Object saved.
+   * @throws DotDataException Error occurred when performing the action.
+   * @throws DotSecurityException The user does not have permissions to perform this action.
+   */
+  ContentType save(ContentType type, List<Field> fields, List<FieldVariable> fieldVariables) throws DotDataException, DotSecurityException;
 }
