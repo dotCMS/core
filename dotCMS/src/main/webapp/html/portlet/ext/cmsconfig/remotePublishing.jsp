@@ -919,10 +919,10 @@ function deleteEnvPushHistory(envId) {
                                 <button dojoType="dijit.form.Button" onClick="checkIntegrity('<%=endpoint.getId()%>');" id="checkIntegrityButton<%=endpoint.getId()%>" style="display: none;">
                                     <%= LanguageUtil.get( pageContext, "CheckIntegrity" ) %>
                                 </button>
+                                <button dojoType="dijit.form.Button" onClick="getIntegrityResult('<%=endpoint.getId()%>');" id="getIntegrityResultsButton<%=endpoint.getId()%>" style="display: none;">
+                                    <%= LanguageUtil.get( pageContext, "Preview-Analysis-Results" ) %>
+                                </button>
                             <%} %>
-                            <button dojoType="dijit.form.Button" onClick="getIntegrityResult('<%=endpoint.getId()%>');" id="getIntegrityResultsButton<%=endpoint.getId()%>" style="display: none;">
-                                <%= LanguageUtil.get( pageContext, "Preview-Analysis-Results" ) %>
-                            </button>
                             <%if((environment.getPushToAll() || i == 0) && !"awss3".equalsIgnoreCase(endpoint.getProtocol())){%>
                                 <div id="loadingContent<%=endpoint.getId()%>" class="loadingIntegrityCheck" align="center" style="display: none;">
                                     <font class="bg" size="2"> <b><%= LanguageUtil.get( pageContext, "Loading" ) %></b> <br />
