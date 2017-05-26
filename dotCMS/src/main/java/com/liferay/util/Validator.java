@@ -183,7 +183,7 @@ public class Validator {
 		}
 
 
-		if(emailRegex !=null && !emailRegex.isEmpty()){
+		if(emailRegex !=null && !emailRegex.isEmpty() && !emailRegex.equals("null")){
 			return regexEmailValidation(ea, emailRegex);
 		}else{
 			return defaultEmailValidation(ea);
