@@ -191,7 +191,7 @@ public class ContentTypeHelper implements Serializable {
         }
     }
 
-    public long getContentTypesCount() throws DotDataException {
-        return this.structureAPI.countStructures("");
+    public long getContentTypesCount(String condition) throws DotDataException {
+        return this.structureAPI.countStructures(condition);
     }
 } // E:O:F:ContentTypeHelper.

@@ -274,7 +274,7 @@ public class ContentTypeResource implements Serializable {
 	 *     <li>order_direction: asc for upward order and desc for downward order</li>
 	 * </ul>
 	 *
-	 * Url example: v1/contenttype/query/New%20L/limit/4/offset/5/orderby/name-asc
+	 * Url example: v1/contenttype?query=New%20L&limit=4&offset=5&orderby=name-asc
 	 *
 	 * @param request
 	 * @return
@@ -304,7 +304,7 @@ public class ContentTypeResource implements Serializable {
 
 		try {
 			List<Map<String, Object>> types = contentTypeHelper.getContentTypes(user, queryCondition, offset, limit, orderby, direction);
-			long contentTypesCount = contentTypeHelper.getContentTypesCount();
+			long contentTypesCount = contentTypeHelper.getContentTypesCount(queryCondition);
 			response = Response.ok(new ResponseEntityView( map("items", types, "totalRecords", contentTypesCount)))
 					.build();
 		} catch (Exception e) {
