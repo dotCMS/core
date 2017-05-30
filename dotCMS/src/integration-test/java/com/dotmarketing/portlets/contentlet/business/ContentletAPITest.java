@@ -1169,6 +1169,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      * @throws DotSecurityException
      */
 
+    @Ignore
     @Test
     public void addRemoveContentFromIndex () throws DotDataException, DotSecurityException {
    // respect CMS Anonymous permissions
@@ -1180,26 +1181,26 @@ public class ContentletAPITest extends ContentletBaseTest {
       Language lang = APILocator.getLanguageAPI().getDefaultLanguage();
       ContentType type = APILocator.getContentTypeAPI(user).find("webPageContent");
       List<Contentlet> origCons = new ArrayList<>();
-      
+
       Map map = new HashMap<>();
       map.put("stInode", type.id());
       map.put("host", host.getIdentifier());
-      map.put("folder", folder.getInode()); 
+      map.put("folder", folder.getInode());
       map.put("languageId", lang.getId());
       map.put("sortOrder", new Long(0));
       map.put("body", "body");
 
-      
+
       //add 5 contentlets
       for(int i = 0;i<num;i++){
         map.put("title", i+ "my test title");
-        
+
         // create a new piece of content backed by the map created above
         Contentlet content = new Contentlet(map);
-    
+
         // check in the content
         content= contentletAPI.checkin(content,user, respectFrontendRoles);
-        
+
         assertTrue( content.getIdentifier()!=null );
         assertTrue( content.isWorking());
         assertFalse( content.isLive());
@@ -1208,15 +1209,15 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertTrue( content.isLive());
         origCons.add(content);
       }
-      
-      
+
+
       //commit it index
       HibernateUtil.closeSession();
       for(Contentlet c : origCons){
         assertTrue(contentletAPI.indexCount("+live:true +identifier:" +c.getIdentifier() + " +inode:" + c.getInode() , user, respectFrontendRoles)>0);
       }
-      
-      
+
+
       HibernateUtil.startTransaction();
       try{
         List<Contentlet> checkedOut=contentletAPI.checkout(origCons, user, respectFrontendRoles);
@@ -1230,7 +1231,7 @@ public class ContentletAPITest extends ContentletBaseTest {
       }
       catch(DotDataException e){
         HibernateUtil.rollbackTransaction();
-        
+
       }
       finally{
         HibernateUtil.closeSession();
@@ -1238,9 +1239,9 @@ public class ContentletAPITest extends ContentletBaseTest {
       for(Contentlet c : origCons){
         assertTrue(contentletAPI.indexCount("+live:true +identifier:" +c.getIdentifier() + " +inode:" + c.getInode() , user, respectFrontendRoles)>0);
       }
-      
+
     }
-    
+
     
     
     
