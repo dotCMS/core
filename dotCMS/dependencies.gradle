@@ -1,7 +1,7 @@
 //noinspection GroovyAssignabilityCheck
 dependencies {
 
-    compile group: 'com.dotcms.enterprise', name: 'ee', version: '4.1.0-SNAPSHOT', changing: true
+    compile group: 'com.dotcms.enterprise', name: 'ee', version: '4.2.0-SNAPSHOT', changing: true
     compile group: 'com.dotcms.enterprise', name: 'eelic', version: '4.1.0-SNAPSHOT', changing: true
 
     compile group: 'com.dotcms', name: 'ant-tooling', version: '1.2'
