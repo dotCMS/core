@@ -20,37 +20,43 @@ import { AppComponent } from './app-component';
 import { APP_RESOLVER_PROVIDERS } from './app.resolver';
 import { AppState, InternalStateType } from './app.service';
 
-import {FormsModule, ReactiveFormsModule} from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
-import {AutoCompleteModule} from 'primeng/primeng';
-import {ButtonModule} from 'primeng/primeng';
-import {CheckboxModule} from 'primeng/primeng';
-import {DialogModule} from 'primeng/primeng';
-import {DropdownModule} from 'primeng/primeng';
-import {InputTextModule} from 'primeng/primeng';
-import {InputTextareaModule} from 'primeng/primeng';
-import {PasswordModule} from 'primeng/primeng';
-import {RadioButtonModule} from 'primeng/primeng';
-import {SplitButtonModule} from 'primeng/primeng';
-import {ToolbarModule} from 'primeng/primeng';
-import {TabViewModule} from 'primeng/primeng';
-import {DataTableModule, SharedModule} from 'primeng/primeng';
+import {
+  AutoCompleteModule,
+  ButtonModule,
+  CalendarModule,
+  CheckboxModule,
+  DataTableModule, SharedModule,
+  DialogModule,
+  DropdownModule,
+  InputTextModule,
+  InputTextareaModule,
+  OverlayPanelModule,
+  PasswordModule,
+  RadioButtonModule,
+  SplitButtonModule,
+  TabViewModule,
+  ToolbarModule
+} from 'primeng/primeng';
 
 const NGFACES_MODULES = [
   AutoCompleteModule,
   ButtonModule,
+  CalendarModule,
   CheckboxModule,
   DataTableModule,
   DialogModule,
   DropdownModule,
   InputTextModule,
   InputTextareaModule,
+  OverlayPanelModule,
   PasswordModule,
   RadioButtonModule,
   SharedModule,
   SplitButtonModule,
-  ToolbarModule,
-  TabViewModule
+  TabViewModule,
+  ToolbarModule
 ];
 
 /*

@@ -8,6 +8,16 @@
 }
 
 .ui-dropdown {
+    @extend #inputtext-normal-border;
+    border-radius: 0;
+
+    &.ui-state-focus {
+        @extend #inputtext-active-border;
+    }
+
+    .ui-inputtext {
+        box-shadow: none;
+    }
 
     &:not(.ui-state-disabled) {
         &:hover,
@@ -15,7 +25,9 @@
             @extend #field-hover-state;
         }
 
-        &:active {
+        &.ui-state-focus {
+
+
             .fa {
                 color: $dropdown-active-color;
             }
@@ -27,6 +39,8 @@
     }
 
     &.ui-state-disabled {
+        background: none;
+
         .ui-dropdown-trigger {
             color: $dropdown-disabled-color;
         }
@@ -70,6 +84,7 @@ p-dropdown {
             }
         }
     }
+    
 }
 
 .ui-dropdown-panel {

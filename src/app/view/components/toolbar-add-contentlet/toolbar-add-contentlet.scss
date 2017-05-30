@@ -1,25 +1,22 @@
 @import "../../../../styles/mixins";
 @import "../../../../styles/variables";
 
-:host {
-
-  .toolbar-add-contentlet__head {
+.toolbar-add-contentlet__head {
     align-items: center;
     border-bottom: $gray-lighter 1px solid;
     display: flex;
     justify-content: space-around;
     padding: $basic-padding $basic-padding $basic-padding * 2;
-  }
+}
 
-  .toolbar-add-contentlet__head-button {
+.toolbar-add-contentlet__head-button {
     align-items: center;
     display: flex;
     flex-direction: column;
     margin: 0 $basic-padding;
-  }
+}
 
-  .toolbar-add-contentlet__head-selected{
+.toolbar-add-contentlet__head-selected{
     background-color: $gray-lightest;
-  }
 }
 

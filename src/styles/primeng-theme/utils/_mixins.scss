@@ -51,3 +51,36 @@
         } 
     }
 }
+
+
+// GRID MIXINS
+
+@mixin small {
+    @media (max-width: $screen-sm-max) {
+      @content;
+    }
+}
+
+@mixin medium {
+  @media screen and (min-width: $screen-md-min) {
+    @content;
+  }
+}
+
+@mixin large {
+  @media screen and (min-width: $screen-lg-min) {
+    @content;
+  }
+}
+
+@mixin x-large {
+  @media screen and (min-width: $screen-xl-min) {
+    @content;
+  }
+}
+
+@mixin responsive-hide($clas) {
+  #{$clas} {
+    display: none !important;
+  }
+}

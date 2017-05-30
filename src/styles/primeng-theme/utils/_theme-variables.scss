@@ -1,16 +1,16 @@
 @import "../../variables";
 
-// Common
+// COMMON
 $field-animation-speed: $basic-speed;
 $field-bgcolor: transparent;
 $field-border-color: $gray-light;
 $field-border-radius: $border-radius;
 $field-border-size: 1px;
 $field-padding: $basic-padding;
-$field-placeholder-color: rgba($gray-dark, .4);
+$field-placeholder-color: $label-color;
 
 
-// Fields
+// FIELDS
 $field-normal-bgcolor: $field-bgcolor;
 $field-normal-color: $body-font-color;
 $field-normal-border-size: $field-border-size;
@@ -26,8 +26,8 @@ $field-active-color: $body-font-color;
 $field-active-border-size: 2px;
 $field-active-border-color: $brand-primary;
 
-$field-disabled-bgcolor: $field-bgcolor;
-$field-disabled-color: $gray-light;
+$field-disabled-bgcolor: rgba($gray-dark, 0.1);
+$field-disabled-color: rgba($gray-dark, 0.3);
 $field-disabled-border-size: $field-border-size;
 $field-disabled-border-color: $gray-lighter;
 
@@ -66,7 +66,7 @@ $buttons-map: (
             shadow: $md-shadow-1
         ),
         disabled: (
-            background: $gray-lighter,
+            background: $field-disabled-bgcolor,
             color: $field-disabled-color,
             border: $button-border,
             shadow: none
@@ -197,8 +197,8 @@ $check-checked-color: $white;
 
 $check-disabled-border: solid $check-border-width $gray-light;
 $check-disabled-bgcolor: $gray-lighter;
-$check-disabled-color: $gray-light;
-$check-disabled-label-color: $gray-light;
+$check-disabled-color: $field-disabled-color;
+$check-disabled-label-color: $field-disabled-color;
 
 $check-normal-bgcolor: $white;
 $check-normal-border: solid $field-border-size $black;
@@ -213,9 +213,9 @@ $radio-checked-border: solid $check-border-width $brand-primary;
 $radio-checked-color: $brand-primary;
 
 $radio-disabled-border: solid $check-border-width $gray-light;
-$radio-disabled-bgcolor: $gray-lighter;
-$radio-disabled-color: $gray-light;
-$radio-disabled-label-color: $gray-light;
+$radio-disabled-bgcolor: $field-disabled-bgcolor;
+$radio-disabled-color: $field-disabled-color;
+$radio-disabled-label-color: $field-disabled-color;
 
 $radio-normal-bgcolor: $white;
 $radio-normal-border: solid $field-border-size $black;

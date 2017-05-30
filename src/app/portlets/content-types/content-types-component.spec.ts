@@ -1,16 +1,15 @@
-import { DOTTestBed } from '../../api/util/test/dot-test-bed';
-import { ContentTypesPortletComponent } from './content-types-component';
-import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { ListingDataTableComponent } from '../../view/components/listing-data-table/listing-data-table-component';
+import { ComponentFixture } from '@angular/core/testing';
+import { ContentTypesPortletComponent } from './content-types-component';
+import { CrudService } from '../../api/services/crud-service';
+import { DOTTestBed } from '../../test/dot-test-bed';
 import { DataTableModule, SharedModule } from 'primeng/primeng';
+import { ListingDataTableComponent } from '../../view/components/listing-data-table/listing-data-table-component';
 import { MessageService } from '../../api/services/messages-service';
-import { MockMessageService } from '../../api/util/test/mock-message-service';
-import { ListingService } from '../../api/services/listing-service';
+import { MockMessageService } from '../../test/message-service.mock';
 
 describe('ContentTypesPortletComponent', () => {
-
-    let comp:    ContentTypesPortletComponent;
+    let comp: ContentTypesPortletComponent;
     let fixture: ComponentFixture<ContentTypesPortletComponent>;
 
     beforeEach(() => {
@@ -29,7 +28,7 @@ describe('ContentTypesPortletComponent', () => {
             imports: [ DataTableModule, SharedModule ],
             providers: [
                  {provide: MessageService, useValue: messageServiceMock},
-                 ListingService
+                 CrudService
             ],
         });
 

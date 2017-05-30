@@ -1,8 +1,8 @@
 <div class="container-fluid">
     <h1 class="page-title">Pattern Library</h1>
-    <section class="row">
+    <section class="ui-g">
 
-        <div class="col-sm-5 section-headings">
+        <div class="ui-g-7 section-headings">
             <h3 class="section__title">Headings</h3>
             <article>
                 <h1>Heading 1</h1>
@@ -56,12 +56,11 @@
             </article>
         </div>
 
-        <div class="col-sm-6 col-md-offset-1 section-fields">
+        <div class="ui-g-5 section-fields">
             <div class="section-buttons">
                 <h3 class="section__title">Buttons & SplitButtons</h3>
                 <article>
                     <h4 class="section__subtitle">Normal buttons</h4>
-                    <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
                     <p>
                         <button pButton label="Normal"></button>
                         <button pButton disabled label="Disabled"></button>
@@ -73,7 +72,6 @@
                 </article>
                 <article>
                     <h4 class="section__subtitle">Icon and label buttons</h4>
-                    <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
                     <p>
                         <button pButton label="Left" icon="fa-check" iconPos="left"></button>
                         <button pButton label="Right" icon="fa-check" iconPos="right"></button>
@@ -84,7 +82,6 @@
                 </article>
                 <article>
                     <h4 class="section__subtitle">Flat buttons</h4>
-                    <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
                     <p>
                         <button pButton flat label="Flat"></button>
                         <button pButton flat disabled label="Disabled"></button>
@@ -100,7 +97,6 @@
                 </article>
                 <article>
                     <h4 class="section__subtitle">Primary Button</h4>
-                    <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
                     <p>
                         <button pButton primary label="Primary"></button>
                         <button pButton primary disabled label="Disabled"></button>
@@ -112,7 +108,6 @@
                 </article>
                 <article>
                     <h4 class="section__subtitle">Negative Button</h4>
-                    <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
                     <p>
                         <button pButton secondary label="Secondary"></button>
                         <button pButton secondary disabled label="Disabled"></button>
@@ -124,21 +119,30 @@
                 </article>
                 <article>
                     <h4 class="section__subtitle">Normal icon buttons</h4>
-                    <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
-                    <button pButton iconButton icon="fa-bell"></button>
-                    <button pButton iconButton icon="fa-user"></button>
-                    <button pButton iconButton icon="fa-plus"></button>
+                    <button pButton iconButton icon="fa-plus"></button>                    
+                    <button pButton primary iconButton icon="fa-bell"></button>
+                    <button pButton secondary iconButton icon="fa-user"></button>
                 </article>
                 <article>
                     <h4 class="section__subtitle">Disabled icon buttons</h4>
-                    <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
                     <button pButton iconButton disabled="disabled" icon="fa-bell"></button>
                     <button pButton iconButton disabled="disabled" icon="fa-user"></button>
                     <button pButton iconButton disabled="disabled" icon="fa-plus"></button>
                 </article>
                 <article>
+                    <h4 class="section__subtitle">Flat icon buttons</h4>
+                    <button pButton iconButton flat icon="fa-bell"></button>
+                    <button pButton iconButton flat icon="fa-user"></button>
+                    <button pButton iconButton flat icon="fa-plus"></button>
+                </article>
+                <article>
+                    <h4 class="section__subtitle">Flat icon buttons disabled</h4>
+                    <button pButton iconButton flat disabled="disabled" icon="fa-bell"></button>
+                    <button pButton iconButton flat disabled="disabled" icon="fa-user"></button>
+                    <button pButton iconButton flat disabled="disabled" icon="fa-plus"></button>
+                </article>
+                <article>
                     <h4 class="section__subtitle">Action buttons</h4>
-                    <p class="section_desc">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda, dignissimos dolores incidunt laborum nulla odit?</p>
                     <button pButton actionButton icon="fa-plus"></button>
                     <button pButton actionButton disabled="disabled" icon="fa-plus"></button>
                 </article>
@@ -146,63 +150,64 @@
             <div class="section-fields">
                 <form #formExample="ngForm" novalidate>
                     <h3 class="section__title">Form</h3>
-                    <div class="form-group">
+                    <div class="form__group">
                         <span md-inputtext label="Placeholder">
                             <input pInputText type="text" id="inputTextFloatingLabel" name="inputTextFloatingLabel" #inputTextFloatingLabel="ngModel" [(ngModel)]="model.inputTextFloatingLabel" required />
                         </span>
-                        <field-validation-message message="InputText is required" [form]="formExample" [field]="inputTextFloatingLabel"></field-validation-message>
+                        <field-validation-message message="InputText is required" [submitted]="submitAttempt" [field]="inputTextFloatingLabel"></field-validation-message>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form__group">
+                        <label for="inputTextRegularField" class="form__label">Label</label>
                         <input pInputText type="text" id="inputTextRegularField" name="inputTextRegularField" placeholder="Placeholder" #inputTextRegularField="ngModel" [(ngModel)]="model.inputTextRegularField" required />
-                        <field-validation-message message="InputText is required" [form]="formExample" [field]="inputTextRegularField"></field-validation-message>
+                        <field-validation-message message="InputText is required" [submitted]="submitAttempt" [field]="inputTextRegularField"></field-validation-message>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form__group">
                         <input pInputText type="text" placeholder="Disabled" disabled />
                     </div>
 
-                    <div class="form-group">
-                        <span md-inputtext label="Placeholder">
-                            <textarea pInputTextarea name="textareaFloatingLabel" #textareaFloatingLabel="ngModel" [(ngModel)]="model.textareaFloatingLabel" required></textarea>
+                    <div class="form__group">
+                        <span md-inputtext label="Textarea">
+                            <textarea rows="5" pInputTextarea name="textareaFloatingLabel" #textareaFloatingLabel="ngModel" [(ngModel)]="model.textareaFloatingLabel" required></textarea>
                         </span>
-                        <field-validation-message message="TextArea is required" [form]="formExample" [field]="textareaFloatingLabel"></field-validation-message>
+                        <field-validation-message message="TextArea is required" [submitted]="submitAttempt" [field]="textareaFloatingLabel"></field-validation-message>
                     </div>
 
-                    <div class="form-group">
-                        <textarea pInputTextarea name="textareaRegularField" #textareaRegularField="ngModel" [(ngModel)]="model.textareaRegularField" required></textarea>
-                        <field-validation-message message="TextArea is required" [form]="formExample" [field]="textareaRegularField"></field-validation-message>
+                    <div class="form__group">
+                        <label for="textareaRegularField" class="form__label">Textarea with Label</label>
+                        <textarea rows="5" pInputTextarea id="textareaRegularField" name="textareaRegularField" #textareaRegularField="ngModel" [(ngModel)]="model.textareaRegularField" required></textarea>
+                        <field-validation-message message="TextArea is required" [submitted]="submitAttempt" [field]="textareaRegularField"></field-validation-message>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form__group">
                         <textarea pInputTextarea disabled></textarea>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form__group">
                         <div class="inline">
                             <p-dropdown [options]="cities" name="dropdownNormal" #dropdownNormal="ngModel" [(ngModel)]="model.dropdownNormal" required></p-dropdown>
                             <p-dropdown disabled="true" [options]="cities" ></p-dropdown>
                         </div>
-                        <field-validation-message message="Dropdown is required" [form]="formExample" [field]="dropdownNormal"></field-validation-message>
+                        <field-validation-message message="Dropdown is required" [submitted]="submitAttempt" [field]="dropdownNormal"></field-validation-message>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form__group">
                         <p-dropdown filter="filter" [options]="cities" name="dropdownWithFilter" #dropdownWithFilter="ngModel" [(ngModel)]="model.dropdownWithFilter" required></p-dropdown>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form__group">
                         <p-checkbox label="Checkbox" name="checkboxNormal" value="Checkbox Normal" #checkboxNormal="ngModel" [(ngModel)]="model.checkboxValues" required></p-checkbox>
                         <p-checkbox name="checkboxDisabled" label="Disabled" disabled="true"></p-checkbox>
-                        <p-checkbox name="checkboxDisabledChecked" label="Disabled/Checked" disabled="true"></p-checkbox>
+                        <p-checkbox name="checkboxDisabledChecked" label="Disabled/Checked" value="Disabled" disabled="true" [(ngModel)]="model.checkboxValues"></p-checkbox>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form__group">
                         <p-radioButton label="RadioButton" name="radiobuttonNormal" value="Radio Button Normal" #radioButtonNormal="ngModel" [(ngModel)]="model.radioBoxValues" required></p-radioButton>
                         <p-radioButton name="radioDisabled" value="val2" label="Disabled" disabled="true" [(ngModel)]="radioBoxValues"></p-radioButton>
-                        <p-radioButton name="radioDisabled" value="val" label="Disabled/Selected" disabled="true" [(ngModel)]="radioBoxDisabledValues"></p-radioButton>
+                        <p-radioButton name="radioDisabled" value="Disabled" label="Disabled/Selected" disabled="true" [(ngModel)]="model.radioBoxValues"></p-radioButton>
                     </div>
-                    <div class="form-group">
-                        <!--TODO: get rid of this let autoComplete when this is fixed: https://github.com/primefaces/primeng/issues/745-->
+                    <div class="form__group">
                         <p-autoComplete
                             let autoComplete
                             [dropdown]="true"
@@ -212,7 +217,7 @@
                         </p-autoComplete>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form__group">
                         <button pButton type="submit" label="Submit"></button>
                     </div>
                 </form>
@@ -239,10 +244,10 @@
                 <h3 class="section__title">Dropdown Buttons</h3>
                 <article>
                     <h4 class="section__subtitle">Right aligned</h4>
-                    <div class="row">
-                        <div class="col-sm-5">
+                    <div class="ui-g">
+                        <div class="ui-g-6">
                             <dot-dropdown-component title="Dropdowns example" alignRight="true">
-                                <div style="width:500px">
+                                <div style="width:500px; padding: 8px;">
                                     <p>Here you can add any HTML</p>
                                     <p>
                                         Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus
@@ -251,9 +256,9 @@
                                 </div>
                             </dot-dropdown-component>
                         </div>
-                        <div class="col-sm-5">
-                            <dot-dropdown-component icon="add_circle" alignRight="true">
-                                <div style="width:200px">
+                        <div class="ui-g-6">
+                            <dot-dropdown-component icon="fa-bell" alignRight="true">
+                                <div style="width:200px; padding: 8px;">
                                     <p>Here you can add any HTML</p>
                                     <p>
                                         Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam architecto, corporis, delectus
@@ -263,16 +268,15 @@
                             </dot-dropdown-component>
                         </div>
                     </div>
-
                 </article>
 
                 <article>
                     <h4 class="section__subtitle">Left aligned</h4>
-                    <div class="row">
-                        <div class="col-sm-5">
+                    <div class="ui-g">
+                        <div class="ui-g-6">
                             <dot-dropdown-component title="Dropdowns example">
                                 <div>
-                                    <div style="width:500px">
+                                    <div style="width:500px; padding: 8px">
                                         <p>Here you can add any HTML</p>
                                         <br/>
                                         <p>
@@ -283,9 +287,9 @@
                                 </div>
                             </dot-dropdown-component>
                         </div>
-                        <div class="col-sm-5">
-                            <dot-dropdown-component icon="add_circle">
-                                <div style="width:200px">
+                        <div class="ui-g-6">
+                            <dot-dropdown-component icon="fa-trash">
+                                <div style="width:200px; padding: 8px">
                                     <p>Here you can add any HTML</p>
                                     <br/>
                                     <p>

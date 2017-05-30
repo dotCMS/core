@@ -64,6 +64,11 @@ export class SiteService {
         return this.selectedSite;
     }
 
+    // TODO: change this when we update the site selector
+    get loadedSites(): Site[] {
+        return this.sites;
+    }
+
     /**
      * Return the sites available for an user paginated and filtered.
      *

@@ -1,7 +1,7 @@
 <dot-dropdown-component
     [gravatar]="auth.loginAsUser === null ? auth.user.emailAddress : auth.loginAsUser.emailAddress"
     inverse="true"
-    alignRight="true"
+    position="right"
     *ngIf="auth.user"
     id="dot-toolbar-user"
     (open)="iframeOverlayService.show()"

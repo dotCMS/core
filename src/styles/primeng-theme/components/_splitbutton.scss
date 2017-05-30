@@ -10,6 +10,10 @@ p-splitbutton {
             color: $button-inverted-color;
         }
     }
+
+    .ui-state-disabled {
+        background: none;
+    }
     
 }
 

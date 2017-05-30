@@ -1,47 +1,46 @@
 @import "../../../../styles/mixins";
 @import "../../../../styles/variables";
 
-:host {
-  display: flex;
-  flex-direction: column;
-  padding: $basic-padding * 2 0 0;
-
-  .toolbar-add-contentlet-body {
+toolbar-add-contentlet-body {
     display: flex;
-  }
+    flex-direction: column;
+    padding: $basic-padding * 2 0 0;
+}
 
-  .toolbar-add-contentlet-body__title {
+.toolbar-add-contentlet-body {
+    display: flex;
+}
+
+.toolbar-add-contentlet-body__title {
     font-weight: normal;
     margin: 0 0 $basic-padding;
-  }
+}
 
-  .toolbar-add-contentlet-body__list {
+.toolbar-add-contentlet-body__list {
     @include naked-list;
-  }
+}
 
-  .toolbar-add-contentlet-body__list-item {
+.toolbar-add-contentlet-body__list-item {
     margin: $basic-padding / 2 0;
 
     a {
-      cursor: pointer;
+        cursor: pointer;
 
-      &:hover {
-        text-decoration: underline;
-      }
+        &:hover {
+            text-decoration: underline;
+        }
     }
-  }
+}
 
-  .toolbar-add-contentlet-body__more-panel {
+.toolbar-add-contentlet-body__more-panel {
     background: $gray-lightest;
     margin-top: $basic-padding * 2;
     padding: $basic-padding;
     text-align: center;
     text-decoration: none;
-  }
-
-  .toolbar-add-contentlet-body__section {
-    padding: 0 $basic-padding * 2;
-    white-space: nowrap;
-  }
 }
 
+.toolbar-add-contentlet-body__section {
+    padding: 0 $basic-padding * 2;
+    white-space: nowrap;
+}

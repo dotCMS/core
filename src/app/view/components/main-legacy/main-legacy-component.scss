@@ -1,67 +1,71 @@
 @import "../../../../styles/mixins";
 @import "../../../../styles/variables";
-
 $sidebar-width: 190px;
 
 .layout {
-  background-color: $gray-lightest;
-  padding-top: $toolbar-height;
+    height: 100%;
+}
+
+.layout {
+    display: flex;
+    overflow: hidden;
+    flex-direction: column;
+}
+
+.layout__content {
+    flex: 1 1 auto;
+    display: flex;
+    overflow: hidden;
+}
+
+.layout__main,
+.layout__sidebar {
+    overflow: auto;
 }
 
 .layout__main {
-  margin-left: $sidebar-width;
-  transition: margin-left $basic-speed cubic-bezier(0.25, 0.8, 0.25, 1);
-
-  .collapsed & {
-    margin-left: 0;
-  }
+    flex: 1 1 auto;
 }
 
 .layout__sidebar {
-  background-color: $white;
-  border-right: solid 1px $gray-lighter;
-  height: 100%;
-  padding-top: $toolbar-height;
-  position: fixed;
-  overflow: auto;
-  transition: transform $basic-speed cubic-bezier(0.25, 0.8, 0.25, 1);
-  top: 0;
-  width: $sidebar-width;
+    background-color: $white;
+    border-right: solid 1px $gray-lighter;
+    flex: 0 0 auto;
+    transition: width $basic-speed cubic-bezier(0.25, 0.8, 0.25, 1);
+    width: $sidebar-width;
 
-  .collapsed & {
-    transform: translateX(-100%);
-  }
+    .collapsed & {
+        width: 0;
+    }
 }
 
 .layout__toolbar {
-  position: fixed;
-  top: 0;
-  width: 100%;
-  z-index: 1004; // Menu and dropdown options in primeng use 1003.
+    width: 100%;
+    z-index: 1004; // Menu and dropdown options in primeng use 1003.
 }
 
 .layout__toolbar-inner {
-  display: flex;
-  flex: 1;
-  justify-content: space-between;
+    display: flex;
+    flex: 1;
+    justify-content: space-between;
 }
 
 .toolbar__actions,
 .toolbar__host {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
 }
 
 .toolbar__actions {
-  toolbar-user {
-    margin: 0 $basic-padding;
-  }
+    toolbar-user {
+        margin: 0 $basic-padding;
+    }
 }
 
 .toolbar__host {
-  // TODO: should we add a param for not hover state in the dot-select?
-  .dot-select.is-active .dot-select__icon {
-    color: $white;
-  }
+    // TODO: should we add a param for not hover state in the dot-select?
+    .dot-select.is-active .dot-select__icon {
+        color: $white;
+    }
 }

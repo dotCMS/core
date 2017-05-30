@@ -22,4 +22,15 @@ export class StringUtils {
         return line;
     } // getLine.
 
+    /**
+     * Get an string and return it camelcased, ex: "Hello World" > "helloWorld"
+     * @param str
+     * @returns {string}
+     */
+    camelize(str): string {
+        return str.replace(/(?:^\w|[A-Z]|\b\w)/g, (letter, index) => {
+            return index === 0 ? letter.toLowerCase() : letter.toUpperCase();
+        }).replace(/\s+/g, '');
+    }
+
 } // E:O:F:StringUtils.

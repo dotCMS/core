@@ -20,6 +20,7 @@
 
 textarea.ui-inputtext {
     padding: $basic-padding 0;
+    height: auto;
 }
 
 .ui-inputtext {
@@ -43,8 +44,10 @@ textarea.ui-inputtext {
 
     &:disabled,
     .ui-state-disabled & {
+        @include placeholder($field-disabled-color);
         @extend #field-disabled-state;
         @extend #inputtext-disabled-border;
+        background: none;
     }
 
     &.ui-state-filled {

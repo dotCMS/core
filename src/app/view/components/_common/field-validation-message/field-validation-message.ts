@@ -4,7 +4,7 @@
 */
 
 import { Component, Input } from '@angular/core';
-import { NgForm, NgControl } from '@angular/forms';
+import { NgControl } from '@angular/forms';
 
 @Component({
   selector: 'field-validation-message',
@@ -13,7 +13,7 @@ import { NgForm, NgControl } from '@angular/forms';
 })
 export class FieldValidationMessageComponent {
   @Input() field: NgControl;
-  @Input() form: NgForm;
+  @Input() submitted = false;
   @Input() message: string;
 
   constructor() { }

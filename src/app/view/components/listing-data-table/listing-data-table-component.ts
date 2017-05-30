@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { DotcmsConfig } from '../../../api/services/system/dotcms-config';
 import { LazyLoadEvent } from 'primeng/primeng';
-import { ListingService } from '../../../api/services/listing-service';
+import { CrudService } from '../../../api/services/crud-service';
 
 @Component({
     selector: 'listing-data-table-component',
@@ -17,7 +17,7 @@ export class ListingDataTableComponent {
     private items: any[];
     private totalRecords: number;
 
-    constructor(private dotcmsConfig: DotcmsConfig, private listingService: ListingService) {
+    constructor(private dotcmsConfig: DotcmsConfig, private crudService: CrudService) {
     }
 
     ngOnInit(): void {
@@ -34,7 +34,7 @@ export class ListingDataTableComponent {
     }
 
     loadData(limit: number, offset: number): void {
-        this.listingService.loadData(this.url, limit, offset)
+        this.crudService.loadData(this.url, limit, offset)
             .subscribe( response => {
                 this.items = response.items;
                 this.totalRecords = response.totalRecords;

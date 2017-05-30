@@ -2,28 +2,20 @@
 @import "../../../../../styles/variables";
 
 :host {
-  position: relative;
+    position: relative;
 
-  .dropdown-content {
-    @include box_shadow(2);
-    border-radius: $border-radius;
-    background-color: $white;
-    color: $black;
-    overflow: hidden;
-    position: absolute;
-    top: 25px;
-    z-index: 100;
-  }
+    .dropdown-content {
+        @include box_shadow(2);
+        border-radius: $border-radius;
+        background-color: $white;
+        color: $black;
+        overflow: hidden;
+        position: absolute;
+        top: 25px;
+        z-index: 100;
+    }
 
-  .dropdown-component__gravatar {
-    cursor: pointer;
-  }
-
-  .dropdown-content_align-left{
-    left: 0;
-  }
-
-  .dropdown-content_align-right{
-    right: 0;
-  }
+    .dropdown-component__gravatar {
+        cursor: pointer;
+    }
 }

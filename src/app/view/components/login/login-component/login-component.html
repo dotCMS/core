@@ -1,53 +1,63 @@
 <!--LOGIN FORM-->
-<div class="login__container">
-    <div class="row">
-        <div class="col-sm-5 hidden-xs cms-info">
-            <div class="cms-info__inner">
-                <img src="{{dotcmscompanyLogo}}" class="cms-info__logo" />
-                <p class="cms-info__message" *ngIf="isCommunityLicense" [innerHTML]="communityLicenseInfoMessage"></p>
-                <p class="cms-info__message">{{serverLabel}}: {{dotcmsServerId}}</p>
-                <p class="cms-info__message">{{dotcmslicenceLevel}} {{dotcmsVersion}}</p>
-                <p class="cms-info__message">( {{dotcmsBuildDateString}} )</p>
+<div class="container">
+    <div class="login__container">
+        <div class="ui-g">
+            <div class="ui-md-5 hidden-xs">
+                <div class="cms-info">
+                    <div class="cms-info__inner">
+                        <img src="{{dotcmscompanyLogo}}" class="cms-info__logo" />
+                        <p class="cms-info__message" *ngIf="isCommunityLicense" [innerHTML]="communityLicenseInfoMessage"></p>
+                        <p class="cms-info__message">{{serverLabel}}: {{dotcmsServerId}}</p>
+                        <p class="cms-info__message">{{dotcmslicenceLevel}} {{dotcmsVersion}}</p>
+                        <p class="cms-info__message">( {{dotcmsBuildDateString}} )</p>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="col-xs-12 col-sm-7">
-            <div class="signin">
-                <h2 class="login__title">{{loginLabel}}</h2>
-                <div class="error-message" [innerHTML]="message" *ngIf="message"></div>
-                <div class="form-group">
-                    <input pInputText type="text" id="login-component-login-input"
-                           (keyup)="message=''"
-                           (keyup.enter)="logInUser()"
-                           placeholder="{{userIdOrEmailLabel}}"
-                           [(ngModel)]="myAccountLogin"
-                           floatingPlaceholder="false"
-                           [disabled]="isLoginInProgress" />
-                </div>
-                <div class="form-group">
-                    <input pInputText type="password" id="login-component-password-input"
-                           (keyup)="message=''"
-                           (keyup.enter)="logInUser()"
-                           placeholder="{{passwordLabel}}"
-                           [(ngModel)]="password"
-                           floatingPlaceholder="false"
-                           [disabled]="isLoginInProgress" />
-                </div>
-                <div class="form-group form-group__two-cols">
-                    <p-checkbox [(ngModel)]="myAccountRememberMe" binary="true" [label]="rememberMeLabel"></p-checkbox>
-                    <p-dropdown [options]="languages"
-                                [style]="{'width':'auto'}"
-                                id="login-component-language-select"
-                                [(ngModel)]="language"
-                                (onChange)="changeLanguage($event.value)"
-                                [disabled]="isLoginInProgress">
-                    </p-dropdown>
-                </div>
-                <div class="form-group">
-                    <dot-loading-indicator *ngIf="isLoginInProgress"></dot-loading-indicator>
-                    <button ripple pButton id="login-component-login-submit-button" *ngIf="!isLoginInProgress"
-                            (click)="logInUser()" [label]="loginButton"></button>
-                    <button pButton flat id="login-component-show-fogot-password-button" *ngIf="!isLoginInProgress"
-                            (click)="showForgotPassword()" [label]="forgotPasswordButton"></button>
+            <div class="ui-sm-12 ui-md-7">
+                <div class="signin">
+                    <h2 class="login__title">{{loginLabel}}</h2>
+                    <div class="error-message" [innerHTML]="message" *ngIf="message"></div>
+                    <div class="form__group">
+                        <span md-inputtext label="{{userIdOrEmailLabel}}">
+                            <input pInputText type="text" id="login-component-login-input"
+                                (keyup)="message=''"
+                                (keyup.enter)="logInUser()"
+                                [(ngModel)]="myAccountLogin"
+                                [disabled]="isLoginInProgress" />
+                        </span>
+                    </div>
+                    <div class="form__group">
+                        <span md-inputtext label="{{passwordLabel}}">
+                            <input pInputText type="password" id="login-component-password-input"
+                                (keyup)="message=''"
+                                (keyup.enter)="logInUser()"
+                                [(ngModel)]="password"
+                                [disabled]="isLoginInProgress" />
+                        </span>
+                    </div>
+                    <div class="form__group">
+                        <div class="ui-g">
+                            <div class="ui-g-12 ui-lg-6">
+                                <p-checkbox [(ngModel)]="myAccountRememberMe" binary="true" [label]="rememberMeLabel"></p-checkbox>
+                            </div>
+                            <div class="ui-g-12 ui-lg-6">
+                                <p-dropdown [options]="languages"
+                                            [style]="{'width':'auto'}"
+                                            id="login-component-language-select"
+                                            [(ngModel)]="language"
+                                            (onChange)="changeLanguage($event.value)"
+                                            [disabled]="isLoginInProgress">
+                                </p-dropdown>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form__group">
+                        <dot-loading-indicator *ngIf="isLoginInProgress"></dot-loading-indicator>
+                        <button ripple pButton id="login-component-login-submit-button" *ngIf="!isLoginInProgress"
+                                (click)="logInUser()" [label]="loginButton"></button>
+                        <button pButton flat id="login-component-show-fogot-password-button" *ngIf="!isLoginInProgress"
+                                (click)="showForgotPassword()" [label]="forgotPasswordButton"></button>
+                    </div>
                 </div>
             </div>
         </div>

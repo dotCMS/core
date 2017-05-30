@@ -9,14 +9,12 @@ import {DotRouterService} from '../../../../api/services/dot-router-service';
 })
 export class LogOutContainer {
 
-    constructor ( loginService: LoginService,  router: DotRouterService) {
+    constructor (loginService: LoginService,  router: DotRouterService) {
 
         loginService.isLogin$.subscribe(isLogin => {
-
             if (isLogin) {
-                loginService.logOutUser().subscribe(() => {
-                });
-            }else {
+                loginService.logOutUser().subscribe(() => {});
+            } else {
                 router.goToLogin();
             }
         });

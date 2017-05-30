@@ -4,7 +4,7 @@
     padding-top: $basic-padding * 2;
 
     label {
-        color: $field-placeholder-color;
+        color: $label-color;
         left: 0;
         pointer-events: none;
         position: absolute;
@@ -22,7 +22,7 @@
         &:focus {
             & ~ label {
                 top: 0;
-                font-size: $font-size-small;
+                font-size: $label-font-size;
                 color: $brand-primary;
             }
         }

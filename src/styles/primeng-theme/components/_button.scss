@@ -28,38 +28,44 @@
 .ui-button {
     @extend #buttons;
 
+    &[disabled] {
+        cursor: inherit;
+    }
+
     &[iconButton], &[actionButton] {
         border-radius: 50%;
         border: none;
         transition: background-color $field-animation-speed;
-
-        &[disabled] {
-            opacity: 0.25;
-
-            .ui-button-text,
-            .ui-c {
-                color: $button-disabled-color;
-            }
-        }
     }
 
     &[iconButton] {
         width: $button-height;
 
-        &:not([disabled]).inverse {
+        &[flat]:not([disabled]) {
+            .ui-c {
+                color: $body-font-color;
+            }
+
+            &.ui-state-default:not(:hover) {
+                background: none;
+                box-shadow: none;
+            }
+        }
+
+        &.inverse {
+            &.ui-state-default {
+                background: none;
+                box-shadow: none;
+            }
+
+            &:hover {
+                background: rgba($black, 0.1);
+            }
+
             .ui-button-text,
             .ui-c {
                 color: $white;
             }
-        }
-
-        &.ui-state-default {
-            background: none;
-            box-shadow: none;
-        }
-
-        &:not([disabled]):hover {
-            background: rgba($black, 0.1);
         }
     }
 

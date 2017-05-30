@@ -65,7 +65,6 @@ export class LoginService {
     }
 
     get auth$(): Observable<Auth> {
-
         return this._auth$.asObservable();
     }
 

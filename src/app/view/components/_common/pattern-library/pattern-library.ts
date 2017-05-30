@@ -11,6 +11,7 @@ import {SelectItem, AutoComplete} from 'primeng/primeng';
 export class PatternLibrary {
     public selectedDummyData = [];
     public selectedCars = [];
+    public submitAttempt = false;
 
     private autocompleteResults: Array<string> = [];
     private cities: SelectItem[];
@@ -53,11 +54,12 @@ export class PatternLibrary {
     ngOnInit(): any {
 
         this.model = {
-            checkboxValues: [],
+            checkboxValues: ['Disabled'],
             dropdownNormal: '',
             dropdownWithFilter: '',
             inputTextFloatingLabel: '',
             inputTextRegularLabel: '',
+            radioBoxValues: ['Disabled'],
             textareaFloatingLabel: '',
             textareaRegularLabel: ''
         };

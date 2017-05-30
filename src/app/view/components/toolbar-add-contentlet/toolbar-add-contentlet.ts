@@ -1,4 +1,4 @@
-import {Component, ViewChild, Input, Output, EventEmitter} from '@angular/core';
+import { Component, ViewChild, Input, Output, EventEmitter, ViewEncapsulation } from '@angular/core';
 import {DropdownComponent} from '../_common/dropdown-component/dropdown-component';
 import {ContentletService, StructureTypeView, ContentTypeView} from '../../../api/services/contentlet-service';
 import {RoutingService} from '../../../api/services/routing-service';
@@ -7,10 +7,10 @@ import {MessageService} from '../../../api/services/messages-service';
 import {IframeOverlayService} from '../../../api/services/iframe-overlay-service';
 
 @Component({
+    encapsulation: ViewEncapsulation.None,
     selector: 'toolbar-add-contentlet-body',
     styles: [require('./toolbar-add-contentlet-body.scss')],
     templateUrl: 'toolbar-add-contentlet-body.html',
-
 })
 export class ToolbarAddContenletBodyComponent {
     @Input() structureTypeViews: StructureTypeView[];
@@ -35,6 +35,7 @@ export class ToolbarAddContenletBodyComponent {
 }
 
 @Component({
+    encapsulation: ViewEncapsulation.None,
     providers: [ContentletService],
     selector: 'toolbar-add-contentlet',
     styles: [require('./toolbar-add-contentlet.scss')],

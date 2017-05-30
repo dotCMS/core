@@ -1,0 +1,17 @@
+p-calendar {
+    &.ui-inputwrapper-focus {
+        .ui-inputtext {
+            @extend #inputtext-active-border;
+        }
+    }
+}
+
+// Validation
+p-calendar {
+    &.ng-dirty.ng-invalid,
+    &.ng-invalid.ng-touched {
+        .ui-inputtext {
+            @extend #inputtext-error-border;
+        }
+    }
+}

@@ -2,82 +2,86 @@
 @import "../../../../styles/mixins";
 
 .cms-info {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .cms-info__message {
-  color: $gray-dark;
-  font-size: rem-cal(12px);
+    color: $gray-dark;
+    font-size: rem-cal(12px);
 }
 
 .cms-info__logo {
-  width: 200px;
+    width: 200px;
 }
 
 .login {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  justify-content: center;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    justify-content: center;
 
-  input.ui-inputtext {
-    display: block;
-    width: 100%;
-  }
+    input.ui-inputtext {
+        display: block;
+        width: 100%;
+    }
 
-  md-input {
-    overflow: inherit;
-    width: 100%;
-  }
+    md-input {
+        overflow: inherit;
+        width: 100%;
+    }
 }
 
 .login__container {
-  @include box_shadow(5);
-  background-color: $white;
-  border-radius: $border-radius;
-  padding: $basic-padding * 4 $basic-padding * 4 $basic-padding * 8;
+    @include box_shadow(5);
+    background-color: $white;
+    border-radius: $border-radius;
+    padding: $basic-padding * 4 $basic-padding * 4 $basic-padding * 8;
 
-  .row {
-    display: flex;
-  }
+    .row {
+        display: flex;
+    }
 
-  &.forgot-password__container {
-    display: block;
-    margin: 0 auto;
-    padding: 30px;
-    width: 500px;
-  }
+    &.forgot-password__container {
+        display: block;
+        margin: 0 auto;
+        padding: 30px;
+        width: 500px;
+    }
 }
 
 .login__title {
-  color: $brand-primary;
-  font-size: rem-cal(32px);
-  font-weight: 100;
-  line-height: 1em;
-  margin: 0 0 rem-cal($basic-padding * 2);
+    color: $brand-primary;
+    font-size: rem-cal(32px);
+    font-weight: 100;
+    line-height: 1em;
+    margin: 0 0 rem-cal($basic-padding * 2);
 }
 
 .signin {
-  position: relative;
+    position: relative;
 
-  @media (min-width: $screen-md-min) {
-    border-left: solid 1px $gray-light;
-    padding-left: $basic-padding * 7;
+    @media (min-width: $screen-md-min) {
+        border-left: solid 1px $gray-light;
+        padding-left: $basic-padding * 4;
 
-    &:before {
-      background-color: $white;
-      border: solid $gray-light;
-      border-width: 1px 1px 0 0;
-      content: '';
-      height: 14px;
-      left: -7px;
-      margin-top: -7px;
-      position: absolute;
-      top: 50%;
-      transform: rotate(45deg);
-      width: 14px;
+        &:before {
+            background-color: $white;
+            border: solid $gray-light;
+            border-width: 1px 1px 0 0;
+            content: '';
+            height: 14px;
+            left: -7px;
+            margin-top: -7px;
+            position: absolute;
+            top: 50%;
+            transform: rotate(45deg);
+            width: 14px;
+        }
     }
-  }
+
+    @media (min-width: $screen-lg-min) {
+        padding-left: $basic-padding * 7;
+    }
 }

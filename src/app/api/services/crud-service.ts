@@ -6,10 +6,10 @@ import { Observable } from 'rxjs/Observable';
 /**
  * Provides util listing methods
  * @export
- * @class ListingService
+ * @class CrudService
  */
 @Injectable()
-export class ListingService {
+export class CrudService {
 
     constructor(private coreWebService: CoreWebService) {}
 
@@ -19,12 +19,28 @@ export class ListingService {
      * @param {number} limit Number of items to return, if it is -1 then return all the items
      * @param {number} offset Offset to start, if it is -1 then start with the first items
      * @returns {Observable<PaginationResponse>} response
-     * @memberOf ListingService
+     * @memberOf CrudService
      */
     loadData(baseUrl: string, limit: number, offset: number): Observable<PaginationResponse> {
         return this.coreWebService.requestView({
             method: RequestMethod.Get,
             url: `${baseUrl}?limit=${limit}&offset=${offset}`
+        }).pluck('entity');
+    }
+
+    /**
+     * Will do a POST request and return the response to the url provide
+     * and the data as body of the request.
+     * @param {string} baseUrl
+     * @param {*} data
+     * @returns {Observable<any>}
+     * @memberof CrudService
+     */
+    postData(baseUrl: string, data: any): Observable<any> {
+        return this.coreWebService.requestView({
+            body: data,
+            method: RequestMethod.Post,
+            url: `${baseUrl}`
         }).pluck('entity');
     }
 }

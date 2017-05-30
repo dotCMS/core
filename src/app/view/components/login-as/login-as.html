@@ -1,7 +1,7 @@
 <p-dialog header="{{i18nMessages['login-as']}}" [(visible)]="visible" appendTo="body" modal="modal" resizable class="login-as">
     <!--TODO: manage errors on required fields and errors messages -->
     <form #loginAsForm="ngForm" class="login-as">
-        <div class="form-group">
+        <div class="form__group">
             <!--TODO: get rid of this let autoComplete when this is fixed: https://github.com/primefaces/primeng/issues/745-->
             <p-autoComplete let autoComplete ngModel required field="label"
                 name="user" id="userId" [suggestions]="filteredLoginAsUsersResults" (completeMethod)="filterUsers($event)" size="30"
@@ -9,7 +9,7 @@
                 [dropdown]="true" (onDropdownClick)="handleLoginAsUsersDropdownClick($event)">
             </p-autoComplete>
         </div>
-        <div class="form-group" *ngIf="needPassword">
+        <div class="form__group" *ngIf="needPassword">
             <input pPassword name="password" id="dot-login-as-password" type="password" placeholder="{{i18nMessages['password']}}" floatingPlaceholder="false" [required]="needPassword" ngModel/>
         </div>
     </form>

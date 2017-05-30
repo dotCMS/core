@@ -3,16 +3,16 @@ import { Component, EventEmitter, Input, Output, ViewEncapsulation, ElementRef, 
 @Component({
     animations: [
         trigger(
-        'enterAnimation', [
-            transition(':enter', [
-            style({transform: 'translateY(-10%)', opacity: 0}),
-            animate('100ms', style({transform: 'translateY(0)', opacity: 1}))
-            ]),
-            transition(':leave', [
-            style({transform: 'translateY(0)', opacity: 1}),
-            animate('100ms', style({transform: 'translateY(-10%)', opacity: 0}))
-            ])
-        ]
+            'enterAnimation', [
+                transition(':enter', [
+                    style({transform: 'translateY(-10%)', opacity: 0}),
+                    animate('100ms', style({transform: 'translateY(0)', opacity: 1}))
+                ]),
+                transition(':leave', [
+                    style({transform: 'translateY(0)', opacity: 1}),
+                    animate('100ms', style({transform: 'translateY(-10%)', opacity: 0}))
+                ])
+            ]
         )
     ],
     encapsulation: ViewEncapsulation.Emulated,
@@ -29,13 +29,11 @@ export class DropdownComponent {
     @Input() icon = null;
     @Input() gravatar = null;
     @Input() title = null;
-    @Input() alignRight = false;
+    @Input() position: string;
     @Input() inverse = false;
-
     @Output() open = new EventEmitter<any>();
     @Output() toggle = new EventEmitter<boolean>();
     @Output() close = new EventEmitter<any>();
-
     private show = false;
 
     constructor(private elementRef: ElementRef) {}

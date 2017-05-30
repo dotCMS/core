@@ -1,0 +1,45 @@
+@import "../../../../styles/mixins";
+@import "../../../../styles/variables";
+
+.content-type__fields-layout {
+    flex: 1 1 auto;
+    display: flex;
+}
+
+.content-type__fields-main {
+    flex: 1 1 auto;
+}
+
+.content-type__fields-sidebar {
+    border-left: solid 1px $gray-lighter;
+    width: 200px;
+}
+
+.content-type__form-header {
+    margin: $basic-padding * 3 0;
+    position: relative;
+}
+
+.content-type__form-title {
+    padding-left: $basic-padding * 3;
+
+    .fa {
+        left: 0;
+        position: absolute;
+        top: 10px;
+    }
+
+    .ui-inputtext {
+        font-size: $font-size-large;
+    }
+}
+
+.content-type__full-form {
+    margin: 0 $basic-padding * 3;
+}
+
+.content-type__form-actions {
+    align-items: center;
+    display: flex;
+    justify-content: flex-end;
+}
