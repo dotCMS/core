@@ -16,6 +16,7 @@ import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -58,24 +59,26 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   final PermissionAPI perms;
   final User user;
   final Boolean respectFrontendRoles;
+  final FieldAPI fAPI;
 
 
 
   public ContentTypeAPIImpl(User user, boolean respectFrontendRoles, ContentTypeFactory fac, FieldFactory ffac,
-                            PermissionAPI perms) {
+                            PermissionAPI perms, FieldAPI fAPI) {
     super();
     this.fac = fac;
     this.ffac = ffac;
     this.perms = perms;
     this.user = user;
     this.respectFrontendRoles = respectFrontendRoles;
+    this.fAPI = fAPI;
   }
 
 
 
   public ContentTypeAPIImpl(User user, boolean respectFrontendRoles) {
     this(user, respectFrontendRoles, FactoryLocator.getContentTypeFactory(), FactoryLocator.getFieldFactory(),
-        APILocator.getPermissionAPI());
+        APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI());
   }
 
 
@@ -200,68 +203,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   @Override
   public ContentType save(ContentType type) throws DotDataException, DotSecurityException {
-
-
-    Permissionable parent = type.getParentPermissionable();
-
-
-    if (!perms.doesUserHavePermissions(parent,
-        "PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_PUBLISH,
-        user)) {
-      throw new DotSecurityException(
-          "User-does-not-have-add-children-or-structure-permission-on-host-folder:" + parent);
-    }
-
-    // set to system folder if on system host or the host id of the folder it is on
-    List<Field> fields = type.fields();
-
-    //Checks if the folder has been set, if so checks the host where that folder lives and set it.
-    if(UtilMethods.isSet(type.folder()) && !type.folder().equals(Folder.SYSTEM_FOLDER)){
-    	type = ContentTypeBuilder.builder(type)
-    	          .host(APILocator.getFolderAPI().find(type.folder(), user, false).getHostId()).build();
-    }else if(UtilMethods.isSet(type.host())){//If there is no folder set, check if the host has been set, if so set the folder to System Folder
-    	type = ContentTypeBuilder.builder(type).folder(Folder.SYSTEM_FOLDER).build();
-    }
-
-    if (!fields.isEmpty())
-    	type.constructWithFields(fields);
-
-    // Sets the host:
-    try {
-      HostAPI hapi = APILocator.getHostAPI();
-      Host host = UUIDUtil.isUUID(type.host()) || "SYSTEM_HOST".equalsIgnoreCase(type.host())
-          ? hapi.find(type.host(), APILocator.systemUser(), true)
-          : hapi.resolveHostName(type.host(), APILocator.systemUser(), true);
-      type = ContentTypeBuilder.builder(type).host(host.getIdentifier()).build();
-    } catch (DotDataException | DotSecurityException e) {
-      throw new DotStateException("unable to resolve host:" + type.host(), e);
-    }
-    
-    
-    
-    ContentType oldType = type;
-    try {
-      if (type.id() != null)
-        oldType = this.fac.find(type.id());
-    } catch (NotFoundInDbException notThere) {
-      // not logging, expected when inserting new from separate environment
-    }
-    type = this.fac.save(type);
-
-    if (oldType != null) {
-      if (fireUpdateIdentifiers(oldType.expireDateVar(), type.expireDateVar())) {
-        IdentifierDateJob.triggerJobImmediately(oldType, user);
-      } else if (fireUpdateIdentifiers(oldType.publishDateVar(), type.publishDateVar())) {
-        IdentifierDateJob.triggerJobImmediately(oldType, user);
-      }
-      perms.resetPermissionReferences(type);
-    }
-    ActivityLogger.logInfo(getClass(), "Save ContentType Action", "User " + user.getUserId() + "/" + user.getFullName()
-        + " added ContentType " + type.name() + " to host id:" + type.host());
-    AdminLogger.log(getClass(), "ContentType", "ContentType saved : " + type.name(), user);
-
-    return type;
-
+	  return save(type, null, null);
   }
 
   @Override
@@ -425,7 +367,106 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   public List<ContentType> findUrlMapped() throws DotDataException {
     return fac.findUrlMapped();
   }
+  
+  @Override
+  public ContentType save(ContentType contentType, List<Field> fields) throws DotDataException, DotSecurityException {
+	  return save(contentType, fields, null);
+  }
 
+  @Override
+  public ContentType save(ContentType contentType, List<Field> fields, List<FieldVariable> fieldVariables) throws DotDataException, DotSecurityException {
+	  
+	  return LocalTransaction.wrapReturn(() -> {
+		  Permissionable parent = contentType.getParentPermissionable();
+
+            ContentType newContentType = contentType;  
+		    if (!perms.doesUserHavePermissions(parent,
+		        "PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_PUBLISH,
+		        user)) {
+		      throw new DotSecurityException(
+		          "User-does-not-have-add-children-or-structure-permission-on-host-folder:" + parent);
+		    }
+
+		    // set to system folder if on system host or the host id of the folder it is on
+		    List<Field> localFields = newContentType.fields();
+
+		    //Checks if the folder has been set, if so checks the host where that folder lives and set it.
+		    if(UtilMethods.isSet(newContentType.folder()) && !newContentType.folder().equals(Folder.SYSTEM_FOLDER)){
+		    	newContentType = ContentTypeBuilder.builder(newContentType)
+		    	          .host(APILocator.getFolderAPI().find(newContentType.folder(), user, false).getHostId()).build();
+		    }else if(UtilMethods.isSet(newContentType.host())){//If there is no folder set, check if the host has been set, if so set the folder to System Folder
+		    	newContentType = ContentTypeBuilder.builder(newContentType).folder(Folder.SYSTEM_FOLDER).build();
+		    }
+
+		    if (!localFields.isEmpty())
+		    	newContentType.constructWithFields(localFields);
+
+		    ContentType oldType = newContentType;
+		    try {
+		      if (newContentType.id() != null)
+		        oldType = this.fac.find(newContentType.id());
+		    } catch (NotFoundInDbException notThere) {
+		      // not logging, expected when inserting new from separate environment
+		    }
+		    newContentType = this.fac.save(newContentType);
+
+		    if (oldType != null) {
+		      if (fireUpdateIdentifiers(oldType.expireDateVar(), newContentType.expireDateVar())) {
+		        IdentifierDateJob.triggerJobImmediately(oldType, user);
+		      } else if (fireUpdateIdentifiers(oldType.publishDateVar(), newContentType.publishDateVar())) {
+		        IdentifierDateJob.triggerJobImmediately(oldType, user);
+		      }
+		      perms.resetPermissionReferences(newContentType);
+		    }
+		    ActivityLogger.logInfo(getClass(), "Save ContentType Action", "User " + user.getUserId() + "/" + user.getFullName()
+		        + " added ContentType " + newContentType.name() + " to host id:" + newContentType.host());
+		    AdminLogger.log(getClass(), "ContentType", "ContentType saved : " + newContentType.name(), user);
+
+		    
+		    //update the existing content type fields
+		    if(fields != null){
+			  //Fields on current content type version
+		      localFields = newContentType.fields();
+		      //Create a copy in order to avoid a possible concurrent modification error
+		      List<String> localFieldsVarNames = new ArrayList<String>();
+		
+		      for (Field localField : localFields) {
+		      	localFieldsVarNames.add(localField.variable());
+		      }
+	
+	      
+		      //for each field in the content type lets create it if doesn't exists and update its properties if it does
+		      for( Field field : fields ) {
+		    	 fAPI.save(field,APILocator.systemUser());
+		    	  
+		    	  localFieldsVarNames.remove( field.variable() );
+		    	  if(fieldVariables != null){
+			    	  for(FieldVariable fieldVariable : fieldVariables) {
+			    		  if(fieldVariable.fieldId().equals(field.inode())) {
+			    			  fAPI.save(fieldVariable, APILocator.systemUser());
+			    		  }
+			    	  }
+		    	  }
+		      }
+		      
+		      if ( localFieldsVarNames.size() > 0 ) {
+		          // we have local fields that didn't came
+		          // in the content type. lets remove them
+		          for ( String localFieldVarName : localFieldsVarNames ) {
+		        	  Field f = fAPI.byContentTypeIdAndVar(newContentType.inode(), localFieldVarName);
+		        	  if(!f.fixed()){
+		        		  fAPI.delete(f);
+		        	  }else{
+		        		  Logger.error(this, "Can't delete fixed field:"+f.name()+" from Content Type:"+newContentType.name());
+		        	  }
+		          }
+		      }
+	      }
+	      
+	
+		  return newContentType;
+	  });
+  }
 
 
 }

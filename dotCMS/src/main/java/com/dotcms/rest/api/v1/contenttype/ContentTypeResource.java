@@ -94,6 +94,10 @@ public class ContentTypeResource implements Serializable {
 
 			response = ExceptionMapperUtil.createResponse(null, "Content-type is not valid ("+ e.getMessage() +")");
 
+		} catch (DotDataException e) {
+
+			response = ExceptionMapperUtil.createResponse(null, "Content-type is not valid ("+ e.getMessage() +")");
+
 		} catch (Exception e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
@@ -146,6 +150,10 @@ public class ContentTypeResource implements Serializable {
 		} catch (NotFoundInDbException e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+
+		} catch (DotDataException e) {
+
+			response = ExceptionMapperUtil.createResponse(null, "Content-type is not valid ("+ e.getMessage() +")");
 
 		} catch (Exception e) {
 
