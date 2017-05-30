@@ -38,7 +38,7 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
       if (json != null && json.trim().startsWith("[")) {
         types = ImmutableList.copyOf(fromJsonArrayStr(json));
       } else {
-        types = ImmutableList.of(fromJsonStr(json));
+        types = ImmutableList.of(fromJsonObject(new JSONObject(json)));
       }
     } catch (JSONException arrEx) {
       throw new DotStateException(arrEx);
@@ -75,9 +75,20 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
   }
 
 
-  private ContentType fromJsonStr(String input) {
+  private ContentType fromJsonObject(JSONObject jo) {
     try {
-      return (ContentType) mapper.readValue(input, ContentType.class);
+      
+      if (jo.has("inode") && !jo.has("id")) {
+        jo.put("id", jo.get("inode"));
+      }
+      ContentType type = (ContentType) mapper.readValue(jo.toString(), ContentType.class);
+
+
+      if (jo.has("fields")) {
+        List<Field> fields = new JsonFieldTransformer(jo.getJSONArray("fields").toString()).asList();
+        type.constructWithFields(fields);
+      }
+      return type;
     } catch (Exception e) {
       throw new DotStateException(e);
     }
@@ -88,26 +99,8 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
     List<ContentType> types = new ArrayList<>();
     JSONArray jarr = new JSONArray(input);
     for (int i = 0; i < jarr.length(); i++) {
-      JSONObject jo = jarr.getJSONObject(i);
-      if (jo.has("inode") && !jo.has("id")) {
-        jo.put("id", jo.get("inode"));
-      }
-      HostAPI hapi = APILocator.getHostAPI();
-      ContentType type = fromJsonStr(jo.toString());
-      try {
-        Host host = UUIDUtil.isUUID(type.host()) || "SYSTEM_HOST".equalsIgnoreCase(type.host())
-            ? hapi.find(type.host(), APILocator.systemUser(), true)
-            : hapi.resolveHostName(type.host(), APILocator.systemUser(), true);
-        type = ContentTypeBuilder.builder(type).host(host.getIdentifier()).build();
-      } catch (DotDataException | DotSecurityException e) {
-        throw new DotStateException("unable to resolve host:" + type.host(), e);
-      }
+      types.add(fromJsonObject(jarr.getJSONObject(i)));
 
-      if (jo.has("fields")) {
-        List<Field> fields = new JsonFieldTransformer(jo.getJSONArray("fields").toString()).asList();
-        type.constructWithFields(fields);
-      }
-      types.add(type);
     }
     return types;
   }

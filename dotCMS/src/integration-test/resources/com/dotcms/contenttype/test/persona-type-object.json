@@ -1,5 +1,5 @@
 {
-	"implClass": "com.dotcms.contenttype.model.type.PersonaContentType",
+	"clazz": "com.dotcms.contenttype.model.type.PersonaContentType",
 	"description": "ANOTHER Structure for Personas",
 	"defaultType": false,
 	"system": false,
@@ -10,7 +10,7 @@
 	"fixed": false,
 	"fields": [
 		{
-			"implClass": "com.dotcms.contenttype.model.field.HostFolderField",
+			"clazz": "com.dotcms.contenttype.model.field.HostFolderField",
 			"indexed": true,
 			"dataType": "SYSTEM",
 			"readOnly": false,
@@ -24,7 +24,7 @@
 			"fixed": true
 		},
 		{
-			"implClass": "com.dotcms.contenttype.model.field.TextField",
+			"clazz": "com.dotcms.contenttype.model.field.TextField",
 			"indexed": true,
 			"dataType": "TEXT",
 			"readOnly": false,
@@ -38,7 +38,7 @@
 			"fixed": true
 		},
 		{
-			"implClass": "com.dotcms.contenttype.model.field.CustomField",
+			"clazz": "com.dotcms.contenttype.model.field.CustomField",
 			"indexed": true,
 			"dataType": "TEXT",
 			"values": "$velutil.mergeTemplate('/static/personas/keytag_custom_field.vtl')",
@@ -54,7 +54,7 @@
 			"fixed": true
 		},
 		{
-			"implClass": "com.dotcms.contenttype.model.field.BinaryField",
+			"clazz": "com.dotcms.contenttype.model.field.BinaryField",
 			"indexed": false,
 			"dataType": "SYSTEM",
 			"readOnly": false,
@@ -69,7 +69,7 @@
 			"id": "07cfbc2c-47de-4c78-a411-176fe8bb24a5"
 		},
 		{
-			"implClass": "com.dotcms.contenttype.model.field.TagField",
+			"clazz": "com.dotcms.contenttype.model.field.TagField",
 			"indexed": true,
 			"dataType": "LONG_TEXT",
 			"readOnly": false,
@@ -83,7 +83,7 @@
 			"fixed": true
 		},
 		{
-			"implClass": "com.dotcms.contenttype.model.field.TextAreaField",
+			"clazz": "com.dotcms.contenttype.model.field.TextAreaField",
 			"indexed": true,
 			"dataType": "LONG_TEXT",
 			"readOnly": false,
