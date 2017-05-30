@@ -33,6 +33,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
@@ -79,20 +80,16 @@ public class ContentTypeResource implements Serializable {
 
 		try {
 			List<ContentType> typesToSave = new JsonContentTypeTransformer(json).asList();
+            List<ContentType> retTypes = new ArrayList<>();
+            
+            // Validate input
+            for (ContentType type : typesToSave) {
+                if (UtilMethods.isSet(type.id()) && !UUIDUtil.isUUID(type.id())) {
+                    return ExceptionMapperUtil.createResponse(null, "ContentType 'id' if set, should be a uuid");
+                }
+                retTypes.add(APILocator.getContentTypeAPI(user, true).save(type));
+            }
 
-			// Validate input
-			for (ContentType type : typesToSave) {
-				if (UtilMethods.isSet(type.id())) {
-					return ExceptionMapperUtil.createResponse(null, "Field 'id' should not be set");
-				}
-			}
-
-			List<ContentType> retTypes = new ArrayList<>();
-
-			// Persist input
-			for (ContentType type :typesToSave) {
-				retTypes.add(APILocator.getContentTypeAPI(user, true).save(type));
-			}
 
 			response = Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(retTypes).mapList())).build();
 
