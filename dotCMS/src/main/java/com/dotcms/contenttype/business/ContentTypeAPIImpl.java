@@ -25,6 +25,7 @@ import com.dotcms.exception.BaseRuntimeInternationalizationException;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.util.ContentTypeUtil;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -37,6 +38,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
@@ -44,6 +46,7 @@ import com.dotmarketing.quartz.job.IdentifierDateJob;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
@@ -195,10 +198,6 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
 
 
-  public void validateFields(ContentType type) {
-
-    fac.validateFields( type);
-  }
 
 
 
