@@ -18,6 +18,7 @@ import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.OnePerContentType;
+import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -30,6 +31,7 @@ import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
 import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -274,7 +276,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	}
 
 	@Test
-	public void testAddingUpdatingDeleteing() throws Exception {
+	public void testAddingUpdatingDeleting() throws Exception {
 
 		for (BaseContentType baseType : BaseContentType.values()) {
 			if (baseType == BaseContentType.ANY)
@@ -509,5 +511,50 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 				}
 			}
 		}
+	}
+	
+	/**
+	 * This test create a Content type with fixed fields, update some fields and delete the content type
+	 * @throws Exception
+	 */
+	@Test
+	public void testAddingUpdatingDeletingContentTypeWithFixedFields() throws Exception{
+		
+		int count = contentTypeApi.count();
+		String TEST_VAR_PREFIX = "myTestField";
+		
+		long time = System.currentTimeMillis();
+		int base = BaseContentType.WIDGET.ordinal();
+		Thread.sleep(1);
+		ContentType type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base))
+					.description("description" + time).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+					.name("ContentTypeTestingWithFixedFields" + time).owner("owner").variable("velocityVarNameTesting" + time).build();
+		type = contentTypeApi.save(type, null, null);
+		
+		int count2 = contentTypeApi.count();
+		assertThat("contenttypes are added", count == count2 - 1);
+		type = contentTypeApi.find(type.id());
+		assertThat("Content type found", type != null && StringUtils.isNotEmpty(type.id()) );
+		
+		//Add Field
+		List<Field> fields = type.fields();
+		int fieldsCount = fields.size();
+		Field savedField = FieldBuilder.builder(WysiwygField.class).name("my test field")
+				.variable(TEST_VAR_PREFIX + "textField").contentTypeId(type.id()).dataType(DataTypes.LONG_TEXT).build();
+		APILocator.getContentTypeFieldAPI().save(savedField, APILocator.systemUser());
+		type = contentTypeApi.find(type.id());
+		List<Field> newFields = type.fields();
+		
+		int fieldsCount2 = newFields.size();
+		assertThat("contenttypes field added", fieldsCount < fieldsCount2);
+		
+		//remove field
+		contentTypeApi.save(type, fields);
+		type = contentTypeApi.find(type.id());
+		fieldsCount2 = type.fields().size();
+		assertThat("contenttypes field removed", fieldsCount == fieldsCount2);
+		
+		//deleting content type
+		delete(type);
 	}
 }
