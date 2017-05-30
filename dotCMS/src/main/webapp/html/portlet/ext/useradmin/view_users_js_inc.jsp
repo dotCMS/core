@@ -388,12 +388,11 @@
 		var userEmail;
 		if(emailChanged){
             <%
-                 String emailRegex = Config.getStringProperty(com.dotmarketing.util.WebKeys.DOTCMS_USE_REGEX_TO_VALIDATE_EMAILS, null);
-                 if (emailRegex !=null && !emailRegex.isEmpty() && !emailRegex.equals("null")){%>
-                 var pattern=new RegExp("<%=emailRegex%>", 'gi');
-            <%}else{%>
-                 var pattern=/^([a-zA-Z0-9_.-])+@([a-zA-Z0-9_.-])+\.([a-zA-Z])+([a-zA-Z])+/;
-            <%}%>
+                 String emailRegex = Config.getStringProperty(com.dotmarketing.util.WebKeys.DOTCMS_USE_REGEX_TO_VALIDATE_EMAILS, "^([a-zA-Z0-9_.-])+@([a-zA-Z0-9_.-])+\\.([a-zA-Z])+([a-zA-Z])+");
+            %>
+
+            var pattern=new RegExp("<%=emailRegex%>", 'gi');
+
 			userEmail = dijit.byId('emailAddress').attr('value');
 			if(!pattern.test(userEmail)){
 				alert(invalidEmail);
