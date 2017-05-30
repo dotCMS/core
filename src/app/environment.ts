@@ -42,6 +42,7 @@ import { GravatarService } from './api/services/gravatar-service';
 import { ColorUtil } from './api/util/ColorUtil';
 import { BrowserUtil } from './api/util/browser-util';
 import { CrudService } from './api/services/crud-service';
+import { ConfirmationService } from 'primeng/primeng';
 
 // ROUTING
 import { LocationStrategy, HashLocationStrategy } from '@angular/common';
@@ -66,6 +67,7 @@ let PROVIDERS: any[] = [
   ColorUtil,
   Config,
   CoreWebService,
+  ConfirmationService,
   DotRouterService,
   DotcmsConfig,
   DotcmsEventsService,

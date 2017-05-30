@@ -1,12 +1,22 @@
+<action-header [selected]="selectedItems.length > 0" 
+                [selectedItems]="selectedItems" 
+                [actionButtonItems]="buttonActions" 
+                [primaryCommand]="actionHeaderLog">
+
+    <input #gf pInputText type="text" placeholder="{{i18nMessages['global-search']}}" [(ngModel)]="query"/>
+</action-header>
+
 <p-dataTable [value]="items" 
              [rows]="paginatorRows" 
              [paginator]="true" 
              [pageLinks]="paginatorLinks" 
              [lazy]="true"
              [totalRecords]="totalRecords"
-             (onLazyLoad)="loadDataPaginationEvent($event)">
+             (onLazyLoad)="loadDataPaginationEvent($event)"
+             [(selection)]="selectedItems"
+             [globalFilter]="gf">
 
-    <p-column selectionMode="multiple" [style]="{'width':'5%'}"></p-column>
+    <p-column selectionMode="multiple"></p-column>
 
     <p-column *ngFor="let col of columns" 
               [field]="col.fieldName" 

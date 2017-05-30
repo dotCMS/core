@@ -4,6 +4,10 @@ import { DebugElement } from '@angular/core';
 import { Router } from '@angular/router';
 import { SplitButtonModule, ButtonModule } from 'primeng/primeng';
 import { ActionHeaderComponent } from './action-header';
+import { MessageService } from '../../../../api/services/messages-service';
+import { ConfirmationService } from 'primeng/components/common/api';
+import { MockMessageService } from '../../../../test/message-service.mock';
+import { DOTTestBed } from '../../../../test/dot-test-bed';
 class RouterMock {
     navigate(): string {
         return null;
@@ -13,37 +17,61 @@ describe('ActionHeaderComponent (inline template)', () => {
     let comp: ActionHeaderComponent;
     let fixture: ComponentFixture<ActionHeaderComponent>;
     let de: DebugElement;
+    let msjService;
     beforeEach(async(() => {
-        TestBed.configureTestingModule({
+
+        let messageServiceMock = new MockMessageService({
+            'selected': 'selected'
+        });
+
+        DOTTestBed.configureTestingModule({
             declarations: [ActionHeaderComponent],
             imports: [SplitButtonModule, ButtonModule],
-            providers: [{ provide: Router, useClass: RouterMock }]
+            providers: [
+                { provide: Router, useClass: RouterMock },
+                { provide: MessageService, useValue: messageServiceMock },
+                ConfirmationService
+            ]
         });
-    }));
 
-    beforeEach(() => {
-      fixture = TestBed.createComponent(ActionHeaderComponent);
-      comp = fixture.componentInstance;
-      de = fixture.debugElement.query(By.css('div'));
-    });
+        fixture = TestBed.createComponent(ActionHeaderComponent);
+        comp = fixture.componentInstance;
+        de = fixture.debugElement.query(By.css('div'));
+
+        msjService = fixture.debugElement.injector.get(MessageService);
+    }));
 
     it('should render default state correctly', () => {
         let actionButton = de.query(By.css('button'));
-        let globalSearch  = de.query(By.css('input'));
         let groupActions = de.query(By.css('.action-header__group-actions'));
         expect(actionButton).not.toBeNull();
-        expect(globalSearch).not.toBeNull();
-        expect(groupActions).not.toBeNull();
+        expect(groupActions).toBeNull();
     });
 
     it('should show the number of items selected', () => {
+        let fakeButtons = [
+            {
+                label: 'Group Actions 1',
+                model: [
+                    {
+                        command: jasmine.createSpy('spy'),
+                        icon: 'fa-refresh',
+                        label: 'Action 1-1'
+                    }
+                ]
+            }
+        ];
+        comp.actionButtonItems = fakeButtons;
+
         let fakeData = [{key: 'value'}, {key: 'value'}];
         let items = 2;
-        let selectedItemsCounter = de.query(By.css('.action-header__selected-items-counter'));
+
         comp.selectedItems = fakeData;
         comp.selected = true;
         fixture.detectChanges();
-        expect(selectedItemsCounter.nativeElement.textContent).toBe(items + ' Selected');
+
+        let selectedItemsCounter = de.query(By.css('.action-header__selected-items-counter'));
+        expect(selectedItemsCounter.nativeElement.textContent).toBe(items + ' selected');
     });
 
     it('should trigger the action button method', () => {

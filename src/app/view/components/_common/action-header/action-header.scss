@@ -1,95 +1,79 @@
 @import "../../../../../styles/variables";
 
 .action-header {
-    height: 120px;
+    align-items: flex-end;
+    display: flex;
+    height: 83px; // 60px + actionButton height / 2
     position: relative;
     z-index: 1;
 
-    .action-header__container{
-        border-top: 1px solid $gray-light;
-        height: 60px;
-        transform: translateY(60px);
-        overflow: hidden;
-    }
-
-    [actionButton] {
-        opacity: 1;
-        position: absolute;
-        top: 30px;
-        transform: translateY(0);
-        transition: 
-            transform 0.3s ease,
-            visibility 0.3s ease,
-            opacity 0.3s ease;
-        visibility: visible;
-        z-index: 1;
-
-        &:first-child {
-            margin-left: $basic-padding * 2;
+    &.selected {    
+        .action-header__primary-button {
+            opacity: 0;
+            transform: translateY(-20px);
         }
-    }
 
-    .action-header__global-search {
-        background: $white;
-        height: 60px;
-        position: relative;
-        transform: translateY(0px);
-        transition: 
-            transform 0.4s ease,
-            visibility 0.3s ease;
-        visibility: visible;
-
-        [pInputText] {
-            bottom: 16px;
-            left: 90px;
-            position: absolute;
+        .action-header__global-search {
+            transform: translateY(-60px);
+            visibility: hidden;
         }
-    }
 
-    .action-header__group-actions { 
-        align-items: center;
-        background: $blue;
-        color: $white;
-        display: flex;
-        height: 60px;
-        transform: translateY(0px);
-        transition: 
-            transform 0.4s ease,
-            visibility 0.3s ease;
-        visibility: hidden;
-
-        .action-header__selected-items-counter {
-            border-right: 1px solid $white;
-            margin-right: $basic-padding * 2;
-            padding: $basic-padding $basic-padding * 2;
+        .action-header__group-actions {
+            transform: translateY(-60px);
+            visibility: visible;
         }
     }
 }
 
-.selected {    
-    [actionButton] {
-        opacity: 0;
-        transform: translateY(-20px);
-        transition: 
-            transform 0.3s ease,
-            visibility 0.3s linear 0.3s,
-            opacity 0.3s ease;
-        visibility: hidden;
-    }
+.action-header__container {
+    border-top: 1px solid $gray-light;
+    flex: 1;
+    height: 61px;
+    overflow: hidden;
+}
 
-    .action-header__global-search {
-        transform: translateY(-60px);
-        transition: 
-            transform 0.4s ease,
-            visibility 0.3s ease;
-        visibility: hidden;
-    }
+.action-header__primary-button[actionButton] {
+    opacity: 1;
+    position: absolute;
+    left: $basic-padding * 2;
+    top: 0;
+    transform: translateY(0);
+    transition: 
+        background-color 100ms,
+        transform 0.2s ease,
+        opacity 0.2s ease;
+    z-index: 1;
+}
 
-    .action-header__group-actions {
-        transform: translateY(-60px);
-        transition:
-            transform 0.4s ease,
-            visibility 0.3s ease;
-        visibility: visible;
+.action-header__global-search {
+    align-items: center;
+    background: $white;
+    display: flex;
+    height: 60px;
+    padding-left: 80px;
+    transform: translateY(0px);
+    transition: transform 0.2s ease;
+
+    & > input {
+        width: 300px;
     }
+}
+
+.action-header__group-actions { 
+    align-items: center;
+    background: $blue;
+    color: $white;
+    display: flex;
+    height: 60px;
+    transform: translateY(0px);
+    transition: 
+        transform 0.2s ease,
+        visibility 0.2s ease;
+    visibility: hidden;
+}
+
+.action-header__selected-items-counter {
+    border-right: 1px solid $white;
+    margin-right: $basic-padding * 2;
+    padding: $basic-padding $basic-padding * 2;
 }

@@ -5,7 +5,7 @@ import {
   ConnectionBackend,
 } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
-import { CrudService } from './crud-service';
+import { CrudService, OrderDirection } from './crud-service';
 import { DOTTestBed } from '../../test/dot-test-bed';
 
 describe('CrudService', () => {
@@ -33,12 +33,12 @@ describe('CrudService', () => {
         };
 
         let result: any;
-        this.crudService.loadData('v1/urldemo', 10, 99).subscribe(entity => result = entity);
+        this.crudService.loadData('v1/urldemo', 10, 99, 'name', OrderDirection.ASC, 'some text').subscribe(entity => result = entity);
         this.lastConnection.mockRespond(new Response(new ResponseOptions({
             body: JSON.stringify(mockResponse),
         })));
         tick();
-        expect(this.lastConnection.request.url).toEqual('http://localhost:9876/api/v1/urldemo?limit=10&offset=99');
+        expect(this.lastConnection.request.url).toEqual('http://localhost:9876/api/v1/urldemo?limit=10&offset=99&orderby=name-asc&query=some%20text');
         expect(result).toBeDefined('result is not defined');
         expect(result.totalRecords).toEqual(5);
         expect(result.items.length).toEqual(4);

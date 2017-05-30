@@ -2,7 +2,7 @@ import { ConnectionBackend, RequestOptions, BaseRequestOptions, Http } from '@an
 import { Logger } from 'angular2-logger/core';
 import { MockBackend } from '@angular/http/testing';
 import { TestBed, TestModuleMetadata, ComponentFixture } from '@angular/core/testing';
-import { Type, Provider, Injector, ReflectiveInjector } from '@angular/core';
+import { Type, Provider, Injector, ReflectiveInjector, Component } from '@angular/core';
 import { ApiRoot } from '../api/persistence/ApiRoot';
 import { BrowserUtil } from '../api/util/browser-util';
 import { Config } from '../api/util/config';
@@ -12,10 +12,19 @@ import { DotcmsEventsService } from '../api/services/dotcms-events-service';
 import { LoggerService } from '../api/services/logger.service';
 import { StringUtils } from '../api/util/string.utils';
 import { UserModel } from '../api/auth/UserModel';
+import { ConfirmDialogModule } from 'primeng/components/confirmdialog/confirmdialog';
+
+@Component({
+    selector: 'p-confirmDialog',
+    template: ''
+})
+class FakeConfirmDialogComponent {
+}
 
 export class DOTTestBed {
 
     private static DEFAULT_CONFIG = {
+        imports: [ConfirmDialogModule],
         providers: [
             {provide: ConnectionBackend, useClass: MockBackend},
             {provide: RequestOptions, useClass: BaseRequestOptions},
@@ -46,7 +55,16 @@ export class DOTTestBed {
             }
         }
 
+        console.log('config', config);
         TestBed.configureTestingModule(config);
+
+        TestBed.overrideModule(ConfirmDialogModule, {
+            set: {
+                declarations: [FakeConfirmDialogComponent],
+                exports: [FakeConfirmDialogComponent]
+            }
+        });
+        TestBed.compileComponents();
     }
 
     public static createComponent<T>(component: Type<T>): ComponentFixture<T> {
