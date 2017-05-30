@@ -7,6 +7,7 @@
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
 <%@ page import="org.osgi.framework.Bundle" %>
+<%@ page import="com.dotmarketing.util.OSGIUtil" %>
 <%        
 	request.setAttribute("requiredPortletAccess", "dynamic-plugins"); 
 %>
@@ -35,6 +36,7 @@
     %>
     var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty()%>;
 
+    var deployPath = '<%=OSGIUtil.getInstance().getFelixDeployPath()%>';
 </script>
 
 <div class="buttonBoxLeft">
@@ -176,14 +178,14 @@
                         if (bundleData.state == <%=Bundle.ACTIVE%>) {
                             htmlContent += "<a href=\"javascript:bundles.stop('" + bundleData.jarFile + "','" + bundleData.bundleId + "')\"><%=LanguageUtil.get(pageContext, "OSGI-Stop")%></a>";
                         }
-                        if (bundleData.location.indexOf(bundleData.separator) != -1 && bundleData.location.indexOf(bundleData.separator + "load" + bundleData.separator) != -1) {
+                        if (bundleData.location.indexOf(bundleData.separator) != -1 && bundleData.location.indexOf(deployPath + bundleData.separator) != -1) {
                             htmlContent += "&nbsp;|&nbsp;<a href=\"javascript:bundles.undeploy('" + bundleData.jarFile + "','" + bundleData.bundleId + "')\"><%=LanguageUtil.get(pageContext, "OSGI-Undeploy")%></a>";
                         }
                         htmlContent += "</td></tr>";
 
                         dojo.place(htmlContent, "bundlesTable-body", "after");
 
-                        if (bundleData.location.indexOf(bundleData.separator) != -1 && bundleData.location.indexOf(bundleData.separator + "load" + bundleData.separator) != -1) {
+                        if (bundleData.location.indexOf(bundleData.separator) != -1 && bundleData.location.indexOf(deployPath + bundleData.separator) != -1) {
                             if(enterprise) {
                                 popupMenus += "<div dojoType=\"dijit.Menu\" class=\"dotContextMenu\" id=\"popupTr" + (i++) +"\" contextMenuForWindow=\"false\" style=\"display: none;\" targetNodeIds=\"tr" + bundleData.jarFile + "\">";
                                 if (sendingEndpoints) {
