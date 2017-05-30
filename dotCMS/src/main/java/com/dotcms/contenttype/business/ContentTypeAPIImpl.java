@@ -438,18 +438,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 	      
 		      //for each field in the content type lets create it if doesn't exists and update its properties if it does
 		      for( Field field : fields ) {
-		    	  try {
-			    	  Field localField = fAPI.byContentTypeIdAndVar(field.contentTypeId(), field.variable());
-			    	  if ( localField == null || !UtilMethods.isSet( localField.inode() ) ) {
-			    		  fAPI.save(field,APILocator.systemUser());
-			    	  } else {
-			          	  fAPI.delete(localField);
-			          	  fAPI.save(field,APILocator.systemUser());
-			    	  }
-		    	  }catch(NotFoundInDbException e){
-		    		  //add field, if doesn't exist
-		    		  fAPI.save(field,APILocator.systemUser());
-		    	  }
+		    	 fAPI.save(field,APILocator.systemUser());
 		    	  
 		    	  localFieldsVarNames.remove( field.variable() );
 		    	  if(fieldVariables != null){
@@ -465,7 +454,12 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 		          // we have local fields that didn't came
 		          // in the content type. lets remove them
 		          for ( String localFieldVarName : localFieldsVarNames ) {
-		          	fAPI.delete(fAPI.byContentTypeIdAndVar(newContentType.inode(), localFieldVarName));
+		        	  Field f = fAPI.byContentTypeIdAndVar(newContentType.inode(), localFieldVarName);
+		        	  if(!f.fixed()){
+		        		  fAPI.delete(f);
+		        	  }else{
+		        		  Logger.error(this, "Can't delete fixed field:"+f.name()+" from Content Type:"+newContentType.name());
+		        	  }
 		          }
 		      }
 	      }
