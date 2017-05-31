@@ -7,6 +7,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,15 +31,12 @@ import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
 import com.dotcms.contenttype.model.type.UrlMapable;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.structure.model.Structure;
 
 public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
@@ -554,6 +552,36 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		fieldsCount2 = type.fields().size();
 		assertThat("contenttypes field removed", fieldsCount == fieldsCount2);
 		
+		//deleting content type
+		delete(type);
+	}
+	
+	/**
+	 * Test the updateModDate method of the contenttypeapi
+	 * to help detect the changes on fields and field variables
+	 * @throws Exception
+	 */
+	@Test
+	public void testUpdateContentTypeModDate() throws Exception{
+		long time = System.currentTimeMillis();
+		int base = BaseContentType.CONTENT.ordinal();
+		Thread.sleep(1);
+		ContentType type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base))
+					.description("description" + time).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+					.name("ContentTypeTestingUpdateModDate" + time).owner("owner").variable("velocityVarNameTesting" + time).build();
+		type = contentTypeApi.save(type, null, null);
+		
+		Date creationModDate = type.modDate();
+		assertThat("contenttypes mod_date is not null", creationModDate != null);
+		//calling updatemod_date method
+		Thread.sleep(1000);
+		contentTypeApi.updateModDate(type);
+		//getting new mod_date
+		type = contentTypeApi.find(type.id());
+		Date currentModDate = type.modDate();
+		assertThat("contenttypes current mod_date is not null", currentModDate != null);
+		assertThat("contenttypes mod_date is updated", creationModDate != currentModDate);
+		assertThat("contenttypes mod_date is updated", currentModDate.compareTo(creationModDate) > 0);
 		//deleting content type
 		delete(type);
 	}

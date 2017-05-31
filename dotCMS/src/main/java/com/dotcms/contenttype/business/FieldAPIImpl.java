@@ -182,7 +182,8 @@ public class FieldAPIImpl implements FieldAPI {
 	      }
 
 	      fac.delete(field);
-
+	      //update contenttype mod_date to detect the changes done on the field
+	      tapi.updateModDate(type);
 
 	      CacheLocator.getContentTypeCache().remove(structure);
 	      StructureServices.removeStructureFile(structure);

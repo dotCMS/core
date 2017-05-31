@@ -496,5 +496,17 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 	  });
   }
 
+  public boolean updateModDate(ContentType type){
+	  boolean updated = false;
+	  
+	  try {
+		fac.updateModDate(type);
+		updated=true;
+	  } catch (DotDataException e) {
+		Logger.error(this, "Error can't update Content Type ("+type.id()+") mod_date field."+e.getMessage());// TODO Auto-generated catch block
+		e.printStackTrace();
+	  }
+	  return updated;
+  }
 
 }

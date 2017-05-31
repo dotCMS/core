@@ -683,4 +683,21 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     
   }
 
+ @Override
+ public void updateModDate(ContentType type) throws DotDataException {
+	 ContentTypeBuilder builder =
+		        ContentTypeBuilder.builder(type).modDate(DateUtils.round(new Date(), Calendar.SECOND));
+	 type = builder.build();
+	 dbUpdateModDate(type);
+	 cache.remove(type);
+ }
+ 
+ private void dbUpdateModDate(ContentType type) throws DotDataException{
+	 DotConnect dc = new DotConnect();
+	 dc.setSQL(this.contentTypeSql.UPDATE_TYPE_MOD_DATE_BY_INODE);
+	 dc.addParam(type.modDate());
+	 dc.addParam(type.id());
+	 dc.loadResult();
+ }
+
 }

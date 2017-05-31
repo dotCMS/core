@@ -7,6 +7,9 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 
@@ -89,6 +92,11 @@ public class FieldVariableAjax {
 		fieldVariable.setLastModDate(new Date());
 		try {
 			fieldAPI.saveFieldVariable(fieldVariable, user, respectFrontendRoles);
+			
+			Field field = APILocator.getContentTypeFieldAPI().find(fieldVariable.getFieldId());
+			ContentTypeAPI tapi = APILocator.getContentTypeAPI(user);
+			ContentType type = tapi.find(field.contentTypeId());
+			tapi.updateModDate(type);
 		} catch (DotSecurityException e) {
 			return LanguageUtil.get(user, "message.fieldvariables.permission.error.save");
 		}
@@ -108,6 +116,10 @@ public class FieldVariableAjax {
 		FieldVariable fieldVar = fieldAPI.findFieldVariable(fieldVarId, user, respectFrontendRoles);
 		fieldAPI.deleteFieldVariable(fieldVar, user, respectFrontendRoles);
 		
+		Field field = APILocator.getContentTypeFieldAPI().find(fieldVar.getFieldId());
+		ContentTypeAPI tapi = APILocator.getContentTypeAPI(user);
+		ContentType type = tapi.find(field.contentTypeId());
+		tapi.updateModDate(type);
 		return LanguageUtil.get(user, "message.fieldvariables.deleted");
 	}
 
