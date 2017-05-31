@@ -440,7 +440,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
             ContentType newContentType = ctype;
 
             // set to system folder if on system host or the host id of the folder it is on
-            List<Field> oldFields = newContentType.fields();
+            List<Field> oldFields = fAPI.byContentTypeId(newContentType.id());
 
             //Checks if the folder has been set, if so checks the host where that folder lives and set it.
             if(UtilMethods.isSet(newContentType.folder()) && !newContentType.folder().equals(Folder.SYSTEM_FOLDER)){
@@ -485,14 +485,14 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
             //update the existing content type fields
             if(newFields != null) {
 
-                for (Field localField : newContentType.fields()) {
-                    if ( !newFields.stream().anyMatch( f -> f.id().equals(localField.id()) ) && !localField.fixed()) {
+                for (Field oldField : oldFields) {
+                    if ( !newFields.stream().anyMatch( f -> f.id().equals(oldField.id()) ) && !oldField.fixed()) {
                         Logger.info(this,
-                            "Deleting no longer needed Field: " + localField.name() +
-                                " with ID: " + localField.id() +
+                            "Deleting no longer needed Field: " + oldField.name() +
+                                " with ID: " + oldField.id() +
                                 ", from Content Type: " + newContentType.name());
 
-                        fAPI.delete(localField);
+                        fAPI.delete(oldField);
                     }
                 }
 
@@ -510,7 +510,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
                 }
             }
 
-            return newContentType;
+            return find(newContentType.id());
         });
     }
 
