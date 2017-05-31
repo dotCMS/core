@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.business;
 
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import com.dotcms.api.system.event.ContentTypePayloadDataWrapper;
@@ -436,96 +437,104 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
           "User-does-not-have-add-children-or-structure-permission-on-host-folder:" + parent);
     }
 
-    
-    
-    
       final ContentType ctype = contentType;
-    
-	  return LocalTransaction.wrapReturn(() -> {
-	      ContentType newContentType = ctype;  
 
-		    // set to system folder if on system host or the host id of the folder it is on
-		    List<Field> localFields = newContentType.fields();
+      return LocalTransaction.wrapReturn(() -> {
+          ContentType newContentType = ctype;
 
-		    //Checks if the folder has been set, if so checks the host where that folder lives and set it.
-		    if(UtilMethods.isSet(newContentType.folder()) && !newContentType.folder().equals(Folder.SYSTEM_FOLDER)){
-		    	newContentType = ContentTypeBuilder.builder(newContentType)
-		    	          .host(APILocator.getFolderAPI().find(newContentType.folder(), user, false).getHostId()).build();
-		    }else if(UtilMethods.isSet(newContentType.host())){//If there is no folder set, check if the host has been set, if so set the folder to System Folder
-		    	newContentType = ContentTypeBuilder.builder(newContentType).folder(Folder.SYSTEM_FOLDER).build();
-		    }
+          // set to system folder if on system host or the host id of the folder it is on
+          List<Field> localFields = newContentType.fields();
 
-		    if (!localFields.isEmpty())
-		    	newContentType.constructWithFields(localFields);
+          //Checks if the folder has been set, if so checks the host where that folder lives and set it.
+          if(UtilMethods.isSet(newContentType.folder()) && !newContentType.folder().equals(Folder.SYSTEM_FOLDER)){
+              newContentType = ContentTypeBuilder.builder(newContentType)
+                  .host(APILocator.getFolderAPI().find(newContentType.folder(), user, false).getHostId()).build();
+          }else if(UtilMethods.isSet(newContentType.host())){//If there is no folder set, check if the host has been set, if so set the folder to System Folder
+              newContentType = ContentTypeBuilder.builder(newContentType).folder(Folder.SYSTEM_FOLDER).build();
+          }
+
+          if (!localFields.isEmpty())
+              newContentType.constructWithFields(localFields);
 
 
-		    ContentType oldType = newContentType;
-		    try {
-		      if (newContentType.id() != null)
-		        oldType = this.fac.find(newContentType.id());
-		        //perms.checkPermission(oldType, PermissionLevel.PUBLISH, user);
-		    } catch (NotFoundInDbException notThere) {
-		      // not logging, expected when inserting new from separate environment
-		    }
-		    newContentType = this.fac.save(newContentType);
+          ContentType oldType = newContentType;
+          try {
+              if (newContentType.id() != null)
+                  oldType = this.fac.find(newContentType.id());
+              //perms.checkPermission(oldType, PermissionLevel.PUBLISH, user);
+          } catch (NotFoundInDbException notThere) {
+              // not logging, expected when inserting new from separate environment
+          }
+          newContentType = this.fac.save(newContentType);
 
-		    if (oldType != null) {
-		      if (fireUpdateIdentifiers(oldType.expireDateVar(), newContentType.expireDateVar())) {
-		        IdentifierDateJob.triggerJobImmediately(oldType, user);
-		      } else if (fireUpdateIdentifiers(oldType.publishDateVar(), newContentType.publishDateVar())) {
-		        IdentifierDateJob.triggerJobImmediately(oldType, user);
-		      }
-		      perms.resetPermissionReferences(newContentType);
-		    }
-		    ActivityLogger.logInfo(getClass(), "Save ContentType Action", "User " + user.getUserId() + "/" + user.getFullName()
-		        + " added ContentType " + newContentType.name() + " to host id:" + newContentType.host());
-		    AdminLogger.log(getClass(), "ContentType", "ContentType saved : " + newContentType.name(), user);
+          if (oldType != null) {
+              if (fireUpdateIdentifiers(oldType.expireDateVar(), newContentType.expireDateVar())) {
+                  IdentifierDateJob.triggerJobImmediately(oldType, user);
+              } else if (fireUpdateIdentifiers(oldType.publishDateVar(), newContentType.publishDateVar())) {
+                  IdentifierDateJob.triggerJobImmediately(oldType, user);
+              }
+              perms.resetPermissionReferences(newContentType);
+          }
+          ActivityLogger.logInfo(getClass(), "Save ContentType Action", "User " + user.getUserId() + "/" + user.getFullName()
+              + " added ContentType " + newContentType.name() + " to host id:" + newContentType.host());
+          AdminLogger.log(getClass(), "ContentType", "ContentType saved : " + newContentType.name(), user);
 
-		    
-		    //update the existing content type fields
-		    if(fields != null){
-			  //Fields on current content type version
-		      localFields = newContentType.fields();
-                // localFieldIds will contains all the local IDs, in order to be able to compare bundle fields vs local fields.
-                Set<String> localFieldIds = Sets.newHashSet();
 
-                for (Field localField : localFields) {
-                    localFieldIds.add(localField.id());
-                }
-	
-	      
-		      //for each field in the content type lets create it if doesn't exists and update its properties if it does
-		      for( Field field : fields ) {
-		    	 fAPI.save(field,APILocator.systemUser());
+          //update the existing content type fields
+          if(fields != null){
+              //Fields on current content type version
+              localFields = newContentType.fields();
+              // localFieldIds will contains all the local IDs, in order to be able to compare bundle fields vs local fields.
+              Set<String> localFieldIds = Sets.newHashSet();
+              Map<String, Field> localFieldsMap = Maps.newHashMap();
+
+              for (Field localField : localFields) {
+                  localFieldIds.add(localField.id());
+                  localFieldsMap.put(localField.variable(), localField);
+              }
+
+              //for each field in the content type lets create it if doesn't exists and update its properties if it does
+              for( Field field : fields ) {
+
+                  if ( localFieldsMap.containsKey(field.variable())
+                      && !localFieldsMap.get(field.variable()).id().equals(field.id())
+                      && !field.fixed() ){
+
+                      final Field f = localFieldsMap.get(field.variable());
+                      fAPI.delete(f);
+                      localFieldIds.remove( f.id() );
+                  }
+
+                  fAPI.save(field,APILocator.systemUser());
 
                   localFieldIds.remove( field.id() );
                   if( fieldVariables != null && !fieldVariables.isEmpty() ){
-			    	  for(FieldVariable fieldVariable : fieldVariables) {
-			    		  if(fieldVariable.fieldId().equals(field.inode())) {
-			    			  fAPI.save(fieldVariable, APILocator.systemUser());
-			    		  }
-			    	  }
-		    	  }
-		      }
+                      for(FieldVariable fieldVariable : fieldVariables) {
+                          if(fieldVariable.fieldId().equals(field.inode())) {
+                              fAPI.save(fieldVariable, APILocator.systemUser());
+                          }
+                      }
+                  }
+              }
 
-                if ( !localFieldIds.isEmpty() ) {
-		          // we have local fields that didn't came
-		          // in the content type. lets remove them
-                    for ( String localFieldId : localFieldIds ) {
+              if ( !localFieldIds.isEmpty() ) {
+                  // we have local fields that didn't came
+                  // in the content type. lets remove them
+                  for ( String localFieldId : localFieldIds ) {
                       Field f = fAPI.find(localFieldId);
-		        	  if(!f.fixed()){
+                      if(!f.fixed()){
                           Logger.info(this, "Deleting no longer needed Field: " + f.name() + ", from Content Type: " + newContentType.name());
-		        		  fAPI.delete(f);
-		        	  }else{
-		        		  Logger.error(this, "Can't delete fixed field:"+f.name()+" from Content Type:"+newContentType.name());
-		        	  }
-		          }
-		      }
-	      }
-	      
-	
-		  return newContentType;
-	  });
+                          fAPI.delete(f);
+                      }else{
+                          Logger.error(this, "Can't delete fixed field:"+f.name()+" from Content Type:"+newContentType.name());
+                      }
+                  }
+              }
+          }
+
+
+          return newContentType;
+      });
   }
 
 
