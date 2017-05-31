@@ -94,9 +94,9 @@ public class FieldVariableAjax {
 			fieldAPI.saveFieldVariable(fieldVariable, user, respectFrontendRoles);
 			
 			Field field = APILocator.getContentTypeFieldAPI().find(fieldVariable.getFieldId());
-			ContentTypeAPI tapi = APILocator.getContentTypeAPI(user);
-			ContentType type = tapi.find(field.contentTypeId());
-			tapi.updateModDate(type);
+			ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+			ContentType type = contentTypeAPI.find(field.contentTypeId());
+			contentTypeAPI.updateModDate(type);
 		} catch (DotSecurityException e) {
 			return LanguageUtil.get(user, "message.fieldvariables.permission.error.save");
 		}
@@ -117,9 +117,9 @@ public class FieldVariableAjax {
 		fieldAPI.deleteFieldVariable(fieldVar, user, respectFrontendRoles);
 		
 		Field field = APILocator.getContentTypeFieldAPI().find(fieldVar.getFieldId());
-		ContentTypeAPI tapi = APILocator.getContentTypeAPI(user);
-		ContentType type = tapi.find(field.contentTypeId());
-		tapi.updateModDate(type);
+		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+		ContentType type = contentTypeAPI.find(field.contentTypeId());
+		contentTypeAPI.updateModDate(type);
 		return LanguageUtil.get(user, "message.fieldvariables.deleted");
 	}
 
