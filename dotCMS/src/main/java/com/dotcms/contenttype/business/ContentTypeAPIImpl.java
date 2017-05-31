@@ -402,16 +402,42 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @Override
   public ContentType save(ContentType contentType, List<Field> fields, List<FieldVariable> fieldVariables) throws DotDataException, DotSecurityException {
 	  
-	  return LocalTransaction.wrapReturn(() -> {
-		  Permissionable parent = contentType.getParentPermissionable();
 
-            ContentType newContentType = contentType;  
-		    if (!perms.doesUserHavePermissions(parent,
-		        "PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_PUBLISH,
-		        user)) {
-		      throw new DotSecurityException(
-		          "User-does-not-have-add-children-or-structure-permission-on-host-folder:" + parent);
-		    }
+    
+    // Sets the host:
+    try {
+      if(contentType.host()==null){
+        contentType = ContentTypeBuilder.builder(contentType).host(Host.SYSTEM_HOST).build();
+      }
+      if(!UUIDUtil.isUUID(contentType.host()) && ! Host.SYSTEM_HOST.equalsIgnoreCase(contentType.host())){
+        HostAPI hapi = APILocator.getHostAPI();
+        contentType = ContentTypeBuilder.builder(contentType).host(hapi.resolveHostName(contentType.host(), APILocator.systemUser(), true).getIdentifier()).build();
+      }
+    } 
+    catch (DotDataException e) {
+      throw new DotDataException("unable to resolve host:" + contentType.host(), e);
+    }
+    catch(DotSecurityException es){
+      throw new DotSecurityException("invalid permissions to:" + contentType.host(), es);
+    }
+    
+    
+    // check perms
+    Permissionable parent = contentType.getParentPermissionable();
+    if (!perms.doesUserHavePermissions(parent,
+        "PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_PUBLISH,
+        user)) {
+      throw new DotSecurityException(
+          "User-does-not-have-add-children-or-structure-permission-on-host-folder:" + parent);
+    }
+
+    
+    
+    
+      final ContentType ctype = contentType;
+    
+	  return LocalTransaction.wrapReturn(() -> {
+	      ContentType newContentType = ctype;  
 
 		    // set to system folder if on system host or the host id of the folder it is on
 		    List<Field> localFields = newContentType.fields();
@@ -427,21 +453,12 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 		    if (!localFields.isEmpty())
 		    	newContentType.constructWithFields(localFields);
 
-          // Sets the host:
-          try {
-              HostAPI hapi = APILocator.getHostAPI();
-              Host host = UUIDUtil.isUUID(newContentType.host()) || "SYSTEM_HOST".equalsIgnoreCase(newContentType.host())
-                      ? hapi.find(newContentType.host(), APILocator.systemUser(), true)
-                      : hapi.resolveHostName(newContentType.host(), APILocator.systemUser(), true);
-              newContentType = ContentTypeBuilder.builder(newContentType).host(host.getIdentifier()).build();
-          } catch (DotDataException | DotSecurityException e) {
-              throw new DotStateException("unable to resolve host:" + newContentType.host(), e);
-          }
 
 		    ContentType oldType = newContentType;
 		    try {
 		      if (newContentType.id() != null)
 		        oldType = this.fac.find(newContentType.id());
+		        //perms.checkPermission(oldType, PermissionLevel.PUBLISH, user);
 		    } catch (NotFoundInDbException notThere) {
 		      // not logging, expected when inserting new from separate environment
 		    }
