@@ -1,8 +1,6 @@
 package com.dotcms.contenttype.business;
 
-import java.util.*;
-
-import org.elasticsearch.action.search.SearchResponse;
+import com.google.common.collect.Sets;
 
 import com.dotcms.api.system.event.ContentTypePayloadDataWrapper;
 import com.dotcms.api.system.event.Payload;
@@ -11,14 +9,12 @@ import com.dotcms.api.system.event.Visibility;
 import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.exception.BaseRuntimeInternationalizationException;
-import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.beans.Host;
@@ -47,6 +43,15 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+
+import org.elasticsearch.action.search.SearchResponse;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 public class ContentTypeAPIImpl implements ContentTypeAPI {
 
@@ -464,20 +469,20 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 		    if(fields != null){
 			  //Fields on current content type version
 		      localFields = newContentType.fields();
-		      //Create a copy in order to avoid a possible concurrent modification error
-		      List<String> localFieldsVarNames = new ArrayList<String>();
-		
-		      for (Field localField : localFields) {
-		      	localFieldsVarNames.add(localField.variable());
-		      }
+                // localFieldIds will contains all the local IDs, in order to be able to compare bundle fields vs local fields.
+                Set<String> localFieldIds = Sets.newHashSet();
+
+                for (Field localField : localFields) {
+                    localFieldIds.add(localField.id());
+                }
 	
 	      
 		      //for each field in the content type lets create it if doesn't exists and update its properties if it does
 		      for( Field field : fields ) {
 		    	 fAPI.save(field,APILocator.systemUser());
-		    	  
-		    	  localFieldsVarNames.remove( field.variable() );
-		    	  if(fieldVariables != null){
+
+                  localFieldIds.remove( field.id() );
+                  if( fieldVariables != null && !fieldVariables.isEmpty() ){
 			    	  for(FieldVariable fieldVariable : fieldVariables) {
 			    		  if(fieldVariable.fieldId().equals(field.inode())) {
 			    			  fAPI.save(fieldVariable, APILocator.systemUser());
@@ -485,13 +490,14 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 			    	  }
 		    	  }
 		      }
-		      
-		      if ( localFieldsVarNames.size() > 0 ) {
+
+                if ( !localFieldIds.isEmpty() ) {
 		          // we have local fields that didn't came
 		          // in the content type. lets remove them
-		          for ( String localFieldVarName : localFieldsVarNames ) {
-		        	  Field f = fAPI.byContentTypeIdAndVar(newContentType.inode(), localFieldVarName);
+                    for ( String localFieldId : localFieldIds ) {
+                      Field f = fAPI.find(localFieldId);
 		        	  if(!f.fixed()){
+                          Logger.info(this, "Deleting no longer needed Field: " + f.name() + ", from Content Type: " + newContentType.name());
 		        		  fAPI.delete(f);
 		        	  }else{
 		        		  Logger.error(this, "Can't delete fixed field:"+f.name()+" from Content Type:"+newContentType.name());
