@@ -259,63 +259,10 @@ public class WebAPI implements ViewTool {
 	}
 
 	public boolean canParseContent(String identifier, boolean isWorking ) {
-		if(!UtilMethods.isSet(identifier) || identifier.equals(0)){
-			Logger.debug(this, "Method WebAPI.canParseContent : The content being parsed is 0 : returning false");
-			return false;
-		}
-		String parsePath ="";
-		String folderPath =isWorking?"working/" : "live/";
-		if(identifier.endsWith(".structure")){
-			parsePath = identifier;
-		}else{
-			if(identifier.indexOf(Config.getStringProperty("VELOCITY_CONTENT_EXTENSION")) == -1){
-				if(UtilMethods.isSet((String)request.getSession().getAttribute(WebKeys.HTMLPAGE_LANGUAGE))){
-					parsePath = folderPath + identifier + "_"+ request.getSession().getAttribute(WebKeys.HTMLPAGE_LANGUAGE).toString() +"." + Config.getStringProperty("VELOCITY_CONTENT_EXTENSION");
-				}else{
-					parsePath = folderPath + identifier + "_"+langAPI.getDefaultLanguage().getId()+"." + Config.getStringProperty("VELOCITY_CONTENT_EXTENSION");
-				}
-			}
-		}
-
-		if(canParseContent(parsePath)){
-			return true;
-		}else{
-			parsePath = folderPath + identifier + "_"+langAPI.getDefaultLanguage().getId()+"." + Config.getStringProperty("VELOCITY_CONTENT_EXTENSION");
-			return canParseContent(parsePath);
-		}
-
+	  return true;
 	}
 	public boolean canParseContent(String parsePath) {
-		try {
-			VelocityEngine ve = VelocityUtil.getEngine();
-			StringWriter w = new StringWriter();
-			//Was put in to fix DOTCMS-995 but it caused DOTCMS-1210.
-//			I actually think it should be fine passed the ctx which is a chained context here
-//			VelocityContext vc = UtilMethods.pushVelocityContext(ctx);
-//			Velocity.mergeTemplate(parsePath, "UTF-8", vc, w);
-			String x;
-	        int startSub = 0;
-	        int endSub = parsePath.length();
-	        if(parsePath.lastIndexOf('\\') > -1){
-	        	startSub = parsePath.lastIndexOf("\\") + 1;
-	        }else if(parsePath.lastIndexOf('/') > -1){
-	        	startSub = parsePath.lastIndexOf('/') + 1;
-	        }
-	        if(parsePath.lastIndexOf(".") > -1){
-	        	endSub = parsePath.lastIndexOf(".");
-	        }
-	        x = parsePath.substring(startSub, endSub);
-	        if(x.equals("0") || x.startsWith("0_")){
-	        	Logger.debug(this, "Method WebAPI.canParseContent : The content being parsed is 0 : returning false");
-	        	return false;
-	        }
-			ve.mergeTemplate(parsePath, "UTF-8", ctx, w);
-		} catch (Exception e) {
-			Logger.debug(this.getClass(), "Velocity Error: " + e);
-			Logger.debug(this,e.getMessage(),e);
-			return false;
-		}
-		return true;
+	  return true;
 	}
 
 

@@ -1,12 +1,29 @@
 package com.dotcms.publisher.business;
 
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.ObjectAlreadyExistsException;
+import org.quartz.Scheduler;
+import org.quartz.SimpleTrigger;
+import org.quartz.Trigger;
+
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.mapper.PublishQueueMapper;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -26,13 +43,6 @@ import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-
-import java.util.*;
-
-import org.quartz.JobDetail;
-import org.quartz.Scheduler;
-import org.quartz.SimpleTrigger;
-import org.quartz.Trigger;
 
 /**
  * Provides utility methods to interact with asset information added to the
@@ -65,7 +75,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 	}
 
 	/**
-	 * 
+	 * Default class constructor.
 	 */
 	protected PublisherAPIImpl(){
 		mapper = new PublishQueueMapper();
@@ -87,18 +97,28 @@ public class PublisherAPIImpl extends PublisherAPI{
 
 	@Override
     public Map<String, Object> addContentsToPublish ( List<String> identifiers, String bundleId, Date publishDate, User user ) throws DotPublisherException {
-    	return addAssetsToQueue(identifiers, bundleId, publishDate, user, ADD_OR_UPDATE_ELEMENT);
+    	return addAssetsToQueue(identifiers, bundleId, publishDate, user, ADD_OR_UPDATE_ELEMENT, DeliveryStrategy.ALL_ENDPOINTS);
+    }
+
+	@Override
+    public Map<String, Object> addContentsToPublish ( List<String> identifiers, String bundleId, Date publishDate, User user, DeliveryStrategy deliveryStrategy) throws DotPublisherException {
+    	return addAssetsToQueue(identifiers, bundleId, publishDate, user, ADD_OR_UPDATE_ELEMENT, deliveryStrategy);
     }
 
 	@Override
     public Map<String, Object> addContentsToUnpublish ( List<String> identifiers, String bundleId, Date unpublishDate, User user ) throws DotPublisherException {
-    	return addAssetsToQueue(identifiers, bundleId, unpublishDate, user, DELETE_ELEMENT);
+    	return addAssetsToQueue(identifiers, bundleId, unpublishDate, user, DELETE_ELEMENT, DeliveryStrategy.ALL_ENDPOINTS);
+    }
+
+	@Override
+    public Map<String, Object> addContentsToUnpublish ( List<String> identifiers, String bundleId, Date unpublishDate, User user, DeliveryStrategy deliveryStrategy) throws DotPublisherException {
+    	return addAssetsToQueue(identifiers, bundleId, unpublishDate, user, DELETE_ELEMENT, deliveryStrategy);
     }
 
     @Override
 	public Map<String, Object> saveBundleAssets(List<String> identifiers, String bundleId,
 			User user) throws DotPublisherException {
-    	return addAssetsToQueue(identifiers, bundleId, null, user, -1);
+    	return addAssetsToQueue(identifiers, bundleId, null, user, -1, DeliveryStrategy.ALL_ENDPOINTS);
 	}
 
 	/**
@@ -136,7 +156,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 *             An error occurred during the analysis of data that is being
 	 *             added to the queue.
 	 */
-    private Map<String, Object> addAssetsToQueue(List<String> identifiers, String bundleId, Date operationDate, User user, long operationType ) throws DotPublisherException {
+    private Map<String, Object> addAssetsToQueue(List<String> identifiers, String bundleId, Date operationDate, User user, long operationType, DeliveryStrategy deliveryStrategy) throws DotPublisherException {
         //Map to store the results and errors adding Assets to que Queue
         Map<String, Object> resultMap = new HashMap<String, Object>();
         List<String> errorsList = new ArrayList<String>();
@@ -155,7 +175,6 @@ public class PublisherAPIImpl extends PublisherAPI{
 				  Collection<String> assets = getAssets(bundleId);
 
 				  for ( String identifier : identifiers ) {
-
 					  idToProcess = identifier;
 
 					  if (assets.contains(identifier)){
@@ -174,24 +193,23 @@ public class PublisherAPIImpl extends PublisherAPI{
                       } else if ( identifier.contains( ".jar" ) ) {//Trying to publish an OSGI jar bundle
                           type = PusheableAsset.OSGI.getType();
                       } else {
-
                           Identifier iden = APILocator.getIdentifierAPI().find( identifier );
 
                           if ( !UtilMethods.isSet( iden.getId() ) ) { // we have an inode, not an identifier
                               try {
-                                  // check if it is a structure
-                                  Structure st = null;
-                                  List<Structure> sts = StructureFactory.getStructures();
-                                  for ( Structure s : sts ) {
-                                      if ( s.getInode().equals( identifier ) ) {
-                                          st = s;
+                                  // check if it is a Content Type
+                                  Structure contentType = null;
+                                  List<Structure> contentTypes = StructureFactory.getStructures();
+                                  for ( Structure contentTypeItem : contentTypes ) {
+                                      if ( contentTypeItem.getInode().equals( identifier ) ) {
+                                          contentType = contentTypeItem;
                                           type = PusheableAsset.CONTENT_TYPE.getType();
                                       }
                                   }
-                                  if ( UtilMethods.isSet( st ) ) {
-                                      if ( !strPerAPI.doesUserHavePermission( st, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
+                                  if ( UtilMethods.isSet( contentType ) ) {
+                                      if ( !strPerAPI.doesUserHavePermission( contentType, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
                                           //Generate and append the error message
-                                          appendError( errorsList, ErrorType.PERMISSION, user, "Structure", st.getName(), st.getIdentifier() );
+                                          appendError( errorsList, ErrorType.PERMISSION, user, "structure", contentType.getName(), contentType.getIdentifier() );
                                           continue;
                                       }
                                   }
@@ -212,7 +230,7 @@ public class PublisherAPIImpl extends PublisherAPI{
                                   else if ( !UtilMethods.isSet(type) && UtilMethods.isSet( folder = APILocator.getFolderAPI().find( identifier, user, false ) ) ) {
                                       if ( !strPerAPI.doesUserHavePermission( folder, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
                                           //Generate and append the error message
-                                          appendError( errorsList, ErrorType.PERMISSION, user, "Folder", folder.getName(), folder.getIdentifier() );
+                                          appendError( errorsList, ErrorType.PERMISSION, user, "folder", folder.getName(), folder.getIdentifier() );
                                           continue;
                                       }
                                       type = PusheableAsset.FOLDER.getType();
@@ -272,38 +290,48 @@ public class PublisherAPIImpl extends PublisherAPI{
                   throw new DotPublisherException( "Unable to add element " + idToProcess + " to publish queue table: " + e.getMessage(), e );
               }
           }
-    	firePublisherQueueNow();
-    	  
-        //Preparing and returning the response status object
-        resultMap.put( "errorMessages", errorsList );
-        resultMap.put( "errors", errorsList.size() );
-        resultMap.put( "bundleId", bundleId );
-        resultMap.put( "total", identifiers != null ? identifiers.size() : 0 );
-        return resultMap;
+    	  Map<String, Object> dataMap = CollectionsUtils.map("deliveryStrategy", deliveryStrategy);
+		firePublisherQueueNow(dataMap);
+		  
+		//Preparing and returning the response status object
+		resultMap.put( "errorMessages", errorsList );
+		resultMap.put( "errors", errorsList.size() );
+		resultMap.put( "bundleId", bundleId );
+		resultMap.put( "total", identifiers != null ? identifiers.size() : 0 );
+		return resultMap;
     }
-    
-    public void firePublisherQueueNow(){
-      //SCHEDULE PUBLISH QUEUE JOB for NOW
-      try {
-        Scheduler sched = QuartzUtils.getStandardScheduler();
-        JobDetail job = sched.getJobDetail("PublishQueueJob"  , "dotcms_jobs");
-        if(job==null) return;
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.SECOND, Config.getIntProperty("PUSH_PUBLISHING_FIRING_DELAY_SEC", 2));
-        Trigger trigger = new SimpleTrigger("PublishQueueJob"+ System.currentTimeMillis(),calendar.getTime() );
-        trigger.setJobName(job.getName());
-        trigger.setJobGroup(job.getGroup());
-        trigger.setJobDataMap(job.getJobDataMap());
-        sched.scheduleJob(trigger);
-        // quartz will throw this error if it is already running
-      } catch (org.quartz.ObjectAlreadyExistsException e) {
-          Logger.debug(this.getClass(), e.getMessage(),e);
-      }
-      catch (Exception e) {
-          Logger.error(this.getClass(), e.getMessage(),e);
-      }
-   } 
-    
+
+    @Override
+    public void firePublisherQueueNow(Map<String, Object> dataMap){
+		try {
+		    Scheduler sched = QuartzUtils.getStandardScheduler();
+		    JobDetail job = sched.getJobDetail("PublishQueueJob"  , "dotcms_jobs");
+			if(job==null) {
+				return;
+			}
+			job.setJobDataMap(new JobDataMap(dataMap));
+			Calendar calendar = Calendar.getInstance();
+			calendar.add(Calendar.SECOND, Config.getIntProperty("PUSH_PUBLISHING_FIRING_DELAY_SEC", 2));
+			//SCHEDULE PUBLISH QUEUE JOB for NOW
+			Trigger trigger = new SimpleTrigger("PublishQueueJob"+ System.currentTimeMillis(),calendar.getTime() );
+			trigger.setJobName(job.getName());
+			trigger.setJobGroup(job.getGroup());
+			trigger.setJobDataMap(job.getJobDataMap());
+			sched.scheduleJob(trigger);
+		} catch (ObjectAlreadyExistsException e) {
+			// Quartz will throw this error if it is already running
+		    Logger.debug(this.getClass(), e.getMessage(),e);
+		} catch (Exception e) {
+		    Logger.error(this.getClass(), e.getMessage(),e);
+		}
+    }
+
+    /**
+     * 
+     * @param bundleId
+     * @return
+     * @throws DotDataException
+     */
 	private Collection<String> getAssets(String bundleId) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		dc.setSQL( SELECT_ASSET );
@@ -565,22 +593,21 @@ public class PublisherAPIImpl extends PublisherAPI{
 			"left join publishing_queue_audit a "+
 			"ON p.bundle_id=a.bundle_id "+
 			"where "+
-			"((a.status != ? and a.status != ?) or a.status is null ) and p.publish_date is not null "+
+			"((a.status != ? and a.status != ? AND a.status != ?) or a.status is null ) and p.publish_date is not null "+
 			"order by publish_date ASC,operation ASC";
 
 	@Override
 	public List<Map<String, Object>> getQueueBundleIdsToProcess() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
-
 			dc.setSQL(SQLGETBUNDLESTOPROCESS);
-
 			dc.addParam(Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
 			dc.addParam(Status.PUBLISHING_BUNDLE.getCode());
+			dc.addParam(Status.WAITING_FOR_PUBLISHING.getCode());
 			return dc.loadObjectResults();
 		}catch(Exception e){
 			Logger.error(PublisherUtil.class,e.getMessage(),e);
-			throw new DotPublisherException("Unable to get list of elements with error:"+e.getMessage(), e);
+			throw new DotPublisherException("Unable to get list of bundles to process: " + e.getMessage(), e);
 		}finally{
 			DbConnectionFactory.closeConnection();
 		}

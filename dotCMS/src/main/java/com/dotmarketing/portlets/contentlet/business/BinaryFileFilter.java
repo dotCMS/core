@@ -11,7 +11,7 @@ public class BinaryFileFilter implements FileFilter {
 		if(pathname.getName().contains(Config.GENERATED_FILE)){
 			return false;
 		}
-		if(pathname.getName().startsWith(".")){
+		else if(pathname.getName().startsWith(".")){
 			return false;
 		}
 		else{

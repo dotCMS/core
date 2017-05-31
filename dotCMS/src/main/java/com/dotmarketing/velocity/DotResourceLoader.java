@@ -13,6 +13,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.org.apache.commons.collections.ExtendedProperties;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.loader.ResourceLoader;
@@ -95,9 +96,17 @@ public class DotResourceLoader extends ResourceLoader {
         VELOCITY_BANNER_EXTENSION = Config.getStringProperty("VELOCITY_BANNER_EXTENSION");
         VELOCITY_HOST_EXTENSION=Config.getStringProperty("VELOCITY_HOST_EXTENSION");
 
-        String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
+        String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
         if (velocityRootPath.startsWith("/WEB-INF")) {
-            velocityRootPath = FileUtil.getRealPath(velocityRootPath);
+            String startPath = velocityRootPath.substring(0, 8);
+            String endPath = velocityRootPath.substring(9, velocityRootPath.length());
+            velocityRootPath = FileUtil.getRealPath(startPath) + File.separator + endPath;
+        } else {
+            // verify folder exists or create it
+            verifyOrCreateVelocityRootPath(velocityRootPath);
+
+            // verify and move velocity contents
+            verifyAndMoveVelocityContents(velocityRootPath, FileUtil.getRealPath("/WEB-INF") + File.separator + "velocity");
         }
 
         VELOCITY_ROOT = velocityRootPath + File.separator;
@@ -520,6 +529,66 @@ public class DotResourceLoader extends ResourceLoader {
 
     public static DotResourceLoader getInstance(){
     	return instance;
+    }
+
+    /**
+     * Verifies the folder exists.
+     * If it does not exists then tries to create it
+     *
+     * @param path The path to verify
+     * @return boolean true when path exists or it was created successfully
+     */
+    private boolean verifyOrCreateVelocityRootPath(String path) {
+        return new File(path).exists() || createVelocityFolder(path);
+    }
+
+    /**
+     * Create the path if it does not exist. Required for velocity files
+     *
+     * @param path The path to create
+     * @return boolean
+     */
+    private boolean createVelocityFolder(String path) {
+        boolean created = false;
+        File directory = new File(path);
+        if (!directory.exists()) {
+            Logger.debug(this, String.format("Velocity directory %s does not exist. Trying to create it...", path));
+            created = directory.mkdirs();
+            if (!created) {
+                Logger.error(this, String.format("Unable to create Velocity directory: %s", path));
+            }
+        }
+        return created;
+    }
+
+    /**
+     * Verify the velocity contents are in the right place if the default path has been overwritten
+     * If velocity contents path is different to the default one then move all contents to the new directory and get rid of the default one
+     *
+     * @param customPath The custom path for velocity files
+     * @param sourcePath The source path for velocity files
+     */
+    private void verifyAndMoveVelocityContents(String customPath, String sourcePath) {
+        if (UtilMethods.isSet(customPath) && UtilMethods.isSet(sourcePath)) {
+            if (!customPath.trim().equals(sourcePath)) {
+                File customDirectory = new File(customPath);
+                File sourceDirectory = new File(sourcePath);
+
+                if (sourceDirectory.exists() && customDirectory.exists()) {
+                    try {
+                        // copy all bundles
+                        FileUtils.copyDirectory(sourceDirectory, customDirectory);
+
+                        // delete target folder since we don't need it
+                        FileUtils.deleteDirectory(sourceDirectory);
+                    } catch (IOException ioex) {
+                        String errorMessage = String.format("There was a problem moving velocity contents from '%s' to '%s'", sourcePath, customPath);
+                        Logger.error(this, errorMessage);
+                        throw new RuntimeException(errorMessage, ioex);
+                    }
+                }
+            }
+        }
     }
 
 }

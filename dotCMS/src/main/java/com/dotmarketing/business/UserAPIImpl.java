@@ -56,7 +56,7 @@ public class UserAPIImpl implements UserAPI {
 	private UserProxyAPI upAPI;
 	private final NotificationAPI notfAPI;
 	private final BundleAPI bundleAPI;
-
+	static User systemUser, anonUser=null;
 	/**
 	 * Creates an instance of the class.
 	 */
@@ -139,9 +139,18 @@ public class UserAPIImpl implements UserAPI {
 			throw new DotDataException("getting default user user failed", e);
 		}
 	}
-
-	@Override
+    @Override
 	public User getSystemUser() throws DotDataException {
+      if(this.systemUser==null){
+        this.systemUser=_getSystemUser();
+	   }
+	   return this.systemUser;
+	}
+	
+	
+	
+
+	private User _getSystemUser() throws DotDataException {
 		User user = null;
 		RoleAPI roleAPI = com.dotmarketing.business.APILocator.getRoleAPI();
 		Role cmsAdminRole = roleAPI.loadCMSAdminRole();
@@ -161,9 +170,19 @@ public class UserAPIImpl implements UserAPI {
 
 		return user;
 	}
+	
+	
+    @Override
+    public User getAnonymousUser() throws DotDataException {
+      if(this.anonUser==null){
+        this.anonUser=_getAnonymousUser();
+       }
+       return this.anonUser;
+    }
+    
 
-	@Override
-	public User getAnonymousUser() throws DotDataException {
+
+	private User _getAnonymousUser() throws DotDataException {
 		User user = null;
 		try {
 			user = uf.loadUserById("anonymous");

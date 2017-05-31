@@ -17,6 +17,7 @@ import com.dotcms.contenttype.model.field.FileField;
 import com.dotcms.contenttype.model.field.HiddenField;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.MultiSelectField;
@@ -136,9 +137,8 @@ public class FieldAPIImpl implements FieldAPI {
 
       ContentType type = tapi.find(field.contentTypeId()) ;
       APILocator.getPermissionAPI().checkPermission(type, PermissionLevel.PUBLISH, user);
-      
 
-      return fac.save(var);
+      return fac.save(ImmutableFieldVariable.builder().from(var).userId(user.getUserId()).build());
   }
 
   @Override
@@ -159,6 +159,10 @@ public class FieldAPIImpl implements FieldAPI {
 
 		  perAPI.checkPermission(type, PermissionLevel.PUBLISH, user);
 
+		  Field oldField = fac.byId(field.id());
+		  if(oldField.fixed() || oldField.readOnly()){
+		    throw new DotDataException("You cannot delete a fixed or read only fiedl");
+		  }
 
 		  Structure structure = new StructureTransformer(type).asStructure();
 		  com.dotmarketing.portlets.structure.model.Field legacyField = new LegacyFieldTransformer(field).asOldField();
@@ -193,8 +197,9 @@ public class FieldAPIImpl implements FieldAPI {
 	      }
 
 	      // rebuild contentlets indexes
-	      conAPI.reindex(structure);
-
+	      if(field.indexed()){
+	        conAPI.reindex(structure);
+	      }
 	      // remove the file from the cache
 	      ContentletServices.removeContentletFile(structure);
 	      ContentletMapServices.removeContentletMapFile(structure);
@@ -221,10 +226,14 @@ public class FieldAPIImpl implements FieldAPI {
   public Field byContentTypeAndVar(ContentType type, String fieldVar) throws DotDataException {
     return fac.byContentTypeFieldVar(type, fieldVar);
   }
-  
+
   @Override
   public Field byContentTypeIdAndVar(String id, String fieldVar) throws DotDataException {
-    return fac.byContentTypeIdFieldVar(id, fieldVar);
+    try {
+        return byContentTypeAndVar(APILocator.getContentTypeAPI(APILocator.systemUser()).find(id), fieldVar);
+    } catch (DotSecurityException e) {
+        throw new DotDataException(e);
+    }
   }
   
   @Override
@@ -251,16 +260,6 @@ public class FieldAPIImpl implements FieldAPI {
 public void delete(FieldVariable fieldVar) throws DotDataException {
     fac.delete(fieldVar);
     
-}
-
-@Override
-public List<FieldVariable> loadVariables(Field field) throws DotDataException {
-    return fac.loadVariables(field);
-}
-
-@Override
-public FieldVariable loadVariable(String id) throws DotDataException {
-    return fac.loadVariable(id);
 }
   
   

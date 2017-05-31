@@ -61,6 +61,7 @@ dependencies {
 if (hasProperty('database') == false) { throw new GradleException( "Required project property \'database\' was not set" ) }
 if (hasProperty('branch') == false) { throw new GradleException( "Required project property \'branch\' was not set" ) }
 if (hasProperty('commit') == false) { ext.commit = "" }
+if (hasProperty('provisioned') == false) { ext.provisioned = "false" }
 
 if (hasProperty('propertiesFile') == false) { ext.propertiesFile = "build-aws-tests.properties" }
 if (hasProperty('scriptFile') == false) { ext.scriptFile = "build-aws-tests.sh" }
@@ -222,6 +223,10 @@ task createDBInstance(type: AmazonRDSCreateDBInstanceTask) {
 	doFirst {
 		dbInstanceIdentifier = getDatabasePropertyIdentifier( properties, project.database, project.branch )
 
+		if ( ! "MSSQL".equalsIgnoreCase( project.database ) ) {
+			dbName = getDatabasePropertyName( properties, project.database, project.branch )
+		}
+
 		engine = getDatabaseProperty( properties, "engine", project.database )
 		dbInstanceClass = getDatabaseProperty( properties, "instance.class", project.database )
 
@@ -230,10 +235,6 @@ task createDBInstance(type: AmazonRDSCreateDBInstanceTask) {
 		licenseModel = getDatabaseProperty( properties, "license", project.database )
 		publiclyAccessible = getDatabaseProperty( properties, "public", project.database ).toBoolean()
 		allocatedStorage = getDatabaseProperty( properties, "storage", project.database ).toInteger()
-
-		if ( ! "MSSQL".equalsIgnoreCase( project.database ) ) {
-			dbName = getDatabaseProperty( properties, "name", project.database )
-		}
 
 		masterUsername = getDatabaseProperty( properties, "user.master.username", project.database )
 		masterUserPassword = getDatabaseProperty( properties, "user.master.password", project.database )
@@ -278,10 +279,13 @@ task waitDBInstanceCreated(type: AmazonRDSWaitInstanceStatusTask) {
 
 task describeDBInstance {
 	doLast {
-		String dbInstanceEndpoint = getDBInstanceEndpoint( getDatabasePropertyIdentifier( properties, project.database, project.branch ) )
+		String dbInstanceEndpoint = ("true".equalsIgnoreCase(project.provisioned))
+			? "localhost"
+			: getDBInstanceEndpoint( getDatabasePropertyIdentifier( properties, project.database, project.branch ) );
+
+		String dbInstanceName = getDatabasePropertyName( properties, project.database, project.branch )
 
 		String dbDriverClassName = getDatabaseProperty( properties, "driver", project.database )
-		String dbInstanceName = getDatabaseProperty( properties, "name", project.database )
 		String dbInstancePort = getDatabaseProperty( properties, "port", project.database )
 		String dbInstanceUsername = getDatabaseProperty( properties, "user.master.username", project.database )
 		String dbInstancePassword = getDatabaseProperty( properties, "user.master.password", project.database )
@@ -428,16 +432,22 @@ task executeScript(dependsOn: [describeInstance, describeDBInstance]) {
 
 		// Define the variables supported on script
 		def variables = [
+			"BUILD_CODE": getBuildCode(project.database, project.branch),
+			"BUILD_PROVISIONED": String.valueOf("true".equalsIgnoreCase(project.provisioned)),
+
 			"BRANCH": project.branch,
 			"COMMIT": project.commit,
 
 			"DB_TYPE": project.database.toLowerCase(),
 			"DB_DRIVER": dbDriverClassName,
+			"DB_NAME": dbInstanceName,
+			"DB_HOST": dbInstanceEndpoint,
+			"DB_PORT": dbInstancePort,
 			"DB_URL": dbInstanceUrl,
 			"DB_USERNAME": dbInstanceSlaveUsername,
 			"DB_PASSWORD": dbInstanceSlavePassword,
 			"DB_VALIDATION_QUERY": validationQuery,
-			"ESCLUSTER": "dotCMS"+ database,
+			"ESCLUSTER": "dotCMS"+ database + cleanBranchName(branch),
 
 			"OUTPUT_FILE": project.outputFile,
 		]
@@ -489,10 +499,29 @@ task executeScript(dependsOn: [describeInstance, describeDBInstance]) {
 
 //---------------------------------------------- Utilities ----------------------------------------------//
 
+String getBuildCode(String database, String branch) {
+	return String.valueOf( Math.abs( Objects.hash( database, branch ) ) );
+}
+
+
 String getDatabasePropertyIdentifier(Properties properties, String database, String branch) {
-	return properties.getProperty( "db.instance.identifier.prefix" ) +"-"+ branch.toLowerCase().replace(".", "") +"-"+ database.toLowerCase()
+	return properties.getProperty( "db.instance.identifier.prefix" ) +"-"+ cleanBranchName(branch) +"-"+ database.toLowerCase()
+}
+
+String getDatabasePropertyName(Properties properties, String database, String branch) {
+	String result = getDatabaseProperty(properties, "name", database);
+
+	if ( ! "ORACLE".equalsIgnoreCase( database ) ) {
+		result += cleanBranchName(branch);
+	}
+
+	return result;
 }
 
 String getDatabaseProperty(Properties properties, String propertyName, String database) {
 	return properties.getProperty( "db."+ database.toLowerCase() +"."+ propertyName );
+}
+
+String cleanBranchName(String branch) {
+	return branch.toLowerCase().replace(".", "").replace("-", "");
 }

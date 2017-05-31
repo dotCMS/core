@@ -1,10 +1,6 @@
 package com.dotcms.contenttype.business;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import org.elasticsearch.action.search.SearchResponse;
 
@@ -16,13 +12,16 @@ import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.exception.BaseRuntimeInternationalizationException;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.util.ContentTypeUtil;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -35,6 +34,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
@@ -42,6 +42,7 @@ import com.dotmarketing.quartz.job.IdentifierDateJob;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
@@ -54,24 +55,26 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   final PermissionAPI perms;
   final User user;
   final Boolean respectFrontendRoles;
+  final FieldAPI fAPI;
 
 
 
   public ContentTypeAPIImpl(User user, boolean respectFrontendRoles, ContentTypeFactory fac, FieldFactory ffac,
-                            PermissionAPI perms) {
+                            PermissionAPI perms, FieldAPI fAPI) {
     super();
     this.fac = fac;
     this.ffac = ffac;
     this.perms = perms;
     this.user = user;
     this.respectFrontendRoles = respectFrontendRoles;
+    this.fAPI = fAPI;
   }
 
 
 
   public ContentTypeAPIImpl(User user, boolean respectFrontendRoles) {
     this(user, respectFrontendRoles, FactoryLocator.getContentTypeFactory(), FactoryLocator.getFieldFactory(),
-        APILocator.getPermissionAPI());
+        APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI());
   }
 
 
@@ -190,101 +193,13 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
 
 
-  @Override
-  public ContentType save(final ContentType type, final List<Field> fields)
-      throws DotDataException, DotSecurityException {
-    return LocalTransaction.wrapReturn(() -> {
-      Preconditions.checkNotNull(fields);
 
-      // Im not smart enough to use lamdas
-      List<Field> saveFields = new ArrayList<>();
-
-      for (Field test : fields) {
-        Optional<Field> optional =
-            type.requiredFields().stream().filter(x -> test.variable().equalsIgnoreCase(x.variable())).findFirst();
-        if (!optional.isPresent()) {
-          saveFields.add(test);
-        }
-      }
-
-
-      ContentType retType = save(type);
-      int i = 0;
-
-
-      for (Field field : saveFields) {
-        field = FieldBuilder.builder(field).contentTypeId(retType.id()).sortOrder(i++).build();
-        ffac.save(field);
-      }
-
-
-
-
-
-      return retType;
-    });
-  }
-
-
-
-  public void validateFields(ContentType type) {
-
-    fac.validateFields( type);
-  }
 
 
 
   @Override
   public ContentType save(ContentType type) throws DotDataException, DotSecurityException {
-
-
-    Permissionable parent = type.getParentPermissionable();
-
-
-    if (!perms.doesUserHavePermissions(parent,
-        "PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_PUBLISH,
-        user)) {
-      throw new DotSecurityException(
-          "User-does-not-have-add-children-or-structure-permission-on-host-folder:" + parent);
-    }
-
-    // set to system folder if on system host or the host id of the folder it is on
-    List<Field> fields = type.fields();
-
-    //Checks if the folder has been set, if so checks the host where that folder lives and set it.
-    if(UtilMethods.isSet(type.folder()) && !type.folder().equals(Folder.SYSTEM_FOLDER)){
-    	type = ContentTypeBuilder.builder(type)
-    	          .host(APILocator.getFolderAPI().find(type.folder(), user, false).getHostId()).build();
-    }else if(UtilMethods.isSet(type.host())){//If there is no folder set, check if the host has been set, if so set the folder to System Folder
-    	type = ContentTypeBuilder.builder(type).folder(Folder.SYSTEM_FOLDER).build();
-    }
-
-    if (!fields.isEmpty())
-    	type.constructWithFields(fields);
-
-    ContentType oldType = type;
-    try {
-      if (type.id() != null)
-        oldType = this.fac.find(type.id());
-    } catch (NotFoundInDbException notThere) {
-      // not logging, expected when inserting new from separate environment
-    }
-    type = this.fac.save(type);
-
-    if (oldType != null) {
-      if (fireUpdateIdentifiers(oldType.expireDateVar(), type.expireDateVar())) {
-        IdentifierDateJob.triggerJobImmediately(oldType, user);
-      } else if (fireUpdateIdentifiers(oldType.publishDateVar(), type.publishDateVar())) {
-        IdentifierDateJob.triggerJobImmediately(oldType, user);
-      }
-      perms.resetPermissionReferences(type);
-    }
-    ActivityLogger.logInfo(getClass(), "Save ContentType Action", "User " + user.getUserId() + "/" + user.getFullName()
-        + " added ContentType " + type.name() + " to host id:" + type.host());
-    AdminLogger.log(getClass(), "ContentType", "ContentType saved : " + type.name(), user);
-
-    return type;
-
+	  return save(type, null, null);
   }
 
   @Override
@@ -334,15 +249,19 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
   }
 
-  @Override
-  public List<SimpleStructureURLMap> findStructureURLMapPatterns() throws DotDataException {
-    List<SimpleStructureURLMap> res = new ArrayList<SimpleStructureURLMap>();
+    @Override
+    public List<SimpleStructureURLMap> findStructureURLMapPatterns() throws DotDataException {
+        List<SimpleStructureURLMap> res = new ArrayList<>();
 
-    for (ContentType type : fac.findUrlMapped()) {
-      res.add(new SimpleStructureURLMap(type.id(), type.urlMapPattern()));
+        for ( ContentType type : fac.findUrlMapped() ){
+            if (type instanceof UrlMapable){
+                res.add(new SimpleStructureURLMap(type.id(), type.urlMapPattern()));
+            }
+
+        }
+
+        return ImmutableList.copyOf(res);
     }
-    return ImmutableList.copyOf(res);
-  }
 
   @Override
   public void moveToSystemFolder(Folder folder) throws DotDataException {
@@ -413,7 +332,37 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
   }
 
+  public Map<String, Long> getEntriesByContentTypes() throws DotDataException {
+    String query = "{" +
+              "  \"aggs\" : {" +
+              "    \"entries\" : {" +
+              "       \"terms\" : { \"field\" : \"contenttype\" }" +
+              "     }" +
+              "   }," +
+              "   size:0" +
+            "}";
 
+    try {
+      SearchResponse raw = APILocator.getEsSearchAPI().esSearchRaw(query.toLowerCase(), false, user, false);
+
+      JSONObject jo = new JSONObject(raw.toString()).getJSONObject("aggregations").getJSONObject("entries");
+      JSONArray ja = jo.getJSONArray("buckets");
+
+      Map<String, Long> result = new HashMap<>();
+
+      for (int i = 0; i < ja.size(); i++) {
+        JSONObject jsonObject = ja.getJSONObject(i);
+        String contentTypeName = jsonObject.getString("key");
+        long count = jsonObject.getLong("doc_count");
+
+        result.put(contentTypeName, count);
+      }
+
+      return result;
+    } catch (Exception e) {
+      throw new DotStateException(e);
+    }
+  }
 
   @Override
   public List<ContentType> search(String condition, String orderBy, int limit, int offset) throws DotDataException {
@@ -444,7 +393,117 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   public List<ContentType> findUrlMapped() throws DotDataException {
     return fac.findUrlMapped();
   }
+  
+  @Override
+  public ContentType save(ContentType contentType, List<Field> fields) throws DotDataException, DotSecurityException {
+	  return save(contentType, fields, null);
+  }
 
+  @Override
+  public ContentType save(ContentType contentType, List<Field> fields, List<FieldVariable> fieldVariables) throws DotDataException, DotSecurityException {
+	  
+	  return LocalTransaction.wrapReturn(() -> {
+		  Permissionable parent = contentType.getParentPermissionable();
+
+            ContentType newContentType = contentType;  
+		    if (!perms.doesUserHavePermissions(parent,
+		        "PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_PUBLISH,
+		        user)) {
+		      throw new DotSecurityException(
+		          "User-does-not-have-add-children-or-structure-permission-on-host-folder:" + parent);
+		    }
+
+		    // set to system folder if on system host or the host id of the folder it is on
+		    List<Field> localFields = newContentType.fields();
+
+		    //Checks if the folder has been set, if so checks the host where that folder lives and set it.
+		    if(UtilMethods.isSet(newContentType.folder()) && !newContentType.folder().equals(Folder.SYSTEM_FOLDER)){
+		    	newContentType = ContentTypeBuilder.builder(newContentType)
+		    	          .host(APILocator.getFolderAPI().find(newContentType.folder(), user, false).getHostId()).build();
+		    }else if(UtilMethods.isSet(newContentType.host())){//If there is no folder set, check if the host has been set, if so set the folder to System Folder
+		    	newContentType = ContentTypeBuilder.builder(newContentType).folder(Folder.SYSTEM_FOLDER).build();
+		    }
+
+		    if (!localFields.isEmpty())
+		    	newContentType.constructWithFields(localFields);
+
+          // Sets the host:
+          try {
+              HostAPI hapi = APILocator.getHostAPI();
+              Host host = UUIDUtil.isUUID(newContentType.host()) || "SYSTEM_HOST".equalsIgnoreCase(newContentType.host())
+                      ? hapi.find(newContentType.host(), APILocator.systemUser(), true)
+                      : hapi.resolveHostName(newContentType.host(), APILocator.systemUser(), true);
+              newContentType = ContentTypeBuilder.builder(newContentType).host(host.getIdentifier()).build();
+          } catch (DotDataException | DotSecurityException e) {
+              throw new DotStateException("unable to resolve host:" + newContentType.host(), e);
+          }
+
+		    ContentType oldType = newContentType;
+		    try {
+		      if (newContentType.id() != null)
+		        oldType = this.fac.find(newContentType.id());
+		    } catch (NotFoundInDbException notThere) {
+		      // not logging, expected when inserting new from separate environment
+		    }
+		    newContentType = this.fac.save(newContentType);
+
+		    if (oldType != null) {
+		      if (fireUpdateIdentifiers(oldType.expireDateVar(), newContentType.expireDateVar())) {
+		        IdentifierDateJob.triggerJobImmediately(oldType, user);
+		      } else if (fireUpdateIdentifiers(oldType.publishDateVar(), newContentType.publishDateVar())) {
+		        IdentifierDateJob.triggerJobImmediately(oldType, user);
+		      }
+		      perms.resetPermissionReferences(newContentType);
+		    }
+		    ActivityLogger.logInfo(getClass(), "Save ContentType Action", "User " + user.getUserId() + "/" + user.getFullName()
+		        + " added ContentType " + newContentType.name() + " to host id:" + newContentType.host());
+		    AdminLogger.log(getClass(), "ContentType", "ContentType saved : " + newContentType.name(), user);
+
+		    
+		    //update the existing content type fields
+		    if(fields != null){
+			  //Fields on current content type version
+		      localFields = newContentType.fields();
+		      //Create a copy in order to avoid a possible concurrent modification error
+		      List<String> localFieldsVarNames = new ArrayList<String>();
+		
+		      for (Field localField : localFields) {
+		      	localFieldsVarNames.add(localField.variable());
+		      }
+	
+	      
+		      //for each field in the content type lets create it if doesn't exists and update its properties if it does
+		      for( Field field : fields ) {
+		    	 fAPI.save(field,APILocator.systemUser());
+		    	  
+		    	  localFieldsVarNames.remove( field.variable() );
+		    	  if(fieldVariables != null){
+			    	  for(FieldVariable fieldVariable : fieldVariables) {
+			    		  if(fieldVariable.fieldId().equals(field.inode())) {
+			    			  fAPI.save(fieldVariable, APILocator.systemUser());
+			    		  }
+			    	  }
+		    	  }
+		      }
+		      
+		      if ( localFieldsVarNames.size() > 0 ) {
+		          // we have local fields that didn't came
+		          // in the content type. lets remove them
+		          for ( String localFieldVarName : localFieldsVarNames ) {
+		        	  Field f = fAPI.byContentTypeIdAndVar(newContentType.inode(), localFieldVarName);
+		        	  if(!f.fixed()){
+		        		  fAPI.delete(f);
+		        	  }else{
+		        		  Logger.error(this, "Can't delete fixed field:"+f.name()+" from Content Type:"+newContentType.name());
+		        	  }
+		          }
+		      }
+	      }
+	      
+	
+		  return newContentType;
+	  });
+  }
 
 
 }

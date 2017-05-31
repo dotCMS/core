@@ -332,7 +332,7 @@ public class StrutsUtils
                                              HttpServletRequest request,
                                              String action)
     {
-        StringBuffer value = new StringBuffer(request.getContextPath());
+        StringBuilder value = new StringBuilder(request.getContextPath());
         ModuleConfig config =
             (ModuleConfig)request.getAttribute(Globals.MODULE_KEY);
         if (config != null)
@@ -409,7 +409,7 @@ public class StrutsUtils
             return null;
         }
 
-        StringBuffer url = new StringBuffer();
+        StringBuilder url = new StringBuilder();
         if (fc.getPath().startsWith("/"))
         {
             url.append(request.getContextPath());
@@ -492,7 +492,7 @@ public class StrutsUtils
         }
 
         /* Render the error messages appropriately if errors have been queued */
-        StringBuffer results = new StringBuffer();
+        StringBuilder results = new StringBuilder();
         String header = null;
         String footer = null;
         String prefix = null;

@@ -65,6 +65,7 @@
             store: myRoleReadStore2,
             pageSize:30,
             searchDelay:300,
+			style: "width: 80%",
             required:false,
             onClick:function(){
             	dijit.byId("whoCanUseSelect").set("displayedValue","");
@@ -140,50 +141,38 @@
 		<input type="hidden" name="whoCanUse"	id="whoCanUse" value="">
 		<input type="hidden" name="actionId"	id="actionId" value="<%=UtilMethods.webifyString(action.getId())%>">
 
-		<div class="yui-g">
-			<div class="yui-u first">
-				<div class="form-horizontal">
-					<dl>
+		<div class="container-fluid">
+			<%if(UtilMethods.isSet(actionId)) {%>
+			<div class="row">
+				<div class="col-md-12">
+					<p><%=LanguageUtil.get(pageContext, "Action")%> <%=LanguageUtil.get(pageContext, "Id")%>: <strong><%=actionId %></strong></p>
+				</div>
+			</div>
+			<%} %>
+
+			<div class="row">
+				<div class="col-xs-5 view-actions__permissions">
+					<button dojoType="dijit.form.Button" class="view-actions__back-btn" onClick='mainAdmin.show(stepAdmin.baseJsp + "?schemeId=<%=schemeId%>")'>
+						<i class="fa fa-level-up" aria-hidden="true"></i>
+					</button>
+					<dl class="vertical">
 						<dt>
 							<h3><%=LanguageUtil.get(pageContext, "About-Action")%></h3>
 						</dt>
-						<dd>
-							&nbsp;
-						</dd>
+						
 					</dl>
-					<dl>
+					<dl class="vertical">
 						<dt>
 							<label for=""><%=LanguageUtil.get(pageContext, "Action-Name")%>:</label>
 						</dt>
 						<dd>
-							<input type="text" name="actionName" id="actionName" style="width: 250px;"
+							<input type="text" name="actionName" id="actionName" style="width: 80%;"
 								dojoType="dijit.form.ValidationTextBox" required="true"
 								value="<%=UtilMethods.webifyString(action.getName())%>"
 								maxlength="255" onkeypress="actionAdmin.doChange()">
 						</dd>
 					</dl>
-					<%if(UtilMethods.isSet(actionId)) {%>
-						<dl>
-							<dt>
-								<label for=""><%=LanguageUtil.get(pageContext, "Action")%> <%=LanguageUtil.get(pageContext, "Id")%>:</label>
-							</dt>
-							<dd>
-								<label for=""><%=actionId %></label>
-							</dd>
-						</dl>
-					<%} %>
-					<dl>
-						<dt>
-							<label for=""><%=LanguageUtil.get(pageContext, "Save-content")%>:</label>
-						</dt>
-						<dd class="checkbox">
-							<input type="checkbox" name="actionRequiresCheckout"
-										id="actionRequiresCheckout" dojoType="dijit.form.CheckBox" value="true"
-										<%=(action.requiresCheckout()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
-							<label for=""><%=LanguageUtil.get(pageContext, "Requires-Checkout")%></label>
-						</dd>
-					</dl>
-					<dl>
+					<dl class="vertical">
 						<dt>
 							<label for=""><%=LanguageUtil.get(pageContext, "Who-can-use-action")%>:</label>
 						</dt>
@@ -196,7 +185,7 @@
 							</button>
 						</dd>
 					</dl>
-					<dl>
+					<dl class="vertical">
 						<dt></dt>
 						<dd>
 							<div class="who-can-use view-actions__who-can-use">
@@ -205,53 +194,44 @@
 							</div>
 						</dd>
 					</dl>
-				</div>
-			</div>
-
-			<div class="yui-u">
-				<div class="form-horizontal">
-					<dl>
-						<dt>
-							<h3><%=LanguageUtil.get(pageContext, "What-Action-Does")%></h3>
-						</dt>
+					<dl class="vertical">
+						<dt></dt>
 						<dd>
+							<div class="checkbox">
+								<input type="checkbox" name="actionRequiresCheckout"
+										id="actionRequiresCheckout" dojoType="dijit.form.CheckBox" value="true"
+										<%=(action.requiresCheckout()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
+								<label for=""><%=LanguageUtil.get(pageContext, "Requires-Checkout")%></label>
+							</div>
+							<div class="checkbox">
+								<input type="checkbox" name="actionCommentable"
+									id="actionCommentable" dojoType="dijit.form.CheckBox" value="true"
+									<%=(action.isCommentable()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
+								<label for=""><%=LanguageUtil.get(pageContext, "Allow-Comments")%></label>
+							</div>
+							<div class="checkbox">
+								<input type="checkbox" name="actionAssignable"
+									id="actionAssignable" dojoType="dijit.form.CheckBox" value="true"
+									<%=(action.isAssignable()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
+								<label for=""><%=LanguageUtil.get(pageContext, "User-Assignable")%></label>
+							</div>
 						</dd>
 					</dl>
-					<dl>
-						<dt>
-							<label for=""><%=LanguageUtil.get(pageContext, "Allow-Comments")%>:</label>
-						</dt>
-						<dd>
-							<input type="checkbox" name="actionCommentable"
-								id="actionCommentable" dojoType="dijit.form.CheckBox" value="true"
-								<%=(action.isCommentable()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
-						</dd>
-					</dl>
-					<dl>
-						<dt>
-							<label for=""><%=LanguageUtil.get(pageContext, "User-Assignable")%>:</label>
-						</dt>
-						<dd>
-							<input type="checkbox" name="actionAssignable"
-								id="actionAssignable" dojoType="dijit.form.CheckBox" value="true"
-								<%=(action.isAssignable()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
-						</dd>
-					</dl>
-					<dl>
+					<dl class="vertical">
 						<dt>
 							<label for=""><%=LanguageUtil.get(pageContext, "Assign-To")%>:</label>
 						</dt>
 						<dd>
 							<input id="actionAssignToSelect"  />
 							<%--hideHierarchayControl --%>
-							<div class="checkbox" id="divRoleHierarchyForAssign" style="visibility:<%=hideHierarchayControl ? "hidden" : "visible" %>;">
+							<div class="checkbox" id="divRoleHierarchyForAssign" style="display:<%=hideHierarchayControl ? "none" : "block" %>;">
 								<input type="checkbox" name="actionRoleHierarchyForAssign" id="actionRoleHierarchyForAssign" dojoType="dijit.form.CheckBox" value="true"
 								<%=(action.isRoleHierarchyForAssign()) ? "checked='true'" : ""%> onClick="actionAdmin.doChange()">
 								<label for="actionRoleHierarchyForAssign"><%=LanguageUtil.get(pageContext, "Use-Role-Hierarchy")%></label>
 							</div>
 						</dd>
 					</dl>
-					<dl>
+					<dl class="vertical">
 						<dt>
 							<label for=""><%=LanguageUtil.get(pageContext, "Next-Step")%>:</label>
 						</dt>
@@ -267,7 +247,7 @@
 							</select>
 						</dd>
 					</dl>
-					<dl>
+					<dl class="vertical">
 						<dt>
 							<label for=""><%=LanguageUtil.get(pageContext, "Custom-Code")%>:</label>
 						</dt>
@@ -283,62 +263,68 @@
 							}
 						%>
 						<dd>
-							<textarea id="actionCondition" dojoType="dijit.form.Textarea" style="width:250px;min-height:100px;max-height:100px;height:100px;" name="actionCondition"><%=textValue %></textarea>
+							<textarea id="actionCondition" dojoType="dijit.form.Textarea" style="width:80%;min-height:100px;max-height:100px;height:100px;" name="actionCondition"><%=textValue %></textarea>
 						</dd>
 					</dl>
-				</div>	
-			</div>
-		</div>
-		
-		<div class="buttonRow">
-			<%if(action!=null && !action.isNew()) {%>
-			<span id="deleteButtonDiv" class="saveButtonHide">
-				<button dojoType="dijit.form.Button" onClick="actionAdmin.deleteAction('<%=action.getId() %>');" class="dijitButtonDanger">
-					<%=LanguageUtil.get(pageContext, "Delete")%>
-				</button>
-			</span>
-			<%} %>
-	
-			<span id="saveButtonDiv" class="saveButtonHide">
-				<button dojoType="dijit.form.Button" onClick="actionAdmin.saveAction('<%=stepId %>');" iconClass="saveIcon">
-					<%=LanguageUtil.get(pageContext, "Save")%>
-				</button>
-			</span>
-			
-			<button dojoType="dijit.form.Button" onClick='mainAdmin.show(stepAdmin.baseJsp + "?schemeId=<%=schemeId%>")' class="dijitButtonFlat">
-				<%=LanguageUtil.get(pageContext, "Cancel")%>
-			</button>
-		</div>
-		
-<!-- SUB ACTIONS -->
-		<%if(!action.isNew()){ %>
-			<div style="margin:40px;" >
-				<h2><%=LanguageUtil.get(pageContext, "Workflow-SubAction")%></h2>
-				<div class="inline-form">
-					 <select name="wfActionlets" id="wfActionlets" style="width:300px;" dojoType="dijit.form.FilteringSelect">
-						<option value=""></option>
-						<%for(WorkFlowActionlet a : wapi.findActionlets()){%>
-							<option value="<%=a.getClass().getCanonicalName()%>"><%=a.getName() %></option>
-						<%} %>
-					</select>
-					<button dojoType="dijit.form.Button"
-					 onClick="actionClassAdmin.addSelectedToActionClasses();" iconClass="addIcon">
-					<%=LanguageUtil.get(pageContext, "Add-Workflow-SubAction")%>
-					</button>
 				</div>
-				
-                <table id="actionletsTbl" class="listingTable">
-                    <thead>
-                        <tr><th colspan="2"><%= LanguageUtil.get(pageContext, "Workflow-SubActions") %></th></tr>
-                    </thead>
-                    <tbody id="actionletsTblBody">
-                    </tbody>
-                </table>
+
+				<div class="col-xs-5 view-actions__sub-actions">
+					<div class="view-actions__arrow-right"> 
+						<i class="fa fa-arrow-circle-o-right" aria-hidden="true"></i>
+					</div>
+					<%if(!action.isNew()){ %>
+					<dl class="vertical">
+						<dt>
+							<h3><%=LanguageUtil.get(pageContext, "Workflow-SubAction")%></h3>
+						</dt>
+					</dl>
+					<dl class="vertical">
+						<dt>
+							<select name="wfActionlets" id="wfActionlets" dojoType="dijit.form.FilteringSelect">
+								<option value=""></option>
+								<%for(WorkFlowActionlet a : wapi.findActionlets()){%>
+									<option value="<%=a.getClass().getCanonicalName()%>"><%=a.getName() %></option>
+								<%} %>
+							</select>
+							<button dojoType="dijit.form.Button"
+							onClick="actionClassAdmin.addSelectedToActionClasses();" style="width:auto;" iconClass="addIcon">
+							<%=LanguageUtil.get(pageContext, "Add-Workflow-SubAction")%>
+							</button>
+						</dt>
+					</dl>
+					<dl class="vertical">
+						<dt>
+							<table id="actionletsTbl" class="listingTable">
+								<tbody id="actionletsTblBody">
+								</tbody>
+							</table>
+						</dt>
+					</dl>
+					<%} %>
+				</div>
+				<div class="col-xs-2 view-actions__workflow-actions">
+					<div class="view-actions__arrow-right"> 
+						<i class="fa fa-arrow-circle-o-right" aria-hidden="true"></i>
+					</div>
+					<div class="content-edit-actions">
+						<div>
+							<%if(action!=null && !action.isNew()) {%>
+							<a id="deleteButtonDiv" class="saveButtonHide" onClick="actionAdmin.deleteAction('<%=action.getId() %>');">
+								<%=LanguageUtil.get(pageContext, "Delete")%>
+							</a>
+							<%} %>
+							<a id="saveButtonDiv" class="saveButtonHide" onClick="actionAdmin.saveAction('<%=stepId %>');">
+								<%=LanguageUtil.get(pageContext, "Save")%>
+							</a>
+							<a onClick='mainAdmin.show(stepAdmin.baseJsp + "?schemeId=<%=schemeId%>")'>
+								<%=LanguageUtil.get(pageContext, "Cancel")%>
+							</a>
+						</div>
+					</div>
+				</div>
 			</div>
-		<%} %>
-		
+		</div>
 	</div>
-	
 </div>
 
 

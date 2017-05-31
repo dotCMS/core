@@ -615,39 +615,39 @@
 		</dt>
 		<dd>
 						<div class="radio" id="radioText">
-				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypetext" <%=fixed?"readonly=\"readonly\"":"" %> value="text" onclick="setUniqueDataType('text');" <% if(fieldForm.getDataType().equals(Field.DataType.TEXT.toString())){ %> checked="checked" <% } %>/>
+				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypetext" <%= hasInode ? "disabled" : ""%> <%=fixed?"readonly=\"readonly\"":"" %> value="text" onclick="setUniqueDataType('text');" <% if(fieldForm.getDataType().equals(Field.DataType.TEXT.toString())){ %> checked="checked" <% } %>/>
 				<label for="dataTypetext"><%= LanguageUtil.get(pageContext, "Text") %></label> &nbsp;
 						</div>
 						<div class="radio" id="radioBool">
-				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypebool" <%=fixed?"readonly=\"readonly\"":"" %> value="bool" onclick="setUniqueDataType('bool');" <% if(fieldForm.getDataType().equals(Field.DataType.BOOL.toString())){ %> checked="checked" <% } %>/>
+				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypebool" <%= hasInode ? "disabled" : ""%> <%=fixed?"readonly=\"readonly\"":"" %> value="bool" onclick="setUniqueDataType('bool');" <% if(fieldForm.getDataType().equals(Field.DataType.BOOL.toString())){ %> checked="checked" <% } %>/>
 				<label for="dataTypebool"><%= LanguageUtil.get(pageContext, "True-False") %></label> &nbsp;
 						</div>
 						<div class="radio" id="radioDate">
-				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypedate" <%=fixed?"readonly=\"readonly\"":"" %> value="date" onclick="setUniqueDataType('date');" <% if(fieldForm.getDataType().equals(Field.DataType.DATE.toString())){ %> checked="checked" <% } %>/>
+				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypedate" <%= hasInode ? "disabled" : ""%> <%=fixed?"readonly=\"readonly\"":"" %> value="date" onclick="setUniqueDataType('date');" <% if(fieldForm.getDataType().equals(Field.DataType.DATE.toString())){ %> checked="checked" <% } %>/>
 				<label for="dataTypedate"><%= LanguageUtil.get(pageContext, "Date") %></label> &nbsp;
 						</div>
 						<div class="radio" id="radioDecimal">
-				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypefloat" <%=fixed?"readonly=\"readonly\"":"" %> value="float" onclick="setUniqueDataType('float');" <% if(fieldForm.getDataType().equals(Field.DataType.FLOAT.toString())){ %> checked="checked" <% } %>/>
+				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypefloat" <%= hasInode ? "disabled" : ""%> <%=fixed?"readonly=\"readonly\"":"" %> value="float" onclick="setUniqueDataType('float');" <% if(fieldForm.getDataType().equals(Field.DataType.FLOAT.toString())){ %> checked="checked" <% } %>/>
 				<label for="dataTypefloat"><%= LanguageUtil.get(pageContext, "Decimal") %></label> &nbsp;
 						</div>
 						<div class="radio" id="radioNumber">
-				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypeinteger" <%=fixed?"readonly=\"readonly\"":"" %> value="integer" onclick="setUniqueDataType('integer');" <% if(fieldForm.getDataType().equals(Field.DataType.INTEGER.toString())){ %> checked="checked" <% } %>/>
+				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypeinteger" <%= hasInode ? "disabled" : ""%> <%=fixed?"readonly=\"readonly\"":"" %> value="integer" onclick="setUniqueDataType('integer');" <% if(fieldForm.getDataType().equals(Field.DataType.INTEGER.toString())){ %> checked="checked" <% } %>/>
 				<label for="dataTypeinteger"><%= LanguageUtil.get(pageContext, "Whole-Number") %></label> &nbsp;
 						</div>
 						<div class="radio" id="radioBlockText">
-				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypetext_area" <%=fixed?"readonly=\"readonly\"":"" %> value="text_area" onclick="setUniqueDataType('textarea');" <% if(fieldForm.getDataType().equals(Field.DataType.LONG_TEXT.toString())){ %> checked="checked" <% } %>/>
+				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypetext_area" <%= hasInode ? "disabled" : ""%> <%=fixed?"readonly=\"readonly\"":"" %> value="text_area" onclick="setUniqueDataType('textarea');" <% if(fieldForm.getDataType().equals(Field.DataType.LONG_TEXT.toString())){ %> checked="checked" <% } %>/>
 				<label for="dataTypetext_area"><%= LanguageUtil.get(pageContext, "Large-Block-of-Text") %></label>
 						</div>
 						<div class="radio" id="radioSectionDivider">
-				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypesection_divider" <%=fixed?"readonly=\"readonly\"":"" %> value="section_divider" onclick="setUniqueDataType('divider');" <% if(fieldForm.getDataType().equals(Field.DataType.SECTION_DIVIDER.toString())){ %> checked="checked" <% } %>/>
+				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypesection_divider" <%= hasInode ? "disabled" : ""%> <%=fixed?"readonly=\"readonly\"":"" %> value="section_divider" onclick="setUniqueDataType('divider');" <% if(fieldForm.getDataType().equals(Field.DataType.SECTION_DIVIDER.toString())){ %> checked="checked" <% } %>/>
 				<label for="dataTypesection_divider"><%= LanguageUtil.get(pageContext, "Section-Divider") %></label> &nbsp;
 						</div>
 						<div class="radio" id="radioSystemField">
-				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypesystem_field" <%=fixed?"readonly=\"readonly\"":"" %> value="system_field" onclick="setUniqueDataType('system');" />
+				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypesystem_field" <%= hasInode ? "disabled" : ""%> <%=fixed?"readonly=\"readonly\"":"" %> value="system_field" onclick="setUniqueDataType('system');" />
 				<label for="dataTypesystem_field"><%= LanguageUtil.get(pageContext, "System-Field") %></label> &nbsp;
 						</div>
 						<div class="radio" id="radioBinary">
-				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypebinary" <%=fixed?"readonly=\"readonly\"":"" %> value="binary" onclick="setUniqueDataType('binary');" <% if(fieldForm.getDataType().equals(Field.DataType.BINARY.toString())){ %> checked="checked" <% } %>/>
+				<input dojoType="dijit.form.RadioButton" type="radio" name="dataType" id="dataTypebinary" <%= hasInode ? "disabled" : ""%> <%=fixed?"readonly=\"readonly\"":"" %> value="binary" onclick="setUniqueDataType('binary');" <% if(fieldForm.getDataType().equals(Field.DataType.BINARY.toString())){ %> checked="checked" <% } %>/>
 				<label for="dataTypebinary"><%= LanguageUtil.get(pageContext, "Binary") %></label>
 						</div>
 		</dd>

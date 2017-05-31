@@ -29,6 +29,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
@@ -37,21 +38,14 @@ import com.liferay.portal.model.User;
 @Path("/v1/contenttype/{typeId}/fields")
 public class FieldResource implements Serializable {
 	private final WebResource webResource;
-	private final FieldHelper fieldHelper;
 
 	public FieldResource() {
-		this(FieldHelper.getInstance(), new WebResource());
+		this(new WebResource());
 	}
 
 	@VisibleForTesting
-	public FieldResource(final FieldHelper fieldHelper, final WebResource webresource) {
+	public FieldResource(final WebResource webresource) {
 		this.webResource = webresource;
-		this.fieldHelper = fieldHelper;
-	}
-
-	@VisibleForTesting
-	public FieldResource(final FieldHelper fieldHelper) {
-		this(fieldHelper, new WebResource());
 	}
 
 	private static final long serialVersionUID = 1L;
@@ -83,6 +77,10 @@ public class FieldResource implements Serializable {
 	
 				response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
 			}
+		} catch (DotStateException e) {
+
+			response = ExceptionMapperUtil.createResponse(null, "Field is not valid ("+ e.getMessage() +")");
+
 		} catch (NotFoundInDbException e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
@@ -227,6 +225,10 @@ public class FieldResource implements Serializable {
 					response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
 				}
 			}
+		} catch (DotStateException e) {
+
+			response = ExceptionMapperUtil.createResponse(null, "Field is not valid ("+ e.getMessage() +")");
+
 		} catch (NotFoundInDbException e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
@@ -271,10 +273,14 @@ public class FieldResource implements Serializable {
 				} else {
 
 					field = fapi.save(field, user);
-	
+
 					response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
 				}
 			}
+		} catch (DotStateException e) {
+
+			response = ExceptionMapperUtil.createResponse(null, "Field is not valid ("+ e.getMessage() +")");
+
 		} catch (NotFoundInDbException e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);

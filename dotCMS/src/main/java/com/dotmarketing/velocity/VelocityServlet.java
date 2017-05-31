@@ -304,11 +304,16 @@ public abstract class VelocityServlet extends HttpServlet {
 
 		
 		// build the dirs
-		String pathWorking = Config.CONTEXT_PATH + File.separator + "WEB-INF" + File.separator + "velocity" + File.separator + "working";
-		String pathLive = Config.CONTEXT_PATH + File.separator + "WEB-INF" + File.separator + "velocity" + File.separator + "live";
+		String pathWorking = VelocityUtil.getVelocityRootPath() + File.separator + "working";
+		String pathLive = VelocityUtil.getVelocityRootPath() + File.separator + "live";
 		
-		new File(pathWorking).mkdirs();
-		new File(pathLive).mkdir();
+		if (!new File(pathWorking).exists()) {
+			new File(pathWorking).mkdirs();
+		}
+
+		if (!new File(pathLive).exists()) {
+			new File(pathLive).mkdirs();
+		}
 
 
 		Config.initializeConfig();

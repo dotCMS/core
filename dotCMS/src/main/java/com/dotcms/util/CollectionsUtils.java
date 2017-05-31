@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
+import java.util.Arrays;
 
 /**
  * This utility class provides common use methods for creating and interacting

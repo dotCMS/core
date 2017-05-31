@@ -44,6 +44,11 @@ public class CaffineCache extends CacheProvider {
     }
 
     @Override
+    public boolean isDistributed() {
+    	return false;
+    }
+
+    @Override
     public void init() {
         HashSet<String> _availableCaches = new HashSet<>();
         _availableCaches.add(DEFAULT_CACHE);
@@ -170,12 +175,12 @@ public class CaffineCache extends CacheProvider {
         DecimalFormat pf = new DecimalFormat("##.##%");
         for (String group : currentGroups) {
             CacheStats stats = new CacheStats();
-            stats.addStat("region", group);
+
             Cache<String, Object> foundCache = getCache(group);
 
 
             boolean isDefault = (Config.getIntProperty("cache." + group + ".size", -1) == -1);
-            stats.addStat(CacheStats.REGION_DEFAULT, isDefault + "");
+
 
             int configured = isDefault ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".size")
                 : (Config.getIntProperty("cache." + group + ".size", -1) != -1)

@@ -1,5 +1,10 @@
 package com.dotcms.contenttype.model.field;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import com.google.common.collect.ImmutableMap;
+
 /**
  * This class provides a useful data mapping between the legacy fields and new
  * fields. It allows you to obtain the type of the legacy fields as well as the
@@ -39,6 +44,19 @@ public enum LegacyFieldTypes {
 	HOST_OR_FOLDER("host or folder",com.dotcms.contenttype.model.field.HostFolderField.class),
 	KEY_VALUE("key_value",com.dotcms.contenttype.model.field.KeyValueField.class);
 
+    final static private Map<String, String> oldFieldMap;
+    static {
+      Map<String,String> map = new HashMap<>();
+    
+      for(LegacyFieldTypes fieldType : LegacyFieldTypes.values()){
+        map.put(fieldType.implClass.getCanonicalName(),fieldType.legacyValue() );
+      }
+      oldFieldMap = ImmutableMap.copyOf(map);
+    }
+  
+  
+  
+  
 	private String legacyValue;
 	private Class<? extends Field> implClass;
 
@@ -126,12 +144,7 @@ public enum LegacyFieldTypes {
 	 */
 	public static String getLegacyName (String clazz) {
 		clazz=clazz.replace(".Immutable", ".");
-		for(LegacyFieldTypes fieldType : LegacyFieldTypes.values()){
-			if(fieldType.implClass.getCanonicalName().equals(clazz)){
-				return fieldType.legacyValue();
-			}
-		}
-		return clazz;
+		return oldFieldMap.get(clazz);
 	}
 
 }

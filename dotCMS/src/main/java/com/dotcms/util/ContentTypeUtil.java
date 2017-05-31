@@ -1,15 +1,7 @@
 package com.dotcms.util;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
-import java.util.List;
-import java.util.Locale;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.cms.login.LoginService;
-import com.dotcms.cms.login.LoginServiceFactory;
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.portlet.PortletURL;
@@ -25,6 +17,12 @@ import com.liferay.portal.model.User;
 import com.liferay.portlet.PortletURLImpl;
 import com.liferay.util.LocaleUtil;
 
+import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+import java.util.Locale;
+
+import static com.dotcms.util.CollectionsUtils.map;
+
 /**
  * Utility class for the {@link ContentTypeResource} end-point and other Content
  * Type related classes throughout the system.
@@ -38,7 +36,7 @@ public class ContentTypeUtil {
     private final LayoutAPI layoutAPI;
     private final LanguageAPI languageAPI;
     private final HttpServletRequestThreadLocal httpServletRequestThreadLocal;
-    private final LoginService loginService;
+    private final LoginServiceAPI loginService;
 
     /**
      * Holder class for holding a unique instance.
@@ -62,14 +60,14 @@ public class ContentTypeUtil {
      */
 	private ContentTypeUtil() {
 		this(APILocator.getLayoutAPI(), APILocator.getLanguageAPI(), HttpServletRequestThreadLocal.INSTANCE,
-				LoginServiceFactory.getInstance().getLoginService());
+				APILocator.getLoginServiceAPI());
 	}
 
     @VisibleForTesting
     public ContentTypeUtil(final LayoutAPI layoutAPI,
                            final LanguageAPI languageAPI,
                            final HttpServletRequestThreadLocal httpServletRequestThreadLocal,
-                           final LoginService loginService){
+                           final LoginServiceAPI loginService){
         this.layoutAPI = layoutAPI;
         this.languageAPI = languageAPI;
         this.httpServletRequestThreadLocal = httpServletRequestThreadLocal;

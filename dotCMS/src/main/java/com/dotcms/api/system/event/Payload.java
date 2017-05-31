@@ -1,10 +1,5 @@
 package com.dotcms.api.system.event;
 
-import com.dotcms.cms.login.LoginServiceFactory;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.liferay.portal.model.User;
-
 import java.io.Serializable;
 
 /**

@@ -3,7 +3,9 @@ package com.dotcms.contenttype.model.field;
 import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.elasticsearch.common.Nullable;
 import org.immutables.value.Value;
@@ -13,6 +15,7 @@ import com.dotcms.contenttype.model.component.FieldFormRenderer;
 import com.dotcms.contenttype.model.component.FieldValueRenderer;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
@@ -22,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import com.google.common.collect.ImmutableMap;
 
 @JsonTypeInfo(
 	use = Id.CLASS,
@@ -59,10 +63,12 @@ public abstract class Field implements FieldIf, Serializable {
 
   @Value.Check
   public void check() {
-    if (iDate().after(legacyFieldDate)) {
+	Preconditions.checkArgument(StringUtils.isNotEmpty(name()), "Name cannot be empty for " + this.getClass());
+
+    /*if (iDate().after(legacyFieldDate)) {
       Preconditions.checkArgument(acceptedDataTypes().contains(dataType()),
           this.getClass().getSimpleName() + " must have DataType:" + acceptedDataTypes());
-    }
+    }*/
   }
 
 
@@ -170,6 +176,7 @@ public abstract class Field implements FieldIf, Serializable {
     return false;
   }
 
+  @JsonIgnore
   @Value.Lazy
   public List<FieldVariable> fieldVariables() {
     if (innerFieldVariables == null) {
@@ -183,6 +190,16 @@ public abstract class Field implements FieldIf, Serializable {
 
     return innerFieldVariables;
 
+  }
+
+  @JsonIgnore
+  @Value.Lazy
+  public Map<String, FieldVariable> fieldVariablesMap() {
+    Map<String, FieldVariable> fmap = new HashMap<>();
+    for (FieldVariable fv : this.fieldVariables()) {
+      fmap.put(fv.id(), fv);
+    }
+    return ImmutableMap.copyOf(fmap);
   }
 
   private List<FieldVariable> innerFieldVariables = null;

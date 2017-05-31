@@ -109,7 +109,7 @@ public class VirtualLinkFactoryImpl implements VirtualLinkFactory {
 		java.util.List<VirtualLink> result = null;
 		if(!UtilMethods.isSet(uri)) return null;
 
-		String query = "from inode in class com.dotmarketing.portlets.virtuallinks.model.VirtualLink where type='virtual_link' and lower(uri) = ?";
+		String query = "from inode in class com.dotmarketing.portlets.virtuallinks.model.VirtualLink where type='virtual_link' and uri = ?";
 		try {
 			dh.setQuery(query);
 			dh.setParam(uri.toLowerCase());
@@ -247,18 +247,40 @@ public class VirtualLinkFactoryImpl implements VirtualLinkFactory {
 
 	@Override
 	public void save(VirtualLink vanityUrl) {
-		final String completeUrl = vanityUrl.getUrl();
-		final String url = completeUrl.split(VirtualLinkAPI.URL_SEPARATOR)[1];
-		VirtualLinksCache.removePathFromCache(url);
+
+		String completeUrl = vanityUrl.getUrl();
+		final String uri = vanityUrl.getUri().toLowerCase();
+
+		/*
+		We need to verify if this VirtualLink was created for a host or for all host in order
+		to decide in what part of the url apply the toLowerCase
+		 */
+		if ( completeUrl.contains(VirtualLinkAPI.URL_SEPARATOR) ) {
+
+			String[] urlArray = completeUrl.split(VirtualLinkAPI.URL_SEPARATOR);
+
+			final String siteName = urlArray[0];
+			final String url = urlArray[1].toLowerCase();
+
+			completeUrl = siteName + VirtualLinkAPI.URL_SEPARATOR + url;
+		} else {
+			completeUrl = completeUrl.toLowerCase();
+		}
+
+		// Overriding the given url and uri in order to apply the lower case value
+		vanityUrl.setUrl(completeUrl);
+		vanityUrl.setUri(uri);
+
 		try {
 			HibernateUtil.saveOrUpdate(vanityUrl);
 		} catch (DotHibernateException e) {
 			throw new DotRuntimeException(
-					String.format("An error occurred when saving Vanirty URL with title=[%s], url=[%s]",
+					String.format("An error occurred when saving Vanity URL with title=[%s], url=[%s]",
 							vanityUrl.getTitle(), vanityUrl.getUrl()),
 					e);
 		}
-		VirtualLinksCache.removePathFromCache(url);
+
+		VirtualLinksCache.removePathFromCache(completeUrl);
 		VirtualLinksCache.addPathToCache(vanityUrl);
 	}
 
@@ -267,7 +289,7 @@ public class VirtualLinkFactoryImpl implements VirtualLinkFactory {
 		InodeFactory.deleteInode(vanityUrl);
 		// Removes this URL from cache
 		if (UtilMethods.isSet(vanityUrl.getUrl())) {
-			VirtualLinksCache.removePathFromCache(vanityUrl.getUrl());
+			VirtualLinksCache.removePathFromCache(vanityUrl.getUrl().toLowerCase());
 		}
 	}
 	

@@ -913,7 +913,6 @@
 
 
     function checkoutContentletCallback(data){
-
         if(data["Error"]){
             showDotCMSSystemMessage(data["Error"], true);
             return;
@@ -974,7 +973,6 @@
 
 
     function refreshActionPanel(inode){
-
         var myCp = dijit.byId("contentActionsCp");
         if (myCp) {
             myCp.destroyRecursive(true);
@@ -987,8 +985,6 @@
         }).placeAt("contentletActionsHanger");
 
         myCp.attr("href",  "/html/portlet/ext/contentlet/contentlet_actions_wrapper.jsp?contentletInode=" + inode);
-        myCp.refresh();
-
     }
     function toggleLockedMessage(locked, who, when){
         if(dojo.byId("contentLockedInfo")){

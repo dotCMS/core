@@ -6,6 +6,7 @@ import org.immutables.value.Value;
 
 import com.dotcms.contenttype.util.FieldUtil;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotmarketing.util.UtilMethods;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -40,9 +41,9 @@ public abstract class TimeField extends Field {
 	
     @Value.Check
     public void check() {
-        super.check();
 
-        Preconditions.checkArgument(new FieldUtil().validTime(defaultValue()), this.getClass().getSimpleName() + " invalid defualt Value:" + defaultValue());
-
+        if(UtilMethods.isSet(defaultValue())){
+          Preconditions.checkArgument(new FieldUtil().validTime(defaultValue()), this.getClass().getSimpleName() + " invalid defualt Value:" + defaultValue());
+        }
     }
 }

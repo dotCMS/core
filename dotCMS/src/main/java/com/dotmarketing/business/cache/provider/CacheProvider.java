@@ -49,6 +49,11 @@ public abstract class CacheProvider implements Serializable {
     public abstract String getKey ();
 
     /**
+     * Specifies whether the underlying cache is implicitly shared over all nodes in a clustered environment
+     */
+    public abstract boolean isDistributed();
+
+    /**
      * Initializes the provider
      *
      * @throws Exception

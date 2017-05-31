@@ -19,6 +19,11 @@ plugins {
 }
 
 node {
+    // Version of node to use.
+    version = nodeVersion
+
+    // Base URL for fetching node distributions (change if you have a mirror).
+    distBaseUrl = 'https://nodejs.org/dist'
     // If true, it will download node using above parameters.
     // If false, it will try to use globally installed node.
     download = true
@@ -403,14 +408,22 @@ removeDistFolder.description='Removes the distribution folder.'
 
 removeDistFolder.mustRunAfter 'zip', 'tgzTask'
 
-/** If you want to create the javadoc, please run ./gradlew generateJavadocs */
 javadoc {
-    title      = "dotCMS API"
-    maxMemory  = "1024m"
-    classpath  = sourceSets.main.compileClasspath
-    source     = sourceSets.main.allJava
-    include   "com.dotmarketing.*"
-    include   "com.dotcms.*"
+
+    options.addStringOption('sourcepath', sourceSets.main.allJava.asPath)
+    //doclint html standards in Java 8 are very strict that's why is better to turn in off
+    options.addBooleanOption('Xdoclint:none', true)
+
+    /*
+     Not working, gradle bug
+      https://groups.google.com/forum/#!topic/gradle-dev/R83dy_6PHMc/discussion
+      https://discuss.gradle.org/t/javadoc-exclusion-question/11875
+     */
+    options.addStringOption('subpackages', 'com.dotmarketing:com.dotcms')
+
+    title       = "dotCMS API"
+    maxMemory   = "1024m"
+    failOnError = false
     options.noQualifiers 'all'
     options.author(true)
     options.version(true)
@@ -418,12 +431,8 @@ javadoc {
     options.encoding 'utf-8'
     options.docEncoding 'utf-8'
     options.charSet 'utf-8'
-    options.linkSource true
+    options.linkSource false
     options.links 'https://docs.oracle.com/javase/8/docs/api/'
-}
-
-task generateJavadocs(type: Javadoc) {
-    source = sourceSets.main.allJava
 }
 
 //Task meant to be use from a distribution structure using the buildwar.sh script.
@@ -791,6 +800,7 @@ task cleanNodeModules(type: Delete) {
 task copyNodeModules(type: Copy) {
     dependsOn 'makeDotAdminFolder'
 
+    delete "./src/main/webapp/$angularFolder"
     from (file("./node_modules/dotcms-ui"))
     into("./src/main/webapp/$angularFolder")
 

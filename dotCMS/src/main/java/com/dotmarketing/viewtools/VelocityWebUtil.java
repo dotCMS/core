@@ -3,11 +3,8 @@
  */
 package com.dotmarketing.viewtools;
 
-import java.io.StringWriter;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import com.dotmarketing.util.*;
+import com.dotmarketing.velocity.VelocityServlet;
 import org.apache.velocity.Template;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
@@ -16,11 +13,9 @@ import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.velocity.VelocityServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.StringWriter;
 
 /**
  * @author Jason Tesser
@@ -78,20 +73,33 @@ public class VelocityWebUtil implements ViewTool {
 		if(this.debug){
 			Logger.info(VelocityWebUtil.class, _logVariable + ": " + templatePath);			
 		}
-		try{
-			String newThreadName = (threadName.contains("{")) 
+		try {
+			String newThreadName = (threadName.contains("{"))
 					? threadName.replaceAll("\\{[^\\}]*\\}", "{" + templatePath + "}")
 					: threadName + " {" + templatePath + "}";
-		    Thread.currentThread().setName(newThreadName);
+			Thread.currentThread().setName(newThreadName);
 			template = ve.getTemplate(templatePath);
-		
-
 
 			template.merge(ctx, sw);
 			return sw.toString();
-		}
-		finally{
-		    Thread.currentThread().setName(threadName);
+		} catch (ParseErrorException e) {
+			if ( null != ctx ) {
+
+				/*
+				In Edit mode we are allow to fail and be noisy, but on Preview and Live mode we just want to
+				continue with the render of the page.
+				 */
+				Object editMode = ctx.get(WebKeys.EDIT_MODE_SESSION);
+
+				if ( null == editMode || !Boolean.valueOf((String) editMode) ) {
+					Logger.error(this.getClass(), "Error parsing elements", e);
+					return sw.toString();
+				}
+			}
+
+			throw e;
+		} finally {
+			Thread.currentThread().setName(threadName);
 		}
 
 		
