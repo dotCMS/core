@@ -1,4 +1,4 @@
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, async } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { ListingDataTableComponent } from './listing-data-table-component';
 import { By } from '@angular/platform-browser';
@@ -7,6 +7,9 @@ import { DotcmsConfig } from '../../../api/services/system/dotcms-config';
 import { CrudService } from '../../../api/services/crud-service';
 import { Observable } from 'rxjs/Observable';
 import { DOTTestBed } from '../../../test/dot-test-bed';
+import { ActionHeaderComponent } from '../_common/action-header/action-header';
+import { MockMessageService } from '../../../test/message-service.mock';
+import { MessageService } from '../../../api/services/messages-service';
 
 describe('Listing Component', () => {
 
@@ -15,12 +18,17 @@ describe('Listing Component', () => {
   let de: DebugElement;
   let el: HTMLElement;
 
-  beforeEach(() => {
+  beforeEach(async(() => {
+
+    let messageServiceMock = new MockMessageService({
+        'global-search': 'Global Serach'
+    });
 
     DOTTestBed.configureTestingModule({
-        declarations: [ ListingDataTableComponent ],
+        declarations: [ ActionHeaderComponent, ListingDataTableComponent ],
         imports: [ DataTableModule, SharedModule ],
         providers: [
+            {provide: MessageService, useValue: messageServiceMock},
             CrudService
         ]
     });
@@ -32,12 +40,7 @@ describe('Listing Component', () => {
     // query for the title <h1> by CSS element selector
     de = fixture.debugElement.query(By.css('p-dataTable'));
     el = de.nativeElement;
-  });
-
-  it('should display original a p-dataTable', () => {
-    fixture.detectChanges();
-    expect(el).toBeDefined(el);
-  });
+  }));
 
   it('renderer title', () => {
     let dotcmsConfig = fixture.debugElement.injector.get(DotcmsConfig);

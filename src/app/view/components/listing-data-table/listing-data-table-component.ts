@@ -72,7 +72,7 @@ export class ListingDataTableComponent extends BaseComponent {
      */
     getAlign(col: DataTableColumn): string {
         return col.textAlign ? col.textAlign :
-            (this.items && typeof this.items[0][col.fieldName] === 'number') ? 'right' : 'left';
+            (this.items && this.items[0] && typeof this.items[0][col.fieldName] === 'number') ? 'right' : 'left';
     }
 
     /**

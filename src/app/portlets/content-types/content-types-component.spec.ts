@@ -3,10 +3,10 @@ import { ComponentFixture } from '@angular/core/testing';
 import { ContentTypesPortletComponent } from './content-types-component';
 import { CrudService } from '../../api/services/crud-service';
 import { DOTTestBed } from '../../test/dot-test-bed';
-import { DataTableModule, SharedModule } from 'primeng/primeng';
 import { ListingDataTableComponent } from '../../view/components/listing-data-table/listing-data-table-component';
 import { MessageService } from '../../api/services/messages-service';
 import { MockMessageService } from '../../test/message-service.mock';
+import { ActionHeaderComponent } from '../../view/components/_common/action-header/action-header';
 
 describe('ContentTypesPortletComponent', () => {
     let comp: ContentTypesPortletComponent;
@@ -22,10 +22,10 @@ describe('ContentTypesPortletComponent', () => {
 
         DOTTestBed.configureTestingModule({
             declarations: [
+                ActionHeaderComponent,
                 ContentTypesPortletComponent,
                 ListingDataTableComponent
             ],
-            imports: [ DataTableModule, SharedModule ],
             providers: [
                  {provide: MessageService, useValue: messageServiceMock},
                  CrudService

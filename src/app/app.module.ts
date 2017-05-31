@@ -19,47 +19,7 @@ import { ROUTES } from './app.routing';
 import { AppComponent } from './app-component';
 import { APP_RESOLVER_PROVIDERS } from './app.resolver';
 import { AppState, InternalStateType } from './app.service';
-
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-
-import {
-  AutoCompleteModule,
-  ButtonModule,
-  CalendarModule,
-  CheckboxModule,
-  ConfirmDialogModule,
-  DataTableModule, SharedModule,
-  DialogModule,
-  DropdownModule,
-  InputTextModule,
-  InputTextareaModule,
-  OverlayPanelModule,
-  PasswordModule,
-  RadioButtonModule,
-  SplitButtonModule,
-  TabViewModule,
-  ToolbarModule
-} from 'primeng/primeng';
-
-const NGFACES_MODULES = [
-  AutoCompleteModule,
-  ButtonModule,
-  CalendarModule,
-  CheckboxModule,
-  ConfirmDialogModule,
-  DataTableModule,
-  DialogModule,
-  DropdownModule,
-  InputTextModule,
-  InputTextareaModule,
-  OverlayPanelModule,
-  PasswordModule,
-  RadioButtonModule,
-  SharedModule,
-  SplitButtonModule,
-  TabViewModule,
-  ToolbarModule
-];
 
 /*
  * Custom Components
@@ -67,6 +27,8 @@ const NGFACES_MODULES = [
 import { COMPONENTS, DIRECTIVES, PIPES } from './components';
 
 import '../styles/main.scss';
+
+import { NGFACES_MODULES } from './modules';
 
 // Application wide providers
 const APP_PROVIDERS = [

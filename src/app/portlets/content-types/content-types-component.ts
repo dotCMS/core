@@ -16,7 +16,7 @@ import { ButtonAction } from '../../view/components/_common/action-header/action
     templateUrl: 'content-types-component.html'
 })
 export class ContentTypesPortletComponent extends BaseComponent {
-    private contentTypeColumns: DataTableColumn[];
+    contentTypeColumns: DataTableColumn[];
     private buttonActions: ButtonAction[] = [];
 
     constructor(messageService: MessageService) {

@@ -13,6 +13,9 @@ import { LoggerService } from '../api/services/logger.service';
 import { StringUtils } from '../api/util/string.utils';
 import { UserModel } from '../api/auth/UserModel';
 import { ConfirmDialogModule } from 'primeng/components/confirmdialog/confirmdialog';
+import { ConfirmationService } from 'primeng/primeng';
+import { FormsModule } from '@angular/forms';
+import { NGFACES_MODULES } from '../modules';
 
 @Component({
     selector: 'p-confirmDialog',
@@ -24,13 +27,14 @@ class FakeConfirmDialogComponent {
 export class DOTTestBed {
 
     private static DEFAULT_CONFIG = {
-        imports: [ConfirmDialogModule],
+        imports: [...NGFACES_MODULES, FormsModule],
         providers: [
             {provide: ConnectionBackend, useClass: MockBackend},
             {provide: RequestOptions, useClass: BaseRequestOptions},
             ApiRoot,
             BrowserUtil,
             Config,
+            ConfirmationService,
             CoreWebService,
             DotcmsConfig,
             DotcmsEventsService,
