@@ -260,7 +260,16 @@ public class FieldAPIImpl implements FieldAPI {
 @Override
 public void delete(FieldVariable fieldVar) throws DotDataException {
     fac.delete(fieldVar);
-    
+    Field field = this.find(fieldVar.fieldId());
+    ContentTypeAPI tapi = APILocator.getContentTypeAPI(this.userAPI.getSystemUser());
+	ContentType type;
+	try {
+		type = tapi.find(field.contentTypeId());
+		tapi.updateModDate(type);
+	} catch (DotSecurityException e) {
+		throw new DotDataException("Error updating Content Type mode_date for FieldVariable("+fieldVar.id()+")"+e.getMessage());
+	}
+	
 }
   
   
