@@ -481,33 +481,23 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
 
           //update the existing content type fields
-          if(fields != null){
-              //Fields on current content type version
-              localFields = newContentType.fields();
-              // localFieldIds will contains all the local IDs, in order to be able to compare bundle fields vs local fields.
-              Set<String> localFieldIds = Sets.newHashSet();
-              Map<String, Field> localFieldsMap = Maps.newHashMap();
+          if(fields != null) {
 
-              for (Field localField : localFields) {
-                  localFieldIds.add(localField.id());
-                  localFieldsMap.put(localField.variable(), localField);
+              for (Field localField : newContentType.fields()) {
+                  if ( !fields.stream().anyMatch( f -> f.id().equals(localField.id()) ) && !localField.fixed()) {
+                      Logger.info(this,
+                          "Deleting no longer needed Field: " + localField.name() +
+                              " with ID: " + localField.id() +
+                              ", from Content Type: " + newContentType.name());
+
+                      fAPI.delete(localField);
+                  }
               }
 
               //for each field in the content type lets create it if doesn't exists and update its properties if it does
               for( Field field : fields ) {
+                  fAPI.save(field, APILocator.systemUser());
 
-                  if ( localFieldsMap.containsKey(field.variable())
-                      && !localFieldsMap.get(field.variable()).id().equals(field.id())
-                      && !field.fixed() ){
-
-                      final Field f = localFieldsMap.get(field.variable());
-                      fAPI.delete(f);
-                      localFieldIds.remove( f.id() );
-                  }
-
-                  fAPI.save(field,APILocator.systemUser());
-
-                  localFieldIds.remove( field.id() );
                   if( fieldVariables != null && !fieldVariables.isEmpty() ){
                       for(FieldVariable fieldVariable : fieldVariables) {
                           if(fieldVariable.fieldId().equals(field.inode())) {
@@ -516,26 +506,10 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
                       }
                   }
               }
-
-              if ( !localFieldIds.isEmpty() ) {
-                  // we have local fields that didn't came
-                  // in the content type. lets remove them
-                  for ( String localFieldId : localFieldIds ) {
-                      Field f = fAPI.find(localFieldId);
-                      if(!f.fixed()){
-                          Logger.info(this, "Deleting no longer needed Field: " + f.name() + ", from Content Type: " + newContentType.name());
-                          fAPI.delete(f);
-                      }else{
-                          Logger.error(this, "Can't delete fixed field:"+f.name()+" from Content Type:"+newContentType.name());
-                      }
-                  }
-              }
           }
-
 
           return newContentType;
       });
   }
-
 
 }
