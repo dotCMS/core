@@ -427,6 +427,17 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 		    if (!localFields.isEmpty())
 		    	newContentType.constructWithFields(localFields);
 
+          // Sets the host:
+          try {
+              HostAPI hapi = APILocator.getHostAPI();
+              Host host = UUIDUtil.isUUID(newContentType.host()) || "SYSTEM_HOST".equalsIgnoreCase(newContentType.host())
+                      ? hapi.find(newContentType.host(), APILocator.systemUser(), true)
+                      : hapi.resolveHostName(newContentType.host(), APILocator.systemUser(), true);
+              newContentType = ContentTypeBuilder.builder(newContentType).host(host.getIdentifier()).build();
+          } catch (DotDataException | DotSecurityException e) {
+              throw new DotStateException("unable to resolve host:" + newContentType.host(), e);
+          }
+
 		    ContentType oldType = newContentType;
 		    try {
 		      if (newContentType.id() != null)
