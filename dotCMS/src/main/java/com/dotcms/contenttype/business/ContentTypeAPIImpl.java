@@ -387,12 +387,22 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         HostAPI hapi = APILocator.getHostAPI();
         contentType = ContentTypeBuilder.builder(contentType).host(hapi.resolveHostName(contentType.host(), APILocator.systemUser(), true).getIdentifier()).build();
       }
-
-    } catch (DotDataException e) {
-        throw new DotDataException("unable to resolve host:" + contentType.host(), e);
+    } 
+    catch (DotDataException e) {
+      throw new DotDataException("unable to resolve host:" + contentType.host(), e);
     }
     catch(DotSecurityException es){
       throw new DotSecurityException("invalid permissions to:" + contentType.host(), es);
+    }
+    
+    
+    // check perms
+    Permissionable parent = contentType.getParentPermissionable();
+    if (!perms.doesUserHavePermissions(parent,
+        "PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_PUBLISH,
+        user)) {
+      throw new DotSecurityException(
+          "User-does-not-have-add-children-or-structure-permission-on-host-folder:" + parent);
     }
 
     
