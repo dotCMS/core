@@ -36,6 +36,7 @@ static transformValue(fieldValue: any): any {
                 try {
                   isFiltered = (obj[fieldName] !== fieldValue && obj[fieldName] !== this.transformValue(fieldValue));
                 } catch (e) {
+                  // tslint:disable-next-line:no-console
                   console.log('Error while trying to check a field value while filtering.', e);
                 }
               }

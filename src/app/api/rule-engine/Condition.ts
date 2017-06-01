@@ -6,6 +6,7 @@ import {ServerSideTypeModel} from './ServerSideFieldModel';
 import {Http, Response} from '@angular/http';
 import { ConditionGroupModel, ConditionModel, ICondition } from './Rule';
 import { HttpCode } from '../util/http-code';
+import { LoggerService } from '../services/logger.service';
 
 // tslint:disable-next-line:no-unused-variable
 let noop = (...arg: any[]) => {
@@ -36,17 +37,19 @@ export class ConditionService {
       Object.keys(values).forEach((key) => {
         let x = values[key];
         conditionModel.setParameter(key, x.value, x.priority);
+        // tslint:disable-next-line:no-console
         console.log('ConditionService', 'setting parameter', key, x);
       });
 
     } catch (e) {
+      // tslint:disable-next-line:no-console
       console.error('Error reading Condition.', e);
       throw e;
     }
     return conditionModel;
   }
 
-  constructor(apiRoot: ApiRoot, http: Http) {
+  constructor(apiRoot: ApiRoot, http: Http, private loggerService: LoggerService) {
     this._apiRoot = apiRoot;
     this._http = http;
     this._baseUrl = `${apiRoot.baseUrl}api/v1/sites/${apiRoot.siteId}/ruleengine/conditions`;
@@ -58,9 +61,9 @@ export class ConditionService {
       return res.json();
     }).catch((err: any, source: Observable<any>) => {
       if (err && err.status === HttpCode.NOT_FOUND) {
-        console.log('Could not retrieve Condition Types: URL not valid.');
+        this.loggerService.info('Could not retrieve Condition Types: URL not valid.');
       } else if (err) {
-        console.log('Could not retrieve Condition Types.', 'response status code: ', err.status, 'error:', err);
+        this.loggerService.info('Could not retrieve Condition Types.', 'response status code: ', err.status, 'error:', err);
       }
       return Observable.empty();
     });
@@ -87,9 +90,9 @@ export class ConditionService {
   }
 
   add(groupId: string, model: ConditionModel): Observable<any> {
-    // console.log("api.rule-engine.ConditionService", "add", model)
+    // this.loggerService.info("api.rule-engine.ConditionService", "add", model)
     if (!model.isValid()) {
-      throw new Error(`This should be thrown from a checkValid function on the model, 
+      throw new Error(`This should be thrown from a checkValid function on the model,
                         and should provide the info needed to make the user aware of the fix.`);
     }
     let json = ConditionService.toJson(model);
@@ -104,9 +107,9 @@ export class ConditionService {
   }
 
   save(groupId: string, model: ConditionModel): Observable<ConditionModel> {
-    console.log('api.rule-engine.ConditionService', 'save', model);
+    this.loggerService.info('api.rule-engine.ConditionService', 'save', model);
     if (!model.isValid()) {
-      throw new Error(`This should be thrown from a checkValid function on the model, 
+      throw new Error(`This should be thrown from a checkValid function on the model,
                         and should provide the info needed to make the user aware of the fix.`);
     }
     if (!model.isPersisted()) {
@@ -134,9 +137,9 @@ export class ConditionService {
   private _catchRequestError(operation): (any) => Observable<any> {
     return (err: any) => {
       if (err && err.status === HttpCode.NOT_FOUND) {
-        console.log('Could not ' + operation + ' Condition: URL not valid.');
+        this.loggerService.info('Could not ' + operation + ' Condition: URL not valid.');
       } else if (err) {
-        console.log('Could not ' + operation + ' Condition.', 'response status code: ', err.status, 'error:', err);
+        this.loggerService.info('Could not ' + operation + ' Condition.', 'response status code: ', err.status, 'error:', err);
       }
       return Observable.empty();
     };

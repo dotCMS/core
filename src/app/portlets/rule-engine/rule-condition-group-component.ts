@@ -7,6 +7,7 @@ import { ConditionActionEvent, ConditionGroupActionEvent} from './rule-engine.co
 import {
     RULE_CONDITION_GROUP_UPDATE_OPERATOR, RULE_CONDITION_CREATE, ConditionGroupModel, ConditionModel
 } from '../../api/rule-engine/Rule';
+import {LoggerService} from '../../api/services/logger.service';
 
 @Component({
   selector: 'condition-group',
@@ -39,7 +40,7 @@ import {
                       ></rule-condition>
       <div class="cw-btn-group cw-add-btn">
         <div class="ui basic icon buttons" *ngIf="i === (group?._conditions.length - 1)">
-          <button class="cw-button-add-item ui button" arial-label="Add Condition" 
+          <button class="cw-button-add-item ui button" arial-label="Add Condition"
             (click)="onCreateCondition()" [disabled]="!condition.isPersisted()">
             <i class="plus icon" aria-hidden="true"></i>
           </button>
@@ -73,7 +74,7 @@ export class ConditionGroupComponent {
   private resources: I18nService;
   private _rsrcCache: {[key: string]: Observable<string>};
 
-  constructor(resources: I18nService) {
+  constructor(resources: I18nService, private loggerService: LoggerService) {
     this.resources = resources;
     this._rsrcCache = {};
   }
@@ -94,7 +95,7 @@ export class ConditionGroupComponent {
   }
 
   onCreateCondition(): void {
-    console.log('ConditionGroupComponent', 'onCreateCondition');
+    this.loggerService.info('ConditionGroupComponent', 'onCreateCondition');
     this.createCondition.emit( <ConditionActionEvent> { payload: {conditionGroup: this.group, index: this.groupIndex, type: RULE_CONDITION_CREATE}} );
   }
 

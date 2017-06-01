@@ -5,6 +5,7 @@ import {
     RULE_CONDITION_UPDATE_PARAMETER, RULE_CONDITION_UPDATE_TYPE,
     RULE_CONDITION_DELETE, RULE_CONDITION_UPDATE_OPERATOR, ConditionModel
 } from '../../api/rule-engine/Rule';
+import {LoggerService} from '../../api/services/logger.service';
 
 @Component({
   selector: 'rule-condition',
@@ -19,7 +20,7 @@ import {
       class="cw-type-dropdown"
       [value]="condition.type?.key"
       placeholder="{{conditionTypePlaceholder}}"
-      (change)="onTypeChange($event)">
+      (onDropDownChange)="onTypeChange($event)">
     <cw-input-option
         *ngFor="let opt of typeDropdown.options"
         [value]="opt.value"
@@ -27,20 +28,20 @@ import {
         icon="{{opt.icon}}"></cw-input-option>
   </cw-input-dropdown>
   <div flex="75" class="cw-condition-row-main" [ngSwitch]="condition.type?.key">
-    <template [ngSwitchCase]="'NoSelection'">
+    <ng-template [ngSwitchCase]="'NoSelection'">
       <div class="cw-condition-component"></div>
-    </template>
-    <template [ngSwitchCase]="'VisitorsGeolocationConditionlet'">
+    </ng-template>
+    <ng-template [ngSwitchCase]="'VisitorsGeolocationConditionlet'">
       <cw-visitors-location-container
           [componentInstance]="condition"
           (parameterValuesChange)="onParameterValuesChange($event)"></cw-visitors-location-container>
-    </template>
-    <template ngSwitchDefault>
+    </ng-template>
+    <ng-template ngSwitchDefault>
       <cw-serverside-condition class="cw-condition-component"
                                [componentInstance]="condition"
                                (parameterValueChange)="onParameterValueChange($event)">
       </cw-serverside-condition>
-    </template>
+    </ng-template>
   </div>
 </div>
 <div class="cw-btn-group cw-delete-btn">
@@ -67,7 +68,7 @@ export class ConditionComponent {
 
   typeDropdown: any;
 
-  constructor(private _resources: I18nService) {
+  constructor(private _resources: I18nService, private loggerService: LoggerService) {
   }
 
   ngOnChanges(change): void {
@@ -90,12 +91,12 @@ export class ConditionComponent {
         });
       }
     } catch (e) {
-      console.error('ConditionComponent', 'ngOnChanges', e);
+      this.loggerService.error('ConditionComponent', 'ngOnChanges', e);
     }
   }
 
   onTypeChange(type: string): void {
-    console.log('ConditionComponent', 'onTypeChange');
+    this.loggerService.info('ConditionComponent', 'onTypeChange', type);
     this.updateConditionType.emit({
       payload: {condition: this.condition, value: type, index: this.index},
       type: RULE_CONDITION_UPDATE_TYPE
@@ -107,7 +108,7 @@ export class ConditionComponent {
   }
 
   onParameterValueChange(event: {name: string, value: string}): void {
-    console.log('ConditionComponent', 'onParameterValueChange');
+    this.loggerService.info('ConditionComponent', 'onParameterValueChange');
     this.updateConditionParameter.emit({
       payload: {condition: this.condition, name: event.name, value: event.value, index: this.index},
       type: RULE_CONDITION_UPDATE_PARAMETER

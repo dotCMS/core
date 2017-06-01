@@ -18,7 +18,7 @@ import {IPublishEnvironment} from '../../../api/services/bundle-service';
       flex
       [value]="environmentStores[0]?.id"
       (click)="$event.stopPropagation()"
-      (change)="setSelectedEnvironment($event)">
+      (onDropDownChange)="setSelectedEnvironment($event)">
     <cw-input-option
         *ngFor="let opt of environmentStores"
         [value]="opt.id"

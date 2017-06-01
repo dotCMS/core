@@ -1,10 +1,10 @@
 <accordion>
     <nav #menuElement>
-        <template ngFor let-menu [ngForOf]="menuItems">
+        <ng-template ngFor let-menu [ngForOf]="menuItems">
 
             <accordion-group [heading]="menu.tabName" [icon]="menu.tabIcon">
                 <div class="main-nav__submenu">
-                    <template ngFor let-menuItem [ngForOf]="menu.menuItems">
+                    <ng-template ngFor let-menuItem [ngForOf]="menu.menuItems">
                         <a ripple (click)="gotToPage($event, menuItem.menuLink)" [routerLink]="[menuItem.menuLink]"
                            *ngIf="menuItem.url && !menuItem.angular && !menuItem.ajax"
                            [class.main-nav__submenu--active]="menuItemIdActive === menuItem.id">
@@ -21,9 +21,9 @@
 
                             {{menuItem.name}}
                         </a>
-                    </template> 
+                    </ng-template> 
                 </div>
             </accordion-group>
-        </template>
+        </ng-template>
     </nav>
 </accordion>

@@ -7,6 +7,7 @@ import {
     RULE_RULE_ACTION_DELETE, ActionModel
 } from '../../api/rule-engine/Rule';
 import {RuleActionActionEvent} from './rule-engine.container';
+import {LoggerService} from '../../api/services/logger.service';
 
 @Component({
   selector: 'rule-action',
@@ -17,7 +18,7 @@ import {RuleActionActionEvent} from './rule-engine.container';
       class="cw-type-dropdown"
       [value]="action.type?.key"
       placeholder="{{actionTypePlaceholder}}"
-      (change)="onTypeChange($event)">
+      (onDropDownChange)="onTypeChange($event)">
         <cw-input-option
         *ngFor="let opt of typeDropdown.options"
         [value]="opt.value"
@@ -52,7 +53,7 @@ export class RuleActionComponent {
 
   @Input() typeDropdown: any;
 
-  constructor(private _resources: I18nService) {}
+  constructor(private _resources: I18nService, private loggerService: LoggerService) {}
 
   ngOnChanges(change): void {
     if (change.ruleActionTypes && !this.typeDropdown) {
@@ -74,12 +75,12 @@ export class RuleActionComponent {
   }
 
   onTypeChange(type: string): void {
-    console.log('RuleActionComponent', 'onTypeChange', type);
+    this.loggerService.info('RuleActionComponent', 'onTypeChange', type);
     this.updateRuleActionType.emit({type: RULE_RULE_ACTION_UPDATE_TYPE, payload: {ruleAction: this.action, value: type, index: this.index}});
   }
 
   onParameterValueChange(event: {name: string, value: string}): void {
-    console.log('RuleActionComponent', 'onParameterValueChange', event);
+    this.loggerService.info('RuleActionComponent', 'onParameterValueChange', event);
     this.updateRuleActionParameter.emit({
       payload: {ruleAction: this.action, name: event.name, value: event.value, index: this.index},
       type: RULE_RULE_ACTION_UPDATE_PARAMETER,

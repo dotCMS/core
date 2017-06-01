@@ -12,7 +12,7 @@ let mapIdCounter = 1;
     height:100%;
     width:100%;
   }`],
-  template: `<cw-modal-dialog 
+  template: `<cw-modal-dialog
                  [headerText]="headerText"
                  [hidden]="hidden"
                  [okEnabled]="true"

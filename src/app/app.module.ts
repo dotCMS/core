@@ -1,5 +1,7 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { HttpModule, JsonpModule } from '@angular/http';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
 import {
   NgModule,
   ApplicationRef
@@ -54,6 +56,7 @@ type StoreType = {
     ...DIRECTIVES,
   ],
   imports: [ // import Angular's modules
+    BrowserAnimationsModule,
     BrowserModule,
     HttpModule,
     JsonpModule,
@@ -79,6 +82,7 @@ export class AppModule {
       return;
     }
 
+    // tslint:disable-next-line:no-console
     console.log('HMR store', JSON.stringify(store, null, 2));
     // set state
     this.appState._state = store.state;

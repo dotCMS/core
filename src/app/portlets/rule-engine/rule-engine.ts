@@ -30,7 +30,7 @@ import './semantic/assets/semantic.js';
     <div flex layout="row" layout-align="space-between center">
       <div flex layout="row" layout-align="space-between center" class="ui icon input">
         <i class="filter icon"></i>
-        <input class="cw-rule-filter" type="text" placeholder="{{rsrc('inputs.filter.placeholder') | async}}" 
+        <input class="cw-rule-filter" type="text" placeholder="{{rsrc('inputs.filter.placeholder') | async}}"
           [value]="filterText" (keyup)="filterText = $event.target.value">
       </div>
       <div flex="2"></div>
@@ -40,13 +40,13 @@ import './semantic/assets/semantic.js';
     </div>
     <div class="cw-filter-links">
       <span>{{rsrc('inputs.filter.status.show.label') | async}}:</span>
-      <a href="javascript:void(0)" class="cw-filter-link" [class.active]="!isFilteringField('enabled')" 
+      <a href="javascript:void(0)" class="cw-filter-link" [class.active]="!isFilteringField('enabled')"
         (click)="setFieldFilter('enabled',null)">{{rsrc('inputs.filter.status.all.label') | async}}</a>
       <span>&#124;</span>
-      <a href="javascript:void(0)" class="cw-filter-link" [class.active]="isFilteringField('enabled',true)" 
+      <a href="javascript:void(0)" class="cw-filter-link" [class.active]="isFilteringField('enabled',true)"
         (click)="setFieldFilter('enabled',true)">{{rsrc('inputs.filter.status.active.label') | async}}</a>
       <span>&#124;</span>
-      <a href="javascript:void(0)" class="cw-filter-link" [class.active]="isFilteringField('enabled',false)" 
+      <a href="javascript:void(0)" class="cw-filter-link" [class.active]="isFilteringField('enabled',false)"
         (click)="setFieldFilter('enabled',false)">{{rsrc('inputs.filter.status.inactive.label') | async}}</a>
     </div>
   </div>
@@ -62,12 +62,12 @@ import './semantic/assets/semantic.js';
         (updateFireOn)="updateFireOn.emit($event)"
         (updateEnabledState)="updateEnabledState.emit($event)"
         (updateExpandedState)="updateExpandedState.emit($event)"
-        
+
         (createRuleAction)="createRuleAction.emit($event)"
         (updateRuleActionType)="updateRuleActionType.emit($event)"
         (updateRuleActionParameter)="updateRuleActionParameter.emit($event)"
         (deleteRuleAction)="deleteRuleAction.emit($event)"
-        
+
         (createCondition)="createCondition.emit($event)"
         (createConditionGroup)="createConditionGroup.emit($event)"
         (updateConditionGroupOperator)="updateConditionGroupOperator.emit($event)"

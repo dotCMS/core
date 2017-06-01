@@ -18,6 +18,7 @@ export function main(): Promise<any> {
   return platformBrowserDynamic()
     .bootstrapModule(AppModule)
     .then(decorateModuleRef)
+    // tslint:disable-next-line:no-console
     .catch((err) => console.error(err));
 }
 

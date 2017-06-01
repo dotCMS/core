@@ -1,4 +1,5 @@
-import { Component, EventEmitter, Input, Output, ViewEncapsulation, ElementRef, trigger, style, transition, animate } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ViewEncapsulation, ElementRef } from '@angular/core';
+import { trigger, transition, style, animate } from '@angular/animations';
 
 @Component({
     animations: [

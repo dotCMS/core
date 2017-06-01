@@ -1,6 +1,7 @@
 import {Router, ActivatedRoute} from '@angular/router';
 import {Component, ViewEncapsulation} from '@angular/core';
 import {LoginService} from '../../../../api/services/login-service';
+import { LoggerService } from '../../../../api/services/logger.service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -22,7 +23,8 @@ export class ResetPasswordContainer {
 
     private changePasswordSuccessfully: string;
 
-    constructor(private loginService: LoginService, private router: Router, private route: ActivatedRoute) {
+    constructor(private loginService: LoginService, private router: Router,
+    private route: ActivatedRoute, private loggerService: LoggerService) {
         this.route.params.pluck('token').subscribe(token => {
             this.token = <string> token;
         });
@@ -31,7 +33,7 @@ export class ResetPasswordContainer {
             let dataI18n = data.i18nMessagesMap;
             this.changePasswordSuccessfully = dataI18n['message.forgot.password.password.updated'];
         }, (error) => {
-            console.log(error);
+            this.loggerService.info(error);
         });
     }
 

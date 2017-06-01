@@ -15,6 +15,7 @@ import {CwError} from '../../api/system/http-response-util';
 import {BundleService, IPublishEnvironment} from '../../api/services/bundle-service';
 import { ActivatedRoute } from '@angular/router';
 import { HttpCode } from '../../api/util/http-code';
+import {LoggerService} from '../../api/services/logger.service';
 
 // tslint:disable-next-line:no-unused-variable
 const I8N_BASE = 'api.sites.ruleengine';
@@ -128,7 +129,8 @@ export class RuleEngineContainer {
               private _conditionService: ConditionService,
               private _resources: I18nService,
               public bundleService: BundleService,
-              private route: ActivatedRoute
+              private route: ActivatedRoute,
+              private loggerService: LoggerService
   ) {
     this.rules$.subscribe(( rules ) => {
       this.rules = rules;
@@ -158,7 +160,7 @@ export class RuleEngineContainer {
    * @param event
    */
   onCreateRule(event): void {
-    console.log('RuleEngineContainer', 'onCreateRule', event);
+    this.loggerService.info('RuleEngineContainer', 'onCreateRule', event);
     let priority = this.rules.length ? this.rules[0].priority + 1 : 1;
     let rule = new RuleModel({ priority});
     let group = new ConditionGroupModel({operator: 'AND', priority: 1});
@@ -196,7 +198,7 @@ export class RuleEngineContainer {
   }
 
   onUpdateFireOn(event: RuleActionEvent): void {
-    console.log('RuleEngineContainer', 'onUpdateFireOn', event);
+    this.loggerService.info('RuleEngineContainer', 'onUpdateFireOn', event);
     event.payload.rule.fireOn = <string> event.payload.value;
     this.patchRule(event.payload.rule, false);
   }
@@ -234,7 +236,7 @@ export class RuleEngineContainer {
       obs4.subscribe((groups: ConditionGroupModel[]) => {
         rule._conditionGroups = groups;
         if (rule._conditionGroups.length === 0) {
-          console.log('RuleEngineContainer', 'conditionGroups', 'Add stub group');
+          this.loggerService.info('RuleEngineContainer', 'conditionGroups', 'Add stub group');
           let group = new ConditionGroupModel({operator: 'AND', priority: 1});
           group._conditions.push(new ConditionModel({_type: new ServerSideTypeModel(), operator: 'AND', priority: 1}));
           rule._conditionGroups.push(group);
@@ -248,7 +250,7 @@ export class RuleEngineContainer {
           });
         }
       }, (e) => {
-        console.error('RuleEngineContainer', e);
+        this.loggerService.error('RuleEngineContainer', e);
       });
 
       if (rule._ruleActions.length === 0) {
@@ -267,7 +269,7 @@ export class RuleEngineContainer {
   }
 
   onCreateRuleAction(event: RuleActionActionEvent): void {
-    console.log('RuleEngineContainer', 'onCreateRuleAction', event);
+    this.loggerService.info('RuleEngineContainer', 'onCreateRuleAction', event);
     let rule = event.payload.rule;
     let priority = rule._ruleActions.length ? rule._ruleActions[rule._ruleActions.length - 1].priority + 1 : 1;
     let entity = new ActionModel(null, new ServerSideTypeModel(), priority);
@@ -278,7 +280,7 @@ export class RuleEngineContainer {
   }
 
   onDeleteRuleAction(event: RuleActionActionEvent): void {
-    console.log('RuleEngineContainer', 'onDeleteRuleAction', event);
+    this.loggerService.info('RuleEngineContainer', 'onDeleteRuleAction', event);
     let rule = event.payload.rule;
     let ruleAction = event.payload.ruleAction;
     if (ruleAction.isPersisted()) {
@@ -294,7 +296,7 @@ export class RuleEngineContainer {
   }
 
   onUpdateRuleActionType(event: RuleActionActionEvent): void {
-    console.log('RuleEngineContainer', 'onUpdateRuleActionType');
+    this.loggerService.info('RuleEngineContainer', 'onUpdateRuleActionType');
     try {
       let ruleAction = event.payload.ruleAction;
       let rule = event.payload.rule;
@@ -303,19 +305,19 @@ export class RuleEngineContainer {
       rule._ruleActions[idx] = new ActionModel(ruleAction.key, type, ruleAction.priority);
       this.patchAction(rule, ruleAction);
     } catch (e) {
-      console.error('RuleComponent', 'onActionTypeChange', e);
+      this.loggerService.error('RuleComponent', 'onActionTypeChange', e);
     }
   }
 
   onUpdateRuleActionParameter(event: RuleActionActionEvent): void {
-    console.log('RuleEngineContainer', 'onUpdateRuleActionParameter');
+    this.loggerService.info('RuleEngineContainer', 'onUpdateRuleActionParameter');
     let ruleAction = event.payload.ruleAction;
     ruleAction.setParameter(event.payload.name, event.payload.value);
     this.patchAction(event.payload.rule, ruleAction);
   }
 
   onCreateConditionGroup(event: ConditionGroupActionEvent): void {
-    console.log('RuleEngineContainer', 'onCreateConditionGroup');
+    this.loggerService.info('RuleEngineContainer', 'onCreateConditionGroup');
     let rule = event.payload.rule;
     let priority = rule._conditionGroups.length ? rule._conditionGroups[rule._conditionGroups.length - 1].priority + 1 : 1;
     let group = new ConditionGroupModel({operator: 'AND', priority: priority});
@@ -325,7 +327,7 @@ export class RuleEngineContainer {
   }
 
   onUpdateConditionGroupOperator(event: ConditionGroupActionEvent): void {
-    console.log('RuleEngineContainer', 'onUpdateConditionGroupOperator');
+    this.loggerService.info('RuleEngineContainer', 'onUpdateConditionGroupOperator');
     let group = event.payload.conditionGroup;
     group.operator = <string> event.payload.value;
     if (group.key != null) {
@@ -352,13 +354,13 @@ export class RuleEngineContainer {
       group._conditions.push(entity);
       this.ruleUpdated(rule);
     } catch (e) {
-      console.error('RuleEngineContainer', 'onCreateCondition', e);
+      this.loggerService.error('RuleEngineContainer', 'onCreateCondition', e);
       this.ruleUpdated(rule, [{unhandledError: e}]);
     }
   }
 
   onUpdateConditionType(event: ConditionActionEvent): void {
-    console.log('RuleEngineContainer', 'onUpdateConditionType');
+    this.loggerService.info('RuleEngineContainer', 'onUpdateConditionType');
     try {
       let condition = event.payload.condition;
       let group = event.payload.conditionGroup;
@@ -370,26 +372,26 @@ export class RuleEngineContainer {
       group._conditions[idx] = condition;
       this.patchCondition(rule, group, condition);
     } catch (e) {
-      console.error('RuleComponent', 'onActionTypeChange', e);
+      this.loggerService.error('RuleComponent', 'onActionTypeChange', e);
     }
   }
 
   onUpdateConditionParameter(event: ConditionActionEvent): void {
-    console.log('RuleEngineContainer', 'onUpdateConditionParameter');
+    this.loggerService.info('RuleEngineContainer', 'onUpdateConditionParameter');
     let condition = event.payload.condition;
     condition.setParameter(event.payload.name, event.payload.value);
     this.patchCondition(event.payload.rule, event.payload.conditionGroup, condition);
   }
 
   onUpdateConditionOperator(event: ConditionActionEvent): void {
-    console.log('RuleEngineContainer', 'onUpdateConditionOperator');
+    this.loggerService.info('RuleEngineContainer', 'onUpdateConditionOperator');
     let condition = event.payload.condition;
     condition.operator = <string> event.payload.value;
     this.patchCondition(event.payload.rule, event.payload.conditionGroup, condition);
   }
 
   onDeleteCondition(event: ConditionActionEvent): void {
-    console.log('RuleEngineContainer', 'onDeleteCondition', event);
+    this.loggerService.info('RuleEngineContainer', 'onDeleteCondition', event);
     let rule = event.payload.rule;
     let group = event.payload.conditionGroup;
     let condition = event.payload.condition;
@@ -399,12 +401,12 @@ export class RuleEngineContainer {
           return aryCondition.key !== condition.key;
         });
         if (group._conditions.length === 0) {
-          console.log('RuleEngineContainer', 'condition', 'Remove Condition and remove Groups is empty');
+          this.loggerService.info('RuleEngineContainer', 'condition', 'Remove Condition and remove Groups is empty');
           this._conditionGroupService.remove(rule.key, group).subscribe();
           rule._conditionGroups = rule._conditionGroups.filter((aryGroup) => aryGroup.key !== group.key );
         }
         if (rule._conditionGroups.length === 0) {
-          console.log('RuleEngineContainer', 'conditionGroups', 'Add stub group if Groups are empty');
+          this.loggerService.info('RuleEngineContainer', 'conditionGroups', 'Add stub group if Groups are empty');
           let group = new ConditionGroupModel({operator: 'AND', priority: 1});
           group._conditions.push(new ConditionModel({_type: new ServerSideTypeModel(), operator: 'AND', priority: 1}));
           rule._conditionGroups.push(group);
@@ -415,7 +417,7 @@ export class RuleEngineContainer {
 
   ruleUpdating(rule, disable = true): void {
     if (disable && rule.enabled && rule.key) {
-      console.log('RuleEngineContainer', 'ruleUpdating', 'disabling rule due for edit.');
+      this.loggerService.info('RuleEngineContainer', 'ruleUpdating', 'disabling rule due for edit.');
       this.patchRule(rule, true);
     }
     rule._saved = false;
@@ -428,7 +430,7 @@ export class RuleEngineContainer {
     if (!errors) {
       rule._saved = true;
     } else {
-      console.error(errors);
+      this.loggerService.error(errors);
       rule._errors = errors;
     }
   }
@@ -528,12 +530,12 @@ export class RuleEngineContainer {
           }
         }
       } else {
-        console.log('RuleEngineContainer', 'patchCondition', 'Not valid');
+        this.loggerService.info('RuleEngineContainer', 'patchCondition', 'Not valid');
         rule._saving = false;
         rule._errors = { invalid: 'Condition not valid.' };
       }
     } catch (e) {
-      console.error(e);
+      this.loggerService.error(e);
       this.ruleUpdated(rule, {invalid: e.message});
     }
   }
@@ -583,7 +585,7 @@ export class RuleEngineContainer {
         }
       }
     } catch (e) {
-      console.error('Error while processing invalid response: ', e);
+      this.loggerService.error('Error while processing invalid response: ', e);
     }
     return handled;
   }

@@ -1,4 +1,4 @@
-import { Component, trigger, state, transition, style, animate, Renderer, ViewEncapsulation, ViewChild, ElementRef } from '@angular/core';
+import { Component, Renderer, ViewEncapsulation, ViewChild, ElementRef } from '@angular/core';
 import { BaseComponent } from '../../../view/components/_common/_base/base-component';
 import { CrudService } from '../../../api/services/crud-service';
 import { LoginService } from '../../../api/services/login-service';
@@ -10,6 +10,7 @@ import { NgForm, FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { Observable } from 'rxjs/Observable';
 import { ContentType } from '../content-types-create-edit-component';
 import { Router } from '@angular/router';
+import { trigger, state, style, transition, animate } from '@angular/animations';
 
 @Component({
     animations: [

@@ -10,6 +10,7 @@ import {CoreWebService} from '../services/core-web-service';
 import {SiteService} from '../services/site-service';
 import {Subject} from 'rxjs/Subject';
 import {CwError} from '../system/http-response-util';
+import {LoggerService} from '../services/logger.service';
 
 export const RULE_CREATE = 'RULE_CREATE';
 export const RULE_DELETE = 'RULE_DELETE';
@@ -126,7 +127,7 @@ export class ActionModel extends ServerSideFieldModel {
     try {
       return super.isValid();
     } catch (e) {
-      console.error(e);
+      this.loggerService.error(e);
     }
   }
 }
@@ -148,7 +149,7 @@ export class ConditionModel extends ServerSideFieldModel {
     try {
       return !!this.getParameterValue('comparison') && super.isValid();
     } catch (e) {
-      console.error(e);
+      this.loggerService.error(e);
     }
   }
 }

@@ -12,13 +12,13 @@ import _ from 'lodash';
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'cw-input-rest-dropdown',
   template: `
-  <cw-input-dropdown 
+  <cw-input-dropdown
       [value]="_modelValue"
       placeholder="{{placeholder}}"
       [maxSelections]="maxSelections"
       [minSelections]="minSelections"
        [allowAdditions]="allowAdditions"
-      (change)="fireChange($event)"
+      (onDropDownChange)="fireChange($event)"
       (touch)="fireTouch($event)"
       >
         <cw-input-option *ngFor="let opt of _options | async" [value]="opt.value" [label]="opt.label" [icon]="opt.icon"></cw-input-option>
@@ -109,7 +109,7 @@ export class RestDropdown implements AfterViewInit, ControlValueAccessor {
       });
     }
     return ary;
-  };
+  }
 
   private jsonEntryToOption(json: any, key: string = null): {value: string, label: string} {
     let opt = {value: null, label: null};

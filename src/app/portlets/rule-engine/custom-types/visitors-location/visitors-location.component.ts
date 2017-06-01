@@ -2,6 +2,7 @@ import {Component, Input, Output, EventEmitter, ChangeDetectionStrategy} from '@
 import {DecimalPipe} from '@angular/common';
 import {FormControl} from '@angular/forms';
 import {GCircle} from '../../../../api/maps/GoogleMapService';
+import {LoggerService} from '../../../../api/services/logger.service';
 
 interface Param<T> {
   key: string;
@@ -46,7 +47,7 @@ const I8N_BASE = 'api.sites.ruleengine';
                      [formControl]="comparisonDropdown.control"
                      [required]="true"
                      [class.cw-comparator-selector]="true"
-                     (change)="comparisonChange.emit($event)"
+                     (onDropDownChange)="comparisonChange.emit($event)"
                      placeholder="{{comparisonDropdown.placeholder}}">
     <cw-input-option *ngFor="let opt of comparisonDropdown.options"
                      [value]="opt.value"
@@ -104,12 +105,12 @@ export class VisitorsLocationComponent {
   showingMap = false;
   comparisonDropdown: any;
 
-  constructor(public decimalPipe: DecimalPipe) {
-    console.log('VisitorsLocationComponent', 'constructor');
+  constructor(public decimalPipe: DecimalPipe, private loggerService: LoggerService) {
+    loggerService.info('VisitorsLocationComponent', 'constructor');
   }
 
   ngOnChanges(change): void {
-    console.log('VisitorsLocationComponent', 'ngOnChanges', change);
+    this.loggerService.info('VisitorsLocationComponent', 'ngOnChanges', change);
 
     if (change.comparisonOptions) {
       this.comparisonDropdown = {
@@ -132,7 +133,7 @@ export class VisitorsLocationComponent {
 
   getRadiusInPreferredUnit(): number {
     let r = this.circle.radius;
-    console.log('VisitorsLocationComponent', 'getRadiusInPreferredUnit', r);
+    this.loggerService.info('VisitorsLocationComponent', 'getRadiusInPreferredUnit', r);
     return UNITS.m[this.preferredUnit](r);
   }
 

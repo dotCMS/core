@@ -13,14 +13,12 @@ export class LoggerService {
     private isProduction = true;
 
     constructor(private logger: Logger, private config: Config, private stringUtils: StringUtils) {
-
-        console.log('Setting the logger...');
+        logger.info('Setting the logger...');
 
         this.isProduction = this.config.isProduction();
 
         if (!this.isProduction) {
-
-            console.log('Developer mode logger on');
+            logger.info('Developer mode logger on');
             logger.level = logger.Level.LOG;
         }
 

@@ -3,6 +3,7 @@ import {ParameterDefinition} from '../util/CwInputModel';
 import {ParameterModel} from './Rule';
 import {FormControl, Validators, ValidatorFn} from '@angular/forms';
 import {CustomValidators} from '../validation/CustomValidators';
+import {LoggerService} from '../services/logger.service';
 
 export class ServerSideFieldModel extends CwModel {
 
@@ -23,7 +24,7 @@ export class ServerSideFieldModel extends CwModel {
     return control;
   }
 
-  constructor(key: string, type: ServerSideTypeModel, priority = 1) {
+  constructor(key: string, type: ServerSideTypeModel, priority = 1, public loggerService?: LoggerService) {
     super(key);
     this.parameters = {};
     this.parameterDefs = {};
@@ -51,7 +52,7 @@ export class ServerSideFieldModel extends CwModel {
 
   setParameter(key: string, value: any, priority = 1): void {
     if (this.parameterDefs[key] === undefined) {
-      console.log('Unsupported parameter: ', key, 'Valid parameters: ', Object.keys(this.parameterDefs));
+      this.loggerService.info('Unsupported parameter: ', key, 'Valid parameters: ', Object.keys(this.parameterDefs));
       return;
     }
     this.parameters[key] = {key: key, priority: priority, value: value};
@@ -91,7 +92,7 @@ export class ServerSideFieldModel extends CwModel {
         try {
           valid = valid && ( paramDef.inputType.verify(value) == null );
         } catch (e) {
-          console.error(e);
+          this.loggerService.error(e);
         }
         if (paramDef.inputType.name === 'comparison' && paramDef.inputType['options'][value].rightHandArgCount === 0) {
           return true;

@@ -5,6 +5,7 @@ import {Injectable} from '@angular/core';
 import {ApiRoot} from '../persistence/ApiRoot';
 import { ConditionGroupModel, IConditionGroup } from './Rule';
 import { HttpCode } from '../util/http-code';
+import { LoggerService } from '../services/logger.service';
 
 @Injectable()
 export class ConditionGroupService {
@@ -32,7 +33,7 @@ export class ConditionGroupService {
     return list;
   }
 
-  constructor(apiRoot: ApiRoot, http: Http) {
+  constructor(apiRoot: ApiRoot, http: Http, private loggerService: LoggerService) {
     this._apiRoot = apiRoot;
     this._http = http;
     this._baseUrl = apiRoot.baseUrl + 'api/v1/sites/' + apiRoot.siteId + '/ruleengine/rules';
@@ -42,13 +43,13 @@ export class ConditionGroupService {
     let opts = this._apiRoot.getDefaultRequestOptions();
     return this._http.get(path, opts).map((res: Response) => {
       let json = res.json();
-      console.log('ConditionGroupService', 'makeRequest-Response', json);
+      this.loggerService.info('ConditionGroupService', 'makeRequest-Response', json);
       return json;
     }).catch((err: any, source: Observable<any>) => {
       if (err && err.status === HttpCode.NOT_FOUND) {
-        console.error('Could not retrieve ' + this._typeName + ' : 404 path not valid.', path);
+        this.loggerService.error('Could not retrieve ' + this._typeName + ' : 404 path not valid.', path);
       } else if (err) {
-        console.log('Could not retrieve' + this._typeName + ': Response status code: ', err.status, 'error:', err, path);
+        this.loggerService.info('Could not retrieve' + this._typeName + ': Response status code: ', err.status, 'error:', err, path);
       }
       return Observable.empty();
     });
@@ -71,7 +72,7 @@ export class ConditionGroupService {
     let result: Observable<ConditionGroupModel>;
     result = this.makeRequest(this._getPath(ruleKey, key)).map((json: IConditionGroup) => {
       json.id = key;
-      console.log('ConditionGroupService', 'creatingConditionGroupFromJson≠≠');
+      this.loggerService.info('ConditionGroupService', 'creatingConditionGroupFromJson≠≠');
       return new ConditionGroupModel(json);
     });
 
@@ -79,9 +80,9 @@ export class ConditionGroupService {
   }
 
   createConditionGroup(ruleId: string, model: ConditionGroupModel): Observable<any> {
-    console.log('ConditionGroupService', 'add', model);
+    this.loggerService.info('ConditionGroupService', 'add', model);
     if (!model.isValid()) {
-      throw new Error(`This should be thrown from a checkValid function on the model, 
+      throw new Error(`This should be thrown from a checkValid function on the model,
                         and should provide the info needed to make the user aware of the fix`);
     }
     let json = ConditionGroupService.toJson(model);
@@ -97,9 +98,9 @@ export class ConditionGroupService {
   }
 
   updateConditionGroup(ruleId: string, model: ConditionGroupModel): Observable<ConditionGroupModel> {
-    console.log('ConditionGroupService', 'save');
+    this.loggerService.info('ConditionGroupService', 'save');
     if (!model.isValid()) {
-      throw new Error(`This should be thrown from a checkValid function on the model, 
+      throw new Error(`This should be thrown from a checkValid function on the model,
                         and should provide the info needed to make the user aware of the fix.`);
     }
     if (!model.isPersisted()) {
@@ -134,9 +135,9 @@ export class ConditionGroupService {
   private _catchRequestError(operation): Func {
     return (err: any) => {
       if (err && err.status === HttpCode.NOT_FOUND) {
-        console.log('Could not ' + operation + ' Condition: URL not valid.');
+        this.loggerService.info('Could not ' + operation + ' Condition: URL not valid.');
       } else if (err) {
-        console.log('Could not ' + operation + ' Condition.', 'response status code: ', err.status, 'error:', err);
+        this.loggerService.info('Could not ' + operation + ' Condition.', 'response status code: ', err.status, 'error:', err);
       }
       return Observable.empty();
     };

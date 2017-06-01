@@ -22,7 +22,7 @@ import {ViewChild} from '@angular/core';
       [value]="bundleStores[0]?.id"
       allowAdditions="true"
       (click)="$event.stopPropagation()"
-      (change)="setSelectedBundle($event)"
+      (onDropDownChange)="setSelectedBundle($event)"
       (enter)="addToBundle.emit(selectedBundle)">
     <cw-input-option
         *ngFor="let opt of bundleStores"

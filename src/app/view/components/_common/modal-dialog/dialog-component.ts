@@ -6,9 +6,9 @@ import { KeyCode } from '../../../../api/util/key-util';
   selector: 'cw-modal-dialog',
   template: `
   <div class="ui dimmer modals page transition visible active" *ngIf="!hidden" (click)="onCancel($event)">
-    <div class="ui modal cw-modal-dialog" 
+    <div class="ui modal cw-modal-dialog"
       style="height:{{height}};width:{{width}};max-height:{{maxHeight}};max-width:{{maxWidth}}" (click)="$event.stopPropagation()">
-      
+
       <div class="header">{{headerText}}</div>
       <div flex layout-fill layout="column" class="content">
         <div *ngIf="errorMessage != null" class="ui negative message">{{errorMessage}}</div>

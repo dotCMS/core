@@ -35,7 +35,7 @@ export class ApiRoot {
       result = query.substring(idx + token.length, end);
     }
     return result;
-  };
+  }
 
   constructor(authUser: UserModel, private loggerService: LoggerService) {
     this.authUser = authUser;

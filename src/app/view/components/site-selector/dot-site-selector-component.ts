@@ -94,14 +94,11 @@ export class SiteSelectorComponent extends BaseComponent {
     handleSitesDropdownClick(event: {originalEvent: Event, query: string}): void {
         this.iframeOverlayService.toggle();
 
-        // TODO: get rid of this lines when this is fixed: https://github.com/primefaces/primeng/issues/745
         event.originalEvent.preventDefault();
         event.originalEvent.stopPropagation();
         if (this.autoCompleteComponent.panelVisible) {
-            this.autoCompleteComponent.onDropdownBlur();
             this.autoCompleteComponent.hide();
         } else {
-            this.autoCompleteComponent.onDropdownFocus();
             this.autoCompleteComponent.show();
         }
 

@@ -89,8 +89,8 @@ export class ActionService {
   createRuleAction(ruleId: string, model: ActionModel): Observable<any> {
     this.loggerService.debug('Action', 'add', model);
     if (!model.isValid()) {
-      throw new Error(`This should be thrown from a checkValid function on the model, 
-                        and should provide the info needed to make the user aware of the fix.`);
+      throw new Error(`This should be thrown from a checkValid function on the model,
+and should provide the info needed to make the user aware of the fix.`);
     }
     let json = ActionService.toJson(model);
     json.owningRule = ruleId;
@@ -108,7 +108,7 @@ export class ActionService {
   updateRuleAction(ruleId: string, model: ActionModel): Observable<ActionModel> {
     this.loggerService.debug('actionService', 'save');
     if (!model.isValid()) {
-      throw new Error(`This should be thrown from a checkValid function on the model, 
+      throw new Error(`This should be thrown from a checkValid function on the model,
                         and should provide the info needed to make the user aware of the fix.`);
     }
     if (!model.isPersisted()) {

@@ -39,7 +39,7 @@ export class Accordion {
             <span class="accordion-group__title-text">
                 {{heading}}
             </span>
-            
+
         </a>
         <div class="accordion-group__content" [style.height.px]="isOpen ? accordionGroupHeight : 0">
             <div class="accordion-group__content-inner" #accordionGroupContentInner>

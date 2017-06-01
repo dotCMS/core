@@ -6,6 +6,7 @@ import {Observable} from 'rxjs/Observable';
 import {I18nService} from '../../../../api/system/locale/I18n';
 import {BehaviorSubject} from 'rxjs/Rx';
 import {GCircle} from '../../../../api/maps/GoogleMapService';
+import {LoggerService} from '../../../../api/services/logger.service';
 
 interface Param<T> {
   key: string;
@@ -44,7 +45,7 @@ const I8N_BASE = 'api.sites.ruleengine';
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [DecimalPipe],
   selector: 'cw-visitors-location-container',
-  template: `<cw-visitors-location-component 
+  template: `<cw-visitors-location-component
     [circle]="circle$ | async"
     [preferredUnit]="preferredUnit"
     [comparisonValue]="comparisonValue"
@@ -75,13 +76,13 @@ export class VisitorsLocationContainer {
 
   private _rsrcCache: {[key: string]: Observable<string>};
 
-  constructor(public resources: I18nService, public decimalPipe: DecimalPipe) {
+  constructor(public resources: I18nService, public decimalPipe: DecimalPipe, private loggerService: LoggerService) {
     resources.get(I8N_BASE).subscribe((rsrc) => { });
     this._rsrcCache = {};
 
     this.circle$.subscribe((e) => {
         }, (e) => {
-          console.error('VisitorsLocationContainer', 'Error updating area', e);
+          loggerService.error('VisitorsLocationContainer', 'Error updating area', e);
         }, () => { }
     );
   }
@@ -127,7 +128,7 @@ export class VisitorsLocationContainer {
   }
 
   onUpdate(circle: GCircle): void {
-    console.log('App', 'onUpdate', circle);
+    this.loggerService.info('App', 'onUpdate', circle);
     this.parameterValuesChange.emit([
       {name: 'latitude', value: circle.center.lat + ''},
       {name: 'longitude', value: circle.center.lng + ''},

@@ -5,6 +5,7 @@ import { BaseComponent } from '../_common/_base/base-component';
 import { MessageService } from '../../../api/services/messages-service';
 import { ButtonAction } from '../_common/action-header/action-header';
 import { CrudService, OrderDirection } from '../../../api/services/crud-service';
+import { LoggerService } from '../../../api/services/logger.service';
 @Component({
     selector: 'listing-data-table-component',
     styles: [require('./listing-data-table-component.scss')],
@@ -25,7 +26,8 @@ export class ListingDataTableComponent extends BaseComponent {
     // tslint:disable-next-line:no-unused-variable
     private selectedItems = [];
 
-    constructor(private dotcmsConfig: DotcmsConfig, private crudService: CrudService, messageService: MessageService) {
+    constructor(private dotcmsConfig: DotcmsConfig, private crudService: CrudService,
+    messageService: MessageService, public loggerService: LoggerService) {
         super(['global-search'], messageService);
     }
 
@@ -55,8 +57,8 @@ export class ListingDataTableComponent extends BaseComponent {
      * @memberof ListingDataTableComponent
      */
     loadData(limit: number, offset: number, sortField?: string, sortOrder?: number, query?: string): void {
-        this.crudService.loadData(this.url, limit, offset,  sortField,
-                                        sortOrder < 0 ? OrderDirection.DESC : OrderDirection.ASC, query)
+        this.crudService.loadData(this.url, limit, offset, sortField,
+        sortOrder < 0 ? OrderDirection.DESC : OrderDirection.ASC, query)
             .subscribe( response => {
                 this.items = response.items;
                 this.totalRecords = response.totalRecords;
@@ -80,7 +82,7 @@ export class ListingDataTableComponent extends BaseComponent {
      * @memberof ListingDataTableComponent
      */
     actionHeaderLog(): void {
-        console.log('Primary command was triggered');
+        this.loggerService.info('Primary command was triggered');
     }
 }
 
