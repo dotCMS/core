@@ -89,8 +89,8 @@ public class FieldAPIImpl implements FieldAPI {
 
   @Override
 	public Field save(Field field, User user) throws DotDataException, DotSecurityException {
-		ContentTypeAPI tapi = APILocator.getContentTypeAPI(user);
-		ContentType type = tapi.find(field.contentTypeId()) ;
+		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+		ContentType type = contentTypeAPI.find(field.contentTypeId()) ;
 		perAPI.checkPermission(type, PermissionLevel.PUBLISH, user);
 
 	    Field oldField = null;
@@ -103,8 +103,9 @@ public class FieldAPIImpl implements FieldAPI {
 	    }
 
 		Field result = fac.save(field);
-
-
+		//update Content Type mod_date to detect the changes done on the field
+		contentTypeAPI.updateModDate(type);
+		
 		Structure structure = new StructureTransformer(type).asStructure();
 
         CacheLocator.getContentTypeCache().remove(structure);
@@ -132,13 +133,18 @@ public class FieldAPIImpl implements FieldAPI {
   
   @Override
   public FieldVariable save(FieldVariable var, User user) throws DotDataException, DotSecurityException {
-      ContentTypeAPI tapi = APILocator.getContentTypeAPI(user);
+      ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
       Field field = fac.byId(var.fieldId());
 
-      ContentType type = tapi.find(field.contentTypeId()) ;
+      ContentType type = contentTypeAPI.find(field.contentTypeId()) ;
       APILocator.getPermissionAPI().checkPermission(type, PermissionLevel.PUBLISH, user);
 
-      return fac.save(ImmutableFieldVariable.builder().from(var).userId(user.getUserId()).build());
+      FieldVariable newFieldVariable = fac.save(ImmutableFieldVariable.builder().from(var).userId(user.getUserId()).build());
+      
+      //update Content Type mod_date to detect the changes done on the field variables
+      contentTypeAPI.updateModDate(type);
+      
+      return newFieldVariable;
   }
 
   @Override
@@ -265,9 +271,10 @@ public void delete(FieldVariable fieldVar) throws DotDataException {
 	ContentType type;
 	try {
 		type = contentTypeAPI.find(field.contentTypeId());
+		 //update Content Type mod_date to detect the changes done on the field variable
 		contentTypeAPI.updateModDate(type);
 	} catch (DotSecurityException e) {
-		throw new DotDataException("Error updating Content Type mode_date for FieldVariable("+fieldVar.id()+")"+e.getMessage());
+		throw new DotDataException("Error updating Content Type mode_date for FieldVariable("+fieldVar.id()+"). "+e.getMessage());
 	}
 	
 }
