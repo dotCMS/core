@@ -214,7 +214,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       validateFields(returnType);
       
       
-      return returnType;
+      return find(returnType.id());
     });
 
 
