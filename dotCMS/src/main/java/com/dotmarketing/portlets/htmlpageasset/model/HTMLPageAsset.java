@@ -160,6 +160,8 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
             Logger.warn(this, "User " + this.getModUser() + " does not exist. Setting system as mod user.");
         } catch (DotDataException | DotSecurityException e1) {
             Logger.warn(this, "There was an issue when pulling " + this.getModUser() + " from DB. Continuing as system user.");
+        } catch (Exception e2) {
+            Logger.warn(this, "There was an unexpected problem with pulling user " + this.getModUser() + " from DB. Continuing as system user.");
         } 
         if (UtilMethods.isSet(modUser) && UtilMethods.isSet(modUser.getUserId()) && !modUser.isNew())
             map.put("modUserName", modUser.getFullName());
