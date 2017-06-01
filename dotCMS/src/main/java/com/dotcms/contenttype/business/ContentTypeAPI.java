@@ -279,4 +279,12 @@ public interface ContentTypeAPI {
    * @throws DotSecurityException The user does not have permissions to perform this action.
    */
   ContentType save(ContentType contentType, List<Field> newFields, List<FieldVariable> newFieldVariables) throws DotDataException, DotSecurityException;
+  
+  /**
+   * Update the Content Type mod_date and clean the cache
+   * @param type Content Type that is going to be modified
+   * @return true if the mod_date was updated, false if not
+   */
+   boolean updateModDate(ContentType type);
+
 }

@@ -405,112 +405,126 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 	  return save(contentType, newFields, null);
   }
 
-    @Override
-    public ContentType save(ContentType contentType, List<Field> newFields, List<FieldVariable> newFieldVariables) throws DotDataException, DotSecurityException {
-        // Sets the host:
-        try {
-            if ( contentType.host() == null ) {
-                contentType = ContentTypeBuilder.builder( contentType ).host( Host.SYSTEM_HOST ).build();
-            }
-            if ( !UUIDUtil.isUUID( contentType.host() ) && !Host.SYSTEM_HOST.equalsIgnoreCase( contentType.host() ) ) {
-                HostAPI hapi = APILocator.getHostAPI();
-                contentType = ContentTypeBuilder.builder( contentType )
-                        .host( hapi.resolveHostName( contentType.host(), APILocator.systemUser(), true ).getIdentifier() )
-                        .build();
-            }
-        } catch ( DotDataException e ) {
-            throw new DotDataException( "unable to resolve host:" + contentType.host(), e );
-        } catch ( DotSecurityException es ) {
-            throw new DotSecurityException( "invalid permissions to:" + contentType.host(), es );
-        }
+  @Override
+  public ContentType save(ContentType contentType, List<Field> newFields, List<FieldVariable> newFieldVariables) throws DotDataException, DotSecurityException {
+      // Sets the host:
+      try {
+          if ( contentType.host() == null ) {
+              contentType = ContentTypeBuilder.builder( contentType ).host( Host.SYSTEM_HOST ).build();
+          }
+          if ( !UUIDUtil.isUUID( contentType.host() ) && !Host.SYSTEM_HOST.equalsIgnoreCase( contentType.host() ) ) {
+              HostAPI hapi = APILocator.getHostAPI();
+              contentType = ContentTypeBuilder.builder( contentType )
+                      .host( hapi.resolveHostName( contentType.host(), APILocator.systemUser(), true ).getIdentifier() )
+                      .build();
+          }
+      } catch ( DotDataException e ) {
+          throw new DotDataException( "unable to resolve host:" + contentType.host(), e );
+      } catch ( DotSecurityException es ) {
+          throw new DotSecurityException( "invalid permissions to:" + contentType.host(), es );
+      }
 
-        // check perms
-        Permissionable parent = contentType.getParentPermissionable();
-        if (!perms.doesUserHavePermissions(parent,
-            "PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_PUBLISH,
-            user)) {
-            throw new DotSecurityException(
-                "User-does-not-have-add-children-or-structure-permission-on-host-folder:" + parent);
-        }
+      // check perms
+      Permissionable parent = contentType.getParentPermissionable();
+      if (!perms.doesUserHavePermissions(parent,
+          "PARENT:" + PermissionAPI.PERMISSION_CAN_ADD_CHILDREN + ", STRUCTURES:" + PermissionAPI.PERMISSION_PUBLISH,
+          user)) {
+          throw new DotSecurityException(
+              "User-does-not-have-add-children-or-structure-permission-on-host-folder:" + parent);
+      }
 
-        final ContentType ctype = contentType;
+      final ContentType ctype = contentType;
 
-        return LocalTransaction.wrapReturn(() -> {
-            ContentType contentTypeToSave = ctype;
+      return LocalTransaction.wrapReturn(() -> {
+          ContentType contentTypeToSave = ctype;
 
-            // set to system folder if on system host or the host id of the folder it is on
-            List<Field> oldFields = fAPI.byContentTypeId(contentTypeToSave.id());
+          // set to system folder if on system host or the host id of the folder it is on
+          List<Field> oldFields = fAPI.byContentTypeId(contentTypeToSave.id());
 
-            //Checks if the folder has been set, if so checks the host where that folder lives and set it.
-            if(UtilMethods.isSet(contentTypeToSave.folder()) && !contentTypeToSave.folder().equals(Folder.SYSTEM_FOLDER)){
-                contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave)
-                    .host(APILocator.getFolderAPI().find(contentTypeToSave.folder(), user, false).getHostId()).build();
-            }else if(UtilMethods.isSet(contentTypeToSave.host())){//If there is no folder set, check if the host has been set, if so set the folder to System Folder
-                contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave).folder(Folder.SYSTEM_FOLDER).build();
-            }
+          //Checks if the folder has been set, if so checks the host where that folder lives and set it.
+          if(UtilMethods.isSet(contentTypeToSave.folder()) && !contentTypeToSave.folder().equals(Folder.SYSTEM_FOLDER)){
+              contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave)
+                  .host(APILocator.getFolderAPI().find(contentTypeToSave.folder(), user, false).getHostId()).build();
+          }else if(UtilMethods.isSet(contentTypeToSave.host())){//If there is no folder set, check if the host has been set, if so set the folder to System Folder
+              contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave).folder(Folder.SYSTEM_FOLDER).build();
+          }
 
-            if ( !ctype.fields().isEmpty() ) {
-                contentTypeToSave.constructWithFields(ctype.fields());
-            }
+          if ( !ctype.fields().isEmpty() ) {
+              contentTypeToSave.constructWithFields(ctype.fields());
+          }
 
-            ContentType oldType = null;
-            try {
-                if (contentTypeToSave.id() != null) {
-                    oldType = this.fac.find(contentTypeToSave.id());
-                }
-            } catch (NotFoundInDbException notThere) {
-                // not logging, expected when inserting new from separate environment
-            }
+          ContentType oldType = null;
+          try {
+              if (contentTypeToSave.id() != null) {
+                  oldType = this.fac.find(contentTypeToSave.id());
+              }
+          } catch (NotFoundInDbException notThere) {
+              // not logging, expected when inserting new from separate environment
+          }
 
-            contentTypeToSave = this.fac.save(contentTypeToSave);
+          contentTypeToSave = this.fac.save(contentTypeToSave);
 
-            if (oldType != null) {
-                if (fireUpdateIdentifiers(oldType.expireDateVar(), contentTypeToSave.expireDateVar())) {
+          if (oldType != null) {
+              if (fireUpdateIdentifiers(oldType.expireDateVar(), contentTypeToSave.expireDateVar())) {
 
-                    IdentifierDateJob.triggerJobImmediately(oldType, user);
-                } else if (fireUpdateIdentifiers(oldType.publishDateVar(), contentTypeToSave.publishDateVar())) {
+                  IdentifierDateJob.triggerJobImmediately(oldType, user);
+              } else if (fireUpdateIdentifiers(oldType.publishDateVar(), contentTypeToSave.publishDateVar())) {
 
-                    IdentifierDateJob.triggerJobImmediately(oldType, user);
-                }
-                perms.resetPermissionReferences(contentTypeToSave);
-            }
-            ActivityLogger.logInfo(getClass(), "Save ContentType Action",
-                "User " + user.getUserId() + "/" + user.getFullName()
-                    + " added ContentType " + contentTypeToSave.name()
-                    + " to host id:" + contentTypeToSave.host());
-            AdminLogger.log(getClass(), "ContentType",
-                "ContentType saved : " + contentTypeToSave.name(), user);
+                  IdentifierDateJob.triggerJobImmediately(oldType, user);
+              }
+              perms.resetPermissionReferences(contentTypeToSave);
+          }
+          ActivityLogger.logInfo(getClass(), "Save ContentType Action",
+              "User " + user.getUserId() + "/" + user.getFullName()
+                  + " added ContentType " + contentTypeToSave.name()
+                  + " to host id:" + contentTypeToSave.host());
+          AdminLogger.log(getClass(), "ContentType",
+              "ContentType saved : " + contentTypeToSave.name(), user);
 
-            //update the existing content type fields
-            if(newFields != null) {
+          //update the existing content type fields
+          if(newFields != null) {
 
-                for (Field oldField : oldFields) {
-                    if ( !newFields.stream().anyMatch( f -> f.id().equals(oldField.id()) ) && !oldField.fixed()) {
-                        Logger.info(this,
-                            "Deleting no longer needed Field: " + oldField.name() +
-                                " with ID: " + oldField.id() +
-                                ", from Content Type: " + contentTypeToSave.name());
+              for (Field oldField : oldFields) {
+                  if ( !newFields.stream().anyMatch( f -> f.id().equals(oldField.id()) ) && !oldField.fixed()) {
+                      Logger.info(this,
+                          "Deleting no longer needed Field: " + oldField.name() +
+                              " with ID: " + oldField.id() +
+                              ", from Content Type: " + contentTypeToSave.name());
 
-                        fAPI.delete(oldField);
-                    }
-                }
+                      fAPI.delete(oldField);
+                  }
+              }
 
-                //for each field in the content type lets create it if doesn't exists and update its properties if it does
-                for( Field field : newFields ) {
-                    fAPI.save(field, APILocator.systemUser());
+              //for each field in the content type lets create it if doesn't exists and update its properties if it does
+              for( Field field : newFields ) {
+                  fAPI.save(field, APILocator.systemUser());
 
-                    if( newFieldVariables != null && !newFieldVariables.isEmpty() ){
-                        for(FieldVariable fieldVariable : newFieldVariables) {
-                            if(fieldVariable.fieldId().equals(field.inode())) {
-                                fAPI.save(fieldVariable, APILocator.systemUser());
-                            }
-                        }
-                    }
-                }
-            }
+                  if( newFieldVariables != null && !newFieldVariables.isEmpty() ){
+                      for(FieldVariable fieldVariable : newFieldVariables) {
+                          if(fieldVariable.fieldId().equals(field.inode())) {
+                              fAPI.save(fieldVariable, APILocator.systemUser());
+                          }
+                      }
+                  }
+              }
+          }
 
-            return find(contentTypeToSave.id());
-        });
+          return find(contentTypeToSave.id());
+      });
+  }
+    
+    public boolean updateModDate(ContentType type){
+  	  boolean updated = false;
+  	  
+  	  try {
+  		fac.updateModDate(type);
+  		updated=true;
+  	  } catch (DotDataException e) {
+  		Logger.error(this, "Error can't update Content Type ("+type.id()+") mod_date field. "+e.getMessage());
+  		e.printStackTrace();
+  	  }
+  	  return updated;
     }
+  
 
 }

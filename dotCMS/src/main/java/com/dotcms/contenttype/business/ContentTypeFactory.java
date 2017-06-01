@@ -72,6 +72,8 @@ public interface ContentTypeFactory {
 	List<ContentType> search(String search, int limit) throws DotDataException;
 
   void validateFields(ContentType type);
+  
+  void updateModDate(ContentType type) throws DotDataException;
 	
 	
 	
