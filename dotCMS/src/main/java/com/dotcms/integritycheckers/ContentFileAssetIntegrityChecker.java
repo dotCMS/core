@@ -65,7 +65,7 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
 
             // Get data from results table
             DotConnect dc = new DotConnect();
-			return (Long) dc.getRecordCount(getIntegrityType().getResultsTableName(), "where endpoint_id = '"+ endpointId+ "'") > 0;
+			return (Long) dc.getRecordCount(getIntegrityType().getResultsTableName()) > 0;
         } catch (Exception e) {
             throw new Exception("Error running the File Assets Integrity Check", e);
         }

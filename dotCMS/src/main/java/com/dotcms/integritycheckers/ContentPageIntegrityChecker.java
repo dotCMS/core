@@ -99,7 +99,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
             checkPages(endpointId, IntegrityType.HTMLPAGES);
 
             // Legacy HTML pages and contentlet pages share the same result table
-            return (Long) dc.getRecordCount(getIntegrityType().getResultsTableName(), "where endpoint_id = '"+ endpointId+ "'") > 0;
+            return (Long) dc.getRecordCount(getIntegrityType().getResultsTableName()) > 0;
         } catch (Exception e) {
             throw new Exception("Error running the HTML Pages Integrity Check", e);
         }
