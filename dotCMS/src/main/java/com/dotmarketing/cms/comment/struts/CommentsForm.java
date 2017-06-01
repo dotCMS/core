@@ -30,6 +30,7 @@ import com.dotmarketing.util.UtilMethods;
  * @version 1.5
  * @since 1.0
  */
+@Deprecated
 public class CommentsForm extends ValidatorForm
 {
 	/**

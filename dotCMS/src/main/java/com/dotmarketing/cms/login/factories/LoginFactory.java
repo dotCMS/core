@@ -35,6 +35,7 @@ import com.liferay.util.Validator;
  * @author will
  *
  */
+@Deprecated
 public class LoginFactory {
 
 	public static String PRE_AUTHENTICATOR = PropsUtil.get("auth.pipeline.pre");

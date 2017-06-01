@@ -18,6 +18,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.cms.SecureAction;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
@@ -28,7 +29,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 
-public class AccountActivationAction extends DispatchAction {
+@Deprecated
+public class AccountActivationAction extends SecureAction {
 
 	@SuppressWarnings("unchecked")
 	public ActionForward unspecified(ActionMapping mapping, ActionForm lf,

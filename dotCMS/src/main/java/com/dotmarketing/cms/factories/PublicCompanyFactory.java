@@ -47,6 +47,7 @@ import com.liferay.util.FileUtil;
  * @version $Revision: 1.1 $
  * 
  */
+@Deprecated
 public class PublicCompanyFactory extends CompanyUtil {
 
 	public static Company getDefaultCompany() {
