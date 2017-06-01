@@ -1935,7 +1935,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public void refresh(Structure structure) throws DotReindexStateException {
         try {
             distAPI.addStructureReindexEntries(structure.getInode());
-            CacheLocator.getContentletCache().clearCache();
+            //CacheLocator.getContentletCache().clearCache();
         } catch (DotDataException e) {
             Logger.error(this, e.getMessage(), e);
             throw new DotReindexStateException("Unable to complete reindex",e);
