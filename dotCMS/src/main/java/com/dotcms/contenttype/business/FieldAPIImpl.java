@@ -154,8 +154,8 @@ public class FieldAPIImpl implements FieldAPI {
   public void delete(Field field, User user) throws DotDataException, DotSecurityException {
 	  LocalTransaction.wrapReturn(() -> {
 
-		  ContentTypeAPI tapi = APILocator.getContentTypeAPI(user);
-		  ContentType type = tapi.find(field.contentTypeId());
+		  ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+		  ContentType type = contentTypeAPI.find(field.contentTypeId());
 
 		  perAPI.checkPermission(type, PermissionLevel.PUBLISH, user);
 
@@ -182,8 +182,8 @@ public class FieldAPIImpl implements FieldAPI {
 	      }
 
 	      fac.delete(field);
-	      //update contenttype mod_date to detect the changes done on the field
-	      tapi.updateModDate(type);
+	      //update Content Type mod_date to detect the changes done on the field
+	      contentTypeAPI.updateModDate(type);
 
 	      CacheLocator.getContentTypeCache().remove(structure);
 	      StructureServices.removeStructureFile(structure);
@@ -261,11 +261,11 @@ public class FieldAPIImpl implements FieldAPI {
 public void delete(FieldVariable fieldVar) throws DotDataException {
     fac.delete(fieldVar);
     Field field = this.find(fieldVar.fieldId());
-    ContentTypeAPI tapi = APILocator.getContentTypeAPI(this.userAPI.getSystemUser());
+    ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(this.userAPI.getSystemUser());
 	ContentType type;
 	try {
-		type = tapi.find(field.contentTypeId());
-		tapi.updateModDate(type);
+		type = contentTypeAPI.find(field.contentTypeId());
+		contentTypeAPI.updateModDate(type);
 	} catch (DotSecurityException e) {
 		throw new DotDataException("Error updating Content Type mode_date for FieldVariable("+fieldVar.id()+")"+e.getMessage());
 	}
