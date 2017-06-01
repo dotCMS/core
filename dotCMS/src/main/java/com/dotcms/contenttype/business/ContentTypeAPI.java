@@ -274,7 +274,10 @@ public interface ContentTypeAPI {
    * Update the Content Type mod_date and clean the cache
    * @param type Content Type that is going to be modified
    * @return true if the mod_date was updated, false if not
+   * @throws DotDataException 
    */
-   boolean updateModDate(ContentType type);
+   boolean updateModDate(ContentType type) throws DotDataException;
+
+  boolean updateModDate(Field field) throws DotDataException;
 
 }
