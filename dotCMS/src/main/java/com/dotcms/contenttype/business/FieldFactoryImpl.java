@@ -30,13 +30,10 @@ import com.dotcms.contenttype.transform.field.DbFieldTransformer;
 import com.dotcms.contenttype.transform.field.DbFieldVariableTransformer;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
+
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
@@ -112,22 +109,12 @@ public class FieldFactoryImpl implements FieldFactory {
 
   @Override
   public FieldVariable save(FieldVariable fieldVar) throws DotDataException {
-    FieldVariable newVar = LocalTransaction.wrapReturn(() -> {
-      return upsertFieldVariable(fieldVar);
+    return LocalTransaction.wrapReturn(() -> {
+      FieldVariable fv =  upsertFieldVariable(fieldVar);
+      Field f = byId(fieldVar.fieldId());
+      APILocator.getContentTypeAPI(APILocator.systemUser()).updateModDate(f);
+      return fv;
     });
-
-    Field f = byId(fieldVar.fieldId());
-    ContentType t;
-    try {
-      t = APILocator.getContentTypeAPI(APILocator.systemUser()).find(f.contentTypeId());
-      if (t != null) {
-        CacheLocator.getContentTypeCache2().remove(t);
-      }
-    } catch (DotSecurityException e) {
-      throw new DotStateException(e);
-    }
-
-    return newVar;
 
   }
 
@@ -135,30 +122,22 @@ public class FieldFactoryImpl implements FieldFactory {
   public void delete(FieldVariable fieldVar) throws DotDataException {
     LocalTransaction.wrapReturn(() -> {
       deleteFieldVarInDb(fieldVar);
+      Field f = byId(fieldVar.fieldId());
+      APILocator.getContentTypeAPI(APILocator.systemUser()).updateModDate(f);
       return null;
     });
+    
 
-    Field f = byId(fieldVar.fieldId());
-    ContentType t;
-    try {
-      t = APILocator.getContentTypeAPI(APILocator.systemUser()).find(f.contentTypeId());
-      if (t != null) {
-        CacheLocator.getContentTypeCache2().remove(t);
-      }
-    } catch (DotSecurityException e) {
-      throw new DotStateException(e);
-    }
   }
 
   @Override
   public Field save(final Field throwAwayField) throws DotDataException {
-    Field f = LocalTransaction.wrapReturn(() -> {
-      return dbSaveUpdate(throwAwayField);
+    return LocalTransaction.wrapReturn(() -> {
+      Field field =  dbSaveUpdate(throwAwayField);
+      APILocator.getContentTypeAPI(APILocator.systemUser()).updateModDate(field);
+      return field;
     });
-    ContentType t = CacheLocator.getContentTypeCache2().byVarOrInode(f.contentTypeId());
-    if (t != null)
-      CacheLocator.getContentTypeCache2().remove(t);
-    return f;
+
   }
 
 
@@ -209,17 +188,8 @@ public class FieldFactoryImpl implements FieldFactory {
   
   
   
-  
-  
-  
   private Field dbSaveUpdate(final Field throwAwayField) throws DotDataException {
 
-
-
-
-
-
-    
 
     FieldBuilder builder = FieldBuilder.builder(throwAwayField);
     
@@ -227,9 +197,6 @@ public class FieldFactoryImpl implements FieldFactory {
     Date modDate = DateUtils.round(new Date(), Calendar.SECOND);
     builder.modDate(modDate);
     
-    
-
-
 
     Field oldField = null;
     try {

@@ -222,10 +222,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   @Override
   public ContentType setAsDefault(ContentType type) throws DotDataException {
-    if (!type.equals(findDefaultType())) {
+    ContentType oldDefault= findDefaultType();
+    if (!type.equals(oldDefault)) {
       LocalTransaction.wrapReturn(() -> {
         ContentType returnType = dbUpdateDefaultToTrue(type);
-        cache.clearCache();
+        cache.remove(type);
+        cache.remove(oldDefault);
         return returnType;
       });
     }
