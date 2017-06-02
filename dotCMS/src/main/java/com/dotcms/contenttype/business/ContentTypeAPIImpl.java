@@ -520,13 +520,13 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   @Override
   public boolean updateModDate(ContentType type) throws DotDataException {
-    boolean updated = false;
+    return LocalTransaction.wrapReturn(() -> {
+      boolean updated = false;
 
-    fac.updateModDate(type);
-
-    updated = true;
-
-    return updated;
+      fac.updateModDate(type);
+      updated = true;
+      return updated;
+    });
   }
 
   @Override
