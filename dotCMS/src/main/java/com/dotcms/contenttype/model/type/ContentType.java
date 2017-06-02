@@ -59,6 +59,8 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   protected void check() {
 	Preconditions.checkArgument(StringUtils.isNotEmpty(name()), "Name cannot be empty for " + this.getClass());
 
+	Preconditions.checkArgument(StringUtils.isNotEmpty(variable()), "Variable cannot be empty for " + this.getClass());
+
     if (!(this instanceof UrlMapable)) {
       Preconditions.checkArgument(detailPage() == null, "Detail Page cannot be set for " + this.getClass());
       Preconditions.checkArgument(urlMapPattern() == null, "urlmap cannot be set for " + this.getClass());
