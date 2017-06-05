@@ -447,7 +447,9 @@ function disableFormFields(){
 							<%= LanguageUtil.get(pageContext, "HTMLPage") %>
 							<%}else if(form.getStructureType() ==6){%>
 							<%= LanguageUtil.get(pageContext, "Persona") %>
-							<%} %> &gt;
+							<%} else if (form.getStructureType() == 7){%>
+                            <%= LanguageUtil.get(pageContext, "VanityURL") %>
+                            <%} %> &gt;
 						</span>
 							<%=structure.getName() %>
 						</h2>
@@ -582,7 +584,9 @@ function disableFormFields(){
 											<%= LanguageUtil.get(pageContext, "HTMLPage") %>
 										<%} else if(form.getStructureType() ==6){%>
 											<%= LanguageUtil.get(pageContext, "Persona") %>
-										<%}%>&nbsp;
+										<%} else if(form.getStructureType() == 7){%>
+                                            <%= LanguageUtil.get(pageContext, "VanityURL") %>
+                                        <%}%>&nbsp;%>&nbsp;
 										<a target="_blank" href="/api/v1/contenttype/id/<%=structure.getInode() %>">json</a>
 									<%}else{ %>
 										<select onchange="changeStructureType()" dojoType="dijit.form.FilteringSelect" name="structureType" id="structureType" style="width:150px" value="<%= form.getStructureType()  %>" >
@@ -593,6 +597,7 @@ function disableFormFields(){
 											<%if(LicenseUtil.getLevel() > 199) {%>
 												<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_PERSONA) %>"><%= LanguageUtil.get(pageContext, "Persona") %></option>
 											<% } %>
+											<option value="7"><%= LanguageUtil.get(pageContext, "VanityURL") %></option>
 										</select>
 									<%} %>
 								<html:hidden property="system" styleId="system" />

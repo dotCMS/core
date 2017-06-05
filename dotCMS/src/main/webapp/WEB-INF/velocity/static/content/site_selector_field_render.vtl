@@ -1,0 +1,26 @@
+<script type="text/javascript">
+	dojo.require('dotcms.dojo.data.SiteSelectorReadStore');
+
+	function siteChanged() {
+		var siteSel = dijit.byId("siteSelector");
+		var value = siteSel.get('value');
+		if (value) {
+			dojo.byId("${field.velocityVarName}").value = value;
+		} else {
+			alert("An error occurred when retrieving the value");
+		}
+	}
+
+	dojo.ready(function() {
+		dijit.byId('siteSelector').set('value',
+				dojo.byId('${field.velocityVarName}').value);
+	});
+</script>
+<span dojoType="dotcms.dojo.data.SiteSelectorReadStore" jsId="SiteStore"></span>
+<select dojoType="dijit.form.FilteringSelect" name="siteSelector"
+	id="siteSelector" store="SiteStore" required="false" pageSize="30"
+	labelAttr="hostname" searchAttr="hostname" searchDelay="400"
+	onChange="siteChanged()"
+	invalidMessage="$text.get('Invalid-option-selected')">
+
+</select>

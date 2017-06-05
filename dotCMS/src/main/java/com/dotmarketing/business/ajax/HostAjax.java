@@ -42,32 +42,45 @@ public class HostAjax {
 	private UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
 
 	public Map<String, Object> findHostsForDataStore(String filter, boolean showArchived, int offset, int count) throws PortalException, SystemException, DotDataException, DotSecurityException {
+		return findHostsForDataStore(filter, showArchived, offset, count, Boolean.FALSE);
+	}
 
-		if(filter.endsWith("*"))
+	public Map<String, Object> findHostsForDataStore(String filter, boolean showArchived, int offset, int count,
+			boolean allSites) throws PortalException, SystemException, DotDataException, DotSecurityException {
+		if (filter.endsWith("*")) {
 			filter = filter.substring(0, filter.length() - 1);
+		}
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest req = ctx.getHttpServletRequest();
 		User user = userWebAPI.getLoggedInUser(req);
 
 		HostAPI hostAPI = APILocator.getHostAPI();
 		List<Host> hosts = hostAPI.findAll(user, userWebAPI.isLoggedToFrontend(req));
-		List<Map<String, Object>> hostResults = new ArrayList<Map<String, Object>>();
+		List<Map<String, Object>> hostResults = new ArrayList<>();
 		Collections.sort(hosts, new HostNameComparator());
 
-		for(Host host : hosts) {
-			if(host.isSystemHost() || (!showArchived && host.isArchived()))
-				continue;
-			if(host.getHostname().toLowerCase().startsWith(filter.toLowerCase()))
-				hostResults.add(host.getMap());
+		if (allSites && this.userWebAPI.isCMSAdmin(user) && !UtilMethods.isSet(filter)) {
+			Map<String, Object> dataMap = new HashMap<>();
+			dataMap.put("hostname", "All Sites");
+			dataMap.put("identifier", "0");
+			dataMap.put("type", "hosts");
+			hostResults.add(dataMap);
 		}
 
-		Map<String, Object> hostMapToReturn =new HashMap<String, Object>();
-		hostMapToReturn.put("total",hostResults.size());
+		for (Host host : hosts) {
+			if (host.isSystemHost() || (!showArchived && host.isArchived())) {
+				continue;
+			}
+			if (host.getHostname().toLowerCase().startsWith(filter.toLowerCase())) {
+				hostResults.add(host.getMap());
+			}
+		}
+
+		Map<String, Object> hostMapToReturn = new HashMap<String, Object>();
+		hostMapToReturn.put("total", hostResults.size());
 		hostMapToReturn.put("list", hostResults);
 		return hostMapToReturn;
-
 	}
-
 
 	public Map<String, Object> findHostsPaginated(String filter, boolean showArchived, int offset, int count) throws DotDataException, DotSecurityException, PortalException, SystemException {
 
