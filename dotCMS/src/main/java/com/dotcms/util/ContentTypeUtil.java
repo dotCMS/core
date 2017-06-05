@@ -107,7 +107,9 @@ public class ContentTypeUtil {
 	 */
     public String getActionUrl(final ContentType contentType, final User user) {
       final HttpServletRequest request = httpServletRequestThreadLocal.getRequest();
-      return getActionUrl(request, contentType, user);
+      
+      String actionUrl = request != null? getActionUrl(request, contentType, user):null;
+      return actionUrl;
     }
 
 	/**
