@@ -342,17 +342,26 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       builder.publishDateVar(null);
     }
 
-    boolean existsInDb = false;
+    ContentType oldContentType = null;
     try {
-      dbById(saveType.id());
-      existsInDb = true;
+      oldContentType = dbById(saveType.id());
     } catch (NotFoundInDbException notThere) {
       Logger.debug(getClass(), "structure inode not found in db:" + saveType.id());
     }
 
+    if (oldContentType == null) {
+    	if (UtilMethods.isSet(saveType.variable())) {
+    		builder.variable(saveType.variable());
+    	} else {
+    		builder.variable(suggestVelocityVar(VelocityUtil.convertToVelocityVariable(saveType.name(), true)));
+    	}
+    } else {
+    	builder.variable(oldContentType.variable());
+    }
+
     ContentType retType = builder.build();
 
-    if (!existsInDb) {
+    if (oldContentType == null) {
     	dbInodeInsert(retType);
     	dbInsert(retType);
 
@@ -373,7 +382,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
 
     // set up default fields
-    if (!existsInDb) {
+    if (oldContentType == null) {
     	List<Field> fields = new ArrayList<Field>(saveType.fields());
 
         for (Field ff : retType.requiredFields()) {
