@@ -131,6 +131,7 @@ felix.base.dir=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/felix
 " >> core/dotCMS/src/integration-test/resources/it-dotmarketing-config.properties
 
 
+
 # Create output directory
 mkdir tests
 mkdir tests/logs
