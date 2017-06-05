@@ -48,11 +48,9 @@ cd ../..
 tar zxf core/dist-output/dotcms_*.tar.gz
 mv dotserver/`ls dotserver | grep  tomcat` dotserver/tomcat
 
-
 # Copy test JARs into distro's tomcat
 cp core/dotCMS/build/libs/dotcms_*-*Test.jar dotserver/tomcat/webapps/ROOT/WEB-INF/lib
 cp core/dotCMS/build/libs/test/junit-*.jar dotserver/tomcat/webapps/ROOT/WEB-INF/lib
-
 
 # Uncompress ant/configuration files for tests
 jar xf dotserver/tomcat/webapps/ROOT/WEB-INF/lib/dotcms_*-functionalTest.jar build-tests.xml
@@ -129,6 +127,7 @@ context.path.felix=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/felix
 echo "
 felix.base.dir=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/felix
 " >> core/dotCMS/src/integration-test/resources/it-dotmarketing-config.properties
+
 
 
 # Create output directory
