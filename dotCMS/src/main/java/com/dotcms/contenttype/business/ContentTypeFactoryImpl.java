@@ -382,7 +382,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
 
     // set up default fields
-    if (oldContentType == null) {
+    if (!existsInDb) {
     	List<Field> fields = new ArrayList<Field>(saveType.fields());
 
         for (Field ff : retType.requiredFields()) {
