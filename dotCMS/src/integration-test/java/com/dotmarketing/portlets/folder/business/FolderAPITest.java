@@ -75,7 +75,7 @@ public class FolderAPITest {
 		// make sure the rename is properly propagated on children (that's done in a db trigger)
 		Identifier ident=APILocator.getIdentifierAPI().find(ftest),ident1=APILocator.getIdentifierAPI().find(ftest1),
 				ident2=APILocator.getIdentifierAPI().find(ftest2),ident3=APILocator.getIdentifierAPI().find(ftest3);
-		Assert.assertTrue(ident.getAssetName().startsWith("folderTestXX"));
+		Assert.assertTrue(ident.getAssetName().startsWith("foldertestxx"));//After 4.1 the asset_name is saved lowercase
 		Assert.assertEquals(ident.getPath(),ident1.getParentPath());
 		Assert.assertEquals(ident1.getPath(),ident2.getParentPath());
 		Assert.assertEquals(ident2.getPath(),ident3.getParentPath());
