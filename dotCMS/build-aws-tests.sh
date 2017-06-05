@@ -24,6 +24,7 @@ if [ "$BUILD_PROVISIONED" == "true" ] && [ "$DB_TYPE" == "postgres" ]; then
 	psql -h $DB_HOST -p $DB_PORT -U $DB_USERNAME -c "CREATE DATABASE $DB_NAME";
 fi
 
+
 # Check out branch under working directory
 git clone -b $BRANCH https://github.com/dotCMS/core.git
 if [ -n "$COMMIT" ]; then
