@@ -2,16 +2,24 @@
     border-radius: 0;
 }
 
-.ui-tabview {
+.ui-tabview {    
     padding: 0;
 
     &.ui-tabview-top {
-        .ui-tabview-nav li a { 
-            border-bottom: $tabview-item-border;
+        .ui-tabview-nav li {
+            top: 0;
 
-            &:hover {
-                border-bottom: $tabview-item-selected-border;
+            a { 
+                border-bottom: $tabview-item-border;
+
+                &:hover {
+                    border-bottom: $tabview-item-selected-border;
+                }
             }
+        }
+
+        & > .ui-tabview-nav {
+            padding: 0;
         }
     }
 

@@ -1,6 +1,6 @@
+import { BaseComponent } from '../../../../view/components/_common/_base/base-component';
 import { Component, ViewEncapsulation } from '@angular/core';
-import { BaseComponent } from '../../view/components/_common/_base/base-component';
-import { MessageService } from '../../api/services/messages-service';
+import { MessageService } from '../../../../api/services/messages-service';
 
 export interface ContentType {
   clazz: string;

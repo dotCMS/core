@@ -1,11 +1,11 @@
+import { BaseComponent } from '../_common/_base/base-component';
+import { ButtonAction } from './action-header/action-header';
 import { Component, Input } from '@angular/core';
+import { CrudService, OrderDirection } from '../../../api/services/crud-service';
 import { DotcmsConfig } from '../../../api/services/system/dotcms-config';
 import { LazyLoadEvent } from 'primeng/primeng';
-import { BaseComponent } from '../_common/_base/base-component';
-import { MessageService } from '../../../api/services/messages-service';
-import { ButtonAction } from '../_common/action-header/action-header';
-import { CrudService, OrderDirection } from '../../../api/services/crud-service';
 import { LoggerService } from '../../../api/services/logger.service';
+import { MessageService } from '../../../api/services/messages-service';
 @Component({
     selector: 'listing-data-table-component',
     styles: [require('./listing-data-table-component.scss')],
@@ -75,14 +75,6 @@ export class ListingDataTableComponent extends BaseComponent {
     getAlign(col: DataTableColumn): string {
         return col.textAlign ? col.textAlign :
             (this.items && this.items[0] && typeof this.items[0][col.fieldName] === 'number') ? 'right' : 'left';
-    }
-
-    /**
-     * Fire when the Add button is clicked.
-     * @memberof ListingDataTableComponent
-     */
-    actionHeaderLog(): void {
-        this.loggerService.info('Primary command was triggered');
     }
 }
 

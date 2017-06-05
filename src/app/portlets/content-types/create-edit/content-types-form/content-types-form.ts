@@ -1,15 +1,15 @@
+import { BaseComponent } from '../../../../view/components/_common/_base/base-component';
 import { Component, Renderer, ViewEncapsulation, ViewChild, ElementRef } from '@angular/core';
-import { BaseComponent } from '../../../view/components/_common/_base/base-component';
-import { CrudService } from '../../../api/services/crud-service';
-import { LoginService } from '../../../api/services/login-service';
-import { MessageService } from '../../../api/services/messages-service';
-import { SiteService, Site } from '../../../api/services/site-service';
-import { StringUtils } from '../../../api/util/string.utils';
-import { SelectItem } from 'primeng/components/common/api';
+import { ContentType } from '../main/content-types-create-edit-component';
+import { CrudService } from '../../../../api/services/crud-service';
+import { LoginService } from '../../../../api/services/login-service';
+import { MessageService } from '../../../../api/services/messages-service';
 import { NgForm, FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { Observable } from 'rxjs/Observable';
-import { ContentType } from '../content-types-create-edit-component';
 import { Router } from '@angular/router';
+import { SelectItem } from 'primeng/components/common/api';
+import { SiteService, Site } from '../../../../api/services/site-service';
+import { StringUtils } from '../../../../api/util/string.utils';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 
 @Component({

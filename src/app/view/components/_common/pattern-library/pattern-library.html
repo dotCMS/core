@@ -43,23 +43,11 @@
                     <p-column field="color" header="Color" [sortable]="true"></p-column>
                 </p-dataTable>
             </article>
-            <h3 class="section__title">Action header</h3>
-            <article>
-                <action-header [selected]="selectedCars.length > 0" 
-                               [selectedItems]="selectedCars" 
-                               [actionButtonItems]="buttonActions" 
-                               [primaryCommand]="actionHeaderLog">
-
-                    <input #gf pInputText type="text" placeholder="Global Search" />
-                </action-header>
-                <p-dataTable [value]="dataTableDummyData" [rows]="6" [paginator]="true" [pageLinks]="5" [(selection)]="selectedCars" dataKey="vin" [globalFilter]="gf">
-                    <p-column selectionMode="multiple"></p-column>
-                    <p-column field="vin" header="Vin" [sortable]="true"></p-column>
-                    <p-column field="year" header="Year" [sortable]="true"></p-column>
-                    <p-column field="brand" header="Brand" [sortable]="true"></p-column>
-                    <p-column field="color" header="Color" [sortable]="true"></p-column>
-                </p-dataTable>
-            </article>
+            <h3 class="section__title">Listing table</h3>
+            <listing-data-table-component url="v1/contenttype"
+                                        [columns]="contentTypeColumns"
+                                        [buttonActions]="buttonActions">
+            </listing-data-table-component>
         </div>
 
         <div class="ui-g-5 section-fields">

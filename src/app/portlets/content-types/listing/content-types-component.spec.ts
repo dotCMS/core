@@ -1,12 +1,12 @@
+import { ActionHeaderComponent } from '../../../view/components/listing-data-table/action-header/action-header';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
 import { ContentTypesPortletComponent } from './content-types-component';
-import { CrudService } from '../../api/services/crud-service';
-import { DOTTestBed } from '../../test/dot-test-bed';
-import { ListingDataTableComponent } from '../../view/components/listing-data-table/listing-data-table-component';
-import { MessageService } from '../../api/services/messages-service';
-import { MockMessageService } from '../../test/message-service.mock';
-import { ActionHeaderComponent } from '../../view/components/_common/action-header/action-header';
+import { CrudService } from '../../../api/services/crud-service';
+import { DOTTestBed } from '../../../test/dot-test-bed';
+import { ListingDataTableComponent } from '../../../view/components/listing-data-table/listing-data-table-component';
+import { MessageService } from '../../../api/services/messages-service';
+import { MockMessageService } from '../../../test/message-service.mock';
 
 describe('ContentTypesPortletComponent', () => {
     let comp: ContentTypesPortletComponent;

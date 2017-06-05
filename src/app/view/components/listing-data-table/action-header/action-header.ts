@@ -1,7 +1,7 @@
+import { BaseComponent } from '../../_common/_base/base-component';
 import { Component, Input, SimpleChanges, ViewEncapsulation } from '@angular/core';
-import {MessageService} from '../../../../api/services/messages-service';
-import {BaseComponent} from '../_base/base-component';
 import { ConfirmationService } from 'primeng/primeng';
+import { MessageService } from '../../../../api/services/messages-service';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -23,7 +23,6 @@ export class ActionHeaderComponent extends BaseComponent {
         super(['selected'], messageService);
     }
 
-    // tslint:disable-next-line:no-unused-variable
     private ngOnChanges(changes: SimpleChanges): any {
         if (changes.selected) {
             this.hideDinamycOverflow();

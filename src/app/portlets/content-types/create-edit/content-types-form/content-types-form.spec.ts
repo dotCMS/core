@@ -1,21 +1,22 @@
-import { LoginService } from '../../../api/services/login-service';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, async } from '@angular/core/testing';
-import { ContentType } from '../content-types-create-edit-component';
+import { ContentType } from '../main/content-types-create-edit-component';
 import { ContentTypesForm } from './content-types-form';
-import { CrudService } from '../../../api/services/crud-service';
-import { DOTTestBed } from '../../../test/dot-test-bed';
+import { CrudService } from '../../../../api/services/crud-service';
+import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement } from '@angular/core';
 import { DropdownModule, OverlayPanelModule, ButtonModule, InputTextModule, TabViewModule } from 'primeng/primeng';
-import { FieldValidationMessageComponent } from '../../../view/components/_common/field-validation-message/field-validation-message';
-import { MessageService } from '../../../api/services/messages-service';
-import { MockMessageService } from '../../../test/message-service.mock';
+import { FieldValidationMessageModule } from '../../../../view/components/_common/field-validation-message/file-validation-message.module';
+import { LoginService } from '../../../../api/services/login-service';
+import { LoginServiceMock } from '../../../../test/login-service.mock';
+import { MessageService } from '../../../../api/services/messages-service';
+import { MockMessageService } from '../../../../test/message-service.mock';
 import { Observable } from 'rxjs/Observable';
 import { ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { SiteService } from '../../../api/services/site-service';
-import { SiteServiceMock } from '../../../test/site-service.mock';
-import { LoginServiceMock } from '../../../test/login-service.mock';
+import { SiteService } from '../../../../api/services/site-service';
+import { SiteServiceMock } from '../../../../test/site-service.mock';
 
 let routerMock = {
     navigate: jasmine.createSpy('navigate')
@@ -47,8 +48,17 @@ describe('Content Type Form Component', () => {
         });
 
         DOTTestBed.configureTestingModule({
-            declarations: [ ContentTypesForm, FieldValidationMessageComponent ],
-            imports: [ ReactiveFormsModule, DropdownModule, OverlayPanelModule, ButtonModule, InputTextModule, TabViewModule ],
+            declarations: [ ContentTypesForm ],
+            imports: [
+                BrowserAnimationsModule,
+                ButtonModule,
+                DropdownModule,
+                FieldValidationMessageModule,
+                InputTextModule,
+                OverlayPanelModule,
+                ReactiveFormsModule,
+                TabViewModule
+            ],
             providers: [
                 { provide: Router, useValue: routerMock },
                 { provide: SiteService, useClass: SiteServiceMock },

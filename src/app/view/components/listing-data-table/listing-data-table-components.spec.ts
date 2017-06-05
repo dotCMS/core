@@ -1,15 +1,15 @@
-import { ComponentFixture, async } from '@angular/core/testing';
-import { DebugElement } from '@angular/core';
-import { ListingDataTableComponent } from './listing-data-table-component';
+import { ActionHeaderComponent } from '../listing-data-table/action-header/action-header';
 import { By } from '@angular/platform-browser';
-import { DataTableModule, SharedModule } from 'primeng/primeng';
-import { DotcmsConfig } from '../../../api/services/system/dotcms-config';
+import { ComponentFixture, async } from '@angular/core/testing';
 import { CrudService } from '../../../api/services/crud-service';
-import { Observable } from 'rxjs/Observable';
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { ActionHeaderComponent } from '../_common/action-header/action-header';
-import { MockMessageService } from '../../../test/message-service.mock';
+import { DataTableModule, SharedModule } from 'primeng/primeng';
+import { DebugElement } from '@angular/core';
+import { DotcmsConfig } from '../../../api/services/system/dotcms-config';
+import { ListingDataTableComponent } from './listing-data-table-component';
 import { MessageService } from '../../../api/services/messages-service';
+import { MockMessageService } from '../../../test/message-service.mock';
+import { Observable } from 'rxjs/Observable';
 
 describe('Listing Component', () => {
 

@@ -1,8 +1,8 @@
+import { BaseComponent } from '../../../view/components/_common/_base/base-component';
+import { ButtonAction } from '../../../view/components/listing-data-table/action-header/action-header';
 import { Component } from '@angular/core';
-import { DataTableColumn } from '../../view/components/listing-data-table/listing-data-table-component';
-import { BaseComponent } from '../../view/components/_common/_base/base-component';
-import { MessageService } from '../../api/services/messages-service';
-import { ButtonAction } from '../../view/components/_common/action-header/action-header';
+import { DataTableColumn } from '../../../view/components/listing-data-table/listing-data-table-component';
+import { MessageService } from '../../../api/services/messages-service';
 
 /**
  * List of Content Types

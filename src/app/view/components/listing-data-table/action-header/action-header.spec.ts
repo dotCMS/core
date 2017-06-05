@@ -13,7 +13,7 @@ class RouterMock {
         return null;
     }
 }
-describe('ActionHeaderComponent (inline template)', () => {
+describe('ActionHeaderComponent', () => {
     let comp: ActionHeaderComponent;
     let fixture: ComponentFixture<ActionHeaderComponent>;
     let de: DebugElement;

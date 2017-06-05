@@ -16,9 +16,9 @@ import {
  * Platform and Environment providers/directives/pipes
  */
 import { ENV_PROVIDERS } from './environment';
-import { ROUTES } from './app.routing';
 // App is our top level component
 import { AppComponent } from './app-component';
+import { AppRoutingModule } from './app-routing.module';
 import { APP_RESOLVER_PROVIDERS } from './app.resolver';
 import { AppState, InternalStateType } from './app.service';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -31,6 +31,8 @@ import { COMPONENTS, DIRECTIVES, PIPES } from './components';
 import '../styles/main.scss';
 
 import { NGFACES_MODULES } from './modules';
+import { FieldValidationMessageModule } from './view/components/_common/field-validation-message/file-validation-message.module';
+import { ListingDataTableModule } from './view/components/listing-data-table/listing-data-table.module';
 
 // Application wide providers
 const APP_PROVIDERS = [
@@ -56,14 +58,17 @@ type StoreType = {
     ...DIRECTIVES,
   ],
   imports: [ // import Angular's modules
+    ...NGFACES_MODULES,
     BrowserAnimationsModule,
     BrowserModule,
+    FieldValidationMessageModule,
+    FormsModule,
     HttpModule,
     JsonpModule,
-    ROUTES,
-    FormsModule,
+    ListingDataTableModule,
     ReactiveFormsModule,
-    ...NGFACES_MODULES,
+    // AppRoutingModule should always be the last one
+    AppRoutingModule
   ],
   providers: [ // expose our Services and Providers into Angular's dependency injection
     ENV_PROVIDERS,
