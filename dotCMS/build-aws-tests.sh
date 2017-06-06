@@ -70,7 +70,6 @@ PORT_TOMCAT_HTTPS=${PORT_BASE}1
 PORT_TOMCAT_SERVER=${PORT_BASE}3
 PORT_ES_TRANSPORT=${PORT_BASE}4
 
-
 # Setup configuration files
 sed -i "s,8080,$PORT_TOMCAT_HTTP,g" build-tests.xml
 
