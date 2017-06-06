@@ -53,11 +53,11 @@ public class ImmutableTypeAdapterTest extends UnitTestBase {
 
 		assertTrue(deserializedContentType instanceof ImmutableSimpleContentType);
 
-		assertEquals("description2", deserializedContentType.description());
+		assertEquals("description", deserializedContentType.description());
 		assertEquals(FolderAPI.SYSTEM_FOLDER, deserializedContentType.folder());
 		assertEquals(Host.SYSTEM_HOST, deserializedContentType.host());
-		assertEquals("ContentTypeDefault2", deserializedContentType.name());
+		assertEquals("ContentTypeDefault", deserializedContentType.name());
 		assertEquals("owner", deserializedContentType.owner());
-		assertEquals("velocityVarNameDefault2", deserializedContentType.variable());
+		assertEquals("velocityVarNameDefault", deserializedContentType.variable());
     }
 }
