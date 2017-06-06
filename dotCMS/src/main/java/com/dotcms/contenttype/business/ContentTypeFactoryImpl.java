@@ -510,9 +510,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     dc.setSQL( String.format( this.contentTypeSql.SELECT_QUERY_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ), orderBy ) );
     dc.setMaxRows(limit);
     dc.setStartRow(offset);
-    dc.addParam( SQLUtil.sanitizeParameter( searchCondition.search ) );
-    dc.addParam( SQLUtil.sanitizeParameter( searchCondition.search ) );
-    dc.addParam( SQLUtil.sanitizeParameter( searchCondition.search ) );
+    dc.addParam( searchCondition.search );
+    dc.addParam( searchCondition.search );
+    dc.addParam( searchCondition.search );
     dc.addParam(bottom);
     dc.addParam(top);
     
@@ -530,9 +530,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
     DotConnect dc = new DotConnect();
     dc.setSQL( String.format( this.contentTypeSql.SELECT_COUNT_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ) ) );
-    dc.addParam( SQLUtil.sanitizeParameter( searchCondition.search ) );
-    dc.addParam( SQLUtil.sanitizeParameter( searchCondition.search ) );
-    dc.addParam( SQLUtil.sanitizeParameter( searchCondition.search ) );
+    dc.addParam( searchCondition.search );
+    dc.addParam( searchCondition.search );
+    dc.addParam( searchCondition.search );
     dc.addParam(bottom);
     dc.addParam(top);
     return dc.getInt("test");
