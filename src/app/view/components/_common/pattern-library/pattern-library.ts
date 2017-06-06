@@ -13,6 +13,8 @@ import { SelectItem, AutoComplete } from 'primeng/primeng';
 export class PatternLibrary {
     public selectedDummyData = [];
     public submitAttempt = false;
+    public actionButtonLog;
+    public actionHeaderLog;
 
     private autocompleteResults: Array<string> = [];
     private cities: SelectItem[];
@@ -20,6 +22,7 @@ export class PatternLibrary {
     private displayDialog = false;
     private model: any = {};
     private buttonActions: [any];
+    private actionButtonItems: [any];
     private contentTypeColumns: any;
 
     @ViewChild(AutoComplete) private autoCompleteComponent: AutoComplete;
@@ -48,12 +51,45 @@ export class PatternLibrary {
                 ]
             }
         ];
+        this.actionButtonItems = [{
+            command: () => {
+                this.loggerService.info('action update');
+            },
+            icon: 'fa-refresh',
+            label: 'Update'
+        },
+        {
+            command: () => {
+                this.loggerService.info('action delete');
+            },
+            icon: 'fa-close',
+            label: 'Delete'
+        },
+        {
+            icon: 'fa-link',
+            label: 'Angular.io',
+            url: 'http://angular.io'
+        },
+        {
+            icon: 'fa-paint-brush',
+            label: 'Theming',
+            routerLink: ['/theming']
+        }];
+
         this.contentTypeColumns = [
             {fieldName: 'name', header: 'Name', width: '40%', sortable: true},
             {fieldName: 'velocityVarName', header: 'Variable', width: '10%'},
             {fieldName: 'description', header: 'Description', width: '40%'},
             {fieldName: 'nEntries', header: 'Entries', width: '10%'}
         ];
+
+        this.actionButtonLog = () => {
+            this.loggerService.info('Primary action triggered');
+        };
+
+        this.actionHeaderLog = () => {
+            this.loggerService.info('Primary command was triggered');
+        };
     }
 
     ngOnInit(): any {
@@ -108,9 +144,5 @@ export class PatternLibrary {
 
     showDialog(): void {
         this.displayDialog = true;
-    }
-
-    actionHeaderLog(): void {
-        this.loggerService.info('Primary command was triggered');
     }
 }

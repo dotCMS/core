@@ -31,6 +31,7 @@ import { COMPONENTS, DIRECTIVES, PIPES } from './components';
 import '../styles/main.scss';
 
 import { NGFACES_MODULES } from './modules';
+import { ActionButtonModule } from './view/components/_common/action-button/action-button.module';
 import { FieldValidationMessageModule } from './view/components/_common/field-validation-message/file-validation-message.module';
 import { ListingDataTableModule } from './view/components/listing-data-table/listing-data-table.module';
 
@@ -59,6 +60,7 @@ type StoreType = {
   ],
   imports: [ // import Angular's modules
     ...NGFACES_MODULES,
+    ActionButtonModule,
     BrowserAnimationsModule,
     BrowserModule,
     FieldValidationMessageModule,

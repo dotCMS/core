@@ -1,0 +1,76 @@
+@import "../../../../../styles/variables";
+@import "../../../../../styles/primeng-theme/utils/_theme-variables";
+
+.action-button {
+    background: none;
+    border: none;
+    box-shadow: none;
+    height: 100%;
+
+    &:hover {
+        border: none;
+        box-shadow: none;
+    }
+
+    .ui-splitbutton {
+        .ui-button {
+            background-color: $blue;
+            border-radius: 50%;
+            font-size: $floating-action-button-icon-size;
+            height: $floating-action-button-height;
+            width: $floating-action-button-height;
+            transition: background-color $basic-speed ease-in,
+                        box-shadow $basic-speed ease-in;
+
+            span {
+                color: $floating-action-button-color;
+            }
+
+            .ui-button-icon-left:before {
+                content: "\F067";
+                color: $floating-action-button-color;
+            }
+
+            &:not([disabled]) {
+
+                &:hover, 
+                &:active, 
+                &:focus {
+                    box-shadow: $md-shadow-2;
+                }
+
+                &:hover {
+                    background: $floating-action-button-bg-hover;
+                }
+
+                &:active {
+                    background: $floating-action-button-bg-active;
+                }
+
+                &:focus {
+                    background: $floating-action-button-bg-focus;
+                }
+            }
+
+            &[disabled] {
+                background: $gray;
+            }
+        }
+
+        .ui-button.ui-corner-right {
+            display: none;
+        }
+    }
+
+    &.multiple-options {
+        .ui-corner-left {
+            display: none;
+        }
+
+        .ui-splitbutton {
+            .ui-button.ui-corner-right {
+                display: block;
+            }
+        }
+    }
+}
