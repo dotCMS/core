@@ -1,8 +1,19 @@
 package com.dotmarketing.business.ajax;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import java.util.*;
+
+import javax.servlet.http.HttpServletRequest;
+
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.repackage.javax.ws.rs.HEAD;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
+import com.dotcms.uuid.shorty.ShortType;
+import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Permission;
@@ -115,6 +126,8 @@ public class PermissionAjax {
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		HostAPI hostAPI = APILocator.getHostAPI();
 		User systemUser = APILocator.getUserAPI().getSystemUser();
+		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
+
 		String roleId = p.getRoleId();
 		Map<String, Object> roleMap = roles.get(roleId);
 		if(roleMap == null) {
@@ -134,7 +147,28 @@ public class PermissionAjax {
 					Permissionable permParent = inodeCache.get(p.getInode());
 					if(permParent == null) {
 						// because identifiers are not Inodes, we need to do a double lookup
-						permParent = InodeFactory.getInode(assetInode, Inode.class);
+
+						if ( Host.SYSTEM_HOST.equals(assetInode) ) {
+							permParent = hostAPI.find(assetInode, systemUser, false);
+						} else {
+
+							//Using the ShortyAPI to identify the nature of this inode
+							Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(assetInode);
+
+							//Hibernate won't handle structures, thats why we need a special case here
+							if ( ShortType.STRUCTURE == shortOpt.get().subType ) {
+
+								//Search for the given ContentType inode
+								ContentType foundContentType = contentTypeAPI.find(assetInode);
+								if ( null != foundContentType ) {
+									//Transform the found content type to a Structure
+									permParent = new StructureTransformer(foundContentType).asStructure();
+								}
+							} else {
+								permParent = InodeFactory.getInode(assetInode, Inode.class);
+							}
+						}
+
 						if(permParent !=null || InodeUtils.isSet(permParent.getPermissionId())){
 							inodeCache.put(permParent.getPermissionId(), permParent);
 
@@ -158,6 +192,10 @@ public class PermissionAjax {
 						roleMap.put("inheritedFromType", "category");
 						roleMap.put("inheritedFromPath", ((Category)permParent).getCategoryName());
 						roleMap.put("inheritedFromId", ((Category)permParent).getInode());
+					} else if ( permParent instanceof Host ) {
+						roleMap.put("inheritedFromType", "host");
+						roleMap.put("inheritedFromPath", ((Host) permParent).getHostname());
+						roleMap.put("inheritedFromId", ((Host) permParent).getIdentifier());
 					} else {
 						Host host = hostAPI.find(assetInode, systemUser, false);
 						if(host != null) {
@@ -206,7 +244,7 @@ public class PermissionAjax {
 				if(individualPermission != null ) {
 					newSetOfPermissions.add(new Permission(asset.getPermissionId(), roleId, Integer.parseInt(individualPermission), true));
 					//If a structure we need to save permissions inheritable by children content
-					if(asset instanceof Structure) {
+					if(asset instanceof Structure || asset instanceof ContentType) {
 						newSetOfPermissions.add(new Permission(Contentlet.class.getCanonicalName(), asset.getPermissionId(), roleId,
 								Integer.parseInt(individualPermission), true));
 					}
@@ -335,6 +373,7 @@ public class PermissionAjax {
 
 		return permissionable;
 	} // retrievePermissionable.
+
 
 	public void permissionIndividually(String assetId, Long languageId) throws Exception {
 			HibernateUtil.startTransaction();

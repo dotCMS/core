@@ -1,15 +1,5 @@
 package com.dotcms.contenttype.business;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-
-import org.elasticsearch.indices.IndexMissingException;
-
 import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
@@ -46,6 +36,16 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 
+import org.elasticsearch.indices.IndexMissingException;
+
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+
 public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   final ContentTypeSql contentTypeSql;
@@ -56,20 +56,35 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     this.cache = CacheLocator.getContentTypeCache2();
   }
 
-  @Override
-  public ContentType find(String id) throws DotDataException {
-    ContentType type = cache.byVarOrInode(id);
-    if (type == null) {
-      type =  LocalTransaction.wrapReturn(() -> {
-        ContentType t = (UUIDUtil.isUUID(id)) ? dbById(id) : dbByVar(id);
-        t.fields();
-        return t;
-      });
-      Logger.debug(this.getClass(), "found type by db:" + type.name());
-      cache.add(type);
+    @Override
+    public ContentType find(String id) throws DotDataException {
+        ContentType type = cache.byVarOrInode(id);
+        if (type == null) {
+            type =  LocalTransaction.wrapReturn(() -> {
+                ContentType t;
+                /*
+                 1. If the if has UUID format lets try to find the ContentType by id.
+                 2. If not let's try to find it by var name.
+                 3. If the id is a really old inode, it will not have the UUID format but still need to catch that case.
+                 */
+                if ( UUIDUtil.isUUID(id) ){
+                    t = dbById(id);
+                } else {
+                    try {
+                        t = dbByVar(id);
+                    } catch (NotFoundInDbException e){
+                        t = dbById(id);
+                    }
+
+                }
+                t.fieldMap();
+                return t;
+            });
+            Logger.debug(this.getClass(), "found type by db:" + type.name());
+            cache.add(type);
+        }
+        return type;
     }
-    return type;
-  }
 
   @Override
   public List<ContentType> findAll() throws DotDataException {
@@ -199,7 +214,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       validateFields(returnType);
       
       
-      return returnType;
+      return find(returnType.id());
     });
 
 
@@ -207,10 +222,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   @Override
   public ContentType setAsDefault(ContentType type) throws DotDataException {
-    if (!type.equals(findDefaultType())) {
+    ContentType oldDefault= findDefaultType();
+    if (!type.equals(oldDefault)) {
       LocalTransaction.wrapReturn(() -> {
         ContentType returnType = dbUpdateDefaultToTrue(type);
-        cache.clearCache();
+        cache.remove(type);
+        cache.remove(oldDefault);
         return returnType;
       });
     }
@@ -325,17 +342,26 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       builder.publishDateVar(null);
     }
 
-    boolean existsInDb = false;
+    ContentType oldContentType = null;
     try {
-      dbById(saveType.id());
-      existsInDb = true;
+      oldContentType = dbById(saveType.id());
     } catch (NotFoundInDbException notThere) {
       Logger.debug(getClass(), "structure inode not found in db:" + saveType.id());
     }
 
+    if (oldContentType == null) {
+    	if (UtilMethods.isSet(saveType.variable())) {
+    		builder.variable(saveType.variable());
+    	} else {
+    		builder.variable(suggestVelocityVar(VelocityUtil.convertToVelocityVariable(saveType.name(), true)));
+    	}
+    } else {
+    	builder.variable(oldContentType.variable());
+    }
+
     ContentType retType = builder.build();
 
-    if (!existsInDb) {
+    if (oldContentType == null) {
     	dbInodeInsert(retType);
     	dbInsert(retType);
 
@@ -356,15 +382,25 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
 
     // set up default fields
-    List<Field> fields = (saveType.fields().isEmpty() && !existsInDb) ? retType.requiredFields() : saveType.fields();
-    FieldAPI fapi = new FieldAPIImpl().instance();
-    for (Field f : fields) {
-      f = FieldBuilder.builder(f).contentTypeId(retType.id()).build();
-      try {
-        fapi.save(f, APILocator.systemUser());
-      } catch (DotSecurityException e) {
-        throw new DotStateException(e);
-      }
+    if (oldContentType == null) {
+    	List<Field> fields = new ArrayList<Field>(saveType.fields());
+
+        for (Field ff : retType.requiredFields()) {
+          Optional<Field> optional = fields.stream().filter(x -> ff.variable().equalsIgnoreCase(x.variable())).findFirst();
+          if (!optional.isPresent()) {
+            fields.add(ff);
+          }
+        }
+
+        FieldAPI fapi = APILocator.getContentTypeFieldAPI();
+        for (Field f : fields) {
+          f = FieldBuilder.builder(f).contentTypeId(retType.id()).build();
+          try {
+            fapi.save(f, APILocator.systemUser());
+          } catch (DotSecurityException e) {
+            throw new DotStateException(e);
+          }
+        }
     }
 
     return retType;
@@ -644,13 +680,35 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
           }
         }
 
-        if (!optional.isPresent()) {
-          throw new DotValidationException("ContentType does not have the required Fields: " + test);
-        }
+          if (!optional.isPresent()) {
+              if (Config.getBooleanProperty("THROW_REQUIRED_FIELD_EXCEPTION", false)){
+                  throw new DotValidationException("ContentType does not have the required Fields: " + test);
+              } else {
+                  Logger.warn(this, "ContentType: " + type.name() +" does not have the required Fields: " + test);
+              }
+
+          }
 
       }
     }
     
   }
+
+ @Override
+ public void updateModDate(ContentType type) throws DotDataException {
+	 ContentTypeBuilder builder =
+		        ContentTypeBuilder.builder(type).modDate(DateUtils.round(new Date(), Calendar.SECOND));
+	 type = builder.build();
+	 dbUpdateModDate(type);
+	 cache.remove(type);
+ }
+ 
+ private void dbUpdateModDate(ContentType type) throws DotDataException{
+	 DotConnect dc = new DotConnect();
+	 dc.setSQL(this.contentTypeSql.UPDATE_TYPE_MOD_DATE_BY_INODE);
+	 dc.addParam(type.modDate());
+	 dc.addParam(type.id());
+	 dc.loadResult();
+ }
 
 }

@@ -1,12 +1,13 @@
 //noinspection GroovyAssignabilityCheck
 dependencies {
 
-    compile group: 'com.dotcms.enterprise', name: 'ee', version: '4.1.0-SNAPSHOT', changing: true
+    compile group: 'com.dotcms.enterprise', name: 'ee', version: '4.2.0-SNAPSHOT', changing: true
     compile group: 'com.dotcms.enterprise', name: 'eelic', version: '4.1.0-SNAPSHOT', changing: true
 
     compile group: 'com.dotcms', name: 'ant-tooling', version: '1.2'
     compile 'io.jsonwebtoken:jjwt:0.6.0'
     compile group: 'com.dotcms.lib', name: 'dot.abdera-client', version:'0.4.0-incubating_2'
+    compile group: 'org.mapdb', name: 'mapdb', version: '3.0.3'
     compile group: 'com.dotcms.lib', name: 'dot.abdera-core', version:'0.4.0-incubating_2'
     compile group: 'com.dotcms.lib', name: 'dot.abdera-extensions-html', version:'0.4.0-incubating_2'
     compile group: 'com.dotcms.lib', name: 'dot.abdera-extensions-json', version:'0.4.0-incubating_2'
@@ -188,6 +189,8 @@ dependencies {
     compile group: 'redis.clients', name: 'jedis', version:'2.7.3'
     compile group: 'org.apache.commons', name: 'commons-pool2', version:'2.0'
     compile group: 'com.dotcms.lib', name: 'dot.maxmind-db', version:'1.0.0_2'
+    
+    compile group: 'org.openjdk.jmh', name: 'jmh-core', version:'0.1'
     compile group: 'com.dotcms.lib', name: 'dot.geoip2', version:'2.1.0_2'
     compile group: 'com.dotcms.lib', name: 'dot.aopalliance-repackaged', version:'2.4.0-b10_2'
     compile group: 'com.dotcms.lib', name: 'dot.hk2-api', version:'2.4.0-b10_2'
@@ -265,7 +268,7 @@ dependencies {
 	compile group: 'com.twelvemonkeys.imageio', name: 'imageio-batik', version:'3.2.1'
 	compile group: 'com.twelvemonkeys.imageio', name: 'imageio-clippath', version:'3.2.1'
     compile group: 'com.twelvemonkeys.servlet', name: 'servlet', version:'3.2.1'
-    compile 'com.github.ben-manes.caffeine:caffeine:2.3.3'
+    compile 'com.github.ben-manes.caffeine:caffeine:2.4.0'
     compile (group: 'org.apache.pdfbox', name: 'pdfbox', version: '2.0.1'){
         exclude(group: 'commons-logging')
     }

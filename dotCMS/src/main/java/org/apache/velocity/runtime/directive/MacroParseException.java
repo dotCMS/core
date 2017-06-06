@@ -124,14 +124,14 @@ public class MacroParseException
     {
         if (!specialConstructor)
         {
-            StringBuffer sb = new StringBuffer(super.getMessage());
+            StringBuilder sb = new StringBuilder(super.getMessage());
             appendTemplateInfo(sb);
             return sb.toString();
         }
 
         int maxSize = 0;
 
-        StringBuffer expected = new StringBuffer();
+        StringBuilder expected = new StringBuilder();
 
         for (int i = 0; i < expectedTokenSequences.length; i++)
         {
@@ -153,7 +153,7 @@ public class MacroParseException
             expected.append(eol).append("    ");
         }
 
-        StringBuffer retval = new StringBuffer("Encountered \"");
+        StringBuilder retval = new StringBuilder("Encountered \"");
         Token tok = currentToken.next;
 
         for (int i = 0; i < maxSize; i++)
@@ -185,7 +185,7 @@ public class MacroParseException
             retval.append("Was expecting one of:").append(eol).append("    ");
         }
 
-        // avoid JDK 1.3 StringBuffer.append(Object o) vs 1.4 StringBuffer.append(StringBuffer sb) gotcha.
+        // avoid JDK 1.3 StringBuilder.append(Object o) vs 1.4 StringBuilder.append(StringBuilder sb) gotcha.
         retval.append(expected.toString());
         return retval.toString();
     }
@@ -194,7 +194,7 @@ public class MacroParseException
      * @param sb
      * @since 1.5
      */
-    protected void appendTemplateInfo(final StringBuffer sb)
+    protected void appendTemplateInfo(final StringBuilder sb)
     {
         sb.append(VelocityException.formatFileString(getTemplateName(), getLineNumber(), getColumnNumber()));
         sb.append(eol);

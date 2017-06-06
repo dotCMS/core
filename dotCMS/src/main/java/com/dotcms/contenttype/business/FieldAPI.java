@@ -50,7 +50,6 @@ public interface FieldAPI {
 		return api;
 	}
 
-	public static final Date VALIDATE_AFTER = new Date(1451606400000l);
 	
 	/**
 	 * Retrieves the list of the base Fields Types
@@ -80,6 +79,14 @@ public interface FieldAPI {
 	 * @throws DotDataException Error occurred when performing the action.
 	 */
 	void delete(Field field) throws DotDataException;
+
+	/**
+	 * Deletes a field from a content type (as specified in the passed in Field object)
+	 * 
+	 * @param field Field that wants to be deleted.
+	 * @throws DotDataException Error occurred when performing the action.
+	 */
+	void delete(Field field, User user) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Deletes all the fields related to the given Content Type
@@ -176,24 +183,6 @@ public interface FieldAPI {
 	 * @throws DotDataException Error occurred when performing the action.
 	 */
     void delete(FieldVariable fieldVar) throws DotDataException;
-
-    /**
-     * Retrieves the Field Variables related to a specific Field.
-     * 
-     * @param field Field to search on 
-     * @return List of Field Variables Objects that are related to a Field
-     * @throws DotDataException Error occurred when performing the action.
-     */
-    List<FieldVariable> loadVariables(Field field) throws DotDataException;
-    
-    /**
-     * Retrieves a Field Variable given its id
-     * 
-     * @param id Id of the field Variable.
-     * @return Field Variable related to the given id.
-     * @throws DotDataException Error occurred when performing the action.
-     */
-    FieldVariable loadVariable(String id) throws DotDataException;
 
     /**
      * Returns the dataType and the number of the column of that field. e.g bool1

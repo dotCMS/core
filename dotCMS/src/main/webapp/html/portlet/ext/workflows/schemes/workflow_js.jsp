@@ -773,13 +773,13 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
           		if(dijit.byId("actionRoleHierarchyForAssign")){
           			dijit.byId("actionRoleHierarchyForAssign").setValue(false);
           		}
-          		dojo.style("divRoleHierarchyForAssign", "visibility", "hidden");
+          		dojo.style("divRoleHierarchyForAssign", "display", "none");
 			}
         	else{
-          		dojo.style("divRoleHierarchyForAssign", "visibility", "visible");
+          		dojo.style("divRoleHierarchyForAssign", "display", "block");
       		}
       	}else{
-       		dojo.style("divRoleHierarchyForAssign", "visibility", "hidden");
+       		dojo.style("divRoleHierarchyForAssign", "display", "none");
       	}
 	},
     isSet: function (toValidate) {

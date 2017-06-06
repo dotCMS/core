@@ -67,13 +67,22 @@ public class DotInitScheduler {
 
 	private static ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = null;
 
-	private static ScheduledThreadPoolExecutor getScheduledThreadPoolExecutor() {
+	/**
+	 * Returns the {@link ScheduledThreadPoolExecutor}
+	 * @return ScheduledThreadPoolExecutor
+	 */
+	public static ScheduledThreadPoolExecutor getScheduledThreadPoolExecutor() {
 
 		if (null == scheduledThreadPoolExecutor) {
 
-			final int corePoolSize = Config.getIntProperty(SCHEDULER_COREPOOLSIZE, 10);
+			synchronized (DotInitScheduler.class) {
 
-			scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(corePoolSize);
+				if (null == scheduledThreadPoolExecutor) {
+
+					final int corePoolSize = Config.getIntProperty(SCHEDULER_COREPOOLSIZE, 10);
+					scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(corePoolSize);
+				}
+			}
 		}
 
 		return scheduledThreadPoolExecutor;
@@ -94,23 +103,7 @@ public class DotInitScheduler {
 			Calendar calendar;
 			boolean isNew;
 
-
-		        Logger.info(DotInitScheduler.class, "Deliver Campaign Cron Thread schedule disabled on this server");
-		        Logger.info(DotInitScheduler.class, "Deleting DeliverCampaignJob Job");
-				if ((job = sched.getJobDetail("DeliverCampaignJob", DOTCMS_JOB_GROUP_NAME)) != null) {
-					sched.deleteJob("DeliverCampaignJob", DOTCMS_JOB_GROUP_NAME);
-				
-				}
-
-
-		        Logger.info(DotInitScheduler.class, "Update Rating Cron Thread schedule disabled on this server");
-		        Logger.info(DotInitScheduler.class, "Deleting UpdateRatingJob Job");
-				if ((job = sched.getJobDetail("UpdateRatingJob", DOTCMS_JOB_GROUP_NAME)) != null) {
-					sched.deleteJob("UpdateRatingJob", DOTCMS_JOB_GROUP_NAME);
-				}
-			
-
-			if(Config.getBooleanProperty("ENABLE_CONTENT_REVIEW_THREAD")) {
+		        if(Config.getBooleanProperty("ENABLE_CONTENT_REVIEW_THREAD")) {
 				try {
 					isNew = false;
 
@@ -181,14 +174,6 @@ public class DotInitScheduler {
 					sched.deleteJob("ContentReindexerJob", DOTCMS_JOB_GROUP_NAME);
 				}
 			}
-
-
-		        Logger.info(DotInitScheduler.class, "Automatic Bounces Retrieval Cron Thread schedule disabled on this server");
-		        Logger.info(DotInitScheduler.class, "Deleting PopBouncedMailJob Job");
-		        if ((job = sched.getJobDetail("PopBouncedMailJob", DOTCMS_JOB_GROUP_NAME)) != null) {
-					sched.deleteJob("PopBouncedMailJob", DOTCMS_JOB_GROUP_NAME);
-				}
-
 
 			if(Config.getBooleanProperty("ENABLE_USERS_TO_DELETE_THREAD")) {
 				try {

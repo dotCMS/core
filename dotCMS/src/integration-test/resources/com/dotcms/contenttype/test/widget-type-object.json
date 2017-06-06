@@ -6,7 +6,7 @@
   "system" : false,
   "variable" : "PhotoGallery",
   "folder" : "SYSTEM_FOLDER",
-  "implClass" : "com.dotcms.contenttype.model.type.WidgetContentType",
+  "clazz" : "com.dotcms.contenttype.model.type.WidgetContentType",
   "fields" : [ {
     "dataType" : "TEXT",
     "searchable" : true,
@@ -20,7 +20,7 @@
     "sortOrder" : 1,
     "fixed" : true,
     "dbColumn" : "text1",
-    "implClass" : "com.dotcms.contenttype.model.field.TextField",
+    "clazz" : "com.dotcms.contenttype.model.field.TextField",
     "fieldVariables" : [ ]
   }, {
     "dataType" : "SYSTEM",
@@ -39,7 +39,7 @@
     "contentTypeId" : "4b1fc848-87f0-4efb-94a8-d04e11f5d3fc",
     "dbColumn" : "constant",
     "iDate" : 1408051358000,
-    "implClass" : "com.dotcms.contenttype.model.field.TextAreaField",
+    "clazz" : "com.dotcms.contenttype.model.field.TextAreaField",
     "fieldVariables" : [ ]
   }, {
     "dataType" : "SYSTEM",
@@ -59,7 +59,7 @@
     "contentTypeId" : "4b1fc848-87f0-4efb-94a8-d04e11f5d3fc",
     "dbColumn" : "constant",
     "iDate" : 1408051358000,
-    "implClass" : "com.dotcms.contenttype.model.field.HiddenField",
+    "clazz" : "com.dotcms.contenttype.model.field.HiddenField",
     "fieldVariables" : [ ]
   }, {
     "dataType" : "SYSTEM",
@@ -78,7 +78,7 @@
     "contentTypeId" : "4b1fc848-87f0-4efb-94a8-d04e11f5d3fc",
     "dbColumn" : "constant",
     "iDate" : 1408051358000,
-    "implClass" : "com.dotcms.contenttype.model.field.HiddenField",
+    "clazz" : "com.dotcms.contenttype.model.field.HiddenField",
     "fieldVariables" : [ ]
   }, {
     "indexed" : true,
@@ -97,7 +97,7 @@
     "contentTypeId" : "4b1fc848-87f0-4efb-94a8-d04e11f5d3fc",
     "dbColumn" : "system_field1",
     "iDate" : 1408051454000,
-    "implClass" : "com.dotcms.contenttype.model.field.HostFolderField",
+    "clazz" : "com.dotcms.contenttype.model.field.HostFolderField",
     "fieldVariables" : [ ]
   }, {
     "dataType" : "INTEGER",
@@ -116,7 +116,7 @@
     "contentTypeId" : "4b1fc848-87f0-4efb-94a8-d04e11f5d3fc",
     "dbColumn" : "integer1",
     "iDate" : 1408051502000,
-    "implClass" : "com.dotcms.contenttype.model.field.TextField",
+    "clazz" : "com.dotcms.contenttype.model.field.TextField",
     "fieldVariables" : [ ]
   } ]
 } ]

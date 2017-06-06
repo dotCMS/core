@@ -224,7 +224,7 @@ public class NewNotificationCacheImpl extends NewNotificationCache implements Se
 
         Long count = null;
         final String primaryKey   =
-            this.getUserCountPrimaryKey(userId);
+                this.getAllNotificationsPrimaryKey(userId);
 
         try {
 

@@ -3,7 +3,9 @@ package com.dotcms.contenttype.model.type;
 import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.elasticsearch.common.Nullable;
 
@@ -13,6 +15,7 @@ import org.immutables.value.Value.Default;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
@@ -32,6 +35,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import com.google.common.collect.ImmutableMap;
 
 
 @JsonTypeInfo(
@@ -53,6 +57,8 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
 
   @Value.Check
   protected void check() {
+	Preconditions.checkArgument(StringUtils.isNotEmpty(name()), "Name cannot be empty for " + this.getClass());
+
     if (!(this instanceof UrlMapable)) {
       Preconditions.checkArgument(detailPage() == null, "Detail Page cannot be set for " + this.getClass());
       Preconditions.checkArgument(urlMapPattern() == null, "urlmap cannot be set for " + this.getClass());
@@ -127,7 +133,7 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     return false;
   }
 
-
+  @Nullable
   public abstract String variable();
 
   @Nullable
@@ -179,7 +185,15 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     }
     return innerFields;
   }
-
+  @JsonIgnore
+  @Value.Lazy
+  public Map<String, Field> fieldMap() {
+    Map<String, Field> fmap = new HashMap<>();
+    for (Field f : this.fields()) {
+      fmap.put(f.variable(), f);
+    }
+    return ImmutableMap.copyOf(fmap);
+  }
   private List<Field> innerFields = null;
 
   public void constructWithFields(List<Field> fields) {

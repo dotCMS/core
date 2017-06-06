@@ -129,7 +129,7 @@ if(request.getParameter(WebKeys.IN_FRAME)!=null){
    									dojoType="dojox.form.Uploader" label="<%= LanguageUtil.get(pageContext, "Select-file(s)-to-upload") %>" >
    						</div>
 				        <div id="files" dojoType="dojox.form.uploader.FileList" uploaderId="uploader"
-				        style="height:200px; overflow-y: auto;"
+				        style="height:170px; overflow-y: auto;"
 				        	<% if(request.getHeader("User-Agent").contains("MSIE")){ %>
 				        		headerFilesize="" 
 				        	<% } %>				        

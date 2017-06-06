@@ -1,19 +1,9 @@
 package com.dotcms.util;
 
-import java.io.Serializable;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.dotcms.repackage.com.google.common.collect.ImmutableBiMap;
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
-import jdk.nashorn.internal.ir.annotations.Immutable;
+
+import java.io.Serializable;
+import java.util.*;
 
 /**
  * This utility class provides common use methods for creating and interacting

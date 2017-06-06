@@ -148,11 +148,17 @@
 			},
 
 			getIconClass: function (item, opened) {
-				var icon = "";
-				if(item) {
+				if (item) {
 					var locked = eval(norm(item.locked));
-					if(locked) {
-						return "lockIcon";
+					if (locked && !dojo.byId("lockedNode-" + item.id)) {
+						var node = dijit.byId("treeNode-" + item.id);
+						node.iconNode.style.width = "0";
+						node.iconNode.style.height = "0";
+						node.iconNode.style.margin = "0";
+						var newIcon = document.createElement("span");
+						newIcon.setAttribute("id", "lockedNode-" + item.id);
+						newIcon.classList = "lockIcon";
+						node.iconNode.parentNode.insertBefore(newIcon, node.iconNode);
 					}
 				}
 				return "";
@@ -523,11 +529,6 @@
 	}
 
 	function lockRoleCallback (lockedRoleId) {
-		var node = dijit.byId("treeNode-"+lockedRoleId);
-		node.iconNode.className = 'lockIcon';
-		node.iconNode.style.width = '';
-		node.iconNode.style.height = '';
-
 		dijit.byId('editRoleButtonWrapper').setAttribute("disabled", norm(currentRoleId) == norm(lockedRoleId));
 		buildRolesTree();
 		showDotCMSSystemMessage(roleLockedMsg);

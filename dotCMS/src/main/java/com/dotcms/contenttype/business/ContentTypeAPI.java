@@ -1,9 +1,11 @@
 package com.dotcms.contenttype.business;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
@@ -188,17 +190,6 @@ public interface ContentTypeAPI {
   void moveToSystemFolder(Folder folder) throws DotDataException;
 
   /**
-   * Saves a list of Fields to a specific Content Type. If the field is already in the Content Type it does not add it.
-   * 
-   * @param type Content Type that is going to be modified
-   * @param fields List of Fields that will be added to the Content Type
-   * @return Content Type with the new fields
-   * @throws DotDataException Error occurred when performing the action.
-   * @throws DotSecurityException The user does not have permissions to perform this action.
-   */
-  ContentType save(ContentType type, List<Field> fields) throws DotDataException, DotSecurityException;
-
-  /**
    * Saves a new Content Type.
    * 
    * @param type Content Type that is going to be modified
@@ -254,5 +245,49 @@ public interface ContentTypeAPI {
       throws DotDataException;
 
 
+  /**
+   * Return the number of entries for each content types
+   *
+   * @return return a Map where the keys are the content types' variable name and the values are the number of entries
+   * @throws DotDataException
+   */
+  Map<String, Long> getEntriesByContentTypes() throws DotDataException;
+  
+  /**
+   * Save or update a Content Type. If the Content Type already exist
+   * then it's going to update the fields with the values set on the fields
+   * parameter
+   * 
+   * @param contentType Content Type that is going to be modified
+   * @param newFields Content Type list of fields
+   * @return Content Type Object saved.
+   * @throws DotDataException Error occurred when performing the action.
+   * @throws DotSecurityException The user does not have permissions to perform this action.
+   */
+  ContentType save(ContentType contentType, List<Field> newFields) throws DotDataException, DotSecurityException;
+  
+  /**
+   * Save or update a Content Type. If the Content Type already exist
+   * then it's going to update the fields and fields variables with the values set 
+   * on the fields and fieldVariables parameters 
+   * 
+   * @param contentType Content Type that is going to be modified
+   * @param newFields Content Type list of fields
+   * @param newFieldVariables ContentType list of field variables
+   * @return Content Type Object saved.
+   * @throws DotDataException Error occurred when performing the action.
+   * @throws DotSecurityException The user does not have permissions to perform this action.
+   */
+  ContentType save(ContentType contentType, List<Field> newFields, List<FieldVariable> newFieldVariables) throws DotDataException, DotSecurityException;
+  
+  /**
+   * Update the Content Type mod_date and clean the cache
+   * @param type Content Type that is going to be modified
+   * @return true if the mod_date was updated, false if not
+   * @throws DotDataException 
+   */
+   boolean updateModDate(ContentType type) throws DotDataException;
+
+  boolean updateModDate(Field field) throws DotDataException;
 
 }

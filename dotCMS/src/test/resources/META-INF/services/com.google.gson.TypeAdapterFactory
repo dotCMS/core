@@ -1,0 +1,6 @@
+com.dotcms.contenttype.model.type.GsonAdaptersPersonaContentType
+com.dotcms.contenttype.model.type.GsonAdaptersSimpleContentType
+com.dotcms.contenttype.model.type.GsonAdaptersPageContentType
+com.dotcms.contenttype.model.type.GsonAdaptersWidgetContentType
+com.dotcms.contenttype.model.type.GsonAdaptersFileAssetContentType
+com.dotcms.contenttype.model.type.GsonAdaptersFormContentType

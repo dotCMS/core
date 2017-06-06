@@ -36,6 +36,7 @@ import org.apache.velocity.runtime.parser.ParseException;
 import org.apache.velocity.runtime.parser.Parser;
 import org.apache.velocity.util.ExceptionUtils;
 
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.VelocityUtil;
 
 /**
@@ -174,6 +175,7 @@ public class ASTDirective extends SimpleNode implements TokenImageSaver
                 try
                 {
                     directive.init( rsvc, context, this );
+                    isDirective = true;
                 }
     
                 /**
@@ -187,7 +189,10 @@ public class ASTDirective extends SimpleNode implements TokenImageSaver
                             die.getColumnNumber() + getColumn(),
                             die.getLineNumber() + getLine());
                 }
-                isDirective = true;
+                catch(DotRuntimeException de){
+                  isDirective = false;
+                }
+                
             }
             
             isInitialized = true;

@@ -16,7 +16,7 @@ import org.junit.Test;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.cms.login.LoginService;
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.business.Layout;
@@ -35,7 +35,7 @@ public class ContentTypeUtilTest extends UnitTestBase {
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpSession session = mock(HttpSession.class);
         LayoutAPI layoutAPI = mock(LayoutAPI.class);
-        LoginService loginService = mock(LoginService.class);
+        LoginServiceAPI loginService = mock(LoginServiceAPI.class);
         LanguageAPI languageAPI = mock(LanguageAPI.class);
         User user = mock(User.class);
         Structure structure = mock(Structure.class);
@@ -66,7 +66,7 @@ public class ContentTypeUtilTest extends UnitTestBase {
         when(httpServletRequestThreadLocal.getRequest()).thenReturn(request);
         when(loginService.getLoggedInUser(request)).thenReturn(user);
 
-        String expected = "http://localhost:0/ctx/portal_public/layout?p_l_id=2&p_p_id=1&p_p_action=1&p_p_state=maximized&_1_inode=&_1_cmd=new&_1_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&selectedContentType=38a3f133-85e1-4b07-b55e-179f38303b90&lang=1";
+        String expected = "http://localhost:0/ctx/portal_public/layout?p_l_id=2&p_p_id=1&p_p_action=1&p_p_state=maximized&_1_inode=&_1_cmd=new&_1_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&selectedStructure=38a3f133-85e1-4b07-b55e-179f38303b90&lang=1";
 
         String actionUrl = contentTypeUtil.getActionUrl(new StructureTransformer(structure).from());
         assertEquals(expected, actionUrl);

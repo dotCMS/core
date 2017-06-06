@@ -15,6 +15,7 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import static com.dotcms.util.CollectionsUtils.set;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -68,8 +69,10 @@ public class FieldFactory {
 	public static List<Field> getFieldsByStructure(String structureInode)
 	{
 	       try {
-	            return new LegacyFieldTransformer(APILocator.getContentTypeFieldAPI().byContentTypeId(structureInode)).asOldFieldList();
-	        } catch (DotStateException | DotDataException e) {
+	            return new LegacyFieldTransformer(
+	                APILocator.getContentTypeAPI(APILocator.systemUser()).find(structureInode).fields()
+	                ).asOldFieldList();
+	        } catch (Exception e) {
 	            return ImmutableList.of();
 	        }
 	}
@@ -108,11 +111,11 @@ public class FieldFactory {
 	 */
 	public static Field getFieldByVariableName(String structureInode, String velocityVarName)
 	{
-	    velocityVarName = StringUtils.camelCaseLower(velocityVarName);
         try {
-            com.dotcms.contenttype.model.field.Field f = fapi().byContentTypeIdAndVar(structureInode, velocityVarName);
+            com.dotcms.contenttype.model.field.Field f = APILocator.getContentTypeAPI(APILocator.systemUser()).find(structureInode).fieldMap().get(velocityVarName);
+
             return new LegacyFieldTransformer(f).asOldField();
-        } catch (DotDataException e) {
+        } catch (Exception e) {
             return new Field();
         }
 	}
@@ -261,7 +264,7 @@ public class FieldFactory {
 	 */
 	public static FieldVariable getFieldVariable(String id){
 	    try {
-            return new FieldVariableTransformer(fapi().loadVariable(id)).oldField();
+            return new FieldVariableTransformer(FactoryLocator.getFieldFactory().loadVariable(id)).oldField();
         } catch (DotStateException | DotDataException e) {
             Logger.error(FieldFactory.class, e.getMessage());
         }
@@ -308,7 +311,7 @@ public class FieldFactory {
 	public static List<FieldVariable> getFieldVariablesForField (Field field ){
 	       try {
 	           com.dotcms.contenttype.model.field.Field newfield = fapi().find(field.getInode());
-	           List<com.dotcms.contenttype.model.field.FieldVariable > fl = fapi().loadVariables(newfield);
+	           List<com.dotcms.contenttype.model.field.FieldVariable > fl = newfield.fieldVariables();
 	           return new FieldVariableTransformer(fl).oldFieldList();
 	        } catch (DotStateException | DotDataException e) {
 	            Logger.error(FieldFactory.class, e.getMessage());

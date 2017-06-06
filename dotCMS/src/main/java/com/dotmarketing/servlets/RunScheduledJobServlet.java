@@ -29,8 +29,7 @@ public class RunScheduledJobServlet extends HttpServlet {
     private String[]          classArr         = { "com.dotmarketing.quartz.job.BuildSearchThread",
             "com.dotmarketing.quartz.job.ContentIndexationThread", "com.dotmarketing.quartz.job.ContentReindexerThread",
             "com.dotmarketing.quartz.job.ContentReviewThread", "com.dotmarketing.quartz.job.DeliverCampaignThread",
-            "com.dotmarketing.quartz.job.PopBouncedMailThread", "com.dotmarketing.quartz.job.UpdateRatingThread",
-            "com.dotmarketing.quartz.job.UsersToDeleteThread" };
+            "com.dotmarketing.quartz.job.UpdateRatingThread", "com.dotmarketing.quartz.job.UsersToDeleteThread" };
 
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         PrintWriter out = response.getWriter();

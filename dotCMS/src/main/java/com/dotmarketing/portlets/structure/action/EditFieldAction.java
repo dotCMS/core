@@ -10,7 +10,9 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
@@ -102,7 +104,6 @@ public class EditFieldAction extends DotPortletAction {
 	 */
     public void processAction(ActionMapping mapping, ActionForm form, PortletConfig config, ActionRequest req,
             ActionResponse res) throws Exception {
-
         User user = _getUser(req);
 
         String cmd = req.getParameter(Constants.CMD);
@@ -144,20 +145,19 @@ public class EditFieldAction extends DotPortletAction {
                             field.setDefaultValue(fieldForm.getDefaultValue());
                             field.setSearchable(fieldForm.isSearchable());
                             field.setListed(fieldForm.isListed());
-                            // field.setFieldName(fieldForm.getFieldName());
                         }
 
-                        Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(field.getStructureInode());
+                        Structure contentType = CacheLocator.getContentTypeCache().getStructureByInode(field.getStructureInode());
 
-                        if (((structure.getStructureType() == Structure.STRUCTURE_TYPE_CONTENT) && !fAPI
+                        if (((contentType.getStructureType() == Structure.STRUCTURE_TYPE_CONTENT) && !fAPI
                                 .isElementConstant(field))
-                                || ((structure.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET) && fAPI
+                                || ((contentType.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET) && fAPI
                                         .isElementConstant(field))
-                                || ((structure.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) && fAPI
+                                || ((contentType.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) && fAPI
                                         .isElementConstant(field))
-                                || ((structure.getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) && fAPI
+                                || ((contentType.getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) && fAPI
                                         .isElementConstant(field))
-                                || ((structure.getStructureType() == Structure.STRUCTURE_TYPE_FORM) && fAPI
+                                || ((contentType.getStructureType() == Structure.STRUCTURE_TYPE_FORM) && fAPI
                                         .isElementConstant(field))) {
                             field.setValues(fieldForm.getValues());
                         }
@@ -170,12 +170,10 @@ public class EditFieldAction extends DotPortletAction {
                         return;
                     }
                 }
-
             } catch (Exception ae) {
                 _handleException(ae, req);
                 return;
             }
-
         }
         /*
          * If we are deleting the field, run the delete action and return to the
@@ -185,7 +183,7 @@ public class EditFieldAction extends DotPortletAction {
         else if ((cmd != null) && cmd.equals(Constants.DELETE)) {
             try {
                 Logger.debug(this, "Calling Delete Method");
-                _deleteField(form, req, res);
+                _deleteField(req);
             } catch (Exception ae) {
                 _handleException(ae, req);
                 return;
@@ -234,10 +232,8 @@ public class EditFieldAction extends DotPortletAction {
         }
 
         if (field.isFixed()) {
-
             String message = "warning.object.isfixed";
             SessionMessages.add(req, "message", message);
-
         }
 
         req.setAttribute(WebKeys.Field.FIELD, field);
@@ -352,44 +348,18 @@ public class EditFieldAction extends DotPortletAction {
                 field.setSortOrder(sortOrder + 1);
                 field.setFixed(false);
                 field.setReadOnly(false);
+                field.setFieldContentlet(dataType);
 
-                String fieldVelocityName = VelocityUtil.convertToVelocityVariable(fieldForm.getFieldName(), false);
-                int found = 0;
-                if (VelocityUtil.isNotAllowedVelocityVariableName(fieldVelocityName)) {
-                    found++;
-                }
 
-                String velvar;
-                for (Field f : fields) {
-                    velvar = f.getVelocityVarName();
-                    if (velvar != null) {
-                        if (fieldVelocityName.equals(velvar)) {
-                            found++;
-                        } else if (velvar.contains(fieldVelocityName)) {
-                            String number = velvar.substring(fieldVelocityName.length());
-                            if (RegEX.contains(number, "^[0-9]+$")) {
-                                found++;
-                            }
-                        }
-                    }
-                }
-                if (found > 0) {
-                    fieldVelocityName = fieldVelocityName + Integer.toString(found);
-                }
-
-                //http://jira.dotmarketing.net/browse/DOTCMS-5616
-                if(!validateInternalFieldVelocityVarName(fieldVelocityName)){
-                    fieldVelocityName+="1";
-                }
-
-                field.setVelocityVarName(fieldVelocityName);
             }
 
-            boolean isUpdating = UtilMethods.isSet(field.getInode());
-            // saves this field
-            FieldFactory.saveField(field);
+            com.dotcms.contenttype.model.field.Field newField = new LegacyFieldTransformer(field).from();
+            APILocator.getContentTypeFieldAPI().save(newField, user);
 
-            if(isUpdating) {
+            
+
+
+            if(UtilMethods.isSet(field.getInode())) {
                 ActivityLogger.logInfo(ActivityLogger.class, "Update Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " modified field " + field.getFieldName() + " to " + structure.getName()
                         + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
             } else {
@@ -473,22 +443,22 @@ public class EditFieldAction extends DotPortletAction {
     }
 
     /**
+     * Deletes the field selected by the user.
      * 
-     * @param form
-	 *            - The form containing the information selected by the user in
-	 *            the UI.
 	 * @param req
 	 *            - The HTTP Request wrapper.
-	 * @param res
-	 *            - The HTTP Response wrapper.
      */
-    private void _deleteField(ActionForm form, ActionRequest req, ActionResponse res) {
+    private void _deleteField(ActionRequest req) {
         Field field = (Field) req.getAttribute(WebKeys.Field.FIELD);
-        Structure structure = StructureFactory.getStructureByInode(field.getStructureInode());
+        if (!UtilMethods.isSet(field.getIdentifier())) {
+        	String message = "message.contenttype.deletefield.error.alreadydeleted";
+            SessionMessages.add(req, "error", message);
+            return;
+        }
+        Structure contentType = StructureFactory.getStructureByInode(field.getStructureInode());
         User user = _getUser(req);
-
         try {
-            _checkUserPermissions(structure, user, PERMISSION_PUBLISH);
+            _checkUserPermissions(contentType, user, PERMISSION_PUBLISH);
         } catch (Exception ae) {
             if (ae.getMessage().equals(WebKeys.USER_PERMISSIONS_EXCEPTION)) {
                 String message = "message.insufficient.permissions.to.delete";
@@ -496,16 +466,13 @@ public class EditFieldAction extends DotPortletAction {
                 return;
             }
         }
-
         try {
-            DeleteFieldJob.triggerDeleteFieldJob(structure, field, user);
+            DeleteFieldJob.triggerDeleteFieldJob(contentType, field, user);
         } catch(Exception e) {
             Logger.error(this, "Unable to trigger DeleteFieldJob", e);
             SessionMessages.add(req, "error", "message.structure.deletefield.error");
         }
-
         SessionMessages.add(req, "message", "message.structure.deletefield.async");
-
     }
 
     /**
@@ -529,17 +496,11 @@ public class EditFieldAction extends DotPortletAction {
                     Field field = FieldFactory.getFieldByInode(fieldInode);
                     field.setSortOrder(Integer.parseInt(parameterValue));
                     FieldFactory.saveField(field);
-
                 }
             }
             FieldsCache.clearCache();
-            //VirtualLinksCache.clearCache();
             String message = "message.structure.reorderfield";
             SessionMessages.add(req, "message", message);
-
-            //AdminLogger.log(EditFieldAction.class, "_saveField", "Added field " + field.getFieldName() + " to " + structure.getName() + " Structure.", user);
-
-
         } catch (Exception ex) {
             Logger.error(EditFieldAction.class, ex.toString());
         }

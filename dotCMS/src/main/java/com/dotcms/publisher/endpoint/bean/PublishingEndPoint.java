@@ -2,6 +2,9 @@ package com.dotcms.publisher.endpoint.bean;
 
 import java.io.Serializable;
 
+import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
+import com.dotcms.publisher.pusher.PushPublisher;
+
 /**
  * Java Bean for publishing_end_point table
  *
@@ -130,5 +133,17 @@ public class PublishingEndPoint implements Serializable {
             sb.append(port);
         }
         return sb;
+    }
+    
+    /**
+     * Get the endpoint publisher class
+     * @return the endpoint publisher class
+     */
+    public Class getPublisher() {
+        if ( AWSS3Publisher.PROTOCOL_AWS_S3.equals(this.getProtocol()) ) {
+            return AWSS3Publisher.class;
+        } else {
+        	return PushPublisher.class;
+        }
     }
 }

@@ -59,7 +59,7 @@ public class BooleanPropertyExecutor extends PropertyExecutor
         {
             Object [] params = {};
 
-            StringBuffer sb = new StringBuffer("is");
+            StringBuilder sb = new StringBuilder("is");
             sb.append(property);
 
             setMethod(getIntrospector().getMethod(clazz, sb.toString(), params));

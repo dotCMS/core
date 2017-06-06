@@ -1,7 +1,3 @@
-/*
- * Created on May 30, 2005
- *
- */
 package com.dotmarketing.cache;
 
 import java.util.Iterator;
@@ -18,11 +14,13 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 
 /**
- * 
  * This cache is used to mapped the virtual link path to the redirection path
  * like /test path points to http://www.yahoo.com
+ * 
  * @author David & Salvador
  * @author Jason Tesser
+ * @version 1.x
+ * @since May 30, 2005
  *
  */
 public class VirtualLinksCache {    
@@ -58,19 +56,15 @@ public class VirtualLinksCache {
         	Logger.debug(VirtualLinksCache.class, "failed to find: " + url);  
         }
         
-
 		if(vl != null && InodeUtils.isSet(vl.getInode())) 
 		{
-
 			addPathToCache(vl);
 		} else {
-
             cache.put(sanitizeKey(url), WebKeys.Cache.CACHE_NOT_FOUND, getPrimaryGroup());
             return null;
 		}
 
         return fixRelativeLinks(vl.getUri());
-
     }
     
     /**
@@ -83,7 +77,7 @@ public class VirtualLinksCache {
     	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
         if (vl != null && InodeUtils.isSet(vl.getInode())) 
         {
-        	Logger.info(VirtualLinksCache.class, "mapping: " + vl.getUrl() + " -> " + vl.getUri());     	
+        	Logger.debug(VirtualLinksCache.class, "mapping: " + vl.getUrl() + " -> " + vl.getUri());     	
             cache.put(sanitizeKey(vl.getUrl())  , vl.getUri(), getPrimaryGroup());
         }
     }
@@ -98,7 +92,10 @@ public class VirtualLinksCache {
     	Logger.debug(VirtualLinksCache.class, "removePathFromCache: url = " + url);
     	cache.remove(sanitizeKey(url),getPrimaryGroup());
     } 
-    
+
+    /**
+     * 
+     */
     public static void mapAllVirtualLinks() {
     	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
     	List<VirtualLink> vls = VirtualLinkFactory.getVirtualLinks();
@@ -114,36 +111,52 @@ public class VirtualLinksCache {
         }
     }   
 
+    /**
+     * 
+     */
     public static void clearCache(){
 		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
 	    //clear the cache
 	    cache.flushGroup(getPrimaryGroup());
 	}
+
+    /**
+     * 
+     * @return
+     */
 	public static String[] getGroups() {
     	String[] groups = {getPrimaryGroup()};
     	return groups;
     }
-    
+
+	/**
+	 * 
+	 * @return
+	 */
     public static String getPrimaryGroup() {
     	return "VirtualLinksCache";
     } 
-    
+
+    /**
+     * 
+     * @param key
+     * @return
+     */
     private static String sanitizeKey(String key){
     	return key.replace('/', '|');
-    	
     }
-    
-    
+
+    /**
+     * 
+     * @param uri
+     * @return
+     */
     private static String fixRelativeLinks(String uri){
 		// if the link relative, store it in cache absolutely
-
 		if(uri!=null && !uri.contains("//") && !uri.startsWith("/")){
 			uri=  "/" + uri;
 		}
     	return uri;
-    	
     }
-    
-    
-    
+
 }

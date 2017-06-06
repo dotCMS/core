@@ -228,8 +228,8 @@ public class FolderFactoryImpl extends FolderFactory {
 				HibernateUtil dh = new HibernateUtil(Folder.class);
 				dh.setSQLQuery("select {folder.*} from folder, inode folder_1_, identifier identifier where asset_name = ? and parent_path = ? and "
 						+ "folder_1_.type = 'folder' and folder.inode = folder_1_.inode and folder.identifier = identifier.id and host_inode = ?");
-				dh.setParam(assetName);
-				dh.setParam(parentPath);
+				dh.setParam(assetName.toLowerCase());
+				dh.setParam(parentPath.toLowerCase());
 				dh.setParam(hostId);
 				folder = (Folder) dh.load();
 
@@ -270,8 +270,8 @@ public class FolderFactoryImpl extends FolderFactory {
 							+ " and folder.inode = folder_1_.inode"
 							+ " and folder.identifier = identifier.id"
 							+ " and host_inode = ?");
-					dh.setParam(parentFolder);
-					dh.setParam(parentPath);
+					dh.setParam(parentFolder.toLowerCase());
+					dh.setParam(parentPath.toLowerCase());
 					dh.setParam(hostId);
 					folder = (Folder) dh.load();
 
@@ -849,7 +849,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		});
 
         Folder ff=(Folder) HibernateUtil.load(Folder.class, folder.getInode());
-		ff.setName(newName);
+		ff.setName(newName.toLowerCase());
 		ff.setTitle(newName);
 		ff.setModDate(new Date());
 

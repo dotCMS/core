@@ -27,7 +27,7 @@ public class FieldsCache {
     }
     public static List<Field> getFieldsByStructureInode(String inode){
         try {
-            return new LegacyFieldTransformer(APILocator.getContentTypeAPI(APILocator.getUserAPI().getSystemUser(), true).find(inode).fields()).asOldFieldList();
+            return new LegacyFieldTransformer(APILocator.getContentTypeAPI(APILocator.systemUser()).find(inode).fields()).asOldFieldList();
         } catch (DotStateException | DotDataException | DotSecurityException e) {
             throw new DotStateException(e);
         }
@@ -126,12 +126,11 @@ public class FieldsCache {
     
 	public static List<FieldVariable> getFieldVariables(Field field) {
         try {
+        	
             return new FieldVariableTransformer(
-                    APILocator.getContentTypeFieldAPI().loadVariables(
-                            new LegacyFieldTransformer(field).from()
-                            )
-                    ).oldFieldList();
-        } catch (DotStateException | DotDataException e) {
+            		new LegacyFieldTransformer(field).from().fieldVariables()        
+            ).oldFieldList();
+        } catch (DotStateException e) {
             throw new DotStateException(e);
         }
     }

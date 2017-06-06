@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotmarketing.beans.Inode;
@@ -147,8 +148,8 @@ public class PermissionedWebAssetUtil {
 	 */
 	public static List<Structure> findStructuresForLimitedUser(String searchString, Integer structureType ,String dbColSort ,int offset, 
 			int limit,int permission, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException{
-		
-		List<ContentType> listContentTypes = APILocator.getContentTypeAPI(user).search(searchString, dbColSort, limit, offset);
+		BaseContentType baseType = BaseContentType.getBaseContentType(structureType);
+		List<ContentType> listContentTypes = APILocator.getContentTypeAPI(user).search(searchString,baseType, dbColSort, limit, offset);
 		return new StructureTransformer(listContentTypes).asStructureList();
 	}
 	

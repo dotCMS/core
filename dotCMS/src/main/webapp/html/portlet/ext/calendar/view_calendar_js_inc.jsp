@@ -246,8 +246,8 @@
 
 		var filtersBox = Ext.get('filtersBox');
 		if(!filterBoxPositioned) {
-			var posX = 275;
-			var posY = 165;
+			var posX = 295;
+			var posY = 48;
 			filtersBox.moveTo(posX, posY);
 			filterBoxPositioned = true;
 		}

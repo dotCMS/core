@@ -15,25 +15,43 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 
+/**
+ * Implementation class for the {@link PublishingEndPointFactory}.
+ * 
+ * @author Brent Griffin
+ * @since Jan 29, 2013
+ *
+ */
 public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 
 	private PublishingEndPointCache cache = null;
 
+	/**
+	 * Default class constructor.
+	 */
 	public PublishingEndPointFactoryImpl() {
 		super();
 		cache = CacheLocator.getPublishingEndPointCache();
 	}
 
+	/**
+	 * Makes sure that the Publishing End-point cache contains data before
+	 * performing several data operations.
+	 * 
+	 * @throws DotDataException
+	 *             An error occurred when populating the cache's data.
+	 */
 	public void ensureCacheIsLoaded() throws DotDataException{
 		if(cache.isLoaded() == false) {
 			getEndPoints();
 		}
 	}
 
+	@Override
 	public List<PublishingEndPoint> getEndPoints() throws DotDataException {
-		if(cache.isLoaded())
+		if(cache.isLoaded()) {
 			return cache.getEndPoints();
-
+		}
 		List<PublishingEndPoint> endPoints = new ArrayList<PublishingEndPoint>();
 		DotConnect dc = new DotConnect();
 		dc.setSQL(GET_END_POINTS);
@@ -49,6 +67,7 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 		return endPoints;
 	}
 
+	@Override
 	public List<PublishingEndPoint> getReceivingEndPoints() throws DotDataException {
 		ensureCacheIsLoaded();
 		List<PublishingEndPoint> endPoints = new ArrayList<PublishingEndPoint>();
@@ -60,11 +79,12 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 		return endPoints;
 	}
 
+	@Override
 	public PublishingEndPoint getEndPointById(String id) throws DotDataException {
-		ensureCacheIsLoaded();
-		return cache.getEndPointById(id);
+		return getEndPoints().stream().filter(endPoint -> endPoint.getId().equals(id)).findFirst().orElse(null);
 	}
 
+	@Override
 	public void store(PublishingEndPoint anEndPoint) throws DotDataException {
 		ensureCacheIsLoaded();
 		anEndPoint.setId(UUID.randomUUID().toString());
@@ -83,6 +103,7 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 		cache.clearCache(); // clear cache to make sure that all nodes in the cluster update
 	}
 
+	@Override
 	public void update(PublishingEndPoint anEndPoint) throws DotDataException {
 		ensureCacheIsLoaded();
 		DotConnect dc = new DotConnect();
@@ -100,6 +121,7 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 		cache.clearCache();		//clear cache to make sure all nodes in the cluster update
 	}
 
+	@Override
 	public void deleteEndPointById(String id) throws DotDataException {
 		ensureCacheIsLoaded();
 		DotConnect dc = new DotConnect();
@@ -109,6 +131,7 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 		cache.removeEndPointById(id);
 	}
 
+	@Override
 	public PublishingEndPoint getEnabledSendingEndPointByAddress(String address) throws DotDataException {
 		ensureCacheIsLoaded();
 		List<PublishingEndPoint> allEndPoints = getEndPoints();
@@ -119,29 +142,45 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 		return null;
 	}
 
-    	boolean isMatchingEndpoint(String endPointAddress, String requestAddress) {
-        	boolean result = false;
-        	try {
-            		InetAddress endPointInetAddress = getInetAddress(endPointAddress);
-            		InetAddress requestInetAddress = getInetAddress(requestAddress);
-            		result = endPointInetAddress.equals(requestInetAddress);
-        	}
-        	catch(UnknownHostException e) {
-            		Logger.error(this.getClass(), "Unable to compare endpoints.", e);
-        	}
-        	return result;
+	/**
+	 * 
+	 * @param endPointAddress
+	 * @param requestAddress
+	 * @return
+	 */
+	boolean isMatchingEndpoint(String endPointAddress, String requestAddress) {
+    	boolean result = false;
+    	try {
+    		InetAddress endPointInetAddress = getInetAddress(endPointAddress);
+    		InetAddress requestInetAddress = getInetAddress(requestAddress);
+    		result = endPointInetAddress.equals(requestInetAddress);
     	}
-
-    	private InetAddress getInetAddress(String address) throws UnknownHostException {
-        	try {
-            		return InetAddress.getByName(address);
-        	}
-        	catch(UnknownHostException e) {
-            		Logger.error(this.getClass(), "Unable to resolve inetAddress for " + address);
-            		throw e;
-        	}
+    	catch(UnknownHostException e) {
+			Logger.error(this.getClass(),
+					String.format("Unable to compare endpoints: endPointAddress=[%s], requestAddress=[%s]",
+							endPointAddress, requestAddress),
+					e);
     	}
+    	return result;
+	}
 
+	/**
+	 * 
+	 * @param address
+	 * @return
+	 * @throws UnknownHostException
+	 */
+	private InetAddress getInetAddress(String address) throws UnknownHostException {
+    	try {
+    		return InetAddress.getByName(address);
+    	}
+    	catch(UnknownHostException e) {
+			Logger.error(this.getClass(), String.format("Unable to resolve inetAddress for: [%s]", address));
+    		throw e;
+    	}
+	}
+
+	@Override
 	public List<PublishingEndPoint> getSendingEndPointsByEnvironment(String environmentId) throws DotDataException {
 		ensureCacheIsLoaded();
 		List<PublishingEndPoint> endPoints = new ArrayList<PublishingEndPoint>();
@@ -153,6 +192,7 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 		return endPoints;
 	}
 
+	@Override
 	public List<PublishingEndPoint> getEnabledReceivingEndPoints() throws DotDataException {
 		ensureCacheIsLoaded();
 		List<PublishingEndPoint> receiverEndPoints = new ArrayList<PublishingEndPoint>();
@@ -180,19 +220,16 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 
 	@Override
 	public PublishingEndPoint getEndPointByName(String name) throws DotDataException {
-
 		DotConnect dc = new DotConnect();
 		dc.setSQL(SELECT_END_POINT_BY_NAME);
 		dc.addParam(name);
 		List<Map<String, Object>> res = dc.loadObjectResults();
 		PublishingEndPoint e = null;
-
 		if(res!=null && !res.isEmpty()) {
 			Map<String, Object> row = res.get(0);
 			e = PublisherUtil.getObjectByMap(row);
 		}
-
 		return e;
-
 	}
+
 }

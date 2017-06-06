@@ -40,7 +40,7 @@ function savechanges() {
 	form = document.getElementById('fm');
 	form.cmd.value = "generatemenu";
 	form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/folders/order_menu" /></portlet:actionURL>';
-	form.action = form.action + serialize();
+	document.getElementById('reorder_result').value = serialize();
 	submitForm(form);
 }
 function moveMenuItemDown(menuItem,parentFolder){
@@ -117,7 +117,7 @@ pagePath=<%=pagePath%>
 		<input type="hidden" name="pagePath" id="pagePath" value="<%=request.getParameter("pagePath")%>">	
 		<input type="hidden" name="startLevel" value="<%=((Integer)request.getAttribute("startLevel")).intValue()%>">
 		<input type="hidden" name="depth" value="<%=((Integer)request.getAttribute("depth")).intValue()%>">
-
+		<input type="hidden" name="reorder_result" id="reorder_result">
 
 <style>
 td li{

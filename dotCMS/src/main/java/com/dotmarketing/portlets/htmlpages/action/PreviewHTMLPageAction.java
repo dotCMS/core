@@ -20,6 +20,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageRequestModeUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageUtil;
@@ -86,17 +87,7 @@ public class PreviewHTMLPageAction extends DotPortletAction {
 			HttpServletRequest hreq = reqImpl.getHttpServletRequest();
 
 			// gets the session object for the messages
-			HttpSession session = hreq.getSession();
-			if(contentLocked && iCanLock){
-				session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, "true");
-				session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-				session.setAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION, "true");
-			}
-			else{
-				session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-				session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true");
-				session.setAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION, "true");
-			}
+			PageRequestModeUtil.setBackEndModeInSession(hreq, contentLocked, iCanLock);
 			
 			IHTMLPage htmlPage = _previewHTMLPages(req, user);
 

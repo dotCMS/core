@@ -9,7 +9,9 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.util.ConfigTestHelper;
 import org.apache.commons.io.IOUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -30,8 +32,9 @@ public class ContentTypeResourceTest extends ContentTypeBaseTest {
 	@Test
 	public void jsonTests() throws Exception {
 
-		URL resource = this.getClass().getResource(base);
-		File directory = new File(resource.toURI());
+		URL resource = ConfigTestHelper.getUrlToTestResource("com/dotcms/contenttype/test/file-asset.json");
+		File pivotResource = new File(resource.toURI());
+		File directory = pivotResource.getParentFile();
 		assertThat("we have a testing directory with json in it", directory != null);
 
 		for (String file : directory.list()) {
@@ -65,10 +68,10 @@ public class ContentTypeResourceTest extends ContentTypeBaseTest {
 
 		ContentTypeResource resource = new ContentTypeResource();
 
-		Response response = resource.saveType(getHttpRequest(), json);
+		Response response = resource.createType(getHttpRequest(), json);
 
 		int x = response.getStatus();
-		assertThat("result:200 with json " + jsonFile, x == 200);
+		assertThat("result:200 with json " + jsonFile + "got :" + x, x == 200);
 	}
 
 	/**

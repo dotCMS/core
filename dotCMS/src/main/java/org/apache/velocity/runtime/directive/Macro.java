@@ -219,7 +219,7 @@ public class Macro extends Directive
 
         if (debugMode)
         {
-            StringBuffer msg = new StringBuffer("Macro.getArgArray() : nbrArgs=");
+            StringBuilder msg = new StringBuilder("Macro.getArgArray() : nbrArgs=");
             msg.append(numArgs).append(" : ");
             macroToString(msg, argArray);
             Logger.debug(Macro.class,msg.toString());
@@ -232,17 +232,17 @@ public class Macro extends Directive
      * For debugging purposes.  Formats the arguments from
      * <code>argArray</code> and appends them to <code>buf</code>.
      *
-     * @param buf A StringBuffer. If null, a new StringBuffer is allocated.
+     * @param buf A StringBuilder. If null, a new StringBuilder is allocated.
      * @param argArray The Macro arguments to format
      *
-     * @return A StringBuffer containing the formatted arguments. If a StringBuffer
+     * @return A StringBuilder containing the formatted arguments. If a StringBuilder
      *         has passed in as buf, this method returns it.
      * @since 1.5
      */
-    public static final StringBuffer macroToString(final StringBuffer buf,
+    public static final StringBuilder macroToString(final StringBuilder buf,
                                                    final String[] argArray)
     {
-        StringBuffer ret = (buf == null) ? new StringBuffer() : buf;
+        StringBuilder ret = (buf == null) ? new StringBuilder() : buf;
 
         ret.append('#').append(argArray[0]).append("( ");
         for (int i = 1; i < argArray.length; i++)

@@ -21,6 +21,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.DotResourceCache;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -73,13 +74,9 @@ public class HostServices {
 
 			if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
 			    String realFolderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
-	            String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
-	            String filePath = realFolderPath + host.getIdentifier() + "." + Config.getStringProperty("VELOCITY_HOST_EXTENSION");
-	            if (velocityRootPath.startsWith("/WEB-INF")) {
-	                velocityRootPath = FileUtil.getRealPath(velocityRootPath);
-	            }
-	            velocityRootPath += java.io.File.separator;
-			    
+
+			    String filePath = realFolderPath + host.getIdentifier() + "." + Config.getStringProperty("VELOCITY_HOST_EXTENSION");
+
 				java.io.BufferedOutputStream tmpOut = new java.io.BufferedOutputStream(new java.io.FileOutputStream(new java.io.File(ConfigUtils.getDynamicVelocityPath()+java.io.File.separator + filePath)));
 				//Specify a proper character encoding
 				OutputStreamWriter out = new OutputStreamWriter(tmpOut, UtilMethods.getCharsetConfiguration());
@@ -112,10 +109,7 @@ public class HostServices {
 
 	public static void removeHostFile (Host host, boolean EDIT_MODE) {
 		String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
-		String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
-		if (velocityRootPath.startsWith("/WEB-INF")) {
-			velocityRootPath = FileUtil.getRealPath(velocityRootPath);
-		}
+		String velocityRootPath = VelocityUtil.getVelocityRootPath();
 		String filePath = folderPath + host.getIdentifier() + "." + Config.getStringProperty("VELOCITY_HOST_EXTENSION");
 		velocityRootPath += java.io.File.separator;
 		java.io.File f  = new java.io.File(velocityRootPath + filePath);

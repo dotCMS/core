@@ -1,11 +1,11 @@
 package com.dotmarketing.portlets.folders.action;
 
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 
@@ -93,7 +93,8 @@ public class OrderMenuAction extends DotPortletAction {
 					doReorderMenu = ((Boolean)l.get(1)).booleanValue();
 				}
 				if(doReorderMenu){
-					navs = _orderMenuItemsDragAndDrop(req,res,config,form);
+
+					navs = _orderMenuItemsDragAndDrop(getOrderedElements(req));
 				}else{
 					Logger.warn(this, "Possible hack attack: User submitting menu post of which they have no permissions to");
 					_sendToReferral(req,res,req.getParameter("referer"));
@@ -136,6 +137,28 @@ public class OrderMenuAction extends DotPortletAction {
 		} catch (ActionException ae) {
 			_handleException(ae,req);
 		}
+	}
+
+	/**
+	 * Splits the parameter reorder_result and creates a map that contains the arranged list of items
+	 * @param req
+	 * @return
+	 */
+	private Map<String, String> getOrderedElements(ActionRequest req){
+
+		String reorderResult;
+		Map<String, String> orderedItems;
+
+		orderedItems  = new HashMap<>();
+		reorderResult = req.getParameter("reorder_result");
+
+		if (reorderResult != null){
+			for(String listItem:reorderResult.split("&")){
+				orderedItems.put(listItem.split("=")[0], listItem.split("=")[1]);
+			}
+		}
+
+		return orderedItems;
 	}
 
 	private Hashtable _getMenuItems(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, int startLevel)
@@ -209,28 +232,23 @@ public class OrderMenuAction extends DotPortletAction {
 	 * changes. Note that XSS validation is performed on the query String, so
 	 * it's important to avoid using dangerous characters for parameter names.
 	 * 
-	 * @param req
-	 *            - The HTTP request.
-	 * @param res
-	 *            - The HTTP response.
-	 * @param config
-	 * @param form
+	 * @param items
+	 *            - List of sorted elements.
 	 * @return
 	 * @throws Exception
 	 *             An error occurred during the save process or the query String
 	 *             parameters may be incorrect.
 	 */
-	private List<Treeable> _orderMenuItemsDragAndDrop(ActionRequest req,
-			ActionResponse res, PortletConfig config, ActionForm form)
+	private List<Treeable> _orderMenuItemsDragAndDrop(Map<String, String> items)
 			throws Exception {
 		List<Treeable> ret = new ArrayList<Treeable>();
 		try {
-			Enumeration<?> parameterNames = req.getParameterNames();
+
 			HashMap<String, HashMap<Integer, String>> hashMap = new HashMap<String, HashMap<Integer, String>>();
-			while (parameterNames.hasMoreElements()) {
-				String parameterName = (String) parameterNames.nextElement();
+			for(String parameterName: items.keySet()) {
+
 				if (parameterName.startsWith("list")) {
-					String value = req.getParameter(parameterName);
+					String value = items.get(parameterName);
 					// Restore square brackets which are NOT allowed in URLs
 					parameterName = parameterName.replaceAll("__", "[");
 					parameterName = parameterName.replaceAll("---", "]");
@@ -507,10 +525,14 @@ public class OrderMenuAction extends DotPortletAction {
 			sb.append("\n");
 			sb.append("function serialize(){\n");
 			sb.append("var values = \"\";\n");
+			String sortCreate = "";
 			for (int i = 0; i < ids.size(); i++) {
 				int internalCounter = (Integer) ids.get(i);
 				String id = "list" + internalCounter;
-				String sortCreate = "values += \"&\" + Sortable.serialize('" + id + "');\n";
+				if (i>0){
+					sortCreate = "values += \"&\";\n";
+				}
+				sortCreate += "values += Sortable.serialize('" + id + "');\n";
 				sb.append(sortCreate);
 			}
 			sb.append("values = values.replace(/\\[/g, '__');\n");

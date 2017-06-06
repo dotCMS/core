@@ -26,13 +26,7 @@ public abstract class TagField extends Field  implements OnePerContentType{
 		return LegacyFieldTypes.getLegacyName(TagField.class);
 	}
 
-	@Value.Check
-	public void check() {
-		super.check();
-		if(iDate().after(legacyFieldDate)){
-			Preconditions.checkArgument(indexed(),"Tag Fields must be indexed");
-		}
-	}
+
 	@Value.Default
 	@Override
 	public boolean indexed() {

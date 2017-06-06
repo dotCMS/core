@@ -225,7 +225,7 @@ public class ResourceManagerImpl
              * pertaining to a particular loader.
              */
             String loaderName = (String) it.next();
-            StringBuffer loaderID = new StringBuffer(loaderName);
+            StringBuilder loaderID = new StringBuilder(loaderName);
             loaderID.append(".").append(RuntimeConstants.RESOURCE_LOADER);
 
             ExtendedProperties loaderConfiguration = 

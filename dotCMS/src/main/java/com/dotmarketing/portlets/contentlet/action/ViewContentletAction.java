@@ -6,6 +6,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
@@ -85,6 +88,7 @@ public class ViewContentletAction extends DotPortletAction {
 		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 		HttpSession ses = httpReq.getSession();
 		ContentletAPI conAPI = APILocator.getContentletAPI();
+		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
 
 		List<String> tempBinaryImageInodes = (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);		
 		if(UtilMethods.isSet(tempBinaryImageInodes) && tempBinaryImageInodes.size() > 0){
@@ -105,14 +109,31 @@ public class ViewContentletAction extends DotPortletAction {
 			}
 			else if (req.getParameter("structure_id") != null)
 			{
-				Structure st = (Structure) InodeFactory.getInode(req.getParameter("structure_id"), Structure.class);
+				Structure st = null;
+
+				//Search for the given ContentType inode
+				ContentType foundContentType = contentTypeAPI.find(req.getParameter("structure_id"));
+				if ( null != foundContentType ) {
+					//Transform the found content type to a Structure
+					st = new StructureTransformer(foundContentType).asStructure();
+				}
+
 				req.setAttribute(WebKeys.Structure.STRUCTURE, st);
 			}
 		}
 		else
 		{
 			if(req.getParameter("structure_id") != null){
-				Structure st = (Structure) InodeFactory.getInode(req.getParameter("structure_id"), Structure.class);
+
+				Structure st = null;
+
+				//Search for the given ContentType inode
+				ContentType foundContentType = contentTypeAPI.find(req.getParameter("structure_id"));
+				if ( null != foundContentType ) {
+					//Transform the found content type to a Structure
+					st = new StructureTransformer(foundContentType).asStructure();
+				}
+
 				if(st.getStructureType()==Structure.STRUCTURE_TYPE_FORM){
 					List<Structure> structures =StructureFactory.getStructuresByUser(user,"structuretype="+st.getStructureType(), "upper(name)", -1, 0, "asc");
 					req.setAttribute(WebKeys.Structure.STRUCTURES, structures);

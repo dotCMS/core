@@ -17,6 +17,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -92,6 +94,11 @@ public class H22Cache extends CacheProvider {
 	public String getKey() {
 		return "H22Cache";
 	}
+
+    @Override
+    public boolean isDistributed() {
+    	return false;
+    }
 
 	@Override
 	public void init() throws Exception {
@@ -300,27 +307,32 @@ public class H22Cache extends CacheProvider {
 		return groups;
 	}
 
-	@Override
-	public CacheProviderStats getStats() {
-		CacheStats providerStats = new CacheStats();
-		CacheProviderStats ret = new CacheProviderStats(providerStats,getName());
-		Set<String> currentGroups = new HashSet<>();
-		currentGroups.addAll(getGroups());
-		for (String group : currentGroups) {
-			H22GroupStats groupStats = stats.group(group);
-			CacheStats stats = new CacheStats();
-			stats.addStat("region", group);
-			stats.addStat("entrySize", groupStats.totalSize + "");
-			try {
-				stats.addStat("disk", _getGroupCount(group));
-			} catch (SQLException e) {
-				Logger.warn(this, "can't get h22 group data for: " + group, e);
-			}
-			ret.addStatRecord(stats);
-		}
-
-		return ret;
-	}
+    @Override
+    public CacheProviderStats getStats() {
+        CacheStats providerStats = new CacheStats();
+        CacheProviderStats ret = new CacheProviderStats(providerStats,getName());
+        Set<String> currentGroups = new HashSet<>();
+        currentGroups.addAll(getGroups());
+        NumberFormat nf = DecimalFormat.getInstance();
+        DecimalFormat pf = new DecimalFormat("##.##%");
+        
+        for (String group : currentGroups) {
+            H22GroupStats groupStats = stats.group(group);
+            long perObject = (groupStats.writes==0) ? 0 : groupStats.totalSize/groupStats.writes;
+            CacheStats stats = new CacheStats();
+            stats.addStat(CacheStats.REGION, group);
+            stats.addStat(CacheStats.REGION_MEM_TOTAL_PRETTY, UtilMethods.prettyByteify(groupStats.totalSize ));
+            stats.addStat(CacheStats.REGION_MEM_PER_OBJECT, UtilMethods.prettyByteify(perObject ));
+            
+            try {
+              stats.addStat(CacheStats.REGION_SIZE,  _getGroupCount(group));
+            } catch (SQLException e) {
+                Logger.warn(this, "can't get h22 group data for: " + group, e);
+            }
+            ret.addStatRecord(stats);
+        }
+        return ret;
+    }
 
 	@Override
 	public void shutdown() {
@@ -481,6 +493,7 @@ public class H22Cache extends CacheProvider {
 			upsertStmt.setBytes(3, data);
 
 			worked = upsertStmt.execute();
+			stats.group(fqn.group).writes++;
 			stats.group(fqn.group).writeSize(bytes * 8);
 			stats.group(fqn.group).writeTime(System.nanoTime() - start);
 		}

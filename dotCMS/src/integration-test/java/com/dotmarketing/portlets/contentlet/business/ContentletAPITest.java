@@ -11,9 +11,11 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -28,6 +30,7 @@ import org.junit.Test;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
@@ -39,6 +42,7 @@ import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
+import com.dotcms.repackage.twitter4j.IDs;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -684,7 +688,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Getting a known binary field for this structure
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
 
-        Field foundBinaryField = FieldFactory.getFieldByVariableName( structure.getInode(), "JUnit Test Binary-" + identifier );
+        Field foundBinaryField = FieldFactory.getFieldByVariableName( structure.getInode(), "junitTestBinary" + identifier );
 
 
         //Getting the current value for this field
@@ -724,7 +728,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Getting a known tag field for this structure
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
-        Field foundTagField = FieldFactory.getFieldByVariableName( structure.getInode(), "JUnit Test Tag-" + identifier );
+        Field foundTagField = FieldFactory.getFieldByVariableName( structure.getInode(), "junitTestTag" + identifier );
 
         //Getting the current value for this field
         List<Tag> value = tagAPI.getTagsByInodeAndFieldVarName(contentlet.getInode(), foundTagField.getVelocityVarName());
@@ -891,7 +895,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Getting a know field for this structure
         //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
-        Field foundWysiwygField = FieldFactory.getFieldByVariableName( structure.getInode(), "JUnit Test Wysiwyg-" + identifier );
+        Field foundWysiwygField = FieldFactory.getFieldByVariableName( structure.getInode(), "junitTestWysiwyg" + identifier );
 
         //Search the contentlets for this structure
         List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
@@ -1159,6 +1163,94 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
 
+    /**
+     * https://github.com/dotCMS/core/issues/11716
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+
+    @Ignore
+    @Test
+    public void addRemoveContentFromIndex () throws DotDataException, DotSecurityException {
+   // respect CMS Anonymous permissions
+      boolean respectFrontendRoles = false;
+      int num = 5;
+      Host host = APILocator.getHostAPI().findDefaultHost(user, respectFrontendRoles);
+      Folder folder = APILocator.getFolderAPI().findSystemFolder();
+
+      Language lang = APILocator.getLanguageAPI().getDefaultLanguage();
+      ContentType type = APILocator.getContentTypeAPI(user).find("webPageContent");
+      List<Contentlet> origCons = new ArrayList<>();
+
+      Map map = new HashMap<>();
+      map.put("stInode", type.id());
+      map.put("host", host.getIdentifier());
+      map.put("folder", folder.getInode());
+      map.put("languageId", lang.getId());
+      map.put("sortOrder", new Long(0));
+      map.put("body", "body");
+
+
+      //add 5 contentlets
+      for(int i = 0;i<num;i++){
+        map.put("title", i+ "my test title");
+
+        // create a new piece of content backed by the map created above
+        Contentlet content = new Contentlet(map);
+
+        // check in the content
+        content= contentletAPI.checkin(content,user, respectFrontendRoles);
+
+        assertTrue( content.getIdentifier()!=null );
+        assertTrue( content.isWorking());
+        assertFalse( content.isLive());
+        // publish the content
+        contentletAPI.publish(content, user, respectFrontendRoles);
+        assertTrue( content.isLive());
+        origCons.add(content);
+      }
+
+
+      //commit it index
+      HibernateUtil.closeSession();
+      for(Contentlet c : origCons){
+        assertTrue(contentletAPI.indexCount("+live:true +identifier:" +c.getIdentifier() + " +inode:" + c.getInode() , user, respectFrontendRoles)>0);
+      }
+
+
+      HibernateUtil.startTransaction();
+      try{
+        List<Contentlet> checkedOut=contentletAPI.checkout(origCons, user, respectFrontendRoles);
+        for(Contentlet c : checkedOut){
+          c.setStringProperty("title", c.getStringProperty("title") + " new");
+          c = contentletAPI.checkin(c,user, respectFrontendRoles);
+          contentletAPI.publish(c, user, respectFrontendRoles);
+          assertTrue( c.isLive());
+        }
+        throw new DotDataException("uh oh, what happened?");
+      }
+      catch(DotDataException e){
+        HibernateUtil.rollbackTransaction();
+
+      }
+      finally{
+        HibernateUtil.closeSession();
+      }
+      for(Contentlet c : origCons){
+        assertTrue(contentletAPI.indexCount("+live:true +identifier:" +c.getIdentifier() + " +inode:" + c.getInode() , user, respectFrontendRoles)>0);
+      }
+
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     /**
      * Testing {@link ContentletAPI#delete(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)}
      *
@@ -1974,7 +2066,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         // https://github.com/dotCMS/dotCMS/issues/2630
         Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ) + "zzzvv", "junit_test_structure_" + String.valueOf( new Date().getTime() ) + "zzzvv" );
         Field field = new Field( "JUnit Test Text", Field.FieldType.TEXT, Field.DataType.TEXT, testStructure, false, true, true, 1, false, false, false );
-        FieldFactory.saveField( field );
+        field = FieldFactory.saveField( field );
 
         List<Contentlet> list=new ArrayList<>();
         String[] letters={"a","b","c","d","e","f","g"};
@@ -2304,4 +2396,52 @@ public class ContentletAPITest extends ContentletBaseTest {
 		TemplateDataGen.remove(template);
 		
     }
+
+    /**
+     * This JUnit is to check the fix on Issue 10797 (https://github.com/dotCMS/core/issues/10797)
+     * It executes the following:
+     * 1) create a new structure
+     * 2) create a new field
+     * 3) create a contentlet
+     * 4) set the contentlet property
+     * 5) check the contentlet
+     * 6) deletes it all in the end
+     *
+     * @throws Exception Any exception that may happen
+     */
+    @Test
+    public void test_validateContentlet_contentWithTabDividerField() throws Exception {
+        Structure testStructure = null;
+        Field tabDividerField = null;
+
+        try {
+            // Create test structure
+            testStructure = createStructure("Tab Divider Test Structure_" + String.valueOf(new Date().getTime()) + "tab_divider", "tab_divider_test_structure_" + String.valueOf(new Date().getTime()) + "tab_divider");
+
+            // Create tab divider field
+            tabDividerField = new Field("JUnit Test TabDividerField", FieldType.TAB_DIVIDER, Field.DataType.SECTION_DIVIDER, testStructure, false, true, true, 1, false, false, false);
+            tabDividerField = FieldFactory.saveField(tabDividerField);
+
+            // Create the test contentlet
+            Contentlet testContentlet = new Contentlet();
+            testContentlet.setStructureInode(testStructure.getInode());
+
+            // Set the contentlet property
+            contentletAPI.setContentletProperty(testContentlet, tabDividerField, "tabDividerFieldValue");
+
+            // Checking the contentlet
+            testContentlet = contentletAPI.checkin(testContentlet, user, false);
+            contentletAPI.isInodeIndexed(testContentlet.getInode());
+        } catch (Exception ex) {
+            Logger.error(this, "An error occurred during test_validateContentlet_contentWithTabDividerField", ex);
+            throw ex;
+        } finally {
+            // Delete field
+            FieldFactory.deleteField(tabDividerField);
+
+            // Delete structure
+            APILocator.getStructureAPI().delete(testStructure, user);
+        }
+    }
+
 }

@@ -83,6 +83,7 @@ import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.snapshots.SnapshotInfo;
 
+import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -516,6 +517,25 @@ public class ESIndexAPI {
     public  void moveIndexBackToCluster(String index) throws IOException {
         Client client=new ESClient().getClient();
         int nreplicas=Config.getIntProperty("es.index.number_of_replicas",0);
+	
+	if (ClusterUtils.isESAutoWireReplicas()){
+		int serverCount;
+
+		try {
+			serverCount = APILocator.getServerAPI().getAliveServersIds().length;
+		} catch (DotDataException e) {
+			Logger.error(this.getClass(), "Error getting live server list for server count, using 1 as default.");
+			serverCount = 1;
+		}
+		// formula is (live server count (including the ones that are down but not yet timed out) - 1)
+
+		if(serverCount>0) {
+			nreplicas = serverCount - 1;
+		}  else {
+			nreplicas = 0;
+		}
+	}
+	   
         UpdateSettingsResponse resp=client.admin().indices().updateSettings(
           new UpdateSettingsRequest(index).settings(
                 jsonBuilder().startObject()
@@ -566,8 +586,7 @@ public class ESIndexAPI {
 		Map map = new ObjectMapper().readValue(settings, LinkedHashMap.class);
 		map.put("number_of_shards", shards);
 
-		if (Config.getBooleanProperty("CLUSTER_AUTOWIRE", true)
-			&& Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS",true)){
+		if (ClusterUtils.isESAutoWireReplicas()){
 			int serverCount;
 
 			try {
@@ -684,8 +703,7 @@ public class ESIndexAPI {
 	 */
     public  synchronized void updateReplicas (String indexName, int replicas) throws DotDataException {
 
-    	if ( Config.getBooleanProperty("CLUSTER_AUTOWIRE", true) &&
-				Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS", true)){
+    	if (ClusterUtils.isESAutoWireReplicas()){
     		AdminLogger.log(this.getClass(),"updateReplicas", "Error on updateReplica. Replicas are configured to be handled by dotCMS.");
     		throw new DotDataException("Error on updateReplica. Replicas are configured to be handled by dotCMS.");
     	}

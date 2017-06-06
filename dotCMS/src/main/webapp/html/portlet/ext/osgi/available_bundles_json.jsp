@@ -3,6 +3,7 @@
 <%@page import="java.util.ArrayList"%>
 <%@page import="java.io.File"%>
 <%@page import="java.util.List"%>
+<%@ page import="com.dotmarketing.util.OSGIUtil" %>
 
 <%!
     /**
@@ -18,12 +19,13 @@
 %>
 
 <%
-    String f = FileUtil.getRealPath( "/WEB-INF/felix/undeployed" );
-    if ( f == null ) {
+    String path = OSGIUtil.getInstance().getFelixUndeployPath();
+
+    if ( path == null ) {
         return;
     }
 
-    File d = new File( f );
+    File d = new File( path );
     String[] a = d.list();
     if ( a == null ) {
         a = new String[0];

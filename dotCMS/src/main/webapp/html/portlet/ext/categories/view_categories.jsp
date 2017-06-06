@@ -812,7 +812,9 @@
 				<div class="portlet-toolbar">
 					<div class="portlet-toolbar__actions-primary">
 						<%@ include file="/html/portlet/ext/common/sub_nav_inc.jsp" %>
-						<!-- Start breadcrumps -->
+
+						<!-- ++++++++++++++++++++++++++++  -->
+						<!-- +++++ Start breadcrumps ++++  -->
 
 						<%
 							if (0 < crumbTrailEntries.size()) {
@@ -872,6 +874,7 @@
 							%>
 							<div class="clear"></div>
 
+===
 						</div>
 
 						<%
@@ -890,8 +893,13 @@
                             }
 						</script>
 
-						<!-- End breadcrumps  -->
+
+						<!-- ++++++ End breadcrumps +++++  -->
+						<!-- ++++++++++++++++++++++++++++  -->
+
+
 					</div>
+
 					<div class="portlet-toolbar__info">
 						<div id="warningDiv" style="color: red;"></div>
 					</div>

@@ -96,9 +96,9 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
             CacheLocator.getContentTypeCache().add(structure);
 
             field = new Field("html", Field.FieldType.WYSIWYG, Field.DataType.LONG_TEXT, structure,
-                    true, true, true, 1, "", "", "", true, false, true);
+                    true, true, true, 1, "", "", "", false, false, true);
             field.setVelocityVarName("html");
-            FieldFactory.saveField(field);
+            field = FieldFactory.saveField(field);
             FieldsCache.addField(field);
 
             container=new Container();
@@ -136,9 +136,9 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
             CacheLocator.getContentTypeCache().add(urlmapstructure);
 
             urlmapfield = new Field("a", Field.FieldType.TEXT, Field.DataType.TEXT, urlmapstructure,
-                    true, true, true, 1, "", "", "", true, false, true);
+                    true, true, true, 1, "", "", "", false, false, true);
             urlmapfield.setVelocityVarName("a");
-            FieldFactory.saveField(urlmapfield);
+            urlmapfield = FieldFactory.saveField(urlmapfield);
             FieldsCache.addField(urlmapfield);
 
         }

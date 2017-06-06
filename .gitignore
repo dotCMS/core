@@ -46,6 +46,7 @@ dotCMS/starter.zip
 /*.local.*
 dotCMS/src/main/webapp/dotAdmin
 dotCMS/bin/*
+dotCMS/classes
 
 # Changes after gradle migration #
 ###############################

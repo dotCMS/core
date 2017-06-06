@@ -1326,7 +1326,7 @@ dd.leftdl {
                            <%= LanguageUtil.get(pageContext,"Refresh-Stats") %>
                         </button>
                         </div>
-                        <div id="cacheStatsCp" dojoType="dijit.layout.ContentPane" style="text-align: center;min-height: 100px;">
+                        <div id="cacheStatsCp" dojoType="dojox.layout.ContentPane" parseOnLoad="true" style="text-align: center;min-height: 100px;">
 
 
                             <div style="padding-bottom:30px;">
@@ -1887,9 +1887,8 @@ dd.leftdl {
 		</div>
 <!--         <ol class="orderMe" id="threadList"></ol> -->
         <ol class="orderMe" id="threadStats"></ol>
-        <div  id="threadList" style="margin-top:10px; width:98%;height:500px;overflow:auto; margin-left:auto; margin-right:auto; border:1px solid #C0C0C0;"></div>
-<!--         <textarea class="tailerBody" style="width:98%; height: 800px;  display: block; margin-left: auto; margin-right: auto;" name="contentIdsList" id="threadList"></textarea> -->
-        <img style="display:none;" id="threadProgress" src="/html/images/icons/round-progress-bar.gif"/>
+        <div  id="threadList" style="margin-top:10px; width:98%;min-height:500px;overflow:visible; ; margin-left:auto; margin-right:auto; border:1px solid #C0C0C0;"></div>
+    	<img style="display:none;" id="threadProgress" src="/html/images/icons/round-progress-bar.gif"/>
     </div>
 
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->

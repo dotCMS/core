@@ -4,7 +4,6 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.UUID;
 
-import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
@@ -13,8 +12,7 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
 
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.LegacyFieldTypes;
+import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -23,26 +21,16 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
-import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.quartz.DotStatefulJob;
 import com.dotmarketing.quartz.QuartzUtils;
-import com.dotmarketing.services.ContentletMapServices;
-import com.dotmarketing.services.ContentletServices;
-import com.dotmarketing.services.StructureServices;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
@@ -69,43 +57,36 @@ import com.liferay.portal.model.User;
  * @since Apr 26, 2016
  *
  */
-public class DeleteFieldJob implements Job {
+public class DeleteFieldJob extends DotStatefulJob {
 
 	public static final String JOB_DATA_MAP_CONTENT_TYPE = "structure";
 	public static final String JOB_DATA_MAP_FIELD = "field";
 	public static final String JOB_DATA_MAP_USER = "user";
 
-    private final PermissionAPI permAPI;
-    private final ContentletAPI conAPI;
+    private final FieldAPI contentTypeFieldAPI;
+    private final com.dotmarketing.portlets.structure.business.FieldAPI fieldAPI;
     private final NotificationAPI notfAPI;
-    private final FieldAPI fieldAPI;
-    private final UserAPI userAPI;
     private final DeleteFieldJobHelper deleteFieldJobHelper;
 
     /**
      * Default class constructor.
      */
     public DeleteFieldJob() {
-        this(APILocator.getPermissionAPI(),
-            APILocator.getContentletAPI(),
-            APILocator.getNotificationAPI(),
+        this(APILocator.getContentTypeFieldAPI(),
             APILocator.getFieldAPI(),
-            APILocator.getUserAPI(),
+            APILocator.getNotificationAPI(),
             DeleteFieldJobHelper.INSTANCE);
     }
 
     @VisibleForTesting
-    public DeleteFieldJob(final PermissionAPI permAPI,
-                          final ContentletAPI conAPI,
+    public DeleteFieldJob(
+                          final FieldAPI contentTypeFieldAPI,
+                          final com.dotmarketing.portlets.structure.business.FieldAPI fieldAPI,
                           final NotificationAPI notfAPI,
-                          final FieldAPI fieldAPI,
-                          final UserAPI userAPI,
                           final DeleteFieldJobHelper deleteFieldJobHelper) {
-        this.permAPI = permAPI;
-        this.conAPI = conAPI;
-        this.notfAPI = notfAPI;
+        this.contentTypeFieldAPI = contentTypeFieldAPI;
         this.fieldAPI = fieldAPI;
-        this.userAPI = userAPI;
+        this.notfAPI = notfAPI;
         this.deleteFieldJobHelper = deleteFieldJobHelper;
     }
 
@@ -178,7 +159,7 @@ public class DeleteFieldJob implements Job {
                         field.getVelocityVarName(), contentType.getInode()));
     }
 
-	/**
+    /**
 	 * Performs the field deletion process based on a set of specific
 	 * parameters. This process involves deleting the Field object and then
 	 * saving the Content Type.
@@ -190,8 +171,9 @@ public class DeleteFieldJob implements Job {
 	 * @throws JobExecutionException
 	 *             An error occurred when deleting the Field.
 	 */
-    public void execute(final JobExecutionContext jobContext) throws JobExecutionException {
-        final JobDataMap map = jobContext.getJobDetail().getJobDataMap();
+	@Override
+	public void run(JobExecutionContext jobContext) throws JobExecutionException {
+		final JobDataMap map = jobContext.getJobDetail().getJobDataMap();
 		Structure contentType = null;
 		if (map.get(JOB_DATA_MAP_CONTENT_TYPE) instanceof Structure) {
 			contentType = Structure.class.cast(map.get(JOB_DATA_MAP_CONTENT_TYPE));
@@ -217,54 +199,16 @@ public class DeleteFieldJob implements Job {
         Preconditions.checkNotNull(user, "User can't be null");
 
         try {
-            if (!this.permAPI.doesUserHavePermission(contentType,
-                    PermissionAPI.PERMISSION_PUBLISH, user, false)) {
-                throw new DotSecurityException("Must be able to publish Content Type to clean all the fields with user: "
-                        + (user != null ? user.getUserId() : "Unknown"));
-            }
-
-            final String type = field.getFieldType();
             final Locale userLocale = user.getLocale();
 
             this.deleteFieldJobHelper.generateNotificationStartDeleting(this.notfAPI, userLocale, user.getUserId(),
                     field.getVelocityVarName(), field.getInode(), contentType.getInode());
 
-            HibernateUtil.startTransaction();
-
-            if (!this.fieldAPI.isElementConstant(field)
-                    && !Field.FieldType.LINE_DIVIDER.toString().equals(type)
-                    && !Field.FieldType.TAB_DIVIDER.toString().equals(type)
-                    && !Field.FieldType.RELATIONSHIPS_TAB.toString().equals(type)
-                    && !Field.FieldType.CATEGORIES_TAB.toString().equals(type)
-                    && !Field.FieldType.PERMISSIONS_TAB.toString().equals(type)
-                    && !Field.FieldType.HOST_OR_FOLDER.toString().equals(type)
-                    && !DataTypes.SYSTEM.toString().equalsIgnoreCase(field.getFieldContentlet())) {
-                this.conAPI.cleanField(contentType, field, this.userAPI.getSystemUser(), false);
-            }
-            FieldFactory.deleteField(field);
-            // Call the commit method to avoid a deadlock
-            HibernateUtil.commitTransaction();
+            contentTypeFieldAPI.delete(new LegacyFieldTransformer(field).from(), user);
 
             ActivityLogger.logInfo(ActivityLogger.class, "Delete Field Action", "User " + user.getUserId() + "/"
                     + user.getFirstName() + " deleted field " + field.getFieldName() + " from " + contentType.getName()
                     + " Content Type.");
-
-            FieldsCache.removeFields(contentType);
-
-            CacheLocator.getContentTypeCache().remove(contentType);
-            StructureServices.removeStructureFile(contentType);
-
-            //Refreshing permissions
-			if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
-                this.conAPI.cleanHostField(contentType, this.userAPI.getSystemUser(), false);
-                this.permAPI.resetChildrenPermissionReferences(contentType);
-            }
-            StructureFactory.saveStructure(contentType);
-            // rebuild contentlets indexes
-            conAPI.reindex(contentType);
-            // remove the file from the cache
-            ContentletServices.removeContentletFile(contentType);
-            ContentletMapServices.removeContentletMapFile(contentType);
 
             this.deleteFieldJobHelper.generateNotificationEndDeleting(this.notfAPI, userLocale, user.getUserId(),
                     field.getVelocityVarName(), field.getInode(), contentType.getInode());
@@ -295,6 +239,6 @@ public class DeleteFieldJob implements Job {
                 DbConnectionFactory.closeConnection();
             }
         }
-    }
+	}
 
 }

@@ -9,9 +9,9 @@ dojo.require("dijit.form.Button");
 dojo.require("dojox.form.Uploader");
 dojo.require("dojox.embed.Flash");
 dojo.require("dojo.io.iframe");
-dojo.subscribe("/dojo/hashchange", this, function(hash){mainAdmin.refresh();});
-
-
+dojo.subscribe("/dojo/hashchange", this, function(hash) {
+	mainAdmin.refresh();
+});
 
 dojo.declare("dotcms.dijit.osgi.MainAdmin", null, {
 
@@ -43,7 +43,6 @@ dojo.declare("dotcms.dijit.osgi.MainAdmin", null, {
         }).placeAt("osgiMain");
 
         myCp.attr("href", this.url);
-        myCp.refresh();
 	},
 
 	refresh : function() {
@@ -62,7 +61,6 @@ dojo.declare("dotcms.dijit.osgi.MainAdmin", null, {
         }).placeAt("osgiMain");
 
         myCp.attr("href", this.url);
-        myCp.refresh();
 	}
 });
 

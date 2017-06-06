@@ -1,7 +1,7 @@
 package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.UnitTestBase;
-import com.dotcms.cms.login.LoginService;
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
@@ -33,7 +33,7 @@ public class LogoutResourceTest extends UnitTestBase {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpSession session  = mock(HttpSession.class);
-        final LoginService loginService     = mock(LoginService.class);
+        final LoginServiceAPI loginService     = mock(LoginServiceAPI.class);
         final WebResource webResource       = null;
         final ServletContext context = mock(ServletContext.class);
 

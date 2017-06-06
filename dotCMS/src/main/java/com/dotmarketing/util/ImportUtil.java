@@ -1,6 +1,3 @@
-/**
- *
- */
 package com.dotmarketing.util;
 
 import java.io.IOException;
@@ -49,7 +46,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
-
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -57,8 +53,20 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
+/**
+ * Provides utility methods to import content into dotCMS. The data source is a
+ * CSV file, which can be previously analyzed and evaluated by this utility
+ * <b>before</b> importing its data as contentlets. Either analyzing or not
+ * analyzing the data in a CSV file before importing it will generate a summary
+ * of the operation, indicating inconsistencies, errors, warnings, or just
+ * useful information for the user.
+ * 
+ * @author root
+ * @version 1.x
+ * @since Mar 22, 2012
+ *
+ */
 public class ImportUtil {
-
 
     private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final static ContentletAPI conAPI = APILocator.getContentletAPI();
@@ -79,11 +87,63 @@ public class ImportUtil {
 
     private static final SimpleDateFormat DATE_FIELD_FORMAT = new SimpleDateFormat("yyyyMMdd");
 
-
-
-
-
-    public static HashMap<String, List<String>> importFile(Long importId, String currentHostId, String structure, String[] keyfields, boolean preview, boolean isMultilingual, User user, long language, String[] csvHeaders, CsvReader csvreader, int languageCodeHeaderColumn, int countryCodeHeaderColumn, Reader reader)
+	/**
+	 * Imports the data contained in a CSV file into dotCMS. The data can be
+	 * either new or an update for existing content. The {@code preview}
+	 * parameter determines the behavior of this method:
+	 * <ul>
+	 * <li>{@code preview == true}: This is the ideal approach. The data
+	 * contained in the CSV file is previously analyzed and evaluated
+	 * <b>BEFORE</b> actually committing any changes to existing contentlets or
+	 * adding new ones. This way, users can perform the appropriate corrections
+	 * (if needed) before submitting the new contents.</li>
+	 * <li>{@code preview == false}: Setting the parameter this way will make
+	 * the system try to import the contents right away. The method will also
+	 * return a summary with the status of the operation.</li>
+	 * </ul>
+	 * 
+	 * @param importId
+	 *            - The ID of this data import.
+	 * @param currentSiteId
+	 *            - The ID of the Site where the content will be added/updated.
+	 * @param contentTypeInode
+	 *            - The Inode of the Content Type that the content is associated
+	 *            to.
+	 * @param keyfields
+	 *            - The Inodes of the fields used to associated existing dotCMS
+	 *            contentlets with the information in this file. Can be empty.
+	 * @param preview
+	 *            - Set to {@code true} if an analysis and evaluation of the
+	 *            imported data will be generated <b>before</b> actually
+	 *            importing the data. Otherwise, set to {@code false}.
+	 * @param isMultilingual
+	 *            - If set to {@code true}, the CSV file will import contents in
+	 *            more than one language. Otherwise, set to {@code false}.
+	 * @param user
+	 *            - The {@link User} performing this action.
+	 * @param language
+	 *            - The language ID for the contents. If the ID equals -1, the
+	 *            columns for language code and country code will be used to
+	 *            infer the language ID.
+	 * @param csvHeaders
+	 *            - The headers for each column in the CSV file.
+	 * @param csvreader
+	 *            - The actual data contained in the CSV file.
+	 * @param languageCodeHeaderColumn
+	 *            - The column name containing the language code.
+	 * @param countryCodeHeaderColumn
+	 *            - The column name containing the country code.
+	 * @param reader
+	 *            - The character streams reader.
+	 * @return The resulting analysis performed on the CSV file. This provides
+	 *         information regarding inconsistencies, errors, warnings and/or
+	 *         precautions to the user.
+	 * @throws DotRuntimeException
+	 *             An error occurred when analyzing the CSV file.
+	 * @throws DotDataException
+	 *             An error occurred when analyzing the CSV file.
+	 */
+    public static HashMap<String, List<String>> importFile(Long importId, String currentSiteId, String contentTypeInode, String[] keyfields, boolean preview, boolean isMultilingual, User user, long language, String[] csvHeaders, CsvReader csvreader, int languageCodeHeaderColumn, int countryCodeHeaderColumn, Reader reader)
             throws DotRuntimeException, DotDataException {
 
         HashMap<String, List<String>> results = new HashMap<String, List<String>>();
@@ -95,8 +155,8 @@ public class ImportUtil {
         results.put("identifiers", new ArrayList<String>());
         results.put("lastInode", new ArrayList<String>());
 
-        Structure st = CacheLocator.getContentTypeCache().getStructureByInode (structure);
-        List<Permission> structurePermissions = permissionAPI.getPermissions(st);
+        Structure contentType = CacheLocator.getContentTypeCache().getStructureByInode (contentTypeInode);
+        List<Permission> contentTypePermissions = permissionAPI.getPermissions(contentType);
         List<UniqueFieldBean> uniqueFieldBeans = new ArrayList<UniqueFieldBean>();
         List<Field> uniqueFields = new ArrayList<Field>();
 
@@ -114,7 +174,7 @@ public class ImportUtil {
         HashMap<Integer, Relationship> relationships = new HashMap<Integer, Relationship>();
 
         //Get unique fields for structure
-        for(Field field : FieldsCache.getFieldsByStructureInode(st.getInode())){
+        for(Field field : FieldsCache.getFieldsByStructureInode(contentType.getInode())){
             if(field.isUnique()){
                 uniqueFields.add(field);
             }
@@ -123,22 +183,21 @@ public class ImportUtil {
         //Parsing the file line per line
         try {
             if ((csvHeaders != null) || (csvreader.readHeaders())) {
-
                 //Importing headers from the first file line
                 HashMap<Integer,Boolean> onlyParent=new HashMap<Integer,Boolean>();
                 HashMap<Integer,Boolean> onlyChild=new HashMap<Integer,Boolean>();
-                if (csvHeaders != null)
-                    importHeaders(csvHeaders, st, keyfields, preview, isMultilingual, user, results, headers, keyFields, uniqueFields,relationships,onlyChild,onlyParent);
-                else
-                    importHeaders(csvreader.getHeaders(), st, keyfields, preview, isMultilingual, user, results, headers, keyFields, uniqueFields,relationships,onlyChild,onlyParent);
+                if (csvHeaders != null) {
+                    importHeaders(csvHeaders, contentType, keyfields, preview, isMultilingual, user, results, headers, keyFields, uniqueFields,relationships,onlyChild,onlyParent);
+                } else {
+                    importHeaders(csvreader.getHeaders(), contentType, keyfields, preview, isMultilingual, user, results, headers, keyFields, uniqueFields,relationships,onlyChild,onlyParent);
+                }
                 lineNumber++;
 
                 //Reading the whole file
                 if (headers.size() > 0) {
-
-                    if (!preview)
+                    if (!preview) {
                         HibernateUtil.startTransaction();
-
+                    }
                     String[] csvLine;
                     while (csvreader.readRecord()) {
                         if(ImportAuditUtil.cancelledImports.containsKey(importId)){
@@ -160,18 +219,15 @@ public class ImportUtil {
                             }
 
                             if ( languageToImport != -1 ) {
-
                                 /*
                                 Verifies if there was already imported a record with the same keys.
                                 Useful to know if we have batch uploads with the same keys, mostly visible for batch content uploads with multiple languages
                                  */
                                 boolean sameKeyBatchInsert = true;
                                 if ( keyFields != null && !keyFields.isEmpty() ) {
-
                                     for ( Integer column : keyFields.keySet() ) {
-
                                         Field keyField = keyFields.get( column );
-                                        if ( !counters.matchKey( keyField.getFieldName(), csvLine[column] ) ) {
+										if (!counters.matchKey(keyField.getVelocityVarName(), csvLine[column])) {
                                             sameKeyBatchInsert = false;
                                             break;
                                         }
@@ -179,19 +235,16 @@ public class ImportUtil {
                                 }
 
                                 //Importing content record...
-                                importLine( csvLine, currentHostId, st, preview, isMultilingual, user, results, lineNumber, languageToImport, headers, keyFields, choosenKeyField,
-                                        counters, keyContentUpdated, structurePermissions, uniqueFieldBeans, uniqueFields, relationships, onlyChild, onlyParent, sameKeyBatchInsert );
+                                importLine( csvLine, currentSiteId, contentType, preview, isMultilingual, user, results, lineNumber, languageToImport, headers, keyFields, choosenKeyField,
+                                        counters, keyContentUpdated, contentTypePermissions, uniqueFieldBeans, uniqueFields, relationships, onlyChild, onlyParent, sameKeyBatchInsert );
 
                                 //Storing the record keys we just imported for a later reference...
                                 if ( keyFields != null && !keyFields.isEmpty() ) {
-
                                     for ( Integer column : keyFields.keySet() ) {
-
                                         Field keyField = keyFields.get( column );
-                                        counters.addKey( keyField.getFieldName(), csvLine[column] );
+										counters.addKey(keyField.getVelocityVarName(), csvLine[column]);
                                     }
                                 }
-
                             } else {
                                 results.get( "errors" ).add( LanguageUtil.get( user, "Line--" ) + lineNumber + LanguageUtil.get( user, "Locale-not-found-for-languageCode" ) + " ='" + csvLine[languageCodeHeaderColumn] + "' countryCode='" + csvLine[countryCodeHeaderColumn] + "'" );
                                 errors++;
@@ -202,9 +255,7 @@ public class ImportUtil {
                                 Thread.sleep( sleepTime );
                                 HibernateUtil.startTransaction();
                             }
-
                         } catch ( DotRuntimeException ex ) {
-
                             String errorMessage = ex.getMessage();
                             if(errorMessage.indexOf("Line #") == -1){
                                 errorMessage = "Line #"+lineNumber+" "+errorMessage;
@@ -225,25 +276,25 @@ public class ImportUtil {
                     }
 
                     results.get("messages").add(lines + " "+LanguageUtil.get(user, "lines-of-data-were-read" ));
-                    if (errors > 0)
+                    if (errors > 0) {
                         results.get("errors").add(errors + " " + LanguageUtil.get(user, "input-lines-had-errors" ));
-
-                    if(preview && choosenKeyField.length() > 1)
+                    }
+                    if(preview && choosenKeyField.length() > 1) {
                         results.get("messages").add( LanguageUtil.get(user, "Fields-selected-as-key")+": "+choosenKeyField.substring(1).toString()+".");
-
-                    if (counters.getNewContentCounter() > 0)
+                    }
+                    if (counters.getNewContentCounter() > 0) {
                         results.get("messages").add(LanguageUtil.get(user, "Attempting-to-create") + " " + (counters.getNewContentCounter()) + " contentlets - " + LanguageUtil.get(user, "check-below-for-errors"));
-
-                    if (counters.getContentToUpdateCounter() > 0)
+                    }
+                    if (counters.getContentToUpdateCounter() > 0) {
                         results.get("messages").add(LanguageUtil.get(user, "Approximately") + " " + (counters.getContentToUpdateCounter()) + " " + LanguageUtil.get(user, "old-content-will-be-updated"));
+                    }
 
+                    results.get("results").add(counters.getContentCreated() + " "+LanguageUtil.get(user, "new")+" "+"\"" + contentType.getName() + "\" "+ LanguageUtil.get(user, "were-created"));
+                    results.get("results").add(counters.getContentUpdatedDuplicated() + " \"" + contentType.getName() + "\" "+ LanguageUtil.get(user, "contentlets-updated-corresponding-to")+" "+ counters.getContentUpdated() +" "+ LanguageUtil.get(user, "repeated-contents-based-on-the-key-provided"));
 
-                    results.get("results").add(counters.getContentCreated() + " "+LanguageUtil.get(user, "new")+" "+"\"" + st.getName() + "\" "+ LanguageUtil.get(user, "were-created"));
-                    results.get("results").add(counters.getContentUpdatedDuplicated() + " \"" + st.getName() + "\" "+ LanguageUtil.get(user, "contentlets-updated-corresponding-to")+" "+ counters.getContentUpdated() +" "+ LanguageUtil.get(user, "repeated-contents-based-on-the-key-provided"));
-
-                    if (errors > 0)
+                    if (errors > 0) {
                         results.get("results").add(errors + " "+ LanguageUtil.get(user, "contentlets-were-ignored-due-to-invalid-information"));
-
+                    }
                 } else {
                     results.get("errors").add(LanguageUtil.get(user, "No-headers-found-on-the-file-nothing-will-be-imported"));
                 }
@@ -252,31 +303,71 @@ public class ImportUtil {
             Logger.error(ImportContentletsAction.class,e.getMessage());
 
         } finally {
-
-            if (reader != null)
+            if (reader != null) {
                 try {
                     reader.close();
                 } catch (IOException e) {
-
+                	// Reader could not be closed. Continue
                 }
+            }
         }
         Logger.info(ImportUtil.class, lines + " lines read correctly. " + errors + " errors found.");
-
         return results;
     }
 
-    private static void importHeaders(String[] headerLine, Structure structure, String[] keyFieldsInodes, boolean preview, boolean isMultilingual, User user, HashMap<String, List<String>> results, HashMap<Integer, Field> headers, HashMap<Integer, Field> keyFields, List<Field> uniqueFields, HashMap<Integer, Relationship> relationships,HashMap<Integer,Boolean> onlyChild, HashMap<Integer,Boolean> onlyParent) throws Exception  {
+	/**
+	 * Reads the CSV file headers in order to find inconsistencies or errors.
+	 * Such situations will be saved in the {@code results} list.
+	 * 
+	 * @param headerLine
+	 *            - The line in the CSV file containing the data headers.
+	 * @param contentType
+	 *            - The Content Type that the data in this file is associated
+	 *            to.
+	 * @param keyFieldsInodes
+	 *            - The Inodes of the fields used to associated existing dotCMS
+	 *            contentlets with the information in this file. Can be empty.
+	 * @param preview
+	 *            - Set to {@code true} if an analysis and evaluation of the
+	 *            imported data will be generated <b>before</b> actually
+	 *            importing the data. Otherwise, set to {@code false}.
+	 * @param isMultilingual
+	 *            - If set to {@code true}, the CSV file will import contents in
+	 *            more than one language. Otherwise, set to {@code false}.
+	 * @param user
+	 *            - The {@link User} performing this action.
+	 * @param results
+	 *            - The status object that keeps track of potential errors,
+	 *            inconsistencies, or warnings.
+	 * @param headers
+	 * @param keyFields
+	 *            - The fields used to associated existing dotCMS contentlets
+	 *            with the information in this file. Can be empty.
+	 * @param uniqueFields
+	 *            - The list of fields that are unique (if any).
+	 * @param relationships
+	 *            - Content relationships (if any).
+	 * @param onlyChild
+	 *            - Contains content relationships that are only child
+	 *            relationships (header name ends with {@code "-RELCHILD"}).
+	 * @param onlyParent
+	 *            - Contains content relationships that are only parent
+	 *            relationships (header name ends with {@code "-RELPARENT"}).
+	 * @throws Exception
+	 *             An error occurred when validating the CSV data.
+	 */
+    private static void importHeaders(String[] headerLine, Structure contentType, String[] keyFieldsInodes, boolean preview, boolean isMultilingual, User user, HashMap<String, List<String>> results, HashMap<Integer, Field> headers, HashMap<Integer, Field> keyFields, List<Field> uniqueFields, HashMap<Integer, Relationship> relationships,HashMap<Integer,Boolean> onlyChild, HashMap<Integer,Boolean> onlyParent) throws Exception  {
 
         int importableFields = 0;
 
         //Importing headers and storing them in a hashmap to be reused later in the whole import process
-        List<Field> fields = FieldsCache.getFieldsByStructureInode(structure.getInode());
-        List<Relationship> structureRelationships = FactoryLocator.getRelationshipFactory().byContentType(structure);
+        List<Field> fields = FieldsCache.getFieldsByStructureInode(contentType.getInode());
+        List<Relationship> contentTypeRelationships = FactoryLocator.getRelationshipFactory().byContentType(contentType);
         List<String> requiredFields = new ArrayList<String>();
         List<String> headerFields = new ArrayList<String>();
         for(Field field:fields){
             if(field.isRequired()){
-                requiredFields.add(field.getFieldName());
+            	requiredFields.add(field.getVelocityVarName());
             }
         }
         for (int i = 0; i < headerLine.length; i++) {
@@ -292,7 +383,7 @@ public class ImportUtil {
             headerFields.add(header);
 
             for (Field field : fields) {
-                if (field.getFieldName().equalsIgnoreCase(header)) {
+            	if (field.getVelocityVarName().equalsIgnoreCase(header)) {
                     if (field.getFieldType().equals(Field.FieldType.BUTTON.toString())){
                         found = true;
 
@@ -332,7 +423,6 @@ public class ImportUtil {
             }
 
             /*
-             * http://jira.dotmarketing.net/browse/DOTCMS-6409
              * We gonna delete -RELPARENT -RELCHILD so we can
              * search for the relation name. No problem as
              * we put relationships.put(i,relationship) instead
@@ -351,7 +441,7 @@ public class ImportUtil {
             }
 
             //Check if the header is a relationship
-            for(Relationship relationship : structureRelationships)
+            for(Relationship relationship : contentTypeRelationships)
             {
                 if(relationship.getRelationTypeValue().equalsIgnoreCase(header))
                 {
@@ -361,8 +451,9 @@ public class ImportUtil {
                     onlyChild.put(i, onlyCh);
 
                     // special case when the relationship has the same structure for parent and child, set only as child
-                    if(relationship.getChildStructureInode().equals(relationship.getParentStructureInode()) && !onlyCh && !onlyP)
+                    if(relationship.getChildStructureInode().equals(relationship.getParentStructureInode()) && !onlyCh && !onlyP) {
                         onlyChild.put(i, true);
+                    }
                 }
             }
 
@@ -396,7 +487,7 @@ public class ImportUtil {
             }
             if (!found) {
                 results.get("errors").add(
-                        LanguageUtil.get(user, "Key-field")+": \"" + FieldFactory.getFieldByInode(keyField).getFieldName()
+                        LanguageUtil.get(user, "Key-field")+": \"" + FieldFactory.getFieldByInode(keyField).getVelocityVarName()
                         + "\" "+LanguageUtil.get(user, "choosen-doesn-t-match-any-of-theh-eaders-found-in-the-file"));
             }
         }
@@ -407,7 +498,7 @@ public class ImportUtil {
 
         if(!uniqueFields.isEmpty()){
             for(Field f : uniqueFields){
-                results.get("warnings").add(LanguageUtil.get(user, "the-structure-field")+ " " + f.getFieldName()+  " " +LanguageUtil.get(user, "is-unique"));
+                results.get("warnings").add(LanguageUtil.get(user, "the-structure-field")+ " " + f.getVelocityVarName() +  " " +LanguageUtil.get(user, "is-unique"));
             }
         }
 
@@ -416,13 +507,14 @@ public class ImportUtil {
             results.get("messages").add(
                     LanguageUtil.get(user,  headers.size() + " "+LanguageUtil.get(user, "headers-match-these-will-be-imported")));
         } else {
-            if (headers.size() > 0)
+            if (headers.size() > 0) {
                 results.get("messages").add(headers.size() + " " + LanguageUtil.get(user, "headers-found-on-the-file-matches-all-the-structure-fields"));
-            else
+            } else {
                 results
                 .get("messages")
                 .add(
                         LanguageUtil.get(user, "No-headers-found-on-the-file-that-match-any-of-the-structure-fields"));
+            }
             results
             .get("warnings")
             .add(LanguageUtil.get(user, "Not-all-the-structure-fields-were-matched-against-the-file-headers-Some-content-fields-could-be-left-empty"));
@@ -434,38 +526,70 @@ public class ImportUtil {
         }
     }
 
-    /**
-     * Imports content extracted from a csv upload file, this method will receive and handle line by line of the import file
-     * @param line
-     * @param structure
-     * @param preview
-     * @param isMultilingual
-     * @param user
-     * @param results
-     * @param lineNumber
-     * @param language
-     * @param headers
-     * @param keyFields
-     * @param choosenKeyField
-     * @param counters
-     * @param keyContentUpdated
-     * @param structurePermissions
-     * @param uniqueFieldBeans
-     * @param uniqueFields
-     * @param relationships
-     * @param onlyChild
-     * @param onlyParent
-     * @param sameKeyBatchInsert Indicates if the keys for this row had been use them in this batch upload, help us to see if there is a batch content upload with multiple records
-     *                           and the same key, mostly used for content with multiple languages.
-     * @throws DotRuntimeException
-     */
-    private static void importLine ( String[] line, String currentHostId, Structure structure, boolean preview, boolean isMultilingual, User user, HashMap<String, List<String>> results, int lineNumber, long language,
+	/**
+	 * Imports content extracted from a CSV upload file. This method will
+	 * receive and handle line by line of the import file.
+	 * 
+	 * @param line
+	 *            - Represents the data line read from the CSV file.
+	 * @param contentType
+	 *            - The Content Type that the data in this file is associated
+	 *            to.
+	 * @param preview
+	 *            - Set to {@code true} if an analysis and evaluation of the
+	 *            imported data will be generated <b>before</b> actually
+	 *            importing the data. Otherwise, set to {@code false}.
+	 * @param isMultilingual
+	 *            - If set to {@code true}, the CSV file will import contents in
+	 *            more than one language. Otherwise, set to {@code false}.
+	 * @param user
+	 *            - The {@link User} performing this action.
+	 * @param results
+	 *            - The status object that keeps track of potential errors,
+	 *            inconsistencies, or warnings.
+	 * @param lineNumber
+	 *            - The line number in the CSV file for this record.
+	 * @param language
+	 *            - The language ID used to create the contentlet.
+	 * @param headers
+	 *            - The {@link Field} objects representing the CSV file headers.
+	 * @param keyFields
+	 *            - The fields used to associated existing dotCMS contentlets
+	 *            with the information in this file. Can be empty.
+	 * @param choosenKeyField
+	 * @param counters
+	 * @param keyContentUpdated
+	 * @param contentTypePermissions
+	 *            - The list of permissions associated to this Content Type.
+	 * @param uniqueFieldBeans
+	 *            - Tracking object used to identify repeated values for unique
+	 *            fields. If repeated fields are found, the line of the CSV file
+	 *            will be ignored.
+	 * @param uniqueFields
+	 *            - The list of fields that are unique (if any).
+	 * @param relationships
+	 *            - Content relationships (if any).
+	 * @param onlyChild
+	 *            - Contains content relationships that are only child
+	 *            relationships (header name ends with {@code "-RELCHILD"}).
+	 * @param onlyParent
+	 *            - Contains content relationships that are only parent
+	 *            relationships (header name ends with {@code "-RELPARENT"}).
+	 * @param sameKeyBatchInsert
+	 *            Indicates if the keys for this row had been use them in this
+	 *            batch upload, help us to see if there is a batch content
+	 *            upload with multiple records and the same key, mostly used for
+	 *            content with multiple languages.
+	 * @throws DotRuntimeException
+	 *             An error was detected when importing a line from the CSV
+	 *             file.
+	 */
+    private static void importLine ( String[] line, String currentHostId, Structure contentType, boolean preview, boolean isMultilingual, User user, HashMap<String, List<String>> results, int lineNumber, long language,
             HashMap<Integer, Field> headers, HashMap<Integer, Field> keyFields, StringBuffer choosenKeyField, Counters counters,
-            HashSet<String> keyContentUpdated, List<Permission> structurePermissions, List<UniqueFieldBean> uniqueFieldBeans, List<Field> uniqueFields, HashMap<Integer, Relationship> relationships, HashMap<Integer, Boolean> onlyChild, HashMap<Integer, Boolean> onlyParent,
+            HashSet<String> keyContentUpdated, List<Permission> contentTypePermissions, List<UniqueFieldBean> uniqueFieldBeans, List<Field> uniqueFields, HashMap<Integer, Relationship> relationships, HashMap<Integer, Boolean> onlyChild, HashMap<Integer, Boolean> onlyParent,
             boolean sameKeyBatchInsert ) throws DotRuntimeException {
 
         try {
-
             //Building a values HashMap based on the headers/columns position
             HashMap<Integer, Object> values = new HashMap<Integer, Object>();
             Set<Category> categories = new HashSet<Category>();
@@ -482,7 +606,7 @@ public class ImportUtil {
                     if (field.getFieldContentlet().startsWith("date")) {
                         if(UtilMethods.isSet(value)) {
                             try { valueObj = parseExcelDate(value) ;} catch (ParseException e) {
-                                throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getFieldName() +
+                                throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getVelocityVarName() +
                                         ", value: " + value + ", couldn't be parsed as any of the following supported formats: " +
                                         printSupportedDateFormats());
                             }
@@ -494,7 +618,7 @@ public class ImportUtil {
                     if (field.getFieldContentlet().startsWith("date")) {
                         if(UtilMethods.isSet(value)) {
                             try { valueObj = parseExcelDate(value) ;} catch (ParseException e) {
-                                throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getFieldName() +
+                                throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getVelocityVarName() +
                                         ", value: " + value + ", couldn't be parsed as any of the following supported formats: " +
                                         printSupportedDateFormats());
                             }
@@ -506,7 +630,7 @@ public class ImportUtil {
                     if (field.getFieldContentlet().startsWith("date")) {
                         if(UtilMethods.isSet(value)) {
                             try { valueObj = parseExcelDate(value) ;} catch (ParseException e) {
-                                throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getFieldName() +
+                                throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getVelocityVarName() +
                                         ", value: " + value + ", couldn't be parsed as any of the following supported formats: " +
                                         printSupportedDateFormats());
                             }
@@ -521,7 +645,7 @@ public class ImportUtil {
                         for(String catKey : categoryKeys) {
                             Category cat = catAPI.findByKey(catKey.trim(), user, false);
                             if(cat == null)
-                                throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getFieldName() +
+                                throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getVelocityVarName() +
                                         ", value: " + value + ", invalid category key found, line will be ignored.");
                             categories.add(cat);
                         }
@@ -535,8 +659,6 @@ public class ImportUtil {
                     valueObj = value;
                     if(UtilMethods.isSet(value))
                     {
-
-
                         String fieldEntriesString = field.getValues()!=null ? field.getValues() : "";
                         String[] fieldEntries = fieldEntriesString.split("\n");
                         boolean found = false;
@@ -553,7 +675,7 @@ public class ImportUtil {
                         }
                         if(!found)
                         {
-                            throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getFieldName() +
+                            throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getVelocityVarName() +
                                     ", value: " + value + ", invalid value found, line will be ignored.");
                         }
                     }
@@ -562,15 +684,13 @@ public class ImportUtil {
                     }
                 }
                 else if (field.getFieldType().equals(Field.FieldType.TEXT.toString())) {
-                    if (value.length() > 255)
+                    if (value.length() > 255) {
                         valueObj = value.substring(0, 255);
-                    //valueObj = UtilMethods.escapeUnicodeCharsForHTML(value);
-                }//http://jira.dotmarketing.net/browse/DOTCMS-3232
-                else if (field.getFieldType().equals(Field.FieldType.TEXT_AREA.toString()) || field.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) {
+                    }
+                } else if (field.getFieldType().equals(Field.FieldType.TEXT_AREA.toString()) || field.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) {
                     valueObj = value;
                 }
                 else if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
-
                     Identifier identifier = null;
                     valueObj = null;
                     try{
@@ -578,7 +698,6 @@ public class ImportUtil {
                     }
                     catch(DotStateException dse){
                         Logger.debug(ImportUtil.class, dse.getMessage());
-
                     }
                     if(identifier != null && InodeUtils.isSet(identifier.getInode())){
                         valueObj = value;
@@ -589,25 +708,22 @@ public class ImportUtil {
 
                         String[] arr = value.split("/");
                         path = new StringWriter().append("/");
-
-
                         for(String y : arr){
                             if(UtilMethods.isSet(y) && hostName == null){
                                 hostName = y;
-
                             }
                             else if(UtilMethods.isSet(y)){
                                 path.append(y);
                                 path.append("/");
-
                             }
                         }
                         Host host = APILocator.getHostAPI().findByName(hostName, user, false);
                         if(UtilMethods.isSet(host)){
                             valueObj=host.getIdentifier();
                             Folder f = APILocator.getFolderAPI().findFolderByPath(path.toString(), host, user, false);
-                            if(UtilMethods.isSet(f))
+                            if(UtilMethods.isSet(f)) {
                                 valueObj=f.getInode();
+                            }
                             headersIncludeHostField = true;
                         }
                     }
@@ -620,9 +736,8 @@ public class ImportUtil {
                     }
 
                     if(valueObj ==null){
-                        throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getFieldName() +
+                        throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getVelocityVarName() +
                                 ", value: " + value + ", invalid host/folder inode found, line will be ignored.");
-
                     }
                 }else if(field.getFieldType().equals(Field.FieldType.IMAGE.toString()) || field.getFieldType().equals(Field.FieldType.FILE.toString())) {
                     String filePath = value;
@@ -639,7 +754,6 @@ public class ImportUtil {
                     else
                     {
                         //check if the path is relative to this host or not
-                        //Host fileHost = hostAPI.findDefaultHost(user,false);
                         Host fileHost = hostAPI.find(currentHostId, user, false);
                         if(filePath.indexOf(":") > -1)
                         {
@@ -694,7 +808,7 @@ public class ImportUtil {
                     relatedContentlets = conAPI.checkoutWithQuery(relatedQuery, user, false);
 
                     //validate if the contenlet retrieved are from the correct typ
-                    if(FactoryLocator.getRelationshipFactory().isParent(relationship,structure))
+                    if(FactoryLocator.getRelationshipFactory().isParent(relationship,contentType))
                     {
                         for(Contentlet contentlet : relatedContentlets)
                         {
@@ -706,7 +820,7 @@ public class ImportUtil {
                             }
                         }
                     }
-                    if(FactoryLocator.getRelationshipFactory().isChild(relationship,structure))
+                    if(FactoryLocator.getRelationshipFactory().isChild(relationship,contentType))
                     {
                         for(Contentlet contentlet : relatedContentlets)
                         {
@@ -722,12 +836,13 @@ public class ImportUtil {
                 if(!error)
                 {
                     //If no error add the relatedContentlets
-                    if(onlyChild.get(column))
+                    if(onlyChild.get(column)) {
                         csvRelationshipRecordsChildOnly.put(relationship, relatedContentlets);
-                    else if(onlyParent.get(column))
+                    } else if(onlyParent.get(column)) {
                         csvRelationshipRecordsParentOnly.put(relationship, relatedContentlets);
-                    else
+                    } else {
                         csvRelationshipRecords.put(relationship, relatedContentlets);
+                    }
                 }
                 else
                 {
@@ -754,7 +869,7 @@ public class ImportUtil {
             }
 
             StringBuffer buffy = new StringBuffer();
-            buffy.append( "+structureName:" + structure.getVelocityVarName() + " +working:true +deleted:false" );
+            buffy.append( "+structureName:" + contentType.getVelocityVarName() + " +working:true +deleted:false" );
 
             if ( UtilMethods.isSet( identifier ) ) {
                 buffy.append( " +identifier:" + identifier );
@@ -775,7 +890,6 @@ public class ImportUtil {
                     }
                 }
             } else if (keyFields.size() > 0) {
-
                 for (Integer column : keyFields.keySet()) {
                     Field field = keyFields.get(column);
                     Object value = values.get(column);
@@ -799,12 +913,13 @@ public class ImportUtil {
                         text = value.toString();
                     }
                     if(!UtilMethods.isSet(text)){
-                        throw new DotRuntimeException("Line #" + lineNumber + " key field "+field.getFieldName()+" is required since it was defined as a key\n");
+                        throw new DotRuntimeException("Line #" + lineNumber + " key field " + field.getVelocityVarName() + " is required since it was defined as a key\n");
                     }else{
-                        if(field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString()))
+                        if(field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
                             buffy.append(" +(conhost:" + text + " conFolder:" + text+")");
-                        else
-                            buffy.append(" +" + structure.getVelocityVarName() + "." + field.getVelocityVarName() + ":" + (escapeLuceneSpecialCharacter(text).contains(" ")?"\""+escapeLuceneSpecialCharacter(text)+"\"":escapeLuceneSpecialCharacter(text)));
+                        } else {
+                            buffy.append(" +" + contentType.getVelocityVarName() + "." + field.getVelocityVarName() + ":" + (escapeLuceneSpecialCharacter(text).contains(" ")?"\""+escapeLuceneSpecialCharacter(text)+"\"":escapeLuceneSpecialCharacter(text)));
+                        }
                         conditionValues += conditionValues + value + "-";
                     }
 
@@ -813,15 +928,15 @@ public class ImportUtil {
                             int count = 1;
                             String[] chosenArr = choosenKeyField.toString().split(",");
                             for(String chosen : chosenArr){
-                                if(UtilMethods.isSet(chosen) && !field.getFieldName().equals(chosen.trim())){
+                                if(UtilMethods.isSet(chosen) && !field.getVelocityVarName().equals(chosen.trim())){
                                     count++;
                                 }
                             }
                             if(chosenArr.length==count){
-                                choosenKeyField.append(", "+field.getFieldName());
+                                choosenKeyField.append(", " + field.getVelocityVarName());
                             }
                         }else{
-                            choosenKeyField.append(", "+field.getFieldName());
+                            choosenKeyField.append(", " + field.getVelocityVarName());
                         }
                     }
 
@@ -888,8 +1003,9 @@ public class ImportUtil {
                                 }
                             }
                         }
-                        if(columnExists)
+                        if(columnExists) {
                             contentlets.add(con);
+                        }
                     }
                 }
 
@@ -904,7 +1020,7 @@ public class ImportUtil {
                     if ( sameKeyBatchInsert && contentlets.isEmpty() ) {
 
                         //Searching for all the contentlets of this structure
-                        List<Contentlet> foundContentlets = conAPI.findByStructure( structure, user, true, 0, -1 );
+                        List<Contentlet> foundContentlets = conAPI.findByStructure( contentType, user, true, 0, -1 );
 
                         for ( Contentlet contentlet : foundContentlets ) {
 
@@ -929,7 +1045,6 @@ public class ImportUtil {
                                 break;
                             }
                         }
-
                     }
                 }
             }
@@ -938,19 +1053,14 @@ public class ImportUtil {
             boolean isNew = false;
             Long existingMultilingualLanguage = null;//For multilingual batch imports we need the language of an existing contentlet if there is any
             if ( contentlets.size() == 0 ) {
-
                 counters.setNewContentCounter( counters.getNewContentCounter() + 1 );
                 isNew = true;
-                //if (!preview) {
                 Contentlet newCont = new Contentlet();
-                newCont.setStructureInode( structure.getInode() );
+                newCont.setStructureInode( contentType.getInode() );
                 newCont.setLanguageId( language );
                 contentlets.add( newCont );
-                //}
             } else {
-
                 if ( isMultilingual || UtilMethods.isSet( identifier ) ) {
-
                     List<Contentlet> multilingualContentlets = new ArrayList<Contentlet>();
 
                     for ( Contentlet contentlet : contentlets ) {
@@ -968,7 +1078,7 @@ public class ImportUtil {
                                 counters.setNewContentCounter( counters.getNewContentCounter() + 1 );
                                 Contentlet newCont = new Contentlet();
                                 newCont.setIdentifier( contentlet.getIdentifier() );
-                                newCont.setStructureInode( structure.getInode() );
+                                newCont.setStructureInode( contentType.getInode() );
                                 newCont.setLanguageId( language );
                                 multilingualContentlets.add( newCont );
 
@@ -982,13 +1092,13 @@ public class ImportUtil {
                 }
 
                 if ( !isNew ) {
-
                     if ( conditionValues.equals( "" ) || !keyContentUpdated.contains( conditionValues ) || isMultilingual ) {
                         counters.setContentToUpdateCounter( counters.getContentToUpdateCounter() + contentlets.size() );
-                        if ( preview )
+                        if ( preview ) {
                             keyContentUpdated.add( conditionValues );
+                        }
                     }
-                    if ( contentlets.size() == 1 ) {//DOTCMS-5204
+                    if ( contentlets.size() == 1 ) {
                         results.get( "warnings" ).add(
                                 LanguageUtil.get( user, "Line--" ) + lineNumber + ". " + LanguageUtil.get( user, "The-key-fields-chosen-match-one-existing-content(s)" ) + " - "
                                         + LanguageUtil.get( user, "more-than-one-match-suggests-key(s)-are-not-properly-unique" ) );
@@ -1019,7 +1129,6 @@ public class ImportUtil {
                         }
 
                         if (folder != null && folder.getInode().equalsIgnoreCase(value.toString())) {
-
                             if (!permissionAPI.doesUserHavePermission(folder,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)) {
                                 throw new DotSecurityException( "User have no Add Children Permissions on selected folder" );
                             }
@@ -1040,7 +1149,6 @@ public class ImportUtil {
                         value = field.getDefaultValue();
                     }
 
-
                     if(field.getFieldContentlet().startsWith("integer") || field.getFieldContentlet().startsWith("float")){
                         if(!UtilMethods.isSet(String.valueOf(value)) && !field.isRequired()){
                             value = "0";
@@ -1055,10 +1163,10 @@ public class ImportUtil {
                     }
                 }
 
-                //DOTCMS-4528 Retaining Categories when content updated with partial imports
+                // Retaining Categories when content updated with partial imports
                 if(UtilMethods.isSet(cont.getIdentifier())){
 
-                    List<Field> structureFields = FieldsCache.getFieldsByStructureInode(structure.getInode());
+                    List<Field> structureFields = FieldsCache.getFieldsByStructureInode(contentType.getInode());
                     List<Field> categoryFields = new ArrayList<Field>();
                     List<Field> nonHeaderCategoryFields = new ArrayList<Field>();
                     List<Category> nonHeaderParentCats = new ArrayList<Category>();
@@ -1115,7 +1223,6 @@ public class ImportUtil {
                             }
                         }
                     }
-
                 }
 
                 //Check if line has repeated values for a unique field, if it does then ignore the line
@@ -1130,7 +1237,7 @@ public class ImportUtil {
                                     counters.setNewContentCounter(counters.getNewContentCounter() - 1);
                                     ignoreLine = true;
                                     results.get("warnings").add(
-                                            LanguageUtil.get(user, "Line--") + " " + lineNumber +  " " +LanguageUtil.get(user, "contains-duplicate-values-for-structure-unique-field") + " " + f.getFieldName() + " "  +LanguageUtil.get(user, "and-will-be-ignored") );
+                                            LanguageUtil.get(user, "Line--") + " " + lineNumber +  " " +LanguageUtil.get(user, "contains-duplicate-values-for-structure-unique-field") + " " + f.getVelocityVarName() + " "  +LanguageUtil.get(user, "and-will-be-ignored") );
                                 }
                                 value = bean.getValue();
                                 count++;
@@ -1140,9 +1247,7 @@ public class ImportUtil {
                     }
                 }
 
-
                 if(!ignoreLine){
-
                     //Check the new contentlet with the validator
                     try
                     {
@@ -1162,7 +1267,7 @@ public class ImportUtil {
                                 if(count>0){
                                     sb.append(", ");
                                 }
-                                sb.append(field.getFieldName());
+                                sb.append(field.getVelocityVarName());
                                 count++;
                             }
                             sb.append("\n");
@@ -1193,7 +1298,7 @@ public class ImportUtil {
                             }
                         }
                         //END Load the old relationShips and add the new ones
-                        cont = conAPI.checkin(cont,contentletRelationships, new ArrayList<Category>(categories), structurePermissions, user, false);
+                        cont = conAPI.checkin(cont,contentletRelationships, new ArrayList<Category>(categories), contentTypePermissions, user, false);
 
                         if(Config.getBooleanProperty("PUBLISH_CSV_IMPORTED_CONTENT_AUTOMATICALLY", false)){
                             APILocator.getContentletAPI().publish(cont, user, false);
@@ -1264,14 +1369,16 @@ public class ImportUtil {
                     }
                 }
             }
-
         } catch (Exception e) {
             Logger.error(ImportUtil.class,e.getMessage(),e);
             throw new DotRuntimeException(e.getMessage());
         }
-
     }
 
+    /**
+     * 
+     * @return
+     */
     private static String printSupportedDateFormats () {
         StringBuffer ret = new StringBuffer("[ ");
         for (String pattern : IMP_DATE_FORMATS) {
@@ -1281,11 +1388,12 @@ public class ImportUtil {
         return ret.toString();
     }
 
-    /**
-     * Escape lucene reserved characters
-     * @param text
-     * @return String
-     */
+	/**
+	 * Escape lucene reserved characters
+	 * 
+	 * @param text
+	 * @return String
+	 */
     private static String escapeLuceneSpecialCharacter(String text){
         text = text.replaceAll("\\[","\\\\[").replaceAll("\\]","\\\\]");
         text = text.replaceAll("\\{","\\\\{").replaceAll("\\}","\\\\}");
@@ -1300,6 +1408,13 @@ public class ImportUtil {
         return text;
     }
 
+    /**
+     * 
+     * @author root
+     * @version 1.x
+     * @since Mar 22, 2012
+     *
+     */
     public static class Counters {
 
         public int newContentCounter = 0;
@@ -1417,6 +1532,11 @@ public class ImportUtil {
 
     }
 
+    /**
+     * 
+     * @param field
+     * @return
+     */
     public static boolean isImportableField ( Field field ) {
         return !(
                 field.getFieldType().equals( Field.FieldType.BUTTON.toString() ) ||
@@ -1426,10 +1546,23 @@ public class ImportUtil {
                 field.getFieldType().equals( Field.FieldType.PERMISSIONS_TAB.toString() ));
     }
 
+    /**
+     * 
+     * @param date
+     * @return
+     * @throws ParseException
+     */
     private static Date parseExcelDate ( String date ) throws ParseException {
         return DateUtil.convertDate( date, IMP_DATE_FORMATS );
     }
 
+    /**
+     * 
+     * @author root
+     * @version 1.x
+     * @since Mar 22, 2012
+     *
+     */
     private static class UniqueFieldBean {
 
         private Field field;
@@ -1438,30 +1571,53 @@ public class ImportUtil {
 
         private Integer lineNumber;
 
+        /**
+         * 
+         * @return
+         */
         public Field getField() {
             return field;
         }
 
+        /**
+         * 
+         * @param field
+         */
         public void setField(Field field) {
             this.field = field;
         }
 
+        /**
+         * 
+         * @return
+         */
         public Object getValue() {
             return value;
         }
 
+        /**
+         * 
+         * @param value
+         */
         public void setValue(Object value) {
             this.value = value;
         }
 
+        /**
+         * 
+         * @return
+         */
         public Integer getLineNumber() {
             return lineNumber;
         }
 
+        /**
+         * 
+         * @param lineNumber
+         */
         public void setLineNumber(Integer lineNumber) {
             this.lineNumber = lineNumber;
         }
-
 
     }
 

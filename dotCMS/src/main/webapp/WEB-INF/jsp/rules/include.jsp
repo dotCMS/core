@@ -69,12 +69,6 @@
 		setTimeout(resizeIframe, 100);
 		setTimeout(resizeIframe, 500);
 		setTimeout(resizeIframe, 5000);
-
-		// deal with style funk
-		dojo.style("subNavCrumbTrail", "margin", "0px -10px 10px -10px");
-		dojo.style("dotAjaxMainHangerDiv", "margin-top", "-9px");
-		
-		
 	});
 	dojo.connect(window, "onresize", this, "resizeIframe");
 	

@@ -18,6 +18,7 @@ import org.quartz.StatefulJob;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -257,6 +258,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 					}
 
 					for (Contentlet contenlet : hits) {
+						stringbuf = null;
 						try {
 							if (usePermalinks) {
 								stringbuf = "<url><loc>"
@@ -305,21 +307,22 @@ public class XMLSitemapJob implements Job, StatefulJob {
 										uri = page.getURI() + "?id=" + contenlet.getInode();
 									}
 								}
-								String urlRelacementText = getUrlPatternReplacementText( host, stVelocityVarName);
+								String urlReplacementText = getUrlPatternReplacementText( host, stVelocityVarName);
 
-								uri = uri.replaceAll(urlRelacementText, "");
+								uri = uri.replaceAll(urlReplacementText, "");
 
 								Logger.debug(this,
 										"Performing URL replacement - urlRelacementText ["
-												+ urlRelacementText
+												+ urlReplacementText
 												+ "], uri [" + uri + "]");
-
-								stringbuf = "<url><loc>"
+								if(StringUtils.isNotEmpty(uri)){
+									stringbuf = "<url><loc>"
 										+ XMLUtils.xmlEscape("http://"
 												+ host.getHostname() + uri)
 										+ "</loc><lastmod>"
 										+ modifiedDateStringValue
 										+ "</lastmod><changefreq>daily</changefreq></url>\n";
+								}
 							} else {
 								stringbuf = "<url><loc>"
 										+ XMLUtils.xmlEscape("http://"
@@ -331,7 +334,10 @@ public class XMLSitemapJob implements Job, StatefulJob {
 										+ modifiedDateStringValue
 										+ "</lastmod><changefreq>daily</changefreq></url>\n";
 							}
-							writeFile(stringbuf);
+
+							if (stringbuf != null) {
+								writeFile(stringbuf);
+							}
 							addRegistryProcessed();
 
 						} catch (Exception e) {

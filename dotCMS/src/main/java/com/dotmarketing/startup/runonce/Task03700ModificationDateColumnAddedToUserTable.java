@@ -35,7 +35,7 @@ public class Task03700ModificationDateColumnAddedToUserTable extends AbstractJDB
 	 */
 	@Override
 	public String getMySQLScript () {
-		return "ALTER TABLE User_ ADD mod_date datetime null;";
+		return "ALTER TABLE user_ ADD mod_date datetime null;";
 	}
 
 	/**

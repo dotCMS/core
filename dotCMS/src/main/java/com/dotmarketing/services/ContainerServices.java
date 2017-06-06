@@ -21,6 +21,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.DotResourceCache;
 import com.liferay.util.FileUtil;
 
@@ -155,7 +156,7 @@ public class ContainerServices {
 
            		sb.append("#set($CONTENT_INODE = '')");
            		sb.append("#if($contentletId != '') ");
-           	    sb.append("#getContentDetail($contentletId) ");
+           	    sb.append("#contentDetail($contentletId) ");
            	    sb.append("#end");
            	    sb.append("#if($CONTENT_INODE != '')");
 
@@ -233,7 +234,7 @@ public class ContainerServices {
                 if(!containsEndTag)
                 {
                 	sb.append("#if($EDIT_MODE && ${contentletId.indexOf(\".structure\")}==-1)");
-                	    sb.append("#getContentDetail($contentletId)");
+                	    sb.append("#contentDetail($contentletId)");
                 		sb.append("$velutil.mergeTemplate('static/preview_mode/content_controls.vtl')");
                 	sb.append("#end ");
                 	sb.append("#if($EDIT_MODE) ");
@@ -285,11 +286,6 @@ public class ContainerServices {
 
         try {
             String folderPath = (!EDIT_MODE) ? "live" + File.separator: "working" + File.separator;
-            String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
-            if (velocityRootPath.startsWith("/WEB-INF")) {
-                velocityRootPath = FileUtil.getRealPath(velocityRootPath);
-            }
-            velocityRootPath += File.separator;
             String filePath = folderPath + identifier.getInode() + "." + Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION");
 
             if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
@@ -332,10 +328,7 @@ public class ContainerServices {
 
     public static void removeContainerFile (Container container, Identifier identifier, boolean EDIT_MODE) {
         String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
-        String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
-        if (velocityRootPath.startsWith("/WEB-INF")) {
-            velocityRootPath = FileUtil.getRealPath(velocityRootPath);
-        }
+        String velocityRootPath = VelocityUtil.getVelocityRootPath();
         velocityRootPath += java.io.File.separator;
         String filePath = folderPath + identifier.getInode() + "." + Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION");
         java.io.File f  = new java.io.File(velocityRootPath + filePath);
