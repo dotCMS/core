@@ -56,7 +56,7 @@ public class TestShortyIdApi {
 
 
 
-            .add(new String[] {"085642aa-a552-4d2e-a163-8424183b039e", "inode", "contentlet"})
+            .add(new String[] {"8ca16830-d1f6-4e1a-9a8c-e061f11d2db0", "inode", "contentlet"})
             .add(new String[] {"cc2cdf9c-a20d-4862-9454-2a76c1132123", "inode", "contentlet"})
             .add(new String[] {"b76bc77a-59a7-45e4-9d8f-01d0f4a1567e", "inode", "template"})
 
