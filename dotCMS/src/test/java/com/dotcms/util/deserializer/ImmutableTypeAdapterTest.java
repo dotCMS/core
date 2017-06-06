@@ -58,6 +58,6 @@ public class ImmutableTypeAdapterTest extends UnitTestBase {
 		assertEquals(Host.SYSTEM_HOST, deserializedContentType.host());
 		assertEquals("ContentTypeDefault", deserializedContentType.name());
 		assertEquals("owner", deserializedContentType.owner());
-		assertEquals("velocityVarNameDefault", deserializedContentType.variable());
+		assertEquals("velocityVarNameDefault1", deserializedContentType.variable());
     }
 }
