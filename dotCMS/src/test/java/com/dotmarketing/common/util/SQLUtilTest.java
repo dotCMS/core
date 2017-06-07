@@ -575,7 +575,7 @@ public class SQLUtilTest  extends UnitTestBase {
     public void testValidSanitizeSQLWithEvilWordsProvided() throws Exception {
 
         final String query = "and if(length(user())>0,sleep(10),2)";
-        final String s = SQLUtil.sanitizeSQL( query, ImmutableSet.of("sleep") );
+        final String s = SQLUtil.sanitizeSQL( query, ImmutableSet.of("sleep"), true );
 
         assertNotNull(s);
         assertEquals(StringPool.BLANK, s);
@@ -585,10 +585,31 @@ public class SQLUtilTest  extends UnitTestBase {
     public void testInvalidSanitizeSQLWithEvilWordsProvided() throws Exception {
 
         final String query = "and if(length(user())>0,sleep(10),2)";
-        final String s = SQLUtil.sanitizeSQL( query, ImmutableSet.of("or") );
+        final String s = SQLUtil.sanitizeSQL( query, ImmutableSet.of("or"), true );
 
         assertNotNull(s);
         assertEquals(query, s);
+    }
+
+    @Test()
+    public void testEscapeSqlwithSingleQuote() throws Exception {
+
+        final String querySingleQuote = "velocity_var_name like 'velocityVarNameTesting'";
+        final String queryDoubleQuote = "velocity_var_name like ''velocityVarNameTesting''";
+        final String s = SQLUtil.sanitizeSQL( querySingleQuote, ImmutableSet.of("or"), true );
+
+        assertNotNull(s);
+        assertEquals(queryDoubleQuote, s);
+    }
+
+    @Test()
+    public void testDontEscapeSqlwithSingleQuote() throws Exception {
+
+        final String querySingleQuote = "velocity_var_name like 'velocityVarNameTesting'";
+        final String s = SQLUtil.sanitizeSQL( querySingleQuote, ImmutableSet.of("or"), false );
+
+        assertNotNull(s);
+        assertEquals(querySingleQuote, s);
     }
 
 }
