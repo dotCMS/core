@@ -40,6 +40,3 @@ dotCMS requires a Java 8 Runtime Environment (JRE) or a Java 7 Development Kit (
 | Twitter       | @dotCMS                         |
 | Main Site | [dotCMS.com](http://dotcms.com/)                  |
 
-## Build Status
-
-
