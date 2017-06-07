@@ -52,33 +52,31 @@ public class HostAjax {
 		}
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest req = ctx.getHttpServletRequest();
-		User user = userWebAPI.getLoggedInUser(req);
+		User user = this.userWebAPI.getLoggedInUser(req);
 
-		HostAPI hostAPI = APILocator.getHostAPI();
-		List<Host> hosts = hostAPI.findAll(user, userWebAPI.isLoggedToFrontend(req));
-		List<Map<String, Object>> hostResults = new ArrayList<>();
-		Collections.sort(hosts, new HostNameComparator());
-
+		List<Host> sites = this.hostAPI.findAll(user, this.userWebAPI.isLoggedToFrontend(req));
+		List<Map<String, Object>> siteResults = new ArrayList<>();
+		Collections.sort(sites, new HostNameComparator());
+		
 		if (allSites && this.userWebAPI.isCMSAdmin(user) && !UtilMethods.isSet(filter)) {
-			Map<String, Object> dataMap = new HashMap<>();
+			final Host systemSite = this.hostAPI.findSystemHost();
+			Map<String, Object> dataMap = systemSite.getMap();
 			dataMap.put("hostname", "All Sites");
-			dataMap.put("identifier", "0");
-			dataMap.put("type", "hosts");
-			hostResults.add(dataMap);
+			siteResults.add(dataMap);
 		}
 
-		for (Host host : hosts) {
-			if (host.isSystemHost() || (!showArchived && host.isArchived())) {
+		for (Host site : sites) {
+			if (site.isSystemHost() || (!showArchived && site.isArchived())) {
 				continue;
 			}
-			if (host.getHostname().toLowerCase().startsWith(filter.toLowerCase())) {
-				hostResults.add(host.getMap());
+			if (site.getHostname().toLowerCase().startsWith(filter.toLowerCase())) {
+				siteResults.add(site.getMap());
 			}
 		}
 
 		Map<String, Object> hostMapToReturn = new HashMap<String, Object>();
-		hostMapToReturn.put("total", hostResults.size());
-		hostMapToReturn.put("list", hostResults);
+		hostMapToReturn.put("total", siteResults.size());
+		hostMapToReturn.put("list", siteResults);
 		return hostMapToReturn;
 	}
 
