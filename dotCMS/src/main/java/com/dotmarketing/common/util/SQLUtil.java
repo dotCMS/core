@@ -231,7 +231,14 @@ public class SQLUtil {
 	 */
 	public static String sanitizeParameter(String parameter){
 
-        return sanitizeSQL( parameter, EVIL_SQL_WORDS, true );
+        if(!UtilMethods.isSet(parameter)) { //check if is not null
+
+            return StringPool.BLANK;
+        }
+
+        parameter = StringEscapeUtils.escapeSql( parameter );
+
+	    return sanitizeSQL( parameter, EVIL_SQL_WORDS );
 	} // sanitizeParameter.
 
     /**
@@ -241,7 +248,12 @@ public class SQLUtil {
      */
     public static String sanitizeCondition(String condition){
 
-        return sanitizeSQL( condition, EVIL_SQL_CONDITION_WORDS, false );
+        if(!UtilMethods.isSet(condition)) { //check if is not null
+
+            return StringPool.BLANK;
+        }
+
+        return sanitizeSQL( condition, EVIL_SQL_CONDITION_WORDS );
     } // sanitizeCondition.
 
     /**
@@ -249,18 +261,9 @@ public class SQLUtil {
      *
      * @param query SQL to filter.
      * @param evilWords words not allowed in the parameter SQL.
-     * @param escapeSql if true turns single-quotes into doubled single-quotes
      * @return String with filtered SQL.
      */
-    public static String sanitizeSQL( String query, final Set<String> evilWords, boolean escapeSql ) {
-        if(!UtilMethods.isSet(query)) { //check if is not null
-
-            return StringPool.BLANK;
-        }
-
-        if ( escapeSql ) {
-            query = StringEscapeUtils.escapeSql( query );
-        }
+    private static String sanitizeSQL( String query, final Set<String> evilWords) {
 
         final String parameterLowercase = query.toLowerCase();
 
