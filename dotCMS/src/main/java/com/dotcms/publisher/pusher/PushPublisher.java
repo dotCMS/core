@@ -190,7 +190,7 @@ public class PushPublisher extends Publisher {
 	        			Bundle b=APILocator.getBundleAPI().getBundleById(this.config.getId());
 	        			form.field("BUNDLE_NAME", b.getName());
 	        			form.field("ENDPOINT_ID", endpoint.getId());
-	        			form.bodyPart(new FileDataBodyPart("bundle", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
+	        			form.bodyPart(new FileDataBodyPart("bundle", bundle, MediaType.APPLICATION_OCTET_STREAM_TYPE));
 
                         WebTarget webTarget = client.target(endpoint.toURL()+"/api/bundlePublisher/publish");
                         Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).post(Entity.entity(form, form.getMediaType()));
