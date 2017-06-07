@@ -1,4 +1,5 @@
 import { ActionHeaderComponent } from '../../../view/components/listing-data-table/action-header/action-header';
+import { ActionButtonComponent } from '../../../view/components/_common/action-button/action-button.component';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
 import { ContentTypesPortletComponent } from './content-types-component';
@@ -7,6 +8,7 @@ import { DOTTestBed } from '../../../test/dot-test-bed';
 import { ListingDataTableComponent } from '../../../view/components/listing-data-table/listing-data-table-component';
 import { MessageService } from '../../../api/services/messages-service';
 import { MockMessageService } from '../../../test/message-service.mock';
+import { RouterTestingModule } from '@angular/router/testing';
 
 describe('ContentTypesPortletComponent', () => {
     let comp: ContentTypesPortletComponent;
@@ -23,9 +25,13 @@ describe('ContentTypesPortletComponent', () => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 ActionHeaderComponent,
+                ActionButtonComponent,
                 ContentTypesPortletComponent,
                 ListingDataTableComponent
             ],
+            imports: [RouterTestingModule.withRoutes([
+                { path: 'test', component: ContentTypesPortletComponent }
+            ])],
             providers: [
                  {provide: MessageService, useValue: messageServiceMock},
                  CrudService

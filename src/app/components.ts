@@ -77,8 +77,6 @@ export const COMPONENTS = [
     ...RULES_ENGINE_COMPONENTS,
     Accordion,
     AccordionGroup,
-    ContentTypesForm,
-    ContentTypesCreateEditPortletComponent,
     CustomTimeComponent,
     DotLoadingIndicator,
     DropdownComponent,
@@ -120,8 +118,6 @@ export const PIPES = [
 import { MessageKeyDirective } from './view/directives/message-keys';
 import { DotRippleEffectDirective } from './view/directives/ripple/ripple-effect';
 import { MaterialDesignTextfield } from './view/directives/md-inputtext/md-inputtext';
-import { ContentTypesCreateEditPortletComponent } from './portlets/content-types/create-edit/main/content-types-create-edit-component';
-import { ContentTypesForm } from './portlets/content-types/create-edit/content-types-form/content-types-form';
 
 export const DIRECTIVES = [
     MessageKeyDirective,

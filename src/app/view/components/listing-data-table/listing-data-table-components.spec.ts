@@ -1,4 +1,5 @@
 import { ActionHeaderComponent } from '../listing-data-table/action-header/action-header';
+import { ActionButtonComponent } from '../_common/action-button/action-button.component';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, async } from '@angular/core/testing';
 import { CrudService } from '../../../api/services/crud-service';
@@ -9,6 +10,7 @@ import { DotcmsConfig } from '../../../api/services/system/dotcms-config';
 import { ListingDataTableComponent } from './listing-data-table-component';
 import { MessageService } from '../../../api/services/messages-service';
 import { MockMessageService } from '../../../test/message-service.mock';
+import { RouterTestingModule } from '@angular/router/testing';
 import { Observable } from 'rxjs/Observable';
 
 describe('Listing Component', () => {
@@ -25,8 +27,10 @@ describe('Listing Component', () => {
     });
 
     DOTTestBed.configureTestingModule({
-        declarations: [ ActionHeaderComponent, ListingDataTableComponent ],
-        imports: [ DataTableModule, SharedModule ],
+        declarations: [ ActionHeaderComponent, ActionButtonComponent, ListingDataTableComponent ],
+        imports: [ DataTableModule, SharedModule, RouterTestingModule.withRoutes([
+            { path: 'test', component: ListingDataTableComponent }
+        ]) ],
         providers: [
             {provide: MessageService, useValue: messageServiceMock},
             CrudService

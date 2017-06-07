@@ -1,7 +1,6 @@
 <action-header [selected]="selectedItems.length > 0" 
                 [selectedItems]="selectedItems" 
-                [actionButtonItems]="buttonActions" 
-                [primaryCommand]="actionHeaderLog">
+                [actionButtonItems]="buttonActions">
 
     <input #gf pInputText type="text" placeholder="{{i18nMessages['global-search']}}" [(ngModel)]="query"/>
 </action-header>

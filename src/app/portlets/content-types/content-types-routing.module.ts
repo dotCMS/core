@@ -16,7 +16,7 @@ const contentTypesRoutes: Routes = [
     {
         canActivate: [RoutingPrivateAuthService],
         component: ContentTypesCreateEditPortletComponent,
-        path: 'create'
+        path: 'create/:id'
     }
 ];
 

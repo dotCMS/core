@@ -2,6 +2,8 @@ import { BaseComponent } from '../../_common/_base/base-component';
 import { Component, Input, SimpleChanges, ViewEncapsulation } from '@angular/core';
 import { ConfirmationService } from 'primeng/primeng';
 import { MessageService } from '../../../../api/services/messages-service';
+import { LoggerService } from '../../../../api/services/logger.service';
+import { Router } from '@angular/router';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -11,16 +13,58 @@ import { MessageService } from '../../../../api/services/messages-service';
 })
 
 export class ActionHeaderComponent extends BaseComponent {
-
-    public dynamicOverflow = 'visible';
-
     @Input() selected = false;
     @Input() selectedItems = [];
     @Input() actionButtonItems: ButtonAction[];
-    @Input() primaryCommand: Function;
 
-    constructor(messageService: MessageService, private confirmationService: ConfirmationService) {
+    public dynamicOverflow = 'visible';
+
+    private contentTypeActions;
+
+    constructor( messageService: MessageService, public loggerService: LoggerService, private confirmationService: ConfirmationService,
+                    private router: Router) {
+
         super(['selected'], messageService);
+
+        this.contentTypeActions = [{
+                command: () => {
+                    this.createContentType('content');
+                },
+                icon: 'fa-newspaper-o',
+                label: 'Content'
+            },
+            {
+                command: () => {
+                    this.createContentType('widget');
+                },
+                icon: 'fa-cog',
+                label: 'Widget'
+            },
+            {
+                command: () => {
+                    this.createContentType('file');
+                },
+                icon: 'fa-file-o',
+                label: 'File'
+            },
+            {
+                command: () => {
+                    this.createContentType('page');
+                },
+                icon: 'fa-file-text-o',
+                label: 'Page'
+            },
+            {
+                command: () => {
+                    this.createContentType('persona');
+                },
+                icon: 'fa-user',
+                label: 'Persona'
+            }];
+    }
+
+    private createContentType(type): void {
+        this.router.navigate(['/content-types-angular/create', type]);
     }
 
     private ngOnChanges(changes: SimpleChanges): any {

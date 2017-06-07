@@ -4,6 +4,7 @@ import { DebugElement } from '@angular/core';
 import { Router } from '@angular/router';
 import { SplitButtonModule, ButtonModule } from 'primeng/primeng';
 import { ActionHeaderComponent } from './action-header';
+import { ActionButtonComponent } from '../../_common/action-button/action-button.component';
 import { MessageService } from '../../../../api/services/messages-service';
 import { ConfirmationService } from 'primeng/components/common/api';
 import { MockMessageService } from '../../../../test/message-service.mock';
@@ -15,7 +16,9 @@ class RouterMock {
 }
 describe('ActionHeaderComponent', () => {
     let comp: ActionHeaderComponent;
+    let compActionButton: ActionButtonComponent;
     let fixture: ComponentFixture<ActionHeaderComponent>;
+    let fixtureActionButton: ComponentFixture<ActionButtonComponent>;
     let de: DebugElement;
     let msjService;
     beforeEach(async(() => {
@@ -25,7 +28,7 @@ describe('ActionHeaderComponent', () => {
         });
 
         DOTTestBed.configureTestingModule({
-            declarations: [ActionHeaderComponent],
+            declarations: [ActionHeaderComponent, ActionButtonComponent],
             imports: [SplitButtonModule, ButtonModule],
             providers: [
                 { provide: Router, useClass: RouterMock },
@@ -35,7 +38,9 @@ describe('ActionHeaderComponent', () => {
         });
 
         fixture = TestBed.createComponent(ActionHeaderComponent);
+        fixtureActionButton = TestBed.createComponent(ActionButtonComponent);
         comp = fixture.componentInstance;
+        compActionButton = fixtureActionButton.componentInstance;
         de = fixture.debugElement.query(By.css('div'));
 
         msjService = fixture.debugElement.injector.get(MessageService);
@@ -74,14 +79,22 @@ describe('ActionHeaderComponent', () => {
         expect(selectedItemsCounter.nativeElement.textContent).toBe(items + ' selected');
     });
 
-    it('should trigger the action button method', () => {
-        let actionButton = de.query(By.css('button'));
-        let btnAction;
-        btnAction = jasmine.createSpy('actionBtnCommand');
-        comp.primaryCommand = btnAction;
-        fixture.detectChanges();
-        actionButton.triggerEventHandler('click', null);
-        expect(btnAction).toHaveBeenCalled();
+    it('should pass configuration to action-button options', () => {
+        let actionButton = de.query(By.css('.action-header__primary-button'));
+        let fakeData = [{
+            command: () => {
+                this.createContentType('content');
+            },
+            icon: 'fa-newspaper-o',
+            label: 'Content'
+        }];
+
+        compActionButton.options = fakeData;
+
+        fixtureActionButton.detectChanges();
+
+        expect(actionButton).not.toBeNull();
+        expect(compActionButton.options.length).not.toBeLessThan(0);
     });
 
     it('should trigger the methods in the action buttons', () => {

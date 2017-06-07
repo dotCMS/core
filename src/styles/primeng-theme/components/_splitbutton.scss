@@ -14,6 +14,12 @@ p-splitbutton {
     .ui-state-disabled {
         background: none;
     }
+
+    .ui-menu {
+        .ui-menuitem-link {
+            color: $black;
+        }
+    }
     
 }
 
