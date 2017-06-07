@@ -555,7 +555,7 @@ public class SQLUtilTest  extends UnitTestBase {
     public void testValidCondition() throws Exception {
 
         final String query = "structuretype = 1";
-        final String s = SQLUtil.sanitizeParameter( query );
+        final String s = SQLUtil.sanitizeCondition( query );
 
         assertNotNull(s);
         assertEquals(query, s);
@@ -565,7 +565,7 @@ public class SQLUtilTest  extends UnitTestBase {
     public void testInvalidCondition() throws Exception {
 
         final String query = "and if(length(user())>0,sleep(10),2)";
-        final String s = SQLUtil.sanitizeParameter( query );
+        final String s = SQLUtil.sanitizeCondition( query );
 
         assertNotNull(s);
         assertEquals(StringPool.BLANK, s);
