@@ -231,7 +231,14 @@ public class SQLUtil {
 	 */
 	public static String sanitizeParameter(String parameter){
 
-        return sanitizeSQL( parameter, EVIL_SQL_WORDS );
+        if(!UtilMethods.isSet(parameter)) { //check if is not null
+
+            return StringPool.BLANK;
+        }
+
+        parameter = StringEscapeUtils.escapeSql( parameter );
+
+	    return sanitizeSQL( parameter, EVIL_SQL_WORDS );
 	} // sanitizeParameter.
 
     /**
@@ -241,25 +248,24 @@ public class SQLUtil {
      */
     public static String sanitizeCondition(String condition){
 
+        if(!UtilMethods.isSet(condition)) { //check if is not null
+
+            return StringPool.BLANK;
+        }
+
         return sanitizeSQL( condition, EVIL_SQL_CONDITION_WORDS );
     } // sanitizeCondition.
 
     /**
      * Util method to filter the parameter SQL with a list of EVIL WORDS not allowed.
      *
-     * @param parameter SQL to filter.
+     * @param query SQL to filter.
      * @param evilWords words not allowed in the parameter SQL.
      * @return String with filtered SQL.
      */
-    public static String sanitizeSQL( String parameter, final Set<String> evilWords ) {
-        if(!UtilMethods.isSet(parameter)) { //check if is not null
+    private static String sanitizeSQL( String query, final Set<String> evilWords) {
 
-            return StringPool.BLANK;
-        }
-
-        parameter = StringEscapeUtils.escapeSql(parameter);
-
-        final String parameterLowercase = parameter.toLowerCase();
+        final String parameterLowercase = query.toLowerCase();
 
         for(String evilWord : evilWords){
 
@@ -276,15 +282,15 @@ public class SQLUtil {
                                     )
                     )) {
 
-                Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + parameter);
-                Logger.error(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter, e);
-                securityLoggerServiceAPI.logInfo(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter);
+                Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + query);
+                Logger.error(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + query, e);
+                securityLoggerServiceAPI.logInfo(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + query);
 
                 return StringPool.BLANK;
             }
         }
 
-        return parameter;
+        return query;
     }
 
     /**
