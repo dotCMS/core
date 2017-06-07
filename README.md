@@ -30,3 +30,10 @@ dotCMS requires a Java 8 Runtime Environment (JRE) or a Java 7 Development Kit (
 | Forums/Listserv        | [via Google Groups](https://groups.google.com/forum/#!forum/dotCMS) |
 | Twitter       | @dotCMS                         |
 | Main Site | [dotCMS.com](http://dotcms.com/)                  |
+
+## Build Status
+
+| Against Postgres | Against MySQL | Against Oracle | Against MSSQL |
+| -------- | ----- | ------ | ----- |
+| [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_master_Postgres)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_master_Postgres) | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_master_MySQL)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_master_MySQL) | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_master_Oracle)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_master_Oracle) | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_master_MSSQL)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_master_MSSQL) |
+
