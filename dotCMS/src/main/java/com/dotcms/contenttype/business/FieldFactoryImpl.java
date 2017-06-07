@@ -94,8 +94,6 @@ public class FieldFactoryImpl implements FieldFactory {
 
   @Override
   public List<FieldVariable> loadVariables(Field field) throws DotDataException {
-    // System.err.println("loading field:" + field.variable() + ":" +
-    // System.identityHashCode(field));
     List<FieldVariable> l = selectFieldVarsInDb(field);
     return l;
   }
@@ -104,8 +102,6 @@ public class FieldFactoryImpl implements FieldFactory {
   public FieldVariable loadVariable(String id) throws DotDataException {
     return selectFieldVarInDb(id);
   }
-
-
 
   @Override
   public FieldVariable save(FieldVariable fieldVar) throws DotDataException {
@@ -140,7 +136,12 @@ public class FieldFactoryImpl implements FieldFactory {
 
   }
 
-
+  /**
+   * 
+   * @param throwAwayField
+   * @return
+   * @throws DotDataException
+   */
   private Field normalizeData(final Field throwAwayField) throws DotDataException {
     FieldBuilder builder = FieldBuilder.builder(throwAwayField);
     Field returnField = throwAwayField;
@@ -185,9 +186,13 @@ public class FieldFactoryImpl implements FieldFactory {
     
     return returnField;
   }
-  
-  
-  
+
+  /**
+   * 
+   * @param throwAwayField
+   * @return
+   * @throws DotDataException
+   */
   private Field dbSaveUpdate(final Field throwAwayField) throws DotDataException {
 
 
@@ -245,10 +250,20 @@ public class FieldFactoryImpl implements FieldFactory {
 
     return retField;
   }
-  
-  private void validateDbColumn(Field field) throws DotDataException {
-    
 
+	/**
+	 * Validates the {@link Field} that will be added to/updated in a
+	 * {@link ContentType} object. Depending on their type, fields need to
+	 * adhere to specific guidelines, such as, not being repeated, having a
+	 * defined DB column name, and so on.
+	 * 
+	 * @param field
+	 *            - The field being added to/updated in a Content Type.
+	 * @throws DotDataException
+	 *             A validation error occurred. Please check your field's
+	 *             values.
+	 */
+  private void validateDbColumn(Field field) throws DotDataException {
     if (field.contentTypeId() == null) {
       throw new DotDataValidationException(
           "Field Type:" + field.type() + " does not have a contenttype.inode set",
@@ -256,7 +271,11 @@ public class FieldFactoryImpl implements FieldFactory {
     }
     
     List<Field> fieldsAlreadyAdded = byContentTypeId(field.contentTypeId());
+    boolean isFieldUpdated = Boolean.FALSE;
     for (Field f : fieldsAlreadyAdded) {
+    	if (field.id().equalsIgnoreCase(f.id())) {
+    		isFieldUpdated = Boolean.TRUE;
+    	}
       if (f instanceof CategoryField) {
         if (f.values() != null) {
           if (f.values().equals(field.values())) {
@@ -278,7 +297,6 @@ public class FieldFactoryImpl implements FieldFactory {
       }
     }
     
-    
     if (!field.acceptedDataTypes().contains(field.dataType())){
       throw new DotDataValidationException("Field Type:" + field.type() + " does not accept datatype "
                 + field.dataType() + ":" + field.variable(), "field.validation.incorrect.datatype");
@@ -287,8 +305,11 @@ public class FieldFactoryImpl implements FieldFactory {
     if(field.dbColumn()==null){
       throw new DotDataValidationException("Unable to save field with a null dbColumn field.field_contentlet:" + field, "message.field.dbcolumn.incorrect");
     }
-    
-    if( !field.dbColumn().matches("(system_field|(text|float|bool|date|text_area|integer)[0-9]+)")){
+	String dbColumnNameRegex = "(system_field|(text|float|bool|date|text_area|integer)[0-9]+)";
+	if (!isFieldUpdated) {
+		dbColumnNameRegex = "(system_field|text|float|bool|date|text_area|integer)";
+	}
+    if( !field.dbColumn().matches(dbColumnNameRegex)){
       throw new DotDataValidationException("Unable to save field with DB Column " + field.dbColumn()+ " - must match (system_field|(text|float|bool|date|text_area|integer)[0-9]+) "  + field.name() + " " + field.variable(), "message.field.dbcolumn.incorrect");
     }
   }
@@ -304,6 +325,13 @@ public class FieldFactoryImpl implements FieldFactory {
 
   }
 
+  /**
+   * 
+   * @param id
+   * @param var
+   * @return
+   * @throws DotDataException
+   */
   private Field selectByContentTypeFieldVarInDb(String id, String var) throws DotDataException {
     DotConnect dc = new DotConnect();
     dc.setSQL(sql.findByContentTypeAndFieldVar).addParam(id).addParam(var);
@@ -319,6 +347,12 @@ public class FieldFactoryImpl implements FieldFactory {
 
   }
 
+  /**
+   * 
+   * @param var
+   * @return
+   * @throws DotDataException
+   */
   private List<Field> selectByContentTypeVarInDb(String var) throws DotDataException {
     DotConnect dc = new DotConnect();
     dc.setSQL(sql.findByContentTypeVar);
@@ -329,6 +363,12 @@ public class FieldFactoryImpl implements FieldFactory {
 
   }
 
+  /**
+   * 
+   * @param id
+   * @return
+   * @throws DotDataException
+   */
   private Field selectInDb(String id) throws DotDataException {
     DotConnect dc = new DotConnect();
     dc.setSQL(sql.findById);
@@ -342,6 +382,12 @@ public class FieldFactoryImpl implements FieldFactory {
     return new DbFieldTransformer(results.get(0)).from();
   }
 
+  /**
+   * 
+   * @param field
+   * @return
+   * @throws DotDataException
+   */
   private boolean deleteFieldInDb(Field field) throws DotDataException {
     deleteFieldVarsInDb(field);
     DotConnect dc = new DotConnect();
@@ -354,6 +400,11 @@ public class FieldFactoryImpl implements FieldFactory {
     return true;
   }
 
+  /**
+   * 
+   * @param field
+   * @throws DotDataException
+   */
   private void updateInodeInDb(Field field) throws DotDataException {
     DotConnect dc = new DotConnect();
     dc.setSQL(sql.updateFieldInode);
@@ -364,6 +415,11 @@ public class FieldFactoryImpl implements FieldFactory {
     dc.loadResult();
   }
 
+  /**
+   * 
+   * @param field
+   * @throws DotDataException
+   */
   private void insertInodeInDb(Field field) throws DotDataException {
     DotConnect dc = new DotConnect();
     dc.setSQL(sql.insertFieldInode);
@@ -373,6 +429,12 @@ public class FieldFactoryImpl implements FieldFactory {
     dc.loadResult();
   }
 
+  /**
+   * 
+   * @param field
+   * @return
+   * @throws DotDataException
+   */
   private List<FieldVariable> selectFieldVarsInDb(Field field) throws DotDataException {
     DotConnect dc = new DotConnect();
     dc.setSQL(sql.selectFieldVars);
@@ -380,6 +442,12 @@ public class FieldFactoryImpl implements FieldFactory {
     return new DbFieldVariableTransformer(dc.loadObjectResults()).asList();
   }
 
+  /**
+   * 
+   * @param id
+   * @return
+   * @throws DotDataException
+   */
   private FieldVariable selectFieldVarInDb(String id) throws DotDataException {
     DotConnect dc = new DotConnect();
     dc.setSQL(sql.selectFieldVar);
@@ -393,6 +461,12 @@ public class FieldFactoryImpl implements FieldFactory {
     return new DbFieldVariableTransformer(results).from();
   }
 
+  /**
+   * 
+   * @param throwAway
+   * @return
+   * @throws DotDataException
+   */
   private FieldVariable upsertFieldVariable(final FieldVariable throwAway) throws DotDataException {
     String key = StringUtils.camelCaseLower(throwAway.key());
     String value = throwAway.value().trim();
@@ -430,6 +504,11 @@ public class FieldFactoryImpl implements FieldFactory {
     return var;
   }
 
+  /**
+   * 
+   * @param var
+   * @throws DotDataException
+   */
   private void deleteFieldVarInDb(FieldVariable var) throws DotDataException {
 
     new DotConnect().setSQL(sql.deleteFieldVar).addParam(var.id()).addParam(var.fieldId()).addParam(var.key())
@@ -439,6 +518,11 @@ public class FieldFactoryImpl implements FieldFactory {
 
   }
 
+  /**
+   * 
+   * @param field
+   * @throws DotDataException
+   */
   private void deleteFieldVarsInDb(Field field) throws DotDataException {
     DotConnect dc = new DotConnect();
     dc.setSQL(sql.deleteFieldVarsForField);
@@ -446,6 +530,11 @@ public class FieldFactoryImpl implements FieldFactory {
     dc.loadResult();
   }
 
+  /**
+   * 
+   * @param field
+   * @throws DotDataException
+   */
   private void updateFieldInDb(Field field) throws DotDataException {
     DotConnect dc = new DotConnect();
     dc.setSQL(sql.updateField);
@@ -473,6 +562,11 @@ public class FieldFactoryImpl implements FieldFactory {
 
   }
 
+  /**
+   * 
+   * @param field
+   * @throws DotDataException
+   */
   private void insertFieldInDb(Field field) throws DotDataException {
     DotConnect dc = new DotConnect();
     dc.setSQL(sql.insertField);
@@ -500,7 +594,6 @@ public class FieldFactoryImpl implements FieldFactory {
     dc.loadResult();
 
   }
-
 
   @Override
   public String nextAvailableColumn(Field field) throws DotDataException {
@@ -554,7 +647,6 @@ public class FieldFactoryImpl implements FieldFactory {
       deleteFieldInDb(field);
     }
   }
-
 
   @Override
   public String suggestVelocityVar(final String tryVar, List<Field> takenFields) throws DotDataException {
