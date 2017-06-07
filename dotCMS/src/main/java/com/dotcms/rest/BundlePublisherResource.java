@@ -56,7 +56,7 @@ public class BundlePublisherResource {
      */
     @POST
     @Path ("/publish")
-    @Consumes (MediaType.MULTIPART_FORM_DATA)
+    @Consumes (MediaType.APPLICATION_OCTET_STREAM)
 	public Response publish(
 			@FormDataParam("bundle") InputStream bundle,
 			@FormDataParam("bundle") FormDataContentDisposition fileDetail,
