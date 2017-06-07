@@ -1,16 +1,13 @@
 <p align="center">
-    <img src="https://dotcms.com/contentAsset/image/9584cd87-8c41-404f-b6e9-b75a3dc06768/fileAsset/byInode/0/filter/Resize/resize_w/350"
-         height="130">
+    <img src="https://dotcms.com/dA/9584cd87-8c41/75h/logo-75h.png">
 </p>
-<p align="center">
+<div style="text-align:center">
 
 | Postgres | MySQL | Oracle | MSSQL |
 | -------- | ----- | ------ | ----- |
 | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_master_Postgres)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_master_Postgres) | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_master_MySQL)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_master_MySQL) | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_master_Oracle)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_master_Oracle) | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_master_MSSQL)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_master_MSSQL) |
 
-
-
-</p>
+</div>
 
 dotCMS is a scalable, java based, open source content management system (CMS) that has been designed to manage and deliver personalized, permission based content experiences across multiple channels.  dotCMS can serve as the plaform for sites, mobile apps, mini-sites, portals, intranets or as a headless CMS (content is consumed via RESTful APIs).  dotCMS is used everywhere, from running small sites to powering multi-node installations for governemnts, Fortune 100 companies, Universities and Global Brands. A dotCMS environment can scale to support hundreds of editors managing thousands of sites with millions of content objects.  
 
