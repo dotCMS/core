@@ -9,7 +9,6 @@ dotCMS is available for download or as a cloud based product.
 - Download dotCMS: https://dotcms.com/download
 - dotCMS Enterprise Cloud: https://dotcms.com/cms-platform/cloud-cms/
 
-### Status
 | Postgres | MySQL | Oracle | MSSQL |
 | -------- | ----- | ------ | ----- |
 | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_master_Postgres)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_master_Postgres) | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_master_MySQL)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_master_MySQL) | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_master_Oracle)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_master_Oracle) | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_master_MSSQL)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_master_MSSQL) |
