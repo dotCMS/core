@@ -33,7 +33,7 @@ public class BrowserAPITest extends IntegrationTestBase {
     }
 
     @Test
-    public void testGetFolderContentWithInvalidIdentifier() throws Exception { // https://github.com/dotCMS/core/issues/11829
+    public void testGetFolderContentWithInvalidIdentifier() { // https://github.com/dotCMS/core/issues/11829
 
         final String NOT_EXISTING_ID = "01234567-1234-1234-1234-123456789012";
 
