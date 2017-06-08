@@ -24,6 +24,7 @@ if [ "$BUILD_PROVISIONED" == "true" ] && [ "$DB_TYPE" == "postgres" ]; then
 	psql -h $DB_HOST -p $DB_PORT -U $DB_USERNAME -c "CREATE DATABASE $DB_NAME";
 fi
 
+
 # Check out branch under working directory
 git clone -b $BRANCH https://github.com/dotCMS/core.git
 if [ -n "$COMMIT" ]; then
@@ -70,7 +71,6 @@ PORT_TOMCAT_HTTP=${PORT_BASE}0
 PORT_TOMCAT_HTTPS=${PORT_BASE}1
 PORT_TOMCAT_SERVER=${PORT_BASE}3
 PORT_ES_TRANSPORT=${PORT_BASE}4
-
 
 # Setup configuration files
 sed -i "s,8080,$PORT_TOMCAT_HTTP,g" build-tests.xml
@@ -128,6 +128,7 @@ context.path.felix=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/felix
 echo "
 felix.base.dir=$PWD/dotserver/tomcat/webapps/ROOT/WEB-INF/felix
 " >> core/dotCMS/src/integration-test/resources/it-dotmarketing-config.properties
+
 
 
 # Create output directory
