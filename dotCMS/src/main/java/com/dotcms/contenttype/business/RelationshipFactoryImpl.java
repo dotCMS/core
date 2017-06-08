@@ -1,13 +1,7 @@
 package com.dotcms.contenttype.business;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.LinkedHashSet;
-import java.util.List;
-
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.contenttype.business.sql.RelationshipSQL;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Tree;
@@ -31,6 +25,11 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.LinkedHashSet;
+import java.util.List;
 
 public class RelationshipFactoryImpl implements RelationshipFactory{
 
@@ -368,21 +367,37 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         Relationship relationship = byInode(inode);
         delete(relationship);
     }
-   @Override
+
+    @Override
     public void delete(Relationship relationship) throws DotHibernateException {
+        delete(relationship, false);
+    }
+
+    private void delete(Relationship relationship, Boolean keepTreeRecords) throws DotHibernateException {
+
         InodeFactory.deleteInode(relationship);
-        
-        TreeFactory.deleteTreesByRelationType(relationship.getRelationTypeValue());
-        
-        
+
+        if ( !keepTreeRecords ) {
+            TreeFactory.deleteTreesByRelationType(relationship.getRelationTypeValue());
+        }
+
         CacheLocator.getRelationshipCache().removeRelationshipByInode(relationship);
         try {
             CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getParentStructure());
             CacheLocator.getRelationshipCache().removeRelationshipsByStruct(relationship.getChildStructure());
         } catch (DotCacheException e) {
-            Logger.error(this.getClass(), e.getMessage(),e);
-            
+            Logger.error(this.getClass(), e.getMessage(), e);
+
         }
+    }
+
+    public void deleteAndRecreate(Relationship outdatedRelationship, Relationship newRelationship) throws DotHibernateException {
+
+        //Deletes the current relationship keeping intact the existing tree records
+        delete(outdatedRelationship, true);
+
+        //Saves the new relationship
+        save(newRelationship, newRelationship.getInode());
     }
 
 
