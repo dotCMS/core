@@ -207,12 +207,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
     return LocalTransaction.wrapReturn(() -> {
       ContentType returnType = dbSaveUpdate(type);
-      cache.remove(returnType);
+      
       if (type instanceof UrlMapable) {
         cache.clearURLMasterPattern();
       }
       validateFields(returnType);
-      
+      updateModDate(returnType);
       
       return find(returnType.id());
     });
@@ -226,6 +226,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     if (!type.equals(oldDefault)) {
       LocalTransaction.wrapReturn(() -> {
         ContentType returnType = dbUpdateDefaultToTrue(type);
+        updateModDate(returnType);
         cache.remove(type);
         cache.remove(oldDefault);
         return returnType;
