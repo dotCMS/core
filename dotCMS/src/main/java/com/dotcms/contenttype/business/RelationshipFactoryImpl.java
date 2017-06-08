@@ -373,6 +373,11 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         delete(relationship, false);
     }
 
+    @Override
+    public void deleteKeepTrees(Relationship relationship) throws DotHibernateException {
+        delete(relationship, true);
+    }
+
     private void delete(Relationship relationship, Boolean keepTreeRecords) throws DotHibernateException {
 
         InodeFactory.deleteInode(relationship);
@@ -389,15 +394,6 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             Logger.error(this.getClass(), e.getMessage(), e);
 
         }
-    }
-
-    public void deleteAndRecreate(Relationship outdatedRelationship, Relationship newRelationship) throws DotHibernateException {
-
-        //Deletes the current relationship keeping intact the existing tree records
-        delete(outdatedRelationship, true);
-
-        //Saves the new relationship
-        save(newRelationship, newRelationship.getInode());
     }
 
 
