@@ -38,6 +38,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.base.Preconditions;
 
 public class FieldFactoryImpl implements FieldFactory {
 
@@ -110,6 +111,15 @@ public class FieldFactoryImpl implements FieldFactory {
   @Override
   public FieldVariable save(FieldVariable fieldVar) throws DotDataException {
     return LocalTransaction.wrapReturn(() -> {
+      
+      if(!UtilMethods.isSet(fieldVar.key())){
+        throw new DotDataException("FieldVariable.key cannot be empty");
+      }
+      
+      if(!UtilMethods.isSet(fieldVar.value())){
+        throw new DotDataException("FieldVariable.value cannot be empty");
+      }
+
       FieldVariable fv =  upsertFieldVariable(fieldVar);
       Field f = byId(fieldVar.fieldId());
       APILocator.getContentTypeAPI(APILocator.systemUser()).updateModDate(f);
