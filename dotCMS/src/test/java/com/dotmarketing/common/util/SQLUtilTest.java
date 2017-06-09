@@ -1,6 +1,7 @@
 package com.dotmarketing.common.util;
 
 import com.dotcms.UnitTestBase;
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotcms.util.SecurityLoggerServiceAPIFactory;
 import com.liferay.util.StringPool;
@@ -550,5 +551,44 @@ public class SQLUtilTest  extends UnitTestBase {
         assertEquals("xxx nor xxx", s);
     }
 
+    @Test()
+    public void testValidCondition() throws Exception {
+
+        final String query = "structuretype = 1";
+        final String s = SQLUtil.sanitizeCondition( query );
+
+        assertNotNull(s);
+        assertEquals(query, s);
+    }
+
+    @Test()
+    public void testInvalidCondition() throws Exception {
+
+        final String query = "and if(length(user())>0,sleep(10),2)";
+        final String s = SQLUtil.sanitizeCondition( query );
+
+        assertNotNull(s);
+        assertEquals(StringPool.BLANK, s);
+    }
+
+    @Test()
+    public void testValidSanitizeSQLWithEvilWordsProvided() throws Exception {
+
+        final String query = "and if(length(user())>0,sleep(10),2)";
+        final String s = SQLUtil.sanitizeSQL( query, ImmutableSet.of("sleep") );
+
+        assertNotNull(s);
+        assertEquals(StringPool.BLANK, s);
+    }
+
+    @Test()
+    public void testInvalidSanitizeSQLWithEvilWordsProvided() throws Exception {
+
+        final String query = "and if(length(user())>0,sleep(10),2)";
+        final String s = SQLUtil.sanitizeSQL( query, ImmutableSet.of("or") );
+
+        assertNotNull(s);
+        assertEquals(query, s);
+    }
 
 }

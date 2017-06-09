@@ -849,7 +849,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		});
 
         Folder ff=(Folder) HibernateUtil.load(Folder.class, folder.getInode());
-		ff.setName(newName);
+		ff.setName(newName.toLowerCase());
 		ff.setTitle(newName);
 		ff.setModDate(new Date());
 
