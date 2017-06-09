@@ -736,6 +736,8 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	}
 
 	public void sortChildren(String inode)  throws DotDataException {
+        inode = SQLUtil.sanitizeParameter( inode );
+
 		Statement s = null;
 		Connection conn = null;
 		ResultSet rs = null;
