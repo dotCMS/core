@@ -31,9 +31,9 @@ dotCMS requires a Java 8 Runtime Environment (JRE) or a Java 7 Development Kit (
 | Twitter       | @dotCMS                         |
 | Main Site | [dotCMS.com](http://dotcms.com/)                  |
 
-## Build Status
-
-| On Postgres | On MySQL | On Oracle | On MSSQL |
+<center>
+| Postgres | MySQL | Oracle | MSSQL |
 | -------- | ----- | ------ | ----- |
 | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_release-4.1_Postgres)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_release-4.1_Postgres) | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_release-4.1_MySQL)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_release-4.1_MySQL) | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_release-4.1_Oracle)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_release-4.1_Oracle) | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_release-4.1_MSSQL)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_release-4.1_MSSQL) |
+</center>
 
