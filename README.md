@@ -1,3 +1,10 @@
+
+| Postgres | MySQL | Oracle | MSSQL |
+| -------- | ----- | ------ | ----- |
+| [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_release-4.1_Postgres)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_release-4.1_Postgres) | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_release-4.1_MySQL)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_release-4.1_MySQL) | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_release-4.1_Oracle)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_release-4.1_Oracle) | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_release-4.1_MSSQL)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_release-4.1_MSSQL) |
+
+
+
 # dotCMS
 
 dotCMS is a scalable, java based, open source content management system (CMS) that has been designed to manage and deliver personalized, permission based content experiences across multiple channels.  dotCMS can serve as the plaform for sites, mobile apps, mini-sites, portals, intranets or as a headless CMS (content is consumed via RESTful APIs).  dotCMS is used everywhere, from running small sites to powering multi-node installations for governemnts, Fortune 100 companies, Universities and Global Brands. A dotCMS environment can scale to support hundreds of editors managing thousands of sites with millions of content objects.  
@@ -31,11 +38,4 @@ dotCMS requires a Java 8 Runtime Environment (JRE) or a Java 7 Development Kit (
 | Twitter       | @dotCMS                         |
 | Main Site | [dotCMS.com](http://dotcms.com/)                  |
 
-<center>
-
-| Postgres | MySQL | Oracle | MSSQL |
-| -------- | ----- | ------ | ----- |
-| [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_release-4.1_Postgres)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_release-4.1_Postgres) | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_release-4.1_MySQL)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_release-4.1_MySQL) | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_release-4.1_Oracle)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_release-4.1_Oracle) | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_release-4.1_MSSQL)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_release-4.1_MSSQL) |
-
-</center>
 
