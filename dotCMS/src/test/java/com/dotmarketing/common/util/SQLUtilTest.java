@@ -572,23 +572,24 @@ public class SQLUtilTest  extends UnitTestBase {
     }
 
     @Test()
-    public void testValidSanitizeSQLWithEvilWordsProvided() throws Exception {
+    public void testEscapeSqlwithSingleQuote() throws Exception {
 
-        final String query = "and if(length(user())>0,sleep(10),2)";
-        final String s = SQLUtil.sanitizeSQL( query, ImmutableSet.of("sleep") );
+        final String querySingleQuote = "velocity_var_name 'velocityVarNameTesting'";
+        final String queryDoubleQuote = "velocity_var_name ''velocityVarNameTesting''";
+        final String s = SQLUtil.sanitizeParameter( querySingleQuote );
 
         assertNotNull(s);
-        assertEquals(StringPool.BLANK, s);
+        assertEquals(queryDoubleQuote, s);
     }
 
     @Test()
-    public void testInvalidSanitizeSQLWithEvilWordsProvided() throws Exception {
+    public void testDontEscapeSqlwithSingleQuote() throws Exception {
 
-        final String query = "and if(length(user())>0,sleep(10),2)";
-        final String s = SQLUtil.sanitizeSQL( query, ImmutableSet.of("or") );
+        final String querySingleQuote = "velocity_var_name like 'velocityVarNameTesting'";
+        final String s = SQLUtil.sanitizeCondition( querySingleQuote );
 
         assertNotNull(s);
-        assertEquals(query, s);
+        assertEquals(querySingleQuote, s);
     }
 
 }

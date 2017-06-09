@@ -49,7 +49,7 @@ public interface FieldVariable extends Serializable, IFieldVar {
 
 	@Value.Check
 	default void check() {
-		Preconditions.checkArgument(StringUtils.isNotEmpty(key()), "FieldVariable.key cannot be empty");
-		Preconditions.checkArgument(StringUtils.isNotEmpty(value()), "FieldVariable.val cannot be empty");
+		//Preconditions.checkArgument(StringUtils.isNotEmpty(key()), "FieldVariable.key cannot be empty");
+		//Preconditions.checkArgument(StringUtils.isNotEmpty(value()), "FieldVariable.val cannot be empty");
 	}	
 }
