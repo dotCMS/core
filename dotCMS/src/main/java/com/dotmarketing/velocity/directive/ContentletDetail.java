@@ -35,9 +35,9 @@ public class ContentletDetail extends DotDirective {
     try {
       cv = APILocator.getVersionableAPI().getContentletVersionInfo(argument, params.language.getId());
       if (cv == null) {
-        long defualtLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        if (defualtLang != params.language.getId()) {
-          cv = APILocator.getVersionableAPI().getContentletVersionInfo(argument, defualtLang);
+        long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        if (defaultLang != params.language.getId()) {
+          cv = APILocator.getVersionableAPI().getContentletVersionInfo(argument, defaultLang);
           String inode = (params.live) ? cv.getLiveInode() : cv.getWorkingInode();
           Contentlet test = APILocator.getContentletAPI().find(inode, params.user, !params.editMode);
           ContentType type = APILocator.getContentTypeAPI(params.user).find(test.getContentTypeId());

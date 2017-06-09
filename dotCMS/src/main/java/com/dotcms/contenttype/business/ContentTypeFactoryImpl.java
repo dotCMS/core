@@ -227,7 +227,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private ContentType dbUpdateDefaultToTrue(ContentType type) throws DotDataException {
 
-    new DotConnect().setSQL(this.contentTypeSql.UPDATE_ALL_DEFUALT).addParam(false).loadResult();
+    new DotConnect().setSQL(this.contentTypeSql.UPDATE_ALL_DEFAULT).addParam(false).loadResult();
     type = ContentTypeBuilder.builder(type).defaultType(true).build();
     return save(type);
 
