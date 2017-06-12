@@ -1,9 +1,11 @@
 package com.dotmarketing.business;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.AfterClass;
@@ -11,11 +13,17 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -39,6 +47,8 @@ import com.liferay.portal.model.User;
 public class PermissionAPIIntegrationTest extends IntegrationTestBase {
 
     private static PermissionAPI perm;
+    private static RoleAPI roleApi;
+    private static ContentTypeAPI contentTypeApi;
     private static Host host;
     private static User sysuser;
     private static Template tt;
@@ -48,7 +58,9 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
 
         IntegrationTestInitService.getInstance().init();
         perm=APILocator.getPermissionAPI();
+        roleApi = APILocator.getRoleAPI();
         sysuser=APILocator.getUserAPI().getSystemUser();
+		contentTypeApi = APILocator.getContentTypeAPI(sysuser);
         host = new Host();
         host.setHostname("testhost.demo.dotcms.com");
         try{
@@ -168,5 +180,74 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
             HibernateUtil.rollbackTransaction();
             Logger.error(PermissionAPIIntegrationTest.class, e.getMessage());
         }
+    }
+
+
+    /**
+     * https://github.com/dotCMS/core/issues/11850
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws DotHibernateException
+     */
+    @Test
+    public void issue11850() throws DotHibernateException, DotSecurityException, DotDataException {
+
+    	// Create test host
+    	Host host = new Host();
+    	host.setHostname("issue11850.demo.dotcms.com");
+    	host=APILocator.getHostAPI().save(host, sysuser, false);
+    	try {
+    		long time = System.currentTimeMillis();
+
+    		// Create test content-type under already-created test host
+    		String name = "ContentTypePermissionsInheritanceTest" + time;
+    		String description = "description" + time;
+    		String variable = "velocityVarNameTesting" + time;
+
+    		ContentType type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.ordinal()))
+    				.description(description).host(host.getIdentifier())
+    				.name(name).owner("owner").variable(variable).build();
+
+    		type = contentTypeApi.save(type, null, null);
+
+    		try {
+    			// Check no permissions exists over test content-type
+    			List<Permission> permissions = perm.getPermissions(type);
+    			assertTrue(permissions.isEmpty());
+
+    			// Assign 5 different permissions over test host (to be inherited to test content-type)
+    			Role role = roleApi.loadCMSAnonymousRole();
+    			int permission = PermissionAPI.PERMISSION_READ |
+    					PermissionAPI.PERMISSION_WRITE |
+    					PermissionAPI.PERMISSION_PUBLISH |
+    					PermissionAPI.PERMISSION_EDIT_PERMISSIONS |
+    					PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+
+    			Permission inheritedPermission = new Permission(
+    				Structure.class.getCanonicalName(), host.getPermissionId(), role.getId(), permission, true
+    			);
+    			perm.save(inheritedPermission, host, sysuser, true);
+
+    			// Check the permissions for content-type are now inherited from test host
+    			permissions = perm.getPermissions(type);
+    			assertFalse(permissions.isEmpty());
+    			assertEquals(5, permissions.size());
+
+    		} finally {
+    			// Remove test content-type
+    			contentTypeApi.delete(type);
+    		}
+    	} finally {
+    		// Remove test host
+    		try{
+    			HibernateUtil.startTransaction();
+    			APILocator.getHostAPI().archive(host, sysuser, false);
+    			APILocator.getHostAPI().delete(host, sysuser, false);
+    			HibernateUtil.commitTransaction();
+    		}catch(Exception e){
+    			HibernateUtil.rollbackTransaction();
+    			Logger.error(PermissionAPIIntegrationTest.class, e.getMessage());
+    		}
+    	}
     }
 }
