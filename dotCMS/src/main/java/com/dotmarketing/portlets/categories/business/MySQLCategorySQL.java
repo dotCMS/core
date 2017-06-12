@@ -19,11 +19,11 @@ class MySQLCategorySQL extends CategorySQL{
 		return "drop table category_reorder";
 	}
 
-	public String getCreateSortChildren(String inode) {
+	public String getCreateSortChildren() {
 		return " create table category_reorder as " +
 				" SELECT inode , @rownum:=@rownum+1 rnum from (SELECT @rownum:=0) r,  (  " +
 				" SELECT category.inode from inode category_1_, category, tree where " +
-				"category.inode = tree.child and tree.parent = '" + inode + "' and category_1_.inode = category.inode " +
+				"category.inode = tree.child and tree.parent = ? and category_1_.inode = category.inode " +
 				" and category_1_.type = 'category'  order by sort_order ) t";
 	}
 
