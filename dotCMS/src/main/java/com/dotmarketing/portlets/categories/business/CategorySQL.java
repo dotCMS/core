@@ -24,7 +24,7 @@ abstract class CategorySQL {
 	}
 	
 	public abstract String getCreateSortTopLevel();
-	public abstract String getCreateSortChildren(String inode);
+	public abstract String getCreateSortChildren();
 	public abstract String getUpdateSort();
 	public abstract String getDropSort();
 	
@@ -34,9 +34,9 @@ abstract class CategorySQL {
 				" inode category_1_ where tree.child is null and category_1_.inode = category.inode and category_1_.type = 'category' ";
 	}
 	
-	public String getSortedChildren(String inode) {
+	public String getSortedChildren() {
 		return "SELECT category.inode from inode category_1_, category, tree where " +
-				"category.inode = tree.child and tree.parent = '" + inode + "' and category_1_.inode = category.inode " +
+				"category.inode = tree.child and tree.parent = ? and category_1_.inode = category.inode " +
 				" and category_1_.type = 'category'";
 	}
  }
