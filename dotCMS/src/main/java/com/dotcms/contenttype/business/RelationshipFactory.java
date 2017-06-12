@@ -1,12 +1,12 @@
 package com.dotcms.contenttype.business;
 
-import java.util.List;
-
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Relationship;
+
+import java.util.List;
 
 public interface RelationshipFactory {
 
@@ -48,7 +48,23 @@ public interface RelationshipFactory {
 
   boolean isParent(Relationship rel, ContentTypeIf st);
 
+  /**
+   * Deletes the given {@link Relationship} and the {@link Tree} records related to the relationship
+   *
+   * @param relationship Relationship to delete
+   * @throws DotDataException
+   */
   void delete(Relationship relationship) throws DotDataException;
+
+  /**
+   * Deletes the given {@link Relationship}
+   * <br>
+   * <strong>Note: This process does NOT delete the related {@link Tree} records</strong>
+   *
+   * @param relationship Relationship to delete
+   * @throws DotDataException
+   */
+  void deleteKeepTrees(Relationship relationship) throws DotDataException;
 
   void addRelationship(String parent, String child, String relationType) throws DotDataException;
 
