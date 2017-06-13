@@ -177,7 +177,7 @@ public class FieldFactoryImpl implements FieldFactory {
       validateDbColumn(returnField);
     }
     catch(Throwable e){
-      Logger.warn(this.getClass(), "field db column being updated:" + e.getMessage() );
+      Logger.debug(this.getClass(), "Field db column being updated: " + e.getMessage());
       builder.dbColumn(nextAvailableColumn(returnField));
       returnField = builder.build();
     }
