@@ -27,9 +27,11 @@ export class MockMessageService {
     }
 
     public getMessages(keys: string[]): Observable<any> {
-        let resp = {};
-        keys.forEach(key => resp[key] = this.messages[key]);
-        return Observable.of(resp);
+        return Observable.of(this.messages);
+    }
+
+    get messageMap$(): Observable<any> {
+        return Observable.of(this.messages);
     }
 }
 

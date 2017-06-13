@@ -15,6 +15,6 @@ import { MenuItem } from 'primeng/primeng';
 })
 
 export class ActionButtonComponent {
-    @Input() options: MenuItem[];
-    @Input() primaryAction: Function;
+    @Input() model?: MenuItem[];
+    @Input() command?: ($event) => void;
 }

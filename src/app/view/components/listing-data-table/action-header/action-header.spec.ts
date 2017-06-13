@@ -1,166 +1,120 @@
-import { ComponentFixture, TestBed, async } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { DebugElement } from '@angular/core';
-import { Router } from '@angular/router';
-import { SplitButtonModule, ButtonModule } from 'primeng/primeng';
+import { ActionButtonModule } from '../../_common/action-button/action-button.module';
 import { ActionHeaderComponent } from './action-header';
-import { ActionButtonComponent } from '../../_common/action-button/action-button.component';
-import { MessageService } from '../../../../api/services/messages-service';
+import { By } from '@angular/platform-browser';
+import { ComponentFixture, TestBed, async } from '@angular/core/testing';
 import { ConfirmationService } from 'primeng/components/common/api';
-import { MockMessageService } from '../../../../test/message-service.mock';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
-class RouterMock {
-    navigate(): string {
-        return null;
-    }
-}
+import { DebugElement } from '@angular/core';
+import { MessageService } from '../../../../api/services/messages-service';
+import { MockMessageService } from '../../../../test/message-service.mock';
+import { RouterTestingModule } from '@angular/router/testing';
+import { SplitButtonModule } from 'primeng/primeng';
+
 describe('ActionHeaderComponent', () => {
     let comp: ActionHeaderComponent;
-    let compActionButton: ActionButtonComponent;
     let fixture: ComponentFixture<ActionHeaderComponent>;
-    let fixtureActionButton: ComponentFixture<ActionButtonComponent>;
     let de: DebugElement;
-    let msjService;
-    beforeEach(async(() => {
 
+    beforeEach(async(() => {
         let messageServiceMock = new MockMessageService({
             'selected': 'selected'
         });
 
         DOTTestBed.configureTestingModule({
-            declarations: [ActionHeaderComponent, ActionButtonComponent],
-            imports: [SplitButtonModule, ButtonModule],
+            declarations: [
+                ActionHeaderComponent
+            ],
+            imports: [
+                ActionButtonModule,
+                RouterTestingModule.withRoutes([{
+                    component: ActionHeaderComponent,
+                    path: 'test'
+                }])
+            ],
             providers: [
-                { provide: Router, useClass: RouterMock },
                 { provide: MessageService, useValue: messageServiceMock },
                 ConfirmationService
             ]
         });
 
-        fixture = TestBed.createComponent(ActionHeaderComponent);
-        fixtureActionButton = TestBed.createComponent(ActionButtonComponent);
+        fixture = DOTTestBed.createComponent(ActionHeaderComponent);
         comp = fixture.componentInstance;
-        compActionButton = fixtureActionButton.componentInstance;
-        de = fixture.debugElement.query(By.css('div'));
-
-        msjService = fixture.debugElement.injector.get(MessageService);
+        de = fixture.debugElement.query(By.css('.action-header'));
     }));
 
     it('should render default state correctly', () => {
-        let actionButton = de.query(By.css('button'));
-        let groupActions = de.query(By.css('.action-header__group-actions'));
-        expect(actionButton).not.toBeNull();
+        let actionButton: DebugElement = de.query(By.css('.action-header__primary-button'));
+        let groupActions: DebugElement = de.query(By.css('.action-header__secondary-button'));
+        expect(actionButton).toBeNull();
         expect(groupActions).toBeNull();
     });
 
     it('should show the number of items selected', () => {
-        let fakeButtons = [
-            {
-                label: 'Group Actions 1',
+        comp.selectedItems = [{key: 'value'}, {key: 'value'}];
+        fixture.detectChanges();
+        let selectedItemsCounter: DebugElement = de.query(By.css('.action-header__selected-items-counter'));
+        expect(de.nativeElement.className).toContain('selected');
+        expect(selectedItemsCounter.nativeElement.textContent).toBe('2 selected');
+    });
+
+    it('should show action-button', () => {
+        let options = {
+            primary: {
+                command: () => {},
                 model: [
                     {
-                        command: jasmine.createSpy('spy'),
-                        icon: 'fa-refresh',
-                        label: 'Action 1-1'
+                        command: () => {},
+                        icon: 'Test',
+                        label: 'Test'
                     }
                 ]
             }
-        ];
-        comp.actionButtonItems = fakeButtons;
-
-        let fakeData = [{key: 'value'}, {key: 'value'}];
-        let items = 2;
-
-        comp.selectedItems = fakeData;
-        comp.selected = true;
+        };
+        comp.options = options;
         fixture.detectChanges();
-
-        let selectedItemsCounter = de.query(By.css('.action-header__selected-items-counter'));
-        expect(selectedItemsCounter.nativeElement.textContent).toBe(items + ' selected');
-    });
-
-    it('should pass configuration to action-button options', () => {
         let actionButton = de.query(By.css('.action-header__primary-button'));
-        let fakeData = [{
-            command: () => {
-                this.createContentType('content');
-            },
-            icon: 'fa-newspaper-o',
-            label: 'Content'
-        }];
-
-        compActionButton.options = fakeData;
-
-        fixtureActionButton.detectChanges();
-
         expect(actionButton).not.toBeNull();
-        expect(compActionButton.options.length).not.toBeLessThan(0);
     });
 
     it('should trigger the methods in the action buttons', () => {
         let primarySpy = jasmine.createSpy('spy');
-        let secondSpy = jasmine.createSpy('spy2');
-        let fakeData = [
-            {
-                label: 'Group Actions 1',
-                model: [
-                    {
-                        command: primarySpy,
-                        icon: 'fa-refresh',
-                        label: 'Action 1-1'
-                    }
-                ]
-            },
-            {
-                label: 'Group Actions 2',
-                model: [
-                    {
-                        command: secondSpy,
-                        icon: 'fa-refresh',
-                        label: 'Action 2-1'
-                    }
-                ]
-            }
-        ];
-        comp.actionButtonItems = fakeData;
-        comp.selected = true;
+        let secondarySpy = jasmine.createSpy('spy2');
+        let options = {
+            secondary: [
+                {
+                    label: 'Group Actions 1',
+                    model: [
+                        {
+                            command: primarySpy,
+                            icon: 'fa-refresh',
+                            label: 'Action 1-1'
+                        }
+                    ]
+                },
+                {
+                    label: 'Group Actions 2',
+                    model: [
+                        {
+                            command: secondarySpy,
+                            icon: 'fa-refresh',
+                            label: 'Action 2-1'
+                        }
+                    ]
+                }
+            ]
+        };
+        comp.options = options;
+        comp.selectedItems = [{key: 'value'}, {key: 'value'}];
         fixture.detectChanges();
-        let primaryButton = de.query(By.css('.primaryActions .ui-menuitem-link'));
-        let secondButton = de.query(By.css('.secondaryActions .ui-menuitem-link'));
 
-        let primaryButtonEl = primaryButton.nativeElement;
-        let secondButtonEl = secondButton.nativeElement;
+        let splitButtons = de.query(By.all()).nativeElement.querySelectorAll('.ui-menuitem-link');
+        let primaryButton = splitButtons[0];
+        let secondaryButton = splitButtons[1];
 
-        primaryButtonEl.click();
-        secondButtonEl.click();
+        primaryButton.click();
+        secondaryButton.click();
 
         expect(primarySpy).toHaveBeenCalled();
-        expect(secondSpy).toHaveBeenCalled();
-    });
-
-    it('should trigger one method in the action button', () => {
-        let primarySpy = jasmine.createSpy('spy');
-        let fakeData = [
-            {
-                label: 'Group Actions 1',
-                model: [
-                    {
-                        command: primarySpy,
-                        icon: 'fa-refresh',
-                        label: 'Action 1-1'
-                    }
-                ]
-            }
-        ];
-        comp.actionButtonItems = fakeData;
-        comp.selected = true;
-        fixture.detectChanges();
-        let primaryButton = de.query(By.css('.primaryActions .ui-menuitem-link'));
-
-        let primaryButtonEl = primaryButton.nativeElement;
-
-        primaryButtonEl.click();
-
-        expect(primarySpy).toHaveBeenCalled();
+        expect(secondarySpy).toHaveBeenCalled();
     });
 });

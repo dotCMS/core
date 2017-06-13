@@ -1,1 +1,1 @@
-export * from './content-types-form';
+export * from './content-types-form.component';

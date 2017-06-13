@@ -2,8 +2,6 @@ import { BaseComponent } from '../../_common/_base/base-component';
 import { Component, Input, SimpleChanges, ViewEncapsulation } from '@angular/core';
 import { ConfirmationService } from 'primeng/primeng';
 import { MessageService } from '../../../../api/services/messages-service';
-import { LoggerService } from '../../../../api/services/logger.service';
-import { Router } from '@angular/router';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -13,58 +11,12 @@ import { Router } from '@angular/router';
 })
 
 export class ActionHeaderComponent extends BaseComponent {
-    @Input() selected = false;
     @Input() selectedItems = [];
-    @Input() actionButtonItems: ButtonAction[];
-
+    @Input() options: ActionHeaderOptions;
     public dynamicOverflow = 'visible';
 
-    private contentTypeActions;
-
-    constructor( messageService: MessageService, public loggerService: LoggerService, private confirmationService: ConfirmationService,
-                    private router: Router) {
-
+    constructor( messageService: MessageService, private confirmationService: ConfirmationService) {
         super(['selected'], messageService);
-
-        this.contentTypeActions = [{
-                command: () => {
-                    this.createContentType('content');
-                },
-                icon: 'fa-newspaper-o',
-                label: 'Content'
-            },
-            {
-                command: () => {
-                    this.createContentType('widget');
-                },
-                icon: 'fa-cog',
-                label: 'Widget'
-            },
-            {
-                command: () => {
-                    this.createContentType('file');
-                },
-                icon: 'fa-file-o',
-                label: 'File'
-            },
-            {
-                command: () => {
-                    this.createContentType('page');
-                },
-                icon: 'fa-file-text-o',
-                label: 'Page'
-            },
-            {
-                command: () => {
-                    this.createContentType('persona');
-                },
-                icon: 'fa-user',
-                label: 'Persona'
-            }];
-    }
-
-    private createContentType(type): void {
-        this.router.navigate(['/content-types-angular/create', type]);
     }
 
     private ngOnChanges(changes: SimpleChanges): any {
@@ -72,22 +24,23 @@ export class ActionHeaderComponent extends BaseComponent {
             this.hideDinamycOverflow();
         }
 
-        if (changes.actionButtonItems) {
-            this.setCommandWrapper(changes.actionButtonItems.currentValue);
+        if (changes.options && changes.options.currentValue) {
+            this.setCommandWrapper(changes.options.currentValue);
         }
     }
 
-    private setCommandWrapper(actionButtonItems: ButtonAction[]): void {
-        actionButtonItems.forEach(actionButton => {
+    private setCommandWrapper(options: ActionHeaderOptions): void {
+        options.secondary.forEach(actionButton => {
             actionButton.model
                 .filter(model => model.deleteOptions)
                 .forEach(model => {
                     if (typeof model.command === 'function') {
                         let callback = model.command ;
-                        model.command = () => {
+                        model.command = ($event) => {
+                            let originalEvent = $event;
                             this.confirmationService.confirm({
-                                accept: () => {
-                                    callback();
+                                accept: ($event) => {
+                                    callback(originalEvent);
                                 },
                                 header: model.deleteOptions.confirmHeader,
                                 message: model.deleteOptions.confirmMessage,
@@ -100,7 +53,7 @@ export class ActionHeaderComponent extends BaseComponent {
 
     private hideDinamycOverflow(): void {
         this.dynamicOverflow = '';
-        if (this.selected) {
+        if (this.selectedItems.length) {
             setTimeout(() => {
                 this.dynamicOverflow = 'visible';
             }, 300);
@@ -114,9 +67,24 @@ export interface ButtonAction {
 }
 
 export interface ButtonModel {
-    deleteOptions?: any;
-    icon: string;
     command: any;
-    label: string;
+    deleteOptions?: ActionHeaderDeleteOptions;
+    icon?: string;
     isDelete?: boolean;
+    label: string;
+}
+
+export interface ActionHeaderOptions {
+    primary?: ActionHeaderOptionsPrimary;
+    secondary?: ButtonAction[];
+}
+
+export interface ActionHeaderDeleteOptions {
+    confirmHeader?: string;
+    confirmMessage?: string;
+}
+
+export interface ActionHeaderOptionsPrimary {
+    command: (event?: any) => void;
+    model: ButtonModel[];
 }

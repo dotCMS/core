@@ -1,10 +1,11 @@
+import { BaseComponent } from '../_common/_base/base-component';
 import { Component, ViewChild, Input, Output, EventEmitter, ViewEncapsulation } from '@angular/core';
-import {DropdownComponent} from '../_common/dropdown-component/dropdown-component';
-import {ContentletService, StructureTypeView, ContentTypeView} from '../../../api/services/contentlet-service';
-import {RoutingService} from '../../../api/services/routing-service';
-import {BaseComponent} from '../_common/_base/base-component';
-import {MessageService} from '../../../api/services/messages-service';
-import {IframeOverlayService} from '../../../api/services/iframe-overlay-service';
+import { ContentTypesInfoService } from '../../../api/services/content-types-info';
+import { ContentletService, StructureTypeView, ContentTypeView } from '../../../api/services/contentlet-service';
+import { DropdownComponent } from '../_common/dropdown-component/dropdown-component';
+import { IframeOverlayService } from '../../../api/services/iframe-overlay-service';
+import { MessageService } from '../../../api/services/messages-service';
+import { RoutingService } from '../../../api/services/routing-service';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -46,15 +47,6 @@ export class ToolbarAddContenletComponent extends BaseComponent {
     @ViewChild(DropdownComponent) dropdown: DropdownComponent;
 
     private types: StructureTypeView[];
-    // tslint:disable-next-line:no-unused-variable
-    private typesIcons: any = {
-        'Content': 'fa-table',
-        'File': 'fa-picture-o',
-        'Form': 'fa-list ',
-        'Page': 'fa-file-text-o',
-        'Persona': 'fa-user',
-        'Widget': 'fa-cog'
-    };
     private recent: StructureTypeView[];
     private structureTypeViewSelected: StructureTypeView[];
     private showMore = false;
@@ -64,7 +56,8 @@ export class ToolbarAddContenletComponent extends BaseComponent {
     private selectedName = '';
 
     constructor(private contentletService: ContentletService, private routingService: RoutingService,
-                 messageService: MessageService, private iframeOverlayService: IframeOverlayService) {
+                 messageService: MessageService, private iframeOverlayService: IframeOverlayService,
+                 private contentTypesInfoService: ContentTypesInfoService) {
 
         super(['more'], messageService);
     }

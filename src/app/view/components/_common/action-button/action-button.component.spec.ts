@@ -2,48 +2,39 @@ import { ComponentFixture, TestBed, async } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
 import { RouterTestingModule } from '@angular/router/testing';
-import { SplitButtonModule, ButtonModule, MenuItem } from 'primeng/primeng';
+import { SplitButtonModule, MenuItem } from 'primeng/primeng';
 import { ActionButtonComponent } from './action-button.component';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 
-class RouterMock {
-    navigate(): string {
-        return null;
-    }
-}
-
-describe('ActionButtonComponent (inline template)', () => {
+describe('ActionButtonComponent', () => {
     let comp: ActionButtonComponent;
     let fixture: ComponentFixture<ActionButtonComponent>;
     let de: DebugElement;
 
     beforeEach(async(() => {
-
         DOTTestBed.configureTestingModule({
             declarations: [ActionButtonComponent],
-            imports: [SplitButtonModule, ButtonModule, RouterTestingModule.withRoutes([
-                { path: 'test', component: ActionButtonComponent }
-            ])]
+            imports: [
+                SplitButtonModule,
+                RouterTestingModule.withRoutes([{
+                    component: ActionButtonComponent,
+                    path: 'test'
+                }])
+            ]
         });
 
         fixture = TestBed.createComponent(ActionButtonComponent);
         comp = fixture.componentInstance;
-        de = fixture.debugElement.query(By.css('div'));
-
     }));
 
     it('should display an action button with opctions', () => {
         let fakeButtonItems: MenuItem[] = [{
-            command: () => {
-                console.log('action update');
-            },
+            command: () => {},
             icon: 'fa-refresh',
             label: 'Update'
         },
         {
-            command: () => {
-                console.log('action delete');
-            },
+            command: () => {},
             icon: 'fa-close',
             label: 'Delete'
         },
@@ -55,18 +46,17 @@ describe('ActionButtonComponent (inline template)', () => {
             icon: 'fa-paint-brush',
             label: 'Theming'
         }];
-
-        comp.primaryAction = null;
-        comp.options = fakeButtonItems;
+        comp.model = fakeButtonItems;
         fixture.detectChanges();
-        expect(comp.options.length).not.toBeLessThan(0);
+        de = fixture.debugElement.query(By.css('p-splitButton'));
+        expect(de.nativeElement.className).toContain('multiple-options');
     });
 
     it('should display a primary action button', () => {
-        comp.primaryAction = Function;
-        comp.options = null;
+        comp.command = () => {};
         fixture.detectChanges();
-        expect(comp.primaryAction).toBe(Function);
+        de = fixture.debugElement.query(By.css('p-splitButton'));
+        expect(de.nativeElement.className).not.toContain('multiple-options');
     });
 
 });

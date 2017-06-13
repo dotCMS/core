@@ -15,6 +15,7 @@
     "suppressImplicitAnyIndexErrors":true,
     "lib": [
       "dom",
+      "dom.iterable",
       "es6"
     ],
     "typeRoots": [

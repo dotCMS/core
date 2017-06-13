@@ -2,10 +2,10 @@ import { ActionHeaderComponent } from '../../../view/components/listing-data-tab
 import { ActionButtonComponent } from '../../../view/components/_common/action-button/action-button.component';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
-import { ContentTypesPortletComponent } from './content-types-component';
-import { CrudService } from '../../../api/services/crud-service';
+import { ContentTypesPortletComponent } from './content-types.component';
+import { CrudService } from '../../../api/services/crud';
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { ListingDataTableComponent } from '../../../view/components/listing-data-table/listing-data-table-component';
+import { ListingDataTableComponent } from '../../../view/components/listing-data-table/listing-data-table.component';
 import { MessageService } from '../../../api/services/messages-service';
 import { MockMessageService } from '../../../test/message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -42,8 +42,8 @@ describe('ContentTypesPortletComponent', () => {
         comp = fixture.componentInstance;
     });
 
-    it('should display a listing-data-table-component', () => {
-        let de = fixture.debugElement.query(By.css('listing-data-table-component'));
+    it('should display a listing-data-table.component', () => {
+        let de = fixture.debugElement.query(By.css('listing-data-table'));
 
         expect('v1/contenttype').toEqual(de.nativeElement.getAttribute('url'));
 

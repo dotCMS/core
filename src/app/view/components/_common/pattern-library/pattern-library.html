@@ -45,14 +45,14 @@
             </article>
             <h3 class="section__title">Action button</h3>
             <article>
-                <action-button [options]="null" [primaryAction]="actionButtonLog"></action-button>
-                <action-button [options]="actionButtonItems" [primaryAction]="null"></action-button>
+                <action-button [command]="actionButtonLog"></action-button>
+                <action-button [model]="actionButtonItems"></action-button>
             </article>
             <h3 class="section__title">Listing table</h3>
-            <listing-data-table-component url="v1/contenttype"
+            <!--<listing-data-table url="v1/contenttype"
                                         [columns]="contentTypeColumns"
                                         [buttonActions]="buttonActions">
-            </listing-data-table-component>         
+            </listing-data-table>-->
         </div>
 
         <div class="ui-g-5 section-fields">

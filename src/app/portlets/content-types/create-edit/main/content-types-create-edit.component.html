@@ -1,7 +1,7 @@
-<div class="content-type">
+<div class="content-type" id="content-type">
   <p-tabView>
       <p-tabPanel header="{{i18nMessages['fields']}}">
-        <content-types-form></content-types-form>
+        <content-types-form [data]="contentTypeItem | async"></content-types-form>
       </p-tabPanel>
       <p-tabPanel header="{{i18nMessages['Permissions']}}">
         <div class="container-fluid">

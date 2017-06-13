@@ -1,7 +1,4 @@
-<action-header [selected]="selectedItems.length > 0" 
-                [selectedItems]="selectedItems" 
-                [actionButtonItems]="buttonActions">
-
+<action-header [selectedItems]="selectedItems" [options]="actionHeaderOptions">
     <input #gf pInputText type="text" placeholder="{{i18nMessages['global-search']}}" [(ngModel)]="query"/>
 </action-header>
 
@@ -13,6 +10,7 @@
              [totalRecords]="totalRecords"
              (onLazyLoad)="loadDataPaginationEvent($event)"
              [(selection)]="selectedItems"
+             (onRowClick)="handleRowClick($event)"
              [globalFilter]="gf">
 
     <p-column selectionMode="multiple"></p-column>

@@ -5,8 +5,8 @@ import {
   ConnectionBackend,
 } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
-import { CrudService, OrderDirection } from './crud-service';
-import { DOTTestBed } from '../../test/dot-test-bed';
+import { CrudService, OrderDirection } from './';
+import { DOTTestBed } from '../../../test/dot-test-bed';
 
 describe('CrudService', () => {
     beforeEach(() => {

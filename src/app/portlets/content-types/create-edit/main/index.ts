@@ -1,1 +1,1 @@
-export * from './content-types-create-edit-component';
+export * from './content-types-create-edit.component';

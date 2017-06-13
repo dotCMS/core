@@ -9,8 +9,8 @@
           <div class="ui-g">
             <div class="ui-g-6">
               <div class="form__group content-type__form-title">
-                <i class="fa fa-newspaper-o"></i>
-                <input pInputText type="text" id="content-type-form-name" placeholder="Content Type Name" name="name" #nameEl formControlName="name" (ngModelChange)="handleNameModelChange($event)" />
+                <i class="fa" [ngClass]="icon"></i>
+                <input pInputText type="text" id="content-type-form-name" [placeholder]="fieldNamePlaceholder" name="name" #nameEl formControlName="name" />
                 <field-validation-message message="Name is required" [submitted]="submitAttempt" [field]="form.controls.name"></field-validation-message>
               </div>
             </div>
@@ -24,7 +24,7 @@
               <div class="ui-g-6">
                 <div class="form__group" *ngIf="isEditMode">
                   <b>{{i18nMessages['Variable']}}:</b>
-                  <a href="#">Blog</a>
+                  <a href="#">{{ data.variable }}</a>
                   <i class="fa fa-question form__hint-icon" (click)="hint.show($event)"></i>
                 </div>
                 <div class="form__group">
@@ -33,7 +33,7 @@
                 </div>
                 <div class="form__group">
                   <label for="host" class="form__label">{{i18nMessages['Host-Folder']}}</label>
-                  <p-dropdown [options]="sitesOrFolderOptions | async" id="content-type-form-host" name="host" formControlName="host" [autoWidth]="false"></p-dropdown>
+                  <p-dropdown [options]="sitesOrFolderOptions" id="content-type-form-host" name="host" formControlName="host" [autoWidth]="false"></p-dropdown>
                 </div>
                 <div class="form__group">
                   <label for="workflow" class="form__label">{{i18nMessages['Workflow']}}</label>
@@ -43,7 +43,7 @@
               <div class="ui-g-6">
                 <div class="form__group" *ngIf="isEditMode">
                   <b>{{i18nMessages['Identifier']}}:</b>
-                  <a href="#">sdf3425-dsfd43-dfdsf-3342-vx</a>
+                  <a href="#">{{ data.id }}</a>
                   <i class="fa fa-question form__hint-icon" (click)="hint.show($event)"></i>
                 </div>
                 <div class="form__group" *ngIf="isEditMode">
@@ -57,11 +57,11 @@
                   </div>
                 </div>
 
-                <div class="form__group">
+                <div class="form__group" *ngIf="form.get('detailPage')">
                   <label for="detailPage" class="form__label">{{i18nMessages['Detail-Page']}}</label>
                   <input pInputText type="text" id="content-type-form-detail-page" name="detailPage" formControlName="detailPage" />
                 </div>
-                <div class="form__group">
+                <div class="form__group" *ngIf="form.get('urlMapPattern')">
                   <i class="fa fa-question form__hint-icon" (click)="hint.show($event)"></i>
                   <label for="urlMapPattern" class="form__label">{{i18nMessages['URL-Pattern']}}</label>
                   <input pInputText type="text" id="content-type-form-url-map-pattern" name="urlMapPattern" formControlName="urlMapPattern" />
@@ -70,7 +70,7 @@
           </div>
           <div class="form__buttons">
             <button pButton type="button" flat id="content-type-form-cancel" label="{{i18nMessages['cancel']}}" (click)="goToListing()"></button>
-            <button pButton type="submit" id="content-type-form-submit" label="{{i18nMessages['save']}}"></button>
+            <button pButton type="submit" id="content-type-form-submit" label="{{actionButtonLabel}}"></button>
           </div>
         </div>
       </form>

@@ -59,7 +59,6 @@ export class DOTTestBed {
             }
         }
 
-        console.log('config', config);
         TestBed.configureTestingModule(config);
 
         TestBed.overrideModule(ConfirmDialogModule, {

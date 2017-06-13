@@ -1,28 +1,29 @@
 import { BaseComponent } from '../_common/_base/base-component';
-import { ButtonAction } from './action-header/action-header';
-import { Component, Input } from '@angular/core';
-import { CrudService, OrderDirection } from '../../../api/services/crud-service';
+import { ActionHeaderOptions } from './action-header/action-header';
+import { Component, Input, Output } from '@angular/core';
+import { CrudService, OrderDirection } from '../../../api/services/crud';
 import { DotcmsConfig } from '../../../api/services/system/dotcms-config';
 import { LazyLoadEvent } from 'primeng/primeng';
 import { LoggerService } from '../../../api/services/logger.service';
 import { MessageService } from '../../../api/services/messages-service';
+import { EventEmitter } from '@angular/core';
 @Component({
-    selector: 'listing-data-table-component',
-    styles: [require('./listing-data-table-component.scss')],
-    templateUrl: 'listing-data-table-component.html'
+    selector: 'listing-data-table',
+    styles: [require('./listing-data-table.component.scss')],
+    templateUrl: 'listing-data-table.component.html'
 })
 export class ListingDataTableComponent extends BaseComponent {
 
     @Input() columns: DataTableColumn[];
     @Input() url: string;
-    @Input() buttonActions: ButtonAction[] = [];
+    @Input() actionHeaderOptions: ActionHeaderOptions;
+    @Output() rowWasClicked: EventEmitter<any> = new EventEmitter;
 
     private paginatorRows: number;
     private paginatorLinks: number;
     private items: any[];
     private totalRecords: number;
     private query = '';
-
     // tslint:disable-next-line:no-unused-variable
     private selectedItems = [];
 
@@ -37,6 +38,10 @@ export class ListingDataTableComponent extends BaseComponent {
             this.paginatorLinks = configParams.paginatorLinks;
             this.loadData(this.paginatorRows, -1);
         });
+    }
+
+    handleRowClick($event): void {
+        this.rowWasClicked.emit($event);
     }
 
     /**

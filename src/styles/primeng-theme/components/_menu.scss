@@ -5,12 +5,13 @@
     &.ui-menu-dynamic {
         z-index: 1003; // Same as dropdown default
     }
-
+    
     .ui-menuitem {
-        @extend #dropdown-item;
+        margin: 0;
     }
 
     .ui-menuitem-link {
-        padding: 0;
+        @extend #dropdown-item;
+        color: $menu-link-color;
     }
 }

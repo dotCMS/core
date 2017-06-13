@@ -15,7 +15,8 @@
     "suppressImplicitAnyIndexErrors":true,
     "lib": [
       "es2015",
-      "dom"
+      "dom",
+      "dom.iterable"
     ],
     "typeRoots": [
       "node_modules/@types"

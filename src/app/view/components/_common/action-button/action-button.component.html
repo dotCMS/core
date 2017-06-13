@@ -1,7 +1,7 @@
 <p-splitButton 
     icon="fa-plus" 
     class="action-button" 
-    (onClick)="primaryAction()" 
-    [model]="options" 
-    [class.multiple-options]="options && options.length">
+    (onClick)="command()" 
+    [model]="model" 
+    [class.multiple-options]="model && model.length">
 </p-splitButton>

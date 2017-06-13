@@ -1,4 +1,10 @@
 .ui-datatable {
+    th {
+        &.ui-state-default {
+            background:  $datatable-head-bgcolor;
+        }
+    }
+
     .ui-datatable-thead > tr > th,
     .ui-datatable-tfoot > tr > td,
     .ui-datatable-data > tr > td {
@@ -24,6 +30,11 @@
         }
     }
 
+    .ui-datatable-thead > tr > th {
+        color: $datatable-head-color;
+        font-weight: bold;
+    }
+
     .ui-datatable-data > tr > td {
         border-bottom: $datatable-cell-border;
     }
@@ -42,22 +53,13 @@
         }
     }
 
-    .ui-selection-column {
-        width: 28px;
-    }
-
     .ui-widget-content .ui-state-highlight {
-        background: $datatable-selected-row-bgcolor;
+        background: $datatable-highlight-row-bgcolor;
         color: $datatable-row-color;
     }
 
     .ui-datatable-odd {
         background: $datatable-row-bgcolor;
-    }
-
-    th.ui-state-active {
-        background: $datatable-head-active-bgcolor;
-        color: $datatable-head-active-color;
     }
 
     .ui-paginator {

@@ -16,39 +16,39 @@
         .ui-button {
             background-color: $blue;
             border-radius: 50%;
-            font-size: $floating-action-button-icon-size;
-            height: $floating-action-button-height;
-            width: $floating-action-button-height;
+            font-size: $action-button-icon-size;
+            height: $action-button-height;
+            width: $action-button-height;
+            box-shadow: $action-button-normal-shadow;
             transition: background-color $basic-speed ease-in,
                         box-shadow $basic-speed ease-in;
 
             span {
-                color: $floating-action-button-color;
+                color: $action-button-color;
             }
 
             .ui-button-icon-left:before {
                 content: "\F067";
-                color: $floating-action-button-color;
+                color: $action-button-color;
             }
 
             &:not([disabled]) {
-
-                &:hover, 
-                &:active, 
+                &:hover,
+                &:active,
                 &:focus {
-                    box-shadow: $md-shadow-2;
+                    box-shadow: $action-button-hover-shadow;
                 }
 
                 &:hover {
-                    background: $floating-action-button-bg-hover;
+                    background: $action-button-hover-bgcolor;
                 }
 
                 &:active {
-                    background: $floating-action-button-bg-active;
+                    background: $action-button-active-bgcolor;
                 }
 
                 &:focus {
-                    background: $floating-action-button-bg-focus;
+                    background: $action-button-focus-bgcolor;
                 }
             }
 
