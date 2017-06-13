@@ -35,19 +35,19 @@ public abstract class VanityUrlContentType extends ContentType {
 	private static final long serialVersionUID = 1L;
 
 	private final String TITLE_FIELD_NAME = "Title";
-	private final String TITLE_FIELD_VAR = "title";
+	public static final String TITLE_FIELD_VAR = "title";
 	private final String SITE_FIELD_NAME = "Site";
-	private final String SITE_FIELD_VAR = "site";
+	public static final String SITE_FIELD_VAR = "site";
 	private final String URI_FIELD_NAME = "URI";
-	private final String URI_FIELD_VAR = "uri";
+	public static final String URI_FIELD_VAR = "uri";
 	private final String FORWARD_TO_FIELD_NAME = "Forward To";
-	private final String FORWARD_TO_FIELD_VAR = "forwardTo";
+	public static final String FORWARD_TO_FIELD_VAR = "forwardTo";
 	private final String RESPONSE_CODE_FIELD_NAME = "Response Code";
-	private final String RESPONSE_CODE_FIELD_VAR = "responseCode";
+	public static final String RESPONSE_CODE_FIELD_VAR = "responseCode";
 	private final String ACTION_FIELD_NAME = "Action";
-	private final String ACTION_FIELD_VAR = "action";
+	public static final String ACTION_FIELD_VAR = "action";
 	private final String ORDER_FIELD_NAME = "Order";
-	private final String ORDER_FIELD_VAR = "order";
+	public static final String ORDER_FIELD_VAR = "order";
 
 	public abstract static class Builder implements ContentTypeBuilder {
 	}

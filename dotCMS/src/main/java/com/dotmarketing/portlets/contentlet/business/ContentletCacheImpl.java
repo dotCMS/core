@@ -1,11 +1,15 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.TranslatedQuery;
+import com.dotcms.util.VanityUrlUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -98,7 +102,19 @@ public class ContentletCacheImpl extends ContentletCache {
 
         // Add the key to the cache
         cache.put(key, content,primaryGroup);
-
+        //add to Vanity Url Cache
+        try {
+			if(content != null && content.isVanityUrl()){
+				if( content.isLive() ){
+					//add to vanityUrl only if the vanity is Live
+					CacheLocator.getVanityURLCache().add(VanityUrlUtil.sanitizeKey(content),APILocator.getVanityUrlAPI().fromContentlet(content));
+				}else{
+					CacheLocator.getVanityURLCache().remove(VanityUrlUtil.sanitizeKey(content));
+				}
+			}
+		} catch (DotDataException | DotRuntimeException | DotSecurityException e) {
+			Logger.debug(this, "Can't add into Vanity URL cache content ID:"+content.getIdentifier(), e);
+		}
 
 		return content;
 		
@@ -133,6 +149,20 @@ public class ContentletCacheImpl extends ContentletCache {
     	
     	String myKey = primaryGroup + key;
     	String metadataKey = metadataGroup + key;
+    	com.dotmarketing.portlets.contentlet.model.Contentlet content = null;
+    	try {
+    		content = (com.dotmarketing.portlets.contentlet.model.Contentlet)cache.get(key,primaryGroup);
+    		try {
+				if(content != null && content.isVanityUrl()){
+					CacheLocator.getVanityURLCache().remove(VanityUrlUtil.sanitizeKey(content));
+				}
+			} catch (DotDataException | DotRuntimeException | DotSecurityException e) {
+				Logger.debug(this, "Cache Vanity URL cache entry not found", e);
+			}
+    	}catch (DotCacheException e) {
+			Logger.debug(this, "Cache Entry not found", e);
+		} 
+    	
     	try{
     		cache.remove(myKey,primaryGroup);
     		cache.remove(metadataKey,metadataGroup);
@@ -143,7 +173,7 @@ public class ContentletCacheImpl extends ContentletCache {
     	if(h != null){ 
     		CacheLocator.getHostCache().remove(h);
     	}
-    	CacheLocator.getHTMLPageCache().remove(key);
+    	CacheLocator.getHTMLPageCache().remove(key);   	
     }
     public String[] getGroups() {
     	return groupNames;

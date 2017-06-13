@@ -1,13 +1,15 @@
 package com.dotmarketing.filters;
 
+import java.util.List;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Versionable;
-import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -16,8 +18,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
-import java.util.List;
 
 public class CmsUrlUtil {
 	private static CmsUrlUtil urlUtil;
@@ -33,7 +33,7 @@ public class CmsUrlUtil {
 		return urlUtil;
 	}
 
-	
+
 	public boolean isPageAsset(Versionable asset) {
 		try {
 			Identifier id = APILocator.getIdentifierAPI().find(asset);
@@ -43,7 +43,7 @@ public class CmsUrlUtil {
 			}else 	if ("htmlpage".equals(id.getAssetType())) {
 				return true;
 			}
-			
+
 			return false;
 		} catch (Exception e) {
 			throw new DotStateException("Getting id failed" + e.getMessage(), e);
@@ -107,9 +107,9 @@ public class CmsUrlUtil {
 	}
 
 	public boolean isFileAsset(String uri, Host host, Long languageId) {
-		
+
 		// languageId is not used now, but will be used in future functionality. Issue #7141
-		
+
 		Identifier id;
 		try {
 			id = APILocator.getIdentifierAPI().find(host, uri);
@@ -123,28 +123,28 @@ public class CmsUrlUtil {
 			return true;
 		}
 
-        if ("contentlet".equals(id.getAssetType())) {
-            try {
-                ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), languageId);
+		if ("contentlet".equals(id.getAssetType())) {
+			try {
+				ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), languageId);
 
-                if ( (cinfo == null || cinfo.getWorkingInode().equals( "NOTFOUND" )) && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
-                    //Get the Default Language
-                    Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
-                    //If the fallback to Default Language is set to true, let's see if the requested file is stored with Default Language
-                    cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( id.getId(), defaultLang.getId() );
-                }
+				if ( (cinfo == null || cinfo.getWorkingInode().equals( "NOTFOUND" )) && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
+					//Get the Default Language
+					Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+					//If the fallback to Default Language is set to true, let's see if the requested file is stored with Default Language
+					cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( id.getId(), defaultLang.getId() );
+				}
 
-                if ( cinfo == null || cinfo.getWorkingInode().equals( "NOTFOUND" ) ) {
-                    return false;//At this point we know is not a File Asset
-                } else {
-                    Contentlet c = APILocator.getContentletAPI().find( cinfo.getWorkingInode(), APILocator.getUserAPI().getSystemUser(), false );
-                    return (c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET);
-                }
-            } catch (Exception e) {
-                Logger.error(this.getClass(), "Unable to find" + uri);
-                return false;
-            }
-        }
+				if ( cinfo == null || cinfo.getWorkingInode().equals( "NOTFOUND" ) ) {
+					return false;//At this point we know is not a File Asset
+				} else {
+					Contentlet c = APILocator.getContentletAPI().find( cinfo.getWorkingInode(), APILocator.getUserAPI().getSystemUser(), false );
+					return (c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET);
+				}
+			} catch (Exception e) {
+				Logger.error(this.getClass(), "Unable to find" + uri);
+				return false;
+			}
+		}
 		return false;
 	}
 
@@ -175,23 +175,41 @@ public class CmsUrlUtil {
 		return false;
 	}
 
-	public boolean isVanityUrl(String uri, Host host) {
+	public boolean isVanityUrl(String uri, Host host, long languageId) {
 
 		if (uri.length()>1 && uri.endsWith("/"))
-            uri = uri.substring(0, uri.length() - 1);
+			uri = uri.substring(0, uri.length() - 1);
 
-		boolean isVanityURL = UtilMethods.isSet(VirtualLinksCache.getPathFromCache(host.getHostname() + ":" + uri));
+		boolean isVanityURL = false;
+		try {
+			isVanityURL = UtilMethods.isSet(APILocator.getVanityUrlAPI().getVanityUrlByURI(uri, host, languageId, APILocator.systemUser(), true));
+		} catch (DotDataException | DotSecurityException e) {
+			Logger.error(this, "Error searching vanity URL "+uri,e);
+		}
 		if (!isVanityURL) {
-			isVanityURL = UtilMethods.isSet(VirtualLinksCache.getPathFromCache(uri));
+			try{
+				isVanityURL = UtilMethods.isSet(APILocator.getVanityUrlAPI().getVanityUrlByURI(uri, null, languageId, APILocator.systemUser(), true));
+			} catch (DotDataException | DotSecurityException e) {
+				Logger.error(this, "Error searching vanity URL "+uri,e);
+			}
 		}
 		// Still support legacy cmsHomePage
 		if("/".equals(uri) && !isVanityURL){
 			uri = "/cmsHomePage";
-			isVanityURL = UtilMethods.isSet(VirtualLinksCache.getPathFromCache(host.getHostname() + ":" + uri));
+			try {
+				isVanityURL = UtilMethods.isSet(APILocator.getVanityUrlAPI().getVanityUrlByURI(uri, host, languageId, APILocator.systemUser(), true));
+			} catch (DotDataException | DotSecurityException e) {
+				Logger.error(this, "Error searching vanity URL "+uri,e);
+			}
 			if (!isVanityURL) {
-				isVanityURL = UtilMethods.isSet(VirtualLinksCache.getPathFromCache(uri));
+				try {
+					isVanityURL = UtilMethods.isSet(APILocator.getVanityUrlAPI().getVanityUrlByURI(uri, null, languageId, APILocator.systemUser(), true));
+				} catch (DotDataException | DotSecurityException e) {
+					Logger.error(this, "Error searching vanity URL "+uri,e);
+				}
 			}
 		}
+
 		return isVanityURL;
 
 	}
@@ -226,7 +244,7 @@ public class CmsUrlUtil {
 	}
 
 	public boolean amISomething(String uri, Host host, Long languageId) {
-		return (urlUtil.isFileAsset(uri, host, languageId) || urlUtil.isVanityUrl(uri, host)
+		return (urlUtil.isFileAsset(uri, host, languageId) || urlUtil.isVanityUrl(uri, host,languageId)
 				|| urlUtil.isPageAsset(uri, host, languageId) || urlUtil.isFolder(uri, host));
 	}
 

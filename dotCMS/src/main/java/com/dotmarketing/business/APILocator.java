@@ -1,5 +1,7 @@
 package com.dotmarketing.business;
 
+import com.dotcms.api.content.VanityUrlAPI;
+import com.dotcms.api.content.VanityUrlAPIImpl;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.api.tree.TreeableAPI;
@@ -805,6 +807,15 @@ public class APILocator extends Locator<APIIndex>{
 	public static FileWatcherAPI getFileWatcherAPI() {
 		return (FileWatcherAPI) getInstance(APIIndex.FILE_WATCHER_API);
 	}
+	
+	/**
+	 * Creates a single instance of the {@link VanityUrlAPI}
+	 *
+	 * @return The {@link VanityUrlAPI} class.
+	 */
+	public static VanityUrlAPI getVanityUrlAPI() {
+		return (VanityUrlAPI) getInstance(APIIndex.VANITY_URLS_API);
+	}
 
 	/**
 	 * Generates a unique instance of the specified dotCMS API.
@@ -928,7 +939,8 @@ enum APIIndex
 	WEB_SOCKET_CONTAINER_API,
 	COMPANY_API,
 	SECURITY_LOGGER_API,
-	FILE_WATCHER_API;
+	FILE_WATCHER_API,
+	VANITY_URLS_API;
 
 	Object create() {
 		switch(this) {
@@ -993,6 +1005,7 @@ enum APIIndex
 		case COMPANY_API: return CompanyAPIFactory.getInstance().getCompanyAPI();
 		case SECURITY_LOGGER_API: return SecurityLoggerServiceAPIFactory.getInstance().getSecurityLoggerAPI();
 		case FILE_WATCHER_API: return createFileWatcherAPI();
+		case VANITY_URLS_API: return new VanityUrlAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
