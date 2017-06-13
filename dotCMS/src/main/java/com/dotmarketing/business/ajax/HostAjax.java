@@ -1,15 +1,5 @@
 package com.dotmarketing.business.ajax;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
-import org.quartz.SchedulerException;
-
 import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
@@ -35,6 +25,14 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+import org.quartz.SchedulerException;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class HostAjax {
 
@@ -46,7 +44,8 @@ public class HostAjax {
 	}
 
 	public Map<String, Object> findHostsForDataStore(String filter, boolean showArchived, int offset, int count,
-			boolean allSites) throws PortalException, SystemException, DotDataException, DotSecurityException {
+													 boolean includeSystemHost) throws PortalException, SystemException, DotDataException, DotSecurityException {
+
 		if (filter.endsWith("*")) {
 			filter = filter.substring(0, filter.length() - 1);
 		}
@@ -57,24 +56,33 @@ public class HostAjax {
 		List<Host> sites = this.hostAPI.findAll(user, this.userWebAPI.isLoggedToFrontend(req));
 		List<Map<String, Object>> siteResults = new ArrayList<>();
 		Collections.sort(sites, new HostNameComparator());
-		
-		if (allSites && this.userWebAPI.isCMSAdmin(user) && !UtilMethods.isSet(filter)) {
+
+		Boolean addedSystemSite = false;
+		//Make sure that if we are not using a filter the System Host is on top
+		if ( includeSystemHost && !UtilMethods.isSet(filter) ) {
 			final Host systemSite = this.hostAPI.findSystemHost();
-			Map<String, Object> dataMap = systemSite.getMap();
-			dataMap.put("hostname", "All Sites");
-			siteResults.add(dataMap);
+			if ( APILocator.getPermissionAPI().doesUserHavePermission(systemSite, PermissionAPI.PERMISSION_READ, user) ) {
+				siteResults.add(systemSite.getMap());
+				addedSystemSite = true;
+			}
 		}
 
 		for (Host site : sites) {
-			if (site.isSystemHost() || (!showArchived && site.isArchived())) {
+			if ( !showArchived && site.isArchived() ) {
 				continue;
 			}
+
+			if ( (!includeSystemHost && site.isSystemHost())
+					|| (site.isSystemHost() && addedSystemSite) ) {
+				continue;
+			}
+
 			if (site.getHostname().toLowerCase().startsWith(filter.toLowerCase())) {
 				siteResults.add(site.getMap());
 			}
 		}
 
-		Map<String, Object> hostMapToReturn = new HashMap<String, Object>();
+		Map<String, Object> hostMapToReturn = new HashMap<>();
 		hostMapToReturn.put("total", siteResults.size());
 		hostMapToReturn.put("list", siteResults);
 		return hostMapToReturn;

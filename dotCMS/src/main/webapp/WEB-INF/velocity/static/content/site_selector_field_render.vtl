@@ -11,18 +11,14 @@
 
 	dojo.ready(function() {
 		var value = dojo.byId('${field.velocityVarName}').value;
-		if (value == "SYSTEM_HOST") {
-			//dijit.byId('siteSelector').set('value', "$text.get('All-Hosts')");
-			dijit.byId('siteSelector').value = "$text.get('All-Hosts')";
-		} else {
-			dijit.byId('siteSelector').set('value', value);
-		}
+        dijit.byId('siteSelector').set('value', value);
 	});
 </script>
-<span dojoType="dotcms.dojo.data.SiteSelectorReadStore" jsId="SiteStore"></span>
+#set($allSitesLabel = $text.get('All-Hosts'))
+<span dojoType="dotcms.dojo.data.SiteSelectorReadStore" jsId="SiteStore"
+      data-dojo-props="allSitesLabel: '$allSitesLabel'"></span>
 <select dojoType="dijit.form.FilteringSelect" name="siteSelector"
 	id="siteSelector" store="SiteStore" pageSize="30" labelAttr="hostname"
 	searchAttr="hostname" searchDelay="400" onChange="siteChanged()"
 	invalidMessage="$text.get('Invalid-option-selected')">
-
 </select>
