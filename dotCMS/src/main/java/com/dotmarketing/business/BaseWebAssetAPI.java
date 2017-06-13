@@ -40,6 +40,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * @author jtesser
@@ -487,10 +488,10 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 
             //We want to create lists of 100 inodes.
             while (inodesToDelete.size() >= truncateAt){
-                inodesToDeleteMatrix.add(inodesToDelete.subList(0,truncateAt));
+                inodesToDeleteMatrix.add(new CopyOnWriteArrayList<>(inodesToDelete.subList(0,truncateAt)));
                 inodesToDelete.subList(0,truncateAt).clear();
             }
-            inodesToDeleteMatrix.add(inodesToDelete.subList(0, inodesToDelete.size()));
+            inodesToDeleteMatrix.add(new CopyOnWriteArrayList<>(inodesToDelete.subList(0, inodesToDelete.size())));
 
             //These are all the queries we want to run involving the inodes.
             List<String> queries = Lists.newArrayList("delete from tree where child in (?)",
