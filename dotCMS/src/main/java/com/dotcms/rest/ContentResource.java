@@ -94,6 +94,7 @@ public class ContentResource {
 	private static final String ACCEPT_LANGUAGE = "acceptLanguage";
 
     private final WebResource webResource = new WebResource();
+    private final ContentHelper contentHelper = ContentHelper.getInstance();
 
     /**
 	 * performs a call to APILocator.getContentletAPI().searchIndex() with the
@@ -449,19 +450,21 @@ public class ContentResource {
 
 		/* Fetching the content using a query if passed or an id */
 
-		List<Contentlet> cons = new ArrayList<Contentlet>();
+		List<Contentlet> contentlets = new ArrayList<Contentlet>();
 		Boolean idPassed = false;
 		Boolean inodePassed = false;
 		Boolean queryPassed = false;
 
 		try {
 			if(idPassed = UtilMethods.isSet(id)) {
-				cons.add(APILocator.getContentletAPI().findContentletByIdentifier(id, live, language, user, true));
+				contentlets.add(this.contentHelper.hydrateContentLet(
+						APILocator.getContentletAPI().findContentletByIdentifier(id, live, language, user, true)));
 			} else if(inodePassed = UtilMethods.isSet(inode)) {
-				cons.add(APILocator.getContentletAPI().find(inode, user, true));
+				contentlets.add(this.contentHelper.hydrateContentLet(
+						APILocator.getContentletAPI().find(inode, user, true)));
 			} else if(queryPassed = UtilMethods.isSet(query)) {
 				String tmDate=(String)request.getSession().getAttribute("tm_date");
-				cons = ContentUtils.pull(query, offset, limit,orderBy,user,tmDate);
+				contentlets = ContentUtils.pull(query, offset, limit,orderBy,user,tmDate);
 			}
 		} catch (Exception e) {
 			if(idPassed) {
@@ -477,9 +480,9 @@ public class ContentResource {
 
 		try {
 			if("xml".equals(type)) {
-				result = getXML(cons, request, response, render, user);
+				result = getXML(contentlets, request, response, render, user);
 			} else {
-				result = getJSON(cons, request, response, render, user);
+				result = getJSON(contentlets, request, response, render, user);
 			}
 		} catch (Exception e) {
 			Logger.warn(this, "Error converting result to XML/JSON");
