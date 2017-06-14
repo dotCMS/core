@@ -27,7 +27,8 @@ abstract class CategorySQL {
 	public abstract String getCreateSortChildren();
 	public abstract String getUpdateSort();
 	public abstract String getDropSort();
-	
+	public abstract String createCategoryReorderTable();
+
 	public String getSortParents() {
 		return " SELECT category.inode " +
 				" from category left join tree tree on category.inode = tree.child, " + 
@@ -39,4 +40,5 @@ abstract class CategorySQL {
 				"category.inode = tree.child and tree.parent = ? and category_1_.inode = category.inode " +
 				" and category_1_.type = 'category'";
 	}
+
  }

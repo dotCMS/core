@@ -721,7 +721,13 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			statement = conn.createStatement();
 			String sql;
 
-            PreparedStatement createSortPreparedStatement = conn.prepareStatement( catSQL.getCreateSortChildren() );
+            if ( DbConnectionFactory.isOracle() ){
+                //For Oracle we need to avoid ORA-01027 by creating the table before.
+                sql = catSQL.createCategoryReorderTable();
+                statement.execute( sql );
+            }
+
+			PreparedStatement createSortPreparedStatement = conn.prepareStatement( catSQL.getCreateSortChildren() );
             createSortPreparedStatement.setString( 1, inode );
             createSortPreparedStatement.executeUpdate();
 
