@@ -20,6 +20,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -65,13 +66,21 @@ public class VanityUrlFactoryImpl implements VanityUrlFactory {
 		if(result == null || !InodeUtils.isSet(result.getInode())){
 			List<VanityUrl> results = new ArrayList<VanityUrl>();
 			String hostCondition = (host != null?host.getHostname():"");
-			List<Contentlet> contentResults = contentletAPI.search("+baseType:"+BaseContentType.VANITY_URL.getType()+" +vanityUrl:"+hostCondition+uri+(live?" +live:true":" +working:true"), 0, 0, "", user, false);
+			List<Contentlet> contentResults = contentletAPI.search("+baseType:"+BaseContentType.VANITY_URL.getType()+" +languageId:"+languageId+" +vanityUrl:"+hostCondition+uri+(live?" +live:true":" +working:true"), 0, 0, "", user, false);
 			contentResults.stream().forEach((Contentlet con) ->{
 						VanityUrl vanityUrl = fromContentlet(con);
 						addToVanityURLCache(vanityUrl);
 						results.add(vanityUrl);
 					});
 
+			if(results.size() == 0 && Config.getBooleanProperty("DEFAULT_VANITY_URL_TO_DEFAULT_LANGUAGE", false)){
+				contentResults = contentletAPI.search("+baseType:"+BaseContentType.VANITY_URL.getType()+" +languageId:"+APILocator.getLanguageAPI().getDefaultLanguage().getId()+" +vanityUrl:"+hostCondition+uri+(live?" +live:true":" +working:true"), 0, 0, "", user, false);
+				contentResults.stream().forEach((Contentlet con) ->{
+							VanityUrl vanityUrl = fromContentlet(con);
+							addToVanityURLCache(vanityUrl);
+							results.add(vanityUrl);
+						});
+			}
 			result = results.size() > 0?results.get(0):null;
 		}
 

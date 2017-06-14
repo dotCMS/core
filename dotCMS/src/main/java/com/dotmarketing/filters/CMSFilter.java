@@ -158,19 +158,22 @@ public class CMSFilter implements Filter {
 				rewrite = vanityUrl != null && InodeUtils.isSet(vanityUrl.getInode())?vanityUrl.getForwardTo():null;
 			}
 			if(vanityUrl != null){
-				if(vanityUrl.getAction().equals("redirect")){
-					response.setStatus(vanityUrl.getResponseCode());
+				if(vanityUrl.getAction() == 200){
+					//then forward
+					response.setStatus(vanityUrl.getAction());
+				}else if(vanityUrl.getAction()== 301 || vanityUrl.getAction() == 302){
+					//redirect
+					response.setStatus(vanityUrl.getAction());
 					response.sendRedirect(rewrite);
 	
 					closeDbSilently();
 					return;
-				}else if(vanityUrl.getAction().equals("die")){
-					response.sendError(vanityUrl.getResponseCode());
+				}else{
+					//errors
+					response.sendError(vanityUrl.getAction());
 					
 					closeDbSilently();
 					return;
-				}else{
-					response.setStatus(vanityUrl.getResponseCode());
 				}
 			}
 			if (UtilMethods.isSet(rewrite) && rewrite.contains("//")) {

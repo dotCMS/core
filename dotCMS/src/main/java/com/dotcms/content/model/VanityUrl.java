@@ -56,23 +56,13 @@ public class VanityUrl extends Contentlet implements IVanityUrl {
 	}
 
 	@Override
-	public int getResponseCode() {
-		return (int)getLongProperty(VanityUrlContentType.RESPONSE_CODE_FIELD_VAR);
+	public int getAction() {
+		return (int)getLongProperty(VanityUrlContentType.ACTION_FIELD_VAR);
 	}
 
 	@Override
-	public void setResponseCode(int responseCode) {
-		setProperty(VanityUrlContentType.RESPONSE_CODE_FIELD_VAR, responseCode);
-	}
-
-	@Override
-	public String getAction() {
-		return getStringProperty(VanityUrlContentType.ACTION_FIELD_VAR);
-	}
-
-	@Override
-	public void setAction(String action) {
-		setStringProperty(VanityUrlContentType.ACTION_FIELD_VAR, action);
+	public void setAction(int action) {
+		setLongProperty(VanityUrlContentType.ACTION_FIELD_VAR, action);
 	}
 
 	@Override

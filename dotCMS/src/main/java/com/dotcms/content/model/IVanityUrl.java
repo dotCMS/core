@@ -100,28 +100,16 @@ public interface IVanityUrl extends Serializable, Versionable, Permissionable, T
 	void setForwardTo(String forwardTo);
 	
 	/**
-	 * Get the Vanity URL response code
-	 * @return the vanity URL response code
-	 */
-	int getResponseCode();
-	
-	/**
-	 * Set the Vanity URL response code
-	 * @param responseCode the response code
-	 */
-	void setResponseCode(int responseCode);
-	
-	/**
 	 * Get the Vanity URL action (redirect, forward or die)
 	 * @return the vanity URL action
 	 */
-	String getAction();
+	int getAction();
 	
 	/**
 	 * Set the VAnity URL action (redirect, forward or die)
 	 * @param action the action
 	 */
-	void setAction(String action);
+	void setAction(int action);
 	
 	/**
 	 * Get the Vanity URL order

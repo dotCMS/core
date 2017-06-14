@@ -42,8 +42,6 @@ public abstract class VanityUrlContentType extends ContentType {
 	public static final String URI_FIELD_VAR = "uri";
 	private final String FORWARD_TO_FIELD_NAME = "Forward To";
 	public static final String FORWARD_TO_FIELD_VAR = "forwardTo";
-	private final String RESPONSE_CODE_FIELD_NAME = "Response Code";
-	public static final String RESPONSE_CODE_FIELD_VAR = "responseCode";
 	private final String ACTION_FIELD_NAME = "Action";
 	public static final String ACTION_FIELD_VAR = "action";
 	private final String ORDER_FIELD_NAME = "Order";
@@ -74,17 +72,13 @@ public abstract class VanityUrlContentType extends ContentType {
 				.dataType(DataTypes.TEXT).fixed(Boolean.TRUE).indexed(Boolean.TRUE)
 				.values("$velutil.mergeTemplate('/static/content/file_browser_field_render.vtl')")
 				.required(Boolean.TRUE).sortOrder(order++).listed(Boolean.TRUE).build();
-		Field responseCodesField = ImmutableTextField.builder().name(RESPONSE_CODE_FIELD_NAME)
-				.variable(RESPONSE_CODE_FIELD_VAR).dataType(DataTypes.INTEGER).required(Boolean.TRUE)
-				.fixed(Boolean.TRUE).indexed(Boolean.TRUE).searchable(Boolean.TRUE).build();
 		Field actionField = ImmutableSelectField.builder().name(ACTION_FIELD_NAME).variable(ACTION_FIELD_VAR)
 				.required(Boolean.TRUE).fixed(Boolean.TRUE).indexed(Boolean.TRUE).searchable(Boolean.TRUE)
-				.values("Redirect|redirect\r\nForward|forward\r\nDie|die").build();
+				.dataType(DataTypes.INTEGER).values("Forward|200\r\nPermanent Redirect|301\r\nTemporary Redirect|302\r\nAuth Required|401\r\nAuth Failed|403\r\nMissing|404\r\nError|500").build();
 		Field orderField = ImmutableTextField.builder().name(ORDER_FIELD_NAME).variable(ORDER_FIELD_VAR)
 				.dataType(DataTypes.INTEGER).required(Boolean.TRUE).fixed(Boolean.TRUE).indexed(Boolean.TRUE)
 				.searchable(Boolean.TRUE).build();
-		return ImmutableList.of(titleField, siteField, uriField, forwardToField, responseCodesField, actionField,
-				orderField);
+		return ImmutableList.of(titleField, siteField, uriField, forwardToField, actionField, orderField);
 	}
 
 }
