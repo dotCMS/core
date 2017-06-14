@@ -307,4 +307,14 @@ public interface HostAPI {
 	 */
 	public PaginatedArrayList<Host> search(String filter, boolean showArchived, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
+	/**
+	 * Return the number of sites for user
+	 *
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public long count(User user, boolean respectFrontendRoles);
 }
