@@ -87,6 +87,8 @@ public class LanguagesResource {
         LanguageAPI lapi = APILocator.getLanguageAPI();
         
         // we need this even before login
+
+
         final InitDataObject initData = this.webResource.init(false, req, false);
         Language lang = lapi.getLanguage(langId);
 
@@ -99,11 +101,13 @@ public class LanguagesResource {
 
         Map<String, String> map = resources.getMessages(locale);
         for( final String key : map.keySet()){
-          if(search !=null){
-            if(key.startsWith(search)){
-              returnMap.put(key, map.get(key));
-            }
+          if("*".equals(search)){
+            returnMap.put(key, map.get(key));
           }
+          else if(key.startsWith(search)){
+            returnMap.put(key, map.get(key));
+          }
+
         }
 
 
