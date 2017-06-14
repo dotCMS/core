@@ -26,4 +26,8 @@ class PostgresCategorySQL extends CategorySQL{
 				" and category_1_.type = 'category' order by sort_order ";
 	}
 
+	public String createCategoryReorderTable() {
+		return "CREATE TABLE category_reorder(inode varchar(36), rnum int4)";
+	}
+
 }

@@ -27,4 +27,8 @@ class MySQLCategorySQL extends CategorySQL{
 				" and category_1_.type = 'category'  order by sort_order ) t";
 	}
 
+    public String createCategoryReorderTable() {
+        return "CREATE TABLE category_reorder(inode varchar(36), rnum integer)";
+    }
+
 }
