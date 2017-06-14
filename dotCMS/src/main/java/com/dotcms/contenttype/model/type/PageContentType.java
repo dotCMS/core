@@ -21,7 +21,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonDeserialize(as = ImmutablePageContentType.class)
 @Gson.TypeAdapters
 @Value.Immutable
-public abstract class PageContentType extends ContentType{
+public abstract class PageContentType extends ContentType implements Expireable{
 
 
 
