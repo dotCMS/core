@@ -23,6 +23,7 @@
 package com.liferay.util;
 
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.util.cal.CalendarUtil;
 
@@ -176,7 +177,7 @@ public class Validator {
 	}
 
 	public static boolean isEmailAddress(String ea) {
-		String emailRegex = Config.getStringProperty(WebKeys.DOTCMS_USE_REGEX_TO_VALIDATE_EMAILS, null);
+		String emailRegex = Constants.REG_EX_EMAIL;
 
 		if (isNull(ea)) {
 			return false;
