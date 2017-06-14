@@ -461,5 +461,15 @@ public interface CategoryAPI {
 	 * Determines if a givenParent is parent/grandParent/... and so on of a givenSon, recursively
 	 */
 	public boolean isParent(Category givenChild, Category givenParent, User user);
+	
+	
+	/**
+	 * Returns a suggestion for the Velocity Variable Name.
+	 * 
+	 * @param categoryVelVarName Velocity Variable Name
+	 * @return Suggestion for the Velocity Variable Name
+	 * @throws DotDataException Error occurred when performing the action.
+	 */
+	public String suggestVelocityVarName (String categoryVelVarName) throws DotDataException;
 
 }

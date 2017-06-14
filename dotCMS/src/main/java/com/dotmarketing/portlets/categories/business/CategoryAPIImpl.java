@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -565,8 +566,12 @@ public class CategoryAPIImpl implements CategoryAPI {
 		return false;
 	}
 
-
-
-
+	public synchronized String suggestVelocityVarName(final String categoryVelVarName) throws DotDataException {
+	    if (!UtilMethods.isSet(categoryVelVarName)) {
+	        return UUID.randomUUID().toString();
+	    } else {
+	        return catFactory.suggestVelocityVarName(categoryVelVarName);
+	    }
+	}
 
 }

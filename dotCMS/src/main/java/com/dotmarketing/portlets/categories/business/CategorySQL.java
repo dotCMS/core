@@ -40,5 +40,9 @@ abstract class CategorySQL {
 				"category.inode = tree.child and tree.parent = ? and category_1_.inode = category.inode " +
 				" and category_1_.type = 'category'";
 	}
+	
+	public String getVelocityVarNameCount() {
+	    return "select count(*) as test from category where category_velocity_var_name like ?";
+	}
 
  }
