@@ -33,7 +33,7 @@ import com.liferay.util.LocaleUtil;
 public class ConfigurationHelper implements Serializable {
 
 	public static final String EDIT_CONTENT_STRUCTURES_PER_COLUMN = "EDIT_CONTENT_STRUCTURES_PER_COLUMN";
-º	public static final String I18N_MESSAGES_MAP = "i18nMessagesMap";
+	public static final String I18N_MESSAGES_MAP = "i18nMessagesMap";
 	public static final String WEB_SOCKET_SECURE_PROTOCOL = "wss";
 	public static final String WEB_SOCKET_PROTOCOL = "ws";
 	public static ConfigurationHelper INSTANCE = new ConfigurationHelper();

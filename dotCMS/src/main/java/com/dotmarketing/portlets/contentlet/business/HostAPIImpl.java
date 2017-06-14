@@ -1009,22 +1009,18 @@ public class HostAPIImpl implements HostAPI {
 
     }
 
-	public PaginatedArrayList<Host> search(String filter, boolean showArchived, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+	public PaginatedArrayList<Host> search(String filter, boolean showArchived, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles) {
         try {
-            Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
-            String condition="";
 
-            if(showArchived){
-                condition=" +deleted:true";
-            }else {
-                condition=" +deleted:false";
-            }
+            Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
+            StringBuilder condition = new StringBuilder( String.format(" +deleted:%b", showArchived) );
+
 
             if(UtilMethods.isSet(filter)){
-                condition += " +Host.hostName:"+filter.trim()+"*";
+                condition.append( String.format(" +Host.hostName:%s*", filter.trim() ) );
             }
             if(!showSystemHost){
-                condition += " +Host.isSystemHost:false";
+                condition.append( " +Host.isSystemHost:false" );
             }
             PaginatedArrayList<Contentlet> list = (PaginatedArrayList<Contentlet>)APILocator.getContentletAPI().search("+structureInode:" + st.getInode() + condition, limit, offset, "Host.hostName", user, respectFrontendRoles);
 

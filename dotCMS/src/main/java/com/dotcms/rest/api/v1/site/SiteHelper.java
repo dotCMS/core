@@ -224,13 +224,8 @@ public class SiteHelper implements Serializable {
 		try {
 			final HttpSession session = req.getSession();
 			String hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
-			Host host = null;
 
-			if (hostId != null) {
-				host = hostAPI.find(hostId, user, false);
-			}
-
-			return host;
+			return (null != hostId) ? hostAPI.find(hostId, user, false) : null;
 		} catch (DotDataException|DotSecurityException e) {
 			throw new DotRuntimeException(e);
 		}
