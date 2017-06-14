@@ -177,7 +177,7 @@ public class Validator {
 	}
 
 	public static boolean isEmailAddress(String ea) {
-		String emailRegex = Constants.REG_EX_EMAIL;
+		String emailRegex = Config.getStringProperty(com.dotmarketing.util.WebKeys.DOTCMS_USE_REGEX_TO_VALIDATE_EMAILS, Constants.REG_EX_EMAIL);
 
 		if (isNull(ea)) {
 			return false;

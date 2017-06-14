@@ -387,7 +387,7 @@
 
 		var userEmail;
 		if(emailChanged){
-            var pattern=new RegExp("<%=com.dotmarketing.util.Constants.REG_EX_EMAIL%>", 'gi');
+            var pattern=new RegExp("<%= Config.getStringProperty(com.dotmarketing.util.WebKeys.DOTCMS_USE_REGEX_TO_VALIDATE_EMAILS, com.dotmarketing.util.Constants.REG_EX_EMAIL)%>", 'gi');
 
 			userEmail = dijit.byId('emailAddress').attr('value');
 			if(!pattern.test(userEmail)){

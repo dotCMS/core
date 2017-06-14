@@ -133,5 +133,5 @@ public final class Constants {
 	public static String REFERER_URL_HTTP_HEADER = "referer";
 
 	// REGEX to validate emails
-	public static final String REG_EX_EMAIL = Config.getStringProperty(com.dotmarketing.util.WebKeys.DOTCMS_USE_REGEX_TO_VALIDATE_EMAILS, "^([a-zA-Z0-9_.-])+@([a-zA-Z0-9_.-])+\\.([a-zA-Z])+([a-zA-Z])+");
+	public static final String REG_EX_EMAIL = "^([a-zA-Z0-9_.-])+@([a-zA-Z0-9_.-])+\\.([a-zA-Z])+([a-zA-Z])+";
 }
