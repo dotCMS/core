@@ -1151,7 +1151,8 @@ public class ContentResource {
 													contentlet.setHost(hh.getIdentifier());
 													contentlet.setFolder(folder.getInode());
 													if(st.getStructureType()==BaseContentType.FILEASSET.getType()){
-														Identifier existingIdent = APILocator.getIdentifierAPI().find(hh,split[1]);
+														String fileName = contentlet.getMap().get("fileName").toString();
+														Identifier existingIdent = APILocator.getIdentifierAPI().find(hh,split[1]+fileName);
 														if(existingIdent != null && UtilMethods.isSet(existingIdent.getId()) && UtilMethods.isSet(contentlet.getIdentifier())){
 															contentlet.setIdentifier(existingIdent.getId());
 														}
