@@ -20,27 +20,27 @@ public class Task04120IncreaseHostColumnOnClusterServerTable extends AbstractJDB
 
     @Override
     public String getH2Script() {
-        return "ALTER TABLE cluster_server ALTER COLUMN host varchar(100);";
+        return "ALTER TABLE cluster_server ALTER COLUMN host varchar(255);";
     }
     
     @Override
     public String getMSSQLScript() {
-        return "ALTER TABLE cluster_server ALTER COLUMN host NVARCHAR(100);";
+        return "ALTER TABLE cluster_server ALTER COLUMN host NVARCHAR(255);";
     }
     
     @Override
     public String getMySQLScript() {
-        return "ALTER TABLE cluster_server MODIFY host varchar(100);";
+        return "ALTER TABLE cluster_server MODIFY host varchar(255);";
     }
 
     @Override
     public String getOracleScript() {
-        return "ALTER TABLE cluster_server MODIFY host varchar2(100);";
+        return "ALTER TABLE cluster_server MODIFY host varchar2(255);";
     }
     
     @Override
     public String getPostgresScript() {
-        return "ALTER TABLE cluster_server ALTER COLUMN host varchar(100);";
+        return "ALTER TABLE cluster_server ALTER COLUMN host varchar(255);";
     }
 
     @Override
