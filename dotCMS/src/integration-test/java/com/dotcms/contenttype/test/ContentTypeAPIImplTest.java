@@ -1,42 +1,27 @@
 package com.dotcms.contenttype.test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.List;
-import java.util.UUID;
-
-import org.junit.Test;
-
 import com.dotcms.contenttype.business.FieldFactoryImpl;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.OnePerContentType;
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.model.type.Expireable;
-import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
-import com.dotcms.contenttype.model.type.ImmutableFormContentType;
-import com.dotcms.contenttype.model.type.ImmutablePageContentType;
-import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
-import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
-import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
-import com.dotcms.contenttype.model.type.UrlMapable;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.type.*;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.UUIDGenerator;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
@@ -274,7 +259,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	}
 
 	@Test
-	public void testAddingUpdatingDeleteing() throws Exception {
+	public void testAddingUpdatingDeleting() throws Exception {
 
 		for (BaseContentType baseType : BaseContentType.values()) {
 			if (baseType == BaseContentType.ANY)
@@ -509,5 +494,301 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 				}
 			}
 		}
+	}
+	
+	/**
+	 * This test create a Content type with fixed fields, update some fields and delete the content type
+	 * @throws Exception
+	 */
+	@Test
+	public void testAddingUpdatingDeletingContentTypeWithFixedFields() throws Exception{
+		
+		int count = contentTypeApi.count();
+		String TEST_VAR_PREFIX = "myTestField";
+		
+		long time = System.currentTimeMillis();
+		int base = BaseContentType.WIDGET.ordinal();
+		Thread.sleep(1);
+		ContentType type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base))
+					.description("description" + time).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+					.name("ContentTypeTestingWithFixedFields" + time).owner("owner").variable("velocityVarNameTesting" + time).build();
+		type = contentTypeApi.save(type, null, null);
+		
+		int count2 = contentTypeApi.count();
+		assertThat("contenttypes are added", count == count2 - 1);
+		type = contentTypeApi.find(type.id());
+		assertThat("Content type found", type != null && StringUtils.isNotEmpty(type.id()) );
+		
+		//Add Field
+		List<Field> fields = type.fields();
+		int fieldsCount = fields.size();
+		Field savedField = FieldBuilder.builder(WysiwygField.class).name("my test field")
+				.variable(TEST_VAR_PREFIX + "textField").contentTypeId(type.id()).dataType(DataTypes.LONG_TEXT).build();
+		APILocator.getContentTypeFieldAPI().save(savedField, APILocator.systemUser());
+		type = contentTypeApi.find(type.id());
+		List<Field> newFields = type.fields();
+		
+		int fieldsCount2 = newFields.size();
+		assertThat("contenttypes field added", fieldsCount < fieldsCount2);
+		
+		//remove field
+		contentTypeApi.save(type, fields);
+		type = contentTypeApi.find(type.id());
+		fieldsCount2 = type.fields().size();
+		assertThat("contenttypes field removed", fieldsCount == fieldsCount2);
+		
+		//deleting content type
+		delete(type);
+	}
+
+    /**
+     * Test the updateModDate method of the contenttypeapi
+     * to help detect the changes on fields and field variables
+     * @throws Exception
+     */
+    @Test
+    public void testUpdateContentTypeModDate() throws Exception{
+        long time = System.currentTimeMillis();
+        String TEST_VAR_PREFIX = "myTestField";
+        String TEST_FIELD_VAR_PREFIX = "myTestFieldVar";
+        String TEST_FIELD_VAR_VALUE_PREFIX = "myTestFieldVar";
+        int base = BaseContentType.CONTENT.ordinal();
+
+        Thread.sleep(1);
+        ContentType type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base))
+                .description("description" + time).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+                .name("ContentTypeTestingUpdateModDate" + time).owner("owner").variable("velocityVarNameTesting" + time).build();
+        type = contentTypeApi.save(type, null, null);
+
+        int fieldsCount = type.fields().size();
+        Date creationModDate = type.modDate();
+        assertThat("contenttypes mod_date is not null", creationModDate != null);
+        //calling updatemod_date method
+        Thread.sleep(1000);
+        contentTypeApi.updateModDate(type);
+        //getting new mod_date
+        type = contentTypeApi.find(type.id());
+        Date currentModDate = type.modDate();
+        assertThat("contenttypes current mod_date is not null", currentModDate != null);
+        assertThat("contenttypes mod_date is updated", creationModDate != currentModDate);
+        assertThat("contenttypes mod_date is updated", currentModDate.compareTo(creationModDate) > 0);
+
+        //Test Content Type mod_date changes after adding a Field
+        Thread.sleep(1000);
+        Field savedField = FieldBuilder.builder(WysiwygField.class).name("my test field")
+                .variable(TEST_VAR_PREFIX + "textField").contentTypeId(type.id()).dataType(DataTypes.LONG_TEXT).build();
+        savedField = APILocator.getContentTypeFieldAPI().save(savedField, APILocator.systemUser());
+        type = contentTypeApi.find(type.id());
+        int updatedFieldsCount = type.fields().size();
+        Date addFieldDate = type.modDate();
+        assertThat("contenttypes current mod_date is not null", addFieldDate != null);
+        assertThat("contenttypes mod_date is updated", addFieldDate != currentModDate);
+        assertThat("contenttypes mod_date is updated after add Field", addFieldDate.compareTo(currentModDate) > 0);
+        assertThat("contenttypes fields incremented", updatedFieldsCount > fieldsCount);
+
+        //Test Content Type mod_date changes after  edit Field
+        Thread.sleep(1000);
+        savedField = FieldBuilder.builder(savedField).indexed(true).build();
+        savedField = APILocator.getContentTypeFieldAPI().save(savedField, APILocator.systemUser());
+        type = contentTypeApi.find(type.id());
+        Date editFieldDate = type.modDate();
+        int updatedFieldsCount2 = type.fields().size();
+        assertThat("contenttypes current mod_date is not null", editFieldDate != null);
+        assertThat("contenttypes mod_date is updated", editFieldDate != addFieldDate);
+        assertThat("contenttypes mod_date is updated after edit Field", editFieldDate.compareTo(addFieldDate) > 0);
+        assertThat("contenttypes fields are the same", updatedFieldsCount == updatedFieldsCount2);
+
+        //Test Content Type mod_date changes after adding a Field Variable
+        Thread.sleep(1000);
+        FieldVariable savedFieldVar = ImmutableFieldVariable.builder().id(null)
+                .fieldId(savedField.id()).name(TEST_FIELD_VAR_PREFIX+time)
+                .key(TEST_FIELD_VAR_PREFIX+time).value(TEST_FIELD_VAR_VALUE_PREFIX+time)
+                .userId(APILocator.systemUser().getUserId()).modDate(new Date()).build();
+        savedFieldVar = APILocator.getContentTypeFieldAPI().save(savedFieldVar, APILocator.systemUser());
+        type = contentTypeApi.find(type.id());
+        Date addFieldVariableDate = type.modDate();
+        assertThat("contenttypes current mod_date is not null", addFieldVariableDate != null);
+        assertThat("contenttypes mod_date is updated", addFieldVariableDate != editFieldDate);
+        assertThat("contenttypes mod_date is updated after add Field Variable", addFieldVariableDate.compareTo(editFieldDate) > 0);
+        assertThat("Field Variable is added ",APILocator.getContentTypeFieldAPI().find(savedField.id()).fieldVariables().size() == 1);
+
+        //Test Content Type mod_date changes after editing a Field Variable
+        Thread.sleep(1000);
+        savedFieldVar = ImmutableFieldVariable.builder().id(savedFieldVar.id())
+                .fieldId(savedField.id()).name(TEST_FIELD_VAR_PREFIX+time)
+                .key(TEST_FIELD_VAR_PREFIX+time).value(TEST_FIELD_VAR_VALUE_PREFIX+(time+1))
+                .userId(APILocator.systemUser().getUserId()).modDate(new Date()).build();
+        savedFieldVar = APILocator.getContentTypeFieldAPI().save(savedFieldVar, APILocator.systemUser());
+        type = contentTypeApi.find(type.id());
+        Date editFieldVariableDate = type.modDate();
+        assertThat("contenttypes current mod_date is not null", editFieldVariableDate != null);
+        assertThat("contenttypes mod_date is updated", editFieldVariableDate != addFieldVariableDate);
+        assertThat("contenttypes mod_date is updated", editFieldVariableDate.compareTo(addFieldVariableDate) > 0);
+        assertThat("Field Variable is updated ",APILocator.getContentTypeFieldAPI().find(savedField.id()).fieldVariables().size() == 1);
+        assertThat("Field Variable was updated properly",APILocator.getContentTypeFieldAPI().find(savedField.id()).fieldVariables().get(0).value().equals(TEST_FIELD_VAR_VALUE_PREFIX+(time+1)));
+
+        //Test Content Type mod_date changes after deleting a Field Variable
+        Thread.sleep(1000);
+        APILocator.getContentTypeFieldAPI().delete(savedFieldVar);
+        type = contentTypeApi.find(type.id());
+        Date deleteFieldVarDate = type.modDate();
+        updatedFieldsCount = type.fields().size();
+        assertThat("contenttypes current mod_date is not null", deleteFieldVarDate != null);
+        assertThat("contenttypes mod_date is updated", deleteFieldVarDate != editFieldVariableDate);
+        assertThat("contenttypes mod_date is updated after delete Field Variable", deleteFieldVarDate.compareTo(editFieldVariableDate) > 0);
+        assertThat("Field Variable is removed ",APILocator.getContentTypeFieldAPI().find(savedField.id()).fieldVariables().size() == 0);
+
+        //Test Content Type mod_date changes after deleting a Field
+        Thread.sleep(1000);
+        APILocator.getContentTypeFieldAPI().delete(savedField);
+        type = contentTypeApi.find(type.id());
+        Date deleteFieldDate = type.modDate();
+        updatedFieldsCount = type.fields().size();
+        assertThat("contenttypes current mod_date is not null", deleteFieldDate != null);
+        assertThat("contenttypes mod_date is updated", deleteFieldDate != deleteFieldVarDate);
+        assertThat("contenttypes mod_date is updated after delete Field", deleteFieldDate.compareTo(deleteFieldVarDate) > 0);
+        assertThat("contenttypes field removed", updatedFieldsCount == fieldsCount);
+        //deleting content type
+        delete(type);
+    }
+
+	/**
+	 * Creates a Content Type with a fixed field and then tries to update it with a field with same VarName and DBColumn but different ID.
+	 * @throws Exception
+	 */
+	@Test
+	public void testUpdatingContentTypeWithFixedFieldsDifferentFieldID() throws Exception{
+
+        int base = BaseContentType.WIDGET.ordinal();
+        long time = System.currentTimeMillis();
+
+        final String FIRST_UUID = UUID.randomUUID().toString();
+        final String FIRST_NAME = "My Fixed Field";
+        final String SECOND_UUID = UUID.randomUUID().toString();
+        final String SECOND_NAME = "My Fixed Field Updated";
+
+	    ContentType contentType = ContentTypeBuilder
+                .builder(BaseContentType.getContentTypeClass(base))
+                .description("Description" + time)
+                .folder(FolderAPI.SYSTEM_FOLDER)
+                .host(Host.SYSTEM_HOST)
+                .name("ContentTypeWithFixedFieldsDifferentFieldID" + time)
+                .owner("Me")
+                .variable("CTVariable" + time)
+                .build();
+        contentType = contentTypeApi.save(contentType);
+
+        assertThat("ContentType exists", contentTypeApi.find( contentType.inode() ) != null);
+
+        //Add Field.
+        List<Field> fields = new ArrayList<>( contentType.fields() );
+        List<Field> originalFields = new ArrayList<>( fields );
+
+        int originalFieldSize = fields.size();
+
+        final String TEST_VAR_NAME = "myFixedVarName";
+
+        Field fieldToSave = FieldBuilder.builder( TextField.class )
+                .name( FIRST_NAME )
+                .variable( TEST_VAR_NAME )
+                .contentTypeId( contentType.id() )
+                .dataType( DataTypes.TEXT )
+                .fixed( true )
+                .dbColumn( "text15" )
+                .id( FIRST_UUID )
+                .build();
+
+        fields.add( fieldToSave );
+
+        contentType = contentTypeApi.save( contentType, fields );
+
+        //Lets check that the Field was added.
+        Field fieldFound = null;
+        for ( Field field : contentType.fields() ) {
+            if ( field.id().equals( FIRST_UUID ) ){
+                fieldFound = field;
+            }
+        }
+        Assert.assertNotNull( fieldFound );
+        Assert.assertEquals( FIRST_NAME, fieldFound.name() );
+
+        Field fieldToSaveDifferentID = FieldBuilder.builder( TextField.class )
+                .name( SECOND_NAME )
+                .variable( TEST_VAR_NAME )
+                .contentTypeId( contentType.id() )
+                .dataType( DataTypes.TEXT )
+                .fixed( true )
+                .dbColumn( "text15" )
+                .id( SECOND_UUID )
+                .build();
+
+        originalFields.add( fieldToSaveDifferentID );
+
+        contentType = contentTypeApi.save( contentType, originalFields );
+
+        //Lets check that the Field was updated.
+        fieldFound = null;
+        for ( Field field : contentType.fields() ) {
+            if ( field.id().equals( FIRST_UUID ) ){
+                fieldFound = field;
+            }
+        }
+        Assert.assertNotNull( fieldFound );
+        Assert.assertEquals( SECOND_NAME, fieldFound.name() );
+
+		//Deleting content type.
+		delete(contentType);
+	}
+	
+	/*
+	 * Github: https://github.com/dotCMS/core/issues/11861
+	 * 
+	 * Creates a Widget and a couple of DateTimeFields (Publish and Expire) and set it as Publish and Expire properties in the Content Type.
+	 */
+	@Test
+	public void testWidgetContentTypeWithPublishExpireFields() throws Exception{
+		int base = BaseContentType.WIDGET.ordinal();
+		long time = System.currentTimeMillis();
+		
+		ContentType contentType = ContentTypeBuilder
+                .builder(BaseContentType.getContentTypeClass(base))
+                .description("WidgetContentTypeWithPublishExpireFields " + time)
+                .folder(FolderAPI.SYSTEM_FOLDER)
+                .host(Host.SYSTEM_HOST)
+                .name("WidgetContentTypeWithPublishExpireFields " + time)
+                .owner(APILocator.systemUser().toString())
+                .variable("WCTVariable " + time)
+                .publishDateVar("publishDate")
+                .expireDateVar("expireDate")
+                .build();
+        contentType = contentTypeApi.save(contentType);
+
+        assertThat("ContentType exists", contentTypeApi.find( contentType.inode() ) != null);
+        
+        List<Field> fields = new ArrayList<>( contentType.fields() );
+        
+        Field fieldToSave = FieldBuilder.builder( DateTimeField.class )
+                .name( "Publish Date" )
+                .variable( "publishDate" )
+                .contentTypeId( contentType.id() )
+                .dataType( DataTypes.DATE )
+                .indexed(true)
+                .build();
+        fields.add( fieldToSave );
+        
+        fieldToSave = FieldBuilder.builder( DateTimeField.class )
+                .name( "Expire Date" )
+                .variable( "expireDate" )
+                .contentTypeId( contentType.id() )
+                .dataType( DataTypes.DATE )
+                .indexed(true)
+                .build();		
+        fields.add( fieldToSave );
+        
+        contentType = contentTypeApi.save(contentType, fields);
+        
+        
+        
+        
 	}
 }

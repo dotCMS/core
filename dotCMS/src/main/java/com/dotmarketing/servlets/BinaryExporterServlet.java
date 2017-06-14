@@ -31,6 +31,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.io.Files;
 import com.dotcms.repackage.org.apache.commons.collections.LRUMap;
@@ -313,9 +314,11 @@ public class BinaryExporterServlet extends HttpServlet {
 				//Find the contentlet content type
 				ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find((content.getContentTypeId()));
 				//And the file asset field
-				com.dotcms.contenttype.model.field.Field field = APILocator.getContentTypeFieldAPI().byContentTypeAndVar(type, fieldVarName);
+				com.dotcms.contenttype.model.field.Field field;
 
-				if(field == null){
+				try {
+					field = APILocator.getContentTypeFieldAPI().byContentTypeAndVar(type, fieldVarName);
+				} catch (NotFoundInDbException e) {
 					Logger.debug(this,"Field " + fieldVarName + " does not exists within structure " + content.getStructure().getVelocityVarName());
 					resp.sendError(404);
 					return;

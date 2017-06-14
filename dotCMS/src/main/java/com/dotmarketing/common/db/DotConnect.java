@@ -928,9 +928,12 @@ public class DotConnect {
 	 * @throws DotDataException
 	 *             An error occurred when interacting with the database.
 	 */
-	public Long getRecordCount(String tableName) throws DotDataException {
-		Long recordCount = 0L;
-		setSQL("SELECT COUNT(*) AS count FROM " + tableName);
+ 	public Long getRecordCount(String tableName) throws DotDataException {
+		return getRecordCount(tableName, "");
+	}
+ 	public Long getRecordCount(String tableName, String whereClause) throws DotDataException {
+ 		Long recordCount = 0L;
+		setSQL("SELECT COUNT(*) AS count FROM " + tableName +" "+ whereClause);
 		if (DbConnectionFactory.isOracle()) {
 			BigDecimal result = (BigDecimal) loadObjectResults().get(0).get("count");
 			recordCount = new Long(result.toPlainString());

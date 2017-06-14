@@ -5,21 +5,12 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.model.type.Expireable;
-import com.dotcms.contenttype.model.type.FileAssetContentType;
-import com.dotcms.contenttype.model.type.UrlMapable;
+import com.dotcms.contenttype.model.type.*;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.DotValidationException;
-import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.LocalTransaction;
@@ -30,21 +21,11 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDUtil;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
-
+import com.dotmarketing.util.*;
 import org.elasticsearch.indices.IndexMissingException;
 
-import java.util.ArrayList;
+import java.util.*;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
 
 public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
@@ -214,7 +195,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       validateFields(returnType);
       
       
-      return returnType;
+      return find(returnType.id());
     });
 
 
@@ -222,10 +203,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   @Override
   public ContentType setAsDefault(ContentType type) throws DotDataException {
-    if (!type.equals(findDefaultType())) {
+    ContentType oldDefault= findDefaultType();
+    if (!type.equals(oldDefault)) {
       LocalTransaction.wrapReturn(() -> {
         ContentType returnType = dbUpdateDefaultToTrue(type);
-        cache.clearCache();
+        cache.remove(type);
+        cache.remove(oldDefault);
         return returnType;
       });
     }
@@ -340,17 +323,26 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       builder.publishDateVar(null);
     }
 
-    boolean existsInDb = false;
+    ContentType oldContentType = null;
     try {
-      dbById(saveType.id());
-      existsInDb = true;
+      oldContentType = dbById(saveType.id());
     } catch (NotFoundInDbException notThere) {
       Logger.debug(getClass(), "structure inode not found in db:" + saveType.id());
     }
 
+    if (oldContentType == null) {
+    	if (UtilMethods.isSet(saveType.variable())) {
+    		builder.variable(saveType.variable());
+    	} else {
+    		builder.variable(suggestVelocityVar(VelocityUtil.convertToVelocityVariable(saveType.name(), true)));
+    	}
+    } else {
+    	builder.variable(oldContentType.variable());
+    }
+
     ContentType retType = builder.build();
 
-    if (!existsInDb) {
+    if (oldContentType == null) {
     	dbInodeInsert(retType);
     	dbInsert(retType);
 
@@ -371,7 +363,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
 
     // set up default fields
-    if (!existsInDb) {
+    if (oldContentType == null) {
     	List<Field> fields = new ArrayList<Field>(saveType.fields());
 
         for (Field ff : retType.requiredFields()) {
@@ -515,12 +507,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     	orderBy = "mod_date";
     }
     DotConnect dc = new DotConnect();
-    dc.setSQL(String.format(this.contentTypeSql.SELECT_QUERY_CONDITION, searchCondition.condition,orderBy));
+    dc.setSQL( String.format( this.contentTypeSql.SELECT_QUERY_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ), orderBy ) );
     dc.setMaxRows(limit);
     dc.setStartRow(offset);
-    dc.addParam(searchCondition.search);
-    dc.addParam(searchCondition.search);
-    dc.addParam(searchCondition.search);
+    dc.addParam( searchCondition.search );
+    dc.addParam( searchCondition.search );
+    dc.addParam( searchCondition.search );
     dc.addParam(bottom);
     dc.addParam(top);
     
@@ -537,10 +529,10 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     SearchCondition searchCondition = new SearchCondition(search);
 
     DotConnect dc = new DotConnect();
-    dc.setSQL(String.format(this.contentTypeSql.SELECT_COUNT_CONDITION, searchCondition.condition));
-    dc.addParam(searchCondition.search);
-    dc.addParam(searchCondition.search);
-    dc.addParam(searchCondition.search);
+    dc.setSQL( String.format( this.contentTypeSql.SELECT_COUNT_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ) ) );
+    dc.addParam( searchCondition.search );
+    dc.addParam( searchCondition.search );
+    dc.addParam( searchCondition.search );
     dc.addParam(bottom);
     dc.addParam(top);
     return dc.getInt("test");
@@ -669,13 +661,35 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
           }
         }
 
-        if (!optional.isPresent()) {
-          throw new DotValidationException("ContentType does not have the required Fields: " + test);
-        }
+          if (!optional.isPresent()) {
+              if (Config.getBooleanProperty("THROW_REQUIRED_FIELD_EXCEPTION", false)){
+                  throw new DotValidationException("ContentType does not have the required Fields: " + test);
+              } else {
+                  Logger.warn(this, "ContentType: " + type.name() +" does not have the required Fields: " + test);
+              }
+
+          }
 
       }
     }
     
   }
+
+ @Override
+ public void updateModDate(ContentType type) throws DotDataException {
+	 ContentTypeBuilder builder =
+		        ContentTypeBuilder.builder(type).modDate(DateUtils.round(new Date(), Calendar.SECOND));
+	 type = builder.build();
+	 dbUpdateModDate(type);
+	 cache.remove(type);
+ }
+ 
+ private void dbUpdateModDate(ContentType type) throws DotDataException{
+	 DotConnect dc = new DotConnect();
+	 dc.setSQL(this.contentTypeSql.UPDATE_TYPE_MOD_DATE_BY_INODE);
+	 dc.addParam(type.modDate());
+	 dc.addParam(type.id());
+	 dc.loadResult();
+ }
 
 }

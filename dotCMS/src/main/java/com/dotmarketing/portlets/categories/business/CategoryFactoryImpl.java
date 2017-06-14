@@ -19,11 +19,9 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.*;
+import java.util.Date;
 
 /**
  *
@@ -600,7 +598,6 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			try {
 				conn.rollback();
 			} catch (SQLException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 			e.printStackTrace();
@@ -609,7 +606,6 @@ public class CategoryFactoryImpl extends CategoryFactory {
 				s.close();
 				conn.close();
 			} catch (SQLException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -700,96 +696,94 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
 			rs = s.executeQuery(catSQL.getSortParents());
 
-			while(rs.next()) {
-				Category cat = null;
-				try {
-					cat = (Category) HibernateUtil.load(Category.class, rs.getString("inode"));
-				} catch (DotHibernateException e) {
-					if(!(e.getCause() instanceof ObjectNotFoundException))
-						throw e;
-				}
-				if(cat != null)
-					try {
-						catCache.put(cat);
-					} catch (DotCacheException e) {
-						throw new DotDataException(e.getMessage(), e);
-					}
-			}
-		} catch (SQLException e) {
+            putResultInCatCache( rs );
+        } catch (SQLException e) {
 			try {
 				conn.rollback();
-			} catch (SQLException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+			} catch (SQLException sqlException) {
+				Logger.debug( this, "Error trying to rollback connection", sqlException );
 			}
-			e.printStackTrace();
+            Logger.debug( this, "Error trying to execute statements", e );
 		} finally {
-			try {
-				rs.close();
-				s.close();
-				conn.close();
-			} catch (SQLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
+            closeEverything( s, conn, rs );
+        }
 	}
 
-	public void sortChildren(String inode)  throws DotDataException {
-		Statement s = null;
+    public void sortChildren(String inode)  throws DotDataException {
+
+		Statement statement = null;
 		Connection conn = null;
 		ResultSet rs = null;
 		try {
 			CategorySQL catSQL= CategorySQL.getInstance();
 			conn = DbConnectionFactory.getDataSource().getConnection();
 			conn.setAutoCommit(false);
-			s = conn.createStatement();
-			String sql = "";
-			sql = catSQL.getCreateSortChildren(inode);
-			s.executeUpdate( sql );
+			statement = conn.createStatement();
+			String sql;
+
+            if ( DbConnectionFactory.isOracle() ){
+                //For Oracle we need to avoid ORA-01027 by creating the table before.
+                sql = catSQL.createCategoryReorderTable();
+                statement.execute( sql );
+            }
+
+			PreparedStatement createSortPreparedStatement = conn.prepareStatement( catSQL.getCreateSortChildren() );
+            createSortPreparedStatement.setString( 1, inode );
+            createSortPreparedStatement.executeUpdate();
+
 			sql = catSQL.getUpdateSort();
-			s.executeUpdate( sql );
+			statement.executeUpdate( sql );
+
 			sql = catSQL.getDropSort();
-			s.executeUpdate(sql);
+			statement.executeUpdate(sql);
+
 			conn.commit();
-			sql = catSQL.getSortedChildren(inode);
-			rs = s.executeQuery(sql);
 
-			while(rs.next()) {
-				Category cat = null;
-				try {
-					cat = (Category) HibernateUtil.load(Category.class, rs.getString("inode"));
-				} catch (DotHibernateException e) {
-					if(!(e.getCause() instanceof ObjectNotFoundException))
-						throw e;
-				}
-				if(cat != null)
-					try {
-						catCache.put(cat);
-					} catch (DotCacheException e) {
-						throw new DotDataException(e.getMessage(), e);
-					}
-			}
+            PreparedStatement getSortedPreparedStatement = conn.prepareStatement( catSQL.getSortedChildren() );
+            getSortedPreparedStatement.setString( 1, inode );
+            rs = getSortedPreparedStatement.executeQuery();
 
-		} catch (SQLException e) {
+            putResultInCatCache( rs );
+
+        } catch (SQLException e) {
 			try {
 				conn.rollback();
-			} catch (SQLException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+			} catch (SQLException sqlException) {
+                Logger.debug( this, "Error trying to rollback connection", sqlException );
 			}
-			e.printStackTrace();
+            Logger.debug( this, "Error trying to execute statements", e );
 		} finally {
-			try {
-				rs.close();
-				s.close();
-				conn.close();
-			} catch (SQLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
+            closeEverything( statement, conn, rs );
+        }
 	}
+
+    private void putResultInCatCache( ResultSet rs ) throws SQLException, DotDataException {
+        while(rs.next()) {
+            Category cat = null;
+            try {
+                cat = (Category) HibernateUtil.load(Category.class, rs.getString("inode"));
+            } catch (DotHibernateException e) {
+                if(!(e.getCause() instanceof ObjectNotFoundException ))
+                    throw e;
+            }
+            if(cat != null)
+                try {
+                    catCache.put(cat);
+                } catch (DotCacheException e) {
+                    throw new DotDataException(e.getMessage(), e);
+                }
+        }
+    }
+
+    private void closeEverything( Statement s, Connection conn, ResultSet rs ) {
+        try {
+            rs.close();
+            s.close();
+            conn.close();
+        } catch (SQLException e) {
+            Logger.debug( this, "Error trying to close statement, connection and result set", e );
+        }
+    }
 
     /**
      * Cleans the parent and child cache for a given category

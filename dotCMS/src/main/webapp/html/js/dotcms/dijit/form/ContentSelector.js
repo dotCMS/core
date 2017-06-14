@@ -350,11 +350,12 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		}//http://jira.dotmarketing.net/browse/DOTCMS-3232
 		else if(type=='host or folder'){
 
-			dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
+
 			// Below code is used to fix the "widget already registered error".
-			if(dojo.byId('FolderHostSelector-hostFoldersTreeWrapper')){
-				dojo.byId('FolderHostSelector-hostFoldersTreeWrapper').remove();
-			}
+            if(dojo.byId('FolderHostSelector' + this.dialogCounter + '-hostFoldersTreeWrapper')){
+                dojo.byId('FolderHostSelector' + this.dialogCounter + '-hostFoldersTreeWrapper').remove();
+            }
+
 			if(dijit.byId('FolderHostSelector' + this.dialogCounter)){
 				dijit.byId('FolderHostSelector' + this.dialogCounter).destroy();
 			}
@@ -362,6 +363,8 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 				dijit.byId('FolderHostSelector' + this.dialogCounter + '-tree').destroy();
 			}
 
+            dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
+			
 			var hostId = "";
 			var fieldValue = hostId;
 
