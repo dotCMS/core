@@ -1,15 +1,26 @@
 package com.dotcms.rest.api.v1.languages;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.POST;
 import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
+import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
@@ -18,14 +29,12 @@ import com.dotcms.rest.api.v1.I18NForm;
 import com.dotcms.util.I18NUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.liferay.portal.struts.MultiMessageResources;
+import com.liferay.portal.util.WebAppPool;
 import com.liferay.util.LocaleUtil;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import java.util.List;
-import java.util.Map;
 
 @Path("/v1/languages")
 public class LanguagesResource {
@@ -54,6 +63,7 @@ public class LanguagesResource {
     @GET
     @JSONP
     @NoCache
+
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Map<String, RestLanguage> list(@Context HttpServletRequest request) {
 
@@ -66,6 +76,52 @@ public class LanguagesResource {
         return hash;
     }
 
+
+    @GET
+    @JSONP
+    @NoCache
+    @Path("/{langId}/{search}")
+    @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+    public final Response getLanguageKeys(@PathParam("langId") final String langId, @PathParam("search") final String search,
+            @Context final HttpServletRequest req) {
+        LanguageAPI lapi = APILocator.getLanguageAPI();
+        
+        // we need this even before login
+        final InitDataObject initData = this.webResource.init(false, req, false);
+        Language lang = lapi.getLanguage(langId);
+
+
+        Locale locale =   new Locale( lang.getLanguageCode(), lang.getCountryCode());
+        
+        
+        MultiMessageResources resources = (MultiMessageResources)WebAppPool.get(PublicCompanyFactory.getDefaultCompanyId(), Globals.MESSAGES_KEY);
+        HashMap<String, String> returnMap = new HashMap<>();
+
+        Map<String, String> map = resources.getMessages(locale);
+        for( final String key : map.keySet()){
+          if(search !=null){
+            if(key.startsWith(search)){
+              returnMap.put(key, map.get(key));
+            }
+          }
+        }
+
+
+        Response response = null;
+        response = Response.ok(new ResponseEntityView(returnMap)).build();
+
+
+
+        return response;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
     @POST
     @JSONP
     @NoCache
