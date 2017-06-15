@@ -281,7 +281,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             	String vanityUrlPath = null;
                 try{
                 	VanityUrl vanityUrl = APILocator.getVanityUrlAPI().fromContentlet(con);
-                	vanityUrlPath = !vanityUrl.getSite().equals(Host.SYSTEM_HOST)?APILocator.getHostAPI().find(vanityUrl.getSite(),APILocator.getUserAPI().getSystemUser(), true).getHostname()+vanityUrl.getURI():vanityUrl.getURI();
+                	vanityUrlPath = !vanityUrl.getSite().equals(Host.SYSTEM_HOST)?APILocator.getHostAPI().find(vanityUrl.getSite(),APILocator.getUserAPI().getSystemUser(), true).getHostname()+VanityUrlUtil.fixURI(vanityUrl.getURI()):VanityUrlUtil.fixURI(vanityUrl.getURI());
                     if(vanityUrlPath != null){
                     	m.put("vanityUrl",vanityUrlPath );
                     }

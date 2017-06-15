@@ -37,7 +37,19 @@ public class VanityUrlUtil {
 	 */
 	public static String sanitizeKey(Contentlet vanityUrl) throws DotDataException, DotRuntimeException, DotSecurityException{
 		Host host = APILocator.getHostAPI().find(vanityUrl.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR), APILocator.systemUser(), false);
-		String key = host != null && !host.getIdentifier().equals(Host.SYSTEM_HOST)?host.getHostname()+"|"+vanityUrl.getStringProperty(VanityUrlContentType.URI_FIELD_VAR):vanityUrl.getStringProperty(VanityUrlContentType.URI_FIELD_VAR);
+		String key = host != null && !host.getIdentifier().equals(Host.SYSTEM_HOST)?host.getHostname()+"|"+fixURI(vanityUrl.getStringProperty(VanityUrlContentType.URI_FIELD_VAR)):fixURI(vanityUrl.getStringProperty(VanityUrlContentType.URI_FIELD_VAR));
 		return sanitizeKey(key, vanityUrl.getLanguageId());
+	}
+
+	/**
+	 * Fix the URI passed if the URI doesn't beging with a "/"
+	 * @param uri The URI to fix
+	 * @return The fixed uri
+	 */
+	public static String fixURI(String uri){
+		if ( !uri.startsWith("/") ) {
+			uri = "/" + uri;
+		}
+		return uri;
 	}
 }
