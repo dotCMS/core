@@ -1,7 +1,6 @@
 import {Component, ViewEncapsulation} from '@angular/core';
 import {LoginService} from '../../../../api/services/login-service';
 import {DotRouterService} from '../../../../api/services/dot-router-service';
-
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
     selector: 'dot-log-out-container',
@@ -10,7 +9,6 @@ import {DotRouterService} from '../../../../api/services/dot-router-service';
 export class LogOutContainer {
 
     constructor (loginService: LoginService,  router: DotRouterService) {
-
         loginService.isLogin$.subscribe(isLogin => {
             if (isLogin) {
                 loginService.logOutUser().subscribe(() => {});

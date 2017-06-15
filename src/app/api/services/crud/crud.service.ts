@@ -23,7 +23,8 @@ export class CrudService {
      * @memberOf CrudService
      */
     loadData(baseUrl: string, limit: number, offset: number, sortField?: string,
-    sortOrder?: OrderDirection, query?: string): Observable<PaginationResponse> {
+                sortOrder?: OrderDirection, query?: string): Observable<PaginationResponse> {
+
         let params: URLSearchParams = new URLSearchParams();
         params.set('limit', String(limit));
         params.set('offset', String(offset));

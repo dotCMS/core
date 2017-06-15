@@ -11,7 +11,7 @@ import { NgModule } from '@angular/core';
 
 @NgModule({
     declarations: [
-        ListingDataTableComponent,
+        ListingDataTableComponent
     ],
     exports: [
         ListingDataTableComponent

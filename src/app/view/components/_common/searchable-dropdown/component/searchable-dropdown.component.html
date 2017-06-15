@@ -1,0 +1,23 @@
+<p-overlayPanel #searchPanel>
+    <input #searchInput pInputText type="text"/>
+
+    <ul>
+        <li *ngFor="let item of data"
+            (click)="handleClick(item)">
+            {{item[labelPropertyName]}}
+        </li>
+    </ul>    
+
+    <p-paginator [rows]="rows" 
+                 [totalRecords]="totalRecords" 
+                [pageLinkSize]="pageLinkSize"
+                (onPageChange)="paginate($event)">
+    </p-paginator>
+</p-overlayPanel>
+
+<button ripple pButton type="button" 
+        icon="fa-sort-desc" 
+        iconPos="right" 
+        [label]="valueString"
+        (click)="searchPanel.toggle($event)">
+</button>

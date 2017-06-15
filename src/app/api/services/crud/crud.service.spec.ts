@@ -38,7 +38,7 @@ describe('CrudService', () => {
             body: JSON.stringify(mockResponse),
         })));
         tick();
-        expect(this.lastConnection.request.url).toEqual('http://localhost:9876/api/v1/urldemo?limit=10&offset=99&orderby=name-asc&query=some%20text');
+        expect(this.lastConnection.request.url).toContain('/api/v1/urldemo?limit=10&offset=99&orderby=name-asc&query=some%20text');
         expect(result).toBeDefined('result is not defined');
         expect(result.totalRecords).toEqual(5);
         expect(result.items.length).toEqual(4);
@@ -80,7 +80,7 @@ describe('CrudService', () => {
         this.crudService.postData('v1/urldemo', body).subscribe(res => {
             result = res;
         });
-        let a = this.lastConnection.mockRespond(new Response(new ResponseOptions({
+        this.lastConnection.mockRespond(new Response(new ResponseOptions({
             body: JSON.stringify(mockResponse)
         })));
 

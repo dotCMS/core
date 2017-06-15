@@ -2,6 +2,7 @@ import { Component, ViewEncapsulation, ViewChild } from '@angular/core';
 import { LoggerService } from '../../../../api/services/logger.service';
 import { Router } from '@angular/router';
 import { SelectItem, AutoComplete } from 'primeng/primeng';
+import { FormGroup, FormBuilder } from '@angular/forms';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -25,9 +26,15 @@ export class PatternLibrary {
     private actionButtonItems: [any];
     private contentTypeColumns: any;
 
+    private searchableForm: FormGroup;
+    private totalRecords: number;
+    private sitesCurrentPage: any[] = [];
+    private sites: any[] = [];
+    private readonly ROWS = 10;
+
     @ViewChild(AutoComplete) private autoCompleteComponent: AutoComplete;
 
-    constructor(public loggerService: LoggerService, private router: Router) {
+    constructor(public loggerService: LoggerService, private router: Router, private fb: FormBuilder) {
         this.cities = [];
         this.cities.push({label: 'Select City', value: null});
         this.cities.push({label: 'New York', value: {id: 1, name: 'New York', code: 'NY'}});
@@ -123,6 +130,8 @@ export class PatternLibrary {
             {vin: 'aab227b7', brand: 'Audi 3', year: 1970, color: 'Black'},
             {vin: '631f7412', brand: 'Volvo 3', year: 1992, color: 'Red'}
         ];
+
+        this.initSites();
     }
 
     autocompleteComplete($event): void {
@@ -144,5 +153,39 @@ export class PatternLibrary {
 
     showDialog(): void {
         this.displayDialog = true;
+    }
+
+    handleFilterChange(filter): void {
+        this.sitesCurrentPage = this.sites.filter( site => site.name.indexOf(filter) !== -1);
+        this.totalRecords = this.sitesCurrentPage .length;
+        this.sitesCurrentPage = this.sitesCurrentPage.slice(0, this.ROWS);
+
+    }
+
+    handlePageChange(event): void {
+        this.sitesCurrentPage = this.sites.slice(event.first, event.first + this.ROWS);
+    }
+
+    private initSites(): void {
+        for (let k = 0; k < 50; k++) {
+            let text = '';
+            let possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+            for ( let i = 0; i < 5; i++ ) {
+                text += possible.charAt(Math.floor(Math.random() * possible.length));
+            }
+
+            this.sites[k] = {
+                id: k,
+                name: text
+            };
+        }
+
+        this.sitesCurrentPage = this.sites.slice(0, this.ROWS);
+        this.totalRecords = this.sites.length;
+        this.searchableForm = this.fb.group({
+            currentSite: '',
+            fakeCurrentSite: this.sites[0]
+        });
     }
 }

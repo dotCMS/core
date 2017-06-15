@@ -68,4 +68,48 @@ $sidebar-width: 190px;
     .dot-select.is-active .dot-select__icon {
         color: $white;
     }
+
+    dot-site-selector-component {
+        .ui-button-text {
+            color: $white;
+            font-size: $font-size-large;
+            text-overflow: ellipsis;
+        }
+
+        button {
+            &:hover {
+                background-color: rgba($white, 0.1);
+
+                .ui-button-text {
+                    color: $white;
+                }
+
+                .ui-button-icon-right {
+                    color: $white;
+                }
+            }
+        }
+
+        .ui-button-icon-right{
+            color: $white;
+            font-size: $font-size-large;
+            padding-left: 5%;
+            top:40%;
+        }
+
+
+        .site-selector__field {
+            .ui-button,
+            .ui-button:hover,
+            .ui-button:active,
+            .ui-button:focus {
+                box-shadow: none;
+            }
+
+            .ui-button {
+                background-color: transparent;
+            }
+        }
+    }
 }
+

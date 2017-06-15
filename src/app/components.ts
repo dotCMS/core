@@ -68,15 +68,18 @@ import { NotificationsList, NotificationsItem } from './view/components/_common/
 import { PatternLibrary } from './view/components/_common/pattern-library/pattern-library';
 import { ResetPasswordComponent } from './view/components/login/reset-password-component/reset-password-component';
 import { ResetPasswordContainer } from './view/components/login/reset-password-component/reset-password-container';
-import { SiteSelectorComponent } from './view/components/site-selector/dot-site-selector-component';
+import { SiteSelectorComponent } from './view/components/site-selector/dot-site-selector.component';
 import { ToolbarAddContenletComponent, ToolbarAddContenletBodyComponent } from './view/components/toolbar-add-contentlet/toolbar-add-contentlet';
 import { ToolbarNotifications } from './view/components/toolbar-notifications/toolbar-notifications';
 import { ToolbarUserComponent } from './view/components/toolbar-user/toolbar-user';
+import { CounterInputComponent } from './view/components/_common/counter-input-component/counter-input-component';
+import { ToolbarComponent } from './view/components/toolbar/toolbar-component';
 
 export const COMPONENTS = [
     ...RULES_ENGINE_COMPONENTS,
     Accordion,
     AccordionGroup,
+    CounterInputComponent,
     CustomTimeComponent,
     DotLoadingIndicator,
     DropdownComponent,
@@ -104,7 +107,8 @@ export const COMPONENTS = [
     ToolbarAddContenletBodyComponent,
     ToolbarAddContenletComponent,
     ToolbarNotifications,
-    ToolbarUserComponent
+    ToolbarUserComponent,
+    ToolbarComponent
 ];
 
 // CUSTOM PIPES

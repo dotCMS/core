@@ -34,6 +34,7 @@ import { NGFACES_MODULES } from './modules';
 import { ActionButtonModule } from './view/components/_common/action-button/action-button.module';
 import { FieldValidationMessageModule } from './view/components/_common/field-validation-message/file-validation-message.module';
 import { ListingDataTableModule } from './view/components/listing-data-table/listing-data-table.module';
+import { SearchableDropDownModule } from './view/components/_common/searchable-dropdown';
 
 // Application wide providers
 const APP_PROVIDERS = [
@@ -63,12 +64,19 @@ type StoreType = {
     ActionButtonModule,
     BrowserAnimationsModule,
     BrowserModule,
+    BrowserModule,
+    FieldValidationMessageModule,
     FieldValidationMessageModule,
     FormsModule,
+    FormsModule,
+    HttpModule,
     HttpModule,
     JsonpModule,
+    JsonpModule,
+    ListingDataTableModule,
     ListingDataTableModule,
     ReactiveFormsModule,
+    SearchableDropDownModule,
     // AppRoutingModule should always be the last one
     AppRoutingModule
   ],

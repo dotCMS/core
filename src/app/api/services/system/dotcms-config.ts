@@ -23,7 +23,6 @@ const DOTCMS_PAGINATOR_ROWS = 'dotcms.paginator.rows';
 const DOTCMS_PAGINATOR_LINKS = 'dotcms.paginator.links';
 
 export interface ConfigParams {
-    defaultRestPageCount: number;
     disabledWebsockets: string;
     websocketReconnectTime: number;
     websocketEndpoints: string;
@@ -74,7 +73,6 @@ export class DotcmsConfig {
             this.loggerService.debug('Configuration Loaded!', res);
 
             this.configParams = {
-                defaultRestPageCount: res.config[DEFAULT_REST_PAGE_COUNT],
                 disabledWebsockets: res.config[DOTCMS_DISABLE_WEBSOCKET_PROTOCOL],
                 menu: res.menu,
                 paginatorLinks: res.config[DOTCMS_PAGINATOR_LINKS],

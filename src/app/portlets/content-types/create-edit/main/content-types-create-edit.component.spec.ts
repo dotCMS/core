@@ -16,6 +16,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 import { async } from '@angular/core/testing';
 import { ContentTypesInfoService } from '../../../../api/services/content-types-info';
+import { OverlayPanelModule } from 'primeng/primeng';
 
 describe('ContentTypesCreateEditPortletComponent', () => {
     let comp: ContentTypesCreateEditPortletComponent;
@@ -46,6 +47,7 @@ describe('ContentTypesCreateEditPortletComponent', () => {
                     component: ContentTypesCreateEditPortletComponent,
                     path: 'test'
                 }]),
+                OverlayPanelModule
             ],
             providers: [
                 { provide: LoginService, useClass: LoginServiceMock },
