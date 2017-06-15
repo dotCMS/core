@@ -477,9 +477,12 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 
         //No need to run all the SQL is we don't get any inodes from the condition.
         if(!resultInodes.isEmpty()){
+			String parameterPlaceholders;
             List<String> inodesToDelete = new ArrayList<>();
             List<List<String>> inodesToDeleteMatrix = new ArrayList<>();
             int truncateAt = 100;
+            int remaining;
+
 
             //Fill inodesToDelete where each inode from the result.
             for (Map<String, Object> row : resultInodes) {
@@ -488,10 +491,12 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 
             //We want to create lists of 100 inodes.
             while (inodesToDelete.size() >= truncateAt){
-                inodesToDeleteMatrix.add(new CopyOnWriteArrayList<>(inodesToDelete.subList(0,truncateAt)));
+                inodesToDeleteMatrix.add(inodesToDelete.subList(0,truncateAt));
                 inodesToDelete.subList(0,truncateAt).clear();
             }
-            inodesToDeleteMatrix.add(new CopyOnWriteArrayList<>(inodesToDelete.subList(0, inodesToDelete.size())));
+
+            remaining = inodesToDelete.size();
+            inodesToDeleteMatrix.add(inodesToDelete.subList(0, remaining));
 
             //These are all the queries we want to run involving the inodes.
             List<String> queries = Lists.newArrayList("delete from tree where child in (?)",
@@ -501,13 +506,19 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 
             //For each query we will run sets of 100 inodes at a time.
             for (String query : queries) {
-                for (List<String> inodes : inodesToDeleteMatrix) {
+                for (int i = 0; i < inodesToDeleteMatrix.size();i++) {
+					inodesToDelete  =  inodesToDeleteMatrix.get(i);
                     //Create (?,?,?...) string depending of the number of inodes.
-                    String parameterPlaceholders = DotConnect.createParametersPlaceholder(inodes.size());
+					if (i == (inodesToDeleteMatrix.size() - 1)){
+						parameterPlaceholders = DotConnect.createParametersPlaceholder(remaining);
+					}else{
+						parameterPlaceholders = DotConnect.createParametersPlaceholder(truncateAt);
+					}
+
                     //Replace '?' in the query, with the correct number of '?'s.
                     dc.setSQL(query.replace("?", parameterPlaceholders));
 
-                    for (String inode : inodes) {
+                    for (String inode : inodesToDelete) {
                         dc.addParam(inode);
                     }
 
