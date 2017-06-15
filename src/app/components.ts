@@ -72,14 +72,12 @@ import { SiteSelectorComponent } from './view/components/site-selector/dot-site-
 import { ToolbarAddContenletComponent, ToolbarAddContenletBodyComponent } from './view/components/toolbar-add-contentlet/toolbar-add-contentlet';
 import { ToolbarNotifications } from './view/components/toolbar-notifications/toolbar-notifications';
 import { ToolbarUserComponent } from './view/components/toolbar-user/toolbar-user';
-import { CounterInputComponent } from './view/components/_common/counter-input-component/counter-input-component';
 import { ToolbarComponent } from './view/components/toolbar/toolbar-component';
 
 export const COMPONENTS = [
     ...RULES_ENGINE_COMPONENTS,
     Accordion,
     AccordionGroup,
-    CounterInputComponent,
     CustomTimeComponent,
     DotLoadingIndicator,
     DropdownComponent,
