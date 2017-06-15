@@ -1,0 +1,1 @@
+export * from './content-types-create.component';

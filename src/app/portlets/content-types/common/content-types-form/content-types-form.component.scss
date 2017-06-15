@@ -1,20 +1,6 @@
 @import "../../../../../styles/mixins";
 @import "../../../../../styles/variables";
 
-.content-type__fields-layout {
-    flex: 1 1 auto;
-    display: flex;
-}
-
-.content-type__fields-main {
-    flex: 1 1 auto;
-}
-
-.content-type__fields-sidebar {
-    border-left: solid 1px $gray-lighter;
-    width: 200px;
-}
-
 .content-type__form-header {
     margin: $basic-padding * 3 0;
     position: relative;

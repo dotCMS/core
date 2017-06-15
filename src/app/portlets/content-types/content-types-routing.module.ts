@@ -1,5 +1,6 @@
-import { ContentTypesCreateEditPortletComponent } from './create-edit/main';
-import { ContentTypesPortletComponent } from './listing';
+import { ContentTypesCreateComponent } from './create';
+import { ContentTypesEditComponent } from './edit';
+import { ContentTypesPortletComponent } from './main';
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { RoutingPrivateAuthService } from '../../api/services/routing-private-auth-service';
@@ -17,7 +18,7 @@ const contentTypesRoutes: Routes = [
     },
     {
         canActivate: [RoutingPrivateAuthService],
-        component: ContentTypesCreateEditPortletComponent,
+        component: ContentTypesCreateComponent,
         path: 'create/:type'
     },
     {
@@ -27,7 +28,7 @@ const contentTypesRoutes: Routes = [
     },
     {
         canActivate: [RoutingPrivateAuthService],
-        component: ContentTypesCreateEditPortletComponent,
+        component: ContentTypesEditComponent,
         path: 'edit/:id'
     }
 ];

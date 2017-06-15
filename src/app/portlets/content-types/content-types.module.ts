@@ -1,8 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { ContentTypesCreateEditPortletComponent } from './create-edit/main';
-import { ContentTypesFormComponent } from './create-edit/content-types-form';
+import { ContentTypesCreateComponent } from './create';
+import { ContentTypesEditComponent } from './edit';
+import { ContentTypesFormComponent } from './common/content-types-form';
 import { ContentTypesInfoService } from '../../api/services/content-types-info';
-import { ContentTypesPortletComponent } from './listing';
+import { ContentTypesLayoutComponent } from './common/content-type-layout';
+import { ContentTypesPortletComponent } from './main';
 import { ContentTypesRoutingModule } from './content-types-routing.module';
 import { CrudService } from '../../api/services/crud';
 import { FieldValidationMessageModule } from '../../view/components/_common/field-validation-message/file-validation-message.module';
@@ -18,13 +20,16 @@ import { TabViewModule, OverlayPanelModule, DropdownModule, ButtonModule, InputT
 
 @NgModule({
     declarations: [
-        ContentTypesCreateEditPortletComponent,
+        ContentTypesCreateComponent,
+        ContentTypesEditComponent,
         ContentTypesFormComponent,
+        ContentTypesLayoutComponent,
         ContentTypesPortletComponent
     ],
     exports: [
         ContentTypesPortletComponent,
-        ContentTypesCreateEditPortletComponent
+        ContentTypesEditComponent,
+        ContentTypesCreateComponent
     ],
     imports: [
         ButtonModule,

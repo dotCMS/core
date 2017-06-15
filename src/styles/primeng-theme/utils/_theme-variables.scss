@@ -249,7 +249,7 @@ $toolbar-color: $white;
 // TABVIEW
 $tabview-item-color: $gray-dark;
 $tabview-item-selected-color: $blue;
-$tabview-item-padding: $basic-padding;
+$tabview-item-padding: 10px $basic-padding * 2; // To match the 40px height
 $tabview-item-border: 3px solid $white;
 $tabview-item-selected-border: 3px solid $blue;
 

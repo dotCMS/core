@@ -33,4 +33,16 @@ export class StringUtils {
         }).replace(/\s+/g, '');
     }
 
+    /**
+     * Return a string with the first char in uppercase
+     *
+     * @param {string} str
+     * @returns {string}
+     *
+     * @memberof StringUtils
+     */
+    titleCase(str: string): string {
+        return `${str.charAt(0).toLocaleUpperCase()}${str.slice(1)}`;
+    }
+
 } // E:O:F:StringUtils.

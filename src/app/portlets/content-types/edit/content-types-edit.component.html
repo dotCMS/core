@@ -1,0 +1,15 @@
+<content-type-layout mode="edit">
+    <content-types-form
+        #form
+        [data]="contentTypeItem | async"
+        [type]="contentTypeType"
+        [name]="contentTypeName | async"
+        [icon]="contentTypeIcon"
+        (onSubmit)="handleFormSubmit($event)"
+        (onCancel)="router.navigate(['../'], { relativeTo: route })">
+    </content-types-form>
+    <div *ngIf="readyToAddFields">
+        <!--HERE WILL RENDER THE DROP ZONE FOR FIELDS-->
+        <h1>Now you can add fields</h1>
+    </div>
+</content-type-layout>

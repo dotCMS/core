@@ -2,14 +2,14 @@
     border-radius: 0;
 }
 
-.ui-tabview {    
+.ui-tabview {
     padding: 0;
 
     &.ui-tabview-top {
         .ui-tabview-nav li {
             top: 0;
 
-            a { 
+            a {
                 border-bottom: $tabview-item-border;
 
                 &:hover {
@@ -23,10 +23,11 @@
         }
     }
 
+
     .ui-tabview-nav {
         .ui-state-default a {
             color: $tabview-item-color;
-            padding: $tabview-item-padding $tabview-item-padding * 2;
+            padding: $tabview-item-padding;
             text-transform: uppercase;
         }
 
@@ -57,7 +58,7 @@
             margin: 0;
         }
     }
-  
+
     .ui-tabview-panel {
       padding: 0;
     }

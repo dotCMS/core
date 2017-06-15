@@ -1,6 +1,6 @@
 import { ActionHeaderOptions } from '../../../view/components/listing-data-table/action-header/action-header';
 import { BaseComponent } from '../../../view/components/_common/_base/base-component';
-import { Component } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { DataTableColumn } from '../../../view/components/listing-data-table/listing-data-table.component';
 import { MessageService } from '../../../api/services/messages-service';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -13,8 +13,9 @@ import { ActivatedRoute, Router } from '@angular/router';
  * @extends {BaseComponent}
  */
 @Component({
+    encapsulation: ViewEncapsulation.None,
     selector: 'content-types',
-    templateUrl: 'content-types.component.html'
+    templateUrl: 'content-types.component.html',
 })
 export class ContentTypesPortletComponent extends BaseComponent {
     public contentTypeColumns: DataTableColumn[];

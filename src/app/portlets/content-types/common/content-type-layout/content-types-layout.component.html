@@ -1,0 +1,37 @@
+<div class="content-type" id="content-type">
+    <p-tabView>
+        <p-tabPanel header="{{i18nMessages['fields']}}">
+            <div class="content-type__fields-layout" id="content-type-form-layout">
+                <div class="content-type__fields-main" id="content-type-form-main">
+                    <div class="container-fluid">
+                        <ng-content></ng-content>
+                    </div>
+                </div>
+                <div class="content-type__fields-sidebar">
+                    <p-tabView>
+                        <p-tabPanel header="{{i18nMessages['fields']}}">
+                            <div class="container-fluid">
+                                Fields
+                            </div>
+                        </p-tabPanel>
+                        <p-tabPanel header="properties">
+                            <div class="container-fluid">
+                                Properties
+                            </div>
+                        </p-tabPanel>
+                    </p-tabView>
+                </div>
+            </div>
+        </p-tabPanel>
+        <p-tabPanel header="{{i18nMessages['Permissions']}}" *ngIf="mode === 'edit'">
+            <div class="container-fluid">
+                Content 2
+            </div>
+        </p-tabPanel>
+        <p-tabPanel header="{{i18nMessages['publisher_push_history']}}">
+            <div class="container-fluid">
+                Content 3
+            </div>
+        </p-tabPanel>
+    </p-tabView>
+</div>

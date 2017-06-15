@@ -1,0 +1,29 @@
+@import "../../../../../styles/mixins";
+@import "../../../../../styles/variables";
+
+.content-type {
+    .ui-tabview-nav {
+        box-shadow: 0 2px 2px $gray-light;
+    }
+
+    & > p-tabview {
+        .ui-tabview-nav {
+            position: relative;
+            z-index: 1;
+        }
+    }
+}
+
+.content-type__fields-layout {
+    flex: 1 1 auto;
+    display: flex;
+}
+
+.content-type__fields-main {
+    flex: 1 1 auto;
+}
+
+.content-type__fields-sidebar {
+    border-left: solid 1px $gray-lighter;
+    width: 200px;
+}
