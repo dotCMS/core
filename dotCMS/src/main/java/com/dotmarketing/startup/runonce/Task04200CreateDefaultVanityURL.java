@@ -30,7 +30,6 @@ public class Task04200CreateDefaultVanityURL extends AbstractJDBCStartupTask {
 	private final String[] DEFAULT_VANITY_URL_FIELDS_INODES = { 
 			"4e64a309-8c5e-48cf-b4a9-e724a5e09575", // Order
 			"3b7f25bb-c5be-48bb-b00b-5b1b754e550c", // Action
-			"e5e9081d-5c17-4bb1-81a7-369ae3233354", // Response Code
 			"de4fea7f-4d8f-48eb-8a63-20772dced99a", // Foward To
 			"7e438b93-b631-4812-9c9c-331b03e6b1cd", // Uri
 			"49f3803a-b2b0-4e03-bb2e-d1bb2a1c135e", // Site
@@ -128,13 +127,10 @@ public class Task04200CreateDefaultVanityURL extends AbstractJDBCStartupTask {
 	private List<Map<String, Object>> setBaseVanityURLFields() {
 		List fields = new ArrayList();
 		
-		fields.add(setFieldElements("Order", "com.dotcms.contenttype.model.field.TextField","", "integer2", true, true, false, "order", 6, "", "", "", "", true, false, true));
+		fields.add(setFieldElements("Order", "com.dotcms.contenttype.model.field.TextField","", "integer2", true, true, false, "order", 5, "", "", "", "", true, false, true));
 		
-		fields.add(setFieldElements("Action", "com.dotcms.contenttype.model.field.SelectField","", "text5", true, true, false, "action", 5, 
-				"Redirect|redirect\r\nForward|forward\r\nDie|die", "", "", "", true, false, true));
-		
-		fields.add(setFieldElements("Response Code", "com.dotcms.contenttype.model.field.TextField","", "integer1", true, true, false, "responseCode", 4, 
-				"", "", "", "", true, false, true));
+		fields.add(setFieldElements("Action", "com.dotcms.contenttype.model.field.SelectField","", "integer1", true, true, false, "action", 4, 
+				"Forward|200\r\nPermanent Redirect|301\r\nTemporary Redirect|307\r\nAuth Required|401\r\nAuth Failed|403\r\nMissing|404\r\nError|500", "", "", "", true, false, true));
 		
 		fields.add(setFieldElements("Forward To", "com.dotcms.contenttype.model.field.CustomField","", "text4", true, true, true, "forwardTo", 3, "$velutil.mergeTemplate('/static/content/file_browser_field_render.vtl')", "", "", "", true, false, false));
 		

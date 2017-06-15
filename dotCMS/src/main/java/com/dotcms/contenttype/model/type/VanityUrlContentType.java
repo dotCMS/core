@@ -74,7 +74,7 @@ public abstract class VanityUrlContentType extends ContentType {
 				.required(Boolean.TRUE).sortOrder(order++).listed(Boolean.TRUE).build();
 		Field actionField = ImmutableSelectField.builder().name(ACTION_FIELD_NAME).variable(ACTION_FIELD_VAR)
 				.required(Boolean.TRUE).fixed(Boolean.TRUE).indexed(Boolean.TRUE).searchable(Boolean.TRUE)
-				.dataType(DataTypes.INTEGER).values("Forward|200\r\nPermanent Redirect|301\r\nTemporary Redirect|302\r\nAuth Required|401\r\nAuth Failed|403\r\nMissing|404\r\nError|500").build();
+				.dataType(DataTypes.INTEGER).values("Forward|200\r\nPermanent Redirect|301\r\nTemporary Redirect|307\r\nAuth Required|401\r\nAuth Failed|403\r\nMissing|404\r\nError|500").build();
 		Field orderField = ImmutableTextField.builder().name(ORDER_FIELD_NAME).variable(ORDER_FIELD_VAR)
 				.dataType(DataTypes.INTEGER).required(Boolean.TRUE).fixed(Boolean.TRUE).indexed(Boolean.TRUE)
 				.searchable(Boolean.TRUE).build();
