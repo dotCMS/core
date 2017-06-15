@@ -313,8 +313,6 @@ public interface HostAPI {
 	 * @param user
 	 * @param respectFrontendRoles
 	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
 	 */
 	public long count(User user, boolean respectFrontendRoles);
 }
