@@ -1,5 +1,6 @@
 package com.dotmarketing.servlets;
 
+import com.dotcms.cache.VanityUrlCache;
 import com.dotcms.cluster.business.HazelcastUtil;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
@@ -197,8 +198,8 @@ public class InitServlet extends HttpServlet {
 
 
         // maps all virtual links in memory
-        VirtualLinksCache.mapAllVirtualLinks();
-
+        //VirtualLinksCache.mapAllVirtualLinks();
+        
         Language language = langAPI.getDefaultLanguage();
 
         if (language.getId() == 0) {

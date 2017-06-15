@@ -16,22 +16,31 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.commons.logging.LogFactory;
+
+import com.dotcms.api.content.VanityUrlAPI;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.content.model.VanityUrl;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
-import com.dotmarketing.util.*;
-import org.apache.commons.logging.LogFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.NumberOfTimeVisitedCounter;
+import com.dotmarketing.util.PageRequestModeUtil;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.util.Xss;
 
 public class CMSFilter implements Filter {
@@ -116,11 +125,11 @@ public class CMSFilter implements Filter {
 		// get the users language
 		long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 
-
+		VanityUrlAPI vanityUrlAPI = APILocator.getVanityUrlAPI(); 
 
 		if (urlUtil.isFileAsset(uri, host, languageId)) {
 			iAm= IAm.FILE;
-		} else if (urlUtil.isVanityUrl(uri, host)) {
+		} else if (urlUtil.isVanityUrl(uri, host, languageId)) {
 			iAm = IAm.VANITY_URL;
 		} else if (urlUtil.isPageAsset(uri, host, languageId)) {
 			iAm = IAm.PAGE;
@@ -132,11 +141,40 @@ public class CMSFilter implements Filter {
 		String queryString = request.getQueryString();
 		// if a vanity URL
 		if (iAm == IAm.VANITY_URL) {
-
-			rewrite = VirtualLinksCache.getPathFromCache(host.getHostname() + ":" + ("/".equals(uri) ? "/cmsHomePage" : uri.endsWith("/")?uri.substring(0, uri.length() - 1):uri));
+			VanityUrl vanityUrl = null;
+			try {
+				vanityUrl = vanityUrlAPI.getVanityUrlByURI(("/".equals(uri) ? "/cmsHomePage" : uri.endsWith("/")?uri.substring(0, uri.length() - 1):uri), host, languageId, APILocator.systemUser(),true);
+			} catch (DotDataException | DotSecurityException e) {
+				Logger.error(this, "Error searching vanity URL "+uri,e);
+			}
+			rewrite = vanityUrl != null && InodeUtils.isSet(vanityUrl.getInode())?vanityUrl.getForwardTo():null;
 
 			if (!UtilMethods.isSet(rewrite)) {
-				rewrite = VirtualLinksCache.getPathFromCache(("/".equals(uri) ? "/cmsHomePage" : uri.endsWith("/")?uri.substring(0, uri.length() - 1):uri));
+				try {
+					vanityUrl = vanityUrlAPI.getVanityUrlByURI(("/".equals(uri) ? "/cmsHomePage" : uri.endsWith("/")?uri.substring(0, uri.length() - 1):uri), null, languageId, APILocator.systemUser(),true);
+				} catch (DotDataException | DotSecurityException e) {
+					Logger.error(this, "Error searching vanity URL "+uri,e);
+				}
+				rewrite = vanityUrl != null && InodeUtils.isSet(vanityUrl.getInode())?vanityUrl.getForwardTo():null;
+			}
+			if(vanityUrl != null){
+				if(vanityUrl.getAction() == 200){
+					//then forward
+					response.setStatus(vanityUrl.getAction());
+				}else if(vanityUrl.getAction()== 301 || vanityUrl.getAction() == 302){
+					//redirect
+					response.setStatus(vanityUrl.getAction());
+					response.sendRedirect(rewrite);
+	
+					closeDbSilently();
+					return;
+				}else{
+					//errors
+					response.sendError(vanityUrl.getAction());
+					
+					closeDbSilently();
+					return;
+				}
 			}
 			if (UtilMethods.isSet(rewrite) && rewrite.contains("//")) {
 				response.sendRedirect(rewrite);
@@ -204,22 +242,22 @@ public class CMSFilter implements Filter {
 		}
 
 		// run rules engine for all requests
-        RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
-        
-        //if we have committed the response, die
-        if(response.isCommitted()){
-          return;
-        }
-        
-        
-        
+		RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
+
+		//if we have committed the response, die
+		if(response.isCommitted()){
+			return;
+		}
+
+
+
 		if (iAm == IAm.FILE) {
 			Identifier ident = null;
 			try {
 				//Serving the file through the /dotAsset servlet
 				StringWriter forward = new StringWriter();
 				forward.append("/dotAsset/");
-				
+
 				ident = APILocator.getIdentifierAPI().find(host, rewrite);
 				request.setAttribute(CMS_FILTER_IDENTITY, ident);
 
@@ -229,12 +267,12 @@ public class CMSFilter implements Filter {
 					forward.append(WebKeys.HTMLPAGE_LANGUAGE + "=" + languageId);
 				}
 				request.getRequestDispatcher(forward.toString()).forward(request, response);
-				
+
 			} catch (DotDataException e) {
 				Logger.error(CMSFilter.class, e.getMessage(), e);
 				throw new IOException(e.getMessage());
 			}
-            return;
+			return;
 		}
 
 		if (iAm == IAm.PAGE) {
@@ -255,10 +293,10 @@ public class CMSFilter implements Filter {
 		}
 
 		if(rewrite.startsWith("/contentAsset/")){
-	        if(response.isCommitted()){
-	            /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
-	            return;
-	        }
+			if(response.isCommitted()){
+				/* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
+				return;
+			}
 		}
 
 		// otherwise, pass

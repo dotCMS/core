@@ -1,5 +1,7 @@
 package com.dotmarketing.business;
 
+import com.dotcms.api.content.VanityUrlFactory;
+import com.dotcms.api.content.VanityUrlFactoryImpl;
 import com.dotcms.cluster.business.ServerFactory;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesFactory;
@@ -229,6 +231,9 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     public static FieldFactory getFieldFactory(){
         return (FieldFactory)  new FieldFactoryImpl();
     }
+    public static VanityUrlFactory getVanityUrlFactory(){
+        return (VanityUrlFactory)  new VanityUrlFactoryImpl();
+    }
     private static Object getInstance(FactoryIndex index) {
 
 		if(instance == null){
@@ -302,7 +307,8 @@ enum FactoryIndex
 	PERSONA_FACTORY,
 	CONTENTTYPE_FACTORY_2,
 	RELATIONSHIP_FACTORY,
-	FIELD_FACTORY_2;
+	FIELD_FACTORY_2,
+	VANITYURL_FACTORY;
 
 	Object create() {
 		switch(this) {
@@ -341,6 +347,7 @@ enum FactoryIndex
             case PERSONA_FACTORY: return new PersonaFactoryImpl();
             case RELATIONSHIP_FACTORY: return new RelationshipFactoryImpl();
             case TAG_FACTORY: return new TagFactoryImpl();
+            case VANITYURL_FACTORY: return new VanityUrlFactoryImpl();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}

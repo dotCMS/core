@@ -19,14 +19,20 @@ import java.util.Set;
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.content.model.VanityUrl;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.org.apache.commons.collections.CollectionUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
+import com.dotcms.util.VanityUrlUtil;
+
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ListenableActionFuture;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
+
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -269,6 +275,20 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             catch(Exception e){
             	Logger.warn(this.getClass(), "Cannot get URLMap for contentlet.id : " + ((ident != null) ? ident.getId() : con) + " , reason: "+e.getMessage());
             	throw new DotRuntimeException(urlMap, e);
+            }
+            
+            if(con.getContentType().baseType() == BaseContentType.VANITY_URL){
+            	String vanityUrlPath = null;
+                try{
+                	VanityUrl vanityUrl = APILocator.getVanityUrlAPI().fromContentlet(con);
+                	vanityUrlPath = !vanityUrl.getSite().equals(Host.SYSTEM_HOST)?APILocator.getHostAPI().find(vanityUrl.getSite(),APILocator.getUserAPI().getSystemUser(), true).getHostname()+vanityUrl.getURI():vanityUrl.getURI();
+                    if(vanityUrlPath != null){
+                    	m.put("vanityUrl",vanityUrlPath );
+                    }
+                }catch(Exception e){
+                	Logger.warn(this.getClass(), "Cannot get Vanity URL for contentlet.id : " + ((ident != null) ? ident.getId() : con) + " , reason: "+e.getMessage());
+                	throw new DotRuntimeException(urlMap, e);
+                }
             }
 
             for(Entry<String,String> entry : m.entrySet()){
