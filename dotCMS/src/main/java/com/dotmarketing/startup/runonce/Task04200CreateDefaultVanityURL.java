@@ -130,7 +130,7 @@ public class Task04200CreateDefaultVanityURL extends AbstractJDBCStartupTask {
 		fields.add(setFieldElements("Order", "com.dotcms.contenttype.model.field.TextField","", "integer2", true, true, false, "order", 5, "", "", "", "", true, false, true));
 		
 		fields.add(setFieldElements("Action", "com.dotcms.contenttype.model.field.SelectField","", "integer1", true, true, false, "action", 4, 
-				"Forward|200\r\nPermanent Redirect|301\r\nTemporary Redirect|307\r\nAuth Required|401\r\nAuth Failed|403\r\nMissing|404\r\nError|500", "", "", "", true, false, true));
+				"Forward|200\r\nPermanent Redirect|301\r\nTemporary Redirect|302\r\nAuth Required|401\r\nAuth Failed|403\r\nMissing|404\r\nError|500", "", "", "", true, false, true));
 		
 		fields.add(setFieldElements("Forward To", "com.dotcms.contenttype.model.field.CustomField","", "text4", true, true, true, "forwardTo", 3, "$velutil.mergeTemplate('/static/content/file_browser_field_render.vtl')", "", "", "", true, false, false));
 		
