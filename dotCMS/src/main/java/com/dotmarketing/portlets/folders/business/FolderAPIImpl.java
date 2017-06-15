@@ -568,6 +568,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		boolean isNew = folder.getInode() == null;
 		folder.setModDate(new Date());
+		folder.setName(folder.getName().toLowerCase());
 		ffac.save(folder, existingId);
 
 		SystemEventType systemEventType = isNew ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;

@@ -353,6 +353,16 @@ public class CollectionsUtils implements Serializable {
                 entry(key9, value9), entry(key10, value10));
     } // map.
 
+    public static <K,V> Map<K,V> map(final K key1, final V value1, final K key2, final V value2
+            , final K key3, final V value3, final K key4, final V value4, final K key5, final V value5
+            , final K key6, final V value6, final K key7, final V value7, final K key8, final V value8
+            , final K key9, final V value9) {
+        return mapEntries(entry(key1, value1), entry(key2, value2),
+                entry(key3, value3), entry(key4, value4), entry(key5, value5),
+                entry(key6, value6), entry(key7, value7), entry(key8, value8),
+                entry(key9, value9));
+    } // map.
+
     /**
      * Get a new map based on a list of key/value.
      * @param key1 K

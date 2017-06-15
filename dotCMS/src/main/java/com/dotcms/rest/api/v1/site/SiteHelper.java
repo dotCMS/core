@@ -15,11 +15,15 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.util.HostNameComparator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 /**
  * Provides all the utility methods used by the {@link SiteBrowserResource}
@@ -186,7 +190,7 @@ public class SiteHelper implements Serializable {
     	int maxIndex = PaginationUtil.getMaxIndex(currentPage, perPage);
     	
     	PaginatedArrayList<Host> hosts = this.hostAPI.search(sanitizedFilter, showArchived, Boolean.FALSE, perPage, minIndex, user, respectFrontendRoles);
-    	   	
+
     	int totalCount = (int)hosts.getTotalResults();
         
         if((minIndex + perPage) >= totalCount){
@@ -201,4 +205,29 @@ public class SiteHelper implements Serializable {
     	
     }
 
+	/**
+	 * Return the number of sites
+	 *
+	 * @return
+	 */
+	public long getSitesCount(final User user){
+    	return this.hostAPI.count(user, Boolean.FALSE);
+	}
+
+	/**
+	 * Return the current site
+	 *
+	 * @param req
+	 * @return
+	 */
+	public Host getCurrentSite(final HttpServletRequest req, final User user) {
+		try {
+			final HttpSession session = req.getSession();
+			String hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+
+			return (null != hostId) ? hostAPI.find(hostId, user, false) : null;
+		} catch (DotDataException|DotSecurityException e) {
+			throw new DotRuntimeException(e);
+		}
+	}
 }

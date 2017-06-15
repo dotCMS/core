@@ -16,7 +16,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonDeserialize(as = ImmutableWidgetContentType.class)
 @Gson.TypeAdapters
 @Value.Immutable
-public abstract class WidgetContentType extends ContentType {
+public abstract class WidgetContentType extends ContentType implements Expireable{
 	
 	private final String WIDGET_CODE_FIELD_NAME = "Widget Code";
 	private final String WIDGET_CODE_FIELD_VAR = "widgetCode";
