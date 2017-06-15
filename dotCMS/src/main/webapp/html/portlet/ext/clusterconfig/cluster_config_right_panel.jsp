@@ -9,7 +9,7 @@
 	<table class="network-action__list">
 		<tr>
 			<td><i class="statusIcon {cache.status}"></i></td>
-			<td><div id="myShowCacheButton"><b>Cache</b></div></td>
+			<td><div id="myShowCacheButton"><b>Cache Transport</b></div></td>
 			<td></td>
 		</tr>
 		<tr>
