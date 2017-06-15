@@ -694,8 +694,8 @@ public class RoleFactoryImpl extends RoleFactory {
 
 	private void populatChildrenForRoles(List<Role> roles) throws Exception{
 		Map<String,Role> roleMap = UtilMethods.convertListToHashMap(roles, "getId", String.class);
-		String sql = "select distinct cr1.id as childId, cr1.role_name as roleName, cr2.id as parentId  from cms_role cr1, cms_role cr2 where cr1.parent in (:param1) and cr1.parent = cr2.id " +
-				"and cr1.parent != cr1.id order by roleName asc";
+		String sql = "select cr1.id as childId, cr1.role_name as roleName, cr2.id as parentId  from cms_role cr1, cms_role cr2 where cr1.parent in (:param1) and cr1.parent = cr2.id " +
+				"and cr1.parent != cr1.id order by lower(cr1.role_name) asc";
 		DotConnect dc = new DotConnect();
 		List<Map<String,String>> sqlResults = new ArrayList<Map<String,String>>();
 		String ids = "";
