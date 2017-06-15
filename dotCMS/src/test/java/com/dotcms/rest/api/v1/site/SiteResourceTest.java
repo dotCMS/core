@@ -333,20 +333,24 @@ public class SiteResourceTest extends UnitTestBase {
 	 */
     @Test
     public void testCurrentSites() throws DotSecurityException, DotDataException {
+        long sitesTotalRecords = 10;
         final HttpServletRequest request = RestUtilTest.getMockHttpRequest();
         final HttpSession session = request.getSession();
         RestUtilTest.initMockContext();
         final User user = new User();
         final PaginatedArrayList<Host> siteList = getSites();
-        final String currentSite = siteList.get(0).getIdentifier();
+        final Host currentSite = siteList.get(0);
+        final String currentSiteId = currentSite.getIdentifier();
         final WebResource webResource = RestUtilTest.getMockWebResource( user, request );
         
         final HostAPI hostAPI = mock(HostAPI.class);
-        when( hostAPI.search(StringUtils.EMPTY, Boolean.FALSE, Boolean.FALSE, 1, 0, user, Boolean.FALSE)).thenReturn( siteList );
+        when( hostAPI.find(currentSiteId, user, false) ).thenReturn( currentSite );
+        when( hostAPI.count(user, false) ).thenReturn( sitesTotalRecords );
+
         final UserAPI userAPI = mock(UserAPI.class);
         when(userAPI.loadUserById(Mockito.anyString())).thenReturn(user);
         when( session.getAttribute( WebKeys.CMS_SELECTED_HOST_ID ) )
-                .thenReturn( currentSite );
+                .thenReturn( currentSite.getIdentifier() );
 
         final SiteResource siteResource =
                 new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
@@ -356,9 +360,7 @@ public class SiteResourceTest extends UnitTestBase {
         Map<String, Object> entity = (Map<String, Object>) ((ResponseEntityView) response.getEntity()).getEntity();
         assertEquals( currentSite, entity.get("currentSite") );
 
-        List<Host> sites = (List<Host>) entity.get("sites");
-        assertEquals(2, sites.size());
-        assertEquals(siteList.get(0), sites.get(0));
+        assertEquals(sitesTotalRecords, entity.get("totalRecords"));
     }
 
     /**
