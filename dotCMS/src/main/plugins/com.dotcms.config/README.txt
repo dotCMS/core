@@ -5,7 +5,7 @@ your dotCMS's behavior.
 
 See the example
 
-    $DOTCMS_ROOT/docs/examples/plugins/hello.world 
+	$DOTCMS_ROOT/docs/examples/plugins/hello.world 
 
 for a complete demonstration of what you can 
 do with plugins
