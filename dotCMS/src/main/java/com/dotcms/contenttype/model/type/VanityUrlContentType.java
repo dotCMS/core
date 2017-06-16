@@ -30,7 +30,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonDeserialize(as = ImmutableVanityUrlContentType.class)
 @Gson.TypeAdapters
 @Value.Immutable
-public abstract class VanityUrlContentType extends ContentType {
+public abstract class VanityUrlContentType extends ContentType implements Expireable{
 
 	private static final long serialVersionUID = 1L;
 
@@ -74,7 +74,7 @@ public abstract class VanityUrlContentType extends ContentType {
 				.required(Boolean.TRUE).sortOrder(order++).listed(Boolean.TRUE).build();
 		Field actionField = ImmutableSelectField.builder().name(ACTION_FIELD_NAME).variable(ACTION_FIELD_VAR)
 				.required(Boolean.TRUE).fixed(Boolean.TRUE).indexed(Boolean.TRUE).searchable(Boolean.TRUE)
-				.dataType(DataTypes.INTEGER).values("Forward|200\r\nPermanent Redirect|301\r\nTemporary Redirect|302\r\nAuth Required|401\r\nAuth Failed|403\r\nMissing|404\r\nError|500").build();
+				.dataType(DataTypes.INTEGER).values("200 - Forward|200\r\n301 - Permanent Redirect|301\r\n302 - Temporary Redirect|302\r\n401 - Auth Required|401\r\n403 - Auth Failed|403\r\n404 - Missing|404\r\n500 - Error|500").build();
 		Field orderField = ImmutableTextField.builder().name(ORDER_FIELD_NAME).variable(ORDER_FIELD_VAR)
 				.dataType(DataTypes.INTEGER).required(Boolean.TRUE).fixed(Boolean.TRUE).indexed(Boolean.TRUE)
 				.searchable(Boolean.TRUE).build();
