@@ -1315,4 +1315,63 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			throw new DotDataException(e.getMessage(), e);
 		}
 	}
+
+	/**
+	 * Method will replace step references of the given stepId in workflow, workflow_action task and contentlets
+	 * with the replacement step id 
+	 * @param stepId Step Identifier
+	 * @param replacementStepId The step id of the replacement step
+	 * @throws DotDataException There is a data inconsistency
+	 * @throws DotStateException There is a data inconsistency
+	 * @throws DotSecurityException 
+	 */
+	public void updateStepReferences(String stepId, String replacementStepId) throws DotDataException, DotSecurityException {
+		DotConnect dc = new DotConnect();
+
+		try {
+			// Replace references and clear cache for workflow actions
+			dc.setSQL("select step_id from workflow_action where next_step_id = ?");
+			dc.addParam(stepId);
+			List<HashMap<String, String>> actionStepIds = dc.loadResults();
+
+			if (replacementStepId != null){
+				dc.setSQL("update workflow_action set next_step_id = ? where next_step_id = ?");
+				dc.addParam(replacementStepId);
+				dc.addParam(stepId);
+				dc.loadResult();
+
+			} else {
+				dc.setSQL("update workflow_action set next_step_id = step_id where next_step_id = ?");
+				dc.addParam(stepId);
+				dc.loadResult();
+			}
+
+			for(HashMap<String, String> v : actionStepIds){
+				String id = v.get("step_id");
+				WorkflowStep step = findStep(id);
+				cache.remove(step);					
+			}
+
+			
+			// Replace references and clear cache for workflow tasks
+			dc.setSQL("select id from workflow_task where status = ?");
+			dc.addParam(stepId);
+			List<HashMap<String, String>> taskIds = dc.loadResults();
+
+			dc.setSQL("update workflow_task set status = ? where status = ?");
+			dc.addParam(replacementStepId);
+			dc.addParam(stepId);
+			dc.loadResults();
+
+			for(HashMap<String, String> val : taskIds){
+				String id = val.get("id");
+				WorkflowTask task = findWorkFlowTaskById(id);
+				cache.remove(task);
+			}
+
+		} catch (DotDataException e) {
+			Logger.error(WorkFlowFactory.class,e.getMessage(),e);
+			throw new DotDataException(e.getMessage(), e);
+		}
+	}
 }
