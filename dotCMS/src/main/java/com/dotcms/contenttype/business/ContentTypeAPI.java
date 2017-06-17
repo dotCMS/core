@@ -259,12 +259,12 @@ public interface ContentTypeAPI {
    * parameter
    * 
    * @param contentType Content Type that is going to be modified
-   * @param fields Content Type list of fields
+   * @param newFields Content Type list of fields
    * @return Content Type Object saved.
    * @throws DotDataException Error occurred when performing the action.
    * @throws DotSecurityException The user does not have permissions to perform this action.
    */
-  ContentType save(ContentType contentType, List<Field> fields) throws DotDataException, DotSecurityException;
+  ContentType save(ContentType contentType, List<Field> newFields) throws DotDataException, DotSecurityException;
   
   /**
    * Save or update a Content Type. If the Content Type already exist
@@ -272,11 +272,22 @@ public interface ContentTypeAPI {
    * on the fields and fieldVariables parameters 
    * 
    * @param contentType Content Type that is going to be modified
-   * @param fields Content Type list of fields
-   * @param fieldVariables ContentType list of field variables
+   * @param newFields Content Type list of fields
+   * @param newFieldVariables ContentType list of field variables
    * @return Content Type Object saved.
    * @throws DotDataException Error occurred when performing the action.
    * @throws DotSecurityException The user does not have permissions to perform this action.
    */
-  ContentType save(ContentType contentType, List<Field> fields, List<FieldVariable> fieldVariables) throws DotDataException, DotSecurityException;
+  ContentType save(ContentType contentType, List<Field> newFields, List<FieldVariable> newFieldVariables) throws DotDataException, DotSecurityException;
+  
+  /**
+   * Update the Content Type mod_date and clean the cache
+   * @param type Content Type that is going to be modified
+   * @return true if the mod_date was updated, false if not
+   * @throws DotDataException 
+   */
+   boolean updateModDate(ContentType type) throws DotDataException;
+
+  boolean updateModDate(Field field) throws DotDataException;
+
 }

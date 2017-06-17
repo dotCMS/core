@@ -2252,7 +2252,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		if(bitPermissionsList == null || bitPermissionsList.isEmpty()) {
 			synchronized(permissionable.getPermissionId().intern()) {
 				//Need to determine who this asset should inherit from
-				String type = permissionable.getClass().getCanonicalName();
+				String type = permissionable.getPermissionType();
 				if(permissionable instanceof Host ||
 						(permissionable instanceof Contentlet &&
 								((Contentlet)permissionable).getStructure() != null &&

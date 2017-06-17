@@ -11,9 +11,11 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -28,6 +30,7 @@ import org.junit.Test;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
@@ -39,6 +42,7 @@ import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
+import com.dotcms.repackage.twitter4j.IDs;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -1159,6 +1163,94 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
 
+    /**
+     * https://github.com/dotCMS/core/issues/11716
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+
+    @Ignore
+    @Test
+    public void addRemoveContentFromIndex () throws DotDataException, DotSecurityException {
+   // respect CMS Anonymous permissions
+      boolean respectFrontendRoles = false;
+      int num = 5;
+      Host host = APILocator.getHostAPI().findDefaultHost(user, respectFrontendRoles);
+      Folder folder = APILocator.getFolderAPI().findSystemFolder();
+
+      Language lang = APILocator.getLanguageAPI().getDefaultLanguage();
+      ContentType type = APILocator.getContentTypeAPI(user).find("webPageContent");
+      List<Contentlet> origCons = new ArrayList<>();
+
+      Map map = new HashMap<>();
+      map.put("stInode", type.id());
+      map.put("host", host.getIdentifier());
+      map.put("folder", folder.getInode());
+      map.put("languageId", lang.getId());
+      map.put("sortOrder", new Long(0));
+      map.put("body", "body");
+
+
+      //add 5 contentlets
+      for(int i = 0;i<num;i++){
+        map.put("title", i+ "my test title");
+
+        // create a new piece of content backed by the map created above
+        Contentlet content = new Contentlet(map);
+
+        // check in the content
+        content= contentletAPI.checkin(content,user, respectFrontendRoles);
+
+        assertTrue( content.getIdentifier()!=null );
+        assertTrue( content.isWorking());
+        assertFalse( content.isLive());
+        // publish the content
+        contentletAPI.publish(content, user, respectFrontendRoles);
+        assertTrue( content.isLive());
+        origCons.add(content);
+      }
+
+
+      //commit it index
+      HibernateUtil.closeSession();
+      for(Contentlet c : origCons){
+        assertTrue(contentletAPI.indexCount("+live:true +identifier:" +c.getIdentifier() + " +inode:" + c.getInode() , user, respectFrontendRoles)>0);
+      }
+
+
+      HibernateUtil.startTransaction();
+      try{
+        List<Contentlet> checkedOut=contentletAPI.checkout(origCons, user, respectFrontendRoles);
+        for(Contentlet c : checkedOut){
+          c.setStringProperty("title", c.getStringProperty("title") + " new");
+          c = contentletAPI.checkin(c,user, respectFrontendRoles);
+          contentletAPI.publish(c, user, respectFrontendRoles);
+          assertTrue( c.isLive());
+        }
+        throw new DotDataException("uh oh, what happened?");
+      }
+      catch(DotDataException e){
+        HibernateUtil.rollbackTransaction();
+
+      }
+      finally{
+        HibernateUtil.closeSession();
+      }
+      for(Contentlet c : origCons){
+        assertTrue(contentletAPI.indexCount("+live:true +identifier:" +c.getIdentifier() + " +inode:" + c.getInode() , user, respectFrontendRoles)>0);
+      }
+
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     /**
      * Testing {@link ContentletAPI#delete(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)}
      *

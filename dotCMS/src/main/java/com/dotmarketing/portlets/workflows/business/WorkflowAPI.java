@@ -271,4 +271,15 @@ public interface WorkflowAPI {
 	 * @throws DotSecurityException 
 	 */
 	public void updateUserReferences(String userId, String userRoleId, String replacementUserId, String replacementUserRoleId)throws DotDataException, DotSecurityException;
+
+	/**
+	 * Method will replace step references of the given stepId in workflow, workflow_action task and contentlets
+	 * with the replacement step id 
+	 * @param stepId Step Identifier
+	 * @param replacementStepId The step id of the replacement step
+	 * @throws DotDataException There is a data inconsistency
+	 * @throws DotStateException There is a data inconsistency
+	 * @throws DotSecurityException 
+	 */
+	public void updateStepReferences(String stepId, String replacementStepId) throws DotDataException, DotSecurityException;
 }

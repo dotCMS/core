@@ -5,8 +5,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -31,22 +34,17 @@ import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.PublisherConfig;
-import com.dotcms.repackage.javax.ws.rs.client.Client;
 import com.dotcms.repackage.javax.ws.rs.client.ClientBuilder;
 import com.dotcms.repackage.javax.ws.rs.client.Entity;
-import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import junit.framework.Assert;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import com.dotcms.rest.RestClientBuilder;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -60,7 +58,6 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
-import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -69,7 +66,6 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.servlets.test.ServletTestRunner;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -280,18 +276,24 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 		assertTrue( newBundleFile.exists() );
 
 		//Prepare the post request
-		FormDataMultiPart form = new FormDataMultiPart();
-		form.field( "AUTH_TOKEN", PublicEncryptionFactory.encryptString( (PublicEncryptionFactory.decryptString( receivingFromEndpoint.getAuthKey().toString() )) ) );
-		form.field( "GROUP_ID", UtilMethods.isSet( receivingFromEndpoint.getGroupId() ) ? receivingFromEndpoint.getGroupId() : receivingFromEndpoint.getId() );
-		form.field( "BUNDLE_NAME", bundle.getName() );
-		form.field( "ENDPOINT_ID", receivingFromEndpoint.getId() );
-		form.bodyPart( new FileDataBodyPart( "bundle", newBundleFile, MediaType.MULTIPART_FORM_DATA_TYPE ) );
-
 		//Sending bundle to endpoint
-        Response clientResponse = ClientBuilder.newClient().register(MultiPartFeature.class)
+		String contentDisposition = "attachment; filename=\"" + newBundleFile.getName() + "\"";
+
+		InputStream newBundleFileStream = new BufferedInputStream(new FileInputStream(newBundleFile));
+
+		Response clientResponse = ClientBuilder.newClient()
             .target(receivingFromEndpoint.toURL() + "/api/bundlePublisher/publish")
-            .request(MediaType.APPLICATION_JSON_TYPE)
-            .post(Entity.entity(form, form.getMediaType()));
+			.queryParam("AUTH_TOKEN", PublicEncryptionFactory.encryptString( (PublicEncryptionFactory.decryptString( receivingFromEndpoint.getAuthKey().toString() )) ))
+			.queryParam("GROUP_ID", UtilMethods.isSet( receivingFromEndpoint.getGroupId() ) ? receivingFromEndpoint.getGroupId() : receivingFromEndpoint.getId())
+			.queryParam("BUNDLE_NAME", bundle.getName())
+			.queryParam("ENDPOINT_ID", receivingFromEndpoint.getId())
+			.queryParam("FILE_NAME", newBundleFile.getName())
+            .request(MediaType.APPLICATION_OCTET_STREAM_TYPE)
+			.header("Content-Disposition", contentDisposition)
+			.post(Entity.entity(newBundleFileStream, MediaType.APPLICATION_OCTET_STREAM_TYPE));
+
+		CloseUtils.closeQuietly(newBundleFileStream);
+		
 		//Validations
 		assertEquals( clientResponse.getStatus(), HttpStatus.SC_OK );
 
@@ -917,18 +919,6 @@ public class RemotePublishAjaxActionTest extends IntegrationTestBase {
 		Boolean success = bundleFile.renameTo( newBundleFile );
 		assertTrue( success );
 		assertTrue( newBundleFile.exists() );
-
-		/*
-		 * Prepare the post request
-		 */
-		Client client = RestClientBuilder.newClient();
-
-		FormDataMultiPart form = new FormDataMultiPart();
-		form.field( "AUTH_TOKEN", PublicEncryptionFactory.encryptString( (PublicEncryptionFactory.decryptString( receivingFromEndpoint.getAuthKey().toString() )) ) );
-		form.field( "GROUP_ID", UtilMethods.isSet( receivingFromEndpoint.getGroupId() ) ? receivingFromEndpoint.getGroupId() : receivingFromEndpoint.getId() );
-		form.field( "BUNDLE_NAME", bundle.getName() );
-		form.field( "ENDPOINT_ID", receivingFromEndpoint.getId() );
-		form.bodyPart( new FileDataBodyPart( "bundle", newBundleFile, MediaType.MULTIPART_FORM_DATA_TYPE ) );
 
 		/*
 		 * Cleaning test values

@@ -93,18 +93,15 @@ public class SiteResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response currentSite(@Context final HttpServletRequest req) {
-        final Map<String,Object> userSites;
         Response response = null;
         final InitDataObject initData = this.webResource.init(null, true, req, true, null);
         final User user = initData.getUser();
         final HttpSession session = req.getSession();
         try {
 			
-        	userSites = siteHelper.getPaginatedOrderedSites(Boolean.FALSE, user, StringUtils.EMPTY, 1, 1, Boolean.FALSE);
-            		                    
-			final String currentSite = this.siteHelper.getSelectedSite((List<Host>)userSites.get(siteHelper.RESULTS),
-					(String) session.getAttribute(WebKeys.CMS_SELECTED_HOST_ID), user);
-            response = Response.ok( new ResponseEntityView( map("sites", userSites.get(siteHelper.RESULTS),"sitesCounter", userSites.get(siteHelper.TOTAL_SITES),
+        	long siteCount = siteHelper.getSitesCount(user);
+            Host currentSite = siteHelper.getCurrentSite(req, user);
+            response = Response.ok( new ResponseEntityView( map("totalRecords", siteCount,
                     "currentSite", currentSite))).build();
         } catch (Exception e) {
         	// Unknown error, so we report it as a 500

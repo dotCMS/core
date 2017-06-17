@@ -133,7 +133,7 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     return false;
   }
 
-
+  @Nullable
   public abstract String variable();
 
   @Nullable

@@ -72,5 +72,7 @@ public abstract class ContentTypeSql {
 	public static String DELETE_TYPE_BY_INODE = "delete from structure where inode =?";
 
 	public static String SELECT_CONTENTLET_IDS_BY_TYPE = "select distinct(identifier) from contentlet where structure_inode = ?";
+	
+	public static String UPDATE_TYPE_MOD_DATE_BY_INODE = "update structure set mod_date = ? where inode = ?";
 
 }

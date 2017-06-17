@@ -127,7 +127,7 @@ dojo.declare("dotcms.dijit.form.HostFolderFilteringSelect", [dijit._Widget, diji
 
 		var boxDim = dojo.contentBox(this.hostFolderComboBox);
 		var cWidth = (boxDim.w -37) < 200?200:(boxDim.w -37);
-		dojo.style(this.hostFoldersTreeWrapper, { width: cWidth + "px" });
+		//dojo.style(this.hostFoldersTreeWrapper, { width: cWidth + "px" });
 
 	   	this.tree = new dijit.Tree({
 
