@@ -14,18 +14,21 @@ import static org.junit.Assert.assertTrue;
  */
 public class ValidatorTest extends UnitTestBase {
 
-    /**
-     * Test several email addresses with valid and invalid formats.
-     */
     @Test
-    public void isEmailAddress(){
+    public void testValidEmails(){
 
         final List<String> validEmails = Arrays.asList( "john.doe@dotcms.com", "james.sa'd@test.com" );
-        final List<String> invalidEmails = Arrays.asList( "abc.example.com", "a@b@c@example.com" );
 
         for ( String validEmail : validEmails ) {
             assertTrue( Validator.isEmailAddress( validEmail ) );
         }
+        
+    }
+
+    @Test
+    public void testInvalidEmails(){
+
+        final List<String> invalidEmails = Arrays.asList( null, "", "abc.example.com", "a@b@c@example.com" );
 
         for ( String invalidEmail : invalidEmails ) {
             assertFalse( Validator.isEmailAddress( invalidEmail ) );
