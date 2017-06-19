@@ -390,10 +390,7 @@ public class BinaryExporterServlet extends HttpServlet {
 					downloadName = downloadName.replaceAll("\\." + x, "\\." + y);
 				}
 				resp.setHeader("Content-Disposition", "attachment; filename=\"" + UtilMethods.encodeURL(downloadName) + "\"");
-				
-				//mimeType = "application/octet-stream";
-	            resp.setContentType(mimeType);
-				
+			
 			} else {
 
 				boolean _adminMode = false;
