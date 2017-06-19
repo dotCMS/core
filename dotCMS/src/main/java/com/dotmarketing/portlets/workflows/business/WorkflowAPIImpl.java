@@ -1025,4 +1025,16 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		wfac.updateUserReferences(userId, userRoleId, replacementUserId,replacementUserRoleId);
 	}
 
+	/**
+	 * Method will replace step references of the given stepId in workflow, workflow_action task and contentlets
+	 * with the replacement step id 
+	 * @param stepId Step Identifier
+	 * @param replacementStepId The step id of the replacement step
+	 * @throws DotDataException There is a data inconsistency
+	 * @throws DotStateException There is a data inconsistency
+	 * @throws DotSecurityException 
+	 */
+	public void updateStepReferences(String stepId, String replacementStepId) throws DotDataException, DotSecurityException {
+		wfac.updateStepReferences(stepId, replacementStepId);
+	}
 }

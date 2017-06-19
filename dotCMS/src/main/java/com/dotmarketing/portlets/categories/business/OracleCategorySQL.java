@@ -19,12 +19,15 @@ class OracleCategorySQL extends CategorySQL{
 		return "drop table category_reorder";
 	}
 	
-	public String getCreateSortChildren(String inode) {
-		return "create table category_reorder as " +
+	public String getCreateSortChildren() {
+		return "INSERT INTO category_reorder(inode, rnum) " +
 				" SELECT category.inode, row_number() over (order by sort_order) rnum from inode category_1_, category, tree where " +
-				"category.inode = tree.child and tree.parent = '" + inode + "' and category_1_.inode = category.inode " +
+				"category.inode = tree.child and tree.parent = ? and category_1_.inode = category.inode " +
 				" and category_1_.type = 'category' order by sort_order ";
 	}
 
+    public String createCategoryReorderTable() {
+        return "CREATE TABLE category_reorder(inode VARCHAR2(36), rnum NUMBER)";
+    }
 
 }

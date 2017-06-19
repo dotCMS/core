@@ -128,7 +128,10 @@
 	%>
 			<script type="text/javascript">
 				dojo.ready(function(){
-					dojo.html.set(dojo.byId("mainTabContainer_tablist_relationships"), '<span class="required"></span>&nbsp;<%= LanguageUtil.get(pageContext, "Relationships") %>');
+                    var mainTabContainerTablistRelationships = dojo.byId("mainTabContainer_tablist_relationships");
+                    if (mainTabContainerTablistRelationships) {
+                        dojo.html.set(dojo.byId("mainTabContainer_tablist_relationships"), '<span class="required"></span>&nbsp;<%= LanguageUtil.get(pageContext, "Relationships") %>');
+                    }
 				});
 			</script>
 	<%

@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonDeserialize(as = ImmutableFileAssetContentType.class)
 @Gson.TypeAdapters
 @Value.Immutable
-public abstract class FileAssetContentType extends ContentType implements UrlMapable{
+public abstract class FileAssetContentType extends ContentType implements UrlMapable, Expireable{
 
 
 	
