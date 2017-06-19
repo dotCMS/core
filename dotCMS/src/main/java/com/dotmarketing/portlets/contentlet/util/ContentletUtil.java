@@ -17,6 +17,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -101,16 +102,36 @@ public class ContentletUtil {
 				m.put(f.getVelocityVarName(), "/contentAsset/raw-data/" +  c.getIdentifier() + "/" + f.getVelocityVarName()	);
 				m.put(f.getVelocityVarName() + "ContentAsset", c.getIdentifier() + "/" +f.getVelocityVarName()	);
 			} else if(f.getFieldType().equals(Field.FieldType.CATEGORY.toString())) {
+
 				List<Category> cats = null;
+				
 				try {
+
 					cats = APILocator.getCategoryAPI().getParents(c, user, true);
 				} catch (Exception e) {
 					Logger.error(ContentletUtil.class, String.format("Unable to get the Categories for given contentlet with inode= %s", c.getInode()));
 				}
 
 				if(cats!=null && !cats.isEmpty()) {
-					String catsStr = cats.stream().map(Category::getCategoryName).collect(Collectors.joining(", "));
-					m.put(f.getVelocityVarName(), catsStr);
+					try {
+
+						final Category parentCategory        = APILocator.getCategoryAPI().findByKey(f.getVelocityVarName(), user, true);
+						final List<Category> childCategories = new ArrayList<>();
+						for (Category category : cats) {
+
+							if (APILocator.getCategoryAPI().isParent(category, parentCategory, user)) {
+
+								childCategories.add(category);
+							}
+						}
+
+						if (!childCategories.isEmpty()){
+							String catsStr = childCategories.stream().map(Category::getCategoryName).collect(Collectors.joining(", "));
+							m.put(f.getVelocityVarName(), catsStr);
+						}
+					} catch (DotSecurityException e) {
+						Logger.error(ContentletUtil.class, String.format("Unable to get the Categories for given contentlet with inode= %s", c.getInode()));
+					}
 				}
 			}
 		}
