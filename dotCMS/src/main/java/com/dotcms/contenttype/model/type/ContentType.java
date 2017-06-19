@@ -37,7 +37,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.google.common.collect.ImmutableMap;
 
-
 @JsonTypeInfo(
 	use = Id.CLASS,
 	include = JsonTypeInfo.As.PROPERTY,
@@ -50,11 +49,10 @@ import com.google.common.collect.ImmutableMap;
 	@Type(value = PersonaContentType.class),
 	@Type(value = SimpleContentType.class),
 	@Type(value = WidgetContentType.class),
+	@Type(value = VanityUrlContentType.class),
 	@Type(value = KeyValueContentType.class),
 })
 public abstract class ContentType implements Serializable, Permissionable, ContentTypeIf {
-
-
 
   @Value.Check
   protected void check() {
@@ -84,8 +82,6 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     return id();
   }
 
-
-
   @Nullable
   public abstract String description();
 
@@ -93,14 +89,6 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   public boolean defaultType() {
     return false;
   }
-
-  /*
-  @JsonIgnore
-  @Value.Default
-  public StorageType storageType() {
-    return ImmutableDbStorageType.of();
-  }
-  */
 
   @Value.Default
   @Nullable
@@ -122,7 +110,6 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   public boolean system() {
     return false;
   }
-
 
   @Value.Default
   public boolean versionable() {
@@ -186,6 +173,7 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     }
     return innerFields;
   }
+
   @JsonIgnore
   @Value.Lazy
   public Map<String, Field> fieldMap() {

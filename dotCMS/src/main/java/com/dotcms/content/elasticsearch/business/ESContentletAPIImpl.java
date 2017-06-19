@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.dotcms.content.model.VanityUrl;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
@@ -2104,6 +2105,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         	ContentletServices.invalidateLive(contentlet);
         	publishRelatedHtmlPages(contentlet);
 
+
+
             contentletSystemEventUtil.pushUnpublishEvent(contentlet);
         } catch(DotDataException | DotStateException| DotSecurityException e) {
         	ActivityLogger.logInfo(getClass(), "Error Unpublishing Content", "StartDate: " +contentPushPublishDate+ "; "
@@ -3255,6 +3258,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 				    indexAPI.addContentToIndex(contentlet);
 				}
+
+                if(contentlet != null && contentlet.isVanityUrl()){
+				    //remove from cache
+                    APILocator.getVanityUrlAPI().invalidateVanityUrl(contentlet);
+                }
 
 				if(structureHasAHostField && changedURI) {
 				    DotConnect dc=new DotConnect();

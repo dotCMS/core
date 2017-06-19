@@ -25,6 +25,10 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.api.content.VanityUrlAPI;
+import com.dotcms.content.model.DefaultVanityUrl;
+import com.dotcms.content.model.VanityUrl;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -35,7 +39,6 @@ import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -50,7 +53,14 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.RegExMatch;
+import com.dotmarketing.util.TagUtil;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
 /**
@@ -70,9 +80,9 @@ public class URLMapFilter implements Filter {
 	private HostWebAPI whostAPI;
 	private boolean urlFallthrough;
 	CmsUrlUtil cmsUrlUtil = CmsUrlUtil.getInstance();
-	
-	
-	
+	VanityUrlAPI vanityUrlAPI = APILocator.getVanityUrlAPI();
+
+
 	public void destroy() {
 
 	}
@@ -85,18 +95,20 @@ public class URLMapFilter implements Filter {
 	 * @param chain
 	 */
 	public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException,
-			ServletException {
-		
-		
+	ServletException {
 
-		
-		
+
+
+
+
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpSession optSession = request.getSession(false);
 		String uri = request.getRequestURI();
 		uri = URLDecoder.decode(uri, "UTF-8");
 
 		String previewPage = request.getParameter("previewPage");
+		long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
+
 		/*
 		 * Getting host object form the session
 		 */
@@ -111,21 +123,23 @@ public class URLMapFilter implements Filter {
 		// http://jira.dotmarketing.net/browse/DOTCMS-6079
 		if (uri.endsWith("/"))
 			uri = uri.substring(0, uri.length() - 1);
-		
+
 		String pointer = null;
-		
+
 		if(host!=null){
-			pointer = VirtualLinksCache.getPathFromCache(host.getHostname() + ":" + uri);
+			VanityUrl vanityUrl = vanityUrlAPI.getLiveVanityUrl(uri, host, languageId, APILocator.systemUser());
+			pointer = vanityUrl != null && InodeUtils.isSet(vanityUrl.getInode())?vanityUrl.getForwardTo():null;
 		}
 		if (!UtilMethods.isSet(pointer)) {
-			pointer = VirtualLinksCache.getPathFromCache(uri);
+			VanityUrl vanityUrl = vanityUrlAPI.getLiveVanityUrl(uri, null, languageId, APILocator.systemUser());
+			pointer = vanityUrl != null && InodeUtils.isSet(vanityUrl.getInode())?vanityUrl.getForwardTo():null;
 		}
 		if(UtilMethods.isSet(pointer)){
 			uri = pointer;
 		}
 
-		long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
-		
+
+
 		String mastRegEx = null;
 		StringBuilder query;
 		try {
@@ -145,8 +159,8 @@ public class URLMapFilter implements Filter {
 		}
 		boolean trailSlash = uri.endsWith("/");
 		boolean isDotPage = cmsUrlUtil.isPageAsset(uri, host, languageId);
-				
-				
+
+
 		String url = (!trailSlash && !isDotPage)?uri+'/':uri;
 		if (!UtilMethods.isSet(mastRegEx) || uri.startsWith("/webdav")) {
 			chain.doFilter(req, res);
@@ -163,7 +177,7 @@ public class URLMapFilter implements Filter {
 			} catch (Exception e1) {
 				Logger.error(URLMapFilter.class, e1.getMessage(), e1);
 			}
-	
+
 			List<ContentletSearch> cons = null;
 			for (PatternCache pc : patternsCache) {
 				List<RegExMatch> matches = RegEX.findForUrlMap(url, pc.getRegEx());
@@ -199,7 +213,7 @@ public class URLMapFilter implements Filter {
 							//} else {
 							try {
 								query.append("+(conhost:").append(host.getIdentifier()).append(" ")
-								     .append("conhost:").append(whostAPI.findSystemHost(wuserAPI.getSystemUser(), true).getIdentifier()).append(") ");
+								.append("conhost:").append(whostAPI.findSystemHost(wuserAPI.getSystemUser(), true).getIdentifier()).append(") ");
 							} catch (Exception e) {
 								Logger.error(URLMapFilter.class, e.getMessage()
 										+ " : Unable to build host in query : ", e);
@@ -216,33 +230,33 @@ public class URLMapFilter implements Filter {
 							value = value.substring(0, value.length() - 1);
 						}
 						query.append("+").append(structure.getVelocityVarName()).append(".").append(fieldMatches.get(counter)).append(":")
-								.append(value).append(" ");
+						.append(value).append(" ");
 						counter++;
 					}
-					
+
 					try {
-					    long sessionLang=WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
-					    long defaultLang=APILocator.getLanguageAPI().getDefaultLanguage().getId();
-					    boolean checkIndex=false;
-					  
-                        if(request.getParameter("language_id")==null && Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",false)) {
-                            // consider default language. respecting language_id in parameters
-                            query.append(" +(languageId:").append(defaultLang).append(" languageId:").append(sessionLang).append(") ");
-                            checkIndex=true;
-                        }else if(request.getParameter("language_id")!=null){
-                        	query.append(" +languageId:").append(languageId).append(" ");
-                        }else {
-                            // respect session language
-                            query.append(" +languageId:").append(sessionLang).append(" ");
-                        }
-					    
+						long sessionLang=WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
+						long defaultLang=APILocator.getLanguageAPI().getDefaultLanguage().getId();
+						boolean checkIndex=false;
+
+						if(request.getParameter("language_id")==null && Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",false)) {
+							// consider default language. respecting language_id in parameters
+							query.append(" +(languageId:").append(defaultLang).append(" languageId:").append(sessionLang).append(") ");
+							checkIndex=true;
+						}else if(request.getParameter("language_id")!=null){
+							query.append(" +languageId:").append(languageId).append(" ");
+						}else {
+							// respect session language
+							query.append(" +languageId:").append(sessionLang).append(" ");
+						}
+
 						cons = conAPI.searchIndex(query.toString(), 2, 0, (hostIsRequired?"conhost, modDate": "modDate"), user, true);
 						int idx = 0;
 						if(checkIndex && cons.size()==2) {
-						    // prefer session setting
-						    Contentlet second=conAPI.find(cons.get(1).getInode(), user, true);
-						    if(second.getLanguageId()==sessionLang)
-						        idx=1;
+							// prefer session setting
+							Contentlet second=conAPI.find(cons.get(1).getInode(), user, true);
+							if(second.getLanguageId()==sessionLang)
+								idx=1;
 						}
 						ContentletSearch c = cons.get(idx);
 						if(optSession !=null){
@@ -282,8 +296,8 @@ public class URLMapFilter implements Filter {
 					}
 				}
 			}
-			
-		
+
+
 			if (structure != null && UtilMethods.isSet(structure.getDetailPage())) {
 				Identifier ident;
 				try {
@@ -292,9 +306,9 @@ public class URLMapFilter implements Filter {
 						throw new DotRuntimeException("No valid detail page for structure '" + structure.getName() + "'. Looking for detail page id=" + structure.getDetailPage());
 					}
 
-					
+
 					if((cons != null && cons.size() > 0) || !urlFallthrough){
-						
+
 						request.setAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE, ident.getURI());
 
 					}
@@ -313,7 +327,7 @@ public class URLMapFilter implements Filter {
 		conAPI = APILocator.getContentletAPI();
 		wuserAPI = WebAPILocator.getUserWebAPI();
 		whostAPI = WebAPILocator.getHostWebAPI();
-		
+
 		// persistant on disk cache makes this necessary
 		CacheLocator.getContentTypeCache().clearURLMasterPattern();
 		urlFallthrough = Config.getBooleanProperty("URLMAP_FALLTHROUGH", true);
@@ -424,7 +438,7 @@ public class URLMapFilter implements Filter {
 			return fieldMatches;
 		}
 	}
-	
+
 	private int getSlashCount(String string){
 		int ret = 0;
 		if(UtilMethods.isSet(string)){

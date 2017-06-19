@@ -163,6 +163,10 @@ public class ContentletServices {
 		if(content.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {
 		    PageServices.removePageFile(APILocator.getHTMLPageAssetAPI().fromContentlet(content), identifier, EDIT_MODE);
 		}
+		if(content != null && content.isVanityUrl()){
+			//remove from cache
+			APILocator.getVanityUrlAPI().invalidateVanityUrl(content);
+		}
 	}
 
 	public static InputStream buildVelocity(Contentlet content, Identifier identifier, boolean EDIT_MODE) throws DotDataException, DotSecurityException {

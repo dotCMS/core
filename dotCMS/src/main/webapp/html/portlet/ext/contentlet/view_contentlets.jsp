@@ -169,6 +169,7 @@
 				LanguageUtil.get(pageContext, "File"),
 				LanguageUtil.get(pageContext, "HTMLPage"),
 				LanguageUtil.get(pageContext, "Persona"),
+				LanguageUtil.get(pageContext, "VanityURL"),
 				LanguageUtil.get(pageContext, "KeyValue"),
 				};
 

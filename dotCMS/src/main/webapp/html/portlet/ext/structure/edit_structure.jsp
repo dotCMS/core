@@ -447,7 +447,9 @@ function disableFormFields(){
 							<%= LanguageUtil.get(pageContext, "HTMLPage") %>
 							<%}else if(form.getStructureType() ==6){%>
 							<%= LanguageUtil.get(pageContext, "Persona") %>
-							<%} else if(form.getStructureType() == 7){%>
+							<%} else if (form.getStructureType() == 7){%>
+                            <%= LanguageUtil.get(pageContext, "VanityURL") %>
+                            <%} else if (form.getStructureType() == 8){%>
                             <%= LanguageUtil.get(pageContext, "KeyValue") %>
                             <%} %> &gt;
 						</span>
@@ -584,7 +586,9 @@ function disableFormFields(){
 											<%= LanguageUtil.get(pageContext, "HTMLPage") %>
 										<%} else if(form.getStructureType() ==6){%>
 											<%= LanguageUtil.get(pageContext, "Persona") %>
-										<%} else if (form.getStructureType() == 7) {%>
+										<%} else if (form.getStructureType() == 7){%>
+                                            <%= LanguageUtil.get(pageContext, "VanityURL") %>
+										<%} else if (form.getStructureType() == 8) { %>
                                             <%= LanguageUtil.get(pageContext, "KeyValue") %>
                                         <%}%>&nbsp;
 										<a target="_blank" href="/api/v1/contenttype/id/<%=structure.getInode() %>">json</a>
@@ -597,7 +601,8 @@ function disableFormFields(){
 											<%if(LicenseUtil.getLevel() > 199) {%>
 												<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_PERSONA) %>"><%= LanguageUtil.get(pageContext, "Persona") %></option>
 											<% } %>
-											<option value="7"><%= LanguageUtil.get(pageContext, "KeyValue") %></option>
+											<option value="7"><%= LanguageUtil.get(pageContext, "VanityURL") %></option>
+											<option value="8"><%= LanguageUtil.get(pageContext, "KeyValue") %></option>
 										</select>
 									<%} %>
 								<html:hidden property="system" styleId="system" />

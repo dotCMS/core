@@ -19,14 +19,20 @@ import java.util.Set;
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.content.model.DefaultVanityUrl;
+import com.dotcms.content.model.VanityUrl;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.org.apache.commons.collections.CollectionUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
+import com.dotcms.util.VanityUrlUtil;
+
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ListenableActionFuture;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
+
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -195,12 +201,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public Map<String,Object> toMap(Contentlet con) throws DotMappingException {
 		try {
 
-			Map<String,String> m = new HashMap<String,String>();
+			Map<String,String> contentletMap = new HashMap<String,String>();
 			Map<String,Object> mlowered=new HashMap<String,Object>();
-			loadCategories(con, m);
-			loadFields(con, m);
-			loadPermissions(con, m);
-			loadRelationshipFields(con, m);
+			loadCategories(con, contentletMap);
+			loadFields(con, contentletMap);
+			loadPermissions(con, contentletMap);
+			loadRelationshipFields(con, contentletMap);
 
 			Identifier ident = APILocator.getIdentifierAPI().find(con);
 			ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), con.getLanguageId());
@@ -208,36 +214,36 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			Folder conFolder=APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
 
-			m.put("title", con.getTitle());
-			m.put("structureName", st.getVelocityVarName()); // marked for DEPRECATION
-			m.put("contentType", st.getVelocityVarName());
-            m.put("structureType", st.getStructureType() + ""); // marked for DEPRECATION
-            m.put("baseType", st.getStructureType() + "");
-            m.put("type", "content");
-            m.put("inode", con.getInode());
-            m.put("modDate", datetimeFormat.format(con.getModDate()));
-            m.put("owner", con.getOwner()==null ? "0" : con.getOwner());
-            m.put("modUser", con.getModUser());
-            m.put("live", Boolean.toString(con.isLive()));
-            m.put("working", Boolean.toString(con.isWorking()));
-            m.put("locked", Boolean.toString(con.isLocked()));
-            m.put("deleted", Boolean.toString(con.isArchived()));
-            m.put("languageId", Long.toString(con.getLanguageId()));
-            m.put("identifier", ident.getId());
-            m.put("conHost", ident.getHostId());
-            m.put("conFolder", conFolder!=null && InodeUtils.isSet(conFolder.getInode()) ? conFolder.getInode() : con.getFolder());
-            m.put("parentPath", ident.getParentPath());
-            m.put("path", ident.getPath());
+			contentletMap.put("title", con.getTitle());
+			contentletMap.put("structureName", st.getVelocityVarName()); // marked for DEPRECATION
+			contentletMap.put("contentType", st.getVelocityVarName());
+            contentletMap.put("structureType", st.getStructureType() + ""); // marked for DEPRECATION
+            contentletMap.put("baseType", st.getStructureType() + "");
+            contentletMap.put("type", "content");
+            contentletMap.put("inode", con.getInode());
+            contentletMap.put("modDate", datetimeFormat.format(con.getModDate()));
+            contentletMap.put("owner", con.getOwner()==null ? "0" : con.getOwner());
+            contentletMap.put("modUser", con.getModUser());
+            contentletMap.put("live", Boolean.toString(con.isLive()));
+            contentletMap.put("working", Boolean.toString(con.isWorking()));
+            contentletMap.put("locked", Boolean.toString(con.isLocked()));
+            contentletMap.put("deleted", Boolean.toString(con.isArchived()));
+            contentletMap.put("languageId", Long.toString(con.getLanguageId()));
+            contentletMap.put("identifier", ident.getId());
+            contentletMap.put("conHost", ident.getHostId());
+            contentletMap.put("conFolder", conFolder!=null && InodeUtils.isSet(conFolder.getInode()) ? conFolder.getInode() : con.getFolder());
+            contentletMap.put("parentPath", ident.getParentPath());
+            contentletMap.put("path", ident.getPath());
             // makes shorties searchable regardless of length
-            m.put("shortId", ident.getId().replace("-", ""));
-            m.put("shortInode", con.getInode().replace("-", ""));
+            contentletMap.put("shortId", ident.getId().replace("-", ""));
+            contentletMap.put("shortInode", con.getInode().replace("-", ""));
             try{
             	WorkflowTask task = APILocator.getWorkflowAPI().findTaskByContentlet(con);
             	if(task!=null && task.getId()!=null){
-            		m.put("wfcreatedBy", task.getCreatedBy());
-                    m.put("wfassign", task.getAssignedTo());
-            		m.put("wfstep", task.getStatus());
-            		m.put("wfModDate", datetimeFormat.format(task.getModDate()));
+            		contentletMap.put("wfcreatedBy", task.getCreatedBy());
+                    contentletMap.put("wfassign", task.getAssignedTo());
+            		contentletMap.put("wfstep", task.getStatus());
+            		contentletMap.put("wfModDate", datetimeFormat.format(task.getModDate()));
             	}
             			
             }
@@ -248,30 +254,34 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             
             
             if(UtilMethods.isSet(ident.getSysPublishDate()))
-                m.put("pubdate", datetimeFormat.format(ident.getSysPublishDate()));
+                contentletMap.put("pubdate", datetimeFormat.format(ident.getSysPublishDate()));
             else
-                m.put("pubdate", datetimeFormat.format(cvi.getVersionTs()));
+                contentletMap.put("pubdate", datetimeFormat.format(cvi.getVersionTs()));
 
             if(UtilMethods.isSet(ident.getSysExpireDate()))
-                m.put("expdate", datetimeFormat.format(ident.getSysExpireDate()));
+                contentletMap.put("expdate", datetimeFormat.format(ident.getSysExpireDate()));
             else
-                m.put("expdate", "29990101000000");
+                contentletMap.put("expdate", "29990101000000");
 
-            m.put("versionTs", datetimeFormat.format(cvi.getVersionTs()));
+            contentletMap.put("versionTs", datetimeFormat.format(cvi.getVersionTs()));
 
             String urlMap = null;
             try{
             	urlMap = APILocator.getContentletAPI().getUrlMapForContentlet(con, APILocator.getUserAPI().getSystemUser(), true);
                 if(urlMap != null){
-                	m.put("urlMap",urlMap );
+                	contentletMap.put("urlMap",urlMap );
                 }
             }
             catch(Exception e){
             	Logger.warn(this.getClass(), "Cannot get URLMap for contentlet.id : " + ((ident != null) ? ident.getId() : con) + " , reason: "+e.getMessage());
             	throw new DotRuntimeException(urlMap, e);
             }
+            
+            if(con.isVanityUrl()){
+                populateVanityUrlPath(con, contentletMap, ident, urlMap);
+            }
 
-            for(Entry<String,String> entry : m.entrySet()){
+            for(Entry<String,String> entry : contentletMap.entrySet()){
                 final String lcasek=entry.getKey().toLowerCase();
 				final String lcasev = UtilMethods.isSet(entry.getValue()) ? entry.getValue().toLowerCase() : null;
                 mlowered.put(lcasek, lcasev);
@@ -304,8 +314,29 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		}
 	}
 
+    /**
+     *
+     * @param con
+     * @param contentletMap
+     * @param ident
+     * @param urlMap
+     */
+    private void populateVanityUrlPath(Contentlet con, Map<String, String> contentletMap, Identifier ident, String urlMap) {
+        String vanityUrlPath;
+        try{
+            VanityUrl vanityUrl = APILocator.getVanityUrlAPI().getVanityUrlFromContentlet(con);
+            vanityUrlPath = !vanityUrl.getSite().equals(Host.SYSTEM_HOST)?APILocator.getHostAPI().find(vanityUrl.getSite(),APILocator.getUserAPI().getSystemUser(), true).getHostname()+ VanityUrlUtil.fixURI(vanityUrl.getURI()):VanityUrlUtil.fixURI(vanityUrl.getURI());
+            if(vanityUrlPath != null){
+                contentletMap.put("vanityUrl",vanityUrlPath );
+            }
+        }catch(Exception e){
+            Logger.warn(this.getClass(), "Cannot get Vanity URL for contentlet.id : " + ((ident != null) ? ident.getId() : con) + " , reason: "+e.getMessage());
+            throw new DotRuntimeException(urlMap, e);
+        }
+    }
 
-	public Object toMappedObj(Contentlet con) throws DotMappingException {
+
+    public Object toMappedObj(Contentlet con) throws DotMappingException {
 		return toJson(con);
 	}
 
