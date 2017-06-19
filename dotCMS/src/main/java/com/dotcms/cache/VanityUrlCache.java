@@ -28,7 +28,7 @@ public abstract class VanityUrlCache implements Cachable {
 	 * Retrieves the Vanity URL associated to the given
 	 * key
 	 * @param Key
-	 * @return VanityUrl
+	 * @return DefaultVanityUrl
 	 * @throws DotDataException
 	 */
 	abstract public VanityUrl get(String key);
@@ -39,7 +39,7 @@ public abstract class VanityUrlCache implements Cachable {
 	abstract public void clearCache();
 
 	/**
-	 * This method removes the VanityUrl entry from the cache
+	 * This method removes the DefaultVanityUrl entry from the cache
 	 * based on the key
 	 * @param object
 	 * @throws DotDataException

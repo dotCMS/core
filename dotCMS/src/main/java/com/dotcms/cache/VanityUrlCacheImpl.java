@@ -1,6 +1,7 @@
 package com.dotcms.cache;
 
 import com.dotcms.content.model.VanityUrl;
+import com.dotcms.content.model.DefaultVanityUrl;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
@@ -35,9 +36,9 @@ public class VanityUrlCacheImpl extends VanityUrlCache{
 
 	@Override
 	public VanityUrl get(String key) {
-		VanityUrl vanityUrl = null;
+		DefaultVanityUrl vanityUrl = null;
 		try{
-			vanityUrl = (VanityUrl) cache.get(key,primaryGroup);
+			vanityUrl = (DefaultVanityUrl) cache.get(key,primaryGroup);
 		}catch (DotCacheException e) {
 			Logger.debug(this, "Cache Entry not found", e);
 		}

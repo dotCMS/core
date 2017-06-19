@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.TranslatedQuery;
+import com.dotcms.content.model.VanityUrl;
 import com.dotcms.util.VanityUrlUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -102,19 +103,7 @@ public class ContentletCacheImpl extends ContentletCache {
 
         // Add the key to the cache
         cache.put(key, content,primaryGroup);
-        //add to Vanity Url Cache
-        try {
-			if(content != null && content.isVanityUrl()){
-				if( content.isLive() ){
-					//add to vanityUrl only if the vanity is Live
-					CacheLocator.getVanityURLCache().add(VanityUrlUtil.sanitizeKey(content),APILocator.getVanityUrlAPI().fromContentlet(content));
-				}else{
-					CacheLocator.getVanityURLCache().remove(VanityUrlUtil.sanitizeKey(content));
-				}
-			}
-		} catch (DotDataException | DotRuntimeException | DotSecurityException e) {
-			Logger.debug(this, "Can't add into Vanity URL cache content ID:"+content.getIdentifier(), e);
-		}
+
 
 		return content;
 		
@@ -154,7 +143,7 @@ public class ContentletCacheImpl extends ContentletCache {
     		content = (com.dotmarketing.portlets.contentlet.model.Contentlet)cache.get(key,primaryGroup);
     		try {
 				if(content != null && content.isVanityUrl()){
-					CacheLocator.getVanityURLCache().remove(VanityUrlUtil.sanitizeKey(content));
+					APILocator.getVanityUrlAPI().invalidateVanityUrl((VanityUrl) content);
 				}
 			} catch (DotDataException | DotRuntimeException | DotSecurityException e) {
 				Logger.debug(this, "Cache Vanity URL cache entry not found", e);

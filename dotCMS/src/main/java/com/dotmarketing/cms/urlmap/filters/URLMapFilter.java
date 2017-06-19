@@ -26,6 +26,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import com.dotcms.api.content.VanityUrlAPI;
+import com.dotcms.content.model.DefaultVanityUrl;
 import com.dotcms.content.model.VanityUrl;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.Host;
@@ -79,7 +80,7 @@ public class URLMapFilter implements Filter {
 	private HostWebAPI whostAPI;
 	private boolean urlFallthrough;
 	CmsUrlUtil cmsUrlUtil = CmsUrlUtil.getInstance();
-
+	VanityUrlAPI vanityUrlAPI = APILocator.getVanityUrlAPI();
 
 
 	public void destroy() {
@@ -124,23 +125,13 @@ public class URLMapFilter implements Filter {
 			uri = uri.substring(0, uri.length() - 1);
 
 		String pointer = null;
-		VanityUrlAPI vanityUrlAPI = APILocator.getVanityUrlAPI();
+
 		if(host!=null){
-			VanityUrl vanityUrl = null;
-			try {
-				vanityUrl = vanityUrlAPI.getVanityUrlByURI((StringUtils.isEmpty(uri) ? "/" : uri), host, languageId, APILocator.systemUser(),true);
-			} catch (DotDataException | DotSecurityException e) {
-				Logger.error(this, "Error searching vanity URL "+(StringUtils.isEmpty(uri) ? "/" : uri),e);
-			}
+			VanityUrl vanityUrl = vanityUrlAPI.getLiveVanityUrl(uri, host, languageId, APILocator.systemUser());
 			pointer = vanityUrl != null && InodeUtils.isSet(vanityUrl.getInode())?vanityUrl.getForwardTo():null;
 		}
 		if (!UtilMethods.isSet(pointer)) {
-			VanityUrl vanityUrl = null;
-			try {
-				vanityUrl = vanityUrlAPI.getVanityUrlByURI((StringUtils.isEmpty(uri) ? "/" : uri), null, languageId, APILocator.systemUser(),true);
-			} catch (DotDataException | DotSecurityException e) {
-				Logger.error(this, "Error searching vanity URL "+(StringUtils.isEmpty(uri) ? "/" : uri),e);
-			}
+			VanityUrl vanityUrl = vanityUrlAPI.getLiveVanityUrl((StringUtils.isEmpty(uri) ? "/" : uri), null, languageId, APILocator.systemUser());
 			pointer = vanityUrl != null && InodeUtils.isSet(vanityUrl.getInode())?vanityUrl.getForwardTo():null;
 		}
 		if(UtilMethods.isSet(pointer)){

@@ -1,15 +1,11 @@
 package com.dotmarketing.filters;
 
-import java.util.List;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Versionable;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -18,6 +14,8 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import java.util.List;
 
 public class CmsUrlUtil {
 	private static CmsUrlUtil urlUtil;
@@ -180,33 +178,18 @@ public class CmsUrlUtil {
 		if (uri.length()>1 && uri.endsWith("/"))
 			uri = uri.substring(0, uri.length() - 1);
 
-		boolean isVanityURL = false;
-		try {
-			isVanityURL = UtilMethods.isSet(APILocator.getVanityUrlAPI().getVanityUrlByURI(uri, host, languageId, APILocator.systemUser(), true));
-		} catch (DotDataException | DotSecurityException e) {
-			Logger.error(this, "Error searching vanity URL "+uri,e);
-		}
+		boolean isVanityURL = UtilMethods.isSet(APILocator.getVanityUrlAPI().getLiveVanityUrl(uri, host, languageId, APILocator.systemUser()));
+
 		if (!isVanityURL) {
-			try{
-				isVanityURL = UtilMethods.isSet(APILocator.getVanityUrlAPI().getVanityUrlByURI(uri, null, languageId, APILocator.systemUser(), true));
-			} catch (DotDataException | DotSecurityException e) {
-				Logger.error(this, "Error searching vanity URL "+uri,e);
-			}
+			isVanityURL = UtilMethods.isSet(APILocator.getVanityUrlAPI().getLiveVanityUrl(uri, null, languageId, APILocator.systemUser()));
 		}
 		// Still support legacy cmsHomePage
 		if("/".equals(uri) && !isVanityURL){
 			uri = "/cmsHomePage";
-			try {
-				isVanityURL = UtilMethods.isSet(APILocator.getVanityUrlAPI().getVanityUrlByURI(uri, host, languageId, APILocator.systemUser(), true));
-			} catch (DotDataException | DotSecurityException e) {
-				Logger.error(this, "Error searching vanity URL "+uri,e);
-			}
+			isVanityURL = UtilMethods.isSet(APILocator.getVanityUrlAPI().getLiveVanityUrl(uri, host, languageId, APILocator.systemUser()));
+
 			if (!isVanityURL) {
-				try {
-					isVanityURL = UtilMethods.isSet(APILocator.getVanityUrlAPI().getVanityUrlByURI(uri, null, languageId, APILocator.systemUser(), true));
-				} catch (DotDataException | DotSecurityException e) {
-					Logger.error(this, "Error searching vanity URL "+uri,e);
-				}
+				isVanityURL = UtilMethods.isSet(APILocator.getVanityUrlAPI().getLiveVanityUrl(uri, null, languageId, APILocator.systemUser()));
 			}
 		}
 

@@ -1,78 +1,125 @@
 package com.dotcms.content.model;
 
-import com.dotcms.contenttype.model.type.VanityUrlContentType;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.business.*;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+
+import java.io.Serializable;
+import java.util.Map;
+
 
 /**
- * This class represents a Vanity URL as a {@link Contentlet}
+ * Represents an Vanity URL in dotCMS. As of version 4.2, Vanity URL are not 
+ * considered as {@link VirtualLink} objects, but as {@link Contentlet} objects.
  * @author oswaldogallango
  *
  */
-public class VanityUrl extends Contentlet implements IVanityUrl {
+public interface VanityUrl extends Serializable, Versionable, Permissionable, Treeable, Ruleable {
 
 	/**
-	 * 
+	 * Get the Vanity URL identifier
+	 * @return the vanity URL identifier
 	 */
-	private static final long serialVersionUID = 1L;
+	String getIdentifier();
+	
+	/**
+	 * Set the Vanity URL identifier
+	 * @param identifier the identifier
+	 */
+    void setIdentifier(String identifier);
+    
+    /**
+     * Get the Vanity URL inode
+     * @return the vanity URL inode
+     */
+    String getInode();
+    
+    /**
+     * Set the Vanity URL inode
+     * @param inode The inode
+     */
+    void setInode(String inode);
+    
+    /**
+	 * Get the Vanity URL language Id
+	 * @return the vanity URL language Id
+	 */
+	long getLanguageId();
+	
+	/**
+	 * Set the Vanity URL language Id
+	 * @param languageId The language Id
+	 */
+    void setLanguageId(long languageId);
+    
+    /**
+     * Get the Vanity URL title
+     * @return the vanity URL title
+     */
+	String getTitle();
+	
+	/**
+	 * Set the Vanity URL title
+	 * @param title The Vanity Url title
+	 */
+	void setTitle(String title);
+	
+	/**
+	 * Get the Vanity URL site identifier
+	 * @return the vanity URL site identifier
+	*/
+	String getSite();
+	
+	/**
+	 * Set the Vanity URL Site identifier
+	 * @param site the Site identifier
+	 */
+	void setSite(String site);
+	
+	/**
+	 * Get the Vanity URL URI
+	 * @return the vanity URL Uri
+	 */
+	String getURI();
+	
+	/**
+	 * Set the Vanity URI
+	 * @param uri the vanity URL Uri
+	 */
+	void setURI(String uri);
+	
+	/**
+	 * The Vanity URL forward to path
+	 * @return the vanity URL forward path
+	 */
+	String getForwardTo();
+	void setForwardTo(String forwardTo);
+	
+	/**
+	 * Get the Vanity URL action (redirect, forward or die)
+	 * @return the vanity URL action
+	 */
+	int getAction();
+	
+	/**
+	 * Set the VAnity URL action (redirect, forward or die)
+	 * @param action the action
+	 */
+	void setAction(int action);
+	
+	/**
+	 * Get the Vanity URL order
+	 * @return the vanity URL order
+	 */
+	int getOrder();
+	
+	/**
+	 * Set the vanity URL order
+	 * @param order the order
+	 */
+	void setOrder(int order);
+	
+	Map<String, Object> getMap () throws DotStateException, DotDataException, DotSecurityException;
 
-	@Override
-	public String getTitle() {
-		return getStringProperty(VanityUrlContentType.TITLE_FIELD_VAR);
-	}
-
-	@Override
-	public void setTitle(String title) {
-		setStringProperty(VanityUrlContentType.TITLE_FIELD_VAR, title);
-	}
-
-	@Override
-	public String getSite() {
-		return getStringProperty(VanityUrlContentType.SITE_FIELD_VAR);
-	}
-
-	@Override
-	public void setSite(String site) {
-		setStringProperty(VanityUrlContentType.SITE_FIELD_VAR, site);
-	}
-
-	@Override
-	public String getURI() {
-		return getStringProperty(VanityUrlContentType.URI_FIELD_VAR);
-	}
-
-	@Override
-	public void setURI(String uri) {
-		setStringProperty(VanityUrlContentType.URI_FIELD_VAR, uri);
-	}
-
-	@Override
-	public String getForwardTo() {
-		return getStringProperty(VanityUrlContentType.FORWARD_TO_FIELD_VAR);
-	}
-
-	@Override
-	public void setForwardTo(String forwardTo) {
-		setStringProperty(VanityUrlContentType.FORWARD_TO_FIELD_VAR, forwardTo);
-	}
-
-	@Override
-	public int getAction() {
-		return (int)getLongProperty(VanityUrlContentType.ACTION_FIELD_VAR);
-	}
-
-	@Override
-	public void setAction(int action) {
-		setLongProperty(VanityUrlContentType.ACTION_FIELD_VAR, action);
-	}
-
-	@Override
-	public int getOrder() {
-		return (int)getLongProperty(VanityUrlContentType.ORDER_FIELD_VAR);
-	}
-
-	@Override
-	public void setOrder(int order) {
-		setProperty(VanityUrlContentType.ORDER_FIELD_VAR, order);
-	}
-
+    
 }
