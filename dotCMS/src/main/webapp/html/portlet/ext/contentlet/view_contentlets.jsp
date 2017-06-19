@@ -169,6 +169,7 @@
 				LanguageUtil.get(pageContext, "File"),
 				LanguageUtil.get(pageContext, "HTMLPage"),
 				LanguageUtil.get(pageContext, "Persona"),
+				LanguageUtil.get(pageContext, "KeyValue"),
 				};
 
 		boolean enterprise = LicenseUtil.getLevel() > 199;

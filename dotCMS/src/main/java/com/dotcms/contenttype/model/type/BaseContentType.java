@@ -9,7 +9,8 @@ public enum BaseContentType {
 	FORM(3,FormContentType.class),
 	FILEASSET(4, FileAssetContentType.class),
 	HTMLPAGE(5, PageContentType.class),
-	PERSONA(6,PersonaContentType.class);
+	PERSONA(6,PersonaContentType.class),
+	KEY_VALUE(7, KeyValueContentType.class);
 
 	final int type;
 	Class immutableClass;

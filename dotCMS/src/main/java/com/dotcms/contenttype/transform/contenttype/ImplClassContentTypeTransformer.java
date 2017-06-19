@@ -7,6 +7,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
 import com.dotcms.contenttype.model.type.ImmutableFormContentType;
+import com.dotcms.contenttype.model.type.ImmutableKeyValueContentType;
 import com.dotcms.contenttype.model.type.ImmutablePageContentType;
 import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
@@ -39,6 +40,8 @@ public class ImplClassContentTypeTransformer implements ContentTypeTransformer{
 				return ImmutablePageContentType.builder().from(type).build();
 			case PERSONA:
 				return ImmutablePersonaContentType.builder().from(type).build();
+			case KEY_VALUE:
+				return ImmutableKeyValueContentType.builder().from(type).build();
 			default:
 				throw new DotStateException("invalid content type");
 		}
