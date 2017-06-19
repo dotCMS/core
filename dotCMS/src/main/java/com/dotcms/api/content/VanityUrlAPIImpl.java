@@ -187,8 +187,13 @@ public class VanityUrlAPIImpl implements VanityUrlAPI{
 
 	@Override
 	public void invalidateVanityUrl(VanityUrl vanityUrl){
+		invalidateVanityUrl((Contentlet)vanityUrl);
+	}
+
+	@Override
+	public void invalidateVanityUrl(Contentlet vanityUrl){
 		try {
-			vanityURLCache.remove(VanityUrlUtil.sanitizeKey((Contentlet)vanityUrl));
+			vanityURLCache.remove(VanityUrlUtil.sanitizeKey(vanityUrl));
 		} catch (DotDataException | DotRuntimeException | DotSecurityException e) {
 			Logger.error(this, "Error trying to add Vanity URL identifier:"+vanityUrl.getIdentifier()+" to VanityURLCache",e);
 		}

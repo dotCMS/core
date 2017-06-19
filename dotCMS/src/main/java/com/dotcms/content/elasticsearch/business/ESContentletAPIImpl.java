@@ -2105,6 +2105,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         	ContentletServices.invalidateLive(contentlet);
         	publishRelatedHtmlPages(contentlet);
 
+
+
             contentletSystemEventUtil.pushUnpublishEvent(contentlet);
         } catch(DotDataException | DotStateException| DotSecurityException e) {
         	ActivityLogger.logInfo(getClass(), "Error Unpublishing Content", "StartDate: " +contentPushPublishDate+ "; "
@@ -3259,7 +3261,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 if(contentlet != null && contentlet.isVanityUrl()){
 				    //remove from cache
-                    APILocator.getVanityUrlAPI().invalidateVanityUrl((VanityUrl) contentlet);
+                    APILocator.getVanityUrlAPI().invalidateVanityUrl(contentlet);
                 }
 
 				if(structureHasAHostField && changedURI) {

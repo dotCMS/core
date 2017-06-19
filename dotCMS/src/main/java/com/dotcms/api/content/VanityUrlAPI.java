@@ -75,4 +75,10 @@ public interface VanityUrlAPI {
 	 * @param vanityUrl The vanity URL object
 	 */
 	void invalidateVanityUrl(VanityUrl vanityUrl);
+
+	/**
+	 * Remove the vanity URL Contentlet from the vanityURLCache
+	 * @param vanityUrl The vanity URL contentlet object
+	 */
+	void invalidateVanityUrl(Contentlet vanityUrl);
 }

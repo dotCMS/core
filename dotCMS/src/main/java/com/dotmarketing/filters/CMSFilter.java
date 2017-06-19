@@ -131,7 +131,7 @@ public class CMSFilter implements Filter {
 		if (iAm == IAm.VANITY_URL) {
 			VanityUrl vanityUrl = vanityUrlAPI.getLiveVanityUrl(("/".equals(uri) ? "/cmsHomePage" : uri.endsWith("/")?uri.substring(0, uri.length() - 1):uri), host, languageId, APILocator.systemUser());
 
-			if (vanityUrl != null && InodeUtils.isSet(vanityUrl.getInode()) && !UtilMethods.isSet(vanityUrl.getForwardTo())) {
+			if (vanityUrl == null || (!InodeUtils.isSet(vanityUrl.getInode()) && !UtilMethods.isSet(vanityUrl.getForwardTo()))) {
 				vanityUrl = vanityUrlAPI.getLiveVanityUrl(("/".equals(uri) ? "/cmsHomePage" : uri.endsWith("/")?uri.substring(0, uri.length() - 1):uri), null, languageId, APILocator.systemUser());
 			}
 
