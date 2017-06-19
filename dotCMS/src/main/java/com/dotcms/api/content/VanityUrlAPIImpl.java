@@ -72,7 +72,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI{
 			List<VanityUrl> results = new ArrayList<>();
 			String hostCondition = (host != null?host.getHostname():"");
 			try {
-                List<Contentlet> contentResults = contentletAPI.search("+baseType:" + BaseContentType.VANITY_URL.getType() + " +languageId:" + languageId + " +vanityUrl:" + hostCondition + uri + (live ? " +live:true" : " +working:true"), 0, 0, StringPool.BLANK, user, false);
+                List<Contentlet> contentResults = contentletAPI.search("+baseType:" + BaseContentType.VANITY_URL.getType() + " +languageId:" + languageId + " +vanityUrl:" + hostCondition + VanityUrlUtil.fixURI(uri) + (live ? " +live:true" : " +working:true"), 0, 0, StringPool.BLANK, user, false);
                 contentResults.stream().forEach((Contentlet con) -> {
                     VanityUrl vanityUrl = getVanityUrlFromContentlet(con);
                     try {
@@ -89,7 +89,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI{
 
 
 			    if(results.size() == 0 && Config.getBooleanProperty("DEFAULT_VANITY_URL_TO_DEFAULT_LANGUAGE", false)){
-                    contentResults = contentletAPI.search("+baseType:"+BaseContentType.VANITY_URL.getType()+" +languageId:"+APILocator.getLanguageAPI().getDefaultLanguage().getId()+" +vanityUrl:"+hostCondition+uri+(live?" +live:true":" +working:true"), 0, 0, StringPool.BLANK, user, false);
+                    contentResults = contentletAPI.search("+baseType:"+BaseContentType.VANITY_URL.getType()+" +languageId:"+APILocator.getLanguageAPI().getDefaultLanguage().getId()+" +vanityUrl:"+hostCondition+VanityUrlUtil.fixURI(uri)+(live?" +live:true":" +working:true"), 0, 0, StringPool.BLANK, user, false);
 				    contentResults.stream().forEach((Contentlet con) ->{
 					    VanityUrl vanityUrl = getVanityUrlFromContentlet(con);
 					    try {
