@@ -7,6 +7,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -18,6 +20,8 @@ import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.integrity.IntegrityDataGeneratorThread;
 import com.dotcms.publisher.pusher.PushPublisher;
+import com.dotcms.repackage.com.google.common.cache.Cache;
+import com.dotcms.repackage.com.google.common.cache.CacheBuilder;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.POST;
@@ -27,9 +31,12 @@ import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.WebApplicationException;
 import com.dotcms.repackage.javax.ws.rs.client.Client;
 import com.dotcms.repackage.javax.ws.rs.client.Entity;
+import com.dotcms.repackage.javax.ws.rs.client.Invocation.Builder;
 import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.javax.ws.rs.core.NewCookie;
+import com.dotcms.repackage.javax.ws.rs.core.Cookie;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.StreamingOutput;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
@@ -84,12 +91,66 @@ public class IntegrityResource {
 
     private final WebResource webResource = new WebResource();
 
+    private final static Cache<String, EndpointState> endpointStateCache =
+    		CacheBuilder.newBuilder().expireAfterAccess(30, TimeUnit.MINUTES).build();    
+
     public enum ProcessStatus {
         PROCESSING, ERROR, FINISHED, NO_CONFLICTS, CANCELED
     }
 
     public static final String INTEGRITY_DATA_TO_CHECK_ZIP_FILE_NAME = "DataToCheck.zip";
     public static final String INTEGRITY_DATA_TO_FIX_ZIP_FILE_NAME = "DataToFix.zip";
+
+
+    private static class EndpointState {
+    	private final Map<String, Cookie> cookies = new ConcurrentHashMap<String, Cookie>();
+
+    	public Map<String, Cookie> getCookies() {
+    		return cookies;
+    	}
+
+    	public void addCookie(String name, Cookie cookie) {
+    		cookies.put(name, cookie);
+    	}
+    }
+
+    private void cacheEndpointState(String endpointId, Map<String, NewCookie> cookiesMap) {
+
+    	EndpointState endpointState = endpointStateCache.getIfPresent(endpointId);
+    	if (endpointState == null) {
+    		endpointStateCache.put(endpointId, endpointState = new EndpointState());
+    	}
+
+    	for (Map.Entry<String, NewCookie> cookieEntry : cookiesMap.entrySet()) {
+    		endpointState.addCookie(cookieEntry.getKey(), cookieEntry.getValue());
+    	}
+    }
+
+    private void applyEndpointState(String endpointId, Builder requestBuilder) {
+
+    	final EndpointState endpointState = endpointStateCache.getIfPresent(endpointId);
+
+    	if (endpointState != null) {
+        	for (Cookie cookie : endpointState.getCookies().values()) {
+        		requestBuilder.cookie(cookie);
+        	}
+    	}
+    }
+
+    // https://github.com/dotCMS/core/issues/9067
+	private Response postWithEndpointState(String endpointId, String url, MediaType mediaType, Entity<?> entity) {
+
+		final Builder requestBuilder = RestClientBuilder.newClient().target(url).request(mediaType);
+
+		applyEndpointState(endpointId, requestBuilder);
+
+		final Response response = requestBuilder.post(entity);
+
+		cacheEndpointState(endpointId, response.getCookies());
+
+		return response;
+	}
+
 
     /**
      * <p>Returns a zip with data from structures, workflow schemes and folders for integrity check
@@ -303,8 +364,6 @@ public class IntegrityResource {
             //Setting the process status
             setStatus( request, endpointId, ProcessStatus.PROCESSING );
 
-            final Client client = RestClientBuilder.newClient();
-
             final PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI().findEndPointById(endpointId);
             final String authToken = PushPublisher.retriveKeyString(PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString()));
 
@@ -313,9 +372,10 @@ public class IntegrityResource {
 
             //Sending bundle to endpoint
             String url = endpoint.toURL()+"/api/integrity/generateintegritydata/";
-            WebTarget webTarget = client.target(url);
 
-            Response response = webTarget.request(MediaType.TEXT_PLAIN_TYPE).post(Entity.entity(form, form.getMediaType()));
+            Response response = postWithEndpointState(
+            	endpoint.getId(), url, MediaType.TEXT_PLAIN_TYPE, Entity.entity(form, form.getMediaType())
+            );
 
             if(response.getStatus() == HttpStatus.SC_OK) {
                 final String integrityDataRequestID = response.readEntity(String.class);
@@ -328,13 +388,14 @@ public class IntegrityResource {
                         form.field("REQUEST_ID",integrityDataRequestID);
 
                         String url = endpoint.toURL()+"/api/integrity/getintegritydata/";
-                        WebTarget webTarget = client.target(url);
 
                         boolean processing = true;
 
                         while(processing) {
 
-                            Response response = webTarget.request("application/zip").post(Entity.entity(form, form.getMediaType()));
+                        	Response response = postWithEndpointState(
+                        		endpoint.getId(), url, new MediaType("application", "zip"), Entity.entity(form, form.getMediaType())
+                        	);
 
                             if ( response.getStatus() == HttpStatus.SC_OK ) {
 
@@ -539,12 +600,12 @@ public class IntegrityResource {
                     form.field( "REQUEST_ID", integrityDataRequestId );
 
                     //Prepare the connection
-                    Client client = RestClientBuilder.newClient();
                     String url = endpoint.toURL() + "/api/integrity/cancelIntegrityProcessOnEndpoint/";
-                    WebTarget webTarget = client.target(url);
 
                     //Execute the call
-                    Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).post(Entity.entity(form, form.getMediaType()));
+                	Response response = postWithEndpointState(
+                		endpoint.getId(), url, MediaType.APPLICATION_JSON_TYPE, Entity.entity(form, form.getMediaType())
+                	);
 
                     if ( response.getStatus() == HttpStatus.SC_OK ) {
                         //Nothing to do here, we found no process to cancel
