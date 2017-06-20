@@ -94,7 +94,10 @@ describe('ContentTypesEditComponent', () => {
         route.url = Observable.of(url);
 
         let crudService = fixture.debugElement.injector.get(CrudService);
-        spyOn(crudService, 'getDataById').and.returnValue(Observable.of({clazz: 'com.dotcms.contenttype.model.type.ImmutableWidgetContentType'}));
+        spyOn(crudService, 'getDataById').and.returnValue(Observable.of({
+            clazz: 'com.dotcms.contenttype.model.type.ImmutableWidgetContentType',
+            fields: []
+        }));
 
         fixture.detectChanges();
 
@@ -113,7 +116,8 @@ describe('ContentTypesEditComponent', () => {
 
         spyOn(crudService, 'getDataById').and.returnValue(Observable.of({
             clazz: 'com.dotcms.contenttype.model.type.ImmutableWidgetContentType',
-            id: '1234-identifier'
+            fields: [],
+            id: '1234-identifier',
         }));
 
         spyOn(crudService, 'putData').and.returnValue(Observable.of({}));
@@ -130,6 +134,7 @@ describe('ContentTypesEditComponent', () => {
 
         expect(crudService.putData).toHaveBeenCalledWith('v1/contenttype/id/1234-identifier', {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableWidgetContentType',
+            fields: [],
             host: '12345',
             id: '1234-identifier',
             name: 'Hello World'

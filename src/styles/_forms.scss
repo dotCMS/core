@@ -40,6 +40,13 @@
     }
 }
 
+.form__group-hint {
+    color: $gray-light;
+    display: block;
+    font-size: $font-size-small;
+    padding-bottom: $basic-padding;
+}
+
 .form__label {
     color: $label-color;
     display: block;

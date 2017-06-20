@@ -46,8 +46,7 @@ export class ContentTypesFormComponent extends BaseComponent {
     public form: FormGroup;
     public formState = 'collapsed';
     public submitAttempt = false;
-    private expireDateFieldOptions: SelectItem[] = [];
-    private publishDateFieldOptions: SelectItem[] = [];
+    private dateVarOptions: SelectItem[] = [];
     private sitesOrFolderOptions = [];
     private workflowOptions: SelectItem[] = [];
 
@@ -57,6 +56,7 @@ export class ContentTypesFormComponent extends BaseComponent {
             'Expire-Date-Field',
             'Host-Folder',
             'Identifier',
+            'No-Date-Fields-Defined',
             'Properties',
             'Publish-Date-Field',
             'URL-Map-Pattern-hint1',
@@ -65,15 +65,14 @@ export class ContentTypesFormComponent extends BaseComponent {
             'Workflow',
             'cancel',
             'description',
+            'name',
             'save',
-            'update',
-            'name'
+            'update'
         ], messageService);
     }
 
     ngOnInit(): void {
         this.initWorkflowtFieldOptions();
-        this.initDatesFieldOptions();
 
         this.messageService.messageMap$.subscribe(res => {
             this.actionButtonLabel = this.isEditMode ? this.i18nMessages['update'] : this.i18nMessages['save'];
@@ -165,8 +164,53 @@ export class ContentTypesFormComponent extends BaseComponent {
     }
 
     private addEditModeSpecificFields(): void {
-        this.form.addControl('publishDateField', new FormControl({value: '', disabled: true}));
-        this.form.addControl('expireDateField', new FormControl({value: '', disabled: true}));
+        this.dateVarOptions = this.getDateVarOptions(this.data.fields);
+
+        let publishDateVar = new FormControl({
+            disabled: !this.dateVarOptions.length,
+            value: this.data.publishDateVar || null
+        });
+        let expireDateVar = new FormControl({
+            disabled: !this.dateVarOptions.length,
+            value: this.data.expireDateVar || null
+        });
+
+        this.form.addControl('publishDateVar', publishDateVar);
+        this.form.addControl('expireDateVar', expireDateVar);
+    }
+
+    private getDateVarOptions(fields): SelectItem[] {
+        let dateVarOptions = fields
+            .filter(item => {
+                return item.dataType === 'DATE_TIME' && item.indexed;
+            })
+            .map(item => {
+                return {
+                    label: item.name,
+                    value: item.variable
+                };
+            });
+
+        if (dateVarOptions.length) {
+            dateVarOptions.unshift({
+                label: '',
+                value: null
+            });
+        }
+
+        return dateVarOptions;
+    }
+
+    private handleDateVarChange($event, field): void {
+        let expireDateVar = this.form.get('expireDateVar');
+        let publishDateVar = this.form.get('publishDateVar');
+
+        if (field === 'publishDateVar' && expireDateVar.value === $event.value) {
+            expireDateVar.patchValue(null);
+        }
+        if (field === 'expireDateVar' && publishDateVar.value === $event.value) {
+            publishDateVar.patchValue(null);
+        }
     }
 
     private handleNameFielEvent(el: EventTarget): void {
@@ -174,22 +218,6 @@ export class ContentTypesFormComponent extends BaseComponent {
         if (!value && this.formState === 'expanded' || value && value.length && this.formState === 'collapsed') {
             this.toggleForm();
         }
-    }
-
-    private initDatesFieldOptions(): void {
-        this.publishDateFieldOptions = [
-            {
-                label: 'Select one',
-                value: null
-            }
-        ];
-
-        this.expireDateFieldOptions = [
-            {
-                label: 'Select one',
-                value: null
-            }
-        ];
     }
 
     private initFormGroup(): void {

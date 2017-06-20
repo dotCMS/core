@@ -122,7 +122,10 @@ describe('ContentTypesFormComponent', () => {
     });
 
     it('form should render dates fields in edit mode', () => {
-        comp.data = {hello: 'world'};
+        comp.data = {
+            fields: [],
+            hello: 'world'
+        };
         comp.ngOnChanges({
             data: new SimpleChange(null, comp.data, true),
             type: new SimpleChange(null, 'content', true)
@@ -135,8 +138,49 @@ describe('ContentTypesFormComponent', () => {
         expect(comp.form.get('workflow')).not.toBeNull();
         expect(comp.form.get('detailPage')).not.toBeNull();
         expect(comp.form.get('urlMapPattern')).not.toBeNull();
-        expect(comp.form.get('publishDateField')).not.toBeNull();
-        expect(comp.form.get('expireDateField')).not.toBeNull();
+        expect(comp.form.get('publishDateVar')).not.toBeNull();
+        expect(comp.form.get('expireDateVar')).not.toBeNull();
+    });
+
+    it('form should render disabled dates fields', () => {
+        comp.data = {
+            fields: [],
+            hello: 'world'
+        };
+        comp.ngOnChanges({
+            data: new SimpleChange(null, comp.data, true),
+            type: new SimpleChange(null, 'content', true)
+        });
+
+        expect(comp.form.get('publishDateVar').disabled).toBe(true);
+        expect(comp.form.get('expireDateVar').disabled).toBe(true);
+    });
+
+    it('form should render enabled dates fields', () => {
+        comp.data = {
+            fields: [
+                {
+                    dataType: 'DATE_TIME',
+                    id: '123',
+                    indexed: true,
+                    name: 'Date 1'
+                },
+                {
+                    dataType: 'DATE_TIME',
+                    id: '456',
+                    indexed: true,
+                    name: 'Date 2'
+                }
+            ],
+            hello: 'world'
+        };
+        comp.ngOnChanges({
+            data: new SimpleChange(null, comp.data, true),
+            type: new SimpleChange(null, 'content', true)
+        });
+
+        expect(comp.form.get('publishDateVar').disabled).toBe(false);
+        expect(comp.form.get('expireDateVar').disabled).toBe(false);
     });
 
     it('form should not send data with invalid form', () => {
