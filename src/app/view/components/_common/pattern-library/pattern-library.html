@@ -172,12 +172,14 @@
                         </span>
                         <field-validation-message message="InputText is required" [submitted]="submitAttempt" [field]="inputTextFloatingLabel"></field-validation-message>
                     </div>
+                    <span class="form__group-hint">This is a hint text</span>
 
                     <div class="form__group">
                         <label for="inputTextRegularField" class="form__label">Label</label>
                         <input pInputText type="text" id="inputTextRegularField" name="inputTextRegularField" placeholder="Placeholder" #inputTextRegularField="ngModel" [(ngModel)]="model.inputTextRegularField" required />
                         <field-validation-message message="InputText is required" [submitted]="submitAttempt" [field]="inputTextRegularField"></field-validation-message>
                     </div>
+                    <span class="form__group-hint">This is a hint text</span>
 
                     <div class="form__group">
                         <input pInputText type="text" placeholder="Disabled" disabled />
