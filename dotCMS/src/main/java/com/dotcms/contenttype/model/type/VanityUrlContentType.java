@@ -60,7 +60,7 @@ public abstract class VanityUrlContentType extends ContentType implements Expire
 		int order = 1;
 		Field titleField = ImmutableTextField.builder().name(TITLE_FIELD_NAME).variable(TITLE_FIELD_VAR)
 				.dataType(DataTypes.TEXT).required(Boolean.TRUE).listed(Boolean.TRUE).indexed(Boolean.TRUE)
-				.sortOrder(order).fixed(Boolean.TRUE).searchable(Boolean.TRUE).build();
+				.sortOrder(order++).fixed(Boolean.TRUE).searchable(Boolean.TRUE).build();
 		Field siteField = ImmutableCustomField.builder().name(SITE_FIELD_NAME).variable(SITE_FIELD_VAR)
 				.dataType(DataTypes.TEXT).fixed(Boolean.TRUE).indexed(Boolean.TRUE)
 				.values("$velutil.mergeTemplate('/static/content/site_selector_field_render.vtl')")
