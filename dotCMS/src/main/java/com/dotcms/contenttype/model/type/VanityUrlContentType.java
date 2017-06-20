@@ -2,6 +2,7 @@ package com.dotcms.contenttype.model.type;
 
 import java.util.List;
 
+import com.dotmarketing.util.Config;
 import org.immutables.gson.Gson;
 import org.immutables.value.Value;
 
@@ -30,7 +31,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonDeserialize(as = ImmutableVanityUrlContentType.class)
 @Gson.TypeAdapters
 @Value.Immutable
-public abstract class VanityUrlContentType extends ContentType implements Expireable{
+public abstract class VanityUrlContentType extends ContentType implements Expireable, Multilinguable {
 
 	private static final long serialVersionUID = 1L;
 
@@ -79,6 +80,11 @@ public abstract class VanityUrlContentType extends ContentType implements Expire
 				.dataType(DataTypes.INTEGER).required(Boolean.TRUE).fixed(Boolean.TRUE).indexed(Boolean.TRUE)
 				.searchable(Boolean.TRUE).build();
 		return ImmutableList.of(titleField, siteField, uriField, forwardToField, actionField, orderField);
+	}
+
+	@Override
+	public boolean fallback(){
+		return Config.getBooleanProperty("DEFAULT_VANITY_URL_TO_DEFAULT_LANGUAGE", false);
 	}
 
 }

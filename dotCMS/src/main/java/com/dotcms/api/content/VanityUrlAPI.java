@@ -15,6 +15,8 @@ import java.util.List;
  * HTML page or File, that might actually live “buried” in a much deeper path.
  * 
  * @author oswaldogallango
+ * @version 4.2.0
+ * @since June 12, 2017
  */
 public interface VanityUrlAPI {
 	/**
@@ -63,22 +65,4 @@ public interface VanityUrlAPI {
 	 * @return Vanity URL
 	 */
 	VanityUrl getVanityUrlFromContentlet(final Contentlet con);
-
-	/**
-	 * Add the Vanity URL to the vanityURLCache
-	 * @param vanityUrl The vanity URL object
-	 */
-	void addToVanityURLCache(VanityUrl vanityUrl);
-
-	/**
-	 * Remove the vanity URL from the vanityURLCache
-	 * @param vanityUrl The vanity URL object
-	 */
-	void invalidateVanityUrl(VanityUrl vanityUrl);
-
-	/**
-	 * Remove the vanity URL Contentlet from the vanityURLCache
-	 * @param vanityUrl The vanity URL contentlet object
-	 */
-	void invalidateVanityUrl(Contentlet vanityUrl);
 }

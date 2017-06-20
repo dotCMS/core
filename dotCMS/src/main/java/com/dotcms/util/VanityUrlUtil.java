@@ -28,8 +28,7 @@ public class VanityUrlUtil {
 	
 	/**
 	 * Generate the sanitized cache key
-	 * @param key to be used in the cache
-	 * @param languageId 
+	 * @param vanityUrl The vanity Url contentlet
 	 * @return String with the sanitized key name
 	 * @throws DotSecurityException 
 	 * @throws DotRuntimeException 
@@ -37,7 +36,7 @@ public class VanityUrlUtil {
 	 */
 	public static String sanitizeKey(Contentlet vanityUrl) throws DotDataException, DotRuntimeException, DotSecurityException{
 		Host host = APILocator.getHostAPI().find(vanityUrl.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR), APILocator.systemUser(), false);
-		String key = host != null && !host.getIdentifier().equals(Host.SYSTEM_HOST)?host.getHostname()+"|"+fixURI(vanityUrl.getStringProperty(VanityUrlContentType.URI_FIELD_VAR)):fixURI(vanityUrl.getStringProperty(VanityUrlContentType.URI_FIELD_VAR));
+		String key = host != null && !host.getIdentifier().equals(Host.SYSTEM_HOST)?host.getIdentifier()+"|"+fixURI(vanityUrl.getStringProperty(VanityUrlContentType.URI_FIELD_VAR)):fixURI(vanityUrl.getStringProperty(VanityUrlContentType.URI_FIELD_VAR));
 		return sanitizeKey(key, vanityUrl.getLanguageId());
 	}
 

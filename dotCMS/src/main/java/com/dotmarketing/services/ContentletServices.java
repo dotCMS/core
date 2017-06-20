@@ -1,5 +1,6 @@
 package com.dotmarketing.services;
 
+import com.dotcms.services.VanityUrlServices;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -165,7 +166,7 @@ public class ContentletServices {
 		}
 		if(content != null && content.isVanityUrl()){
 			//remove from cache
-			APILocator.getVanityUrlAPI().invalidateVanityUrl(content);
+			VanityUrlServices.invalidateVanityUrl(content);
 		}
 	}
 

@@ -5,7 +5,9 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 /**
  * This class represents a Vanity URL as a {@link Contentlet}
- * @author oswaldogallango
+ * @autor oswaldogallango
+ * @version 4.2.0
+ * @since June 16, 2017
  *
  */
 public class DefaultVanityUrl extends Contentlet implements VanityUrl {

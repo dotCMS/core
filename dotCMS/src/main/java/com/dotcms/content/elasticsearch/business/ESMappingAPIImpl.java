@@ -278,7 +278,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             }
             
             if(con.isVanityUrl()){
-                populateVanityUrlPath(con, contentletMap, ident, urlMap);
+                populateVanityUrlPath(con, contentletMap, ident);
             }
 
             for(Entry<String,String> entry : contentletMap.entrySet()){
@@ -315,23 +315,22 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	}
 
     /**
-     *
-     * @param con
-     * @param contentletMap
-     * @param ident
-     * @param urlMap
+     * Set the Vanity Url URI in the content map
+     * @param con The current vanity url Contentlet
+     * @param contentletMap Contentlet properties map
+     * @param ident Contentlet
      */
-    private void populateVanityUrlPath(Contentlet con, Map<String, String> contentletMap, Identifier ident, String urlMap) {
+    private void populateVanityUrlPath(Contentlet con, Map<String, String> contentletMap, Identifier ident) {
         String vanityUrlPath;
         try{
             VanityUrl vanityUrl = APILocator.getVanityUrlAPI().getVanityUrlFromContentlet(con);
-            vanityUrlPath = !vanityUrl.getSite().equals(Host.SYSTEM_HOST)?APILocator.getHostAPI().find(vanityUrl.getSite(),APILocator.getUserAPI().getSystemUser(), true).getHostname()+ VanityUrlUtil.fixURI(vanityUrl.getURI()):VanityUrlUtil.fixURI(vanityUrl.getURI());
+            vanityUrlPath = VanityUrlUtil.fixURI(vanityUrl.getURI());
             if(vanityUrlPath != null){
-                contentletMap.put("vanityUrl",vanityUrlPath );
+                contentletMap.put("vanityUrl",vanityUrlPath);
             }
         }catch(Exception e){
             Logger.warn(this.getClass(), "Cannot get Vanity URL for contentlet.id : " + ((ident != null) ? ident.getId() : con) + " , reason: "+e.getMessage());
-            throw new DotRuntimeException(urlMap, e);
+            throw new DotRuntimeException(e);
         }
     }
 

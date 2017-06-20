@@ -6,7 +6,9 @@ import com.dotmarketing.util.UtilMethods;
 
 /**
  * This class get the handler to manage the Vanity URLs
- * Created by oswaldogallango on 2017-06-16.
+ * @autor oswaldogallango
+ * @version 4.2.0
+ * @since June 16, 2017
  */
 public class VanityUrlHandlerResolver {
 

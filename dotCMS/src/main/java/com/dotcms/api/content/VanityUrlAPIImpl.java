@@ -4,6 +4,9 @@ import com.dotcms.cache.VanityUrlCache;
 import com.dotcms.content.model.DefaultVanityUrl;
 import com.dotcms.content.model.VanityUrl;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.VanityUrlContentType;
+import com.dotcms.services.VanityUrlServices;
 import com.dotcms.util.VanityUrlUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -15,7 +18,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -30,6 +32,8 @@ import java.util.List;
  * Implementation class for the {@link VanityUrlAPI}.
  * 
  * @author oswaldogallango
+ * @version 4.2.0
+ * @since June 12, 2017
  *
  */
 public class VanityUrlAPIImpl implements VanityUrlAPI{
@@ -67,19 +71,19 @@ public class VanityUrlAPIImpl implements VanityUrlAPI{
 	}
 
 	protected VanityUrl getVanityUrlByURI(final String uri, final Host host, final long languageId, final User user, final boolean live) {
-		VanityUrl result = vanityURLCache.get(VanityUrlUtil.sanitizeKey(host != null && InodeUtils.isSet(host.getInode())?host.getHostname()+"|"+VanityUrlUtil.fixURI(uri):VanityUrlUtil.fixURI(uri),languageId));
+		VanityUrl result = vanityURLCache.get(VanityUrlUtil.sanitizeKey(host != null && InodeUtils.isSet(host.getInode())?host.getIdentifier()+"|"+VanityUrlUtil.fixURI(uri):VanityUrlUtil.fixURI(uri),languageId));
 		if(result == null || !InodeUtils.isSet(result.getInode())){
 			List<VanityUrl> results = new ArrayList<>();
-			String hostCondition = (host != null?host.getHostname():"");
+			String hostCondition = (host != null?" +conHost:"+host.getIdentifier():" +conHost:"+Host.SYSTEM_HOST);
 			try {
-                List<Contentlet> contentResults = contentletAPI.search("+baseType:" + BaseContentType.VANITY_URL.getType() + " +languageId:" + languageId + " +vanityUrl:" + hostCondition + VanityUrlUtil.fixURI(uri) + (live ? " +live:true" : " +working:true"), 0, 0, StringPool.BLANK, user, false);
+                List<Contentlet> contentResults = contentletAPI.search("+baseType:" + BaseContentType.VANITY_URL.getType() + " +languageId:" + languageId + hostCondition + " +vanityUrl:" + VanityUrlUtil.fixURI(uri) + (live ? " +live:true" : " +working:true"), 0, 0, StringPool.BLANK, user, false);
                 contentResults.stream().forEach((Contentlet con) -> {
                     VanityUrl vanityUrl = getVanityUrlFromContentlet(con);
                     try {
                         if (con.isLive()) {
                             addToVanityURLCache(vanityUrl);
                         } else {
-                            invalidateVanityUrl(vanityUrl);
+                            VanityUrlServices.invalidateVanityUrl(vanityUrl);
                         }
                     } catch (DotDataException | DotSecurityException e) {
                         Logger.error(this, "Error processing Vanity Url - contentlet Id:" + con.getIdentifier(), e);
@@ -87,16 +91,17 @@ public class VanityUrlAPIImpl implements VanityUrlAPI{
                     results.add(vanityUrl);
                 });
 
+                List<ContentType> vanityUrlContentTypes = APILocator.getContentTypeAPI(user).findByType(BaseContentType.VANITY_URL);
 
-			    if(results.size() == 0 && Config.getBooleanProperty("DEFAULT_VANITY_URL_TO_DEFAULT_LANGUAGE", false)){
-                    contentResults = contentletAPI.search("+baseType:"+BaseContentType.VANITY_URL.getType()+" +languageId:"+APILocator.getLanguageAPI().getDefaultLanguage().getId()+" +vanityUrl:"+hostCondition+VanityUrlUtil.fixURI(uri)+(live?" +live:true":" +working:true"), 0, 0, StringPool.BLANK, user, false);
-				    contentResults.stream().forEach((Contentlet con) ->{
+				if(results.size() == 0 && vanityUrlContentTypes.size() > 0 && ((VanityUrlContentType)vanityUrlContentTypes.get(0)).fallback()){
+					contentResults = contentletAPI.search("+baseType:" + BaseContentType.VANITY_URL.getType() + " +languageId:" + APILocator.getLanguageAPI().getDefaultLanguage().getId() + hostCondition + " +vanityUrl:" + VanityUrlUtil.fixURI(uri) + (live ? " +live:true" : " +working:true"), 0, 0, StringPool.BLANK, user, false);
+                    contentResults.stream().forEach((Contentlet con) ->{
 					    VanityUrl vanityUrl = getVanityUrlFromContentlet(con);
 					    try {
 					        if(con.isLive()) {
 						        addToVanityURLCache(vanityUrl);
 					        } else{
-                                invalidateVanityUrl(vanityUrl);
+								VanityUrlServices.invalidateVanityUrl(vanityUrl);
 					        }
 					    }catch(DotDataException | DotSecurityException e){
 						    Logger.error(this,"Error processing Vanity Url - contentlet Id:"+con.getIdentifier(),e);
@@ -172,30 +177,21 @@ public class VanityUrlAPIImpl implements VanityUrlAPI{
 		return vanityUrl;
 	}
 
-	@Override
-	public void addToVanityURLCache(VanityUrl vanityUrl){
+	/**
+	 * Add the Vanity URL to the vanityURLCache
+	 * @param vanityUrl The vanity URL object
+	 */
+	private void addToVanityURLCache(VanityUrl vanityUrl){
 		try {
 		    if(vanityUrl.isLive()) {
                 vanityURLCache.add(VanityUrlUtil.sanitizeKey((Contentlet)vanityUrl), vanityUrl);
             }else {
-		        invalidateVanityUrl(vanityUrl);
+				VanityUrlServices.invalidateVanityUrl(vanityUrl);
             }
 		} catch (DotDataException | DotRuntimeException | DotSecurityException e) {
 			Logger.error(this, "Error trying to add Vanity URL identifier:"+vanityUrl.getIdentifier()+" to VanityURLCache",e);
 		}
 	}
 
-	@Override
-	public void invalidateVanityUrl(VanityUrl vanityUrl){
-		invalidateVanityUrl((Contentlet)vanityUrl);
-	}
 
-	@Override
-	public void invalidateVanityUrl(Contentlet vanityUrl){
-		try {
-			vanityURLCache.remove(VanityUrlUtil.sanitizeKey(vanityUrl));
-		} catch (DotDataException | DotRuntimeException | DotSecurityException e) {
-			Logger.error(this, "Error trying to add Vanity URL identifier:"+vanityUrl.getIdentifier()+" to VanityURLCache",e);
-		}
-	}
 }

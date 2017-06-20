@@ -140,7 +140,9 @@ public class CMSFilter implements Filter {
 			if(vanityUrlResult.isResult()){
 				return;
 			}
-			queryString = vanityUrlResult.getQueryString();
+			if(vanityUrlResult.getQueryString() != null) {
+				queryString = vanityUrlResult.getQueryString();
+			}
 			iAm = vanityUrlResult.getiAm();
 			rewrite = vanityUrlResult.getRewrite();
 		}

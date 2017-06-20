@@ -197,9 +197,6 @@ public class InitServlet extends HttpServlet {
         }
 
 
-        // maps all virtual links in memory
-        //VirtualLinksCache.mapAllVirtualLinks();
-        
         Language language = langAPI.getDefaultLanguage();
 
         if (language.getId() == 0) {

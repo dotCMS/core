@@ -24,6 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.dotcms.content.model.VanityUrl;
+import com.dotcms.services.VanityUrlServices;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
@@ -3261,7 +3262,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 if(contentlet != null && contentlet.isVanityUrl()){
 				    //remove from cache
-                    APILocator.getVanityUrlAPI().invalidateVanityUrl(contentlet);
+                    VanityUrlServices.invalidateVanityUrl(contentlet);
                 }
 
 				if(structureHasAHostField && changedURI) {
