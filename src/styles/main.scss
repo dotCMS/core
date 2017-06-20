@@ -37,6 +37,11 @@ body {
     background-size: cover;
 }
 
+code {
+    background: $gray-lighter;
+    padding: 2px;
+}
+
 p {
     line-height: 1.5em;
 }

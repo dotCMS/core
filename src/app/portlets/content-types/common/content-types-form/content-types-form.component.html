@@ -1,4 +1,4 @@
-<p-overlayPanel [dismissable]="true" #hint [style]="{'width':'250px'}">
+<p-overlayPanel [dismissable]="true" #hint [style]="{'width':'350px'}">
     <div [innerHTML]="i18nMessages['URL-Map-Pattern-hint1']"></div>
 </p-overlayPanel>
 
@@ -53,8 +53,7 @@
                         <p-dropdown [options]="dateVarOptions" id="content-type-form-expire-date-field" name="expireDateVar" formControlName="expireDateVar" (onChange)="handleDateVarChange($event, 'expireDateVar')" [style]="{'min-width':'90px'}"></p-dropdown>
                     </div>                    
                 </div>
-
-                <span class="form__group-hint" *ngIf="!dateVarOptions.length">{{i18nMessages['No-Date-Fields-Defined']}}</span>
+                <span class="form__group-hint" *ngIf="isEditMode && !dateVarOptions.length">{{i18nMessages['No-Date-Fields-Defined']}}</span>
 
                 <div class="form__group" *ngIf="form.get('detailPage')">
                     <label for="content-type-form-detail-page" class="form__label">{{i18nMessages['Detail-Page']}}</label>
