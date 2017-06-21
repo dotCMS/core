@@ -19,10 +19,18 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
-
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  *
@@ -843,14 +851,15 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
     protected String suggestVelocityVarName(String categoryVelVarName) throws DotDataException {
         DotConnect dc = new DotConnect();
-        String var = VelocityUtil.convertToVelocityVariable(categoryVelVarName, true);
+        String var = VelocityUtil.convertToVelocityVariable(categoryVelVarName, false);
         for (int i = 1; i < 100000; i++) {
           dc.setSQL(this.categorySQL.getVelocityVarNameCount());
           dc.addParam(var);
           if (dc.getInt("test") == 0) {
             return var;
           }
-          var = categoryVelVarName + String.valueOf(i);
+            var = VelocityUtil.convertToVelocityVariable(categoryVelVarName, false) + String
+                    .valueOf(i);
         }
         throw new DotDataException("Unable to suggest a variable name.  Got to:" + var);
     }
