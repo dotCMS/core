@@ -14,7 +14,9 @@ import java.io.IOException;
 
 /**
  * This class implements the methods defined in the {@link VanityUrlHandler}
- * Created by oswaldogallango on 2017-06-16.
+ * @author oswaldogallango
+ * @version 4.2.0
+ * @since June 16, 2017
  */
 public class DefaultVanityUrlHandler implements VanityUrlHandler{
 

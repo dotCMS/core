@@ -8,7 +8,9 @@ import java.io.IOException;
 
 /**
  * This class have all the method required to handle the Vanity URL in the {@link com.dotmarketing.filters.CMSFilter}
- * Created by oswaldogallango on 2017-06-16.
+ * @author oswaldogallango
+ * @version 4.2.0
+ * @since June 16, 2017
  */
 public interface VanityUrlHandler {
 

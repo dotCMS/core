@@ -19,12 +19,8 @@ import java.util.List;
  * @since June 12, 2017
  */
 public interface VanityUrlAPI {
-	/**
-	 * This method load in cache all the active Vanity URLs 
-	 * created in dotCMS
-	 */
-	void initializeActiveVanityURLsCache(final User user);
 
+	public static final String CACHE_404_VANITY_URL = "CACHE_404_VANITY_URL";
 	/**
 	 * Get a list of all the existing Vanity URLs contents
 	 * @param user The current user 

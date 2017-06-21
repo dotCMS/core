@@ -128,11 +128,11 @@ public class URLMapFilter implements Filter {
 
 		if(host!=null){
 			VanityUrl vanityUrl = vanityUrlAPI.getLiveVanityUrl(uri, host, languageId, APILocator.systemUser());
-			pointer = vanityUrl != null && InodeUtils.isSet(vanityUrl.getInode())?vanityUrl.getForwardTo():null;
+			pointer = vanityUrl != null && !VanityUrlAPI.CACHE_404_VANITY_URL.equals(vanityUrl.getInode()) && InodeUtils.isSet(vanityUrl.getInode())?vanityUrl.getForwardTo():null;
 		}
 		if (!UtilMethods.isSet(pointer)) {
 			VanityUrl vanityUrl = vanityUrlAPI.getLiveVanityUrl(uri, null, languageId, APILocator.systemUser());
-			pointer = vanityUrl != null && InodeUtils.isSet(vanityUrl.getInode())?vanityUrl.getForwardTo():null;
+			pointer = vanityUrl != null && !VanityUrlAPI.CACHE_404_VANITY_URL.equals(vanityUrl.getInode()) && InodeUtils.isSet(vanityUrl.getInode())?vanityUrl.getForwardTo():null;
 		}
 		if(UtilMethods.isSet(pointer)){
 			uri = pointer;

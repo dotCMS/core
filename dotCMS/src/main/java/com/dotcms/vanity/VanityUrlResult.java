@@ -3,7 +3,11 @@ package com.dotcms.vanity;
 import com.dotmarketing.filters.CMSFilter;
 
 /**
- * Created by oswaldogallango on 2017-06-16.
+ * This class implements the Vanity URL response object
+ * from the {@link VanityUrlHandler}
+ * @author oswaldogallango
+ * @version 4.2.0
+ * @since June 16, 2017
  */
 public class VanityUrlResult {
     private final String queryString;

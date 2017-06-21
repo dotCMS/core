@@ -12,18 +12,21 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
  * This class provide some utility methods to interact with
  * Vanity URLs
  * @author oswaldogallango
- *
+ * @version 4.2.0
+ * @since June 12, 2017
  */
 public class VanityUrlUtil {
 
+
 	/**
 	 * Generate the sanitized cache key
-	 * @param key to be used in the cache
-	 * @param languageId 
+	 * @param hostId The current host Identifier
+	 * @param uri The current URI
+	 * @param languageId The current languageId
 	 * @return String with the sanitized key name
 	 */
-	public static String sanitizeKey(String key, long languageId){
-		return key.replace('/', '|')+"|lang_"+languageId;
+	public static String sanitizeKey(String hostId, String uri, long languageId){
+		return hostId+"|"+ fixURI(uri).replace('/', '|')+"|lang_"+languageId;
 	}
 	
 	/**
@@ -36,8 +39,7 @@ public class VanityUrlUtil {
 	 */
 	public static String sanitizeKey(Contentlet vanityUrl) throws DotDataException, DotRuntimeException, DotSecurityException{
 		Host host = APILocator.getHostAPI().find(vanityUrl.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR), APILocator.systemUser(), false);
-		String key = host != null && !host.getIdentifier().equals(Host.SYSTEM_HOST)?host.getIdentifier()+"|"+fixURI(vanityUrl.getStringProperty(VanityUrlContentType.URI_FIELD_VAR)):fixURI(vanityUrl.getStringProperty(VanityUrlContentType.URI_FIELD_VAR));
-		return sanitizeKey(key, vanityUrl.getLanguageId());
+		return sanitizeKey(host.getIdentifier(),fixURI(vanityUrl.getStringProperty(VanityUrlContentType.URI_FIELD_VAR)), vanityUrl.getLanguageId());
 	}
 
 	/**

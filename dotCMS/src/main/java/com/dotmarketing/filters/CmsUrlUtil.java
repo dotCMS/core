@@ -1,5 +1,7 @@
 package com.dotmarketing.filters;
 
+import com.dotcms.api.content.VanityUrlAPI;
+import com.dotcms.content.model.VanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -178,18 +180,22 @@ public class CmsUrlUtil {
 		if (uri.length()>1 && uri.endsWith("/"))
 			uri = uri.substring(0, uri.length() - 1);
 
-		boolean isVanityURL = UtilMethods.isSet(APILocator.getVanityUrlAPI().getLiveVanityUrl(uri, host, languageId, APILocator.systemUser()));
+		VanityUrl vanityUrl = APILocator.getVanityUrlAPI().getLiveVanityUrl(uri, host, languageId, APILocator.systemUser());
+		boolean isVanityURL = UtilMethods.isSet(vanityUrl) && !VanityUrlAPI.CACHE_404_VANITY_URL.equals(vanityUrl.getInode());
 
 		if (!isVanityURL) {
-			isVanityURL = UtilMethods.isSet(APILocator.getVanityUrlAPI().getLiveVanityUrl(uri, null, languageId, APILocator.systemUser()));
+			vanityUrl = APILocator.getVanityUrlAPI().getLiveVanityUrl(uri, null, languageId, APILocator.systemUser());
+			isVanityURL = UtilMethods.isSet(vanityUrl) && !VanityUrlAPI.CACHE_404_VANITY_URL.equals(vanityUrl.getInode());
 		}
 		// Still support legacy cmsHomePage
 		if("/".equals(uri) && !isVanityURL){
 			uri = "/cmsHomePage";
-			isVanityURL = UtilMethods.isSet(APILocator.getVanityUrlAPI().getLiveVanityUrl(uri, host, languageId, APILocator.systemUser()));
+			vanityUrl = APILocator.getVanityUrlAPI().getLiveVanityUrl(uri, host, languageId, APILocator.systemUser());
+			isVanityURL = UtilMethods.isSet(vanityUrl) && !VanityUrlAPI.CACHE_404_VANITY_URL.equals(vanityUrl.getInode());
 
 			if (!isVanityURL) {
-				isVanityURL = UtilMethods.isSet(APILocator.getVanityUrlAPI().getLiveVanityUrl(uri, null, languageId, APILocator.systemUser()));
+				vanityUrl = APILocator.getVanityUrlAPI().getLiveVanityUrl(uri, null, languageId, APILocator.systemUser());
+				isVanityURL = UtilMethods.isSet(vanityUrl) && !VanityUrlAPI.CACHE_404_VANITY_URL.equals(vanityUrl.getInode());
 			}
 		}
 
