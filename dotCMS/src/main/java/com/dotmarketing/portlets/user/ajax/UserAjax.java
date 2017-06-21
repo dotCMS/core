@@ -1,18 +1,6 @@
 package com.dotmarketing.portlets.user.ajax;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.velocity.tools.generic.SortTool;
-
 import com.dotcms.api.system.user.UserServiceFactory;
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Permission;
@@ -54,6 +42,18 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Address;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
+
+import org.apache.velocity.tools.generic.SortTool;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Provides utility methods that are accessed via DWR to build up the UI of the
