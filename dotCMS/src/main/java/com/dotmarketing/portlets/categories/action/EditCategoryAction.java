@@ -1,8 +1,7 @@
 package com.dotmarketing.portlets.categories.action;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.List;
+
 
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
@@ -21,7 +20,6 @@ import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
@@ -107,12 +105,8 @@ public class EditCategoryAction extends DotPortletAction {
         BeanUtils.copyProperties(req.getAttribute(WebKeys.CATEGORY_EDIT), form);
         Category cat = (Category) req.getAttribute(WebKeys.CATEGORY_EDIT);
         Category parent = null;
-        
-        List <Category> categories=categoryAPI.findAll(APILocator.getUserAPI().getSystemUser(), false);
-        
+               
         String catvelvar=cat.getCategoryVelocityVarName();
-        List <String> velocityvarnames=new ArrayList <String>();
-        int found=0;
         Boolean Proceed=false;
         if(!UtilMethods.isSet(catvelvar)){
         	catvelvar=StringUtils.camelCaseLower(cat.getCategoryName());
@@ -120,29 +114,10 @@ public class EditCategoryAction extends DotPortletAction {
         }
 		if(!InodeUtils.isSet(cat.getInode())|| Proceed){	 
 			if(VelocityUtil.isNotAllowedVelocityVariableName(catvelvar)){
-				found++;
+			    catvelvar= catvelvar + "Field";
 			}
-			for(Category categ: categories){
-				velocityvarnames.add(categ.getCategoryVelocityVarName());
-			}
-			for(String velvar: velocityvarnames){
-				if(velvar!=null){
-					if(catvelvar.equals(velvar)){					
-						found++;
-					}
-					else if (velvar.contains(catvelvar))
-					{
-	                 String number=velvar.substring(catvelvar.length());
-	                 if(RegEX.contains(number,"^[0-9]+$")){
-	                	 found ++;
-	                 }
-					}
-				}
-			}
-			if(found>0){
-				catvelvar= catvelvar + Integer.toString(found);
-				cat.setCategoryVelocityVarName(catvelvar);
-			}
+			catvelvar = categoryAPI.suggestVelocityVarName(catvelvar);
+			cat.setCategoryVelocityVarName(catvelvar);
 		}
 	
         String parentInode =  req.getParameter("parent");
