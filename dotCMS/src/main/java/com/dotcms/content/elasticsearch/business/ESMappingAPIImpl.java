@@ -4,6 +4,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
+import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -160,18 +161,18 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 	private String getElasticType(Field f) throws DotMappingException {
 		if (f.getFieldType().equals(Field.FieldType.TAG.toString())) {
-			return "tag";
+			return ESMappingConstants.FIELD_TYPE_TAG;
 		}
-		if (f.getFieldContentlet().contains("integer")) {
-			return "integer";
-		} else if (f.getFieldContentlet().contains("date")) {
-			return "date";
-		} else if (f.getFieldContentlet().contains("bool")) {
-			return "boolean";
-		} else if (f.getFieldContentlet().contains("float")) {
-			return "float";
+		if (f.getFieldContentlet().contains(ESMappingConstants.FIELD_ELASTIC_TYPE_INTEGER)) {
+			return ESMappingConstants.FIELD_ELASTIC_TYPE_INTEGER;
+		} else if (f.getFieldContentlet().contains(ESMappingConstants.FIELD_ELASTIC_TYPE_DATE)) {
+			return ESMappingConstants.FIELD_ELASTIC_TYPE_DATE;
+		} else if (f.getFieldContentlet().contains(ESMappingConstants.FIELD_ELASTIC_TYPE_BOOLEAN)) {
+			return ESMappingConstants.FIELD_ELASTIC_TYPE_BOOLEAN;
+		} else if (f.getFieldContentlet().contains(ESMappingConstants.FIELD_ELASTIC_TYPE_FLOAT)) {
+			return ESMappingConstants.FIELD_ELASTIC_TYPE_FLOAT;
 		}
-		return "string";
+		return ESMappingConstants.FIELD_ELASTIC_TYPE_STRING;
 		// throw new
 		// DotMappingException("unable to find mapping for indexed field " + f);
 
@@ -214,36 +215,36 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			Folder conFolder=APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
 
-			contentletMap.put("title", con.getTitle());
-			contentletMap.put("structureName", st.getVelocityVarName()); // marked for DEPRECATION
-			contentletMap.put("contentType", st.getVelocityVarName());
-            contentletMap.put("structureType", st.getStructureType() + ""); // marked for DEPRECATION
-            contentletMap.put("baseType", st.getStructureType() + "");
-            contentletMap.put("type", "content");
-            contentletMap.put("inode", con.getInode());
-            contentletMap.put("modDate", datetimeFormat.format(con.getModDate()));
-            contentletMap.put("owner", con.getOwner()==null ? "0" : con.getOwner());
-            contentletMap.put("modUser", con.getModUser());
-            contentletMap.put("live", Boolean.toString(con.isLive()));
-            contentletMap.put("working", Boolean.toString(con.isWorking()));
-            contentletMap.put("locked", Boolean.toString(con.isLocked()));
-            contentletMap.put("deleted", Boolean.toString(con.isArchived()));
-            contentletMap.put("languageId", Long.toString(con.getLanguageId()));
-            contentletMap.put("identifier", ident.getId());
-            contentletMap.put("conHost", ident.getHostId());
-            contentletMap.put("conFolder", conFolder!=null && InodeUtils.isSet(conFolder.getInode()) ? conFolder.getInode() : con.getFolder());
-            contentletMap.put("parentPath", ident.getParentPath());
-            contentletMap.put("path", ident.getPath());
+			contentletMap.put(ESMappingConstants.TITLE, con.getTitle());
+			contentletMap.put(ESMappingConstants.STRUCTURE_NAME, st.getVelocityVarName()); // marked for DEPRECATION
+			contentletMap.put(ESMappingConstants.CONTENT_TYPE, st.getVelocityVarName());
+            contentletMap.put(ESMappingConstants.STRUCTURE_TYPE, st.getStructureType() + ""); // marked for DEPRECATION
+            contentletMap.put(ESMappingConstants.BASE_TYPE, st.getStructureType() + "");
+            contentletMap.put(ESMappingConstants.TYPE, ESMappingConstants.CONTENT);
+            contentletMap.put(ESMappingConstants.INODE, con.getInode());
+            contentletMap.put(ESMappingConstants.MOD_DATE, datetimeFormat.format(con.getModDate()));
+            contentletMap.put(ESMappingConstants.OWNER, con.getOwner()==null ? "0" : con.getOwner());
+            contentletMap.put(ESMappingConstants.MOD_USER, con.getModUser());
+            contentletMap.put(ESMappingConstants.LIVE, Boolean.toString(con.isLive()));
+            contentletMap.put(ESMappingConstants.WORKING, Boolean.toString(con.isWorking()));
+            contentletMap.put(ESMappingConstants.LOCKED, Boolean.toString(con.isLocked()));
+            contentletMap.put(ESMappingConstants.DELETED, Boolean.toString(con.isArchived()));
+            contentletMap.put(ESMappingConstants.LANGUAGE_ID, Long.toString(con.getLanguageId()));
+            contentletMap.put(ESMappingConstants.IDENTIFIER, ident.getId());
+            contentletMap.put(ESMappingConstants.CONTENTLET_HOST, ident.getHostId());
+            contentletMap.put(ESMappingConstants.CONTENTLET_FOLER, conFolder!=null && InodeUtils.isSet(conFolder.getInode()) ? conFolder.getInode() : con.getFolder());
+            contentletMap.put(ESMappingConstants.PARENT_PATH, ident.getParentPath());
+            contentletMap.put(ESMappingConstants.PATH, ident.getPath());
             // makes shorties searchable regardless of length
-            contentletMap.put("shortId", ident.getId().replace("-", ""));
-            contentletMap.put("shortInode", con.getInode().replace("-", ""));
+            contentletMap.put(ESMappingConstants.SHORT_ID, ident.getId().replace("-", ""));
+            contentletMap.put(ESMappingConstants.SHORT_INODE, con.getInode().replace("-", ""));
             try{
             	WorkflowTask task = APILocator.getWorkflowAPI().findTaskByContentlet(con);
             	if(task!=null && task.getId()!=null){
-            		contentletMap.put("wfcreatedBy", task.getCreatedBy());
-                    contentletMap.put("wfassign", task.getAssignedTo());
-            		contentletMap.put("wfstep", task.getStatus());
-            		contentletMap.put("wfModDate", datetimeFormat.format(task.getModDate()));
+            		contentletMap.put(ESMappingConstants.WORKFLOW_CREATED_BY, task.getCreatedBy());
+                    contentletMap.put(ESMappingConstants.WORKFLOW_ASSIGN, task.getAssignedTo());
+            		contentletMap.put(ESMappingConstants.WORKFLOW_STEP, task.getStatus());
+            		contentletMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, datetimeFormat.format(task.getModDate()));
             	}
             			
             }
@@ -254,22 +255,22 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             
             
             if(UtilMethods.isSet(ident.getSysPublishDate()))
-                contentletMap.put("pubdate", datetimeFormat.format(ident.getSysPublishDate()));
+                contentletMap.put(ESMappingConstants.PUBLISH_DATE, datetimeFormat.format(ident.getSysPublishDate()));
             else
-                contentletMap.put("pubdate", datetimeFormat.format(cvi.getVersionTs()));
+                contentletMap.put(ESMappingConstants.PUBLISH_DATE, datetimeFormat.format(cvi.getVersionTs()));
 
             if(UtilMethods.isSet(ident.getSysExpireDate()))
-                contentletMap.put("expdate", datetimeFormat.format(ident.getSysExpireDate()));
+                contentletMap.put(ESMappingConstants.EXPIRE_DATE, datetimeFormat.format(ident.getSysExpireDate()));
             else
-                contentletMap.put("expdate", "29990101000000");
+                contentletMap.put(ESMappingConstants.EXPIRE_DATE, "29990101000000");
 
-            contentletMap.put("versionTs", datetimeFormat.format(cvi.getVersionTs()));
+            contentletMap.put(ESMappingConstants.VERSION_TS, datetimeFormat.format(cvi.getVersionTs()));
 
             String urlMap = null;
             try{
             	urlMap = APILocator.getContentletAPI().getUrlMapForContentlet(con, APILocator.getUserAPI().getSystemUser(), true);
                 if(urlMap != null){
-                	contentletMap.put("urlMap",urlMap );
+                	contentletMap.put(ESMappingConstants.URL_MAP,urlMap );
                 }
             }
             catch(Exception e){
@@ -326,7 +327,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             VanityUrl vanityUrl = APILocator.getVanityUrlAPI().getVanityUrlFromContentlet(con);
             vanityUrlPath = VanityUrlUtil.fixURI(vanityUrl.getURI());
             if(vanityUrlPath != null){
-                contentletMap.put("vanityUrl",vanityUrlPath);
+                contentletMap.put(ESMappingConstants.VANITY_URL,vanityUrlPath);
             }
         }catch(Exception e){
             Logger.warn(this.getClass(), "Cannot get Vanity URL for contentlet.id : " + ((ident != null) ? ident.getId() : con) + " , reason: "+e.getMessage());
@@ -393,7 +394,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	        }
 	    }
 
-        m.put("categories", categoriesString);
+        m.put(ESMappingConstants.CATEGORIES, categoriesString);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -422,10 +423,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 }
             }
         }
-        m.put("permissions", permissionsSt.toString());
-        m.put("ownerCanRead", Boolean.toString(ownerCanRead));
-        m.put("ownerCanWrite", Boolean.toString(ownerCanWrite));
-        m.put("ownerCanPublish", Boolean.toString(ownerCanPub));
+        m.put(ESMappingConstants.PERMISSIONS, permissionsSt.toString());
+        m.put(ESMappingConstants.OWNER_CAN_READ, Boolean.toString(ownerCanRead));
+        m.put(ESMappingConstants.OWNER_CAN_WRITE, Boolean.toString(ownerCanWrite));
+        m.put(ESMappingConstants.OWNER_CAN_PUBLISH, Boolean.toString(ownerCanPub));
 	}
 
 	public static final FastDateFormat dateFormat = FastDateFormat.getInstance("yyyyMMdd");
@@ -450,7 +451,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	    Structure st=con.getStructure();
         for (Field f : fields) {
             if (f.getFieldType().equals(Field.FieldType.BINARY.toString())
-                    || f.getFieldContentlet() != null && (f.getFieldContentlet().startsWith("system_field") && !f.getFieldType().equals(Field.FieldType.TAG.toString()))) {
+                    || f.getFieldContentlet() != null && (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_TYPE_SYSTEM_FIELD) && !f.getFieldType().equals(Field.FieldType.TAG.toString()))) {
                 continue;
             }
             if(!f.isIndexed()){
@@ -466,14 +467,14 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 if(valueObj == null){
                     valueObj = "";
                 }
-                if (f.getFieldContentlet().startsWith("section_divider")) {
+                if (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_TYPE_SECTION_DIVIDER)) {
                     valueObj = "";
                 }
 
                 if(!UtilMethods.isSet(valueObj)) {
                     m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), "");
                 }
-                else if(f.getFieldType().equals("time")) {
+                else if(f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_TIME)) {
                 	try{
                         String timeStr=timeFormat.format(valueObj);
                         m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), timeStr);
@@ -482,7 +483,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 		m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(),"");
                 	}
                 }
-                else if (f.getFieldType().equals("date")) {
+                else if (f.getFieldType().equals(ESMappingConstants.FIELD_ELASTIC_TYPE_DATE)) {
                     try {
                         String dateString = dateFormat.format(valueObj);
                         m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), dateString);
@@ -490,7 +491,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                     catch(Exception ex) {
                         m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(),"");
                     }
-                } else if(f.getFieldType().equals("date_time")) {
+                } else if(f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_DATE_TIME)) {
                     try {
                         String datetimeString = datetimeFormat.format(valueObj);
                         m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), datetimeString);
@@ -498,15 +499,15 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                     catch(Exception ex) {
                         m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(),"");
                     }
-                } else if (f.getFieldType().equals("category")) {
+                } else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_CATEGORY)) {
                     // moved the logic to loadCategories
-                } else if (f.getFieldType().equals("checkbox") || f.getFieldType().equals("multi_select")) {
-                    if (f.getFieldContentlet().startsWith("bool")) {
+                } else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_CHECKBOX) || f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_MULTI_SELECT)) {
+                    if (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_BOOLEAN)) {
                         m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), valueObj.toString());
                     } else {
                         m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), UtilMethods.listToString(valueObj.toString()));
                     }
-                } else if (f.getFieldType().equals("key_value")){
+                } else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_KEY_VALUE)){
                     boolean fileMetadata=f.getVelocityVarName().equals(FileAssetAPI.META_DATA_FIELD) && st.getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET;
                 	if(!fileMetadata || LicenseUtil.getLevel()>199) {
 
@@ -519,7 +520,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                     	    List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(
                                     f.getInode(), APILocator.getUserAPI().getSystemUser(), false);
                             for(FieldVariable fv : fieldVariables) {
-                                if(fv.getKey().equals("dotIndexPattern")) {
+                                if(fv.getKey().equals(ESMappingConstants.DOT_INDEX_PATTERN)) {
                                     String[] names=fv.getValue().split(",");
                                     allowedFields=new HashSet<String>();
                                     for(String n : names)
@@ -563,22 +564,22 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                     if(tagg.length() >tagDelimit.length()){
                     	String taggStr = tagg.substring(0, tagg.length()-tagDelimit.length());
                         m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), taggStr.replaceAll(",,", " "));
-                        m.put("tags", taggStr);
+                        m.put(ESMappingConstants.TAGS, taggStr);
                     }
 
 
                     if ( Structure.STRUCTURE_TYPE_PERSONA != con.getStructure().getStructureType() ) {
                         if ( personaTags.length() > tagDelimit.length() ) {
                         	String personaStr = personaTags.substring(0, personaTags.length()-tagDelimit.length());
-                            m.put(st.getVelocityVarName() + ".personas", personaStr);
-                            m.put("personas", personaStr);
+                            m.put(st.getVelocityVarName() + "."+ESMappingConstants.PERSONAS, personaStr);
+                            m.put(ESMappingConstants.PERSONAS, personaStr);
                         }
                     }
 
                 } else {
-                    if (f.getFieldContentlet().startsWith("bool")) {
+                    if (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_BOOLEAN)) {
                         m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), valueObj.toString());
-                    } else if (f.getFieldContentlet().startsWith("float") || f.getFieldContentlet().startsWith("integer")) {
+                    } else if (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_FLOAT) || f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_INTEGER)) {
                         m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), numFormatter.format(valueObj));
                     } else {
                         m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), valueObj.toString());
@@ -618,8 +619,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 boolean isSameStructRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
 
                 if(isSameStructRelationship)
-                    q = "+type:content +(" + rel.getRelationTypeValue() + "-parent:" + con.getIdentifier() + " " +
-                        rel.getRelationTypeValue() + "-child:" + con.getIdentifier() + ") ";
+                    q = "+type:content +(" + rel.getRelationTypeValue() + ESMappingConstants.SUFIX_PARENT+":" + con.getIdentifier() + " " +
+                        rel.getRelationTypeValue() + ESMappingConstants.SUFIX_CHILD+":" + con.getIdentifier() + ") ";
                 else
                     q = "+type:content +" + rel.getRelationTypeValue() + ":" + con.getIdentifier();
 
@@ -634,9 +635,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
                 List<String> newRelatedIds = new ArrayList<String>();
                 for(HashMap<String, String> relatedEntry : relatedContentlets) {
-                    String childId = relatedEntry.get("child");
-                    String parentId = relatedEntry.get("parent");
-                    if(relatedEntry.get("relation_type").equals(rel.getRelationTypeValue())) {
+                    String childId = relatedEntry.get(ESMappingConstants.CHILD);
+                    String parentId = relatedEntry.get(ESMappingConstants.PARENT);
+                    if(relatedEntry.get(ESMappingConstants.RELATION_TYPE).equals(rel.getRelationTypeValue())) {
                         if(con.getIdentifier().equalsIgnoreCase(childId)) {
                             newRelatedIds.add(parentId);
                             oldRelatedIds.remove(parentId);
@@ -663,10 +664,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
         for(Map<String, Object> relatedEntry : db.loadObjectResults()) {
 
-            String childId = relatedEntry.get("child").toString();
-            String parentId = relatedEntry.get("parent").toString();
-            String relType=relatedEntry.get("relation_type").toString();
-            String order = relatedEntry.get("tree_order").toString();
+            String childId = relatedEntry.get(ESMappingConstants.CHILD).toString();
+            String parentId = relatedEntry.get(ESMappingConstants.PARENT).toString();
+            String relType=relatedEntry.get(ESMappingConstants.RELATION_TYPE).toString();
+            String order = relatedEntry.get(ESMappingConstants.TREE_ORDER).toString();
 
             Relationship rel = FactoryLocator.getRelationshipFactory().byTypeValue(relType);
 
@@ -674,12 +675,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 boolean isSameStructRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
 
                 String propName = isSameStructRelationship ?
-                        (con.getIdentifier().equals(parentId)?rel.getRelationTypeValue() + "-child":rel.getRelationTypeValue() + "-parent")
+                        (con.getIdentifier().equals(parentId)?rel.getRelationTypeValue() + ESMappingConstants.SUFIX_CHILD:rel.getRelationTypeValue() + ESMappingConstants.SUFIX_PARENT)
                         : rel.getRelationTypeValue();
 
-                String orderKey = rel.getRelationTypeValue()+"-order";
+                String orderKey = rel.getRelationTypeValue()+ESMappingConstants.SUFIX_ORDER;
 
-                if(relatedEntry.get("relation_type").equals(rel.getRelationTypeValue())) {
+                if(relatedEntry.get(ESMappingConstants.RELATION_TYPE).equals(rel.getRelationTypeValue())) {
                     String me = con.getIdentifier();
                     String related = me.equals(childId)? parentId : childId;
 

@@ -138,6 +138,7 @@ public class CMSFilter implements Filter {
 			VanityUrlHandler vanityUrlHandler = vanityUrlHandlerResolver.getVanityUrlHandler();
 			VanityUrlResult vanityUrlResult = vanityUrlHandler.handle(vanityUrl,response,host,languageId);
 			if(vanityUrlResult.isResult()){
+				closeDbSilently();
 				return;
 			}
 			if(vanityUrlResult.getQueryString() != null) {
