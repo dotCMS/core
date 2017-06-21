@@ -11,7 +11,8 @@
              (onLazyLoad)="loadDataPaginationEvent($event)"
              [(selection)]="selectedItems"
              (onRowClick)="handleRowClick($event)"
-             [globalFilter]="gf">
+             [globalFilter]="gf"
+             [sortOrder]="sortOrder === 'desc' ? -1 : 1">
 
     <p-column selectionMode="multiple"></p-column>
 

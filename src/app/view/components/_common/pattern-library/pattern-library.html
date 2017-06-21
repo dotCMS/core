@@ -50,9 +50,11 @@
             </article>
             <h3 class="section__title">Listing table</h3>
             <!--<listing-data-table url="v1/contenttype"
-                                        [columns]="contentTypeColumns"
-                                        [buttonActions]="buttonActions">
-            </listing-data-table>-->
+                                [columns]="contentTypeColumns"
+                                [buttonActions]="buttonActions"
+                                [defaultSortOrder]="'mod_date'"
+                                [defaultSortField]="'mod_date'">
+            </listing-data-table>  -->
        
             <form [formGroup]="searchableForm" novalidate>
                 <h3 class="section__title">Searchable Dropdown</h3>

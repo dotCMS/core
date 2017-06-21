@@ -84,10 +84,11 @@ export class PatternLibrary {
         }];
 
         this.contentTypeColumns = [
-            {fieldName: 'name', header: 'Name', width: '40%', sortable: true},
-            {fieldName: 'velocityVarName', header: 'Variable', width: '10%'},
-            {fieldName: 'description', header: 'Description', width: '40%'},
-            {fieldName: 'nEntries', header: 'Entries', width: '10%'}
+            {fieldName: 'name', header: 'Name', width: '20%', sortable: true},
+            {fieldName: 'velocityVarName', header: 'Variable', width: '20%'},
+            {fieldName: 'description', header: 'Description', width: '30%'},
+            {fieldName: 'nEntries', header: 'Entries', width: '10%'},
+            {fieldName: 'mod_date', header: 'Last Edit Date', width: '20%', format: 'date', sortable: true}
         ];
 
         this.actionButtonLog = () => {

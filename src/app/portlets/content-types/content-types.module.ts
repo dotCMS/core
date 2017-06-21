@@ -7,6 +7,7 @@ import { ContentTypesLayoutComponent } from './common/content-type-layout';
 import { ContentTypesPortletComponent } from './main';
 import { ContentTypesRoutingModule } from './content-types-routing.module';
 import { CrudService } from '../../api/services/crud';
+import { FormatDateService } from '../../api/services/format-date-service';
 import { FieldValidationMessageModule } from '../../view/components/_common/field-validation-message/file-validation-message.module';
 import { ListingDataTableModule } from '../../view/components/listing-data-table/listing-data-table.module';
 import { LoginService } from '../../api/services/login-service';
@@ -47,6 +48,7 @@ import { TabViewModule, OverlayPanelModule, DropdownModule, ButtonModule, InputT
     providers: [
         ContentTypesInfoService,
         CrudService,
+        FormatDateService,
         LoginService,
         MessageService,
         RoutingPrivateAuthService,

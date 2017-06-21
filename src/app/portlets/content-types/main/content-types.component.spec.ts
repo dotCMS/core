@@ -5,6 +5,7 @@ import { ComponentFixture } from '@angular/core/testing';
 import { ContentTypesPortletComponent } from './content-types.component';
 import { CrudService } from '../../../api/services/crud';
 import { DOTTestBed } from '../../../test/dot-test-bed';
+import { FormatDateService } from '../../../api/services/format-date-service';
 import { ListingDataTableComponent } from '../../../view/components/listing-data-table/listing-data-table.component';
 import { MessageService } from '../../../api/services/messages-service';
 import { MockMessageService } from '../../../test/message-service.mock';
@@ -19,7 +20,8 @@ describe('ContentTypesPortletComponent', () => {
             'Description': 'Description',
             'Entries': 'Entries',
             'Structure-Name': 'Content Type Name',
-            'Variable': 'Variable Name'
+            'Variable': 'Variable Name',
+            'mod_date': 'Last Edit Date'
         });
 
         DOTTestBed.configureTestingModule({
@@ -34,7 +36,7 @@ describe('ContentTypesPortletComponent', () => {
             ])],
             providers: [
                  {provide: MessageService, useValue: messageServiceMock},
-                 CrudService
+                 CrudService, FormatDateService
             ],
         });
 
@@ -48,11 +50,11 @@ describe('ContentTypesPortletComponent', () => {
         expect('v1/contenttype').toEqual(de.nativeElement.getAttribute('url'));
 
         let columns = comp.contentTypeColumns;
-        expect(4).toEqual(columns.length);
+        expect(5).toEqual(columns.length);
 
         expect('name').toEqual(columns[0].fieldName);
         expect('Content Type Name').toEqual(columns[0].header);
-        expect('40%').toEqual(columns[0].width);
+        expect('35%').toEqual(columns[0].width);
 
         expect('velocityVarName').toEqual(columns[1].fieldName);
         expect('Variable Name').toEqual(columns[1].header);
@@ -60,10 +62,14 @@ describe('ContentTypesPortletComponent', () => {
 
         expect('description').toEqual(columns[2].fieldName);
         expect('Description').toEqual(columns[2].header);
-        expect('40%').toEqual(columns[2].width);
+        expect('35%').toEqual(columns[2].width);
 
         expect('nEntries').toEqual(columns[3].fieldName);
         expect('Entries').toEqual(columns[3].header);
         expect('10%').toEqual(columns[3].width);
+
+        expect('mod_date').toEqual(columns[4].fieldName);
+        expect('Last Edit Date').toEqual(columns[4].header);
+        expect('10%').toEqual(columns[4].width);
     });
 });
