@@ -21,7 +21,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.asm', version:'3.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.axiom-api', version:'1.2.5_2'
     compile group: 'com.dotcms.lib', name: 'dot.axiom-impl', version:'1.2.5_2'
-    compile group: 'com.dotcms.lib', name: 'dot.backport-util-concurrent', version:'3.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.bsf', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.bsh', version:'2.0b4_3'
     compile 'net.bytebuddy:byte-buddy:1.6.12'
