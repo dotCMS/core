@@ -136,19 +136,25 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 	public PublishingEndPoint getEnabledSendingEndPointByAddress(String address) throws DotDataException {
 		ensureCacheIsLoaded();
 		List<PublishingEndPoint> allEndPoints = getEndPoints();
-		String ipOrNetMask;
-		boolean match;
+
 		for(PublishingEndPoint endPoint : allEndPoints) {
-			ipOrNetMask = endPoint.getAddress();
-			if (ipOrNetMask.contains("/")) {
-				match = new SubnetUtils(ipOrNetMask).getInfo().isInRange(address);
-			} else {
-				match = isMatchingEndpoint(ipOrNetMask, address);
-			}
-			if(match && endPoint.isEnabled() && endPoint.isSending())
+			if (validateAddress(address, endPoint.getAddress(), endPoint)) {
 				return endPoint;
+			}
 		}
 		return null;
+	}
+
+	private boolean validateAddress(String address, String ipOrNetMask, PublishingEndPoint endPoint) {
+		boolean match;
+		if (ipOrNetMask.contains("/")) {
+            match = new SubnetUtils(ipOrNetMask).getInfo().isInRange(address);
+        } else {
+            match = isMatchingEndpoint(ipOrNetMask, address);
+        }
+		if(match && endPoint.isEnabled() && endPoint.isSending())
+			return true;
+		return false;
 	}
 
 	/**
