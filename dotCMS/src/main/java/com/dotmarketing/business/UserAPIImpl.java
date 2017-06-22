@@ -185,18 +185,18 @@ public class UserAPIImpl implements UserAPI {
 	private User _getAnonymousUser() throws DotDataException {
 		User user = null;
 		try {
-			user = uf.loadUserById("anonymous");
+			user = uf.loadUserById(ANONYMOUS_USER_ID);
 		} catch (DotDataException e) {
-			user = createUser("anonymous", "anonymous@dotcmsfakeemail.org");
-			user.setUserId("anonymous");
+			user = createUser(ANONYMOUS_USER_ID, "anonymous@dotcmsfakeemail.org");
+			user.setUserId(ANONYMOUS_USER_ID);
 			user.setFirstName("anonymous user");
 			user.setCreateDate(new java.util.Date());
 			user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
 			uf.saveUser(user);
 			com.dotmarketing.business.APILocator.getRoleAPI().addRoleToUser(com.dotmarketing.business.APILocator.getRoleAPI().loadRoleByKey(Config.getStringProperty("CMS_ANONYMOUS_ROLE")).getId(), user);
 		} catch (NoSuchUserException e) {
-			user = createUser("anonymous", "anonymous@dotcmsfakeemail.org");
-			user.setUserId("anonymous");
+			user = createUser(ANONYMOUS_USER_ID, "anonymous@dotcmsfakeemail.org");
+			user.setUserId(ANONYMOUS_USER_ID);
 			user.setFirstName("anonymous user");
 			user.setCreateDate(new java.util.Date());
 			user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
@@ -345,10 +345,10 @@ public class UserAPIImpl implements UserAPI {
 		if (!UtilMethods.isSet(replacementUser) || replacementUser.getUserId() == null) {
 			throw new DotDataException("Can't delete a user without a replacement userId");
 		}
-		if (userToDelete.getUserId() == replacementUser.getUserId()) {
+		if (userToDelete.getUserId() .equals(replacementUser.getUserId())) {
 			throw new DotDataException("Can't delete a user without a replacement userId");
 		}
-		if (getAnonymousUser().getUserId() == userToDelete.getUserId()){
+		if (ANONYMOUS_USER_ID.equals(userToDelete.getUserId())){
 			throw new DotDataException("Anonymous user can not be deleted.");
 		}
 		if(!perAPI.doesUserHavePermission(upAPI.getUserProxy(userToDelete,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)){

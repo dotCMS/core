@@ -9,10 +9,20 @@ import com.liferay.portal.model.User;
 
 public interface RoleAPI {
 
-	public final String SYSTEM_ROOT_ROLE_KEY = "System";
-	public final String USERS_ROOT_ROLE_KEY = "cms_users";
-	public final String WORKFLOW_ADMIN_ROLE_KEY = "cms_workflow_admin";
-	public final String DEFAULT_USER_ROLE_KEY = "dotcms.org.default";
+	public static final String SYSTEM_ROOT_ROLE_KEY = "System";
+	public static final String USERS_ROOT_ROLE_KEY = "cms_users";
+	public static final String WORKFLOW_ADMIN_ROLE_KEY = "cms_workflow_admin";
+    public static final String DEFAULT_USER_ROLE_KEY = "dotcms.org.default";
+    public static final String CMS_ANONYMOUS_ROLE = "CMS Anonymous";
+    public static final String CMS_EDITOR_ROLE = "CMS User";
+    public static final String CMS_USER_ROLE = CMS_EDITOR_ROLE;
+    public static final String CMS_VIEWER_ROLE = "LoggedIn Site User";
+    public static final String ADMINISTRATOR_ROLE = "Administrator";
+    public static final String CMS_ADMINISTRATOR_ROLE = "CMS Administrator";
+    public static final String CMS_OWNER_ROLE = "CMS Owner";
+    public static final String CMS_LOGGED_IN_SITE_USER_ROLE = "LoggedIn Site User";
+    public static final String USER_MANAGER_ADMIN_ROLE= "User Manager Administrator";
+    public static final String USER_MANAGER_EDIT_ROLE= "User Manager Editor";
 
 	/**
 	 * Will retrieve all roles.

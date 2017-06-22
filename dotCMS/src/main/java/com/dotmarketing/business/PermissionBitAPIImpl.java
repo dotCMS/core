@@ -334,19 +334,12 @@ public class PermissionBitAPIImpl implements PermissionAPI {
                 && ((Structure)permissionable).getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET)
             return true;
 
-		Role adminRole;
-		Role anonRole;
-		Role frontEndUserRole;
-		Role cmsOwnerRole;
-		try {
-			adminRole = APILocator.getRoleAPI().loadCMSAdminRole();
-			anonRole = APILocator.getRoleAPI().loadCMSAnonymousRole();
-			frontEndUserRole = APILocator.getRoleAPI().loadLoggedinSiteRole();
-			cmsOwnerRole = APILocator.getRoleAPI().loadCMSOwnerRole();
-		} catch (DotDataException e1) {
-			Logger.error(this, e1.getMessage(), e1);
-			throw new DotRuntimeException(e1.getMessage(), e1);
-		}
+
+
+		String	adminRole = RoleAPI.CMS_ADMINISTRATOR_ROLE;
+		String	anonRole = RoleAPI.CMS_ANONYMOUS_ROLE;
+		String	frontEndUserRole = RoleAPI.CMS_LOGGED_IN_SITE_USER_ROLE;
+		String	cmsOwnerRole = RoleAPI.CMS_OWNER_ROLE;
 
 		if(user != null && APILocator.getRoleAPI().doesUserHaveRole(user, adminRole))
 			return true;
@@ -360,16 +353,16 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			if(p.matchesPermission(permissionType)){
 				if(respectFrontendRoles){
 					// if we are anonymous
-					if(p.getRoleId().equals(anonRole.getId())){
+					if(p.getRoleId().equals(anonRole)){
 						return true;
 						//if logged in site user has permission
-					}else if(user != null && !user.getUserId().equals(APILocator.getUserAPI().getAnonymousUser().getUserId()) && p.getRoleId().equals(frontEndUserRole.getId())){
+					}else if(user != null && !user.getUserId().equals(UserAPI.ANONYMOUS_USER_ID) && p.getRoleId().equals(frontEndUserRole)){
 						return true;
 					}
 				} 
 				// if owner and owner has required permission return true
 				try {
-					if(p.getRoleId().equals(cmsOwnerRole.getId()) && user != null &&
+					if(p.getRoleId().equals(cmsOwnerRole) && user != null &&
 							permissionable.getOwner() != null && permissionable.getOwner().equals(user.getUserId()) &&
 							checkRelatedPermissions(permissionDependencies, user)){
 						return true;
@@ -399,7 +392,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			try{
 				String roleID = role.getId();
 				userRoleIds.add(roleID);
-				if(roleID.equals(adminRole.getId())){
+				if(roleID.equals(RoleAPI.ADMINISTRATOR_ROLE)){
 					// if CMS Admin return true
 					return true;
 				}

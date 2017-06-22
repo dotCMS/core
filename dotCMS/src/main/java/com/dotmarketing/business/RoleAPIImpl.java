@@ -247,28 +247,28 @@ public class RoleAPIImpl implements RoleAPI {
 	
 	public Role loadCMSAnonymousRole() throws DotDataException {
 		if(CMS_ANON == null){
-			CMS_ANON =  rf.loadRoleByKey(Config.getStringProperty("CMS_ANONYMOUS_ROLE"));
+			CMS_ANON =  rf.loadRoleByKey(Role.ANONYMOUS_ROLE_ID);
 		}
 		return CMS_ANON;
 	}
 	
 	public Role loadCMSOwnerRole() throws DotDataException {
 		if(CMS_OWNER == null){
-			CMS_OWNER =  rf.loadRoleByKey(Config.getStringProperty("CMS_OWNER_ROLE"));
+			CMS_OWNER =  rf.loadRoleByKey(CMS_OWNER_ROLE);
 		}
 		return CMS_OWNER;
 	}
 	
 	public Role loadLoggedinSiteRole() throws DotDataException {
 		if(LOGGEDIN_SITE_USER == null){
-			LOGGEDIN_SITE_USER =  rf.loadRoleByKey(Config.getStringProperty("CMS_LOGGED_IN_SITE_USER_ROLE"));
+			LOGGEDIN_SITE_USER =  rf.loadRoleByKey(CMS_LOGGED_IN_SITE_USER_ROLE);
 		}
 		return LOGGEDIN_SITE_USER;
 	}
 	
 	public Role loadCMSAdminRole() throws DotDataException {
 		if(CMS_ADMIN == null){
-			CMS_ADMIN = rf.loadRoleByKey(Config.getStringProperty("CMS_ADMINISTRATOR_ROLE"));
+			CMS_ADMIN = rf.loadRoleByKey((CMS_ADMINISTRATOR_ROLE));
 		}
 		return CMS_ADMIN;		
 	}

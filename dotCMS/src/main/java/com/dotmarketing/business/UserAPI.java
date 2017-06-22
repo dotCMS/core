@@ -22,7 +22,9 @@ import com.liferay.portal.model.User;
 public interface UserAPI {
 	
 	final static String SYSTEM_USER_ID = "system";
+    final static String ANONYMOUS_USER_ID = "anonymous";
 
+	
 	/**
 	 * Used to encrypt a User's userid
 	 * @param userId
