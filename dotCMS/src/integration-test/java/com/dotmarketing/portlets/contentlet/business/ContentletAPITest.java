@@ -5,32 +5,16 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
-
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.context.InternalContextAdapterImpl;
-import org.apache.velocity.runtime.parser.node.SimpleNode;
-import org.junit.Ignore;
-import org.junit.Test;
+import static org.junit.Assert.fail;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.ImmutableBinaryField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
@@ -42,7 +26,6 @@ import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
-import com.dotcms.repackage.twitter4j.IDs;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -67,7 +50,6 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
@@ -82,10 +64,31 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.context.InternalContextAdapterImpl;
+import org.apache.velocity.runtime.parser.node.SimpleNode;
+import org.junit.Ignore;
+import org.junit.Test;
 
 /**
  * Created by Jonathan Gamba.
@@ -2441,6 +2444,127 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             // Delete structure
             APILocator.getStructureAPI().delete(testStructure, user);
+        }
+    }
+
+    /**
+     * https://github.com/dotCMS/core/issues/11950
+     */
+    @Test
+    public void testContentWithTwoBinaryFieldsAndSameFile_afterCheckinShouldContainBothFields() {
+
+        ContentType contentType = null;
+        com.dotcms.contenttype.model.field.Field textField = null;
+        com.dotcms.contenttype.model.field.Field binaryField1 = null;
+        com.dotcms.contenttype.model.field.Field binaryField2 = null;
+
+        Contentlet contentlet = null;
+
+        try {
+            //Create Content Type.
+            contentType = ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+                    .description("Test ContentType Two Fields")
+                    .host(defaultHost.getIdentifier())
+                    .name("Test ContentType Two Fields")
+                    .owner("owner")
+                    .variable("testContentTypeWithTwoBinaryFields")
+                    .build();
+
+            contentType = contentTypeAPI.save(contentType);
+
+            //Save Fields. 1. Text, 2. Binary, 3. Binary.
+            //Creating Text Field.
+            textField = ImmutableTextField.builder()
+                    .name("Title")
+                    .variable("title")
+                    .contentTypeId(contentType.id())
+                    .dataType(DataTypes.TEXT)
+                    .build();
+
+            textField = fieldAPI.save(textField, user);
+
+            //Creating First Binary Field.
+            binaryField1 = ImmutableBinaryField.builder()
+                    .name("Image 1")
+                    .variable("image1")
+                    .contentTypeId(contentType.id())
+                    .build();
+
+            binaryField1 = fieldAPI.save(binaryField1, user);
+
+            //Creating Second Binary Field.
+            binaryField2 = ImmutableBinaryField.builder()
+                    .name("Image 2")
+                    .variable("image2")
+                    .contentTypeId(contentType.id())
+                    .build();
+
+            binaryField2 = fieldAPI.save(binaryField2, user);
+
+            //Creating a temporary File to use in the binary fields.
+            File imageFile = temporaryFolder.newFile("ImageFile.png");
+            writeTextIntoFile(imageFile, "This is the same image");
+
+            contentlet = new Contentlet();
+            contentlet.setStructureInode(contentType.inode());
+            contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
+
+            contentlet.setStringProperty(textField.variable(), "Test Content with Same Image");
+            contentlet.setBinary(binaryField1.variable(), imageFile);
+            contentlet.setBinary(binaryField2.variable(), imageFile);
+
+            contentlet = contentletAPI.checkin(contentlet, user, false);
+            contentletAPI.isInodeIndexed(contentlet.getInode());
+
+            //Check that the properties still exist.
+            assertTrue(contentlet.getMap().containsKey(binaryField1.variable()));
+            assertTrue(contentlet.getMap().containsKey(binaryField2.variable()));
+
+            //Check that the properties have value.
+            assertTrue(UtilMethods.isSet(contentlet.getMap().get(binaryField1.variable())));
+            assertTrue(UtilMethods.isSet(contentlet.getMap().get(binaryField2.variable())));
+
+        } catch (Exception e) {
+            fail(e.getMessage());
+        } finally {
+            try {
+                //Delete Contentlet.
+                if (contentlet != null) {
+                    contentletAPI.archive(contentlet, user, false);
+                    contentletAPI.delete(contentlet, user, false);
+                }
+                //Deleting Fields.
+                if (textField != null) {
+                    fieldAPI.delete(textField);
+                }
+                if (binaryField1 != null) {
+                    fieldAPI.delete(binaryField1);
+                }
+                if (binaryField2 != null) {
+                    fieldAPI.delete(binaryField2);
+                }
+                //Deleting Content Type
+                if (contentType != null) {
+                    contentTypeAPI.delete(contentType);
+                }
+            } catch (Exception e) {
+                fail(e.getMessage());
+            }
+        }
+
+    }
+
+    /**
+     * Util method to write dummy text into a file.
+     *
+     * @param file that we need to write. File should be empty.
+     * @param textToWrite text that we are going to write into the file.
+     */
+    private void writeTextIntoFile(File file, final String textToWrite) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
+            bw.write(textToWrite);
+        } catch (IOException e) {
+            fail(e.getMessage());
         }
     }
 
