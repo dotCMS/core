@@ -12,13 +12,14 @@ import com.dotmarketing.exception.DotDataException;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -183,5 +184,52 @@ public class PublishingEndPointAPITest extends IntegrationTestBase{
 		}
 		
 		HibernateUtil.commitTransaction();
+	}
+
+	@Test
+	public void getEnabledSendingEndPointByAddress_returnEndpoint_whenNetmaskIsUsed() throws DotDataException {
+
+		PublishingEndPoint
+			endPoint =
+			createPublishingEndPoint("10", "G03", "Netmask Endpoint", "192.168.1.0/24",
+				"90", "http", true, "123456",
+				true);
+		// Insert test end point netmask
+		api.saveEndPoint(endPoint);
+
+		assertNotNull(api.findEnabledSendingEndPointByAddress("192.168.1.60"));
+
+		// Delete endpoint
+		api.deleteEndPointById(endPoint.getId());
+	}
+
+	@Test
+	public void getEnabledSendingEndPointByAddress_returnEndpoint_whenIPAddressIsUsed() throws DotDataException {
+		PublishingEndPoint
+			endPoint =
+			createPublishingEndPoint("11", "G03", "IP Endpoint", "192.168.1.60",
+				"90", "http", true, "123456", true);
+		// Insert test end point netmask
+		api.saveEndPoint(endPoint);
+		assertNotNull(api.findEnabledSendingEndPointByAddress("192.168.1.60"));
+
+		// Delete endpoint
+		api.deleteEndPointById(endPoint.getId());
+	}
+
+	@Test
+	public void getEnabledSendingEndPointByAddress_returnNull_whenInvalidAddressIsReceived() throws DotDataException {
+		PublishingEndPoint
+			endPoint =
+			createPublishingEndPoint("12", "G03", "Netmask Endpoint", "192.168.1.0/24",
+				"90", "http", true, "123456",
+				true);
+		// Insert test end point netmask
+		api.saveEndPoint(endPoint);
+
+		assertNull(api.findEnabledSendingEndPointByAddress("192.168.2.60"));
+
+		// Delete endpoint
+		api.deleteEndPointById(endPoint.getId());
 	}
 }
