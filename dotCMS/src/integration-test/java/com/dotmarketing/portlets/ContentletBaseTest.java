@@ -1,11 +1,12 @@
 package com.dotmarketing.portlets;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -16,7 +17,6 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -33,7 +33,6 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
-
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -42,13 +41,9 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.business.TagAPI;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-
-import org.junit.BeforeClass;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -57,6 +52,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
 
 /**
  * Created by Jonathan Gamba.
@@ -71,9 +69,11 @@ public class ContentletBaseTest extends IntegrationTestBase {
     protected static ContentletFactory contentletFactory;
     protected static MenuLinkAPI menuLinkAPI;
     protected static TagAPI tagAPI;
+    protected static LanguageAPI languageAPI;
+    protected static FieldAPI fieldAPI;
+    protected static ContentTypeAPI contentTypeAPI;
     private static RoleAPI roleAPI;
     private static PermissionAPI permissionAPI;
-    private static LanguageAPI languageAPI;
     private static HostAPI hostAPI;
     private static CategoryAPI categoryAPI;
     private static ContainerAPI containerAPI;
@@ -90,6 +90,9 @@ public class ContentletBaseTest extends IntegrationTestBase {
     protected static int FIELDS_SIZE = 14;
 
     protected static Map<String, Long> uniqueIdentifier = new HashMap<>();
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     private static String wysiwygValue = "<p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. " +
             "Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem.</p>" +
@@ -118,6 +121,8 @@ public class ContentletBaseTest extends IntegrationTestBase {
         folderAPI = APILocator.getFolderAPI();
         menuLinkAPI = APILocator.getMenuLinkAPI();
         tagAPI = APILocator.getTagAPI();
+        fieldAPI = APILocator.getContentTypeFieldAPI();
+        contentTypeAPI = APILocator.getContentTypeAPI(user, false);
 
         defaultHost = hostAPI.findDefaultHost( user, false );
 
