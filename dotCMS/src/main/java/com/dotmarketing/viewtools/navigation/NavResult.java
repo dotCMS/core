@@ -1,9 +1,12 @@
 package com.dotmarketing.viewtools.navigation;
 
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionSummary;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -22,12 +25,13 @@ import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.tools.ViewRenderTool;
 
-import javax.servlet.http.HttpServletRequest;
-
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
 
 public class NavResult implements Iterable<NavResult>, Permissionable, Serializable {
 

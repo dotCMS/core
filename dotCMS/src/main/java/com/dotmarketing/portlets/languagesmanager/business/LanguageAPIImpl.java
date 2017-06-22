@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
+import com.dotcms.repackage.org.apache.commons.lang.math.NumberUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -11,15 +12,18 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
-import com.dotcms.repackage.org.apache.commons.lang.math.NumberUtils;
 
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 
-import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
-import java.util.*;
+import javax.servlet.http.HttpServletRequest;
 
 public class LanguageAPIImpl implements LanguageAPI {
 

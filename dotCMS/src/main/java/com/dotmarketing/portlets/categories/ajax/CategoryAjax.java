@@ -23,7 +23,6 @@ import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
@@ -390,42 +389,18 @@ public class CategoryAjax {
 	}
 
 	private void setVelocityVarName(Category cat, String catvelvar, String catName) throws DotDataException, DotSecurityException {
-		List <Category> categories=categoryAPI.findAll(APILocator.getUserAPI().getSystemUser(), false);
-		List <String> velocityvarnames=new ArrayList <String>();
-		int found=0;
 		Boolean Proceed=false;
 		if(!UtilMethods.isSet(catvelvar)){
 			catvelvar=StringUtils.camelCaseLower(catName);
 			Proceed=true;
 		}
-		if(!InodeUtils.isSet(cat.getInode())|| Proceed){
-			if(VelocityUtil.isNotAllowedVelocityVariableName(catvelvar)){
-				found++;
-			}
-			for(Category categ: categories){
-				velocityvarnames.add(categ.getCategoryVelocityVarName());
-			}
-			for(String velvar: velocityvarnames){
-				if(velvar!=null){
-					if(catvelvar.equals(velvar)){
-						found++;
-					}
-					else if (velvar.contains(catvelvar))
-					{
-						String number=velvar.substring(catvelvar.length());
-						if(RegEX.contains(number,"^[0-9]+$")){
-							found ++;
-						}
-					}
-				}
-			}
-			if(found>0){
-				catvelvar= catvelvar + Integer.toString(found);
-				cat.setCategoryVelocityVarName(catvelvar);
-			} else {
-				cat.setCategoryVelocityVarName(catvelvar);
-			}
-		}
+        if(!InodeUtils.isSet(cat.getInode())|| Proceed){     
+            if(VelocityUtil.isNotAllowedVelocityVariableName(catvelvar)){
+                catvelvar= catvelvar + "Field";
+            }
+            catvelvar = categoryAPI.suggestVelocityVarName(catvelvar);
+            cat.setCategoryVelocityVarName(catvelvar);
+        }
 	}
 
 	private String getUniqueKey(String key, User user, Integer consecutive) throws DotDataException, DotSecurityException {

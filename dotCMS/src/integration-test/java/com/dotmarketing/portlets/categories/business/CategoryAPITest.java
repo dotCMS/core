@@ -1,5 +1,12 @@
 package com.dotmarketing.portlets.categories.business;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -19,14 +26,11 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
-import static org.junit.Assert.*;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * Created by Jonathan Gamba
@@ -662,6 +666,68 @@ public class CategoryAPITest extends IntegrationTestBase {
         CacheLocator.getContentTypeCache().add( testStructure );
 
         return testStructure;
+    }
+
+    @Test
+    public void testDuplicatedCategories() {
+
+        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+
+        Category category = null;
+
+        try {
+            //Test varName with proper camel case.
+            final String categoryVarName = "categoryVarNameToTest";
+            String suggestedCategoryVarName = categoryAPI
+                    .suggestVelocityVarName(categoryVarName);
+
+            assertEquals(categoryVarName, suggestedCategoryVarName);
+
+            //Test varName with spaces and 1st letter uppercase.
+            final String categoryVarNameWithSpaces = "Category Var Name To Test";
+            suggestedCategoryVarName = categoryAPI
+                    .suggestVelocityVarName(categoryVarNameWithSpaces);
+
+            assertEquals(categoryVarName, suggestedCategoryVarName);
+
+            //Test varName with spaces and no uppercase.
+            final String categoryVarNameWithSpacesNouppercase = "category var name to test";
+            suggestedCategoryVarName = categoryAPI
+                    .suggestVelocityVarName(categoryVarNameWithSpacesNouppercase);
+
+            assertEquals(categoryVarName, suggestedCategoryVarName);
+
+            //Now lets create a Category to check how we handle duplicated varNames.
+            category = new Category();
+            category.setCategoryName("Category Var Name To Test");
+            category.setKey("categoryNameWithSpaces-1");
+            category.setCategoryVelocityVarName(categoryVarName);
+            category.setSortOrder((String) null);
+            category.setKeywords(null);
+
+            categoryAPI.save(null, category, user, false);
+
+            Category foundCategory = categoryAPI.find(category.getCategoryId(), user, false);
+            assertNotNull(foundCategory);
+
+            //suggestVelocityVarName should return {categoryVarName}-1 because {categoryVarName} already exists.
+            suggestedCategoryVarName = categoryAPI
+                    .suggestVelocityVarName(categoryVarName);
+
+            assertEquals(categoryVarName + "1", suggestedCategoryVarName);
+
+        } catch (Exception e) {
+            fail(e.getMessage());
+        } finally {
+            try {
+                if (category != null) {
+                    //Delete Parent Category.
+                    categoryAPI.delete(category, user, false);
+                }
+            } catch (Exception e) {
+                fail(e.getMessage());
+            }
+        }
     }
 
 }

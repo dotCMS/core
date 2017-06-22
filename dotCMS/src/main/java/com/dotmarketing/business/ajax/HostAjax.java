@@ -1,16 +1,5 @@
 package com.dotmarketing.business.ajax;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
-import org.quartz.SchedulerException;
-
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
@@ -35,6 +24,17 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+
+import org.quartz.SchedulerException;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
 
 public class HostAjax {
 
