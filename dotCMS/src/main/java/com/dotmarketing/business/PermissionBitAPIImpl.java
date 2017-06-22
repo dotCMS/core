@@ -363,7 +363,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 					if(p.getRoleId().equals(anonRole.getId())){
 						return true;
 						//if logged in site user has permission
-					}else if(user != null && p.getRoleId().equals(frontEndUserRole.getId())){
+					}else if(user != null && !user.getUserId().equals(APILocator.getUserAPI().getAnonymousUser().getUserId()) && p.getRoleId().equals(frontEndUserRole.getId())){
 						return true;
 					}
 				} 
