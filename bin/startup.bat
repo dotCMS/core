@@ -55,7 +55,7 @@ rem Java VM configuration options
 if not "%JAVA_OPTS%" == "" goto noDefaultJavaOpts
 
 rem set JAVA_OPTS=-Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -Xmx1G -Djava.endorsed.dirs=%DOTCMS_HOME%/WEB-INF/endorsed_libs -XX:+UseG1GC -javaagent:%DOTCMS_HOME%/WEB-INF/lib/byte-buddy-agent-1.6.12.jar
-set JAVA_OPTS=%JAVA_OPTS% -Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -XX:+DisableExplicitGC -XX:+UseConcMarkSweepGC
+set JAVA_OPTS=%JAVA_OPTS% -Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -XX:+DisableExplicitGC
 
 rem Set Memory sizing
 set JAVA_OPTS=%JAVA_OPTS% -XX:MaxMetaspaceSize=512m -Xmx1G
