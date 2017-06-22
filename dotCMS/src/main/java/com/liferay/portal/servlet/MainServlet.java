@@ -39,6 +39,7 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
 
 import com.dotcms.config.DotInitializationService;
+import com.liferay.util.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -81,12 +82,6 @@ import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.ShutdownUtil;
 import com.liferay.portal.util.WebAppPool;
 import com.liferay.portal.util.WebKeys;
-import com.liferay.util.CookieUtil;
-import com.liferay.util.GetterUtil;
-import com.liferay.util.Http;
-import com.liferay.util.ParamUtil;
-import com.liferay.util.PwdGenerator;
-import com.liferay.util.StringUtil;
 import com.liferay.util.servlet.EncryptedServletRequest;
 import com.liferay.util.servlet.UploadServletRequest;
 
@@ -103,6 +98,7 @@ public class MainServlet extends ActionServlet {
 	public void init(ServletConfig config) throws ServletException {
 		synchronized (MainServlet.class) {
 			super.init(config);
+			SystemProperties.getProperties(); // Init the system properties
 			Config.initializeConfig();
 			com.dotmarketing.util.Config.setMyApp(config.getServletContext());
 			// Need the plugin root dir before Hibernate comes up
