@@ -253,6 +253,8 @@ public abstract class CategoryFactory {
 	abstract void sortTopLevelCategories()  throws DotDataException;
 	
 	abstract void sortChildren(String inode)  throws DotDataException;
+	
+	abstract protected String suggestVelocityVarName (String categoryVelVarName) throws DotDataException;
 
 	abstract protected  void clearCache();
 	
