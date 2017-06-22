@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.util.PublisherUtil;
+import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -135,8 +136,16 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 	public PublishingEndPoint getEnabledSendingEndPointByAddress(String address) throws DotDataException {
 		ensureCacheIsLoaded();
 		List<PublishingEndPoint> allEndPoints = getEndPoints();
+		String ipOrNetMask;
+		boolean match;
 		for(PublishingEndPoint endPoint : allEndPoints) {
-			if(isMatchingEndpoint(endPoint.getAddress(), address) && endPoint.isEnabled() && endPoint.isSending())
+			ipOrNetMask = endPoint.getAddress();
+			if (ipOrNetMask.contains("/")) {
+				match = new SubnetUtils(ipOrNetMask).getInfo().isInRange(address);
+			} else {
+				match = isMatchingEndpoint(ipOrNetMask, address);
+			}
+			if(match && endPoint.isEnabled() && endPoint.isSending())
 				return endPoint;
 		}
 		return null;
