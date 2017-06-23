@@ -1,17 +1,14 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.TranslatedQuery;
-import com.dotcms.content.model.VanityUrl;
-import com.dotcms.util.VanityUrlUtil;
+import com.dotcms.services.VanityUrlServices;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -143,7 +140,7 @@ public class ContentletCacheImpl extends ContentletCache {
     		content = (com.dotmarketing.portlets.contentlet.model.Contentlet)cache.get(key,primaryGroup);
     		try {
 				if(content != null && content.isVanityUrl()){
-					APILocator.getVanityUrlAPI().invalidateVanityUrl((VanityUrl) content);
+					VanityUrlServices.invalidateVanityUrl(content);
 				}
 			} catch (DotDataException | DotRuntimeException | DotSecurityException e) {
 				Logger.debug(this, "Cache Vanity URL cache entry not found", e);

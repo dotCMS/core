@@ -25,10 +25,8 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.api.content.VanityUrlAPI;
-import com.dotcms.content.model.DefaultVanityUrl;
-import com.dotcms.content.model.VanityUrl;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.vanityurl.business.VanityUrlAPI;
+import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -128,11 +126,11 @@ public class URLMapFilter implements Filter {
 
 		if(host!=null){
 			VanityUrl vanityUrl = vanityUrlAPI.getLiveVanityUrl(uri, host, languageId, APILocator.systemUser());
-			pointer = vanityUrl != null && InodeUtils.isSet(vanityUrl.getInode())?vanityUrl.getForwardTo():null;
+			pointer = vanityUrl != null && !VanityUrlAPI.CACHE_404_VANITY_URL.equals(vanityUrl.getInode()) && InodeUtils.isSet(vanityUrl.getInode())?vanityUrl.getForwardTo():null;
 		}
 		if (!UtilMethods.isSet(pointer)) {
 			VanityUrl vanityUrl = vanityUrlAPI.getLiveVanityUrl(uri, null, languageId, APILocator.systemUser());
-			pointer = vanityUrl != null && InodeUtils.isSet(vanityUrl.getInode())?vanityUrl.getForwardTo():null;
+			pointer = vanityUrl != null && !VanityUrlAPI.CACHE_404_VANITY_URL.equals(vanityUrl.getInode()) && InodeUtils.isSet(vanityUrl.getInode())?vanityUrl.getForwardTo():null;
 		}
 		if(UtilMethods.isSet(pointer)){
 			uri = pointer;

@@ -1,17 +1,21 @@
 package com.dotmarketing.business;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 import com.dotcms.api.content.KeyValueAPI;
 import com.dotcms.api.content.KeyValueAPIImpl;
-import com.dotcms.api.content.VanityUrlAPI;
-import com.dotcms.api.content.VanityUrlAPIImpl;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.api.tree.TreeableAPI;
-import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.cms.login.LoginServiceAPIFactory;
+import com.dotcms.company.CompanyAPI;
+import com.dotcms.company.CompanyAPIFactory;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
@@ -22,8 +26,6 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.business.FieldAPIImpl;
-import com.dotcms.company.CompanyAPI;
-import com.dotcms.company.CompanyAPIFactory;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.RulesAPIProxy;
 import com.dotcms.enterprise.ServerActionAPIImplProxy;
@@ -47,16 +49,22 @@ import com.dotcms.publisher.environment.business.EnvironmentAPIImpl;
 import com.dotcms.publishing.PublisherAPI;
 import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
+import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPIFactory;
 import com.dotcms.timemachine.business.TimeMachineAPI;
 import com.dotcms.timemachine.business.TimeMachineAPIImpl;
-import com.dotcms.util.*;
+import com.dotcms.util.FileWatcherAPI;
+import com.dotcms.util.FileWatcherAPIImpl;
+import com.dotcms.util.ReflectionUtils;
+import com.dotcms.util.SecurityLoggerServiceAPI;
+import com.dotcms.util.SecurityLoggerServiceAPIFactory;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPIImpl;
+import com.dotcms.vanityurl.business.VanityUrlAPI;
+import com.dotcms.vanityurl.business.VanityUrlAPIImpl;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.business.VisitorAPIImpl;
 import com.dotmarketing.beans.Host;
-import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
-import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPIFactory;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.portal.PortletAPIImpl;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
@@ -113,11 +121,6 @@ import com.dotmarketing.tag.business.TagAPIImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * APILocator is a factory method (pattern) to get single(ton) service objects.
@@ -612,6 +615,10 @@ public class APILocator extends Locator<APIIndex>{
 	 * Creates a single instance of the {@link StructureAPI} class.
 	 *
 	 * @return The {@link StructureAPI} class.
+	 * @deprecated As of dotCMS 4.1.0, this API has been deprecated. From now on,
+	 *             please use the {@link ContentTypeAPI} class via
+	 *             {@link APILocator#getContentTypeAPI(User)} in order to interact
+	 *             with Content Types.
 	 */
 	public static StructureAPI getStructureAPI() {
 	    return (StructureAPI)getInstance(APIIndex.STRUCTURE_API);
@@ -762,10 +769,18 @@ public class APILocator extends Locator<APIIndex>{
     	return new ContentTypeAPIImpl(user, respectFrontendRoles);
     }
 
+    /**
+     * 
+     * @return
+     */
     public static FieldAPI getContentTypeFieldAPI() {
 		return new FieldAPIImpl();
 	}
 
+    /**
+     * 
+     * @return
+     */
     public static User systemUser()  {
       try{
         return getUserAPI().getSystemUser();
@@ -774,8 +789,11 @@ public class APILocator extends Locator<APIIndex>{
         throw new DotStateException(e);
       }
 	}
-    
-    
+
+    /**
+     * 
+     * @return
+     */
     public static Host systemHost()  {
       try{
         return getHostAPI().findSystemHost();
@@ -784,10 +802,12 @@ public class APILocator extends Locator<APIIndex>{
         throw new DotStateException(e);
       }
 	}
-    
 
+    /**
+     * 
+     * @return
+     */
 	public static TreeableAPI getTreeableAPI () {return new TreeableAPI();}
-
 
 	/**
 	 * Returns the System Events API that allows other pieces of the application
@@ -1026,6 +1046,10 @@ enum APIIndex
 		throw new AssertionError("Unknown API index: " + this);
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
 	private static FileWatcherAPI createFileWatcherAPI () {
 
 		FileWatcherAPIImpl fileWatcherAPI = null;

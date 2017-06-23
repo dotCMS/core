@@ -6,12 +6,14 @@
 		var value = siteSel.get('value');
 		if (value) {
 			dojo.byId('${field.velocityVarName}').value = value;
+			dojo.byId('hostId').value = value;
 		}
 	}
 
 	dojo.ready(function() {
 		var value = dojo.byId('${field.velocityVarName}').value;
         dijit.byId('siteSelector').set('value', value);
+        dojo.byId('hostId').value = value;
 	});
 </script>
 #set($allSitesLabel = $text.get('All-Hosts'))
@@ -22,3 +24,4 @@
 	searchAttr="hostname" searchDelay="400" onChange="siteChanged()"
 	invalidMessage="$text.get('Invalid-option-selected')">
 </select>
+<input type="hidden" name="hostId" id="hostId" value=""/>

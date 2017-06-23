@@ -13,9 +13,17 @@
 		dojo.byId('vlUri').value = path;
 		dojo.byId('${field.velocityVarName}').value = path;
 	}
+
+    function setValue(e) {
+        dojo.byId('${field.velocityVarName}').value = e.target.value;
+    }
+
 	dojo.ready(function() {
 		dojo.byId('vlUri').value = dojo.byId('${field.velocityVarName}').value;
+
+        dojo.require('dojo.on')(dojo.byId('vlUri'), 'change', setValue);
 	});
+	
 </script>
 <div class="inline-form">
 	<input id="vlUri" type="text" name="uri" dojoType="dijit.form.TextBox"

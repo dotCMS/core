@@ -1,11 +1,11 @@
 package com.dotmarketing.filters;
 
-import com.dotcms.api.content.VanityUrlAPI;
+import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.content.model.VanityUrl;
-import com.dotcms.vanity.VanityUrlHandler;
-import com.dotcms.vanity.VanityUrlHandlerResolver;
-import com.dotcms.vanity.VanityUrlResult;
+import com.dotcms.vanityurl.model.VanityUrl;
+import com.dotcms.vanityurl.handler.VanityUrlHandler;
+import com.dotcms.vanityurl.handler.VanityUrlHandlerResolver;
+import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
@@ -131,16 +131,19 @@ public class CMSFilter implements Filter {
 		if (iAm == IAm.VANITY_URL) {
 			VanityUrl vanityUrl = vanityUrlAPI.getLiveVanityUrl(("/".equals(uri) ? "/cmsHomePage" : uri.endsWith("/")?uri.substring(0, uri.length() - 1):uri), host, languageId, APILocator.systemUser());
 
-			if (vanityUrl == null || (!InodeUtils.isSet(vanityUrl.getInode()) && !UtilMethods.isSet(vanityUrl.getForwardTo()))) {
+			if (vanityUrl == null || VanityUrlAPI.CACHE_404_VANITY_URL.equals(vanityUrl.getInode())|| (!InodeUtils.isSet(vanityUrl.getInode()) && !UtilMethods.isSet(vanityUrl.getForwardTo()))) {
 				vanityUrl = vanityUrlAPI.getLiveVanityUrl(("/".equals(uri) ? "/cmsHomePage" : uri.endsWith("/")?uri.substring(0, uri.length() - 1):uri), null, languageId, APILocator.systemUser());
 			}
 
 			VanityUrlHandler vanityUrlHandler = vanityUrlHandlerResolver.getVanityUrlHandler();
 			VanityUrlResult vanityUrlResult = vanityUrlHandler.handle(vanityUrl,response,host,languageId);
 			if(vanityUrlResult.isResult()){
+				closeDbSilently();
 				return;
 			}
-			queryString = vanityUrlResult.getQueryString();
+			if(vanityUrlResult.getQueryString() != null) {
+				queryString = vanityUrlResult.getQueryString();
+			}
 			iAm = vanityUrlResult.getiAm();
 			rewrite = vanityUrlResult.getRewrite();
 		}

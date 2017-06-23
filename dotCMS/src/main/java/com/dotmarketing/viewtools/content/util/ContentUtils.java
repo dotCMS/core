@@ -1,14 +1,6 @@
 package com.dotmarketing.viewtools.content.util;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -25,6 +17,14 @@ import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.content.PaginatedContentList;
 import com.liferay.portal.model.User;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * The purpose of this class is to abstract the methods called from the ContentTool Viewtool
