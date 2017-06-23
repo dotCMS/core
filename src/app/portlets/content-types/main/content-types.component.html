@@ -1,7 +1,8 @@
-<listing-data-table url="v1/contenttype"
-    [columns]="contentTypeColumns"
+<listing-data-table 
+    (rowWasClicked)="editContentType($event)"
     [actionHeaderOptions]="actionHeaderOptions"
+    [columns]="contentTypeColumns"
     sortField="mod_date" 
     sortOrder="-1"
-    (rowWasClicked)="editContentType($event)">
+    url="v1/contenttype">
 </listing-data-table>

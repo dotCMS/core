@@ -53,7 +53,7 @@ describe('Listing Component', () => {
 
   }));
 
-  it('renderer title', () => {
+  it('renderer basic datatable component', () => {
     let items = [
         {field1: 'item1-value1', field2: 'item1-value2', field3: 'item1-value3'},
         {field1: 'item2-value1', field2: 'item2-value2', field3: 'item2-value3'},
@@ -98,8 +98,8 @@ describe('Listing Component', () => {
 
             cells.forEach((cell, cellIndex) => {
                 if (cellIndex) {
-                    expect(item[comp.columns[cellIndex - 1].fieldName])
-                        .toEqual(cells[cellIndex].querySelector('span').textContent);
+                    expect(cells[cellIndex].querySelector('span').textContent)
+                        .toContain(item[comp.columns[cellIndex - 1].fieldName]);
                 }
             });
         }
@@ -152,8 +152,8 @@ describe('Listing Component', () => {
 
             cells.forEach((cell, cellIndex) => {
                 if (cellIndex) {
-                    expect((item[comp.columns[cellIndex - 1].fieldName]).toString())
-                        .toEqual(cells[cellIndex].querySelector('span').textContent);
+                    expect(cells[cellIndex].querySelector('span').textContent)
+                        .toContain(item[comp.columns[cellIndex - 1].fieldName]);
                 }
             });
         }

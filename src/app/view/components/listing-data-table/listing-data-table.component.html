@@ -16,10 +16,17 @@
 
     <p-column selectionMode="multiple"></p-column>
 
-    <p-column *ngFor="let col of columns" 
-              [field]="col.fieldName" 
-              [header]="col.header"
-              [sortable]="col.sortable"
-              [style]="{'width': col.width, 'text-align': getAlign(col)}"> 
-    </p-column>
+    <ng-template ngFor let-col [ngForOf]="columns">
+        <p-column 
+            [field]="col.fieldName" 
+            [header]="col.header"
+            [sortable]="col.sortable"
+            [style]="{'width': col.width, 'text-align': getAlign(col)}">
+            <ng-template let-item="rowData" pTemplate="body">
+                <i class="fa {{col.icon(item)}}" *ngIf="col.icon"></i>
+                {{item[col.fieldName]}}
+            </ng-template>
+        </p-column>
+    </ng-template>
+
 </p-dataTable>

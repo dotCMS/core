@@ -99,7 +99,7 @@ export class ListingDataTableComponent extends BaseComponent {
      private formatData(items: any[]): any[] {
         return items.map((item) => {
             this.dateColumns.forEach((col) => {
-            item[col.fieldName] = this.formatDateService.getRelative(item[col.fieldName]);
+                item[col.fieldName] = this.formatDateService.getRelative(item[col.fieldName]);
             });
             return item;
         });
@@ -108,9 +108,10 @@ export class ListingDataTableComponent extends BaseComponent {
 
 export interface DataTableColumn {
     fieldName: string;
-    header: string;
-    sortable?: boolean;
-    width?: string;
-    textAlign?: string;
     format?: string;
+    header: string;
+    icon?: (any) => string;
+    sortable?: boolean;
+    textAlign?: string;
+    width?: string;
 }

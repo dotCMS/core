@@ -1,7 +1,8 @@
-import { ActionHeaderComponent } from '../../../view/components/listing-data-table/action-header/action-header';
 import { ActionButtonComponent } from '../../../view/components/_common/action-button/action-button.component';
+import { ActionHeaderComponent } from '../../../view/components/listing-data-table/action-header/action-header';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
+import { ContentTypesInfoService } from '../../../api/services/content-types-info';
 import { ContentTypesPortletComponent } from './content-types.component';
 import { CrudService } from '../../../api/services/crud';
 import { DOTTestBed } from '../../../test/dot-test-bed';
@@ -36,7 +37,9 @@ describe('ContentTypesPortletComponent', () => {
             ])],
             providers: [
                  {provide: MessageService, useValue: messageServiceMock},
-                 CrudService, FormatDateService
+                 CrudService,
+                 FormatDateService,
+                 ContentTypesInfoService
             ],
         });
 
