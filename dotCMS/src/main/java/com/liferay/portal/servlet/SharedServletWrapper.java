@@ -98,53 +98,7 @@ public class SharedServletWrapper extends GenericServlet {
 	public void service(ServletRequest req, ServletResponse res)
 		throws IOException, ServletException {
 
-		if ((_httpServletInstance == null) ||
-			(GetterUtil.getBoolean(PropsUtil.get(PropsUtil.TCK_URL)))) {
-
-			_servletInstance.service(req, res);
-		}
-		else {
-			HttpServletRequest httpReq = (HttpServletRequest)req;
-
-			String sharedSessionId = CookieUtil.get(
-				httpReq.getCookies(), CookieKeys.SHARED_SESSION_ID);
-
-			_log.debug("Shared session id is " + sharedSessionId);
-
-			HttpSession portalSes = null;
-
-			if (sharedSessionId != null) {
-				portalSes = SharedSessionPool.get(sharedSessionId);
-			}
-
-			HttpSession portletSes = httpReq.getSession();
-
-			if (portalSes == null) {
-				portalSes = portletSes;
-			}
-			else {
-				try {
-					portalSes.getCreationTime();
-				}
-				catch (IllegalStateException ise) {
-					_log.debug("Removing session from pool");
-
-					SharedSessionPool.remove(sharedSessionId);
-
-					portalSes = portletSes;
-				}
-			}
-
-			HttpServletRequest sharedReq =
-				new SharedServletRequest(httpReq, portalSes);
-
-			sharedReq.setAttribute(
-				WebKeys.SERVLET_CONTEXT_NAME, _servletContextName);
-
-			_httpServletInstance.service(sharedReq, res);
-
-			sharedReq.removeAttribute(WebKeys.SERVLET_CONTEXT_NAME);
-		}
+		throw new ServletException("THIS SERVLET IS NOT SUPPORTED");
 	}
 
 	public void destroy() {
