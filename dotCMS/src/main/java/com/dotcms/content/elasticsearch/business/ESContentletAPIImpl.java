@@ -1,35 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import java.io.BufferedOutputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.Serializable;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import com.dotcms.services.VanityUrlServices;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.springframework.beans.BeanUtils;
-
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -41,11 +11,13 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.dotcms.repackage.com.google.common.collect.Sets;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.jboss.util.Strings;
+import com.dotcms.services.VanityUrlServices;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -139,6 +111,34 @@ import com.google.gson.GsonBuilder;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.Serializable;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.springframework.beans.BeanUtils;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -3013,13 +3013,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 			+ java.io.File.separator + oldInode);
                 }
 
+                // List of files that we need to delete after iterate over all the fields.
+                Set<File> fileListToDelete = Sets.newHashSet();
 
-
-				// loop over the new field values
+                // loop over the new field values
 				// if we have a new temp file or a deleted file
 				// do it to the new inode directory
 			    List<Field> structFields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
 			    for (Field field : structFields) {
+
 			        if(Field.FieldType.BINARY.toString().equals(field.getFieldType())) {
 			            try {
 
@@ -3066,9 +3068,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 				                // we move files that have been newly uploaded or edited
 			                	if(oldFile==null || !oldFile.equals(incomingFile)){
-				                	//FileUtil.deltree(binaryFieldFolder);
-
-			                		FileUtil.move(incomingFile, newFile, validateEmptyFile);
+                                    // We want to copy (not move) cause the same file could be in
+                                    // another field and we don't want to delete it in the first time.
+                                    FileUtil.copyFile(incomingFile, newFile);
+                                    // add the incomingFile to a list of files that will be deleted
+                                    // after we iterate over all the fields.
+                                    fileListToDelete.add(incomingFile);
 
 			                		// delete old content metadata if exists
 			                		if(metadata!=null && metadata.exists())
@@ -3100,6 +3105,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			        }
 			    }
 
+                // These are the incomingFiles that were copied to a new location
+                // (cause new content inode) and now we need to delete to avoid duplicates.
+                for (File fileToDelete : fileListToDelete) {
+                    fileToDelete.delete();
+                }
 
 			    // lets update identifier's syspubdate & sysexpiredate
 			    if ((contentlet != null) && InodeUtils.isSet(contentlet.getIdentifier())) {
