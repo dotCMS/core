@@ -16,22 +16,22 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.ListenableActionFuture;
+import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
+
+import com.dotcms.api.content.KeyValueAPI;
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.util.ESClient;
-import com.dotcms.content.model.DefaultVanityUrl;
+import com.dotcms.content.model.KeyValue;
 import com.dotcms.content.model.VanityUrl;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.org.apache.commons.collections.CollectionUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
 import com.dotcms.util.VanityUrlUtil;
-
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.ListenableActionFuture;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
-import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -52,7 +52,6 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
-
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.FieldVariable;
@@ -66,12 +65,24 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
 
-
+/**
+ * Implementation class for the {@link ContentMappingAPI}.
+ * 
+ * @author root
+ * @version 1.x
+ * @since Mar 22, 2012
+ *
+ */
 public class ESMappingAPIImpl implements ContentMappingAPI {
 
 	static ObjectMapper mapper = null;
+	private KeyValueAPI keyValueAPI;
 
+	/**
+	 * Creates a new instance of the {@link ContentMappingAPI}.
+	 */
 	public ESMappingAPIImpl() {
 		if (mapper == null) {
 			synchronized (this.getClass().getName()) {
@@ -82,6 +93,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				}
 			}
 		}
+		this.keyValueAPI = APILocator.getKeyValueAPI();
 	}
 
 	/**
@@ -113,12 +125,18 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
     	return lis.actionGet().isAcknowledged();
     }
 
+    /**
+     * 
+     * @param indexName
+     * @param settings
+     * @return
+     * @throws ElasticsearchException
+     * @throws IOException
+     */
     public  boolean setSettings(String indexName,   String settings) throws ElasticsearchException, IOException{
     	new ESClient().getClient().admin().indices().prepareUpdateSettings().setSettings(settings).setIndices( indexName).execute().actionGet();
     	return true;
     }
-
-
 
     /**
      * Gets the mapping params for an index and type
@@ -135,7 +153,15 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
         .get(index).mapping(type).source().string();
 
     }
-    
+
+    /**
+     * 
+     * @param index
+     * @param type
+     * @return
+     * @throws ElasticsearchException
+     * @throws IOException
+     */
     public  String getSettings(String index, String type) throws ElasticsearchException, IOException{
 
     	return new ESClient().getClient().admin().cluster().state(new ClusterStateRequest())
@@ -145,39 +171,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
     }
 
-
-
-	private Map<String, Object> getDefaultFieldMap() {
-
-		Map<String, Object> fieldProps = new HashMap<String, Object>();
-		fieldProps.put("store", "no");
-		fieldProps.put("include_in_all", false);
-		return fieldProps;
-
-	}
-
-
-
-	private String getElasticType(Field f) throws DotMappingException {
-		if (f.getFieldType().equals(Field.FieldType.TAG.toString())) {
-			return "tag";
-		}
-		if (f.getFieldContentlet().contains("integer")) {
-			return "integer";
-		} else if (f.getFieldContentlet().contains("date")) {
-			return "date";
-		} else if (f.getFieldContentlet().contains("bool")) {
-			return "boolean";
-		} else if (f.getFieldContentlet().contains("float")) {
-			return "float";
-		}
-		return "string";
-		// throw new
-		// DotMappingException("unable to find mapping for indexed field " + f);
-
-	}
-
-	@SuppressWarnings("unchecked")
+	/**
+	 * 
+	 * @param con
+	 * @return
+	 * @throws DotMappingException
+	 */
 	public String toJson(Contentlet con) throws DotMappingException {
 
 		try {
@@ -210,7 +209,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			Identifier ident = APILocator.getIdentifierAPI().find(con);
 			ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), con.getLanguageId());
-			Structure st=CacheLocator.getContentTypeCache().getStructureByInode(con.getStructureInode());
+			Structure st=CacheLocator.getContentTypeCache().getStructureByInode(con.getContentTypeId());
 
 			Folder conFolder=APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
 
@@ -248,21 +247,19 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             			
             }
             catch(DotDataException e){
-            	Logger.error(this.getClass(), "unable to add workflow info to index:" + e, e);
+            	Logger.error(this.getClass(), "unable to add workflow info to index: " + e, e);
             }
             
-            
-            
-            if(UtilMethods.isSet(ident.getSysPublishDate()))
+            if(UtilMethods.isSet(ident.getSysPublishDate())) {
                 contentletMap.put("pubdate", datetimeFormat.format(ident.getSysPublishDate()));
-            else
+            } else {
                 contentletMap.put("pubdate", datetimeFormat.format(cvi.getVersionTs()));
-
-            if(UtilMethods.isSet(ident.getSysExpireDate()))
+            }
+            if(UtilMethods.isSet(ident.getSysExpireDate())) {
                 contentletMap.put("expdate", datetimeFormat.format(ident.getSysExpireDate()));
-            else
+            } else {
                 contentletMap.put("expdate", "29990101000000");
-
+            }
             contentletMap.put("versionTs", datetimeFormat.format(cvi.getVersionTs()));
 
             String urlMap = null;
@@ -279,6 +276,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             
             if(con.isVanityUrl()){
                 populateVanityUrlPath(con, contentletMap, ident, urlMap);
+            }
+            if (con.isKeyValue()) {
+                addKeyValueData(con, contentletMap);
             }
 
             for(Entry<String,String> entry : contentletMap.entrySet()){
@@ -309,10 +309,21 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
             return mlowered;
 		} catch (Exception e) {
-			//Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotMappingException(e.getMessage(), e);
 		}
 	}
+
+    /**
+     * Adds the respective key data to the Contentlet's data map when interacting with Key/Value
+     * Contentlets.
+     * 
+     * @param contentlet - The Contentlet including the "key" value.
+     * @param contentletMap - The data map that will be added to the index.
+     */
+    private void addKeyValueData(Contentlet contentlet, Map<String, String> contentletMap) {
+        KeyValue keyValue = this.keyValueAPI.fromContentlet(contentlet);
+        contentletMap.put("key", (UtilMethods.isSet(keyValue.getIdentifier()) ? keyValue.getKey() : StringPool.BLANK));
+    }
 
     /**
      *
@@ -335,17 +346,24 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
         }
     }
 
-
+    @Override
     public Object toMappedObj(Contentlet con) throws DotMappingException {
 		return toJson(con);
 	}
 
+    /**
+     * 
+     * @param con
+     * @param m
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
 	@SuppressWarnings("unchecked")
 	protected void loadCategories(Contentlet con, Map<String,String> m) throws DotDataException, DotSecurityException {
 	    // first we check if there is a category field in the structure. We don't hit db if not needed
 	    boolean thereiscategory=false;
-	    Structure st=CacheLocator.getContentTypeCache().getStructureByInode(con.getStructureInode());
-	    List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
+	    Structure st=CacheLocator.getContentTypeCache().getStructureByInode(con.getContentTypeId());
+	    List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getContentTypeId());
 	    for(Field f : fields)
 	        thereiscategory = thereiscategory ||
 	         f.getFieldType().equals(FieldType.CATEGORY.toString());
@@ -397,7 +415,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
         m.put("categories", categoriesString);
 	}
 
-	@SuppressWarnings("unchecked")
+	/**
+	 * 
+	 * @param con
+	 * @param m
+	 * @throws DotDataException
+	 */
 	protected void loadPermissions(Contentlet con, Map<String,String> m) throws DotDataException {
         PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         List<Permission> permissions = permissionAPI.getPermissions(con, false, false, false);
@@ -437,6 +460,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 	public static final FastDateFormat timeFormat = FastDateFormat.getInstance("HHmmss");
 
+	/**
+	 * 
+	 * @param con
+	 * @param m
+	 * @throws DotDataException
+	 */
 	protected void loadFields(Contentlet con, Map<String, String> m) throws DotDataException {
 		
 		// https://github.com/dotCMS/dotCMS/issues/6152
@@ -446,7 +475,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		DecimalFormat numFormatter = new DecimalFormat("0000000000000000000.000000000000000000", otherSymbols);
 		
 	    FieldAPI fAPI=APILocator.getFieldAPI();
-	    List<Field> fields = new ArrayList<Field>(FieldsCache.getFieldsByStructureInode(con.getStructureInode()));
+	    List<Field> fields = new ArrayList<Field>(FieldsCache.getFieldsByStructureInode(con.getContentTypeId()));
 
 	    Structure st=con.getStructure();
         for (Field f : fields) {
@@ -592,9 +621,18 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             }
         }
 	}
+
+	/**
+	 * 
+	 * @param map
+	 * @return
+	 * @throws IOException
+	 */
 	public String toJsonString(Map<String, Object> map) throws IOException{
 		return mapper.writeValueAsString(map);
 	}
+
+	@Override
 	public List<String> dependenciesLeftToReindex(Contentlet con) throws DotStateException, DotDataException, DotSecurityException {
 	    List<String> dependenciesToReindex = new ArrayList<String>();
 
@@ -656,6 +694,13 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
         return dependenciesToReindex;
 	}
 
+	/**
+	 * 
+	 * @param con
+	 * @param m
+	 * @throws DotStateException
+	 * @throws DotDataException
+	 */
 	protected void loadRelationshipFields(Contentlet con, Map<String,String> m) throws DotStateException, DotDataException {
 	    DotConnect db = new DotConnect();
         db.setSQL("select * from tree where parent = ? or child = ? order by tree_order asc");
@@ -692,8 +737,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 }
             }
         }
-
 	}
-
 
 }

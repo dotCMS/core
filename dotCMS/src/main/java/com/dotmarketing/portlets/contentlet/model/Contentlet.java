@@ -201,7 +201,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      * use instead:
      * {@link #getContentTypeId()}
      */
-    @Deprecated
     public String getStructureInode() {
         return (String) map.get(STRUCTURE_INODE_KEY);
     }
@@ -233,7 +232,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * 
 	 * @return
 	 */
-    @Deprecated
     public Structure getStructure() {
     	Structure structure = null;
     	structure = CacheLocator.getContentTypeCache().getStructureByInode(getStructureInode());
@@ -1053,5 +1051,17 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public boolean isVanityUrl() throws DotDataException, DotSecurityException {
 		return getContentType().baseType() == BaseContentType.VANITY_URL;
 	}
+
+    /**
+     * Determines whether this object belongs to a Key/Value Content Type or not.
+     * 
+     * @return If the object is an instance of Key/Value, returns {@code true}. Otherwise, returns
+     *         {@code false}.
+     * @throws DotDataException An error occurred when retrieving information from the data source.
+     * @throws DotSecurityException
+     */
+	public boolean isKeyValue() throws DotDataException, DotSecurityException {
+        return getContentType().baseType() == BaseContentType.KEY_VALUE;
+    }
 
 }

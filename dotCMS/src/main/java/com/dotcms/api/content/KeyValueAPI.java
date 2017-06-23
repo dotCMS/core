@@ -17,12 +17,14 @@ import com.liferay.portal.model.User;
  */
 public interface KeyValueAPI {
 
-	public KeyValue fromContentlet(Contentlet contentlet);
+    public KeyValue fromContentlet(final Contentlet contentlet);
 
-	public List<KeyValue> get(String key, User user, boolean respectFrontEnd);
+    public List<KeyValue> get(final String key, final User user, final boolean respectFrontEnd);
 
-	public List<KeyValue> get(String key, ContentType contentType, User user, boolean respectFrontEnd);
+    public List<KeyValue> get(final String key, final long languageId, final User user, final boolean respectFrontEnd);
+    
+    public List<KeyValue> get(final String key, final ContentType contentType, final User user, final boolean respectFrontEnd);
 
-	public KeyValue get(String key, long language, ContentType contentType, User user, boolean respectFrontEnd);
+    public KeyValue get(final String key, final long languageId, final ContentType contentType, final User user, final boolean respectFrontEnd);
 
 }
