@@ -1,5 +1,6 @@
-package com.dotcms.vanity;
+package com.dotcms.vanityurl.model;
 
+import com.dotcms.vanityurl.handler.VanityUrlHandler;
 import com.dotmarketing.filters.CMSFilter;
 
 /**

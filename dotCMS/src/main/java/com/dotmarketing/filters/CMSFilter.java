@@ -1,11 +1,11 @@
 package com.dotmarketing.filters;
 
-import com.dotcms.api.content.VanityUrlAPI;
+import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.content.model.VanityUrl;
-import com.dotcms.vanity.VanityUrlHandler;
-import com.dotcms.vanity.VanityUrlHandlerResolver;
-import com.dotcms.vanity.VanityUrlResult;
+import com.dotcms.vanityurl.model.VanityUrl;
+import com.dotcms.vanityurl.handler.VanityUrlHandler;
+import com.dotcms.vanityurl.handler.VanityUrlHandlerResolver;
+import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;

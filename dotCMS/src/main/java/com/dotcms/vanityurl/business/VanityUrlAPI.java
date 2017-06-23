@@ -1,6 +1,6 @@
-package com.dotcms.api.content;
+package com.dotcms.vanityurl.business;
 
-import com.dotcms.content.model.VanityUrl;
+import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
@@ -38,25 +38,25 @@ public interface VanityUrlAPI {
     List<VanityUrl> getActiveVanityUrls(final User user);
 
     /**
-     * Return the vanity URL working contentlet with the specified URI
+     * Return the vanityurl URL working contentlet with the specified URI
      *
-     * @param uri The URI of the vanity URL
+     * @param uri The URI of the vanityurl URL
      * @param host The current host
      * @param languageId The current language Id
      * @param user The current user
-     * @return the working version of the vanity URL contentlet
+     * @return the working version of the vanityurl URL contentlet
      */
     VanityUrl getWorkingVanityUrl(final String uri, final Host host, final long languageId,
             final User user);
 
     /**
-     * Return the live version of the vanity URL contentlet with the specified URI
+     * Return the live version of the vanityurl URL contentlet with the specified URI
      *
-     * @param uri The URI of the vanity URL
+     * @param uri The URI of the vanityurl URL
      * @param host The current host
      * @param languageId The current language Id
      * @param user The current user
-     * @return the live version of the vanity URL contentlet
+     * @return the live version of the vanityurl URL contentlet
      */
     VanityUrl getLiveVanityUrl(final String uri, final Host host, final long languageId,
             final User user);

@@ -1,4 +1,4 @@
-package com.dotcms.vanity;
+package com.dotcms.vanityurl.handler;
 
 import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.util.Config;
@@ -13,7 +13,7 @@ import com.dotmarketing.util.UtilMethods;
  */
 public class VanityUrlHandlerResolver {
 
-    public static final String DOTCMS_VANITY_URL_HANDLER_RESOLVER_CLASSNAME = "dotcms.vanity.url.handler.resolver.classname";
+    public static final String DOTCMS_VANITY_URL_HANDLER_RESOLVER_CLASSNAME = "dotcms.vanityurl.url.handler.resolver.classname";
     private static final VanityUrlHandler defaultVanityUrlHandler = new DefaultVanityUrlHandler();
 
     private static VanityUrlHandlerResolver instance;

@@ -1,6 +1,6 @@
 package com.dotcms.cache;
 
-import com.dotcms.content.model.VanityUrl;
+import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.business.Cachable;
 
 /**

@@ -1,6 +1,7 @@
-package com.dotcms.vanity;
+package com.dotcms.vanityurl.handler;
 
-import com.dotcms.content.model.VanityUrl;
+import com.dotcms.vanityurl.model.VanityUrl;
+import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotmarketing.beans.Host;
 import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
@@ -19,7 +20,7 @@ public interface VanityUrlHandler {
      * This method handle the logic to process the Vanity URLs and returns a
      * VanityUrlResult Object
      *
-     * @param vanityUrl The vanity URL object
+     * @param vanityUrl The vanityurl URL object
      * @param response The HttpServletResponse
      * @param host The current host
      * @param languageId The current languageId

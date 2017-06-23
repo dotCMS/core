@@ -1,11 +1,12 @@
-package com.dotcms.api.content;
+package com.dotcms.vanityurl.business;
 
 import com.dotcms.cache.VanityUrlCache;
-import com.dotcms.content.model.DefaultVanityUrl;
-import com.dotcms.content.model.VanityUrl;
+import com.dotcms.contenttype.model.type.VanityUrlContentType;
+import com.dotcms.vanityurl.model.DefaultVanityUrl;
+import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.VanityUrlContentType;
+;
 import com.dotcms.services.VanityUrlServices;
 import com.dotcms.util.VanityUrlUtil;
 import com.dotmarketing.beans.Host;
@@ -55,7 +56,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                 results.add(getVanityUrlFromContentlet(con));
             });
         } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this, "Error searching vanity URLs", e);
+            Logger.error(this, "Error searching vanityurl URLs", e);
         }
         return results.build();
     }
@@ -136,7 +137,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                     results.add(cache404VanityUrl);
                 }
             } catch (DotDataException | DotSecurityException e) {
-                Logger.error(this, "Error searching vanity URLs", e);
+                Logger.error(this, "Error searching vanityurl URLs", e);
             }
 
             result = results.size() > 0 ? results.get(0) : null;
@@ -157,7 +158,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                 results.add(vanityUrl);
             });
         } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this, "Error searching vanity URLs", e);
+            Logger.error(this, "Error searching vanityurl URLs", e);
         }
         return results.build();
     }
@@ -213,7 +214,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     /**
      * Add the Vanity URL to the vanityURLCache
      *
-     * @param vanityUrl The vanity URL object
+     * @param vanityUrl The vanityurl URL object
      */
     private void addToVanityURLCache(VanityUrl vanityUrl) {
         try {

@@ -1,11 +1,10 @@
 package com.dotmarketing.business;
 
-import com.dotcms.api.content.VanityUrlAPI;
-import com.dotcms.api.content.VanityUrlAPIImpl;
+import com.dotcms.vanityurl.business.VanityUrlAPI;
+import com.dotcms.vanityurl.business.VanityUrlAPIImpl;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.api.tree.TreeableAPI;
-import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.cms.login.LoginServiceAPI;

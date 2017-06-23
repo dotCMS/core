@@ -1,7 +1,7 @@
 package com.dotcms.services;
 
 import com.dotcms.cache.VanityUrlCache;
-import com.dotcms.content.model.VanityUrl;
+import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotcms.util.VanityUrlUtil;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;

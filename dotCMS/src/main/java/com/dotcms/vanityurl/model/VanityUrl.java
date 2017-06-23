@@ -1,4 +1,4 @@
-package com.dotcms.content.model;
+package com.dotcms.vanityurl.model;
 
 import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
@@ -19,7 +19,7 @@ public interface VanityUrl extends Serializable, Versionable, Permissionable, Tr
     /**
      * Get the Vanity URL identifier
      *
-     * @return the vanity URL identifier
+     * @return the vanityurl URL identifier
      */
     String getIdentifier();
 
@@ -33,7 +33,7 @@ public interface VanityUrl extends Serializable, Versionable, Permissionable, Tr
     /**
      * Get the Vanity URL inode
      *
-     * @return the vanity URL inode
+     * @return the vanityurl URL inode
      */
     String getInode();
 
@@ -47,7 +47,7 @@ public interface VanityUrl extends Serializable, Versionable, Permissionable, Tr
     /**
      * Get the Vanity URL language Id
      *
-     * @return the vanity URL language Id
+     * @return the vanityurl URL language Id
      */
     long getLanguageId();
 
@@ -61,7 +61,7 @@ public interface VanityUrl extends Serializable, Versionable, Permissionable, Tr
     /**
      * Get the Vanity URL title
      *
-     * @return the vanity URL title
+     * @return the vanityurl URL title
      */
     String getTitle();
 
@@ -75,7 +75,7 @@ public interface VanityUrl extends Serializable, Versionable, Permissionable, Tr
     /**
      * Get the Vanity URL site identifier
      *
-     * @return the vanity URL site identifier
+     * @return the vanityurl URL site identifier
      */
     String getSite();
 
@@ -89,21 +89,21 @@ public interface VanityUrl extends Serializable, Versionable, Permissionable, Tr
     /**
      * Get the Vanity URL URI
      *
-     * @return the vanity URL Uri
+     * @return the vanityurl URL Uri
      */
     String getURI();
 
     /**
      * Set the Vanity URI
      *
-     * @param uri the vanity URL Uri
+     * @param uri the vanityurl URL Uri
      */
     void setURI(String uri);
 
     /**
      * The Vanity URL forward to path
      *
-     * @return the vanity URL forward path
+     * @return the vanityurl URL forward path
      */
     String getForwardTo();
 
@@ -112,7 +112,7 @@ public interface VanityUrl extends Serializable, Versionable, Permissionable, Tr
     /**
      * Get the Vanity URL action (redirect, forward or die)
      *
-     * @return the vanity URL action
+     * @return the vanityurl URL action
      */
     int getAction();
 
@@ -126,12 +126,12 @@ public interface VanityUrl extends Serializable, Versionable, Permissionable, Tr
     /**
      * Get the Vanity URL order
      *
-     * @return the vanity URL order
+     * @return the vanityurl URL order
      */
     int getOrder();
 
     /**
-     * Set the vanity URL order
+     * Set the vanityurl URL order
      *
      * @param order the order
      */

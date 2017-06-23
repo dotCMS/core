@@ -25,10 +25,8 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.api.content.VanityUrlAPI;
-import com.dotcms.content.model.DefaultVanityUrl;
-import com.dotcms.content.model.VanityUrl;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.vanityurl.business.VanityUrlAPI;
+import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;

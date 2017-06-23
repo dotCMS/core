@@ -1,7 +1,7 @@
 package com.dotmarketing.filters;
 
-import com.dotcms.api.content.VanityUrlAPI;
-import com.dotcms.content.model.VanityUrl;
+import com.dotcms.vanityurl.business.VanityUrlAPI;
+import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
