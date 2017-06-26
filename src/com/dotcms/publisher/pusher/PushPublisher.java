@@ -1,7 +1,10 @@
 package com.dotcms.publisher.pusher;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -36,9 +39,9 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
+import com.dotcms.repackage.org.glassfish.jersey.client.ClientProperties;
 import com.dotcms.rest.RestClientBuilder;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.util.Config;
@@ -106,6 +109,11 @@ public class PushPublisher extends Publisher {
 
 			List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(config.getId());
 			Client client = RestClientBuilder.newClient();
+			client.property(ClientProperties.REQUEST_ENTITY_PROCESSING, "CHUNKED");
+
+			client.property(ClientProperties.CHUNKED_ENCODING_SIZE, 1024);
+
+			String contentDisposition = "attachment; filename=\"" + bundle.getName() + "\"";
 
 			//Updating audit table
 			currentStatusHistory = pubAuditAPI.getPublishAuditStatus(config.getId()).getStatusPojo();
@@ -139,23 +147,23 @@ public class PushPublisher extends Publisher {
 				}
 
 				for (PublishingEndPoint endpoint : endpoints) {
-					EndpointDetail detail = new EndpointDetail();
-	        		try {
-	        			FormDataMultiPart form = new FormDataMultiPart();
-	        			form.field("AUTH_TOKEN",
-	        					retriveKeyString(
-	        							PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())));
+				    EndpointDetail detail = new EndpointDetail();
 
-	        			form.field("GROUP_ID", UtilMethods.isSet(endpoint.getGroupId()) ? endpoint.getGroupId() : endpoint.getId());
-	        			Bundle b=APILocator.getBundleAPI().getBundleById(config.getId());
-	        			form.field("BUNDLE_NAME", b.getName());
-	        			form.field("ENDPOINT_ID", endpoint.getId());
-	        			form.bodyPart(new FileDataBodyPart("bundle", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
+				    InputStream bundleStream = new BufferedInputStream(new FileInputStream(bundle));
+				    try {
+				        Bundle b=APILocator.getBundleAPI().getBundleById(config.getId());
+				        WebTarget webTarget = client.target(endpoint.toURL()+"/api/bundlePublisher/publish")
+				                .queryParam("AUTH_TOKEN", retriveKeyString(PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())))
+				                .queryParam("GROUP_ID", UtilMethods.isSet(endpoint.getGroupId()) ? endpoint.getGroupId() : endpoint.getId())
+				                .queryParam("BUNDLE_NAME", b.getName())
+				                .queryParam("ENDPOINT_ID", endpoint.getId())
+				                .queryParam("FILE_NAME", bundle.getName())
+				                ;
 
-                        WebTarget webTarget = client.target(endpoint.toURL()+"/api/bundlePublisher/publish");
-
-                        Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).post(Entity.entity(form, form.getMediaType()));
-
+				        Response response = webTarget.request(MediaType.APPLICATION_OCTET_STREAM_TYPE)
+				                .header("Content-Disposition", contentDisposition)
+				                .post(Entity.entity(bundleStream, MediaType.APPLICATION_OCTET_STREAM_TYPE));
+				        
 	        			if(response.getStatus() == HttpStatus.SC_OK)
 	        			{
 							PushPublishLogger.log(this.getClass(), "Status Update: Bundle sent");
@@ -183,6 +191,8 @@ public class PushPublisher extends Publisher {
 	        			failedEnvironment |= true;
 
 	        			Logger.error(this.getClass(), error);
+	        		} finally {
+	        		    CloseUtils.closeQuietly(bundleStream);
 	        		}
 	        		if (isHistoryEmpty || failedEnvironment) {
 	        			currentStatusHistory.addOrUpdateEndpoint(environment.getId(), endpoint.getId(), detail);

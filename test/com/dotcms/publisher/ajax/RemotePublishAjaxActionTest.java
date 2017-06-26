@@ -279,21 +279,24 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		assertTrue( success );
 		assertTrue( newBundleFile.exists() );
 
-		//Prepare the post request
-		FormDataMultiPart form = new FormDataMultiPart();
-		form.field( "AUTH_TOKEN", PublicEncryptionFactory.encryptString( (PublicEncryptionFactory.decryptString( receivingFromEndpoint.getAuthKey().toString() )) ) );
-		form.field( "GROUP_ID", UtilMethods.isSet( receivingFromEndpoint.getGroupId() ) ? receivingFromEndpoint.getGroupId() : receivingFromEndpoint.getId() );
-		form.field( "BUNDLE_NAME", bundle.getName() );
-		form.field( "ENDPOINT_ID", receivingFromEndpoint.getId() );
-		form.bodyPart( new FileDataBodyPart( "bundle", newBundleFile, MediaType.MULTIPART_FORM_DATA_TYPE ) );
+        //Prepare the post request
+        //Sending bundle to endpoint
+        String contentDisposition = "attachment; filename=\"" + newBundleFile.getName() + "\"";
 
-		//Sending bundle to endpoint
-        Response clientResponse = ClientBuilder.newClient().register(MultiPartFeature.class)
+        InputStream newBundleFileStream = new BufferedInputStream(new FileInputStream(newBundleFile));
+
+        Response clientResponse = ClientBuilder.newClient()
             .target(receivingFromEndpoint.toURL() + "/api/bundlePublisher/publish")
-            .request(MediaType.APPLICATION_JSON_TYPE)
-            .post(Entity.entity(form, form.getMediaType()));
-		//Validations
-		assertEquals( clientResponse.getStatus(), HttpStatus.SC_OK );
+            .queryParam("AUTH_TOKEN", PublicEncryptionFactory.encryptString( (PublicEncryptionFactory.decryptString( receivingFromEndpoint.getAuthKey().toString() )) ))
+            .queryParam("GROUP_ID", UtilMethods.isSet( receivingFromEndpoint.getGroupId() ) ? receivingFromEndpoint.getGroupId() : receivingFromEndpoint.getId())
+            .queryParam("BUNDLE_NAME", bundle.getName())
+            .queryParam("ENDPOINT_ID", receivingFromEndpoint.getId())
+            .queryParam("FILE_NAME", newBundleFile.getName())
+            .request(MediaType.APPLICATION_OCTET_STREAM_TYPE)
+            .header("Content-Disposition", contentDisposition)
+            .post(Entity.entity(newBundleFileStream, MediaType.APPLICATION_OCTET_STREAM_TYPE));
+
+        CloseUtils.closeQuietly(newBundleFileStream);
 
 		//Get current status dates
 		status = PublishAuditAPI.getInstance().getPublishAuditStatus( newBundleId );//Get the audit records related to this new bundle
@@ -954,18 +957,6 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		Boolean success = bundleFile.renameTo( newBundleFile );
 		assertTrue( success );
 		assertTrue( newBundleFile.exists() );
-
-		/*
-		 * Prepare the post request
-		 */
-		Client client = RestClientBuilder.newClient();
-
-		FormDataMultiPart form = new FormDataMultiPart();
-		form.field( "AUTH_TOKEN", PublicEncryptionFactory.encryptString( (PublicEncryptionFactory.decryptString( receivingFromEndpoint.getAuthKey().toString() )) ) );
-		form.field( "GROUP_ID", UtilMethods.isSet( receivingFromEndpoint.getGroupId() ) ? receivingFromEndpoint.getGroupId() : receivingFromEndpoint.getId() );
-		form.field( "BUNDLE_NAME", bundle.getName() );
-		form.field( "ENDPOINT_ID", receivingFromEndpoint.getId() );
-		form.bodyPart( new FileDataBodyPart( "bundle", newBundleFile, MediaType.MULTIPART_FORM_DATA_TYPE ) );
 
 		/*
 		 * Cleaning test values
