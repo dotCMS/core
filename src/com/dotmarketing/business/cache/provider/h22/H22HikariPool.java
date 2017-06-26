@@ -24,7 +24,7 @@ public class H22HikariPool {
 	final HikariDataSource datasource;
 	final String folderName;
 	boolean running = false;
-	final String extraParms = Config.getStringProperty("cache.h22.db.extra.params", ";DB_CLOSE_ON_EXIT=FALSE"); //;LOCK_MODE=0;DB_CLOSE_ON_EXIT=FALSE;FILE_LOCK=NO
+	final String extraParms = Config.getStringProperty("cache.h22.db.extra.params", ";MVCC=TRUE;DB_CLOSE_ON_EXIT=FALSE"); //;LOCK_MODE=0;DB_CLOSE_ON_EXIT=FALSE;FILE_LOCK=NO
 	
 	public H22HikariPool(String dbRoot, int dbNumber) {
 		this(dbRoot,dbNumber,new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()) );
