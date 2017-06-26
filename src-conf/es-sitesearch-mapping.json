@@ -7,7 +7,8 @@
             "untouched": {
               "type": "string",
               "index": "not_analyzed",
-              "ignore_above": 8191
+              "ignore_above": 8191,
+              "doc_values": true 
             },
             "content": {
               "type": "string",
@@ -22,22 +23,26 @@
         },
         "host": {
           "type": "string",
-          "index": "not_analyzed"
+          "index": "not_analyzed",
+          "doc_values": true 
         },
         "contentLength": {
           "type": "long"
         },
         "uri": {
           "type": "string",
-          "index": "not_analyzed"
+          "index": "not_analyzed",
+          "doc_values": true 
         },
         "url": {
           "type": "string",
-          "index": "not_analyzed"
+          "index": "not_analyzed",
+          "doc_values": true 
         },
         "mimeType": {
           "type": "string",
-          "index": "not_analyzed"
+          "index": "not_analyzed",
+          "doc_values": true 
         },
         "title": {
           "type": "string"
@@ -46,7 +51,8 @@
           "type": "string"
         },
         "modified": {
-          "type": "date"
+          "type": "date",
+          "doc_values": true 
         },
         "keywords": {
           "type": "string",
