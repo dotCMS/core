@@ -36,7 +36,7 @@ public class TestInitialContext extends InitialContext {
         dataSource.setDriverClassName(prop.getProperty(dbType + "db.driver"));
         dataSource.setUrl(prop.getProperty(dbType + "db.base.url"));
         dataSource.setUsername(prop.getProperty(dbType + "db.username"));
-        dataSource.setPassword("sebas03ç");
+        dataSource.setPassword(prop.getProperty(dbType + "db.password"));
         dataSource.setRemoveAbandoned(true);
         dataSource.setLogAbandoned(true);
         dataSource.setMaxIdle(Integer.parseInt(prop.getProperty(dbType + "db.max.idle")));
