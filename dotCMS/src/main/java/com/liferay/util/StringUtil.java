@@ -34,7 +34,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.dotmarketing.util.Config;
+import java.util.Map;
 import com.dotmarketing.util.Logger;
 
 /**
@@ -652,4 +652,28 @@ public class StringUtil {
 		return sb.toString();
 	}
 
+	/**
+	 * Format a String template with name, for example:
+	 * <code>
+	 * 	String template = "Hello word {name}";
+	 * 	String format = StringUtil.format(teamplat, map("name", "Freddy"));
+	 * 	System.out.println(format);
+	 * </code>
+	 *
+	 * The output is: Hello Wordl Freddy
+	 *
+	 * @param template
+	 * @param params
+	 * @return
+	 */
+	public static String format (String template, Map<String, String> params){
+		String result = template;
+
+		for (Map.Entry<String, String> entry : params.entrySet()) {
+			String key = String.format("\\{%s\\}", entry.getKey());
+			result = result.replaceAll(key, entry.getValue());
+		}
+
+		return result;
+	}
 }
