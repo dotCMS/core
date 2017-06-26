@@ -130,7 +130,6 @@ public class RulesCacheImpl extends RulesCache {
 
         fireOn = checkNotNull(fireOn, "FireOn is required.");
 
-        cache.remove(parentIdentifier + ":" + fireOn, getPrimaryGroup());
         cache.put(parentIdentifier + ":" + fireOn, rules, getPrimaryGroup());
     }
 
