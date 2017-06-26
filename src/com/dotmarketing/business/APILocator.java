@@ -30,6 +30,8 @@ import com.dotcms.publishing.PublisherAPI;
 import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.timemachine.business.TimeMachineAPI;
 import com.dotcms.timemachine.business.TimeMachineAPIImpl;
+import com.dotcms.util.SecurityLoggerServiceAPI;
+import com.dotcms.util.SecurityLoggerServiceAPIFactory;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPIImpl;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -375,6 +377,10 @@ public class APILocator extends Locator<APIIndex>{
     public static VisitorAPI getVisitorAPI () {
 		return (VisitorAPI) getInstance( APIIndex.VISITOR_API );
 	}
+    
+    public static SecurityLoggerServiceAPI getSecurityLogger() {
+        return (SecurityLoggerServiceAPI)getInstance(APIIndex.SECURITY_LOGGER_API);
+    }
 
 
 	private static Object getInstance(APIIndex index) {
@@ -471,7 +477,8 @@ enum APIIndex
 	ES_SEARCH_API,
     RULES_API,
     VISITOR_API,
-    SHORTY_ID_API;
+    SHORTY_ID_API,
+    SECURITY_LOGGER_API;
 
 
 	Object create() {
@@ -537,6 +544,7 @@ enum APIIndex
 		case RULES_API: return new RulesAPIProxy();
 		case VISITOR_API: return new VisitorAPIImpl();
 		case SHORTY_ID_API: return new ShortyIdAPIImpl();
+		case SECURITY_LOGGER_API: return SecurityLoggerServiceAPIFactory.getInstance().getSecurityLoggerAPI();
 
 		
 		}
