@@ -499,6 +499,127 @@ public class CategoryAPITest extends TestBase {
         cachedCategories = categoryCache.getChildren( childCategory2 );
         assertNull( cachedCategories );//Shouldn't exist
     }
+    
+    @Test
+    public void testSortChildren() {
+
+        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+        final CategoryCache categoryCache = CacheLocator.getCategoryCache();
+
+        final String categoryAKey = "categoryA";
+        final String categoryBKey = "categoryB";
+        final String categoryCKey = "categoryC";
+
+        Category parentCategory = null;
+        Category childCategoryA = null;
+        Category childCategoryB = null;
+        Category childCategoryC = null;
+
+        try {
+            //Create Parent Category.
+            parentCategory = new Category();
+            parentCategory.setCategoryName( "Parent Category" );
+            parentCategory.setKey( "parent" );
+            parentCategory.setCategoryVelocityVarName( "parent" );
+            parentCategory.setSortOrder( (String) null );
+            parentCategory.setKeywords( null );
+
+            categoryAPI.save( null, parentCategory, user, false );
+
+            Category foundCategory = categoryAPI.find( parentCategory.getCategoryId(), user, false );
+            assertNotNull( foundCategory );
+
+            //Create First Child Category.
+            childCategoryA = new Category();
+            childCategoryA.setCategoryName( "Category A" );
+            childCategoryA.setKey( categoryAKey );
+            childCategoryA.setCategoryVelocityVarName( "categoryA" );
+            childCategoryA.setSortOrder( 1 );
+            childCategoryA.setKeywords( null );
+
+            categoryAPI.save( parentCategory, childCategoryA, user, false );
+
+            foundCategory = categoryAPI.find( childCategoryA.getCategoryId(), user, false );
+            assertNotNull( foundCategory );
+
+            //Create Second Child Category.
+            childCategoryB = new Category();
+            childCategoryB.setCategoryName( "Category B" );
+            childCategoryB.setKey( categoryBKey );
+            childCategoryB.setCategoryVelocityVarName( "categoryB" );
+            childCategoryB.setSortOrder( 2 );
+            childCategoryB.setKeywords( null );
+
+            categoryAPI.save( parentCategory, childCategoryB, user, false );
+
+            foundCategory = categoryAPI.find( childCategoryB.getCategoryId(), user, false );
+            assertNotNull( foundCategory );
+
+            //Create Third Child Category.
+            childCategoryC = new Category();
+            childCategoryC.setCategoryName( "Category C" );
+            childCategoryC.setKey( categoryCKey );
+            childCategoryC.setCategoryVelocityVarName( "categoryC" );
+            childCategoryC.setSortOrder( 3 );
+            childCategoryC.setKeywords( null );
+
+            categoryAPI.save( parentCategory, childCategoryC, user, false );
+
+            foundCategory = categoryAPI.find( childCategoryC.getCategoryId(), user, false );
+            assertNotNull( foundCategory );
+
+            //Check that the original order follows SortOrder value.
+            List<Category> children = categoryAPI.findChildren( user, parentCategory.getInode(), false, null );
+            assertEquals( 3, children.size() );
+            assertEquals( categoryAKey, children.get( 0 ).getKey() );
+            assertEquals( categoryBKey, children.get( 1 ).getKey() );
+            assertEquals( categoryCKey, children.get( 2 ).getKey() );
+
+            //Reorder.
+            childCategoryA.setSortOrder( 3 );
+            childCategoryB.setSortOrder( 2);
+            childCategoryC.setSortOrder( 1 );
+
+            //Saving all the children.
+            categoryAPI.save( parentCategory, childCategoryA, user, false );
+            categoryAPI.save( parentCategory, childCategoryB, user, false );
+            categoryAPI.save( parentCategory, childCategoryC, user, false );
+
+            assertNull( categoryCache.get( childCategoryA.getCategoryId() ) );
+            assertNull( categoryCache.get( childCategoryB.getCategoryId() ) );
+            assertNull( categoryCache.get( childCategoryC.getCategoryId() ) );
+
+            //This call will put the children on the cache.
+            categoryAPI.sortChildren( parentCategory.getInode() );
+
+            //Check new order.
+            assertEquals( new Integer( 3 ), categoryCache.get( childCategoryA.getCategoryId() ).getSortOrder() );
+            assertEquals( new Integer( 2 ), categoryCache.get( childCategoryB.getCategoryId() ).getSortOrder() );
+            assertEquals( new Integer( 1 ), categoryCache.get( childCategoryC.getCategoryId() ).getSortOrder() );
+
+        } catch ( Exception e ) {
+            fail( e.getMessage() );
+        } finally {
+            try {
+                //Deleting Child Categories.
+                if ( childCategoryA != null ){
+                    categoryAPI.delete( childCategoryA, user, false );
+                }
+                if ( childCategoryB != null ){
+                    categoryAPI.delete( childCategoryB, user, false );
+                }
+                if ( childCategoryC != null ){
+                    categoryAPI.delete( childCategoryC, user, false );
+                }
+                if ( parentCategory != null ){
+                    //Delete Parent Category.
+                    categoryAPI.delete( parentCategory, user, false );
+                }
+            } catch ( Exception e ){
+                fail( e.getMessage() );
+            }
+        }
+    }
 
     /**
      * Creates an Structure object for a later use in the tests

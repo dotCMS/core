@@ -462,7 +462,6 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			try {
 				conn.rollback();
 			} catch (SQLException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 			e.printStackTrace();
@@ -471,7 +470,6 @@ public class CategoryFactoryImpl extends CategoryFactory {
 				s.close();
 				conn.close();
 			} catch (SQLException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -561,7 +559,6 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			try {
 				conn.rollback();
 			} catch (SQLException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 			e.printStackTrace();
@@ -570,7 +567,6 @@ public class CategoryFactoryImpl extends CategoryFactory {
 				s.close();
 				conn.close();
 			} catch (SQLException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -674,96 +670,88 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
 			rs = s.executeQuery(catSQL.getSortParents());
 
-			while(rs.next()) {
-				Category cat = null;
-				try {
-					cat = (Category) HibernateUtil.load(Category.class, rs.getString("inode"));
-				} catch (DotHibernateException e) {
-					if(!(e.getCause() instanceof ObjectNotFoundException))
-						throw e;
-				}
-				if(cat != null)
-					try {
-						catCache.put(cat);
-					} catch (DotCacheException e) {
-						throw new DotDataException(e.getMessage(), e);
-					}
-			}
+			putResultInCatCache( rs );
 		} catch (SQLException e) {
 			try {
 				conn.rollback();
-			} catch (SQLException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+			} catch (SQLException sqlException) {
+			    Logger.debug( this, "Error trying to rollback connection", sqlException );
 			}
-			e.printStackTrace();
+			Logger.debug( this, "Error trying to execute statements", e );
 		} finally {
-			try {
-				rs.close();
-				s.close();
-				conn.close();
-			} catch (SQLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		    closeEverything( s, conn, rs );
 		}
 	}
 
-	public void sortChildren(String inode)  throws DotDataException {
-		Statement s = null;
-		Connection conn = null;
-		ResultSet rs = null;
-		try {
-			CategorySQL catSQL= CategorySQL.getInstance();
-			conn = DbConnectionFactory.getDataSource().getConnection();
-			conn.setAutoCommit(false);
-			s = conn.createStatement();
-			String sql = "";
-			sql = catSQL.getCreateSortChildren(inode);
-			s.executeUpdate( sql );
-			sql = catSQL.getUpdateSort();
-			s.executeUpdate( sql );
-			sql = catSQL.getDropSort();
-			s.executeUpdate(sql);
-			conn.commit();
-			sql = catSQL.getSortedChildren(inode);
-			rs = s.executeQuery(sql);
+    public void sortChildren(String inode)  throws DotDataException {
 
-			while(rs.next()) {
-				Category cat = null;
-				try {
-					cat = (Category) HibernateUtil.load(Category.class, rs.getString("inode"));
-				} catch (DotHibernateException e) {
-					if(!(e.getCause() instanceof ObjectNotFoundException))
-						throw e;
-				}
-				if(cat != null)
-					try {
-						catCache.put(cat);
-					} catch (DotCacheException e) {
-						throw new DotDataException(e.getMessage(), e);
-					}
-			}
+        Statement statement = null;
+        Connection conn = null;
+        ResultSet rs = null;
+        try {
+            CategorySQL catSQL= CategorySQL.getInstance();
+            conn = DbConnectionFactory.getDataSource().getConnection();
+            conn.setAutoCommit(false);
+            statement = conn.createStatement();
+            String sql;
 
-		} catch (SQLException e) {
-			try {
-				conn.rollback();
-			} catch (SQLException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-			e.printStackTrace();
-		} finally {
-			try {
-				rs.close();
-				s.close();
-				conn.close();
-			} catch (SQLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-	}
+            PreparedStatement createSortPreparedStatement = conn.prepareStatement( catSQL.getCreateSortChildren() );
+            createSortPreparedStatement.setString( 1, inode );
+            createSortPreparedStatement.executeUpdate();
+
+            sql = catSQL.getUpdateSort();
+            statement.executeUpdate( sql );
+
+            sql = catSQL.getDropSort();
+            statement.executeUpdate(sql);
+
+            conn.commit();
+
+            PreparedStatement getSortedPreparedStatement = conn.prepareStatement( catSQL.getSortedChildren() );
+            getSortedPreparedStatement.setString( 1, inode );
+            rs = getSortedPreparedStatement.executeQuery();
+
+            putResultInCatCache( rs );
+
+        } catch (SQLException e) {
+            try {
+                conn.rollback();
+            } catch (SQLException sqlException) {
+                Logger.debug( this, "Error trying to rollback connection", sqlException );
+            }
+            Logger.debug( this, "Error trying to execute statements", e );
+        } finally {
+            closeEverything( statement, conn, rs );
+        }
+    }
+    
+    private void putResultInCatCache( ResultSet rs ) throws SQLException, DotDataException {
+        while(rs.next()) {
+            Category cat = null;
+            try {
+                cat = (Category) HibernateUtil.load(Category.class, rs.getString("inode"));
+            } catch (DotHibernateException e) {
+                if(!(e.getCause() instanceof ObjectNotFoundException ))
+                    throw e;
+            }
+            if(cat != null)
+                try {
+                    catCache.put(cat);
+                } catch (DotCacheException e) {
+                    throw new DotDataException(e.getMessage(), e);
+                }
+        }
+    }
+
+    private void closeEverything( Statement s, Connection conn, ResultSet rs ) {
+        try {
+            rs.close();
+            s.close();
+            conn.close();
+        } catch (SQLException e) {
+            Logger.debug( this, "Error trying to close statement, connection and result set", e );
+        }
+    }
 
     /**
      * Cleans the parent and child cache for a given category
