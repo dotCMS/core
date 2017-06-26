@@ -78,7 +78,16 @@
 	   	        load: function(data) {
 	   	        	var isError = false;
 
-	   	        	if (data.success == false || data.success == "false") {
+                    var json = data;
+                    
+                    try {
+                       json = JSON.parse(json);
+                    } catch (e) {
+                        console.log(e);
+                        console.log(json)
+                    }
+
+                    if (json.success == false || json.success == "false") {
 	   	        		isError = true;
 	   	        	}
 
