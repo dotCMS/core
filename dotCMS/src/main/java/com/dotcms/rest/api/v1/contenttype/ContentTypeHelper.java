@@ -31,8 +31,6 @@ import static com.dotcms.util.CollectionsUtils.map;
  */
 public class ContentTypeHelper implements Serializable {
 
-    private static final String N_ENTRIES_FIELD_NAME = "nEntries";
-
     private static final Map<Locale, Map<String, String>> BASE_CONTENT_TYPE_LABELS = new HashMap<>();
 
     private static class SingletonHolder {
@@ -150,46 +148,6 @@ public class ContentTypeHelper implements Serializable {
         return map;
 
     } // getBaseContentTypeNames.
-
-    public List<Map<String, Object>> getContentTypes(User user, String query, int offset, int limit, String orderby, String direction)
-            throws DotDataException {
-        List<Structure> structures = this.structureAPI.find(user, false, false, query, orderby,
-                limit, offset, direction);
-        Map<String, Long> entriesByContentTypes = getEntriesByContentTypes(user);
-
-        List<Map<String, Object>> result = structures.stream()
-                .map(contentType -> {
-                    Map<String, Object> map = contentType.getMap();
-
-                    if (entriesByContentTypes != null) {
-                        String key = contentType.getVelocityVarName().toLowerCase();
-                        Long contentTypeEntriesNumber = entriesByContentTypes.get(key) == null ? 0l :
-                                entriesByContentTypes.get(key);
-                        map.put(N_ENTRIES_FIELD_NAME, contentTypeEntriesNumber);
-                    }
-
-                    return map;
-                })
-                .collect(Collectors.toList());
-
-        if (N_ENTRIES_FIELD_NAME.equals(orderby)){
-            result.sort( (contentType1, contentType2) -> {
-                long l1 = (long) contentType1.get(N_ENTRIES_FIELD_NAME);
-                long l2 = (long) contentType2.get(N_ENTRIES_FIELD_NAME);
-                return "asc".equals(direction) ? (int) (l1 - l2) : (int) (l2 - l1);
-            });
-        }
-
-        return result;
-    }
-
-    private Map<String, Long> getEntriesByContentTypes(User user) {
-        try {
-            return APILocator.getContentTypeAPI(user, true).getEntriesByContentTypes();
-        } catch (Exception e) {
-            return null;
-        }
-    }
 
     public long getContentTypesCount(String condition) throws DotDataException {
         return this.structureAPI.countStructures(condition);

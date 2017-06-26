@@ -20,6 +20,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.util.PaginationUtil;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -48,13 +49,14 @@ import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
 
 /**
- * {@link siteResource} test
+ * {@link SiteResource} test
  * @author jsanca
  */
 public class SiteResourceTest extends UnitTestBase {
 
 	private static final int page = 1;
 	private static final int count = 20;
+
 	/**
 	 * Queries the list of sites associated to a user based on the value of the
 	 * "filter" parameter being an actual filter or an empty value.
@@ -74,138 +76,30 @@ public class SiteResourceTest extends UnitTestBase {
         final InitDataObject initDataObject = mock(InitDataObject.class);
         final User user = new User();
         final PaginatedArrayList<Host> hosts = getSites();
-        
+        final PaginationUtil paginationUtil = mock(PaginationUtil.class);
+
+        Response responseExpected = Response.ok(new ResponseEntityView(hosts)).build();
+
         Config.CONTEXT = context;
         Config.CONTEXT = context;
 
         when(initDataObject.getUser()).thenReturn(user);
         when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
-        when(hostAPI.search(StringUtils.EMPTY,  Boolean.FALSE, Boolean.FALSE, count, 0, user, Boolean.FALSE)).thenReturn(hosts);
+        when(paginationUtil.getPage(request, user, "filter",  Boolean.FALSE, 1, count)).thenReturn(responseExpected);
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session);
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
         SiteResource siteResource =
-                new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
+                new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI, paginationUtil);
 
-        Response response1 = siteResource.sites(request, null, false, page, count);
-        System.out.println(response1);
-        System.out.println(response1.getEntity());
+        Response response = siteResource.sites(request, "filter", false, page, count);
 
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 200);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() == 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getEntity());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getEntity() instanceof Map);
-        assertNotNull(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results").equals("demo.dotcms.com"));
-        assertTrue(Host.class.cast(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).get(0))
-                .getHostname().equals("demo.dotcms.com"));
+        RestUtilTest.verifySuccessResponse(response);
 
-        response1 = siteResource.sites(request, StringUtils.EMPTY, false, page, count);
-        System.out.println(response1);
-        System.out.println(response1.getEntity());
-
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 200);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() == 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getEntity());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getEntity() instanceof Map);
-        assertNotNull(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results").equals("demo.dotcms.com"));
-        assertTrue(Host.class.cast(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).get(0))
-                .getHostname().equals("demo.dotcms.com"));
-
-        response1 = siteResource.sites(request, "*", false, page, count);
-        System.out.println(response1);
-        System.out.println(response1.getEntity());
-
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 200);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() == 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getEntity());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getEntity() instanceof Map);
-        assertNotNull(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results").equals("demo.dotcms.com"));
-        assertTrue(Host.class.cast(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).get(0))
-                .getHostname().equals("demo.dotcms.com"));
+        assertEquals(((ResponseEntityView) response.getEntity()).getEntity(), hosts);
     }
 
-    @Test
-    public void testPreffixFilter() throws JSONException, DotSecurityException, DotDataException {
-        final HttpServletRequest request  = mock(HttpServletRequest.class);
-        final HttpSession session  = mock(HttpSession.class);
-        final HostAPI hostAPI     = mock(HostAPI.class);
-        final UserAPI userAPI = mock(UserAPI.class);
-        final WebResource webResource       = mock(WebResource.class);
-        final ServletContext context = mock(ServletContext.class);
-        final InitDataObject initDataObject = mock(InitDataObject.class);
-        final User user = new User();
-        final PaginatedArrayList<Host> hosts = getTwoSites();
-        final PaginatedArrayList<Host> nohosts = getNoSites();
-
-        Config.CONTEXT = context;
-        Config.CONTEXT = context;
-
-        when(initDataObject.getUser()).thenReturn(user);
-        when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
-        when(hostAPI.search("demo", Boolean.FALSE, Boolean.FALSE, count, 0, user, Boolean.FALSE)).thenReturn(hosts);
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession()).thenReturn(session);
-        when(request.getSession(false)).thenReturn(session);
-        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
-        SiteResource siteResource =
-                new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
-
-        Response response1 = siteResource.sites(request, "demo", false, page, count);
-        System.out.println(response1);
-        System.out.println(response1.getEntity());
-
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 200);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() == 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getEntity());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getEntity() instanceof Map);
-        assertNotNull(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results").equals("demo.dotcms.com"));
-        assertTrue(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).size() == 2);
-        assertTrue(Host.class.cast(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).get(0))
-                .getHostname().equals("demo.awesome.dotcms.com"));
-        assertTrue(Host.class.cast(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).get(1))
-                .getHostname().equals("demo.dotcms.com"));
-
-        
-        when(initDataObject.getUser()).thenReturn(user);
-        when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
-        when(hostAPI.search("nothing", Boolean.FALSE, Boolean.FALSE, count, 0, user, Boolean.FALSE)).thenReturn(nohosts);
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
-        when(request.getSession()).thenReturn(session);
-        when(request.getSession(false)).thenReturn(session);
-        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
-        
-        response1 = siteResource.sites(request, "nothing", false, page, count);
-        System.out.println(response1);
-        System.out.println(response1.getEntity());
-
-        assertNotNull(response1);
-        assertEquals(response1.getStatus(), 200);
-        assertNotNull(response1.getEntity());
-        assertTrue(response1.getEntity() instanceof ResponseEntityView);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() == 0);
-        assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getEntity());
-        assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getEntity() instanceof Map);
-        assertNotNull(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results").equals("demo.dotcms.com"));
-        assertTrue(List.class.cast(Map.class.cast(Map.class.cast(ResponseEntityView.class.cast(response1.getEntity()).getEntity()).get("sites")).get("results")).size() == 0);
-    }
 
     @Test
     public void testSwitchNullEmptyAndInvalidFilter() throws JSONException, DotSecurityException, DotDataException {
@@ -218,6 +112,7 @@ public class SiteResourceTest extends UnitTestBase {
         final InitDataObject initDataObject = mock(InitDataObject.class);
         final User user = new User();
         final List<Host> hosts = getSites();
+        final PaginationUtil paginationUtil = mock(PaginationUtil.class);
 
         Config.CONTEXT = context;
 
@@ -229,7 +124,7 @@ public class SiteResourceTest extends UnitTestBase {
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
         SiteResource siteResource =
-                new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
+                new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI, paginationUtil);
 
         Response response1 = siteResource.switchSite(request, null);
         System.out.println(response1);
@@ -260,6 +155,7 @@ public class SiteResourceTest extends UnitTestBase {
         assertEquals(response1.getStatus(), 404);
     }
 
+
     @Test
     public void testSwitchExistingHost() throws JSONException, DotSecurityException, DotDataException {
         final HttpServletRequest request  = mock(HttpServletRequest.class);
@@ -271,6 +167,7 @@ public class SiteResourceTest extends UnitTestBase {
         final InitDataObject initDataObject = mock(InitDataObject.class);
         final User user = new User();
         final Host host = getSite().get(0);
+        final PaginationUtil paginationUtil = mock(PaginationUtil.class);
 
         Config.CONTEXT = context;
         Map<String, Object> sessionAttributes = map(WebKeys.CONTENTLET_LAST_SEARCH, "mock mock mock mock");
@@ -310,7 +207,7 @@ public class SiteResourceTest extends UnitTestBase {
         );
 
         SiteResource siteResource =
-                new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
+                new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI, paginationUtil);
 
         Response response1 = siteResource.switchSite(request, "48190c8c-42c4-46af-8d1a-0cd5db894798");
         System.out.println(response1);
@@ -342,7 +239,8 @@ public class SiteResourceTest extends UnitTestBase {
         final Host currentSite = siteList.get(0);
         final String currentSiteId = currentSite.getIdentifier();
         final WebResource webResource = RestUtilTest.getMockWebResource( user, request );
-        
+        final PaginationUtil paginationUtil = mock(PaginationUtil.class);
+
         final HostAPI hostAPI = mock(HostAPI.class);
         when( hostAPI.find(currentSiteId, user, false) ).thenReturn( currentSite );
         when( hostAPI.count(user, false) ).thenReturn( sitesTotalRecords );
@@ -353,7 +251,7 @@ public class SiteResourceTest extends UnitTestBase {
                 .thenReturn( currentSite.getIdentifier() );
 
         final SiteResource siteResource =
-                new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI);
+                new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI, paginationUtil);
         final Response response = siteResource.currentSite(request);
 
         RestUtilTest.verifySuccessResponse(response);
