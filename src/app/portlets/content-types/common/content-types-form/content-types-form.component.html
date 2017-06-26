@@ -35,8 +35,9 @@
                 </div>
                 <div class="form__group">
                     <label for="content-type-form-workflow" class="form__label">{{i18nMessages['Workflow']}}</label>
-                    <p-dropdown [options]="workflowOptions" id="content-type-form-workflow" name="workflow" formControlName="workflow"></p-dropdown>
+                    <p-dropdown [options]="workflowOptions" [style]="{'min-width':'90px'}" id="content-type-form-workflow" name="workflow" formControlName="workflow"></p-dropdown>
                 </div>
+                <span id="field-workflow-hint" class="form__group-hint" *ngIf="form.get('workflow').disabled">{{i18nMessages['Only-Default-Scheme-is-available-in-Community']}}</span>
             </div>
             <div class="ui-g-6">
                 <div class="form__group" *ngIf="isEditMode">

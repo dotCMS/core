@@ -28,6 +28,7 @@ export class ContentTypesEditComponent extends BaseComponent {
     private contentTypeIcon: string;
     private data: any;
     private readyToAddFields = false;
+    private licenseInfo: any;
 
     constructor(messageService: MessageService, private route: ActivatedRoute,
         private crudService: CrudService, public router: Router, private stringUtils: StringUtils,

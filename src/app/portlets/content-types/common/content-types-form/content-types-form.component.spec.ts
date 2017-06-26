@@ -5,6 +5,8 @@ import { ContentTypesFormComponent } from './content-types-form.component';
 import { DebugElement, SimpleChange } from '@angular/core';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DropdownModule, OverlayPanelModule, ButtonModule, InputTextModule, TabViewModule } from 'primeng/primeng';
+import { DotcmsConfig } from '../../../../api/services/system/dotcms-config';
+import { Observable } from 'rxjs/Observable';
 import { FieldValidationMessageModule } from '../../../../view/components/_common/field-validation-message/file-validation-message.module';
 import { MessageService } from '../../../../api/services/messages-service';
 import { MockMessageService } from '../../../../test/message-service.mock';
@@ -50,6 +52,7 @@ describe('ContentTypesFormComponent', () => {
             ],
             providers: [
                 { provide: MessageService, useValue: messageServiceMock },
+                DotcmsConfig,
             ]
         });
 
@@ -64,8 +67,43 @@ describe('ContentTypesFormComponent', () => {
         });
     }));
 
+    it('should show workflow if the license its diferent to comunity(true)', async(() => {
+        let dotcmsConfig = fixture.debugElement.injector.get(DotcmsConfig);
+
+        spyOn(dotcmsConfig, 'getConfig').and.returnValue(Observable.of({
+            license: {isCommunity: true}
+        }).delay(100));
+
+        fixture.detectChanges();
+        fixture.whenStable().then(() => {
+            fixture.detectChanges();
+            let workflowMsg = de.query(By.css('#field-workflow-hint'));
+            expect(workflowMsg).not.toBeNull();
+            expect(comp.form.get('workflow').disabled).toBeTruthy();
+
+        });
+    }));
+
+    it('should show workflow if the license its diferent to comunity(false)', async(() => {
+        let dotcmsConfig = fixture.debugElement.injector.get(DotcmsConfig);
+
+        spyOn(dotcmsConfig, 'getConfig').and.returnValue(Observable.of({
+            license: {isCommunity: false}
+        }).delay(100));
+
+        fixture.detectChanges();
+        fixture.whenStable().then(() => {
+            fixture.detectChanges();
+            let workflowMsg = de.query(By.css('#field-workflow-hint'));
+            expect(workflowMsg).toBeNull();
+            expect(comp.form.get('workflow').disabled).toBeFalsy();
+
+        });
+    }));
+
     it('should focus on the name field on load', async(() => {
         let nameDebugEl: DebugElement = fixture.debugElement.query(By.css('#content-type-form-name'));
+
         spyOn(nameDebugEl.nativeElement, 'focus');
 
         fixture.detectChanges();
