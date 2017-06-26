@@ -287,8 +287,6 @@ public class WebKeys {
 
 	public static final String SESSION_LISTENER = "SESSION_LISTENER";
 
-	public static final String SHARED_SESSION_ID = "SHARED_SESSION_ID";
-
 	public static final String SHOPPING_CATEGORIES = "SHOPPING_CATEGORIES";
 
 	public static final String SHOPPING_CATEGORY = "SHOPPING_CATEGORY";
