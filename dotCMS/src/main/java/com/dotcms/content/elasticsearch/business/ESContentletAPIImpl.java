@@ -495,7 +495,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletStateException("Only the working version can be published");
 
         // writes the contentlet object to a file
-        HibernateUtil.addCommitListener( new FlushCacheRunnable() {
+        HibernateUtil.addCommitListener( new DotRunnable() {
             public void run () {
                 try {
                     indexAPI.addContentToIndex(contentlet, true, true);
