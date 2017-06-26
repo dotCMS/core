@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 /**
- * Provides all the utility methods used by the {@link SiteBrowserResource}
+ * Provides all the utility methods used by the {@link SiteResource}
  * class to provide the required data to the UI layer or any other type of
  * client.
  *
@@ -152,58 +152,6 @@ public class SiteHelper implements Serializable {
 		}
 		return selectedSite;
 	}
-	
-	/**
-	 * Returns a subset of the list of sites that the given user has access to
-	 * by query, page and limit 
-	 * .
-	 *
-	 * @param showArchived
-	 *            - Is set to {@code true}, archived sites will be returned.
-	 *            Otherwise, set to {@code false}.
-	 * @param user
-	 *            - The {@link User} performing this action.
-	 * @param filter
-	 *            - (Optional) If specified, returns the sites whose name starts
-	 *            with the value of the {@code filter} variable.
-	 *            
-	 * @param currentPage
-	 *           - indicate the page to obtain the subset of sites to be returned.
-	 *           
-	 * @param sitesPerPage
-	 *           - indicates how many site should be included in the subset to be returned.
-	 *            
-	 * @param respectFrontendRoles
-	 *            -
-	 * @return The list of sites that the given user has permissions to access.
-	 * @throws DotDataException
-	 *             An error occurred when retrieving the sites' data.
-	 * @throws DotSecurityException
-	 *             A system error occurred.
-	 */
-    public Map<String,Object> getPaginatedOrderedSites(final boolean showArchived, final User user, final String filter, final int currentPage, final int perPage, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-    	final String sanitizedFilter = filter != null && !filter.equals("all") ? filter : StringUtils.EMPTY;
-    	
-    	Map<String, Object> results = new HashMap<String,Object>(); 
-    	
-    	int minIndex = PaginationUtil.getMinIndex(currentPage, perPage);
-    	int maxIndex = PaginationUtil.getMaxIndex(currentPage, perPage);
-    	
-    	PaginatedArrayList<Host> hosts = this.hostAPI.search(sanitizedFilter, showArchived, Boolean.FALSE, perPage, minIndex, user, respectFrontendRoles);
-
-    	int totalCount = (int)hosts.getTotalResults();
-        
-        if((minIndex + perPage) >= totalCount){
-        	maxIndex = totalCount;
-        }
-        
-		results.put(TOTAL_SITES, totalCount);
-    	results.put(RESULTS, hosts);
-    	results.put(HAS_NEXT, maxIndex < totalCount);
-    	results.put(HAS_PREVIOUS, minIndex > 0);
-    	return results;
-    	
-    }
 
 	/**
 	 * Return the number of sites

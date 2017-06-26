@@ -766,6 +766,12 @@
 		<portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
 	</portlet>
 
+	<portlet>
+		<portlet-name>content-types-create-edit</portlet-name>
+		<display-name>Create/Edit Content Types</display-name>
+		<portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+	</portlet>
+
 	<custom-window-state>
 		<window-state>exclusive</window-state>
 	</custom-window-state>

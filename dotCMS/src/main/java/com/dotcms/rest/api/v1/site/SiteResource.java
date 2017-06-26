@@ -30,6 +30,8 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.I18NUtil;
 import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.pagination.HostPaginator;
+import com.dotcms.util.pagination.Paginator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
@@ -56,21 +58,26 @@ public class SiteResource implements Serializable {
     private final WebResource webResource;
     private final SiteHelper siteHelper;
     private final I18NUtil i18NUtil;
+    private final PaginationUtil paginationUtil;
 
     public SiteResource() {
         this(new WebResource(),
                 SiteHelper.getInstance(),
-                I18NUtil.INSTANCE, APILocator.getUserAPI());
+                I18NUtil.INSTANCE, APILocator.getUserAPI(),
+                new PaginationUtil(new HostPaginator()));
     }
 
     @VisibleForTesting
     public SiteResource(final WebResource webResource,
                                final SiteHelper siteHelper,
-                               final I18NUtil i18NUtil, final UserAPI userAPI) {
+                               final I18NUtil i18NUtil,
+                               final UserAPI userAPI,
+                               final PaginationUtil paginationUtil) {
         this.webResource = webResource;
         this.siteHelper  = siteHelper;
         this.i18NUtil    = i18NUtil;
         this.userAPI = userAPI;
+        this.paginationUtil = paginationUtil;
     }
 
 	/**
@@ -96,7 +103,7 @@ public class SiteResource implements Serializable {
         Response response = null;
         final InitDataObject initData = this.webResource.init(null, true, req, true, null);
         final User user = initData.getUser();
-        final HttpSession session = req.getSession();
+
         try {
 			
         	long siteCount = siteHelper.getSitesCount(user);
@@ -119,35 +126,21 @@ public class SiteResource implements Serializable {
                                 @QueryParam(PaginationUtil.FILTER)   final String filterParam,
                                 @QueryParam(PaginationUtil.ARCHIVED) final boolean showArchived,
                                 @QueryParam(PaginationUtil.PAGE) final int page,
-                                @QueryParam(PaginationUtil.COUNT) final int count
+                                @QueryParam(PaginationUtil.PER_PAGE) final int perPage
                                 ) {
 
         Response response = null;
         final InitDataObject initData = this.webResource.init(null, true, req, true, null);
         final User user = initData.getUser();
-        final String filter;
-        final Map<String, Object> paginatedSites;
+
+        String filter = (null != filterParam && filterParam.endsWith(NO_FILTER))?
+                filterParam.substring(0, filterParam.length() - 1):
+                (null != filterParam)? filterParam: StringUtils.EMPTY;
+        final String sanitizedFilter = filter != null && !filter.equals("all") ? filter : StringUtils.EMPTY;
 
         try {
-
-            Locale locale = LocaleUtil.getLocale(user, req);
-
-            filter = (null != filterParam && filterParam.endsWith(NO_FILTER))?
-                    filterParam.substring(0, filterParam.length() - 1):
-                    (null != filterParam)? filterParam: StringUtils.EMPTY;
-
-                    paginatedSites = siteHelper.getPaginatedOrderedSites(showArchived, user, filter, page, count, Boolean.FALSE);
-        			
-        			response = Response.ok(new ResponseEntityView
-                    (map(   "sites",         paginatedSites
-                            //,"hostManagerUrl", getHostManagerUrl(req, this.layoutAPI.loadLayoutsForUser(user)) // NOTE: this is not needed yet.
-                            ),
-                     this.i18NUtil.getMessagesMap(locale, "select-host",
-                         "select-host-nice-message", "Invalid-option-selected",
-                         "manage-hosts", "cancel", "Change-Host"))
-                    ).build(); // 200
+            response = paginationUtil.getPage(req, user, sanitizedFilter, showArchived, page, perPage);
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
-
             response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 

@@ -4,8 +4,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -22,10 +25,16 @@ import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
+import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.RestUtilTest;
+import com.dotcms.rest.WebResource;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.pagination.OrderDirection;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -52,8 +61,8 @@ public class ContentTypeResourceTest {
 		);
 
 		// Test Content Type Creation
-		assertResponse_OK(
-			response = resource.createType(getHttpRequest(), JSON_CONTENT_TYPE_CREATE)
+		RestUtilTest.verifySuccessResponse(
+				response = resource.createType(getHttpRequest(), JSON_CONTENT_TYPE_CREATE)
 		);
 
 		try {
@@ -64,7 +73,7 @@ public class ContentTypeResourceTest {
 			);
 
 			// Test Content Type Retrieval
-			assertResponse_OK(
+			RestUtilTest.verifySuccessResponse(
 				response = resource.getType((String) fieldMap.get("id"), getHttpRequest())
 			);
 
@@ -84,7 +93,7 @@ public class ContentTypeResourceTest {
 			);
 
 			// Test Content Type Update
-			assertResponse_OK(
+			RestUtilTest.verifySuccessResponse(
 				response = resource.updateType(
 					(String) fieldMap.get("id"),
 					JSON_CONTENT_TYPE_UPDATE.replace("CONTENT_TYPE_ID", (String) fieldMap.get("id")),
@@ -99,7 +108,7 @@ public class ContentTypeResourceTest {
 			);
 
 			// Test Content Type Retrieval
-			assertResponse_OK(
+			RestUtilTest.verifySuccessResponse(
 				response = resource.getType((String) fieldMap.get("id"), getHttpRequest())
 			);
 
@@ -111,7 +120,7 @@ public class ContentTypeResourceTest {
 
 		} finally {
 			// Test Content Type Deletion
-			assertResponse_OK(
+			RestUtilTest.verifySuccessResponse(
 				response = resource.deleteType(
 					(String) fieldMap.get("id"), getHttpRequest()
 				)
@@ -127,34 +136,35 @@ public class ContentTypeResourceTest {
 
 	@Test
 	public void getContentTypes(){
-		Response response = null;
-		final ContentTypeResource resource = new ContentTypeResource();
+		final HttpServletRequest request  = mock(HttpServletRequest.class);
+		final WebResource webResource = mock(WebResource.class);
+		final InitDataObject initDataObject = mock(InitDataObject.class);
+		final User user = new User();
+		when(initDataObject.getUser()).thenReturn(user);
+		when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
 
-		assertResponse_OK(
-				response = resource.getContentTypes(getHttpRequest(), -1, -1, null, "name")
+		String filter = "filter";
+		boolean showArchived = true;
+		int page = 3;
+		int perPage = 4;
+		String orderBy = "name";
+		OrderDirection direction = OrderDirection.ASC;
+
+		List<ContentType> contentTypes = new ArrayList<>();
+		Response responseExpected = Response.ok(new ResponseEntityView(contentTypes)).build();
+
+		final PaginationUtil paginationUtil = mock(PaginationUtil.class);
+		when(paginationUtil.getPage(request, user, filter, showArchived, page, perPage, orderBy, direction.toString())).thenReturn(responseExpected);
+
+
+		final ContentTypeResource resource = new ContentTypeResource(new ContentTypeHelper(), webResource, paginationUtil);
+		Response response = null;
+
+		RestUtilTest.verifySuccessResponse(
+				response = resource.getContentTypes(request, filter, showArchived, page, perPage, orderBy, direction.toString())
 		);
 
-		Map entity = (Map) ((ResponseEntityView) response.getEntity()).getEntity();
-		assertEquals(2, entity.size());
-
-		long total = (long) entity.get("totalRecords");
-		List contentTypes = (List) entity.get("items");
-
-		assertEquals(total, contentTypes.size());
-
-		//limit and offset test
-		response = resource.getContentTypes(getHttpRequest(), (int) (total/2), 5, null, "name");
-		Map lastEntity = (Map) ((ResponseEntityView) response.getEntity()).getEntity();
-		List lastContentTypes = ((List) lastEntity.get("items"));
-		assertEquals((int) (total/2), lastContentTypes.size());
-		assertEquals(contentTypes.get(5), lastContentTypes.get(0));
-
-		//orderby test
-		response = resource.getContentTypes(getHttpRequest(), -1, -1, null, "name-desc");
-		lastEntity = (Map) ((ResponseEntityView) response.getEntity()).getEntity();
-		lastContentTypes = ((List) lastEntity.get("items"));
-		assertEquals(total, lastContentTypes.size());
-		assertEquals(contentTypes.get(contentTypes.size()-1), lastContentTypes.get(0));
+		assertEquals(responseExpected.getEntity(), response.getEntity());
 	}
 
 	private static String JSON_CONTENT_TYPE_CREATE =
@@ -252,18 +262,6 @@ public class ContentTypeResourceTest {
 
 		assertEquals(7, contentType.fields().size());
 		assertTrue(contentType.fieldMap().get("theField1") instanceof TextField);
-	}
-
-
-	private static void assertResponse_OK(Response response){
-		assertNotNull(response);
-		assertEquals(200, response.getStatus());
-		assertNotNull(response.getEntity());
-		assertTrue(response.getEntity() instanceof ResponseEntityView);
-		assertTrue(
-			(ResponseEntityView.class.cast(response.getEntity()).getErrors() == null) ||
-			ResponseEntityView.class.cast(response.getEntity()).getErrors().isEmpty()
-		);
 	}
 
 	private static void assertResponse_NOT_FOUND(Response response){
