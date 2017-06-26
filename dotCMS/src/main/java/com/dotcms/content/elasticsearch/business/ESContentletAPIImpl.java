@@ -40,6 +40,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.DotRunnable;
+import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -494,7 +495,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletStateException("Only the working version can be published");
 
         // writes the contentlet object to a file
-        indexAPI.addContentToIndex(contentlet, true, true);
+        HibernateUtil.addCommitListener( new FlushCacheRunnable() {
+            public void run () {
+                try {
+                    indexAPI.addContentToIndex(contentlet, true, true);
+                } catch (DotHibernateException e) {
+                    Logger.error( this, e.getMessage(), e );
+                }
+            }
+        } );
 
         // Publishes the files associated with the Contentlet
         List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
