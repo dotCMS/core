@@ -13,8 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
-import org.apache.tools.tar.TarEntry;
-import org.apache.tools.tar.TarInputStream;
+import org.apache.tools.tar.TarBuffer;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.publishing.remote.handler.BundleXMLascHandler;
@@ -49,6 +48,8 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.repackage.org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import com.dotcms.repackage.org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.exception.ExceptionUtils;
 import com.dotcms.rest.BundlePublisherResource;
@@ -58,6 +59,9 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.FileUtil;
 
 /**
  * This publisher will be in charge of retrieving the bundle, un-zipping it, and
@@ -156,6 +160,9 @@ public class BundlePublisher extends Publisher {
         }
 
         File folderOut = new File( bundlePath + bundleFolder );
+        if(folderOut.exists()){
+            FileUtil.deltree(folderOut);
+        }
         folderOut.mkdir();
 
         // Extract file to a directory
@@ -267,10 +274,12 @@ public class BundlePublisher extends Publisher {
 	 * @param fileName
 	 *            - The file name of the bundle.
 	 */
-    private void untar ( InputStream bundle, String path, String fileName ) {
-        TarEntry entry;
-        TarInputStream inputStream = null;
+    private void untar ( InputStream bundle, String path, String fileName ) throws DotPublishingException  {
+        TarArchiveEntry entry;
+        TarArchiveInputStream inputStream = null;
         FileOutputStream outputStream = null;
+        
+        File baseBundlePath = new File(ConfigUtils.getBundlePath());
 
         try {
         	//Clean the bundler folder if exist to clean dirty data
@@ -281,28 +290,45 @@ public class BundlePublisher extends Publisher {
         	}
             // get a stream to tar file
             InputStream gstream = new GZIPInputStream( bundle );
-            inputStream = new TarInputStream( gstream );
+            inputStream =
+                    new TarArchiveInputStream(gstream, TarBuffer.DEFAULT_BLKSIZE, TarBuffer.DEFAULT_RCDSIZE,
+                        UtilMethods.getCharsetConfiguration());;
 
             // For each entry in the tar, extract and save the entry to the file
             // system
-            while ( null != (entry = inputStream.getNextEntry()) ) {
+            while ( null != (entry = inputStream.getNextTarEntry()) ) {
                 // for each entry to be extracted
                 int bytesRead;
 
-                String pathWithoutName = path.substring( 0,
-                        path.indexOf( fileName ) );
+                String pathWithoutName = path.substring(0, path.indexOf(fileName));
+                File fileOrDir = new File(pathWithoutName + entry.getName());
+
+                // if the logFile is outside of of the logFolder, die
+                if ( !fileOrDir.getCanonicalPath().startsWith(baseBundlePath.getCanonicalPath())) {
+
+                    SecurityLogger.logInfo(this.getClass(),  "Invalid Bundle writing file outside of bundlePath"  );
+                    SecurityLogger.logInfo(this.getClass(),  " Bundle path "  + baseBundlePath );
+                    SecurityLogger.logInfo(this.getClass(),  " Evil File"  + fileOrDir );
+                    throw new DotPublishingException("Bundle trying to write outside of proper path:" + fileOrDir);
+                }
 
                 // if the entry is a directory, create the directory
                 if ( entry.isDirectory() ) {
-                    File fileOrDir = new File( pathWithoutName + entry.getName() );
-                    fileOrDir.mkdir();
+                    fileOrDir.mkdirs();
                     continue;
+                }
+
+                // We will ignore symlinks
+                if(entry.isLink() || entry.isSymbolicLink()){
+                    SecurityLogger.logInfo(this.getClass(),  "Invalid Bundle writing symlink (or some non-file) inside a bundle"  );
+                    SecurityLogger.logInfo(this.getClass(),  " Bundle path "  + baseBundlePath );
+                    SecurityLogger.logInfo(this.getClass(),  " Evil entry"  + entry );
+                    throw new DotPublishingException("Bundle contains a symlink:" + fileOrDir);
                 }
 
                 // write to file
                 byte[] buf = new byte[1024];
-                outputStream = new FileOutputStream( pathWithoutName
-                        + entry.getName() );
+                outputStream = new FileOutputStream(pathWithoutName + entry.getName());
                 while ( (bytesRead = inputStream.read( buf, 0, 1024 )) > -1 )
                     outputStream.write( buf, 0, bytesRead );
                 try {
@@ -315,7 +341,7 @@ public class BundlePublisher extends Publisher {
             }// while
 
         } catch ( Exception e ) {
-            e.printStackTrace();
+            throw new DotPublishingException(e.getMessage(),e);
         } finally { // close your streams
             if ( inputStream != null ) {
                 try {
