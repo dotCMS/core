@@ -44,6 +44,7 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
 
 public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
@@ -378,26 +379,30 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		return newBody.toString();
 	}
 
-	public void updateParseContainerSyntax(Template template) {
-		String tb = template.getBody();
-		Perl5Matcher matcher = (Perl5Matcher) localP5Matcher.get();
-		String oldParse;
-		String newParse;
-    	while(matcher.contains(tb, parseContainerPattern)){
-     		MatchResult match = matcher.getMatch();
-    		int groups = match.groups();
-     		for(int g=0;g<groups;g++){
-     			oldParse = match.group(g);
-     			if(matcher.contains(oldParse, oldContainerPattern)){
-     				MatchResult matchOld = matcher.getMatch();
-     				newParse = matchOld.group(0).trim();
-     				newParse = containerTag + newParse + "')";
-     				tb = StringUtil.replace(tb,oldParse,newParse);
-     			}
-     		}
-     		template.setBody(tb);
-    	}
-	}
+    public void updateParseContainerSyntax(Template template) {
+        String tb = template.getBody();
+        if(!UtilMethods.isSet(tb)){
+            template.setBody(StringPool.BLANK); 
+        }else{
+            Perl5Matcher matcher = (Perl5Matcher) localP5Matcher.get();
+            String oldParse;
+            String newParse;
+            while(matcher.contains(tb, parseContainerPattern)){
+                MatchResult match = matcher.getMatch();
+                int groups = match.groups();
+                for(int g=0;g<groups;g++){
+                    oldParse = match.group(g);
+                    if(matcher.contains(oldParse, oldContainerPattern)){
+                        MatchResult matchOld = matcher.getMatch();
+                        newParse = matchOld.group(0).trim();
+                        newParse = containerTag + newParse + "')";
+                        tb = StringUtil.replace(tb,oldParse,newParse);
+                    }
+                }
+                template.setBody(tb);
+            }
+        }
+    }
 
 	@SuppressWarnings("unchecked")
 	private String getCopyTemplateName(String templateName, Host host) throws DotDataException {

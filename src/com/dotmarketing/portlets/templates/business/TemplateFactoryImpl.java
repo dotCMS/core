@@ -379,10 +379,14 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	}
 	
 	private List<String> getContainerIds(String templateBody) {
+	    List<String> ids = new LinkedList<String>();
+	    if(!UtilMethods.isSet(templateBody)){
+	        return ids;
+	    }
 		Pattern oldContainerReferencesRegex = Pattern.compile("#parse\\s*\\(\\s*\\$container([^\\s)]+)\\s*\\)");
 		Pattern newContainerReferencesRegex = Pattern.compile("#parseContainer\\s*\\(\\s*['\"]*([^'\")]+)['\"]*\\s*\\)");
 		Matcher matcher = oldContainerReferencesRegex.matcher(templateBody);
-		List<String> ids = new LinkedList<String>();
+		
 		while(matcher.find()) {
 			String containerId = matcher.group(1).trim();
 			if(!ids.contains(containerId))
