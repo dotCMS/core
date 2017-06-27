@@ -1,8 +1,7 @@
-<!--TODO: get rid of this let autoComplete when this is fixed: https://github.com/primefaces/primeng/issues/745-->
-<searchable-dropdown *ngIf="sitesCounter > 1"
+<searchable-dropdown        *ngIf="totalRecords > 1"
                             #searchableDropdown    
                             [data]="sitesCurrentPage"
-                            [totalRecords]="sitesCounter"
+                            [totalRecords]="paginationService.totalRecords"
                             [rows]="10"
                             [pageLinkSize] = "3"
                             labelPropertyName = "name"
@@ -13,4 +12,4 @@
                             class="site-selector__field">
 </searchable-dropdown>
 
-<h1 *ngIf="sitesCounter == 1" class="site-selector__title">{{currentSite ? currentSite.label : ''}}</h1>
+<h1 *ngIf="totalRecords == 1" class="site-selector__title">{{currentSite ? currentSite.name : ''}}</h1>

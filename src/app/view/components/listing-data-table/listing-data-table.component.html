@@ -1,13 +1,13 @@
 <action-header [selectedItems]="selectedItems" [options]="actionHeaderOptions">
-    <input #gf pInputText type="text" placeholder="{{i18nMessages['global-search']}}" [(ngModel)]="query"/>
+    <input #gf pInputText type="text" placeholder="{{i18nMessages['global-search']}}" [(ngModel)]="filter"/>
 </action-header>
 
 <p-dataTable [value]="items" 
-             [rows]="paginatorRows" 
+             [rows]="paginatorService.paginationPerPage" 
              [paginator]="true" 
-             [pageLinks]="paginatorLinks" 
+             [pageLinks]="paginatorService.maxLinksPage" 
              [lazy]="true"
-             [totalRecords]="totalRecords"
+             [totalRecords]="paginatorService.totalRecords"
              (onLazyLoad)="loadDataPaginationEvent($event)"
              [(selection)]="selectedItems"
              (onRowClick)="handleRowClick($event)"

@@ -1,4 +1,4 @@
-import { Response } from '@angular/http';
+import { Response, Headers } from '@angular/http';
 
 /**
  *
@@ -15,13 +15,19 @@ import { Response } from '@angular/http';
 export class ResponseView {
 
     private bodyJsonObject: any;
+    private headers: Headers;
 
     public constructor( private resp: Response ) {
         try {
             this.bodyJsonObject = resp.json();
-        }catch (e) {
+            this.headers = resp.headers;
+        } catch (e) {
             this.bodyJsonObject = {};
         }
+    }
+
+    public header(headerName: string): string {
+        return this.headers.get(headerName);
     }
 
     get i18nMessagesMap(): any{

@@ -126,12 +126,12 @@ export class ContentTypesPortletComponent extends BaseComponent {
             {
                 fieldName: 'name',
                 header: this.i18nMessages['Structure-Name'],
-                icon: (item: any): string => this.contentTypesInfoService.getIcon(item.type),
+                icon: (item: any): string => this.contentTypesInfoService.getIcon(item.baseType),
                 sortable: true,
                 width: '35%'
             },
             {
-                fieldName: 'velocityVarName',
+                fieldName: 'variable',
                 header: this.i18nMessages['Variable'],
                 width: '10%'
             },
@@ -146,7 +146,7 @@ export class ContentTypesPortletComponent extends BaseComponent {
                 width: '10%'
             },
             {
-                fieldName: 'mod_date',
+                fieldName: 'modDate',
                 format: 'date',
                 header: 'Last Edit Date',
                 sortable: true,
@@ -160,7 +160,7 @@ export class ContentTypesPortletComponent extends BaseComponent {
     }
 
     private editContentType($event): void {
-        this.router.navigate([`edit/${$event.data.identifier}`], {
+        this.router.navigate([`edit/${$event.data.id}`], {
             relativeTo: this.route
         });
     }

@@ -13,6 +13,8 @@ import { MessageService } from '../../../api/services/messages-service';
 import { MockMessageService } from '../../../test/message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Observable } from 'rxjs/Observable';
+import { PaginatorService } from '../../..//api/services/paginator';
+import { tick, fakeAsync } from '@angular/core/testing';
 
 describe('Listing Component', () => {
 
@@ -20,6 +22,7 @@ describe('Listing Component', () => {
   let fixture: ComponentFixture<ListingDataTableComponent>;
   let de: DebugElement;
   let el: HTMLElement;
+  let url = '/test/';
 
   beforeEach(async(() => {
     let messageServiceMock = new MockMessageService({
@@ -33,7 +36,7 @@ describe('Listing Component', () => {
         ]) ],
         providers: [
             {provide: MessageService, useValue: messageServiceMock},
-            CrudService, FormatDateService
+            CrudService, FormatDateService, PaginatorService
         ]
     });
 
@@ -44,16 +47,10 @@ describe('Listing Component', () => {
     // query for the title <h1> by CSS element selector
     de = fixture.debugElement.query(By.css('p-dataTable'));
     el = de.nativeElement;
-
-    let dotcmsConfig = fixture.debugElement.injector.get(DotcmsConfig);
-    spyOn(dotcmsConfig, 'getConfig').and.returnValue(Observable.of({
-        paginatorLinks: 2,
-        paginatorRows: 3
-    }));
-
   }));
 
   it('renderer basic datatable component', () => {
+
     let items = [
         {field1: 'item1-value1', field2: 'item1-value2', field3: 'item1-value3'},
         {field1: 'item2-value1', field2: 'item2-value2', field3: 'item2-value3'},
@@ -64,11 +61,16 @@ describe('Listing Component', () => {
         {field1: 'item7-value1', field2: 'item7-value2', field3: 'item7-value3'}
     ];
 
-    let crudService = fixture.debugElement.injector.get(CrudService);
-    spyOn(crudService, 'loadData').and.returnValue(Observable.of({
-        items: items,
-        totalRecords: items.length,
-    }));
+    let paginatorService = fixture.debugElement.injector.get(PaginatorService);
+    paginatorService.paginationPerPage = 4;
+    paginatorService.maxLinksPage = 2;
+    paginatorService.totalRecords = items.length;
+
+    spyOn(paginatorService, 'getWithOffset').and.callFake(() => {
+        return Observable.create(observer => {
+            observer.next(items);
+        });
+    });
 
     comp.columns = [
         {fieldName: 'field1', header: 'Field 1', width: '45%'},
@@ -77,13 +79,21 @@ describe('Listing Component', () => {
     ];
 
     comp.ngOnChanges({
-        columns: new SimpleChange(null, comp.columns, true)
+        columns: new SimpleChange(null, comp.columns, true),
+        url: new SimpleChange(null, url, true)
+    });
+
+    let dataList = fixture.debugElement.query(By.css('p-dataTable'));
+    let dataListComponentInstance = dataList.componentInstance;
+
+    dataListComponentInstance.onLazyLoad.emit({
+      first: 0
     });
 
     fixture.detectChanges();
 
     let rows = el.querySelectorAll('tr');
-    expect(4).toEqual(rows.length);
+    expect(5).toEqual(rows.length);
 
     let headers = rows[0].querySelectorAll('th');
     expect(4).toEqual(headers.length);
@@ -104,6 +114,8 @@ describe('Listing Component', () => {
             });
         }
     });
+
+    expect(url).toEqual(paginatorService.url);
   });
 
   it('renderer with format date column', () => {
@@ -118,11 +130,15 @@ describe('Listing Component', () => {
         {field1: 'item7-value1', field2: 'item7-value2', field3: 1496178807000}
     ];
 
-    let crudService = fixture.debugElement.injector.get(CrudService);
-    spyOn(crudService, 'loadData').and.returnValue(Observable.of({
-        items: items,
-        totalRecords: items.length,
-    }));
+    let paginatorService = fixture.debugElement.injector.get(PaginatorService);
+    paginatorService.paginationPerPage = 4;
+    paginatorService.maxLinksPage = 2;
+    paginatorService.totalRecords = items.length;
+    spyOn(paginatorService, 'getWithOffset').and.callFake(() => {
+        return Observable.create(observer => {
+            observer.next(items);
+        });
+    });
 
     comp.columns = [
         {fieldName: 'field1', header: 'Field 1', width: '45%'},
@@ -131,16 +147,23 @@ describe('Listing Component', () => {
     ];
 
     comp.ngOnChanges({
-        columns: new SimpleChange(null, comp.columns, true)
+        columns: new SimpleChange(null, comp.columns, true),
+        url: new SimpleChange(null, url, true)
+    });
+
+    let dataList = fixture.debugElement.query(By.css('p-dataTable'));
+    let dataListComponentInstance = dataList.componentInstance;
+    dataListComponentInstance.onLazyLoad.emit({
+      first: 0
     });
 
     fixture.detectChanges();
 
     let rows = el.querySelectorAll('tr');
-    expect(4).toEqual(rows.length);
+    expect(5).toEqual(rows.length, 'tr');
 
     let headers = rows[0].querySelectorAll('th');
-    expect(4).toEqual(headers.length);
+    expect(4).toEqual(headers.length, 'th');
 
     comp.columns.forEach((col, index ) =>
     expect(!index ? '' : comp.columns[index - 1].header).toEqual(headers[index].querySelector('span').textContent));
@@ -158,5 +181,7 @@ describe('Listing Component', () => {
             });
         }
     });
+
+    expect(url).toEqual(paginatorService.url);
   });
 });

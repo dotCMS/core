@@ -43,16 +43,13 @@ describe('Site Service', () => {
         });
     });
 
-    it('should tigger switchSite and sitesCounter$', fakeAsync(() => {
+    it('should tigger switchSite', fakeAsync(() => {
         let currentCounter = 5;
         let newCurrentSite: Site;
-        let newCurrentCounter: number;
-
         let loginService: LoginServiceMock = this.injector.get(LoginService);
 
         this.siteService = this.injector.get(SiteService);
         this.siteService.switchSite$.subscribe( site => newCurrentSite = site);
-        this.siteService.sitesCounter$.subscribe( counter => newCurrentCounter = counter);
 
         let mockResponse = {
                 entity: {
@@ -107,13 +104,9 @@ describe('Site Service', () => {
         dotcmsEventsService.tiggerSubscribeTo('ARCHIVE_SITE', data);
         this.lastPaginateSiteConnection.mockRespond(new Response(new ResponseOptions({
             body: JSON.stringify({
-                entity: {
-                    sites: {
-                        results: [
-                            newCurrentSite
-                        ]
-                    }
-                }
+                entity: [
+                    newCurrentSite
+                ]
             })
         })));
         respondSwitchSiteRequest.bind(this)();

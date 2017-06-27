@@ -46,6 +46,7 @@ import { UserModel } from './api/auth/UserModel';
 
 // ROUTING
 import { LocationStrategy, HashLocationStrategy } from '@angular/common';
+import { PaginatorService } from './api/services/paginator';
 
 // Environment Providers
 const RULES_ENGINE_SERVICES = [
@@ -66,9 +67,9 @@ let PROVIDERS: any[] = [
   BundleService,
   ColorUtil,
   Config,
-  CoreWebService,
   ConfirmationService,
   ContentTypesInfoService,
+  CoreWebService,
   DotRouterService,
   DotcmsConfig,
   DotcmsEventsService,
@@ -81,6 +82,7 @@ let PROVIDERS: any[] = [
   MessageService,
   NotLicensedService,
   NotificationsService,
+  PaginatorService,
   RoutingPrivateAuthService,
   RoutingPublicAuthService,
   RoutingService,

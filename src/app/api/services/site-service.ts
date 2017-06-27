@@ -36,8 +36,7 @@ export class SiteService {
             let siteToExclude = eventTypeWrapper.data.data.identifier;
 
             if (siteToExclude === this.selectedSite.identifier) {
-
-                this.paginateSites('', false, 1, 1).subscribe( sites => this.switchSite(sites[0]));
+                this.getOneSite().subscribe( site => this.switchSite(site));
             }
         });
 
@@ -55,12 +54,12 @@ export class SiteService {
     }
 
     /**
-     * Observable tigger when the total number of sites change.
+     * Observable tigger when the number of sites is changed
      * @readonly
-     * @type {Observable<number>}
+     * @type {Observable<Site>}
      * @memberof SiteService
      */
-    get sitesCounter$(): Observable<number>{
+    get sitesCounter$(): Observable<number> {
         return this._sitesCounter$.asObservable();
     }
 
@@ -72,25 +71,6 @@ export class SiteService {
      */
     get currentSite(): Site {
         return this.selectedSite;
-    }
-
-    /**
-     * Return the sites available for an user paginated and filtered.
-     *
-     * @param filter (String) Text to filter the site names
-     * @param archived (Boolean) Indicate if the results should include the archived sites
-     * @param page (Int) Number of the page to display
-     * @param count (Int) number of sites to show per page
-     * @returns {Observable<R>} return a map with the list of paginated sites and if there
-     * is a previous and next page that can be displayed
-     */
-    paginateSites(filter: string, archived: boolean, page: number, count: number): Observable<Site[]> {
-        return this.coreWebService.requestView({
-            method: RequestMethod.Get,
-            url: `${this.urls.sitesUrl}?filter=${filter}&archived=${archived}&page=${page}&count=${count}`,
-        }).map(response => {
-            return response.entity.sites.results;
-        });
     }
 
     /**
@@ -118,16 +98,19 @@ export class SiteService {
             url: this.urls.currentSiteUrl,
         }).pluck('entity')
         .subscribe(entity => {
-            this.setSitesCounter(entity['totalRecords']);
+            this._sitesCounter$.next(entity['totalRecords']);
             this.setCurrentSite(entity['currentSite']);
         });
     }
 
-    private setSitesCounter(counter: number): void {
-        this.sitesCounter = counter;
-        this._sitesCounter$.next(this.sitesCounter);
+    private getOneSite(): Observable<Site> {
+        return this.coreWebService.requestView({
+            method: RequestMethod.Get,
+            url: this.urls.sitesUrl,
+        }).map(response => {
+            return response.entity[0];
+        });
     }
-
 }
 
 export interface Site {

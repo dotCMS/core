@@ -1,5 +1,5 @@
 import { ComponentFixture, async } from '@angular/core/testing';
-import { DebugElement } from '@angular/core';
+import { DebugElement, ElementRef } from '@angular/core';
 import { SiteSelectorComponent } from './dot-site-selector.component';
 import { By } from '@angular/platform-browser';
 import { DOTTestBed } from '../../../test/dot-test-bed';
@@ -16,6 +16,7 @@ import { Observable } from 'rxjs/Observable';
 import { DotcmsConfig } from '../../../api/services/system/dotcms-config';
 import { SearchableDropdownComponent } from '../_common/searchable-dropdown/component/searchable-dropdown.component';
 import { fakeAsync, tick } from '@angular/core/testing';
+import { PaginatorService } from '../../../api/services/paginator';
 
 describe('Site Selector Component', () => {
 
@@ -23,9 +24,6 @@ describe('Site Selector Component', () => {
   let fixture: ComponentFixture<SiteSelectorComponent>;
   let de: DebugElement;
   let el: HTMLElement;
-
-  let paginatorRows = 3;
-  let paginatorLinks = 2;
 
   beforeEach(async(() => {
 
@@ -38,7 +36,7 @@ describe('Site Selector Component', () => {
         ],
         providers: [
           {provide: SiteService, useValue: siteServiceMock},
-          IframeOverlayService
+          IframeOverlayService, PaginatorService
         ]
     });
 
@@ -46,22 +44,29 @@ describe('Site Selector Component', () => {
     comp = fixture.componentInstance;
     de = fixture.debugElement;
     el = de.nativeElement;
-
-    let dotcmsConfig = de.injector.get(DotcmsConfig);
-    spyOn(dotcmsConfig, 'getConfig').and.returnValue(Observable.of({
-        paginatorLinks: paginatorLinks,
-        paginatorRows: paginatorRows
-    }));
   }));
 
   it('Should call paginateSites', () => {
+    let site1 = {
+      identifier: 1,
+      name: 'Site 1'
+    };
+
+    let site2 = {
+      identifier: 2,
+      name: 'Site 2'
+    };
+
     let siteService = de.injector.get(SiteService);
-    spyOn(siteService, 'paginateSites').and.returnValue(Observable.of([]));
-    spyOn(siteService, 'switchSite$').and.returnValue(Observable.of({}));
+    spyOn(siteService, 'switchSite$').and.returnValue(Observable.of(site1));
+
+    let paginatorService = de.injector.get(PaginatorService);
+    spyOn(paginatorService, 'getPage').and.returnValue(Observable.of([site1, site2]));
 
     comp.ngOnInit();
 
-    expect(siteService.paginateSites).toHaveBeenCalledWith('', false, 1, paginatorRows);
+    expect(paginatorService.getPage).toHaveBeenCalledWith(1);
+
   });
 
   it('Should change Page', fakeAsync(() => {
@@ -69,8 +74,11 @@ describe('Site Selector Component', () => {
     let filter = 'filter';
     let page = 1;
 
+    let paginatorService = de.injector.get(PaginatorService);
+    paginatorService.totalRecords = 2;
+    spyOn(paginatorService, 'getPage').and.returnValue(Observable.of([]));
+
     let siteService = de.injector.get(SiteService);
-    spyOn(siteService, 'paginateSites').and.returnValue(Observable.of([]));
     spyOn(siteService, 'switchSite$').and.returnValue(Observable.of({}));
 
     comp.ngOnInit();
@@ -81,13 +89,14 @@ describe('Site Selector Component', () => {
     searchableDropdownComponent.pageChange.emit({
       filter: filter,
       first: 0,
-      page: 1,
+      page: 2,
       pageCount: 0,
       rows: 0
     });
 
     tick();
-    expect(siteService.paginateSites).toHaveBeenCalledWith(filter, false, page + 1, paginatorRows);
+    expect(paginatorService.getPage).toHaveBeenCalledWith(1);
+    expect(paginatorService.getPage).toHaveBeenCalledWith(2);
   }));
 
   it('Should paginate when the filter change', fakeAsync(() => {
@@ -95,8 +104,11 @@ describe('Site Selector Component', () => {
     let filter = 'filter';
     let first = 2;
 
+    let paginatorService = de.injector.get(PaginatorService);
+    paginatorService.totalRecords = 2;
+    spyOn(paginatorService, 'getPage').and.returnValue(Observable.of([]));
+
     let siteService = de.injector.get(SiteService);
-    spyOn(siteService, 'paginateSites').and.returnValue(Observable.of([]));
     spyOn(siteService, 'switchSite$').and.returnValue(Observable.of({}));
 
     comp.ngOnInit();
@@ -108,6 +120,7 @@ describe('Site Selector Component', () => {
     comp.handleFilterChange(filter);
 
     tick();
-    expect(siteService.paginateSites).toHaveBeenCalledWith(filter, false, 1, paginatorRows);
+    expect(paginatorService.getPage).toHaveBeenCalledWith(1);
+    expect(paginatorService.filter).toEqual(filter);
   }));
 });

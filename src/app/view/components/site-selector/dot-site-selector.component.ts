@@ -8,6 +8,7 @@ import { AutoComplete } from 'primeng/primeng';
 import { IframeOverlayService } from '../../../api/services/iframe-overlay-service';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { SearchableDropdownComponent } from '../_common/searchable-dropdown/component';
+import { PaginatorService } from '../../../api/services/paginator';
 
 /**
  * It is dropdown of sites, it handle pagination and global search
@@ -18,11 +19,12 @@ import { SearchableDropdownComponent } from '../_common/searchable-dropdown/comp
 @Component({
     encapsulation: ViewEncapsulation.None,
     providers: [
+        PaginatorService,
         SearchableDropdownComponent,
         {
-        multi: true,
-        provide: NG_VALUE_ACCESSOR,
-        useExisting: forwardRef(() => SiteSelectorComponent)
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => SiteSelectorComponent)
         }
     ],
     selector: 'dot-site-selector-component',
@@ -39,34 +41,28 @@ export class SiteSelectorComponent implements ControlValueAccessor {
     public value: string;
     private currentSite: Site;
     private sitesCurrentPage: Site[];
-    private sitesCounter: number;
     private filteredSitesResults: Array<any>;
     private paginationPage = 1;
     private paginationPerPage: number;
     private paginatorLinks: number;
     private paginationQuery = '';
+    private totalRecords: number;
 
     propagateChange = (_: any) => {};
 
-    constructor(private siteService: SiteService, private config: DotcmsConfig, private iframeOverlayService: IframeOverlayService) {
+    constructor(private siteService: SiteService, private config: DotcmsConfig, private iframeOverlayService: IframeOverlayService,
+        private paginationService: PaginatorService) {
 
     }
 
     ngOnInit(): void {
-        this.config.getConfig().subscribe(configParams => {
-            this.paginationPerPage = configParams.paginatorRows;
-            this.paginatorLinks = configParams.paginatorLinks;
+        this.paginationService.url = 'v1/site';
+        this.paginateSites();
 
-            this.paginateSites();
-        });
-
-        this.siteService.sitesCounter$.subscribe(counter => {
-            this.sitesCounter = counter;
-        });
         this.currentSite = this.siteService.currentSite;
-        this.siteService.switchSite$.subscribe(site => {
-            this.writeValue(site.identifier);
-        });
+
+        this.siteService.switchSite$.subscribe(site => this.currentSite = site);
+        this.siteService.sitesCounter$.subscribe(nSites => this.totalRecords = nSites);
     }
 
     /**
@@ -84,7 +80,7 @@ export class SiteSelectorComponent implements ControlValueAccessor {
      * @memberof SiteSelectorComponent
      */
     handlePageChange(event): void {
-        this.paginateSites(event.filter, event.page + 1);
+        this.paginateSites(event.filter, event.page);
     }
 
     /**
@@ -94,9 +90,15 @@ export class SiteSelectorComponent implements ControlValueAccessor {
      * @memberof SiteSelectorComponent
      */
     paginateSites(filter = '',  page = 1): void {
-        this.siteService.paginateSites(filter, false, page, this.paginationPerPage).subscribe( sites => {
-            this.sitesCurrentPage = sites;
-            this.selectCurrentSite();
+        this.paginationService.filter = filter;
+        this.paginationService.getPage(page).subscribe( items => {
+            this.sitesCurrentPage = items;
+
+            if (this.currentSite) {
+                this.selectCurrentSite(this.currentSite.identifier);
+            }
+
+            this.totalRecords = this.totalRecords | this.paginationService.totalRecords;
         });
     }
 
@@ -118,7 +120,6 @@ export class SiteSelectorComponent implements ControlValueAccessor {
      */
     writeValue(value: string): void {
         this.value = value;
-        this.selectCurrentSite();
     }
 
     /**
@@ -132,7 +133,7 @@ export class SiteSelectorComponent implements ControlValueAccessor {
 
     registerOnTouched(): void {}
 
-    private selectCurrentSite(): void {
+    private selectCurrentSite(value: string): void {
         if (this.sitesCurrentPage) {
             let selected = this.sitesCurrentPage.filter( site => site.identifier === this.value);
             this.currentSite = selected.length > 0 ? selected[0] : this.currentSite;

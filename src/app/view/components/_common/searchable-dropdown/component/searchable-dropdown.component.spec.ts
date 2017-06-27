@@ -67,12 +67,8 @@ describe('Searchable Dropdown Component', () => {
 
     fixture.detectChanges();
 
-    let items = fixture.debugElement.queryAll(By.css('li'));
-
-    expect(data.length).toEqual(items.length);
-    items.forEach((element, index) => {
-      expect(data[index].name).toEqual(element.nativeElement.innerHTML.trim());
-    });
+    let pDataList = fixture.debugElement.query(By.css('p-dataList')).componentInstance;
+    expect(comp.data).toEqual(pDataList.value);
   });
 
   it('should the pageChange call the paginate method', fakeAsync(() => {
@@ -91,9 +87,10 @@ describe('Searchable Dropdown Component', () => {
     });
 
     fixture.detectChanges();
-    let paginator = fixture.debugElement.query(By.css('p-paginator'));
-    let paginatorComponentInstance = paginator.componentInstance;
-    paginatorComponentInstance.onPageChange.emit({
+    let dataList = fixture.debugElement.query(By.css('p-dataList'));
+    let dataListComponentInstance = dataList.componentInstance;
+
+    dataListComponentInstance.onLazyLoad.emit({
       first: first,
       page: page,
       pageCount: pageCount,
@@ -101,6 +98,7 @@ describe('Searchable Dropdown Component', () => {
     });
 
     tick();
+
     expect(first).toEqual(event.first);
     expect(page).toEqual(event.page);
     expect(pageCount).toEqual(event.pageCount);
@@ -118,7 +116,7 @@ describe('Searchable Dropdown Component', () => {
 
     fixture.detectChanges();
 
-    let items = fixture.debugElement.queryAll(By.css('li'));
+    let items = fixture.debugElement.queryAll(By.css('span'));
     items[0].triggerEventHandler('click', null);
   });
 });

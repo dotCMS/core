@@ -1,18 +1,18 @@
 <p-overlayPanel #searchPanel>
+
     <input #searchInput pInputText type="text"/>
 
-    <ul>
-        <li *ngFor="let item of data"
-            (click)="handleClick(item)">
-            {{item[labelPropertyName]}}
-        </li>
-    </ul>    
-
-    <p-paginator [rows]="rows" 
-                 [totalRecords]="totalRecords" 
-                [pageLinkSize]="pageLinkSize"
-                (onPageChange)="paginate($event)">
-    </p-paginator>
+    <p-dataList [value]="data"
+                [pageLinks]="pageLinkSize"
+                [totalRecords]="totalRecords"
+                [paginator]="true" 
+                [lazy]="true"
+                [rows]="rows"
+                (onLazyLoad)="paginate($event)">
+        <ng-template let-item pTemplate="item">
+            <span (click)="handleClick(item)">{{item[labelPropertyName]}}</span>
+        </ng-template>
+    </p-dataList>
 </p-overlayPanel>
 
 <button ripple pButton type="button" 

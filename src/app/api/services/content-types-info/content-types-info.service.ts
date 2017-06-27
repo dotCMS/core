@@ -21,7 +21,7 @@ export class ContentTypesInfoService {
         {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableFileAssetContentType',
             icon: 'fa-file-o',
-            label: 'file',
+            label: 'fileasset',
         },
         {
             clazz: 'com.dotcms.contenttype.model.type.ImmutablePageContentType',

@@ -59,7 +59,7 @@ describe('ContentTypesPortletComponent', () => {
         expect('Content Type Name').toEqual(columns[0].header);
         expect('35%').toEqual(columns[0].width);
 
-        expect('velocityVarName').toEqual(columns[1].fieldName);
+        expect('variable').toEqual(columns[1].fieldName);
         expect('Variable Name').toEqual(columns[1].header);
         expect('10%').toEqual(columns[1].width);
 
@@ -71,7 +71,7 @@ describe('ContentTypesPortletComponent', () => {
         expect('Entries').toEqual(columns[3].header);
         expect('10%').toEqual(columns[3].width);
 
-        expect('mod_date').toEqual(columns[4].fieldName);
+        expect('modDate').toEqual(columns[4].fieldName);
         expect('Last Edit Date').toEqual(columns[4].header);
         expect('10%').toEqual(columns[4].width);
     });

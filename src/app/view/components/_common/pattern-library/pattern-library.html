@@ -49,24 +49,24 @@
                 <action-button [model]="actionButtonItems"></action-button>
             </article>
             <h3 class="section__title">Listing table</h3>
-            <!--<listing-data-table url="v1/contenttype"
+            <listing-data-table url="v1/contenttype"
                                 [columns]="contentTypeColumns"
                                 [buttonActions]="buttonActions"
-                                [defaultSortOrder]="'mod_date'"
-                                [defaultSortField]="'mod_date'">
-            </listing-data-table>  -->
-       
+                                sortOrder="ASC"
+                                sortField="modDate">
+            </listing-data-table>-
+
             <form [formGroup]="searchableForm" novalidate>
                 <h3 class="section__title">Searchable Dropdown</h3>
             
-                <searchable-dropdown [data]="sitesCurrentPage"
-                                            [totalRecords]="totalRecords"
-                                            [rows]="10"
-                                            [pageLinkSize] = "3"
-                                            labelPropertyName = "name"
-                                            (filterChange)="handleFilterChange($event)"
-                                            (pageChange)="handlePageChange($event)"
-                                            formControlName="fakeCurrentSite">
+                <searchable-dropdown    [data]="sitesCurrentPage"
+                                        [totalRecords]="totalRecords"
+                                        [rows]="10"
+                                        [pageLinkSize] = "3"
+                                        labelPropertyName = "name"
+                                        (filterChange)="handleFilterChange($event)"
+                                        (pageChange)="handlePageChange($event)"
+                                        formControlName="fakeCurrentSite">
                 </searchable-dropdown>
 
                 <h3 class="section__title">Site Selector</h3>

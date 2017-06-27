@@ -85,10 +85,10 @@ export class PatternLibrary {
 
         this.contentTypeColumns = [
             {fieldName: 'name', header: 'Name', width: '20%', sortable: true},
-            {fieldName: 'velocityVarName', header: 'Variable', width: '20%'},
+            {fieldName: 'variable', header: 'Variable', width: '20%'},
             {fieldName: 'description', header: 'Description', width: '30%'},
             {fieldName: 'nEntries', header: 'Entries', width: '10%'},
-            {fieldName: 'mod_date', header: 'Last Edit Date', width: '20%', format: 'date', sortable: true}
+            {fieldName: 'modDate', header: 'Last Edit Date', width: '20%', format: 'date', sortable: true}
         ];
 
         this.actionButtonLog = () => {
@@ -158,7 +158,7 @@ export class PatternLibrary {
 
     handleFilterChange(filter): void {
         this.sitesCurrentPage = this.sites.filter( site => site.name.indexOf(filter) !== -1);
-        this.totalRecords = this.sitesCurrentPage .length;
+        this.totalRecords = this.sitesCurrentPage.length;
         this.sitesCurrentPage = this.sitesCurrentPage.slice(0, this.ROWS);
 
     }
