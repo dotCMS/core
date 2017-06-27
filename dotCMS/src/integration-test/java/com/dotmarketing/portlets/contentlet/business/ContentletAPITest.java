@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -9,7 +10,10 @@ import static org.junit.Assert.fail;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -47,6 +51,7 @@ import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -2552,6 +2557,50 @@ public class ContentletAPITest extends ContentletBaseTest {
             }
         }
 
+    }
+    /*
+     * https://github.com/dotCMS/core/issues/11978
+     * 
+     * Creates a new Content Type with a DateTimeField and sets it as Expire Field, saves a new Content a checks that 
+     * the value of the expire field is set and retrieve correctly
+     */
+    @Test
+    public void contentOnlyWithExpireFieldTest() throws Exception{
+    	ContentTypeAPIImpl contentTypeApi = (ContentTypeAPIImpl) APILocator.getContentTypeAPI(user);
+		long time = System.currentTimeMillis();
+
+		ContentType contentType = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.ordinal()))
+				.description("ContentTypeWithPublishExpireFields " + time).folder(FolderAPI.SYSTEM_FOLDER)
+				.host(Host.SYSTEM_HOST).name("ContentTypeWithPublishExpireFields " + time)
+				.owner(APILocator.systemUser().toString()).variable("CTVariable11").expireDateVar("expireDate").build();
+		contentType = contentTypeApi.save(contentType);
+
+		assertThat("ContentType exists", contentTypeApi.find(contentType.inode()) != null);
+
+		List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>(contentType.fields());
+
+		com.dotcms.contenttype.model.field.Field fieldToSave = FieldBuilder.builder(DateTimeField.class).name("Expire Date").variable("expireDate")
+				.contentTypeId(contentType.id()).dataType(DataTypes.DATE).indexed(true).build();
+		fields.add(fieldToSave);
+
+		contentType = contentTypeApi.save(contentType, fields);
+		
+		Contentlet contentlet = new Contentlet();
+		contentlet.setStructureInode(contentType.inode());
+        contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
+
+        contentlet.setDateProperty(fieldToSave.variable(), new Date(new Date().getTime()+60000L));
+
+        contentlet = contentletAPI.checkin(contentlet, user, false);
+        contentletAPI.isInodeIndexed(contentlet.getInode());
+        
+        contentlet = contentletAPI.find(contentlet.getInode(), user, false);
+		Date expireDate = contentlet.getDateProperty("expireDate");
+        
+        assertNotNull(expireDate);
+		
+		// Deleting content type.
+		contentTypeApi.delete(contentType);
     }
 
     /**
