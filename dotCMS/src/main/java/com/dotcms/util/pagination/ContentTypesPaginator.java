@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 
 /**
  * Handle {@link ContentType} pagination
@@ -95,6 +96,6 @@ public class ContentTypesPaginator extends Paginator<Map<String, Object>>{
     }
 
     private String getQueryCondition(String filter){
-        return UtilMethods.isSet(filter) ? String.format("(name like '%%%s%%')", filter) : "";
+        return UtilMethods.isSet(filter) ? String.format("(name like '%%%s%%')", filter) : StringUtils.EMPTY;
     }
 }
