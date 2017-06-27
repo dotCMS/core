@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -160,6 +161,7 @@ public class ContentTypeHelper implements Serializable {
         List<Map<String, Object>> result = structures.stream()
                 .map(contentType -> {
                     Map<String, Object> map = contentType.getMap();
+                    CollectionsUtils.renameKey(map, "modDate", "mod_date");
 
                     if (entriesByContentTypes != null) {
                         String key = contentType.getVelocityVarName().toLowerCase();
