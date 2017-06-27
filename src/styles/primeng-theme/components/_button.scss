@@ -52,7 +52,7 @@
             }
         }
 
-        &.inverse {
+        &.inverse:not([disabled]) {
             &.ui-state-default {
                 background: none;
                 box-shadow: none;
