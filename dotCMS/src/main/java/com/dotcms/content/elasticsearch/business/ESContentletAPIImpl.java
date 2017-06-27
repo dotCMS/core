@@ -3122,7 +3122,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			    // lets update identifier's syspubdate & sysexpiredate
 			    if ((contentlet != null) && InodeUtils.isSet(contentlet.getIdentifier())) {
 			        Structure st=contentlet.getStructure();
-			        if(UtilMethods.isSet(st.getPublishDateVar()) || UtilMethods.isSet(st.getPublishDateVar())) {
+			        if(UtilMethods.isSet(st.getPublishDateVar()) || UtilMethods.isSet(st.getExpireDateVar())) {
     			        Identifier ident=APILocator.getIdentifierAPI().find(contentlet);
     			        boolean save=false;
     			        if(UtilMethods.isSet(st.getPublishDateVar())) {
