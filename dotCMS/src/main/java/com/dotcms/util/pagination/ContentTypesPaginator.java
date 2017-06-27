@@ -24,7 +24,7 @@ import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 /**
  * Handle {@link ContentType} pagination
  */
-public class ContentTypesPaginator extends Paginator<Map<String, Object>>{
+public class ContentTypesPaginator implements Paginator<Map<String, Object>>{
     private static final String N_ENTRIES_FIELD_NAME = "nEntries";
 
     private final StructureAPI structureAPI;

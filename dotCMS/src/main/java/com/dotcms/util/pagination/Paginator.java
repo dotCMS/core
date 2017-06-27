@@ -7,7 +7,7 @@ import java.util.Collection;
 /**
  * Define the methods to get handle a pagination request
  */
-public abstract class Paginator<T> {
+public interface Paginator<T> {
 
     /**
      * Return the number of items

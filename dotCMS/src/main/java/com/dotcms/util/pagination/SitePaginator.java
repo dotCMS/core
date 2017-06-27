@@ -13,7 +13,7 @@ import java.util.Collection;
 /**
  * Paginator util for Host
  */
-public class SitePaginator extends Paginator<Host> {
+public class SitePaginator implements Paginator<Host> {
     private final HostAPI hostAPI;
     private long totalResults;
 
