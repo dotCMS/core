@@ -330,12 +330,12 @@ public class VersionableAPIImpl implements VersionableAPI {
 
             if ( UtilMethods.isSet( structure.getPublishDateVar() ) ) {//Verify if the structure have a Publish Date Field set
                 if ( UtilMethods.isSet( ident.getSysPublishDate() ) && ident.getSysPublishDate().after( new Date() ) ) {
-                    throw new PublishStateException( "message.contentlet.publish.future.date" );
+                    throw new PublishStateException( "The content cannot be published because it is scheduled to be published on future date." );
                 }
             }
             if ( UtilMethods.isSet( structure.getExpireDateVar() ) ) {//Verify if the structure have a Expire Date Field set
                 if ( UtilMethods.isSet( ident.getSysExpireDate() ) && ident.getSysExpireDate().before( new Date() ) ) {
-                    throw new PublishStateException( "message.contentlet.expired" );
+                    throw new PublishStateException( "The content cannot be published because the expire date has already passed." );
                 }
             }
 
