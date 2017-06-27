@@ -59,7 +59,7 @@ import { LoginAsComponent } from './view/components/login-as/login-as';
 import { LoginComponent } from './view/components/login/login-component/login-component';
 import { LoginContainer } from './view/components/login/login-component/login-container';
 import { LoginPageComponent } from './view/components/login/login-page-component';
-import { MainComponentLegacy } from './view/components/main-legacy/main-legacy-component';
+import { MainComponentLegacy } from './view/components/main-legacy/main-legacy.component';
 import { MainCoreLegacyComponent } from './view/components/main-core-legacy/main-core-legacy-component';
 import { MainNavigation } from './view/components/main-navigation/main-navigation';
 import { MyAccountComponent } from './view/components/my-account/dot-my-account-component';
@@ -72,7 +72,7 @@ import { SiteSelectorComponent } from './view/components/site-selector/dot-site-
 import { ToolbarAddContenletComponent, ToolbarAddContenletBodyComponent } from './view/components/toolbar-add-contentlet/toolbar-add-contentlet';
 import { ToolbarNotifications } from './view/components/toolbar-notifications/toolbar-notifications';
 import { ToolbarUserComponent } from './view/components/toolbar-user/toolbar-user';
-import { ToolbarComponent } from './view/components/toolbar/toolbar-component';
+import { ToolbarComponent } from './view/components/toolbar/toolbar.component';
 
 export const COMPONENTS = [
     ...RULES_ENGINE_COMPONENTS,

@@ -3,7 +3,7 @@ import { IframeLegacyComponent } from './view/components/iframe-legacy/iframe-le
 import { LogOutContainer } from './view/components/login/login-component/log-out-container';
 import { LoginContainer } from './view/components/login/login-component/login-container';
 import { LoginPageComponent } from './view/components/login/login-page-component';
-import { MainComponentLegacy } from './view/components/main-legacy/main-legacy-component';
+import { MainComponentLegacy } from './view/components/main-legacy/main-legacy.component';
 import { MainCoreLegacyComponent } from './view/components/main-core-legacy/main-core-legacy-component';
 import { ModuleWithProviders}  from '@angular/core';
 import { NgModule } from '@angular/core';

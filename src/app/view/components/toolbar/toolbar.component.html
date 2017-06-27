@@ -1,7 +1,7 @@
 <p-toolbar>
     <div class="layout__toolbar-inner">
         <div class="toolbar__host">
-            <button pButton iconButton icon="fa-bars" class="inverse" (click)="toggleSidenav()"></button>
+            <button pButton iconButton icon="fa-bars" class="inverse" (click)="handleMainButtonClick($event)"></button>
             <dot-site-selector-component #siteSelector (change)="siteChange($event)"></dot-site-selector-component>
         </div>
         <div class="toolbar__actions">
