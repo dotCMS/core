@@ -81,8 +81,8 @@ public class ContentTypeResource implements Serializable {
 		Response response = null;
 
 		try {
-			List<ContentType> typesToSave = new JsonContentTypeTransformer(json).asList();
-			List<ContentType> retTypes = new ArrayList<>();
+			final List<ContentType> typesToSave = new JsonContentTypeTransformer(json).asList();
+			final List<ContentType> retTypes = new ArrayList<>();
 
 			// Validate input
 			for (ContentType type : typesToSave) {

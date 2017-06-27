@@ -1,6 +1,7 @@
 package com.dotcms.util;
 
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.Paginator;
@@ -101,7 +102,7 @@ public class PaginationUtil {
 
 	public Response getPage(HttpServletRequest req, User user, String filter, boolean showArchived, int pageParam,
 							int perPageParam) {
-		return getPage(req, user, filter, showArchived, pageParam, perPageParam, "", (OrderDirection) null);
+		return getPage(req, user, filter, showArchived, pageParam, perPageParam, StringUtils.EMPTY, (OrderDirection) null);
 	}
 
 	public Response getPage(HttpServletRequest req, User user, String filter, boolean showArchived, int pageParam,
@@ -145,9 +146,35 @@ public class PaginationUtil {
 				.build();
 	}
 
+
+	/**
+	 * Return the valur for the Link header according tis RFC:
+	 *
+	 * https://tools.ietf.org/html/rfc5988#page-6
+	 *
+	 * The sintax to build each URL is the follow:
+	 *
+	 * [urlBase]?filter=[filter]&page=[page]&perPage=[perPage]&archived=[showArchived]&direction=[direction]&orderBy=[orderBy]
+	 *
+	 * The real parameter could hve the follow values:  next, prev, last, fisrt and x-page.
+	 *
+	 * For more information, you can see:
+	 *
+	 * https://developer.github.com/v3/#pagination
+	 *
+	 * @param urlBase
+	 * @param filter
+	 * @param page
+	 * @param perPage
+	 * @param showArchived
+	 * @param totalRecords
+	 * @param orderBy
+	 * @param direction
+	 * @return
+	 */
 	private static String getHeaderValue(String urlBase, String filter, int page, int perPage, boolean showArchived,
 										 long totalRecords, String orderBy, OrderDirection direction) {
-		List<String> links = new ArrayList<>();
+		final List<String> links = new ArrayList<>();
 
 		links.add(StringUtil.format(LINK_TEMPLATE, map(
 				"URL", getUrl(urlBase, filter, FIRST_PAGE_INDEX, perPage, showArchived, orderBy, direction),
@@ -184,6 +211,21 @@ public class PaginationUtil {
 		return String.join(",", links);
 	}
 
+	/**
+	 *  Build each URL for the Link header.
+	 *  The sintax to build each URL is the follow:
+	 *
+	 * [urlBase]?filter=[filter]&page=[page]&perPage=[perPage]&archived=[showArchived]&direction=[direction]&orderBy=[orderBy]
+	 *
+	 * @param urlBase
+	 * @param filter
+	 * @param page
+	 * @param perPage
+	 * @param showArchived
+	 * @param orderBy
+	 * @param direction
+	 * @return
+	 */
 	private static String getUrl(String urlBase, String filter, int page, int perPage, boolean showArchived,
 								 String orderBy, OrderDirection direction){
 

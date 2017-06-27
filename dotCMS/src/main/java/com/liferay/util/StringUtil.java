@@ -666,7 +666,7 @@ public class StringUtil {
 	 * @param params
 	 * @return
 	 */
-	public static String format (String template, Map<String, String> params){
+	public static String format (String template, final Map<String, String> params){
 		String result = template;
 
 		for (Map.Entry<String, String> entry : params.entrySet()) {

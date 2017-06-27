@@ -3,10 +3,6 @@ package com.dotcms.rest.api.v1.site;
 import static com.dotcms.util.CollectionsUtils.map;
 
 import java.io.Serializable;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -30,16 +26,13 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.I18NUtil;
 import com.dotcms.util.PaginationUtil;
-import com.dotcms.util.pagination.HostPaginator;
-import com.dotcms.util.pagination.Paginator;
+import com.dotcms.util.pagination.SitePaginator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import com.liferay.util.LocaleUtil;
 
 /**
  * This resource provides all the different end-points associated to information
@@ -64,7 +57,7 @@ public class SiteResource implements Serializable {
         this(new WebResource(),
                 SiteHelper.getInstance(),
                 I18NUtil.INSTANCE, APILocator.getUserAPI(),
-                new PaginationUtil(new HostPaginator()));
+                new PaginationUtil(new SitePaginator()));
     }
 
     @VisibleForTesting
