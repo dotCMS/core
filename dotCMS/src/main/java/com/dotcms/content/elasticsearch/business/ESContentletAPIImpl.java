@@ -3567,7 +3567,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public String getName(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException,DotContentletStateException, DotDataException {
         
         Preconditions.checkNotNull(contentlet, "The contentlet is null");
-        Preconditions.checkNotNull(contentlet.getIdentifier(), "The contentlet is null");
 
         if(!perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
             Logger.error(this.getClass(),"User: " + (user != null ? user.getUserId() : "Unknown")
