@@ -1009,32 +1009,48 @@ public class HostAPIImpl implements HostAPI {
 
     }
 
-	public PaginatedArrayList<Host> search(String filter, boolean showArchived, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		try {
-			Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
-			String condition="";
-			
-			if(showArchived){
-				condition=" +deleted:true";
-			}else {
-				condition=" +deleted:false";
-			}
-			
-			if(UtilMethods.isSet(filter)){
-				condition += " +Host.hostName:"+filter.trim()+"*";
-			}
-			if(!showSystemHost){
-				condition += " +Host.isSystemHost:false";
-			}
-			PaginatedArrayList<Contentlet> list = (PaginatedArrayList<Contentlet>)APILocator.getContentletAPI().search("+structureInode:" + st.getInode() + condition, limit, offset, "Host.hostName", user, respectFrontendRoles);
-			
-			return convertToHostPaginatedArrayList(list);
-		} catch (Exception e) {
-			Logger.error(HostAPIImpl.class, e.getMessage(), e);
-			throw new DotRuntimeException(e.getMessage(), e);
-		}
-	}
-	
+	public PaginatedArrayList<Host> search(String filter, boolean showArchived, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles) {
+        try {
+
+            Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
+            StringBuilder condition = new StringBuilder( String.format(" +deleted:%b", showArchived) );
+
+
+            if(UtilMethods.isSet(filter)){
+                condition.append( String.format(" +Host.hostName:%s*", filter.trim() ) );
+            }
+            if(!showSystemHost){
+                condition.append( " +Host.isSystemHost:false" );
+            }
+            PaginatedArrayList<Contentlet> list = (PaginatedArrayList<Contentlet>)APILocator.getContentletAPI().search("+structureInode:" + st.getInode() + condition, limit, offset, "Host.hostName", user, respectFrontendRoles);
+
+            return convertToHostPaginatedArrayList(list);
+        } catch (Exception e) {
+            Logger.error(HostAPIImpl.class, e.getMessage(), e);
+            throw new DotRuntimeException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Return the number of sites for user
+     *
+     * @param user
+     * @param respectFrontendRoles
+     * @return
+     */
+    public long count(User user, boolean respectFrontendRoles) {
+        try {
+            Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
+
+            return APILocator.getContentletAPI()
+                    .indexCount("+structureInode:" + st.getInode(), user, respectFrontendRoles);
+
+        } catch (Exception e) {
+            Logger.error(HostAPIImpl.class, e.getMessage(), e);
+            throw new DotRuntimeException(e.getMessage(), e);
+        }
+    }
+
 	private PaginatedArrayList<Host> convertToHostPaginatedArrayList(PaginatedArrayList<Contentlet> list) {
 		
 		PaginatedArrayList<Host> hosts = new PaginatedArrayList<Host>();

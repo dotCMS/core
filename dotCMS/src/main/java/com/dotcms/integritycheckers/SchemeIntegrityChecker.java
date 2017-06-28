@@ -186,20 +186,20 @@ public class SchemeIntegrityChecker extends AbstractIntegrityChecker {
                 if (defaultScheme != null && defaultScheme.getId().equals(oldWorkflowId)) {
                     CacheLocator.getCacheAdministrator().remove(workflowCache.defaultKey,
                             workflowCache.getPrimaryGroup());
-                } else {
-                    // Clear the cache
-                    WorkflowScheme oldScheme = APILocator.getWorkflowAPI()
-                            .findScheme(oldWorkflowId);
-                    List<WorkflowStep> steps = APILocator.getWorkflowAPI().findSteps(oldScheme);
-
-                    for (int i = 0; i < steps.size(); i++) {
-                        WorkflowStep workflowStep = steps.get(i);
-                        workflowCache.remove(workflowStep);
-                    }
-
-                    WorkflowScheme scheme = workflowCache.getScheme(oldWorkflowId);
-                    workflowCache.remove(scheme);
                 }
+
+                // Clear the cache
+                WorkflowScheme oldScheme = APILocator.getWorkflowAPI()
+                        .findScheme(oldWorkflowId);
+                List<WorkflowStep> steps = APILocator.getWorkflowAPI().findSteps(oldScheme);
+
+                for (int i = 0; i < steps.size(); i++) {
+                    WorkflowStep workflowStep = steps.get(i);
+                    workflowCache.remove(workflowStep);
+                }
+
+                WorkflowScheme scheme = workflowCache.getScheme(oldWorkflowId);
+                workflowCache.remove(scheme);
 
                 // THIS IS THE NEW CODE
 

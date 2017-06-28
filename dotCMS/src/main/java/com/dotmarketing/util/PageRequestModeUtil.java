@@ -48,5 +48,24 @@ public abstract  class PageRequestModeUtil {
       return !( isAdminMode(session) && (isEditMode(session) || isPreviewMode(session)));
     }
     
+    /**
+     * Activate the Edit or preview mode in session depending of the content state
+     * @param request Http request
+     * @param contentLocked boolean is the content locked
+     * @param canLock boolean can the user loc the content
+     */
+    public static void setBackEndModeInSession( HttpServletRequest request, boolean contentLocked, boolean canLock ){
+        HttpSession session = request.getSession(false);
+        if(contentLocked && canLock){
+			session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, "true");
+			session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
+			session.setAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION, "true");
+		}else{
+			session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
+			session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true");
+			session.setAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION, "true");
+		}
+      }
+    
     
 }

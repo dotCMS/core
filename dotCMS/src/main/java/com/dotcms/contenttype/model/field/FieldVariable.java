@@ -7,6 +7,7 @@ import java.util.Date;
 import org.elasticsearch.common.Nullable;
 import org.immutables.value.Value;
 
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -48,7 +49,7 @@ public interface FieldVariable extends Serializable, IFieldVar {
 
 	@Value.Check
 	default void check() {
-		Preconditions.checkArgument(key()!=null,"FieldVariable.key cannot be null");
-		Preconditions.checkArgument(value()!=null,"FieldVariable.val cannot be null");
+		//Preconditions.checkArgument(StringUtils.isNotEmpty(key()), "FieldVariable.key cannot be empty");
+		//Preconditions.checkArgument(StringUtils.isNotEmpty(value()), "FieldVariable.val cannot be empty");
 	}	
 }

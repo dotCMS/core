@@ -29,6 +29,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
@@ -76,6 +77,10 @@ public class FieldResource implements Serializable {
 	
 				response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
 			}
+		} catch (DotStateException e) {
+
+			response = ExceptionMapperUtil.createResponse(null, "Field is not valid ("+ e.getMessage() +")");
+
 		} catch (NotFoundInDbException e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
@@ -220,6 +225,10 @@ public class FieldResource implements Serializable {
 					response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
 				}
 			}
+		} catch (DotStateException e) {
+
+			response = ExceptionMapperUtil.createResponse(null, "Field is not valid ("+ e.getMessage() +")");
+
 		} catch (NotFoundInDbException e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
@@ -264,10 +273,14 @@ public class FieldResource implements Serializable {
 				} else {
 
 					field = fapi.save(field, user);
-	
+
 					response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
 				}
 			}
+		} catch (DotStateException e) {
+
+			response = ExceptionMapperUtil.createResponse(null, "Field is not valid ("+ e.getMessage() +")");
+
 		} catch (NotFoundInDbException e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);

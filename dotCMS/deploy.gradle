@@ -10,6 +10,8 @@ buildscript {
 
 configurations {
     compile
+    compileOnly
+    apt
     testCompile
 }
 
@@ -132,7 +134,7 @@ ext {
     }
 
     if (gradle.startParameter.taskNames.contains("uploadDotcms")) {
-        jarName = "dotcms_$dotcmsReleaseVersion"+ "_" + git.head().abbreviatedId
+        jarName = "dotcms_$dotcmsReleaseVersion"
         fileToUpload = "build/libs/$jarName" + ".jar"
         submodulePath = "."
     }
@@ -404,6 +406,8 @@ Example of use:
 Name convention: ant-tooling_version.jar -> ant-tooling_1.1.jar
 As snapshot: ./gradlew -b deploy.gradle uploadAntTooling -Pusername=username -Ppassword=XYZ -Pfile=/project/path/ant-tooling/build/libs/ant-tooling_1.1.jar
 As release: ./gradlew -b deploy.gradle uploadAntTooling -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/ant-tooling/build/libs/ant-tooling_1.1.jar
+
+NOTE: BEFORE GENERATING A NEW VERSION OF THE JAR FILE, ALL UNIT TESTS FOUND IN THE ANT-TOOLING REPO MUST BE RUN AND ALL OF THE MUST PASS. 
 """
 
 uploadAntTooling.group='dotCMS Upload Version'

@@ -303,46 +303,6 @@ public class MainServlet extends ActionServlet {
 
 		HttpSession ses = req.getSession();
 		
-		if (!GetterUtil.getBoolean(PropsUtil.get(PropsUtil.TCK_URL))) {
-			String sharedSessionId = CookieUtil.get(req.getCookies(), CookieKeys.SHARED_SESSION_ID);
-
-			_log.debug("Shared session id is " + sharedSessionId);
-
-			if (sharedSessionId == null) {
-				sharedSessionId = PwdGenerator.getPassword(PwdGenerator.KEY1 + PwdGenerator.KEY2, 12);
-
-				String secure = Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("always") 
-						|| (Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("https") && req.isSecure())?CookieUtil.SECURE:"";
-				
-				String httpOnly = Config.getBooleanProperty("COOKIES_HTTP_ONLY", false)?CookieUtil.HTTP_ONLY:"";
-					
-				StringBuilder headerStr = new StringBuilder();
-				headerStr.append(CookieKeys.SHARED_SESSION_ID).append("=").append(sharedSessionId).append(";").append(secure).append(";").append(httpOnly).append(";Path=/").append(";Max-Age=86400");
-				res.addHeader("SET-COOKIE", headerStr.toString());
-
-				_log.debug("Shared session id is " + sharedSessionId);
-			}
-
-			// if (ses.getAttribute(WebKeys.SHARED_SESSION_ID) == null) {
-			ses.setAttribute(WebKeys.SHARED_SESSION_ID, sharedSessionId);
-			// }
-
-			HttpSession portalSes = (HttpSession) SharedSessionPool.get(sharedSessionId);
-
-			if ((portalSes == null) || (ses != portalSes)) {
-				if (portalSes == null) {
-					_log.debug("No session exists in pool");
-				} else {
-					_log.debug("Session " + portalSes.getId() + " in pool is old");
-				}
-
-				_log.debug("Inserting current session " + ses.getId() + " in pool");
-
-				SharedSessionPool.put(sharedSessionId, ses);
-			}
-		}
-
-		// Test CAS auto login
 
 		/*
 		 * ses.setAttribute(

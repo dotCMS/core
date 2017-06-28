@@ -13,11 +13,13 @@ import com.dotcms.contenttype.exception.DotDataValidationException;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.exception.OverFieldLimitException;
 import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableConstantField;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable.Builder;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
@@ -28,15 +30,15 @@ import com.dotcms.contenttype.transform.field.DbFieldTransformer;
 import com.dotcms.contenttype.transform.field.DbFieldVariableTransformer;
 import com.dotcms.repackage.org.apache.commons.lang.time.DateUtils;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
+
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.base.Preconditions;
 
 public class FieldFactoryImpl implements FieldFactory {
 
@@ -54,8 +56,13 @@ public class FieldFactoryImpl implements FieldFactory {
 
   @Override
   public Field byContentTypeFieldVar(ContentType type, String var) throws DotDataException {
-    
-    return type.fieldMap().get(var);
+    Field field = type.fieldMap().get(var);
+
+    if(field==null) {
+      throw new NotFoundInDbException("Field variable with var:" + var + " not found");
+    }
+
+    return field;
 
   }
 
@@ -103,22 +110,21 @@ public class FieldFactoryImpl implements FieldFactory {
 
   @Override
   public FieldVariable save(FieldVariable fieldVar) throws DotDataException {
-    FieldVariable newVar = LocalTransaction.wrapReturn(() -> {
-      return upsertFieldVariable(fieldVar);
-    });
-
-    Field f = byId(fieldVar.fieldId());
-    ContentType t;
-    try {
-      t = APILocator.getContentTypeAPI(APILocator.systemUser()).find(f.contentTypeId());
-      if (t != null) {
-        CacheLocator.getContentTypeCache2().remove(t);
+    return LocalTransaction.wrapReturn(() -> {
+      
+      if(!UtilMethods.isSet(fieldVar.key())){
+        throw new DotDataException("FieldVariable.key cannot be empty");
       }
-    } catch (DotSecurityException e) {
-      throw new DotStateException(e);
-    }
+      
+      if(!UtilMethods.isSet(fieldVar.value())){
+        throw new DotDataException("FieldVariable.value cannot be empty");
+      }
 
-    return newVar;
+      FieldVariable fv =  upsertFieldVariable(fieldVar);
+      Field f = byId(fieldVar.fieldId());
+      APILocator.getContentTypeAPI(APILocator.systemUser()).updateModDate(f);
+      return fv;
+    });
 
   }
 
@@ -126,77 +132,93 @@ public class FieldFactoryImpl implements FieldFactory {
   public void delete(FieldVariable fieldVar) throws DotDataException {
     LocalTransaction.wrapReturn(() -> {
       deleteFieldVarInDb(fieldVar);
+      Field f = byId(fieldVar.fieldId());
+      APILocator.getContentTypeAPI(APILocator.systemUser()).updateModDate(f);
       return null;
     });
+    
 
-    Field f = byId(fieldVar.fieldId());
-    ContentType t;
-    try {
-      t = APILocator.getContentTypeAPI(APILocator.systemUser()).find(f.contentTypeId());
-      if (t != null) {
-        CacheLocator.getContentTypeCache2().remove(t);
-      }
-    } catch (DotSecurityException e) {
-      throw new DotStateException(e);
-    }
   }
 
   @Override
   public Field save(final Field throwAwayField) throws DotDataException {
-    Field f = LocalTransaction.wrapReturn(() -> {
-      return dbSaveUpdate(throwAwayField);
+    return LocalTransaction.wrapReturn(() -> {
+      Field field =  dbSaveUpdate(throwAwayField);
+      APILocator.getContentTypeAPI(APILocator.systemUser()).updateModDate(field);
+      return field;
     });
-    ContentType t = CacheLocator.getContentTypeCache2().byVarOrInode(f.contentTypeId());
-    if (t != null)
-      CacheLocator.getContentTypeCache2().remove(t);
-    return f;
+
   }
 
 
+  private Field normalizeData(final Field throwAwayField) throws DotDataException {
+    FieldBuilder builder = FieldBuilder.builder(throwAwayField);
+    Field returnField = throwAwayField;
+    
+    if("constant".equals(returnField.dbColumn()) && !(returnField instanceof ConstantField)) {
+      builder = ImmutableConstantField.builder().from(returnField);
+      builder.dbColumn(DataTypes.SYSTEM.value);
+      returnField = builder.build();
+    }
+
+    if(returnField.acceptedDataTypes().size()==1  && returnField.acceptedDataTypes().get(0) == DataTypes.SYSTEM) {
+      builder.dataType( DataTypes.SYSTEM);
+      returnField = builder.build();
+    }
+    // make sure we are setting the db to system
+    if(returnField.dataType() == DataTypes.SYSTEM){
+      builder.dbColumn(DataTypes.SYSTEM.value);
+      returnField = builder.build();
+    }
+    
+    
+    // if this is a new column validate and assign a db column
+    try{
+      validateDbColumn(returnField);
+    }
+    catch(Throwable e){
+      Logger.debug(this.getClass(), "Field db column being updated: " + e.getMessage());
+      builder.dbColumn(nextAvailableColumn(returnField));
+      returnField = builder.build();
+    }
+    // make sure we are properly indexed
+    if ((returnField.searchable() || returnField.listed()) || returnField.unique()
+        || returnField instanceof HostFolderField || returnField instanceof TagField) {
+      
+      builder.indexed(true);
+      returnField = builder.build();
+    }
+    if (returnField.unique()) {
+      builder.required(true);
+      returnField = builder.build();
+    }
+    
+    return returnField;
+  }
+  
+  
+  
   private Field dbSaveUpdate(final Field throwAwayField) throws DotDataException {
 
 
-    // we only validate new fields
-    if (throwAwayField.modDate().after(FieldAPI.VALIDATE_AFTER)) {
-      if (!throwAwayField.acceptedDataTypes().contains(throwAwayField.dataType())
-          && (throwAwayField.acceptedDataTypes().size() > 0
-              && throwAwayField.acceptedDataTypes().get(0) != DataTypes.SYSTEM)) {
-        throw new DotDataValidationException("Field Type:" + throwAwayField.type() + " does not accept datatype "
-            + throwAwayField.dataType() + ":" + throwAwayField, "field.validation.incorrect.datatype");
-      }
-    }
-    if (throwAwayField.contentTypeId() == null) {
-      throw new DotDataValidationException(
-          "Field Type:" + throwAwayField.type() + " does not have a contenttype.inode set",
-          "field.validation.contenttype.not.set");
-    }
-
-    List<Field> fieldsAlreadyAdded = byContentTypeId(throwAwayField.contentTypeId());
-
+    FieldBuilder builder = FieldBuilder.builder(throwAwayField);
+    
+    
     Date modDate = DateUtils.round(new Date(), Calendar.SECOND);
-    FieldBuilder builder = FieldBuilder.builder(throwAwayField).modDate(modDate);
-
-    if (throwAwayField.acceptedDataTypes().size() == 1
-        && throwAwayField.acceptedDataTypes().get(0) == DataTypes.SYSTEM) {
-      builder.dataType(DataTypes.SYSTEM);
-    }
-
+    builder.modDate(modDate);
+    
 
     Field oldField = null;
     try {
       oldField = selectInDb(throwAwayField.id());
+      builder.fixed(oldField.fixed());
+      builder.readOnly(oldField.readOnly());
+      builder.dataType(oldField.dataType());
+      builder.dbColumn(oldField.dbColumn());
+
     } catch (NotFoundInDbException e) {
-      // this is a new field
-    }
-
-
-
-    if (oldField == null) {
-      // assign a db column if we need to
-      if (throwAwayField.dbColumn() == null) {
-        builder.dbColumn(nextAvailableColumn(throwAwayField));
-      }
-      // assign an inode if needed
+      List<Field> fieldsAlreadyAdded = byContentTypeId(throwAwayField.contentTypeId());
+      // assign an inode and db column if needed
       if (throwAwayField.id() == null) {
         builder.id(UUID.randomUUID().toString());
       }
@@ -213,49 +235,12 @@ public class FieldFactoryImpl implements FieldFactory {
           ? suggestVelocityVar(throwAwayField.name(), fieldsAlreadyAdded) : throwAwayField.variable();
       builder.variable(tryVar);
 
-      builder.fixed(false);
-      builder.readOnly(false);
     }
-
-
-
-    for (Field f : fieldsAlreadyAdded) {
-      if (f instanceof CategoryField) {
-        if (f.values() != null) {
-          if (f.values().equals(throwAwayField.values())) {
-            if (!f.id().equals(throwAwayField.id())) {
-              throw new DotDataValidationException("This category field already exists on this content type",
-                  "message.category.existing.field");
-            }
-          }
-        }
-      }
-      if (throwAwayField instanceof OnePerContentType) {
-        if (f.id().equals(throwAwayField.id())) {
-          continue;
-        }
-        if (f.type().equals(throwAwayField.type())) {
-          throw new DotDataValidationException("A content type cannot have two:" + throwAwayField.type() + " fields",
-              "contenttype.validation.cannot.have.two.of.fieldtype");
-        }
-      }
-    }
-
-    // make sure we are properly indexed
-    if ((throwAwayField.searchable() || throwAwayField.listed()) || throwAwayField.unique()
-        || throwAwayField instanceof HostFolderField || throwAwayField instanceof TagField) {
-      builder.indexed(true);
-    }
-    if (throwAwayField.unique()) {
-      builder.required(true);
-    }
-
-
+    builder = FieldBuilder.builder(normalizeData(builder.build()));
 
     Field retField = builder.build();
 
-
-    
+    validateDbColumn(retField);
     
     
     if (oldField == null) {
@@ -270,7 +255,54 @@ public class FieldFactoryImpl implements FieldFactory {
 
     return retField;
   }
+  
+  private void validateDbColumn(Field field) throws DotDataException {
+    
 
+    if (field.contentTypeId() == null) {
+      throw new DotDataValidationException(
+          "Field Type:" + field.type() + " does not have a contenttype.inode set",
+          "field.validation.contenttype.not.set");
+    }
+    
+    List<Field> fieldsAlreadyAdded = byContentTypeId(field.contentTypeId());
+    for (Field f : fieldsAlreadyAdded) {
+      if (f instanceof CategoryField) {
+        if (f.values() != null) {
+          if (f.values().equals(field.values())) {
+            if (!f.id().equals(field.id())) {
+              throw new DotDataValidationException("This category field already exists on this content type",
+                  "message.category.existing.field");
+            }
+          }
+        }
+      }
+      if (field instanceof OnePerContentType) {
+        if (f.id().equals(field.id())) {
+          continue;
+        }
+        if (f.type().equals(field.type())) {
+          throw new DotDataValidationException("A content type cannot have two:" + field.type() + " fields",
+              "contenttype.validation.cannot.have.two.of.fieldtype");
+        }
+      }
+    }
+    
+    
+    if (!field.acceptedDataTypes().contains(field.dataType())){
+      throw new DotDataValidationException("Field Type:" + field.type() + " does not accept datatype "
+                + field.dataType() + ":" + field.variable(), "field.validation.incorrect.datatype");
+    
+    }
+    if(field.dbColumn()==null){
+      throw new DotDataValidationException("Unable to save field with a null dbColumn field.field_contentlet:" + field, "message.field.dbcolumn.incorrect");
+    }
+    
+    if( !field.dbColumn().matches("(system_field|(text|float|bool|date|text_area|integer)[0-9]+)")){
+      throw new DotDataValidationException("Unable to save field with DB Column " + field.dbColumn()+ " - must match (system_field|(text|float|bool|date|text_area|integer)[0-9]+) "  + field.name() + " " + field.variable(), "message.field.dbcolumn.incorrect");
+    }
+  }
+  
   @Override
   public List<Field> selectByContentTypeInDb(String id) throws DotDataException {
     DotConnect dc = new DotConnect();
@@ -431,6 +463,7 @@ public class FieldFactoryImpl implements FieldFactory {
     dc.addParam(field.name());
     dc.addParam(field.type().getCanonicalName());
     dc.addParam(field.relationType());
+    dc.addParam(field.dbColumn());
     dc.addParam(field.required());
     dc.addParam(field.indexed());
     dc.addParam(field.listed());

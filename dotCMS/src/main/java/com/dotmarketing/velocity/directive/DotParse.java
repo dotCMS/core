@@ -1,11 +1,5 @@
 package com.dotmarketing.velocity.directive;
 
-import java.io.Writer;
-
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.velocity.context.Context;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -16,7 +10,13 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.exception.ResourceNotFoundException;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.Writer;
 
 
 public class DotParse extends DotDirective {
@@ -60,6 +60,22 @@ public class DotParse extends DotDirective {
       long lang = params.language.getId();
       Identifier id = APILocator.getIdentifierAPI().find(host, templatePath);
 
+      //Verify if we found a resource with the given path
+      if ( null == id || !UtilMethods.isSet(id.getId()) ) {
+
+        String errorMessage = String.format("No resource found for [%s]", templatePath);
+
+        /*
+        In Edit mode we are allow to fail and be noisy, but on Preview and Live mode we just want to
+        continue with the render of the page, on the DotDirective.render we are catching ResourceNotFoundException's
+        and on the catch we continue with the render.
+         */
+        if ( params.editMode ) {
+          throw new DotStateException(errorMessage);
+        } else {
+          throw new ResourceNotFoundException(errorMessage);
+        }
+      }
 
       ContentletVersionInfo cv = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), lang);
 
@@ -71,7 +87,11 @@ public class DotParse extends DotDirective {
       }
       String inode = ((live) ? cv.getLiveInode() : cv.getWorkingInode());
 
-
+      //We found the resource but not the version we are looking for
+      if ( null == inode ) {
+        String errorMessage = String.format("Not found %s version of [%s]", (live) ? "Live" : "Working", templatePath);
+        throw new ResourceNotFoundException(errorMessage);
+      }
 
       Contentlet c = APILocator.getContentletAPI().find(inode, params.user, params.live);
       FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(c);
@@ -92,6 +112,12 @@ public class DotParse extends DotDirective {
       Logger.warn(this.getClass(), " - unable to resolve " + templatePath + " getting this: "+ e.getMessage() );
       if(e.getStackTrace().length>0)
         Logger.warn(this.getClass(), " - at " + e.getStackTrace()[0]);
+      
+      //If we didn't find the resource don't change the exception type
+      if( e instanceof ResourceNotFoundException ) {
+        throw (ResourceNotFoundException) e;
+      }
+      
       throw new DotStateException(e);
     }
   }

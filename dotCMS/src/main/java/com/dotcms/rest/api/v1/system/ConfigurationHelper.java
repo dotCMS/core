@@ -12,10 +12,13 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.rest.api.v1.system.websocket.SystemEventsWebSocketEndPoint;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.util.ReleaseInfo;
 import com.liferay.util.LocaleUtil;
 
 /**
@@ -33,10 +36,16 @@ import com.liferay.util.LocaleUtil;
 public class ConfigurationHelper implements Serializable {
 
 	public static final String EDIT_CONTENT_STRUCTURES_PER_COLUMN = "EDIT_CONTENT_STRUCTURES_PER_COLUMN";
-	public static final String DEFAULT_REST_PAGE_COUNT = "DEFAULT_REST_PAGE_COUNT";
 	public static final String I18N_MESSAGES_MAP = "i18nMessagesMap";
 	public static final String WEB_SOCKET_SECURE_PROTOCOL = "wss";
 	public static final String WEB_SOCKET_PROTOCOL = "ws";
+	public static final String LICENSE = "license";
+	public static final String IS_COMMUNITY = "isCommunity";
+	public static final String DISPLAY_SERVER_ID = "displayServerId";
+	public static final String LEVEL_NAME = "levelName";
+	public static final String RELEASE_INFO = "releaseInfo";
+	public static final String VERSION = "version";
+	public static final String BUILD_DATE = "buildDate";
 	public static ConfigurationHelper INSTANCE = new ConfigurationHelper();
 
 	/**
@@ -72,8 +81,6 @@ public class ConfigurationHelper implements Serializable {
 				Config.getIntProperty(EDIT_CONTENT_STRUCTURES_PER_COLUMN, 15),
 				DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT,
 				Config.getIntProperty(DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT, 1000),
-				DEFAULT_REST_PAGE_COUNT,
-				Config.getIntProperty(DEFAULT_REST_PAGE_COUNT, 20),
 				DOTCMS_DISABLE_WEBSOCKET_PROTOCOL,
 				Boolean.valueOf( Config.getBooleanProperty(DOTCMS_DISABLE_WEBSOCKET_PROTOCOL, false) ),
 				I18N_MESSAGES_MAP,
@@ -83,10 +90,17 @@ public class ConfigurationHelper implements Serializable {
 						message("notifications_dismissall", locale), // Dismiss all
 						this.getRelativeTimeEntry(locale)
 				),
-				DOTCMS_PAGINATION_ROWS,
-				Config.getIntProperty(DOTCMS_PAGINATION_ROWS, 10),
-				DOTCMS_PAGINATION_LINKS,
-				Config.getIntProperty(DOTCMS_PAGINATION_LINKS, 5)
+				LICENSE,
+				map(
+						IS_COMMUNITY,      LicenseManager.getInstance().isCommunity(),
+						DISPLAY_SERVER_ID, LicenseUtil.getDisplayServerId(),
+						LEVEL_NAME,        LicenseUtil.getLevelName()
+				),
+				RELEASE_INFO,
+				map(
+						VERSION,           ReleaseInfo.getVersion(),
+						BUILD_DATE,        ReleaseInfo.getBuildDateString()
+				)
 		);
 	}
 

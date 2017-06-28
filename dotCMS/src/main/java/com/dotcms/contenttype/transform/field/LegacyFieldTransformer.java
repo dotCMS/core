@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.elasticsearch.common.Nullable;
 
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
@@ -98,14 +99,24 @@ public class LegacyFieldTransformer implements FieldTransformer {
 	}
 
 	private static String buildLegacyFieldContent(Field field){
-		String fieldContent = field.dbColumn();
-		if(field.typeName().endsWith("BinaryField")){
-			fieldContent = "binary" + field.sortOrder();
-		}
+		String fieldContent = (field instanceof BinaryField)
+		    ? fieldContent = "binary" + field.sortOrder() 
+		    : (field.dbColumn() !=null)
+		      ? field.dbColumn()
+		          : " system_field";
 		return fieldContent;
 	}
-
-	private static Field transformToNew(com.dotmarketing.portlets.structure.model.Field oldField) {
+	
+    private static String buildNewFieldDbColumn(com.dotmarketing.portlets.structure.model.Field oldField){
+      String fieldContent = (oldField.getFieldContentlet()!=null) 
+          ?  (oldField.getFieldContentlet().startsWith("binary"))
+              ? "system_field"
+              :  oldField.getFieldContentlet()
+                : null;
+              
+      return fieldContent;
+  }
+	private static Field transformToNew(final com.dotmarketing.portlets.structure.model.Field oldField) {
 		final String fieldType = oldField.getFieldType();
 
 		@SuppressWarnings("serial")
@@ -164,7 +175,7 @@ public class LegacyFieldTransformer implements FieldTransformer {
 
 			@Override
 			public DataTypes dataType() {
-				String dbType = oldField.getFieldContentlet().replaceAll("[0-9]", "");
+				String dbType = (oldField.getFieldContentlet()!=null) ? oldField.getFieldContentlet().replaceAll("[0-9]", "") : null;
 				if(!UtilMethods.isSet(dbType)){
 				   return FieldBuilder.instanceOf(LegacyFieldTypes.getImplClass(fieldType)).acceptedDataTypes().get(0);
 				}

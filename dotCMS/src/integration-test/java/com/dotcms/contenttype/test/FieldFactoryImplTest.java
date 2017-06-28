@@ -14,16 +14,23 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
+import com.dotcms.contenttype.business.sql.FieldSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.exception.OverFieldLimitException;
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.field.ImmutableDateTimeField;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableLineDividerField;
+import com.dotcms.contenttype.model.field.ImmutableSelectField;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.LineDividerField;
+import com.dotcms.contenttype.model.field.SelectField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -37,6 +44,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.Config;
 
@@ -138,6 +146,209 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 
 	}
 
+
+	@Test
+	public void testTextDBColumn() throws Exception {
+
+	    String uu = UUID.randomUUID().toString();
+
+	    TextField textField = ImmutableTextField.builder().name("test field" + uu)
+	            .variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint")
+	            .dataType(DataTypes.TEXT).id(uu).build();
+
+	    Field savedField = fieldFactory.save(textField);
+	    String inode = savedField.inode();
+	    Field field2 = fieldFactory.byId(inode);
+	    assertThat("field2 text data type", field2.dataType() == DataTypes.TEXT);
+	    assertThat("field2 text db column", field2.dbColumn().matches("text[0-9]+"));
+	}
+	
+
+
+    @Test
+    public void testBadIntDBColumn() throws Exception {
+
+        String uu = UUID.randomUUID().toString();
+
+        TextField textField = ImmutableTextField.builder().name("test field" + uu)
+                .variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint")
+                .dataType(DataTypes.INTEGER).dbColumn("bad1").build();
+
+        Field savedField = fieldFactory.save(textField);
+        String inode = savedField.inode();
+        Field field2 = fieldFactory.byId(inode);
+        assertThat("testBadIntDBColumn text data type", field2.dataType() == DataTypes.INTEGER);
+        assertThat("testBadIntDBColumn text db column", field2.dbColumn().matches("integer[0-9]+"));
+    }
+    
+    
+    @Test
+    public void testBadLegacyDBColumn() throws Exception {
+
+        String uu = UUID.randomUUID().toString();
+
+
+        
+        LineDividerField badLineDividerField = ImmutableLineDividerField.builder()
+            .name("test field" + uu)
+            .id(uu)
+            .variable(TEST_VAR_PREFIX + uu)
+            .contentTypeId(Constants.NEWS).hint("my hint")
+            .dataType(DataTypes.INTEGER)
+            .sortOrder(99)
+            .dbColumn("section_divider1").build();
+        
+        insertRawFieldInDb(badLineDividerField);
+
+        String inode = badLineDividerField.inode();
+        Field fieldFromDB = fieldFactory.byId(inode);
+        assertThat("testBadLegacyDBColumn  data type", fieldFromDB.dataType() == DataTypes.SYSTEM);
+        assertThat("testBadLegacyDBColumn  db column", fieldFromDB.dbColumn().matches("section_divider1"));
+        assertThat("testBadLegacyDBColumn  order column", fieldFromDB.sortOrder() ==99);
+        
+        
+        Field field3 = FieldBuilder.builder(fieldFromDB).sortOrder(10).build();
+        fieldFactory.save(field3);
+        fieldFromDB = fieldFactory.byId(inode);
+        
+        assertThat("testBadLegacyDBColumn  data type", fieldFromDB.dataType() == DataTypes.SYSTEM);
+        assertThat("testBadLegacyDBColumn  db column", fieldFromDB.dbColumn().matches("system_field"));
+        assertThat("testBadLegacyDBColumn  order column", fieldFromDB.sortOrder() ==10);
+        
+        
+    }
+    
+    
+    FieldSql sql =  FieldSql.getInstance();
+    
+
+    private void insertRawFieldInDb(Field field) throws DotDataException {
+      
+      
+      DotConnect dc = new DotConnect();
+      dc.setSQL(sql.insertFieldInode);
+      dc.addParam(field.id());
+      dc.addParam(field.iDate());
+      dc.addParam(field.owner());
+      dc.loadResult();
+      
+      
+
+      
+      
+      dc.setSQL(sql.insertField);
+      dc.addParam(field.id());
+      dc.addParam(field.contentTypeId());
+      dc.addParam(field.name());
+      dc.addParam(field.type().getCanonicalName());
+      dc.addParam(field.relationType());
+      dc.addParam(field.dbColumn());
+      dc.addParam(field.required());
+      dc.addParam(field.indexed());
+      dc.addParam(field.listed());
+      dc.addParam(field.variable());
+      dc.addParam(field.sortOrder());
+      dc.addParam(field.values());
+      dc.addParam(field.regexCheck());
+      dc.addParam(field.hint());
+      dc.addParam(field.defaultValue());
+      dc.addParam(field.fixed());
+      dc.addParam(field.readOnly());
+      dc.addParam(field.searchable());
+      dc.addParam(field.unique());
+      dc.addParam(field.modDate());
+
+      dc.loadResult();
+    }
+    
+    @Test
+    public void testBadBoolDBColumn() throws Exception {
+
+        String uu = UUID.randomUUID().toString();
+
+        SelectField selectField = ImmutableSelectField.builder().name("test field" + uu)
+                .variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint")
+                .dataType(DataTypes.BOOL).dbColumn("notreal").values("").build();
+
+        Field savedField = fieldFactory.save(selectField);
+        String inode = savedField.inode();
+        Field field2 = fieldFactory.byId(inode);
+        assertThat("testBadBoolDBColumn select data type", field2.dataType() == DataTypes.BOOL);
+        assertThat("testBadBoolDBColumn select db column", field2.dbColumn().matches("bool[0-9]+"));
+    }
+    
+	
+	
+    @Test
+    public void testTextIntColumn() throws Exception {
+
+        String uu = UUID.randomUUID().toString();
+
+        TextField textField = ImmutableTextField.builder().name("test field" + uu)
+                .variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint")
+                .dataType(DataTypes.INTEGER).id(uu).build();
+
+        Field savedField = fieldFactory.save(textField);
+        Field field2 = fieldFactory.byId(savedField.inode());
+        assertThat("field2 int dataType ", field2.dataType() == DataTypes.INTEGER);
+        assertThat("field2 int db column", field2.dbColumn().matches("integer[0-9]+"));
+    }
+    
+    @Test
+    public void testTextFloatColumn() throws Exception {
+
+        String uu = UUID.randomUUID().toString();
+
+        TextField textField = ImmutableTextField.builder().name("test field" + uu)
+                .variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint")
+                .dataType(DataTypes.FLOAT).id(uu).build();
+
+        Field savedField = fieldFactory.save(textField);
+        Field field2 = fieldFactory.byId(savedField.inode());
+        assertThat("field2 float dataType", field2.dataType() == DataTypes.FLOAT);
+        assertThat("field2 float db column", field2.dbColumn().matches("float[0-9]+"));
+    }
+    
+    @Test
+    public void testBinaryFieldDataType() throws Exception {
+
+        String uu = UUID.randomUUID().toString();
+
+        BinaryField binField = ImmutableBinaryField.builder().name("test field" + uu)
+                .variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint").id(uu).build();
+
+        Field savedField = fieldFactory.save(binField);
+        Field field2 = fieldFactory.byId(savedField.inode());
+        assertThat("binField system_field dataType ", field2.dataType() == DataTypes.SYSTEM);
+        assertThat("binField system_field db column", field2.dbColumn().matches("system_field"));
+
+    }
+    
+    @Test
+    public void testReorderField() throws Exception {
+
+        String uu = UUID.randomUUID().toString();
+
+        BinaryField binField = ImmutableBinaryField.builder().name("test field" + uu).sortOrder(15)
+                .variable(TEST_VAR_PREFIX + uu).contentTypeId(Constants.NEWS).hint("my hint").id(uu).build();
+
+        Field savedField = fieldFactory.save(binField);
+        assertThat("binField sort order ", savedField.sortOrder() == 15);
+        
+        Field loadedField = fieldFactory.byId(savedField.inode());
+        assertThat("loadedField sort order ", loadedField.sortOrder() == 15);
+        
+        
+        Field savedAgain = FieldBuilder.builder(loadedField).sortOrder(50).build();
+        Field savedAgain2 = fieldFactory.save(savedAgain);
+        assertThat("savedAgain2 sort order ", savedAgain2.sortOrder() == 50);
+        
+        
+        //assertThat("binField system_field dataType ", field2.dataType() == DataTypes.SYSTEM);
+        //assertThat("binField system_field db column", field2.dbColumn().matches("system_field"));
+
+    }
+    
 	@Test
 	public void testDataTypeLimit() throws Exception {
 
@@ -257,6 +468,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 		}
 
 	}
+	
 
 	@Test
 	public void testSuggestVelocityVar() throws Exception {

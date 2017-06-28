@@ -316,7 +316,7 @@ public class StructureFactory {
 
 
 		try{
-			String condition = " host = ?";
+			String condition = " host = '" + h.getIdentifier() + "'";
 			int limit = -1;
 			List<ContentType> types = APILocator.getContentTypeAPI(user,respectFrontendRoles).search(condition, "mod_date desc", limit, 0);
 			return new StructureTransformer(types).asStructureList();

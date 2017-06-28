@@ -2,6 +2,7 @@ package com.dotcms.uuid.shorty;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.Before;
@@ -9,65 +10,23 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotcms.repackage.com.google.common.collect.ImmutableList.Builder;
 import com.dotcms.repackage.org.apache.commons.lang.RandomStringUtils;
-import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
 
+/**
+ * Integration tests for the Shorty ID API class.
+ * 
+ * @author 
+ * @since Oct 10, 2016
+ */
 public class TestShortyIdApi {
 
-    List<String[]> expecteds = ImmutableList.<String[]>builder()
-            .add(new String[] {"f05ca8e0-eae5-422e-8e15-7a87734edda1", "inode", "containers"})
-            .add(new String[] {"fc193c82-8c32-4abe-ba8a-49522328c93e", "identifier", "containers"})
-
-
-            .add(new String[] {"ff9d9f72-3650-4bca-9e0f-6ce18150d51e", "identifier", "contentlet"})
-            .add(new String[] {"ffa0b494-cbb2-4634-b747-8795b5995d74", "identifier", "folder"})
-            .add(new String[] {"b12f30da-0f0c-4376-88a0-a17d1ffe39f9", "identifier", "links"})
-            .add(new String[] {"fdb3f906-e9c4-46c4-b7e4-148201271d04", "identifier", "template"})
-
-
-
-            .add(new String[] {"ffe266d8-0683-45f3-9b08-3d7804ae3280", "inode", "contentlet"})
-            .add(new String[] {"fe654925-f011-487c-b5db-d7cb4ed2553a", "inode", "template"})
-
-            .add(new String[] {"ede13663-ff06-4d01-ab99-a8976e995010", "inode", "category"})
-            .add(new String[] {"fff86d86-7908-4922-aaed-a3e8b0c6aae4", "inode", "field"})
-            .add(new String[] {"008dab22-8bc3-4eb2-93a0-79e3d5d0a4ab", "inode", "folder"})
-            .add(new String[] {"b1bb57cf-6f98-486d-a3b9-83f96d3dab22", "inode", "links"})
-            .add(new String[] {"a2446e0c-0e8f-4308-8b17-9d0e907aaff5", "inode", "relationship"})
-            .add(new String[] {"868c07ca-c2af-4668-8fe8-75d5b48bd6a5", "inode", "virtual_link"})
-
-
-
-            .build();
-
-    List<String[]> starterExpecteds = ImmutableList.<String[]>builder()
-            .add(new String[] {"f05ca8e0-eae5-422e-8e15-7a87734edda1", "inode", "containers"})
-            .add(new String[] {"3f0255e8-b45d-46ea-8bb7-eb6597db4c1e", "identifier", "containers"})
-
-
-            .add(new String[] {"767509b1-2392-4661-a16b-e0e31ce27719", "identifier", "contentlet"})
-            .add(new String[] {"008dab22-8bc3-4eb2-93a0-79e3d5d0a4ab", "inode", "folder"})
-            .add(new String[] {"c12fe7e6-d338-49d5-973b-2d974d57015b", "identifier", "contentlet"})
-            .add(new String[] {"4d7112b5-3efe-40b0-acff-912cc44b483e", "identifier", "links"})
-            .add(new String[] {"d30a0347-7473-49ab-b67d-cc7a972f4d59", "identifier", "template"})
-
-
-
-            .add(new String[] {"085642aa-a552-4d2e-a163-8424183b039e", "inode", "contentlet"})
-            .add(new String[] {"cc2cdf9c-a20d-4862-9454-2a76c1132123", "inode", "contentlet"})
-            .add(new String[] {"b76bc77a-59a7-45e4-9d8f-01d0f4a1567e", "inode", "template"})
-
-            .add(new String[] {"1049e7fe-1553-4731-bdf9-ba069f1dc08b", "inode", "folder"})
-            .add(new String[] {"b1bb57cf-6f98-486d-a3b9-83f96d3dab22", "inode", "links"})
-            .build();
-
-
     static List<String> fourOhFours = new ArrayList<>();
-
-
 
     /**
      * | fc193c82-8c32-4abe-ba8a-49522328c93e | containers | | ff9d9f72-3650-4bca-9e0f-6ce18150d51e
@@ -87,10 +46,144 @@ public class TestShortyIdApi {
         }
     }
 
+    protected List<String[]> expectedIdsFromStarter = null;
+    protected List<String[]> expectedIds = null;
+    
+    final String GET_INODE = "SELECT inode FROM inode WHERE type = ?";
+	final String GET_ID_CONTAINERS = "SELECT identifier FROM dot_containers";
+	final String GET_ID_CONTENTLETS = "SELECT identifier FROM contentlet";
+	final String GET_ID_LINKS = "SELECT identifier FROM links";
+	final String GET_ID_TEMPLATES = "SELECT identifier FROM template";
+	final String GET_ID_FOLDERS = "SELECT identifier FROM folder";
+    
     @Before
-    public void setUp() throws Exception {}
+    public void setUp() throws Exception {
+    	getExpectedIds();
+    	getExpectedIdsFromStarter();
+    }
 
-    @Test
+    /**
+	 * This utility method reads actual data from the DB in order to get valid
+	 * information for testing purposes.
+	 * 
+	 * @throws DotDataException
+	 *             An error occurred when reading the test data.
+	 */
+	private void getExpectedIds() throws DotDataException {
+		final DotConnect dc = new DotConnect();
+		Builder<String[]> builder = ImmutableList.<String[]>builder();
+
+		dc.setSQL(GET_INODE, 2);
+		dc.addParam("containers");
+		List<Map<String, Object>> res = dc.loadObjectResults();
+		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "containers" });
+		dc.setSQL(GET_ID_CONTAINERS, 2);
+		res = dc.loadObjectResults();
+		builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "containers" });
+
+		dc.setSQL(GET_ID_CONTENTLETS, 2);
+		res = dc.loadObjectResults();
+		builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "contentlet" });
+		dc.setSQL(GET_ID_FOLDERS, 2);
+		res = dc.loadObjectResults();
+		builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "folder" });
+		dc.setSQL(GET_ID_LINKS, 2);
+		res = dc.loadObjectResults();
+		builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "links" });
+		dc.setSQL(GET_ID_TEMPLATES, 2);
+		res = dc.loadObjectResults();
+		builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "template" });
+		
+		dc.setSQL(GET_INODE, 2);
+		dc.addParam("contentlet");
+		res = dc.loadObjectResults();
+		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "contentlet" });
+		dc.setSQL(GET_INODE, 2);
+		dc.addParam("template");
+		res = dc.loadObjectResults();
+		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "template" });
+		
+		dc.setSQL(GET_INODE, 2);
+		dc.addParam("category");
+		res = dc.loadObjectResults();
+		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "category" });
+		dc.setSQL(GET_INODE, 2);
+		dc.addParam("field");
+		res = dc.loadObjectResults();
+		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "field" });
+		dc.setSQL(GET_INODE, 2);
+		dc.addParam("folder");
+		res = dc.loadObjectResults();
+		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "folder" });
+		dc.setSQL(GET_INODE, 2);
+		dc.addParam("links");
+		res = dc.loadObjectResults();
+		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "links" });
+		dc.setSQL(GET_INODE, 2);
+		dc.addParam("relationship");
+		res = dc.loadObjectResults();
+		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "relationship" });
+		dc.setSQL(GET_INODE, 2);
+		dc.addParam("virtual_link");
+		res = dc.loadObjectResults();
+		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "virtual_link" });
+		this.expectedIds = builder.build();
+	}
+
+	/**
+	 * This utility method reads actual data from the DB in order to get valid
+	 * information for testing purposes.
+	 * 
+	 * @throws DotDataException
+	 *             An error occurred when reading the test data.
+	 */
+	private void getExpectedIdsFromStarter() throws DotDataException {
+		final DotConnect dc = new DotConnect();
+		Builder<String[]> builder = ImmutableList.<String[]>builder();
+
+		dc.setSQL(GET_INODE, 1);
+		dc.addParam("containers");
+		List<Map<String, Object>> res = dc.loadObjectResults();
+		builder.add(new String[] { res.get(0).get("inode").toString(), "inode", "containers" });
+		dc.setSQL(GET_ID_CONTAINERS, 1);
+		res = dc.loadObjectResults();
+		builder.add(new String[] { res.get(0).get("identifier").toString(), "identifier", "containers" });
+
+		dc.setSQL(GET_ID_CONTENTLETS, 2);
+		res = dc.loadObjectResults();
+		builder.add(new String[] { res.get(0).get("identifier").toString(), "identifier", "contentlet" });
+		builder.add(new String[] { res.get(1).get("identifier").toString(), "identifier", "contentlet" });
+		dc.setSQL(GET_INODE, 2);
+		dc.addParam("contentlet");
+		res = dc.loadObjectResults();
+		builder.add(new String[] { res.get(0).get("inode").toString(), "inode", "contentlet" });
+		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "contentlet" });
+
+		dc.setSQL(GET_INODE, 2);
+		dc.addParam("folder");
+		res = dc.loadObjectResults();
+		builder.add(new String[] { res.get(0).get("inode").toString(), "inode", "folder" });
+		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "folder" });
+
+		dc.setSQL(GET_INODE, 1);
+		dc.addParam("links");
+		res = dc.loadObjectResults();
+		builder.add(new String[] { res.get(0).get("inode").toString(), "inode", "links" });
+		dc.setSQL(GET_ID_LINKS, 1);
+		res = dc.loadObjectResults();
+		builder.add(new String[] { res.get(0).get("identifier").toString(), "identifier", "links" });
+
+		dc.setSQL(GET_ID_TEMPLATES, 1);
+		res = dc.loadObjectResults();
+		builder.add(new String[] { res.get(0).get("identifier").toString(), "identifier", "template" });
+		dc.setSQL(GET_INODE, 1);
+		dc.addParam("template");
+		res = dc.loadObjectResults();
+		builder.add(new String[] { res.get(0).get("inode").toString(), "inode", "template" });
+		this.expectedIdsFromStarter = builder.build();
+	}
+
+	@Test
     public void testShortyLookup() {
         ShortyId shorty = null;
         ShortType shortType = null;
@@ -101,7 +194,7 @@ public class TestShortyIdApi {
         // run 10 times
         for (int i = 0; i < 10; i++) {
             try {
-                for (String[] values : starterExpecteds) {
+                for (String[] values : expectedIdsFromStarter) {
                     val = values;
                     key = val[0].substring(0, ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH);
                     shortType = ShortType.fromString(val[1]);
@@ -130,8 +223,6 @@ public class TestShortyIdApi {
                 throw t;
             }
         }
-
-
     }
 
     @Test
@@ -141,7 +232,7 @@ public class TestShortyIdApi {
         String[] val = null;
 
         // load cache
-        for (String[] values : expecteds) {
+        for (String[] values : expectedIds) {
             val = values;
             String key = val[0].substring(0, ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH);
             Optional<ShortyId> opt = api.getShorty(key);
@@ -151,7 +242,7 @@ public class TestShortyIdApi {
 
         for (int i = 0; i < 10; i++) {
 
-            for (String[] values : expecteds) {
+            for (String[] values : expectedIds) {
                 val = values;
                 String key = val[0].substring(0, ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH);
                 Optional<ShortyId> opt = api.getShorty(key);
@@ -162,29 +253,23 @@ public class TestShortyIdApi {
         long dbQueries2 = api.getDbHits();
         assert (dbQueries2 == dbQueries);
 
-
         CacheLocator.getCacheAdministrator().flushAll();
 
         // load cache
-        for (String[] values : expecteds) {
+        for (String[] values : expectedIds) {
             val = values;
             String key = val[0].substring(0, ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH);
             Optional<ShortyId> opt = api.getShorty(key);
         }
 
-
         long dbQueries3 = api.getDbHits();
-        assert (dbQueries3 == dbQueries2 + expecteds.size());
+        assert (dbQueries3 == dbQueries2 + expectedIds.size());
     }
-
-
 
     @Test
     public void testValidShorty() {
 
-
         String[] invalids = new String[] {"!", ":", ";", "\"", "'", "*", "_", null};
-        String[] valids = new String[] {"-", "a", "4", "9", "A", "Z"};
         ShortyIdAPI api = APILocator.getShortyAPI();
         int runs = 10;
 
@@ -201,8 +286,6 @@ public class TestShortyIdApi {
 
             }
         }
-
-
 
         for (int i = 0; i < runs; i++) {
             String x = RandomStringUtils.randomAlphanumeric(ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH);
@@ -237,17 +320,14 @@ public class TestShortyIdApi {
         long dbQueries2 = api.getDbHits();
         assert (dbQueries2 == dbQueries);
 
-
         CacheLocator.getCacheAdministrator().flushAll();
 
         for (String key : fourOhFours) {
             Optional<ShortyId> opt = api.getShorty(key);
         }
 
-
         long dbQueries3 = api.getDbHits();
         assert (dbQueries3 == dbQueries2 + fourOhFours.size());
-
     }
 
     @Test
@@ -259,20 +339,18 @@ public class TestShortyIdApi {
             assert (y.indexOf('-') == 8);
         }
 
-        for (String[] x : expecteds) {
+        for (String[] x : expectedIds) {
             String noDashes = x[0].replaceAll("-", "");
             String y = api.uuidIfy(noDashes);
             assert (x[0].equals(y));
-
         }
     }
-
 
     @Test
     public void testLongerShorties() {
 
         ShortyIdAPI api = APILocator.getShortyAPI();
-        for (String[] expected : starterExpecteds) {
+        for (String[] expected : expectedIdsFromStarter) {
             String noDashes = expected[0].replaceAll("-", "");
             for ( int i = ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH; i < 30; i++ ) {
                 String key = noDashes.substring(0, i);
@@ -283,12 +361,8 @@ public class TestShortyIdApi {
                     System.out.println("key is empty:" + key);
                     throw t;
                 }
-
             }
-
-
         }
     }
-
 
 }
