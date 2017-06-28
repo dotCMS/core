@@ -12,6 +12,7 @@ import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
@@ -111,6 +112,7 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.liferay.util.StringPool;
 
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -3563,12 +3565,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @Override
     public String getName(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException,DotContentletStateException, DotDataException {
-        if(!perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
-            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
-            		+ " cannot read Contentlet: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"));
+        
+        Preconditions.checkNotNull(contentlet, "The contentlet is null");
+        Preconditions.checkNotNull(contentlet.getIdentifier(), "The contentlet is null");
+        if(StringPool.BLANK.equals(contentlet.getIdentifier())){
+            throw new DotContentletStateException("The contentlet identifier is null");
         }
-        if(contentlet == null){
-            throw new DotContentletStateException("The contentlet was null");
+
+        if(!perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
+            Logger.error(this.getClass(),"User: " + (user != null ? user.getUserId() : "Unknown")
+                    + " cannot read Contentlet: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"));
+            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown") 
+            		+ " cannot read Contentlet: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"));
         }
         String returnValue = (String) contentlet.getMap().get("__DOTNAME__");
         if(UtilMethods.isSet(returnValue)){
