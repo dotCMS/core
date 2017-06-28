@@ -1,6 +1,8 @@
 package com.dotcms.cache;
 
-import com.dotcms.content.model.KeyValue;
+import java.util.List;
+
+import com.dotcms.keyvalue.model.KeyValue;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.exception.DotDataException;
@@ -18,17 +20,18 @@ public interface KeyValueCache extends Cachable {
     /**
      * Add or update in the cache the given Key/Value based on given the given key
      * 
-     * @param key
-     * @param keyValue
-     * @return Contentlet
+     * @param key TODO
+     * @param keyValues
      * @throws DotDataException
      * @throws DotCacheException
      */
-    public KeyValue add(String key, KeyValue keyValue);
+    public void add(final String key, final List<KeyValue> keyValues);
 
-    public KeyValue addByContentType(String key, KeyValue keyValue);
+    public void addByLanguage(final String key, final long languageId, final List<KeyValue> keyValues);
 
-    public KeyValue addByContentTypeAndLanguage(String key, KeyValue keyValue);
+    public void addByContentType(final String key, final String contentTypeId, final List<KeyValue> keyValues);
+
+    public void addByLanguageAndContentType(final long languageId, final String contentTypeId, final KeyValue keyValue);
 
     /**
      * Retrieves the Key/Value associated to the given key
@@ -37,11 +40,13 @@ public interface KeyValueCache extends Cachable {
      * @return KeyValue
      * @throws DotDataException
      */
-    public KeyValue get(String key);
-    
-    public KeyValue getByContentType(String key);
-    
-    public KeyValue getByContentTypeAndLanguage(String key);
+    public List<KeyValue> get(final String key);
+
+    public List<KeyValue> getByLanguage(final String key, final long languageId);
+
+    public List<KeyValue> getByContentType(final String key, final String contentTypeId);
+
+    public KeyValue getByLanguageAndContentType(final String key, final long languageId, final String contentTypeId);
 
     /**
      * Removes all entries from cache
@@ -55,14 +60,7 @@ public interface KeyValueCache extends Cachable {
      * @throws DotDataException
      * @throws DotCacheException
      */
-    public void remove(String key);
-
-    /**
-     * 
-     * @param keyValue
-     * @return
-     */
-    public String generateCacheKey(KeyValue keyValue);
+    public void remove(final KeyValue keyValue);
 
     /**
      * 
@@ -70,6 +68,10 @@ public interface KeyValueCache extends Cachable {
      * @param languageId
      * @return
      */
-    public String generateCacheKey(String key, long languageId);
+    /*public String generateKeyByLanguage(final String key, final long languageId);
+
+    public String generateKeyByContentType(final String key, final String contentTypeId);
+
+    public String generateKeyByLanguageContentType(final String key, final long languageId, final String contentTypeId);*/
 
 }

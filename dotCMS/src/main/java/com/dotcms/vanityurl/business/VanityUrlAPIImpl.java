@@ -6,7 +6,7 @@ import com.dotcms.vanityurl.model.DefaultVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-;
+
 import com.dotcms.services.VanityUrlServices;
 import com.dotcms.util.VanityUrlUtil;
 import com.dotmarketing.beans.Host;

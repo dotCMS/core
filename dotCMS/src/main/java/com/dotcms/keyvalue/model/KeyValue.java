@@ -1,4 +1,4 @@
-package com.dotcms.content.model;
+package com.dotcms.keyvalue.model;
 
 import java.io.Serializable;
 import java.util.Map;

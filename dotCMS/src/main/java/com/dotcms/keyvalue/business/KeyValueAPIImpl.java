@@ -1,24 +1,19 @@
-package com.dotcms.api.content;
+package com.dotcms.keyvalue.business;
 
 import java.util.List;
 
 import com.dotcms.cache.KeyValueCache;
-import com.dotcms.content.model.DefaultKeyValue;
-import com.dotcms.content.model.KeyValue;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.KeyValueContentType;
+import com.dotcms.keyvalue.model.KeyValue;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
@@ -52,65 +47,41 @@ public class KeyValueAPIImpl implements KeyValueAPI {
     }
 
     @Override
-    public KeyValue fromContentlet(final Contentlet contentlet) {
-        if (null == contentlet) {
-            throw new DotStateException("The contentlet cannot be null.");
-        }
-        try {
-            if (!contentlet.getContentType().baseType().equals(BaseContentType.KEY_VALUE)) {
-                throw new DotStateException(String.format("The contentlet with ID %s is not a KeyValue content.",
-                                contentlet.getIdentifier()));
-            }
-        } catch (DotSecurityException | DotDataException e) {
-            throw new DotStateException(String.format("The contentlet with ID %s could not be identified as a KeyValue content.",
-                            contentlet.getIdentifier()));
-        }
-        DefaultKeyValue keyValue;
-        final String key = contentlet.getMap().get(KeyValueContentType.KEY_VALUE_KEY_FIELD_VAR).toString();
-        final long langId = contentlet.getLanguageId();
-        keyValue = DefaultKeyValue.class.cast(this.cache.get(this.cache.generateCacheKey(key, langId)));
-        if (null != keyValue) {
-            return keyValue;
-        }
-        keyValue = new DefaultKeyValue();
-        keyValue.setContentTypeId(contentlet.getContentTypeId());
-        try {
-            this.contentletAPI.copyProperties(Contentlet.class.cast(keyValue), contentlet.getMap());
-        } catch (DotRuntimeException | DotSecurityException e) {
-            throw new DotStateException(String.format("Properties of Contentlet %s could not be copied to a KeyValue object.",
-                            contentlet.getIdentifier()), e);
-        }
-        keyValue.setHost(contentlet.getHost());
-        if (UtilMethods.isSet(contentlet.getFolder())) {
-            try {
-                final Folder folder = this.folderAPI.find(contentlet.getFolder(), this.userAPI.getSystemUser(), Boolean.FALSE);
-                keyValue.setFolder(folder.getInode());
-            } catch (DotDataException | DotSecurityException e) {
-                Logger.warn(this, String.format("Contentlet with ID %s could not be converted to a KeyValue object.",
-                                contentlet.getIdentifier()), e);
-                keyValue = new DefaultKeyValue();
-            }
-        }
-        return keyValue;
-    }
-
-    @Override
     public List<KeyValue> get(final String key, final User user, final boolean respectFrontEnd) {
-        return get(key, null, user, respectFrontEnd);
+        List<KeyValue> results = this.cache.get(key);
+        if (null != results) {
+            return results;
+        }
+        results = queryKeyValues(key, -1, null, user, respectFrontEnd);
+        if (null != results && !results.isEmpty()) {
+            this.cache.add(key, results);
+        }
+        return results;
     }
 
-    /*
-        grupo 1 = key-lang
-        grupo 2 = key-lang-conttype
-        grupo 3 = key-contetype
-    */
     @Override
     public List<KeyValue> get(final String key, final long languageId, final User user, final boolean respectFrontEnd) {
-        return null;
+        List<KeyValue> results = this.cache.getByLanguage(key, languageId);
+        if (null != results) {
+            return results;
+        }
+        results = queryKeyValues(key, languageId, null, user, respectFrontEnd);
+        if (null != results && !results.isEmpty()) {
+            this.cache.addByLanguage(key, languageId, results);
+        }
+        return results;
     }
-    
+
     @Override
     public List<KeyValue> get(final String key, final ContentType contentType, final User user, final boolean respectFrontEnd) {
+        List<KeyValue> results = this.cache.getByContentType(key, contentType.id());
+        if (null != results) {
+            return results;
+        }
+        results = queryKeyValues(key, -1, contentType, user, respectFrontEnd);
+        if (null != results && !results.isEmpty()) {
+            this.cache.addByContentType(key, contentType.id(), results);
+        }
         return queryKeyValues(key, -1, contentType, user, respectFrontEnd);
     }
 
@@ -118,12 +89,15 @@ public class KeyValueAPIImpl implements KeyValueAPI {
     public KeyValue get(final String key, final long languageId, final ContentType contentType, final User user,
                     final boolean respectFrontEnd) {
         if (languageId > -1 && null != contentType && UtilMethods.isSet(contentType.id())) {
-            KeyValue keyValue = this.cache.get(this.cache.generateCacheKey(key, languageId));
+            final KeyValue keyValue = this.cache.getByLanguageAndContentType(key, languageId, contentType.id());
             if (null != keyValue) {
                 return keyValue;
             }
         }
-        List<KeyValue> result = queryKeyValues(key, languageId, contentType, user, respectFrontEnd);
+        final List<KeyValue> result = queryKeyValues(key, languageId, contentType, user, respectFrontEnd);
+        result.stream().forEach((KeyValue keyValue) -> {
+            this.cache.addByLanguageAndContentType(languageId, contentType.id(), keyValue);
+        });
         return (result.size() > 0) ? result.get(0) : null;
     }
 
@@ -139,9 +113,10 @@ public class KeyValueAPIImpl implements KeyValueAPI {
     private List<KeyValue> queryKeyValues(final String key, final long languageId, final ContentType contentType, final User user,
                     final boolean respectFrontEnd) {
         final ImmutableList.Builder<KeyValue> results = new Builder<KeyValue>();
+        // No limit and no pagination required
         final int limit = 0;
         final int offset = -1;
-        StringBuilder query = new StringBuilder();
+        final StringBuilder query = new StringBuilder();
         try {
             query.append((UtilMethods.isSet(contentType) && UtilMethods.isSet(contentType.variable()))
                             ? "+contentType:" + contentType.variable() : "+baseType:" + BaseContentType.KEY_VALUE.getType());
@@ -152,7 +127,6 @@ public class KeyValueAPIImpl implements KeyValueAPI {
                             contentletAPI.search(query.toString(), limit, offset, StringPool.BLANK, user, Boolean.FALSE);
             contentResults.stream().forEach((Contentlet contentlet) -> {
                 KeyValue keyValue = fromContentlet(contentlet);
-                this.cache.add(this.cache.generateCacheKey(keyValue), keyValue);
                 results.add(keyValue);
             });
         } catch (DotDataException | DotSecurityException e) {

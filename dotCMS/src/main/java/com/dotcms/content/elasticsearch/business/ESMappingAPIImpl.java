@@ -22,13 +22,13 @@ import org.elasticsearch.action.ListenableActionFuture;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 
-import com.dotcms.api.content.KeyValueAPI;
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.util.ESClient;
-import com.dotcms.content.model.KeyValue;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.keyvalue.business.KeyValueAPI;
+import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.org.apache.commons.collections.CollectionUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;

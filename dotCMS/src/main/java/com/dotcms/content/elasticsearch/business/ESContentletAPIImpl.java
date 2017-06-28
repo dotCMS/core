@@ -1,11 +1,42 @@
 package com.dotcms.content.elasticsearch.business;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.Serializable;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.springframework.beans.BeanUtils;
+
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.enterprise.cmis.QueryResult;
+import com.dotcms.keyvalue.business.KeyValueAPI;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
@@ -111,34 +142,6 @@ import com.google.gson.GsonBuilder;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.Serializable;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.springframework.beans.BeanUtils;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -725,7 +728,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (!isAdmin)
             addPermissionsToQuery(buffy, user, roles, respectFrontendRoles);
 
-        int originalLimit = limit;
         if(UtilMethods.isSet(sortBy) && sortBy.trim().equalsIgnoreCase("random")){
             sortBy="random";
         }
@@ -738,7 +740,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         for (SearchHit sh : lc.hits()) {
             try{
-                Map<String, Object> hm = new HashMap<String, Object>();
                 ContentletSearch conwrapper= new ContentletSearch();
                 conwrapper.setIdentifier(sh.field("identifier").getValue().toString());
                 conwrapper.setInode(sh.field("inode").getValue().toString());
@@ -761,7 +762,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         //Get the contentlet Identifier to gather the related pages
         Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
         //Get the identifier's number of the related pages
-        List<MultiTree> multitrees = (List<MultiTree>) MultiTreeFactory.getMultiTreeByChild(identifier.getInode());
+        List<MultiTree> multitrees = (List<MultiTree>) MultiTreeFactory.getMultiTreeByChild(identifier.getId());
         for(MultiTree multitree : multitrees)
         {
             //Get the Identifiers of the related pages
@@ -3272,6 +3273,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if(contentlet != null && contentlet.isVanityUrl()){
 				    //remove from cache
                     VanityUrlServices.invalidateVanityUrl(contentlet);
+                }
+                if (null != contentlet && contentlet.isKeyValue()) {
+                    // Remove from cache
+                    CacheLocator.getKeyValueCache().remove(APILocator.getKeyValueAPI().fromContentlet(contentlet));
                 }
 
 				if(structureHasAHostField && changedURI) {

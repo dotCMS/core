@@ -1,6 +1,5 @@
 package com.dotcms.vanityurl.model;
 
-;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 

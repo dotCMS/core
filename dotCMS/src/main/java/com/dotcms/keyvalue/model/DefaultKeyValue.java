@@ -1,4 +1,4 @@
-package com.dotcms.content.model;
+package com.dotcms.keyvalue.model;
 
 import com.dotcms.contenttype.model.type.KeyValueContentType;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -33,5 +33,5 @@ public class DefaultKeyValue extends Contentlet implements KeyValue {
 	public void setValue(String value) {
 		setStringProperty(KeyValueContentType.KEY_VALUE_VALUE_FIELD_VAR, value);
 	}
-
+	
 }

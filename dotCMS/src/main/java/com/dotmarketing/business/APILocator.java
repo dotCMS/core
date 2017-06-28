@@ -5,8 +5,6 @@ import java.io.IOException;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import com.dotcms.api.content.KeyValueAPI;
-import com.dotcms.api.content.KeyValueAPIImpl;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.api.tree.TreeableAPI;
@@ -36,6 +34,10 @@ import com.dotcms.enterprise.linkchecker.LinkCheckerAPIImpl;
 import com.dotcms.enterprise.priv.ESSearchProxy;
 import com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchAPI;
 import com.dotcms.enterprise.rules.RulesAPI;
+import com.dotcms.keyvalue.business.KeyValueAPI;
+import com.dotcms.keyvalue.business.KeyValueAPIImpl;
+import com.dotcms.languagevariables.business.LanguageVariableAPI;
+import com.dotcms.languagevariables.business.LanguageVariableAPIImpl;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.notifications.business.NotificationAPIImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsAPI;
@@ -147,9 +149,9 @@ public class APILocator extends Locator<APIIndex>{
 	 * Creates a single instance of this class.
 	 */
 	public synchronized static void init(){
-		if(instance != null)
+		if(instance != null) {
 			return;
-
+		}
 
 		String apiLocatorClass = Config.getStringProperty("API_LOCATOR_IMPLEMENTATION", null, false);
 		if (apiLocatorClass != null) {
@@ -192,8 +194,11 @@ public class APILocator extends Locator<APIIndex>{
 		}
 	} // destroy.
 
-
-
+    /**
+     * Creates a single instance of the {@link SecurityLoggerServiceAPI} class.
+     *
+     * @return The {@link SecurityLoggerServiceAPI} class.
+     */
 	public static SecurityLoggerServiceAPI getSecurityLogger() {
 		return (SecurityLoggerServiceAPI)getInstance(APIIndex.SECURITY_LOGGER_API);
 	}
@@ -770,16 +775,18 @@ public class APILocator extends Locator<APIIndex>{
     }
 
     /**
-     * 
-     * @return
+     * Creates a single instance of the {@link FieldAPI} class.
+     *
+     * @return The {@link FieldAPI} class.
      */
     public static FieldAPI getContentTypeFieldAPI() {
 		return new FieldAPIImpl();
 	}
 
     /**
+     * Returns the dotCMS System User object.
      * 
-     * @return
+     * @return The System {@link User}.
      */
     public static User systemUser()  {
       try{
@@ -791,8 +798,9 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
     /**
+     * Returns the dotCMS System Host object.
      * 
-     * @return
+     * @return The System {@link Host}.
      */
     public static Host systemHost()  {
       try{
@@ -804,8 +812,9 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
     /**
-     * 
-     * @return
+     * Creates a single instance of the {@link TreeableAPI} class.
+     *
+     * @return The {@link TreeableAPI} class.
      */
 	public static TreeableAPI getTreeableAPI () {return new TreeableAPI();}
 
@@ -847,6 +856,15 @@ public class APILocator extends Locator<APIIndex>{
         return (KeyValueAPI) getInstance(APIIndex.KEY_VALUE_API);
     }
 
+    /**
+     * Creates a single instance of the {@link LanguageVariableAPI}
+     *
+     * @return The {@link LanguageVariableAPI} class.
+     */
+    public static LanguageVariableAPI getLanguageVariableAPI() {
+        return (LanguageVariableAPI) getInstance(APIIndex.KEY_VALUE_API);
+    }
+
 	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
@@ -869,8 +887,9 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
+	 * Creates a unique instance of this API Locator.
 	 * 
-	 * @return
+	 * @return A new instance of the {@link APILocator}.
 	 */
 	private static APILocator getAPILocatorInstance() {
 		if(instance == null){
@@ -975,7 +994,8 @@ enum APIIndex
 	SECURITY_LOGGER_API,
 	FILE_WATCHER_API,
 	VANITY_URL_API,
-	KEY_VALUE_API;
+	KEY_VALUE_API,
+	LANGUAGE_VARIABLE_API;
 
 	Object create() {
 		switch(this) {
@@ -1042,14 +1062,16 @@ enum APIIndex
     		case FILE_WATCHER_API: return createFileWatcherAPI();
     		case VANITY_URL_API: return new VanityUrlAPIImpl();
     		case KEY_VALUE_API: return new KeyValueAPIImpl();
+    		case LANGUAGE_VARIABLE_API: return new LanguageVariableAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
 
-	/**
-	 * 
-	 * @return
-	 */
+    /**
+     * Correctly initializes a new single instance of the {@link FileWatcherAPI}.
+     * 
+     * @return The {@link FileWatcherAPI}.
+     */
 	private static FileWatcherAPI createFileWatcherAPI () {
 
 		FileWatcherAPIImpl fileWatcherAPI = null;
