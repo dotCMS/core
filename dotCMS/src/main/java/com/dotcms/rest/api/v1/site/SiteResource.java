@@ -127,7 +127,7 @@ public class SiteResource implements Serializable {
         String filter = (null != filterParam && filterParam.endsWith(NO_FILTER))?
                 filterParam.substring(0, filterParam.length() - 1):
                 (null != filterParam)? filterParam: StringUtils.EMPTY;
-        final String sanitizedFilter = !filter.equals("all") ? filter : StringUtils.EMPTY;
+        final String sanitizedFilter = !"all".equals(filter) ? filter : StringUtils.EMPTY;
 
         try {
             response = paginationUtil.getPage(req, user, sanitizedFilter, showArchived, page, perPage);
