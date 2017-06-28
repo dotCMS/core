@@ -128,7 +128,7 @@ public class PaginationUtil {
 
 		int pageValue = page == 0 ? FIRST_PAGE_INDEX : page;
 		int perPageValue = perPage == 0 ? perPageDefault : perPage;
-		int minIndex = getMinIndex(pageValue, perPage);
+		int minIndex = getMinIndex(pageValue, perPageValue);
 		String sanitizefilter = SQLUtil.sanitizeParameter(filter);
 
 		Collection items = paginator.getItems(user, sanitizefilter, showArchived, perPageValue, minIndex, orderBy, direction);
@@ -244,13 +244,8 @@ public class PaginationUtil {
 			params.put("pageValue", String.valueOf(page));
 		}
 
-		if (direction != null){
-			params.put("directionValue", direction.toString());
-		}
-
-		if (UtilMethods.isSet(orderBy)){
-			params.put("orderByValue", orderBy.toString());
-		}
+		params.put("directionValue", UtilMethods.isSet(direction) ? direction.toString() : StringUtils.EMPTY);
+		params.put("orderByValue", UtilMethods.isSet(orderBy) ? orderBy.toString()  : StringUtils.EMPTY);
 
 		return StringUtil.format(URL_TEMPLATE, params);
 	}

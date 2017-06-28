@@ -6,6 +6,7 @@ public enum DataTypes {
 	NONE("none"),
 	BOOL("bool"),
 	DATE("date"),
+	DATE_TIME("date_time"),
 	FLOAT("float"),
 	INTEGER("integer"),
 	TEXT("text"),
