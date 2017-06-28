@@ -136,7 +136,7 @@ export class SiteSelectorComponent implements ControlValueAccessor {
     private selectCurrentSite(value: string): void {
         if (this.sitesCurrentPage) {
             let selected = this.sitesCurrentPage.filter( site => site.identifier === this.value);
-            this.currentSite = selected.length > 0 ? selected[0] : this.currentSite;
+            this.currentSite = selected[0] || this.currentSite;
         }
     }
 }

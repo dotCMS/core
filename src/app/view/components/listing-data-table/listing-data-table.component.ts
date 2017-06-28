@@ -23,6 +23,8 @@ export class ListingDataTableComponent extends BaseComponent {
     @Input() buttonActions: ButtonAction[] = [];
     @Input() sortOrder: number;
     @Input() sortField: string;
+    @Input() multipleSelection = false;
+
     @Output() rowWasClicked: EventEmitter<any> = new EventEmitter;
 
     readonly DATE_FORMAT = 'date';
@@ -66,6 +68,7 @@ export class ListingDataTableComponent extends BaseComponent {
     }
 
     loadData(offset: number, sortFieldParam?: string, sortOrderParam?: OrderDirection): void {
+
         if (this.columns) {
             let sortField = sortFieldParam || this.sortField;
             let sortOrder = sortOrderParam || this.sortOrder;
@@ -94,9 +97,7 @@ export class ListingDataTableComponent extends BaseComponent {
 
     private formatData(items: any[]): any[] {
         return items.map((item) => {
-            this.dateColumns.forEach((col) => {
-                item[col.fieldName] = this.formatDateService.getRelative(item[col.fieldName]);
-            });
+            this.dateColumns.forEach((col) => item[col.fieldName] = this.formatDateService.getRelative(item[col.fieldName]));
             return item;
         });
     }

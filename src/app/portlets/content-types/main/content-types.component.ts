@@ -97,29 +97,7 @@ export class ContentTypesPortletComponent extends BaseComponent {
                         label: this.i18nMessages['Persona']
                     }
                 ]
-            },
-            secondary: [
-                {
-                    label: this.i18nMessages['Actions'],
-                    model: [
-                        {
-                            command: $event => {
-                                // DELETE DATA
-                            },
-                            deleteOptions: {
-                                confirmHeader: this.i18nMessages[
-                                    'message.structure.cantdelete'
-                                ],
-                                confirmMessage: this.i18nMessages[
-                                    'message.structure.delete.structure.and.content'
-                                ]
-                            },
-                            icon: 'fa-close',
-                            label: this.i18nMessages['delete']
-                        }
-                    ]
-                }
-            ]
+            }
         };
 
         this.contentTypeColumns = [

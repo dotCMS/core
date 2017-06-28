@@ -14,7 +14,7 @@
              [globalFilter]="gf"
              [sortOrder]="sortOrder === 'desc' ? -1 : 1">
 
-    <p-column selectionMode="multiple"></p-column>
+    <p-column selectionMode="multiple" *ngIf="multipleSelection"></p-column>
 
     <ng-template ngFor let-col [ngForOf]="columns">
         <p-column 

@@ -13,8 +13,8 @@ import { MessageService } from '../../../api/services/messages-service';
 import { MockMessageService } from '../../../test/message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Observable } from 'rxjs/Observable';
-import { PaginatorService } from '../../..//api/services/paginator';
 import { tick, fakeAsync } from '@angular/core/testing';
+import { PaginatorService } from '../../../api/services/paginator';
 
 describe('Listing Component', () => {
 
@@ -22,9 +22,8 @@ describe('Listing Component', () => {
   let fixture: ComponentFixture<ListingDataTableComponent>;
   let de: DebugElement;
   let el: HTMLElement;
-  let url = '/test/';
 
-  beforeEach(async(() => {
+  beforeEach(() => {
     let messageServiceMock = new MockMessageService({
         'global-search': 'Global Serach'
     });
@@ -41,17 +40,11 @@ describe('Listing Component', () => {
     });
 
     fixture = DOTTestBed.createComponent(ListingDataTableComponent);
-
     comp = fixture.componentInstance;
-
-    // query for the title <h1> by CSS element selector
     de = fixture.debugElement.query(By.css('p-dataTable'));
     el = de.nativeElement;
-  }));
 
-  it('renderer basic datatable component', () => {
-
-    let items = [
+    this.items = [
         {field1: 'item1-value1', field2: 'item1-value2', field3: 'item1-value3'},
         {field1: 'item2-value1', field2: 'item2-value2', field3: 'item2-value3'},
         {field1: 'item3-value1', field2: 'item3-value2', field3: 'item3-value3'},
@@ -61,33 +54,35 @@ describe('Listing Component', () => {
         {field1: 'item7-value1', field2: 'item7-value2', field3: 'item7-value3'}
     ];
 
-    let paginatorService = fixture.debugElement.injector.get(PaginatorService);
-    paginatorService.paginationPerPage = 4;
-    paginatorService.maxLinksPage = 2;
-    paginatorService.totalRecords = items.length;
+    this.paginatorService = fixture.debugElement.injector.get(PaginatorService);
+    this.paginatorService.paginationPerPage = 4;
+    this.paginatorService.maxLinksPage = 2;
+    this.paginatorService.totalRecords = this.items.length;
 
-    spyOn(paginatorService, 'getWithOffset').and.callFake(() => {
-        return Observable.create(observer => {
-            observer.next(items);
-        });
-    });
-
-    comp.columns = [
+    this.columns = [
         {fieldName: 'field1', header: 'Field 1', width: '45%'},
         {fieldName: 'field2', header: 'Field 2', width: '10%'},
         {fieldName: 'field3', header: 'Field 3', width: '45%'},
     ];
 
-    comp.ngOnChanges({
-        columns: new SimpleChange(null, comp.columns, true),
-        url: new SimpleChange(null, url, true)
+    this.url = '/test/';
+  });
+
+  it('renderer basic datatable component', () => {
+
+    spyOn(this.paginatorService, 'getWithOffset').and.callFake(() => {
+        return Observable.create(observer => {
+            observer.next(Object.assign([], this.items));
+        });
     });
 
-    let dataList = fixture.debugElement.query(By.css('p-dataTable'));
-    let dataListComponentInstance = dataList.componentInstance;
+    comp.columns = this.columns;
+    comp.url = this.url;
+    comp.multipleSelection = true;
 
-    dataListComponentInstance.onLazyLoad.emit({
-      first: 0
+    comp.ngOnChanges({
+        columns: new SimpleChange(null, comp.columns, true),
+        url: new SimpleChange(null, this.url, true)
     });
 
     fixture.detectChanges();
@@ -104,7 +99,7 @@ describe('Listing Component', () => {
     rows.forEach((row, rowIndex) => {
         if (rowIndex) {
             let cells = row.querySelectorAll('td');
-            let item = items[rowIndex - 1];
+            let item = this.items[rowIndex - 1];
 
             cells.forEach((cell, cellIndex) => {
                 if (cellIndex) {
@@ -115,46 +110,31 @@ describe('Listing Component', () => {
         }
     });
 
-    expect(url).toEqual(paginatorService.url);
+    expect(this.url).toEqual(this.paginatorService.url);
+    let checkboxs = fixture.debugElement.queryAll(By.css('input[type="checkbox"]'));
+    expect(5).toEqual(checkboxs.length);
   });
 
   it('renderer with format date column', () => {
+    let itemsWithFormat = this.items.map(item => {
+        item.field3 = 1496178801000;
+        return item;
+    });
 
-    let items = [
-        {field1: 'item1-value1', field2: 'item1-value2', field3: 1496178801000},
-        {field1: 'item2-value1', field2: 'item2-value2', field3: 1496178802000},
-        {field1: 'item3-value1', field2: 'item3-value2', field3: 1496178803000},
-        {field1: 'item4-value1', field2: 'item4-value2', field3: 1496178804000},
-        {field1: 'item5-value1', field2: 'item5-value2', field3: 1496178805000},
-        {field1: 'item6-value1', field2: 'item6-value2', field3: 1496178806000},
-        {field1: 'item7-value1', field2: 'item7-value2', field3: 1496178807000}
-    ];
-
-    let paginatorService = fixture.debugElement.injector.get(PaginatorService);
-    paginatorService.paginationPerPage = 4;
-    paginatorService.maxLinksPage = 2;
-    paginatorService.totalRecords = items.length;
-    spyOn(paginatorService, 'getWithOffset').and.callFake(() => {
+    spyOn(this.paginatorService, 'getWithOffset').and.callFake(() => {
         return Observable.create(observer => {
-            observer.next(items);
+            observer.next(Object.assign([], itemsWithFormat));
         });
     });
 
-    comp.columns = [
-        {fieldName: 'field1', header: 'Field 1', width: '45%'},
-        {fieldName: 'field2', header: 'Field 2', width: '10%'},
-        {fieldName: 'field3', header: 'Field 3', width: '45%', format: 'date'},
-    ];
-
+    this.columns[2].format = 'date';
+    comp.columns = this.columns;
+    comp.url = this.url;
+    comp.multipleSelection = true;
+    
     comp.ngOnChanges({
         columns: new SimpleChange(null, comp.columns, true),
-        url: new SimpleChange(null, url, true)
-    });
-
-    let dataList = fixture.debugElement.query(By.css('p-dataTable'));
-    let dataListComponentInstance = dataList.componentInstance;
-    dataListComponentInstance.onLazyLoad.emit({
-      first: 0
+        url: new SimpleChange(null, this.url, true)
     });
 
     fixture.detectChanges();
@@ -171,17 +151,53 @@ describe('Listing Component', () => {
     rows.forEach((row, rowIndex) => {
         if (rowIndex) {
             let cells = row.querySelectorAll('td');
-            let item = items[rowIndex - 1];
+            let item = this.items[rowIndex - 1];
 
             cells.forEach((cell, cellIndex) => {
                 if (cellIndex) {
-                    expect(cells[cellIndex].querySelector('span').textContent)
-                        .toContain(item[comp.columns[cellIndex - 1].fieldName]);
+                    let textContent = cells[cellIndex].querySelector('span').textContent;
+                    let itemCOntent = item[comp.columns[cellIndex - 1].fieldName];
+                    expect(textContent).toContain(itemCOntent);
                 }
             });
         }
     });
 
-    expect(url).toEqual(paginatorService.url);
+    expect(this.url).toEqual(this.paginatorService.url);
+  });
+
+  it('should renderer table without checkbox', () => {
+
+    spyOn(this.paginatorService, 'getWithOffset').and.callFake(() => {
+        return Observable.create(observer => {
+            observer.next(Object.assign([], this.items));
+        });
+    });
+
+    comp.columns = this.columns;
+    comp.url = this.url;
+
+    comp.ngOnChanges({
+        columns: new SimpleChange(null, comp.columns, true),
+        url: new SimpleChange(null, this.url, true)
+    });
+
+    let dataList = fixture.debugElement.query(By.css('p-dataTable'));
+    let dataListComponentInstance = dataList.componentInstance;
+
+    dataListComponentInstance.onLazyLoad.emit({
+      first: 0
+    });
+
+    fixture.detectChanges();
+
+    let rows = el.querySelectorAll('tr');
+    expect(5).toEqual(rows.length);
+
+    let headers = rows[0].querySelectorAll('th');
+    expect(3).toEqual(headers.length);
+
+    let checkboxs = fixture.debugElement.queryAll(By.css('input[type="checkbox"]'));
+    expect(0).toEqual(checkboxs.length);
   });
 });
