@@ -3568,9 +3568,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         
         Preconditions.checkNotNull(contentlet, "The contentlet is null");
         Preconditions.checkNotNull(contentlet.getIdentifier(), "The contentlet is null");
-        if(StringPool.BLANK.equals(contentlet.getIdentifier())){
-            throw new DotContentletStateException("The contentlet identifier is null");
-        }
 
         if(!perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
             Logger.error(this.getClass(),"User: " + (user != null ? user.getUserId() : "Unknown")
