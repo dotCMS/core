@@ -204,7 +204,7 @@ public class VanityUrlAPITest {
                     vanity2 == null);
 
             vanity2 = vanityUrlAPI
-                    .getLiveVanityUrl(uri, defaultHost, defaultLanguageId, user);
+                    .getLiveVanityUrl(uri2, defaultHost, defaultLanguageId, user);
 
             assertThat("Vanity URL should not be live",
                     vanity2 == null || vanity2.getInode()
