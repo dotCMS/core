@@ -254,7 +254,7 @@ public class CMSFilterTest {
         // build them up
         try {
 
-            cmsHomePage = createVanityUrl("cmsHomePage", Host.SYSTEM_HOST, "/cmsHomePage",
+            cmsHomePage = createVanityUrl("cmsHomePage", defaultHost.getIdentifier(), "/cmsHomePage",
                     "/about-us/" + CMSFilter.CMS_INDEX_PAGE, 200, 1, defaulLanguageId);
 
             CMSFilter cmsFilter = new CMSFilter();
@@ -279,7 +279,7 @@ public class CMSFilterTest {
             contentletAPI.delete(cmsHomePage, systemUser, false);
 
             //And save it
-            cmsHomePage = createVanityUrl("cmsHomePage Host", defaultHost.getIdentifier(), "/cmsHomePage",
+            cmsHomePage = createVanityUrl("cmsHomePage Host", Host.SYSTEM_HOST, "/cmsHomePage",
                     "/about-us/" + CMSFilter.CMS_INDEX_PAGE, 200, 1, defaulLanguageId);
 
 
@@ -584,7 +584,7 @@ public class CMSFilterTest {
         contentletAPI.isInodeIndexed(contentlet.getInode());
         //Publish Vanity Url
         contentletAPI.publish(contentlet, user, false);
-
+        contentletAPI.isInodeIndexed(contentlet.getInode());
         return contentlet;
     }
 

@@ -3,16 +3,19 @@ package com.dotcms.vanityurl.business;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import com.dotcms.cache.VanityUrlCache;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.VanityUrlUtil;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -48,6 +51,7 @@ public class VanityUrlAPITest {
     private static ContentTypeAPI contentTypeAPI;
     private static PermissionAPI permissionAPI;
     private static ContentType contentType;
+    private static VanityUrlCache vanityUrlCache;
 
     private static final String VANITY_URL_CONTENT_TYPE_NAME = "Vanity URL Asset";
     private static final String VANITY_URL_CONTENT_TYPE_VARNAME = "Vanityurlasset";
@@ -68,6 +72,9 @@ public class VanityUrlAPITest {
         languageAPI = APILocator.getLanguageAPI();
         contentTypeAPI = APILocator.getContentTypeAPI(user);
         permissionAPI = APILocator.getPermissionAPI();
+
+        /* Load Cache */
+        vanityUrlCache = CacheLocator.getVanityURLCache();
 
         /* Default variables */
         defaultHost = hostAPI.findDefaultHost(user, false);
@@ -141,12 +148,13 @@ public class VanityUrlAPITest {
     public void getLiveVanityUrl() {
 
         Contentlet contentlet1 = null;
+        Contentlet contentlet2 = null;
         try {
             long i = System.currentTimeMillis();
             String title = "VanityURL" + i;
             String site = defaultHost.getIdentifier();
-            String uri = "/test2_" + i;
-            String forwardTo = "/about-us/" + CMSFilter.CMS_INDEX_PAGE;
+            String uri = "/test2_1_" + i;
+            String forwardTo = "/products/";
             int action = 200;
             int order = 1;
 
@@ -155,7 +163,22 @@ public class VanityUrlAPITest {
 
             publishVanityUrl(contentlet1);
 
-            VanityUrl vanity1 = vanityUrlAPI
+            //Not live
+            String title2 = "VanityURL_2_" + i;
+            String site2 = defaultHost.getIdentifier();
+            String uri2 = "/test2_2_" + i;
+            String forwardTo2 = "/products/";
+            int action2 = 301;
+            int order2 = 1;
+
+            contentlet2 = createVanityUrl(title2, site2, uri2,
+                    forwardTo2, action2, order2, defaultLanguageId);
+
+            VanityUrl vanity1 = vanityUrlCache.get(VanityUrlUtil.sanitizeKey(contentlet1));
+            assertThat("Vanity URL should not be cached yet",
+                    vanity1 == null);
+
+            vanity1 = vanityUrlAPI
                     .getLiveVanityUrl(uri, defaultHost, defaultLanguageId, user);
 
             assertThat("Vanity URL should be live",
@@ -171,6 +194,22 @@ public class VanityUrlAPITest {
                     .equals(forwardTo));
             assertThat("Vanity URL action code field is incorrect", vanity1.getAction() == action);
 
+            vanity1 = vanityUrlCache.get(VanityUrlUtil.sanitizeKey(contentlet1));
+            assertThat("Vanity URL should be cached",
+                    vanity1 != null && !vanity1.getInode()
+                    .equals(VanityUrlAPI.CACHE_404_VANITY_URL));
+
+            VanityUrl vanity2 = vanityUrlCache.get(VanityUrlUtil.sanitizeKey(contentlet2));
+            assertThat("Vanity URL should not be cached yet",
+                    vanity2 == null);
+
+            vanity2 = vanityUrlAPI
+                    .getLiveVanityUrl(uri, defaultHost, defaultLanguageId, user);
+
+            assertThat("Vanity URL should not be live",
+                    vanity2 == null || vanity2.getInode()
+                            .equals(VanityUrlAPI.CACHE_404_VANITY_URL));
+
         } catch (DotDataException | DotSecurityException e) {
             e.printStackTrace();
             Assert.fail();
@@ -178,6 +217,10 @@ public class VanityUrlAPITest {
             try {
                 if (contentlet1 != null) {
                     contentletAPI.delete(contentlet1, user, false);
+                }
+
+                if (contentlet2 != null) {
+                    contentletAPI.delete(contentlet2, user, false);
                 }
             } catch (Exception e) {
                 Logger.error(this.getClass(), "Error cleaning up Vanity Url Links");
@@ -538,6 +581,6 @@ public class VanityUrlAPITest {
             throws DotDataException, DotSecurityException {
         //Publish Vanity Url
         contentletAPI.publish(contentlet, user, false);
-        contentletAPI.isInodeIndexed(contentlet.getInode());
+        contentletAPI.isInodeIndexed(contentlet.getInode(),1);
     }
 }
