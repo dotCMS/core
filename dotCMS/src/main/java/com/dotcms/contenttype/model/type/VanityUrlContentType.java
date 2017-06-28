@@ -58,7 +58,7 @@ public abstract class VanityUrlContentType extends ContentType implements Expire
 
 	@Override
 	public List<Field> requiredFields() {
-		int order = 1;
+		int order = 0;
 		Field titleField = ImmutableTextField.builder().name(TITLE_FIELD_NAME).variable(TITLE_FIELD_VAR)
 				.dataType(DataTypes.TEXT).required(Boolean.TRUE).listed(Boolean.TRUE).indexed(Boolean.TRUE)
 				.sortOrder(order++).fixed(Boolean.TRUE).searchable(Boolean.TRUE).build();
@@ -74,11 +74,11 @@ public abstract class VanityUrlContentType extends ContentType implements Expire
 				.values("$velutil.mergeTemplate('/static/content/file_browser_field_render.vtl')")
 				.required(Boolean.TRUE).sortOrder(order++).listed(Boolean.TRUE).build();
 		Field actionField = ImmutableSelectField.builder().name(ACTION_FIELD_NAME).variable(ACTION_FIELD_VAR)
-				.required(Boolean.TRUE).fixed(Boolean.TRUE).indexed(Boolean.TRUE).searchable(Boolean.TRUE)
+				.required(Boolean.TRUE).fixed(Boolean.TRUE).indexed(Boolean.TRUE).searchable(Boolean.TRUE).sortOrder(order++)
 				.dataType(DataTypes.INTEGER).values("200 - Forward|200\r\n301 - Permanent Redirect|301\r\n302 - Temporary Redirect|302\r\n401 - Auth Required|401\r\n403 - Auth Failed|403\r\n404 - Missing|404\r\n500 - Error|500").build();
 		Field orderField = ImmutableTextField.builder().name(ORDER_FIELD_NAME).variable(ORDER_FIELD_VAR)
 				.dataType(DataTypes.INTEGER).required(Boolean.TRUE).fixed(Boolean.TRUE).indexed(Boolean.TRUE)
-				.searchable(Boolean.TRUE).build();
+				.sortOrder(order++).searchable(Boolean.TRUE).build();
 		return ImmutableList.of(titleField, siteField, uriField, forwardToField, actionField, orderField);
 	}
 

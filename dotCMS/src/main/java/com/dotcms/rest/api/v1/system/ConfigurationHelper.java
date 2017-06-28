@@ -90,10 +90,6 @@ public class ConfigurationHelper implements Serializable {
 						message("notifications_dismissall", locale), // Dismiss all
 						this.getRelativeTimeEntry(locale)
 				),
-				DOTCMS_PAGINATION_ROWS,
-				Config.getIntProperty(DOTCMS_PAGINATION_ROWS, 10),
-				DOTCMS_PAGINATION_LINKS,
-				Config.getIntProperty(DOTCMS_PAGINATION_LINKS, 5),
 				LICENSE,
 				map(
 						IS_COMMUNITY,      LicenseManager.getInstance().isCommunity(),

@@ -29,10 +29,13 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
@@ -47,20 +50,19 @@ import java.util.Map;
 public class ContentTypeResource implements Serializable {
 	private final WebResource webResource;
 	private final ContentTypeHelper contentTypeHelper;
+	private final PaginationUtil paginationUtil;
 
 	public ContentTypeResource() {
-		this(ContentTypeHelper.getInstance(), new WebResource());
+		this(ContentTypeHelper.getInstance(), new WebResource(), new PaginationUtil(new ContentTypesPaginator()));
 	}
 
 	@VisibleForTesting
-	public ContentTypeResource(final ContentTypeHelper contentletHelper, final WebResource webresource) {
+	public ContentTypeResource(final ContentTypeHelper contentletHelper, final WebResource webresource,
+							   PaginationUtil paginationUtil) {
+
 		this.webResource = webresource;
 		this.contentTypeHelper = contentletHelper;
-	}
-
-	@VisibleForTesting
-	public ContentTypeResource(final ContentTypeHelper contentletHelper) {
-		this(contentletHelper, new WebResource());
+		this.paginationUtil = paginationUtil;
 	}
 
 	private static final long serialVersionUID = 1L;
@@ -79,16 +81,16 @@ public class ContentTypeResource implements Serializable {
 		Response response = null;
 
 		try {
-			List<ContentType> typesToSave = new JsonContentTypeTransformer(json).asList();
-            List<ContentType> retTypes = new ArrayList<>();
-            
-            // Validate input
-            for (ContentType type : typesToSave) {
-                if (UtilMethods.isSet(type.id()) && !UUIDUtil.isUUID(type.id())) {
-                    return ExceptionMapperUtil.createResponse(null, "ContentType 'id' if set, should be a uuid");
-                }
-                retTypes.add(APILocator.getContentTypeAPI(user, true).save(type));
-            }
+			final List<ContentType> typesToSave = new JsonContentTypeTransformer(json).asList();
+			final List<ContentType> retTypes = new ArrayList<>();
+
+			// Validate input
+			for (ContentType type : typesToSave) {
+				if (UtilMethods.isSet(type.id()) && !UUIDUtil.isUUID(type.id())) {
+					return ExceptionMapperUtil.createResponse(null, "ContentType 'id' if set, should be a uuid");
+				}
+				retTypes.add(APILocator.getContentTypeAPI(user, true).save(type));
+			}
 
 
 			response = Response.ok(new ResponseEntityView(new JsonContentTypeTransformer(retTypes).mapList())).build();
@@ -282,33 +284,30 @@ public class ContentTypeResource implements Serializable {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final Response getContentTypes(@Context final HttpServletRequest request,
-										  @DefaultValue("-1") @QueryParam("limit") int limit,
-										  @DefaultValue("-1") @QueryParam("offset") int offset,
-										  @QueryParam("query") String query,
-										  @DefaultValue("upper(name)") @QueryParam("orderby") String orderbyParams) {
+										  @QueryParam(PaginationUtil.FILTER)   final String filter,
+										  @QueryParam(PaginationUtil.ARCHIVED) final boolean showArchived,
+										  @QueryParam(PaginationUtil.PAGE) final int page,
+										  @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+										  @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) String orderbyParam,
+										  @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction) {
 
 		final InitDataObject initData = webResource.init(null, true, request, true, null);
 
 		Response response = null;
 
+		final String orderBy = orderbyParam.equals("modDate") ? "mod_date" : orderbyParam;
 		final User user = initData.getUser();
 
-		String[] split = orderbyParams.split("-");
-		String orderby = "name".equals(split[0]) ? "upper(name)" : split[0];
-		String direction = split.length < 2 ? "asc" : split[1];
-
-		String queryCondition = query == null ? "" : String.format("(name like '%%%s%%')", query);
-
 		try {
-			List<Map<String, Object>> types = contentTypeHelper.getContentTypes(user, queryCondition, offset, limit, orderby, direction);
-			long contentTypesCount = contentTypeHelper.getContentTypesCount(queryCondition);
-			response = Response.ok(new ResponseEntityView( map("items", types, "totalRecords", contentTypesCount)))
-					.build();
+			response = this.paginationUtil.getPage(request, user, filter, showArchived, page, perPage, orderBy,
+					direction);
 		} catch (Exception e) {
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+			Logger.error(this, e.getMessage(), e);
 		}
 
 		return response;
 	}
+
 }
