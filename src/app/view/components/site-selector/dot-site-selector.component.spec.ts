@@ -61,11 +61,11 @@ describe('Site Selector Component', () => {
     spyOn(siteService, 'switchSite$').and.returnValue(Observable.of(site1));
 
     let paginatorService = de.injector.get(PaginatorService);
-    spyOn(paginatorService, 'getPage').and.returnValue(Observable.of([site1, site2]));
+    spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([site1, site2]));
 
     comp.ngOnInit();
 
-    expect(paginatorService.getPage).toHaveBeenCalledWith(1);
+    expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
 
   });
 
@@ -76,7 +76,7 @@ describe('Site Selector Component', () => {
 
     let paginatorService = de.injector.get(PaginatorService);
     paginatorService.totalRecords = 2;
-    spyOn(paginatorService, 'getPage').and.returnValue(Observable.of([]));
+    spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
 
     let siteService = de.injector.get(SiteService);
     spyOn(siteService, 'switchSite$').and.returnValue(Observable.of({}));
@@ -88,15 +88,14 @@ describe('Site Selector Component', () => {
 
     searchableDropdownComponent.pageChange.emit({
       filter: filter,
-      first: 0,
-      page: 2,
-      pageCount: 0,
+      first: 10,
+      pageCount: 10,
       rows: 0
     });
 
     tick();
-    expect(paginatorService.getPage).toHaveBeenCalledWith(1);
-    expect(paginatorService.getPage).toHaveBeenCalledWith(2);
+    expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+    expect(paginatorService.getWithOffset).toHaveBeenCalledWith(10);
   }));
 
   it('Should paginate when the filter change', fakeAsync(() => {
@@ -106,7 +105,7 @@ describe('Site Selector Component', () => {
 
     let paginatorService = de.injector.get(PaginatorService);
     paginatorService.totalRecords = 2;
-    spyOn(paginatorService, 'getPage').and.returnValue(Observable.of([]));
+    spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
 
     let siteService = de.injector.get(SiteService);
     spyOn(siteService, 'switchSite$').and.returnValue(Observable.of({}));
@@ -120,7 +119,7 @@ describe('Site Selector Component', () => {
     comp.handleFilterChange(filter);
 
     tick();
-    expect(paginatorService.getPage).toHaveBeenCalledWith(1);
+    expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
     expect(paginatorService.filter).toEqual(filter);
   }));
 });

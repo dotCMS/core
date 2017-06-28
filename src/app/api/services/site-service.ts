@@ -19,7 +19,6 @@ export class SiteService {
     private urls: any;
 
     private _switchSite$: Subject<Site> = new Subject<Site>();
-    private _sitesCounter$: Subject<number> = new Subject<number>();
 
     constructor(loginService: LoginService, dotcmsEventsService: DotcmsEventsService,
                 private coreWebService: CoreWebService, private loggerService: LoggerService) {
@@ -51,16 +50,6 @@ export class SiteService {
      */
     get switchSite$(): Observable<Site> {
         return this._switchSite$.asObservable();
-    }
-
-    /**
-     * Observable tigger when the number of sites is changed
-     * @readonly
-     * @type {Observable<Site>}
-     * @memberof SiteService
-     */
-    get sitesCounter$(): Observable<number> {
-        return this._sitesCounter$.asObservable();
     }
 
     /**
@@ -97,9 +86,8 @@ export class SiteService {
             method: RequestMethod.Get,
             url: this.urls.currentSiteUrl,
         }).pluck('entity')
-        .subscribe(entity => {
-            this._sitesCounter$.next(entity['totalRecords']);
-            this.setCurrentSite(entity['currentSite']);
+        .subscribe(currentSite => {
+            this.setCurrentSite(<Site> currentSite);
         });
     }
 

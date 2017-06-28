@@ -12,4 +12,4 @@
                             class="site-selector__field">
 </searchable-dropdown>
 
-<h1 *ngIf="totalRecords == 1" class="site-selector__title">{{currentSite ? currentSite.name : ''}}</h1>
+<span *ngIf="totalRecords == 1" class="site-selector__title">{{currentSite ? currentSite.name : ''}}</span>

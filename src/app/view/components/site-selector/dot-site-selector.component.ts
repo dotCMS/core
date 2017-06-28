@@ -60,9 +60,7 @@ export class SiteSelectorComponent implements ControlValueAccessor {
         this.paginateSites();
 
         this.currentSite = this.siteService.currentSite;
-
         this.siteService.switchSite$.subscribe(site => this.currentSite = site);
-        this.siteService.sitesCounter$.subscribe(nSites => this.totalRecords = nSites);
     }
 
     /**
@@ -80,7 +78,7 @@ export class SiteSelectorComponent implements ControlValueAccessor {
      * @memberof SiteSelectorComponent
      */
     handlePageChange(event): void {
-        this.paginateSites(event.filter, event.page);
+        this.paginateSites(event.filter, event.first);
     }
 
     /**
@@ -89,15 +87,10 @@ export class SiteSelectorComponent implements ControlValueAccessor {
      * @param {number} [page=1]
      * @memberof SiteSelectorComponent
      */
-    paginateSites(filter = '',  page = 1): void {
+    paginateSites(filter = '',  offset = 0): void {
         this.paginationService.filter = filter;
-        this.paginationService.getPage(page).subscribe( items => {
+        this.paginationService.getWithOffset(offset).subscribe( items => {
             this.sitesCurrentPage = items;
-
-            if (this.currentSite) {
-                this.selectCurrentSite(this.currentSite.identifier);
-            }
-
             this.totalRecords = this.totalRecords | this.paginationService.totalRecords;
         });
     }
@@ -120,6 +113,7 @@ export class SiteSelectorComponent implements ControlValueAccessor {
      */
     writeValue(value: string): void {
         this.value = value;
+        this.selectCurrentSite(value);
     }
 
     /**
@@ -136,7 +130,7 @@ export class SiteSelectorComponent implements ControlValueAccessor {
     private selectCurrentSite(value: string): void {
         if (this.sitesCurrentPage) {
             let selected = this.sitesCurrentPage.filter( site => site.identifier === this.value);
-            this.currentSite = selected[0] || this.currentSite;
+            this.currentSite = selected.length > 0 ? selected[0] : this.currentSite;
         }
     }
 }
