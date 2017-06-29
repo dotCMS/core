@@ -535,7 +535,7 @@ public class FieldFactoryImpl implements FieldFactory {
       return field.dataType().toString();
     }
 
-    String dbColumn = field.dbColumn().replaceAll("[0-9]", "");
+    final String dbColumn = field.dbColumn().replaceAll("[0-9]", com.dotcms.repackage.org.apache.commons.lang.StringUtils.EMPTY);
     dc.setSQL(this.sql.selectFieldOfDbType);
     dc.addParam(field.contentTypeId());
     dc.addParam(dbColumn + "%");
