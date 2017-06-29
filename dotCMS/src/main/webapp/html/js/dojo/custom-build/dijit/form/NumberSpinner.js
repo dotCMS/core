@@ -54,6 +54,7 @@ return declare("dijit.form.NumberSpinner", [_Spinner, NumberTextBox.Mixin], {
 	},
 
 	_onKeyPress: function(e){
+		if(this.disabled || this.readOnly){ return; }
 		if((e.charOrCode == keys.HOME || e.charOrCode == keys.END) && !(e.ctrlKey || e.altKey || e.metaKey)
 		&& typeof this.get('value') != 'undefined' /* gibberish, so HOME and END are default editing keys*/){
 			var value = this.constraints[(e.charOrCode == keys.HOME ? "min" : "max")];

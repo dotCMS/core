@@ -35,7 +35,7 @@ define("dojox/image/FlickrBadge", ["dojo", "dojox/main", "dojox/image/Badge", "d
 		postCreate: function(){
 			if(this.username && !this.userid){
 				var def = dojo.io.script.get({
-					url: "http://www.flickr.com/services/rest/",
+					url: "https://www.flickr.com/services/rest/",
 					preventCache: true,
 					content: {
 						format: "json",

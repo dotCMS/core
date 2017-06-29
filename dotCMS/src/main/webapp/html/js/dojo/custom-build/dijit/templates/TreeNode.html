@@ -7,8 +7,10 @@
 		><span data-dojo-attach-point="contentNode"
 			class="dijitTreeContent" role="presentation">
 			<img src="${_blankGif}" alt="" data-dojo-attach-point="iconNode" class="dijitIcon dijitTreeIcon" role="presentation"
-			/><span data-dojo-attach-point="labelNode" class="dijitTreeLabel" role="treeitem" tabindex="-1" aria-selected="false"></span>
+			/><span data-dojo-attach-point="labelNode" class="dijitTreeLabel" role="treeitem"
+					tabindex="-1" aria-selected="false" id="${id}_label"></span>
 		</span
 	></div>
-	<div data-dojo-attach-point="containerNode" class="dijitTreeContainer" role="presentation" style="display: none;"></div>
+	<div data-dojo-attach-point="containerNode" class="dijitTreeContainer" role="presentation"
+		 style="display: none;" aria-labelledby="${id}_label"></div>
 </div>

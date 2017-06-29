@@ -11,6 +11,7 @@ define("dojox/grid/enhanced/plugins/filter/FilterDefDialog", [
 	"dojo/_base/html",
 	"dojo/_base/sniff",
 	"dojo/keys",
+	"dojo/on",
 	"dojo/string",
 	"dojo/window",
 	"dojo/date/locale",		
@@ -38,7 +39,7 @@ define("dojox/grid/enhanced/plugins/filter/FilterDefDialog", [
 	"dijit/form/RadioButton",
 	"dojox/html/ellipsis",
 	"../../../cells/dijit"
-], function(declare, array, connect, lang, event, html, has, keys, string, win, dateLocale, 
+], function(declare, array, connect, lang, event, html, has, keys, on, string, win, dateLocale, 
 	FilterBuilder, Dialog, ComboBox, TextBox, NumberTextBox, DateTextBox, TimeTextBox, Button, 
 	AccordionContainer, ContentPane, _Widget, _TemplatedMixin, _WidgetsInTemplateMixin, dijitFocus,
 	metrics, dijitA11y, defPaneTemplate, criteriaTemplate, boolValueTemplate){
@@ -224,7 +225,9 @@ var FilterDefPane = declare("dojox.grid.enhanced.plugins.filter.FilterDefPane",[
 	},
 	postCreate: function(){
 		this.inherited(arguments);
-		this.connect(this.domNode, "onkeypress", "_onKey");
+		// this.connect(this.domNode, "onkeypress", "_onKey");
+		on(this.domNode, "keydown", lang.hitch(this, "_onKey"));
+		
 		(this.cboxContainer = new FilterAccordionContainer({
 			nls: this.plugin.nls
 		})).placeAt(this.criteriaPane);

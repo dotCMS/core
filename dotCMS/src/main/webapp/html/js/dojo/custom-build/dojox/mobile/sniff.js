@@ -6,7 +6,7 @@ define("dojox/mobile/sniff", [
 	var ua = navigator.userAgent;
 
 	// BlackBerry (OS 6 or later only)
-	has.add('bb', (ua.indexOf("BlackBerry") >= 0 || ua.indexOf("BB10")) && parseFloat(ua.split("Version/")[1]) || undefined, undefined, true);
+	has.add('bb', (ua.indexOf("BlackBerry") >= 0 || ua.indexOf("BB10") >= 0) && parseFloat(ua.split("Version/")[1]) || undefined, undefined, true);
 
 	// Android
 	has.add('android', parseFloat(ua.split("Android ")[1]) || undefined, undefined, true);
