@@ -1692,16 +1692,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             _writing = new java.io.File(backupPath + java.io.File.separator + lastmoddate + "_" + "deletedcontentlets" + ".xml");
 
             BufferedOutputStream _bout = null;
-            FileOutputStream tempStream = null;
             try {
-                tempStream = new FileOutputStream(_writing);
-                _bout = new BufferedOutputStream(tempStream);
-
+                _bout = new BufferedOutputStream(new FileOutputStream(_writing));
             } catch (FileNotFoundException e) {
                 Logger.error(this, e.getMessage());
             } finally{
                 try {
-                    tempStream.close();
+                    _bout.close();
                 } catch (IOException e) {
                     Logger.error(this, e.getMessage());
                 }
