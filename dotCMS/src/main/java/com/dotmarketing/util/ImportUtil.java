@@ -1232,7 +1232,7 @@ public class ImportUtil {
                 if(!uniqueFieldBeans.isEmpty()){
                     ignoreLine =
                         validateUniqueFields(user, results, lineNumber, language, counters, uniqueFieldBeans,
-                            uniqueFields, ignoreLine);
+                            uniqueFields);
                 }
 
                 if(!ignoreLine){
@@ -1363,20 +1363,36 @@ public class ImportUtil {
         }
     }
 
+    /**
+     *
+     * @param user
+     * @param results
+     * @param lineNumber
+     * @param language
+     * @param counters
+     * @param uniqueFieldBeans
+     * @param uniqueFields
+     * @return
+     * @throws LanguageException
+     */
     private static boolean validateUniqueFields(User user, HashMap<String, List<String>> results, int lineNumber,
                                                 long language, Counters counters,
                                                 List<UniqueFieldBean> uniqueFieldBeans,
-                                                List<Field> uniqueFields, boolean ignoreLine) throws LanguageException {
-        for(Field f : uniqueFields){
+                                                List<Field> uniqueFields) throws LanguageException {
+        boolean ignoreLine = false;
+        for (Field f : uniqueFields) {
             Object value = null;
             int count = 0;
-            for(UniqueFieldBean bean : uniqueFieldBeans){
-                if(bean.getField().equals(f) && language == bean.getLanguageId()){
-                    if(count > 0 && value!=null && value.equals(bean.getValue()) && lineNumber == bean.getLineNumber()){
+            for (UniqueFieldBean bean : uniqueFieldBeans) {
+                if (bean.getField().equals(f) && language == bean.getLanguageId()) {
+                    if (count > 0 && value != null && value.equals(bean.getValue()) && lineNumber == bean
+                        .getLineNumber()) {
                         counters.setNewContentCounter(counters.getNewContentCounter() - 1);
                         ignoreLine = true;
                         results.get("warnings").add(
-                                LanguageUtil.get(user, "Line--") + " " + lineNumber +  " " +LanguageUtil.get(user, "contains-duplicate-values-for-structure-unique-field") + " " + f.getVelocityVarName() + " "  +LanguageUtil.get(user, "and-will-be-ignored") );
+                            LanguageUtil.get(user, "Line--") + " " + lineNumber + " " + LanguageUtil
+                                .get(user, "contains-duplicate-values-for-structure-unique-field") + " " + f
+                                .getVelocityVarName() + " " + LanguageUtil.get(user, "and-will-be-ignored"));
                     }
                     value = bean.getValue();
                     count++;

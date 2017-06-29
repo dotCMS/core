@@ -1,23 +1,5 @@
 package com.dotcms.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.charset.Charset;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -45,6 +27,23 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.ImportUtil;
 import com.liferay.portal.model.User;
+
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.Charset;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Verifies that the Content Importer/Exporter feature is working as expected.
@@ -350,9 +349,10 @@ public class ImportUtilTest extends IntegrationTestBase {
 
         type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.getType()))
             .description("description" + time).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
-            .name("ContentTypeTestingWithFields" + time).owner("owner").variable("velocityVarNameTesting" + time).build();
+            .name("ContentTypeTestingWithFields" + time).owner("owner").variable("velocityVarNameTesting" + time)
+            .build();
 
-        type       = contentTypeApi.save(type);
+        type = contentTypeApi.save(type);
 
         try {
             titleField =
@@ -388,7 +388,7 @@ public class ImportUtilTest extends IntegrationTestBase {
             assertEquals(results.get("warnings").get(0), "the-structure-field testTitle is-unique");
 
 
-        }finally{
+        } finally {
             contentTypeApi.delete(type);
         }
     }
@@ -410,9 +410,10 @@ public class ImportUtilTest extends IntegrationTestBase {
 
         type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.getType()))
             .description("description" + time).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
-            .name("ContentTypeTestingWithFields" + time).owner("owner").variable("velocityVarNameTesting" + time).build();
+            .name("ContentTypeTestingWithFields" + time).owner("owner").variable("velocityVarNameTesting" + time)
+            .build();
 
-        type       = contentTypeApi.save(type);
+        type = contentTypeApi.save(type);
 
         try {
             titleField =
@@ -446,9 +447,10 @@ public class ImportUtilTest extends IntegrationTestBase {
 
             assertTrue(results.get("warnings").size() == 2);
             assertEquals(results.get("warnings").get(0), "the-structure-field testTitle is-unique");
-            assertEquals(results.get("warnings").get(1), "Line-- 3 contains-duplicate-values-for-structure-unique-field testTitle and-will-be-ignored");
+            assertEquals(results.get("warnings").get(1),
+                "Line-- 3 contains-duplicate-values-for-structure-unique-field testTitle and-will-be-ignored");
 
-        }finally{
+        } finally {
             contentTypeApi.delete(type);
         }
     }
