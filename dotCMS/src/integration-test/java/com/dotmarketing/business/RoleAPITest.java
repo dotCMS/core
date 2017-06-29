@@ -283,4 +283,103 @@ public class RoleAPITest extends IntegrationTestBase {
         assertEquals( cachedRole, foundRole );
     }
 
+    @Test
+    public void test_isParentRole() {
+
+        RoleAPI roleAPI = APILocator.getRoleAPI();
+
+        Role parentRole = null;
+        Role childRole = null;
+        Role grandChildRole = null;
+
+        Role secondParentRole = null;
+        Role secondChildRole = null;
+
+        try {
+            // Create Parent Role.
+            parentRole = new Role();
+            parentRole.setName("Parent Role");
+            parentRole.setEditUsers(true);
+            parentRole.setEditPermissions(true);
+            parentRole.setEditLayouts(true);
+            parentRole.setDescription("Parent Role");
+            parentRole = roleAPI.save(parentRole);
+
+            // Create Child Role Role.
+            childRole = new Role();
+            childRole.setName("Child Role");
+            childRole.setEditUsers(true);
+            childRole.setEditPermissions(true);
+            childRole.setEditLayouts(true);
+            childRole.setDescription("Child Role");
+            childRole.setParent(parentRole.getId());
+            childRole = roleAPI.save(childRole);
+
+            // Create Grandchild Role Role.
+            grandChildRole = new Role();
+            grandChildRole.setName("Grandchild Role");
+            grandChildRole.setEditUsers(true);
+            grandChildRole.setEditPermissions(true);
+            grandChildRole.setEditLayouts(true);
+            grandChildRole.setDescription("Grandchild Role");
+            grandChildRole.setParent(childRole.getId());
+            grandChildRole = roleAPI.save(grandChildRole);
+
+            assertTrue(roleAPI.isParentRole(parentRole, childRole));
+            assertTrue(roleAPI.isParentRole(parentRole, grandChildRole));
+            assertTrue(roleAPI.isParentRole(childRole, grandChildRole));
+
+            assertFalse(roleAPI.isParentRole(grandChildRole, parentRole));
+            assertFalse(roleAPI.isParentRole(childRole, parentRole));
+            assertFalse(roleAPI.isParentRole(grandChildRole, grandChildRole));
+
+            // Now let's create a sibling branch of roles.
+            // Create Second Parent Role.
+            secondParentRole = new Role();
+            secondParentRole.setName("Second Parent Role");
+            secondParentRole.setEditUsers(true);
+            secondParentRole.setEditPermissions(true);
+            secondParentRole.setEditLayouts(true);
+            secondParentRole.setDescription("Second Parent Role");
+            secondParentRole = roleAPI.save(secondParentRole);
+
+            // Create Second Child Role Role.
+            secondChildRole = new Role();
+            secondChildRole.setName("Second Child Role");
+            secondChildRole.setEditUsers(true);
+            secondChildRole.setEditPermissions(true);
+            secondChildRole.setEditLayouts(true);
+            secondChildRole.setDescription("Second Child Role");
+            secondChildRole.setParent(secondParentRole.getId());
+            secondChildRole = roleAPI.save(secondChildRole);
+
+            assertFalse(roleAPI.isParentRole(parentRole, secondChildRole));
+            assertFalse(roleAPI.isParentRole(parentRole, secondParentRole));
+
+        } catch (Exception e) {
+            fail(e.getMessage());
+        } finally {
+            try {
+                //Delete Roles.
+                if (grandChildRole != null) {
+                    roleAPI.delete(grandChildRole);
+                }
+                if (childRole != null) {
+                    roleAPI.delete(childRole);
+                }
+                if (parentRole != null) {
+                    roleAPI.delete(parentRole);
+                }
+                if (secondChildRole != null) {
+                    roleAPI.delete(secondChildRole);
+                }
+                if (secondParentRole != null) {
+                    roleAPI.delete(secondParentRole);
+                }
+            } catch (Exception e) {
+                fail(e.getMessage());
+            }
+        }
+    }
+
 }
