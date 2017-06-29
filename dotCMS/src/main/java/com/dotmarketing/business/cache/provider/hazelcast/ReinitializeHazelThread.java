@@ -29,7 +29,7 @@ public class ReinitializeHazelThread implements Runnable{
                 haz.getMap("dotTest").set("test", "test");
                 hazelProvider.setRecovering(false);
             }catch (Exception hce){
-                Logger.info(this, "HazelCast is still down trying to connect again");
+                Logger.warn(this, "HazelCast is still down trying to connect again");
                 Logger.debug(this, hce.getMessage(),hce);
             }
             try {
