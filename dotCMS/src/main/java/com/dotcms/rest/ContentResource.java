@@ -1,25 +1,5 @@
 package com.dotcms.rest;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Part;
-
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.converters.Converter;
@@ -28,13 +8,7 @@ import com.dotcms.repackage.com.thoughtworks.xstream.converters.UnmarshallingCon
 import com.dotcms.repackage.com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
-import com.dotcms.repackage.javax.ws.rs.Consumes;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.PUT;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -48,12 +22,14 @@ import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.BodyPart;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.ContentDisposition;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
@@ -71,13 +47,21 @@ import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.dotmarketing.viewtools.content.util.ContentUtils;
 import com.liferay.portal.model.User;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.servlet.http.Part;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.util.*;
+import java.util.Map.Entry;
 
 @Path("/content")
 public class ContentResource {
@@ -1275,4 +1259,189 @@ public class ContentResource {
 			
 		}
 	}
+
+    /**
+     * Returns a list of contentlets that represents the content related
+     * @param request
+     * @param relationshipName String name of the relationship
+     * @param contentletIdentifier String identifier
+     * @param pullParents boolean should the related pull be based on Parents or Children
+     * @param limit int 0 is the dotCMS max limit which is 10000. Becareful when searching for unlimited amount as all content will load into memory
+     * @return Response
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws JSONException
+     */
+    @GET
+    @Path("/related/relation/{relationshipName}/id/{contentletIdentifier}/parents/{pullParents}/limit/{limit}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response related ( @Context HttpServletRequest request,
+                              @Context HttpServletResponse response,
+                              @PathParam ("relationshipName")     final String relationshipName,
+                              @PathParam ("contentletIdentifier") final String contentletIdentifier,
+                              @PathParam ("pullParents")          final boolean pullParents,
+                              @PathParam ("limit")                final int limit
+    ) throws DotSecurityException, DotDataException, JSONException {
+
+        final InitDataObject initData = this.webResource.init(null, true, request, true, null);
+        final ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+        final User user = initData.getUser();
+        List<Contentlet> contentlets = null;
+        String result = null;
+
+        try {
+
+            contentlets = this.related(request, user, relationshipName, contentletIdentifier,
+                    null, pullParents, limit, null);
+            result = getJSON(contentlets, request, response, "true", user);
+        } catch (Exception e) {
+            // In case of unknown error, so we report it as a 500
+            Logger.error(this, "An error occurred when processing the request.", e);
+            return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return responseResource.response( result );
+    } //  related.
+
+    /**
+     * Returns a list of contentlets that represents the content related
+     * @param request
+     * @param relationshipName String name of the relationship
+     * @param contentletIdentifier String identifier
+     * @param pullParents boolean should the related pull be based on Parents or Children
+     * @param limit int 0 is the dotCMS max limit which is 10000. Becareful when searching for unlimited amount as all content will load into memory
+     * @param sort String this is a string and can contain multiple values "sort1 acs, sort2 desc". Can be Null
+     * @return Response
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws JSONException
+     */
+    @GET
+    @Path("/related/relation/{relationshipName}/id/{contentletIdentifier}/parents/{pullParents}/limit/{limit}/sort/{sort}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response related ( @Context HttpServletRequest request,
+                              @Context HttpServletResponse response,
+                              @PathParam ("relationshipName")     final String relationshipName,
+                              @PathParam ("contentletIdentifier") final String contentletIdentifier,
+                              @PathParam ("pullParents")          final boolean pullParents,
+                              @PathParam ("limit")                final int limit,
+                              @PathParam ("sort")                 final String sort
+    ) throws DotSecurityException, DotDataException, JSONException {
+
+        final InitDataObject initData = this.webResource.init(null, true, request, true, null);
+        final ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+        final User user = initData.getUser();
+        List<Contentlet> contentlets = null;
+        String result = null;
+
+        try {
+
+            contentlets = this.related(request, user, relationshipName, contentletIdentifier,
+                    null, pullParents, limit, sort);
+            result = getJSON(contentlets, request, response, "true", user);
+        } catch (Exception e) {
+            // In case of unknown error, so we report it as a 500
+            Logger.error(this, "An error occurred when processing the request.", e);
+            return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return responseResource.response( result );
+    } //  related.
+
+    /**
+     * Returns a list of contentlets that represents the content related
+     * @param request HttpServletRequest
+     * @param relationshipName String name of the relationship
+     * @param contentletIdentifier String identifier
+     * @param pullParents boolean should the related pull be based on Parents or Children
+     * @param limit int 0 is the dotCMS max limit which is 10000. Becareful when searching for unlimited amount as all content will load into memory
+     * @param condition String Extra conditions to add to the query. like +title:Some Title.  Can be Null
+     * @param sort String this is a string and can contain multiple values "sort1 acs, sort2 desc". Can be Null
+     * @return Response
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws JSONException
+     */
+    @GET
+    @Path("/related/relation/{relationshipName}/id/{contentletIdentifier}/parents/{pullParents}/limit/{limit}/condition/{condition}/sort/{sort}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response related ( @Context HttpServletRequest request,
+                              @Context HttpServletResponse response,
+                              @PathParam ("relationshipName")     final String relationshipName,
+                              @PathParam ("contentletIdentifier") final String contentletIdentifier,
+                              @PathParam ("pullParents")          final boolean pullParents,
+                              @PathParam ("limit")                final int limit,
+                              @PathParam ("condition")            final String condition,
+                              @PathParam ("sort")                 final String sort
+    ) throws DotSecurityException, DotDataException, JSONException {
+
+        final InitDataObject initData = this.webResource.init(null, true, request, true, null);
+        final ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+        final User user = initData.getUser();
+        List<Contentlet> contentlets = null;
+        String result = null;
+
+        try {
+
+            contentlets = this.related(request, user, relationshipName, contentletIdentifier,
+                    condition, pullParents, limit, sort);
+
+            result = getJSON(contentlets, request, response, "true", user);
+        } catch (Exception e) {
+            // In case of unknown error, so we report it as a 500
+            Logger.error(this, "An error occurred when processing the request.", e);
+            return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        return responseResource.response( result );
+    } // related.
+
+    private List<Contentlet> related (final HttpServletRequest request,
+                                      final User user,
+                                      final String relationshipName,
+                                      final String contentletIdentifier,
+                                      final String condition,
+                                      final boolean pullParents,
+                                      final int limit,
+                                      final String sort) throws DotSecurityException, DotDataException, JSONException {
+
+        final HttpSession session = request.getSession();
+        final boolean adminMode   = session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null;
+        final boolean previewMode = session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null && adminMode;
+        final boolean editMode    = session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null    && adminMode;
+        final boolean editOrPreviewMode = previewMode || editMode;
+
+        return ContentUtils.pullRelated(relationshipName,
+                contentletIdentifier, addDefaultsToQuery(condition, request, editOrPreviewMode),
+                pullParents, limit, sort, user, (String) session.getAttribute("tm_date"));
+    } // related.
+
+    private String addDefaultsToQuery(final String query, final HttpServletRequest request,
+                                      final boolean editOrPreviewMode) {
+
+        final StringBuilder queryBuilder = new StringBuilder();
+
+        if(query != null) {
+
+            queryBuilder.append(query);
+
+            if (!query.contains("languageId")) {
+
+                queryBuilder.append(" +languageId:" +
+                        WebAPILocator.getLanguageWebAPI().getLanguage(request).getId());
+            }
+
+            if (!(query.contains("live:") || query.contains("working:"))) {
+
+                queryBuilder.append((editOrPreviewMode)?" +working:true ":" +live:true ");
+            }
+
+            if (!UtilMethods.contains(query, "deleted:")) {
+
+                queryBuilder.append( " +deleted:false ");
+            }
+        }
+
+        return queryBuilder.toString();
+    } // addDefaultsToQuery.
 }
