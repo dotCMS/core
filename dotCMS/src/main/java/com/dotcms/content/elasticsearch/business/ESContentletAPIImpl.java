@@ -112,7 +112,6 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import com.liferay.util.StringPool;
 
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -1693,10 +1692,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
             _writing = new java.io.File(backupPath + java.io.File.separator + lastmoddate + "_" + "deletedcontentlets" + ".xml");
 
             BufferedOutputStream _bout = null;
+            FileOutputStream tempStream = null;
             try {
-                _bout = new BufferedOutputStream(new FileOutputStream(_writing));
-            } catch (FileNotFoundException e) {
+                tempStream = new FileOutputStream(_writing);
+                _bout = new BufferedOutputStream(tempStream);
 
+            } catch (FileNotFoundException e) {
+                Logger.error(this, e.getMessage());
+            } finally{
+                try {
+                    tempStream.close();
+                } catch (IOException e) {
+                    Logger.error(this, e.getMessage());
+                }
             }
             _xstream.toXML(contentlets, _bout);
         }
