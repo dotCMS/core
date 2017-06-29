@@ -36,6 +36,7 @@ import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -478,8 +479,8 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
         //No need to run all the SQL is we don't get any inodes from the condition.
         if(!resultInodes.isEmpty()){
             String parameterPlaceholders;
-            List<String> inodesToDeleteList = new ArrayList<>();
-            List<String> inodesToDelete = new ArrayList<>();
+            List<String> inodesToDeleteList = Collections.EMPTY_LIST;
+            List<String> inodesToDelete = Collections.EMPTY_LIST;
             int truncateAt = 100;
             int totalIter;
 
