@@ -94,7 +94,13 @@ public class DbFieldTransformer implements FieldTransformer {
 
 			@Override
 			public DataTypes dataType() {
-				return DataTypes.getDataType((String) map.get("field_contentlet"));
+				String legacyName = LegacyFieldTypes.getLegacyName(LegacyFieldTypes.getImplClass(fieldType));
+
+				try{
+					return DataTypes.valueOf(legacyName.toUpperCase());
+				}catch(IllegalArgumentException e){
+					return DataTypes.getDataType((String) map.get("field_contentlet"));
+				}
 			}
 
 			@Override

@@ -175,11 +175,7 @@ public class LegacyFieldTransformer implements FieldTransformer {
 
 			@Override
 			public DataTypes dataType() {
-				String dbType = (oldField.getFieldContentlet()!=null) ? oldField.getFieldContentlet().replaceAll("[0-9]", "") : null;
-				if(!UtilMethods.isSet(dbType)){
-				   return FieldBuilder.instanceOf(LegacyFieldTypes.getImplClass(fieldType)).acceptedDataTypes().get(0);
-				}
-				return DataTypes.getDataType(dbType);
+				return DataTypes.valueOf(oldField.getFieldType().toUpperCase());
 			}
 
 			@Override
