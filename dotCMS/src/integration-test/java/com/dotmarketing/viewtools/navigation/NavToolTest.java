@@ -50,8 +50,6 @@ public class NavToolTest extends IntegrationTestBase{
 
     @Test
     public void testAboutUsDefaultPageToLanguageTrue() throws Exception { // https://github.com/dotCMS/core/issues/7678
-        CacheLocator.getCacheAdministrator().flushAll();
-
         Config.setProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", true);
         assertEquals(LanguageWebAPI.canDefaultPageToDefaultLanguage(), true);
 
@@ -105,12 +103,13 @@ public class NavToolTest extends IntegrationTestBase{
 
         //Now We are expecting original amount children result for Spanish Language.
         assertEquals(spanishResultChildren, navResult.getChildren().size());
+
+        // Flush the cache
+        CacheLocator.getNavToolCache().removeNav(demoHost.getIdentifier(), aboutUsFolder.getInode(), 2);
     }
 
     @Test
     public void testAboutUsDefaultPageToLanguageFalse() throws Exception { // https://github.com/dotCMS/core/issues/7678
-        CacheLocator.getCacheAdministrator().flushAll();
-
         Config.setProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", false);
         assertEquals(LanguageWebAPI.canDefaultPageToDefaultLanguage(), false);
 
@@ -165,6 +164,8 @@ public class NavToolTest extends IntegrationTestBase{
         //Now We are expecting original amount children result for Spanish Language.
         assertEquals(spanishResultChildren, navResult.getChildren().size());
 
+        // Flush the cache
+        CacheLocator.getNavToolCache().removeNav(demoHost.getIdentifier(), aboutUsFolder.getInode(), 2);
     }
 
     /**
