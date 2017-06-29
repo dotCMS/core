@@ -147,34 +147,15 @@ public abstract class GenericBundleActivator implements BundleActivator {
             this.context = context;
         }
 
-        //ClassLoaders
-        ClassLoader felixClassLoader = getFelixClassLoader();
-        ClassLoader contextClassLoader = getContextClassLoader();
-
         //Force the loading of some classes that may be already loaded on the host classpath but we want to override with the ones on this bundle
         String overrideClasses = getManifestHeaderValue( context, MANIFEST_HEADER_OVERRIDE_CLASSES );
         if ( overrideClasses != null && !overrideClasses.isEmpty() ) {
 
             String[] forceOverride = overrideClasses.split( "," );
             if ( forceOverride.length > 0 ) {
-
-                try {
-                    //Get the activator class for this OSGI bundle
-                    String activatorClass = getManifestHeaderValue( context, MANIFEST_HEADER_BUNDLE_ACTIVATOR );
-                    //Injecting this bundle context code inside the dotCMS context
-                    addClassTodotCMSClassLoader( activatorClass );
-                } catch ( Exception e ) {
-                    Logger.error( this, "Error injecting context for overriding", e );
-                    throw e;
-                }
-
                 for ( String classToOverride : forceOverride ) {
-                    ByteBuddyAgent.install();
-                    new ByteBuddy()
-                            .rebase(Class.forName(classToOverride.trim()), ClassFileLocator.ForClassLoader.of(felixClassLoader))
-                            .name(classToOverride.trim())
-                            .make()
-                            .load(contextClassLoader,ClassReloadingStrategy.fromInstalledAgent());
+                    //Injecting this bundle context code inside the dotCMS context
+                    addClassTodotCMSClassLoader( classToOverride );
                 }
             }
 
