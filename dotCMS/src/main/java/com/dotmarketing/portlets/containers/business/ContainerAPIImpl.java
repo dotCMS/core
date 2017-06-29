@@ -66,6 +66,11 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		hostAPI = APILocator.getHostAPI();
 	}
 
+	private static void Test () {
+		String testVariable = null;
+		System.out.println(testVariable.replace("","--"));
+	}
+
 	@Override
 	public Container copy(Container source, Host destination, User user, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
