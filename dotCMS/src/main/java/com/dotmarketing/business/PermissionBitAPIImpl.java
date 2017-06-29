@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -17,9 +18,11 @@ import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -976,15 +979,27 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	 */
 	public List<Role> getRoles(String inode, int permissionType, String filter, int start, int limit) {
 
-		Inode inodeObj = null;
+        Optional<ShortyId> sid = APILocator.getShortyAPI().getShorty(inode);
+        if(!sid.isPresent()){
+            Logger.warn( PermissionAPI.class, String.format("::getRoles fails loading inode object(%s)", inode) );
+
+            throw new DotStateException("Inode: " + inode + " is not a permissionable inode");
+        }
 		List<Role> roleList = null;
 		List<Permission> permissionList = null;
-
+        PermissionableProxy pp = new PermissionableProxy();
+        pp.setIdentifier(inode);
+        pp.setInode(inode);
 		try {
 
 			Logger.debug( PermissionAPI.class, String.format("::getRoles -> before loading inode object(%s)", inode) );
-			inodeObj = InodeFactory.getInode(inode, Inode.class);
-			permissionList = getPermissions(inodeObj, true);
+
+			if(sid.isPresent()){
+	            pp.setType(sid.get().type.toString());
+			}
+
+
+			permissionList = getPermissions(pp, true);
 
 			roleList = loadRolesForPermission(permissionList, permissionType, filter);
 
