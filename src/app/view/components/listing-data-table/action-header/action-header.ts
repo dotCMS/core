@@ -15,7 +15,7 @@ export class ActionHeaderComponent extends BaseComponent {
     @Input() options: ActionHeaderOptions;
     public dynamicOverflow = 'visible';
 
-    constructor( messageService: MessageService, private confirmationService: ConfirmationService) {
+    constructor(messageService: MessageService, private confirmationService: ConfirmationService) {
         super(['selected'], messageService);
     }
 
@@ -24,13 +24,13 @@ export class ActionHeaderComponent extends BaseComponent {
             this.hideDinamycOverflow();
         }
 
-        if (changes.options && changes.options.currentValue) {
-            this.setCommandWrapper(changes.options.currentValue);
+        if (changes.options && changes.options.currentValue && changes.options.currentValue.secondary) {
+            this.setCommandWrapper(changes.options.currentValue.secondary);
         }
     }
 
-    private setCommandWrapper(options: ActionHeaderOptions): void {
-        options.secondary.forEach(actionButton => {
+    private setCommandWrapper(options: ButtonAction[]): void {
+        options.forEach(actionButton => {
             actionButton.model
                 .filter(model => model.deleteOptions)
                 .forEach(model => {

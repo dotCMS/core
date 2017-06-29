@@ -57,22 +57,19 @@ describe('ContentTypesPortletComponent', () => {
 
         expect('name').toEqual(columns[0].fieldName);
         expect('Content Type Name').toEqual(columns[0].header);
-        expect('35%').toEqual(columns[0].width);
 
         expect('variable').toEqual(columns[1].fieldName);
         expect('Variable Name').toEqual(columns[1].header);
-        expect('10%').toEqual(columns[1].width);
 
         expect('description').toEqual(columns[2].fieldName);
         expect('Description').toEqual(columns[2].header);
-        expect('35%').toEqual(columns[2].width);
 
         expect('nEntries').toEqual(columns[3].fieldName);
         expect('Entries').toEqual(columns[3].header);
-        expect('10%').toEqual(columns[3].width);
+        expect('7%').toEqual(columns[3].width);
 
         expect('modDate').toEqual(columns[4].fieldName);
         expect('Last Edit Date').toEqual(columns[4].header);
-        expect('10%').toEqual(columns[4].width);
+        expect('13%').toEqual(columns[4].width);
     });
 });

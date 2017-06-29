@@ -77,6 +77,13 @@ export class ContentTypesInfoService {
     }
 
     private getItem(type: string, prop: string): string {
+        // Some endpoints have different name/labels for the same content types
+        if (type === 'HTMLPAGE' || type === 'htmlpage') {
+            type = 'PAGE';
+        }
+        if (type === 'FILE' || type === 'file' || type === 'File') {
+            type = 'FILEASSET';
+        }
         for (let i = 0; i < this.contentTypeInfoCollection.length; i++) {
             let item = this.contentTypeInfoCollection[i];
             if (item.clazz.toLocaleLowerCase() === type.toLocaleLowerCase() || item.label.toLocaleLowerCase() === type.toLocaleLowerCase()) {

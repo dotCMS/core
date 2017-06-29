@@ -106,29 +106,26 @@ export class ContentTypesPortletComponent extends BaseComponent {
                 header: this.i18nMessages['Structure-Name'],
                 icon: (item: any): string => this.contentTypesInfoService.getIcon(item.baseType),
                 sortable: true,
-                width: '35%'
             },
             {
                 fieldName: 'variable',
                 header: this.i18nMessages['Variable'],
-                width: '10%'
             },
             {
                 fieldName: 'description',
                 header: this.i18nMessages['Description'],
-                width: '35%'
             },
             {
                 fieldName: 'nEntries',
                 header: this.i18nMessages['Entries'],
-                width: '10%'
+                width: '7%'
             },
             {
                 fieldName: 'modDate',
                 format: 'date',
                 header: 'Last Edit Date',
                 sortable: true,
-                width: '10%'
+                width: '13%'
             }
         ];
     }

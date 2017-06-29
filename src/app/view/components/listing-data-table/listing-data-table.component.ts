@@ -33,8 +33,6 @@ export class ListingDataTableComponent extends BaseComponent {
     private paginatorLinks: number;
     private items: any[];
     private filter;
-    // tslint:disable-next-line:no-unused-variable
-    private selectedItems = [];
     private dateColumns: DataTableColumn[];
 
     constructor(private crudService: CrudService, messageService: MessageService, public loggerService: LoggerService,
@@ -68,7 +66,6 @@ export class ListingDataTableComponent extends BaseComponent {
     }
 
     loadData(offset: number, sortFieldParam?: string, sortOrderParam?: OrderDirection): void {
-
         if (this.columns) {
             let sortField = sortFieldParam || this.sortField;
             let sortOrder = sortOrderParam || this.sortOrder;

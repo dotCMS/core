@@ -1,4 +1,4 @@
-<action-header [selectedItems]="selectedItems" [options]="actionHeaderOptions">
+<action-header [options]="actionHeaderOptions">
     <input #gf pInputText type="text" placeholder="{{i18nMessages['global-search']}}" [(ngModel)]="filter"/>
 </action-header>
 
@@ -12,7 +12,7 @@
              [(selection)]="selectedItems"
              (onRowClick)="handleRowClick($event)"
              [globalFilter]="gf"
-             [sortOrder]="sortOrder === 'desc' ? -1 : 1">
+             [sortOrder]="sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1">
 
     <p-column selectionMode="multiple" *ngIf="multipleSelection"></p-column>
 
@@ -23,7 +23,7 @@
             [sortable]="col.sortable"
             [style]="{'width': col.width, 'text-align': getAlign(col)}">
             <ng-template let-item="rowData" pTemplate="body">
-                <i class="fa {{col.icon(item)}}" *ngIf="col.icon"></i>
+                <i class="fa {{col.icon(item)}} listing-datatable__icon" *ngIf="col.icon"></i>
                 {{item[col.fieldName]}}
             </ng-template>
         </p-column>
