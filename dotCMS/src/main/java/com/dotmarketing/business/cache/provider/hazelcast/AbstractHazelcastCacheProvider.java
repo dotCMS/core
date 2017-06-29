@@ -12,6 +12,7 @@ import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.util.Logger;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 
 /**
  * Created by jasontesser on 3/14/17.
@@ -19,16 +20,27 @@ import com.hazelcast.core.HazelcastInstance;
 public abstract class AbstractHazelcastCacheProvider extends CacheProvider {
 
 	private static final long serialVersionUID = 1L;
-    protected Boolean initialized = false;
-
+    private boolean initialized = false;
+    private boolean recovering =false;
 
     protected abstract HazelcastInstanceType getHazelcastInstanceType();
-
     protected abstract CacheStats getStats(String group);
-
 
     protected HazelcastInstance getHazelcastInstance() {
     	return HazelcastUtil.getInstance().getHazel(getHazelcastInstanceType());
+    }
+
+    protected void reInitialize(){
+        if(recovering){
+            return;
+        }
+        synchronized (this) {
+            if(!recovering){
+                setRecovering(true);
+                Runnable hazelThread = new ReinitializeHazelThread(this, getHazelcastInstanceType());
+                hazelThread.run();
+            }
+        }
     }
 
     @Override
@@ -38,38 +50,86 @@ public abstract class AbstractHazelcastCacheProvider extends CacheProvider {
 
     @Override
     public void init()  {
+        try {Thread.sleep(1000);}catch (Exception e){}
+        if(isRecovering()){
+            return;
+        }
         Logger.debug(this,"Calling HazelUtil to ensure Hazelcast member is up");
         getHazelcastInstance();
-        initialized = true;
+        setInitialized(true);
+    }
+
+    public boolean isRecovering() {
+        return recovering;
+    }
+
+    public void setRecovering(boolean recovering){
+        this.recovering = recovering;
     }
 
     @Override
-    public boolean isInitialized() throws Exception {
+    public boolean isInitialized() {
         return initialized;
+    }
+
+    public void setInitialized(boolean initialized){
+        this.initialized=initialized;
     }
 
     @Override
     public void put(String group, String key, Object content) {
-        getHazelcastInstance().getMap(group).set(key, content);
+        if(isRecovering()){
+            return;
+        }
+        try{
+            getHazelcastInstance().getMap(group).set(key, content);
+        } catch (HazelcastInstanceNotActiveException hce){
+            reInitialize();
+        }
     }
 
     @Override
     public Object get(String group, String key) {
-        return getHazelcastInstance().getMap(group).get(key);
+        if(isRecovering()){
+            return null;
+        }
+        try {
+            return getHazelcastInstance().getMap(group).get(key);
+        } catch (HazelcastInstanceNotActiveException hce){
+            reInitialize();
+            return null;
+        }
     }
 
     @Override
     public void remove(String group, String key) {
-        getHazelcastInstance().getMap(group).remove(key);
+        if(isRecovering()){
+            return;
+        }
+        try{
+            getHazelcastInstance().getMap(group).remove(key);
+        } catch (HazelcastInstanceNotActiveException hce){
+            reInitialize();
+        }
     }
 
     @Override
     public void remove(String group) {
-        getHazelcastInstance().getMap(group).clear();
+        if(isRecovering()){
+            return;
+        }
+        try{
+            getHazelcastInstance().getMap(group).clear();
+        } catch (HazelcastInstanceNotActiveException hce){
+            reInitialize();
+        }
     }
 
     @Override
     public void removeAll() {
+        if(isRecovering()){
+            return;
+        }
         Collection<DistributedObject> distObjs = getHazelcastInstance().getDistributedObjects();
         for (DistributedObject distObj : distObjs) {
             if (distObj.getServiceName().contains("mapService")) {
@@ -81,6 +141,9 @@ public abstract class AbstractHazelcastCacheProvider extends CacheProvider {
     @Override
     public Set<String> getKeys(String group) {
         Set<String> keys = new HashSet<String>();
+        if(isRecovering()){
+            return keys;
+        }
         for (Object key : getHazelcastInstance().getMap(group).keySet()) {
             keys.add(key.toString());
         }
@@ -90,7 +153,9 @@ public abstract class AbstractHazelcastCacheProvider extends CacheProvider {
     @Override
     public Set<String> getGroups() {
         Set groups = new HashSet();
-
+        if(isRecovering()){
+            return groups;
+        }
         Collection<DistributedObject> distObjs = getHazelcastInstance().getDistributedObjects();
         for (DistributedObject distObj : distObjs) {
             if (distObj.getServiceName().contains("mapService")) {
@@ -104,7 +169,10 @@ public abstract class AbstractHazelcastCacheProvider extends CacheProvider {
     public CacheProviderStats getStats() {
         CacheStats providerStats = new CacheStats();
         CacheProviderStats ret = new CacheProviderStats(providerStats,getName());
-
+        Set groups = new HashSet();
+        if(isRecovering()){
+            return ret;
+        }
         for (String group : getGroups()) {
 
             ret.addStatRecord(getStats(group));

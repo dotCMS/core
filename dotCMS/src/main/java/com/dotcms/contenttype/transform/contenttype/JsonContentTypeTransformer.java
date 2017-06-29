@@ -146,6 +146,7 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
       ContentType type = from();
       Map<String, Object> typeMap = mapper.convertValue(type, HashMap.class);
       typeMap.put("fields", new JsonFieldTransformer(type.fields()).mapList());
+      typeMap.put("baseType", type.baseType());
       typeMap.remove("acceptedDataTypes");
       typeMap.remove("dbColumn");
 
