@@ -212,6 +212,21 @@ processResources {
 war.dependsOn 'deployPlugins','installDotcmsUI'
 
 war {
+
+    sourceSets {
+        main {
+            java {
+                //We only want to compile using the submodules code when using the deployWarTomcatDev task
+                if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDev')) {
+                    srcDirs = ["src/main/java", "$enterpriseProjectHome/src/main/java", "$licenseProjectHome/src/main/java"]
+                } else {
+                    srcDirs = ["src/main/java"]
+                }
+
+            }
+        }
+    }
+
     classpath = classpath - sourceSets.main.output.classesDir
 
     if (gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
