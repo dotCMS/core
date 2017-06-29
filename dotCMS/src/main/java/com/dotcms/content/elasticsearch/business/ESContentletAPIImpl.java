@@ -1693,7 +1693,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             try {
                 _bout = new BufferedOutputStream(new FileOutputStream(_writing));
             } catch (FileNotFoundException e) {
-
+                Logger.error(this, e.getMessage());
+            } finally{
+                try {
+                    _bout.close();
+                } catch (IOException e) {
+                    Logger.error(this, e.getMessage());
+                }
             }
             _xstream.toXML(contentlets, _bout);
         }
