@@ -1456,6 +1456,17 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		return hasPerm;
     }
 
+    /**
+     * @Deprecated: use permissionIndividually(Permissionable parent, Permissionable permissionable,
+     * User user) instead.
+     */
+    @Override
+    @Deprecated
+    public void permissionIndividually(Permissionable parent, Permissionable permissionable,
+            User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        permissionIndividually(parent, permissionable, user);
+    }
+
     @Override
     public void permissionIndividually(Permissionable parent, Permissionable permissionable,
             User user) throws DotDataException, DotSecurityException {

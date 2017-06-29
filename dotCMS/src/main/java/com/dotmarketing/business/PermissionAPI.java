@@ -786,6 +786,13 @@ public interface PermissionAPI {
 	boolean doesUserHavePermissions(PermissionableType permType, int permissionType, User user) throws DotDataException;
 
     /**
+     * @Deprecated: use permissionIndividually(Permissionable parent, Permissionable permissionable, User user) instead.
+     */
+    @Deprecated
+    void permissionIndividually(Permissionable parent, Permissionable permissionable, User user, boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException;
+
+    /**
      * This method should be called when we want to break permission inheritance. It will find
      * parent permissions and apply all those permissions to the permissionable.
      */
