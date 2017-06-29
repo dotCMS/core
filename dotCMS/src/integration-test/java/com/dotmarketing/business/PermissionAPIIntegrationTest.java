@@ -73,7 +73,7 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
         }
  
 
-        perm.permissionIndividually(host.getParentPermissionable(), host, sysuser, false);
+        perm.permissionIndividually(host.getParentPermissionable(), host, sysuser);
 
         tt=new Template();
         tt.setTitle("testtemplate");
@@ -143,12 +143,12 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
         cont2=APILocator.getContentletAPI().checkin(cont2, sysuser, false);
         APILocator.getContentletAPI().isInodeIndexed(cont2.getInode());
 
-        perm.permissionIndividually(host, cont1, sysuser, false);
-        perm.permissionIndividually(host, cont2, sysuser, false);
-        perm.permissionIndividually(host, f4, sysuser, false);
-        perm.permissionIndividually(host, f3, sysuser, false);
-        perm.permissionIndividually(host, f2, sysuser, false);
-        perm.permissionIndividually(host, f1, sysuser, false);
+        perm.permissionIndividually(host, cont1, sysuser);
+        perm.permissionIndividually(host, cont2, sysuser);
+        perm.permissionIndividually(host, f4, sysuser);
+        perm.permissionIndividually(host, f3, sysuser);
+        perm.permissionIndividually(host, f2, sysuser);
+        perm.permissionIndividually(host, f1, sysuser);
 
 
         assertFalse(perm.isInheritingPermissions(f1));

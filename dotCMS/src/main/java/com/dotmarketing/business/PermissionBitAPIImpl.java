@@ -15,7 +15,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -27,6 +26,9 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList.Builder;
+import com.google.common.collect.Sets;
 import com.liferay.portal.NoSuchRoleException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
@@ -1456,7 +1458,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
     @Override
     public void permissionIndividually(Permissionable parent, Permissionable permissionable,
-            User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+            User user) throws DotDataException, DotSecurityException {
 
         List<Permission> newSetOfPermissions = getNewPermissions(parent, permissionable, user);
 
@@ -1473,7 +1475,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
             User user, Role role) throws DotDataException, DotSecurityException {
 
         List<Permission> newSetOfPermissions = getNewPermissions(parent, permissionable, user);
-        List<Permission> newSetOfPermissionsFiltered = new ArrayList<>();
+        ImmutableList.Builder<Permission> immutablePermissionsFiltered = new Builder<>();
 
         // We need to make sure that newSetOfPermissions doesn't contain
         // a child of the role we are assigning permissions.
@@ -1481,15 +1483,16 @@ public class PermissionBitAPIImpl implements PermissionAPI {
             Role newPermissionRole = APILocator.getRoleAPI().loadRoleById(newPermission.getRoleId());
 
             if (!APILocator.getRoleAPI().isParentRole(role, newPermissionRole)) {
-                newSetOfPermissionsFiltered.add(newPermission);
+                immutablePermissionsFiltered.add(newPermission);
             }
         }
 
-        if (!newSetOfPermissions.isEmpty()) {
+        final List<Permission> permissionsFiltered = immutablePermissionsFiltered.build();
+        if (!permissionsFiltered.isEmpty()) {
             // NOTE: Method "assignPermissions" is deprecated in favor of "savePermission",
             // which has subtle functional differences. Please take these differences into
             // consideration if planning to replace this method with the "savePermission"
-            permissionFactory.assignPermissions(newSetOfPermissionsFiltered, permissionable);
+            permissionFactory.assignPermissions(permissionsFiltered, permissionable);
         }
     }
 
@@ -1499,7 +1502,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
     private List<Permission> getNewPermissions(Permissionable parent, Permissionable permissionable,
             User user) throws DotDataException, DotSecurityException {
 
-        List<Permission> perList = new ArrayList<>();
+        ImmutableList.Builder<Permission> immutablePermissionList = new Builder<>();
         List<Permission> newSetOfPermissions = new ArrayList<>();
 
         if (!doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
@@ -1512,65 +1515,79 @@ public class PermissionBitAPIImpl implements PermissionAPI {
         if (parent.isParentPermissionable()) {
 
             String type = permissionable.getPermissionType();
-            perList.addAll(permissionFactory.getInheritablePermissions(parent));
-            perList.addAll(permissionFactory.getPermissions(parent, true));
+            immutablePermissionList.addAll(permissionFactory.getInheritablePermissions(parent));
+            immutablePermissionList.addAll(permissionFactory.getPermissions(parent, true));
+            List<Permission> permissionList = immutablePermissionList.build();
+
             Host host = APILocator.getHostAPI()
-                    .find(permissionable.getPermissionId(), APILocator.getUserAPI().getSystemUser(), false);
+                    .find(permissionable.getPermissionId(), APILocator.getUserAPI().getSystemUser(),
+                            false);
             if (host != null) {
                 type = Host.class.getCanonicalName();
             }
-            for (Permission p : perList) {
 
-                if (type.equals(Folder.class.getCanonicalName())) {
-                    if (p.getType().equals(Template.class.getCanonicalName())
-                            || p.getType().equals(Container.class.getCanonicalName())
-                            || p.getType().equals(Category.class.getCanonicalName())
-                            || p.getType().equals(Host.class.getCanonicalName())) {
-                        continue;
-                    }
+            final Set<String> classesToIgnoreFolder = Sets
+                    .newHashSet(Template.class.getCanonicalName(),
+                            Container.class.getCanonicalName(),
+                            Category.class.getCanonicalName(),
+                            Host.class.getCanonicalName());
+
+            final Set<String> classesToIgnoreHost = Sets
+                    .newHashSet(Category.class.getCanonicalName());
+
+            for (Permission permission : permissionList) {
+
+                if (type.equals(Folder.class.getCanonicalName()) && classesToIgnoreFolder
+                        .contains(permission.getType())) {
+                    continue;
                 }
 
-                if (type.equals(Host.class.getCanonicalName())) {
-                    if (p.getType().equals(Category.class.getCanonicalName())) {
-                        continue;
-                    }
+                if (type.equals(Host.class.getCanonicalName()) && classesToIgnoreHost
+                        .contains(permission.getType())) {
+                    continue;
                 }
 
-                if (type.equals(p.getType()) || p.isIndividualPermission()) {
-                    Permission dupe = null;
-                    List<Permission> dupes = new ArrayList<>();
-                    for (Permission newPerm : newSetOfPermissions) {
-                        if (newPerm.isIndividualPermission() && newPerm.getRoleId()
-                                .equals(p.getRoleId()) && newPerm.getPermission() > p
+                if (type.equals(permission.getType()) || permission.isIndividualPermission()) {
+                    Permission duplicatedPermission = null;
+                    ImmutableList.Builder<Permission> immutableDuplicatedList = new Builder<>();
+
+                    for (Permission newPermission : newSetOfPermissions) {
+                        if (newPermission.isIndividualPermission() && newPermission.getRoleId()
+                                .equals(permission.getRoleId())
+                                && newPermission.getPermission() > permission
                                 .getPermission()) {
-                            dupe = newPerm;
+                            duplicatedPermission = newPermission;
                             break;
-                        } else if (newPerm.isIndividualPermission() && newPerm.getRoleId()
-                                .equals(p.getRoleId())) {
-                            dupes.add(newPerm);
+                        } else if (newPermission.isIndividualPermission() && newPermission
+                                .getRoleId()
+                                .equals(permission.getRoleId())) {
+                            immutableDuplicatedList.add(newPermission);
                         }
                     }
-                    if (dupe == null) {
-                        newSetOfPermissions.removeAll(dupes);
-                        if (p.isIndividualPermission()) {
-                            newSetOfPermissions.add(new Permission(p.getType(),
-                                    permissionable.getPermissionId(), p.getRoleId(),
-                                    p.getPermission(), true));
+                    List<Permission> duplicatedPermissionList = immutableDuplicatedList.build();
+                    if (duplicatedPermission == null) {
+                        newSetOfPermissions.removeAll(duplicatedPermissionList);
+                        if (permission.isIndividualPermission()) {
+                            newSetOfPermissions.add(new Permission(permission.getType(),
+                                    permissionable.getPermissionId(), permission.getRoleId(),
+                                    permission.getPermission(), true));
                             continue;
                         } else {
                             newSetOfPermissions.add(new Permission(permissionable.getPermissionId(),
-                                    p.getRoleId(), p.getPermission(), true));
+                                    permission.getRoleId(), permission.getPermission(), true));
                         }
                     }
-                    if (!p.isIndividualPermission()) {
+                    if (!permission.isIndividualPermission()) {
                         newSetOfPermissions
-                                .add(new Permission(p.getType(), permissionable.getPermissionId(),
-                                        p.getRoleId(), p.getPermission(), true));
+                                .add(new Permission(permission.getType(),
+                                        permissionable.getPermissionId(),
+                                        permission.getRoleId(), permission.getPermission(), true));
                     }
                 } else {
                     newSetOfPermissions
-                            .add(new Permission(p.getType(), permissionable.getPermissionId(),
-                                    p.getRoleId(), p.getPermission(), true));
+                            .add(new Permission(permission.getType(),
+                                    permissionable.getPermissionId(),
+                                    permission.getRoleId(), permission.getPermission(), true));
                 }
             }
 
