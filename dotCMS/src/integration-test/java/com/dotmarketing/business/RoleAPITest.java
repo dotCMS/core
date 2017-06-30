@@ -5,6 +5,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -288,16 +289,15 @@ public class RoleAPITest extends IntegrationTestBase {
 
         RoleAPI roleAPI = APILocator.getRoleAPI();
 
-        Role parentRole = null;
-        Role childRole = null;
-        Role grandChildRole = null;
+        Role parentRole = new Role();
+        Role childRole = new Role();
+        Role grandChildRole = new Role();
 
-        Role secondParentRole = null;
-        Role secondChildRole = null;
+        Role secondParentRole = new Role();
+        Role secondChildRole = new Role();
 
         try {
             // Create Parent Role.
-            parentRole = new Role();
             parentRole.setName("Parent Role");
             parentRole.setEditUsers(true);
             parentRole.setEditPermissions(true);
@@ -306,7 +306,6 @@ public class RoleAPITest extends IntegrationTestBase {
             parentRole = roleAPI.save(parentRole);
 
             // Create Child Role Role.
-            childRole = new Role();
             childRole.setName("Child Role");
             childRole.setEditUsers(true);
             childRole.setEditPermissions(true);
@@ -316,7 +315,6 @@ public class RoleAPITest extends IntegrationTestBase {
             childRole = roleAPI.save(childRole);
 
             // Create Grandchild Role Role.
-            grandChildRole = new Role();
             grandChildRole.setName("Grandchild Role");
             grandChildRole.setEditUsers(true);
             grandChildRole.setEditPermissions(true);
@@ -335,7 +333,6 @@ public class RoleAPITest extends IntegrationTestBase {
 
             // Now let's create a sibling branch of roles.
             // Create Second Parent Role.
-            secondParentRole = new Role();
             secondParentRole.setName("Second Parent Role");
             secondParentRole.setEditUsers(true);
             secondParentRole.setEditPermissions(true);
@@ -344,7 +341,6 @@ public class RoleAPITest extends IntegrationTestBase {
             secondParentRole = roleAPI.save(secondParentRole);
 
             // Create Second Child Role Role.
-            secondChildRole = new Role();
             secondChildRole.setName("Second Child Role");
             secondChildRole.setEditUsers(true);
             secondChildRole.setEditPermissions(true);
@@ -356,27 +352,27 @@ public class RoleAPITest extends IntegrationTestBase {
             assertFalse(roleAPI.isParentRole(parentRole, secondChildRole));
             assertFalse(roleAPI.isParentRole(parentRole, secondParentRole));
 
-        } catch (Exception e) {
+        } catch (DotSecurityException | DotDataException e) {
             fail(e.getMessage());
         } finally {
             try {
                 //Delete Roles.
-                if (grandChildRole != null) {
+                if (UtilMethods.isSet(grandChildRole.getId())) {
                     roleAPI.delete(grandChildRole);
                 }
-                if (childRole != null) {
+                if (UtilMethods.isSet(childRole.getId())) {
                     roleAPI.delete(childRole);
                 }
-                if (parentRole != null) {
+                if (UtilMethods.isSet(parentRole.getId())) {
                     roleAPI.delete(parentRole);
                 }
-                if (secondChildRole != null) {
+                if (UtilMethods.isSet(secondChildRole.getId())) {
                     roleAPI.delete(secondChildRole);
                 }
-                if (secondParentRole != null) {
+                if (UtilMethods.isSet(secondParentRole.getId())) {
                     roleAPI.delete(secondParentRole);
                 }
-            } catch (Exception e) {
+            } catch (DotDataException e) {
                 fail(e.getMessage());
             }
         }

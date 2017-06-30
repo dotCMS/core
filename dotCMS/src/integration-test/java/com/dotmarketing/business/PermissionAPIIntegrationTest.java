@@ -26,6 +26,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import java.util.HashMap;
@@ -95,8 +96,8 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
         removeTestHost(host);
     }
 
-    private static void removeTestHost(Host host) throws DotHibernateException {
-        if (host != null){
+    private static void removeTestHost(final Host host) throws DotHibernateException {
+        if (host != null && UtilMethods.isSet(host.getIdentifier())){
             try{
                 HibernateUtil.startTransaction();
                 hostAPI.archive(host, systemUser, false);
@@ -112,10 +113,10 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
     @Test
     public void resetPermissionsUnder() throws DotStateException, DotDataException, DotSecurityException {
         folderAPI.createFolders("/f5/f1/f1/f1/", host, systemUser, false);
-        Folder f1 = folderAPI.findFolderByPath("/f5/", host, systemUser, false);
-        Folder f2 = folderAPI.findFolderByPath("/f5/f1", host, systemUser, false);
-        Folder f3 = folderAPI.findFolderByPath("/f5/f1/f1", host, systemUser, false);
-        Folder f4 = folderAPI.findFolderByPath("/f5/f1/f1/f1", host, systemUser, false);
+        final Folder f1 = folderAPI.findFolderByPath("/f5/", host, systemUser, false);
+        final Folder f2 = folderAPI.findFolderByPath("/f5/f1", host, systemUser, false);
+        final Folder f3 = folderAPI.findFolderByPath("/f5/f1/f1", host, systemUser, false);
+        final Folder f4 = folderAPI.findFolderByPath("/f5/f1/f1/f1", host, systemUser, false);
 
         Structure s = new Structure();
         s.setHost(host.getIdentifier());
@@ -229,7 +230,7 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
     			assertTrue(permissions.isEmpty());
 
     			// Assign 5 different permissions over test host (to be inherited to test content-type)
-    			Role role = roleAPI.loadCMSAnonymousRole();
+    			final Role role = roleAPI.loadCMSAnonymousRole();
     			int permission = PermissionAPI.PERMISSION_READ |
     					PermissionAPI.PERMISSION_WRITE |
     					PermissionAPI.PERMISSION_PUBLISH |
@@ -262,20 +263,19 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
     @Test
     public void test_permissionIndividuallyByRole() {
 
-        Host host = null;
+        Host host = new Host();
 
-        Folder goQuestFolder = null;
-        Folder applicationFolder = null;
+        Folder goQuestFolder = new Folder();
+        Folder applicationFolder = new Folder();
 
-        Role parentRole = null;
-        Role childRole = null;
-        Role grandChildRole = null;
+        Role parentRole = new Role();
+        Role childRole = new Role();
+        Role grandChildRole = new Role();
 
-        User newUser = null;
+        User newUser = new User();
 
         try {
             // Create test Host.
-            host = new Host();
             host.setHostname("permission.dotcms.com");
             host = hostAPI.save(host, systemUser, false);
 
@@ -288,7 +288,6 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
             // Child: Product Publisher
             // Grandchild: Product Contributor
             // Create Parent Role.
-            parentRole = new Role();
             parentRole.setName("Webmaster-Test");
             parentRole.setEditUsers(true);
             parentRole.setEditPermissions(true);
@@ -296,7 +295,6 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
             parentRole = roleAPI.save(parentRole);
 
             // Create Child Role Role.
-            childRole = new Role();
             childRole.setName("Product Contributor-Test");
             childRole.setEditUsers(true);
             childRole.setEditPermissions(true);
@@ -305,7 +303,6 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
             childRole = roleAPI.save(childRole);
 
             // Create Grandchild Role Role.
-            grandChildRole = new Role();
             grandChildRole.setName("Product Contributor-Test");
             grandChildRole.setEditUsers(true);
             grandChildRole.setEditPermissions(true);
@@ -336,7 +333,7 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
             // Set up permissions for Product Contributor
             // Permission the role to view and add children on demo.dotcm.com
             if (permissionAPI.isInheritingPermissions(host)) {
-                Permissionable parentPermissionable = permissionAPI.findParentPermissionable(host);
+                final Permissionable parentPermissionable = permissionAPI.findParentPermissionable(host);
                 permissionAPI.permissionIndividuallyByRole(parentPermissionable, host, systemUser,
                         grandChildRole);
             }
@@ -349,7 +346,7 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
             // Set up permissions for Product Contributor
             // Give access to view and add/edit child objects on the "Go Quest" directory
             if (permissionAPI.isInheritingPermissions(goQuestFolder)) {
-                Permissionable parentPermissionable = permissionAPI
+                final Permissionable parentPermissionable = permissionAPI
                         .findParentPermissionable(goQuestFolder);
                 permissionAPI.permissionIndividuallyByRole(parentPermissionable, goQuestFolder,
                         systemUser, grandChildRole);
@@ -367,7 +364,7 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
             // Set up permissions for Product Publisher
             // Give the role full publish permissions to the applications directory.
             if (permissionAPI.isInheritingPermissions(applicationFolder)) {
-                Permissionable parentPermissionable = permissionAPI
+                final Permissionable parentPermissionable = permissionAPI
                         .findParentPermissionable(applicationFolder);
                 permissionAPI.permissionIndividuallyByRole(parentPermissionable, applicationFolder,
                         systemUser, childRole);
@@ -396,23 +393,23 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
             fail(e.getMessage());
         } finally {
             try {
-                if (newUser != null) {
+                if (UtilMethods.isSet(newUser.getUserId())) {
                     userAPI.delete(newUser, systemUser, false);
                 }
                 //Delete Roles.
-                if (grandChildRole != null) {
+                if (UtilMethods.isSet(grandChildRole.getId())) {
                     roleAPI.delete(grandChildRole);
                 }
-                if (childRole != null) {
+                if (UtilMethods.isSet(childRole.getId())) {
                     roleAPI.delete(childRole);
                 }
-                if (parentRole != null) {
+                if (UtilMethods.isSet(parentRole.getId())) {
                     roleAPI.delete(parentRole);
                 }
-                if (goQuestFolder != null) {
+                if (UtilMethods.isSet(goQuestFolder.getInode())) {
                     folderAPI.delete(goQuestFolder, systemUser, false);
                 }
-                if (applicationFolder != null) {
+                if (UtilMethods.isSet(applicationFolder.getInode())) {
                     folderAPI.delete(applicationFolder, systemUser, false);
                 }
                 // Removing Host.
