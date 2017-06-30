@@ -30,7 +30,6 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
@@ -54,7 +53,6 @@ import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
 import java.io.IOException;
 import java.io.InputStream;

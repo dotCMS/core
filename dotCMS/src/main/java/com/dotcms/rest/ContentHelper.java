@@ -1,10 +1,7 @@
 package com.dotcms.rest;
 
-import com.dotcms.repackage.javax.ws.rs.DefaultValue;
-import com.dotcms.repackage.javax.ws.rs.QueryParam;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
-import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -245,7 +242,7 @@ class ContentHelper {
         params.put("pageValue", (page != -1)?String.valueOf(page): StringPool.BLANK);
         params.put("filterValue", (null != filter)?filter: StringPool.BLANK);
         params.put("directionValue", UtilMethods.isSet(direction) ? direction.toString() : StringUtils.EMPTY);
-        params.put("orderByValue", UtilMethods.isSet(orderBy) ? orderBy.toString()  : StringUtils.EMPTY);
+        params.put("orderByValue", UtilMethods.isSet(orderBy) ? orderBy  : StringUtils.EMPTY);
 
         return StringUtil.format(URL_TEMPLATE, params);
     }
