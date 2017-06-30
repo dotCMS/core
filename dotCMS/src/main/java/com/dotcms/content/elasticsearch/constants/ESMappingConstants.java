@@ -1,7 +1,5 @@
 package com.dotcms.content.elasticsearch.constants;
 
-import com.dotmarketing.util.InodeUtils;
-
 /**
  * This class define the Contentlets ESMapping constants
  *
@@ -82,9 +80,9 @@ public final class ESMappingConstants {
     public static final String RELATION_TYPE = "relation_type";
     public static final String TREE_ORDER = "tree_order";
 
-    public static final String SUFIX_CHILD = "-child";
-    public static final String SUFIX_PARENT = "-parent";
-    public static final String SUFIX_ORDER = "-order";
+    public static final String SUFFIX_CHILD = "-child";
+    public static final String SUFFIX_PARENT = "-parent";
+    public static final String SUFFIX_ORDER = "-order";
 
 
 }

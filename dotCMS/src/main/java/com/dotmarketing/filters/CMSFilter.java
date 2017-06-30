@@ -2,6 +2,7 @@ package com.dotmarketing.filters;
 
 import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotcms.vanityurl.handler.VanityUrlHandler;
 import com.dotcms.vanityurl.handler.VanityUrlHandlerResolver;
@@ -129,10 +130,10 @@ public class CMSFilter implements Filter {
 		String queryString = request.getQueryString();
 		// if a vanity URL
 		if (iAm == IAm.VANITY_URL) {
-			VanityUrl vanityUrl = vanityUrlAPI.getLiveVanityUrl(("/".equals(uri) ? "/cmsHomePage" : uri.endsWith("/")?uri.substring(0, uri.length() - 1):uri), host, languageId, APILocator.systemUser());
+			CachedVanityUrl vanityUrl = urlUtil.getCachedVanityUrl(("/".equals(uri) ? "/cmsHomePage" : uri.endsWith("/")?uri.substring(0, uri.length() - 1):uri), host, languageId);
 
-			if (vanityUrl == null || VanityUrlAPI.CACHE_404_VANITY_URL.equals(vanityUrl.getInode())|| (!InodeUtils.isSet(vanityUrl.getInode()) && !UtilMethods.isSet(vanityUrl.getForwardTo()))) {
-				vanityUrl = vanityUrlAPI.getLiveVanityUrl(("/".equals(uri) ? "/cmsHomePage" : uri.endsWith("/")?uri.substring(0, uri.length() - 1):uri), null, languageId, APILocator.systemUser());
+			if (vanityUrl == null || VanityUrlAPI.CACHE_404_VANITY_URL.equals(vanityUrl.getVanityUrlId())|| (!InodeUtils.isSet(vanityUrl.getVanityUrlId()) && !UtilMethods.isSet(vanityUrl.getForwardTo()))) {
+				vanityUrl = urlUtil.getCachedVanityUrl(("/".equals(uri) ? "/cmsHomePage" : uri.endsWith("/")?uri.substring(0, uri.length() - 1):uri), null, languageId);
 			}
 
 			VanityUrlHandler vanityUrlHandler = vanityUrlHandlerResolver.getVanityUrlHandler();

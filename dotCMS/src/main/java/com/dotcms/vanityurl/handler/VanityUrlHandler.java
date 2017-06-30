@@ -1,6 +1,6 @@
 package com.dotcms.vanityurl.handler;
 
-import com.dotcms.vanityurl.model.VanityUrl;
+import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotmarketing.beans.Host;
 import java.io.IOException;
@@ -26,6 +26,6 @@ public interface VanityUrlHandler {
      * @param languageId The current languageId
      * @return a VanityURLResult Object
      */
-    VanityUrlResult handle(VanityUrl vanityUrl, HttpServletResponse response, Host host,
+    VanityUrlResult handle(CachedVanityUrl vanityUrl, HttpServletResponse response, Host host,
             long languageId) throws IOException;
 }

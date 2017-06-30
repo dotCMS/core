@@ -1,6 +1,5 @@
 package com.dotmarketing.servlets;
 
-import com.dotcms.cache.VanityUrlCache;
 import com.dotcms.cluster.business.HazelcastUtil;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
@@ -15,7 +14,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.ChainableCacheAdministratorImpl;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
