@@ -23,6 +23,7 @@ import com.dotcms.repackage.org.glassfish.jersey.media.multipart.BodyPart;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.ContentDisposition;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.PaginationUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -78,6 +79,7 @@ public class ContentResource {
 	private static final String ACCEPT_LANGUAGE = "acceptLanguage";
 
     private final WebResource webResource = new WebResource();
+    private final ContentHelper contentHelper = ContentHelper.INSTANCE;
 
     /**
 	 * performs a call to APILocator.getContentletAPI().searchIndex() with the
@@ -1257,188 +1259,228 @@ public class ContentResource {
 		}
 	}
 
-    /**
-     * Returns a list of contentlets that represents the content related
-     * @param request
-     * @param relationshipName String name of the relationship
-     * @param contentletIdentifier String identifier
-     * @param pullParents boolean should the related pull be based on Parents or Children
-     * @param limit int 0 is the dotCMS max limit which is 10000. Becareful when searching for unlimited amount as all content will load into memory
-     * @return Response
-     * @throws DotSecurityException
-     * @throws DotDataException
-     * @throws JSONException
-     */
-    @GET
-    @Path("/related/relation/{relationshipName}/id/{contentletIdentifier}/parents/{pullParents}/limit/{limit}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response related ( @Context HttpServletRequest request,
-                              @Context HttpServletResponse response,
-                              @PathParam ("relationshipName")     final String relationshipName,
-                              @PathParam ("contentletIdentifier") final String contentletIdentifier,
-                              @PathParam ("pullParents")          final boolean pullParents,
-                              @PathParam ("limit")                final int limit
-    ) throws DotSecurityException, DotDataException, JSONException {
-
-        final InitDataObject initData = this.webResource.init(null, true, request, true, null);
-        final ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
-        final User user = initData.getUser();
-        List<Contentlet> contentlets = null;
-        String result = null;
-
-        try {
-
-            contentlets = this.related(request, user, relationshipName, contentletIdentifier,
-                    null, pullParents, limit, null);
-            result = getJSON(contentlets, request, response, "true", user);
-        } catch (Exception e) {
-            // In case of unknown error, so we report it as a 500
-            Logger.error(this, "An error occurred when processing the request.", e);
-            return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-        }
-
-        return responseResource.response( result );
-    } //  related.
 
     /**
-     * Returns a list of contentlets that represents the content related
-     * @param request
-     * @param relationshipName String name of the relationship
-     * @param contentletIdentifier String identifier
-     * @param pullParents boolean should the related pull be based on Parents or Children
-     * @param limit int 0 is the dotCMS max limit which is 10000. Becareful when searching for unlimited amount as all content will load into memory
-     * @param sort String this is a string and can contain multiple values "sort1 acs, sort2 desc". Can be Null
-     * @return Response
-     * @throws DotSecurityException
-     * @throws DotDataException
-     * @throws JSONException
-     */
-    @GET
-    @Path("/related/relation/{relationshipName}/id/{contentletIdentifier}/parents/{pullParents}/limit/{limit}/sort/{sort}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response related ( @Context HttpServletRequest request,
-                              @Context HttpServletResponse response,
-                              @PathParam ("relationshipName")     final String relationshipName,
-                              @PathParam ("contentletIdentifier") final String contentletIdentifier,
-                              @PathParam ("pullParents")          final boolean pullParents,
-                              @PathParam ("limit")                final int limit,
-                              @PathParam ("sort")                 final String sort
-    ) throws DotSecurityException, DotDataException, JSONException {
-
-        final InitDataObject initData = this.webResource.init(null, true, request, true, null);
-        final ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
-        final User user = initData.getUser();
-        List<Contentlet> contentlets = null;
-        String result = null;
-
-        try {
-
-            contentlets = this.related(request, user, relationshipName, contentletIdentifier,
-                    null, pullParents, limit, sort);
-            result = getJSON(contentlets, request, response, "true", user);
-        } catch (Exception e) {
-            // In case of unknown error, so we report it as a 500
-            Logger.error(this, "An error occurred when processing the request.", e);
-            return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-        }
-
-        return responseResource.response( result );
-    } //  related.
-
-    /**
-     * Returns a list of contentlets that represents the content related
+     * <p>
+     * Gets the relationships for a piece of content with Identifier. The content pull is related to the children
+     * </p>
+     * <p>
+     * The method will figure out language, working and live for you.
+     * </p>
+     * <p>
+     * Returns empty List if no results are found
+     * </p>
+     *
+     * <i>Example:</i>
+     * <pre>
+     *     <code>
+     *         http://localhost:8080/api/content/relatedparents/relation/LandingPage-Products/id/7b22b477-b444-4d4b-b2e4-14ac4f9378e9?page=1&per_page=10&direction=asc&orderby=modDate
+     *     </code>
+     * </pre>
+     * <i>Returned:</i>
+     * <pre>
+     *     <code>
+     * {
+     *    "contentlets": [
+     *       {
+     *            "template": "eae2538a-6bc0-4d27-916f-bbc5d7ca45c5",
+     *            "owner": "dotcms.org.1",
+     *            "identifier": "4180b269-e59d-40ef-92e1-f50e4806e3ac",
+     *            "friendlyname": "TargetQuest",
+     *            "modDate": "2017-03-13 09:57:59.0",
+     *            "cachettl": "15",
+     *           "languageId": 1,
+     *            "caption": "Our Financial Advisors can help you reach them and deliver services and solutions that help build, preserve and manage wealth.",
+     *            "banner": "/contentAsset/raw-data/4180b269-e59d-40ef-92e1-f50e4806e3ac/banner",
+     *            "title": "Let Quest's Financial Advisors help",
+     *            "showOnMenu": "true",
+     *            "inode": "2d6dc412-84b6-4511-b84a-75efa1327ef9",
+     *            "seodescription": "My Quest - Demo site for dotCMS Content Management System",
+     *            "folder": "cb6c1020-b9e2-4b64-8c68-52f790cbf4d8",
+     *            "sortOrder": 1,
+     *            "subtitle": "Managed Strategies for your Financial Goals",
+     *            "seokeywords": "CMS, Java CMS",
+     *            "modUser": "dotcms.org.1",
+     *            "host": "48190c8c-42c4-46af-8d1a-0cd5db894797",
+     *            "lastReview": "2017-03-13 09:57:59.0",
+     *            "stInode": "5a19371b-6b31-46d1-94db-8e100197cbb4",
+     *            "bannerContentAsset": "4180b269-e59d-40ef-92e1-f50e4806e3ac/banner"
+     *        }
+     *    ]
+     *}
+     *     </code>
+     * </pre>
+     * <i>Query string parameters for pagination:</i>
+     * <ul>
+     *     <li>filter:     It is extra conditions to add to the query. like +title:Some Title.  Optional</li>
+     *     <li>page:       Represents the number of the page you want for the pagination.  Optional</li>
+     *     <li>per_page:   Represents how many elements do you want per page.  Optional</li>
+     *     <li>direction:  Represents the direction: asc or desc (non-case sensitive and Optional)</li>
+     *     <li>orderby:    Represents the field to use for the order. Optional</li>
+     * </ul>
+     * <i>The resource will return a list of headers such as:</i>
+     * <ul>
+     *     <li>Link: <http://localhost:8080/api/content/relatedchildren/relation/LandingPage-Products/id/7b22b477-b444-4d4b-b2e4-14ac4f9378e9?filter=&page=1&per_page=10&direction=ASC&orderby=modDate>;rel="first",<http://localhost:8080/api/content/related/relation/LandingPage-Products/id/7b22b477-b444-4d4b-b2e4-14ac4f9378e9?filter=&page=1&per_page=10&direction=ASC&orderby=modDate>;rel="last",<http://localhost:8080/api/content/related/relation/LandingPage-Products/id/7b22b477-b444-4d4b-b2e4-14ac4f9378e9?filter=&page=&per_page=10&direction=ASC&orderby=modDate>;rel="x-page"</li>
+     *     <li>X-Pagination-Current-Page: 1</li>
+     *     <li>X-Pagination-Link-Pages: 5</li>
+     *     <li>X-Pagination-Per-Page: 10</li>
+     *     <li>X-Pagination-Total-Entries: 1</li>
+     * </ul>
      * @param request HttpServletRequest
-     * @param relationshipName String name of the relationship
-     * @param contentletIdentifier String identifier
-     * @param pullParents boolean should the related pull be based on Parents or Children
-     * @param limit int 0 is the dotCMS max limit which is 10000. Becareful when searching for unlimited amount as all content will load into memory
-     * @param condition String Extra conditions to add to the query. like +title:Some Title.  Can be Null
-     * @param sort String this is a string and can contain multiple values "sort1 acs, sort2 desc". Can be Null
+     * @param response HttpServletResponse
+     * @param relationshipName String name of the relationship as defined in the structure.
+     * @param contentletIdentifier String identifier of the contentlet
      * @return Response
      * @throws DotSecurityException
      * @throws DotDataException
      * @throws JSONException
      */
     @GET
-    @Path("/related/relation/{relationshipName}/id/{contentletIdentifier}/parents/{pullParents}/limit/{limit}/condition/{condition}/sort/{sort}")
+    @Path("/relatedchildren/relation/{relationshipName}/id/{contentletIdentifier}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response related ( @Context HttpServletRequest request,
+    public Response relatedChildren ( @Context HttpServletRequest request,
                               @Context HttpServletResponse response,
-                              @PathParam ("relationshipName")     final String relationshipName,
-                              @PathParam ("contentletIdentifier") final String contentletIdentifier,
-                              @PathParam ("pullParents")          final boolean pullParents,
-                              @PathParam ("limit")                final int limit,
-                              @PathParam ("condition")            final String condition,
-                              @PathParam ("sort")                 final String sort
+                              @PathParam ("relationshipName")       final String relationshipName,
+                              @PathParam ("contentletIdentifier")   final String contentletIdentifier,
+                              @QueryParam(PaginationUtil.FILTER)    final String filter,
+                              @QueryParam(PaginationUtil.PAGE)      final int page,
+                              @QueryParam(PaginationUtil.PER_PAGE)  final int perPage,
+                              @QueryParam(PaginationUtil.ORDER_BY)  final String orderbyParam,
+                              @DefaultValue("asc") @QueryParam(PaginationUtil.DIRECTION) final String direction
+    ) throws DotSecurityException, DotDataException, JSONException {
+
+        return doRelated(request, response, relationshipName, contentletIdentifier, filter,
+                false, page, perPage, orderbyParam, direction);
+    } // related.
+
+    /**
+     * <p>
+     * Gets the relationships for a piece of content with Identifier. The content pull is related to the parents
+     * </p>
+     * <p>
+     * The method will figure out language, working and live for you.
+     * </p>
+     * <p>
+     * Returns empty List if no results are found
+     * </p>
+     *
+     * <i>Example:</i>
+     * <pre>
+     *     <code>
+     *         http://localhost:8080/api/content/relatedparents/relation/LandingPage-Products/id/7b22b477-b444-4d4b-b2e4-14ac4f9378e9?page=1&per_page=10&direction=asc&orderby=modDate
+     *     </code>
+     * </pre>
+     * <i>Returned:</i>
+     * <pre>
+     *     <code>
+     * {
+     *    "contentlets": [
+     *       {
+     *            "template": "eae2538a-6bc0-4d27-916f-bbc5d7ca45c5",
+     *            "owner": "dotcms.org.1",
+     *            "identifier": "4180b269-e59d-40ef-92e1-f50e4806e3ac",
+     *            "friendlyname": "TargetQuest",
+     *            "modDate": "2017-03-13 09:57:59.0",
+     *            "cachettl": "15",
+     *           "languageId": 1,
+     *            "caption": "Our Financial Advisors can help you reach them and deliver services and solutions that help build, preserve and manage wealth.",
+     *            "banner": "/contentAsset/raw-data/4180b269-e59d-40ef-92e1-f50e4806e3ac/banner",
+     *            "title": "Let Quest's Financial Advisors help",
+     *            "showOnMenu": "true",
+     *            "inode": "2d6dc412-84b6-4511-b84a-75efa1327ef9",
+     *            "seodescription": "My Quest - Demo site for dotCMS Content Management System",
+     *            "folder": "cb6c1020-b9e2-4b64-8c68-52f790cbf4d8",
+     *            "sortOrder": 1,
+     *            "subtitle": "Managed Strategies for your Financial Goals",
+     *            "seokeywords": "CMS, Java CMS",
+     *            "modUser": "dotcms.org.1",
+     *            "host": "48190c8c-42c4-46af-8d1a-0cd5db894797",
+     *            "lastReview": "2017-03-13 09:57:59.0",
+     *            "stInode": "5a19371b-6b31-46d1-94db-8e100197cbb4",
+     *            "bannerContentAsset": "4180b269-e59d-40ef-92e1-f50e4806e3ac/banner"
+     *        }
+     *    ]
+     *}
+     *     </code>
+     * </pre>
+     * <i>Query string parameters for pagination:</i>
+     * <ul>
+     *     <li>filter:     It is extra conditions to add to the query. like +title:Some Title.  Optional</li>
+     *     <li>page:       Represents the number of the page you want for the pagination.  Optional</li>
+     *     <li>per_page:   Represents how many elements do you want per page.  Optional</li>
+     *     <li>direction:  Represents the direction: asc or desc (non-case sensitive and Optional)</li>
+     *     <li>orderby:    Represents the field to use for the order. Optional</li>
+     * </ul>
+     * <i>The resource will return a list of headers such as:</i>
+     * <ul>
+     *     <li>Link: <http://localhost:8080/api/content/related/relation/LandingPage-Products/id/7b22b477-b444-4d4b-b2e4-14ac4f9378e9?filter=&page=1&per_page=10&direction=ASC&orderby=modDate>;rel="first",<http://localhost:8080/api/content/related/relation/LandingPage-Products/id/7b22b477-b444-4d4b-b2e4-14ac4f9378e9?filter=&page=1&per_page=10&direction=ASC&orderby=modDate>;rel="last",<http://localhost:8080/api/content/related/relation/LandingPage-Products/id/7b22b477-b444-4d4b-b2e4-14ac4f9378e9?filter=&page=&per_page=10&direction=ASC&orderby=modDate>;rel="x-page"</li>
+     *     <li>X-Pagination-Current-Page: 1</li>
+     *     <li>X-Pagination-Link-Pages: 5</li>
+     *     <li>X-Pagination-Per-Page: 10</li>
+     *     <li>X-Pagination-Total-Entries: 1</li>
+     * </ul>
+     * @param request HttpServletRequest
+     * @param response HttpServletResponse
+     * @param relationshipName String name of the relationship as defined in the structure.
+     * @param contentletIdentifier String identifier of the contentlet
+     * @return Response
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws JSONException
+     */
+    @GET
+    @Path("/relatedparents/relation/{relationshipName}/id/{contentletIdentifier}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response relatedParents ( @Context HttpServletRequest request,
+                              @Context HttpServletResponse response,
+                              @PathParam ("relationshipName")       final String relationshipName,
+                              @PathParam ("contentletIdentifier")   final String contentletIdentifier,
+                              @QueryParam(PaginationUtil.FILTER)    final String filter,
+                              @QueryParam(PaginationUtil.PAGE)      final int page,
+                              @QueryParam(PaginationUtil.PER_PAGE)  final int perPage,
+                              @QueryParam(PaginationUtil.ORDER_BY)  final String orderbyParam,
+                              @DefaultValue("asc") @QueryParam(PaginationUtil.DIRECTION) final String direction
+    ) throws DotSecurityException, DotDataException, JSONException {
+
+        return doRelated(request, response, relationshipName, contentletIdentifier, filter,
+                true, page, perPage, orderbyParam, direction);
+    } // related.
+
+
+    private Response doRelated ( final HttpServletRequest request,
+                                         final HttpServletResponse response,
+                                         final String relationshipName,
+                                         final String contentletIdentifier,
+                                         final String filter,
+                                         final boolean pullParents,
+                                         final int page,
+                                         final int perPage,
+                                         final String orderbyParam,
+                                         final String direction
     ) throws DotSecurityException, DotDataException, JSONException {
 
         final InitDataObject initData = this.webResource.init(null, true, request, true, null);
         final ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         final User user = initData.getUser();
-        List<Contentlet> contentlets = null;
+        ContentHelper.ContentRelatedResult contentRelatedResult = null;
         String result = null;
+        Response restResponse = null;
 
         try {
 
-            contentlets = this.related(request, user, relationshipName, contentletIdentifier,
-                    condition, pullParents, limit, sort);
+            contentRelatedResult = contentHelper.getContentRelated(initData, request, relationshipName, contentletIdentifier,
+                    filter, pullParents, page, perPage, orderbyParam, direction);
 
-            result = getJSON(contentlets, request, response, "true", user);
+            result = getJSON(contentRelatedResult.getRelatedContents(), request, response, "true", user);
+            restResponse = responseResource.response( result, null, contentRelatedResult.getHeadersMap() );
         } catch (Exception e) {
             // In case of unknown error, so we report it as a 500
             Logger.error(this, "An error occurred when processing the request.", e);
-            return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+            restResponse = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
 
-        return responseResource.response( result );
+        return restResponse;
     } // related.
 
-    private List<Contentlet> related (final HttpServletRequest request,
-                                      final User user,
-                                      final String relationshipName,
-                                      final String contentletIdentifier,
-                                      final String condition,
-                                      final boolean pullParents,
-                                      final int limit,
-                                      final String sort) throws DotSecurityException, DotDataException, JSONException {
 
-        final HttpSession session = request.getSession();
-        final boolean adminMode   = session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null;
-        final boolean previewMode = session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null && adminMode;
-        final boolean editMode    = session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null    && adminMode;
-        final boolean editOrPreviewMode = previewMode || editMode;
-
-        return ContentUtils.pullRelated(relationshipName,
-                contentletIdentifier, addDefaultsToQuery(condition, request, editOrPreviewMode),
-                pullParents, limit, sort, user, (String) session.getAttribute("tm_date"));
-    } // related.
-
-    private String addDefaultsToQuery(final String query, final HttpServletRequest request,
-                                      final boolean editOrPreviewMode) {
-
-        final StringBuilder queryBuilder = new StringBuilder();
-
-        if(query != null) {
-
-            queryBuilder.append(query);
-
-            if (!query.contains("languageId")) {
-
-                queryBuilder.append(" +languageId:" +
-                        WebAPILocator.getLanguageWebAPI().getLanguage(request).getId());
-            }
-
-            if (!(query.contains("live:") || query.contains("working:"))) {
-
-                queryBuilder.append((editOrPreviewMode)?" +working:true ":" +live:true ");
-            }
-
-            if (!UtilMethods.contains(query, "deleted:")) {
-
-                queryBuilder.append( " +deleted:false ");
-            }
-        }
-
-        return queryBuilder.toString();
-    } // addDefaultsToQuery.
 }

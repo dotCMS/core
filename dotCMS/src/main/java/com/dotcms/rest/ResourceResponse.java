@@ -87,6 +87,10 @@ public class ResourceResponse {
     }
 
     public Response response ( String response, CacheControl cacheControl ) {
+        return response( response, cacheControl, null );
+    }
+
+    public Response response ( String response, final CacheControl cacheControl, final Map<String, Object> headersMap) {
 
         String contentType = null;
         if ( UtilMethods.isSet( getType() ) ) {
@@ -125,6 +129,11 @@ public class ResourceResponse {
 
         if ( cacheControl != null ) {
             return responseBuilder.cacheControl( cacheControl ).build();
+        }
+
+        if (null != headersMap) {
+
+            headersMap.forEach( (headerName, headerValue) -> { responseBuilder.header(headerName, headerValue); } );
         }
 
         return responseBuilder.build();
