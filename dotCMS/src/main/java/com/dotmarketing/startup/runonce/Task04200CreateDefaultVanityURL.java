@@ -68,7 +68,7 @@ public class Task04200CreateDefaultVanityURL extends AbstractJDBCStartupTask {
 		dc.addParam(DEFAULT_VANITY_URL_STRUCTURE_DESCRIPTION);
 		dc.addParam(7);
 		dc.addParam(false);
-		dc.addParam(false);
+		dc.addParam(true);
 		dc.addParam(DEFAULT_VANITY_URL_STRUCTURE_VARNAME);
 		dc.addParam("SYSTEM_HOST");
 		dc.addParam("SYSTEM_FOLDER");
