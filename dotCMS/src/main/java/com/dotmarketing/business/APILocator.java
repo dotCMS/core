@@ -36,8 +36,8 @@ import com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchAPI;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.keyvalue.business.KeyValueAPI;
 import com.dotcms.keyvalue.business.KeyValueAPIImpl;
-import com.dotcms.languagevariables.business.LanguageVariableAPI;
-import com.dotcms.languagevariables.business.LanguageVariableAPIImpl;
+import com.dotcms.languagevariable.business.LanguageVariableAPI;
+import com.dotcms.languagevariable.business.LanguageVariableAPIImpl;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.notifications.business.NotificationAPIImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsAPI;
@@ -862,7 +862,7 @@ public class APILocator extends Locator<APIIndex>{
      * @return The {@link LanguageVariableAPI} class.
      */
     public static LanguageVariableAPI getLanguageVariableAPI() {
-        return (LanguageVariableAPI) getInstance(APIIndex.KEY_VALUE_API);
+        return (LanguageVariableAPI) getInstance(APIIndex.LANGUAGE_VARIABLE_API);
     }
 
 	/**

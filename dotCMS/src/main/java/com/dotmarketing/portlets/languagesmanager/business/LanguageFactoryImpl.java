@@ -9,6 +9,10 @@ import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.io.PrintWriter;
 import java.nio.channels.FileChannel;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -19,9 +23,10 @@ import java.util.Map;
 import java.util.Set;
 
 import com.dotcms.repackage.org.apache.struts.Globals;
-
+import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -35,13 +40,23 @@ import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.util.FileUtil;
 
 /**
- *
+ * Implementation class for the {@link LanguageFactory}.
+ * 
  * @author  will
  * @author  david torres
+ * @version N/A
+ * @since Mar 22, 2012
  *
  */
 public class LanguageFactoryImpl extends LanguageFactory {
 
+    private static Language defaultLanguage;
+    
+    private Map<String, Date> readTimeStamps = new HashMap<String, Date>();
+
+    /**
+     * Creates a new instance of the {@link LanguageFactory}.
+     */
 	public LanguageFactoryImpl () {
 
 	}
@@ -226,8 +241,6 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		return language.getLanguageCode() + "_" + language.getCountryCode();
 	}
 
-    private static Language defaultLanguage;
-
 	@Override
     protected Language getDefaultLanguage () {
         if (defaultLanguage == null) {
@@ -253,6 +266,10 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		return getLanguage(languageCode, countryCode) != null;
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
     private String getGlobalVariablesPath () {
     	String ret="";
     	String realPath = Config.getStringProperty("ASSET_REAL_PATH");
@@ -271,8 +288,6 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
 		return getLanguageKeys(langCode, null);
 	}
-
-	private Map<String, Date> readTimeStamps = new HashMap<String, Date>();
 
 	@Override
 	protected List<LanguageKey> getLanguageKeys(String langCode, String countryCode) {
@@ -411,6 +426,13 @@ public class LanguageFactoryImpl extends LanguageFactory {
         }
 	}
 
+	/**
+	 * 
+	 * @param fileLangName
+	 * @param keys
+	 * @param toDeleteKeys
+	 * @throws IOException
+	 */
 	private void saveLanguageKeys(String fileLangName, Map<String, String> keys, Set<String> toDeleteKeys) throws IOException {
 
 		if(keys == null)
@@ -538,4 +560,40 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
 
 	}
+
+    @Override
+    protected Language getFallbackLanguage(final String languageCode) {
+        final Connection conn = DbConnectionFactory.getConnection();
+        ResultSet resultSet = null;
+        try (PreparedStatement preparedStatement = conn.prepareStatement(
+                        "SELECT * FROM language WHERE language_code = ? AND (country_code = '' OR country_code IS NULL)");) {
+            Language lang = CacheLocator.getLanguageCache().getLanguageByCode(languageCode.toLowerCase(), null);
+            if (lang == null) {
+                preparedStatement.setString(1, languageCode.toLowerCase());
+                resultSet = preparedStatement.executeQuery();
+                if (resultSet.next()) {
+                    final long id = ConversionUtils.toLong(resultSet.getObject(1), 0L);
+                    final String langCode = resultSet.getString(2);
+                    final String countryCode = resultSet.getString(3);
+                    final String language = resultSet.getString(4);
+                    final String country = resultSet.getString(5);
+                    lang = new Language(id, langCode, countryCode, language, country);
+                    CacheLocator.getLanguageCache().addLanguage(lang);
+                }
+            }
+            return lang;
+        } catch (Exception e) {
+            Logger.error(LanguageFactoryImpl.class, "getLanguage failed:" + e, e);
+            throw new DotRuntimeException(e.toString());
+        } finally {
+            if (null != resultSet) {
+                try {
+                    resultSet.close();
+                } catch (SQLException e) {
+                    // Result Set not closed, continue
+                }
+            }
+        }
+    }
+
 }

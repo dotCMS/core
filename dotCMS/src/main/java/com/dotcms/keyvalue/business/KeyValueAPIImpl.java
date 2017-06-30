@@ -47,12 +47,12 @@ public class KeyValueAPIImpl implements KeyValueAPI {
     }
 
     @Override
-    public List<KeyValue> get(final String key, final User user, final boolean respectFrontEnd) {
+    public List<KeyValue> get(final String key, final User user, final boolean respectFrontendRoles) {
         List<KeyValue> results = this.cache.get(key);
         if (null != results) {
             return results;
         }
-        results = queryKeyValues(key, -1, null, user, respectFrontEnd);
+        results = queryKeyValues(key, -1, null, user, respectFrontendRoles);
         if (null != results && !results.isEmpty()) {
             this.cache.add(key, results);
         }
@@ -60,12 +60,12 @@ public class KeyValueAPIImpl implements KeyValueAPI {
     }
 
     @Override
-    public List<KeyValue> get(final String key, final long languageId, final User user, final boolean respectFrontEnd) {
+    public List<KeyValue> get(final String key, final long languageId, final User user, final boolean respectFrontendRoles) {
         List<KeyValue> results = this.cache.getByLanguage(key, languageId);
         if (null != results) {
             return results;
         }
-        results = queryKeyValues(key, languageId, null, user, respectFrontEnd);
+        results = queryKeyValues(key, languageId, null, user, respectFrontendRoles);
         if (null != results && !results.isEmpty()) {
             this.cache.addByLanguage(key, languageId, results);
         }
@@ -73,28 +73,29 @@ public class KeyValueAPIImpl implements KeyValueAPI {
     }
 
     @Override
-    public List<KeyValue> get(final String key, final ContentType contentType, final User user, final boolean respectFrontEnd) {
+    public List<KeyValue> get(final String key, final ContentType contentType, final User user,
+                    final boolean respectFrontendRoles) {
         List<KeyValue> results = this.cache.getByContentType(key, contentType.id());
         if (null != results) {
             return results;
         }
-        results = queryKeyValues(key, -1, contentType, user, respectFrontEnd);
+        results = queryKeyValues(key, -1, contentType, user, respectFrontendRoles);
         if (null != results && !results.isEmpty()) {
             this.cache.addByContentType(key, contentType.id(), results);
         }
-        return queryKeyValues(key, -1, contentType, user, respectFrontEnd);
+        return results;
     }
 
     @Override
     public KeyValue get(final String key, final long languageId, final ContentType contentType, final User user,
-                    final boolean respectFrontEnd) {
+                    final boolean respectFrontendRoles) {
         if (languageId > -1 && null != contentType && UtilMethods.isSet(contentType.id())) {
             final KeyValue keyValue = this.cache.getByLanguageAndContentType(key, languageId, contentType.id());
             if (null != keyValue) {
                 return keyValue;
             }
         }
-        final List<KeyValue> result = queryKeyValues(key, languageId, contentType, user, respectFrontEnd);
+        final List<KeyValue> result = queryKeyValues(key, languageId, contentType, user, respectFrontendRoles);
         result.stream().forEach((KeyValue keyValue) -> {
             this.cache.addByLanguageAndContentType(languageId, contentType.id(), keyValue);
         });
@@ -102,16 +103,21 @@ public class KeyValueAPIImpl implements KeyValueAPI {
     }
 
     /**
+     * Performs a Lucene query to returns a list of {@link KeyValue} objects that match the
+     * specified key, language ID, and Content Type. This method don't use pagination or limit in
+     * its results.
      * 
-     * @param key
-     * @param languageId
-     * @param contentType
-     * @param user
-     * @param respectFrontEnd
-     * @return
+     * @param key - The key.
+     * @param languageId - The ID of the language that the content was created for.
+     * @param contentType - The {@link ContentType} used to create this content.
+     * @param user - The user performing this action.
+     * @param respectFrontendRoles - Set to {@code true} if this method requires that front-end
+     *        roles are take in count for the search (which means this is being called from the
+     *        front-end). Otherwise, set to {@code false}.
+     * @return The Key/Value object.
      */
     private List<KeyValue> queryKeyValues(final String key, final long languageId, final ContentType contentType, final User user,
-                    final boolean respectFrontEnd) {
+                    final boolean respectFrontendRoles) {
         final ImmutableList.Builder<KeyValue> results = new Builder<KeyValue>();
         // No limit and no pagination required
         final int limit = 0;
@@ -124,7 +130,7 @@ public class KeyValueAPIImpl implements KeyValueAPI {
             query.append((languageId >= 0) ? " +languageId:" + languageId : StringPool.BLANK);
             query.append(" +live:true +deleted:false");
             List<Contentlet> contentResults =
-                            contentletAPI.search(query.toString(), limit, offset, StringPool.BLANK, user, Boolean.FALSE);
+                            contentletAPI.search(query.toString(), limit, offset, StringPool.BLANK, user, respectFrontendRoles);
             contentResults.stream().forEach((Contentlet contentlet) -> {
                 KeyValue keyValue = fromContentlet(contentlet);
                 results.add(keyValue);

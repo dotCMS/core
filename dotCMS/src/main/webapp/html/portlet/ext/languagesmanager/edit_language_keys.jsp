@@ -17,7 +17,7 @@
         if(!first) buff.append(","); else first=false;
         final String ccode=lang.getLanguageCode()  + "_" + lang.getCountryCode();
         final String imgURL="/html/images/languages/"+ccode+".gif";
-        final String display=lang.getLanguage() + " - " + lang.getCountry().trim();
+        final String display=lang.getLanguage() + (UtilMethods.isSet(lang.getCountry()) ? " - " + lang.getCountry().trim() : "");
         buff.append("{");
         buff.append("id:'" + lang.getId() + "',");
         buff.append("label:'<span style=\"background-image:url("+imgURL+");width:16px;height:11px;display:inline-block;vertical-align:middle\"></span> "+display+"',");

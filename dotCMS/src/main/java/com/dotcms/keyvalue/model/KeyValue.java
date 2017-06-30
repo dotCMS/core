@@ -12,6 +12,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 
 /**
+ * Represents a content of type Key/Value in the system. These types of contents are very useful for
+ * both inner workings of dotCMS and custom content. For example, Language Variables are a sub-type
+ * of Key/Value objects.
  * 
  * @author Jose Castro
  * @version 4.2.0
@@ -20,59 +23,80 @@ import com.dotmarketing.exception.DotSecurityException;
  */
 public interface KeyValue extends Serializable, Versionable, Permissionable, Treeable, Ruleable {
 
-	/**
-	 * Get the Vanity URL identifier
-	 * 
-	 * @return the vanity URL identifier
-	 */
-	String getIdentifier();
+    /**
+     * Returns the Key/Value identifier.
+     * 
+     * @return The Key/Value identifier
+     */
+    public String getIdentifier();
 
-	/**
-	 * Set the Vanity URL identifier
-	 * 
-	 * @param identifier
-	 *            the identifier
-	 */
-	void setIdentifier(String identifier);
+    /**
+     * Sets the Key/Value identifier.
+     * 
+     * @param identifier - The Key/Value identifier.
+     */
+    public void setIdentifier(String identifier);
 
-	/**
-	 * Get the Vanity URL inode
-	 * 
-	 * @return the vanity URL inode
-	 */
-	String getInode();
+    /**
+     * Returns the Key/Value inode.
+     * 
+     * @return The Key/Value inode.
+     */
+    public String getInode();
 
-	/**
-	 * Set the Vanity URL inode
-	 * 
-	 * @param inode
-	 *            The inode
-	 */
-	void setInode(String inode);
+    /**
+     * Sets the Key/Value inode.
+     * 
+     * @param inode - The Key/Value inode.
+     */
+    public void setInode(String inode);
 
-	/**
-	 * Get the Vanity URL language Id
-	 * 
-	 * @return the vanity URL language Id
-	 */
-	long getLanguageId();
+    /**
+     * Returns the Key/Value language ID.
+     * 
+     * @return The Key/Value language ID.
+     */
+    public long getLanguageId();
 
-	/**
-	 * Set the Vanity URL language Id
-	 * 
-	 * @param languageId
-	 *            The language Id
-	 */
-	void setLanguageId(long languageId);
+    /**
+     * Sets the Key/Value language ID.
+     * 
+     * @param languageId - The Key/Value language ID.
+     */
+    public void setLanguageId(long languageId);
 
-	String getKey();
+    /**
+     * Returns the content's key.
+     * 
+     * @return The the content's key.
+     */
+    public String getKey();
 
-	void setKey(String key);
+    /**
+     * Sets the content's key.
+     * 
+     * @param key - The content's key.
+     */
+    public void setKey(String key);
 
-	String getValue();
+    /**
+     * Returns the content's value.
+     * 
+     * @return The the content's value.
+     */
+    public String getValue();
 
-	void setValue(String value);
+    /**
+     * Sets the content's value.
+     * 
+     * @param value - The content's value.
+     */
+    public void setValue(String value);
 
-	Map<String, Object> getMap() throws DotStateException, DotDataException, DotSecurityException;
+    /**
+     * Returns the property map associated to this Key/Value. It's worth noting that many properties
+     * can be set to a Key/Value object as it is also a Contentlet.
+     */
+    public Map<String, Object> getMap() throws DotStateException, DotDataException, DotSecurityException;
 
 }

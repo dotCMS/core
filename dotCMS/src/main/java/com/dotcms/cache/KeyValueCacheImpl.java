@@ -9,10 +9,18 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.util.Logger;
-import com.liferay.util.StringPool;
 
 /**
- * Implementation class for the {@link KeyValueCache}.
+ * Implementation class for the {@link KeyValueCache}. This cache contains 4 groups:
+ * <ol>
+ * <li>{@code primaryGroup}: Holds the list of Key/Value contents that match a given key.</li>
+ * <li>{@code byLanguageGroup}: Holds the list of Key/Value contents that match a given key and
+ * language ID.</li>
+ * <li>{@code byContentTypeGroup}: Holds the list of Key/Value contents that match a given key and
+ * Content Type ID.</li>
+ * <li>{@code byLanguageContentTypeGroup}: Holds the single Key/Value content that match a given
+ * key, language ID, and Content Type ID.</li>
+ * </ol>
  * 
  * @author Jose Castro
  * @version 4.2.0
@@ -21,7 +29,7 @@ import com.liferay.util.StringPool;
  */
 public class KeyValueCacheImpl implements KeyValueCache {
 
-    private DotCacheAdministrator cache;
+    private final DotCacheAdministrator cache;
 
     private static final String primaryGroup = "KeyValueCache";
     private static final String byLanguageGroup = "KeyValueCacheByLanguage";
@@ -36,12 +44,6 @@ public class KeyValueCacheImpl implements KeyValueCache {
         this.cache = CacheLocator.getCacheAdministrator();
     }
 
-    /*
-     * grupo 1 = key-lang 
-     * grupo 2 = key-lang-conttype 
-     * grupo 3 = key-contetype
-     */
-
     @Override
     public void add(final String key, final List<KeyValue> keyValues) {
         this.cache.put(key, keyValues, primaryGroup);
@@ -49,12 +51,6 @@ public class KeyValueCacheImpl implements KeyValueCache {
 
     @Override
     public void addByLanguage(final String key, final long languageId, final List<KeyValue> keyValues) {
-        /*
-         * List<KeyValue> cachedValues = getByLanguage(key, languageId); Map<Long, List<KeyValue>>
-         * data; if (null == cachedValues) { data = CollectionsUtils.map(languageId, keyValues); }
-         * else { cachedValues.addAll(keyValues); data = CollectionsUtils.map(languageId,
-         * cachedValues); }
-         */
         Map<Long, List<KeyValue>> data = CollectionsUtils.map(languageId, keyValues);
         this.cache.put(key, data, byLanguageGroup);
     }
@@ -67,11 +63,6 @@ public class KeyValueCacheImpl implements KeyValueCache {
 
     @Override
     public void addByLanguageAndContentType(final long languageId, final String contentTypeId, final KeyValue keyValue) {
-        /*
-         * final String key = generateKeyByLanguageContentType(keyValue.getKey(),
-         * keyValue.getLanguageId(), keyValue.getType()); this.cache.put(key, keyValue,
-         * byLanguageContentTypeGroup);
-         */
         Map<Long, Map<String, KeyValue>> data = CollectionsUtils.map();
         data.put(languageId, CollectionsUtils.map(contentTypeId, keyValue));
         this.cache.put(keyValue.getKey(), data, byLanguageContentTypeGroup);
@@ -123,7 +114,9 @@ public class KeyValueCacheImpl implements KeyValueCache {
             @SuppressWarnings("unchecked")
             Map<Long, Map<String, KeyValue>> cachedValues = Map.class.cast(this.cache.get(key, byLanguageContentTypeGroup));
             if (null != cachedValues) {
-                return cachedValues.get(languageId).get(contentTypeId);
+                if (cachedValues.containsKey(languageId)) {
+                    return cachedValues.get(languageId).get(contentTypeId);
+                }
             }
         } catch (DotCacheException e) {
             Logger.debug(this, String.format("Cache entry with key %s was not found.", key), e);
@@ -141,13 +134,18 @@ public class KeyValueCacheImpl implements KeyValueCache {
 
     @Override
     public void remove(final KeyValue keyValue) {
+        remove(keyValue.getIdentifier());
+    }
+
+    @Override
+    public void remove(final String keyValueId) {
         try {
-            this.cache.remove(keyValue.getKey(), primaryGroup);
-            this.cache.remove(keyValue.getKey(), byLanguageGroup);
-            this.cache.remove(keyValue.getKey(), byContentTypeGroup);
-            this.cache.remove(keyValue.getKey(), byLanguageContentTypeGroup);
+            this.cache.remove(keyValueId, primaryGroup);
+            this.cache.remove(keyValueId, byLanguageGroup);
+            this.cache.remove(keyValueId, byContentTypeGroup);
+            this.cache.remove(keyValueId, byLanguageContentTypeGroup);
         } catch (Exception e) {
-            Logger.debug(this, String.format("Cache entry with key %s could not be removed.", keyValue.getKey()), e);
+            Logger.debug(this, String.format("Cache entry with ID %s could not be removed.", keyValueId), e);
         }
     }
 
@@ -160,20 +158,5 @@ public class KeyValueCacheImpl implements KeyValueCache {
     public String getPrimaryGroup() {
         return primaryGroup;
     }
-
-    /*@Override
-    public String generateKeyByLanguage(String key, long languageId) {
-        return generateKeyByLanguageContentType(key, languageId, StringPool.BLANK);
-    }
-
-    @Override
-    public String generateKeyByContentType(final String key, final String contentTypeId) {
-        return key + "|" + contentTypeId;
-    }
-
-    @Override
-    public String generateKeyByLanguageContentType(String key, long languageId, String contentTypeId) {
-        return key + "|" + languageId + "|" + contentTypeId;
-    }*/
 
 }

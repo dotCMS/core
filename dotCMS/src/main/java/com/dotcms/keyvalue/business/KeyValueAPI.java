@@ -31,9 +31,10 @@ import com.liferay.portal.model.User;
 public interface KeyValueAPI {
 
     /**
+     * Transforms a given {@link Contentlet} object into a {@link KeyValue} object.
      * 
-     * @param contentlet
-     * @return
+     * @param contentlet - The Contentlet containing the Key/Value data.
+     * @return The transformed {@link KeyValue} object.
      */
     public default KeyValue fromContentlet(final Contentlet contentlet) {
         if (null == contentlet) {
@@ -82,13 +83,59 @@ public interface KeyValueAPI {
         return keyValue;
     }
 
-    public List<KeyValue> get(final String key, final User user, final boolean respectFrontEnd);
+    /**
+     * Returns a list of {@link KeyValue} objects that match the specified key.
+     * 
+     * @param key - The key.
+     * @param user - The user performing this action.
+     * @param respectFrontendRoles - Set to {@code true} if this method requires that front-end
+     *        roles are take in count for the search (which means this is being called from the
+     *        front-end). Otherwise, set to {@code false}.
+     * @return The list of Key/Value objects.
+     */
+    public List<KeyValue> get(final String key, final User user, final boolean respectFrontendRoles);
 
-    public List<KeyValue> get(final String key, final long languageId, final User user, final boolean respectFrontEnd);
+    /**
+     * Returns a list of {@link KeyValue} objects that match the specified key and language ID.
+     * 
+     * @param key - The key.
+     * @param languageId - The ID of the language that the content was created for.
+     * @param user - The user performing this action.
+     * @param respectFrontendRoles - Set to {@code true} if this method requires that front-end
+     *        roles are take in count for the search (which means this is being called from the
+     *        front-end). Otherwise, set to {@code false}.
+     * @return The list of Key/Value objects.
+     */
+    public List<KeyValue> get(final String key, final long languageId, final User user, final boolean respectFrontendRoles);
 
-    public List<KeyValue> get(final String key, final ContentType contentType, final User user, final boolean respectFrontEnd);
+    /**
+     * Returns a list of {@link KeyValue} objects that match the specified key and Content Type.
+     * 
+     * @param key - The key.
+     * @param contentType - The {@link ContentType} used to create this content.
+     * @param user - The user performing this action.
+     * @param respectFrontendRoles - Set to {@code true} if this method requires that front-end
+     *        roles are take in count for the search (which means this is being called from the
+     *        front-end). Otherwise, set to {@code false}.
+     * @return The list of Key/Value objects.
+     */
+    public List<KeyValue> get(final String key, final ContentType contentType, final User user,
+                    final boolean respectFrontendRoles);
 
+    /**
+     * Returns the {@link KeyValue} object that matches the specified key, language ID, and Content
+     * Type.
+     * 
+     * @param key - The key.
+     * @param languageId - The ID of the language that the content was created for.
+     * @param contentType - The {@link ContentType} used to create this content.
+     * @param user - The user performing this action.
+     * @param respectFrontendRoles - Set to {@code true} if this method requires that front-end
+     *        roles are take in count for the search (which means this is being called from the
+     *        front-end). Otherwise, set to {@code false}.
+     * @return The Key/Value object.
+     */
     public KeyValue get(final String key, final long languageId, final ContentType contentType, final User user,
-                    final boolean respectFrontEnd);
+                    final boolean respectFrontendRoles);
 
 }

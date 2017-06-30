@@ -28,9 +28,9 @@ public abstract class KeyValueContentType extends ContentType {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final String KEY_VALUE_KEY_FIELD_NAME = "Key";
+	public static final String KEY_VALUE_KEY_FIELD_NAME = "Key";
 	public static final String KEY_VALUE_KEY_FIELD_VAR = "key";
-	private static final String KEY_VALUE_VALUE_FIELD_NAME = "Value";
+	public static final String KEY_VALUE_VALUE_FIELD_NAME = "Value";
 	public static final String KEY_VALUE_VALUE_FIELD_VAR = "value";
 
 	public abstract static class Builder implements ContentTypeBuilder {

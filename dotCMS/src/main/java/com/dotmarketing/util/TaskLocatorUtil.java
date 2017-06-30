@@ -192,7 +192,7 @@ public class TaskLocatorUtil {
         ret.add(Task03100HTMLPageAsContentChanges.class);
         ret.add(Task03105HTMLPageGenericPermissions.class);
         ret.add(Task03120AddInodeToContainerStructure.class);
-		    ret.add(Task03130ActionletsFromPlugin.class);
+	    ret.add(Task03130ActionletsFromPlugin.class);
 		ret.add(Task03135FixStructurePageDetail.class);
 		ret.add(Task03140AddFileAssetsIntegrityResultTable.class);
 		ret.add(Task03150LoweCaseURLOnVirtualLinksTable.class);
@@ -230,6 +230,7 @@ public class TaskLocatorUtil {
         ret.add(Task04115LowercaseIdentifierUrls.class);
         ret.add(Task04200CreateDefaultVanityURL.class);
         ret.add(Task04205MigrateVanityURLToContent.class);
+        ret.add(Task04210CreateDefaultLanguageVariable.class);
         return ret;
     }
 
