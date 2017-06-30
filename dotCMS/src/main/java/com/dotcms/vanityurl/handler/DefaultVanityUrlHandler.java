@@ -1,6 +1,6 @@
 package com.dotcms.vanityurl.handler;
 
-import com.dotcms.vanityurl.model.VanityUrl;
+import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.filters.CMSFilter;
@@ -19,32 +19,35 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class DefaultVanityUrlHandler implements VanityUrlHandler {
 
-    private final static VanityUrlResult DEFAULT_RESULT = new VanityUrlResult(null,null,null,true);
+    private final static VanityUrlResult DEFAULT_RESULT = new VanityUrlResult(null, null,
+            CMSFilter.IAm.NOTHING_IN_THE_CMS,true);
+
     private final static CmsUrlUtil urlUtil = CmsUrlUtil.getInstance();
 
     @Override
-    public VanityUrlResult handle(final VanityUrl vanityUrl, final HttpServletResponse response, final Host host,
+    public VanityUrlResult handle(final CachedVanityUrl vanityUrl,
+            final HttpServletResponse response, final Host host,
             final long languageId) throws IOException {
         String rewrite = null;
         String queryString = null;
-        CMSFilter.IAm iAm = null;
+        CMSFilter.IAm iAm = CMSFilter.IAm.NOTHING_IN_THE_CMS;
 
         if (vanityUrl != null) {
-            rewrite = InodeUtils.isSet(vanityUrl.getInode()) ? vanityUrl.getForwardTo() : null;
+            rewrite = InodeUtils.isSet(vanityUrl.getForwardTo()) ? vanityUrl.getForwardTo() : null;
 
-            if (vanityUrl.getAction() == HttpServletResponse.SC_OK) {
+            if (vanityUrl.getResponse() == HttpServletResponse.SC_OK) {
                 //then forward
-                response.setStatus(vanityUrl.getAction());
-            } else if (vanityUrl.getAction() == HttpServletResponse.SC_MOVED_PERMANENTLY
-                    || vanityUrl.getAction() == HttpServletResponse.SC_FOUND) {
+                response.setStatus(vanityUrl.getResponse());
+            } else if (vanityUrl.getResponse() == HttpServletResponse.SC_MOVED_PERMANENTLY
+                    || vanityUrl.getResponse() == HttpServletResponse.SC_FOUND) {
                 //redirect
-                response.setStatus(vanityUrl.getAction());
+                response.setStatus(vanityUrl.getResponse());
                 response.sendRedirect(rewrite);
 
                 return DEFAULT_RESULT;
             } else {
                 //errors
-                response.sendError(vanityUrl.getAction());
+                response.sendError(vanityUrl.getResponse());
 
                 return DEFAULT_RESULT;
             }

@@ -1,6 +1,7 @@
 package com.dotcms.services;
 
 import com.dotcms.cache.VanityUrlCache;
+import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotcms.util.VanityUrlUtil;
 import com.dotmarketing.beans.Identifier;
@@ -62,5 +63,18 @@ public class VanityUrlServices {
         } catch (DotDataException | DotRuntimeException | DotSecurityException e) {
             Logger.error(VanityUrlServices.class, "Error trying to invalidate Vanity URL identifier:"+vanityUrl.getIdentifier(),e);
         }
+    }
+
+    /**
+     * Load in cache the active vanities Urls
+     */
+    public static void initializeVanityUrlCache(){
+        List<VanityUrl> activeVanityUrls = APILocator.getVanityUrlAPI().getActiveVanityUrls(APILocator.systemUser());
+        activeVanityUrls.stream().forEach((VanityUrl vanity) ->{
+            CachedVanityUrl newCachedVanityUrl = new CachedVanityUrl(vanity);
+            List<CachedVanityUrl> currentCachedVanities = CacheLocator.getVanityURLCache().getCachedVanityUrls(vanity.getSite());
+            currentCachedVanities.add(newCachedVanityUrl);
+            CacheLocator.getVanityURLCache().setCachedVanityUrls(vanity.getSite(),currentCachedVanities);
+        });
     }
 }

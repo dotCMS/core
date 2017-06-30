@@ -23,7 +23,7 @@ public class DefaultVanityUrl extends Contentlet implements VanityUrl {
     }
 
     @Override
-    public void setTitle(String title) {
+    public void setTitle(final String title) {
         setStringProperty(VanityUrlContentType.TITLE_FIELD_VAR, title);
     }
 
@@ -33,7 +33,7 @@ public class DefaultVanityUrl extends Contentlet implements VanityUrl {
     }
 
     @Override
-    public void setSite(String site) {
+    public void setSite(final String site) {
         setStringProperty(VanityUrlContentType.SITE_FIELD_VAR, site);
     }
 
@@ -43,7 +43,7 @@ public class DefaultVanityUrl extends Contentlet implements VanityUrl {
     }
 
     @Override
-    public void setURI(String uri) {
+    public void setURI(final String uri) {
         setStringProperty(VanityUrlContentType.URI_FIELD_VAR, uri);
     }
 
@@ -53,7 +53,7 @@ public class DefaultVanityUrl extends Contentlet implements VanityUrl {
     }
 
     @Override
-    public void setForwardTo(String forwardTo) {
+    public void setForwardTo(final String forwardTo) {
         setStringProperty(VanityUrlContentType.FORWARD_TO_FIELD_VAR, forwardTo);
     }
 
@@ -63,7 +63,7 @@ public class DefaultVanityUrl extends Contentlet implements VanityUrl {
     }
 
     @Override
-    public void setAction(int action) {
+    public void setAction(final int action) {
         setLongProperty(VanityUrlContentType.ACTION_FIELD_VAR, action);
     }
 
@@ -73,7 +73,7 @@ public class DefaultVanityUrl extends Contentlet implements VanityUrl {
     }
 
     @Override
-    public void setOrder(int order) {
+    public void setOrder(final int order) {
         setProperty(VanityUrlContentType.ORDER_FIELD_VAR, order);
     }
 

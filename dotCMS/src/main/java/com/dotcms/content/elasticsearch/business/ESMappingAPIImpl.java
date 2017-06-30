@@ -702,8 +702,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 boolean isSameStructRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
 
                 if(isSameStructRelationship)
-                    q = "+type:content +(" + rel.getRelationTypeValue() + ESMappingConstants.SUFIX_PARENT+":" + con.getIdentifier() + " " +
-                        rel.getRelationTypeValue() + ESMappingConstants.SUFIX_CHILD+":" + con.getIdentifier() + ") ";
+                    q = "+type:content +(" + rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_PARENT+":" + con.getIdentifier() + " " +
+                        rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_CHILD+":" + con.getIdentifier() + ") ";
                 else
                     q = "+type:content +" + rel.getRelationTypeValue() + ":" + con.getIdentifier();
 
@@ -765,10 +765,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 boolean isSameStructRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
 
                 String propName = isSameStructRelationship ?
-                        (con.getIdentifier().equals(parentId)?rel.getRelationTypeValue() + ESMappingConstants.SUFIX_CHILD:rel.getRelationTypeValue() + ESMappingConstants.SUFIX_PARENT)
+                        (con.getIdentifier().equals(parentId)?rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_CHILD:rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_PARENT)
                         : rel.getRelationTypeValue();
 
-                String orderKey = rel.getRelationTypeValue()+ESMappingConstants.SUFIX_ORDER;
+                String orderKey = rel.getRelationTypeValue()+ESMappingConstants.SUFFIX_ORDER;
 
                 if(relatedEntry.get(ESMappingConstants.RELATION_TYPE).equals(rel.getRelationTypeValue())) {
                     String me = con.getIdentifier();

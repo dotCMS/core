@@ -13,12 +13,14 @@ import java.util.regex.Pattern;
  */
 public class CachedVanityUrl implements Serializable {
 
-    //public final Pattern pattern;
-    public final String url;
-    public final String siteId;
-    public final long languageId;
-    public final String forwardTo;
-    public final int response;
+    private static final long serialVersionUID = 1L;
+    private final Pattern pattern;
+    private final String vanityUrlId;
+    private final String url;
+    private final String siteId;
+    private final long languageId;
+    private final String forwardTo;
+    private final int response;
 
     /**
      * Generate a cached Vanity URL object
@@ -26,13 +28,13 @@ public class CachedVanityUrl implements Serializable {
      * @param vanityUrl The vanityurl Url to cache
      */
     public CachedVanityUrl(VanityUrl vanityUrl) {
-        //this.pattern = ;
+        this.pattern = Pattern.compile(vanityUrl.getURI());
+        this.vanityUrlId = vanityUrl.getIdentifier();
         this.url = vanityUrl.getURI();
         this.languageId = vanityUrl.getLanguageId();
         this.siteId = vanityUrl.getSite();
         this.forwardTo = vanityUrl.getForwardTo();
         this.response = vanityUrl.getAction();
-
     }
 
     /**
@@ -79,7 +81,15 @@ public class CachedVanityUrl implements Serializable {
      * Get the URI Pattern from the Cached Vanity URL
      * @return the URI Pattern from the Cached Vanity URL
      */
-    //public Pattern getPattern() {
-    //    return pattern;
-    //}
+    public Pattern getPattern() {
+        return pattern;
+    }
+
+    /**
+     * get the Vanitu Url Identifier
+     * @return The Vanity Url Identifier
+     */
+    public String getVanityUrlId(){
+        return vanityUrlId;
+    }
 }

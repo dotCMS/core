@@ -39,6 +39,7 @@ import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
@@ -141,6 +142,7 @@ import com.google.gson.GsonBuilder;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.liferay.util.StringPool;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -3572,12 +3574,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @Override
     public String getName(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException,DotContentletStateException, DotDataException {
+        
+        Preconditions.checkNotNull(contentlet, "The contentlet is null");
+
         if(!perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
-            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
+            Logger.error(this.getClass(),"User: " + (user != null ? user.getUserId() : "Unknown")
+                    + " cannot read Contentlet: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"));
+            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown") 
             		+ " cannot read Contentlet: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"));
-        }
-        if(contentlet == null){
-            throw new DotContentletStateException("The contentlet was null");
         }
         String returnValue = (String) contentlet.getMap().get("__DOTNAME__");
         if(UtilMethods.isSet(returnValue)){

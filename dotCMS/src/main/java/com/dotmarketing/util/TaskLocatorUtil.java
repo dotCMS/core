@@ -228,6 +228,7 @@ public class TaskLocatorUtil {
         ret.add(Task04105LowercaseVanityUrls.class);
         ret.add(Task04110AddColumnsPublishingPushedAssetsTable.class);
         ret.add(Task04115LowercaseIdentifierUrls.class);
+		ret.add(Task04120IncreaseHostColumnOnClusterServerTable.class);
         ret.add(Task04200CreateDefaultVanityURL.class);
         ret.add(Task04205MigrateVanityURLToContent.class);
         ret.add(Task04210CreateDefaultLanguageVariable.class);

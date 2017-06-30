@@ -6,7 +6,6 @@ import com.dotcms.vanityurl.model.DefaultVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-
 import com.dotcms.services.VanityUrlServices;
 import com.dotcms.util.VanityUrlUtil;
 import com.dotmarketing.beans.Host;
@@ -43,6 +42,8 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
     public VanityUrlAPIImpl() {
         cache404VanityUrl.setInode(VanityUrlAPI.CACHE_404_VANITY_URL);
+        cache404VanityUrl.setIdentifier(VanityUrlAPI.CACHE_404_VANITY_URL);
+        cache404VanityUrl.setAction(404);
     }
 
     @Override
@@ -186,7 +187,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         } catch (DotDataException | DotRuntimeException | DotSecurityException e1) {
             throw new DotStateException(e1);
         }
-        if (vanityUrl != null && !VanityUrlAPI.CACHE_404_VANITY_URL.equals(vanityUrl.getInode())) {
+        if (vanityUrl != null && !VanityUrlAPI.CACHE_404_VANITY_URL.equals(vanityUrl.getIdentifier())) {
             return vanityUrl;
         }
         vanityUrl = new DefaultVanityUrl();

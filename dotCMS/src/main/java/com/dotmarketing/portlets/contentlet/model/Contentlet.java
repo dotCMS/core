@@ -136,7 +136,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     	    map.put("title", x);
     	    return x;
 		} catch (Exception e) {
-			Logger.error(this,"Unable to get title" ,e);
+			Logger.error(this,"Unable to get title.");
 			return  "";
 		}
 	}

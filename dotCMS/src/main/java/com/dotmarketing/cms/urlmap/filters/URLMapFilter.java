@@ -9,6 +9,8 @@
  */
 package com.dotmarketing.cms.urlmap.filters;
 
+import com.dotcms.util.VanityUrlUtil;
+import com.dotcms.vanityurl.model.CachedVanityUrl;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -26,7 +28,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import com.dotcms.vanityurl.business.VanityUrlAPI;
-import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -78,7 +79,6 @@ public class URLMapFilter implements Filter {
 	private HostWebAPI whostAPI;
 	private boolean urlFallthrough;
 	CmsUrlUtil cmsUrlUtil = CmsUrlUtil.getInstance();
-	VanityUrlAPI vanityUrlAPI = APILocator.getVanityUrlAPI();
 
 
 	public void destroy() {
@@ -125,12 +125,12 @@ public class URLMapFilter implements Filter {
 		String pointer = null;
 
 		if(host!=null){
-			VanityUrl vanityUrl = vanityUrlAPI.getLiveVanityUrl(uri, host, languageId, APILocator.systemUser());
-			pointer = vanityUrl != null && !VanityUrlAPI.CACHE_404_VANITY_URL.equals(vanityUrl.getInode()) && InodeUtils.isSet(vanityUrl.getInode())?vanityUrl.getForwardTo():null;
+			CachedVanityUrl vanityUrl = cmsUrlUtil.getCachedVanityUrl(VanityUrlUtil.fixURI(uri), host, languageId);
+			pointer = vanityUrl != null && !VanityUrlAPI.CACHE_404_VANITY_URL.equals(vanityUrl.getVanityUrlId()) && InodeUtils.isSet(vanityUrl.getVanityUrlId())?vanityUrl.getForwardTo():null;
 		}
 		if (!UtilMethods.isSet(pointer)) {
-			VanityUrl vanityUrl = vanityUrlAPI.getLiveVanityUrl(uri, null, languageId, APILocator.systemUser());
-			pointer = vanityUrl != null && !VanityUrlAPI.CACHE_404_VANITY_URL.equals(vanityUrl.getInode()) && InodeUtils.isSet(vanityUrl.getInode())?vanityUrl.getForwardTo():null;
+			CachedVanityUrl vanityUrl = cmsUrlUtil.getCachedVanityUrl(VanityUrlUtil.fixURI(uri), null, languageId);
+			pointer = vanityUrl != null && !VanityUrlAPI.CACHE_404_VANITY_URL.equals(vanityUrl.getVanityUrlId()) && InodeUtils.isSet(vanityUrl.getVanityUrlId())?vanityUrl.getForwardTo():null;
 		}
 		if(UtilMethods.isSet(pointer)){
 			uri = pointer;

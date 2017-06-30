@@ -99,10 +99,8 @@ public class SiteResource implements Serializable {
 
         try {
 
-            long siteCount = siteHelper.getSitesCount(user);
             Host currentSite = siteHelper.getCurrentSite(req, user);
-            response = Response.ok( new ResponseEntityView( map("totalRecords", siteCount,
-                    "currentSite", currentSite))).build();
+            response = Response.ok( new ResponseEntityView(currentSite) ).build();
         } catch (Exception e) {
             // Unknown error, so we report it as a 500
             response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
@@ -129,7 +127,7 @@ public class SiteResource implements Serializable {
         String filter = (null != filterParam && filterParam.endsWith(NO_FILTER))?
                 filterParam.substring(0, filterParam.length() - 1):
                 (null != filterParam)? filterParam: StringUtils.EMPTY;
-        final String sanitizedFilter = filter != null && !filter.equals("all") ? filter : StringUtils.EMPTY;
+        final String sanitizedFilter = !"all".equals(filter) ? filter : StringUtils.EMPTY;
 
         try {
             response = paginationUtil.getPage(req, user, sanitizedFilter, showArchived, page, perPage);

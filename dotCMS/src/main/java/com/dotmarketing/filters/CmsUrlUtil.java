@@ -1,13 +1,17 @@
 package com.dotmarketing.filters;
 
 import com.dotcms.vanityurl.business.VanityUrlAPI;
+import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Versionable;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -18,6 +22,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import java.util.List;
+import java.util.regex.Matcher;
 
 public class CmsUrlUtil {
 	private static CmsUrlUtil urlUtil;
@@ -27,6 +32,7 @@ public class CmsUrlUtil {
 
 			synchronized (CmsUrlUtil.class) {
 				urlUtil = new CmsUrlUtil();
+                //urlUtil.loadCachedVanityUrlCache();
 			}
 
 		}
@@ -180,22 +186,23 @@ public class CmsUrlUtil {
 		if (uri.length()>1 && uri.endsWith("/"))
 			uri = uri.substring(0, uri.length() - 1);
 
-		VanityUrl vanityUrl = APILocator.getVanityUrlAPI().getLiveVanityUrl(uri, host, languageId, APILocator.systemUser());
-		boolean isVanityURL = UtilMethods.isSet(vanityUrl) && !VanityUrlAPI.CACHE_404_VANITY_URL.equals(vanityUrl.getInode());
+		CachedVanityUrl cachedVanityUrl = getCachedVanityUrl(uri,host,languageId);
+		boolean isVanityURL =  UtilMethods.isSet(cachedVanityUrl) && !cachedVanityUrl.getVanityUrlId().equals(VanityUrlAPI.CACHE_404_VANITY_URL);
 
 		if (!isVanityURL) {
-			vanityUrl = APILocator.getVanityUrlAPI().getLiveVanityUrl(uri, null, languageId, APILocator.systemUser());
-			isVanityURL = UtilMethods.isSet(vanityUrl) && !VanityUrlAPI.CACHE_404_VANITY_URL.equals(vanityUrl.getInode());
+			cachedVanityUrl = getCachedVanityUrl(uri,null,languageId);
+			isVanityURL =  UtilMethods.isSet(cachedVanityUrl) && !cachedVanityUrl.getVanityUrlId().equals(VanityUrlAPI.CACHE_404_VANITY_URL);
 		}
 		// Still support legacy cmsHomePage
 		if("/".equals(uri) && !isVanityURL){
 			uri = "/cmsHomePage";
-			vanityUrl = APILocator.getVanityUrlAPI().getLiveVanityUrl(uri, host, languageId, APILocator.systemUser());
-			isVanityURL = UtilMethods.isSet(vanityUrl) && !VanityUrlAPI.CACHE_404_VANITY_URL.equals(vanityUrl.getInode());
+			cachedVanityUrl = getCachedVanityUrl(uri,host,languageId);
+			isVanityURL =  UtilMethods.isSet(cachedVanityUrl) && !cachedVanityUrl.getVanityUrlId().equals(VanityUrlAPI.CACHE_404_VANITY_URL);
+
 
 			if (!isVanityURL) {
-				vanityUrl = APILocator.getVanityUrlAPI().getLiveVanityUrl(uri, null, languageId, APILocator.systemUser());
-				isVanityURL = UtilMethods.isSet(vanityUrl) && !VanityUrlAPI.CACHE_404_VANITY_URL.equals(vanityUrl.getInode());
+				cachedVanityUrl = getCachedVanityUrl(uri,null,languageId);
+				isVanityURL =  UtilMethods.isSet(cachedVanityUrl) && !cachedVanityUrl.getVanityUrlId().equals(VanityUrlAPI.CACHE_404_VANITY_URL);
 			}
 		}
 
@@ -237,4 +244,53 @@ public class CmsUrlUtil {
 				|| urlUtil.isPageAsset(uri, host, languageId) || urlUtil.isFolder(uri, host));
 	}
 
+	/**
+	 * Search for the Cached Vanity Url
+	 * @param uri The URI to match
+	 * @param host The current host
+	 * @param languagueId The current languageId
+	 * @return The cached vanity Url
+	 */
+	public CachedVanityUrl getCachedVanityUrl(String uri, Host host, long languagueId){
+		CachedVanityUrl result = null;
+
+		if(host == null){
+			try {
+				host = APILocator.getHostAPI().findSystemHost();
+			} catch (DotDataException e) {
+				Logger.error(this,"Error searching for System host",e);
+			}
+		}
+		//Search fot the URI in the vanityURL cached cache
+		List<CachedVanityUrl> cachedVanityUrls = CacheLocator.getVanityURLCache().getCachedVanityUrls(host);
+		for(CachedVanityUrl vanity : cachedVanityUrls){
+		    if(vanity != null) {
+                Matcher matcher = vanity.getPattern().matcher(uri);
+                if (matcher.matches()) {
+                    result = vanity;
+                    break;
+                }
+            }else{
+		        Logger.info(this,"Vanity:"+vanity+" - URI:"+uri);
+            }
+		}
+		if(result == null) {
+			VanityUrl vanityUrl = APILocator.getVanityUrlAPI().getLiveVanityUrl(uri, host, languagueId, APILocator.systemUser());
+			if(vanityUrl != null && !vanityUrl.getIdentifier().equals(VanityUrlAPI.CACHE_404_VANITY_URL)){
+				result = new CachedVanityUrl(vanityUrl);
+				cachedVanityUrls.add(result);
+				CacheLocator.getVanityURLCache().setCachedVanityUrls(host, cachedVanityUrls);
+			}else if(vanityUrl.getIdentifier().equals(VanityUrlAPI.CACHE_404_VANITY_URL)){
+			    //generated a 404 cache for this uri
+			    vanityUrl.setLanguageId(languagueId);
+                vanityUrl.setURI(uri);
+                vanityUrl.setSite(host.getIdentifier());
+                result = new CachedVanityUrl(vanityUrl);
+                cachedVanityUrls.add(result);
+                CacheLocator.getVanityURLCache().setCachedVanityUrls(host, cachedVanityUrls);
+            }
+		}
+
+		return result;
+	}
 }

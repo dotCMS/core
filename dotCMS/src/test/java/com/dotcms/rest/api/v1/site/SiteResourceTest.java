@@ -230,7 +230,6 @@ public class SiteResourceTest extends UnitTestBase {
      */
     @Test
     public void testCurrentSites() throws DotSecurityException, DotDataException {
-        long sitesTotalRecords = 10;
         final HttpServletRequest request = RestUtilTest.getMockHttpRequest();
         final HttpSession session = request.getSession();
         RestUtilTest.initMockContext();
@@ -243,7 +242,6 @@ public class SiteResourceTest extends UnitTestBase {
 
         final HostAPI hostAPI = mock(HostAPI.class);
         when( hostAPI.find(currentSiteId, user, false) ).thenReturn( currentSite );
-        when( hostAPI.count(user, false) ).thenReturn( sitesTotalRecords );
 
         final UserAPI userAPI = mock(UserAPI.class);
         when(userAPI.loadUserById(Mockito.anyString())).thenReturn(user);
@@ -255,10 +253,8 @@ public class SiteResourceTest extends UnitTestBase {
         final Response response = siteResource.currentSite(request);
 
         RestUtilTest.verifySuccessResponse(response);
-        Map<String, Object> entity = (Map<String, Object>) ((ResponseEntityView) response.getEntity()).getEntity();
-        assertEquals( currentSite, entity.get("currentSite") );
-
-        assertEquals(sitesTotalRecords, entity.get("totalRecords"));
+        Object entity = ((ResponseEntityView) response.getEntity()).getEntity();
+        assertEquals( currentSite, entity);
     }
 
     /**
