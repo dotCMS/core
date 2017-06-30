@@ -105,7 +105,7 @@ class ContentHelper {
         final int pageValue       = page == 0 ? FIRST_PAGE_INDEX : page;
         final int perPageValue    = perPage == 0 ? perPageDefault : perPage;
         final int offset          = getMinIndex (pageValue, perPageValue);
-        final String sort         = getSort (orderbyParam, direction);
+        final String sort            = getSort (orderbyParam, direction);
         final PaginatedArrayList<Contentlet> relatedContents = ContentUtils.pullRelated(relationshipName,
                 contentletIdentifier, addDefaultsToQuery(filter, request, editOrPreviewMode),
                 pullParents, offset, perPage, sort, user, (String) session.getAttribute(TM_DATE));
@@ -134,9 +134,13 @@ class ContentHelper {
 
         final StringBuilder stringBuilder = new StringBuilder();
         final String [] querySortFields = orderbyParam.split(",");
-        for (String querySortField : querySortFields) {
+        for (int i = 0; i < querySortFields.length; ++i) {
 
-            stringBuilder.append(querySortField).append(" ").append(direction.toLowerCase());
+            stringBuilder.append(querySortFields[i]).append(" ").append(direction.toLowerCase());
+            if (i < querySortFields.length -1) {
+
+                stringBuilder.append(",");
+            }
         }
 
         return stringBuilder.toString();
