@@ -1,8 +1,35 @@
 package com.dotcms.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.business.ContentTypeAPIImpl;
+import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.repackage.com.csvreader.CsvReader;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.structure.factories.FieldFactory;
+import com.dotmarketing.portlets.structure.factories.StructureFactory;
+import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.ImportUtil;
+import com.liferay.portal.model.User;
+
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -14,26 +41,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.dotcms.IntegrationTestBase;
-import com.dotcms.repackage.com.csvreader.CsvReader;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.common.model.ContentletSearch;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.structure.factories.FieldFactory;
-import com.dotmarketing.portlets.structure.factories.StructureFactory;
-import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.ImportUtil;
-import com.liferay.portal.model.User;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Verifies that the Content Importer/Exporter feature is working as expected.
@@ -46,6 +56,8 @@ public class ImportUtilTest extends IntegrationTestBase {
     private static User user;
     private static Host defaultSite;
     private static Language defaultLanguage;
+    private static ContentTypeAPIImpl contentTypeApi;
+    private static FieldAPI fieldAPI;
 
     @BeforeClass
     public static void prepare () throws Exception {
@@ -54,6 +66,8 @@ public class ImportUtilTest extends IntegrationTestBase {
         user = APILocator.getUserAPI().getSystemUser();
         defaultSite = APILocator.getHostAPI().findDefaultHost( user, false );
         defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        contentTypeApi  = (ContentTypeAPIImpl) APILocator.getContentTypeAPI(user);
+        fieldAPI = APILocator.getContentTypeFieldAPI();
     }
 
     /**
@@ -315,6 +329,129 @@ public class ImportUtilTest extends IntegrationTestBase {
             List<String> counters = results.get( "counters" );
             assertNotNull( counters );
             assertTrue( !counters.isEmpty() );
+        }
+    }
+
+    @Test
+    public void importFile_success_when_twoLinesHaveSameUniqueKeysButDifferentLanguage()
+        throws DotSecurityException, DotDataException, IOException {
+
+        ContentType type;
+        CsvReader csvreader;
+        com.dotcms.contenttype.model.field.Field titleField, hostField;
+        HashMap<String, List<String>> results;
+        Reader reader;
+        String[] csvHeaders;
+        long time;
+
+        //Creating new content type with one unique field
+        time = System.currentTimeMillis();
+
+        type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.getType()))
+            .description("description" + time).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+            .name("ContentTypeTestingWithFields" + time).owner("owner").variable("velocityVarNameTesting" + time)
+            .build();
+
+        type = contentTypeApi.save(type);
+
+        try {
+            titleField =
+                FieldBuilder.builder(TextField.class).name("testTitle").variable("testTitle").unique(true)
+                    .contentTypeId(type.id()).dataType(
+                    DataTypes.TEXT).build();
+            hostField =
+                FieldBuilder.builder(HostFolderField.class).name("testHost").variable("testHost")
+                    .contentTypeId(type.id()).dataType(
+                    DataTypes.TEXT).build();
+            titleField = fieldAPI.save(titleField, user);
+            fieldAPI.save(hostField, user);
+
+            //Creating csv
+            reader = createTempFile("languageCode, countryCode, testTitle, testHost" + "\r\n" +
+                "es, ES, UniqueTitle, " + defaultSite.getIdentifier() + "\r\n" +
+                "en, US, UniqueTitle, " + defaultSite.getIdentifier() + "\r\n");
+            csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            csvHeaders = csvreader.getHeaders();
+
+            int languageCodeHeaderColumn = 0;
+            int countryCodeHeaderColumn = 1;
+            //Preview=false
+            results =
+                ImportUtil
+                    .importFile(0L, defaultSite.getInode(), type.inode(), new String[]{titleField.id()}, true, true,
+                        user, -1, csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader);
+            //Validations
+            validate(results, true, false, true);
+
+            assertTrue(results.get("warnings").size() == 1);
+            assertEquals(results.get("warnings").get(0), "the-structure-field testTitle is-unique");
+
+
+        } finally {
+            contentTypeApi.delete(type);
+        }
+    }
+
+    @Test
+    public void importFile_fails_when_twoLinesHaveSameUniqueKeys()
+        throws DotSecurityException, DotDataException, IOException {
+
+        ContentType type;
+        CsvReader csvreader;
+        com.dotcms.contenttype.model.field.Field titleField, hostField;
+        HashMap<String, List<String>> results;
+        Reader reader;
+        String[] csvHeaders;
+        long time;
+
+        //Creating new content type with one unique field
+        time = System.currentTimeMillis();
+
+        type = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.getType()))
+            .description("description" + time).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+            .name("ContentTypeTestingWithFields" + time).owner("owner").variable("velocityVarNameTesting" + time)
+            .build();
+
+        type = contentTypeApi.save(type);
+
+        try {
+            titleField =
+                FieldBuilder.builder(TextField.class).name("testTitle").variable("testTitle").unique(true)
+                    .contentTypeId(type.id()).dataType(
+                    DataTypes.TEXT).build();
+            hostField =
+                FieldBuilder.builder(HostFolderField.class).name("testHost").variable("testHost")
+                    .contentTypeId(type.id()).dataType(
+                    DataTypes.TEXT).build();
+            titleField = fieldAPI.save(titleField, user);
+            fieldAPI.save(hostField, user);
+
+            //Creating csv
+            reader = createTempFile("languageCode, countryCode, testTitle, testHost" + "\r\n" +
+                "en, US, UniqueTitle, " + defaultSite.getIdentifier() + "\r\n" +
+                "en, US, UniqueTitle, " + defaultSite.getIdentifier() + "\r\n");
+            csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            csvHeaders = csvreader.getHeaders();
+
+            int languageCodeHeaderColumn = 0;
+            int countryCodeHeaderColumn = 1;
+            //Preview=false
+            results =
+                ImportUtil
+                    .importFile(0L, defaultSite.getInode(), type.inode(), new String[]{titleField.id()}, true, true,
+                        user, -1, csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader);
+            //Validations
+            validate(results, true, false, true);
+
+            assertTrue(results.get("warnings").size() == 2);
+            assertEquals(results.get("warnings").get(0), "the-structure-field testTitle is-unique");
+            assertEquals(results.get("warnings").get(1),
+                "Line-- 3 contains-duplicate-values-for-structure-unique-field testTitle and-will-be-ignored");
+
+        } finally {
+            contentTypeApi.delete(type);
         }
     }
 
