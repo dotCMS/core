@@ -1,19 +1,18 @@
 package com.dotmarketing.business;
 
+import static org.junit.Assert.*;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.util.Date;
 import java.util.List;
-
-import static org.junit.Assert.*;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * @author Jonathan Gamba
@@ -355,26 +354,10 @@ public class RoleAPITest extends IntegrationTestBase {
         } catch (DotSecurityException | DotDataException e) {
             fail(e.getMessage());
         } finally {
-            try {
-                //Delete Roles.
-                if (UtilMethods.isSet(grandChildRole.getId())) {
-                    roleAPI.delete(grandChildRole);
-                }
-                if (UtilMethods.isSet(childRole.getId())) {
-                    roleAPI.delete(childRole);
-                }
-                if (UtilMethods.isSet(parentRole.getId())) {
-                    roleAPI.delete(parentRole);
-                }
-                if (UtilMethods.isSet(secondChildRole.getId())) {
-                    roleAPI.delete(secondChildRole);
-                }
-                if (UtilMethods.isSet(secondParentRole.getId())) {
-                    roleAPI.delete(secondParentRole);
-                }
-            } catch (DotDataException e) {
-                fail(e.getMessage());
-            }
+            List<Role> rolesToDelete = Lists
+                    .newArrayList(grandChildRole, childRole, parentRole, secondChildRole,
+                            secondParentRole);
+            cleanRoles(rolesToDelete);
         }
     }
 

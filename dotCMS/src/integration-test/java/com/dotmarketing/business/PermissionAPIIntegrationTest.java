@@ -15,7 +15,6 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -26,13 +25,11 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -89,25 +86,6 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
         APILocator.getTemplateAPI().saveTemplate(template, host, systemUser, false);
         Map<String, Object> sessionAttrs = new HashMap<String, Object>();
         sessionAttrs.put("USER_ID", "dotcms.org.1");
-    }
-
-    @AfterClass
-    public static void deleteTestHost() throws DotContentletStateException, DotDataException, DotSecurityException {
-        removeTestHost(host);
-    }
-
-    private static void removeTestHost(final Host host) throws DotHibernateException {
-        if (host != null && UtilMethods.isSet(host.getIdentifier())){
-            try{
-                HibernateUtil.startTransaction();
-                hostAPI.archive(host, systemUser, false);
-                hostAPI.delete(host, systemUser, false);
-                HibernateUtil.commitTransaction();
-            }catch(Exception e){
-                HibernateUtil.rollbackTransaction();
-                Logger.error(PermissionAPIIntegrationTest.class, e.getMessage());
-            }
-        }
     }
    
     @Test
@@ -194,6 +172,9 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
             HibernateUtil.rollbackTransaction();
             Logger.error(PermissionAPIIntegrationTest.class, e.getMessage());
         }
+
+        List<Host> hostsToDelete = Lists.newArrayList(host);
+        cleanHosts(hostsToDelete);
     }
 
 
@@ -253,7 +234,8 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
     		}
     	} finally {
     		// Remove test host
-            removeTestHost(host);
+            List<Host> hostsToDelete = Lists.newArrayList(host);
+            cleanHosts(hostsToDelete);
         }
     }
 
@@ -392,31 +374,19 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
         } catch (Exception e) {
             fail(e.getMessage());
         } finally {
-            try {
-                if (UtilMethods.isSet(newUser.getUserId())) {
-                    userAPI.delete(newUser, systemUser, false);
-                }
-                //Delete Roles.
-                if (UtilMethods.isSet(grandChildRole.getId())) {
-                    roleAPI.delete(grandChildRole);
-                }
-                if (UtilMethods.isSet(childRole.getId())) {
-                    roleAPI.delete(childRole);
-                }
-                if (UtilMethods.isSet(parentRole.getId())) {
-                    roleAPI.delete(parentRole);
-                }
-                if (UtilMethods.isSet(goQuestFolder.getInode())) {
-                    folderAPI.delete(goQuestFolder, systemUser, false);
-                }
-                if (UtilMethods.isSet(applicationFolder.getInode())) {
-                    folderAPI.delete(applicationFolder, systemUser, false);
-                }
-                // Removing Host.
-                removeTestHost(host);
-            } catch (Exception e) {
-                fail(e.getMessage());
-            }
+            List<User> usersToDelete = Lists.newArrayList(newUser);
+            cleanUsers(usersToDelete);
+
+            //Delete Roles.
+            List<Role> rolesToDelete = Lists.newArrayList(grandChildRole, childRole, parentRole);
+            cleanRoles(rolesToDelete);
+
+            List<Folder> foldersToDelete = Lists.newArrayList(goQuestFolder, applicationFolder);
+            cleanFolders(foldersToDelete);
+
+            // Removing Host.
+            List<Host> hostsToDelete = Lists.newArrayList(host);
+            cleanHosts(hostsToDelete);
         }
     }
 }
