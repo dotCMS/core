@@ -21,10 +21,10 @@ import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.viewtools.LanguageWebAPI;
 
 import eu.bitwalker.useragentutils.Browser;
 import eu.bitwalker.useragentutils.UserAgent;
@@ -113,7 +113,7 @@ public class TimeMachineFilter implements Filter {
 				sendFile(file, request, response);
 			} else {
 				// File not found for the selected language
-				boolean useDefaultLanguage = Config.getBooleanProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", true);
+				boolean useDefaultLanguage = LanguageWebAPI.canDefaultPageToDefaultLanguage();
 				if (!useDefaultLanguage) {
 					// Send page in default language is false, so send an error
 					sendError(request, response, ERROR_404, host.getHostname() + uri, HttpServletResponse.SC_BAD_REQUEST);

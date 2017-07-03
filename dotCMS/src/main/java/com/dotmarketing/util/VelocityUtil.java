@@ -24,6 +24,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.DisplayedLanguage;
+import com.dotmarketing.viewtools.LanguageWebAPI;
 import com.liferay.portal.model.User;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
@@ -53,7 +54,7 @@ public class VelocityUtil {
 
 	private static VelocityEngine ve = null;
 	private static String dotResourceLoaderClassName = null;
-	private static boolean DEFAULT_PAGE_TO_DEFAULT_LANGUAGE=Config.getBooleanProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", true);
+	private static boolean DEFAULT_PAGE_TO_DEFAULT_LANGUAGE = LanguageWebAPI.canDefaultPageToDefaultLanguage();
 	
 	private synchronized static void init(){
 		if(ve != null)

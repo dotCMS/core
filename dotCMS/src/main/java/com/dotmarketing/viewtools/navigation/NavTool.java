@@ -25,6 +25,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.viewtools.LanguageWebAPI;
 import com.liferay.portal.model.User;
 
 public class NavTool implements ViewTool {
@@ -146,7 +147,7 @@ public class NavTool implements ViewTool {
                     nav.setType("htmlpage");
                     nav.setPermissionId(itemPage.getPermissionId());
                     nav.setShowOnMenu(itemPage.isShowOnMenu());
-                    if(!itemPage.isContent() || (itemPage.isContent() && (itemPage.getLanguageId() == languageId) )) {
+                    if(!itemPage.isContent() || (itemPage.isContent() && (itemPage.getLanguageId() == languageId || LanguageWebAPI.canDefaultPageToDefaultLanguage()) )) {
                     	children.add(nav);
                     }
                 }

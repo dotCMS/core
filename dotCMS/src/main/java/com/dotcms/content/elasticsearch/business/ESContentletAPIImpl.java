@@ -113,7 +113,6 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import com.liferay.util.StringPool;
 
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -1697,7 +1696,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             try {
                 _bout = new BufferedOutputStream(new FileOutputStream(_writing));
             } catch (FileNotFoundException e) {
-
+                Logger.error(this, e.getMessage());
+            } finally{
+                try {
+                    _bout.close();
+                } catch (IOException e) {
+                    Logger.error(this, e.getMessage());
+                }
             }
             _xstream.toXML(contentlets, _bout);
         }
