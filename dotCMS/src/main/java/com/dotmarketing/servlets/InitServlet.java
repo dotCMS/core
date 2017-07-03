@@ -6,6 +6,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.dotcms.repackage.org.apache.commons.lang.SystemUtils;
 
+import com.dotcms.services.VanityUrlServices;
 import org.apache.lucene.search.BooleanQuery;
 
 import com.dotcms.util.GeoIp2CityDbUtil;
@@ -194,6 +195,8 @@ public class InitServlet extends HttpServlet {
         	CacheLocator.getCacheAdministrator().flushGroupLocalOnly("navCache", false);
         }
 
+        //Initialize the Cached Vanity URL cache
+        VanityUrlServices.initializeVanityUrlCache();
 
         Language language = langAPI.getDefaultLanguage();
 

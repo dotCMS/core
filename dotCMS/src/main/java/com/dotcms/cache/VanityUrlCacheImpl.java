@@ -32,21 +32,22 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
     }
 
     @Override
-    public VanityUrl add(String key, VanityUrl vanityUrl) {
+    public CachedVanityUrl add(String key, VanityUrl vanityUrl) {
         // Add the key to the cache
-        cache.put(getPrimaryGroup()+key, vanityUrl, getPrimaryGroup());
-        return vanityUrl;
+        CachedVanityUrl cachedVanityUrl = new CachedVanityUrl(vanityUrl);
+        cache.put(getPrimaryGroup()+key, cachedVanityUrl, getPrimaryGroup());
+        return cachedVanityUrl;
     }
 
     @Override
-    public VanityUrl get(String key) {
-        VanityUrl vanityUrl = null;
+    public CachedVanityUrl get(String key) {
+        CachedVanityUrl cachedVanityUrl = null;
         try {
-            vanityUrl = (DefaultVanityUrl) cache.get(getPrimaryGroup()+key, getPrimaryGroup());
+            cachedVanityUrl = (CachedVanityUrl) cache.get(getPrimaryGroup()+key, getPrimaryGroup());
         } catch (DotCacheException e) {
             Logger.debug(this, "Cache Entry not found", e);
         }
-        return vanityUrl;
+        return cachedVanityUrl;
     }
 
     @Override
@@ -61,15 +62,15 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
     public void remove(String key) {
         try {
             //Remove VanityUrl from the CachedVanityUrlCache
-            VanityUrl vanity = (VanityUrl) cache.get(getPrimaryGroup()+key, getPrimaryGroup());
-            List<CachedVanityUrl> cachedVanityUrlList = getCachedVanityUrls(vanity.getSite());
+            CachedVanityUrl vanity = (CachedVanityUrl) cache.get(getPrimaryGroup()+key, getPrimaryGroup());
+            List<CachedVanityUrl> cachedVanityUrlList = getCachedVanityUrls(vanity.getSiteId());
             List<CachedVanityUrl> newListCachedVanityUrl = new ArrayList<>();
             for(CachedVanityUrl cachedVanityUrl : cachedVanityUrlList){
-                if(!cachedVanityUrl.getVanityUrlId().equals(vanity.getIdentifier())){
+                if(!cachedVanityUrl.getVanityUrlId().equals(vanity.getVanityUrlId())){
                     newListCachedVanityUrl.add(cachedVanityUrl);
                 }
             }
-            setCachedVanityUrls(vanity.getSite(),newListCachedVanityUrl );
+            setCachedVanityUrls(vanity.getSiteId(),newListCachedVanityUrl );
 
             cache.remove(key, getPrimaryGroup());
         } catch (Exception e) {
