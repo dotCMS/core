@@ -64,7 +64,7 @@ public class CMSFilterTest {
     private static HostAPI hostAPI;
     private static User user;
     private static LanguageAPI languageAPI;
-    private static long defaulLanguageId;
+    private static long defaultLanguageId;
     private static ContentTypeAPI contentTypeAPI;
     private static PermissionAPI permissionAPI;
     private static ContentType contentType;
@@ -106,7 +106,7 @@ public class CMSFilterTest {
 
         /* Default variables */
         defaultHost = hostAPI.findDefaultHost(user, false);
-        defaulLanguageId = languageAPI.getDefaultLanguage().getId();
+        defaultLanguageId = languageAPI.getDefaultLanguage().getId();
         getContentType();
     }
 
@@ -125,22 +125,22 @@ public class CMSFilterTest {
         // build them up
         try {
             vanityUrl1 = createVanityUrl("test link1", Host.SYSTEM_HOST, "/testLink1",
-                    "/about-us/" + CMSFilter.CMS_INDEX_PAGE, 200, 1, defaulLanguageId);
+                    "/about-us/" + CMSFilter.CMS_INDEX_PAGE, 200, 1, defaultLanguageId);
 
             vanityUrl2 = createVanityUrl("test link2", defaultHost.getIdentifier(),
                     "/testLink2", "/about-us/" + CMSFilter.CMS_INDEX_PAGE, 200, 1,
-                    defaulLanguageId);
+                    defaultLanguageId);
 
             vanityUrl3 = createVanityUrl("test link3", defaultHost.getIdentifier(),
                     "/testLink3", "http://demo.dotcms.com/about-us/" + CMSFilter.CMS_INDEX_PAGE,
-                    301, 1, defaulLanguageId);
+                    301, 1, defaultLanguageId);
 
             vanityUrl4 = createVanityUrl("test link4", defaultHost.getIdentifier(),
                     "/testLink4", "http://demo.dotcms.com/about-us/" + CMSFilter.CMS_INDEX_PAGE,
-                    301, 1, defaulLanguageId);
+                    301, 1, defaultLanguageId);
 
             vanityUrl5 = createVanityUrl("test link5", defaultHost.getIdentifier(),
-                    "/testLink5", "/products/", 200, 1, defaulLanguageId);
+                    "/testLink5", "/products/", 200, 1, defaultLanguageId);
 
             CMSFilter cmsFilter = new CMSFilter();
             HttpServletResponse res = Mockito.mock(HttpServletResponse.class);
@@ -248,15 +248,14 @@ public class CMSFilterTest {
     public void shouldWorkVanityUrlCMSHomePage() throws IOException, DotDataException {
 
         //Init APIs and test values
-        Contentlet cmsHomePage = null;
-        final User systemUser = APILocator.getUserAPI().getSystemUser();
-
+        Contentlet vanityURLContentlet = null;
         // build them up
         try {
 
-            cmsHomePage = createVanityUrl("cmsHomePage", defaultHost.getIdentifier(), "/cmsHomePage",
-                    "/about-us/" + CMSFilter.CMS_INDEX_PAGE, 200, 1, defaulLanguageId);
-
+            vanityURLContentlet = createVanityUrl("cmsHomePage", defaultHost.getIdentifier(), "/cmsHomePage",
+                    "/about-us/" + CMSFilter.CMS_INDEX_PAGE, 200, 1, defaultLanguageId);
+            contentletAPI.isInodeIndexed(vanityURLContentlet.getInode(), true);
+            
             CMSFilter cmsFilter = new CMSFilter();
             HttpServletResponse res = Mockito.mock(HttpServletResponse.class);
             MockResponseWrapper response = new MockResponseWrapper(res);
@@ -268,30 +267,31 @@ public class CMSFilterTest {
             request = getMockRequest("demo.dotcms.com", "/");
             response = new MockResponseWrapper(Mockito.mock(HttpServletResponse.class));
             cmsFilter.doFilter(request, response, chain);
-            Logger.info(this.getClass(), "looking for 200, got;" + response.getStatus());
+            Logger.info(this.getClass(), "looking for 200, got:" + response.getStatus());
             Assert.assertEquals(200, response.getStatus());
             Logger.info(this.getClass(),
-                    "looking for /about-us/" + CMSFilter.CMS_INDEX_PAGE + ", got;" + request
+                    "looking for /about-us/" + CMSFilter.CMS_INDEX_PAGE + ", got:" + request
                             .getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE));
             Assert.assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE,
                     request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE));
             //Delete the test Vanity URL
-            contentletAPI.delete(cmsHomePage, systemUser, false);
+            contentletAPI.delete(vanityURLContentlet, user, false);
 
+            
             //And save it
-            cmsHomePage = createVanityUrl("cmsHomePage Host", Host.SYSTEM_HOST, "/cmsHomePage",
-                    "/about-us/" + CMSFilter.CMS_INDEX_PAGE, 200, 1, defaulLanguageId);
-
+            vanityURLContentlet = createVanityUrl("cmsHomePage Host", Host.SYSTEM_HOST, "/cmsHomePage",
+                    "/about-us/" + CMSFilter.CMS_INDEX_PAGE, 200, 1, defaultLanguageId);
+            contentletAPI.isInodeIndexed(vanityURLContentlet.getInode(), true);
 
             Logger.info(this.getClass(), "demo.dotcms.com:/cmsHomePage should forward to /about-us/"
                     + CMSFilter.CMS_INDEX_PAGE);
             request = getMockRequest("demo.dotcms.com", "/");
             response = new MockResponseWrapper(Mockito.mock(HttpServletResponse.class));
             cmsFilter.doFilter(request, response, chain);
-            Logger.info(this.getClass(), "looking for 200, got;" + response.getStatus());
+            Logger.info(this.getClass(), "looking for 200, got:" + response.getStatus());
             Assert.assertEquals(200, response.getStatus());
             Logger.info(this.getClass(),
-                    "looking for /about-us" + CMSFilter.CMS_INDEX_PAGE + ", got;" + request
+                    "looking for /about-us" + CMSFilter.CMS_INDEX_PAGE + ", got:" + request
                             .getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE));
             Assert.assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE,
                     request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE));
@@ -304,8 +304,8 @@ public class CMSFilterTest {
         } finally {
             try {
                 //Delete the test Vanity URL
-                if(cmsHomePage != null) {
-                    contentletAPI.delete(cmsHomePage, systemUser, false);
+                if(vanityURLContentlet != null) {
+                    contentletAPI.delete(vanityURLContentlet, user, false);
                 }
             } catch (Exception e) {
                 Logger.error(this.getClass(), "Error deleting Vanity URL");
