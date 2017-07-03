@@ -87,7 +87,7 @@ public class AuthenticationResource implements Serializable {
     public final Response authentication(@Context final HttpServletRequest request,
                                    @Context final HttpServletResponse response,
                                    final AuthenticationForm authenticationForm) {
-
+        // this should be call under https
         Response res = null;
         boolean authenticated = false;
         String userId = authenticationForm.getUserId();
