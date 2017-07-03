@@ -69,12 +69,11 @@ public class VanityUrlServices {
      * Load in cache the active vanities Urls
      */
     public static void initializeVanityUrlCache(){
-        List<VanityUrl> activeVanityUrls = APILocator.getVanityUrlAPI().getActiveVanityUrls(APILocator.systemUser());
-        activeVanityUrls.stream().forEach((VanityUrl vanity) ->{
-            CachedVanityUrl newCachedVanityUrl = new CachedVanityUrl(vanity);
-            List<CachedVanityUrl> currentCachedVanities = CacheLocator.getVanityURLCache().getCachedVanityUrls(vanity.getSite());
-            currentCachedVanities.add(newCachedVanityUrl);
-            CacheLocator.getVanityURLCache().setCachedVanityUrls(vanity.getSite(),currentCachedVanities);
+        List<CachedVanityUrl> activeVanityUrls = APILocator.getVanityUrlAPI().getActiveCachedVanityUrls(APILocator.systemUser());
+        activeVanityUrls.stream().forEach((CachedVanityUrl vanity) ->{
+            List<CachedVanityUrl> currentCachedVanities = CacheLocator.getVanityURLCache().getCachedVanityUrls(vanity.getSiteId());
+            currentCachedVanities.add(vanity);
+            CacheLocator.getVanityURLCache().setCachedVanityUrls(vanity.getSiteId(),currentCachedVanities);
         });
     }
 }

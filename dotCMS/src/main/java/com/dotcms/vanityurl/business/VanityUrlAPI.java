@@ -1,5 +1,6 @@
 package com.dotcms.vanityurl.business;
 
+import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -33,9 +34,17 @@ public interface VanityUrlAPI {
      * Get a list of all the Vanity URLs contents live
      *
      * @param user The current user
-     * @return a List of all Vanity URLs contentlets live
+     * @return a List of all Cached Vanity URLs contentlets live
      */
     List<VanityUrl> getActiveVanityUrls(final User user);
+
+    /**
+     * Get a list of all the Cached Vanity URLs contents live
+     *
+     * @param user The current user
+     * @return a List of all Cached Vanity URLs contentlets live
+     */
+    List<CachedVanityUrl> getActiveCachedVanityUrls(final User user);
 
     /**
      * Return the vanityurl URL working contentlet with the specified URI
@@ -59,6 +68,18 @@ public interface VanityUrlAPI {
      * @return the live version of the vanityurl URL contentlet
      */
     VanityUrl getLiveVanityUrl(final String uri, final Host host, final long languageId,
+            final User user);
+
+    /**
+     * Return the live version of the Cached vanityurl URL contentlet with the specified URI
+     *
+     * @param uri The URI of the vanityurl URL
+     * @param host The current host
+     * @param languageId The current language Id
+     * @param user The current user
+     * @return the live version of the vanityurl URL contentlet
+     */
+    CachedVanityUrl getLiveCachedVanityUrl(final String uri, final Host host, final long languageId,
             final User user);
 
     /**
