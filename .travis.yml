@@ -1,0 +1,10 @@
+addons:
+  sonarcloud:
+    organization: "dotcms-core"
+    branches:
+      - test-branch-jonathan-gamba
+    github_token:
+      secure: 4daa2fec47683d3f8c8db73fa03d83e0fd4f3f9e
+script:
+  # other script steps might be done before running the actual analysis
+  - sonar-scanner
