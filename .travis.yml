@@ -3,7 +3,7 @@ git:
   submodules: false
 addons:
   sonarcloud:
-    organization: dotcms-core
+    organization: "dotcms-core"
     token:
       secure: Db3xwPvaNnJQrLWIpTZ7yNrXxMwqZqwl/LRmFj09NUSsbrymg0sOn9b+m37S6FF+o/6drlI9v+vRaJd4rAUkMp2wyZHBBgjcwWB5qHcqksIqEmhirhGT7lJs8N9K8KvaxMnD6QhDKQBWApBD3OTMzHLFWKt4/MrZlQep9jZC8Ja4tB+Vsrp3bZVHzQ1SQIBKd+JxMaJic7MjYAiVQZGvGvakXdGR9xy8mHjLZkfzW1xTisyth0OL+EuacrlJh1+2ygMl903ij20tWqyMIbJhwTGBsKHx6y2HvFMyP6cC95qUuaw9+GgC70FhNr14JhgN4orD1xpk/evI4OzYowq+iNsSUxN+3S3N0DVt+cQNryktAdiBvFryB5/WJr28VoqqLGgO3U5DpA4pDT8BqwYOOmBXeOz9HBbESGPPyg+1gv3IWYh0UCRZR6s88OWTEkDdSRWf+64swb3Xe2PoIVcEx66nK207wDJeJPAfQ3eZR0IWhUO95U5kWCCAvUyRkHgIbXTgJzyjnohsyW2Ec3ys4ktUVkgODryTf+MZd+68+XbOnKAyvGr7X9H9Z9Wg6AFRTfe+k80qzMuT1EV7zk21+5wdGLdZaAvQsDLKYqVYN4inU/ZFW750fEeVSZaoXQLIkZ7bvc9b4vPqwMiB84BSnOmaZ3tGFKqhh0lEy4aggu8=
     github_token:
@@ -12,7 +12,7 @@ addons:
         - test-branch-jonathan-gamba
 
 jdk:
-  - oraclejdk8
+  - openjdk8
 
 script:
   - sonar-scanner
