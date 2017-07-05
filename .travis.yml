@@ -1,4 +1,6 @@
 language: java
+git:
+  submodules: false
 addons:
   sonarcloud:
     organization: dotcms-core
