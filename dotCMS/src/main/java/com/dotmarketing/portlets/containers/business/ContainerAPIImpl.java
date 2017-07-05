@@ -197,6 +197,12 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 				}
 			}
 
+			try {
+				String bla = null;
+			} catch (Exception e ){
+				e.getMessage();
+			}
+
 			if (!isContainerTitle)
 				result += " (COPY)";
 		}
