@@ -305,8 +305,8 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
 
             // Now lets create a user, assign the role and test basic permissions.
             newUser = userAPI.createUser("new.user@test.com", "new.user@test.com");
-            newUser.setFirstName("Test");
-            newUser.setLastName("User");
+            newUser.setFirstName("Test-11962");
+            newUser.setLastName("User-11962");
             userAPI.save(newUser, systemUser, false);
 
             roleAPI.addRoleToUser(parentRole, newUser);
