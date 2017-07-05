@@ -27,6 +27,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Implementation class for the {@link VanityUrlAPI}.
@@ -207,16 +208,6 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
             throw new DotStateException("Contentlet is null");
         }
 
-        /*DefaultVanityUrl vanityUrl;
-        try {
-            vanityUrl = (DefaultVanityUrl) CacheLocator.getVanityURLCache()
-                    .get(VanityUrlUtil.sanitizeKey(con));
-        } catch (DotDataException | DotRuntimeException | DotSecurityException e1) {
-            throw new DotStateException(e1);
-        }
-        if (vanityUrl != null && !VanityUrlAPI.CACHE_404_VANITY_URL.equals(vanityUrl.getIdentifier())) {
-            return vanityUrl;
-        }*/
         DefaultVanityUrl vanityUrl = new DefaultVanityUrl();
         vanityUrl.setStructureInode(con.getContentTypeId());
         try {
@@ -248,6 +239,9 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         try {
             if (vanityUrl.isLive()) {
                 vanityURLCache.add(VanityUrlUtil.sanitizeKey((Contentlet) vanityUrl), vanityUrl);
+                Set<CachedVanityUrl> hostCachedVanityUrl = vanityURLCache.getCachedVanityUrls(vanityUrl.getSite());
+                hostCachedVanityUrl.add(new CachedVanityUrl(vanityUrl));
+                vanityURLCache.setCachedVanityUrls(vanityUrl.getSite(), hostCachedVanityUrl);
             } else {
                 VanityUrlServices.invalidateVanityUrl(vanityUrl);
             }
@@ -272,6 +266,10 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
             cache404VanityUrl.setSite(hostId);
             vanityURLCache
                     .add(VanityUrlUtil.sanitizeKey(hostId, uri, languageId), cache404VanityUrl);
+
+            Set<CachedVanityUrl> hostCachedVanityUrl = vanityURLCache.getCachedVanityUrls(cache404VanityUrl.getSite());
+            hostCachedVanityUrl.add(new CachedVanityUrl(cache404VanityUrl));
+            vanityURLCache.setCachedVanityUrls(cache404VanityUrl.getSite(), hostCachedVanityUrl);
         } catch (DotRuntimeException e) {
             Logger.error(this, "Error trying to add 404 Vanity URL to cache", e);
         }

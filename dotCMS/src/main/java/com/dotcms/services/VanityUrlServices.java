@@ -16,6 +16,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * This service allows to invalidate the Vanity URL Cache
@@ -71,7 +72,7 @@ public class VanityUrlServices {
     public static void initializeVanityUrlCache(){
         List<CachedVanityUrl> activeVanityUrls = APILocator.getVanityUrlAPI().getActiveCachedVanityUrls(APILocator.systemUser());
         activeVanityUrls.stream().forEach((CachedVanityUrl vanity) ->{
-            List<CachedVanityUrl> currentCachedVanities = CacheLocator.getVanityURLCache().getCachedVanityUrls(vanity.getSiteId());
+            Set<CachedVanityUrl> currentCachedVanities = CacheLocator.getVanityURLCache().getCachedVanityUrls(vanity.getSiteId());
             currentCachedVanities.add(vanity);
             CacheLocator.getVanityURLCache().setCachedVanityUrls(vanity.getSiteId(),currentCachedVanities);
         });

@@ -8,8 +8,8 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.util.Logger;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * This class implements the cache for Vanity URLs.
@@ -63,14 +63,9 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
         try {
             //Remove VanityUrl from the CachedVanityUrlCache
             CachedVanityUrl vanity = (CachedVanityUrl) cache.get(getPrimaryGroup()+key, getPrimaryGroup());
-            List<CachedVanityUrl> cachedVanityUrlList = getCachedVanityUrls(vanity.getSiteId());
-            List<CachedVanityUrl> newListCachedVanityUrl = new ArrayList<>();
-            for(CachedVanityUrl cachedVanityUrl : cachedVanityUrlList){
-                if(!cachedVanityUrl.getVanityUrlId().equals(vanity.getVanityUrlId())){
-                    newListCachedVanityUrl.add(cachedVanityUrl);
-                }
-            }
-            setCachedVanityUrls(vanity.getSiteId(),newListCachedVanityUrl );
+            Set<CachedVanityUrl> cachedVanityUrlList = getCachedVanityUrls(vanity.getSiteId());
+            cachedVanityUrlList.remove(vanity);
+            setCachedVanityUrls(vanity.getSiteId(),cachedVanityUrlList );
 
             cache.remove(key, getPrimaryGroup());
         } catch (Exception e) {
@@ -101,33 +96,33 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
     }
 
     @Override
-    public List<CachedVanityUrl> getCachedVanityUrls(Host host){
+    public Set<CachedVanityUrl> getCachedVanityUrls(Host host){
         return getCachedVanityUrls(host.getIdentifier());
     }
 
     @Override
-    public List<CachedVanityUrl> getCachedVanityUrls(String hostId){
-        List<CachedVanityUrl> vanityUrlList = null;
+    public Set<CachedVanityUrl> getCachedVanityUrls(String hostId){
+        Set<CachedVanityUrl> vanityUrlList = null;
         try {
-            vanityUrlList = (List<CachedVanityUrl>) cache.get(getCachedVanityUrlGroup()+hostId, getCachedVanityUrlGroup());
+            vanityUrlList = (Set<CachedVanityUrl>) cache.get(getCachedVanityUrlGroup()+hostId, getCachedVanityUrlGroup());
         } catch (DotCacheException e) {
             Logger.error(this, "Cache Entry not found", e);
         }catch (Exception e) {
             Logger.error(this, "Cache Entry not found 2", e);
         }
         if(vanityUrlList == null){
-            vanityUrlList = new ArrayList<>();
+            vanityUrlList = new HashSet<>();
         }
         return vanityUrlList;
     }
 
     @Override
-    public void setCachedVanityUrls(Host host, List<CachedVanityUrl> cachedVanityUrlList){
+    public void setCachedVanityUrls(Host host, Set<CachedVanityUrl> cachedVanityUrlList){
         setCachedVanityUrls(host.getIdentifier(), cachedVanityUrlList);
     }
 
     @Override
-    public void setCachedVanityUrls(String hostId, List<CachedVanityUrl> cachedVanityUrlList){
+    public void setCachedVanityUrls(String hostId, Set<CachedVanityUrl> cachedVanityUrlList){
         cache.put(getCachedVanityUrlGroup()+hostId, cachedVanityUrlList, getCachedVanityUrlGroup());
     }
 }

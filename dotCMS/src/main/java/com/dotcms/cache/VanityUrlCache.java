@@ -4,7 +4,7 @@ import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.Cachable;
-import java.util.List;
+import java.util.Set;
 
 /**
  * This cache is used to map the Vanity URLs path to the Vanity Url
@@ -46,26 +46,26 @@ public abstract class VanityUrlCache implements Cachable {
      * @param host The current Host
      * @return a list of CachedVanityUrl
      */
-    abstract public List<CachedVanityUrl> getCachedVanityUrls(Host host);
+    abstract public Set<CachedVanityUrl> getCachedVanityUrls(Host host);
 
     /**
      * Get the associated list of CachedVanityUrl to current host Id
      * @param hostId The current Host Id
      * @return a list of CachedVanityUrl
      */
-    abstract public List<CachedVanityUrl> getCachedVanityUrls(String hostId);
+    abstract public Set<CachedVanityUrl> getCachedVanityUrls(String hostId);
 
     /**
      * Associate a list of CachedVanityUrl to a Host
      * @param host The current Host
      * @param cachedVanityUrlList The list of CachedVanityUrls
      */
-    abstract public void setCachedVanityUrls(Host host, List<CachedVanityUrl> cachedVanityUrlList);
+    abstract public void setCachedVanityUrls(Host host, Set<CachedVanityUrl> cachedVanityUrlList);
 
     /**
      * Associate a list of CachedVanityUrl to a Host
      * @param hostId The current Host Id
      * @param cachedVanityUrlList The list of CachedVanityUrls
      */
-    abstract public void setCachedVanityUrls(String hostId, List<CachedVanityUrl> cachedVanityUrlList);
+    abstract public void setCachedVanityUrls(String hostId, Set<CachedVanityUrl> cachedVanityUrlList);
 }

@@ -2,28 +2,30 @@
 <%@page import="com.dotmarketing.factories.ClickstreamFactory"%>
 <%@page import="com.dotmarketing.util.WebKeys"%>
 <%@page import="com.dotmarketing.filters.CMSFilter"%>
-<%@page import="com.dotmarketing.cache.VirtualLinksCache"%>
 <%@page import="com.dotmarketing.filters.CmsUrlUtil"%>
-<%@ page import="com.dotmarketing.util.UtilMethods"%>
-<%@ page import="com.dotmarketing.beans.Host"%>
-<%@ page import="com.dotmarketing.business.web.WebAPILocator"%>
-<%@ page import="com.dotmarketing.business.CacheLocator"%>
-<%@ page import="com.dotmarketing.util.Logger"%>
-<%@ page import="com.dotmarketing.db.DbConnectionFactory"%>
+<%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@page import="com.dotmarketing.beans.Host"%>
+<%@page import="com.dotmarketing.business.web.WebAPILocator"%>
+<%@page import="com.dotmarketing.util.Logger"%>
+<%@page import="com.dotmarketing.db.DbConnectionFactory"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
+<%@page import="com.dotcms.vanityurl.model.CachedVanityUrl"%>
 
 <%
   int status = response.getStatus();
   String title = LanguageUtil.get(pageContext, status + "-page-title");
   String body = LanguageUtil.get(pageContext, status + "-body1");
+  long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
   try {
     String errorPage = "/cms" + status + "Page";
     Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
     // Get from virtual link
-    if (CmsUrlUtil.getInstance().isVanityUrl(errorPage, host)) {
-      String uri = (String) VirtualLinksCache.getPathFromCache(host.getHostname() + ":" + errorPage);
+    if (CmsUrlUtil.getInstance().isVanityUrl(errorPage, host, languageId)) {
+      CachedVanityUrl vanityurl = CmsUrlUtil.getInstance().getCachedVanityUrl(errorPage, host, languageId);
+      String uri = vanityurl.getForwardTo();
       if (!UtilMethods.isSet(uri)) {
-        uri = (String) VirtualLinksCache.getPathFromCache(errorPage);
+        vanityurl = CmsUrlUtil.getInstance().getCachedVanityUrl(errorPage, null, languageId);
+        uri = vanityurl.getForwardTo();
       }
       if (uri.contains("://")) {
         response.setStatus(301);

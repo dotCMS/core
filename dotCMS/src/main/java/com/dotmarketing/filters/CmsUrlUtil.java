@@ -20,6 +20,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 
 public class CmsUrlUtil {
@@ -289,7 +290,7 @@ public class CmsUrlUtil {
             }
         }
         //Search fot the URI in the vanityURL cached cache
-        List<CachedVanityUrl> cachedVanityUrls = CacheLocator.getVanityURLCache()
+        Set<CachedVanityUrl> cachedVanityUrls = CacheLocator.getVanityURLCache()
                 .getCachedVanityUrls(host);
         if (cachedVanityUrls.size() == 0) {
             //Initialize the Cached Vanity URL cache
@@ -311,8 +312,6 @@ public class CmsUrlUtil {
         if (result == null) {
             result = APILocator.getVanityUrlAPI()
                     .getLiveCachedVanityUrl(uri, host, languageId, APILocator.systemUser());
-            cachedVanityUrls.add(result);
-            CacheLocator.getVanityURLCache().setCachedVanityUrls(host, cachedVanityUrls);
         }
 
         return result;
