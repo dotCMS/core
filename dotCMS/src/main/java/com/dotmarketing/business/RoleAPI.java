@@ -1,11 +1,10 @@
 package com.dotmarketing.business;
 
-import java.util.List;
-
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
+import java.util.List;
 
 public interface RoleAPI {
 
@@ -356,4 +355,12 @@ public interface RoleAPI {
 	 *         {@code true}. Otherwise, returns {@code false}.
 	 */
 	public boolean doesUserHaveRoles(String userId, List<String> roleIds);
+
+    /**
+     * Checks if the first role parameter is indeed a parent of the second role parameter.
+     *
+     * @return true is first parameter is parent of second.
+     */
+    boolean isParentRole(Role parent, Role child) throws DotSecurityException, DotDataException;
+
 }

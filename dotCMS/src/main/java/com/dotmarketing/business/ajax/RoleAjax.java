@@ -59,7 +59,6 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
-
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -69,7 +68,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import javax.servlet.http.HttpServletRequest;
 
 public class RoleAjax {
@@ -726,7 +724,7 @@ public class RoleAjax {
 
 		UserAPI userAPI = APILocator.getUserAPI();
 		HostAPI hostAPI = APILocator.getHostAPI();
-		FolderAPI folderAPI = APILocator.getFolderAPI();
+        RoleAPI roleAPI = APILocator.getRoleAPI();
 
 		HibernateUtil.startTransaction();
 		try {
@@ -745,7 +743,7 @@ public class RoleAjax {
 
 			if ( APILocator.getPermissionAPI().isInheritingPermissions(permissionable) ) {
 				Permissionable parentPermissionable = permissionAPI.findParentPermissionable(permissionable);
-				permissionAPI.permissionIndividually(parentPermissionable, permissionable, systemUser, respectFrontendRoles);
+				permissionAPI.permissionIndividuallyByRole(parentPermissionable, permissionable, systemUser, roleAPI.loadRoleById(roleId));
 			}
 
 			if ( permissions.get("individual") != null ) {

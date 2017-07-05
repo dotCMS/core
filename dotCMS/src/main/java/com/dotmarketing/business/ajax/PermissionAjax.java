@@ -451,7 +451,7 @@ public class PermissionAjax {
 	    		Permissionable parentPermissionable = APILocator.getPermissionAPI().findParentPermissionable(asset);
 
 	    		if(parentPermissionable!=null){
-	    			permissionAPI.permissionIndividually(parentPermissionable, asset, user, respectFrontendRoles);
+	    			permissionAPI.permissionIndividually(parentPermissionable, asset, user);
 	    		}
 	    		HibernateUtil.commitTransaction();
 	    	} catch (Exception e) {
