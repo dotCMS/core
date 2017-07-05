@@ -5,7 +5,10 @@ addons:
   sonarcloud:
     organization: dotcms-core
     branches:
-    - test-branch-jonathan-gamba
+      - test-branch-jonathan-gamba
+  sonarqube:
+    branches:
+      - test-branch-jonathan-gamba
 jdk:
 - oraclejdk8
 script:
