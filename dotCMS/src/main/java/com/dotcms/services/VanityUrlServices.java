@@ -26,9 +26,13 @@ import java.util.Set;
  */
 public class VanityUrlServices {
 
-    final static VanityUrlCache vanityURLCache = CacheLocator.getVanityURLCache();
-    final static ContentletAPI contentletAPI = APILocator.getContentletAPI();
-    final static IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
+    private static final VanityUrlCache vanityURLCache = CacheLocator.getVanityURLCache();
+    private static final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+    private static final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
+
+    private VanityUrlServices(){
+
+    }
     /**
      * Remove the vanity URL from the vanityURLCache
      * @param vanityUrl The vanity URL object
@@ -53,16 +57,22 @@ public class VanityUrlServices {
         try {
             Identifier identifier = identifierAPI.find(vanityUrl.getIdentifier());
             List<Contentlet> contentletVersions = contentletAPI.findAllVersions(identifier,APILocator.systemUser(),false);
-            contentletVersions.stream().forEach( (Contentlet con) -> {
-                try {
-                    vanityURLCache.remove(VanityUrlUtil.sanitizeKey(con));
-                } catch (DotDataException | DotRuntimeException | DotSecurityException e) {
-                    Logger.error(VanityUrlServices.class, "Error trying to invalidate Vanity URL identifier:"+vanityUrl.getIdentifier(),e);
-                }
-            });
+            contentletVersions.stream().forEach( (Contentlet con) -> removeFromCache(con) );
             vanityURLCache.remove(VanityUrlUtil.sanitizeKey(vanityUrl));
         } catch (DotDataException | DotRuntimeException | DotSecurityException e) {
             Logger.error(VanityUrlServices.class, "Error trying to invalidate Vanity URL identifier:"+vanityUrl.getIdentifier(),e);
+        }
+    }
+
+    /**
+     * Remove the vanity Url contentlet from cache
+     * @param contentlet
+     */
+    private static void removeFromCache(Contentlet contentlet){
+        try {
+            vanityURLCache.remove(VanityUrlUtil.sanitizeKey(contentlet));
+        } catch (DotDataException | DotRuntimeException | DotSecurityException e) {
+            Logger.error(VanityUrlServices.class, "Error trying to invalidate Vanity URL identifier:"+contentlet.getIdentifier(),e);
         }
     }
 

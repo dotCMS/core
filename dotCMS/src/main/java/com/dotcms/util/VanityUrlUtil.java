@@ -19,8 +19,11 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
  */
 public class VanityUrlUtil {
 
-    private final static HostAPI hostAPI = APILocator.getHostAPI();
+    private static final HostAPI hostAPI = APILocator.getHostAPI();
 
+    private VanityUrlUtil() {
+
+    }
     /**
      * Generate the sanitized cache key
      *
@@ -29,7 +32,7 @@ public class VanityUrlUtil {
      * @param languageId The current languageId
      * @return String with the sanitized key name
      */
-    public static String sanitizeKey(final String hostId, String uri, final long languageId) {
+    public static String sanitizeKey(final String hostId, final String uri, final long languageId) {
         return hostId + "|" + fixURI(uri).replace('/', '|') + "|lang_" + languageId;
     }
 
@@ -54,10 +57,13 @@ public class VanityUrlUtil {
      * @param uri The URI to fix
      * @return The fixed uri
      */
-    public static String fixURI(String uri) {
+    public static String fixURI(final String uri) {
+        String modifiedUri = "";
         if (!uri.startsWith("/")) {
-            uri = "/" + uri;
+            modifiedUri = "/" + uri;
+        } else {
+            modifiedUri = uri;
         }
-        return uri;
+        return modifiedUri;
     }
 }

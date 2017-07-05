@@ -19,10 +19,10 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class DefaultVanityUrlHandler implements VanityUrlHandler {
 
-    private final static VanityUrlResult DEFAULT_RESULT = new VanityUrlResult(null, null,
-            CMSFilter.IAm.NOTHING_IN_THE_CMS,true);
+    private static final VanityUrlResult DEFAULT_RESULT = new VanityUrlResult(null, null,
+            CMSFilter.IAm.NOTHING_IN_THE_CMS, true);
 
-    private final static CmsUrlUtil urlUtil = CmsUrlUtil.getInstance();
+    private static final CmsUrlUtil urlUtil = CmsUrlUtil.getInstance();
 
     @Override
     public VanityUrlResult handle(final CachedVanityUrl vanityUrl,

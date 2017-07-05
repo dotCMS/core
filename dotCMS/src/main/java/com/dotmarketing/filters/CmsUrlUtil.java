@@ -26,13 +26,18 @@ import java.util.regex.Matcher;
 public class CmsUrlUtil {
 
     private static CmsUrlUtil urlUtil;
+    private static final String CONTENTLET = "contentlet";
+    private static final String HTMLPAGE = "htmlpage";
+    private static final String FILE_ASSET = "file_asset";
+    private static final String FOLDER = "folder";
+    private static final String NOT_FOUND = "NOTFOUND";
+    private static final String UNABLE_TO_FIND = "Unable to find ";
 
     public static CmsUrlUtil getInstance() {
         if (urlUtil == null) {
 
             synchronized (CmsUrlUtil.class) {
                 urlUtil = new CmsUrlUtil();
-                //urlUtil.loadCachedVanityUrlCache();
             }
 
         }
@@ -43,10 +48,10 @@ public class CmsUrlUtil {
     public boolean isPageAsset(Versionable asset) {
         try {
             Identifier id = APILocator.getIdentifierAPI().find(asset);
-            if ("contentlet".equals(id.getAssetType()) && asset instanceof Contentlet) {
+            if (CONTENTLET.equals(id.getAssetType()) && asset instanceof Contentlet) {
                 Contentlet c = (Contentlet) asset;
                 return (c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE);
-            } else if ("htmlpage".equals(id.getAssetType())) {
+            } else if (HTMLPAGE.equals(id.getAssetType())) {
                 return true;
             }
 
@@ -65,16 +70,16 @@ public class CmsUrlUtil {
         try {
             id = APILocator.getIdentifierAPI().find(host, uri);
         } catch (Exception e) {
-            Logger.error(this.getClass(), "Unable to find" + uri);
+            Logger.error(this.getClass(), UNABLE_TO_FIND + uri);
             return false;
         }
         if (id == null || id.getId() == null) {
             return false;
         }
-        if ("htmlpage".equals(id.getAssetType())) {
+        if (HTMLPAGE.equals(id.getAssetType())) {
             return true;
         }
-        if ("contentlet".equals(id.getAssetType())) {
+        if (CONTENTLET.equals(id.getAssetType())) {
             try {
 
                 //Get the list of languages use by the application
@@ -83,7 +88,7 @@ public class CmsUrlUtil {
                 //First try with the given language
                 ContentletVersionInfo cinfo = APILocator.getVersionableAPI()
                         .getContentletVersionInfo(id.getId(), languageId);
-                if (cinfo == null || cinfo.getWorkingInode().equals("NOTFOUND")) {
+                if (cinfo == null || cinfo.getWorkingInode().equals(NOT_FOUND)) {
 
                     for (Language language : languages) {
                         /*
@@ -94,7 +99,7 @@ public class CmsUrlUtil {
                         if (languageId != language.getId()) {
                             cinfo = APILocator.getVersionableAPI()
                                     .getContentletVersionInfo(id.getId(), language.getId());
-                            if (cinfo != null && !cinfo.getWorkingInode().equals("NOTFOUND")) {
+                            if (cinfo != null && !cinfo.getWorkingInode().equals(NOT_FOUND)) {
                                 //Found it
                                 break;
                             }
@@ -102,7 +107,7 @@ public class CmsUrlUtil {
                     }
 
                 }
-                if (cinfo == null || cinfo.getWorkingInode().equals("NOTFOUND")) {
+                if (cinfo == null || cinfo.getWorkingInode().equals(NOT_FOUND)) {
                     return false;//At this point we know is not a page
                 } else {
                     Contentlet c = APILocator.getContentletAPI()
@@ -112,7 +117,7 @@ public class CmsUrlUtil {
                             == Structure.STRUCTURE_TYPE_HTMLPAGE);
                 }
             } catch (Exception e) {
-                Logger.error(this.getClass(), "Unable to find" + uri);
+                Logger.error(this.getClass(), UNABLE_TO_FIND + uri);
                 return false;
             }
         }
@@ -127,22 +132,22 @@ public class CmsUrlUtil {
         try {
             id = APILocator.getIdentifierAPI().find(host, uri);
         } catch (Exception e) {
-            Logger.error(this.getClass(), "Unable to find" + uri);
+            Logger.error(this.getClass(), UNABLE_TO_FIND + uri);
             return false;
         }
         if (id == null || id.getId() == null) {
             return false;
         }
-        if ("file_asset".equals(id.getAssetType())) {
+        if (FILE_ASSET.equals(id.getAssetType())) {
             return true;
         }
 
-        if ("contentlet".equals(id.getAssetType())) {
+        if (CONTENTLET.equals(id.getAssetType())) {
             try {
                 ContentletVersionInfo cinfo = APILocator.getVersionableAPI()
                         .getContentletVersionInfo(id.getId(), languageId);
 
-                if ((cinfo == null || cinfo.getWorkingInode().equals("NOTFOUND")) && Config
+                if ((cinfo == null || cinfo.getWorkingInode().equals(NOT_FOUND)) && Config
                         .getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
                     //Get the Default Language
                     Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
@@ -151,7 +156,7 @@ public class CmsUrlUtil {
                             .getContentletVersionInfo(id.getId(), defaultLang.getId());
                 }
 
-                if (cinfo == null || cinfo.getWorkingInode().equals("NOTFOUND")) {
+                if (cinfo == null || cinfo.getWorkingInode().equals(NOT_FOUND)) {
                     return false;//At this point we know is not a File Asset
                 } else {
                     Contentlet c = APILocator.getContentletAPI()
@@ -161,7 +166,7 @@ public class CmsUrlUtil {
                             == Structure.STRUCTURE_TYPE_FILEASSET);
                 }
             } catch (Exception e) {
-                Logger.error(this.getClass(), "Unable to find" + uri);
+                Logger.error(this.getClass(), UNABLE_TO_FIND + uri);
                 return false;
             }
         }
@@ -186,11 +191,11 @@ public class CmsUrlUtil {
             if (id == null || id.getId() == null) {
                 return false;
             }
-            if ("folder".equals(id.getAssetType())) {
+            if (FOLDER.equals(id.getAssetType())) {
                 return true;
             }
         } catch (Exception e) {
-            Logger.error(this.getClass(), "Unable to find" + uri);
+            Logger.error(this.getClass(), UNABLE_TO_FIND + uri);
         }
 
         return false;
@@ -235,7 +240,7 @@ public class CmsUrlUtil {
         if (ident == null || ident.getId() == null) {
             throw new DotStateException("Identifier cannot be null");
         }
-        if (ident.getAssetType().equals("contentlet")) {
+        if (ident.getAssetType().equals(CONTENTLET)) {
             try {
                 ContentletVersionInfo cinfo = APILocator.getVersionableAPI()
                         .getContentletVersionInfo(ident.getId(), languageId);
@@ -292,7 +297,7 @@ public class CmsUrlUtil {
         //Search fot the URI in the vanityURL cached cache
         Set<CachedVanityUrl> cachedVanityUrls = CacheLocator.getVanityURLCache()
                 .getCachedVanityUrls(host);
-        if (cachedVanityUrls.size() == 0) {
+        if (cachedVanityUrls.isEmpty()) {
             //Initialize the Cached Vanity URL cache
             VanityUrlServices.initializeVanityUrlCache();
             cachedVanityUrls = CacheLocator.getVanityURLCache().getCachedVanityUrls(host);
