@@ -66,6 +66,11 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		hostAPI = APILocator.getHostAPI();
 	}
 
+	private static void Test () {
+		String testVariable = null;
+		System.out.println(testVariable.replace("","--"));
+	}
+
 	@Override
 	public Container copy(Container source, Host destination, User user, boolean respectFrontendRoles)
 			throws DotDataException, DotSecurityException {
@@ -428,6 +433,12 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 				Template parentInode = (Template) it.next();
 				TreeFactory.saveTree(new Tree(parentInode.getInode(), container.getInode()));
 			}
+		}
+
+		try {
+			String bla = null;
+		} catch (Exception e) {
+			e.getMessage();
 		}
 
 		// save the container-structure relationships , issue-2093

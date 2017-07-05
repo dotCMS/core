@@ -1707,6 +1707,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         deleteBinaryFiles(contentletsVersion,null);
 
+        try {
+            String bla = null;
+            bla = "fffff";
+            bla = "fffff";
+            bla = "fffff";
+            bla = "fffff";
+        }catch (Exception e) {
+
+        }
     }
 
     @Override
