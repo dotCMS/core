@@ -6,9 +6,11 @@ addons:
     organization: dotcms-core
     branches:
       - test-branch-jonathan-gamba
+      - test-branch-jonathan-gamba-2
   sonarqube:
     branches:
       - test-branch-jonathan-gamba
+      - test-branch-jonathan-gamba-2
 jdk:
 - oraclejdk8
 script:
