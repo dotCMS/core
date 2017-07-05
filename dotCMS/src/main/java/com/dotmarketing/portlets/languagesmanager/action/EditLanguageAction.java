@@ -36,7 +36,7 @@ import com.liferay.util.servlet.SessionMessages;
  */
 public class EditLanguageAction extends DotPortletAction {
 	
-	private LanguageAPI langAPI;
+	private final LanguageAPI languageAPI;
 
 	/**
 	 * Default class constructor.
@@ -46,8 +46,8 @@ public class EditLanguageAction extends DotPortletAction {
     }
 	
 	@VisibleForTesting
-    public EditLanguageAction(LanguageAPI languageAPI) {
-	    this.langAPI = APILocator.getLanguageAPI();
+    public EditLanguageAction(final LanguageAPI languageAPI) {
+	    this.languageAPI = APILocator.getLanguageAPI();
     }
 
     /**
@@ -125,7 +125,7 @@ public class EditLanguageAction extends DotPortletAction {
      */
     private void _retrieveLanguage(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, String languageId)
     throws Exception {
-        Language language = langAPI.getLanguage(languageId);
+        Language language = languageAPI.getLanguage(languageId);
         if(language == null) {
         	language = new Language();
         }
@@ -146,7 +146,7 @@ public class EditLanguageAction extends DotPortletAction {
 		BeanUtils.copyProperties(language,form);
         if (UtilMethods.isSet(language.getLanguageCode()) && UtilMethods.isSet(language.getLanguage())) {
 			try{
-				langAPI.saveLanguage(language);
+				languageAPI.saveLanguage(language);
 			} catch(Exception e ){
 				SessionMessages.add(req,"message", "message.languagemanager.languagenotsaved");
 				throw new SQLException();
@@ -170,9 +170,9 @@ public class EditLanguageAction extends DotPortletAction {
     * @throws Exception An error occurred when retrieving a language.
     */
 	private void _delete(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, String languageId){
-		Language language = langAPI.getLanguage(languageId);
+		Language language = languageAPI.getLanguage(languageId);
 		try{
-			langAPI.deleteLanguage(language);
+			languageAPI.deleteLanguage(language);
 			SessionMessages.add(req,"message", "message.language.deleted");
         	Logger.debug(this, "deleted");
 		}catch (Exception e){

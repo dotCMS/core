@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.dotcms.repackage.org.apache.struts.Globals;
-import com.dotcms.util.ConversionUtils;
+
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -39,6 +39,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.util.FileUtil;
 
+
+import static com.dotcms.util.CloseUtils.*;
+import static com.dotcms.util.ConversionUtils.*;
 /**
  * Implementation class for the {@link LanguageFactory}.
  * 
@@ -52,7 +55,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
     private static Language defaultLanguage;
     
-    private Map<String, Date> readTimeStamps = new HashMap<String, Date>();
+    private final Map<String, Date> readTimeStamps = new HashMap<String, Date>();
 
     /**
      * Creates a new instance of the {@link LanguageFactory}.
@@ -243,11 +246,25 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
 	@Override
     protected Language getDefaultLanguage () {
+
         if (defaultLanguage == null) {
-            defaultLanguage = getLanguage (Config.getStringProperty("DEFAULT_LANGUAGE_CODE"), Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY_CODE"));
-            if (defaultLanguage.getId() == 0)
-                defaultLanguage = createDefaultLanguage();
+
+        	synchronized (this) {
+
+				if (defaultLanguage == null) {
+
+					defaultLanguage = getLanguage(
+							Config.getStringProperty("DEFAULT_LANGUAGE_CODE"),
+							Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY_CODE"));
+
+					if (defaultLanguage.getId() == 0) {
+
+						defaultLanguage = createDefaultLanguage();
+					}
+				}
+			}
         }
+
         return defaultLanguage;
     }
 
@@ -563,37 +580,44 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
     @Override
     protected Language getFallbackLanguage(final String languageCode) {
+
         final Connection conn = DbConnectionFactory.getConnection();
+        PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
-        try (PreparedStatement preparedStatement = conn.prepareStatement(
-                        "SELECT * FROM language WHERE language_code = ? AND (country_code = '' OR country_code IS NULL)");) {
-            Language lang = CacheLocator.getLanguageCache().getLanguageByCode(languageCode.toLowerCase(), null);
+        Language lang = null;
+
+        try {
+
+            preparedStatement = conn.prepareStatement(
+                    "SELECT * FROM language WHERE language_code = ? AND (country_code = '' OR country_code IS NULL)");
+            lang              = CacheLocator.getLanguageCache().getLanguageByCode(languageCode.toLowerCase(), null);
+
             if (lang == null) {
+
                 preparedStatement.setString(1, languageCode.toLowerCase());
                 resultSet = preparedStatement.executeQuery();
+
                 if (resultSet.next()) {
-                    final long id = ConversionUtils.toLong(resultSet.getObject(1), 0L);
-                    final String langCode = resultSet.getString(2);
+
+                    final long id          = toLong(resultSet.getObject(1), 0L);
+                    final String langCode    = resultSet.getString(2);
                     final String countryCode = resultSet.getString(3);
-                    final String language = resultSet.getString(4);
-                    final String country = resultSet.getString(5);
-                    lang = new Language(id, langCode, countryCode, language, country);
+                    final String language    = resultSet.getString(4);
+                    final String country     = resultSet.getString(5);
+                    lang            = new Language(id, langCode, countryCode, language, country);
                     CacheLocator.getLanguageCache().addLanguage(lang);
                 }
             }
-            return lang;
         } catch (Exception e) {
+
             Logger.error(LanguageFactoryImpl.class, "getLanguage failed:" + e, e);
             throw new DotRuntimeException(e.toString());
         } finally {
-            if (null != resultSet) {
-                try {
-                    resultSet.close();
-                } catch (SQLException e) {
-                    // Result Set not closed, continue
-                }
-            }
+
+			closeQuietly(preparedStatement, resultSet);
         }
-    }
+
+        return lang;
+    } // getFallbackLanguage.
 
 }

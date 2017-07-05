@@ -41,4 +41,55 @@ public interface LanguageVariableAPI {
      */
     public String get(final String key, final long languageId, final User user, final boolean respectFrontendRoles);
 
+
+    /**
+     * Returns the Language Variable value associated to the specified key and language ID. This
+     * method has a series of fallback mechanisms:
+     * <ol>
+     * <li>If the key doesn't exist for the specified language ID, then they key will be looked up
+     * using the fallback language, i.e., looking up its value using ONLY the language code.</li>
+     * <li>If the fallback value doesn't exist and the {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE}
+     * is {@code true}, then look up the key using the system's default language.</li>
+     * <li>If none of the previous two appraoches work, then return {@code null}.</li>
+     * </ol>
+     *
+     * This method is pretty much {@link #get(String, long, User, boolean)} with respectFrontendRoles in true.
+     *
+     * @param key - The key to the Language Variable.
+     * @param languageId - The ID of the language that the variable was created for.
+     * @param user - The user performing this action.
+
+     * @return The value of the Language Variable that matched the search criteria, or {@code null}
+     *         if it doesn't exist.
+     */
+    public default String getLanguageVariableRespectingFrontEndRoles(final String key, final long languageId, final User user) {
+
+        return this.get(key, languageId, user, Boolean.TRUE);
+    }
+
+    /**
+     * Returns the Language Variable value associated to the specified key and language ID. This
+     * method has a series of fallback mechanisms:
+     * <ol>
+     * <li>If the key doesn't exist for the specified language ID, then they key will be looked up
+     * using the fallback language, i.e., looking up its value using ONLY the language code.</li>
+     * <li>If the fallback value doesn't exist and the {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE}
+     * is {@code true}, then look up the key using the system's default language.</li>
+     * <li>If none of the previous two appraoches work, then return {@code null}.</li>
+     * </ol>
+     *
+     * This method is pretty much {@link #get(String, long, User, boolean)} with respectFrontendRoles in false.
+     *
+     * @param key - The key to the Language Variable.
+     * @param languageId - The ID of the language that the variable was created for.
+     * @param user - The user performing this action.
+
+     * @return The value of the Language Variable that matched the search criteria, or {@code null}
+     *         if it doesn't exist.
+     */
+    public default String getLanguageVariableWithoutFrontEndRoles(final String key, final long languageId, final User user) {
+
+        return this.get(key, languageId, user, Boolean.FALSE);
+    }
+
 }

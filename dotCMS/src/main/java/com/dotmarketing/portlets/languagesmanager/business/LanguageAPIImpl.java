@@ -37,20 +37,21 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class LanguageAPIImpl implements LanguageAPI {
 
-	private HttpServletRequest request;
+
+    private final static LanguageKeyComparator LANGUAGE_KEY_COMPARATOR = new LanguageKeyComparator();
+
+	private HttpServletRequest request; // todo: this should be decouple from the api
 	private LanguageFactory factory;
 	private LanguageVariableAPI languageVariableAPI;
 	
-	Context ctx;
-
 	/**
-	 * 
+	 * Inits the service with the user {@link ViewContext}
 	 * @param obj
 	 */
-	public void init(Object obj) {
+	// TODO: remove me
+	public void init(final Object obj) {
 		ViewContext context = (ViewContext) obj;
-		this.request = context.getRequest();
-		ctx = context.getVelocityContext();
+		this.request = context.getRequest(); // todo: this is just getting it for the user, so instead of getting the request should get the user.
 	}
 
 	/**
@@ -61,17 +62,17 @@ public class LanguageAPIImpl implements LanguageAPI {
 	}
 
 	@Override
-	public void deleteLanguage(Language language) {
+	public void deleteLanguage(final Language language) {
 		factory.deleteLanguage(language);
 	}
 
 	@Override
-	public Language getLanguage(String languageCode, String countryCode) {
+	public Language getLanguage(final String languageCode, final String countryCode) {
 		return factory.getLanguage(languageCode, countryCode);
 	}
 
 	@Override
-    public boolean isAssetTypeLanguage(String id) {
+    public boolean isAssetTypeLanguage(final String id) {
         if (!NumberUtils.isDigits(id)) {
             return false;
         }
@@ -87,7 +88,7 @@ public class LanguageAPIImpl implements LanguageAPI {
     }
 
 	@Override
-	public Language getLanguage(String id) {
+	public Language getLanguage(final String id) {
 		return factory.getLanguage(id);
 	}
 
@@ -97,7 +98,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 	}
 
 	@Override
-	public Language getLanguage(long id) {
+	public Language getLanguage(final long id) {
 		return factory.getLanguage(id);
 	}
 
@@ -107,12 +108,12 @@ public class LanguageAPIImpl implements LanguageAPI {
 	}
 
 	@Override
-	public void saveLanguage(Language language) {
+	public void saveLanguage(final Language language) {
 		factory.saveLanguage(language);
 	}
 
 	@Override
-	public String getLanguageCodeAndCountry(long id, String langId) {
+	public String getLanguageCodeAndCountry(final long id, final String langId) {
 		return factory.getLanguageCodeAndCountry(id, langId);
 	}
 
@@ -122,64 +123,65 @@ public class LanguageAPIImpl implements LanguageAPI {
 	}
 
 	@Override
-	public boolean hasLanguage(String id) {
+	public boolean hasLanguage(final String id) {
 		return factory.hasLanguage(id);
 	}
 
 	@Override
-	public boolean hasLanguage(long id) {
+	public boolean hasLanguage(final long id) {
 		return factory.hasLanguage(id);
 	}
 
 	@Override
-	public boolean hasLanguage(String languageCode, String countryCode) {
+	public boolean hasLanguage(final String languageCode, final String countryCode) {
 		return factory.hasLanguage(languageCode, countryCode);
 	}
 
 	@Override
-	public List<LanguageKey> getLanguageKeys(String langCode) {
-		List<LanguageKey> list = factory.getLanguageKeys(langCode);
-		Collections.sort(list, new LanguageKeyComparator());
+	public List<LanguageKey> getLanguageKeys(final String langCode) {
+		final List<LanguageKey> list = factory.getLanguageKeys(langCode);
+		Collections.sort(list, LANGUAGE_KEY_COMPARATOR);
 		return list;
 	}
 
 	@Override
-	public List<LanguageKey> getLanguageKeys(String langCode, String countryCode) {
-		List<LanguageKey> list = factory.getLanguageKeys(langCode, countryCode);
-		Collections.sort(list, new LanguageKeyComparator());
+	public List<LanguageKey> getLanguageKeys(final String langCode, final String countryCode) {
+		final List<LanguageKey> list = factory.getLanguageKeys(langCode, countryCode);
+		Collections.sort(list, LANGUAGE_KEY_COMPARATOR);
 		return list;
 	}
 
 	@Override
-	public List<LanguageKey> getLanguageKeys(Language lang) {
-		String langCode = lang.getLanguageCode();
-		String countryCode = lang.getCountryCode();
-		List<LanguageKey> list = new ArrayList<LanguageKey>();
-		list.addAll(factory.getLanguageKeys(langCode));
-		Collections.sort(list, new LanguageKeyComparator());
+	public List<LanguageKey> getLanguageKeys(final Language lang) {
+		final String langCode = lang.getLanguageCode();
+        final String countryCode = lang.getCountryCode();
+		final List<LanguageKey> list = new ArrayList<LanguageKey>(factory.getLanguageKeys(langCode));
+		Collections.sort(list, LANGUAGE_KEY_COMPARATOR);
 
-		List<LanguageKey> keys = factory.getLanguageKeys(langCode, countryCode);
-		for(LanguageKey key : keys) {
+		final List<LanguageKey> keys = factory.getLanguageKeys(langCode, countryCode);
+		for(LanguageKey key : keys) { // todo: analize it but it could be used an set instead of arraylist.
 			int index = -1;
-			if((index = Collections.binarySearch(list, key, new LanguageKeyComparator())) >= 0) {
+			if((index = Collections.binarySearch(list, key, LANGUAGE_KEY_COMPARATOR)) >= 0) {
 				list.remove(index);
 			}
 			list.add(key);
 		}
 
-		Collections.sort(list, new LanguageKeyComparator());
+		Collections.sort(list, LANGUAGE_KEY_COMPARATOR);
 		return list;
 	}
 
 	@Override
-	public void createLanguageFiles(Language lang) {
+	public void createLanguageFiles(final Language lang) {
 		factory.createLanguageFiles(lang);
 	}
 
 	@Override
-	public void saveLanguageKeys(Language lang, Map<String, String> generalKeys, Map<String, String> specificKeys, Set<String> toDeleteKeys) throws DotDataException {
-		List<LanguageKey> existingGeneralKeys = getLanguageKeys(lang.getLanguageCode());
-		List<LanguageKey> existingSpecificKeys = getLanguageKeys(lang.getLanguageCode(),lang.getCountryCode());
+	public void saveLanguageKeys(final Language lang, final Map<String, String> generalKeys,
+                                 final Map<String, String> specificKeys, final Set<String> toDeleteKeys) throws DotDataException {
+
+		final List<LanguageKey> existingGeneralKeys  = getLanguageKeys(lang.getLanguageCode());
+        final List<LanguageKey> existingSpecificKeys = getLanguageKeys(lang.getLanguageCode(),lang.getCountryCode());
 
 		for(LanguageKey key:existingGeneralKeys){
 			if(generalKeys.containsKey(key.getKey())){
@@ -197,77 +199,92 @@ public class LanguageAPIImpl implements LanguageAPI {
 		for(LanguageKey key:existingGeneralKeys){
 			generalKeys.put(key.getKey(), key.getValue());
 		}
+
 		for(LanguageKey key:existingSpecificKeys){
 			specificKeys.put(key.getKey(), key.getValue());
 		}
+
 		factory.saveLanguageKeys(lang, generalKeys, specificKeys, toDeleteKeys);
 	}
 
 	@Override
-    public String getStringKey ( Language lang, String key ) {
-        User user = null;
+    public String getStringKey ( final Language lang, final String key ) {
+
+        final User user = getUser();
+        // First, retrieve value from legacy Language Variables or the appropriate
+        // Language.properties file
+        final String value = this.getStringFromPropertiesFile(lang, key);
+        // If not found, look it up using the new Language Variable API
+        return (null == value || StringPool.BLANK.equals(value.trim()))?
+                getLanguageVariableAPI().getLanguageVariableRespectingFrontEndRoles(key, lang.getId(), user):
+                value;
+    }
+
+    private String getStringFromPropertiesFile (final Language lang, final String key) {
+
+        String value = null;
+
         try {
+            value = LanguageUtil.get( new Locale( lang.getLanguageCode(), lang.getCountryCode() ), key );
+        } catch ( LanguageException e ) {
+            Logger.error( this, e.getMessage(), e );
+        }
+
+        return value;
+    }
+
+	private User getUser() {
+
+		User user = null;
+
+		try {
             user = com.liferay.portal.util.PortalUtil.getUser( this.request );
         } catch ( Exception e ) {
             Logger.debug( this, e.getMessage(), e );
         }
 
-        if ( user == null ) {
+		if ( user == null ) {
             try {
                 user = APILocator.getUserAPI().getSystemUser();
             } catch ( DotDataException e ) {
                 Logger.debug( this, e.getMessage(), e );
             }
         }
-        // First, retrieve value from legacy Language Variables or the appropriate
-        // Language.properties file
-        String value = null;
-        try {
-            value = LanguageUtil.get( new Locale( lang.getLanguageCode(), lang.getCountryCode() ), key );
-        } catch ( LanguageException e ) {
-            Logger.error( this, e.getMessage(), e );
-        }
-        // If not found, look it up using the new Language Variable API
-        if (null == value || StringPool.BLANK.equals(value.trim())) {
-            value = getLanguageVariableAPI().get(key, lang.getId(), user, Boolean.TRUE);
-        }
-        return value;
-    }
+
+		return user;
+	}
 
 	@Override
-	public boolean getBooleanKey(Language lang, String key) {
+	public boolean getBooleanKey(final Language lang, final String key) {
 		return Boolean.parseBoolean(getStringKey(lang, key));
 	}
 
 	@Override
-	public boolean getBooleanKey(Language lang, String key, boolean defaultVal) {
-		if(getStringKey(lang, key) != null)
-			return Boolean.parseBoolean(getStringKey(lang, key));
-		return defaultVal;
+	public boolean getBooleanKey(final Language lang, final String key, final boolean defaultVal) {
+		return (getStringKey(lang, key) != null)?
+			Boolean.parseBoolean(getStringKey(lang, key)):defaultVal;
 	}
 
 	@Override
-	public float getFloatKey(Language lang, String key) {
+	public float getFloatKey(final Language lang, final String key) {
 		return Float.parseFloat(getStringKey(lang, key));
 	}
 
 	@Override
-	public float getFloatKey(Language lang, String key, float defaultVal) {
-		if(getStringKey(lang, key) != null)
-			return Float.parseFloat(getStringKey(lang, key));
-		return defaultVal;
+	public float getFloatKey(final Language lang, final String key, final float defaultVal) {
+		return (getStringKey(lang, key) != null)?
+			Float.parseFloat(getStringKey(lang, key)):defaultVal;
 	}
 
 	@Override
-	public int getIntKey(Language lang, String key) {
+	public int getIntKey(final Language lang, final String key) {
 		return Integer.parseInt(getStringKey(lang, key));
 	}
 
 	@Override
-	public int getIntKey(Language lang, String key, int defaultVal) {
-		if(getStringKey(lang, key) != null)
-			return Integer.parseInt(getStringKey(lang, key));
-		return defaultVal;
+	public int getIntKey(final Language lang, final String key, final int defaultVal) {
+		return (getStringKey(lang, key) != null)?
+                Integer.parseInt(getStringKey(lang, key)):defaultVal;
 	}
 
 	@Override
@@ -276,7 +293,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 	}
 
     @Override
-    public Language getFallbackLanguage(String languageCode) {
+    public Language getFallbackLanguage(final String languageCode) {
         return this.factory.getFallbackLanguage(languageCode);
     }
 
@@ -287,9 +304,17 @@ public class LanguageAPIImpl implements LanguageAPI {
      * @return An instance of the {@link LanguageVariableAPI}.
      */
     private LanguageVariableAPI getLanguageVariableAPI() {
-        if (null == this.languageVariableAPI) {
-            this.languageVariableAPI = APILocator.getLanguageVariableAPI();
+
+    	if (null == this.languageVariableAPI) {
+
+        	synchronized (this) {
+				if (null == this.languageVariableAPI) {
+
+					this.languageVariableAPI = APILocator.getLanguageVariableAPI();
+				}
+			}
         }
+
         return this.languageVariableAPI;
     }
     
