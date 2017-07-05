@@ -44,7 +44,7 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
     /**
      * Util method to delete all the roles.
      */
-    public void cleanRoles(List<Role> rolesToDelete) {
+    public void cleanRoles(final List<Role> rolesToDelete) {
         RoleAPI roleAPI = APILocator.getRoleAPI();
 
         for (Role role : rolesToDelete) {
@@ -62,9 +62,9 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
     /**
      * Util method to delete all the folders.
      */
-    public void cleanFolders(List<Folder> foldersToDelete) {
-        FolderAPI folderAPI = APILocator.getFolderAPI();
-        User systemUser = APILocator.systemUser();
+    public void cleanFolders(final List<Folder> foldersToDelete) {
+        final FolderAPI folderAPI = APILocator.getFolderAPI();
+        final User systemUser = APILocator.systemUser();
 
         for (Folder folder : foldersToDelete) {
             try {
@@ -82,10 +82,10 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
     /**
      * Util method to delete all the users.
      */
-    public void cleanUsers(List<User> usersToDelete) {
+    public void cleanUsers(final List<User> usersToDelete) {
         UserAPI userAPI = APILocator.getUserAPI();
 
-        for (User user : usersToDelete) {
+        for (final User user : usersToDelete) {
             try {
                 if (user != null && UtilMethods.isSet(user.getUserId())) {
                     userAPI.delete(user, userAPI.getSystemUser(), false);

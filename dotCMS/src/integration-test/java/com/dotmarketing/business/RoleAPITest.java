@@ -354,7 +354,7 @@ public class RoleAPITest extends IntegrationTestBase {
         } catch (DotSecurityException | DotDataException e) {
             fail(e.getMessage());
         } finally {
-            List<Role> rolesToDelete = Lists
+            final List<Role> rolesToDelete = Lists
                     .newArrayList(grandChildRole, childRole, parentRole, secondChildRole,
                             secondParentRole);
             cleanRoles(rolesToDelete);

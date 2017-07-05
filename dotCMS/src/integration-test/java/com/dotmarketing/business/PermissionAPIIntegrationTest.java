@@ -173,7 +173,7 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
             Logger.error(PermissionAPIIntegrationTest.class, e.getMessage());
         }
 
-        List<Host> hostsToDelete = Lists.newArrayList(host);
+        final List<Host> hostsToDelete = Lists.newArrayList(host);
         cleanHosts(hostsToDelete);
     }
 
@@ -374,14 +374,14 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
         } catch (Exception e) {
             fail(e.getMessage());
         } finally {
-            List<User> usersToDelete = Lists.newArrayList(newUser);
+            final List<User> usersToDelete = Lists.newArrayList(newUser);
             cleanUsers(usersToDelete);
 
             //Delete Roles.
-            List<Role> rolesToDelete = Lists.newArrayList(grandChildRole, childRole, parentRole);
+            final List<Role> rolesToDelete = Lists.newArrayList(grandChildRole, childRole, parentRole);
             cleanRoles(rolesToDelete);
 
-            List<Folder> foldersToDelete = Lists.newArrayList(goQuestFolder, applicationFolder);
+            final List<Folder> foldersToDelete = Lists.newArrayList(goQuestFolder, applicationFolder);
             cleanFolders(foldersToDelete);
 
             // Removing Host.
