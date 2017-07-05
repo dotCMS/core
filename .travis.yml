@@ -12,7 +12,7 @@ addons:
         - test-branch-jonathan-gamba
 
 jdk:
-  - openjdk8
+  - oraclejdk8
 
 script:
   - sonar-scanner
