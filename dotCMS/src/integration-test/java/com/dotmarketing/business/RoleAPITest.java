@@ -1,18 +1,18 @@
 package com.dotmarketing.business;
 
+import static org.junit.Assert.*;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.util.Date;
 import java.util.List;
-
-import static org.junit.Assert.*;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * @author Jonathan Gamba
@@ -281,6 +281,84 @@ public class RoleAPITest extends IntegrationTestBase {
         Role foundRole = roleAPI.loadRoleById( testRole.getId() );
         assertNotNull( foundRole );
         assertEquals( cachedRole, foundRole );
+    }
+
+    @Test
+    public void test_isParentRole() {
+
+        RoleAPI roleAPI = APILocator.getRoleAPI();
+
+        Role parentRole = new Role();
+        Role childRole = new Role();
+        Role grandChildRole = new Role();
+
+        Role secondParentRole = new Role();
+        Role secondChildRole = new Role();
+
+        try {
+            // Create Parent Role.
+            parentRole.setName("Parent Role");
+            parentRole.setEditUsers(true);
+            parentRole.setEditPermissions(true);
+            parentRole.setEditLayouts(true);
+            parentRole.setDescription("Parent Role");
+            parentRole = roleAPI.save(parentRole);
+
+            // Create Child Role Role.
+            childRole.setName("Child Role");
+            childRole.setEditUsers(true);
+            childRole.setEditPermissions(true);
+            childRole.setEditLayouts(true);
+            childRole.setDescription("Child Role");
+            childRole.setParent(parentRole.getId());
+            childRole = roleAPI.save(childRole);
+
+            // Create Grandchild Role Role.
+            grandChildRole.setName("Grandchild Role");
+            grandChildRole.setEditUsers(true);
+            grandChildRole.setEditPermissions(true);
+            grandChildRole.setEditLayouts(true);
+            grandChildRole.setDescription("Grandchild Role");
+            grandChildRole.setParent(childRole.getId());
+            grandChildRole = roleAPI.save(grandChildRole);
+
+            assertTrue(roleAPI.isParentRole(parentRole, childRole));
+            assertTrue(roleAPI.isParentRole(parentRole, grandChildRole));
+            assertTrue(roleAPI.isParentRole(childRole, grandChildRole));
+
+            assertFalse(roleAPI.isParentRole(grandChildRole, parentRole));
+            assertFalse(roleAPI.isParentRole(childRole, parentRole));
+            assertFalse(roleAPI.isParentRole(grandChildRole, grandChildRole));
+
+            // Now let's create a sibling branch of roles.
+            // Create Second Parent Role.
+            secondParentRole.setName("Second Parent Role");
+            secondParentRole.setEditUsers(true);
+            secondParentRole.setEditPermissions(true);
+            secondParentRole.setEditLayouts(true);
+            secondParentRole.setDescription("Second Parent Role");
+            secondParentRole = roleAPI.save(secondParentRole);
+
+            // Create Second Child Role Role.
+            secondChildRole.setName("Second Child Role");
+            secondChildRole.setEditUsers(true);
+            secondChildRole.setEditPermissions(true);
+            secondChildRole.setEditLayouts(true);
+            secondChildRole.setDescription("Second Child Role");
+            secondChildRole.setParent(secondParentRole.getId());
+            secondChildRole = roleAPI.save(secondChildRole);
+
+            assertFalse(roleAPI.isParentRole(parentRole, secondChildRole));
+            assertFalse(roleAPI.isParentRole(parentRole, secondParentRole));
+
+        } catch (DotSecurityException | DotDataException e) {
+            fail(e.getMessage());
+        } finally {
+            final List<Role> rolesToDelete = Lists
+                    .newArrayList(grandChildRole, childRole, parentRole, secondChildRole,
+                            secondParentRole);
+            cleanRoles(rolesToDelete);
+        }
     }
 
 }
