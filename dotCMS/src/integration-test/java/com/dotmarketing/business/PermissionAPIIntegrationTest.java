@@ -30,6 +30,7 @@ import com.liferay.portal.model.User;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -86,6 +87,19 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
         APILocator.getTemplateAPI().saveTemplate(template, host, systemUser, false);
         Map<String, Object> sessionAttrs = new HashMap<String, Object>();
         sessionAttrs.put("USER_ID", "dotcms.org.1");
+    }
+
+    @AfterClass
+    public static void deleteTestHost() throws DotDataException {
+        try{
+            HibernateUtil.startTransaction();
+            APILocator.getHostAPI().archive(host, userAPI.getSystemUser(), false);
+            APILocator.getHostAPI().delete(host, userAPI.getSystemUser(), false);
+            HibernateUtil.commitTransaction();
+        }catch(Exception e){
+            HibernateUtil.rollbackTransaction();
+            Logger.error(PermissionAPIIntegrationTest.class, e.getMessage());
+        }
     }
    
     @Test
@@ -172,9 +186,6 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
             HibernateUtil.rollbackTransaction();
             Logger.error(PermissionAPIIntegrationTest.class, e.getMessage());
         }
-
-        final List<Host> hostsToDelete = Lists.newArrayList(host);
-        cleanHosts(hostsToDelete);
     }
 
 
