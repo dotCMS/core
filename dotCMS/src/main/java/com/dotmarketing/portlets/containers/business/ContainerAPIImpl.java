@@ -435,6 +435,12 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			}
 		}
 
+		try {
+			String bla = null;
+		} catch (Exception e) {
+			e.getMessage();
+		}
+
 		// save the container-structure relationships , issue-2093
 		for (ContainerStructure cs : containerStructureList) {
 			cs.setContainerId(container.getIdentifier());
