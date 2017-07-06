@@ -11,6 +11,7 @@ addons:
 jdk:
 - oraclejdk8
 script:
+- export SONAR_SCANNER_OPTS="-Xmx512m"
 - export SONARQUBE_SKIPPED=false
 - ./travis.sh
 env:
