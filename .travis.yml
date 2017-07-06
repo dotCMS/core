@@ -7,10 +7,7 @@ addons:
     branches:
     - test-branch-jonathan-gamba
     - test-branch-jonathan-gamba-2
-  sonarqube:
-    branches:
-    - test-branch-jonathan-gamba
-    - test-branch-jonathan-gamba-2
+    - test-branch-jonathan-gamba-3
 jdk:
 - oraclejdk8
 script:
