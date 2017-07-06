@@ -10,6 +10,8 @@ import java.util.List;
 
 public class PublisherAPIImpl implements PublisherAPI {
 
+    private final PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
+
     @Override
     public PublishStatus publish ( PublisherConfig config ) throws DotPublishingException {
 
@@ -71,7 +73,7 @@ public class PublisherAPIImpl implements PublisherAPI {
 
                 // If the bundle exists and we are retrying to push the bundle
                 // there is no need to run all the bundlers again.
-                if (bundleExists && PublishAuditAPI.getInstance().isPublishRetry(config.getId())) {
+                if (bundleExists && publishAuditAPI.isPublishRetry(config.getId())) {
 
                     for ( Class<IBundler> clazz : p.getBundlers() ) {
                         IBundler bundler = clazz.newInstance();
