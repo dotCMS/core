@@ -30,7 +30,6 @@ public class VanityUrlServices {
     private static VanityUrlServices vanituUrlService;
     private final VanityUrlCache vanityURLCache = CacheLocator.getVanityURLCache();
     private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
-    private final VanityUrlAPI vanityUrlAPI = APILocator.getVanityUrlAPI();
     private final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 
     /**
@@ -130,7 +129,7 @@ public class VanityUrlServices {
      */
     public void initializeVanityUrlCache(String hostId, long languageId) {
         List<VanityUrl> activeVanityUrls = APILocator.getVanityUrlAPI()
-                .getActiveVanityUrls(APILocator.systemUser());
+                .getActiveVanityUrlsByHostAndLanguage(hostId,languageId,APILocator.systemUser());
         activeVanityUrls.stream().forEach((VanityUrl vanity) -> updateCache(vanity));
     }
 
