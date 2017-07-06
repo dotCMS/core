@@ -58,7 +58,7 @@ public class MenuLinkAPITest extends IntegrationTestBase {
         
         hAPI.publish(host, user, false);
         cAPI.isInodeIndexed(host.getInode(),true);
-        pAPI.permissionIndividually(hAPI.findSystemHost(),host, user, false);
+        pAPI.permissionIndividually(hAPI.findSystemHost(),host, user);
     }
     
     @AfterClass
@@ -83,7 +83,7 @@ public class MenuLinkAPITest extends IntegrationTestBase {
          */
         Folder parent1 = fAPI.createFolders("/parent1/sub", host, user, false);
         Folder parent2 = fAPI.createFolders("/parent2/sub", host, user, false);
-        pAPI.permissionIndividually(host, parent2, user, false);
+        pAPI.permissionIndividually(host, parent2, user);
         
         Link link = new Link();
         link.setFriendlyName("test link");

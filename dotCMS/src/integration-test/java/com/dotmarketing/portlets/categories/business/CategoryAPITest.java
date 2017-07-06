@@ -646,7 +646,7 @@ public class CategoryAPITest extends IntegrationTestBase {
 
         //Set up a test folder
         Folder testFolder = APILocator.getFolderAPI().createFolders( "/" + new Date().getTime() + "/", defaultHost, user, false );
-        permissionAPI.permissionIndividually( permissionAPI.findParentPermissionable( testFolder ), testFolder, user, false );
+        permissionAPI.permissionIndividually( permissionAPI.findParentPermissionable( testFolder ), testFolder, user);
 
         //Create the structure
         Structure testStructure = new Structure();
