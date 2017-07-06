@@ -81,7 +81,7 @@ public class VanityUrlServices {
             Identifier identifier = identifierAPI.find(vanityUrl.getIdentifier());
             List<Contentlet> contentletVersions = contentletAPI
                     .findAllVersions(identifier, APILocator.systemUser(), false);
-            contentletVersions.stream().forEach((Contentlet con) -> removeFromCache(con));
+            contentletVersions.stream().filter( con -> vanityUrl.getLanguageId() == con.getLanguageId()).forEach((Contentlet con) -> removeFromCache(con));
 
             removeFromCache(vanityUrl);
         } catch (DotDataException | DotRuntimeException | DotSecurityException e) {
