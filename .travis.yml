@@ -7,8 +7,6 @@ addons:
     organization: dotcms-github
     branches:
     - test-branch-jonathan-gamba
-    - test-branch-jonathan-gamba-2
-    - test-branch-jonathan-gamba-3
 jdk:
 - oraclejdk8
 before_install:
