@@ -1,4 +1,5 @@
 language: java
+sudo: false
 git:
   submodules: false
 addons:
@@ -11,8 +12,9 @@ addons:
 jdk:
 - oraclejdk8
 script:
+- export SONAR_SCANNER_OPTS="-Xmx512m"
 - export SONARQUBE_SKIPPED=false
-- ./travis.sh
+- ./travis.sh -J-Xms1024M
 env:
   global:
   - secure: LMAju0W05TOLR6GuhZm1/8reUnoJMlRfIpUK7DTHqzH35KbRQgfYyIG8VGKhNS3SA1solNnlZpn5gbxNbJ1HCHfZl1iWshn9BuRM2Kje+wxltb2c3Q7Ql8PtE5EsREtV9jzrhQTVqVIBqWT4HLLDF7UHO8UXUV7jsKNaNlGP4GGZPPfiOdkuVTcdggGQeoFjQgUGSGhaPjUkT0GHdHRdwv7xS4tGZJRe5Lpd01MYUAb3T3syL7LBQnDSRlj74eLgkK3JL4jPS191rQ2Suj88jrcLOh204RHKH5OVox/KRqE/gEPvb5LV/C7/MfRBTyBSq1193osX0wDLlBJBklsTin4u3SQuGRiXPdIGLtmV9ZQrAfYuZqIpyZDgJjOwI3STgEKbJcEfPQik+riwRohhanKEj6wOmjvbkWj7jjFEhEAkOVE1a8nrVeX6+A19qC6SUqekbzyy21O6/pvZk1MhcYFxsg3do/BgJZZ2hzbJVQxoROaqQuG6gfE2ehHzJ9tHLcVNZCHqxibTlU5aExVkBrVwiazzcmaBd6toSlUS3rTHr/zRz2b+X/tZbD9nDmm0JAMmJcJlgNMMqrrGwcLhEWqwjkDobNZzTeJPFihFVq3lBFc2++vNKyK4GGzKvw9pJSW49ftg1Vtes/pSr6CViY6tXiqbNOhJJZl6txmv+eg=
