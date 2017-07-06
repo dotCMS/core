@@ -34,7 +34,7 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
     public CachedVanityUrl add(final String key, final VanityUrl vanityUrl) {
         // Add the key to the cache
         CachedVanityUrl cachedVanityUrl = new CachedVanityUrl(vanityUrl);
-        cache.put(getPrimaryGroup() + key, cachedVanityUrl, getPrimaryGroup());
+        cache.put( key, cachedVanityUrl, getPrimaryGroup());
         return cachedVanityUrl;
     }
 
@@ -43,7 +43,7 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
         CachedVanityUrl cachedVanityUrl = null;
         try {
             cachedVanityUrl = (CachedVanityUrl) cache
-                    .get(getPrimaryGroup() + key, getPrimaryGroup());
+                    .get( key, getPrimaryGroup());
         } catch (DotCacheException e) {
             Logger.debug(this, "Cache Entry not found", e);
         }
@@ -61,13 +61,6 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
     @Override
     public void remove(final String key) {
         try {
-            //Remove VanityUrl from the CachedVanityUrlCache
-            CachedVanityUrl vanity = (CachedVanityUrl) cache
-                    .get(getPrimaryGroup() + key, getPrimaryGroup());
-            if(vanity != null) {
-                removeCachedVanityUrls(VanityUrlUtil
-                        .sanitizeSecondCacheKey(vanity.getSiteId(), vanity.getLanguageId()));
-            }
             cache.remove(key, getPrimaryGroup());
         } catch (Exception e) {
             Logger.debug(this, "Cache not able to be removed", e);
@@ -100,12 +93,9 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
     public Set<CachedVanityUrl> getCachedVanityUrls(final String key) {
         Set<CachedVanityUrl> vanityUrlList = null;
         try {
-            vanityUrlList = (Set<CachedVanityUrl>) cache
-                    .get(getCachedVanityUrlGroup() + key, getCachedVanityUrlGroup());
-        } catch (DotCacheException e) {
-            Logger.error(this, "Cache Entry not found", e);
+            vanityUrlList = (Set<CachedVanityUrl>) cache.get( key, getCachedVanityUrlGroup());
         } catch (Exception e) {
-            Logger.error(this, "Cache Entry not found 2", e);
+            Logger.debug(this, "Cache Entry not found", e);
         }
         if (vanityUrlList == null) {
             vanityUrlList = new HashSet<>();
@@ -116,13 +106,13 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
     @Override
     public void setCachedVanityUrls(final String key,
             final Set<CachedVanityUrl> cachedVanityUrlList) {
-        cache.put(getCachedVanityUrlGroup() + key, cachedVanityUrlList, getCachedVanityUrlGroup());
+        cache.put( key, cachedVanityUrlList, getCachedVanityUrlGroup());
     }
 
     @Override
     public void removeCachedVanityUrls(String key) {
         try {
-            cache.remove(getCachedVanityUrlGroup() + key, getCachedVanityUrlGroup());
+            cache.remove(key, getCachedVanityUrlGroup());
         } catch (Exception e) {
             Logger.debug(this, "Cache not able to be removed", e);
         }
