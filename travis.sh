@@ -5,7 +5,6 @@ if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
   echo ">> Running sonar scanner in change preview mode"
   echo ">> For pull request [$TRAVIS_PULL_REQUEST]"
   echo ">> For repository [$TRAVIS_REPO_SLUG]"
-  echo ">> And key [$SONAR_GITHUB_TOKEN]"
   echo "--------------------------------------------------"
 
   sonar-scanner \
@@ -17,5 +16,6 @@ if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
     -Dsonar.scanner.skip=false
 
 else
-  sonar-scanner
+  sonar-scanner \
+    -Dsonar.scanner.skip=false
 fi

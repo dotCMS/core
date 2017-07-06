@@ -1,4 +1,5 @@
 language: java
+sudo: false
 git:
   submodules: false
 addons:
@@ -10,6 +11,11 @@ addons:
     - test-branch-jonathan-gamba-3
 jdk:
 - oraclejdk8
+before_install:
+  - chmod +x travis.sh
+before_script:
+ - "echo $JAVA_OPTS"
+ - "export JAVA_OPTS=-Xmx1024m"
 script:
 - export SONAR_SCANNER_OPTS="-Xmx512m"
 - export SONARQUBE_SKIPPED=false
@@ -18,5 +24,3 @@ env:
   global:
   - secure: LMAju0W05TOLR6GuhZm1/8reUnoJMlRfIpUK7DTHqzH35KbRQgfYyIG8VGKhNS3SA1solNnlZpn5gbxNbJ1HCHfZl1iWshn9BuRM2Kje+wxltb2c3Q7Ql8PtE5EsREtV9jzrhQTVqVIBqWT4HLLDF7UHO8UXUV7jsKNaNlGP4GGZPPfiOdkuVTcdggGQeoFjQgUGSGhaPjUkT0GHdHRdwv7xS4tGZJRe5Lpd01MYUAb3T3syL7LBQnDSRlj74eLgkK3JL4jPS191rQ2Suj88jrcLOh204RHKH5OVox/KRqE/gEPvb5LV/C7/MfRBTyBSq1193osX0wDLlBJBklsTin4u3SQuGRiXPdIGLtmV9ZQrAfYuZqIpyZDgJjOwI3STgEKbJcEfPQik+riwRohhanKEj6wOmjvbkWj7jjFEhEAkOVE1a8nrVeX6+A19qC6SUqekbzyy21O6/pvZk1MhcYFxsg3do/BgJZZ2hzbJVQxoROaqQuG6gfE2ehHzJ9tHLcVNZCHqxibTlU5aExVkBrVwiazzcmaBd6toSlUS3rTHr/zRz2b+X/tZbD9nDmm0JAMmJcJlgNMMqrrGwcLhEWqwjkDobNZzTeJPFihFVq3lBFc2++vNKyK4GGzKvw9pJSW49ftg1Vtes/pSr6CViY6tXiqbNOhJJZl6txmv+eg=
   - secure: fPC9k9NRd7gsHjOXa8P9f9ZSugEc8fLjaVDrqQgUGcFYu/Cme5twkLMBr8H2bfcVYI2erd3irSDGm763mNCEH5l02FrTku4AGcHRXf7w9KAOah7fA5bvzAxn07HPUx97rJcjVh4tUCBW50xb7+UU3tQJmVPZm9cetfBW4cmyFBe1TFxwBm1uRmCa/k3o3XH6cHPYGzceYlryQKl7RXRV7teyK/6vtK94/RFNvm0KxDnNYC9260BSVDX19LvlcYcV9+igBJutKbX+XxEu4gLX9tNNgCjWKb4+o5lJZBubYHXl0GmxqWlWoue08+tZ7kKnH6vaxzFiGr8QMRpBMRrEmRSKl4q1U7SD4L6moW/LuUzk+xzXWWk4F7fR7sm3zzP6NJAOiv7Ta+cfZvaxugBtegE9CPVhcCkJT+Sm6IkAmDzsDFM/I8vjrfy1R8j8trXyxhYbbOTitjXSzlVZQ7hjwXO4GTgGWD5lUQgaobTUyKCmHH2Kc3lZ3CnCpJWNFzDuJEIFoyAPJXCw+t2dxLXP9UMqggn6gvStVAuh5UCiRwMz4A4phURuqSpoIgP0q8UPoKtMuOIEDmpt9f6ypO0VeUpG1US2+Ucv14+hzZ6zQtdm2YHYXHEF86e1Cw7CE1bVtuYSjPJ+WSRcDKigt58Wd/3vWu97xz89SBQ7QAJ9Lv8=
-before_install:
-  - chmod +x travis.sh
