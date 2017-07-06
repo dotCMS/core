@@ -90,7 +90,25 @@ project.test {
 idea {
 
     module {
-        //and some extra test source dirs
+
+        name = 'dotCMS'
+        contentRoot = file('..')
+        excludeDirs += file('build')
+        excludeDirs += file('.idea')
+        excludeDirs += file('.gradle')
+        //if you prefer different output folders
+        inheritOutputDirs = false
+        outputDir = file('build/classes/main')
+        testOutputDir = file('build/classes/test')
+
+        //Extra source dirs
+        sourceDirs += file('src/main/enterprise/src/main/java')
+        excludeDirs += file('src/main/enterprise/build')
+
+        sourceDirs += file('src/main/license/src/main/java')
+        excludeDirs += file('src/main/license/build')
+
+        //Extra test source dirs
         testSourceDirs += file('integration-test/java')
         testSourceDirs += file('functional-test/java')
 
@@ -218,7 +236,17 @@ war {
             java {
                 //We only want to compile using the submodules code when using the deployWarTomcatDev task
                 if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDev')) {
-                    srcDirs = ["src/main/java", "$enterpriseProjectHome/src/main/java", "$licenseProjectHome/src/main/java"]
+                    if (enterpriseSrcFolder.exists() && licenseSrcFolder.exists()) {
+                        srcDirs = ["src/main/java", "$enterpriseProjectHome/src/main/java", "$licenseProjectHome/src/main/java"]
+                    } else {
+                        srcDirs = ["src/main/java"]
+                    }
+                } else if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDevEE')) {
+                    if (enterpriseSrcFolder.exists()) {
+                        srcDirs = ["src/main/java", "$enterpriseProjectHome/src/main/java"]
+                    } else {
+                        srcDirs = ["src/main/java"]
+                    }
                 } else {
                     srcDirs = ["src/main/java"]
                 }
@@ -309,7 +337,7 @@ task deployWarTomcatDist(type: DeployWarTomcatTask) {
 deployWarTomcatDist.group='dotCMS Util'
 deployWarTomcatDist.description='Same as deployWarTomcat but ran inside the Distribution. (Useful for development)'
 
-//Same as deploy-war-tomcat but will use the no obfuscated version of the license and enterprise jars.
+//Same as deployWarTomcat but will use the no obfuscated version of the license and enterprise jars.
 //(Useful for development)
 task deployWarTomcatDev (dependsOn: 'deployWarTomcat') {
 
@@ -317,6 +345,15 @@ task deployWarTomcatDev (dependsOn: 'deployWarTomcat') {
 deployWarTomcatDev.finalizedBy 'generateMoveCleanLicenseTomcat', 'generateMoveCleanEnterpriseTomcat'
 deployWarTomcatDev.group='dotCMS Development'
 deployWarTomcatDev.description='Same as deployWarTomcat but will use the no obfuscated version of the license and enterprise jars. (Useful for development)'
+
+//Same as deployWarTomcatDev but will ONLY use the no obfuscated version of the enterprise jar.
+//(Useful for development)
+task deployWarTomcatDevEE (dependsOn: 'deployWarTomcat') {
+
+}
+deployWarTomcatDevEE.finalizedBy 'generateMoveCleanEnterpriseTomcat'
+deployWarTomcatDevEE.group='dotCMS Development'
+deployWarTomcatDevEE.description='Same as deployWarTomcatDev but will ONLY use the no obfuscated version of the enterprise jar. (Useful for development)'
 
 //Executes a pull or clone to get tomcat from the repository
 task clonePullTomcat(type: ClonePullTomcatTask) {
