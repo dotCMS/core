@@ -66,4 +66,28 @@ public class VanityUrlUtil {
         }
         return modifiedUri;
     }
+
+    /**
+     * Generate the sanitized cache key for the second cache
+     *
+     * @param hostId The current host Identifier
+     * @param languageId The current languageId
+     * @return String with the sanitized key name
+     */
+    public static String sanitizeSecondCacheKey(final String hostId, final long languageId) {
+        return hostId + "| lang_" + languageId;
+    }
+
+    /**
+     * Generate the sanitized cache key
+     *
+     * @param vanityUrl The vanity Url contentlet
+     * @return String with the sanitized key name
+     */
+    public static String sanitizeSecondCachedKey(final Contentlet vanityUrl)
+            throws DotDataException, DotRuntimeException, DotSecurityException {
+        Host host = hostAPI.find(vanityUrl.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
+                APILocator.systemUser(), false);
+        return sanitizeSecondCacheKey(host.getIdentifier(), vanityUrl.getLanguageId());
+    }
 }

@@ -2,7 +2,6 @@ package com.dotcms.cache;
 
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.Cachable;
 import java.util.Set;
 
@@ -42,30 +41,22 @@ public abstract class VanityUrlCache implements Cachable {
     abstract public void remove(String key);
 
     /**
-     * Get the associated list of CachedVanityUrl to current host
-     * @param host The current Host
+     * Get the associated list of CachedVanityUrl to current host Id and language Id key
+     * @param key The current key composed of the host Id and languageId
      * @return a list of CachedVanityUrl
      */
-    abstract public Set<CachedVanityUrl> getCachedVanityUrls(Host host);
+    abstract public Set<CachedVanityUrl> getCachedVanityUrls(String key);
 
     /**
-     * Get the associated list of CachedVanityUrl to current host Id
-     * @param hostId The current Host Id
-     * @return a list of CachedVanityUrl
-     */
-    abstract public Set<CachedVanityUrl> getCachedVanityUrls(String hostId);
-
-    /**
-     * Associate a list of CachedVanityUrl to a Host
-     * @param host The current Host
+     * Associate a list of CachedVanityUrl to a Host Id and language id key
+     * @param key The current key composed of the host Id and languageId
      * @param cachedVanityUrlList The list of CachedVanityUrls
      */
-    abstract public void setCachedVanityUrls(Host host, Set<CachedVanityUrl> cachedVanityUrlList);
+    abstract public void setCachedVanityUrls(String key, Set<CachedVanityUrl> cachedVanityUrlList);
 
     /**
-     * Associate a list of CachedVanityUrl to a Host
-     * @param hostId The current Host Id
-     * @param cachedVanityUrlList The list of CachedVanityUrls
+     * remove the associate a list of CachedVanityUrl associated to a Host Id and language id key
+     * @param key The current key composed of the host Id and languageId
      */
-    abstract public void setCachedVanityUrls(String hostId, Set<CachedVanityUrl> cachedVanityUrlList);
+    abstract public void removeCachedVanityUrls(String key);
 }

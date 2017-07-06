@@ -10,6 +10,7 @@
 <%@page import="com.dotmarketing.db.DbConnectionFactory"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotcms.vanityurl.model.CachedVanityUrl"%>
+<%@page import="com.dotmarketing.business.APILocator"%>
 
 <%
   int status = response.getStatus();
@@ -21,10 +22,10 @@
     Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
     // Get from virtual link
     if (CmsUrlUtil.getInstance().isVanityUrl(errorPage, host, languageId)) {
-      CachedVanityUrl vanityurl = CmsUrlUtil.getInstance().getCachedVanityUrl(errorPage, host, languageId);
+      CachedVanityUrl vanityurl = APILocator.getVanityUrlAPI().getLiveCachedVanityUrl(errorPage, host, languageId, APILocator.systemUser());
       String uri = vanityurl.getForwardTo();
       if (!UtilMethods.isSet(uri)) {
-        vanityurl = CmsUrlUtil.getInstance().getCachedVanityUrl(errorPage, null, languageId);
+        vanityurl = APILocator.getVanityUrlAPI().getLiveCachedVanityUrl(errorPage, null, languageId, APILocator.systemUser());
         uri = vanityurl.getForwardTo();
       }
       if (uri.contains("://")) {

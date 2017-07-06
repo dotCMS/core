@@ -47,6 +47,14 @@ public interface VanityUrlAPI {
     List<CachedVanityUrl> getActiveCachedVanityUrls(final User user);
 
     /**
+     * Get a list of all the Vanity URLs contents live by Host and language Id
+     *
+     * @param user The current user
+     * @return a List of all Cached Vanity URLs contentlets live
+     */
+    List<VanityUrl> getActiveVanityUrlsByHostAndLanguage(final String hostId, final long languageId, final User user);
+
+    /**
      * Return the vanityurl URL working contentlet with the specified URI
      *
      * @param uri The URI of the vanityurl URL
@@ -55,11 +63,11 @@ public interface VanityUrlAPI {
      * @param user The current user
      * @return the working version of the vanityurl URL contentlet
      */
-    VanityUrl getWorkingVanityUrl(final String uri, final Host host, final long languageId,
+    VanityUrl getWorkingVanityUrlByURI(final String uri, final Host host, final long languageId,
             final User user);
 
     /**
-     * Return the live version of the vanityurl URL contentlet with the specified URI
+     * Return the vanityurl URL live contentlet with the specified URI
      *
      * @param uri The URI of the vanityurl URL
      * @param host The current host
@@ -67,7 +75,7 @@ public interface VanityUrlAPI {
      * @param user The current user
      * @return the live version of the vanityurl URL contentlet
      */
-    VanityUrl getLiveVanityUrl(final String uri, final Host host, final long languageId,
+    VanityUrl getLiveVanityUrlByURI(final String uri, final Host host, final long languageId,
             final User user);
 
     /**

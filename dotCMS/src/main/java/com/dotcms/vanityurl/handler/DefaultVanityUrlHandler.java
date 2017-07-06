@@ -65,14 +65,31 @@ public class DefaultVanityUrlHandler implements VanityUrlHandler {
                     queryString = arr[1];
                 }
             }
-            if (urlUtil.isFileAsset(rewrite, host, languageId)) {
-                iAm = CMSFilter.IAm.FILE;
-            } else if (urlUtil.isPageAsset(rewrite, host, languageId)) {
-                iAm = CMSFilter.IAm.PAGE;
-            } else if (urlUtil.isFolder(rewrite, host)) {
-                iAm = CMSFilter.IAm.FOLDER;
-            }
+            iAm = rewriteIs(rewrite, host, languageId);
         }
         return new VanityUrlResult(rewrite, queryString, iAm, false);
+    }
+
+    /**
+     * Identify what type of CMSFiltet.IAm object is the rewrite url (file asset, page, folder o
+     * nothing)
+     *
+     * @param rewrite The current URL to forward/redirect
+     * @param host The current host
+     * @param languageId The current language id
+     * @return CMSFiltet.IAm object
+     */
+    private CMSFilter.IAm rewriteIs(final String rewrite, Host host, final long languageId) {
+        CMSFilter.IAm iAm = CMSFilter.IAm.NOTHING_IN_THE_CMS;
+
+        if (urlUtil.isFileAsset(rewrite, host, languageId)) {
+            iAm = CMSFilter.IAm.FILE;
+        } else if (urlUtil.isPageAsset(rewrite, host, languageId)) {
+            iAm = CMSFilter.IAm.PAGE;
+        } else if (urlUtil.isFolder(rewrite, host)) {
+            iAm = CMSFilter.IAm.FOLDER;
+        }
+
+        return iAm;
     }
 }

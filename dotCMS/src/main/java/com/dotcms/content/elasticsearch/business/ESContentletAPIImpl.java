@@ -3289,7 +3289,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 if(contentlet != null && contentlet.isVanityUrl()){
 				    //remove from cache
-                    VanityUrlServices.invalidateVanityUrl(contentlet);
+                    VanityUrlServices.getInstance().invalidateVanityUrl(contentlet);
                 }
 
 				if(structureHasAHostField && changedURI) {

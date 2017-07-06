@@ -196,7 +196,7 @@ public class InitServlet extends HttpServlet {
         }
 
         //Initialize the Cached Vanity URL cache
-        VanityUrlServices.initializeVanityUrlCache();
+        VanityUrlServices.getInstance().initializeVanityUrlCache();
 
         Language language = langAPI.getDefaultLanguage();
 

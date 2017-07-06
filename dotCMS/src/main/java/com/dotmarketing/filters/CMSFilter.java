@@ -12,6 +12,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.HostWebAPI;
+import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -113,7 +114,7 @@ public class CMSFilter implements Filter {
         }
 
 		/*
-		 * If someone is trying to go right to an asset without going through
+         * If someone is trying to go right to an asset without going through
 		 * the cms, give them a 404
 		 */
 
@@ -139,17 +140,21 @@ public class CMSFilter implements Filter {
         String queryString = request.getQueryString();
         // if a vanity URL
         if (iAm == IAm.VANITY_URL) {
-            CachedVanityUrl vanityUrl = urlUtil.getCachedVanityUrl(("/".equals(uri) ? "/cmsHomePage"
-                            : uri.endsWith("/") ? uri.substring(0, uri.length() - 1) : uri), host,
-                    languageId);
+            UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
+            CachedVanityUrl vanityUrl = APILocator.getVanityUrlAPI()
+                    .getLiveCachedVanityUrl(("/".equals(uri) ? "/cmsHomePage"
+                                    : uri.endsWith("/") ? uri.substring(0, uri.length() - 1) : uri), host,
+                            languageId, userWebAPI.getUser(request));
 
             if (vanityUrl == null || VanityUrlAPI.CACHE_404_VANITY_URL
                     .equals(vanityUrl.getVanityUrlId()) || (
                     !InodeUtils.isSet(vanityUrl.getVanityUrlId()) && !UtilMethods
                             .isSet(vanityUrl.getForwardTo()))) {
-                vanityUrl = urlUtil.getCachedVanityUrl(("/".equals(uri) ? "/cmsHomePage"
-                                : uri.endsWith("/") ? uri.substring(0, uri.length() - 1) : uri), null,
-                        languageId);
+                vanityUrl = APILocator.getVanityUrlAPI()
+                        .getLiveCachedVanityUrl(("/".equals(uri) ? "/cmsHomePage"
+                                        : uri.endsWith("/") ? uri.substring(0, uri.length() - 1) : uri),
+                                null,
+                                languageId, userWebAPI.getUser(request));
             }
 
             VanityUrlHandler vanityUrlHandler = vanityUrlHandlerResolver.getVanityUrlHandler();

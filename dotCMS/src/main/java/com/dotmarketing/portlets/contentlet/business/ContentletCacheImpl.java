@@ -140,7 +140,7 @@ public class ContentletCacheImpl extends ContentletCache {
     		content = (com.dotmarketing.portlets.contentlet.model.Contentlet)cache.get(key,primaryGroup);
     		try {
 				if(content != null && content.isVanityUrl()){
-					VanityUrlServices.invalidateVanityUrl(content);
+					VanityUrlServices.getInstance().invalidateVanityUrl(content);
 				}
 			} catch (DotDataException | DotRuntimeException | DotSecurityException e) {
 				Logger.debug(this, "Cache Vanity URL cache entry not found", e);

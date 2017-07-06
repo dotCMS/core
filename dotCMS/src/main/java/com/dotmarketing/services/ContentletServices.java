@@ -166,7 +166,7 @@ public class ContentletServices {
 		}
 		if(content != null && content.isVanityUrl()){
 			//remove from cache
-			VanityUrlServices.invalidateVanityUrl(content);
+			VanityUrlServices.getInstance().invalidateVanityUrl(content);
 		}
 	}
 
