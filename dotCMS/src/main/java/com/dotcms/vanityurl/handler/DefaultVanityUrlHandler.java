@@ -25,6 +25,7 @@ public class DefaultVanityUrlHandler implements VanityUrlHandler {
     private static final CmsUrlUtil urlUtil = CmsUrlUtil.getInstance();
 
     private static final int LIMIT = 2;
+
     @Override
     public VanityUrlResult handle(final CachedVanityUrl vanityUrl,
             final HttpServletResponse response, final Host host,
@@ -32,28 +33,21 @@ public class DefaultVanityUrlHandler implements VanityUrlHandler {
         String rewrite = null;
         String queryString = null;
         CMSFilter.IAm iAm = CMSFilter.IAm.NOTHING_IN_THE_CMS;
+        VanityUrlResult vanityUrlResult = null;
 
         if (vanityUrl != null) {
             rewrite = InodeUtils.isSet(vanityUrl.getForwardTo()) ? vanityUrl.getForwardTo() : null;
 
-            if (vanityUrl.getResponse() == HttpServletResponse.SC_OK) {
-                //then forward
-                response.setStatus(vanityUrl.getResponse());
-            } else if (vanityUrl.getResponse() == HttpServletResponse.SC_MOVED_PERMANENTLY
-                    || vanityUrl.getResponse() == HttpServletResponse.SC_FOUND) {
-                //redirect
-                response.setStatus(vanityUrl.getResponse());
-                response.sendRedirect(rewrite);
-
-                return DEFAULT_RESULT;
-            } else {
-                //errors
-                response.sendError(vanityUrl.getResponse());
-
-                return DEFAULT_RESULT;
-            }
+            vanityUrlResult = processVanityResponse(vanityUrl,rewrite, response);
         }
+
+        if (vanityUrlResult != null) {
+            // if a redirect or error ations was processed
+            return vanityUrlResult;
+        }
+
         if (UtilMethods.isSet(rewrite) && rewrite.contains("//")) {
+            //if the forward is and external url
             response.sendRedirect(rewrite);
 
             return DEFAULT_RESULT;
@@ -69,6 +63,39 @@ public class DefaultVanityUrlHandler implements VanityUrlHandler {
             iAm = rewriteIs(rewrite, host, languageId);
         }
         return new VanityUrlResult(rewrite, queryString, iAm, false);
+    }
+
+    /**
+     * This method process the response actions for the cache and return
+     * a VanityUrlResult object
+     *
+     * @param vanityUrl The Cached Vanityurl URL object
+     * @param rewrite The url to forward
+     * @param response The HttpServletResponse
+     * @return a VanityUrlResult object
+     * @throws IOException
+     */
+    private VanityUrlResult processVanityResponse(final CachedVanityUrl vanityUrl,
+            final String rewrite, final HttpServletResponse response) throws IOException {
+        VanityUrlResult vanityUrlResult = null;
+
+        if (vanityUrl.getResponse() == HttpServletResponse.SC_OK) {
+            //then forward
+            response.setStatus(vanityUrl.getResponse());
+        } else if (vanityUrl.getResponse() == HttpServletResponse.SC_MOVED_PERMANENTLY
+                || vanityUrl.getResponse() == HttpServletResponse.SC_FOUND) {
+            //redirect
+            response.setStatus(vanityUrl.getResponse());
+            response.sendRedirect(rewrite);
+
+            vanityUrlResult = DEFAULT_RESULT;
+        } else {
+            //errors
+            response.sendError(vanityUrl.getResponse());
+
+            vanityUrlResult = DEFAULT_RESULT;
+        }
+        return vanityUrlResult;
     }
 
     /**

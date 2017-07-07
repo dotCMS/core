@@ -6,7 +6,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -60,7 +59,7 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
     private static final int INT_2 = 2;
 
     @Override
-    public void executeUpgrade() throws DotDataException, DotRuntimeException {
+    public void executeUpgrade() throws DotDataException {
 
         DotConnect dc = new DotConnect();
 

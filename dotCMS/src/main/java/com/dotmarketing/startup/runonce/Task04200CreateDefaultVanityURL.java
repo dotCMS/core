@@ -2,7 +2,6 @@ package com.dotmarketing.startup.runonce;
 
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import java.util.ArrayList;
 import java.util.Date;
@@ -60,7 +59,7 @@ public class Task04200CreateDefaultVanityURL extends AbstractJDBCStartupTask {
     private static final String SELECT_FIELD = "com.dotcms.contenttype.model.field.SelectField";
 
     @Override
-    public void executeUpgrade() throws DotDataException, DotRuntimeException {
+    public void executeUpgrade() throws DotDataException {
         DotConnect dc = new DotConnect();
 
         //Inserts into Inode Table the reference of the Vanity URL Content Type
