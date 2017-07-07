@@ -55,30 +55,6 @@ public interface VanityUrlAPI {
     List<VanityUrl> getActiveVanityUrlsByHostAndLanguage(final String hostId, final long languageId, final User user);
 
     /**
-     * Return the vanityurl URL working contentlet with the specified URI
-     *
-     * @param uri The URI of the vanityurl URL
-     * @param host The current host
-     * @param languageId The current language Id
-     * @param user The current user
-     * @return the working version of the vanityurl URL contentlet
-     */
-    VanityUrl getWorkingVanityUrlByURI(final String uri, final Host host, final long languageId,
-            final User user);
-
-    /**
-     * Return the vanityurl URL live contentlet with the specified URI
-     *
-     * @param uri The URI of the vanityurl URL
-     * @param host The current host
-     * @param languageId The current language Id
-     * @param user The current user
-     * @return the live version of the vanityurl URL contentlet
-     */
-    VanityUrl getLiveVanityUrlByURI(final String uri, final Host host, final long languageId,
-            final User user);
-
-    /**
      * Return the live version of the Cached vanityurl URL contentlet with the specified URI
      *
      * @param uri The URI of the vanityurl URL

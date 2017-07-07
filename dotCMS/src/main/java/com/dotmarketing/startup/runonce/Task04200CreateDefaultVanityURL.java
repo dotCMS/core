@@ -127,7 +127,7 @@ public class Task04200CreateDefaultVanityURL extends AbstractJDBCStartupTask {
 	private List<Map<String, Object>> setBaseVanityURLFields() {
 		List fields = new ArrayList();
 		
-		fields.add(setFieldElements("Order", "com.dotcms.contenttype.model.field.TextField","", "integer2", true, true, false, "order", 5, "", "", "", "", true, false, true));
+		fields.add(setFieldElements("Order", "com.dotcms.contenttype.model.field.TextField","", "integer2", true, true, false, "order", 5, "", "", "", "0", true, false, true));
 		
 		fields.add(setFieldElements("Action", "com.dotcms.contenttype.model.field.SelectField","", "integer1", true, true, false, "action", 4, 
 				"200 - Forward|200\r\n301 - Permanent Redirect|301\r\n302 - Temporary Redirect|302\r\n401 - Auth Required|401\r\n403 - Auth Failed|403\r\n404 - Missing|404\r\n500 - Error|500", "", "", "", true, false, true));
