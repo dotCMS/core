@@ -55,9 +55,7 @@ public class CMSFilter implements Filter {
 		VANITY_URL,
 		NOTHING_IN_THE_CMS
 	}
-
-
-
+	
 	public static final String CMS_INDEX_PAGE = Config.getStringProperty("CMS_INDEX_PAGE", "index");
 	public static final String CMS_FILTER_IDENTITY = "CMS_FILTER_IDENTITY";
 	public static final String CMS_FILTER_URI_OVERRIDE = "CMS_FILTER_URLMAP_OVERRIDE";
