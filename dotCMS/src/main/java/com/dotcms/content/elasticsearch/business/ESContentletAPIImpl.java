@@ -1707,6 +1707,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         deleteBinaryFiles(contentletsVersion,null);
 
+        try {
+            String bla = null;
+            bla = "fffff";
+            bla = "fffff";
+            bla = "fffff";
+            bla = "fffff";
+        }catch (Exception e) {
+
+        }
     }
 
     @Override
@@ -1718,6 +1727,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(!canLock(con, user)){
                 throw new DotContentletStateException("Content Object is locked and cannot be deleted:" + con.getIdentifier());
             }
+
+            if (con.getInode().equals(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT)) {
+                throw new DotDataException("");
+            }
+        }
+
+
+          if (true){
+                System.out.println("ddd");
         }
         List<Contentlet> perCons = perAPI.filterCollection(contentlets, PermissionAPI.PERMISSION_PUBLISH, respectFrontendRoles, user);
         List<Contentlet> contentletsVersion = new ArrayList<Contentlet>();
