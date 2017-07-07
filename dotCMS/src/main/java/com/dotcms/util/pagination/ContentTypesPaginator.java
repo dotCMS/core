@@ -96,6 +96,6 @@ public class ContentTypesPaginator implements Paginator<Map<String, Object>>{
     }
 
     private String getQueryCondition(String filter){
-        return UtilMethods.isSet(filter) ? String.format("(name like '%%%s%%')", filter) : StringUtils.EMPTY;
+        return UtilMethods.isSet(filter) ? String.format("(upper(name) like '%%%s%%')", filter.toUpperCase()) : StringUtils.EMPTY;
     }
 }
