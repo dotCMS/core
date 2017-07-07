@@ -19,7 +19,7 @@ import java.util.Set;
  */
 public class VanityUrlCacheImpl extends VanityUrlCache {
 
-    private static DotCacheAdministrator cache;
+    private DotCacheAdministrator cache;
 
     private static final String primaryGroup = "VanityURLCache";
     private static final String cachedVanityUrlGroup = "cachedVanityUrlGroup";

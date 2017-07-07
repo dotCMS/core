@@ -4,7 +4,6 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.services.VanityUrlServices;
-import com.dotcms.util.VanityUrlUtil;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.DefaultVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
@@ -22,7 +21,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -44,13 +42,13 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     private static final String GET_ALL_VANITY_URL = GET_VANITY_URL_BASE_TYPE + " +working:true";
     private static final String GET_ACTIVE_VANITY_URL =
             GET_VANITY_URL_BASE_TYPE + " +live:true +deleted:false";
-    private static final String GET_VANITY_URL_BY_URI = GET_VANITY_URL_BASE_TYPE + " +conHost:";
     private static final String GET_VANITY_URL_LANGUAGE_ID = " +languageId:";
+    private static final int CODE_404_VALUE = 404;
 
     public VanityUrlAPIImpl() {
         cache404VanityUrl.setInode(VanityUrlAPI.CACHE_404_VANITY_URL);
         cache404VanityUrl.setIdentifier(VanityUrlAPI.CACHE_404_VANITY_URL);
-        cache404VanityUrl.setAction(404);
+        cache404VanityUrl.setAction(CODE_404_VALUE);
     }
 
     @Override
@@ -151,28 +149,6 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
             }
         }
 
-        return vanityUrl;
-    }
-
-    /**
-     * Return the VanityUrl object from the given contentlet
-     * and update the value on cache
-     *
-     * @param contentlet Vanity Url Contentlet
-     * @return the VanityUrl object
-     */
-    private VanityUrl transformContentletToVanityUrl(Contentlet contentlet) {
-        VanityUrl vanityUrl = getVanityUrlFromContentlet(contentlet);
-        try {
-            if (contentlet.isLive()) {
-                VanityUrlServices.getInstance().updateCache(vanityUrl);
-            } else {
-                VanityUrlServices.getInstance().invalidateVanityUrl(vanityUrl);
-            }
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this, "Error processing Vanity Url - contentlet Id:" + contentlet
-                    .getIdentifier(), e);
-        }
         return vanityUrl;
     }
 

@@ -10,6 +10,11 @@ package com.dotcms.content.elasticsearch.constants;
 public final class ESMappingConstants {
 
     /**
+     * Constructor
+     */
+    private ESMappingConstants(){}
+
+    /**
      * Field contentlets elastic types
      */
     public static final String FIELD_ELASTIC_TYPE_INTEGER = "integer";

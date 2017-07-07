@@ -24,6 +24,7 @@ public class DefaultVanityUrlHandler implements VanityUrlHandler {
 
     private static final CmsUrlUtil urlUtil = CmsUrlUtil.getInstance();
 
+    private static final int LIMIT = 2;
     @Override
     public VanityUrlResult handle(final CachedVanityUrl vanityUrl,
             final HttpServletResponse response, final Host host,
@@ -59,7 +60,7 @@ public class DefaultVanityUrlHandler implements VanityUrlHandler {
         }
         if (UtilMethods.isSet(rewrite)) {
             if (rewrite != null && rewrite.contains("?")) {
-                String[] arr = rewrite.split("\\?", 2);
+                String[] arr = rewrite.split("\\?", LIMIT);
                 rewrite = arr[0];
                 if (arr.length > 1) {
                     queryString = arr[1];
