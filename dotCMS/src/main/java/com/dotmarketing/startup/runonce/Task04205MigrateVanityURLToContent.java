@@ -34,19 +34,21 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
     +"asset_name, host_inode, asset_type) values (?,?,?,?,?)";
     private String INSERT_CONTENTLET_QUERY =
             "insert into contentlet(inode, show_on_menu, sort_order, title, mod_date, mod_user, "
-            +"friendly_name, structure_inode, identifier, language_id, text1, text2, text3, text4"
-            +", integer1, integer2, integer3, integer4, integer15, integer16, integer17, integer18"
-            +",integer19, integer20, integer21, integer22, integer23, integer24, integer25,"
-            +"\"float1\", \"float2\", \"float3\", \"float4\", \"float5\", \"float6\", \"float7\","
-            +"\"float8\", \"float9\", \"float10\", \"float11\", \"float12\","
-            +"\"float13\", \"float14\", \"float15\", \"float16\", \"float17\", \"float18\","
-            +"\"float19\", \"float20\", \"float21\", \"float22\", \"float23\", \"float24\",\";"
-            +"\"float25\", bool1, bool2, bool3, bool4, bool5, bool6, bool7, bool8, bool9, bool10,"
+            +" friendly_name, structure_inode, identifier, language_id, text1, text2, text3, text4, "
+            +" integer1, integer2, integer3, integer4, integer5, integer6, integer7, integer8, "
+            +" integer9, integer10, integer11, integer12, integer13, integer14, integer15, "
+            +" integer16, integer17, integer18, integer19, integer20, integer21, integer22, "
+            +" integer23, integer24, integer25, "
+            +" \"float1\", \"float2\", \"float3\", \"float4\", \"float5\", \"float6\", \"float7\","
+            +" \"float8\", \"float9\", \"float10\", \"float11\", \"float12\","
+            +" \"float13\", \"float14\", \"float15\", \"float16\", \"float17\", \"float18\","
+            +" \"float19\", \"float20\", \"float21\", \"float22\", \"float23\", \"float24\", "
+            +" \"float25\", bool1, bool2, bool3, bool4, bool5, bool6, bool7, bool8, bool9, bool10,"
             +" bool11, bool12, bool13, bool14, bool15, bool16, bool17, bool18, bool19, bool20,"
             +" bool21, bool22, bool23, bool24, bool25) "
             +"values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,"
-            +"?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,"
-            +"?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            +" ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,"
+            +" ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
     private static final String INSERT_CONTENTLET_VERSION_INFO_QUERY =
             "insert into contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_on, version_ts)"
                     + "values (?,?,?,?,?,?,?)";
