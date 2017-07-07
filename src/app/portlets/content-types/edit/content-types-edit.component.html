@@ -1,4 +1,4 @@
-<content-type-layout mode="edit">
+<content-type-layout>
     <content-types-form
         #form
         [data]="contentTypeItem | async"
@@ -9,7 +9,6 @@
         (onCancel)="router.navigate(['../'], { relativeTo: route })">
     </content-types-form>
     <div *ngIf="readyToAddFields">
-        <!--HERE WILL RENDER THE DROP ZONE FOR FIELDS-->
-        <h1>Now you can add fields</h1>
+        <fields-drop-zone></fields-drop-zone>
     </div>
 </content-type-layout>

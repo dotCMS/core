@@ -1,6 +1,7 @@
 import { Component, Input, ViewEncapsulation} from '@angular/core';
 import { BaseComponent } from '../../../../view/components/_common/_base/base-component';
 import { MessageService } from '../../../../api/services/messages-service';
+import { DragulaService } from 'ng2-dragula';
 
 @Component({
     encapsulation: ViewEncapsulation.None,

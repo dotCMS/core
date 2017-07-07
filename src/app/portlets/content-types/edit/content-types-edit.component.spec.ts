@@ -8,7 +8,7 @@ import { ContentTypesFormComponent} from '../common/content-types-form';
 import { ContentTypesInfoService } from '../../../api/services/content-types-info';
 import { ContentTypesLayoutComponent } from '../common/content-type-layout/content-types-layout.component';
 import { CrudService } from '../../../api/services/crud/crud.service';
-import { DebugElement } from '@angular/core';
+import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { FieldValidationMessageModule } from '../../../view/components/_common/field-validation-message/file-validation-message.module';
 import { LoginService } from '../../../api/services/login-service';
@@ -20,6 +20,37 @@ import { OverlayPanelModule } from 'primeng/primeng';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 import { StringUtils } from '../../../api/util/string.utils';
+
+@Component({
+    selector: 'fields-drop-zone',
+    template: ''
+})
+class TestFieldsRowComponent {
+
+}
+
+@Component({
+    selector: 'content-type-layout',
+    template: '<ng-content></ng-content>'
+})
+class TestContentTypeLayout {
+    @Input() mode: string;
+}
+
+@Component({
+    selector: 'content-types-form',
+    template: ''
+})
+class TestContentTypesForm {
+    @Input() data: any;
+    @Input() icon: string;
+    @Input() name: string;
+    @Input() type: string;
+    @Output() onCancel: EventEmitter<any> = new EventEmitter();
+    @Output() onSubmit: EventEmitter<any> = new EventEmitter();
+
+    public resetForm(): void {}
+}
 
 describe('ContentTypesEditComponent', () => {
     let comp: ContentTypesEditComponent;
@@ -41,19 +72,16 @@ describe('ContentTypesEditComponent', () => {
 
         DOTTestBed.configureTestingModule({
             declarations: [
-                ContentTypesLayoutComponent,
-                ContentTypesFormComponent,
                 ContentTypesEditComponent,
+                TestContentTypesForm,
+                TestContentTypeLayout,
+                TestFieldsRowComponent
             ],
             imports: [
-                FieldValidationMessageModule,
-                BrowserAnimationsModule,
-                ReactiveFormsModule,
                 RouterTestingModule.withRoutes([{
                     component: ContentTypesEditComponent,
                     path: 'test'
-                }]),
-                OverlayPanelModule
+                }])
             ],
             providers: [
                 { provide: LoginService, useClass: LoginServiceMock },
@@ -70,19 +98,21 @@ describe('ContentTypesEditComponent', () => {
 
         fixture = DOTTestBed.createComponent(ContentTypesEditComponent);
         comp = fixture.componentInstance;
-        de = fixture.debugElement.query(By.css('#content-type'));
+        de = fixture.debugElement;
         el = de.nativeElement;
         route = fixture.debugElement.injector.get(ActivatedRoute);
     }));
 
     it('should have Content Types Layout', () => {
-        de = de.query(By.css('content-types-layout'));
-        expect(de).toBeDefined();
+        let contentTypeLayout = de.query(By.css('content-type-layout'));
+        let contentTypeLayoutComponentInstance = contentTypeLayout.componentInstance;
+        expect(contentTypeLayout).not.toBeNull();
     });
 
     it('should have Content Types Form', () => {
-        de = de.query(By.css('content-types-form'));
-        expect(de).toBeDefined();
+        let contentTypeLayout = de.query(By.css('content-type-layout'));
+        let contentTypeForm = contentTypeLayout.query(By.css('content-types-form'));
+        expect(contentTypeForm).not.toBeNull();
     });
 
     it('should get the content type data with the id in the url', async(() => {

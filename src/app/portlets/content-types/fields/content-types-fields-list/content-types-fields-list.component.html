@@ -1,0 +1,6 @@
+<ul  dragula='fields-bag'
+     [dragulaModel]='fieldTypes'
+     data-drag-type="source">
+
+    <li *ngFor="let fieldType of fieldTypes">{{fieldType.type}}</li>
+</ul>

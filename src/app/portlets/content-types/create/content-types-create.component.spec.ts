@@ -8,7 +8,7 @@ import { ContentTypesFormComponent} from '../common/content-types-form';
 import { ContentTypesInfoService } from '../../../api/services/content-types-info';
 import { ContentTypesLayoutComponent } from '../common/content-type-layout/content-types-layout.component';
 import { CrudService } from '../../../api/services/crud/crud.service';
-import { DebugElement } from '@angular/core';
+import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { FieldValidationMessageModule } from '../../../view/components/_common/field-validation-message/file-validation-message.module';
 import { LoginService } from '../../../api/services/login-service';
@@ -20,6 +20,37 @@ import { OverlayPanelModule } from 'primeng/primeng';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 import { StringUtils } from '../../../api/util/string.utils';
+import { FieldsDropZoneComponent, FieldsRowComponent } from '../fields';
+
+@Component({
+    selector: 'fields-drop-zone',
+    template: ''
+})
+class TestFieldsRowComponent {
+
+}
+
+@Component({
+    selector: 'content-type-layout',
+    template: '<ng-content></ng-content>'
+})
+class TestContentTypeLayout {
+
+}
+
+@Component({
+    selector: 'content-types-form',
+    template: ''
+})
+class TestContentTypesForm {
+    @Input() icon: string;
+    @Input() name: string;
+    @Input() type: string;
+    @Output() onCancel: EventEmitter<any> = new EventEmitter();
+    @Output() onSubmit: EventEmitter<any> = new EventEmitter();
+
+    public resetForm(): void {}
+}
 
 describe('ContentTypesCreateComponent', () => {
     let comp: ContentTypesCreateComponent;
@@ -41,19 +72,16 @@ describe('ContentTypesCreateComponent', () => {
 
         DOTTestBed.configureTestingModule({
             declarations: [
-                ContentTypesLayoutComponent,
-                ContentTypesFormComponent,
                 ContentTypesCreateComponent,
+                TestContentTypesForm,
+                TestContentTypeLayout,
+                TestFieldsRowComponent
             ],
             imports: [
-                FieldValidationMessageModule,
-                BrowserAnimationsModule,
-                ReactiveFormsModule,
                 RouterTestingModule.withRoutes([{
                     component: ContentTypesCreateComponent,
                     path: 'test'
-                }]),
-                OverlayPanelModule
+                }])
             ],
             providers: [
                 { provide: LoginService, useClass: LoginServiceMock },
@@ -70,22 +98,39 @@ describe('ContentTypesCreateComponent', () => {
 
         fixture = DOTTestBed.createComponent(ContentTypesCreateComponent);
         comp = fixture.componentInstance;
-        de = fixture.debugElement.query(By.css('#content-type'));
+        de = fixture.debugElement;
         el = de.nativeElement;
         route = fixture.debugElement.injector.get(ActivatedRoute);
     }));
 
     it('should have Content Types Layout', () => {
-        de = de.query(By.css('content-types-layout'));
-        expect(de).toBeDefined();
+        let contentTypeLayout = de.query(By.css('content-type-layout'));
+        expect(contentTypeLayout).not.toBeNull();
     });
 
     it('should have Content Types Form', () => {
-        de = de.query(By.css('content-types-form'));
-        expect(de).toBeDefined();
+        url = [
+            new UrlSegment('create', { name: 'create' }),
+            new UrlSegment('content', { name: 'content' })
+        ];
+
+        route.url = Observable.of(url);
+
+        fixture.detectChanges();
+
+        let contentTypeLayout = de.query(By.css('content-type-layout'));
+        let contentTypeForm = contentTypeLayout.query(By.css('content-types-form'));
+        let contentTypeFormComponentInstance = contentTypeForm.componentInstance;
+
+        expect(contentTypeForm).not.toBeNull();
+
+        expect('content').toEqual(contentTypeFormComponentInstance.type);
+        expect('fa-newspaper-o').toEqual(contentTypeFormComponentInstance.icon);
+        expect('Content').toEqual(contentTypeFormComponentInstance.name);
+
     });
 
-    it('should have call content types endpoint with content data', async(() => {
+    it('should have call content types endpoint with content data', () => {
         url = [
             new UrlSegment('create', { name: 'create' }),
             new UrlSegment('content', { name: 'content' })
@@ -118,9 +163,9 @@ describe('ContentTypesCreateComponent', () => {
         };
 
         expect(crudService.postData).toHaveBeenCalledWith('v1/contenttype', mockData);
-    }));
+    });
 
-    it('should have call content types endpoint with widget data', async(() => {
+    it('should have call content types endpoint with widget data', () => {
         url = [
             new UrlSegment('create', { name: 'create' }),
             new UrlSegment('widget', { name: 'widget' })
@@ -153,5 +198,5 @@ describe('ContentTypesCreateComponent', () => {
         };
 
         expect(crudService.postData).toHaveBeenCalledWith('v1/contenttype', mockData);
-    }));
+    });
 });

@@ -19,24 +19,34 @@ import { RoutingPrivateAuthService } from '../../api/services/routing-private-au
 import { SiteService } from '../../api/services/site-service';
 import { StringUtils } from '../../api/util/string.utils';
 import { TabViewModule, OverlayPanelModule, DropdownModule, ButtonModule, InputTextModule } from 'primeng/primeng';
-
+import {
+    ContentTypesFieldsListComponent,
+    FieldsDropZoneComponent,
+    FieldsRowComponent,
+    ContentTypesFieldDragabbleItemComponent
+} from './fields';
+import { DragulaModule } from 'ng2-dragula';
+import { DragulaService } from 'ng2-dragula';
 @NgModule({
     declarations: [
         ContentTypesCreateComponent,
         ContentTypesEditComponent,
+        ContentTypesFieldDragabbleItemComponent,
+        ContentTypesFieldsListComponent,
         ContentTypesFormComponent,
         ContentTypesLayoutComponent,
-        ContentTypesPortletComponent
+        ContentTypesPortletComponent,
+        FieldsDropZoneComponent,
+        FieldsRowComponent
     ],
     exports: [
-        ContentTypesPortletComponent,
-        ContentTypesEditComponent,
-        ContentTypesCreateComponent
+        ContentTypesPortletComponent
     ],
     imports: [
         ButtonModule,
         CommonModule,
         ContentTypesRoutingModule,
+        DragulaModule,
         DropdownModule,
         FieldValidationMessageModule,
         FormsModule,
@@ -50,6 +60,7 @@ import { TabViewModule, OverlayPanelModule, DropdownModule, ButtonModule, InputT
         ContentTypesInfoService,
         CrudService,
         DotcmsConfig,
+        DragulaService,
         FormatDateService,
         LoginService,
         MessageService,
