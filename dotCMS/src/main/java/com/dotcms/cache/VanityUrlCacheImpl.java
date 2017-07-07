@@ -21,10 +21,10 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
 
     private DotCacheAdministrator cache;
 
-    private static final String primaryGroup = "VanityURLCache";
-    private static final String cachedVanityUrlGroup = "cachedVanityUrlGroup";
+    private static final String PRIMARY_GROUP = "VanityURLCache";
+    private static final String CACHED_VANITY_URL_GROUP = "cachedVanityUrlGroup";
     // region's name for the cache
-    private static final String[] groupNames = {primaryGroup, cachedVanityUrlGroup};
+    private static final String[] groupNames = {PRIMARY_GROUP, CACHED_VANITY_URL_GROUP};
 
     public VanityUrlCacheImpl() {
         cache = CacheLocator.getCacheAdministrator();
@@ -83,11 +83,11 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
      * @return primary group name
      */
     public String getPrimaryGroup() {
-        return primaryGroup;
+        return PRIMARY_GROUP;
     }
 
     public String getCachedVanityUrlGroup() {
-        return cachedVanityUrlGroup;
+        return CACHED_VANITY_URL_GROUP;
     }
 
     @Override
