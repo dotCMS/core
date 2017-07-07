@@ -81,7 +81,7 @@ public class VanityUrlServices {
                     .findAllVersions(identifier, APILocator.systemUser(), false);
             contentletVersions.stream()
                     .filter(con -> vanityUrl.getLanguageId() == con.getLanguageId())
-                    .forEach((Contentlet con) -> removeFromCache(con));
+                    .forEach(this::removeFromCache);
 
             removeFromCache(vanityUrl);
         } catch (DotDataException | DotRuntimeException | DotSecurityException e) {
@@ -132,7 +132,7 @@ public class VanityUrlServices {
     public void initializeVanityUrlCache(String hostId, long languageId) {
         List<VanityUrl> activeVanityUrls = APILocator.getVanityUrlAPI()
                 .getActiveVanityUrlsByHostAndLanguage(hostId, languageId, APILocator.systemUser());
-        activeVanityUrls.stream().forEach((VanityUrl vanity) -> updateCache(vanity));
+        activeVanityUrls.forEach(this::updateCache);
     }
 
     /**
