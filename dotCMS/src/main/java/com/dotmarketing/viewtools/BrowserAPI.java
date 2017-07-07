@@ -436,6 +436,12 @@ public class BrowserAPI {
 					.getFileExtension(fileAsset.getFileName()));
 			fileMap.put("path", fileAsset.getPath());
 			fileMap.put("type", fileAsset.getType());
+			Host hoster = APILocator.getHostAPI().find(ident.getHostId(), APILocator.systemUser(), false);
+            fileMap.put("hostName", hoster.getHostname());
+			
+			
+			
+			
 			if(wfdata!=null) {
     			fileMap.put("wfActionMapList", wfdata.wfActionMapList);
     			fileMap.put("contentEditable", wfdata.contentEditable);
