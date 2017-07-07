@@ -2,7 +2,6 @@ package com.dotcms.vanityurl.model;
 
 import com.dotmarketing.util.Logger;
 import com.liferay.util.StringPool;
-import com.liferay.util.StringUtil;
 import java.io.Serializable;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
