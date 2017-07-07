@@ -36,7 +36,6 @@ import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -441,7 +440,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		return WebAssetFactory.getAssetsCountPerConditionWithPermission(hostId, condition, c, -1, 0, parent, user);
 	}
 
-    public int deleteOldVersions(final Date olderThan, final String type) throws DotDataException {
+	public int deleteOldVersions(final Date olderThan, final String type) throws DotDataException {
         DotConnect dc = new DotConnect();
 
         //Setting the date to olderThan 00:00:00.
@@ -453,8 +452,8 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
         calendar.set(Calendar.MILLISECOND, 0);
         Date date = calendar.getTime();
 
-        String tableName = Inode.Type.valueOf(type.toUpperCase()).getTableName();
-        String versionInfoTable = Inode.Type.valueOf(type.toUpperCase()).getVersionTableName();
+		String tableName = Inode.Type.valueOf(type.toUpperCase()).getTableName();
+		String versionInfoTable = Inode.Type.valueOf(type.toUpperCase()).getVersionTableName();
 
         //Get the count of the tableName before deleting.
         String countSQL = "select count(*) as count from " + tableName;
@@ -477,17 +476,22 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 
         //No need to run all the SQL is we don't get any inodes from the condition.
         if(!resultInodes.isEmpty()){
-            String parameterPlaceholders;
-            List<String> inodesToDeleteList = Collections.EMPTY_LIST;
-            List<String> inodesToDelete = Collections.EMPTY_LIST;
+            List<String> inodesToDelete = new ArrayList<>();
+            List<List<String>> inodesToDeleteMatrix = new ArrayList<>();
             int truncateAt = 100;
-            int totalIter;
 
             //Fill inodesToDelete where each inode from the result.
             for (Map<String, Object> row : resultInodes) {
                 inodesToDelete.add(row.get("inode").toString());
             }
-            
+
+            //We want to create lists of 100 inodes.
+            while (inodesToDelete.size() >= truncateAt){
+                inodesToDeleteMatrix.add(new ArrayList<>(inodesToDelete.subList(0,truncateAt)));
+                inodesToDelete.subList(0,truncateAt).clear();
+            }
+            inodesToDeleteMatrix.add(new ArrayList<>(inodesToDelete.subList(0, inodesToDelete.size())));
+
             //These are all the queries we want to run involving the inodes.
             List<String> queries = Lists.newArrayList("delete from tree where child in (?)",
                     "delete from tree where parent in (?)",
@@ -495,28 +499,17 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
                     "delete from " + tableName + " where inode in (?)");
 
             //For each query we will run sets of 100 inodes at a time.
-
-            for (int i = 0; i < inodesToDelete.size(); i++) {
-
-                 //Create (?,?,?...) string depending of the number of inodes.
-                if (inodesToDelete.size() < truncateAt){
-                    totalIter = inodesToDelete.size();
-                }else{
-                    totalIter = truncateAt;
-                }
-
-                parameterPlaceholders = DotConnect.createParametersPlaceholder(totalIter);
-
-                inodesToDeleteList = new ArrayList<String>(inodesToDelete.subList(0,totalIter));
-                inodesToDelete.subList(0,totalIter).clear();
-
-                for (String query : queries) {
+            for (String query : queries) {
+                for (List<String> inodes : inodesToDeleteMatrix) {
+                    //Create (?,?,?...) string depending of the number of inodes.
+                    String parameterPlaceholders = DotConnect.createParametersPlaceholder(inodes.size());
                     //Replace '?' in the query, with the correct number of '?'s.
                     dc.setSQL(query.replace("?", parameterPlaceholders));
 
-                    for (int j=0;j < inodesToDeleteList.size(); j++) 
-                        dc.addParam(inodesToDeleteList.get(j));
-                    
+                    for (String inode : inodes) {
+                        dc.addParam(inode);
+                    }
+
                     dc.loadResult();
                 }
             }
@@ -537,6 +530,6 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
             after = Integer.parseInt(result.get(0).get("count"));
         }
 
-        return before - after;
-    }
+	    return before - after;
+	}
 }
