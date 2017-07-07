@@ -79,7 +79,9 @@ public class VanityUrlServices {
             Identifier identifier = identifierAPI.find(vanityUrl.getIdentifier());
             List<Contentlet> contentletVersions = contentletAPI
                     .findAllVersions(identifier, APILocator.systemUser(), false);
-            contentletVersions.stream().filter( con -> vanityUrl.getLanguageId() == con.getLanguageId()).forEach((Contentlet con) -> removeFromCache(con));
+            contentletVersions.stream()
+                    .filter(con -> vanityUrl.getLanguageId() == con.getLanguageId())
+                    .forEach((Contentlet con) -> removeFromCache(con));
 
             removeFromCache(vanityUrl);
         } catch (DotDataException | DotRuntimeException | DotSecurityException e) {
@@ -95,7 +97,8 @@ public class VanityUrlServices {
     private void removeFromCache(Contentlet contentlet) {
         try {
             vanityURLCache.remove(VanityUrlUtil.sanitizeKey(contentlet));
-            vanityURLCache.removeCachedVanityUrls(VanityUrlUtil.sanitizeSecondCachedKey(contentlet));
+            vanityURLCache
+                    .removeCachedVanityUrls(VanityUrlUtil.sanitizeSecondCachedKey(contentlet));
         } catch (DotDataException | DotRuntimeException | DotSecurityException e) {
             Logger.error(VanityUrlServices.class,
                     "Error trying to invalidate Vanity URL identifier:" + contentlet
@@ -128,7 +131,7 @@ public class VanityUrlServices {
      */
     public void initializeVanityUrlCache(String hostId, long languageId) {
         List<VanityUrl> activeVanityUrls = APILocator.getVanityUrlAPI()
-                .getActiveVanityUrlsByHostAndLanguage(hostId,languageId,APILocator.systemUser());
+                .getActiveVanityUrlsByHostAndLanguage(hostId, languageId, APILocator.systemUser());
         activeVanityUrls.stream().forEach((VanityUrl vanity) -> updateCache(vanity));
     }
 
