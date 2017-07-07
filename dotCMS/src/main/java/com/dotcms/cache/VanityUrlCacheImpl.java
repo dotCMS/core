@@ -1,6 +1,5 @@
 package com.dotcms.cache;
 
-import com.dotcms.util.VanityUrlUtil;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.business.CacheLocator;
@@ -11,11 +10,12 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * This class implements the cache for Vanity URLs.
- * Is used to map the Vanity URLs path to the Vanity URL
- * content
+ * This class implements {@link VanityUrlCache} the cache for Vanity URLs.
+ * Is used to map the Vanity URLs path to the Vanity URL content
  *
  * @author oswaldogallango
+ * @version 4.2.0
+ * @since June 24, 2017
  */
 public class VanityUrlCacheImpl extends VanityUrlCache {
 
@@ -35,6 +35,7 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
         // Add the key to the cache
         CachedVanityUrl cachedVanityUrl = new CachedVanityUrl(vanityUrl);
         cache.put( key, cachedVanityUrl, getPrimaryGroup());
+
         return cachedVanityUrl;
     }
 
