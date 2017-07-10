@@ -139,31 +139,33 @@ public class Task04200CreateDefaultVanityURL extends AbstractJDBCStartupTask {
     private List<Map<String, Object>> setBaseVanityURLFields() {
         List fields = new ArrayList();
 
-        fields.add(setFieldElements("Order", TEXT_FIELD, "",
-                "integer2", true, true, false, "order", INT_6, "", "", "", "0", true, false, true));
+        fields.add(setFieldElements("Title", TEXT_FIELD, "",
+                "text1", true, true, true, "title", INT_1, "", "", "", "", true, false, true));
 
-        fields.add(setFieldElements("Action", SELECT_FIELD, "",
-                "integer1", true, true, false, "action", INT_5,
-                "200 - Forward|200\r\n301 - Permanent Redirect|301\r\n302 - Temporary Redirect|302\r\n401 - Auth Required|401\r\n403 - Auth Failed|403\r\n404 - Missing|404\r\n500 - Error|500",
-                "", "", "", true, false, true));
-
-        fields.add(
-                setFieldElements("Forward To", CUSTOM_FIELD, "",
-                        "text4", true, true, true, "forwardTo", INT_4,
-                        "$velutil.mergeTemplate('/static/content/file_browser_field_render.vtl')",
-                        "", "", "", true, false, false));
-
-        fields.add(
-                setFieldElements("Uri", TEXT_FIELD, "", "text3",
-                        true, true, true, "uri", INT_3, "", "", "", "", true, false, true));
 
         fields.add(setFieldElements("Site", CUSTOM_FIELD, "",
                 "text2", true, false, true, "site", INT_2,
                 "$velutil.mergeTemplate('/static/content/site_selector_field_render.vtl')", "", "",
                 "", true, false, false));
 
-        fields.add(setFieldElements("Title", TEXT_FIELD, "",
-                "text1", true, true, true, "title", INT_1, "", "", "", "", true, false, true));
+        fields.add(
+                setFieldElements("Uri", TEXT_FIELD, "", "text3",
+                        true, true, true, "uri", INT_3, "", "", "", "", true, false, true));
+
+        fields.add(setFieldElements("Action", SELECT_FIELD, "",
+                "integer1", true, true, false, "action", INT_4,
+                "200 - Forward|200\r\n301 - Permanent Redirect|301\r\n302 - Temporary Redirect|302\r\n401 - Auth Required|401\r\n403 - Auth Failed|403\r\n404 - Missing|404\r\n500 - Error|500",
+                "", "", "", true, false, true));
+
+        fields.add(
+                setFieldElements("Forward To", CUSTOM_FIELD, "",
+                        "text4", true, true, true, "forwardTo", INT_5,
+                        "$velutil.mergeTemplate('/static/content/file_browser_field_render.vtl')",
+                        "", "", "", true, false, false));
+
+        fields.add(setFieldElements("Order", TEXT_FIELD, "",
+                "integer2", true, true, false, "order", INT_6, "", "", "", "0", true, false, true));
+
 
         return fields;
     }
