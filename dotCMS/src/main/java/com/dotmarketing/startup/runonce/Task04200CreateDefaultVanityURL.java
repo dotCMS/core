@@ -158,7 +158,7 @@ public class Task04200CreateDefaultVanityURL extends AbstractJDBCStartupTask {
                         true, true, true, "uri", INT_3, "", "", "", "", true, false, true));
 
         fields.add(setFieldElements("Site", CUSTOM_FIELD, "",
-                "text2", true, true, true, "site", INT_2,
+                "text2", true, false, true, "site", INT_2,
                 "$velutil.mergeTemplate('/static/content/site_selector_field_render.vtl')", "", "",
                 "", true, false, false));
 
