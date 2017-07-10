@@ -143,7 +143,6 @@ import com.google.gson.GsonBuilder;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import com.liferay.util.StringPool;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -1695,7 +1694,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             try {
                 _bout = new BufferedOutputStream(new FileOutputStream(_writing));
             } catch (FileNotFoundException e) {
-
+                Logger.error(this, e.getMessage());
+            } finally{
+                try {
+                    _bout.close();
+                } catch (IOException e) {
+                    Logger.error(this, e.getMessage());
+                }
             }
             _xstream.toXML(contentlets, _bout);
         }
@@ -4324,8 +4329,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 					}
 					for (Contentlet con : cons) {
 						try {
+                            // In order to get the related content we should use method getRelatedContent
+                            // that has -boolean pullByParent- as parameter so we can pass -false-
+                            // to get related content where we are parents.
 							List<Contentlet> relatedCon = getRelatedContent(
-									con, rel, APILocator.getUserAPI()
+									con, rel, false, APILocator.getUserAPI()
 											.getSystemUser(), true);
 							// If there's a 1-N relationship and the parent
 							// content is relating to a child that already has

@@ -1,17 +1,5 @@
 package com.dotmarketing.business;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
@@ -27,7 +15,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -39,9 +26,23 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList.Builder;
+import com.google.common.collect.Sets;
 import com.liferay.portal.NoSuchRoleException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * PermissionAPI is an API intended to be a helper class for class to get Permissions.  Classes within the dotCMS
@@ -1455,75 +1456,155 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		return hasPerm;
     }
 
-    public void permissionIndividually(Permissionable parent, Permissionable permissionable, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException{
-    	List<Permission> perList = new ArrayList<Permission>();
-    	List<Permission> newSetOfPermissions = new ArrayList<Permission>();
-    	HostAPI hostAPI = APILocator.getHostAPI();
-		User systemUser = APILocator.getUserAPI().getSystemUser();
+    /**
+     * @Deprecated: use permissionIndividually(Permissionable parent, Permissionable permissionable,
+     * User user) instead.
+     */
+    @Override
+    @Deprecated
+    public void permissionIndividually(Permissionable parent, Permissionable permissionable,
+            User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        permissionIndividually(parent, permissionable, user);
+    }
 
-		if(!doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user))
-			throw new DotSecurityException("User id: " + user.getUserId() + " does not have permission to alter permissions on asset " + permissionable.getPermissionId());
+    @Override
+    public void permissionIndividually(Permissionable parent, Permissionable permissionable,
+            User user) throws DotDataException, DotSecurityException {
 
-    	if(parent.isParentPermissionable()){
+        List<Permission> newSetOfPermissions = getNewPermissions(parent, permissionable, user);
 
-    		String type = permissionable.getPermissionType();
-    		perList.addAll(permissionFactory.getInheritablePermissions(parent));
-    		perList.addAll(permissionFactory.getPermissions(parent,true));
-    		Host host = hostAPI.find(permissionable.getPermissionId(), systemUser, false);
-			if(host != null) {
-				type = Host.class.getCanonicalName();
-			}
-    		for(Permission p : perList){
+        if (!newSetOfPermissions.isEmpty()) {
+            // NOTE: Method "assignPermissions" is deprecated in favor of "savePermission",
+            // which has subtle functional differences. Please take these differences into
+            // consideration if planning to replace this method with the "savePermission"
+            permissionFactory.assignPermissions(newSetOfPermissions, permissionable);
+        }
+    }
 
-    			if(type.equals(Folder.class.getCanonicalName())){
-    				if(p.getType().equals(Template.class.getCanonicalName())
-    						|| p.getType().equals(Container.class.getCanonicalName())
-    						|| p.getType().equals(Category.class.getCanonicalName())
-    						|| p.getType().equals(Host.class.getCanonicalName())){
-    					continue;
-    				}
-    			}
+    @Override
+    public void permissionIndividuallyByRole(Permissionable parent, Permissionable permissionable,
+            User user, Role role) throws DotDataException, DotSecurityException {
 
-    			if(type.equals(Host.class.getCanonicalName())){
-    				if(p.getType().equals(Category.class.getCanonicalName())){
-    					continue;
-    				}
-    			}
+        List<Permission> newSetOfPermissions = getNewPermissions(parent, permissionable, user);
+        ImmutableList.Builder<Permission> immutablePermissionsFiltered = new Builder<>();
 
-    			if(type.equals(p.getType()) || p.isIndividualPermission()){
-    				Permission dupe = null;
-    				List<Permission> dupes = new ArrayList<Permission>();
-    				for(Permission newPerm : newSetOfPermissions){
-    					if(newPerm.isIndividualPermission() && newPerm.getRoleId().equals(p.getRoleId()) && newPerm.getPermission()>p.getPermission()){
-    						dupe = newPerm;
-    						break;
-    					}else if(newPerm.isIndividualPermission() && newPerm.getRoleId().equals(p.getRoleId())){
-    						dupes.add(newPerm);
-    					}
-    				}
-    				if(dupe==null){
-    					newSetOfPermissions.removeAll(dupes);
-    					if(p.isIndividualPermission()){
-    	    				newSetOfPermissions.add(new Permission(p.getType(), permissionable.getPermissionId(), p.getRoleId(), p.getPermission(), true));
-    	    				continue;
-    					}else{
-    						newSetOfPermissions.add(new Permission(permissionable.getPermissionId(), p.getRoleId(), p.getPermission(), true));
-    					}
-    				}
-    				if(!p.isIndividualPermission()){
-    				   newSetOfPermissions.add(new Permission(p.getType(), permissionable.getPermissionId(), p.getRoleId(), p.getPermission(), true));
-    				}
-    			}else{
-    				newSetOfPermissions.add(new Permission(p.getType(), permissionable.getPermissionId(), p.getRoleId(), p.getPermission(), true));
-    			}
-    		}
+        // We need to make sure that newSetOfPermissions doesn't contain
+        // a child of the role we are assigning permissions.
+        for (Permission newPermission : newSetOfPermissions) {
+            Role newPermissionRole = APILocator.getRoleAPI().loadRoleById(newPermission.getRoleId());
+
+            if (!APILocator.getRoleAPI().isParentRole(role, newPermissionRole)) {
+                immutablePermissionsFiltered.add(newPermission);
+            }
+        }
+
+        final List<Permission> permissionsFiltered = immutablePermissionsFiltered.build();
+        if (!permissionsFiltered.isEmpty()) {
+            // NOTE: Method "assignPermissions" is deprecated in favor of "savePermission",
+            // which has subtle functional differences. Please take these differences into
+            // consideration if planning to replace this method with the "savePermission"
+            permissionFactory.assignPermissions(permissionsFiltered, permissionable);
+        }
+    }
+
+    /**
+     * Retrieves all the parent permissions in order to be applied to the permissionable.
+     */
+    private List<Permission> getNewPermissions(Permissionable parent, Permissionable permissionable,
+            User user) throws DotDataException, DotSecurityException {
+
+        ImmutableList.Builder<Permission> immutablePermissionList = new Builder<>();
+        List<Permission> newSetOfPermissions = new ArrayList<>();
+
+        if (!doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
+                user)) {
+            throw new DotSecurityException("User id: " + user.getUserId()
+                    + " does not have permission to alter permissions on asset " + permissionable
+                    .getPermissionId());
+        }
+
+        if (parent.isParentPermissionable()) {
+
+            String type = permissionable.getPermissionType();
+            immutablePermissionList.addAll(permissionFactory.getInheritablePermissions(parent));
+            immutablePermissionList.addAll(permissionFactory.getPermissions(parent, true));
+            List<Permission> permissionList = immutablePermissionList.build();
+
+            Host host = APILocator.getHostAPI()
+                    .find(permissionable.getPermissionId(), APILocator.getUserAPI().getSystemUser(),
+                            false);
+            if (host != null) {
+                type = Host.class.getCanonicalName();
+            }
+
+            final Set<String> classesToIgnoreFolder = Sets
+                    .newHashSet(Template.class.getCanonicalName(),
+                            Container.class.getCanonicalName(),
+                            Category.class.getCanonicalName(),
+                            Host.class.getCanonicalName());
+
+            final Set<String> classesToIgnoreHost = Sets
+                    .newHashSet(Category.class.getCanonicalName());
+
+            for (Permission permission : permissionList) {
+
+                if (type.equals(Folder.class.getCanonicalName()) && classesToIgnoreFolder
+                        .contains(permission.getType())) {
+                    continue;
+                }
+
+                if (type.equals(Host.class.getCanonicalName()) && classesToIgnoreHost
+                        .contains(permission.getType())) {
+                    continue;
+                }
+
+                if (type.equals(permission.getType()) || permission.isIndividualPermission()) {
+                    Permission duplicatedPermission = null;
+                    ImmutableList.Builder<Permission> immutableDuplicatedList = new Builder<>();
+
+                    for (Permission newPermission : newSetOfPermissions) {
+                        if (newPermission.isIndividualPermission() && newPermission.getRoleId()
+                                .equals(permission.getRoleId())
+                                && newPermission.getPermission() > permission
+                                .getPermission()) {
+                            duplicatedPermission = newPermission;
+                            break;
+                        } else if (newPermission.isIndividualPermission() && newPermission
+                                .getRoleId()
+                                .equals(permission.getRoleId())) {
+                            immutableDuplicatedList.add(newPermission);
+                        }
+                    }
+                    List<Permission> duplicatedPermissionList = immutableDuplicatedList.build();
+                    if (duplicatedPermission == null) {
+                        newSetOfPermissions.removeAll(duplicatedPermissionList);
+                        if (permission.isIndividualPermission()) {
+                            newSetOfPermissions.add(new Permission(permission.getType(),
+                                    permissionable.getPermissionId(), permission.getRoleId(),
+                                    permission.getPermission(), true));
+                            continue;
+                        } else {
+                            newSetOfPermissions.add(new Permission(permissionable.getPermissionId(),
+                                    permission.getRoleId(), permission.getPermission(), true));
+                        }
+                    }
+                    if (!permission.isIndividualPermission()) {
+                        newSetOfPermissions
+                                .add(new Permission(permission.getType(),
+                                        permissionable.getPermissionId(),
+                                        permission.getRoleId(), permission.getPermission(), true));
+                    }
+                } else {
+                    newSetOfPermissions
+                            .add(new Permission(permission.getType(),
+                                    permissionable.getPermissionId(),
+                                    permission.getRoleId(), permission.getPermission(), true));
+                }
+            }
 
 
-    	    if(!newSetOfPermissions.isEmpty()){
-    			// NOTE: Method "assignPermissions" is deprecated in favor of "savePermission", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "savePermission"
-    	    	permissionFactory.assignPermissions(newSetOfPermissions,permissionable);
-    	    }
-    	}
+        }
+        return newSetOfPermissions;
     }
 
     public Permissionable findParentPermissionable(Permissionable permissionable) throws DotDataException, DotSecurityException {

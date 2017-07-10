@@ -31,7 +31,7 @@ public class ContentTypesPaginatorTest {
     @Test
     public void testGetTotalRecords(){
         String filter = "filter";
-        String queryCondition = String.format("(name like '%%%s%%')", filter);
+        String queryCondition = String.format("(upper(name) like '%%%s%%')", filter.toUpperCase());
         int resultExpected = 5;
 
         when(structureAPI.countStructures( queryCondition )).thenReturn( resultExpected );

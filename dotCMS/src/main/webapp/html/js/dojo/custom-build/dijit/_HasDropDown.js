@@ -11,13 +11,13 @@ define("dijit/_HasDropDown", [
 	"dojo/keys", // keys.DOWN_ARROW keys.ENTER keys.ESCAPE
 	"dojo/_base/lang", // lang.hitch lang.isFunction
 	"dojo/on",
-	"dojo/window", // winUtils.getBox
 	"./registry",	// registry.byNode()
 	"./focus",
 	"./popup",
-	"./_FocusMixin"
+	"./_FocusMixin",
+	"./Viewport"
 ], function(declare, Deferred, event,dom, domAttr, domClass, domGeometry, domStyle, has, keys, lang, on,
-			winUtils, registry, focus, popup, _FocusMixin){
+			registry, focus, popup, _FocusMixin, Viewport){
 
 
 	// module:
@@ -41,7 +41,8 @@ define("dijit/_HasDropDown", [
 		_arrowWrapperNode: null,
 
 		// _popupStateNode: [protected] DomNode
-		//		The node to set the popupActive class on.
+		//		The node to set the aria-expanded class on.
+		//		Also sets popupActive class but that will be removed in 2.0.
 		//		Can be set via a data-dojo-attach-point assignment.
 		//		If missing, then focusNode or _buttonNode (if focusNode is missing) will be used.
 		_popupStateNode: null,
@@ -104,7 +105,12 @@ define("dijit/_HasDropDown", [
 			//		1. TimeTextBox etc. can focus the <input> on mousedown
 			//		2. dropDownButtonActive class applied by _CssStateMixin (on button depress)
 			//		3. user defined onMouseDown handler fires
-			e.preventDefault();
+			//
+			// Also, don't call preventDefault() on MSPointerDown event (on IE10) because that prevents the button
+			// from getting focus, and then the focus manager doesn't know what's going on (#17262)
+			if(e.type != "MSPointerDown"){
+				e.preventDefault();
+			}
 
 			this._docHandler = this.connect(this.ownerDocument, "mouseup", "_onDropDownMouseUp");
 
@@ -124,6 +130,7 @@ define("dijit/_HasDropDown", [
 			//		1. mouse down on the select node (probably on the arrow)
 			//		2. move mouse to a menu item while holding down the mouse button
 			//		3. mouse up.  this selects the menu item as though the user had clicked it.
+
 			if(e && this._docHandler){
 				this.disconnect(this._docHandler);
 			}
@@ -161,9 +168,12 @@ define("dijit/_HasDropDown", [
 				}
 			}
 			if(this._opened){
-				if(dropDown.focus && dropDown.autoFocus !== false){
-					// Focus the dropdown widget - do it on a delay so that we
-					// don't steal back focus from the dropdown.
+				// Focus the dropdown widget unless it's a menu (in which case autoFocus is set to false).
+				// Even if it's a menu, we need to focus it if this is a fake mouse event caused by the user typing
+				// SPACE/ENTER while using JAWS.  Jaws converts the SPACE/ENTER key into mousedown/mouseup events.
+				// If this.hovering is false then it's presumably actually a keyboard event.
+				if(dropDown.focus && (dropDown.autoFocus !== false || (e.type == "mouseup" && !this.hovering))){
+					// Do it on a delay so that we don't steal back focus from the dropdown.
 					this._focusDropDownTimer = this.defer(function(){
 						dropDown.focus();
 						delete this._focusDropDownTimer;
@@ -172,7 +182,9 @@ define("dijit/_HasDropDown", [
 			}else{
 				// The drop down arrow icon probably can't receive focus, but widget itself should get focus.
 				// defer() needed to make it work on IE (test DateTextBox)
-				this.defer("focus");
+				if(this.focus){
+					this.defer("focus");
+				}
 			}
 
 			if(has("touch")){
@@ -414,7 +426,7 @@ define("dijit/_HasDropDown", [
 				if(maxHeight == -1){
 					// limit height to space available in viewport either above or below my domNode
 					// (whichever side has more room)
-					var viewport = winUtils.getBox(this.ownerDocument),
+					var viewport = Viewport.getEffectiveBox(this.ownerDocument),
 						position = domGeometry.position(aroundNode, false);
 					maxHeight = Math.floor(Math.max(position.y, viewport.h - (position.y + position.h)));
 				}
@@ -431,8 +443,7 @@ define("dijit/_HasDropDown", [
 				var mb = domGeometry.getMarginSize(ddNode);
 				var overHeight = (maxHeight && mb.h > maxHeight);
 				domStyle.set(ddNode, {
-					overflowX: "visible",
-					overflowY: overHeight ? "auto" : "visible"
+					overflow: overHeight ? "auto" : "visible"
 				});
 				if(overHeight){
 					mb.h = maxHeight;
@@ -480,7 +491,14 @@ define("dijit/_HasDropDown", [
 			domAttr.set(this._popupStateNode, "popupActive", "true");
 			domClass.add(this._popupStateNode, "dijitHasDropDownOpen");
 			this._set("_opened", true);	// use set() because _CssStateMixin is watching
-			this.domNode.setAttribute("aria-expanded", "true");
+			
+			this._popupStateNode.setAttribute("aria-expanded", "true");
+			this._popupStateNode.setAttribute("aria-owns", dropDown.id);
+
+			// Set aria-labelledby on dropdown if it's not already set to something more meaningful
+			if(ddNode.getAttribute("role") !== "presentation" && !ddNode.getAttribute("aria-labelledby")){
+				ddNode.setAttribute("aria-labelledby", this.id);
+			}
 			
 			return retVal;
 		},
@@ -497,8 +515,9 @@ define("dijit/_HasDropDown", [
 				this._focusDropDownTimer.remove();
 				delete this._focusDropDownTimer;
 			}
+			
 			if(this._opened){
-				this.domNode.setAttribute("aria-expanded", "false");
+				this._popupStateNode.setAttribute("aria-expanded", "false");
 				if(focus){ this.focus(); }
 				popup.close(this.dropDown);
 				this._opened = false;

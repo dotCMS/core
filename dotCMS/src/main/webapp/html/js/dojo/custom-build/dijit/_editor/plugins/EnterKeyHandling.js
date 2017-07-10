@@ -119,7 +119,7 @@ return declare("dijit._editor.plugins.EnterKeyHandling", _Plugin, {
 							}
 						}
 					});
-					if(has("ie") >= 9){
+					if(has("ie") >= 9 && has("ie") <= 10){
 						this.connect(editor.document, "onpaste", function(e){
 							setTimeout(dojo.hitch(this, function(){
 								// Use the old range/selection code to kick IE 9 into updating
@@ -279,7 +279,6 @@ return declare("dijit._editor.plugins.EnterKeyHandling", _Plugin, {
 						rs = range.startContainer;
 						if(rs && rs.nodeType == 3){
 							// Text node, we have to split it.
-							var endEmpty = false;
 
 							var offset = range.startOffset;
 							if(rs.length < offset){
@@ -296,7 +295,6 @@ return declare("dijit._editor.plugins.EnterKeyHandling", _Plugin, {
 
 							if(!endNode.length){
 								endNode = doc.createTextNode('\xA0');
-								endEmpty = true;
 							}
 
 							if(startNode.length){
@@ -312,11 +310,7 @@ return declare("dijit._editor.plugins.EnterKeyHandling", _Plugin, {
 							newrange.setEnd(endNode, endNode.length);
 							selection.removeAllRanges();
 							selection.addRange(newrange);
-							if(endEmpty && !has("webkit")){
-								this.editor._sCall("remove", []);
-							}else{
-								this.editor._sCall("collapse", [true]);
-							}
+							this.editor._sCall("collapse", [true]);
 						}else{
 							var targetNode;
 							if(range.startOffset >= 0){
@@ -338,6 +332,9 @@ return declare("dijit._editor.plugins.EnterKeyHandling", _Plugin, {
 							selection.addRange(newrange);
 							this.editor._sCall("collapse", [true]);
 						}
+						// \xA0 dummy text node remains, but is stripped before get("value")
+						// by RichText._stripTrailingEmptyNodes().  Still, could we just use a plain
+						// space (" ") instead?
 					}
 				}else{
 					// don't change this: do not call this.execCommand, as that may have other logic in subclass

@@ -920,6 +920,9 @@ define("dojox/gfx/silverlight", ["dojo/_base/kernel", "dojo/_base/lang", "dojo/_
 	
 	var eventsProcessing = {
 		connect: function(name, object, method){
+			if(name.indexOf("mouse") === 0){
+				name = "on" + name;
+			}
 			var token, n = name in eventNames ? eventNames[name] :
 				{name: name, fix: function(){ return {}; }};
 			if(arguments.length > 2){

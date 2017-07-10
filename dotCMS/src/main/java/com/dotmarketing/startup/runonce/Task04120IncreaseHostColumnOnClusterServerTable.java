@@ -40,7 +40,7 @@ public class Task04120IncreaseHostColumnOnClusterServerTable extends AbstractJDB
     
     @Override
     public String getPostgresScript() {
-        return "ALTER TABLE cluster_server ALTER COLUMN host varchar(255);";
+        return "ALTER TABLE cluster_server ALTER COLUMN host TYPE varchar(255);";
     }
 
     @Override

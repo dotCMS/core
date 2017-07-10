@@ -1,11 +1,10 @@
 package com.dotmarketing.filters;
 
-import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.vanityurl.model.CachedVanityUrl;
-import com.dotcms.vanityurl.model.VanityUrl;
+import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.vanityurl.handler.VanityUrlHandler;
 import com.dotcms.vanityurl.handler.VanityUrlHandlerResolver;
+import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
@@ -55,8 +54,6 @@ public class CMSFilter implements Filter {
 		VANITY_URL,
 		NOTHING_IN_THE_CMS
 	}
-
-	VanityUrlAPI vanityUrlAPI = APILocator.getVanityUrlAPI();
 
 	public static final String CMS_INDEX_PAGE = Config.getStringProperty("CMS_INDEX_PAGE", "index");
 	public static final String CMS_FILTER_IDENTITY = "CMS_FILTER_IDENTITY";

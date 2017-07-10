@@ -52,7 +52,37 @@ define("dojox/highlight/languages/python", ["../_base"], function(dh){
 			},
 			{
 				className: 'string',
+				begin: 'r\'\'\'', end: '\'\'\'',
+				relevance: 10
+			},
+			{
+				className: 'string',
+				begin: 'u\'\'\'', end: '(^|[^\\\\])\'\'\'',
+				relevance: 10
+			},
+			{
+				className: 'string',
+				begin: 'ur\'\'\'', end: '\'\'\'',
+				relevance: 10
+			},
+			{
+				className: 'string',
 				begin: '"""', end: '"""',
+				relevance: 10
+			},
+			{
+				className: 'string',
+				begin: 'r"""', end: '"""',
+				relevance: 10
+			},
+			{
+				className: 'string',
+				begin: 'u"""', end: '(^|[^\\\\])"""',
+				relevance: 10
+			},
+			{
+				className: 'string',
+				begin: 'ur"""', end: '"""',
 				relevance: 10
 			},
 			dhc.APOS_STRING_MODE,

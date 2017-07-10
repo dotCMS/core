@@ -259,7 +259,7 @@ var FloatingPane = declare("dojox.layout.FloatingPane", [ ContentPane, Templated
 		// summary:
 		//		Size the FloatingPane and place accordingly
 		dim = dim || this._naturalState;
-		this._currentState = dim;
+		this._naturalState = dim;
 
 		// From the ResizeHandle we only get width and height information
 		var dns = this.domNode.style;

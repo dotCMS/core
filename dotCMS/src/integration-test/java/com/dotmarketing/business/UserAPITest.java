@@ -167,7 +167,7 @@ public class UserAPITest extends IntegrationTestBase {
 
 		if ( APILocator.getPermissionAPI().isInheritingPermissions(host) ) {
 			Permissionable parentPermissionable = APILocator.getPermissionAPI().findParentPermissionable(host);
-			APILocator.getPermissionAPI().permissionIndividually(parentPermissionable, host, systemUser, false);
+			APILocator.getPermissionAPI().permissionIndividually(parentPermissionable, host, systemUser);
 		}
 
 		// NOTE: Method "assignPermissions" is deprecated in favor of "save", which has subtle functional differences. Please take these differences into consideration if planning to replace this method with the "save"
@@ -177,7 +177,7 @@ public class UserAPITest extends IntegrationTestBase {
 		 * Add role permission over htmlpages
 		 */
 		Structure pageStructure = StructureFactory.getStructureByVelocityVarName(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_VARNAME);
-		perAPI.permissionIndividually(host, pageStructure, systemUser, false);
+		perAPI.permissionIndividually(host, pageStructure, systemUser);
 
 		List<Permission> permissions = new ArrayList<Permission>();
 		Permission p1=new Permission();

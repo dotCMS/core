@@ -26,7 +26,7 @@
     <property name="build.compiler.fulldepend" value="true" />
     <property name="deploy.dir" value="${basedir}/dotCMS/WEB-INF/lib" />
     <property name="ant.build.javac.target" value="1.8"/>
-    <property name="war.name" value="dotcms"/>
+    <property name="war.name" value="ROOT"/>
     <property name="endorsed_libs" value="${basedir}/dotCMS/WEB-INF/endorsed_libs" />
     <property name="agent.version" value="31"/>
 
@@ -862,7 +862,7 @@
         <mkdir dir="../../WAR"/>
 
         <!--Create the war-->
-        <war destfile="../../WAR/dotcms.war" webxml="${basedir}/../../${target.root}/WEB-INF/web.xml">
+        <war destfile="../../WAR/${war.name}.war" webxml="${basedir}/../../${target.root}/WEB-INF/web.xml">
             <fileset dir="${basedir}/../../${target.root}">
                 <exclude name="WEB-INF/web.xml"/>
                 <exclude name="**/*.db"/>

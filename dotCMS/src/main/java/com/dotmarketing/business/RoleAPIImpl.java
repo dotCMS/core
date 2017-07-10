@@ -393,5 +393,24 @@ public class RoleAPIImpl implements RoleAPI {
 		}
 		return false;
 	}
-	
+
+    @Override
+    public boolean isParentRole(Role parent, Role child)
+            throws DotSecurityException, DotDataException {
+
+        final List<Role> roleHierarchy = findRoleHierarchy(child);
+
+        // findRoleHierarchy return the hierarchy INCLUDING same role
+        // so we need to remove it from the list before checking.
+        roleHierarchy.remove(child);
+
+        for (Role role : roleHierarchy) {
+            if (role.getId().equals(parent.getId())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 }
