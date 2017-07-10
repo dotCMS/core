@@ -109,7 +109,7 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
         Assert.assertTrue("Failed creating a new Contentlet using the Language Variable Content Type.",
                         UtilMethods.isSet(contentlet.getIdentifier()));
 
-        final String languageVariable = languageVariableAPI.get(KEY_1, englishLanguageId, systemUser, Boolean.FALSE);
+        final String languageVariable = languageVariableAPI.getLanguageVariable(KEY_1, englishLanguageId, systemUser);
 
         Assert.assertTrue("Language Variable CANNOT BE null/empty.", UtilMethods.isSet(languageVariable));
 
@@ -145,13 +145,13 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
         Assert.assertTrue("Failed creating a fallback portuguese Contentlet using the Language Variable Content Type.",
                         UtilMethods.isSet(fallbackContentlet.getIdentifier()));
 
-        final String languageVariable = languageVariableAPI.get(KEY_1, portugueseLanguage.getId(), systemUser, Boolean.FALSE);
+        final String languageVariable = languageVariableAPI.getLanguageVariable(KEY_1, portugueseLanguage.getId(), systemUser);
 
         Assert.assertTrue("Language Variable CANNOT BE null/empty.", UtilMethods.isSet(languageVariable));
 
         deleteContentlets(systemUser, fallbackContentlet);
         languageAPI.deleteLanguage(portugueseLanguage);
-        languageAPI.deleteLanguage(fallbackPortugueseLanguage);
+        languageAPI.deleteFallbackLanguage(fallbackPortugueseLanguage);
     }
 
     /*
@@ -170,12 +170,12 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
                         UtilMethods.isSet(contentlet.getIdentifier()));
 
         Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, Boolean.FALSE);
-        String languageVariable = languageVariableAPI.get(KEY_1, spanishLanguageId, systemUser, Boolean.FALSE);
+        String languageVariable = languageVariableAPI.getLanguageVariable(KEY_1, spanishLanguageId, systemUser);
 
         Assert.assertTrue("Language Variable MUST BE null/empty.", !UtilMethods.isSet(languageVariable));
 
         Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, Boolean.TRUE);
-        languageVariable = languageVariableAPI.get(KEY_1, spanishLanguageId, systemUser, Boolean.FALSE);
+        languageVariable = languageVariableAPI.getLanguageVariable(KEY_1, spanishLanguageId, systemUser);
 
         Assert.assertTrue("Language Variable CANNOT BE null/empty.", UtilMethods.isSet(languageVariable));
 

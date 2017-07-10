@@ -14,18 +14,10 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-
-import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-
 import javax.servlet.http.HttpServletRequest;
+import java.util.*;
 
 /**
  * Implementation class for the {@link LanguageAPI}.
@@ -66,7 +58,12 @@ public class LanguageAPIImpl implements LanguageAPI {
 		factory.deleteLanguage(language);
 	}
 
-	@Override
+    @Override
+    public void deleteFallbackLanguage(final Language fallbackPortugueseLanguage) {
+        this.factory.deleteLanguageById(fallbackPortugueseLanguage.getId());
+    }
+
+    @Override
 	public Language getLanguage(final String languageCode, final String countryCode) {
 		return factory.getLanguage(languageCode, countryCode);
 	}

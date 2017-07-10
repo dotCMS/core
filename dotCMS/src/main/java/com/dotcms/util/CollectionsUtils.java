@@ -1,5 +1,7 @@
 package com.dotcms.util;
 
+import org.elasticsearch.common.collect.MapBuilder;
+
 import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -554,9 +556,11 @@ public class CollectionsUtils implements Serializable {
     } // map.
     
     /**
-     * 
-     * @param entries
-     * @return
+     * Returns an immutable map based on the objects entries (must be pairs otherwise will throws an {@link IllegalArgumentException})
+     * @param entries Object an array
+     * @param <K>
+     * @param <V>
+     * @return Map
      */
     @SuppressWarnings("unchecked")
 	public static <K,V> Map<K,V> imap(Object... entries) {
@@ -570,7 +574,7 @@ public class CollectionsUtils implements Serializable {
             entriesCollection.add(entry((K) entries[i], (V) entries[i + 1]));
         }
 
-        return mapEntries(entriesCollection);
+        return imapEntries(entriesCollection);
     } // map.
 
     /**
@@ -608,6 +612,24 @@ public class CollectionsUtils implements Serializable {
         }
 
         return hashMap;
+    } // map.
+
+    /**
+     * Get a new immutable map based on a collections of entries
+     * @param entries Collection
+     * @param <K>
+     * @param <V>
+     * @return Map
+     */
+    public static <K,V> Map<K,V> imapEntries(final Collection<Map.Entry<K, V>> entries) {
+        final MapBuilder<K,V> hashMap = new MapBuilder<>();
+
+        for (Map.Entry<K, V> entry : entries) {
+
+            hashMap.put(entry.getKey(), entry.getValue());
+        }
+
+        return hashMap.immutableMap();
     } // map.
 
     /**

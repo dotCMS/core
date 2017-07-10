@@ -146,4 +146,9 @@ public abstract class LanguageFactory {
      */
     protected abstract Language getFallbackLanguage(final String languageCode);
 
+    /**
+     * Deletes a language by id
+     * @param id long
+     */
+    protected  abstract int deleteLanguageById(long id) ;
 }

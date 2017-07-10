@@ -75,7 +75,7 @@ public class ContentUtils {
                         value);
         contentlet = contentletAPI.checkin(contentlet, user, Boolean.FALSE);
         contentletAPI.publish(contentlet, user, Boolean.FALSE);
-        contentletAPI.isInodeIndexed(contentlet.getInode());
+        contentletAPI.isInodeIndexed(contentlet.getInode(), true);
         return contentlet;
     }
 
@@ -139,7 +139,7 @@ public class ContentUtils {
                         value);
         contentlet = contentletAPI.checkin(contentlet, user, Boolean.FALSE);
         contentletAPI.publish(contentlet, user, Boolean.FALSE);
-        contentletAPI.isInodeIndexed(contentlet.getInode());
+        contentletAPI.isInodeIndexed(contentlet.getInode(), true);
         return contentlet;
     }
 

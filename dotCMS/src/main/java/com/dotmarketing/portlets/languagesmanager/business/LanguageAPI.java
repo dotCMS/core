@@ -37,6 +37,12 @@ public interface LanguageAPI {
 	public void deleteLanguage(Language language);
 
 	/**
+	 * Deletes a fallback Language, that you obtain with {@link #getFallbackLanguage(String)}
+	 * @param fallbackPortugueseLanguage Language
+	 */
+	void deleteFallbackLanguage(Language fallbackPortugueseLanguage);
+
+	/**
 	 * 
 	 * @param language
 	 */
@@ -230,5 +236,7 @@ public interface LanguageAPI {
      * @return The fallback {@link Language} object.
      */
     public Language getFallbackLanguage(final String languageCode);
+
+
 
 }

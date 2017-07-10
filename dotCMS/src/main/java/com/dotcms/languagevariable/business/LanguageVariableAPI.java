@@ -87,7 +87,7 @@ public interface LanguageVariableAPI {
      * @return The value of the Language Variable that matched the search criteria, or {@code null}
      *         if it doesn't exist.
      */
-    public default String getLanguageVariableWithoutFrontEndRoles(final String key, final long languageId, final User user) {
+    public default String getLanguageVariable(final String key, final long languageId, final User user) {
 
         return this.get(key, languageId, user, Boolean.FALSE);
     }

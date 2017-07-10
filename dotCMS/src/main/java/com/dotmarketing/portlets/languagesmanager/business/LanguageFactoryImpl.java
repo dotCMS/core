@@ -26,6 +26,7 @@ import com.dotcms.repackage.org.apache.struts.Globals;
 
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -36,6 +37,7 @@ import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.util.FileUtil;
 
@@ -53,7 +55,9 @@ import static com.dotcms.util.ConversionUtils.*;
  */
 public class LanguageFactoryImpl extends LanguageFactory {
 
+    public static final String DELETE_FROM_LANGUAGE_WHERE_ID = "delete from language where id = ?";
     private static Language defaultLanguage;
+    private final DotConnect dotConnect;
     
     private final Map<String, Date> readTimeStamps = new HashMap<String, Date>();
 
@@ -61,8 +65,17 @@ public class LanguageFactoryImpl extends LanguageFactory {
      * Creates a new instance of the {@link LanguageFactory}.
      */
 	public LanguageFactoryImpl () {
-
+        this(new DotConnect());
 	}
+
+    /**
+     * Creates a new instance of the {@link LanguageFactory}.
+     */
+    @VisibleForTesting
+    protected LanguageFactoryImpl (final DotConnect dotConnect) {
+
+        this.dotConnect = dotConnect;
+    }
 
 	@Override
     protected void deleteLanguage(Language language) {
@@ -619,5 +632,16 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
         return lang;
     } // getFallbackLanguage.
+
+    @Override
+    protected int deleteLanguageById(final long id) {
+
+        try {
+            return this.dotConnect.executeUpdate(DELETE_FROM_LANGUAGE_WHERE_ID, id);
+        } catch (DotDataException e) {
+            Logger.error(LanguageFactoryImpl.class, "deleteLanguageById failed to delete the language with id: " + id, e);
+            throw new DotRuntimeException(e.toString(), e);
+        }
+    }
 
 }
