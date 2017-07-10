@@ -1,9 +1,8 @@
 package com.dotcms.publisher.business;
 
+import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import java.util.Date;
 import java.util.List;
-
-import com.dotcms.publisher.business.PublishAuditStatus.Status;
 
 
 /**
@@ -136,5 +135,13 @@ public abstract class PublishAuditAPI {
      * @throws DotPublisherException
      */
     public abstract PublishAuditStatus updateAuditTable ( String endpointId, String groupId, String bundleFolder, Boolean updateDates ) throws DotPublisherException;
+
+    /**
+     * Find out if the publisher is retrying to process the bundle.
+     *
+     * @return true if the bundle has PublishAuditStatus with a number of tries > 0, false
+     * otherwise.
+     */
+    public abstract boolean isPublishRetry(final String bundleId);
 
 }
