@@ -86,7 +86,7 @@ define("dojo/i18n", ["./_base/kernel", "require", "./has", "./_base/array", "./_
 			// summary:
 			//		get the root bundle which instructs which other bundles are required to construct the localized bundle
 			require([bundlePathAndName], function(root){
-				var current = lang.clone(root.root),
+				var current = lang.clone(root.root || root.ROOT),// 1.6 built bundle defined ROOT
 					availableLocales = getAvailableLocales(!root._v1x && root, locale, bundlePath, bundleName);
 				require(availableLocales, function(){
 					for (var i = 1; i<availableLocales.length; i++){
@@ -341,26 +341,112 @@ define("dojo/i18n", ["./_base/kernel", "require", "./has", "./_base/array", "./_
 					func("ROOT");
 				}
 
-				function preload(locale){
-					locale = normalizeLocale(locale);
-					forEachLocale(locale, function(loc){
-						if(array.indexOf(localesGenerated, loc)>=0){
-							var mid = bundlePrefix.replace(/\./g, "/")+"_"+loc;
-							preloading++;
-							doRequire(mid, function(rollup){
-								for(var p in rollup){
-									cache[require.toAbsMid(p) + "/" + loc] = rollup[p];
-								}
-								--preloading;
-								while(!preloading && preloadWaitQueue.length){
-									load.apply(null, preloadWaitQueue.shift());
-								}
-							});
-							return true;
+					function preloadingAddLock(){
+						preloading++;
+					}
+
+					function preloadingRelLock(){
+						--preloading;
+						while(!preloading && preloadWaitQueue.length){
+							load.apply(null, preloadWaitQueue.shift());
 						}
-						return false;
-					});
-				}
+					}
+
+					function cacheId(path, name, loc, require){
+						// path is assumed to have a trailing "/"
+						return require.toAbsMid(path + name + "/" + loc)
+					}
+
+					function preload(locale){
+						locale = normalizeLocale(locale);
+						forEachLocale(locale, function(loc){
+							if(array.indexOf(localesGenerated, loc) >= 0){
+								var mid = bundlePrefix.replace(/\./g, "/") + "_" + loc;
+								preloadingAddLock();
+								doRequire(mid, function(rollup){
+									for(var p in rollup){
+										var bundle = rollup[p],
+											match = p.match(/(.+)\/([^\/]+)$/),
+											bundleName, bundlePath;
+											
+											// If there is no match, the bundle is not a regular bundle from an AMD layer.
+											if (!match){continue;}
+
+											bundleName = match[2];
+											bundlePath = match[1] + "/";
+
+										// backcompat
+										if(!bundle._localized){continue;}
+
+										var localized;
+										if(loc === "ROOT"){
+											var root = localized = bundle._localized;
+											delete bundle._localized;
+											root.root = bundle;
+											cache[require.toAbsMid(p)] = root;
+										}else{
+											localized = bundle._localized;
+											cache[cacheId(bundlePath, bundleName, loc, require)] = bundle;
+										}
+
+										if(loc !== locale){
+											// capture some locale variables
+											function improveBundle(bundlePath, bundleName, bundle, localized){
+												// locale was not flattened and we've fallen back to a less-specific locale that was flattened
+												// for example, we had a flattened 'fr', a 'fr-ca' is available for at least this bundle, and
+												// locale==='fr-ca'; therefore, we must improve the bundle as retrieved from the rollup by
+												// manually loading the fr-ca version of the bundle and mixing this into the already-retrieved 'fr'
+												// version of the bundle.
+												//
+												// Remember, different bundles may have different sets of locales available.
+												//
+												// we are really falling back on the regular algorithm here, but--hopefully--starting with most
+												// of the required bundles already on board as given by the rollup and we need to "manually" load
+												// only one locale from a few bundles...or even better...we won't find anything better to load.
+												// This algorithm ensures there is nothing better to load even when we can only load a less-specific rollup.
+												//
+												// note: this feature is only available in async mode
+
+												// inspect the loaded bundle that came from the rollup to see if something better is available
+												// for any bundle in a rollup, more-specific available locales are given at localized.
+												var requiredBundles = [],
+													cacheIds = [];
+												forEachLocale(locale, function(loc){
+													if(localized[loc]){
+														requiredBundles.push(require.toAbsMid(bundlePath + loc + "/" + bundleName));
+														cacheIds.push(cacheId(bundlePath, bundleName, loc, require));
+													}
+												});
+
+												if(requiredBundles.length){
+													preloadingAddLock();
+													contextRequire(requiredBundles, function(){
+														// requiredBundles was constructed by forEachLocale so it contains locales from 
+														// less specific to most specific. 
+														// the loop starts with the most specific locale, the last one.
+														for(var i = requiredBundles.length - 1; i >= 0 ; i--){
+															bundle = lang.mixin(lang.clone(bundle), arguments[i]);
+															cache[cacheIds[i]] = bundle;
+														}
+														// this is the best possible (maybe a perfect match, maybe not), accept it
+														cache[cacheId(bundlePath, bundleName, locale, require)] = lang.clone(bundle);
+														preloadingRelLock();
+													});
+												}else{
+													// this is the best possible (definitely not a perfect match), accept it
+													cache[cacheId(bundlePath, bundleName, locale, require)] = bundle;
+												}
+											}
+											improveBundle(bundlePath, bundleName, bundle, localized);
+										}
+									}
+									preloadingRelLock();
+								});
+								return true;
+							}
+							return false;
+						});
+					}
 
 				preload();
 				array.forEach(dojo.config.extraLocale, preload);
@@ -380,44 +466,7 @@ define("dojo/i18n", ["./_base/kernel", "require", "./has", "./_base/array", "./_
 	if( 1 ){
 		// this code path assumes the dojo loader and won't work with a standard AMD loader
 		var amdValue = {},
-			evalBundle =
-				// use the function ctor to keep the minifiers away (also come close to global scope, but this is secondary)
-				new Function(
-					"__bundle",				   // the bundle to evalutate
-					"__checkForLegacyModules", // a function that checks if __bundle defined __mid in the global space
-					"__mid",				   // the mid that __bundle is intended to define
-					"__amdValue",
-
-					// returns one of:
-					//		1 => the bundle was an AMD bundle
-					//		a legacy bundle object that is the value of __mid
-					//		instance of Error => could not figure out how to evaluate bundle
-
-					  // used to detect when __bundle calls define
-					  "var define = function(mid, factory){define.called = 1; __amdValue.result = factory || mid;},"
-					+ "	   require = function(){define.called = 1;};"
-
-					+ "try{"
-					+		"define.called = 0;"
-					+		"eval(__bundle);"
-					+		"if(define.called==1)"
-								// bundle called define; therefore signal it's an AMD bundle
-					+			"return __amdValue;"
-
-					+		"if((__checkForLegacyModules = __checkForLegacyModules(__mid)))"
-								// bundle was probably a v1.6- built NLS flattened NLS bundle that defined __mid in the global space
-					+			"return __checkForLegacyModules;"
-
-					+ "}catch(e){}"
-					// evaulating the bundle was *neither* an AMD *nor* a legacy flattened bundle
-					// either way, re-eval *after* surrounding with parentheses
-
-					+ "try{"
-					+		"return eval('('+__bundle+')');"
-					+ "}catch(e){"
-					+		"return e;"
-					+ "}"
-				),
+			evalBundle,
 
 			syncRequire = function(deps, callback, require){
 				var results = [];
@@ -425,6 +474,45 @@ define("dojo/i18n", ["./_base/kernel", "require", "./has", "./_base/array", "./_
 					var url = require.toUrl(mid + ".js");
 
 					function load(text){
+						if (!evalBundle) {
+							// use the function ctor to keep the minifiers away (also come close to global scope, but this is secondary)
+							evalBundle = new Function(
+								"__bundle",				   // the bundle to evalutate
+								"__checkForLegacyModules", // a function that checks if __bundle defined __mid in the global space
+								"__mid",				   // the mid that __bundle is intended to define
+								"__amdValue",
+
+								// returns one of:
+								//		1 => the bundle was an AMD bundle
+								//		a legacy bundle object that is the value of __mid
+								//		instance of Error => could not figure out how to evaluate bundle
+
+								// used to detect when __bundle calls define
+								"var define = function(mid, factory){define.called = 1; __amdValue.result = factory || mid;},"
+								+ "	   require = function(){define.called = 1;};"
+
+								+ "try{"
+								+		"define.called = 0;"
+								+		"eval(__bundle);"
+								+		"if(define.called==1)"
+											// bundle called define; therefore signal it's an AMD bundle
+								+			"return __amdValue;"
+
+								+		"if((__checkForLegacyModules = __checkForLegacyModules(__mid)))"
+											// bundle was probably a v1.6- built NLS flattened NLS bundle that defined __mid in the global space
+								+			"return __checkForLegacyModules;"
+
+								+ "}catch(e){}"
+								// evaulating the bundle was *neither* an AMD *nor* a legacy flattened bundle
+								// either way, re-eval *after* surrounding with parentheses
+
+								+ "try{"
+								+		"return eval('('+__bundle+')');"
+								+ "}catch(e){"
+								+		"return e;"
+								+ "}"
+							);
+						}
 						var result = evalBundle(text, checkForLegacyModules, mid, amdValue);
 						if(result===amdValue){
 							// the bundle was an AMD module; re-inject it through the normal AMD path
@@ -447,13 +535,15 @@ define("dojo/i18n", ["./_base/kernel", "require", "./has", "./_base/array", "./_
 						results.push(cache[url]);
 					}else{
 						var bundle = require.syncLoadNls(mid);
-						// don't need to check for legacy since syncLoadNls returns a module if the module
-						// (1) was already loaded, or (2) was in the cache. In case 1, if syncRequire is called
-						// from getLocalization --> load, then load will have called checkForLegacyModules() before
-						// calling syncRequire; if syncRequire is called from preloadLocalizations, then we
-						// don't care about checkForLegacyModules() because that will be done when a particular
-						// bundle is actually demanded. In case 2, checkForLegacyModules() is never relevant
-						// because cached modules are always v1.7+ built modules.
+						// need to check for legacy module here because there might be a legacy module for a
+						// less specific locale (which was not looked up during the first checkForLegacyModules
+						// call in load()).
+						// Also need to reverse the locale and the module name in the mid because syncRequire
+						// deps parameters uses the AMD style package/nls/locale/module while legacy code uses
+						// package/nls/module/locale.
+						if(!bundle){
+							bundle = checkForLegacyModules(mid.replace(/nls\/([^\/]*)\/([^\/]*)$/, "nls/$2/$1"));
+						}
 						if(bundle){
 							results.push(bundle);
 						}else{

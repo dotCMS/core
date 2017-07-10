@@ -76,8 +76,9 @@ define("dojox/mvc/EditStoreRefController", [
 			if(!(this.store || {}).query){ return; }
 			if(this._resultsWatchHandle){ this._resultsWatchHandle.unwatch(); }
 			this._removals = [];
-			var _self = this;
-			return when(this.inherited(arguments), function(results){
+			var _self = this,
+			 queryResult = this.inherited(arguments),
+			 result = when(queryResult, function(results){
 				if(_self._beingDestroyed){ return; }
 				if(lang.isArray(results)){
 					_self._resultsWatchHandle = results.watchElements(function(idx, removals, adds){
@@ -86,6 +87,16 @@ define("dojox/mvc/EditStoreRefController", [
 				}
 				return results;
 			});
+			if(result.then){
+				result = lang.delegate(result);
+			}
+			// For dojo/store/Observable, which adds a function to query result
+			for(var s in queryResult){
+				if(isNaN(s) && queryResult.hasOwnProperty(s) && lang.isFunction(queryResult[s])){
+					result[s] = queryResult[s];
+				}
+			}
+			return result;
 		},
 
 		getStore: function(/*Number*/ id, /*Object*/ options){

@@ -1,5 +1,5 @@
 require({cache:{
-'url:dijit/templates/TreeNode.html':"<div class=\"dijitTreeNode\" role=\"presentation\"\n\t><div data-dojo-attach-point=\"rowNode\" class=\"dijitTreeRow dijitInline\" role=\"presentation\"\n\t\t><div data-dojo-attach-point=\"indentNode\" class=\"dijitInline\"></div\n\t\t><img src=\"${_blankGif}\" alt=\"\" data-dojo-attach-point=\"expandoNode\" class=\"dijitTreeExpando\" role=\"presentation\"\n\t\t/><span data-dojo-attach-point=\"expandoNodeText\" class=\"dijitExpandoText\" role=\"presentation\"\n\t\t></span\n\t\t><span data-dojo-attach-point=\"contentNode\"\n\t\t\tclass=\"dijitTreeContent\" role=\"presentation\">\n\t\t\t<img src=\"${_blankGif}\" alt=\"\" data-dojo-attach-point=\"iconNode\" class=\"dijitIcon dijitTreeIcon\" role=\"presentation\"\n\t\t\t/><span data-dojo-attach-point=\"labelNode\" class=\"dijitTreeLabel\" role=\"treeitem\" tabindex=\"-1\" aria-selected=\"false\"></span>\n\t\t</span\n\t></div>\n\t<div data-dojo-attach-point=\"containerNode\" class=\"dijitTreeContainer\" role=\"presentation\" style=\"display: none;\"></div>\n</div>\n",
+'url:dijit/templates/TreeNode.html':"<div class=\"dijitTreeNode\" role=\"presentation\"\n\t><div data-dojo-attach-point=\"rowNode\" class=\"dijitTreeRow dijitInline\" role=\"presentation\"\n\t\t><div data-dojo-attach-point=\"indentNode\" class=\"dijitInline\"></div\n\t\t><img src=\"${_blankGif}\" alt=\"\" data-dojo-attach-point=\"expandoNode\" class=\"dijitTreeExpando\" role=\"presentation\"\n\t\t/><span data-dojo-attach-point=\"expandoNodeText\" class=\"dijitExpandoText\" role=\"presentation\"\n\t\t></span\n\t\t><span data-dojo-attach-point=\"contentNode\"\n\t\t\tclass=\"dijitTreeContent\" role=\"presentation\">\n\t\t\t<img src=\"${_blankGif}\" alt=\"\" data-dojo-attach-point=\"iconNode\" class=\"dijitIcon dijitTreeIcon\" role=\"presentation\"\n\t\t\t/><span data-dojo-attach-point=\"labelNode\" class=\"dijitTreeLabel\" role=\"treeitem\"\n\t\t\t\t\ttabindex=\"-1\" aria-selected=\"false\" id=\"${id}_label\"></span>\n\t\t</span\n\t></div>\n\t<div data-dojo-attach-point=\"containerNode\" class=\"dijitTreeContainer\" role=\"presentation\"\n\t\t style=\"display: none;\" aria-labelledby=\"${id}_label\"></div>\n</div>\n",
 'url:dijit/templates/Tree.html':"<div class=\"dijitTree dijitTreeContainer\" role=\"tree\">\n\t<div class=\"dijitInline dijitTreeIndent\" style=\"position: absolute; top: -9999px\" data-dojo-attach-point=\"indentDetector\"></div>\n</div>\n"}});
 define("dijit/Tree", [
 	"dojo/_base/array", // array.filter array.forEach array.map
@@ -765,11 +765,11 @@ var Tree = declare("dijit.Tree", [_Widget, _TemplatedMixin], {
 			on(this.domNode, on.selector(".dijitTreeNode", touch.leave), function(evt){
 				self._onNodeMouseLeave(registry.byNode(this), evt);
 			}),
-			on(this.domNode, on.selector(".dijitTreeNode", "click"), function(evt){
-				self._onClick(registry.byNode(this), evt);
+			on(this.domNode, on.selector(".dijitTreeRow", "click"), function(evt){
+				self._onClick(registry.getEnclosingWidget(this), evt);
 			}),
-			on(this.domNode, on.selector(".dijitTreeNode", "dblclick"), function(evt){
-				self._onDblClick(registry.byNode(this), evt);
+			on(this.domNode, on.selector(".dijitTreeRow", "dblclick"), function(evt){
+				self._onDblClick(registry.getEnclosingWidget(this), evt);
 			}),
 			on(this.domNode, on.selector(".dijitTreeNode", "keypress"), function(evt){
 				self._onKeyPress(registry.byNode(this), evt);
@@ -883,7 +883,15 @@ var Tree = declare("dijit.Tree", [_Widget, _TemplatedMixin], {
 					this.domNode.setAttribute("role", "presentation");
 					this.domNode.removeAttribute("aria-expanded");
 					this.domNode.removeAttribute("aria-multiselectable");
-					
+
+					// move the aria-label or aria-labelledby to the element with the role
+					if(this["aria-label"]){
+						rn.containerNode.setAttribute("aria-label", this["aria-label"]);
+						this.domNode.removeAttribute("aria-label");
+					}else if(this["aria-labelledby"]){
+						rn.containerNode.setAttribute("aria-labelledby", this["aria-labelledby"]);
+						this.domNode.removeAttribute("aria-labelledby");
+					}
 					rn.labelNode.setAttribute("role", "presentation");
 					rn.containerNode.setAttribute("role", "tree");
 					rn.containerNode.setAttribute("aria-expanded","true");

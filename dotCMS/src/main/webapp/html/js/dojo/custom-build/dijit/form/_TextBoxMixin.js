@@ -2,12 +2,12 @@ define("dijit/form/_TextBoxMixin", [
 	"dojo/_base/array", // array.forEach
 	"dojo/_base/declare", // declare
 	"dojo/dom", // dom.byId
-	"dojo/_base/event", // event.stop
+	"dojo/sniff",	// has("ie"), has("dojo-bidi")
 	"dojo/keys", // keys.ALT keys.CAPS_LOCK keys.CTRL keys.META keys.SHIFT
 	"dojo/_base/lang", // lang.mixin
 	"dojo/on", // on
 	"../main"	// for exporting dijit._setSelectionRange, dijit.selectInputText
-], function(array, declare, dom, event, keys, lang, on, dijit){
+], function(array, declare, dom, has, keys, lang, on, dijit){
 
 // module:
 //		dijit/form/_TextBoxMixin
@@ -188,35 +188,44 @@ var _TextBoxMixin = declare("dijit.form._TextBoxMixin", null, {
 		//		protected
 	},
 
-	/*=====
-	onInput: function(event){
+	onInput: function(/*Event*/ evt){
 		// summary:
 		//		Connect to this function to receive notifications of various user data-input events.
 		//		Return false to cancel the event and prevent it from being processed.
 		// event:
-		//		keydown | keypress | cut | paste | input
+			 //		keydown | keypress | cut | paste | compositionend
 		// tags:
 		//		callback
-	},
-	=====*/
-	onInput: function(){},
+	 },
 
-	__skipInputEvent: false,
 	_onInput: function(/*Event*/ evt){
 		// summary:
-		//		Called AFTER the input event has happened
+		//		Called AFTER the input event has happened and this.textbox.value has new value.
 
 		// set text direction according to textDir that was defined in creation
 		if(this.textDir == "auto"){
 			this.applyTextDir(this.focusNode, this.focusNode.value);
 		}
 
-		this._processInput(evt);
+		this._lastInputEventValue = this.textbox.value;
+
+		// For Combobox, this needs to be called w/the keydown/keypress event that was passed to onInput().
+		// As a backup, use the "input" event itself.
+		this._processInput(this._lastInputProducingEvent);
+		delete this._lastInputProducingEvent;
+
+		if(this.intermediateChanges){
+			this._handleOnChange(this.get('value'), false);
+		}
 	},
 
 	_processInput: function(/*Event*/ evt){
 		// summary:
-		//		Default action handler for user input events
+			//		Default action handler for user input events.
+			//		Called after the "input" event (i.e. after this.textbox.value has been updated),
+			//		but `evt` is the keydown/keypress/etc. event that triggered the "input" event.
+			// tags:
+			//		protected
 
 		this._refreshState();
 
@@ -232,14 +241,16 @@ var _TextBoxMixin = declare("dijit.form._TextBoxMixin", null, {
 		this.inherited(arguments);
 
 		// normalize input events to reduce spurious event processing
-		//	onkeydown: do not forward modifier keys
+			//	keydown: do not forward modifier keys
 		//		       set charOrCode to numeric keycode
-		//	onkeypress: do not forward numeric charOrCode keys (already sent through onkeydown)
-		//	onpaste & oncut: set charOrCode to 229 (IME)
-		//	oninput: if primary event not already processed, set charOrCode to 229 (IME), else do not forward
-		var handleEvent = function(e){
+		//	keypress: do not forward numeric charOrCode keys (already sent through onkeydown)
+		//	paste, cut, compositionend: set charOrCode to 229 (IME)
+		function handleEvent(e){
 			var charOrCode;
-			if(e.type == "keydown"){
+
+			// Filter out keydown events that will be followed by keypress events.  Note that chrome/android
+			// w/word suggestions has keydown/229 events on typing with no corresponding keypress events.
+			if(e.type == "keydown" && e.keyCode != 229){
 				charOrCode = e.keyCode;
 				switch(charOrCode){ // ignore state keys
 					case keys.SHIFT:
@@ -284,6 +295,7 @@ var _TextBoxMixin = declare("dijit.form._TextBoxMixin", null, {
 					if(!named){ return; } // only allow named ones through
 				}
 			}
+
 			charOrCode = e.charCode >= 32 ? String.fromCharCode(e.charCode) : e.charCode;
 			if(!charOrCode){
 				charOrCode = (e.keyCode >= 65 && e.keyCode <= 90) || (e.keyCode >= 48 && e.keyCode <= 57) || e.keyCode == keys.SPACE ? String.fromCharCode(e.keyCode) : e.keyCode;
@@ -297,14 +309,7 @@ var _TextBoxMixin = declare("dijit.form._TextBoxMixin", null, {
 					if(e.ctrlKey || e.metaKey || e.altKey){ return; } // can only be stopped reliably in keydown
 				}
 			}
-			if(e.type == "input"){
-				if(this.__skipInputEvent){ // duplicate event
-					this.__skipInputEvent = false;
-					return;
-				}
-			}else{
-				this.__skipInputEvent = true;
-			}
+
 			// create fake event to set charOrCode and to know if preventDefault() was called
 			var faux = { faux: true }, attr;
 			for(attr in e){
@@ -322,16 +327,57 @@ var _TextBoxMixin = declare("dijit.form._TextBoxMixin", null, {
 				},
 				stopPropagation: function(){ e.stopPropagation(); }
 			});
-			// give web page author a chance to consume the event
+
+
+			this._lastInputProducingEvent = faux;
+
+			// Give web page author a chance to consume the event.  Note that onInput() may be called multiple times
+			// for same keystroke: once for keypress event and once for input event.
 			//console.log(faux.type + ', charOrCode = (' + (typeof charOrCode) + ') ' + charOrCode + ', ctrl ' + !!faux.ctrlKey + ', alt ' + !!faux.altKey + ', meta ' + !!faux.metaKey + ', shift ' + !!faux.shiftKey);
 			if(this.onInput(faux) === false){ // return false means stop
 				faux.preventDefault();
 				faux.stopPropagation();
 			}
-			if(faux._wasConsumed){ return; } // if preventDefault was called
-			this.defer(function(){ this._onInput(faux); }); // widget notification after key has posted
-		};
-		this.own(on(this.textbox, "keydown, keypress, paste, cut, input, compositionend", lang.hitch(this, handleEvent)));
+			if(faux._wasConsumed){
+				return;
+			} // if preventDefault was called
+
+			// IE8 doesn't emit the "input" event at all, and IE9 doesn't emit it for backspace, delete, cut, etc.
+			// Since the code below (and perhaps user code) depends on that event, emit it synthetically.
+			// See http://benalpert.com/2013/06/18/a-near-perfect-oninput-shim-for-ie-8-and-9.html.
+			if(has("ie") <= 9){
+				switch(e.keyCode){
+				case keys.TAB:
+				case keys.ESCAPE:
+				case keys.DOWN_ARROW:
+				case keys.UP_ARROW:
+				case keys.LEFT_ARROW:
+				case keys.RIGHT_ARROW:
+					// These keys may alter the <input>'s value indirectly, but we don't want to emit an "input"
+					// event.  For example, the up/down arrows in TimeTextBox or ComboBox will cause the next
+					// dropdown item's value to be copied to the <input>.
+					break;
+				default:
+					if(e.keyCode == keys.ENTER && this.textbox.tagName.toLowerCase() != "textarea"){
+						break;
+					}
+					this.defer(function(){
+						if(this.textbox.value !== this._lastInputEventValue){
+							on.emit(this.textbox, "input", {bubbles: true});
+						}
+					});
+				}
+			}
+		}
+		this.own(
+			on(this.textbox, "keydown, keypress, paste, cut, compositionend", lang.hitch(this, handleEvent)),
+			on(this.textbox, "input", lang.hitch(this, "_onInput")),
+
+			// Allow keypress to bubble to this.domNode, so that TextBox.on("keypress", ...) works,
+			// but prevent it from further propagating, so that typing into a TextBox inside a Toolbar doesn't
+			// trigger the Toolbar's letter key navigation.
+			on(this.domNode, "keypress", function(e){ e.stopPropagation(); })
+		);
 	},
 
 	_blankValue: '', // if the textbox is blank, what value should be reported

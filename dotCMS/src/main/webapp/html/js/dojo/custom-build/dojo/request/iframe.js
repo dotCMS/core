@@ -10,10 +10,11 @@ define("dojo/request/iframe", [
 	'../has',
 	'../dom',
 	'../dom-construct',
-	'../_base/window'/*=====,
+	'../_base/window',
+	'../NodeList-dom'/*=====,
 	'../request',
 	'../_base/declare' =====*/
-], function(module, require, watch, util, handlers, lang, ioQuery, query, has, dom, domConstruct, win/*=====, request, declare =====*/){
+], function(module, require, watch, util, handlers, lang, ioQuery, query, has, dom, domConstruct, win/*=====, NodeList, request, declare =====*/){
 	var mid = module.id.replace(/[\/\.\-]/g, '_'),
 		onload = mid + '_onload';
 
@@ -178,7 +179,7 @@ define("dojo/request/iframe", [
 					var parentNode = formNode;
 					do{
 						parentNode = parentNode.parentNode;
-					}while(parentNode !== win.doc.documentElement);
+					}while(parentNode && parentNode !== win.doc.documentElement);
 
 					// Append the form node or some browsers won't work
 					if(!parentNode){
@@ -244,10 +245,10 @@ define("dojo/request/iframe", [
 					}
 				}else{
 					if(!methodNode || !methodNode.value){
-						if(mthdNode){
-							mthdNode.value = options.method;
+						if(methodNode){
+							methodNode.value = options.method;
 						}else{
-							fn.setAttribute("method", options.method);
+							formNode.setAttribute('method', options.method);
 						}
 					}
 				}
@@ -303,7 +304,7 @@ define("dojo/request/iframe", [
 						// IE6-8 have to parse the XML manually. See http://bugs.dojotoolkit.org/ticket/6334
 						if(doc.documentElement.tagName.toLowerCase() === 'html'){
 							query('a', doc.documentElement).orphan();
-							var xmlText = doc.documentElement.innerText;
+							var xmlText = doc.documentElement.innerText || doc.documentElement.textContent;
 							xmlText = xmlText.replace(/>\s+</g, '><');
 							response.text = lang.trim(xmlText);
 						}else{

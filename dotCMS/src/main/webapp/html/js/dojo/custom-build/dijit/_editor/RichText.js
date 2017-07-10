@@ -181,7 +181,10 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 
 		// Push in the builtin filters now, making them the first executed, but not over-riding anything
 		// users passed in.  See: #6062
-		this.contentPreFilters = [lang.hitch(this, "_preFixUrlAttributes")].concat(this.contentPreFilters);
+		this.contentPreFilters = [
+			lang.trim,	// avoid IE10 problem hitting ENTER on last line when there's a trailing \n.
+			lang.hitch(this, "_preFixUrlAttributes")
+		].concat(this.contentPreFilters);
 		if(has("mozilla")){
 			this.contentPreFilters = [this._normalizeFontStyle].concat(this.contentPreFilters);
 			this.contentPostFilters = [this._removeMozBogus].concat(this.contentPostFilters);
@@ -192,11 +195,13 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 			this.contentPreFilters = [this._removeWebkitBogus].concat(this.contentPreFilters);
 			this.contentPostFilters = [this._removeWebkitBogus].concat(this.contentPostFilters);
 		}
-		if(has("ie")){
+		if(has("ie") || has("trident")){
 			// IE generates <strong> and <em> but we want to normalize to <b> and <i>
+			// Still happens in IE11!
 			this.contentPostFilters = [this._normalizeFontStyle].concat(this.contentPostFilters);
-			this.contentDomPostFilters = [lang.hitch(this, this._stripBreakerNodes)].concat(this.contentDomPostFilters);
+				this.contentDomPostFilters = [lang.hitch(this, "_stripBreakerNodes")].concat(this.contentDomPostFilters);
 		}
+		this.contentDomPostFilters = [lang.hitch(this, "_stripTrailingEmptyNodes")].concat(this.contentDomPostFilters);
 		this.inherited(arguments);
 
 		topic.publish(dijit._scopeName + "._editor.RichText::init", this);
@@ -483,7 +488,7 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 		ifr.frameBorder = 0;
 		ifr._loadFunc = lang.hitch( this, function(w){
 			this.window = w;
-			this.document = this.window.document;
+				this.document = w.document;
 
 			if(has("ie")){
 				this._localizeEditorCommands();
@@ -493,11 +498,33 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 			this.onLoad(html);
 		});
 
-		// Set the iframe's initial (blank) content.
-		var src = this._getIframeDocTxt(),
-			s = "javascript: '" + src.replace(/\\/g, "\\\\").replace(/'/g, "\\'") + "'";
-		ifr.setAttribute('src', s);
-		this.editingArea.appendChild(ifr);
+		// Attach iframe to document, and set the initial (blank) content.
+			var src = this._getIframeDocTxt().replace(/\\/g, "\\\\").replace(/'/g, "\\'"),
+				s;
+
+			// IE10 and earlier will throw an "Access is denied" error when attempting to access the parent frame if
+			// document.domain has been set, unless the child frame also has the same document.domain set. The child frame
+			// can only set document.domain while the document is being constructed using open/write/close; attempting to
+			// set it later results in a different "This method can't be used in this context" error. See #17529
+			if (has("ie") < 11) {
+				s = 'javascript:document.open();try{parent.window;}catch(e){document.domain="' + document.domain + '";}' +
+					'document.write(\'' + src + '\');document.close()';
+			}
+			else {
+				s = "javascript: '" + src + "'";
+			}
+
+			if(has("ie") == 9){
+				// On IE9, attach to document before setting the content, to avoid problem w/iframe running in
+			// wrong security context, see #16633.
+			this.editingArea.appendChild(ifr);
+			ifr.src = s;
+		}else{
+			// For other browsers, set src first, especially for IE6/7 where attaching first gives a warning on
+			// https:// about "this page contains secure and insecure items, do you want to view both?"
+			ifr.setAttribute('src', s);
+			this.editingArea.appendChild(ifr);
+		}
 
 		if(has("safari") <= 4){
 			src = ifr.getAttribute("src");
@@ -529,19 +556,9 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 		var _cs = domStyle.getComputedStyle(this.domNode);
 
 		// The contents inside of <body>.  The real contents are set later via a call to setValue().
-		var html = "";
-		var setBodyId = true;
-		if(has("ie") || has("webkit") || (!this.height && !has("mozilla"))){
 			// In auto-expand mode, need a wrapper div for AlwaysShowToolbar plugin to correctly
 			// expand/contract the editor as the content changes.
-			html = "<div id='dijitEditorBody'></div>";
-			setBodyId = false;
-		}else if(has("mozilla")){
-			// workaround bug where can't select then delete text (until user types something
-			// into the editor)... and/or issue where typing doesn't erase selected text
-			this._cursorToStart = true;
-			html = "&#160;";	// &nbsp;
-		}
+			var html = "<div id='dijitEditorBody' role='main'></div>";
 
 		var font = [ _cs.fontWeight, _cs.fontSize, _cs.fontFamily ].join(" ");
 
@@ -585,25 +602,41 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 		});
 
 
-		// need to find any associated label element and update iframe document title
-		var label=query('label[for="'+this.id+'"]');
-
+		// need to find any associated label element, aria-label, or aria-labelledby and update iframe document title
+		var label = query('label[for="'+this.id+'"]');
+		var title = "";
+		if(label.length){
+			title = label[0].innerHTML;
+		}else if(this["aria-label"]){
+			title = this["aria-label"];
+		}else if(this["aria-labelledby"]){
+			title = dom.byId(this["aria-labelledby"]).innerHTML;
+		}
+			
+		// Now that we have the title, also set it as the title attribute on the iframe
+		this.iframe.setAttribute("title", title);
+		
 		return [
-			this.isLeftToRight() ? "<html>\n<head>\n" : "<html dir='rtl'>\n<head>\n",
-			(has("mozilla") && label.length ? "<title>" + label[0].innerHTML + "</title>\n" : ""),
+				"<!DOCTYPE html>",
+			this.isLeftToRight() ? "<html lang='"+this.lang+"'>\n<head>\n" : "<html dir='rtl' lang='"+this.lang+"'>\n<head>\n",
+			title ? "<title>" + title + "</title>" : "",
 			"<meta http-equiv='Content-Type' content='text/html'>\n",
 			"<style>\n",
 			"\tbody,html {\n",
 			"\t\tbackground:transparent;\n",
 			"\t\tpadding: 1px 0 0 0;\n",
 			"\t\tmargin: -1px 0 0 0;\n", // remove extraneous vertical scrollbar on safari and firefox
-
-			// Set the html/body sizing.  Webkit always needs this, other browsers
-			// only set it when height is defined (not auto-expanding), otherwise
-			// scrollers do not appear.
-			((has("webkit"))?"\t\twidth: 100%;\n":""),
-			((has("webkit"))?"\t\theight: 100%;\n":""),
 			"\t}\n",
+				"\tbody,html,#dijitEditorBody { outline: none; }",
+
+				// Set <body> to expand to full size of editor, so clicking anywhere will work.
+				// Except in auto-expand mode, in which case the editor expands to the size of <body>.
+				// Also determine how scrollers should be applied.  In autoexpand mode (height = "") no scrollers on y at all.
+				// But in fixed height mode we want both x/y scrollers.
+				// Scrollers go on <body> since it's been set to height: 100%.
+				"html { height: 100%; width: 100%; overflow: hidden; }\n",	// scroll bar is on #dijitEditorBody, shouldn't be on <html>
+				this.height ? "\tbody,#dijitEditorBody { height: 100%; width: 100%; overflow: auto; }\n" :
+					"\tbody,#dijitEditorBody { min-height: " + this.minHeight + "; width: 100%; overflow-x: auto; overflow-y: hidden; }\n",
 
 			// TODO: left positioning will cause contents to disappear out of view
 			//	   if it gets too wide for the visible area
@@ -613,24 +646,16 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 			"\t\tright:0px;\n",
 			"\t\tfont:", font, ";\n",
 				((this.height||has("opera")) ? "" : "\t\tposition: fixed;\n"),
-			// FIXME: IE 6 won't understand min-height?
-			"\t\tmin-height:", this.minHeight, ";\n",
 			"\t\tline-height:", lineHeight,";\n",
 			"\t}\n",
 			"\tp{ margin: 1em 0; }\n",
 
-			// Determine how scrollers should be applied.  In autoexpand mode (height = "") no scrollers on y at all.
-			// But in fixed height mode we want both x/y scrollers.  Also, if it's using wrapping div and in auto-expand
-			// (Mainly IE) we need to kill the y scroller on body and html.
-			(!setBodyId && !this.height ? "\tbody,html {overflow-y: hidden;}\n" : ""),
-			"\t#dijitEditorBody{overflow-x: auto; overflow-y:" + (this.height ? "auto;" : "hidden;") + " outline: 0px;}\n",
 			"\tli > ul:-moz-first-node, li > ol:-moz-first-node{ padding-top: 1.2em; }\n",
-			// Can't set min-height in IE9, it puts layout on li, which puts move/resize handles.
-			(!has("ie") ? "\tli{ min-height:1.2em; }\n" : ""),
+			// Can't set min-height in IE>=9, it puts layout on li, which puts move/resize handles.
+			(has("ie") || has("trident") ? "" : "\tli{ min-height:1.2em; }\n"),
 			"</style>\n",
 			this._applyEditingAreaStyleSheets(),"\n",
 			"</head>\n<body ",
-			(setBodyId?"id='dijitEditorBody' ":""),
 
 			// Onload handler fills in real editor content.
 			// On IE9, sometimes onload is called twice, and the first time frameElement is null (test_FullScreen.html)
@@ -709,7 +734,7 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 			return;
 		}
 		delete this.editingAreaStyleSheets[index];
-		query('link:[href="'+url+'"]', this.window.document).orphan();
+		query('link[href="' + url + '"]', this.window.document).orphan();
 	},
 
 	// disabled: Boolean
@@ -721,10 +746,12 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 		value = !!value;
 		this._set("disabled", value);
 		if(!this.isLoaded){ return; } // this method requires init to be complete
-		if(has("ie") || has("webkit") || has("opera")){
 			var preventIEfocus = has("ie") && (this.isLoaded || !this.focusOnLoad);
-			if(preventIEfocus){ this.editNode.unselectable = "on"; }
+			if(preventIEfocus){
+				this.editNode.unselectable = "on";
+			}
 			this.editNode.contentEditable = !value;
+			this.editNode.tabIndex = value ? "-1" : this.tabIndex;
 			if(preventIEfocus){
 				this.defer(function(){
 					if(this.editNode){		// guard in case widget destroyed before timeout
@@ -732,26 +759,18 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 					}
 				});
 			}
-		}else{ //moz
-			try{
-				this.document.designMode=(value?'off':'on');
-			}catch(e){ return; } // ! _disabledOK
-			if(!value && this._mozSettingProps){
+			if(has("mozilla") && !value && this._mozSettingProps){
 				var ps = this._mozSettingProps;
 				var n;
 				for(n in ps){
 					if(ps.hasOwnProperty(n)){
 						try{
 							this.document.execCommand(n,false,ps[n]);
-						}catch(e2){}
+						}catch(e2){
 					}
 				}
 			}
-//			this.document.execCommand('contentReadOnly', false, value);
-//				if(value){
-//					this.blur(); //to remove the blinking caret
-//				}
-		}
+			}
 		this._disabledOK = true;
 	},
 
@@ -772,17 +791,19 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 			this.window.__registeredWindow = true;
 			this._iframeRegHandle = focus.registerIframe(this.iframe);
 		}
-		if(!has("ie") && !has("webkit") && (this.height || has("mozilla"))){
-			this.editNode=this.document.body;
-		}else{
+
 			// there's a wrapper div around the content, see _getIframeDocTxt().
 			this.editNode=this.document.body.firstChild;
 			var _this = this;
-			if(has("ie")){ // #4996 IE wants to focus the BODY tag
-				this.tabStop = domConstruct.create('div', { tabIndex: -1 }, this.editingArea);
-				this.iframe.onfocus = function(){ _this.editNode.setActive(); };
-			}
-		}
+
+			// Helper code so IE and FF skip over focusing on the <iframe> and just focus on the inner <div>.
+			// See #4996 IE wants to focus the BODY tag.
+			this.beforeIframeNode = domConstruct.place("<div tabIndex=-1></div>", this.iframe, "before");
+			this.afterIframeNode = domConstruct.place("<div tabIndex=-1></div>", this.iframe, "after");
+			this.iframe.onfocus = this.document.onfocus = function(){
+				_this.editNode.focus();
+			};
+
 		this.focusNode = this.editNode; // for InlineEditBox
 
 
@@ -792,7 +813,10 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 			this.connect(ap, item.toLowerCase(), item);
 		}, this);
 
-		this.connect(ap, "onmouseup", "onClick"); // mouseup in the margin does not generate an onclick event
+			this.own(
+				// mouseup in the margin does not generate an onclick event
+				on(ap, "mouseup", lang.hitch(this, "onClick"))
+			);
 
 		if(has("ie")){ // IE contentEditable
 			this.connect(this.document, "onmousedown", "_onIEMouseDown"); // #4996 fix focus
@@ -876,7 +900,7 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 		// such as the backspace. It might be possible to add this to Dojo, so that
 		// keyPress events can be emulated by the keyDown and keyUp detection.
 
-		if(e.keyCode === keys.TAB && this.isTabIndent ){
+		if(e.keyCode === keys.TAB && this.isTabIndent){
 			event.stop(e); //prevent tab from moving focus out of editor
 
 			// FIXME: this is a poor-man's indent/outdent. It would be
@@ -886,20 +910,25 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 				this.execCommand((e.shiftKey ? "outdent" : "indent"));
 			}
 		}
-		if(has("ie")){
-			if(e.keyCode == keys.TAB && !this.isTabIndent){
-				if(e.shiftKey && !e.ctrlKey && !e.altKey){
-					// focus the BODY so the browser will tab away from it instead
-					this.iframe.focus();
-				}else if(!e.shiftKey && !e.ctrlKey && !e.altKey){
-					// focus the BODY so the browser will tab away from it instead
-					this.tabStop.focus();
+
+			// Make tab and shift-tab skip over the <iframe>, going from the nested <div> to the toolbar
+			// or next element after the editor
+			if(e.keyCode == keys.TAB && !this.isTabIndent && !e.ctrlKey && !e.altKey){
+				if(e.shiftKey){
+					// focus the <iframe> so the browser will shift-tab away from it instead
+					this.beforeIframeNode.focus();
+				}else{
+					// focus node after the <iframe> so the browser will tab away from it instead
+					this.afterIframeNode.focus();
 				}
-			}else if(e.keyCode === keys.BACKSPACE && this.document.selection.type === "Control"){
+			}
+
+			if(has("ie") < 9 && e.keyCode === keys.BACKSPACE && this.document.selection.type === "Control"){
 				// IE has a bug where if a non-text object is selected in the editor,
 				// hitting backspace would act as if the browser's back button was
 				// clicked instead of deleting the object. see #1069
-				event.stop(e);
+				e.stopPropagation();
+				e.preventDefault();
 				this.execCommand("delete");
 			}else if((65 <= e.keyCode && e.keyCode <= 90) ||
 				(e.keyCode>=37 && e.keyCode<=40) // FIXME: get this from connect() instead!
@@ -907,7 +936,7 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 				e.charCode = e.keyCode;
 				this.onKeyPress(e);
 			}
-		}
+
 		if(has("ff")){
 			if(e.keyCode === keys.PAGE_UP || e.keyCode === keys.PAGE_DOWN ){
 				if(this.editNode.clientHeight >= this.editNode.scrollHeight){
@@ -956,6 +985,14 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 		//		Handle the various key events
 		// tags:
 		//		protected
+
+		if(e.keyCode === keys.SHIFT ||
+		   e.keyCode === keys.ALT ||
+		   e.keyCode === keys.META ||
+		   e.keyCode === keys.CTRL ||
+		   (e.keyCode == keys.TAB && !this.isTabIndent && !e.ctrlKey && !e.altKey)){
+			return true;
+		}
 
 		var c = (e.keyChar && e.keyChar.toLowerCase()) || e.keyCode,
 			handlers = this._keyHandlers[c],
@@ -1035,7 +1072,15 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 		// tags:
 		//		protected
 
-		// console.info('_onBlur')
+			// Workaround IE problem when you blur the browser windows while an editor is focused: IE hangs
+			// when you focus editor #1, blur the browser window, and then click editor #0.  See #16939.
+			if(has("ie") || has("trident")){
+				this.defer(function(){
+					if(!focus.curNode){
+						this.ownerDocumentBody.focus();
+					}
+				});
+			}
 
 		this.inherited(arguments);
 
@@ -1088,17 +1133,14 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 				return;
 			}
 		}
-		if(!has("ie")){
-			focus.focus(this.iframe);
-		}else if(this.editNode && this.editNode.focus){
-			// editNode may be hidden in display:none div, lets just punt in this case
+			if(has("ie") < 9){
 			//this.editNode.focus(); -> causes IE to scroll always (strict and quirks mode) to the top the Iframe
 			// if we fire the event manually and let the browser handle the focusing, the latest
 			// cursor position is focused like in FF
-			this.iframe.fireEvent('onfocus', document.createEventObject()); // createEventObject only in IE
-		//	}else{
-		// TODO: should we throw here?
-		// console.debug("Have no idea how to focus into the editor!");
+				this.iframe.fireEvent('onfocus', document.createEventObject()); // createEventObject/fireEvent only in IE < 11
+			}else{
+				// Firefox and chrome
+				this.editNode.focus();
 		}
 	},
 
@@ -1236,7 +1278,7 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 			default: return false;
 		}
 
-		return (has("ie") && supportedBy.ie) ||
+			return ((has("ie") || has("trident")) && supportedBy.ie) ||
 			(has("mozilla") && supportedBy.mozilla) ||
 			(has("webkit") && supportedBy.webkit) ||
 			(has("opera") && supportedBy.opera);	// Boolean return true if the command is supported, false otherwise
@@ -1256,14 +1298,17 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 		//focus() is required for IE to work
 		//In addition, focus() makes sure after the execution of
 		//the command, the editor receives the focus as expected
-		this.focus();
+		if(this.focused){
+			// put focus back in the iframe, unless focus has somehow been shifted out of the editor completely
+			this.focus();
+		}
 
 		command = this._normalizeCommand(command, argument);
 		
 		if(argument !== undefined){
 			if(command === "heading"){
 				throw new Error("unimplemented");
-			}else if((command === "formatblock") && has("ie")){
+				}else if(command === "formatblock" && (has("ie") || has("trident"))){
 				argument = '<'+argument+'>';
 			}
 		}
@@ -1334,7 +1379,7 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 		if(this.disabled || !this._disabledOK){ return false; }
 		var r;
 		command = this._normalizeCommand(command);
-		if(has("ie") && command === "formatblock"){
+			if((has("ie") || has("trident")) && command === "formatblock"){
 			r = this._native2LocalFormatNames[this.document.queryCommandValue(command)];
 		}else if(has("mozilla") && command === "hilitecolor"){
 			var oldValue;
@@ -1463,7 +1508,7 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 			}
 		}
 
-		return this._postFilterContent(null, nonDestructive);
+		return this.isLoaded ? this._postFilterContent(null, nonDestructive) : this.value;
 	},
 	_getValueAttr: function(){
 		// summary:
@@ -1493,9 +1538,6 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 		}else{
 			html = this._preFilterContent(html);
 			var node = this.isClosed ? this.domNode : this.editNode;
-			if(html && has("mozilla") && html.toLowerCase() === "<p></p>"){
-				html = "<p>&#160;</p>";	// &nbsp;
-			}
 
 			// Use &nbsp; to avoid webkit problems where editor is disabled until the user clicks it
 			if(!html && has("webkit")){
@@ -1525,10 +1567,6 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 		}else if(this.window && this.window.getSelection){ // Moz
 			html = this._preFilterContent(html);
 			this.execCommand("selectall");
-			if(!html){
-				this._cursorToStart = true;
-				html = "&#160;";	// &nbsp;
-			}
 			this.execCommand("inserthtml", html);
 			this._preDomFilterContent(this.editNode);
 		}else if(this.document && this.document.selection){//IE
@@ -1631,10 +1669,6 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 			ec = "";
 		}
 
-		//	if(has("ie")){
-		//		//removing appended <P>&nbsp;</P> for IE
-		//		ec = ec.replace(/(?:<p>&nbsp;</p>[\n\r]*)+$/i,"");
-		//	}
 		array.forEach(this.contentPostFilters, function(ef){
 			ec = ef(ec);
 		});
@@ -1825,15 +1859,17 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 
 	/*** queryCommandEnabled implementations ***/
 
-	_browserQueryCommandEnabled: function(command){
-		// summary:
-		//		Implementation to call to the native queryCommandEnabled of the browser.
-		// command:
-		//		The command to check.
-		// tags:
-		//		protected
-		if(!command) { return false; }
-		var elem = has("ie") ? this.document.selection.createRange() : this.document;
+		_browserQueryCommandEnabled: function(command){
+			// summary:
+			//		Implementation to call to the native queryCommandEnabled of the browser.
+			// command:
+			//		The command to check.
+			// tags:
+			//		protected
+			if(!command){
+				return false;
+			}
+			var elem = has("ie") < 9 ? this.document.selection.createRange() : this.document;
 		try{
 			return elem.queryCommandEnabled(command);
 		}catch(e){
@@ -2061,19 +2097,41 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 		//		protected
 		argument = this._preFilterContent(argument);
 		var rv = true;
-		if(has("ie")){
-			var insertRange = this.document.selection.createRange();
-			if(this.document.selection.type.toUpperCase() === 'CONTROL'){
-				var n=insertRange.item(0);
-				while(insertRange.length){
-					insertRange.remove(insertRange.item(0));
+			if(has("ie") < 9){
+				var insertRange = this.document.selection.createRange();
+				if(this.document.selection.type.toUpperCase() === 'CONTROL'){
+					var n = insertRange.item(0);
+					while(insertRange.length){
+						insertRange.remove(insertRange.item(0));
+					}
+					n.outerHTML = argument;
+				}else{
+					insertRange.pasteHTML(argument);
 				}
-				n.outerHTML=argument;
-			}else{
-				insertRange.pasteHTML(argument);
+				insertRange.select();
+			}else if(has("trident") < 8){
+			var insertRange;
+			var selection = rangeapi.getSelection(this.window);
+			if(selection && selection.rangeCount && selection.getRangeAt){
+				insertRange = selection.getRangeAt(0);
+				insertRange.deleteContents();
+
+				var div = domConstruct.create('div');
+				div.innerHTML = argument;
+				var node, lastNode;
+				var n = this.document.createDocumentFragment();
+				while((node = div.firstChild)){
+					lastNode = n.appendChild(node);
+				}
+				insertRange.insertNode(n);
+				if(lastNode) {
+					insertRange = insertRange.cloneRange();
+					insertRange.setStartAfter(lastNode);
+					insertRange.collapse(false);
+					selection.removeAllRanges();
+					selection.addRange(insertRange);
+				}
 			}
-			insertRange.select();
-			//insertRange.collapse(true);
 		}else if(has("mozilla") && !argument.length){
 			//mozilla can not inserthtml an empty html to delete current selection
 			//so we delete the selection instead in this case
@@ -2092,7 +2150,7 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 		// tags:
 		//		protected
 		var applied = false;
-		if(has("ie")){
+		if(has("ie") || has("trident")){
 			this._adaptIESelection();		
 			applied = this._adaptIEFormatAreaAndExec("bold");
 		}
@@ -2110,7 +2168,7 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 		// tags:
 		//		protected
 		var applied = false;
-		if(has("ie")){
+		if(has("ie") || has("trident")){
 			this._adaptIESelection();			
 			applied = this._adaptIEFormatAreaAndExec("italic");
 		}
@@ -2128,7 +2186,7 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 		// tags:
 		//		protected
 		var applied = false;
-		if(has("ie")){
+		if(has("ie") || has("trident")){
 			this._adaptIESelection();			
 			applied = this._adaptIEFormatAreaAndExec("underline");
 		}
@@ -2146,7 +2204,7 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 		// tags:
 		//		protected
 		var applied = false;
-		if(has("ie")){
+		if(has("ie") || has("trident")){
 			this._adaptIESelection();			
 			applied = this._adaptIEFormatAreaAndExec("strikethrough");
 		}
@@ -2164,7 +2222,7 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 		// tags:
 		//		protected
 		var applied = false;
-		if(has("ie")){
+		if(has("ie") || has("trident")){
 			this._adaptIESelection();			
 			applied = this._adaptIEFormatAreaAndExec("superscript");
 		}
@@ -2182,7 +2240,7 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 		// tags:
 		//		protected
 		var applied = false;
-		if(has("ie")){
+		if(has("ie") || has("trident")){
 			this._adaptIESelection();			
 			applied = this._adaptIEFormatAreaAndExec("subscript");
 			
@@ -2201,7 +2259,7 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 		// tags:
 		//		protected
 		var isApplied;
-		if(has("ie")){
+		if(has("ie") || has("trident")){
 			isApplied = this._handleTextColorOrProperties("fontname", argument);
 		}
 		if(!isApplied){
@@ -2218,7 +2276,7 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 		// tags:
 		//		protected
 		var isApplied;
-		if(has("ie")){
+		if(has("ie") || has("trident")){
 			isApplied = this._handleTextColorOrProperties("fontsize", argument);
 		}
 		if(!isApplied){
@@ -2235,7 +2293,7 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 		// tags:
 		//		protected
 		var applied = false;
-		if(has("ie")){
+		if(has("ie") || has("trident")){
 			applied = this._adaptIEList("insertorderedlist", argument);
 		}
 		if(!applied){
@@ -2252,7 +2310,7 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 		// tags:
 		//		protected
 		var applied = false;
-		if(has("ie")){
+		if(has("ie") || has("trident")){
 			applied = this._adaptIEList("insertunorderedlist", argument);
 		}
 		if(!applied){
@@ -2300,7 +2358,7 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 		//		private.
 		if(node.nodeType === 1/*element*/){
 			if(node.childNodes.length > 0){
-				return this._isNodeEmpty(node.childNodes[0], startOffset);
+					return this._isNodeEmpty(node.childNodes[0], startOffset);	// huh?   why test just first child?
 	}
 			return true;
 		}else if(node.nodeType === 3/*text*/){
@@ -2865,6 +2923,24 @@ var RichText = declare("dijit._editor.RichText", [_Widget, _CssStateMixin], {
 			}
 			domConstruct.destroy(b);
 		});
+			return node;
+		},
+
+		_stripTrailingEmptyNodes: function(/*DOMNode*/ node){
+			// summary:
+			//		Function for stripping trailing nodes without any text, excluding trailing nodes
+			//		like <img> or <div><img></div>, even though they don't have text either.
+
+			function isEmpty(node){
+				// If not for old IE we could check for Element children by node.firstElementChild
+				return (/^(p|div|br)$/i.test(node.nodeName) && node.children.length == 0 &&
+					/^[\s\xA0]*$/.test(node.textContent || node.innerText || "")) ||
+					(node.nodeType === 3/*text*/ && /^[\s\xA0]*$/.test(node.nodeValue));
+			}
+			while(node.lastChild && isEmpty(node.lastChild)){
+				domConstruct.destroy(node.lastChild);
+			}
+
 		return node;
 	}
 });

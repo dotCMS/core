@@ -106,7 +106,7 @@ define("dijit/form/ValidationTextBox", [
 			// summary:
 			//		Hook so set('value', ...) works.
 			this.inherited(arguments);
-			this.validate(this.focused);
+			this._refreshState();
 		},
 
 		validator: function(/*anything*/ value, /*__Constraints*/ constraints){
@@ -175,7 +175,7 @@ define("dijit/form/ValidationTextBox", [
 			var isEmpty = this._isEmpty(this.textbox.value);
 			var isValidSubset = !isValid && isFocused && this._isValidSubset();
 			this._set("state", isValid ? "" : (((((!this._hasBeenBlurred || isFocused) && isEmpty) || isValidSubset) && (this._maskValidSubsetError || (isValidSubset && !this._hasBeenBlurred && isFocused))) ? "Incomplete" : "Error"));
-			this.focusNode.setAttribute("aria-invalid", isValid ? "false" : "true");
+			this.focusNode.setAttribute("aria-invalid", this.state == "Error" ? "true" : "false");
 
 			if(this.state == "Error"){
 				this._maskValidSubsetError = isFocused && isValidSubset; // we want the error to show up after a blur and refocus
@@ -206,7 +206,7 @@ define("dijit/form/ValidationTextBox", [
 
 		_refreshState: function(){
 			// Overrides TextBox._refreshState()
-			if(this._created){
+			if(this._created){ // should instead be this._started but that would require all programmatic ValidationTextBox instantiations to call startup()
 				this.validate(this.focused);
 			}
 			this.inherited(arguments);
@@ -243,6 +243,7 @@ define("dijit/form/ValidationTextBox", [
 
 		_setPatternAttr: function(/*String|Function*/ pattern){
 			this._set("pattern", pattern); // don't set on INPUT to avoid native HTML5 validation
+			this._refreshState();
 		},
 
 		_getPatternAttr: function(/*__Constraints*/ constraints){
