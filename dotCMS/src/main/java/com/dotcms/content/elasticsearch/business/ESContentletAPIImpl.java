@@ -4319,7 +4319,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 					}
 					for (Contentlet con : cons) {
 						try {
-						    // In order to get the related content we should use method getRelatedContent
+                            // In order to get the related content we should use method getRelatedContent
                             // that has -boolean pullByParent- as parameter so we can pass -false-
                             // to get related content where we are parents.
 							List<Contentlet> relatedCon = getRelatedContent(
