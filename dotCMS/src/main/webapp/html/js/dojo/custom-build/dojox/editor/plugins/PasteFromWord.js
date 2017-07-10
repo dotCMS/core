@@ -174,6 +174,7 @@ var PasteFromWord = dojo.declare("dojox.editor.plugins.PasteFromWord", _Plugin, 
 		content = dojox.html.format.prettyPrint(content);
 
 		// Paste it in.
+		this.editor.focus();
 		this.editor.execCommand("inserthtml", content);
 	},
 

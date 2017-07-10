@@ -264,7 +264,11 @@ define("dojox/gesture/Base", [
 				return;
 			}
 			// invoking gesture.press()|move()|release()|cancel()
-			e.preventDefault();
+			// #16900: same condition as in dojo/touch, to avoid breaking the editing of input fields.
+			if((e.target.tagName != "INPUT" || e.target.type == "radio" || e.target.type == "checkbox")
+				&& e.target.tagName != "TEXTAREA"){
+				e.preventDefault(); 
+			}
 			e._locking[this.defaultEvent] = true;
 			this[phase](element.data, e);
 		},
