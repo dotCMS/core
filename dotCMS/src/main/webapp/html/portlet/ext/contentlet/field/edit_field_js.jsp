@@ -529,12 +529,11 @@ var cmsfile=null;
 
 	function addFileImageCallback(file) {
 		
-		console.log(file);
+		//console.log(file);
 		var pattern = "<%=Config.getStringProperty("WYSIWYG_IMAGE_URL_PATTERN", "{path}{name}?language_id={languageId}")%>";
-		
 		var assetURI = replaceUrlPattern(pattern, file);
 
-	    console.log("assetURI:" + assetURI)
+	    // console.log("assetURI:" + assetURI)
 	    /*
 	    pattern="/dA/{shortyId}/{name}?language_id";
 	    console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
@@ -550,11 +549,11 @@ var cmsfile=null;
         
         pattern="/dA/{identifier}/{extension}?language_id={languageId}";  
         console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-	    */
+
 	    
         pattern="//{hostName}{path}{name}?language_id={languageId}";  
         console.log("pattern:" + pattern + " = " + replaceUrlPattern(pattern, file));
-	    
+	    */
 	    
 	    
 		tinyMCEFilePickerCallback(assetURI, {alt: file.description});
@@ -566,15 +565,18 @@ var cmsfile=null;
 		
 	     return pattern
           .replace(/{name}/g        ,file.name)
+          .replace(/{fileName}/g        ,file.name)
           .replace(/{path}/g        ,file.path)
           .replace(/{extension}/g   ,file.extension)
           .replace(/{languageId}/g   ,file.languageId)
-          .replace(/{hostname}/g   ,file.hostName)
-          .replace(/{hostName}/g   ,file.hostName)
-          .replace(/{inode}/g   ,file.inode)
-          .replace(/{identifier}/g   ,file.identifier)
-          .replace(/{shortyInode}/g   ,file.inode.replace("-").substring(0, 10))
-          .replace(/{shortyId}/g   ,file.identifier.replace("-").substring(0, 10))
+          .replace(/{hostname}/g    ,file.hostName)
+          .replace(/{hostName}/g    ,file.hostName)
+          .replace(/{inode}/g       ,file.inode)
+          .replace(/{hostId}/g      ,file.host)   
+          .replace(/{identifier}/g  ,file.identifier)
+          .replace(/{id}/g          ,file.identifier)
+          .replace(/{shortyInode}/g ,file.inode.replace("-", "").substring(0, 10))
+          .replace(/{shortyId}/g    ,file.identifier.replace("-", "").substring(0, 10))
           ;
 		
 	}
