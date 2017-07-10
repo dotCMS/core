@@ -498,7 +498,7 @@ public class StructureFactory {
      */
 	public static void disableDefault() throws DotHibernateException
 	{
-		throw new DotHibernateException("You cannot disbale the defualt without setting a new one");
+		throw new DotHibernateException("You cannot disbale the default without setting a new one");
 	}
 
 	public static int getTotalDates(Structure structure)
