@@ -77,19 +77,36 @@ export class ContentTypesInfoService {
     }
 
     private getItem(type: string, prop: string): string {
-        // Some endpoints have different name/labels for the same content types
+        let result: any;
+
+        if (type) {
+            type = this.getTypeName(type);
+
+            for (let i = 0; i < this.contentTypeInfoCollection.length; i++) {
+                let item = this.contentTypeInfoCollection[i];
+                if (item.clazz.toLocaleLowerCase() === type.toLocaleLowerCase() || item.label.toLocaleLowerCase() === type.toLocaleLowerCase()) {
+                    result = item[prop];
+                    break;
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Some endpoints have different name/labels for the same content types
+     * @param type
+     */
+    private getTypeName(type: string): string {
         if (type === 'HTMLPAGE' || type === 'htmlpage') {
             type = 'PAGE';
         }
         if (type === 'FILE' || type === 'file' || type === 'File') {
             type = 'FILEASSET';
         }
-        for (let i = 0; i < this.contentTypeInfoCollection.length; i++) {
-            let item = this.contentTypeInfoCollection[i];
-            if (item.clazz.toLocaleLowerCase() === type.toLocaleLowerCase() || item.label.toLocaleLowerCase() === type.toLocaleLowerCase()) {
-                return item[prop];
-            }
-        }
+
+        return type;
     }
 
 }

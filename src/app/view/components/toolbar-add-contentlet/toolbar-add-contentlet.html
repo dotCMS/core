@@ -7,7 +7,7 @@
     (close)="iframeOverlayService.hide()">
     <div class="toolbar-add-contentlet__head">
         <span class="toolbar-add-contentlet__head-button" *ngFor="let structureTypeView of types">
-            <button pButton iconButton flat (click)="select(structureTypeView)" [icon]="contentTypesInfoService.getIcon(structureTypeView.label)" [class.toolbar-add-contentlet__head-selected]="selectedName === structureTypeView.name"></button>
+            <button pButton iconButton flat (click)="select(structureTypeView)" [icon]="contentTypesInfoService.getIcon(structureTypeView.name)" [class.toolbar-add-contentlet__head-selected]="selectedName === structureTypeView.name"></button>
             <label>{{structureTypeView.label}}</label>
         </span>
     </div>
