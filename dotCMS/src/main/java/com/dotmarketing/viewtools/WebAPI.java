@@ -73,7 +73,7 @@ public class WebAPI implements ViewTool {
     boolean PREVIEW_MODE=false;
     boolean EDIT_MODE = false;
     long langId;
-    long defualtLang  = langAPI.getDefaultLanguage().getId();
+    long defaultLang  = langAPI.getDefaultLanguage().getId();
 	/**
 	 * @param  obj  the ViewContext that is automatically passed on view tool initialization, either in the request or the application
 	 * @return
@@ -391,8 +391,8 @@ public class WebAPI implements ViewTool {
 		  
 		  // Language Fall Back
 		  cvi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), langId);
-		  if(cvi ==null && defualtLang != langId){
-		    cvi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), defualtLang);
+		  if(cvi ==null && defaultLang != langId){
+		    cvi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), defaultLang);
 		  }
 		  String conInode = (PREVIEW_MODE && EDIT_MODE) ? cvi.getWorkingInode() : cvi.getLiveInode();
 		  FileAsset file  = APILocator.getFileAssetAPI().fromContentlet(APILocator.getContentletAPI().find(conInode,  user, true));

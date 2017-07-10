@@ -1315,7 +1315,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             	}
             	else if(sortBy.startsWith("score")){
             		String[] test = sortBy.split("\\s+");
-            		String defualtSecondarySort = "moddate";
+            		String defaultSecondarySort = "moddate";
             		SortOrder defaultSecondardOrder = SortOrder.DESC;
 
             		if(test.length>2){
@@ -1325,11 +1325,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
             				defaultSecondardOrder = SortOrder.ASC;
             		}
             		if(test.length>1){
-            			defualtSecondarySort= test[1];
+            			defaultSecondarySort= test[1];
             		}
 
             		srb.addSort("_score", SortOrder.DESC);
-            		srb.addSort(defualtSecondarySort, defaultSecondardOrder);
+            		srb.addSort(defaultSecondarySort, defaultSecondardOrder);
             	}
             	else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")) {
             		String[] sortbyArr=sortBy.split(",");

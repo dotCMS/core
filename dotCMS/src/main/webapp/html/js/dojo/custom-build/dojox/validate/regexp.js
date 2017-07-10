@@ -106,7 +106,7 @@ dxregexp = dojox.validate.regexp = {
 		//TODO: support unicode hostnames?
 		// Domain name labels can not end with a dash.
 		var domainLabelRE = "(?:[\\da-zA-Z](?:[-\\da-zA-Z]{0,61}[\\da-zA-Z])?)";
-		var domainNameRE = "(?:[a-zA-Z](?:[-\\da-zA-Z]{0,6}[\\da-zA-Z])?)"; // restricted version to allow backwards compatibility with allowLocal, allowIP
+		var domainNameRE = "(?:[a-zA-Z](?:[-\\da-zA-Z]{0,61}[\\da-zA-Z])?)"; // restricted version to allow backwards compatibility with allowLocal, allowIP
 
 		// port number RE
 		var portRE = flags.allowPort ? "(\\:\\d+)?" : "";

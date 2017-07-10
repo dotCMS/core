@@ -541,7 +541,7 @@ define("dojox/dtl/_base", [
 	},
 	{
 		render: function(context, buffer){
-			var str = this.contents.resolve(context);
+			var str = this.contents.resolve(context) || "";
 			if(!str.safe){
 				str = dd._base.escape("" + str);
 			}

@@ -88,7 +88,7 @@ var RowSelector = declare("dojox.grid.cells.RowSelector", gridCells._Widget, {
 		return ["<div tabindex = -1 ",
 				"id = '" + _this.grid.id + "_rowSelector_" + rowIndex + "' ",
 				"name = '" + _this.grid.id + "_rowSelector' class = '" + clazz + "' ",
-				"role = " + _this.inputType + " aria-checked = '" + checked + "' aria-disabled = '" + disabled +
+				"role = " + _this.inputType.toLowerCase() + " aria-checked = '" + checked + "' aria-disabled = '" + disabled +
 				"' aria-label = '" + string.substitute(_this.grid._nls["indirectSelection" + _this.inputType], [rowIndex + 1]) + "'>",
 				"<span class = '" + _this.statusTextClass + "'>" + (checked ? _this.checkedText : _this.unCheckedText) + "</span>",
 				"</div>"].join("");

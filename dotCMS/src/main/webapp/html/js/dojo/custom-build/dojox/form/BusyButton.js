@@ -14,13 +14,13 @@ var _BusyButtonMixin = declare("dojox.form._BusyButtonMixin", null, {
 
 	// isBusy: Boolean
 	isBusy: false,
-	
+
 	// busyLabel: String
 	//		text while button is busy
 	busyLabel: "",
-	
+
 	timeout: null, // timeout, should be controlled by xhr call
-	
+
 	// useIcon: Boolean
 	//		use a busy icon
 	useIcon: true,
@@ -49,7 +49,15 @@ var _BusyButtonMixin = declare("dojox.form._BusyButtonMixin", null, {
 		// summary:
 		//		sets state from idle to busy
 		this.isBusy = true;
-		this.set("disabled", true);
+
+		// Webkit does not submit the form if the submit button is disabled when
+		// clicked ( https://bugs.webkit.org/show_bug.cgi?id=14443 ), so disable the button later
+		if(this._disableHandle) {
+			this._disableHandle.remove();
+		}
+		this._disableHandle = this.defer(function() {
+			this.set("disabled", true);
+		});
 
 		this.setLabel(this.busyLabel, this.timeout);
 	},
@@ -58,6 +66,9 @@ var _BusyButtonMixin = declare("dojox.form._BusyButtonMixin", null, {
 		// summary:
 		//		if no timeout is set or for other reason the user can put the button back
 		//		to being idle
+		if(this._disableHandle) {
+			this._disableHandle.remove();
+		}
 		this.set("disabled", false);
 		this.isBusy = false;
 		this.setLabel(this._label);
@@ -94,7 +105,7 @@ var _BusyButtonMixin = declare("dojox.form._BusyButtonMixin", null, {
 		while(this.containerNode.firstChild){
 			this.containerNode.removeChild(this.containerNode.firstChild);
 		}
-		this.containerNode.innerHTML = this.label;
+		this.containerNode.appendChild(document.createTextNode(this.label));
 
 		if(this.showLabel == false && !domAttr.get(this.domNode, "title")){
 			this.titleNode.title=lang.trim(this.containerNode.innerText || this.containerNode.textContent || '');
@@ -132,7 +143,7 @@ var _BusyButtonMixin = declare("dojox.form._BusyButtonMixin", null, {
 
 var BusyButton = declare("dojox.form.BusyButton", [Button, _BusyButtonMixin], {
 	// summary:
-	//		BusyButton is a simple widget which provides implementing more 
+	//		BusyButton is a simple widget which provides implementing more
 	//		user friendly form submission.
 	// description:
 	//		When a form gets submitted by a user, many times it is recommended to disable

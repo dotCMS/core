@@ -278,7 +278,7 @@ public class PersonaAPIImpl implements PersonaAPI {
 	@Override
 	public void createDefaultPersonaStructure() throws DotDataException {
 
-		pFactory.createDefualtPersonaStructure();
+		pFactory.createDefaultPersonaStructure();
 	}
 
 	@Override
