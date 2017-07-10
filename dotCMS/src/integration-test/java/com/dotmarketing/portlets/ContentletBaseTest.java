@@ -11,6 +11,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
@@ -72,6 +73,7 @@ public class ContentletBaseTest extends IntegrationTestBase {
     protected static LanguageAPI languageAPI;
     protected static FieldAPI fieldAPI;
     protected static ContentTypeAPI contentTypeAPI;
+    protected static RelationshipAPI relationshipAPI;
     private static RoleAPI roleAPI;
     private static PermissionAPI permissionAPI;
     private static HostAPI hostAPI;
@@ -123,6 +125,7 @@ public class ContentletBaseTest extends IntegrationTestBase {
         tagAPI = APILocator.getTagAPI();
         fieldAPI = APILocator.getContentTypeFieldAPI();
         contentTypeAPI = APILocator.getContentTypeAPI(user, false);
+        relationshipAPI = APILocator.getRelationshipAPI();
 
         defaultHost = hostAPI.findDefaultHost( user, false );
 

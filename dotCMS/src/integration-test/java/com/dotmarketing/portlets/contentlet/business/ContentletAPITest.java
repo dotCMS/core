@@ -72,6 +72,8 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.io.BufferedWriter;
@@ -2601,6 +2603,133 @@ public class ContentletAPITest extends ContentletBaseTest {
 		
 		// Deleting content type.
 		contentTypeApi.delete(contentType);
+    }
+
+    /**
+     * This test will:
+     * --- Create a content type called "Nested".
+     * --- Add only 1 Text field called Title
+     * --- Create a Content "A". Save/publish it.
+     * --- Create a Content "B". Save/publish it.
+     * --- Create a Content "C". Save/publish it.
+     * --- Create a 1:N Relationship, Parent and Child same Content Type: Nested
+     * --- Relate Content: Parent: A, Child B.
+     * --- Relate Content: Parent: B, Child C.
+     * --- Edit Content A, update title to "ABC"
+     *
+     * Before the fix we were getting an exception when editing content A because validateContentlet
+     * validates that if there's a 1-N relationship the parent content can't relate to a child
+     * that already has a parent; but we were pulling other related content, not just the parents.
+     *
+     * https://github.com/dotCMS/core/issues/10656
+     */
+    @Test
+    public void test_validateContentlet_noErrors_whenRelationChainSameContentType() {
+        ContentType contentType = null;
+        com.dotcms.contenttype.model.field.Field textField = null;
+
+        Contentlet contentletA = null;
+        Contentlet contentletB = null;
+        Contentlet contentletC = null;
+
+        Relationship relationShip = null;
+
+        try {
+            // Create Content Type.
+            contentType = ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+                    .description("Nested")
+                    .host(defaultHost.getIdentifier())
+                    .name("Nested")
+                    .owner("owner")
+                    .variable("nested")
+                    .build();
+
+            contentType = contentTypeAPI.save(contentType);
+
+            // Save Fields. 1. Text
+            // Creating Text Field: Title.
+            textField = ImmutableTextField.builder()
+                    .name("Title")
+                    .variable("title")
+                    .contentTypeId(contentType.id())
+                    .dataType(DataTypes.TEXT)
+                    .build();
+
+            textField = fieldAPI.save(textField, user);
+
+            contentletA = new Contentlet();
+            contentletA.setStructureInode(contentType.inode());
+            contentletA.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentletA.setStringProperty(textField.variable(), "A");
+            contentletA = contentletAPI.checkin(contentletA, user, false);
+            contentletAPI.isInodeIndexed(contentletA.getInode());
+
+            contentletB = new Contentlet();
+            contentletB.setStructureInode(contentType.inode());
+            contentletB.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentletB.setStringProperty(textField.variable(), "B");
+            contentletB = contentletAPI.checkin(contentletB, user, false);
+            contentletAPI.isInodeIndexed(contentletB.getInode());
+
+            contentletC = new Contentlet();
+            contentletC.setStructureInode(contentType.inode());
+            contentletC.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentletC.setStringProperty(textField.variable(), "B");
+            contentletC = contentletAPI.checkin(contentletC, user, false);
+            contentletAPI.isInodeIndexed(contentletC.getInode());
+
+            relationShip = createRelationShip(contentType.inode(),
+                    contentType.inode(), false);
+
+            // Relate the content.
+            contentletAPI
+                    .relateContent(contentletA, relationShip, Lists.newArrayList(contentletB), user,
+                            false);
+            contentletAPI
+                    .relateContent(contentletB, relationShip, Lists.newArrayList(contentletC), user,
+                            false);
+
+            Map<Relationship, List<Contentlet>> relationshipListMap = Maps.newHashMap();
+            relationshipListMap.put(relationShip, Lists.newArrayList(contentletB));
+
+            contentletA = contentletAPI.checkout(contentletA.getInode(), user, false);
+            contentletA.setStringProperty(textField.variable(), "ABC");
+            contentletA = contentletAPI.checkin(contentletA, relationshipListMap, user, false);
+            contentletAPI.isInodeIndexed(contentletA.getInode());
+
+        } catch (Exception e) {
+            fail(e.getMessage());
+        } finally {
+            try {
+                // Delete Relationship.
+                if (relationShip != null) {
+                    relationshipAPI.delete(relationShip);
+                }
+                // Delete Contentlet.
+                if (contentletA != null) {
+                    contentletAPI.archive(contentletA, user, false);
+                    contentletAPI.delete(contentletA, user, false);
+                }
+                if (contentletB != null) {
+                    contentletAPI.archive(contentletB, user, false);
+                    contentletAPI.delete(contentletB, user, false);
+                }
+                if (contentletC != null) {
+                    contentletAPI.archive(contentletC, user, false);
+                    contentletAPI.delete(contentletC, user, false);
+                }
+                // Deleting Fields.
+                if (textField != null) {
+                    fieldAPI.delete(textField);
+                }
+                // Deleting Content Type
+                if (contentType != null) {
+                    contentTypeAPI.delete(contentType);
+                }
+            } catch (Exception e) {
+                fail(e.getMessage());
+            }
+        }
     }
 
     /**
