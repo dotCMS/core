@@ -4319,8 +4319,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 					}
 					for (Contentlet con : cons) {
 						try {
+						    // In order to get the related content we should use method getRelatedContent
+                            // that has -boolean pullByParent- as parameter so we can pass -false-
+                            // to get related content where we are parents.
 							List<Contentlet> relatedCon = getRelatedContent(
-									con, rel, APILocator.getUserAPI()
+									con, rel, false, APILocator.getUserAPI()
 											.getSystemUser(), true);
 							// If there's a 1-N relationship and the parent
 							// content is relating to a child that already has
