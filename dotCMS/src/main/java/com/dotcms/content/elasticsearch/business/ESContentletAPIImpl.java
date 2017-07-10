@@ -4292,14 +4292,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
 		    if(Structure.STRUCTURE_TYPE_PERSONA == contentlet.getStructure().getStructureType() ){
 		    	APILocator.getPersonaAPI().validatePersona(contentlet);
 		    }
+            if(contentlet != null && contentlet.isVanityUrl()){
+                APILocator.getVanityUrlAPI().validateVanityUrl(contentlet);
+            }
 		} catch (DotContentletValidationException ve) {
 			cve = ve;
 			hasError = true;
-		}
+		} catch (DotSecurityException | DotDataException e) {
+            Logger.error(this,"Error validating contentlet: "+e.getMessage(),e);
+        }
 
-
-
-		if (contentRelationships != null) {
+        if (contentRelationships != null) {
 			List<ContentletRelationshipRecords> records = contentRelationships
 					.getRelationshipsRecords();
 			for (ContentletRelationshipRecords cr : records) {

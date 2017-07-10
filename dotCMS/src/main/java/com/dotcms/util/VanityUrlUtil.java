@@ -7,6 +7,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Logger;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * This class provide some utility methods to interact with
@@ -23,6 +26,7 @@ public class VanityUrlUtil {
     private VanityUrlUtil() {
 
     }
+
     /**
      * Generate the sanitized cache key
      *
@@ -44,7 +48,7 @@ public class VanityUrlUtil {
     public static String sanitizeKey(final Contentlet vanityUrl)
             throws DotDataException, DotSecurityException {
         Host host = hostAPI.find(vanityUrl.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
-                        APILocator.systemUser(), false);
+                APILocator.systemUser(), false);
         return sanitizeKey(host.getIdentifier(),
                 fixURI(vanityUrl.getStringProperty(VanityUrlContentType.URI_FIELD_VAR)),
                 vanityUrl.getLanguageId());
@@ -88,5 +92,23 @@ public class VanityUrlUtil {
         Host host = hostAPI.find(vanityUrl.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
                 APILocator.systemUser(), false);
         return sanitizeSecondCacheKey(host.getIdentifier(), vanityUrl.getLanguageId());
+    }
+
+    /**
+     * Validates if the regular expression is valid
+     *
+     * @param regex Regular expression string
+     * @return true if is a valid pattern, false if not
+     */
+    public static boolean isPatternValid(String regex) {
+        boolean isValid = false;
+        try {
+            Pattern.compile(regex);
+            isValid = true;
+        } catch (PatternSyntaxException e) {
+            Logger.error(VanityUrlUtil.class,
+                    "Error cause by invalid Pattern syntax. URI:" + regex, e);
+        }
+        return isValid;
     }
 }

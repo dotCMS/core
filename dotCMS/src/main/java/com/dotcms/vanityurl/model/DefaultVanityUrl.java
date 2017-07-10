@@ -77,4 +77,15 @@ public class DefaultVanityUrl extends Contentlet implements VanityUrl {
         setProperty(VanityUrlContentType.ORDER_FIELD_VAR, order);
     }
 
+    @Override
+    public int compareTo(Object o) {
+        VanityUrl vanityUrl = (VanityUrl) o;
+        if (this.getOrder() == vanityUrl.getOrder()) {
+            return 0;
+        } else if (this.getOrder() < vanityUrl.getOrder()) {
+            return -1;
+        } else {
+            return 1;
+        }
+    }
 }

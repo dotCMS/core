@@ -3,6 +3,7 @@ package com.dotcms.vanityurl.business;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
 import java.util.List;
@@ -52,7 +53,8 @@ public interface VanityUrlAPI {
      * @param user The current user
      * @return a List of all Cached Vanity URLs contentlets live
      */
-    List<VanityUrl> getActiveVanityUrlsByHostAndLanguage(final String hostId, final long languageId, final User user);
+    List<VanityUrl> getActiveVanityUrlsByHostAndLanguage(final String hostId, final long languageId,
+            final User user);
 
     /**
      * Return the live version of the Cached vanityurl URL contentlet with the specified URI
@@ -73,4 +75,11 @@ public interface VanityUrlAPI {
      * @return Vanity URL
      */
     VanityUrl getVanityUrlFromContentlet(final Contentlet con);
+
+    /**
+     * This method checks that the Vanity Url URI is using a valid regular expression.
+     *
+     * @param contentlet The Vanity Url Contentlet
+     */
+    void validateVanityUrl(Contentlet contentlet) throws DotContentletValidationException;
 }

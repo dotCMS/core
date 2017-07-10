@@ -1,10 +1,9 @@
 package com.dotcms.vanityurl.model;
 
-import com.dotmarketing.util.Logger;
+import com.dotcms.util.VanityUrlUtil;
 import com.liferay.util.StringPool;
 import java.io.Serializable;
 import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 /**
  * This class construct a reduced version of the {@link VanityUrl}
@@ -32,7 +31,8 @@ public class CachedVanityUrl implements Serializable {
      */
     public CachedVanityUrl(VanityUrl vanityUrl) {
         //if the VanityUrl URI is not a valid regex
-        String regex = isPatternValid(vanityUrl.getURI())?vanityUrl.getURI(): StringPool.BLANK;
+        String regex = VanityUrlUtil.isPatternValid(vanityUrl.getURI()) ? vanityUrl.getURI()
+                : StringPool.BLANK;
         this.pattern = Pattern.compile(regex);
         this.vanityUrlId = vanityUrl.getIdentifier();
         this.url = vanityUrl.getURI();
@@ -105,21 +105,4 @@ public class CachedVanityUrl implements Serializable {
         return vanityUrlId;
     }
 
-    /**
-     * Validates if the regular expression is valid
-     *
-     * @param regex Regular expression string
-     * @return true if is a valid pattern, false if not
-     */
-    private boolean isPatternValid(String regex) {
-        boolean isValid = false;
-        try {
-            Pattern.compile(regex);
-            isValid = true;
-        } catch (PatternSyntaxException e) {
-            Logger.error(CachedVanityUrl.class,
-                    "Error cause by invalid Pattern syntax. URI:" + regex, e);
-        }
-        return isValid;
-    }
 }

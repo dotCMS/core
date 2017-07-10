@@ -4,6 +4,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.services.VanityUrlServices;
+import com.dotcms.util.VanityUrlUtil;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.DefaultVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
@@ -14,8 +15,10 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
@@ -23,6 +26,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 
 /**
@@ -54,39 +58,43 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     @Override
     public List<VanityUrl> getAllVanityUrls(final User user) {
         ImmutableList.Builder<VanityUrl> results = ImmutableList.builder();
+        TreeSet vanityTreeSet = new TreeSet<VanityUrl>();
         try {
             List<Contentlet> contentResults = contentletAPI
                     .search(GET_ALL_VANITY_URL,
                             0, 0, StringPool.BLANK, user, false);
             contentResults.stream()
-                    .forEach((Contentlet con) -> results.add(getVanityUrlFromContentlet(con)));
+                    .forEach((Contentlet con) -> vanityTreeSet.add(getVanityUrlFromContentlet(con)));
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, "Error searching for all Vanity URLs", e);
         }
-        return results.build();
+
+        return results.addAll(vanityTreeSet).build();
     }
 
     @Override
     public List<VanityUrl> getActiveVanityUrls(final User user) {
         ImmutableList.Builder<VanityUrl> results = new ImmutableList.Builder();
+        TreeSet vanityTreeSet = new TreeSet<VanityUrl>();
         try {
             List<Contentlet> contentResults = contentletAPI
                     .search(GET_ACTIVE_VANITY_URL, 0, 0, StringPool.BLANK, user, false);
             contentResults.stream().forEach((Contentlet con) -> {
                 VanityUrl vanityUrl = getVanityUrlFromContentlet(con);
                 addToVanityURLCache(vanityUrl);
-                results.add(vanityUrl);
+                vanityTreeSet.add(vanityUrl);
             });
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, "Error searching for active Vanity URLs", e);
         }
-        return results.build();
+        return results.addAll(vanityTreeSet).build();
     }
 
     @Override
     public List<VanityUrl> getActiveVanityUrlsByHostAndLanguage(final String hostId,
             final long languageId, final User user) {
         ImmutableList.Builder<VanityUrl> results = new ImmutableList.Builder();
+        TreeSet vanityTreeSet = new TreeSet<VanityUrl>();
         try {
             List<Contentlet> contentResults = contentletAPI
                     .search(GET_ACTIVE_VANITY_URL + " +conHost:" + hostId
@@ -95,12 +103,12 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
             contentResults.stream().forEach((Contentlet con) -> {
                 VanityUrl vanityUrl = getVanityUrlFromContentlet(con);
                 addToVanityURLCache(vanityUrl);
-                results.add(vanityUrl);
+                vanityTreeSet.add(vanityUrl);
             });
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, "Error searching for active Vanity URLs", e);
         }
-        return results.build();
+        return results.addAll(vanityTreeSet).build();
     }
 
     @Override
@@ -288,6 +296,32 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
             }
         }
         return result;
+    }
+
+    @Override
+    public void validateVanityUrl(Contentlet contentlet) throws DotContentletValidationException {
+        VanityUrl vanityUrl = getVanityUrlFromContentlet(contentlet);
+        User user = null;
+        try {
+            user = APILocator.getUserAPI().loadUserById(contentlet.getModUser());
+        } catch (Exception e) {
+            Logger.debug(this,e.getMessage(),e);
+            try {
+                user = APILocator.getUserAPI().getSystemUser();
+            } catch (DotDataException e1) {
+                Logger.debug(this,e1.getMessage(),e1);
+                throw new DotContentletValidationException("User Not Found");
+            }
+        }
+
+        if (!VanityUrlUtil.isPatternValid(vanityUrl.getURI())) {
+            Language l = APILocator.getLanguageAPI().getLanguage(user.getLanguageId());
+            String message = APILocator.getLanguageAPI()
+                    .getStringKey(l, "message.vanity.url.error.invalidURIPattern");
+
+            throw new DotContentletValidationException(message);
+        }
+
     }
 
 }
