@@ -32,8 +32,6 @@ import com.liferay.util.StringPool;
  */
 public class Task04210CreateDefaultLanguageVariable implements StartupTask {
 
-    // TODO: If the Content Type is changed we need to check that the values here and the ones in
-    // the Starter are the same
     private static final String LANGUAGE_VARIABLE_INODE = "f4d7c1b8-2c88-4071-abf1-a5328977b07d";
     private static final String LANGUAGE_VARIABLE_VARNAME = "Languagevariable";
     private static final String LANGUAGE_VARIABLE_NAME = "Language Variable";

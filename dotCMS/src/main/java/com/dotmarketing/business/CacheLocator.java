@@ -1,8 +1,5 @@
 package com.dotmarketing.business;
 
-import java.util.List;
-import java.util.Set;
-
 import com.dotcms.business.SystemCache;
 import com.dotcms.cache.KeyValueCache;
 import com.dotcms.cache.KeyValueCacheImpl;
@@ -72,6 +69,10 @@ import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.velocity.DotResourceCache;
 import com.dotmarketing.viewtools.navigation.NavToolCache;
 import com.dotmarketing.viewtools.navigation.NavToolCacheImpl;
+
+import java.util.List;
+import java.util.Set;
+
 
 /**
  * FactoryLocator is a factory method to get single(ton) service objects.
@@ -327,6 +328,7 @@ public class CacheLocator extends Locator<CacheIndex>{
     public static KeyValueCache getKeyValueCache() {
     	return (KeyValueCache) getInstance(CacheIndex.KeyValueCache);
     }
+
 
 	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster

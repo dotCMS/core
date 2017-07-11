@@ -36,7 +36,7 @@ import com.dotmarketing.startup.runonce.*;
  * meant for the initialization of a fresh dotCMS install, for fixing data
  * inconsistencies, and the database upgrade process usually associated with a
  * new system version.
- * 
+ *
  * @author root
  * @version 1.0
  * @since Mar 22, 2012
@@ -49,27 +49,27 @@ public class TaskLocatorUtil {
 	/**
 	 * Returns the list of tasks that are run to solve internal conflicts
 	 * related to data inconsistency.
-	 * 
+	 *
 	 * @return The list of Fix Tasks.
 	 */
-    private static List<Class<?>> systemfixTasks = ImmutableList.of(
-            FixTask00001CheckAssetsMissingIdentifiers.class,
-            FixTask00003CheckContainersInconsistencies.class,
-            FixTask00006CheckLinksInconsistencies.class,
-            FixTask00007CheckTemplatesInconsistencies.class,
-            FixTask00008CheckTreeInconsistencies.class,
-            FixTask00009CheckContentletsInexistentInodes.class,
-            FixTask00011RenameHostInFieldVariableName.class,
-            FixTask00012UpdateAssetsHosts.class,
-            FixTask00015FixAssetTypesInIdentifiers.class,
-            FixTask00020DeleteOrphanedIdentifiers.class,
-            FixTask00030DeleteOrphanedAssets.class,
-            FixTask00050FixInodesWithoutContentlets.class,
-            FixTask00060FixAssetType.class,
-            FixTask00070FixVersionInfo.class,
-            FixTask00080DeleteOrphanedContentTypeFields.class,
-            FixTask00090RecreateMissingFoldersInParentPath.class
-        );
+	private static List<Class<?>> systemfixTasks = ImmutableList.of(
+			FixTask00001CheckAssetsMissingIdentifiers.class,
+			FixTask00003CheckContainersInconsistencies.class,
+			FixTask00006CheckLinksInconsistencies.class,
+			FixTask00007CheckTemplatesInconsistencies.class,
+			FixTask00008CheckTreeInconsistencies.class,
+			FixTask00009CheckContentletsInexistentInodes.class,
+			FixTask00011RenameHostInFieldVariableName.class,
+			FixTask00012UpdateAssetsHosts.class,
+			FixTask00015FixAssetTypesInIdentifiers.class,
+			FixTask00020DeleteOrphanedIdentifiers.class,
+			FixTask00030DeleteOrphanedAssets.class,
+			FixTask00050FixInodesWithoutContentlets.class,
+			FixTask00060FixAssetType.class,
+			FixTask00070FixVersionInfo.class,
+			FixTask00080DeleteOrphanedContentTypeFields.class,
+			FixTask00090RecreateMissingFoldersInParentPath.class
+	);
 
 	/**
 	 * Adds a dotCMS fix task to the main fix task list.
@@ -77,9 +77,9 @@ public class TaskLocatorUtil {
 	 * @param clazz
 	 *            - The new fix task class.
 	 */
-    public static void addFixTask(Class<?> clazz){
-        userfixTasks.add(clazz);
-    }
+	public static void addFixTask(Class<?> clazz){
+		userfixTasks.add(clazz);
+	}
 
 	/**
 	 * Removes the specified fix task from the main list.
@@ -87,9 +87,9 @@ public class TaskLocatorUtil {
 	 * @param clazz
 	 *            - The fix task to remove.
 	 */
-    public static void removeFixTask(Class<?> clazz){
-        userfixTasks.remove(clazz);
-    }
+	public static void removeFixTask(Class<?> clazz){
+		userfixTasks.remove(clazz);
+	}
 
 	/**
 	 * Returns the list of fix task classes for the current dotCMS instance.
@@ -97,10 +97,10 @@ public class TaskLocatorUtil {
 	 * @return The list of fix tasks.
 	 */
 	public static List<Class<?>> getFixTaskClasses() {
-	    List<Class<?>> l = new ArrayList<>();
+		List<Class<?>> l = new ArrayList<>();
 		l.addAll(systemfixTasks);
 		l.addAll(userfixTasks);
-	    return l;
+		return l;
 	}
 
 	/**
@@ -113,7 +113,7 @@ public class TaskLocatorUtil {
 	 * executed upgrade task will add a new record in such a table with the
 	 * number in the class name. This allows dotCMS to keep track of the tasks 
 	 * that have been run.
-	 * 
+	 *
 	 * @return The list of Run-Once Tasks.
 	 */
 	public static List<Class<?>> getStartupRunOnceTaskClasses() {
@@ -146,53 +146,53 @@ public class TaskLocatorUtil {
 		ret.add(Task00900CreateLogConsoleTable.class);
 		ret.add(Task00905FixAddFolderAfterDelete.class);
 		ret.add(Task00910AddEscalationFields.class);
-        ret.add( Task00920AddContentletVersionSystemHost.class );
-        ret.add(Task00922FixdotfolderpathMSSQL.class);
-        ret.add(Task00925UserIdTypeChange.class);
-        ret.add(Task00930AddIdentifierIndex.class);
-        ret.add(Task00935LogConsoleTableData.class);
-        ret.add(Task00940AlterTemplateTable.class);
-        // Content Publishing Framework
-        ret.add(Task00945AddTableContentPublishing.class);
-        // Content Publishing Framework - End Point Management
-        ret.add(Task00950AddTablePublishingEndpoint.class);
-        ret.add(Task01000LinkChequerTable.class);
-        ret.add(Task01005TemplateThemeField.class);
-        ret.add(Task01015AddPublishExpireDateToIdentifier.class);
-        ret.add(Task01016AddStructureExpireFields.class);
-        ret.add(Task01020CreateDefaultWorkflow.class);
-        ret.add(Task01030AddSiteSearchAuditTable.class);
-        ret.add(Task01035FixTriggerVarLength.class);
-        ret.add(Task03000CreateContainertStructures.class);
-        ret.add(Task01045FixUpgradeTriggerVarLength.class);
-        ret.add(Task01050AddPushPublishLogger.class);
-        ret.add(Task01055CreatePushPublishEnvironmentTable.class);
-        ret.add(Task01060CreatePushPublishPushedAssets.class);
-        ret.add(Task01065IndexOnPublishingQueueAuditStatus.class);
-        ret.add(Task01070BundleNameDropUnique.class);
-        ret.add(Task01085CreateBundleTablesIfNotExists.class);
-        ret.add(Task01080CreateModDateForMissingObjects.class);
-        ret.add(Task01090AddWorkflowSchemeUniqueNameContraint.class);
-        ret.add(Task01095CreateIntegrityCheckerResultTables.class);
-        ret.add(Task01096CreateContainerStructuresTable.class);
-        ret.add(Task03005CreateModDateForFieldIfNeeded.class);
-        ret.add(Task03010AddContentletIdentifierIndex.class);
-        ret.add(Task03015CreateClusterConfigModel.class);
-        ret.add(Task03020PostgresqlIndiciesFK.class);
-        ret.add(Task03025CreateFoundationForNotificationSystem.class);
-        ret.add(Task03030CreateIndicesForVersionTables.class);
-        ret.add(Task03035FixContainerCheckTrigger.class);
-        ret.add(Task03040AddIndexesToStructureFields.class);
-        ret.add(Task03042AddLicenseRepoModel.class);
-        ret.add(Task03045TagnameTypeChangeMSSQL.class);
-        ret.add(Task03050updateFormTabName.class);
-        ret.add(Task03055RemoveLicenseManagerPortlet.class);
-        ret.add(Task03060AddClusterServerAction.class);
+		ret.add( Task00920AddContentletVersionSystemHost.class );
+		ret.add(Task00922FixdotfolderpathMSSQL.class);
+		ret.add(Task00925UserIdTypeChange.class);
+		ret.add(Task00930AddIdentifierIndex.class);
+		ret.add(Task00935LogConsoleTableData.class);
+		ret.add(Task00940AlterTemplateTable.class);
+		// Content Publishing Framework
+		ret.add(Task00945AddTableContentPublishing.class);
+		// Content Publishing Framework - End Point Management
+		ret.add(Task00950AddTablePublishingEndpoint.class);
+		ret.add(Task01000LinkChequerTable.class);
+		ret.add(Task01005TemplateThemeField.class);
+		ret.add(Task01015AddPublishExpireDateToIdentifier.class);
+		ret.add(Task01016AddStructureExpireFields.class);
+		ret.add(Task01020CreateDefaultWorkflow.class);
+		ret.add(Task01030AddSiteSearchAuditTable.class);
+		ret.add(Task01035FixTriggerVarLength.class);
+		ret.add(Task03000CreateContainertStructures.class);
+		ret.add(Task01045FixUpgradeTriggerVarLength.class);
+		ret.add(Task01050AddPushPublishLogger.class);
+		ret.add(Task01055CreatePushPublishEnvironmentTable.class);
+		ret.add(Task01060CreatePushPublishPushedAssets.class);
+		ret.add(Task01065IndexOnPublishingQueueAuditStatus.class);
+		ret.add(Task01070BundleNameDropUnique.class);
+		ret.add(Task01085CreateBundleTablesIfNotExists.class);
+		ret.add(Task01080CreateModDateForMissingObjects.class);
+		ret.add(Task01090AddWorkflowSchemeUniqueNameContraint.class);
+		ret.add(Task01095CreateIntegrityCheckerResultTables.class);
+		ret.add(Task01096CreateContainerStructuresTable.class);
+		ret.add(Task03005CreateModDateForFieldIfNeeded.class);
+		ret.add(Task03010AddContentletIdentifierIndex.class);
+		ret.add(Task03015CreateClusterConfigModel.class);
+		ret.add(Task03020PostgresqlIndiciesFK.class);
+		ret.add(Task03025CreateFoundationForNotificationSystem.class);
+		ret.add(Task03030CreateIndicesForVersionTables.class);
+		ret.add(Task03035FixContainerCheckTrigger.class);
+		ret.add(Task03040AddIndexesToStructureFields.class);
+		ret.add(Task03042AddLicenseRepoModel.class);
+		ret.add(Task03045TagnameTypeChangeMSSQL.class);
+		ret.add(Task03050updateFormTabName.class);
+		ret.add(Task03055RemoveLicenseManagerPortlet.class);
+		ret.add(Task03060AddClusterServerAction.class);
 		ret.add(Task03065AddHtmlPageIR.class);
-        ret.add(Task03100HTMLPageAsContentChanges.class);
-        ret.add(Task03105HTMLPageGenericPermissions.class);
-        ret.add(Task03120AddInodeToContainerStructure.class);
-	    ret.add(Task03130ActionletsFromPlugin.class);
+		ret.add(Task03100HTMLPageAsContentChanges.class);
+		ret.add(Task03105HTMLPageGenericPermissions.class);
+		ret.add(Task03120AddInodeToContainerStructure.class);
+		ret.add(Task03130ActionletsFromPlugin.class);
 		ret.add(Task03135FixStructurePageDetail.class);
 		ret.add(Task03140AddFileAssetsIntegrityResultTable.class);
 		ret.add(Task03150LoweCaseURLOnVirtualLinksTable.class);
@@ -214,36 +214,36 @@ public class TaskLocatorUtil {
 		ret.add(Task03565FixContainerVersionsCheck.class);
 		ret.add(Task03600UpdateMssqlVarcharTextColumns.class);
 		ret.add(Task03605FixMSSQLMissingConstraints.class);
-        ret.add(Task03700ModificationDateColumnAddedToUserTable.class);
-        ret.add(Task03705AddingSystemEventTable.class);
-        ret.add(Task03710AddFKForIntegrityCheckerTables.class);
-        ret.add(Task03715AddFKForPublishingBundleTable.class);
-        ret.add(Task03720AddRolesIntegrityCheckerTable.class);
-        ret.add(Task03725NewNotificationTable.class);
-        ret.add(Task03735UpdatePortletsIds.class);
-        ret.add(Task03740UpdateLayoutIcons.class);
-        ret.add(Task03745DropLegacyHTMLPageAndFileTables.class);
-        ret.add(Task03800AddIndexLowerStructureTable.class);
-        ret.add(Task04100DeleteUnusedJobEntries.class);
-        ret.add(Task04105LowercaseVanityUrls.class);
-        ret.add(Task04110AddColumnsPublishingPushedAssetsTable.class);
-        ret.add(Task04115LowercaseIdentifierUrls.class);
+		ret.add(Task03700ModificationDateColumnAddedToUserTable.class);
+		ret.add(Task03705AddingSystemEventTable.class);
+		ret.add(Task03710AddFKForIntegrityCheckerTables.class);
+		ret.add(Task03715AddFKForPublishingBundleTable.class);
+		ret.add(Task03720AddRolesIntegrityCheckerTable.class);
+		ret.add(Task03725NewNotificationTable.class);
+		ret.add(Task03735UpdatePortletsIds.class);
+		ret.add(Task03740UpdateLayoutIcons.class);
+		ret.add(Task03745DropLegacyHTMLPageAndFileTables.class);
+		ret.add(Task03800AddIndexLowerStructureTable.class);
+		ret.add(Task04100DeleteUnusedJobEntries.class);
+		ret.add(Task04105LowercaseVanityUrls.class);
+		ret.add(Task04110AddColumnsPublishingPushedAssetsTable.class);
+		ret.add(Task04115LowercaseIdentifierUrls.class);
 		ret.add(Task04120IncreaseHostColumnOnClusterServerTable.class);
-        ret.add(Task04200CreateDefaultVanityURL.class);
-        ret.add(Task04205MigrateVanityURLToContent.class);
-        ret.add(Task04210CreateDefaultLanguageVariable.class);
-        return ret;
-    }
+		ret.add(Task04200CreateDefaultVanityURL.class);
+		ret.add(Task04205MigrateVanityURLToContent.class);
+
+		return ret;
+	}
 
 	/**
 	 * Returns list of tasks that are run <b>every time</b> that dotCMS starts
 	 * up. In the case of a fresh install, these tasks will deploy the default
 	 * database schema and data, along with the information associated to the
 	 * Starter Site ("demo.dotcms.com").
-	 * 
+	 *
 	 * @return The list of Run-Always Tasks.
 	 */
-    public static List<Class<?>> getStartupRunAlwaysTaskClasses() {
+	public static List<Class<?>> getStartupRunAlwaysTaskClasses() {
 		List<Class<?>> ret = new ArrayList<Class<?>>();
 		ret.add(Task00001LoadSchema.class);
 		ret.add(Task00003CreateSystemRoles.class);

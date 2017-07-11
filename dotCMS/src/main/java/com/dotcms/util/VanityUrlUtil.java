@@ -4,10 +4,12 @@ import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Logger;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * This class provide some utility methods to interact with
@@ -19,7 +21,11 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
  */
 public class VanityUrlUtil {
 
-    private final static HostAPI hostAPI = APILocator.getHostAPI();
+    private static final HostAPI hostAPI = APILocator.getHostAPI();
+
+    private VanityUrlUtil() {
+
+    }
 
     /**
      * Generate the sanitized cache key
@@ -29,7 +35,7 @@ public class VanityUrlUtil {
      * @param languageId The current languageId
      * @return String with the sanitized key name
      */
-    public static String sanitizeKey(final String hostId, String uri, final long languageId) {
+    public static String sanitizeKey(final String hostId, final String uri, final long languageId) {
         return hostId + "|" + fixURI(uri).replace('/', '|') + "|lang_" + languageId;
     }
 
@@ -40,9 +46,9 @@ public class VanityUrlUtil {
      * @return String with the sanitized key name
      */
     public static String sanitizeKey(final Contentlet vanityUrl)
-            throws DotDataException, DotRuntimeException, DotSecurityException {
+            throws DotDataException, DotSecurityException {
         Host host = hostAPI.find(vanityUrl.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
-                        APILocator.systemUser(), false);
+                APILocator.systemUser(), false);
         return sanitizeKey(host.getIdentifier(),
                 fixURI(vanityUrl.getStringProperty(VanityUrlContentType.URI_FIELD_VAR)),
                 vanityUrl.getLanguageId());
@@ -54,10 +60,55 @@ public class VanityUrlUtil {
      * @param uri The URI to fix
      * @return The fixed uri
      */
-    public static String fixURI(String uri) {
+    public static String fixURI(final String uri) {
+        String modifiedUri = "";
         if (!uri.startsWith("/")) {
-            uri = "/" + uri;
+            modifiedUri = "/" + uri;
+        } else {
+            modifiedUri = uri;
         }
-        return uri;
+        return modifiedUri;
+    }
+
+    /**
+     * Generate the sanitized cache key for the second cache
+     *
+     * @param hostId The current host Identifier
+     * @param languageId The current languageId
+     * @return String with the sanitized key name
+     */
+    public static String sanitizeSecondCacheKey(final String hostId, final long languageId) {
+        return hostId + "| lang_" + languageId;
+    }
+
+    /**
+     * Generate the sanitized cache key
+     *
+     * @param vanityUrl The vanity Url contentlet
+     * @return String with the sanitized key name
+     */
+    public static String sanitizeSecondCachedKey(final Contentlet vanityUrl)
+            throws DotDataException, DotSecurityException {
+        Host host = hostAPI.find(vanityUrl.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
+                APILocator.systemUser(), false);
+        return sanitizeSecondCacheKey(host.getIdentifier(), vanityUrl.getLanguageId());
+    }
+
+    /**
+     * Validates if the regular expression is valid
+     *
+     * @param regex Regular expression string
+     * @return true if is a valid pattern, false if not
+     */
+    public static boolean isPatternValid(String regex) {
+        boolean isValid = false;
+        try {
+            Pattern.compile(regex);
+            isValid = true;
+        } catch (PatternSyntaxException e) {
+            Logger.error(VanityUrlUtil.class,
+                    "Error cause by invalid Pattern syntax. URI:" + regex, e);
+        }
+        return isValid;
     }
 }

@@ -1,5 +1,7 @@
 package com.dotcms.vanityurl.model;
 
+import com.dotcms.util.VanityUrlUtil;
+import com.liferay.util.StringPool;
 import java.io.Serializable;
 import java.util.regex.Pattern;
 
@@ -28,7 +30,10 @@ public class CachedVanityUrl implements Serializable {
      * @param vanityUrl The vanityurl Url to cache
      */
     public CachedVanityUrl(VanityUrl vanityUrl) {
-        this.pattern = Pattern.compile(vanityUrl.getURI());
+        //if the VanityUrl URI is not a valid regex
+        String regex = VanityUrlUtil.isPatternValid(vanityUrl.getURI()) ? vanityUrl.getURI()
+                : StringPool.BLANK;
+        this.pattern = Pattern.compile(regex);
         this.vanityUrlId = vanityUrl.getIdentifier();
         this.url = vanityUrl.getURI();
         this.languageId = vanityUrl.getLanguageId();
@@ -39,6 +44,7 @@ public class CachedVanityUrl implements Serializable {
 
     /**
      * Get the URL from the Cached Vanity URL
+     *
      * @return the URL from the Cached Vanity URL
      */
     public String getUrl() {
@@ -47,6 +53,7 @@ public class CachedVanityUrl implements Serializable {
 
     /**
      * Get the Site Id from the Cached Vanity URL
+     *
      * @return the Site ID from the Cached Vanity URL
      */
     public String getSiteId() {
@@ -55,6 +62,7 @@ public class CachedVanityUrl implements Serializable {
 
     /**
      * Get the Language Id from the Cached Vanity URL
+     *
      * @return the language Id from the Cached Vanity URL
      */
     public long getLanguageId() {
@@ -63,6 +71,7 @@ public class CachedVanityUrl implements Serializable {
 
     /**
      * Get the Forward to path from the Cached Vanity URL
+     *
      * @return the Forward to path from the Cached Vanity URL
      */
     public String getForwardTo() {
@@ -71,6 +80,7 @@ public class CachedVanityUrl implements Serializable {
 
     /**
      * Get the Response code from the Cached Vanity URL
+     *
      * @return the Response code from the Cached Vanity URL
      */
     public int getResponse() {
@@ -79,6 +89,7 @@ public class CachedVanityUrl implements Serializable {
 
     /**
      * Get the URI Pattern from the Cached Vanity URL
+     *
      * @return the URI Pattern from the Cached Vanity URL
      */
     public Pattern getPattern() {
@@ -87,9 +98,11 @@ public class CachedVanityUrl implements Serializable {
 
     /**
      * get the Vanitu Url Identifier
+     *
      * @return The Vanity Url Identifier
      */
-    public String getVanityUrlId(){
+    public String getVanityUrlId() {
         return vanityUrlId;
     }
+
 }

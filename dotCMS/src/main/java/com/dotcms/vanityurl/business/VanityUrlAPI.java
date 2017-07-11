@@ -1,7 +1,9 @@
 package com.dotcms.vanityurl.business;
 
+import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
 import java.util.List;
@@ -33,24 +35,29 @@ public interface VanityUrlAPI {
      * Get a list of all the Vanity URLs contents live
      *
      * @param user The current user
-     * @return a List of all Vanity URLs contentlets live
+     * @return a List of all Cached Vanity URLs contentlets live
      */
     List<VanityUrl> getActiveVanityUrls(final User user);
 
     /**
-     * Return the vanityurl URL working contentlet with the specified URI
+     * Get a list of all the Cached Vanity URLs contents live
      *
-     * @param uri The URI of the vanityurl URL
-     * @param host The current host
-     * @param languageId The current language Id
      * @param user The current user
-     * @return the working version of the vanityurl URL contentlet
+     * @return a List of all Cached Vanity URLs contentlets live
      */
-    VanityUrl getWorkingVanityUrl(final String uri, final Host host, final long languageId,
-            final User user);
+    List<CachedVanityUrl> getActiveCachedVanityUrls(final User user);
 
     /**
-     * Return the live version of the vanityurl URL contentlet with the specified URI
+     * Get a list of all the Vanity URLs contents live by Host and language Id
+     *
+     * @param user The current user
+     * @return a List of all Cached Vanity URLs contentlets live
+     */
+    List<VanityUrl> getActiveVanityUrlsByHostAndLanguage(final String hostId, final long languageId,
+                                                         final User user);
+
+    /**
+     * Return the live version of the Cached vanityurl URL contentlet with the specified URI
      *
      * @param uri The URI of the vanityurl URL
      * @param host The current host
@@ -58,8 +65,8 @@ public interface VanityUrlAPI {
      * @param user The current user
      * @return the live version of the vanityurl URL contentlet
      */
-    VanityUrl getLiveVanityUrl(final String uri, final Host host, final long languageId,
-            final User user);
+    CachedVanityUrl getLiveCachedVanityUrl(final String uri, final Host host, final long languageId,
+                                           final User user);
 
     /**
      * Convert the contentlet into a Vanity URL object
@@ -68,4 +75,11 @@ public interface VanityUrlAPI {
      * @return Vanity URL
      */
     VanityUrl getVanityUrlFromContentlet(final Contentlet con);
+
+    /**
+     * This method checks that the Vanity Url URI is using a valid regular expression.
+     *
+     * @param contentlet The Vanity Url Contentlet
+     */
+    void validateVanityUrl(Contentlet contentlet) throws DotContentletValidationException;
 }

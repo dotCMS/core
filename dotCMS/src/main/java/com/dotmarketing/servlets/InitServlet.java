@@ -6,6 +6,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.dotcms.repackage.org.apache.commons.lang.SystemUtils;
 
+import com.dotcms.services.VanityUrlServices;
 import org.apache.lucene.search.BooleanQuery;
 
 import com.dotcms.util.GeoIp2CityDbUtil;
@@ -56,7 +57,7 @@ public class InitServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     PermissionAPI             permissionAPI    = APILocator.getPermissionAPI();
-	private LanguageAPI langAPI = APILocator.getLanguageAPI();
+    private LanguageAPI langAPI = APILocator.getLanguageAPI();
 
     //	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(Config
     //			.getIntProperty("EXEC_NUM_OF_THREAD"));
@@ -71,7 +72,7 @@ public class InitServlet extends HttpServlet {
 
     public void destroy() {
         Logger.info(this, "dotCMS shutting down Elastic Search");
-    	new ESClient().shutDownNode();
+        new ESClient().shutDownNode();
         Logger.info(this, "dotCMS shutting down Hazelcast");
         HazelcastUtil.getInstance().shutdown();
         Logger.info(this, "dotCMS shutting down");
@@ -100,11 +101,11 @@ public class InitServlet extends HttpServlet {
 
         String _dbType = DbConnectionFactory.getDBType();
         String _dailect = "";
-		try {
-			_dailect = HibernateUtil.getDialect();
-		} catch (DotHibernateException e3) {
-			Logger.error(InitServlet.class, e3.getMessage(), e3);
-		}
+        try {
+            _dailect = HibernateUtil.getDialect();
+        } catch (DotHibernateException e3) {
+            Logger.error(InitServlet.class, e3.getMessage(), e3);
+        }
         String _companyId = PublicCompanyFactory.getDefaultCompanyId();
         Logger.info(this, "");
         Logger.info(this, "   Initializing dotCMS");
@@ -114,7 +115,7 @@ public class InitServlet extends HttpServlet {
 
         if(Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false)){
 
-        	Logger.info(this, "   Clustering    : Enabled");
+            Logger.info(this, "   Clustering    : Enabled");
 
             //Get the current license level
             int licenseLevel = LicenseUtil.getLevel();
@@ -133,7 +134,7 @@ public class InitServlet extends HttpServlet {
             }
         }
         else{
-        	Logger.info(this, "   Clustering    : Disabled");
+            Logger.info(this, "   Clustering    : Disabled");
         }
 
 
@@ -143,11 +144,11 @@ public class InitServlet extends HttpServlet {
         APILocator.getContentletIndexAPI().checkAndInitialiazeIndex();
         Logger.info(this, "");
 
-		Logger.info(this, "");
+        Logger.info(this, "");
 
         String classPath = config.getServletContext().getRealPath("/WEB-INF/lib");
 
-    	new PluginLoader().loadPlugins(config.getServletContext().getRealPath("/"),classPath);
+        new PluginLoader().loadPlugins(config.getServletContext().getRealPath("/"),classPath);
 
 
 
@@ -187,13 +188,15 @@ public class InitServlet extends HttpServlet {
         if (!fileFolder.exists()) {
             fileFolder.mkdirs();
         }
-        
+
         if(Config.getBooleanProperty("CACHE_DISK_SHOULD_DELETE_NAVTOOL", false)){
             // deletes all menues that have been generated
             RefreshMenus.deleteMenus();
-        	CacheLocator.getCacheAdministrator().flushGroupLocalOnly("navCache", false);
+            CacheLocator.getCacheAdministrator().flushGroupLocalOnly("navCache", false);
         }
 
+        //Initialize the Cached Vanity URL cache
+        VanityUrlServices.getInstance().initializeVanityUrlCache();
 
         Language language = langAPI.getDefaultLanguage();
 
@@ -203,11 +206,11 @@ public class InitServlet extends HttpServlet {
         }
 
         try {
-			DotInitScheduler.start();
-		} catch (SchedulerException e2) {
-			Logger.fatal(InitServlet.class, e2.getMessage(), e2);
-			throw new ServletException(e2.getMessage(), e2);
-		}
+            DotInitScheduler.start();
+        } catch (SchedulerException e2) {
+            Logger.fatal(InitServlet.class, e2.getMessage(), e2);
+            throw new ServletException(e2.getMessage(), e2);
+        }
 
         //Adding the shutdown hook
         Runtime.getRuntime().addShutdownHook(new ShutdownHookThread());
@@ -227,86 +230,86 @@ public class InitServlet extends HttpServlet {
 
         //Ensure the system host is in the system
         try {
-			APILocator.getHostAPI().findSystemHost(APILocator.getUserAPI().getSystemUser(), false);
-		} catch (DotDataException e1) {
-			Logger.fatal(InitServlet.class, e1.getMessage(), e1);
-			throw new ServletException("Unable to initialize system host", e1);
-		} catch (DotSecurityException e) {
-			Logger.fatal(InitServlet.class, e.getMessage(), e);
-			throw new ServletException("Unable to initialize system host", e);
-		}
+            APILocator.getHostAPI().findSystemHost(APILocator.getUserAPI().getSystemUser(), false);
+        } catch (DotDataException e1) {
+            Logger.fatal(InitServlet.class, e1.getMessage(), e1);
+            throw new ServletException("Unable to initialize system host", e1);
+        } catch (DotSecurityException e) {
+            Logger.fatal(InitServlet.class, e.getMessage(), e);
+            throw new ServletException("Unable to initialize system host", e);
+        }
 
-		try {
-			APILocator.getFolderAPI().findSystemFolder();
-		} catch (DotDataException e1) {
-			Logger.error(InitServlet.class, e1.getMessage(), e1);
-			throw new ServletException("Unable to initialize system folder", e1);
-		}
+        try {
+            APILocator.getFolderAPI().findSystemFolder();
+        } catch (DotDataException e1) {
+            Logger.error(InitServlet.class, e1.getMessage(), e1);
+            throw new ServletException("Unable to initialize system folder", e1);
+        }
 
-		// Create the GeoIP2 database reader on startup since it takes around 2
-		// seconds to load the file. If the prop is not set, just move on
-		if (UtilMethods.isSet(Config.getStringProperty(
-				"GEOIP2_CITY_DATABASE_PATH", ""))) {
-			try {
-				Logger.info(this, "");
-				GeoIp2CityDbUtil geoIp2Util = GeoIp2CityDbUtil.getInstance();
-				// Validation query to initialize the GeoIP DB
-				String state = geoIp2Util
-						.getSubdivisionIsoCode("www.google.com");
-				Logger.info(this,
-						"Local GeoIP2 DB connection established successfully!");
-			} catch (IOException | GeoIp2Exception | DotRuntimeException e) {
-				Logger.info(this,
-						"Could not read from GeoIP2 DB: " + e.getMessage());
-			}
-			Logger.info(this, "");
-		}
-		
+        // Create the GeoIP2 database reader on startup since it takes around 2
+        // seconds to load the file. If the prop is not set, just move on
+        if (UtilMethods.isSet(Config.getStringProperty(
+                "GEOIP2_CITY_DATABASE_PATH", ""))) {
+            try {
+                Logger.info(this, "");
+                GeoIp2CityDbUtil geoIp2Util = GeoIp2CityDbUtil.getInstance();
+                // Validation query to initialize the GeoIP DB
+                String state = geoIp2Util
+                        .getSubdivisionIsoCode("www.google.com");
+                Logger.info(this,
+                        "Local GeoIP2 DB connection established successfully!");
+            } catch (IOException | GeoIp2Exception | DotRuntimeException e) {
+                Logger.info(this,
+                        "Could not read from GeoIP2 DB: " + e.getMessage());
+            }
+            Logger.info(this, "");
+        }
+
         /*
          * SHOULD BE LAST THING THAT HAPPENS
          */
         try {
-			HibernateUtil.closeSession();
-		} catch (DotHibernateException e1) {
-			Logger.error(InitServlet.class, e1.getMessage(), e1);
-		}
+            HibernateUtil.closeSession();
+        } catch (DotHibernateException e1) {
+            Logger.error(InitServlet.class, e1.getMessage(), e1);
+        }
 
 
-			try {
-				MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-				ObjectName name = new ObjectName("org.dotcms:type=Log4J");
-				Log4jConfig mbean = new Log4jConfig();
-				mbs.registerMBean(mbean, name);
-			} catch (MalformedObjectNameException e) {
-				Logger.debug(InitServlet.class,"MalformedObjectNameException: " + e.getMessage(),e);
-			} catch (InstanceAlreadyExistsException e) {
-				Logger.debug(InitServlet.class,"InstanceAlreadyExistsException: " + e.getMessage(),e);
-			} catch (MBeanRegistrationException e) {
-				Logger.debug(InitServlet.class,"MBeanRegistrationException: " + e.getMessage(),e);
-			} catch (NotCompliantMBeanException e) {
-				Logger.debug(InitServlet.class,"NotCompliantMBeanException: " + e.getMessage(),e);
-			} catch (NullPointerException e) {
-				Logger.debug(InitServlet.class,"NullPointerException: " + e.getMessage(),e);
-			}
+        try {
+            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+            ObjectName name = new ObjectName("org.dotcms:type=Log4J");
+            Log4jConfig mbean = new Log4jConfig();
+            mbs.registerMBean(mbean, name);
+        } catch (MalformedObjectNameException e) {
+            Logger.debug(InitServlet.class,"MalformedObjectNameException: " + e.getMessage(),e);
+        } catch (InstanceAlreadyExistsException e) {
+            Logger.debug(InitServlet.class,"InstanceAlreadyExistsException: " + e.getMessage(),e);
+        } catch (MBeanRegistrationException e) {
+            Logger.debug(InitServlet.class,"MBeanRegistrationException: " + e.getMessage(),e);
+        } catch (NotCompliantMBeanException e) {
+            Logger.debug(InitServlet.class,"NotCompliantMBeanException: " + e.getMessage(),e);
+        } catch (NullPointerException e) {
+            Logger.debug(InitServlet.class,"NullPointerException: " + e.getMessage(),e);
+        }
 
 
-			//Just get the Engine to make sure it gets inited on time before the first request
-			VelocityUtil.getEngine();
+        //Just get the Engine to make sure it gets inited on time before the first request
+        VelocityUtil.getEngine();
 
-			// Tell the world we are started up
-			System.setProperty(WebKeys.DOTCMS_STARTED_UP, "true");
-			
-			// Record how long it took to start us up.
-			try{
+        // Tell the world we are started up
+        System.setProperty(WebKeys.DOTCMS_STARTED_UP, "true");
 
-				long startupTime = ManagementFactory.getRuntimeMXBean().getUptime();
+        // Record how long it took to start us up.
+        try{
 
-				System.setProperty(WebKeys.DOTCMS_STARTUP_TIME, String.valueOf(startupTime));
+            long startupTime = ManagementFactory.getRuntimeMXBean().getUptime();
 
-			}
-			catch(Exception e){
-				Logger.warn(this.getClass(), "Unable to record startup time :" + e);
-			}
+            System.setProperty(WebKeys.DOTCMS_STARTUP_TIME, String.valueOf(startupTime));
+
+        }
+        catch(Exception e){
+            Logger.warn(this.getClass(), "Unable to record startup time :" + e);
+        }
 
     }
 
@@ -324,22 +327,22 @@ public class InitServlet extends HttpServlet {
     public static Date getStartupDate() {
         return startupDate;
     }
-/**
- *
- * @author will
- * This thread will fire and send host ids to dotcms.com for internal
- * corporate information (we are dying to know who is using dotCMS!).
- * This can be turned off by setting RUN_INIT_THREAD=0 in the config
- *
- */
+    /**
+     *
+     * @author will
+     * This thread will fire and send host ids to dotcms.com for internal
+     * corporate information (we are dying to know who is using dotCMS!).
+     * This can be turned off by setting RUN_INIT_THREAD=0 in the config
+     *
+     */
 
     private class InitThread extends Thread {
 
         public void run() {
-        	try {
-        		long runInitThread = Config.getIntProperty("RUN_INIT_THREAD", 6000);
-        		if(runInitThread<1){return;}
-        		
+            try {
+                long runInitThread = Config.getIntProperty("RUN_INIT_THREAD", 6000);
+                if(runInitThread<1){return;}
+
                 Thread.sleep(runInitThread);
             } catch (InterruptedException e) {
                 Logger.debug(this,e.getMessage(),e);
@@ -359,26 +362,26 @@ public class InitServlet extends HttpServlet {
             }
             try{
 
-            	HostAPI hostAPI = APILocator.getHostAPI();
+                HostAPI hostAPI = APILocator.getHostAPI();
                 String defaultHost = hostAPI.findDefaultHost(APILocator.getUserAPI().getSystemUser(), false).getHostname();
                 StringBuilder sb = new StringBuilder();
                 List<Host> hosts = hostAPI.findAll(APILocator.getUserAPI().getSystemUser(), false);
                 for (Host h : hosts) {
-                	if(!"System Host".equals(h.getHostname())){
-                		sb.append(h.getHostname() + "\n");
-                	}
+                    if(!"System Host".equals(h.getHostname())){
+                        sb.append(h.getHostname() + "\n");
+                    }
                     if (UtilMethods.isSet(h.getAliases())) {
-                    	String[] x = h.getAliases().split("\\n|\\r");
-                    	for(String y : x){
-                    		if(UtilMethods.isSet(y) && !y.contains("dotcms.com") || !"host".equals(y)){
-		                    	sb.append(y + "\\n");
-	                    	}
-                		}
-                	}
+                        String[] x = h.getAliases().split("\\n|\\r");
+                        for(String y : x){
+                            if(UtilMethods.isSet(y) && !y.contains("dotcms.com") || !"host".equals(y)){
+                                sb.append(y + "\\n");
+                            }
+                        }
+                    }
                 }
 
-                
-                
+
+
                 // Construct data
                 StringBuilder data = new StringBuilder();
                 data.append(URLEncoder.encode("ipAddr", "UTF-8"));
@@ -404,32 +407,32 @@ public class InitServlet extends HttpServlet {
                 data.append(URLEncoder.encode("build", "UTF-8"));
                 data.append("=");
                 if(UtilMethods.isSet(System.getProperty(WebKeys.DOTCMS_STARTUP_TIME))){
-                	data.append("&");
-                	data.append(URLEncoder.encode("startupTime", "UTF-8"));
-                	data.append("=");
-                	data.append(URLEncoder.encode(System.getProperty(WebKeys.DOTCMS_STARTUP_TIME), "UTF-8"));
+                    data.append("&");
+                    data.append(URLEncoder.encode("startupTime", "UTF-8"));
+                    data.append("=");
+                    data.append(URLEncoder.encode(System.getProperty(WebKeys.DOTCMS_STARTUP_TIME), "UTF-8"));
                 }
                 data.append("&");
                 data.append(URLEncoder.encode("serverId", "UTF-8"));
                 data.append("=");
                 data.append(URLEncoder.encode(String.valueOf(LicenseUtil.getDisplayServerId()), "UTF-8"));
                 data.append("&");
-                
+
                 data.append(URLEncoder.encode("licenseId", "UTF-8"));
                 data.append("=");
                 data.append(URLEncoder.encode(String.valueOf(LicenseUtil.getSerial()), "UTF-8"));
                 data.append("&");
-                
+
                 data.append(URLEncoder.encode("licenseLevel", "UTF-8"));
                 data.append("=");
                 data.append(URLEncoder.encode(String.valueOf(LicenseUtil.getLevel()), "UTF-8"));
                 data.append("&");
-                
+
                 if(UtilMethods.isSet(LicenseUtil.getValidUntil())){
-	                data.append(URLEncoder.encode("licenseValid", "UTF-8"));
-	                data.append("=");
-	                data.append(URLEncoder.encode(UtilMethods.dateToJDBC(LicenseUtil.getValidUntil())));
-	                data.append("&");
+                    data.append(URLEncoder.encode("licenseValid", "UTF-8"));
+                    data.append("=");
+                    data.append(URLEncoder.encode(UtilMethods.dateToJDBC(LicenseUtil.getValidUntil())));
+                    data.append("&");
                 }
                 data.append(URLEncoder.encode("perpetual", "UTF-8"));
                 data.append("=");
@@ -443,19 +446,19 @@ public class InitServlet extends HttpServlet {
                 data.append("=");
                 data.append(URLEncoder.encode(String.valueOf(LicenseUtil.getClientName()), "UTF-8"));
                 data.append("&");
-                
+
                 data.append(URLEncoder.encode("hostfolder", "UTF-8"));
                 data.append("=");
                 data.append(URLEncoder.encode("dotcms.com:/private", "UTF-8"));
                 data.append("&");
 
-                
-                
-                
+
+
+
                 String portalUrl = Config.getStringProperty("DOTCMS_PORTAL_URL", "dotcms.com");
                 String portalUrlProtocol = Config.getStringProperty("DOTCMS_PORTAL_URL_PROTOCOL", "https");
                 String portalUrlUri = Config.getStringProperty("DOTCMS_PORTAL_URL_URI", "/api/content/save/1");
-                
+
 
                 // Send data
 
@@ -472,7 +475,7 @@ public class InitServlet extends HttpServlet {
                 conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
                 conn.setRequestProperty("DOTAUTH", "bGljZW5zZXJlcXVlc3RAZG90Y21zLmNvbTpKbnM0QHdAOCZM");
-                
+
 
                 DataOutputStream wr = new DataOutputStream(conn.getOutputStream());
                 wr.writeBytes(data.toString());
@@ -489,12 +492,12 @@ public class InitServlet extends HttpServlet {
             }
             finally{
                 try {
-					HibernateUtil.closeSession();
-				} catch (DotHibernateException e) {
-					Logger.error(InitServlet.class, e.getMessage(), e);
-				} finally {
-	                DbConnectionFactory.closeConnection();
-	            }
+                    HibernateUtil.closeSession();
+                } catch (DotHibernateException e) {
+                    Logger.error(InitServlet.class, e.getMessage(), e);
+                } finally {
+                    DbConnectionFactory.closeConnection();
+                }
             }
 
         }
