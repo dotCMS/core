@@ -24,6 +24,7 @@ public enum BaseContentType {
 	VANITY_URL(7, VanityUrlContentType.class),
 	KEY_VALUE(8, KeyValueContentType.class);
 
+
 	final int type;
 	Class<? extends ContentType> immutableClass;
 
@@ -54,6 +55,8 @@ public enum BaseContentType {
 	 * Returns the immutable class associated to the specified Content Type.
 	 * 
 	 * @return The immutable class.
+	 *
+	 * @return
 	 */
 	public Class<? extends ContentType> immutableClass() {
 		return immutableClass;
@@ -65,6 +68,9 @@ public enum BaseContentType {
 	 * @param value
 	 *            - The numeric representation of a Content Type.
 	 * @return The associated Content Type.
+	 *
+	 * @param value
+	 * @return
 	 */
 	public static BaseContentType getBaseContentType (int value) {
 		BaseContentType[] types = BaseContentType.values();
@@ -83,6 +89,9 @@ public enum BaseContentType {
 	 * @param value
 	 *            - The numeric representation of an immutable Content Type.
 	 * @return The associated immutable Content Type.
+	 *
+	 * @param value
+	 * @return
 	 */
 	public static Class<? extends ContentType> getContentTypeClass (int value) {
 		BaseContentType[] types = BaseContentType.values();

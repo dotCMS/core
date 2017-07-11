@@ -10,6 +10,11 @@ package com.dotcms.content.elasticsearch.constants;
 public final class ESMappingConstants {
 
     /**
+     * Constructor
+     */
+    private ESMappingConstants(){}
+
+    /**
      * Field contentlets elastic types
      */
     public static final String FIELD_ELASTIC_TYPE_INTEGER = "integer";
@@ -30,18 +35,15 @@ public final class ESMappingConstants {
     public static final String FIELD_TYPE_CHECKBOX = "checkbox";
     public static final String FIELD_TYPE_MULTI_SELECT = "multi_select";
     public static final String FIELD_TYPE_KEY_VALUE = "key_value";
-
     /**
      * Contentlet properties
      */
     public static final String TITLE = "title";
-    /** @deprecated As of dotCMS 4.1.0. Please use {@link ESMappingConstants#CONTENT_TYPE} */
     public static final String STRUCTURE_NAME = "structureName";
     public static final String CONTENT_TYPE = "contentType";
-    /** @deprecated As of dotCMS 4.1.0. Please use {@link ESMappingConstants#BASE_TYPE} */
     public static final String STRUCTURE_TYPE = "structureType";
     public static final String BASE_TYPE = "baseType";
-    public static final String TYPE = "type";
+    public static final String TYPE ="type";
     public static final String CONTENT = "content";
     public static final String INODE = "inode";
     public static final String MOD_DATE = "modDate";
@@ -58,7 +60,7 @@ public final class ESMappingConstants {
     public static final String PARENT_PATH = "parentPath";
     public static final String PATH = "path";
     public static final String SHORT_ID = "shortId";
-    public static final String SHORT_INODE = "shortInode";
+    public static final String SHORT_INODE ="shortInode";
     public static final String WORKFLOW_CREATED_BY = "wfcreatedBy";
     public static final String WORKFLOW_ASSIGN = "wfassign";
     public static final String WORKFLOW_STEP = "wfstep";
@@ -67,6 +69,7 @@ public final class ESMappingConstants {
     public static final String EXPIRE_DATE = "expdate";
     public static final String VERSION_TS = "versionTs";
     public static final String URL_MAP = "urlMap";
+    public static final String VANITY_URL = "vanityUrl";
     public static final String CATEGORIES = "categories";
     public static final String TAGS = "tags";
     public static final String PERSONAS = "personas";
@@ -86,14 +89,5 @@ public final class ESMappingConstants {
     public static final String SUFFIX_PARENT = "-parent";
     public static final String SUFFIX_ORDER = "-order";
 
-    /**
-     * Vanity URL Contentlets
-     */
-    public static final String VANITY_URL = "vanityUrl";
-
-    /**
-     * Key/Value Contentlets
-     */
-    public static final String KEY_VALUE_KEY = "key";
 
 }

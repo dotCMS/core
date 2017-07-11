@@ -14,7 +14,7 @@ import java.util.Map;
  *
  * @author oswaldogallango
  */
-public interface VanityUrl extends Serializable, Versionable, Permissionable, Treeable, Ruleable {
+public interface VanityUrl extends Serializable, Versionable, Permissionable, Treeable, Ruleable, Comparable {
 
     /**
      * Get the Vanity URL identifier
@@ -137,7 +137,6 @@ public interface VanityUrl extends Serializable, Versionable, Permissionable, Tr
      */
     void setOrder(int order);
 
-    Map<String, Object> getMap() throws DotStateException, DotDataException, DotSecurityException;
-
+    Map<String, Object> getMap() throws DotDataException, DotSecurityException;
 
 }

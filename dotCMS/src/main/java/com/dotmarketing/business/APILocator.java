@@ -1,10 +1,5 @@
 package com.dotmarketing.business;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.api.tree.TreeableAPI;
@@ -14,12 +9,7 @@ import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.cms.login.LoginServiceAPIFactory;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.company.CompanyAPIFactory;
-import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
-import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
-import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI;
-import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
+import com.dotcms.content.elasticsearch.business.*;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -55,11 +45,7 @@ import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPIFactory;
 import com.dotcms.timemachine.business.TimeMachineAPI;
 import com.dotcms.timemachine.business.TimeMachineAPIImpl;
-import com.dotcms.util.FileWatcherAPI;
-import com.dotcms.util.FileWatcherAPIImpl;
-import com.dotcms.util.ReflectionUtils;
-import com.dotcms.util.SecurityLoggerServiceAPI;
-import com.dotcms.util.SecurityLoggerServiceAPIFactory;
+import com.dotcms.util.*;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPIImpl;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
@@ -123,6 +109,11 @@ import com.dotmarketing.tag.business.TagAPIImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * APILocator is a factory method (pattern) to get single(ton) service objects.
@@ -844,7 +835,7 @@ public class APILocator extends Locator<APIIndex>{
 	 * @return The {@link VanityUrlAPI} class.
 	 */
 	public static VanityUrlAPI getVanityUrlAPI() {
-		return (VanityUrlAPI) getInstance(APIIndex.VANITY_URL_API);
+		return (VanityUrlAPI) getInstance(APIIndex.VANITY_URLS_API);
 	}
 
 	/**
@@ -993,9 +984,9 @@ enum APIIndex
 	COMPANY_API,
 	SECURITY_LOGGER_API,
 	FILE_WATCHER_API,
-	VANITY_URL_API,
 	KEY_VALUE_API,
-	LANGUAGE_VARIABLE_API;
+	LANGUAGE_VARIABLE_API,
+	VANITY_URLS_API;
 
 	Object create() {
 		switch(this) {
@@ -1060,7 +1051,7 @@ enum APIIndex
     		case COMPANY_API: return CompanyAPIFactory.getInstance().getCompanyAPI();
     		case SECURITY_LOGGER_API: return SecurityLoggerServiceAPIFactory.getInstance().getSecurityLoggerAPI();
     		case FILE_WATCHER_API: return createFileWatcherAPI();
-    		case VANITY_URL_API: return new VanityUrlAPIImpl();
+    		case VANITY_URLS_API: return new VanityUrlAPIImpl();
     		case KEY_VALUE_API: return new KeyValueAPIImpl();
     		case LANGUAGE_VARIABLE_API: return new LanguageVariableAPIImpl();
 		}

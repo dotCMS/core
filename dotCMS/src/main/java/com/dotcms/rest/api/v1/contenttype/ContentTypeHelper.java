@@ -136,7 +136,8 @@ public class ContentTypeHelper implements Serializable {
                     BaseContentType.FILEASSET.name(), LanguageUtil.get(locale, "File"),
                     BaseContentType.HTMLPAGE.name(), LanguageUtil.get(locale, "HTMLPage"),
                     BaseContentType.PERSONA.name(), LanguageUtil.get(locale, "Persona"),
-                    BaseContentType.KEY_VALUE.name(), LanguageUtil.get(locale, "KeyValue")
+                    BaseContentType.KEY_VALUE.name(), LanguageUtil.get(locale, "KeyValue"),
+                    BaseContentType.VANITY_URL.name(), LanguageUtil.get(locale, "VanityURL")
             );
 
             BASE_CONTENT_TYPE_LABELS.put(locale, map);
