@@ -35,6 +35,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
@@ -146,6 +147,7 @@ public class PublisherAPITest extends IntegrationTestBase {
             final List<Folder> folderList = folderAPI
                     .findFoldersByHost(defaultHost, systemUser, false);
             final Folder folder = folderList.get(0);
+            Logger.info(this, "Using folder: " + folder.getName());
 
             /* Push publish the folder. */
             // Set up Bundle.
