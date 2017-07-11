@@ -210,6 +210,16 @@ public class PublisherAPITest extends IntegrationTestBase {
             /* Push publish retry. */
             // As we are using the same config and bundle,
             // the PublishAuditStatus.getStatusPojo().getNumTries() should be > 0.
+            publisherConfig = new PushPublisherConfig();
+            publisherConfig.setId(bundle.getId());
+            publisherConfig.setOperation(Operation.PUBLISH);
+            publisherConfig.setLanguage(languageAPI.getDefaultLanguage().getId());
+            publisherConfig.setAssets(Lists.newArrayList(publishQueueElement));
+            publisherConfig.setLuceneQueries(Lists.newArrayList());
+            publisherConfig.setUser(systemUser);
+            publisherConfig.setStartDate(new Date());
+            publisherConfig.setPublishers(Lists.newArrayList(PushPublisher.class));
+
             publisherAPI.publish(publisherConfig);
 
             /* Check the file dates */
