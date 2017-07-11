@@ -232,6 +232,7 @@ public class TaskLocatorUtil {
         ret.add(Task04200CreateDefaultVanityURL.class);
         ret.add(Task04205MigrateVanityURLToContent.class);
         ret.add(Task04210CreateDefaultLanguageVariable.class);
+        
         return ret;
     }
 
