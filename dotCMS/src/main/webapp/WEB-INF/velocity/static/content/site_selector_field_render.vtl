@@ -1,0 +1,27 @@
+<script type="text/javascript">
+	dojo.require('dotcms.dojo.data.SiteSelectorReadStore');
+
+	function siteChanged() {
+		var siteSel = dijit.byId('siteSelector');
+		var value = siteSel.get('value');
+		if (value) {
+			dojo.byId('${field.velocityVarName}').value = value;
+			dojo.byId('hostId').value = value;
+		}
+	}
+
+	dojo.ready(function() {
+		var value = dojo.byId('${field.velocityVarName}').value;
+        dijit.byId('siteSelector').set('value', value);
+        dojo.byId('hostId').value = value;
+	});
+</script>
+#set($allSitesLabel = $text.get('All-Hosts'))
+<span dojoType="dotcms.dojo.data.SiteSelectorReadStore" jsId="SiteStore"
+      data-dojo-props="allSitesLabel: '$allSitesLabel'"></span>
+<select dojoType="dijit.form.FilteringSelect" name="siteSelector"
+	id="siteSelector" store="SiteStore" pageSize="30" labelAttr="hostname"
+	searchAttr="hostname" searchDelay="400" onChange="siteChanged()"
+	invalidMessage="$text.get('Invalid-option-selected')">
+</select>
+<input type="hidden" name="hostId" id="hostId" value=""/>

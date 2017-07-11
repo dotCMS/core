@@ -20,7 +20,7 @@ public interface FieldBuilder {
 	FieldBuilder variable(String variable);
 	FieldBuilder contentTypeId(String contentTypeId);
 	FieldBuilder hint(String hint);
-	FieldBuilder defaultValue(String defualtValue);
+	FieldBuilder defaultValue(String defaultValue);
 	FieldBuilder dataType(DataTypes types);
 	FieldBuilder required(boolean val);
 	FieldBuilder unique(boolean val);

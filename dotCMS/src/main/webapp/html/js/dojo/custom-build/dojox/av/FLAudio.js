@@ -128,9 +128,7 @@ return dojo.declare("dojox.av.FLAudio", null, {
 		this._sub("mediaMeta",     "onID3");
 
 		this._flashObject = new dojox.embed.Flash(args, this.domNode);
-		this._flashObject.onError = function(err){
-			console.warn("Flash Error:", err);
-		};
+		this._flashObject.onError = dojo.hitch(this, this.onError);
 		this._flashObject.onLoad = dojo.hitch(this, function(mov){
 			this.flashMedia = mov;
 			this.isPlaying = this.autoPlay;

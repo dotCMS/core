@@ -52,12 +52,14 @@ function(kernel, lang, Color, has, win, arr, dom, domConstruct, domGeom){
 			'x-small': 0, 'small': 0, 'medium': 0, 'large': 0, 'x-large': 0,
 			'xx-large': 0
 		};
-		var p;
-
+		var p, oldStyle;	
 		if(has("ie")){
-			//		we do a font-size fix if and only if one isn't applied already.
+			//	We do a font-size fix if and only if one isn't applied already.
 			// NOTE: If someone set the fontSize on the HTML Element, this will kill it.
-			win.doc.documentElement.style.fontSize="100%";
+			oldStyle = win.doc.documentElement.style.fontSize || "";
+			if(!oldStyle){
+				win.doc.documentElement.style.fontSize="100%";
+			}
 		}
 
 		//		set up the measuring node.
@@ -81,6 +83,10 @@ function(kernel, lang, Color, has, win, arr, dom, domConstruct, domGeom){
 			heights[p] = Math.round(div.offsetHeight * 12/16) * 16/12 / 1000;
 		}
 
+		if(has("ie")){
+			// Restore the font to its old style.
+			win.doc.documentElement.style.fontSize = oldStyle;
+		}
 		win.body().removeChild(div);
 		return heights; //object
 	};

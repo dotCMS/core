@@ -1,18 +1,5 @@
 package com.dotcms.publisher.pusher;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.publishing.remote.bundler.BundleXMLAsc;
 import com.dotcms.enterprise.publishing.remote.bundler.CategoryBundler;
@@ -66,6 +53,18 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * This is the main content publishing class in the Push Publishing process.
@@ -129,9 +128,14 @@ public class PushPublisher extends Publisher {
 			ArrayList<File> list = new ArrayList<File>(1);
 			list.add(bundleRoot);
 			File bundle = new File(bundleRoot+File.separator+".."+File.separator+this.config.getId()+".tar.gz");
-			PushUtils.compressFiles(list, bundle, bundleRoot.getAbsolutePath());
 
-			List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(this.config.getId());
+            // If the tar.gz doesn't exist or if it the first try to push bundle
+            // we need to compress the bundle folder into the tar.gz file.
+            if (!bundle.exists() || !pubAuditAPI.isPublishRetry(config.getId())) {
+                PushUtils.compressFiles(list, bundle, bundleRoot.getAbsolutePath());
+            }
+
+            List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(this.config.getId());
 
 			Client client = RestClientBuilder.newClient();
 			client.property(ClientProperties.REQUEST_ENTITY_PROCESSING, "CHUNKED");

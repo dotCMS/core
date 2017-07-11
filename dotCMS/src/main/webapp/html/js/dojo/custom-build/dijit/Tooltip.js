@@ -11,7 +11,7 @@ define("dijit/Tooltip", [
 	"dojo/_base/lang", // lang.hitch lang.isArrayLike
 	"dojo/mouse",
 	"dojo/on",
-	"dojo/sniff", // has("ie")
+	"dojo/sniff", // has("ie"), has("trident")
 	"./_base/manager",	// manager.defaultDuration
 	"./place",
 	"./_Widget",
@@ -151,8 +151,8 @@ define("dijit/Tooltip", [
 			// Note that sometimes widthAvailable is negative, but we guard against setting style.width to a
 			// negative number since that causes an exception on IE.
 			var size = domGeometry.position(this.domNode);
-			if(has("ie") == 9){
-				// workaround strange IE9 bug where setting width to offsetWidth causes words to wrap
+			if(has("ie") || has("trident")){
+				// workaround strange IE bug where setting width to offsetWidth causes words to wrap
 				size.w += 2;
 			}
 

@@ -100,7 +100,7 @@ var FlickrStore = declare("dojox.data.FlickrStore", null, {
 		//		See dojo/data/api/Read.getLabel()
 		return this.getValue(item,this.label);
 	},
-	
+
 	getLabelAttributes: function(item){
 		// summary:
 		//		See dojo/data/api/Read.getLabelAttributes()
@@ -161,7 +161,7 @@ var FlickrStore = declare("dojox.data.FlickrStore", null, {
 		}
 		return false;
 	},
-	
+
 	close: function(request){
 		// summary:
 		//		See dojo/data/api/Read.close()
@@ -215,7 +215,7 @@ var FlickrStore = declare("dojox.data.FlickrStore", null, {
 		});
 		handle = connect.connect("jsonFlickrFeed", myHandler);
 		var deferred = scriptIO.get(getArgs);
-		
+
 		//We only set up the errback, because the callback isn't ever really used because we have
 		//to link to the jsonFlickrFeed function....
 		deferred.addErrback(function(error){
@@ -260,7 +260,7 @@ var FlickrStore = declare("dojox.data.FlickrStore", null, {
 
 lang.extend(FlickrStore, simpleFetch);
 
-var feedsUrl = "http://api.flickr.com/services/feeds/";
+var feedsUrl = "https://api.flickr.com/services/feeds/";
 
 var reg = FlickrStore.urlRegistry = new AdapterRegistry(true);
 

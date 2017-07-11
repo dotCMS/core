@@ -55,7 +55,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
@@ -136,9 +135,6 @@ public class BinaryExporterServlet extends HttpServlet {
         final IIORegistry registry = IIORegistry.getDefaultInstance();
         registry.deregisterServiceProvider(registry.getServiceProviderByClass(com.twelvemonkeys.imageio.plugins.svg.SVGImageReaderSpi.class));
         registry.registerServiceProvider(new SVGImageReaderSpi());
-        
-		
-		
 	}
 
 	private static final long serialVersionUID = 1L;
@@ -319,7 +315,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				try {
 					field = APILocator.getContentTypeFieldAPI().byContentTypeAndVar(type, fieldVarName);
 				} catch (NotFoundInDbException e) {
-					Logger.debug(this,"Field " + fieldVarName + " does not exists within structure " + content.getStructure().getVelocityVarName());
+					Logger.debug(this,"Field " + fieldVarName + " does not exist within structure " + type.variable());
 					resp.sendError(404);
 					return;
 				}
@@ -372,14 +368,19 @@ public class BinaryExporterServlet extends HttpServlet {
 			 *  Start serving the data
 			 *
 			 *******************************/
+			long _fileLength = data.getDataFile().length();
+			
 			String mimeType = fileAssetAPI.getMimeType(data.getDataFile().getName());
 
 			if (mimeType == null) {
 				mimeType = "application/octet-stream";
 			}
-			resp.setContentType(mimeType);
+			
 			resp.setHeader("Content-Disposition", "inline; filename=\"" + UtilMethods.encodeURL(downloadName) + "\"" );
+			resp.setHeader("Content-Length", String.valueOf(_fileLength));
 
+			resp.setContentType(mimeType);
+			
 			if (req.getParameter("dotcms_force_download") != null || req.getParameter("force_download") != null) {
 
 				// if we are downloading a jpeg version of a png or gif
@@ -389,14 +390,15 @@ public class BinaryExporterServlet extends HttpServlet {
 					downloadName = downloadName.replaceAll("\\." + x, "\\." + y);
 				}
 				resp.setHeader("Content-Disposition", "attachment; filename=\"" + UtilMethods.encodeURL(downloadName) + "\"");
-				resp.setHeader("Content-Type", "application/force-download");
+			
 			} else {
 
 				boolean _adminMode = false;
 				try {
 				    _adminMode = (session!=null && session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
 				}catch(Exception e){
-
+				    Logger.warn(this, "An unexpected problem happened when trying to retrieve the backend session");
+				    Logger.debug(this, "Something happened!", e);
 				}
 
 			    // Set the expiration time
@@ -416,7 +418,7 @@ public class BinaryExporterServlet extends HttpServlet {
 					_lastModified = _lastModified * 1000;
 					Date _lastModifiedDate = new java.util.Date(_lastModified);
 
-					long _fileLength = data.getDataFile().length();
+					
 					String _eTag = "dot:" + assetInode + ":" + _lastModified + ":" + _fileLength;
 
 					SimpleDateFormat httpDate = new SimpleDateFormat(Constants.RFC2822_FORMAT);
@@ -425,7 +427,6 @@ public class BinaryExporterServlet extends HttpServlet {
 		            resp.setHeader("Expires", httpDate.format(expiration.getTime()));
 		            resp.setHeader("Cache-Control", "public, max-age="+seconds);
 
-		            String ifModifiedSince = req.getHeader("If-Modified-Since");
 		            String ifNoneMatch = req.getHeader("If-None-Match");
 
 		            /*
@@ -438,18 +439,6 @@ public class BinaryExporterServlet extends HttpServlet {
 		                    return;
 		                }
 		            }
-
-		            /* Using the If-Modified-Since Header */
-		             /*if(ifModifiedSince != null){
-					    try{
-					        Date ifModifiedSinceDate = httpDate.parse(ifModifiedSince);
-					        if(_lastModifiedDate.getTime() <= ifModifiedSinceDate.getTime()){
-					            resp.setStatus(HttpServletResponse.SC_NOT_MODIFIED );
-					            return;
-					        }
-					    }
-					    catch(Exception e){}
-					}*/
 
 		            resp.setHeader("Last-Modified", httpDate.format(_lastModifiedDate));
 		            resp.setHeader("Content-Length", String.valueOf(_fileLength));
@@ -471,11 +460,6 @@ public class BinaryExporterServlet extends HttpServlet {
 					out = resp.getOutputStream();
 					from = new FileInputStream(data.getDataFile()).getChannel();
 					to = Channels.newChannel(out);
-					//DOTCMS-5716
-					//32 MB at a time	
-					int maxTransferSize = (32 * 1024 * 1024) ;
-					long size = from.size();
-					long position = 0;
 					
 					boolean responseSent = false;
 					byte[] dataBytes = Files.toByteArray(data.getDataFile());

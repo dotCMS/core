@@ -88,7 +88,7 @@ define("dijit/Editor", [
 			//see whether user clicks out of a focus editor, if so, save selection (focus will
 			//only lost after onmousedown event is fired, so we can obtain correct caret pos.)
 			//2) when user tabs away from the editor, which is handled in onKeyDown below.
-			if(has("ie")){
+			if(has("ie") || has("trident")){
 				this.events.push("onBeforeDeactivate");
 				this.events.push("onBeforeActivate");
 			}
@@ -124,7 +124,8 @@ define("dijit/Editor", [
 				this.toolbar = new Toolbar({
 					ownerDocument: this.ownerDocument,
 					dir: this.dir,
-					lang: this.lang
+					lang: this.lang,
+					"aria-label": this.id
 				});
 				this.header.appendChild(this.toolbar.domNode);
 			}
@@ -414,18 +415,15 @@ define("dijit/Editor", [
 				// Try to exec the superclass exec-command and see if it works.
 				r = this.document.execCommand(cmd, false, null);
 				if(has("webkit") && !r){ //see #4598: webkit does not guarantee clipboard support from js
-					throw { code: 1011 }; // throw an object like Mozilla's error
+					throw {}; // throw to show the warning
 				}
 			}catch(e){
-				//TODO: when else might we get an exception?  Do we need the Mozilla test below?
-				if(e.code == 1011 /* Mozilla: service denied */ ||
-					(e.code == 9 && has("opera") /* Opera not supported */)){
-					// Warn user of platform limitation.  Cannot programmatically access clipboard. See ticket #4136
-					var sub = string.substitute,
-						accel = {cut:'X', copy:'C', paste:'V'};
-					alert(sub(this.commands.systemShortcut,
-						[this.commands[cmd], sub(this.commands[has("mac") ? 'appleKey' : 'ctrlKey'], [accel[cmd]])]));
-				}
+				//Ticket #18467 removed the checks to specific codes
+				// Warn user of platform limitation.  Cannot programmatically access clipboard. See ticket #4136
+				var sub = string.substitute,
+					accel = {cut:'X', copy:'C', paste:'V'};
+				alert(sub(this.commands.systemShortcut,
+					[this.commands[cmd], sub(this.commands[has("mac") ? 'appleKey' : 'ctrlKey'], [accel[cmd]])]));
 				r = false;
 			}
 			return r;

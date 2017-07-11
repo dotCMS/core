@@ -80,9 +80,9 @@ public class DotParse extends DotDirective {
       ContentletVersionInfo cv = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), lang);
 
       if (cv == null) {
-        long defualtLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        if (defualtLang != lang) {
-          cv = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), defualtLang);
+        long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        if (defaultLang != lang) {
+          cv = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), defaultLang);
         }
       }
       String inode = ((live) ? cv.getLiveInode() : cv.getWorkingInode());

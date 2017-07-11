@@ -21,6 +21,7 @@ import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.jboss.util.Strings;
+import com.dotcms.services.VanityUrlServices;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -2122,6 +2123,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         	ContentletServices.invalidateLive(contentlet);
         	publishRelatedHtmlPages(contentlet);
 
+
+
             contentletSystemEventUtil.pushUnpublishEvent(contentlet);
         } catch(DotDataException | DotStateException| DotSecurityException e) {
         	ActivityLogger.logInfo(getClass(), "Error Unpublishing Content", "StartDate: " +contentPushPublishDate+ "; "
@@ -3284,6 +3287,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    indexAPI.addContentToIndex(contentlet);
 				}
 
+                if(contentlet != null && contentlet.isVanityUrl()){
+				    //remove from cache
+                    VanityUrlServices.getInstance().invalidateVanityUrl(contentlet);
+                }
+
 				if(structureHasAHostField && changedURI) {
 				    DotConnect dc=new DotConnect();
 				    dc.setSQL("select working_inode,live_inode from contentlet_version_info where identifier=? and lang<>?");
@@ -4284,14 +4292,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
 		    if(Structure.STRUCTURE_TYPE_PERSONA == contentlet.getStructure().getStructureType() ){
 		    	APILocator.getPersonaAPI().validatePersona(contentlet);
 		    }
+            if(contentlet != null && contentlet.isVanityUrl()){
+                APILocator.getVanityUrlAPI().validateVanityUrl(contentlet);
+            }
 		} catch (DotContentletValidationException ve) {
 			cve = ve;
 			hasError = true;
-		}
+		} catch (DotSecurityException | DotDataException e) {
+            Logger.error(this,"Error validating contentlet: "+e.getMessage(),e);
+        }
 
-
-
-		if (contentRelationships != null) {
+        if (contentRelationships != null) {
 			List<ContentletRelationshipRecords> records = contentRelationships
 					.getRelationshipsRecords();
 			for (ContentletRelationshipRecords cr : records) {
@@ -4319,8 +4330,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 					}
 					for (Contentlet con : cons) {
 						try {
+                            // In order to get the related content we should use method getRelatedContent
+                            // that has -boolean pullByParent- as parameter so we can pass -false-
+                            // to get related content where we are parents.
 							List<Contentlet> relatedCon = getRelatedContent(
-									con, rel, APILocator.getUserAPI()
+									con, rel, false, APILocator.getUserAPI()
 											.getSystemUser(), true);
 							// If there's a 1-N relationship and the parent
 							// content is relating to a child that already has

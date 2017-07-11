@@ -35,7 +35,7 @@ public class PersonaFactoryImpl implements PersonaFactory {
 	 *  ALL OF of this logic is DUPED in com.dotmarketing.startup.runonce.Task03510CreateDefaultPersona
 	 */
 	@Override
-	public void createDefualtPersonaStructure() throws DotDataException {
+	public void createDefaultPersonaStructure() throws DotDataException {
 
 		
 		
@@ -97,7 +97,7 @@ public class PersonaFactoryImpl implements PersonaFactory {
 			if (localTransaction) {
 				HibernateUtil.rollbackTransaction();
 			}
-			Logger.error(this, "defualty persona creation failed:" + e, e);
+			Logger.error(this, "default persona creation failed:" + e, e);
 			throw new DotDataException(e.toString());
 		}
 		finally{

@@ -87,8 +87,16 @@ return declare("dojox.layout.ContentPane", ContentPane, {
 			scriptHookReplacement: "dijit.byId('"+this.id+"')"
 		};
 
-		this.inherited("_setContent", arguments);
-	}
+		return this.inherited("_setContent", arguments);
+	},
 	// could put back _renderStyles by wrapping/aliasing dojox.html._ContentSetter.prototype._renderStyles
+
+	destroy: function () {
+		var setter = this._contentSetter;
+		if (setter) {
+			setter.tearDown();
+		}
+		this.inherited(arguments);
+	}
 });
 });

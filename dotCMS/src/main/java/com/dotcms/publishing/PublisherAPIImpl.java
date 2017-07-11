@@ -1,14 +1,16 @@
 package com.dotcms.publishing;
 
+import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 public class PublisherAPIImpl implements PublisherAPI {
+
+    private final PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
 
     @Override
     public PublishStatus publish ( PublisherConfig config ) throws DotPublishingException {
@@ -48,6 +50,12 @@ public class PublisherAPIImpl implements PublisherAPI {
                     }
                 }
 
+                // Find out if we already have the bundle. It is important to note that we
+                // get this info before calling BundlerUtil.writeBundleXML() (code below)
+                // cause that logic will create the bundle folder and BundlerUtil.bundleExists
+                // will return true after that always.
+                final boolean bundleExists = BundlerUtil.bundleExists(config);
+
                 // Run bundlers
                 File bundleRoot = BundlerUtil.getBundleRoot( config );
 
@@ -63,17 +71,22 @@ public class PublisherAPIImpl implements PublisherAPI {
                     BundlerUtil.writeBundleXML( config );
                 }
 
-                for ( Class<IBundler> clazz : p.getBundlers() ) {
-                    IBundler bundler = clazz.newInstance();
-                    confBundlers.add( bundler );
-                    bundler.setConfig( config );
-                    bundler.setPublisher(p);
-                    BundlerStatus bs = new BundlerStatus( bundler.getClass().getName() );
-                    status.addToBs( bs );
-                    //Generate the bundler
-                    Logger.info(this, "Start of Bundler: " + clazz.getSimpleName());
-                    bundler.generate( bundleRoot, bs );
-                    Logger.info(this, "End of Bundler: " + clazz.getSimpleName());
+                // If the bundle exists and we are retrying to push the bundle
+                // there is no need to run all the bundlers again.
+                if (!bundleExists || !publishAuditAPI.isPublishRetry(config.getId())) {
+
+                    for ( Class<IBundler> clazz : p.getBundlers() ) {
+                        IBundler bundler = clazz.newInstance();
+                        confBundlers.add( bundler );
+                        bundler.setConfig( config );
+                        bundler.setPublisher(p);
+                        BundlerStatus bs = new BundlerStatus( bundler.getClass().getName() );
+                        status.addToBs( bs );
+                        //Generate the bundler
+                        Logger.info(this, "Start of Bundler: " + clazz.getSimpleName());
+                        bundler.generate( bundleRoot, bs );
+                        Logger.info(this, "End of Bundler: " + clazz.getSimpleName());
+                    }
                 }
 
                 p.process( status );
