@@ -357,7 +357,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			assertThat("contenttype is in db", testing.equals(type));
 			ContentTypeBuilder builder = ContentTypeBuilder.builder(type);
 
-			builder.host(Constants.DEFUALT_HOST);
+			builder.host(Constants.DEFAULT_HOST);
 			builder.folder(Constants.ABOUT_US_FOLDER);
 
 			if (type instanceof UrlMapable) {

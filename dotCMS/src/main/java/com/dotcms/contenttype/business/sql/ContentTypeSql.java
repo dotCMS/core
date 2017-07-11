@@ -65,7 +65,7 @@ public abstract class ContentTypeSql {
 
 	public static String SELECT_COUNT_VAR="select count(*) as test from structure where velocity_var_name like ?";
 
-	public static String UPDATE_ALL_DEFUALT = "update structure set default_structure=?";
+	public static String UPDATE_ALL_DEFAULT = "update structure set default_structure=?";
 
 	public static String DELETE_INODE_BY_INODE = "delete from inode where inode = ? and type='structure'";
 

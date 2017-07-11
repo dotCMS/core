@@ -43,7 +43,7 @@ public abstract class TimeField extends Field {
     public void check() {
 
         if(UtilMethods.isSet(defaultValue())){
-          Preconditions.checkArgument(new FieldUtil().validTime(defaultValue()), this.getClass().getSimpleName() + " invalid defualt Value:" + defaultValue());
+          Preconditions.checkArgument(new FieldUtil().validTime(defaultValue()), this.getClass().getSimpleName() + " invalid default Value:" + defaultValue());
         }
     }
 }
