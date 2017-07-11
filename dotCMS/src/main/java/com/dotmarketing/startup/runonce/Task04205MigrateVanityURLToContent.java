@@ -54,6 +54,7 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
                     + "values (?,?,?,?,?,?,?)";
     private static final String DELETE_INODE_BY_INODE_QUERY = "delete from inode where inode = ?";
     private static final String DELETE_VIRTUAL_LINK_QUERY = "delete from virtual_link";
+    private static final String DROP_TABLE_VIRTUAL_LINK_QUERY = "drop table virtual_link";
 
     private static final int CODE_301 = 301;
     private static final int FOR_LIMIT_48 = 48;
@@ -159,6 +160,9 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
             }
         }
 
+        //Drop virtual link table
+        dc.setSQL(DROP_TABLE_VIRTUAL_LINK_QUERY);
+        dc.loadResult();
     }
 
     /**
