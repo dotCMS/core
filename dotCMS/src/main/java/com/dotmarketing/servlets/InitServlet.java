@@ -6,6 +6,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.dotcms.repackage.org.apache.commons.lang.SystemUtils;
 
+import com.dotcms.services.VanityUrlServices;
 import org.apache.lucene.search.BooleanQuery;
 
 import com.dotcms.util.GeoIp2CityDbUtil;
@@ -14,7 +15,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.ChainableCacheAdministratorImpl;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -195,9 +195,8 @@ public class InitServlet extends HttpServlet {
         	CacheLocator.getCacheAdministrator().flushGroupLocalOnly("navCache", false);
         }
 
-
-        // maps all virtual links in memory
-        VirtualLinksCache.mapAllVirtualLinks();
+        //Initialize the Cached Vanity URL cache
+        VanityUrlServices.getInstance().initializeVanityUrlCache();
 
         Language language = langAPI.getDefaultLanguage();
 

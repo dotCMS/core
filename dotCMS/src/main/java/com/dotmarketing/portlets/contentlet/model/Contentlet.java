@@ -797,4 +797,24 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public boolean hasLiveVersion() throws DotStateException, DotDataException {
 		return APILocator.getVersionableAPI().hasLiveVersion(this);
 	}
+	
+	/**
+	 * Get the contentlet Content Type
+	 * @return the contentlet Content Type
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public ContentType getContentType() throws DotDataException, DotSecurityException{
+		return APILocator.getContentTypeAPI(APILocator.systemUser()).find(getContentTypeId());
+    }
+	
+	/**
+	 * Get if the contentlet is a Vanity URL
+	 * @return true if the contentlet Content Type is a Vanity URL
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public boolean isVanityUrl() throws DotDataException, DotSecurityException {
+		return getContentType().baseType() == BaseContentType.VANITY_URL;
+	}
 }
