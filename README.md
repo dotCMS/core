@@ -1,7 +1,7 @@
 
 | Postgres | MySQL | Oracle | MSSQL |
 | -------- | ----- | ------ | ----- |
-| [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_release-4.1.1_Postgres)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_release-4.1.1_Postgres) | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_release-4.1.1_MySQL)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_release-4.1.1_MySQL) | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_release-4.1.1_Oracle)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_release-4.1.1_Oracle) | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_release-4.1.1_MSSQL)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_release-4.1.1_MSSQL) |
+| [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_project-8_Postgres)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_project-8_Postgres) | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_project-8_MySQL)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_project-8_MySQL) | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_project-8_Oracle)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_project-8_Oracle) | [![Build Status](https://cb.dotcms.com/buildStatus/icon?job=Build_Full_Tester_Func_Int_project-8_MSSQL)](https://cb.dotcms.com/job/Build_Full_Tester_Func_Int_project-8_MSSQL) |
 
 
 
