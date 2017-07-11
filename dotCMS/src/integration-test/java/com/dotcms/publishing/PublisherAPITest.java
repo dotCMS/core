@@ -1,12 +1,12 @@
 package com.dotcms.publishing;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleAPI;
+import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
@@ -29,6 +29,7 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -193,12 +194,12 @@ public class PublisherAPITest extends IntegrationTestBase {
             final String bundleXMLPath = bundlePath + File.separator + "bundle.xml";
 
             final File bundleFolder = new File(bundlePath);
-            assertTrue(bundleFolder.exists());
+            assertTrue("Bundle Folder Exists", bundleFolder.exists());
             final File bundleTarGz = new File(bundleTarGzPath);
-            assertTrue(bundleTarGz.exists());
+            assertTrue("Bundle Tar Gz Exists", bundleTarGz.exists());
             final long bundleTarGzFirstDate = bundleTarGz.lastModified();
             final File bundleXML = new File(bundleXMLPath);
-            assertTrue(bundleXML.exists());
+            assertTrue("bundle.xml exists", bundleXML.exists());
             final long bundleXMLFirstDate = bundleXML.lastModified();
 
             final Map<String, Long> firstFileDates = getFileDatesByFolder(bundleFolder,
@@ -212,21 +213,25 @@ public class PublisherAPITest extends IntegrationTestBase {
             /* Check the file dates */
             final long bundleTarGzSecondDate = bundleTarGz.lastModified();
             // Tar Gz File should have the same date.
-            assertTrue(bundleTarGzFirstDate == bundleTarGzSecondDate);
+            assertEquals("Tar Gz File should have the same date",
+                    bundleTarGzFirstDate, bundleTarGzSecondDate);
             final long bundleXMLSecondDate = bundleXML.lastModified();
             // bundle.xml file should be updated each PP process, so dates shouldn't be the same.
-            assertTrue(bundleXMLFirstDate < bundleXMLSecondDate);
+            assertTrue("bundle.xml file should be updated each PP process",
+                    bundleXMLFirstDate < bundleXMLSecondDate);
 
             final Map<String, Long> secondFileDates = getFileDatesByFolder(bundleFolder,
                     getNoBundleXMLFileFilter());
 
             // We want to check bundle folder contains same file and they were not modified.
             for (String filePath : secondFileDates.keySet()) {
-                assertTrue(firstFileDates.containsKey(filePath));
-                assertTrue(firstFileDates.get(filePath).equals(secondFileDates.get(filePath)));
+                assertTrue("Check bundle folder contains same file " + filePath,
+                        firstFileDates.containsKey(filePath));
+                assertTrue("Check dates were not modified" + filePath,
+                        firstFileDates.get(filePath).equals(secondFileDates.get(filePath)));
             }
 
-        } catch (Exception e) {
+        } catch (DotDataException | DotSecurityException | DotPublisherException | DotPublishingException e) {
             fail(e.getMessage());
         } finally {
             try {
