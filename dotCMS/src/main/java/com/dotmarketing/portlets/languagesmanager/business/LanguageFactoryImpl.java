@@ -634,14 +634,25 @@ public class LanguageFactoryImpl extends LanguageFactory {
     } // getFallbackLanguage.
 
     @Override
-    protected int deleteLanguageById(final long id) {
+    protected int deleteLanguageById(final Language language) {
+
+		int rowsAffected = 0;
+		long id          = 0;
 
         try {
-            return this.dotConnect.executeUpdate(DELETE_FROM_LANGUAGE_WHERE_ID, id);
+
+            id = language.getId();
+            Logger.debug(this, "Deleting the language by id: " + id);
+			rowsAffected = this.dotConnect.executeUpdate(DELETE_FROM_LANGUAGE_WHERE_ID, id);
         } catch (DotDataException e) {
             Logger.error(LanguageFactoryImpl.class, "deleteLanguageById failed to delete the language with id: " + id, e);
             throw new DotRuntimeException(e.toString(), e);
-        }
-    }
+        } finally {
+
+			CacheLocator.getLanguageCache().removeLanguage(language);
+		}
+
+		return rowsAffected;
+    } // deleteLanguageById.
 
 }

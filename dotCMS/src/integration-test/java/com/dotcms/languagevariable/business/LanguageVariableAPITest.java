@@ -155,7 +155,7 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
     }
 
     /*
-     * Testing the "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE" fallback, which means that a key that
+     * Testing the "MULTILINGUAGE_FALLBACK" fallback, which means that a key that
      * doesn't exist neither for a given language and country nor for a single language, will be
      * looked up using the default system language.
      */

@@ -25,7 +25,7 @@ public interface LanguageVariableAPI {
      * <ol>
      * <li>If the key doesn't exist for the specified language ID, then they key will be looked up
      * using the fallback language, i.e., looking up its value using ONLY the language code.</li>
-     * <li>If the fallback value doesn't exist and the {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE}
+     * <li>If the fallback value doesn't exist and the {@code MULTILINGUAGE_FALLBACK}
      * is {@code true}, then look up the key using the system's default language.</li>
      * <li>If none of the previous two appraoches work, then return {@code null}.</li>
      * </ol>
@@ -48,7 +48,7 @@ public interface LanguageVariableAPI {
      * <ol>
      * <li>If the key doesn't exist for the specified language ID, then they key will be looked up
      * using the fallback language, i.e., looking up its value using ONLY the language code.</li>
-     * <li>If the fallback value doesn't exist and the {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE}
+     * <li>If the fallback value doesn't exist and the {@code MULTILINGUAGE_FALLBACK}
      * is {@code true}, then look up the key using the system's default language.</li>
      * <li>If none of the previous two appraoches work, then return {@code null}.</li>
      * </ol>
@@ -73,7 +73,7 @@ public interface LanguageVariableAPI {
      * <ol>
      * <li>If the key doesn't exist for the specified language ID, then they key will be looked up
      * using the fallback language, i.e., looking up its value using ONLY the language code.</li>
-     * <li>If the fallback value doesn't exist and the {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE}
+     * <li>If the fallback value doesn't exist and the {@code MULTILINGUAGE_FALLBACK}
      * is {@code true}, then look up the key using the system's default language.</li>
      * <li>If none of the previous two appraoches work, then return {@code null}.</li>
      * </ol>

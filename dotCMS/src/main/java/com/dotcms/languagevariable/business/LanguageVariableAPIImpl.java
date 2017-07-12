@@ -1,6 +1,7 @@
 package com.dotcms.languagevariable.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.MultilinguableFallback;
 import com.dotcms.keyvalue.business.KeyValueAPI;
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotmarketing.business.APILocator;
@@ -23,7 +24,7 @@ import com.liferay.portal.model.User;
  */
 public class LanguageVariableAPIImpl implements LanguageVariableAPI {
 
-    public static final String DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE = "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE";
+
     public static final String LANGUAGEVARIABLE = "Languagevariable";
     private final KeyValueAPI keyValueAPI;
     private final LanguageAPI languageAPI;
@@ -63,8 +64,8 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
                 languageValue = this.getValueFromUserFallbackLanguage(key, languageId, user,
                         respectFrontendRoles, languageVariableContentType);
 
-                if (null == languageValue && Config.getBooleanProperty
-                        (DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, Boolean.FALSE)) {
+                if (null == languageValue && languageVariableContentType instanceof MultilinguableFallback &&
+                        MultilinguableFallback.class.cast(languageVariableContentType).fallback()) {
 
                     languageValue = this.getValueFromDefaultLanguage(key, user,
                             respectFrontendRoles, languageVariableContentType);

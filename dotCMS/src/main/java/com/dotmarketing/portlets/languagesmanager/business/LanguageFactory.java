@@ -150,5 +150,5 @@ public abstract class LanguageFactory {
      * Deletes a language by id
      * @param id long
      */
-    protected  abstract int deleteLanguageById(long id) ;
+    protected  abstract int deleteLanguageById(final Language fallbackLanguage) ;
 }

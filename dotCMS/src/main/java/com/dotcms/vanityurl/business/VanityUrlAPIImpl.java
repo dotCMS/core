@@ -24,6 +24,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import org.elasticsearch.indices.IndexMissingException;
+
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -105,7 +107,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                 addToVanityURLCache(vanityUrl);
                 vanityTreeSet.add(vanityUrl);
             });
-        } catch (DotDataException | DotSecurityException e) {
+        } catch (DotDataException | DotSecurityException e ) {
             Logger.error(this, "Error searching for active Vanity URLs", e);
         }
         return results.addAll(vanityTreeSet).build();

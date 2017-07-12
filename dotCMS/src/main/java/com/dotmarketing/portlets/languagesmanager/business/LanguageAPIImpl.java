@@ -19,6 +19,9 @@ import org.apache.velocity.tools.view.context.ViewContext;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 
+import static com.dotmarketing.db.LocalTransaction.wrap;
+import static com.dotmarketing.db.LocalTransaction.wrapReturn;
+
 /**
  * Implementation class for the {@link LanguageAPI}.
  * 
@@ -55,13 +58,36 @@ public class LanguageAPIImpl implements LanguageAPI {
 
 	@Override
 	public void deleteLanguage(final Language language) {
-		factory.deleteLanguage(language);
+
+        try {
+
+            wrap(() -> factory.deleteLanguage(language));
+            Logger.debug(this, "deleteLanguage");
+        } catch (DotDataException e) {
+
+            if ( Logger.isErrorEnabled(LanguageAPIImpl.class) ) {
+                Logger.error(LanguageAPIImpl.class, e.getMessage(), e);
+            }
+        }
+
 	}
 
     @Override
-    public void deleteFallbackLanguage(final Language fallbackPortugueseLanguage) {
-        this.factory.deleteLanguageById(fallbackPortugueseLanguage.getId());
-    }
+    public void deleteFallbackLanguage(final Language fallbackLanguage) {
+
+	    int rowsAffected = 0;
+
+		try {
+
+            rowsAffected = wrapReturn(() -> this.factory.deleteLanguageById(fallbackLanguage));
+            Logger.debug(this, "deleteFallbackLanguage, rowsAffected: " + rowsAffected);
+        } catch (DotDataException e) {
+
+			if ( Logger.isErrorEnabled(LanguageAPIImpl.class) ) {
+				Logger.error(LanguageAPIImpl.class, e.getMessage(), e);
+			}
+		}
+	} // deleteFallbackLanguage.
 
     @Override
 	public Language getLanguage(final String languageCode, final String countryCode) {
@@ -91,7 +117,20 @@ public class LanguageAPIImpl implements LanguageAPI {
 
 	@Override
 	public Language createDefaultLanguage() {
-		return factory.createDefaultLanguage();
+
+        Language  language = null;
+
+        try {
+
+            language = wrapReturn(() -> factory.createDefaultLanguage());
+            Logger.debug(this, "Created default language");
+        } catch (DotDataException e) {
+
+            if ( Logger.isErrorEnabled(LanguageAPIImpl.class) ) {
+                Logger.error(LanguageAPIImpl.class, e.getMessage(), e);
+            }
+        }
+		return language;
 	}
 
 	@Override
@@ -106,7 +145,16 @@ public class LanguageAPIImpl implements LanguageAPI {
 
 	@Override
 	public void saveLanguage(final Language language) {
-		factory.saveLanguage(language);
+        try {
+
+            wrap(() -> factory.saveLanguage(language));
+            Logger.debug(this, "Created language: " + language);
+        } catch (DotDataException e) {
+
+            if ( Logger.isErrorEnabled(LanguageAPIImpl.class) ) {
+                Logger.error(LanguageAPIImpl.class, e.getMessage(), e);
+            }
+        }
 	}
 
 	@Override
@@ -170,7 +218,18 @@ public class LanguageAPIImpl implements LanguageAPI {
 
 	@Override
 	public void createLanguageFiles(final Language lang) {
-		factory.createLanguageFiles(lang);
+
+        try {
+
+            wrap(() -> factory.createLanguageFiles(lang));
+            Logger.debug(this, "Created language file for lang: " + lang);
+        } catch (DotDataException e) {
+
+            if ( Logger.isErrorEnabled(LanguageAPIImpl.class) ) {
+                Logger.error(LanguageAPIImpl.class, e.getMessage(), e);
+            }
+        }
+
 	}
 
 	@Override
@@ -201,7 +260,16 @@ public class LanguageAPIImpl implements LanguageAPI {
 			specificKeys.put(key.getKey(), key.getValue());
 		}
 
-		factory.saveLanguageKeys(lang, generalKeys, specificKeys, toDeleteKeys);
+        try {
+
+            wrap(() -> factory.saveLanguageKeys(lang, generalKeys, specificKeys, toDeleteKeys));
+            Logger.debug(this, "Created language file for lang: " + lang);
+        } catch (DotDataException e) {
+
+            if ( Logger.isErrorEnabled(LanguageAPIImpl.class) ) {
+                Logger.error(LanguageAPIImpl.class, e.getMessage(), e);
+            }
+        }
 	}
 
 	@Override
