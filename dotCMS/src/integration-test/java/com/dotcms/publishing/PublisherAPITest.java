@@ -211,7 +211,7 @@ public class PublisherAPITest extends IntegrationTestBase {
                     getNoBundleXMLFileFilter());
 
             // Let's wait 2 seconds between runs so we have different millis in files.
-            Logger.info(this, "Waiting 1 second before 2nd PP run");
+            Logger.info(this, "Waiting 2 seconds before 2nd PP run");
             Thread.sleep(2000);
 
             /* Push publish retry. */
