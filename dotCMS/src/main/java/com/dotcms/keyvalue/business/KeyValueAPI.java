@@ -48,7 +48,7 @@ public interface KeyValueAPI {
         } catch (DotSecurityException | DotDataException e) {
             throw new DotStateException(
                             String.format("The contentlet with ID '%s' could not be identified as a KeyValue content.",
-                                            contentlet.getIdentifier()));
+                                            contentlet.getIdentifier()), e);
         }
         DefaultKeyValue keyValue;
         final String key = contentlet.getMap().get(KeyValueContentType.KEY_VALUE_KEY_FIELD_VAR).toString();

@@ -97,10 +97,8 @@ public class KeyValueAPIImpl implements KeyValueAPI {
         }
 
         final List<KeyValue> result = queryKeyValues(key, languageId, contentType, user, respectFrontendRoles);
-        result.stream().forEach((KeyValue keyValue) -> {
-            this.cache.addByLanguageAndContentType(languageId, contentType.id(), keyValue);
-        });
-        return (result.size() > 0) ? result.get(0) : null;
+        result.stream().forEach((KeyValue keyValue) -> this.cache.addByLanguageAndContentType(languageId, contentType.id(), keyValue));
+        return (!result.isEmpty()) ? result.get(0) : null;
     }
 
     /**
@@ -119,7 +117,7 @@ public class KeyValueAPIImpl implements KeyValueAPI {
      */
     private List<KeyValue> queryKeyValues(final String key, final long languageId, final ContentType contentType, final User user,
                     final boolean respectFrontendRoles) {
-        final ImmutableList.Builder<KeyValue> results = new Builder<KeyValue>();
+        final ImmutableList.Builder<KeyValue> results = new Builder<>();
         // No limit and no pagination required
         final int limit = 0;
         final int offset = -1;

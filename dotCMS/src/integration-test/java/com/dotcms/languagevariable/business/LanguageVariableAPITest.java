@@ -3,6 +3,7 @@ package com.dotcms.languagevariable.business;
 import static com.dotcms.integrationtestutil.content.ContentUtils.createTestLanguageVariableContent;
 import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
 
+import com.liferay.util.SystemProperties;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -51,9 +52,14 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
     private static final String PORTUGAL_COUNTRY_NAME = "Portugal";
     private static final String DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE = "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE";
 
+    static {
+        SystemProperties.getProperties();
+    }
+
     @BeforeClass
     public static void prepare() throws Exception {
         // Setting web app environment
+
         IntegrationTestInitService.getInstance().init();
         systemUser = APILocator.systemUser();
         try {

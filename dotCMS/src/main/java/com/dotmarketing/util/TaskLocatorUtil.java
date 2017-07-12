@@ -1,36 +1,13 @@
 package com.dotmarketing.util;
 
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotmarketing.fixtask.tasks.*;
+import com.dotmarketing.startup.runalways.*;
+import com.dotmarketing.startup.runonce.*;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotcms.repackage.javax.ws.rs.HEAD;
-import com.dotmarketing.fixtask.tasks.FixTask00001CheckAssetsMissingIdentifiers;
-import com.dotmarketing.fixtask.tasks.FixTask00003CheckContainersInconsistencies;
-import com.dotmarketing.fixtask.tasks.FixTask00006CheckLinksInconsistencies;
-import com.dotmarketing.fixtask.tasks.FixTask00007CheckTemplatesInconsistencies;
-import com.dotmarketing.fixtask.tasks.FixTask00008CheckTreeInconsistencies;
-import com.dotmarketing.fixtask.tasks.FixTask00009CheckContentletsInexistentInodes;
-import com.dotmarketing.fixtask.tasks.FixTask00011RenameHostInFieldVariableName;
-import com.dotmarketing.fixtask.tasks.FixTask00012UpdateAssetsHosts;
-import com.dotmarketing.fixtask.tasks.FixTask00015FixAssetTypesInIdentifiers;
-import com.dotmarketing.fixtask.tasks.FixTask00020DeleteOrphanedIdentifiers;
-import com.dotmarketing.fixtask.tasks.FixTask00030DeleteOrphanedAssets;
-import com.dotmarketing.fixtask.tasks.FixTask00050FixInodesWithoutContentlets;
-import com.dotmarketing.fixtask.tasks.FixTask00060FixAssetType;
-import com.dotmarketing.fixtask.tasks.FixTask00070FixVersionInfo;
-import com.dotmarketing.fixtask.tasks.FixTask00080DeleteOrphanedContentTypeFields;
-import com.dotmarketing.fixtask.tasks.FixTask00090RecreateMissingFoldersInParentPath;
-import com.dotmarketing.startup.runalways.Task00001LoadSchema;
-import com.dotmarketing.startup.runalways.Task00003CreateSystemRoles;
-import com.dotmarketing.startup.runalways.Task00004LoadStarter;
-import com.dotmarketing.startup.runalways.Task00005LoadFixassets;
-import com.dotmarketing.startup.runalways.Task00006CreateSystemLayout;
-import com.dotmarketing.startup.runalways.Task00007RemoveSitesearchQuartzJob;
-import com.dotmarketing.startup.runalways.Task00009ClusterInitialize;
-import com.dotmarketing.startup.runalways.Task00010CheckAnonymousUser;
-import com.dotmarketing.startup.runonce.*;
 
 /**
  * This utility class provides access to the lists of dotCMS tasks that are

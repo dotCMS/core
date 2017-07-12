@@ -1,29 +1,6 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.LineNumberReader;
-import java.io.PrintWriter;
-import java.nio.channels.FileChannel;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.dotcms.repackage.org.apache.struts.Globals;
-
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.common.db.DotConnect;
@@ -41,9 +18,15 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.util.FileUtil;
 
+import java.io.*;
+import java.nio.channels.FileChannel;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.*;
 
-import static com.dotcms.util.CloseUtils.*;
-import static com.dotcms.util.ConversionUtils.*;
+import static com.dotcms.util.CloseUtils.closeQuietly;
+import static com.dotcms.util.ConversionUtils.toLong;
 /**
  * Implementation class for the {@link LanguageFactory}.
  * 
