@@ -59,7 +59,7 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
     private static final int CODE_301 = 301;
     private static final int FOR_LIMIT_48 = 48;
     private static final int FOR_LIMIT_25 = 25;
-    private static final int INT_2 = 2;
+    private static final int INT_1 = 1;
 
     @Override
     public void executeUpgrade() throws DotDataException {
@@ -178,7 +178,7 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
         int hostSplit = url.indexOf(':');
         if (hostSplit != -1) {
             String hostName = url.substring(0, url.lastIndexOf(':'));
-            newURL = url.substring(hostSplit + INT_2);
+            newURL = url.substring(hostSplit + INT_1);
             hostId = findHostId(hostName);
         }
 
