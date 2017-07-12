@@ -87,6 +87,9 @@ public class PublisherAPIImpl implements PublisherAPI {
                         bundler.generate( bundleRoot, bs );
                         Logger.info(this, "End of Bundler: " + clazz.getSimpleName());
                     }
+                } else {
+                    Logger.info(this, "Retrying bundle: " + config.getId()
+                            + ", we don't need to run bundlers again");
                 }
 
                 p.process( status );

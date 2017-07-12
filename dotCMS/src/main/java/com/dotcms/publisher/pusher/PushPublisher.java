@@ -135,6 +135,9 @@ public class PushPublisher extends Publisher {
             // we need to compress the bundle folder into the tar.gz file.
             if (!bundle.exists() || !pubAuditAPI.isPublishRetry(config.getId())) {
                 PushUtils.compressFiles(list, bundle, bundleRoot.getAbsolutePath());
+            } else {
+                Logger.info(this, "Retrying bundle: " + config.getId()
+                        + ", we don't need to run bundlers again");
             }
 
             List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(this.config.getId());
