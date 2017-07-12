@@ -123,18 +123,30 @@ public class URLMapFilter implements Filter {
 		String pointer = null;
 
 		if (host != null) {
-			CachedVanityUrl vanityUrl = APILocator.getVanityUrlAPI()
-					.getLiveCachedVanityUrl(VanityUrlUtil.fixURI(uri), host, languageId, user);
-			pointer = vanityUrl != null && !VanityUrlAPI.CACHE_404_VANITY_URL
+
+			try {
+				CachedVanityUrl vanityUrl = APILocator.getVanityUrlAPI()
+						.getLiveCachedVanityUrl(VanityUrlUtil.fixURI(uri), host, languageId, user);
+
+				pointer = vanityUrl != null && !VanityUrlAPI.CACHE_404_VANITY_URL
 					.equals(vanityUrl.getVanityUrlId()) && InodeUtils
 					.isSet(vanityUrl.getVanityUrlId()) ? vanityUrl.getForwardTo() : null;
+			} catch (Exception e) {
+				Logger.error(this, e.getMessage(), e);
+			}
+
 		}
 		if (!UtilMethods.isSet(pointer)) {
-			CachedVanityUrl vanityUrl = APILocator.getVanityUrlAPI()
-					.getLiveCachedVanityUrl(VanityUrlUtil.fixURI(uri), null, languageId, user);
-			pointer = vanityUrl != null && !VanityUrlAPI.CACHE_404_VANITY_URL
-					.equals(vanityUrl.getVanityUrlId()) && InodeUtils
-					.isSet(vanityUrl.getVanityUrlId()) ? vanityUrl.getForwardTo() : null;
+
+			try {
+				CachedVanityUrl vanityUrl = APILocator.getVanityUrlAPI()
+						.getLiveCachedVanityUrl(VanityUrlUtil.fixURI(uri), null, languageId, user);
+				pointer = vanityUrl != null && !VanityUrlAPI.CACHE_404_VANITY_URL
+						.equals(vanityUrl.getVanityUrlId()) && InodeUtils
+						.isSet(vanityUrl.getVanityUrlId()) ? vanityUrl.getForwardTo() : null;
+			} catch (Exception e) {
+				Logger.error(this, e.getMessage(), e);
+			}
 		}
 		if (UtilMethods.isSet(pointer)) {
 			uri = pointer;
