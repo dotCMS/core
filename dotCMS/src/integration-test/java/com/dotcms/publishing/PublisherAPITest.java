@@ -210,6 +210,10 @@ public class PublisherAPITest extends IntegrationTestBase {
             final Map<String, Long> firstFileDates = getFileDatesByFolder(bundleFolder,
                     getNoBundleXMLFileFilter());
 
+            // Let's wait 2 seconds between runs so we have different millis in files.
+            Logger.info(this, "Waiting 1 second before 2nd PP run");
+            Thread.sleep(2000);
+
             /* Push publish retry. */
             // As we are using the same config and bundle,
             // the PublishAuditStatus.getStatusPojo().getNumTries() should be > 0.
@@ -252,6 +256,7 @@ public class PublisherAPITest extends IntegrationTestBase {
                 | DotSecurityException
                 | DotPublisherException
                 | DotPublishingException
+                | InterruptedException
                 | FileNotFoundException e) {
             fail(e.getMessage());
         } finally {
