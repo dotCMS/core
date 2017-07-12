@@ -477,7 +477,6 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
         //No need to run all the SQL is we don't get any inodes from the condition.
         if(!resultInodes.isEmpty()){
             List<String> inodesToDelete = new ArrayList<>();
-            List<List<String>> inodesToDeleteMatrix = new ArrayList<>();
             int truncateAt = 100;
 
             //Fill inodesToDelete where each inode from the result.
@@ -486,11 +485,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
             }
 
             //We want to create lists of 100 inodes.
-            while (inodesToDelete.size() >= truncateAt){
-                inodesToDeleteMatrix.add(new ArrayList<>(inodesToDelete.subList(0,truncateAt)));
-                inodesToDelete.subList(0,truncateAt).clear();
-            }
-            inodesToDeleteMatrix.add(new ArrayList<>(inodesToDelete.subList(0, inodesToDelete.size())));
+			List<List<String>> inodesToDeleteMatrix = Lists.partition(inodesToDelete, truncateAt);
 
             //These are all the queries we want to run involving the inodes.
             List<String> queries = Lists.newArrayList("delete from tree where child in (?)",
