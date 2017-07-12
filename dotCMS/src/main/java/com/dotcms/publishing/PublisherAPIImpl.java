@@ -66,8 +66,10 @@ public class PublisherAPIImpl implements PublisherAPI {
                 	pcClone.setId(config.getId());
                 	pcClone.setStatic(true);
                 	pcClone.setOperation(config.getOperation());
-                    BundlerUtil.writeBundleXML( pcClone );
+                    Logger.info(this, "Writing bundle.xml file");
+                	BundlerUtil.writeBundleXML( pcClone );
                 } else {
+                    Logger.info(this, "Writing bundle.xml file");
                     BundlerUtil.writeBundleXML( config );
                 }
 

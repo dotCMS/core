@@ -135,7 +135,7 @@ public class PushPublisher extends Publisher {
                 PushUtils.compressFiles(list, bundle, bundleRoot.getAbsolutePath());
             } else {
                 Logger.info(this, "Retrying bundle: " + config.getId()
-                        + ", we don't need to run bundlers again");
+                        + ", we don't need to compress bundle again");
             }
 
             List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(this.config.getId());
