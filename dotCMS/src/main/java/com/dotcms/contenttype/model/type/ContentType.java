@@ -50,6 +50,7 @@ import com.google.common.collect.ImmutableMap;
 	@Type(value = PersonaContentType.class),
 	@Type(value = SimpleContentType.class),
 	@Type(value = WidgetContentType.class),
+	@Type(value = VanityUrlContentType.class),
 })
 public abstract class ContentType implements Serializable, Permissionable, ContentTypeIf {
 

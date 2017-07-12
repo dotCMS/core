@@ -15,7 +15,7 @@
 
 var enterprise = <%=LicenseUtil.getLevel() > 199%>;
 
-<%  boolean inFrame=(UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (boolean)request.getSession().getAttribute(WebKeys.IN_FRAME))?true:false;
+<%  boolean inFrame=(UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (Boolean)request.getSession().getAttribute(WebKeys.IN_FRAME))?true:false;
     String locationMode = inFrame?"window.location":"top.location";
     PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 	List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndPoints();%>

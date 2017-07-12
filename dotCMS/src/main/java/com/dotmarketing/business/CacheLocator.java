@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.Set;
 
 import com.dotcms.business.SystemCache;
+import com.dotcms.cache.VanityUrlCache;
+import com.dotcms.cache.VanityUrlCacheImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
 import com.dotcms.contenttype.business.ContentTypeCache2;
@@ -309,6 +311,9 @@ public class CacheLocator extends Locator<CacheIndex>{
     public static ContentTypeCache2 getContentTypeCache2() {
         return (ContentTypeCache2) getInstance(CacheIndex.ContentTypeCache2);
     }
+    public static VanityUrlCache getVanityURLCache() {
+		return (VanityUrlCache) getInstance(CacheIndex.VanityURLCache);
+	}
 	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
 	 * on a put where the non legacy one will not.
@@ -399,7 +404,7 @@ enum CacheIndex
 	RulesCache("Rules Cache"),
 	SiteVisitCache("Rules Engine - Site Visits"),
 	NewNotification("NewNotification Cache"),
-
+	VanityURLCache("Vanity URL Cache"),
 	ContentTypeCache("Legacy Content Type Cache"),
 	ContentTypeCache2("New Content Type Cache");
 	Cachable create() {
@@ -443,7 +448,7 @@ enum CacheIndex
       	case SiteVisitCache : return new SiteVisitCacheImpl();
       	case ContentTypeCache: return new LegacyContentTypeCacheImpl();
       	case ContentTypeCache2: return new ContentTypeCache2Impl();
-      	
+      	case VanityURLCache : return new VanityUrlCacheImpl();
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}

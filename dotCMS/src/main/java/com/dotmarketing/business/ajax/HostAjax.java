@@ -24,17 +24,14 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
-
-import org.quartz.SchedulerException;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.servlet.http.HttpServletRequest;
+import org.quartz.SchedulerException;
 
 public class HostAjax {
 
@@ -42,32 +39,53 @@ public class HostAjax {
 	private UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
 
 	public Map<String, Object> findHostsForDataStore(String filter, boolean showArchived, int offset, int count) throws PortalException, SystemException, DotDataException, DotSecurityException {
-
-		if(filter.endsWith("*"))
-			filter = filter.substring(0, filter.length() - 1);
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest req = ctx.getHttpServletRequest();
-		User user = userWebAPI.getLoggedInUser(req);
-
-		HostAPI hostAPI = APILocator.getHostAPI();
-		List<Host> hosts = hostAPI.findAll(user, userWebAPI.isLoggedToFrontend(req));
-		List<Map<String, Object>> hostResults = new ArrayList<Map<String, Object>>();
-		Collections.sort(hosts, new HostNameComparator());
-
-		for(Host host : hosts) {
-			if(host.isSystemHost() || (!showArchived && host.isArchived()))
-				continue;
-			if(host.getHostname().toLowerCase().startsWith(filter.toLowerCase()))
-				hostResults.add(host.getMap());
-		}
-
-		Map<String, Object> hostMapToReturn =new HashMap<String, Object>();
-		hostMapToReturn.put("total",hostResults.size());
-		hostMapToReturn.put("list", hostResults);
-		return hostMapToReturn;
-
+		return findHostsForDataStore(filter, showArchived, offset, count, Boolean.FALSE);
 	}
 
+	public Map<String, Object> findHostsForDataStore(String filter, boolean showArchived, int offset, int count,
+													 boolean includeSystemHost) throws PortalException, SystemException, DotDataException, DotSecurityException {
+
+		if (filter.endsWith("*")) {
+			filter = filter.substring(0, filter.length() - 1);
+		}
+		WebContext ctx = WebContextFactory.get();
+		HttpServletRequest req = ctx.getHttpServletRequest();
+		User user = this.userWebAPI.getLoggedInUser(req);
+
+		List<Host> sites = this.hostAPI.findAll(user, this.userWebAPI.isLoggedToFrontend(req));
+		List<Map<String, Object>> siteResults = new ArrayList<>();
+		Collections.sort(sites, new HostNameComparator());
+
+		Boolean addedSystemSite = false;
+		//Make sure that if we are not using a filter the System Host is on top
+		if ( includeSystemHost && !UtilMethods.isSet(filter) ) {
+			final Host systemSite = this.hostAPI.findSystemHost();
+			if ( APILocator.getPermissionAPI().doesUserHavePermission(systemSite, PermissionAPI.PERMISSION_READ, user) ) {
+				siteResults.add(systemSite.getMap());
+				addedSystemSite = true;
+			}
+		}
+
+		for (Host site : sites) {
+			if ( !showArchived && site.isArchived() ) {
+				continue;
+			}
+
+			if ( (!includeSystemHost && site.isSystemHost())
+					|| (site.isSystemHost() && addedSystemSite) ) {
+				continue;
+			}
+
+			if (site.getHostname().toLowerCase().startsWith(filter.toLowerCase())) {
+				siteResults.add(site.getMap());
+			}
+		}
+
+		Map<String, Object> hostMapToReturn = new HashMap<>();
+		hostMapToReturn.put("total", siteResults.size());
+		hostMapToReturn.put("list", siteResults);
+		return hostMapToReturn;
+	}
 
 	public Map<String, Object> findHostsPaginated(String filter, boolean showArchived, int offset, int count) throws DotDataException, DotSecurityException, PortalException, SystemException {
 
