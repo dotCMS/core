@@ -1,16 +1,5 @@
 package com.dotcms.rest;
 
-import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.net.URLEncoder;
-import java.text.SimpleDateFormat;
-import java.util.*;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -26,28 +15,22 @@ import com.dotcms.repackage.javax.ws.rs.client.ClientBuilder;
 import com.dotcms.repackage.javax.ws.rs.client.Entity;
 import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
-import com.dotcms.repackage.org.glassfish.jersey.jackson.JacksonFeature;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.BodyPart;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPart;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
-import com.dotmarketing.business.*;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -56,7 +39,6 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
-
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.DataType;
@@ -76,6 +58,30 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -292,7 +298,7 @@ public class ContentResourceTest extends IntegrationTestBase {
 
         Contentlet contentlet = null;
 
-        Host demo=hostAPI.findByName("demo.dotcms.com", user, false);
+        Host demo = hostAPI.findByName("demo.dotcms.com", user, false);
 
         try {
             //Create Content Type.
@@ -362,12 +368,12 @@ public class ContentResourceTest extends IntegrationTestBase {
                             imageFile.getName(),
                             MediaType.APPLICATION_OCTET_STREAM_TYPE)), MediaType.MULTIPART_FORM_DATA_TYPE));
 
-
             Assert.assertEquals(200, response.getStatus());
-            contentlet=contentletAPI.find((String) response.getHeaders().getFirst("inode"),user,false);
+            contentlet = contentletAPI.find((String) response.getHeaders().getFirst("inode"), user, false);
             Assert.assertNotNull(contentlet);
             Assert.assertTrue(InodeUtils.isSet(contentlet.getIdentifier()));
-            Assert.assertTrue(response.getLocation().toString().endsWith("/api/content/inode/"+contentlet.getInode()));
+            Assert
+                .assertTrue(response.getLocation().toString().endsWith("/api/content/inode/" + contentlet.getInode()));
 
             //Check that the properties still exist.
             assertTrue(contentlet.getMap().containsKey(binaryField1.variable()));

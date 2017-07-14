@@ -1,12 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
@@ -50,7 +45,6 @@ import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -73,10 +67,16 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.context.InternalContextAdapterImpl;
+import org.apache.velocity.runtime.parser.node.SimpleNode;
+import org.junit.Ignore;
+import org.junit.Test;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -89,14 +89,17 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.context.InternalContextAdapterImpl;
-import org.apache.velocity.runtime.parser.node.SimpleNode;
-import org.junit.Ignore;
-import org.junit.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Created by Jonathan Gamba.
@@ -2570,7 +2573,6 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void test_saveMultilingualFileAssetBasedOnLegacyFile_shouldKeepBinaryFile()
         throws IOException, DotSecurityException, DotDataException {
 
-
         ContentType contentType = null;
         com.dotcms.contenttype.model.field.Field textField = null;
         com.dotcms.contenttype.model.field.Field binaryField = null;
@@ -2581,8 +2583,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Contentlet spanishContent = null;
         Contentlet englishContent = null;
 
-
-        try{
+        try {
 
             //Create Content Type.
             contentType = ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
@@ -2619,7 +2620,6 @@ public class ContentletAPITest extends ContentletBaseTest {
             imageFile = temporaryFolder.newFile("BinaryFile.txt");
             writeTextIntoFile(imageFile, "This is the same file");
 
-
             initialContent = new Contentlet();
             initialContent.setStructureInode(contentType.inode());
             initialContent.setLanguageId(languageAPI.getDefaultLanguage().getId());
@@ -2629,7 +2629,6 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             //Saving initial contentlet
             initialContent = contentletAPI.checkin(initialContent, user, false);
-
 
             //File assets creation based on the initial content
             fileAssetDataGen = new FileAssetDataGen(testFolder, initialContent.getBinary(binaryField.variable()));
@@ -2641,7 +2640,6 @@ public class ContentletAPITest extends ContentletBaseTest {
             englishContent = contentletAPI.checkout(spanishContent.getInode(), user, false);
             englishContent.setLanguageId(1);
             englishContent = contentletAPI.checkin(englishContent, user, false);
-
 
             //Check that the properties still exist.
             assertTrue(initialContent.getMap().containsKey(binaryField.variable()));
@@ -2657,7 +2655,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             fail(e.getMessage());
         } finally {
 
-            try{
+            try {
                 //Delete initial Contentlet.
                 if (initialContent != null) {
                     contentletAPI.archive(initialContent, user, false);
@@ -2675,7 +2673,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                     contentTypeAPI.delete(contentType);
                 }
 
-                if (fileAssetDataGen != null){
+                if (fileAssetDataGen != null) {
 
                     if (spanishContent != null) {
                         fileAssetDataGen.remove(spanishContent);
