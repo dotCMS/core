@@ -50,6 +50,7 @@ import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -2560,6 +2561,138 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
 
     }
+
+    /**
+     * This case should run once this ticket https://github.com/dotCMS/core/issues/12116 is solved
+     */
+    @Test
+    @Ignore
+    public void test_saveMultilingualFileAssetBasedOnLegacyFile_shouldKeepBinaryFile()
+        throws IOException, DotSecurityException, DotDataException {
+
+
+        ContentType contentType = null;
+        com.dotcms.contenttype.model.field.Field textField = null;
+        com.dotcms.contenttype.model.field.Field binaryField = null;
+
+        File imageFile;
+        FileAssetDataGen fileAssetDataGen = null;
+        Contentlet initialContent = null;
+        Contentlet spanishContent = null;
+        Contentlet englishContent = null;
+
+
+        try{
+
+            //Create Content Type.
+            contentType = ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+                .description("ContentType for Legacy File")
+                .host(defaultHost.getIdentifier())
+                .name("ContentType for Legacy File")
+                .owner("owner")
+                .variable("testContentTypeForLegacyFile")
+                .build();
+
+            contentType = contentTypeAPI.save(contentType);
+
+            //Save Fields. 1. Text, 2. Binary
+            //Creating Text Field.
+            textField = ImmutableTextField.builder()
+                .name("Title")
+                .variable("title")
+                .contentTypeId(contentType.id())
+                .dataType(DataTypes.TEXT)
+                .build();
+
+            textField = fieldAPI.save(textField, user);
+
+            //Creating First Binary Field.
+            binaryField = ImmutableBinaryField.builder()
+                .name("File")
+                .variable("file")
+                .contentTypeId(contentType.id())
+                .build();
+
+            binaryField = fieldAPI.save(binaryField, user);
+
+            //Creating a temporary binary file
+            imageFile = temporaryFolder.newFile("BinaryFile.txt");
+            writeTextIntoFile(imageFile, "This is the same file");
+
+
+            initialContent = new Contentlet();
+            initialContent.setStructureInode(contentType.inode());
+            initialContent.setLanguageId(languageAPI.getDefaultLanguage().getId());
+
+            initialContent.setStringProperty(textField.variable(), "Test Content with Same File");
+            initialContent.setBinary(binaryField.variable(), imageFile);
+
+            //Saving initial contentlet
+            initialContent = contentletAPI.checkin(initialContent, user, false);
+
+
+            //File assets creation based on the initial content
+            fileAssetDataGen = new FileAssetDataGen(testFolder, initialContent.getBinary(binaryField.variable()));
+
+            //Creating file asset content in Spanish
+            spanishContent = fileAssetDataGen.languageId(2).nextPersisted();
+
+            //Creating content version in English
+            englishContent = contentletAPI.checkout(spanishContent.getInode(), user, false);
+            englishContent.setLanguageId(1);
+            englishContent = contentletAPI.checkin(englishContent, user, false);
+
+
+            //Check that the properties still exist.
+            assertTrue(initialContent.getMap().containsKey(binaryField.variable()));
+            assertTrue(spanishContent.getMap().containsKey(FileAssetAPI.BINARY_FIELD));
+            assertTrue(englishContent.getMap().containsKey(FileAssetAPI.BINARY_FIELD));
+
+            //Check that the properties have value.
+            assertTrue(UtilMethods.isSet(initialContent.getMap().get(binaryField.variable())));
+            assertTrue(UtilMethods.isSet(spanishContent.getMap().get(FileAssetAPI.BINARY_FIELD)));
+            assertTrue(UtilMethods.isSet(englishContent.getMap().get(FileAssetAPI.BINARY_FIELD)));
+
+        } catch (Exception e) {
+            fail(e.getMessage());
+        } finally {
+
+            try{
+                //Delete initial Contentlet.
+                if (initialContent != null) {
+                    contentletAPI.archive(initialContent, user, false);
+                    contentletAPI.delete(initialContent, user, false);
+                }
+                //Deleting Fields.
+                if (textField != null) {
+                    fieldAPI.delete(textField);
+                }
+                if (binaryField != null) {
+                    fieldAPI.delete(binaryField);
+                }
+                //Deleting Content Type
+                if (contentType != null) {
+                    contentTypeAPI.delete(contentType);
+                }
+
+                if (fileAssetDataGen != null){
+
+                    if (spanishContent != null) {
+                        fileAssetDataGen.remove(spanishContent);
+                    }
+
+                    if (englishContent != null) {
+                        fileAssetDataGen.remove(englishContent);
+                    }
+
+                }
+            } catch (Exception e) {
+                fail(e.getMessage());
+            }
+        }
+    }
+
+
     /*
      * https://github.com/dotCMS/core/issues/11978
      * 

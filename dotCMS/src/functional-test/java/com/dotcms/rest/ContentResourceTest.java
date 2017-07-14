@@ -1,6 +1,10 @@
 package com.dotcms.rest;
 
+import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -9,6 +13,14 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.ImmutableBinaryField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.repackage.javax.ws.rs.client.Client;
 import com.dotcms.repackage.javax.ws.rs.client.ClientBuilder;
 import com.dotcms.repackage.javax.ws.rs.client.Entity;
@@ -17,6 +29,7 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
@@ -29,10 +42,15 @@ import com.dotmarketing.business.*;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -55,14 +73,27 @@ import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class ContentResourceTest extends IntegrationTestBase {
     Client client;
     WebTarget webTarget;
     String authheader="Authorization";
     String authvalue="Basic "+new String(Base64.encode("admin@dotcms.com:admin".getBytes()));
+
+    private static FieldAPI fieldAPI;
+    private static ContentletAPI contentletAPI;
+    private static ContentTypeAPI contentTypeAPI;
+    private static HostAPI hostAPI;
+    private static User user;
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Before
     public void before() throws Exception{
@@ -73,14 +104,21 @@ public class ContentResourceTest extends IntegrationTestBase {
         String serverName = request.getServerName();
         long serverPort = request.getServerPort();
         webTarget = client.target("http://" + serverName + ":" + serverPort + "/api/content");
+
+        //Setting the test user
+        user = APILocator.getUserAPI().getSystemUser();
+        fieldAPI = APILocator.getContentTypeFieldAPI();
+        hostAPI = APILocator.getHostAPI();
+        contentletAPI = APILocator.getContentletAPI();
+        contentTypeAPI = APILocator.getContentTypeAPI(user, false);
     }
 
     @Test
     @Ignore
     public void singlePUT() throws Exception {
         Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent");
-        Host demo=APILocator.getHostAPI().findByName("demo.dotcms.com", APILocator.getUserAPI().getSystemUser(), false);
-        User sysuser=APILocator.getUserAPI().getSystemUser();
+        Host demo=hostAPI.findByName("demo.dotcms.com", user, false);
+
         String demoId=demo.getIdentifier();
 
         Response response = webTarget.path("/publish/1/").request()
@@ -97,7 +135,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         Assert.assertTrue(response.getLocation().toString().contains("/api/content/inode/"));
         String location=response.getLocation().toString();
         String inode=location.substring(location.lastIndexOf("/")+1);
-        Contentlet cont=APILocator.getContentletAPI().find(inode, sysuser, false);
+        Contentlet cont=contentletAPI.find(inode, user, false);
         Assert.assertNotNull(cont);
         Assert.assertTrue(InodeUtils.isSet(cont.getIdentifier()));
         Assert.assertEquals(demoId, cont.getHost());
@@ -108,7 +146,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         Assert.assertTrue(cont.isLive());
 
         // testing other host_or_folder formats: folderId
-        Folder folder=APILocator.getFolderAPI().findFolderByPath("/home", demo, sysuser, false);
+        Folder folder=APILocator.getFolderAPI().findFolderByPath("/home", demo, user, false);
         response=webTarget.path("/publish/1").request()
                        .header(authheader, authvalue).put(Entity.entity(
                         new JSONObject()
@@ -119,7 +157,7 @@ public class ContentResourceTest extends IntegrationTestBase {
                                 .put("contentHost", folder.getInode()).toString(), MediaType.APPLICATION_JSON_TYPE));
         location=response.getLocation().toString();
         inode=location.substring(location.lastIndexOf("/")+1);
-        cont=APILocator.getContentletAPI().find(inode, sysuser, false);
+        cont=contentletAPI.find(inode, user, false);
         Assert.assertEquals(folder.getInode(), cont.getFolder());
         Assert.assertTrue(cont.isLive());
 
@@ -134,7 +172,7 @@ public class ContentResourceTest extends IntegrationTestBase {
                                 .put("contentHost", "demo.dotcms.com").toString(), MediaType.APPLICATION_JSON_TYPE));
         location=response.getLocation().toString();
         inode=location.substring(location.lastIndexOf("/")+1);
-        cont=APILocator.getContentletAPI().find(inode, sysuser, false);
+        cont=contentletAPI.find(inode, user, false);
         Assert.assertEquals(demoId, cont.getHost());
         Assert.assertTrue(cont.isLive());
 
@@ -149,7 +187,7 @@ public class ContentResourceTest extends IntegrationTestBase {
                                 .put("contentHost", "demo.dotcms.com:/home").toString(), MediaType.APPLICATION_JSON_TYPE));
         location=response.getLocation().toString();
         inode=location.substring(location.lastIndexOf("/")+1);
-        cont=APILocator.getContentletAPI().find(inode, sysuser, false);
+        cont=contentletAPI.find(inode, user, false);
         Assert.assertEquals(folder.getInode(), cont.getFolder());
         Assert.assertFalse(cont.isLive());
 
@@ -168,7 +206,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         Assert.assertTrue(response.getLocation().toString().contains("/api/content/inode/"));
         location=response.getLocation().toString();
         inode=location.substring(location.lastIndexOf("/")+1);
-        cont=APILocator.getContentletAPI().find(inode, sysuser, false);
+        cont=contentletAPI.find(inode, user, false);
         Assert.assertNotNull(cont);
         Assert.assertTrue(InodeUtils.isSet(cont.getIdentifier()));
         Assert.assertEquals(demoId, cont.getHost());
@@ -193,7 +231,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         location=response.getLocation().toString();
         inode=location.substring(location.lastIndexOf("/")+1);
         Assert.assertEquals(inode, response.getHeaders().getFirst("inode")); // validate consistency of inode header
-        cont=APILocator.getContentletAPI().find(inode, sysuser, false);
+        cont=contentletAPI.find(inode, user, false);
         Assert.assertNotNull(cont);
         Assert.assertTrue(InodeUtils.isSet(cont.getIdentifier()));
         Assert.assertEquals(cont.getIdentifier(), response.getHeaders().getFirst("identifier")); // consistency of identifier header
@@ -210,7 +248,6 @@ public class ContentResourceTest extends IntegrationTestBase {
     @Test
     public void multipartPUT() throws Exception {
         final String salt=Long.toString(System.currentTimeMillis());
-        final User sysuser=APILocator.getUserAPI().getSystemUser();
         final Client client = ClientBuilder.newClient().register(MultiPartFeature.class);
 
         Response response = client.target(webTarget.getUri() + "/publish/1").request()
@@ -231,20 +268,147 @@ public class ContentResourceTest extends IntegrationTestBase {
                                     MediaType.APPLICATION_OCTET_STREAM_TYPE)), MediaType.MULTIPART_FORM_DATA_TYPE));
 
         Assert.assertEquals(200, response.getStatus());
-        Contentlet cont=APILocator.getContentletAPI().find((String) response.getHeaders().getFirst("inode"),sysuser,false);
+        Contentlet cont=contentletAPI.find((String) response.getHeaders().getFirst("inode"),user,false);
         Assert.assertNotNull(cont);
         Assert.assertTrue(InodeUtils.isSet(cont.getIdentifier()));
         Assert.assertTrue(response.getLocation().toString().endsWith("/api/content/inode/"+cont.getInode()));
         FileAsset file=APILocator.getFileAssetAPI().fromContentlet(cont);
         Assert.assertEquals("/resources/newfile"+salt+".txt",file.getURI());
-        Assert.assertEquals("demo.dotcms.com", APILocator.getHostAPI().find(file.getHost(), sysuser, false).getHostname());
+        Assert.assertEquals("demo.dotcms.com", hostAPI.find(file.getHost(), user, false).getHostname());
         Assert.assertEquals("this is the salt "+salt, IOUtils.toString(file.getFileInputStream()));
+    }
+
+    /**
+     * https://github.com/dotCMS/core/issues/11950
+     */
+    @Test
+    public void testContentWithTwoBinaryFieldsAndSameFile_afterCheckinShouldContainBothFields() throws Exception {
+        final Client client = ClientBuilder.newClient().register(MultiPartFeature.class);
+
+        ContentType contentType = null;
+        com.dotcms.contenttype.model.field.Field textField = null;
+        com.dotcms.contenttype.model.field.Field binaryField1 = null;
+        com.dotcms.contenttype.model.field.Field binaryField2 = null;
+
+        Contentlet contentlet = null;
+
+        Host demo=hostAPI.findByName("demo.dotcms.com", user, false);
+
+        try {
+            //Create Content Type.
+            contentType = ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+                .description("Test ContentType Two Fields")
+                .host(demo.getIdentifier())
+                .name("Test ContentType Two Fields")
+                .owner("owner")
+                .variable("testContentTypeWithTwoBinaryFields")
+                .build();
+
+            contentType = contentTypeAPI.save(contentType);
+
+            //Save Fields. 1. Text, 2. Binary, 3. Binary.
+            //Creating Text Field.
+            textField = ImmutableTextField.builder()
+                .name("Title")
+                .variable("title")
+                .contentTypeId(contentType.id())
+                .dataType(DataTypes.TEXT)
+                .build();
+
+            textField = fieldAPI.save(textField, user);
+
+            //Creating First Binary Field.
+            binaryField1 = ImmutableBinaryField.builder()
+                .name("Binary 1")
+                .variable("binary1")
+                .contentTypeId(contentType.id())
+                .build();
+
+            binaryField1 = fieldAPI.save(binaryField1, user);
+
+            //Creating Second Binary Field.
+            binaryField2 = ImmutableBinaryField.builder()
+                .name("Binary 2")
+                .variable("binary2")
+                .contentTypeId(contentType.id())
+                .build();
+
+            binaryField2 = fieldAPI.save(binaryField2, user);
+
+            //Creating a temporary File to use in the binary fields.
+            File imageFile = temporaryFolder.newFile("DummyFile.txt");
+            writeTextIntoFile(imageFile, "This is the same file");
+
+            Response response = client.target(webTarget.getUri() + "/publish/1").request()
+                .header(authheader, authvalue).put(Entity.entity(
+                    new MultiPart()
+                        .bodyPart(new BodyPart(
+                            new JSONObject()
+                                .put("hostFolder", "demo.dotcms.com:/resources")
+                                .put(textField.variable(), "Test Content with Same File")
+                                .put(binaryField1.variable(), imageFile.getName())
+                                .put(binaryField2.variable(), imageFile.getName())
+                                .put("languageId", "1")
+                                .put("stInode", contentType.inode())
+                                .toString(), MediaType.APPLICATION_JSON_TYPE))
+                        .bodyPart(new StreamDataBodyPart(
+                            imageFile.getName(),
+                            FileUtils.openInputStream(imageFile),
+                            imageFile.getName(),
+                            MediaType.APPLICATION_OCTET_STREAM_TYPE))
+                        .bodyPart(new StreamDataBodyPart(
+                            imageFile.getName(),
+                            FileUtils.openInputStream(imageFile),
+                            imageFile.getName(),
+                            MediaType.APPLICATION_OCTET_STREAM_TYPE)), MediaType.MULTIPART_FORM_DATA_TYPE));
+
+
+            Assert.assertEquals(200, response.getStatus());
+            contentlet=contentletAPI.find((String) response.getHeaders().getFirst("inode"),user,false);
+            Assert.assertNotNull(contentlet);
+            Assert.assertTrue(InodeUtils.isSet(contentlet.getIdentifier()));
+            Assert.assertTrue(response.getLocation().toString().endsWith("/api/content/inode/"+contentlet.getInode()));
+
+            //Check that the properties still exist.
+            assertTrue(contentlet.getMap().containsKey(binaryField1.variable()));
+            assertTrue(contentlet.getMap().containsKey(binaryField2.variable()));
+
+            //Check that the properties have value.
+            assertTrue(UtilMethods.isSet(contentlet.getMap().get(binaryField1.variable())));
+            assertTrue(UtilMethods.isSet(contentlet.getMap().get(binaryField2.variable())));
+
+        } catch (Exception e) {
+            fail(e.getMessage());
+        } finally {
+            try {
+                //Delete Contentlet.
+                if (contentlet != null) {
+                    contentletAPI.archive(contentlet, user, false);
+                    contentletAPI.delete(contentlet, user, false);
+                }
+                //Deleting Fields.
+                if (textField != null) {
+                    fieldAPI.delete(textField);
+                }
+                if (binaryField1 != null) {
+                    fieldAPI.delete(binaryField1);
+                }
+                if (binaryField2 != null) {
+                    fieldAPI.delete(binaryField2);
+                }
+                //Deleting Content Type
+                if (contentType != null) {
+                    contentTypeAPI.delete(contentType);
+                }
+            } catch (Exception e) {
+                fail(e.getMessage());
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void categoryAndTagFields() throws Exception {
-        User sysuser=APILocator.getUserAPI().getSystemUser();
         Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Blog");
         String salt=Long.toString(System.currentTimeMillis());
         Response response=webTarget.path("/justsave/1").request()
@@ -264,7 +428,7 @@ public class ContentResourceTest extends IntegrationTestBase {
                                 .put("contentHost", "demo.dotcms.com:/home").toString(), MediaType.APPLICATION_JSON_TYPE));
         Assert.assertEquals(200, response.getStatus());
         String inode=(String)response.getHeaders().getFirst("inode");
-        Contentlet cont=APILocator.getContentletAPI().find(inode, sysuser, false);
+        Contentlet cont=contentletAPI.find(inode, user, false);
         Assert.assertNotNull(cont);
         Assert.assertTrue(InodeUtils.isSet(cont.getIdentifier()));
 
@@ -272,7 +436,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         // checking categories //
         /////////////////////////
 
-        List<Category> cats=APILocator.getCategoryAPI().getParents(cont, sysuser, false);
+        List<Category> cats=APILocator.getCategoryAPI().getParents(cont, user, false);
         Assert.assertNotNull(cats);
         Assert.assertEquals(2,cats.size());
 
@@ -440,7 +604,6 @@ public class ContentResourceTest extends IntegrationTestBase {
         APILocator.getWorkflowAPI().saveSchemeForStruct(st, scheme);
 
         // send the Rest api call
-        User sysuser=APILocator.getUserAPI().getSystemUser();
         User bill=APILocator.getUserAPI().loadUserById("dotcms.org.2806");
         Role billrole=APILocator.getRoleAPI().getUserRole(bill);
         Response response =webTarget.path("/Save%20and%20Assign/1/wfActionComments/please%20do%20this%20for%20me/wfActionAssign/"+billrole.getId())
@@ -453,7 +616,7 @@ public class ContentResourceTest extends IntegrationTestBase {
                     .toString(), MediaType.APPLICATION_JSON_TYPE));
         Assert.assertEquals(200, response.getStatus());
 
-        Contentlet cont = APILocator.getContentletAPI().find((String)response.getHeaders().getFirst("inode"), sysuser, false);
+        Contentlet cont = contentletAPI.find((String)response.getHeaders().getFirst("inode"), user, false);
         Assert.assertNotNull(cont);
         Assert.assertTrue(InodeUtils.isSet(cont.getIdentifier()));
 
@@ -464,7 +627,7 @@ public class ContentResourceTest extends IntegrationTestBase {
 
         HashMap<String, Object> map = new HashMap<String,Object>();
         map.put("assignedTo",billrole.getId());
-        for(WorkflowTask task : APILocator.getWorkflowAPI().searchTasks(new WorkflowSearcher(map, sysuser))) {
+        for(WorkflowTask task : APILocator.getWorkflowAPI().searchTasks(new WorkflowSearcher(map, user))) {
             if(task.getWebasset().equals(cont.getIdentifier())) {
                 assigned=true;
                 Assert.assertEquals("please do this for me",task.getDescription());
@@ -477,8 +640,6 @@ public class ContentResourceTest extends IntegrationTestBase {
 
     @Test
     public void uriFileImageFields() throws Exception {
-        User sysuser=APILocator.getUserAPI().getSystemUser();
-
         final String salt=Long.toString(System.currentTimeMillis());
 
         Structure st=new Structure();
@@ -493,8 +654,8 @@ public class ContentResourceTest extends IntegrationTestBase {
         Field image=new Field("aImage",FieldType.IMAGE,DataType.TEXT,st,true,false,true,3,false,false,true);
         FieldFactory.saveField(image);
 
-        Host demo=APILocator.getHostAPI().findByName("demo.dotcms.com", sysuser, false);
-        Folder ff=APILocator.getFolderAPI().createFolders("/rest/"+salt, demo, sysuser, false);
+        Host demo=hostAPI.findByName("demo.dotcms.com", user, false);
+        Folder ff=APILocator.getFolderAPI().createFolders("/rest/"+salt, demo, user, false);
 
         java.io.File filefile = java.io.File.createTempFile("filefile", ".txt");
         FileUtil.write(filefile, "helloworld");
@@ -510,7 +671,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         filea.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, "filefile.txt");
         filea.setBinary(FileAssetAPI.BINARY_FIELD, filefile);
         filea.setLanguageId(1);
-        filea = APILocator.getContentletAPI().checkin(filea, sysuser, false);
+        filea = contentletAPI.checkin(filea, user, false);
 
         Contentlet imga=new Contentlet();
         imga.setFolder(ff.getInode());
@@ -521,7 +682,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         imga.setStringProperty(FileAssetAPI.TITLE_FIELD, "imgimg.jpg");
         imga.setBinary(FileAssetAPI.BINARY_FIELD, imgimg);
         imga.setLanguageId(1);
-        imga = APILocator.getContentletAPI().checkin(imga, sysuser, false);
+        imga = contentletAPI.checkin(imga, user, false);
 
         Response response = webTarget.path("/publish/1")
             .request()
@@ -535,7 +696,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         Assert.assertEquals(200, response.getStatus());
 
         String inode=(String)response.getHeaders().getFirst("inode");
-        Contentlet cont = APILocator.getContentletAPI().find(inode, sysuser, false);
+        Contentlet cont = contentletAPI.find(inode, user, false);
         Assert.assertEquals(filea.getIdentifier(),cont.getStringProperty(file.getVelocityVarName()));
         Assert.assertEquals(imga.getIdentifier(),cont.getStringProperty(image.getVelocityVarName()));
     }
@@ -543,7 +704,6 @@ public class ContentResourceTest extends IntegrationTestBase {
     @Test
     public void relationShips() throws Exception {
         final String salt=Long.toString(System.currentTimeMillis());
-        final User sysuser=APILocator.getUserAPI().getSystemUser();
 
         Structure st1=new Structure();
         st1.setName("Rest Test rel "+salt);
@@ -565,16 +725,16 @@ public class ContentResourceTest extends IntegrationTestBase {
         c1.setLanguageId(1);
         c1.setStringProperty(title2.getVelocityVarName(), "title 2");
         c1.setStructureInode(st2.getInode());
-        c1 = APILocator.getContentletAPI().checkin(c1, sysuser, false);
+        c1 = contentletAPI.checkin(c1, user, false);
 
         Contentlet c2=new Contentlet();
         c2.setLanguageId(1);
         c2.setStringProperty(title2.getVelocityVarName(), "title 222");
         c2.setStructureInode(st2.getInode());
-        c2 = APILocator.getContentletAPI().checkin(c2, sysuser, false);
+        c2 = contentletAPI.checkin(c2, user, false);
 
-        APILocator.getContentletAPI().isInodeIndexed(c1.getInode());
-        APILocator.getContentletAPI().isInodeIndexed(c2.getInode());
+        contentletAPI.isInodeIndexed(c1.getInode());
+        contentletAPI.isInodeIndexed(c2.getInode());
 
         Relationship rel=new Relationship(st1,st2,"st1"+salt,"st2"+salt,0,false,false);
         FactoryLocator.getRelationshipFactory().save(rel);
@@ -592,9 +752,9 @@ public class ContentResourceTest extends IntegrationTestBase {
         Thread.sleep(2000); // wait for relation fields update
 
         String inode=(String)response.getHeaders().getFirst("inode");
-        Contentlet cc=APILocator.getContentletAPI().find(inode, sysuser, false);
+        Contentlet cc=contentletAPI.find(inode, user, false);
 
-        List<Contentlet> relatedContent = APILocator.getContentletAPI().getRelatedContent(cc, rel, sysuser, false);
+        List<Contentlet> relatedContent = contentletAPI.getRelatedContent(cc, rel, user, false);
         Assert.assertEquals(2, relatedContent.size());
 
         Set<String> inodes=new HashSet<String>();
@@ -607,7 +767,6 @@ public class ContentResourceTest extends IntegrationTestBase {
 
     @Test
     public void newVersion() throws Exception {
-        final User sysuser=APILocator.getUserAPI().getSystemUser();
 
         Response response = webTarget.path("/justSave/1")
                 .request()
@@ -641,16 +800,30 @@ public class ContentResourceTest extends IntegrationTestBase {
         Assert.assertEquals(identifier, identifier2);
         Assert.assertNotSame(inode, inode2);
 
-        Contentlet c1=APILocator.getContentletAPI().find(inode, sysuser, false);
-        Contentlet c2=APILocator.getContentletAPI().find(inode2, sysuser, false);
+        Contentlet c1=contentletAPI.find(inode, user, false);
+        Contentlet c2=contentletAPI.find(inode2, user, false);
 
-        Contentlet working=APILocator.getContentletAPI().findContentletByIdentifier(identifier, false, 1, sysuser, false);
+        Contentlet working=contentletAPI.findContentletByIdentifier(identifier, false, 1, user, false);
 
         Assert.assertEquals("testing newVersion 2", c2.getStringProperty("title"));
         Assert.assertEquals("just testing 2", c2.getStringProperty("body"));
         Assert.assertEquals(c1.getIdentifier(), c2.getIdentifier());
 
         Assert.assertEquals(working.getInode(), c2.getInode());
+    }
+
+    /**
+     * Util method to write dummy text into a file.
+     *
+     * @param file that we need to write. File should be empty.
+     * @param textToWrite text that we are going to write into the file.
+     */
+    private void writeTextIntoFile(File file, final String textToWrite) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
+            bw.write(textToWrite);
+        } catch (IOException e) {
+            fail(e.getMessage());
+        }
     }
 }
 
