@@ -634,6 +634,7 @@
                 grid.selection.clear();
 
                 var message = "";
+                var messageStyle = "color:green; font-size:11px;";
 
                 switch (result) {
                     case 0:
@@ -646,15 +647,19 @@
                         break;
                     case 1:
                         message = '<%= LanguageUtil.get(pageContext, "message.category.permission.error") %>';
+                        messageStyle = "color:red; font-size:11px;";
+                        error = true;
                         clearAddDialog();
                         break;
                     case 2:
                         message = '<%= LanguageUtil.get(pageContext, "error.category.folder.taken") %>';
+                        messageStyle = "color:red; font-size:11px;";
                         break;
                     default:
                 }
 
                 dojo.byId("savedMessage").innerHTML = message;
+                dojo.byId("savedMessage").style = messageStyle;
             }
         });
     }
@@ -1002,7 +1007,7 @@
 <!-- START Add Category pop up -->
 <div id="add_category_dialog"  dojoType="dijit.Dialog" style="display:none;width:300px" draggable="true" title="<%= LanguageUtil.get(pageContext, "add-category") %>" >
 	<div dojoType="dijit.layout.ContentPane">
-		<span id="savedMessage" style="color:red; font-size:11px;"></span>
+		<span id="savedMessage"></span>
 		<form id="addCatPropertiesForm" dojoType="dijit.form.Form" style="max-width: 260px; max-height: 300px;">
 			<div class="form-inline">
 				<dl>
