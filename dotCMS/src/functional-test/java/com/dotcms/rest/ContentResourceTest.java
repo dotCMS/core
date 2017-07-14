@@ -1,6 +1,5 @@
 package com.dotcms.rest;
 
-import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -86,7 +85,7 @@ import javax.servlet.http.HttpServletRequest;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class ContentResourceTest extends IntegrationTestBase {
+public class ContentResourceTest {
     Client client;
     WebTarget webTarget;
     String authheader="Authorization";

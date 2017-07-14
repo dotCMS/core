@@ -11,7 +11,6 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import org.junit.After;
@@ -46,7 +45,7 @@ import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
-public class URLMapTest extends IntegrationTestBase {
+public class URLMapTest {
 
 	private Folder testFolder;
 	private Template template;
