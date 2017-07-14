@@ -4,8 +4,14 @@ import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyV
 import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
 import static com.dotcms.integrationtestutil.content.ContentUtils.updateTestKeyValueContent;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.util.List;
 
+import com.dotmarketing.util.Logger;
+import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -49,6 +55,9 @@ public class KeyValueAPITest extends IntegrationTestBase {
     private static final String KEY_1 = "com.dotcms.test.key1";
     private static final String VALUE_1 = "Test Key #1";
 
+
+
+
     @BeforeClass
     public static void prepare() throws Exception {
         // Setting web app environment
@@ -66,6 +75,7 @@ public class KeyValueAPITest extends IntegrationTestBase {
         keyValueContentType = contentTypeApi.save(keyValueContentType);
         englishLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         spanishLanguageId = APILocator.getLanguageAPI().getLanguage("es", "ES").getId();
+        setDebugMode(Boolean.TRUE);
     }
 
     /*
@@ -185,8 +195,13 @@ public class KeyValueAPITest extends IntegrationTestBase {
                         null != cache.get(KEY_1) ? cache.get(KEY_1) : ""), cache.get(KEY_1));
 
         KeyValue testKeyValue = keyValueAPI.fromContentlet(contentlet);
+
+        System.out.print("testKeyValue: " + testKeyValue + ", keyValueAPI = " + keyValueAPI + "\n");
+        System.out.print("testKeyValue.getKey: " + testKeyValue.getKey()
+                + ", testKeyValue.getLanguageId = " + testKeyValue.getLanguageId() + "\n");
         keyValues = keyValueAPI.get(testKeyValue.getKey(), testKeyValue.getLanguageId(), systemUser, Boolean.FALSE);
 
+        System.out.print("keyValues: " + keyValues  + "\n");
         Assert.assertTrue(String.format("Key/Value list MUST CONTAIN 1 element. It had %s elements.", keyValues.size()),
                         keyValues.size() == 1);
         Assert.assertTrue(
@@ -209,6 +224,11 @@ public class KeyValueAPITest extends IntegrationTestBase {
         cache.clearCache();
         final Contentlet contentlet =
                         createTestKeyValueContent(KEY_1, VALUE_1, englishLanguageId, keyValueContentType, systemUser);
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         List<KeyValue> keyValues = cache.getByContentType(KEY_1, keyValueContentType.id());
 
         Assert.assertNull(String.format("Key/Value cache MUST BE EMPTY at this point. It had %s elements.",
@@ -260,6 +280,7 @@ public class KeyValueAPITest extends IntegrationTestBase {
             ContentTypeAPI contentTypeApi = APILocator.getContentTypeAPI(systemUser);
             contentTypeApi.delete(keyValueContentType);
         }
+        cleanupDebug(KeyValueAPITest.class);
     }
 
 }

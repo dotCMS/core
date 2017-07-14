@@ -51,6 +51,7 @@
 	int STRUCTURE_TYPE_HTMLPAGE= 5;
 	int STRUCTURE_TYPE_PERSONA= 6;
 	int CONTENT_TYPE_VANITY_URL = 7;
+	int CONTENT_TYPE_KEY_VALUE = 8;
 	List<Integer> structureTypes = new ArrayList<Integer>();
 	structureTypes.add(STRUCTURE_TYPE_CONTENT);
 	structureTypes.add(STRUCTURE_TYPE_WIDGET);
@@ -63,6 +64,7 @@
 		structureTypes.add(STRUCTURE_TYPE_PERSONA);
 	}
 	structureTypes.add(CONTENT_TYPE_VANITY_URL);
+	structureTypes.add(CONTENT_TYPE_KEY_VALUE);
 	int structureType = 0;
 	try {
 		if (session.getAttribute(com.dotmarketing.util.WebKeys.Structure.STRUCTURE_EDIT_TYPE) != null)
@@ -289,7 +291,10 @@
 										strTypeName = LanguageUtil.get(pageContext, "Persona");
 									} else if (next == CONTENT_TYPE_VANITY_URL){
 										strTypeName = LanguageUtil.get(pageContext, "VanityURL");
+									} else if (next == CONTENT_TYPE_KEY_VALUE){
+										strTypeName = LanguageUtil.get(pageContext, "KeyValue");
 									}
+
 							%>
 							<option value="<%=next%>" <%=structureType == next?"selected='true'":""%>><%=strTypeName%></option>
 							<%} %>

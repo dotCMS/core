@@ -178,7 +178,7 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
         Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, Boolean.FALSE);
         String languageVariable = languageVariableAPI.getLanguageVariable(KEY_1, spanishLanguageId, systemUser);
 
-        Assert.assertTrue("Language Variable MUST BE null/empty.", !UtilMethods.isSet(languageVariable));
+        Assert.assertTrue("Language Variable MUST BE null/empty.", UtilMethods.isSet(languageVariable) && languageVariable.equals(KEY_1));
 
         Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, Boolean.TRUE);
         languageVariable = languageVariableAPI.getLanguageVariable(KEY_1, spanishLanguageId, systemUser);

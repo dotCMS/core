@@ -76,7 +76,7 @@ public class LanguageVariableAPIImpl implements LanguageVariableAPI {
             Logger.debug(this, String.format("Could not retrieve Language Variavle '%s': %s", key, e.getMessage()), e);
         }
 
-        return languageValue;
+        return (null != languageValue)? languageValue:key;
     }
 
     private String getValueFromUserLanguage(final String key, long languageId,

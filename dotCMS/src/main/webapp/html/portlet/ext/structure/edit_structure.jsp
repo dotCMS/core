@@ -449,6 +449,8 @@
 							<%= LanguageUtil.get(pageContext, "Persona") %>
 							<%} else if (form.getStructureType() == 7){%>
                             <%= LanguageUtil.get(pageContext, "VanityURL") %>
+                            <%} else if (form.getStructureType() == 8){%>
+                            <%= LanguageUtil.get(pageContext, "KeyValue") %>
                             <%} %> &gt;
 						</span>
 								<%=structure.getName() %>
@@ -586,6 +588,8 @@
 										<%= LanguageUtil.get(pageContext, "Persona") %>
 										<%} else if(form.getStructureType() == 7){%>
 										<%= LanguageUtil.get(pageContext, "VanityURL") %>
+                                        <%} else if (form.getStructureType() == 8){%>
+                                        <%= LanguageUtil.get(pageContext, "KeyValue") %>
 										<%}%>&nbsp;%>&nbsp;
 										<a target="_blank" href="/api/v1/contenttype/id/<%=structure.getInode() %>">json</a>
 										<%}else{ %>
@@ -598,6 +602,7 @@
 											<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_PERSONA) %>"><%= LanguageUtil.get(pageContext, "Persona") %></option>
 											<% } %>
 											<option value="7"><%= LanguageUtil.get(pageContext, "VanityURL") %></option>
+                                            <option value="8"><%= LanguageUtil.get(pageContext, "KeyValue") %></option>
 										</select>
 										<%} %>
 										<html:hidden property="system" styleId="system" />

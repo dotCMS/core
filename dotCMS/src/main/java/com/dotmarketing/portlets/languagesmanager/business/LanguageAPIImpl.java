@@ -280,7 +280,7 @@ public class LanguageAPIImpl implements LanguageAPI {
         // Language.properties file
         final String value = this.getStringFromPropertiesFile(lang, key);
         // If not found, look it up using the new Language Variable API
-        return (null == value || StringPool.BLANK.equals(value.trim()))?
+        return (null == value || StringPool.BLANK.equals(value.trim()) || key.equals(value) )?
                 getLanguageVariableAPI().getLanguageVariableRespectingFrontEndRoles(key, lang.getId(), user):
                 value;
     }

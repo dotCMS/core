@@ -101,33 +101,43 @@ public class KeyValueAPIImpl implements KeyValueAPI {
         return (!result.isEmpty()) ? result.get(0) : null;
     }
 
-    /**
-     * Performs a Lucene query to returns a list of {@link KeyValue} objects that match the
-     * specified key, language ID, and Content Type. This method don't use pagination or limit in
-     * its results.
-     * 
-     * @param key - The key.
-     * @param languageId - The ID of the language that the content was created for.
-     * @param contentType - The {@link ContentType} used to create this content.
-     * @param user - The user performing this action.
-     * @param respectFrontendRoles - Set to {@code true} if this method requires that front-end
-     *        roles are take in count for the search (which means this is being called from the
-     *        front-end). Otherwise, set to {@code false}.
-     * @return The Key/Value object.
-     */
+
+        /**
+         * Performs a Lucene query to returns a list of {@link KeyValue} objects that match the
+         * specified key, language ID, and Content Type. This method don't use pagination or limit in
+         * its results.
+         *
+         * @param key - The key.
+         * @param languageId - The ID of the language that the content was created for.
+         * @param contentType - The {@link ContentType} used to create this content.
+         * @param user - The user performing this action.
+         * @param respectFrontendRoles - Set to {@code true} if this method requires that front-end
+         *        roles are take in count for the search (which means this is being called from the
+         *        front-end). Otherwise, set to {@code false}.
+         * @return The Key/Value object.
+         */
     private List<KeyValue> queryKeyValues(final String key, final long languageId, final ContentType contentType, final User user,
-                    final boolean respectFrontendRoles) {
+                                          final boolean respectFrontendRoles) {
         final ImmutableList.Builder<KeyValue> results = new Builder<>();
         // No limit and no pagination required
         final int limit = 0;
         final int offset = -1;
         final StringBuilder query = new StringBuilder();
         try {
+
             query.append((UtilMethods.isSet(contentType) && UtilMethods.isSet(contentType.variable()))
                             ? "+contentType:" + contentType.variable() : "+baseType:" + BaseContentType.KEY_VALUE.getType());
-            query.append(" +key:").append(key);
+
+            if (UtilMethods.isSet(contentType) && UtilMethods.isSet(contentType.variable())) {
+
+                query.append(" +").append(contentType.variable()).append(".key:").append(key);
+            } else {
+                query.append(" +key:").append(key);
+            }
+
             query.append((languageId >= 0) ? " +languageId:" + languageId : StringPool.BLANK);
             query.append(" +live:true +deleted:false");
+            System.out.print("query: " + query + "\n");
             List<Contentlet> contentResults =
                             contentletAPI.search(query.toString(), limit, offset, StringPool.BLANK, user, respectFrontendRoles);
             contentResults.stream().forEach((Contentlet contentlet) -> {

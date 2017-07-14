@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.keyvalue.business.KeyValueAPITest;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -16,8 +17,12 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.BaseMessageResources;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import java.io.*;
 import java.sql.SQLException;
 import java.util.List;
+
+import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
 
@@ -32,6 +37,36 @@ import org.junit.Assert;
  * <br>For managing the assertions use the static class {@link org.junit.Assert Assert}
  */
 public abstract class IntegrationTestBase extends BaseMessageResources {
+
+    private static Boolean debugMode = Boolean.FALSE;
+    private final static PrintStream stdout = System.out;
+    private final static ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+    protected static void setDebugMode (final boolean mode) throws UnsupportedEncodingException {
+
+        debugMode = mode;
+        if (debugMode) {
+
+            System.setOut(new PrintStream(output, true, "UTF-8"));
+        }
+    }
+
+    protected static void cleanupDebug (Class clazz) {
+
+        if (debugMode) {
+            try {
+                final String fileName = clazz.getName() + System.currentTimeMillis() + ".out";
+                FileUtils.writeByteArrayToFile(new File(fileName), output.toByteArray());
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                System.setOut(stdout);
+            }
+        }
+
+    }
+
+
 
     @After
     public void after () throws SQLException, DotHibernateException, HibernateException {
