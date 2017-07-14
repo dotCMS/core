@@ -52,8 +52,8 @@ public class VanityUrlAPITest {
     private static ContentType contentType;
     private static VanityUrlCache vanityUrlCache;
 
-    private static final String VANITY_URL_CONTENT_TYPE_NAME = "Vanity URL Asset";
-    private static final String VANITY_URL_CONTENT_TYPE_VARNAME = "Vanityurlasset";
+    private static final String VANITY_URL_CONTENT_TYPE_NAME = "Vanity URL";
+    private static final String VANITY_URL_CONTENT_TYPE_VARNAME = "Vanityurl";
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -262,6 +262,7 @@ public class VanityUrlAPITest {
      */
     @Test
     public void getActiveVanityUrls() {
+
         Contentlet contentlet1 = null;
         Contentlet contentlet2 = null;
         Contentlet contentlet3 = null;
@@ -352,102 +353,6 @@ public class VanityUrlAPITest {
         }
     }
 
-    /**
-     * Testing {@link VanityUrlAPI#getAllVanityUrls(com.liferay.portal.model.User))}
-     *
-     * @see VanityUrlAPI
-     */
-    @Test
-    public void getAllVanityUrls() {
-        Contentlet contentlet1 = null;
-        Contentlet contentlet2 = null;
-        Contentlet contentlet3 = null;
-        Contentlet contentlet4 = null;
-        try {
-
-            List<VanityUrl> currentActiveVanityUrls = vanityUrlAPI.getAllVanityUrls(user);
-            int initialVanityUrlsCount = currentActiveVanityUrls.size();
-
-            long i = System.currentTimeMillis();
-
-            //Live
-            String title = "VanityURL_1_" + i;
-            String site = defaultHost.getIdentifier();
-            String uri = "/test5_1_" + i;
-            String forwardTo = "/about-us/" + CMSFilter.CMS_INDEX_PAGE;
-            int action = 200;
-            int order = 1;
-
-            contentlet1 = createVanityUrl(title, site, uri,
-                    forwardTo, action, order, defaultLanguageId);
-
-            publishVanityUrl(contentlet1);
-
-            //Not live
-            String title2 = "VanityURL_2_" + i;
-            String site2 = defaultHost.getIdentifier();
-            String uri2 = "/test5_2_" + i;
-            String forwardTo2 = "/products/";
-            int action2 = 301;
-            int order2 = 1;
-
-            contentlet2 = createVanityUrl(title2, site2, uri2,
-                    forwardTo2, action2, order2, defaultLanguageId);
-
-            //Live
-            String title3 = "VanityURL_3_" + i;
-            String site3 = defaultHost.getIdentifier();
-            String uri3 = "/test5_3_" + i;
-            String forwardTo3 = "/about-us/" + CMSFilter.CMS_INDEX_PAGE;
-            int action3 = 500;
-            int order3 = 1;
-
-            contentlet3 = createVanityUrl(title3, site3, uri3,
-                    forwardTo3, action3, order3, defaultLanguageId);
-
-            publishVanityUrl(contentlet3);
-
-            //not Live
-            String title4 = "VanityURL_4_" + i;
-            String site4 = defaultHost.getIdentifier();
-            String uri4 = "/test5_4_" + i;
-            String forwardTo4 = "/about-us/" + CMSFilter.CMS_INDEX_PAGE;
-            int action4 = 200;
-            int order4 = 1;
-
-            contentlet4 = createVanityUrl(title4, site4, uri4,
-                    forwardTo4, action4, order4, defaultLanguageId);
-
-            List<VanityUrl> vanityURLs = vanityUrlAPI.getAllVanityUrls(user);
-            Assert.assertTrue(vanityURLs.size() > initialVanityUrlsCount);
-            Assert.assertTrue(vanityURLs.contains(vanityUrlAPI.getVanityUrlFromContentlet(contentlet1)));
-            Assert.assertTrue(vanityURLs.contains(vanityUrlAPI.getVanityUrlFromContentlet(contentlet2)));
-            Assert.assertTrue(vanityURLs.contains(vanityUrlAPI.getVanityUrlFromContentlet(contentlet3)));
-            Assert.assertTrue(vanityURLs.contains(vanityUrlAPI.getVanityUrlFromContentlet(contentlet4)));
-
-        } catch (DotDataException | DotSecurityException e) {
-            e.printStackTrace();
-            Assert.fail();
-        } finally {
-            try {
-                if (contentlet1 != null) {
-                    contentletAPI.delete(contentlet1, user, false);
-                }
-                if (contentlet2 != null) {
-                    contentletAPI.delete(contentlet2, user, false);
-                }
-                if (contentlet3 != null) {
-                    contentletAPI.delete(contentlet3, user, false);
-                }
-                if (contentlet4 != null) {
-                    contentletAPI.delete(contentlet4, user, false);
-                }
-            } catch (Exception e) {
-                Logger.error(this.getClass(), "Error cleaning up Vanity Url Links");
-            }
-        }
-    }
-    
     /**
      * This test creates a vanity url, gets it so it's cached. 
      * Then modify the uri, and checks if the old one is removed from cache.

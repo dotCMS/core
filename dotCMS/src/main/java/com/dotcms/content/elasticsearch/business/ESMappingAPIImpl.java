@@ -275,10 +275,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             	Logger.warn(this.getClass(), "Cannot get URLMap for contentlet.id : " + ((ident != null) ? ident.getId() : con) + " , reason: "+e.getMessage());
             	throw new DotRuntimeException(urlMap, e);
             }
-            
-            if(con.isVanityUrl()){
-                populateVanityUrlPath(con, contentletMap, ident);
-            }
 
             for(Entry<String,String> entry : contentletMap.entrySet()){
                 final String lcasek=entry.getKey().toLowerCase();
@@ -312,27 +308,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			throw new DotMappingException(e.getMessage(), e);
 		}
 	}
-
-    /**
-     * Set the Vanity Url URI in the content map
-     * @param con The current vanity url Contentlet
-     * @param contentletMap Contentlet properties map
-     * @param ident Contentlet
-     */
-    private void populateVanityUrlPath(Contentlet con, Map<String, String> contentletMap, Identifier ident) {
-        String vanityUrlPath;
-        try{
-            VanityUrl vanityUrl = APILocator.getVanityUrlAPI().getVanityUrlFromContentlet(con);
-            vanityUrlPath = VanityUrlUtil.fixURI(vanityUrl.getURI());
-            if(vanityUrlPath != null){
-                contentletMap.put(ESMappingConstants.VANITY_URL,vanityUrlPath);
-            }
-        }catch(Exception e){
-            Logger.warn(this.getClass(), "Cannot get Vanity URL for contentlet.id : " + ((ident != null) ? ident.getId() : con) + " , reason: "+e.getMessage());
-            throw new DotRuntimeException(e);
-        }
-    }
-
 
     public Object toMappedObj(Contentlet con) throws DotMappingException {
 		return toJson(con);

@@ -24,15 +24,10 @@ public interface VanityUrlAPI {
     public static final String CACHE_404_VANITY_URL = "CACHE_404_VANITY_URL";
 
     /**
-     * Get a list of all the existing Vanity URLs contents
-     *
-     * @param user The current user
-     * @return a List of all the Vanity URLs contentlets
-     */
-    List<VanityUrl> getAllVanityUrls(final User user);
-
-    /**
-     * Get a list of all the Vanity URLs contents live
+     * Searches for live VanityURLs, each VanityURL found is added into the cache.
+     * <br>
+     * Note this method does not uses cache, always does the ES search, the intention of this method
+     * is mainly to populate the cache with the found data.
      *
      * @param user The current user
      * @return a List of all Cached Vanity URLs contentlets live
@@ -40,20 +35,16 @@ public interface VanityUrlAPI {
     List<VanityUrl> getActiveVanityUrls(final User user);
 
     /**
-     * Get a list of all the Cached Vanity URLs contents live
+     * Searches for live VanityURLs by Site and Language id, each VanityURL found is added into
+     * the cache.
+     * <br>
+     * Note this method does not uses cache, always does the ES search, the intention of this method
+     * is mainly to populate the cache with the found data.
      *
      * @param user The current user
      * @return a List of all Cached Vanity URLs contentlets live
      */
-    List<CachedVanityUrl> getActiveCachedVanityUrls(final User user);
-
-    /**
-     * Get a list of all the Vanity URLs contents live by Host and language Id
-     *
-     * @param user The current user
-     * @return a List of all Cached Vanity URLs contentlets live
-     */
-    List<VanityUrl> getActiveVanityUrlsByHostAndLanguage(final String hostId, final long languageId,
+    List<VanityUrl> getActiveVanityUrlsBySiteAndLanguage(final String siteId, final long languageId,
             final User user);
 
     /**
@@ -65,7 +56,7 @@ public interface VanityUrlAPI {
      * @param user The current user
      * @return the live version of the vanityurl URL contentlet
      */
-    CachedVanityUrl getLiveCachedVanityUrl(final String uri, final Host host, final long languageId,
+    CachedVanityUrl getLiveCachedVanityUrl(final String uri, final Host site, final long languageId,
             final User user);
 
     /**
@@ -81,5 +72,6 @@ public interface VanityUrlAPI {
      *
      * @param contentlet The Vanity Url Contentlet
      */
-    void validateVanityUrl(Contentlet contentlet) throws DotContentletValidationException;
+    void validateVanityUrl(Contentlet contentlet);
+
 }

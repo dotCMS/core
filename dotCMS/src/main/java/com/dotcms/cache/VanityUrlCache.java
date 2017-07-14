@@ -3,6 +3,7 @@ package com.dotcms.cache;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.business.Cachable;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import java.util.Set;
 
 /**
@@ -35,10 +36,23 @@ public abstract class VanityUrlCache implements Cachable {
     public abstract void clearCache();
 
     /**
+     * Removes from cache in all the registered regions a given VanityURL
+     * @param vanityURL
+     */
+    public abstract void remove(final Contentlet vanityURL);
+
+    /**
      * This method removes the Cached Vanity Url entry from the cache
      * based on the key
      */
     public abstract void remove(String key);
+
+    /**
+     * Add the vanity URL to the caches
+     *
+     * @param vanity The vanity URL to add
+     */
+    public abstract void update(VanityUrl vanity);
 
     /**
      * Get the associated list of CachedVanityUrl to current host Id and language Id key
@@ -59,4 +73,5 @@ public abstract class VanityUrlCache implements Cachable {
      * @param key The current key composed of the host Id and languageId
      */
     public abstract void removeCachedVanityUrls(String key);
+
 }

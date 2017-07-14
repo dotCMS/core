@@ -31,7 +31,7 @@ public class CachedVanityUrl implements Serializable {
      */
     public CachedVanityUrl(VanityUrl vanityUrl) {
         //if the VanityUrl URI is not a valid regex
-        String regex = VanityUrlUtil.isPatternValid(vanityUrl.getURI()) ? vanityUrl.getURI()
+        String regex = VanityUrlUtil.isValidRegex(vanityUrl.getURI()) ? vanityUrl.getURI()
                 : StringPool.BLANK;
         this.pattern = Pattern.compile(regex);
         this.vanityUrlId = vanityUrl.getIdentifier();

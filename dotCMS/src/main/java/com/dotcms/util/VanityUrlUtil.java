@@ -100,7 +100,7 @@ public class VanityUrlUtil {
      * @param regex Regular expression string
      * @return true if is a valid pattern, false if not
      */
-    public static boolean isPatternValid(String regex) {
+    public static boolean isValidRegex(String regex) {
         boolean isValid = false;
         try {
             Pattern.compile(regex);
@@ -111,4 +111,5 @@ public class VanityUrlUtil {
         }
         return isValid;
     }
+
 }
