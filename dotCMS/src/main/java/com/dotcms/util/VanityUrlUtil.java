@@ -1,7 +1,6 @@
 package com.dotcms.util;
 
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -47,9 +46,8 @@ public class VanityUrlUtil {
      */
     public static String sanitizeKey(final Contentlet vanityUrl)
             throws DotDataException, DotSecurityException {
-        Host host = hostAPI.find(vanityUrl.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
-                APILocator.systemUser(), false);
-        return sanitizeKey(host.getIdentifier(),
+
+        return sanitizeKey(vanityUrl.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
                 fixURI(vanityUrl.getStringProperty(VanityUrlContentType.URI_FIELD_VAR)),
                 vanityUrl.getLanguageId());
     }
@@ -89,9 +87,10 @@ public class VanityUrlUtil {
      */
     public static String sanitizeSecondCachedKey(final Contentlet vanityUrl)
             throws DotDataException, DotSecurityException {
-        Host host = hostAPI.find(vanityUrl.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
-                APILocator.systemUser(), false);
-        return sanitizeSecondCacheKey(host.getIdentifier(), vanityUrl.getLanguageId());
+
+        return sanitizeSecondCacheKey(
+                vanityUrl.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
+                vanityUrl.getLanguageId());
     }
 
     /**

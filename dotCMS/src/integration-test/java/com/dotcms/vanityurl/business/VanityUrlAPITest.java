@@ -500,6 +500,157 @@ public class VanityUrlAPITest {
     		contentletAPI.delete(vanityURLContentletEnglish, user, false);
     	}
     }
+
+    /**
+     * Testing how the cache is working when publishing and unpublishing a VanityURL, we are
+     * simulating URL requests that makes exact match with the URI of the VanityURL
+     */
+    @Test
+    public void publishUnpublishVanityURLExact() throws DotDataException, DotSecurityException {
+
+        long currentTime = System.currentTimeMillis();
+        publishUnpublishVanityURL("/testing" + currentTime, "/testing" + currentTime);
+    }
+
+    /**
+     * Testing how the cache is working when publishing and unpublishing a VanityURL, on this test
+     * we created a VanityURL with a regex
+     */
+    @Test
+    public void publishUnpublishVanityURLRegex() throws DotDataException, DotSecurityException {
+
+        long currentTime = System.currentTimeMillis();
+        publishUnpublishVanityURL("/testing" + currentTime + "(.*)",
+                "/testing" + currentTime + "/testing/index");
+    }
+
+    private void publishUnpublishVanityURL(String vanityURI, String requestedURL)
+            throws DotDataException, DotSecurityException {
+
+        Contentlet vanityURL = null;
+        long currentTime = System.currentTimeMillis();
+
+        try {
+
+            //------------------------------------
+            //Create the VanityURL
+            //------------------------------------
+            vanityURL = this
+                    .createVanityUrl("test Vanity Url " + currentTime, defaultHost.getIdentifier(),
+                            vanityURI, "https://www.google.com", 200, 1, defaultLanguageId);
+            publishVanityUrl(vanityURL);
+            contentletAPI.isInodeIndexed(vanityURL.getInode(), true);
+
+            //Should not exist yet in cache
+            CachedVanityUrl vanityURLCached = vanityUrlCache
+                    .get(VanityUrlUtil.sanitizeKey(vanityURL));
+            Assert.assertNull(vanityURLCached);
+
+            //Request a matching URL
+            vanityURLCached = vanityUrlAPI
+                    .getLiveCachedVanityUrl(requestedURL, defaultHost, defaultLanguageId, user);
+            Assert.assertNotNull(vanityURLCached);
+            Assert.assertNotEquals(VanityUrlAPI.CACHE_404_VANITY_URL,
+                    vanityURLCached.getVanityUrlId());
+            //Validate the cache for this published content
+            checkPublished(vanityURL, vanityURI, requestedURL);
+
+            //------------------------------------
+            //Now we need to unpublish out vanity
+            //------------------------------------
+            contentletAPI.unpublish(vanityURL, user, false);
+            //And should NOT be in cache
+            vanityURLCached = vanityUrlCache.get(VanityUrlUtil.sanitizeKey(vanityURL));
+            Assert.assertNull(vanityURLCached);
+            if (!requestedURL.equals(vanityURI)) {
+                //Now, for the requested url we should have a 404_CACHE
+                vanityURLCached = vanityUrlCache.get(VanityUrlUtil
+                        .sanitizeKey(defaultHost.getIdentifier(), requestedURL, defaultLanguageId));
+                Assert.assertNull(vanityURLCached);
+            }
+
+            //Search for the same matching URL
+            vanityURLCached = vanityUrlAPI
+                    .getLiveCachedVanityUrl(requestedURL, defaultHost, defaultLanguageId, user);
+            Assert.assertNotNull(vanityURLCached);
+            Assert.assertEquals(VanityUrlAPI.CACHE_404_VANITY_URL,
+                    vanityURLCached.getVanityUrlId());
+
+            if (!requestedURL.equals(vanityURI)) {
+                //Check the cache, should NOT be in cache as it was unpublised and we are using regex and we have a different request URL
+                vanityURLCached = vanityUrlCache.get(VanityUrlUtil.sanitizeKey(vanityURL));
+                Assert.assertNull(vanityURLCached);
+                //Now, for the requested url we should have a 404_CACHE
+                vanityURLCached = vanityUrlCache.get(VanityUrlUtil
+                        .sanitizeKey(defaultHost.getIdentifier(), requestedURL, defaultLanguageId));
+                Assert.assertNotNull(vanityURLCached);
+                Assert.assertEquals(VanityUrlAPI.CACHE_404_VANITY_URL,
+                        vanityURLCached.getVanityUrlId());
+            } else {
+                //Check the cache, should be in cache but as a 404_CACHE as it was unpublised
+                vanityURLCached = vanityUrlCache.get(VanityUrlUtil.sanitizeKey(vanityURL));
+                Assert.assertNotNull(vanityURLCached);
+                Assert.assertEquals(VanityUrlAPI.CACHE_404_VANITY_URL,
+                        vanityURLCached.getVanityUrlId());
+            }
+
+            //------------------------------------
+            //Now publish the Vanity
+            //------------------------------------
+            publishVanityUrl(vanityURL);
+            contentletAPI.isInodeIndexed(vanityURL.getInode(), true);
+
+            //Should NOT exist yet in cache
+            vanityURLCached = vanityUrlCache.get(VanityUrlUtil.sanitizeKey(vanityURL));
+            Assert.assertNull(vanityURLCached);
+            if (!requestedURL.equals(vanityURI)) {
+                //Now, for the requested url we should have find something in cache
+                vanityURLCached = vanityUrlCache.get(VanityUrlUtil
+                        .sanitizeKey(defaultHost.getIdentifier(), requestedURL, defaultLanguageId));
+                Assert.assertNull(vanityURLCached);
+            }
+
+            //Request a matching URL
+            vanityURLCached = vanityUrlAPI
+                    .getLiveCachedVanityUrl(requestedURL, defaultHost, defaultLanguageId, user);
+            Assert.assertNotNull(vanityURLCached);
+            Assert.assertNotEquals(VanityUrlAPI.CACHE_404_VANITY_URL,
+                    vanityURLCached.getVanityUrlId());
+            //Validate the cache for this published content
+            checkPublished(vanityURL, vanityURI, requestedURL);
+
+        } finally {
+            contentletAPI.archive(vanityURL, user, false);
+            contentletAPI.delete(vanityURL, user, false);
+        }
+    }
+
+    private void checkPublished (Contentlet vanityURL, String vanityURI, String requestedURL)
+            throws DotSecurityException, DotDataException {
+
+        CachedVanityUrl vanityURLCached;
+
+        if (!requestedURL.equals(vanityURI)) {
+            //Check the cache, should be in cache
+            vanityURLCached = vanityUrlCache.get(VanityUrlUtil.sanitizeKey(vanityURL));
+            Assert.assertNotNull(vanityURLCached);
+            Assert.assertNotEquals(VanityUrlAPI.CACHE_404_VANITY_URL,
+                    vanityURLCached.getVanityUrlId());
+            //Now, for the requested url we should have find something in cache
+            vanityURLCached = vanityUrlCache.get(VanityUrlUtil
+                    .sanitizeKey(defaultHost.getIdentifier(), requestedURL, defaultLanguageId));
+            Assert.assertNotNull(vanityURLCached);
+            Assert.assertNotEquals(VanityUrlAPI.CACHE_404_VANITY_URL,
+                    vanityURLCached.getVanityUrlId());
+
+        } else {
+            //Check the cache, we should have this URL in cache now
+            vanityURLCached = vanityUrlCache.get(VanityUrlUtil.sanitizeKey(vanityURL));
+            Assert.assertNotNull(vanityURLCached);
+            Assert.assertNotEquals(VanityUrlAPI.CACHE_404_VANITY_URL,
+                    vanityURLCached.getVanityUrlId());
+        }
+    }
     
     /**
      * Creates two vanity url's one with All Sites(SystemHost) and another with defaultHost(demo.dotcms.com), gets both so are cached. 

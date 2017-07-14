@@ -20,7 +20,7 @@ public abstract class VanityUrlCache implements Cachable {
      *
      * @return CachedVanityUrl object
      */
-    public abstract CachedVanityUrl add(String key, VanityUrl vanityUrl);
+    public abstract CachedVanityUrl add(String key, CachedVanityUrl vanityUrl);
 
     /**
      * Retrieves the Cached Vanity URL associated to the given
@@ -53,6 +53,13 @@ public abstract class VanityUrlCache implements Cachable {
      * @param vanity The vanity URL to add
      */
     public abstract void update(VanityUrl vanity);
+
+    /**
+     * Add the vanity URL to the caches
+     *
+     * @param vanity The vanity URL to add
+     */
+    public abstract void update(CachedVanityUrl vanity);
 
     /**
      * Get the associated list of CachedVanityUrl to current host Id and language Id key

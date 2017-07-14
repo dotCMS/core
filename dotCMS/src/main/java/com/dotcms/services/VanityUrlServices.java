@@ -77,8 +77,10 @@ public class VanityUrlServices {
     public void invalidateAllVanityUrlVersions(Contentlet vanityUrl) {
         try {
             Identifier identifier = identifierAPI.find(vanityUrl.getIdentifier());
+
             List<Contentlet> contentletVersions = contentletAPI
                     .findAllVersions(identifier, APILocator.systemUser(), false);
+
             contentletVersions.stream()
                     .filter(con -> vanityUrl.getLanguageId() == con.getLanguageId())
                     .forEach(vanityURLCache::remove);
@@ -117,6 +119,15 @@ public class VanityUrlServices {
      * @param vanity The vanity URL to add
      */
     public void updateCache(VanityUrl vanity) {
+        vanityURLCache.update(vanity);
+    }
+
+    /**
+     * Add the vanity URL to the caches
+     *
+     * @param vanity The vanity URL to add
+     */
+    public void updateCache(CachedVanityUrl vanity) {
         vanityURLCache.update(vanity);
     }
 

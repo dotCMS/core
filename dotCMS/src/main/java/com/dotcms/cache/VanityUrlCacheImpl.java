@@ -29,7 +29,7 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
 
     private static final String PRIMARY_GROUP = "VanityURLCache";
     private static final String CACHED_VANITY_URL_GROUP = "cachedVanityUrlGroup";
-    // region's name for the cache
+
     private static final String[] groupNames = {PRIMARY_GROUP, CACHED_VANITY_URL_GROUP};
 
     public VanityUrlCacheImpl() {
@@ -37,12 +37,10 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
     }
 
     @Override
-    public CachedVanityUrl add(final String key, final VanityUrl vanityUrl) {
+    public CachedVanityUrl add(final String key, final CachedVanityUrl vanityUrl) {
         // Add the key to the cache
-        CachedVanityUrl cachedVanityUrl = new CachedVanityUrl(vanityUrl);
-        cache.put( key, cachedVanityUrl, getPrimaryGroup());
-
-        return cachedVanityUrl;
+        cache.put(key, vanityUrl, getPrimaryGroup());
+        return vanityUrl;
     }
 
     @Override
@@ -66,9 +64,24 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
 
     @Override
     public void remove(final Contentlet vanityURL) {
+
         try {
+
+            /*
+            First get the records we want to remove from secondary cache group and
+            delete it from the primary cache group, we do this in order to avoid to
+            flush the primary group.
+             */
+            Set<CachedVanityUrl> cachedVanityUrls = this
+                    .getCachedVanityUrls(VanityUrlUtil.sanitizeSecondCachedKey(vanityURL));
+            for (CachedVanityUrl toRemove : cachedVanityUrls) {
+                this.remove(VanityUrlUtil.sanitizeKey(toRemove.getSiteId(), toRemove.getUrl(),
+                        toRemove.getLanguageId()));
+            }
+
             this.remove(VanityUrlUtil.sanitizeKey(vanityURL));
             this.removeCachedVanityUrls(VanityUrlUtil.sanitizeSecondCachedKey(vanityURL));
+
         } catch (DotDataException | DotRuntimeException | DotSecurityException e) {
             Logger.debug(VanityUrlServices.class,
                     "Error trying to invalidate Vanity URL with identifier:" + vanityURL
@@ -86,26 +99,32 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
     }
 
     @Override
-    public void update(VanityUrl vanity) {
+    public void update(CachedVanityUrl vanity) {
 
         try {
 
             //Update primary Cache
             this.add(VanityUrlUtil
-                            .sanitizeKey(vanity.getSite(), vanity.getURI(), vanity.getLanguageId()),
+                            .sanitizeKey(vanity.getSiteId(), vanity.getUrl(), vanity.getLanguageId()),
                     vanity);
 
             //update Secondary cache
             Set<CachedVanityUrl> siteCachedVanityUrl = this.getCachedVanityUrls(VanityUrlUtil
-                    .sanitizeSecondCacheKey(vanity.getSite(), vanity.getLanguageId()));
-            siteCachedVanityUrl.add(new CachedVanityUrl(vanity));
+                    .sanitizeSecondCacheKey(vanity.getSiteId(), vanity.getLanguageId()));
+            siteCachedVanityUrl.add(vanity);
 
             this.setCachedVanityUrls(
-                    VanityUrlUtil.sanitizeSecondCacheKey(vanity.getSite(), vanity.getLanguageId()),
+                    VanityUrlUtil
+                            .sanitizeSecondCacheKey(vanity.getSiteId(), vanity.getLanguageId()),
                     siteCachedVanityUrl);
         } catch (DotRuntimeException e) {
             Logger.debug(this, "Error trying to update Vanity URL in cache", e);
         }
+    }
+
+    @Override
+    public void update(VanityUrl vanity) {
+        this.update(new CachedVanityUrl(vanity));
     }
 
     /**

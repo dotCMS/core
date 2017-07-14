@@ -40,7 +40,6 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
     private final ContentletAPI contentletAPI;
     private final VanityUrlServices vanityUrlServices;
-    private final VanityUrl cache404VanityUrl;
 
     private static final String GET_VANITY_URL_BASE_TYPE =
             "+baseType:" + BaseContentType.VANITY_URL.getType();
@@ -60,11 +59,6 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
         this.contentletAPI = contentletAPI;
         this.vanityUrlServices = vanityUrlServices;
-
-        cache404VanityUrl = new DefaultVanityUrl();
-        cache404VanityUrl.setInode(VanityUrlAPI.CACHE_404_VANITY_URL);
-        cache404VanityUrl.setIdentifier(VanityUrlAPI.CACHE_404_VANITY_URL);
-        cache404VanityUrl.setAction(CODE_404_VALUE);
     }
 
     @Override
@@ -138,6 +132,11 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
      * @param languageId The current language Id
      */
     private void add404URIToCache(String siteId, String uri, long languageId) {
+
+        VanityUrl cache404VanityUrl = new DefaultVanityUrl();
+        cache404VanityUrl.setInode(VanityUrlAPI.CACHE_404_VANITY_URL);
+        cache404VanityUrl.setIdentifier(VanityUrlAPI.CACHE_404_VANITY_URL);
+        cache404VanityUrl.setAction(CODE_404_VALUE);
         cache404VanityUrl.setLanguageId(languageId);
         cache404VanityUrl.setURI(uri);
         cache404VanityUrl.setSite(siteId);
@@ -151,6 +150,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
         String siteId = (site != null ? site.getIdentifier() : Host.SYSTEM_HOST);
 
+        //First lets try with the cache
         CachedVanityUrl result = vanityUrlServices
                 .getCachedVanityUrlByUri(uri, siteId, languageId);
 
@@ -164,8 +164,12 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         if (result == null) {
 
             try {
+
+                //Search for the list of ContentTypes of type VanityURL
                 List<ContentType> vanityUrlContentTypes = APILocator.getContentTypeAPI(user)
                         .findByType(BaseContentType.VANITY_URL);
+
+                //Verify if this Content Type has a Multilinguable fallback
                 if (!vanityUrlContentTypes.isEmpty()
                         && ((VanityUrlContentType) vanityUrlContentTypes.get(0)).fallback()) {
 
@@ -259,6 +263,19 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                 break;
             }
         }
+
+        /*
+        At this point we already found and saved in cache the VanityURL that matches with the given
+        URL but adding a new VanityURL to the cache for the completed requested URL
+        and not just the regex used can save us time.
+         */
+        if (null != result) {
+            if (!result.getUrl().equals(uri)) {
+                CachedVanityUrl cachedVanityUrl = new CachedVanityUrl(result, uri);
+                vanityUrlServices.updateCache(cachedVanityUrl);
+            }
+        }
+
         return result;
     }
 

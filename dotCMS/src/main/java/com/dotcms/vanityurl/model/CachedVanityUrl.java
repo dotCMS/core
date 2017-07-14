@@ -43,6 +43,26 @@ public class CachedVanityUrl implements Serializable {
     }
 
     /**
+     * Generates a CachedVanityUrl from another given CachedVanityUrl
+     *
+     * @param fromCachedVanityUrl VanityURL to copy
+     * @param url url to override in the created copy
+     */
+    public CachedVanityUrl(CachedVanityUrl fromCachedVanityUrl, String url) {
+
+        //if the VanityUrl URI is not a valid regex
+        String regex = VanityUrlUtil.isValidRegex(url) ? url : StringPool.BLANK;
+
+        this.pattern = Pattern.compile(regex);
+        this.vanityUrlId = fromCachedVanityUrl.getVanityUrlId();
+        this.url = url;
+        this.languageId = fromCachedVanityUrl.getLanguageId();
+        this.siteId = fromCachedVanityUrl.getSiteId();
+        this.forwardTo = fromCachedVanityUrl.getForwardTo();
+        this.response = fromCachedVanityUrl.getResponse();
+    }
+
+    /**
      * Get the URL from the Cached Vanity URL
      *
      * @return the URL from the Cached Vanity URL
