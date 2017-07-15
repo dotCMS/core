@@ -35,7 +35,7 @@ public class VanityUrlUtil {
      * @return String with the sanitized key name
      */
     public static String sanitizeKey(final String hostId, final String uri, final long languageId) {
-        return hostId + "|" + fixURI(uri).replace('/', '|') + "|lang_" + languageId;
+        return hostId + "|" + uri.replace('/', '|') + "|lang_" + languageId;
     }
 
     /**
@@ -48,24 +48,8 @@ public class VanityUrlUtil {
             throws DotDataException, DotSecurityException {
 
         return sanitizeKey(vanityUrl.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
-                fixURI(vanityUrl.getStringProperty(VanityUrlContentType.URI_FIELD_VAR)),
+                vanityUrl.getStringProperty(VanityUrlContentType.URI_FIELD_VAR),
                 vanityUrl.getLanguageId());
-    }
-
-    /**
-     * Fix the URI passed if the URI doesn't beging with a "/"
-     *
-     * @param uri The URI to fix
-     * @return The fixed uri
-     */
-    public static String fixURI(final String uri) {
-        String modifiedUri = "";
-        if (!uri.startsWith("/")) {
-            modifiedUri = "/" + uri;
-        } else {
-            modifiedUri = uri;
-        }
-        return modifiedUri;
     }
 
     /**

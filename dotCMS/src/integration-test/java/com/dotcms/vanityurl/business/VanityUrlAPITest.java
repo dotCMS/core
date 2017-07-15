@@ -530,46 +530,53 @@ public class VanityUrlAPITest {
     @Test
     public void cache_404_Test() throws DotDataException, DotSecurityException {
 
-        long currentTime = System.currentTimeMillis();
-        String uri = "/testing" + currentTime;
-        String requestedURL = "/nonexisting/should404/index";
+        Contentlet vanityURL = null;
 
-        //------------------------------------
-        //Create the VanityURL
-        //------------------------------------
-        Contentlet vanityURL = this
-                .createVanityUrl("test Vanity Url " + currentTime, defaultHost.getIdentifier(),
-                        uri, "https://www.google.com", 200, 1, defaultLanguageId);
-        publishVanityUrl(vanityURL);
-        contentletAPI.isInodeIndexed(vanityURL.getInode(), true);
+        try {
+            long currentTime = System.currentTimeMillis();
+            String uri = "/testing" + currentTime;
+            String requestedURL = "/nonexisting/should404/index";
 
-        //Should not exist in cache
-        CachedVanityUrl vanityURLCached = vanityUrlCache
-                .get(VanityUrlUtil.sanitizeKey(vanityURL));
-        Assert.assertNull(vanityURLCached);
-        vanityURLCached = vanityUrlCache.get(VanityUrlUtil
-                .sanitizeKey(defaultHost.getIdentifier(), requestedURL, defaultLanguageId));
-        Assert.assertNull(vanityURLCached);
+            //------------------------------------
+            //Create the VanityURL
+            //------------------------------------
+            vanityURL = this
+                    .createVanityUrl("test Vanity Url " + currentTime, defaultHost.getIdentifier(),
+                            uri, "https://www.google.com", 200, 1, defaultLanguageId);
+            publishVanityUrl(vanityURL);
+            contentletAPI.isInodeIndexed(vanityURL.getInode(), true);
 
-        //Request a vanity with a URL with no matches
-        vanityURLCached = vanityUrlAPI
-                .getLiveCachedVanityUrl(requestedURL, defaultHost, defaultLanguageId, user);
-        Assert.assertNotNull(vanityURLCached);
-        Assert.assertEquals(VanityUrlAPI.CACHE_404_VANITY_URL,
-                vanityURLCached.getVanityUrlId());
+            //Should not exist in cache
+            CachedVanityUrl vanityURLCached = vanityUrlCache
+                    .get(VanityUrlUtil.sanitizeKey(vanityURL));
+            Assert.assertNull(vanityURLCached);
+            vanityURLCached = vanityUrlCache.get(VanityUrlUtil
+                    .sanitizeKey(defaultHost.getIdentifier(), requestedURL, defaultLanguageId));
+            Assert.assertNull(vanityURLCached);
 
-        //Check the cache, probably the Vanity we created was added in cache by the getLiveCachedVanityUrl
-        vanityURLCached = vanityUrlCache.get(VanityUrlUtil.sanitizeKey(vanityURL));
-        Assert.assertNotNull(vanityURLCached);
-        Assert.assertNotEquals(VanityUrlAPI.CACHE_404_VANITY_URL,
-                vanityURLCached.getVanityUrlId());
+            //Request a vanity with a URL with no matches
+            vanityURLCached = vanityUrlAPI
+                    .getLiveCachedVanityUrl(requestedURL, defaultHost, defaultLanguageId, user);
+            Assert.assertNotNull(vanityURLCached);
+            Assert.assertEquals(VanityUrlAPI.CACHE_404_VANITY_URL,
+                    vanityURLCached.getVanityUrlId());
 
-        //Now, for the requested url we should have a 404_CACHE
-        vanityURLCached = vanityUrlCache.get(VanityUrlUtil
-                .sanitizeKey(defaultHost.getIdentifier(), requestedURL, defaultLanguageId));
-        Assert.assertNotNull(vanityURLCached);
-        Assert.assertEquals(VanityUrlAPI.CACHE_404_VANITY_URL,
-                vanityURLCached.getVanityUrlId());
+            //Check the cache, probably the Vanity we created was added in cache by the getLiveCachedVanityUrl
+            vanityURLCached = vanityUrlCache.get(VanityUrlUtil.sanitizeKey(vanityURL));
+            Assert.assertNotNull(vanityURLCached);
+            Assert.assertNotEquals(VanityUrlAPI.CACHE_404_VANITY_URL,
+                    vanityURLCached.getVanityUrlId());
+
+            //Now, for the requested url we should have a 404_CACHE
+            vanityURLCached = vanityUrlCache.get(VanityUrlUtil
+                    .sanitizeKey(defaultHost.getIdentifier(), requestedURL, defaultLanguageId));
+            Assert.assertNotNull(vanityURLCached);
+            Assert.assertEquals(VanityUrlAPI.CACHE_404_VANITY_URL,
+                    vanityURLCached.getVanityUrlId());
+        } finally {
+            contentletAPI.archive(vanityURL, user, false);
+            contentletAPI.delete(vanityURL, user, false);
+        }
     }
 
     private void publishUnpublishVanityURL(String vanityURI, String requestedURL)
