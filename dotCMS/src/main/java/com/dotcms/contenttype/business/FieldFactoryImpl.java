@@ -39,6 +39,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.base.Preconditions;
+import com.liferay.util.StringUtil;
 
 public class FieldFactoryImpl implements FieldFactory {
 
@@ -534,11 +535,10 @@ public class FieldFactoryImpl implements FieldFactory {
       return field.dataType().toString();
     }
 
-
-    String dataType = field.dataType().toString();
+    final String dbColumn = field.dbColumn().replaceAll("[0-9]", com.dotcms.repackage.org.apache.commons.lang.StringUtils.EMPTY);
     dc.setSQL(this.sql.selectFieldOfDbType);
     dc.addParam(field.contentTypeId());
-    dc.addParam(dataType + "%");
+    dc.addParam(dbColumn + "%");
     List<Map<String, Object>> rows = dc.loadObjectResults();
     Set<String> columns = new TreeSet<String>();
     for (int i = 0; i < rows.size(); i++) {
@@ -546,13 +546,13 @@ public class FieldFactoryImpl implements FieldFactory {
     }
 
     for (int i = 0; i < Config.getIntProperty("db.number.of.contentlet.columns.per.datatype", 25); i++) {
-      if (!columns.contains(dataType + (i + 1))) {
-        return dataType + (i + 1);
+      if (!columns.contains(dbColumn + (i + 1))) {
+        return dbColumn + (i + 1);
 
       }
     }
 
-    throw new OverFieldLimitException("No more columns for datatype:" + dataType);
+    throw new OverFieldLimitException("No more columns for datatype:" + dbColumn);
 
 
   }

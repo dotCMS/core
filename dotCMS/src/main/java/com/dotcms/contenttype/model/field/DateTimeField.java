@@ -25,14 +25,14 @@ public abstract class DateTimeField extends Field {
 	@Value.Default
 	@Override
 	public DataTypes dataType(){
-		return DataTypes.DATE;
+		return DataTypes.DATE_TIME;
 	};
 
 	@JsonIgnore
 	@Value.Derived
 	@Override
 	public List<DataTypes> acceptedDataTypes(){
-		return ImmutableList.of(DataTypes.DATE);
+		return ImmutableList.of(DataTypes.DATE, DataTypes.DATE_TIME);
 	}
 	public abstract static class Builder implements FieldBuilder {}
 	
