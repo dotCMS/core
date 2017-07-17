@@ -24,6 +24,7 @@ import java.util.Map;
  * Site and the other one the Uri Uri -> Forward To
  *
  * @author erickgonzalez
+ * @author oswaldogallango
  * @version 4.2.0
  * @since Jun 8, 2017
  */
@@ -34,10 +35,15 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
     private static final String COUNT_VIRTUAL_LINK_QUERY = "select count(*) as total from virtual_link";
     private static final String SELECT_VIRTUAL_LINK_QUERY = "select inode, title, url, uri from virtual_link";
     private static final String UPDATE_INODE_QUERY = "update inode set type = 'contentlet' where type = 'virtual_link' ";
-    private static final String SELECT_HOSTID_BY_NAME_QUERY =
-            "select contentlet.identifier from contentlet join contentlet_version_info "
-                    + "on contentlet.inode = contentlet_version_info.working_inode "
-                    + "where contentlet.structure_inode = ? and lower(contentlet.text1) = ?";
+    private static final String SELECT_SITEID =
+            "select contentlet.identifier, contentlet.text1, contentlet.text_area1 from contentlet"
+                    + " join contentlet_version_info"
+                    + " on contentlet.inode = contentlet_version_info.working_inode"
+                    + " where contentlet.structure_inode = ?";
+    private static final String SELECT_SITEID_BY_NAME_QUERY = SELECT_SITEID
+            + " and lower(contentlet.text1) = ?";
+    private static final String SELECT_SITEID_BY_ALIAS_NAME_QUERY = SELECT_SITEID
+            + " and lower(contentlet.text_area1) like ?";
     private static final String SELECT_DEFAULT_LANGUAGE = "select id from language where language_code = ? and country_code = ?";
     private static final String INSERT_IDENTIFIER_QUERY = "insert into identifier(id, parent_path, "
             + "asset_name, host_inode, asset_type) values (?,?,?,?,?)";
@@ -73,7 +79,7 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
     private static final int LIMIT = 100;
 
     private static final String ERROR_MESSAGE = "Error executing Task04205MigrateVanityURLToContent: %s";
-    private Map<String, String> hostIds = new HashMap<>();
+    private Map<String, String> siteIds = new HashMap<>();
 
     @Override
     public void executeUpgrade() throws DotDataException {
@@ -249,11 +255,11 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
 
     /**
      * This method splits the old Url into the site and uri. Also make the call for the {@link
-     * #findHostId(String, String)} that returns the host identifier
+     * #findSiteId(String, String)} that returns the site identifier
      *
      * @param url The value of the url column on the virtual_link table.
      * @param hostContentTypeInode The inode of the Host content type
-     * @return a map with the host identifier and uri
+     * @return a map with the site identifier and uri
      */
     private Map<String, String> splitURL(String url, String hostContentTypeInode)
             throws DotDataException {
@@ -261,9 +267,9 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
         String newURL = "";
         int hostSplit = url.indexOf(':');
         if (hostSplit != -1) {
-            String hostName = url.substring(0, url.lastIndexOf(':'));
+            String siteName = url.substring(0, url.lastIndexOf(':'));
             newURL = url.substring(hostSplit + INT_1);
-            hostId = findHostId(hostName.toLowerCase(), hostContentTypeInode);
+            hostId = findSiteId(siteName.toLowerCase(), hostContentTypeInode);
         } else {
             newURL = url;
         }
@@ -274,25 +280,60 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
     /**
      * This method searches the site identifier, if it doesn't exists it returns null.
      *
+     * @param siteName The site name
+     * @param hostContentTypeInode The Host content type identifier
      * @return the identifier of the site
      */
-    private String findHostId(String hostName, String hostContentTypeInode)
+    private String findSiteId(String siteName, String hostContentTypeInode)
             throws DotDataException {
-        String hostId = hostIds.get(hostName);
+        String siteId = siteIds.get(siteName);
 
-        if (hostId == null) {
+        if (siteId == null) {
             DotConnect dc = new DotConnect();
-            dc.setSQL(SELECT_HOSTID_BY_NAME_QUERY);
+            dc.setSQL(SELECT_SITEID_BY_NAME_QUERY);
             dc.addParam(hostContentTypeInode);
-            dc.addParam(hostName);
+            dc.addParam(siteName);
             List<Map<String, String>> result = dc.loadResults();
 
             if (!result.isEmpty()) {
-                hostId = result.get(0).get("identifier");
-                hostIds.put(hostName, hostId);
+                siteId = result.get(0).get("identifier");
+                siteIds.put(siteName, siteId);
+            } else {
+                //search the site by alias
+                siteId = findSiteIdByAlias(siteName, hostContentTypeInode);
             }
         }
-        return hostId;
+        return siteId;
+    }
+
+    /**
+     * This method searches the site identifier by alias, if it doesn't exists it returns null.
+     *
+     * @param siteName The site name
+     * @param hostContentTypeInode The Host content type identifier
+     * @return the identifier of the site
+     */
+    private String findSiteIdByAlias(String siteName, String hostContentTypeInode)
+            throws DotDataException {
+        String siteId = null;
+
+        DotConnect dc = new DotConnect();
+        dc.setSQL(SELECT_SITEID_BY_ALIAS_NAME_QUERY);
+        dc.addParam(hostContentTypeInode);
+        dc.addParam("%" + siteName + "%");
+        List<Map<String, String>> result = dc.loadResults();
+        if (!result.isEmpty()) {
+            for (Map<String, String> site : result) {
+                siteId = site.get("identifier");
+                String aliases = site.get("text_area1");
+                for (String value : aliases.split("\n")) {
+                    siteIds.put(value, siteId);
+                }
+            }
+
+        }
+        //here get the id from the map to avoid false/positives
+        return siteIds.get(siteName);
     }
 
     /**
@@ -307,14 +348,14 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
         dc.addParam(Config.getStringProperty("DEFAULT_LANGUAGE_CODE", "en"));
         dc.addParam(Config.getStringProperty("DEFAULT_LANGUAGE_COUNTRY_CODE", "US"));
 
-        List<Map<String, String>> hostLanguage = dc.loadResults();
-        String hostLang = hostLanguage.get(0).get("id");
+        List<Map<String, String>> siteLanguage = dc.loadResults();
+        String siteLang = siteLanguage.get(0).get("id");
 
-        return Integer.parseInt(hostLang);
+        return Integer.parseInt(siteLang);
     }
 
     /**
-     * Get the content type inode for Host
+     * Get the content type inode for Host content type
      *
      * @param dc DotConnect Object
      * @return the inode of the Host content Type
