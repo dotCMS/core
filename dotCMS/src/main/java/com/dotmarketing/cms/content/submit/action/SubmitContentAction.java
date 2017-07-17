@@ -107,11 +107,6 @@ public class SubmitContentAction extends DispatchAction{
 		else
 			htmlServlet = referrer.substring(index + 1);
 
-		if (htmlServlet.indexOf('.') < 0) {
-			//If is a servlet
-			referrer += "/";
-		}
-
 		String params="";
 		HibernateUtil.startTransaction();
 
