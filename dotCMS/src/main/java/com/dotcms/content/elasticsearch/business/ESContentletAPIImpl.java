@@ -1,5 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.keyvalue.model.KeyValue;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -2697,6 +2698,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         String syncMe = (UtilMethods.isSet(contentlet.getIdentifier())) ? contentlet.getIdentifier() : UUIDGenerator.generateUuid();
 
         synchronized (syncMe) {
+
             boolean saveWithExistingID=false;
             String existingInode=null, existingIdentifier=null;
             boolean changedURI=false;
@@ -3290,6 +3292,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if(contentlet != null && contentlet.isVanityUrl()){
                     //remove from cache
                     VanityUrlServices.getInstance().invalidateVanityUrl(contentlet);
+                }
+
+                if(contentlet != null && contentlet.isKeyValue() && contentlet instanceof KeyValue){
+                    //remove from cache
+                    CacheLocator.getKeyValueCache().remove(KeyValue.class.cast(contentlet));
                 }
 
                 if(structureHasAHostField && changedURI) {
