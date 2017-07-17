@@ -20,7 +20,6 @@ import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -79,7 +78,7 @@ import com.liferay.portal.model.User;
  *         Date: 3/17/14
  */
 
-public class RemotePublishAjaxActionTest extends IntegrationTestBase {
+public class RemotePublishAjaxActionTest {
 
 	private static User user;
 	private static User adminUser;

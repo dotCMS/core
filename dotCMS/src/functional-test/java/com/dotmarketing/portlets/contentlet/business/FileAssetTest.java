@@ -3,7 +3,6 @@ package com.dotmarketing.portlets.contentlet.business;
 import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.IntegrationTestBase;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,7 +24,7 @@ import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
-public class FileAssetTest extends IntegrationTestBase {
+public class FileAssetTest {
 	
 	Client client;
 	WebTarget webTarget;
