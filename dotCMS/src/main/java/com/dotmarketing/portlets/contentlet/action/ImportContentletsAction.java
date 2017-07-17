@@ -22,6 +22,7 @@ import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.mozilla.universalchardet.UniversalDetector;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -281,15 +282,25 @@ public class ImportContentletsAction extends DotPortletAction {
 				};
 				t.start();
 				req.setAttribute("previewResults", (HashMap<String, List<String>>) session.getAttribute("previewResults"));
+				session.removeAttribute("previewResults");
 				req.setAttribute("importId", importId);
 				setForward(req, "portlet.ext.contentlet.import_contentlets_preview");
 			}		
 		}else  if(cmd != null && cmd.equals("downloadCSVTemplate")){
 			_downloadCSVTemplate(req, res,config,form);
 		} else {
-			
 			if(UtilMethods.isSet(req.getParameter("selectedStructure")) && UtilMethods.isSet(req.getAttribute("ImportContentletsForm"))){
 				((ImportContentletsForm)req.getAttribute("ImportContentletsForm")).setStructure(req.getParameter("selectedStructure"));
+			}
+			if (session.getAttribute("previewResults")!= null){
+				HashMap<String, List<String>> results  = (HashMap<String, List<String>>) session.getAttribute("previewResults");
+
+				if (results.get("updatedInodes")!=null){
+					for (String inode: results.get("updatedInodes")){
+						CacheLocator.getContentletCache().remove(inode);
+					}
+					session.removeAttribute("previewResults");
+				}
 			}
 			
 			ImportAuditResults audits = ImportAuditUtil.loadAuditResults(user.getUserId());
