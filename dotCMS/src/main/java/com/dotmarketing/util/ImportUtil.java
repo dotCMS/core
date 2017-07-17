@@ -1157,7 +1157,9 @@ public class ImportUtil {
                         }
                     }
                     try{
-                        conAPI.setContentletProperty(cont, field, value);
+                        if (!preview) {
+                            conAPI.setContentletProperty(cont, field, value);
+                        }
                     }catch(DotContentletStateException de){
                         if(!field.isRequired() || (value!=null && UtilMethods.isSet(String.valueOf(value)))){
                             throw de;
