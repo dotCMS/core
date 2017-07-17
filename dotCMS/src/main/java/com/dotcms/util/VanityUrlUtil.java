@@ -1,7 +1,6 @@
 package com.dotcms.util;
 
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -36,7 +35,7 @@ public class VanityUrlUtil {
      * @return String with the sanitized key name
      */
     public static String sanitizeKey(final String hostId, final String uri, final long languageId) {
-        return hostId + "|" + fixURI(uri).replace('/', '|') + "|lang_" + languageId;
+        return hostId + "|" + uri.replace('/', '|') + "|lang_" + languageId;
     }
 
     /**
@@ -47,27 +46,10 @@ public class VanityUrlUtil {
      */
     public static String sanitizeKey(final Contentlet vanityUrl)
             throws DotDataException, DotSecurityException {
-        Host host = hostAPI.find(vanityUrl.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
-                APILocator.systemUser(), false);
-        return sanitizeKey(host.getIdentifier(),
-                fixURI(vanityUrl.getStringProperty(VanityUrlContentType.URI_FIELD_VAR)),
-                vanityUrl.getLanguageId());
-    }
 
-    /**
-     * Fix the URI passed if the URI doesn't beging with a "/"
-     *
-     * @param uri The URI to fix
-     * @return The fixed uri
-     */
-    public static String fixURI(final String uri) {
-        String modifiedUri = "";
-        if (!uri.startsWith("/")) {
-            modifiedUri = "/" + uri;
-        } else {
-            modifiedUri = uri;
-        }
-        return modifiedUri;
+        return sanitizeKey(vanityUrl.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
+                vanityUrl.getStringProperty(VanityUrlContentType.URI_FIELD_VAR),
+                vanityUrl.getLanguageId());
     }
 
     /**
@@ -89,9 +71,10 @@ public class VanityUrlUtil {
      */
     public static String sanitizeSecondCachedKey(final Contentlet vanityUrl)
             throws DotDataException, DotSecurityException {
-        Host host = hostAPI.find(vanityUrl.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
-                APILocator.systemUser(), false);
-        return sanitizeSecondCacheKey(host.getIdentifier(), vanityUrl.getLanguageId());
+
+        return sanitizeSecondCacheKey(
+                vanityUrl.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
+                vanityUrl.getLanguageId());
     }
 
     /**
@@ -100,7 +83,7 @@ public class VanityUrlUtil {
      * @param regex Regular expression string
      * @return true if is a valid pattern, false if not
      */
-    public static boolean isPatternValid(String regex) {
+    public static boolean isValidRegex(String regex) {
         boolean isValid = false;
         try {
             Pattern.compile(regex);
@@ -111,4 +94,5 @@ public class VanityUrlUtil {
         }
         return isValid;
     }
+
 }

@@ -22,8 +22,8 @@ public class Task04200CreateDefaultVanityURL extends AbstractJDBCStartupTask {
 
     /* If the Content Type is changed we need to check the values here are the same that the ones on the Starter */
     private static final String DEFAULT_VANITY_URL_STRUCTURE_INODE = "8e850645-bb92-4fda-a765-e67063a59be0";
-    private static final String DEFAULT_VANITY_URL_STRUCTURE_VARNAME = "Vanityurlasset";
-    private static final String DEFAULT_VANITY_URL_STRUCTURE_NAME = "Vanity URL Asset";
+    private static final String DEFAULT_VANITY_URL_STRUCTURE_VARNAME = "Vanityurl";
+    private static final String DEFAULT_VANITY_URL_STRUCTURE_NAME = "Vanity URL";
     private static final String DEFAULT_VANITY_URL_STRUCTURE_DESCRIPTION = "Vanity URL as Content";
     private static final String[] DEFAULT_VANITY_URL_FIELDS_INODES = {
             "4e64a309-8c5e-48cf-b4a9-e724a5e09575", // Order

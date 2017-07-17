@@ -124,14 +124,14 @@ public class URLMapFilter implements Filter {
 
         if (host != null) {
             CachedVanityUrl vanityUrl = APILocator.getVanityUrlAPI()
-                    .getLiveCachedVanityUrl(VanityUrlUtil.fixURI(uri), host, languageId, user);
+                    .getLiveCachedVanityUrl(uri, host, languageId, user);
             pointer = vanityUrl != null && !VanityUrlAPI.CACHE_404_VANITY_URL
                     .equals(vanityUrl.getVanityUrlId()) && InodeUtils
                     .isSet(vanityUrl.getVanityUrlId()) ? vanityUrl.getForwardTo() : null;
         }
         if (!UtilMethods.isSet(pointer)) {
             CachedVanityUrl vanityUrl = APILocator.getVanityUrlAPI()
-                    .getLiveCachedVanityUrl(VanityUrlUtil.fixURI(uri), null, languageId, user);
+                    .getLiveCachedVanityUrl(uri, null, languageId, user);
             pointer = vanityUrl != null && !VanityUrlAPI.CACHE_404_VANITY_URL
                     .equals(vanityUrl.getVanityUrlId()) && InodeUtils
                     .isSet(vanityUrl.getVanityUrlId()) ? vanityUrl.getForwardTo() : null;
