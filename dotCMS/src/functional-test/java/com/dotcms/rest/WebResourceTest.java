@@ -4,7 +4,6 @@ import static org.junit.Assert.assertNotNull;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.IntegrationTestBase;
 import com.dotcms.repackage.javax.ws.rs.client.Client;
 import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 
@@ -25,7 +24,7 @@ import com.liferay.portal.model.User;
 
 import static org.mockito.Mockito.*;
 
-public class WebResourceTest extends IntegrationTestBase {
+public class WebResourceTest {
 
     private Client client;
     private WebTarget webTarget;

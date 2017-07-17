@@ -12,7 +12,6 @@ import java.util.Random;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
@@ -52,7 +51,7 @@ import com.liferay.portal.model.User;
  * Testing actionlet to add tags to the visitor object
  *
  */
-public class VisitorsTagsActionletFTest extends IntegrationTestBase {
+public class VisitorsTagsActionletFTest {
 
 	private final Random random = new Random();
 	private RuleDataGen ruleDataGen;

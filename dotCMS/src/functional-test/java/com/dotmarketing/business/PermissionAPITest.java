@@ -1,7 +1,6 @@
 package com.dotmarketing.business;
 
 import com.dotcms.DwrAuthenticationUtil;
-import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotmarketing.beans.Host;
@@ -54,7 +53,7 @@ import static org.junit.Assert.assertTrue;
  * @since May 14, 2012
  *
  */
-public class PermissionAPITest extends IntegrationTestBase {
+public class PermissionAPITest {
 
     private static PermissionAPI perm;
     private static Host host;
