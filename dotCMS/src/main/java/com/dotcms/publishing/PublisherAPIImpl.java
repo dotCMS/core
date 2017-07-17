@@ -66,8 +66,10 @@ public class PublisherAPIImpl implements PublisherAPI {
                 	pcClone.setId(config.getId());
                 	pcClone.setStatic(true);
                 	pcClone.setOperation(config.getOperation());
-                    BundlerUtil.writeBundleXML( pcClone );
+                    Logger.info(this, "Writing bundle.xml file");
+                	BundlerUtil.writeBundleXML( pcClone );
                 } else {
+                    Logger.info(this, "Writing bundle.xml file");
                     BundlerUtil.writeBundleXML( config );
                 }
 
@@ -87,6 +89,9 @@ public class PublisherAPIImpl implements PublisherAPI {
                         bundler.generate( bundleRoot, bs );
                         Logger.info(this, "End of Bundler: " + clazz.getSimpleName());
                     }
+                } else {
+                    Logger.info(this, "Retrying bundle: " + config.getId()
+                            + ", we don't need to run bundlers again");
                 }
 
                 p.process( status );

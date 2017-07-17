@@ -35,6 +35,7 @@ import com.dotmarketing.util.*;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.util.ReleaseInfo;
 
+import org.elasticsearch.indices.IndexMissingException;
 import org.quartz.SchedulerException;
 
 import javax.management.*;
@@ -196,7 +197,17 @@ public class InitServlet extends HttpServlet {
         }
 
         //Initialize the Cached Vanity URL cache
-        VanityUrlServices.getInstance().initializeVanityUrlCache();
+        try {
+            VanityUrlServices.getInstance().initializeVanityUrlCache();
+        } catch (Exception e) {
+            if (e instanceof IndexMissingException || e.getCause() instanceof IndexMissingException) {
+                /*
+                We catch this exception in order to avoid to stop the initialization of dotCMS if for
+                some reason at this point we don't have indexes.
+                 */
+                Logger.error(this, "Error when initializing Vanity URLs, no index found", e);
+            }
+        }
 
         Language language = langAPI.getDefaultLanguage();
 

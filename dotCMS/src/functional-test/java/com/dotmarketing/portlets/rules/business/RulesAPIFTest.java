@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.rules.business;
 
-import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.portlets.rules.actionlet.ThrowErrorActionlet;
@@ -35,7 +34,7 @@ import com.liferay.portal.model.User;
 
 import static org.junit.Assert.*;
 
-public class RulesAPIFTest extends IntegrationTestBase {
+public class RulesAPIFTest {
 
 	private HttpServletRequest request;
     private String ruleId;

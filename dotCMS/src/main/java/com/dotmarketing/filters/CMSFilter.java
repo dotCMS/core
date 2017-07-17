@@ -140,7 +140,7 @@ public class CMSFilter implements Filter {
             Logger.error(this, e.getMessage(), e);
         }
 
-        String rewrite = null;
+        String vanityURLRewrite = null;
         String queryString = request.getQueryString();
         // if a vanity URL
         if (iAm == IAm.VANITY_URL) {
@@ -172,34 +172,38 @@ public class CMSFilter implements Filter {
                 queryString = vanityUrlResult.getQueryString();
             }
             iAm = vanityUrlResult.getiAm();
-            rewrite = vanityUrlResult.getRewrite();
+            vanityURLRewrite = vanityUrlResult.getRewrite();
         }
 
         if (iAm == IAm.FOLDER) {
-            if (!uri.endsWith("/")) {
-                // If the value comes from the uri override attribute, used it, if not use the same uri as the
-                // current request, no decoding needed.
-                String undecodeUri =
-                        (request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null) ? (String) request
-                                .getAttribute(CMS_FILTER_URI_OVERRIDE)
-                                : request.getRequestURI();
+
+            // if we are not rewriting anything, use the uri
+            String urlToUse = UtilMethods.isSet(vanityURLRewrite) ? vanityURLRewrite : uri;
+            if (!urlToUse.endsWith("/")) {
+
                 if (UtilMethods.isSet(queryString)) {
-                    response.setHeader("Location", undecodeUri + "/?" + queryString);
+                    response.setHeader("Location", urlToUse + "/?" + queryString);
                 } else {
-                    response.setHeader("Location", undecodeUri + "/");
+                    response.setHeader("Location", urlToUse + "/");
 
                 }
-                response.setStatus(301);
+
+                /*
+                 At this point if rewrite is different than null is because a VanityURL set it, and
+                 in that case we need to respect the status code set by the VanityURL.
+                  */
+                if (!UtilMethods.isSet(vanityURLRewrite)) {
+                    response.setStatus(301);
+                }
                 closeDbSilently();
                 return;
             } else {
-                if (UtilMethods.isSet(rewrite)) {
-
-                    rewrite = rewrite + CMS_INDEX_PAGE;
+                if (UtilMethods.isSet(vanityURLRewrite)) {
+                    vanityURLRewrite = vanityURLRewrite + CMS_INDEX_PAGE;
                 } else {
-                    rewrite = uri + CMS_INDEX_PAGE;
+                    vanityURLRewrite = uri + CMS_INDEX_PAGE;
                 }
-                if (urlUtil.isPageAsset(rewrite, host, languageId)) {
+                if (urlUtil.isPageAsset(vanityURLRewrite, host, languageId)) {
                     iAm = IAm.PAGE;
                 }
             }
@@ -211,10 +215,10 @@ public class CMSFilter implements Filter {
         }
 
         // if we are not rewriting anything, use the uri
-        rewrite = (rewrite == null) ? uri : rewrite;
+        vanityURLRewrite = (vanityURLRewrite == null) ? uri : vanityURLRewrite;
 
         if (iAm == IAm.PAGE) {
-            request.setAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE, rewrite);
+            request.setAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE, vanityURLRewrite);
         }
 
         // run rules engine for all requests
@@ -232,7 +236,7 @@ public class CMSFilter implements Filter {
                 StringWriter forward = new StringWriter();
                 forward.append("/dotAsset/");
 
-                ident = APILocator.getIdentifierAPI().find(host, rewrite);
+                ident = APILocator.getIdentifierAPI().find(host, vanityURLRewrite);
                 request.setAttribute(CMS_FILTER_IDENTITY, ident);
 
                 //If language is in session, set as query string
@@ -266,7 +270,7 @@ public class CMSFilter implements Filter {
             return;
         }
 
-        if (rewrite.startsWith("/contentAsset/")) {
+        if (vanityURLRewrite.startsWith("/contentAsset/")) {
             if (response.isCommitted()) {
 				/* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
                 return;

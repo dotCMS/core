@@ -90,6 +90,8 @@ public class PushPublisher extends Publisher {
     
     private static final String PROTOCOL_HTTP = "http";
     private static final String PROTOCOL_HTTPS = "https";
+    private static final String HTTP_PORT = "80";
+	private static final String HTTPS_PORT = "443";
 
     @Override
     public PublisherConfig init ( PublisherConfig config ) throws DotPublishingException {
@@ -133,6 +135,9 @@ public class PushPublisher extends Publisher {
             // we need to compress the bundle folder into the tar.gz file.
             if (!bundle.exists() || !pubAuditAPI.isPublishRetry(config.getId())) {
                 PushUtils.compressFiles(list, bundle, bundleRoot.getAbsolutePath());
+            } else {
+                Logger.info(this, "Retrying bundle: " + config.getId()
+                        + ", we don't need to compress bundle again");
             }
 
             List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(this.config.getId());
@@ -174,8 +179,7 @@ public class PushPublisher extends Publisher {
 							// If re-trying a bundle or just re-attempting to
 							// install a bundle, send it only to those
 							// end-points whose status IS NOT success
-							if ((DeliveryStrategy.ALL_ENDPOINTS.equals(this.config.getDeliveryStrategy())
-									&& PublishAuditStatus.Status.SUCCESS.getCode() != epDetail.getStatus())
+							if ((DeliveryStrategy.ALL_ENDPOINTS.equals(this.config.getDeliveryStrategy()))
 									|| (DeliveryStrategy.FAILED_ENDPOINTS.equals(this.config.getDeliveryStrategy())
 											&& PublishAuditStatus.Status.SUCCESS.getCode() != epDetail.getStatus())) {
 								endpoints.add(ep);
@@ -221,10 +225,11 @@ public class PushPublisher extends Publisher {
 		        				APILocator.getPushedAssetsAPI().deletePushedAssets(this.config.getId(), environment.getId());
 		        			}
 	        				detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
-	        				detail.setInfo(
-	        						"Returned "+response.getStatus()+ " status code " +
-	        								"for the endpoint " + endpoint.getServerName() + "with address "+endpoint.getAddress());
-	        				failedEnvironment |= true;
+							detail.setInfo(
+								"Returned " + response.getStatus() + " status code " +
+									"for the endpoint " + endpoint.getServerName() + " with address " + endpoint
+									.getAddress() + getFormattedPort(endpoint.getPort()));
+							failedEnvironment |= true;
 	        			}
 	        		} catch(Exception e) {
 	        			// if the bundle can't be sent after the total num of tries, delete the pushed assets for this bundle
@@ -232,8 +237,12 @@ public class PushPublisher extends Publisher {
 	        				APILocator.getPushedAssetsAPI().deletePushedAssets(this.config.getId(), environment.getId());
 	        			}
 	        			detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
-	        			String error = 	"An error occured for the endpoint "+ endpoint.getServerName() + " with address "+ endpoint.getAddress() + ". Error: " + e.getMessage();
-	        			detail.setInfo(error);
+						String
+							error =
+							"An error occurred for the endpoint " + endpoint.getServerName() + " with address "
+								+ endpoint.getAddress() + getFormattedPort(
+								endpoint.getPort()) + ". Error: " + e.getMessage();
+						detail.setInfo(error);
 	        			failedEnvironment |= true;
 	        			errorCounter++;
 	        			Logger.error(this.getClass(), error);
@@ -272,6 +281,18 @@ public class PushPublisher extends Publisher {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotPublishingException(e.getMessage());
 		}
+	}
+
+	/**
+	 * @param port
+	 * @return
+	 */
+	private String getFormattedPort(String port){
+
+		if(port !=null && !port.equals(HTTP_PORT) && !port.equals(HTTPS_PORT)){
+			return ":" + port;
+		}
+    	return "";
 	}
 
     /**

@@ -69,8 +69,8 @@ public class CMSFilterTest {
     private static PermissionAPI permissionAPI;
     private static ContentType contentType;
 
-    private static final String VANITY_URL_CONTENT_TYPE_NAME = "Vanity URL Asset";
-    private static final String VANITY_URL_CONTENT_TYPE_VARNAME = "Vanityurlasset";
+    private static final String VANITY_URL_CONTENT_TYPE_NAME = "Vanity URL";
+    private static final String VANITY_URL_CONTENT_TYPE_VARNAME = "Vanityurl";
 
     @BeforeClass
     public static void prepare() throws Exception {

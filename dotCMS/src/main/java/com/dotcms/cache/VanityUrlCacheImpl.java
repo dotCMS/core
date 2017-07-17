@@ -1,12 +1,18 @@
 package com.dotcms.cache;
 
+import com.dotcms.services.VanityUrlServices;
+import com.dotcms.util.VanityUrlUtil;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -23,7 +29,7 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
 
     private static final String PRIMARY_GROUP = "VanityURLCache";
     private static final String CACHED_VANITY_URL_GROUP = "cachedVanityUrlGroup";
-    // region's name for the cache
+
     private static final String[] groupNames = {PRIMARY_GROUP, CACHED_VANITY_URL_GROUP};
 
     public VanityUrlCacheImpl() {
@@ -31,20 +37,17 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
     }
 
     @Override
-    public CachedVanityUrl add(final String key, final VanityUrl vanityUrl) {
+    public CachedVanityUrl add(final String key, final CachedVanityUrl vanityUrl) {
         // Add the key to the cache
-        CachedVanityUrl cachedVanityUrl = new CachedVanityUrl(vanityUrl);
-        cache.put( key, cachedVanityUrl, getPrimaryGroup());
-
-        return cachedVanityUrl;
+        cache.put(key, vanityUrl, getPrimaryGroup());
+        return vanityUrl;
     }
 
     @Override
     public CachedVanityUrl get(final String key) {
         CachedVanityUrl cachedVanityUrl = null;
         try {
-            cachedVanityUrl = (CachedVanityUrl) cache
-                    .get( key, getPrimaryGroup());
+            cachedVanityUrl = (CachedVanityUrl) cache.get(key, getPrimaryGroup());
         } catch (DotCacheException e) {
             Logger.debug(this, "Cache Entry not found", e);
         }
@@ -60,12 +63,68 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
     }
 
     @Override
+    public void remove(final Contentlet vanityURL) {
+
+        try {
+
+            /*
+            First get the records we want to remove from secondary cache group and
+            delete it from the primary cache group, we do this in order to avoid to
+            flush the primary group.
+             */
+            Set<CachedVanityUrl> cachedVanityUrls = this
+                    .getCachedVanityUrls(VanityUrlUtil.sanitizeSecondCachedKey(vanityURL));
+            for (CachedVanityUrl toRemove : cachedVanityUrls) {
+                this.remove(VanityUrlUtil.sanitizeKey(toRemove.getSiteId(), toRemove.getUrl(),
+                        toRemove.getLanguageId()));
+            }
+
+            this.remove(VanityUrlUtil.sanitizeKey(vanityURL));
+            this.removeCachedVanityUrls(VanityUrlUtil.sanitizeSecondCachedKey(vanityURL));
+
+        } catch (DotDataException | DotRuntimeException | DotSecurityException e) {
+            Logger.debug(VanityUrlServices.class,
+                    "Error trying to invalidate Vanity URL with identifier:" + vanityURL
+                            .getIdentifier(), e);
+        }
+    }
+
+    @Override
     public void remove(final String key) {
         try {
             cache.remove(key, getPrimaryGroup());
         } catch (Exception e) {
             Logger.debug(this, "Cache not able to be removed", e);
         }
+    }
+
+    @Override
+    public void update(CachedVanityUrl vanity) {
+
+        try {
+
+            //Update primary Cache
+            this.add(VanityUrlUtil
+                            .sanitizeKey(vanity.getSiteId(), vanity.getUrl(), vanity.getLanguageId()),
+                    vanity);
+
+            //update Secondary cache
+            Set<CachedVanityUrl> siteCachedVanityUrl = this.getCachedVanityUrls(VanityUrlUtil
+                    .sanitizeSecondCacheKey(vanity.getSiteId(), vanity.getLanguageId()));
+            siteCachedVanityUrl.add(vanity);
+
+            this.setCachedVanityUrls(
+                    VanityUrlUtil
+                            .sanitizeSecondCacheKey(vanity.getSiteId(), vanity.getLanguageId()),
+                    siteCachedVanityUrl);
+        } catch (DotRuntimeException e) {
+            Logger.debug(this, "Error trying to update Vanity URL in cache", e);
+        }
+    }
+
+    @Override
+    public void update(VanityUrl vanity) {
+        this.update(new CachedVanityUrl(vanity));
     }
 
     /**
@@ -99,7 +158,7 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
             Logger.debug(this, "Cache Entry not found", e);
         }
         if (vanityUrlList == null) {
-            vanityUrlList = new HashSet<>();
+            vanityUrlList = new LinkedHashSet<>();
         }
         return vanityUrlList;
     }
