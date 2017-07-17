@@ -100,13 +100,6 @@ public class SubmitContentAction extends DispatchAction{
 		ActionForward af = new ActionForward(SecurityUtils.stripReferer(request, referrer));
 		af.setRedirect(true);
 
-		int index = referrer.lastIndexOf('/');
-		String htmlServlet = null;
-		if (index < 0)
-			htmlServlet = referrer;
-		else
-			htmlServlet = referrer.substring(index + 1);
-
 		String params="";
 		HibernateUtil.startTransaction();
 
