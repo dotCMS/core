@@ -2,7 +2,7 @@ package com.dotcms.publisher.pusher;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.publishing.remote.bundler.BundleXMLAsc;
-import com.dotcms.enterprise.publishing.remote.bundler.CategoryBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.CategoryFullBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentTypeBundler;
@@ -345,7 +345,7 @@ public class PushPublisher extends Publisher {
             list.add( UserBundler.class );
         }
         if ( buildCategories ) {
-            list.add( CategoryBundler.class );
+            list.add( CategoryFullBundler.class );
         }
         if ( buildOSGIBundle ) {
             list.add( OSGIBundler.class );

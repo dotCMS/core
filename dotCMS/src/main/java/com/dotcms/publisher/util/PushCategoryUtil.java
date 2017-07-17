@@ -9,7 +9,7 @@ import java.util.List;
 import com.dotcms.publisher.pusher.wrapper.CategoryWrapper;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
-import static com.dotcms.enterprise.publishing.remote.bundler.CategoryBundler.CATEGORY_EXTENSION;
+import static com.dotcms.enterprise.publishing.remote.bundler.CategoryFullBundler.CATEGORY_EXTENSION;
 
 public class PushCategoryUtil {
 	
