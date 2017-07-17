@@ -75,7 +75,7 @@ public class KeyValueAPITest extends IntegrationTestBase {
         keyValueContentType = contentTypeApi.save(keyValueContentType);
         englishLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         spanishLanguageId = APILocator.getLanguageAPI().getLanguage("es", "ES").getId();
-        setDebugMode(Boolean.TRUE);
+        setDebugMode(Boolean.FALSE);
     }
 
     /*
@@ -122,6 +122,7 @@ public class KeyValueAPITest extends IntegrationTestBase {
                         systemUser);
         cachedKeyValue = cache.getByLanguageAndContentType(KEY_1, englishLanguageId, keyValueContentType.id());
 
+        System.out.print("cachedKeyValue: " + cachedKeyValue + "\n");
         Assert.assertNull("Key/Value cache MUST BE null.", cachedKeyValue);
 
         deleteContentlets(systemUser, contentlet);
@@ -138,7 +139,7 @@ public class KeyValueAPITest extends IntegrationTestBase {
                         createTestKeyValueContent(KEY_1, VALUE_1, englishLanguageId, keyValueContentType, systemUser);
         final Contentlet contentlet2 =
                         createTestKeyValueContent(KEY_1, VALUE_1 + "spanish", spanishLanguageId, keyValueContentType, systemUser);
-        final List<KeyValue> keyValueList = keyValueAPI.get(KEY_1, systemUser, Boolean.FALSE);
+        final List<KeyValue> keyValueList = keyValueAPI.get(KEY_1, systemUser, keyValueContentType, Boolean.FALSE);
 
         Assert.assertTrue("Failed creating a new Contentlet using the Key/Value Content Type.",
                         UtilMethods.isSet(contentlet.getIdentifier()));
@@ -167,7 +168,7 @@ public class KeyValueAPITest extends IntegrationTestBase {
                         null != keyValues ? keyValues.size() : ""), keyValues);
 
         KeyValue testKeyValue = keyValueAPI.fromContentlet(contentlet);
-        keyValues = keyValueAPI.get(testKeyValue.getKey(), systemUser, Boolean.FALSE);
+        keyValues = keyValueAPI.get(testKeyValue.getKey(), systemUser, keyValueContentType, Boolean.FALSE);
 
         Assert.assertTrue(String.format("Key/Value list MUST CONTAIN 1 element. It had %s elements.", keyValues.size()),
                         keyValues.size() == 1);
@@ -199,7 +200,7 @@ public class KeyValueAPITest extends IntegrationTestBase {
         System.out.print("testKeyValue: " + testKeyValue + ", keyValueAPI = " + keyValueAPI + "\n");
         System.out.print("testKeyValue.getKey: " + testKeyValue.getKey()
                 + ", testKeyValue.getLanguageId = " + testKeyValue.getLanguageId() + "\n");
-        keyValues = keyValueAPI.get(testKeyValue.getKey(), testKeyValue.getLanguageId(), systemUser, Boolean.FALSE);
+        keyValues = keyValueAPI.get(testKeyValue.getKey(), keyValueContentType, testKeyValue.getLanguageId(), systemUser, Boolean.FALSE);
 
         System.out.print("keyValues: " + keyValues  + "\n");
         Assert.assertTrue(String.format("Key/Value list MUST CONTAIN 1 element. It had %s elements.", keyValues.size()),
@@ -224,11 +225,7 @@ public class KeyValueAPITest extends IntegrationTestBase {
         cache.clearCache();
         final Contentlet contentlet =
                         createTestKeyValueContent(KEY_1, VALUE_1, englishLanguageId, keyValueContentType, systemUser);
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+
         List<KeyValue> keyValues = cache.getByContentType(KEY_1, keyValueContentType.id());
 
         Assert.assertNull(String.format("Key/Value cache MUST BE EMPTY at this point. It had %s elements.",

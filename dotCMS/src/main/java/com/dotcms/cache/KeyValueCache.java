@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotmarketing.business.Cachable;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 /**
  * This cache is used to map Key/Value contents in dotCMS. This cache is used to map a property key
@@ -111,8 +112,15 @@ public interface KeyValueCache extends Cachable {
     /**
      * Removes the specified {@link KeyValue} ID from the cache.
      * 
-     * @param keyValue - The Key/Value ID to remove.
+     * @param keyValueId - The Key/Value ID to remove.
      */
     public void remove(final String keyValueId);
 
+    /**
+     * Removes the specified {@link Contentlet} content from the cache.
+     * Contentlet must have a key field.
+     *
+     * @param contentlet - The Key/Value content to remove.
+     */
+    void remove(Contentlet contentlet);
 }

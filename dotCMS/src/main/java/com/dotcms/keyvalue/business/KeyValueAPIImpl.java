@@ -47,6 +47,19 @@ public class KeyValueAPIImpl implements KeyValueAPI {
     }
 
     @Override
+    public List<KeyValue> get(final String key, final User user,
+                              final ContentType contentType, final boolean respectFrontendRoles) {
+        List<KeyValue> results = this.cache.get(key);
+        if (null != results) {
+            return results;
+        }
+        results = queryKeyValues(key, -1, contentType, user, respectFrontendRoles);
+        if (null != results && !results.isEmpty()) {
+            this.cache.add(key, results);
+        }
+        return results;
+    }
+    @Override
     public List<KeyValue> get(final String key, final User user, final boolean respectFrontendRoles) {
         List<KeyValue> results = this.cache.get(key);
         if (null != results) {
@@ -55,6 +68,21 @@ public class KeyValueAPIImpl implements KeyValueAPI {
         results = queryKeyValues(key, -1, null, user, respectFrontendRoles);
         if (null != results && !results.isEmpty()) {
             this.cache.add(key, results);
+        }
+        return results;
+    }
+
+
+    @Override
+    public List<KeyValue> get(final String key, final ContentType contentType,
+                              final long languageId, final User user, final boolean respectFrontendRoles) {
+        List<KeyValue> results = this.cache.getByLanguage(key, languageId);
+        if (null != results) {
+            return results;
+        }
+        results = queryKeyValues(key, languageId, contentType, user, respectFrontendRoles);
+        if (null != results && !results.isEmpty()) {
+            this.cache.addByLanguage(key, languageId, results);
         }
         return results;
     }

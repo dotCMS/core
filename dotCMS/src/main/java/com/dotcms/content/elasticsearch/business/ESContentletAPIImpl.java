@@ -3294,9 +3294,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     VanityUrlServices.getInstance().invalidateVanityUrl(contentlet);
                 }
 
-                if(contentlet != null && contentlet.isKeyValue() && contentlet instanceof KeyValue){
+                if(contentlet != null && contentlet.isKeyValue()){
                     //remove from cache
-                    CacheLocator.getKeyValueCache().remove(KeyValue.class.cast(contentlet));
+                    CacheLocator.getKeyValueCache().remove(contentlet);
                 }
 
                 if(structureHasAHostField && changedURI) {

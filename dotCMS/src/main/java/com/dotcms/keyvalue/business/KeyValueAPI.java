@@ -83,6 +83,21 @@ public interface KeyValueAPI {
         return keyValue;
     }
 
+
+    /**
+     * Returns a list of {@link KeyValue} objects that match the specified key.
+     *
+     * @param key - The key.
+     * @param user - The user performing this action.
+     * @param contentType - The {@link ContentType} used to create this content.
+     * @param respectFrontendRoles - Set to {@code true} if this method requires that front-end
+     *        roles are take in count for the search (which means this is being called from the
+     *        front-end). Otherwise, set to {@code false}.
+     * @return The list of Key/Value objects.
+     */
+    List<KeyValue> get(final String key, final User user,
+                       final ContentType contentType, final boolean respectFrontendRoles);
+
     /**
      * Returns a list of {@link KeyValue} objects that match the specified key.
      * 
@@ -108,6 +123,20 @@ public interface KeyValueAPI {
      */
     public List<KeyValue> get(final String key, final long languageId, final User user, final boolean respectFrontendRoles);
 
+    /**
+     * Returns a list of {@link KeyValue} objects that match the specified key and language ID.
+     *
+     * @param key - The key.
+     * @param contentType    - The {@link ContentType} used to create this content.
+     * @param languageId - The ID of the language that the content was created for.
+     * @param user - The user performing this action.
+     * @param respectFrontendRoles - Set to {@code true} if this method requires that front-end
+     *        roles are take in count for the search (which means this is being called from the
+     *        front-end). Otherwise, set to {@code false}.
+     * @return The list of Key/Value objects.
+     */
+    List<KeyValue> get(final String key, final ContentType contentType,
+                       final long languageId, final User user, final boolean respectFrontendRoles);
     /**
      * Returns a list of {@link KeyValue} objects that match the specified key and Content Type.
      * 

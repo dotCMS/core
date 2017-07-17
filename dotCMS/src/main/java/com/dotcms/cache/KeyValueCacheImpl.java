@@ -3,12 +3,14 @@ package com.dotcms.cache;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.contenttype.model.type.KeyValueContentType;
 import com.dotcms.keyvalue.model.KeyValue;
 import static com.dotcms.util.CollectionsUtils.*;
 
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 
 /**
@@ -137,6 +139,11 @@ public class KeyValueCacheImpl implements KeyValueCache {
     @Override
     public void remove(final KeyValue keyValue) {
         remove(keyValue.getKey());
+    }
+
+    @Override
+    public void remove(final Contentlet contentlet) {
+        remove(contentlet.getStringProperty(KeyValueContentType.KEY_VALUE_KEY_FIELD_VAR));
     }
 
     @Override
