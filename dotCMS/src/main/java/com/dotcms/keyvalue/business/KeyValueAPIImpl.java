@@ -54,7 +54,7 @@ public class KeyValueAPIImpl implements KeyValueAPI {
             return results;
         }
         results = queryKeyValues(key, -1, contentType, user, respectFrontendRoles);
-        if (null != results && !results.isEmpty()) {
+        if (null != results) {
             this.cache.add(key, results);
         }
         return results;
@@ -66,7 +66,7 @@ public class KeyValueAPIImpl implements KeyValueAPI {
             return results;
         }
         results = queryKeyValues(key, -1, null, user, respectFrontendRoles);
-        if (null != results && !results.isEmpty()) {
+        if (null != results) {
             this.cache.add(key, results);
         }
         return results;
@@ -81,7 +81,7 @@ public class KeyValueAPIImpl implements KeyValueAPI {
             return results;
         }
         results = queryKeyValues(key, languageId, contentType, user, respectFrontendRoles);
-        if (null != results && !results.isEmpty()) {
+        if (null != results) {
             this.cache.addByLanguage(key, languageId, results);
         }
         return results;
@@ -94,7 +94,7 @@ public class KeyValueAPIImpl implements KeyValueAPI {
             return results;
         }
         results = queryKeyValues(key, languageId, null, user, respectFrontendRoles);
-        if (null != results && !results.isEmpty()) {
+        if (null != results) {
             this.cache.addByLanguage(key, languageId, results);
         }
         return results;
@@ -108,7 +108,7 @@ public class KeyValueAPIImpl implements KeyValueAPI {
             return results;
         }
         results = queryKeyValues(key, -1, contentType, user, respectFrontendRoles);
-        if (null != results && !results.isEmpty()) {
+        if (null != results) {
             this.cache.addByContentType(key, contentType.id(), results);
         }
         return results;
