@@ -14,13 +14,10 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.virtuallinks.business.VirtualLinkAPI;
-import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
@@ -39,7 +36,6 @@ import com.liferay.util.servlet.SessionMessages;
 public class ViewHTMLPageViewsAction extends DotPortletAction {
 
 	protected HostWebAPI hostAPI = WebAPILocator.getHostWebAPI();
-	protected VirtualLinkAPI virtualLinkAPI = APILocator.getVirtualLinkAPI();
 
 	/**
 	 * 
@@ -125,21 +121,6 @@ public class ViewHTMLPageViewsAction extends DotPortletAction {
             Identifier id = APILocator.getIdentifierAPI().find(host, uri);
             IHTMLPage myHTMLPage = (IHTMLPage) APILocator.getVersionableAPI().findLiveVersion(id, APILocator.getUserAPI().getSystemUser(),false);
             req.setAttribute("htmlPage", myHTMLPage);
-            if (!InodeUtils.isSet(id.getInode())) {
-                VirtualLink vl = null;
-                try{
-                	vl = this.virtualLinkAPI.getVirtualLinkByURL(uri);
-                }
-                catch(DotHibernateException dhe){
-                	Logger.debug(VirtualLinksCache.class, "failed to find: " + uri);  
-                }
-                if (vl != null && !InodeUtils.isSet(vl.getInode())) {
-                    myHTMLPage.setTitle(LanguageUtil.get(user, "message.htmlpageviews.pagenotfound"));
-                    SessionMessages.add(req, "message", "message.htmlpageviews.pagenotfound");
-                } else {
-                    req.setAttribute(WebKeys.VIRTUAL_LINK_EDIT, vl);
-                }
-            }
         }
         
         req.setAttribute("uri", uri);        

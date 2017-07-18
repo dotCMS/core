@@ -215,12 +215,6 @@
 						    </div>
 						</div>
 						<div class="yui-g" style="margin-bottom: 16px;">
-						    <div class="yui-u first" style="text-align: left">
-						        <input type="checkbox" id="copyVirtualLinks" disabled="true" checked="checked" dojoType="dijit.form.CheckBox">
-								<label for="copyVirtualLinks">
-			    					<%= LanguageUtil.get(pageContext, "Virtual-Links") %>
-								</label>
-						    </div>
 							<div class="yui-u" style="text-align: left">
 								<input type="checkbox" id="copyLinks" disabled="true" checked="checked" dojoType="dijit.form.CheckBox">
 								<label for="copyLinks">

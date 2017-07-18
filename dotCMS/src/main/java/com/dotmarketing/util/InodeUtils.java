@@ -16,7 +16,6 @@ import com.dotmarketing.portlets.report.model.Report;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
 import com.dotmarketing.portlets.workflows.model.WorkflowComment;
 import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
@@ -99,8 +98,6 @@ public class InodeUtils {
 
 		else if (type.equals("template")) {
 			return Template.class;
-		} else if (type.equals("virtual_link")) {
-			return VirtualLink.class;
 		} else if (type.equals("user_proxy")) {
 			return UserProxy.class;
 		} else if (type.equals("structure")) {

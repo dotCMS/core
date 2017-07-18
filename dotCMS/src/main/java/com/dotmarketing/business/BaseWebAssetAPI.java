@@ -11,9 +11,6 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.beans.WebAsset;
-
-import com.dotmarketing.cache.VirtualLinksCache;
-
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -297,17 +294,6 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 				TemplateServices.unpublishTemplateFile((Template)currWebAsset);
 				APILocator.getTemplateAPI().associateContainers(new ArrayList<Container>(), (Template)currWebAsset);
 				CacheLocator.getTemplateCache().remove(currWebAsset.getInode());
-			}
-			else if(currWebAsset instanceof Link)
-			{
-				VersionInfo vi = APILocator.getVersionableAPI().getVersionInfo(currWebAsset.getIdentifier());
-
-				if(!UtilMethods.isSet(vi)) {
-					auxVersionInfo = getVersionInfo(currWebAsset, identifier,
-							webAssetList, "links");
-				}
-
-				VirtualLinksCache.removePathFromCache(((Link)currWebAsset).getUrl());
 			}
 
 			if(auxVersionInfo==null || !UtilMethods.isSet(auxVersionInfo.getIdentifier())) { // null auxVersionInfo  indicates everything goes fine

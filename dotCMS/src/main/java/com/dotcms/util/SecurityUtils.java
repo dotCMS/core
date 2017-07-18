@@ -8,7 +8,6 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -84,18 +83,6 @@ public class SecurityUtils {
                     Host foundHost = APILocator.getHostAPI().findByName( refererHost, systemUser, false );
                     if ( !UtilMethods.isSet( foundHost ) ) {
                         foundHost = APILocator.getHostAPI().findByAlias( refererHost, systemUser, false );
-                    }
-
-                    //If the host was not found it means it is a external url
-                    if ( !UtilMethods.isSet( foundHost ) ) {
-
-                    	// lets check if it is a Virtual Link
-                    	List<VirtualLink> virtualLinks = APILocator.getVirtualLinkAPI().getVirtualLinksByURI(referer);
-
-                    	if(!UtilMethods.isSet(virtualLinks) || virtualLinks.isEmpty()) {
-                    		ref = "/";
-                    	}
-
                     }
                 }
 

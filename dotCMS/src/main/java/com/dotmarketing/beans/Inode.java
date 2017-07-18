@@ -47,7 +47,6 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
     public enum Type {
         CONTENTLET("contentlet", "contentlet_version_info"),
         TEMPLATE("template", "template_version_info"),
-        VIRTUAL_LINK("virtual_link", null),
         CONTAINERS("dot_containers", "container_version_info"),
         USER_PROXY("user_proxy", null),
         FOLDER("folder", null),
