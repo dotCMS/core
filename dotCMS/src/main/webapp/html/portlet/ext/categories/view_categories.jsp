@@ -74,13 +74,23 @@
 
     function refresh() {
 
-        var hashValue = decodeURIComponent(dojo.hash());
+        var hashReceived = decodeURIComponent(dojo.hash());
+        var inode = "0";
+        var name = "<%= LanguageUtil.get(pageContext, "Top-Level") %>";
+        var hashToSend = null;
 
-        if(typeof hashValue == "undefined" || hashValue == '') {
-            doSearchHash(null);
-        } else {
-            doSearchHash(hashValue);
+        if(typeof hashReceived != "undefined" && hashReceived != '') {
+            var query = hashReceived.substring(hashReceived.indexOf("?") + 1, hashReceived.length);
+            query = dojo.queryToObject(query);
+            inode = query.inode==''?0:query.inode;
+            name = query.name;
+            hashToSend = hashReceived;
         }
+
+        buildCrumbs(inode, name);
+        doSearchHash(hashToSend);
+        refreshCrumbs();
+
     }
 
     var grid;
@@ -273,7 +283,7 @@
     // search handling
     function doSearch(reorder, importing) {
         var params = dojo.byId("catFilter").value.trim();
-        params = "?donothing&inode="+currentInodeOrIdentifier+"&q="+params;
+        params = "?donothing&inode="+currentInodeOrIdentifier+"&name="+currentCatName+"&q="+params;
         if(reorder) {
             params = params + "&reorder=true";
         }
@@ -405,10 +415,7 @@
 
     var myCrumbs = new Array();
 
-
-
     function refreshCrumbs() {
-
         if(myCrumbs.length ==0){
             myCrumbs[0] = "0---------<%= LanguageUtil.get(pageContext, "Top-Level") %>";
         }
@@ -433,16 +440,15 @@
             }
         }
 
-
-
-
     }
 
-
-
     function prepareCrumbs(inode, name) {
+        buildCrumbs(inode, name);
+        doSearch();
+        refreshCrumbs();
+    }
 
-
+    function buildCrumbs(inode, name) {
         dijit.byId("mainTabContainer").selectChild(dijit.byId("TabOne"));
         if(inode =="0"){
             currentInodeOrIdentifier="";
@@ -464,10 +470,7 @@
         newCrumbs[newCrumbs.length] = inode + "---------" + name;
         myCrumbs = newCrumbs;
         dijit.byId('catFilter').attr('value', '');
-
-        doSearch();
-        refreshCrumbs();
-    }
+	}
 
     // drill down of a category, load the children, properties
     function drillDown(index) {
