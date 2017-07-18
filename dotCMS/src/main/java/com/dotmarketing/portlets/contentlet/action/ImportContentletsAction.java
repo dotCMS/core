@@ -29,6 +29,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil.ImportAuditResults;
+import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.struts.ImportContentletsForm;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.AdminLogger;
@@ -293,11 +294,13 @@ public class ImportContentletsAction extends DotPortletAction {
 				((ImportContentletsForm)req.getAttribute("ImportContentletsForm")).setStructure(req.getParameter("selectedStructure"));
 			}
 			if (session.getAttribute("previewResults")!= null){
-				HashMap<String, List<String>> results  = (HashMap<String, List<String>>) session.getAttribute("previewResults");
-
-				if (results.get("updatedInodes")!=null){
-					for (String inode: results.get("updatedInodes")){
-						CacheLocator.getContentletCache().remove(inode);
+				HashMap<String, List<String>>
+					results =
+					(HashMap<String, List<String>>) session.getAttribute("previewResults");
+				ContentletCache contentletCache = CacheLocator.getContentletCache();
+				if (results.get("updatedInodes") != null) {
+					for (String inode : results.get("updatedInodes")) {
+						contentletCache.remove(inode);
 					}
 					session.removeAttribute("previewResults");
 				}
@@ -319,21 +322,25 @@ public class ImportContentletsAction extends DotPortletAction {
 	 */
 	private void detectEncodeType(final HttpSession session, final File file) throws IOException {
 
-		String encodeType=null;
+		String encodeType   = null;
 
 		if (null != file && file.exists()) {
             byte[] buf = new byte[4096];
-            FileInputStream fis = new FileInputStream(file);
-            UniversalDetector detector = new UniversalDetector(null);
-            int nread;
-            while ((nread = fis.read(buf)) > 0 && !detector.isDone()) {
-                detector.handleData(buf, 0, nread);
-            }
-            detector.dataEnd();
-            encodeType = detector.getDetectedCharset();
-            session.setAttribute(ENCODE_TYPE, encodeType);
-            detector.reset();
-            fis.close();
+            try (FileInputStream fis = new FileInputStream(file)){
+
+
+				UniversalDetector detector = new UniversalDetector(null);
+				int nread;
+				while ((nread = fis.read(buf)) > 0 && !detector.isDone()) {
+					detector.handleData(buf, 0, nread);
+				}
+				detector.dataEnd();
+				encodeType = detector.getDetectedCharset();
+				session.setAttribute(ENCODE_TYPE, encodeType);
+				detector.reset();
+			}catch (IOException e){
+				throw e;
+			}
         }
 	}
 
