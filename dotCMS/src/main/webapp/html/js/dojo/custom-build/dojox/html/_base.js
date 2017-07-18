@@ -180,6 +180,9 @@ define("dojox/html/_base", [
 					url: src,
 					sync: true,
 					load: function(code){
+						if(byRef.code !=="") {
+						   code = "\n" + code;
+						}
 						byRef.code += code+";";
 					},
 					error: byRef.errBack
@@ -193,7 +196,10 @@ define("dojox/html/_base", [
 				if(src){
 					download(src);
 				}else{
-					byRef.code += code;
+					if(byRef.code !=="") {
+					   code = "\n" + code;
+					}
+					byRef.code += code+";";
 				}
 				return "";
 			}

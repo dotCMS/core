@@ -8,6 +8,13 @@ define("dojox/embed/Flash", ["dojo"], function(dojo) {
 	// example:
 	//	|	var movie=new Flash({ args }, containerNode);
 
+	function htmlEscape(str) {
+		return String(str)
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/"/g, '&quot;')
+			.replace(/'/g, '&apos;');
+	}
 
 	var fMarkup, fVersion;
 	var minimumVersion = 9; // anything below this will throw an error (may overwrite)
@@ -47,21 +54,21 @@ define("dojox/embed/Flash", ["dojo"], function(dojo) {
 			if(kwArgs.vars){
 				var a = [];
 				for(p in kwArgs.vars){
-					a.push(p + '=' + kwArgs.vars[p]);
+					a.push(encodeURIComponent(p) + '=' + encodeURIComponent(kwArgs.vars[p]));
 				}
 				kwArgs.params.FlashVars = a.join("&");
 				delete kwArgs.vars;
 			}
-			var s = '<object id="' + kwArgs.id + '" '
+			var s = '<object id="' + htmlEscape(String(kwArgs.id)) + '" '
 				+ 'classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" '
-				+ 'width="' + kwArgs.width + '" '
-				+ 'height="' + kwArgs.height + '"'
-				+ ((kwArgs.style)?' style="' + kwArgs.style + '"':'')
+				+ 'width="' + htmlEscape(String(kwArgs.width)) + '" '
+				+ 'height="' + htmlEscape(String(kwArgs.height)) + '"'
+				+ ((kwArgs.style)?' style="' + htmlEscape(String(kwArgs.style)) + '"':'')
 				+ '>'
-				+ '<param name="movie" value="' + path + '" />';
+				+ '<param name="movie" value="' + htmlEscape(String(path)) + '" />';
 			if(kwArgs.params){
 				for(p in kwArgs.params){
-					s += '<param name="' + p + '" value="' + kwArgs.params[p] + '" />';
+					s += '<param name="' + htmlEscape(p) + '" value="' + htmlEscape(String(kwArgs.params[p])) + '" />';
 				}
 			}
 			s += '</object>';
@@ -114,22 +121,22 @@ define("dojox/embed/Flash", ["dojo"], function(dojo) {
 			if(kwArgs.vars){
 				var a = [];
 				for(p in kwArgs.vars){
-					a.push(p + '=' + kwArgs.vars[p]);
+					a.push(encodeURIComponent(p) + '=' + encodeURIComponent(kwArgs.vars[p]));
 				}
 				kwArgs.params.flashVars = a.join("&");
 				delete kwArgs.vars;
 			}
 			var s = '<embed type="application/x-shockwave-flash" '
-				+ 'src="' + path + '" '
-				+ 'id="' + kwArgs.id + '" '
-				+ 'width="' + kwArgs.width + '" '
-				+ 'height="' + kwArgs.height + '"'
-				+ ((kwArgs.style)?' style="' + kwArgs.style + '" ':'')
+				+ 'src="' + htmlEscape(String(path)) + '" '
+				+ 'id="' + htmlEscape(String(kwArgs.id)) + '" '
+				+ 'width="' + htmlEscape(String(kwArgs.width)) + '" '
+				+ 'height="' + htmlEscape(String(kwArgs.height)) + '"'
+				+ ((kwArgs.style)?' style="' + htmlEscape(String(kwArgs.style)) + '" ':'')
 
 				+ 'pluginspage="' + window.location.protocol + '//www.adobe.com/go/getflashplayer" ';
 			if(kwArgs.params){
 				for(p in kwArgs.params){
-					s += ' ' + p + '="' + kwArgs.params[p] + '"';
+					s += ' ' + htmlEscape(p) + '="' + htmlEscape(String(kwArgs.params[p])) + '"';
 				}
 			}
 			s += ' />';

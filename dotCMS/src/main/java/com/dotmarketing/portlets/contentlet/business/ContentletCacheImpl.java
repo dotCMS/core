@@ -1,12 +1,14 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.TranslatedQuery;
+import com.dotcms.services.VanityUrlServices;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -133,6 +135,20 @@ public class ContentletCacheImpl extends ContentletCache {
     	
     	String myKey = primaryGroup + key;
     	String metadataKey = metadataGroup + key;
+    	com.dotmarketing.portlets.contentlet.model.Contentlet content = null;
+    	try {
+    		content = (com.dotmarketing.portlets.contentlet.model.Contentlet)cache.get(key,primaryGroup);
+    		try {
+				if(content != null && content.isVanityUrl()){
+					VanityUrlServices.getInstance().invalidateVanityUrl(content);
+				}
+			} catch (DotDataException | DotRuntimeException | DotSecurityException e) {
+				Logger.debug(this, "Cache Vanity URL cache entry not found", e);
+			}
+    	}catch (DotCacheException e) {
+			Logger.debug(this, "Cache Entry not found", e);
+		} 
+    	
     	try{
     		cache.remove(myKey,primaryGroup);
     		cache.remove(metadataKey,metadataGroup);
@@ -143,7 +159,7 @@ public class ContentletCacheImpl extends ContentletCache {
     	if(h != null){ 
     		CacheLocator.getHostCache().remove(h);
     	}
-    	CacheLocator.getHTMLPageCache().remove(key);
+    	CacheLocator.getHTMLPageCache().remove(key);   	
     }
     public String[] getGroups() {
     	return groupNames;

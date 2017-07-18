@@ -89,6 +89,7 @@ import com.dotmarketing.util.Parameter;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.ZipUtil;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.ImageLocalManagerUtil;
 import com.liferay.portal.ejb.PortletPreferencesLocalManagerUtil;
@@ -931,8 +932,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 	public void _initStructures(ActionForm form,RenderRequest req, RenderResponse res)
 	{
 		CmsMaintenanceForm maintenanceForm = (CmsMaintenanceForm) form;
-		List<Structure> structures = StructureFactory.getStructures();
-		maintenanceForm.setStructures(structures);
+		List<Structure> structures = ImmutableList.of();
+		//List<Structure> structures = StructureFactory.getStructures();
+		//maintenanceForm.setStructures(structures);
 	}
 
 	@SuppressWarnings("unchecked")

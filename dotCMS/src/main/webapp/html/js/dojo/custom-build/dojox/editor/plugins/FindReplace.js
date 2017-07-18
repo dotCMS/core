@@ -344,6 +344,8 @@ dojo.declare("dojox.editor.plugins.FindReplace",[_Plugin],{
 	//		The array that contains globalized strings
 	_strings: null,
 
+	_bookmark: null,
+
 	_initButton: function(){
 		// summary:
 		//		Over-ride for creation of the resize button.
@@ -723,18 +725,35 @@ dojo.declare("dojox.editor.plugins.FindReplace",[_Plugin],{
 				found = win.find(txt, caseSensitive, backwards, false, false, false, false);
 			}else{
 				var doc = ed.document;
-				if(doc.selection){
+				if(doc.selection || win.getSelection){
 					/* IE */
 					// Focus to restore position/selection,
 					// then shift to search from current position.
 					this.editor.focus();
 					var txtRg = doc.body.createTextRange();
+					var txtRg2 = txtRg.duplicate();
+					var sel1 = win.getSelection();
+					var sRange = sel1.getRangeAt(0);
 					var curPos = doc.selection?doc.selection.createRange():null;
 					if(curPos){
 						if(backwards){
 							txtRg.setEndPoint("EndToStart", curPos);
 						}else{
 							txtRg.setEndPoint("StartToEnd", curPos);
+						}
+					}else if(this._bookmark){
+						var currentText = win.getSelection().toString();
+						txtRg.moveToBookmark(this._bookmark);
+						//if selection is different to previous bookmark, need to search from that position
+						if ( txtRg.text != currentText ) {
+							txtRg = txtRg2.duplicate();
+							this._bookmark = null;
+						}else if(backwards){
+							txtRg2.setEndPoint("EndToStart", txtRg);
+							txtRg = txtRg2.duplicate();
+						}else{
+							txtRg2.setEndPoint("StartToEnd", txtRg);
+							txtRg = txtRg2.duplicate();
 						}
 					}
 					var flags = caseSensitive?4:0;
@@ -745,6 +764,7 @@ dojo.declare("dojox.editor.plugins.FindReplace",[_Plugin],{
 					found = txtRg.findText(txt,txtRg.text.length,flags);
 					if(found){
 						txtRg.select();
+						this._bookmark = txtRg.getBookmark();
 					}
 				}
 			}

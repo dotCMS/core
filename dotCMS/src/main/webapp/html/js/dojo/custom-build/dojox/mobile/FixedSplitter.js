@@ -99,6 +99,7 @@ define("dojox/mobile/FixedSplitter", [
 		},
 
 		resize: function(){
+			var paddingTop = domGeometry.getPadExtents(this.domNode).t;
 			var wh = this.orientation === "H" ? "w" : "h", // width/height
 				tl = this.orientation === "H" ? "l" : "t", // top/left
 				props1 = {}, props2 = {},
@@ -121,16 +122,25 @@ define("dojox/mobile/FixedSplitter", [
 				}
 			}
 			var l = (h || domGeometry.getMarginBox(this.domNode)[wh]) - total;
+			if(this.orientation === "V"){
+				l -= paddingTop;
+			}
 			props2[wh] = a[idx] = l;
 			c = children[idx];
 			domGeometry.setMarginBox(c, props2);
 			c.style[this.orientation === "H" ? "height" : "width"] = "";
-
+			if(this.orientation === "V"){
+				offset = offset ? offset + paddingTop : paddingTop;
+			}
 			for(i = 0; i < children.length; i++){
 				c = children[i];
 				props1[tl] = offset;
 				domGeometry.setMarginBox(c, props1);
-				c.style[this.orientation === "H" ? "top" : "left"] = "";
+				if(this.orientation === "H"){
+					c.style.top = paddingTop +"px";
+				}else{
+					c.style.left = "";
+				}
 				offset += a[i];
 			}
 

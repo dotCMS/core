@@ -10,6 +10,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Configuration;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3EndPointPublisher;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
@@ -212,24 +213,29 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 		String bucketID = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_BUCKET_ID);
 		String bucketValidationName = props.getProperty(AWSS3Publisher.DOTCMS_PUSH_AWS_S3_BUCKET_VALIDATION_NAME);
 
-		if (!UtilMethods.isSet(token)
-			|| !UtilMethods.isSet(secret)
-			|| !UtilMethods.isSet(bucketID)) {
-
+		if (!UtilMethods.isSet(bucketID)) {
 			throw new DotDataException(
-				LanguageUtil.get( getUser(), "publisher_Endpoint_awss3_authKey_missing_properties" )
+					LanguageUtil.get( getUser(), "publisher_Endpoint_awss3_authKey_missing_bucket_id" )
 			);
 		}
 
-
-		// Validate correctness of AWS S3 connection properties
-		AWSS3Configuration awss3Config =
-			new AWSS3Configuration.Builder().accessKey(token).secretKey(secret).build();
-
-		if (! new AWSS3EndPointPublisher(awss3Config).canConnectSuccessfully(bucketValidationName)) {
-			throw new DotDataException(
-				LanguageUtil.get( getUser(), "publisher_Endpoint_awss3_authKey_properties_invalid" )
-			);
+		if (!UtilMethods.isSet(token) || !UtilMethods.isSet(secret)) {
+			// Validate DefaultAWSCredentialsProviderChain configuration
+			DefaultAWSCredentialsProviderChain creds = DefaultAWSCredentialsProviderChain.getInstance();
+			if (! new AWSS3EndPointPublisher(creds).canConnectSuccessfully(bucketValidationName)) {
+				throw new DotDataException(
+						LanguageUtil.get( getUser(), "publisher_Endpoint_DefaultAWSCredentialsProviderChain_invalid" )
+				);
+			}
+		} else {
+			// Validate correctness of AWS S3 connection properties
+			AWSS3Configuration awss3Config =
+					new AWSS3Configuration.Builder().accessKey(token).secretKey(secret).build();
+			if (!new AWSS3EndPointPublisher(awss3Config).canConnectSuccessfully(bucketValidationName)) {
+				throw new DotDataException(
+						LanguageUtil.get(getUser(), "publisher_Endpoint_awss3_authKey_properties_invalid")
+				);
+			}
 		}
 	}
 }

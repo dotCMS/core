@@ -656,7 +656,7 @@ public class ESIndexAPI {
 
 	/**
 	 * Returns the json (String) for
-	 * the defualt ES index settings
+	 * the default ES index settings
 	 * @param shards
 	 * @return
 	 * @throws IOException

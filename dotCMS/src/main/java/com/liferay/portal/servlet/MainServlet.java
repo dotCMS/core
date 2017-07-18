@@ -22,27 +22,8 @@
 
 package com.liferay.portal.servlet;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TreeMap;
-
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.servlet.jsp.PageContext;
-
-import com.dotcms.config.DotInitializationService;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.dotcms.cluster.common.ClusterServerActionThread;
+import com.dotcms.config.DotInitializationService;
 import com.dotcms.enterprise.ClusterThreadProxy;
 import com.dotcms.repackage.com.httpbridge.webproxy.http.TaskController;
 import com.dotcms.repackage.org.apache.struts.Globals;
@@ -73,22 +54,26 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.struts.PortletRequestProcessor;
 import com.liferay.portal.struts.StrutsUtil;
-import com.liferay.portal.util.ContentUtil;
-import com.liferay.portal.util.CookieKeys;
-import com.liferay.portal.util.PortalInstances;
-import com.liferay.portal.util.PortalUtil;
-import com.liferay.portal.util.PropsUtil;
-import com.liferay.portal.util.ShutdownUtil;
-import com.liferay.portal.util.WebAppPool;
-import com.liferay.portal.util.WebKeys;
-import com.liferay.util.CookieUtil;
-import com.liferay.util.GetterUtil;
-import com.liferay.util.Http;
-import com.liferay.util.ParamUtil;
-import com.liferay.util.PwdGenerator;
-import com.liferay.util.StringUtil;
+import com.liferay.portal.util.*;
+import com.liferay.util.*;
 import com.liferay.util.servlet.EncryptedServletRequest;
 import com.liferay.util.servlet.UploadServletRequest;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.servlet.jsp.PageContext;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * <a href="MainServlet.java.html"><b><i>View Source</i></b></a>
@@ -303,46 +288,6 @@ public class MainServlet extends ActionServlet {
 
 		HttpSession ses = req.getSession();
 		
-		if (!GetterUtil.getBoolean(PropsUtil.get(PropsUtil.TCK_URL))) {
-			String sharedSessionId = CookieUtil.get(req.getCookies(), CookieKeys.SHARED_SESSION_ID);
-
-			_log.debug("Shared session id is " + sharedSessionId);
-
-			if (sharedSessionId == null) {
-				sharedSessionId = PwdGenerator.getPassword(PwdGenerator.KEY1 + PwdGenerator.KEY2, 12);
-
-				String secure = Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("always") 
-						|| (Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("https") && req.isSecure())?CookieUtil.SECURE:"";
-				
-				String httpOnly = Config.getBooleanProperty("COOKIES_HTTP_ONLY", false)?CookieUtil.HTTP_ONLY:"";
-					
-				StringBuilder headerStr = new StringBuilder();
-				headerStr.append(CookieKeys.SHARED_SESSION_ID).append("=").append(sharedSessionId).append(";").append(secure).append(";").append(httpOnly).append(";Path=/").append(";Max-Age=86400");
-				res.addHeader("SET-COOKIE", headerStr.toString());
-
-				_log.debug("Shared session id is " + sharedSessionId);
-			}
-
-			// if (ses.getAttribute(WebKeys.SHARED_SESSION_ID) == null) {
-			ses.setAttribute(WebKeys.SHARED_SESSION_ID, sharedSessionId);
-			// }
-
-			HttpSession portalSes = (HttpSession) SharedSessionPool.get(sharedSessionId);
-
-			if ((portalSes == null) || (ses != portalSes)) {
-				if (portalSes == null) {
-					_log.debug("No session exists in pool");
-				} else {
-					_log.debug("Session " + portalSes.getId() + " in pool is old");
-				}
-
-				_log.debug("Inserting current session " + ses.getId() + " in pool");
-
-				SharedSessionPool.put(sharedSessionId, ses);
-			}
-		}
-
-		// Test CAS auto login
 
 		/*
 		 * ses.setAttribute(

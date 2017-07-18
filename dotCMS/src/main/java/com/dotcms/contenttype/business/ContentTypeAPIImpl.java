@@ -318,7 +318,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   }
 
   public Map<String, Long> getEntriesByContentTypes() throws DotDataException {
-    String query = "{" + "  \"aggs\" : {" + "    \"entries\" : {" + "       \"terms\" : { \"field\" : \"contenttype\" }"
+    String query = "{" + "  \"aggs\" : {" + "    \"entries\" : {" + "       \"terms\" : { \"field\" : \"contenttype\",  \"size\" : 0 }"
         + "     }" + "   }," + "   size:0" + "}";
 
     try {

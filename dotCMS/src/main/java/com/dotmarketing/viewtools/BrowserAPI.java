@@ -1,21 +1,9 @@
 package com.dotmarketing.viewtools;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.Versionable;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.comparators.WebAssetMapComparator;
@@ -41,6 +29,10 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+
+import java.util.*;
+
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
 public class BrowserAPI {
 
@@ -230,6 +222,12 @@ public class BrowserAPI {
 		if (parent == null) {// If we didn't find a parent folder lets verify if
 								// this is a host
 			host = APILocator.getHostAPI().find(folderId, user, false);
+
+            if ( host == null ){
+                Logger.error( this, "Folder ID doesn't belong to a Folder nor a Host, id: " + folderId +
+                                                    ", maybe the Folder was modified in the background." );
+                throw new NotFoundInDbException( "Folder ID doesn't belong to a Folder nor a Host, id: " + folderId );
+            }
 		}
 
 		if (!noFolders) {
@@ -438,6 +436,12 @@ public class BrowserAPI {
 					.getFileExtension(fileAsset.getFileName()));
 			fileMap.put("path", fileAsset.getPath());
 			fileMap.put("type", fileAsset.getType());
+			Host hoster = APILocator.getHostAPI().find(ident.getHostId(), APILocator.systemUser(), false);
+            fileMap.put("hostName", hoster.getHostname());
+			
+			
+			
+			
 			if(wfdata!=null) {
     			fileMap.put("wfActionMapList", wfdata.wfActionMapList);
     			fileMap.put("contentEditable", wfdata.contentEditable);

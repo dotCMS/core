@@ -12,13 +12,15 @@ import com.dotmarketing.exception.DotDataException;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -183,5 +185,62 @@ public class PublishingEndPointAPITest extends IntegrationTestBase{
 		}
 		
 		HibernateUtil.commitTransaction();
+	}
+
+	@Test
+	public void getEnabledSendingEndPointByAddress_returnEndpoint_whenNetmaskIsUsed() throws DotDataException {
+
+		PublishingEndPoint endPoint, endPointResult;
+
+		endPoint =
+			createPublishingEndPoint("10", "G03", "Netmask Endpoint", "192.168.1.0/24",
+				"90", "http", true, "123456",
+				true);
+		// Insert test end point netmask
+		api.saveEndPoint(endPoint);
+
+		validateEndPoint(endPoint, "192.168.1.60");
+	}
+
+	@Test
+	public void getEnabledSendingEndPointByAddress_returnEndpoint_whenIPAddressIsUsed() throws DotDataException {
+		PublishingEndPoint endPoint, endPointResult;
+
+		endPoint =
+			createPublishingEndPoint("11", "G03", "IP Endpoint", "192.168.1.60",
+				"90", "http", true, "123456", true);// Insert test end point netmask
+
+		api.saveEndPoint(endPoint);
+
+		validateEndPoint(endPoint, "192.168.1.60");
+	}
+
+	@Test
+	public void getEnabledSendingEndPointByAddress_returnNull_whenInvalidAddressIsReceived() throws DotDataException {
+		PublishingEndPoint endPoint =
+			createPublishingEndPoint("12", "G03", "Netmask Endpoint", "192.168.1.0/24",
+				"90", "http", true, "123456",
+				true);
+		// Insert test end point netmask
+		api.saveEndPoint(endPoint);
+
+		try {
+			assertNull(api.findEnabledSendingEndPointByAddress("192.168.2.60"));
+		}finally{
+			// Delete endpoint
+			api.deleteEndPointById(endPoint.getId());
+		}
+	}
+
+	private void validateEndPoint(PublishingEndPoint endPoint, String address) throws DotDataException {
+		PublishingEndPoint endPointResult;
+		try{
+			endPointResult = api.findEnabledSendingEndPointByAddress(address);
+			assertNotNull(endPointResult);
+			assertEquals(endPointResult.getId(), endPoint.getId());
+		}finally{
+			// Delete endpoint
+			api.deleteEndPointById(endPoint.getId());
+		}
 	}
 }

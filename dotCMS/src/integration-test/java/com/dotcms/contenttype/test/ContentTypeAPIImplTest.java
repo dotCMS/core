@@ -357,7 +357,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			assertThat("contenttype is in db", testing.equals(type));
 			ContentTypeBuilder builder = ContentTypeBuilder.builder(type);
 
-			builder.host(Constants.DEFUALT_HOST);
+			builder.host(Constants.DEFAULT_HOST);
 			builder.folder(Constants.ABOUT_US_FOLDER);
 
 			if (type instanceof UrlMapable) {
@@ -735,6 +735,92 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
         Assert.assertEquals( SECOND_NAME, fieldFound.name() );
 
 		//Deleting content type.
+		delete(contentType);
+	}
+	
+	/*
+	 * Github: https://github.com/dotCMS/core/issues/11861
+	 * 
+	 * Creates a Widget and a couple of DateTimeFields (Publish and Expire) and set it as Publish and Expire properties in the Content Type.
+	 */
+	@Test
+	public void testWidgetContentTypeWithPublishExpireFields() throws Exception{
+		int base = BaseContentType.WIDGET.ordinal();
+		createContentTypeWithPublishExpireFields(base);
+        
+	}
+	
+	/*
+	 * Github: https://github.com/dotCMS/core/issues/11861
+	 * 
+	 * Creates a Page and a couple of DateTimeFields (Publish and Expire) and set it as Publish and Expire properties in the Content Type.
+	 */
+	@Test
+	public void testPageContentTypeWithPublishExpireFields() throws Exception{
+		int base = BaseContentType.HTMLPAGE.ordinal();
+		createContentTypeWithPublishExpireFields(base);
+	}
+	
+	/*
+	 * Github: https://github.com/dotCMS/core/issues/11861
+	 * 
+	 * Creates a File and a couple of DateTimeFields (Publish and Expire) and set it as Publish and Expire properties in the Content Type.
+	 */
+	@Test
+	public void testFileContentTypeWithPublishExpireFields() throws Exception{
+		int base = BaseContentType.FILEASSET.ordinal();
+		createContentTypeWithPublishExpireFields(base);
+        
+	}
+	
+	/*
+	 * Github: https://github.com/dotCMS/core/issues/11861
+	 * 
+	 * Creates a Form and a couple of DateTimeFields (Publish and Expire) and set it as Publish and Expire properties in the Content Type.
+	 */
+	@Test
+	public void testFormContentTypeWithPublishExpireFields() throws Exception{
+		int base = BaseContentType.FORM.ordinal();
+		createContentTypeWithPublishExpireFields(base);
+        
+	}
+	
+	/*
+	 * Github: https://github.com/dotCMS/core/issues/11861
+	 * 
+	 * Creates a Persona and a couple of DateTimeFields (Publish and Expire) and set it as Publish and Expire properties in the Content Type.
+	 */
+	@Test
+	public void testPersonaContentTypeWithPublishExpireFields() throws Exception{
+		int base = BaseContentType.PERSONA.ordinal();
+        createContentTypeWithPublishExpireFields(base);
+	}
+	
+	private void createContentTypeWithPublishExpireFields(int base) throws Exception{
+		long time = System.currentTimeMillis();
+
+		ContentType contentType = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base))
+				.description("ContentTypeWithPublishExpireFields " + time).folder(FolderAPI.SYSTEM_FOLDER)
+				.host(Host.SYSTEM_HOST).name("ContentTypeWithPublishExpireFields " + time)
+				.owner(APILocator.systemUser().toString()).variable("CTVariable").publishDateVar("publishDate")
+				.expireDateVar("expireDate").build();
+		contentType = contentTypeApi.save(contentType);
+
+		assertThat("ContentType exists", contentTypeApi.find(contentType.inode()) != null);
+
+		List<Field> fields = new ArrayList<>(contentType.fields());
+
+		Field fieldToSave = FieldBuilder.builder(DateTimeField.class).name("Publish Date").variable("publishDate")
+				.contentTypeId(contentType.id()).dataType(DataTypes.DATE).indexed(true).build();
+		fields.add(fieldToSave);
+
+		fieldToSave = FieldBuilder.builder(DateTimeField.class).name("Expire Date").variable("expireDate")
+				.contentTypeId(contentType.id()).dataType(DataTypes.DATE).indexed(true).build();
+		fields.add(fieldToSave);
+
+		contentType = contentTypeApi.save(contentType, fields);
+
+		// Deleting content type.
 		delete(contentType);
 	}
 }

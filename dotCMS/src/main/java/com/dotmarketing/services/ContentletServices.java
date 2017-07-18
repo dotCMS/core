@@ -1,5 +1,6 @@
 package com.dotmarketing.services;
 
+import com.dotcms.services.VanityUrlServices;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -163,6 +164,10 @@ public class ContentletServices {
 		if(content.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {
 		    PageServices.removePageFile(APILocator.getHTMLPageAssetAPI().fromContentlet(content), identifier, EDIT_MODE);
 		}
+		if(content != null && content.isVanityUrl()){
+			//remove from cache
+			VanityUrlServices.getInstance().invalidateVanityUrl(content);
+		}
 	}
 
 	public static InputStream buildVelocity(Contentlet content, Identifier identifier, boolean EDIT_MODE) throws DotDataException, DotSecurityException {
@@ -243,30 +248,41 @@ public class ContentletServices {
 
 			}
 
-			if (field.getFieldType().equals(Field.FieldType.IMAGE.toString())) {
+			if (field.getFieldType().equals(Field.FieldType.IMAGE.toString()) || field.getFieldType().equals(Field.FieldType.FILE.toString())) {
 				String identifierValue= content.getStringProperty(field.getVelocityVarName());
 				if( InodeUtils.isSet(identifierValue) ) {
 					if (EDIT_MODE){
 						sb.append("#set($" ).append( field.getVelocityVarName() ).append( "Object= $filetool.getFile('" ).append( identifierValue ).append( "',false,").append(content.getLanguageId()).append(" ))");
 					}else{
 						sb.append("#set($" ).append( field.getVelocityVarName() ).append( "Object= $filetool.getFile('" ).append( identifierValue ).append( "',true,").append(content.getLanguageId()).append(" ))");
-					}
+					}     
 				}else{
 					sb.append("#set($" ).append( field.getVelocityVarName() ).append( "Object= $filetool.getNewFile())");
 				}
+                if(field.getFieldType().equals(Field.FieldType.IMAGE.toString())){
+                    sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageInode=$!{" ).append( field.getVelocityVarName() ).append( "Object.getInode()} )");
+                    sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageIdentifier=$!{" ).append( field.getVelocityVarName() ).append( "Object.getIdentifier()} )");
+                    sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageWidth=$!{" ).append( field.getVelocityVarName() ).append( "Object.getWidth()} )");
+                    sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageHeight=$!{" ).append( field.getVelocityVarName() ).append( "Object.getHeight()} )");
+                    sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageExtension=$!{" ).append( field.getVelocityVarName() ).append( "Object.getExtension()} )");
+                    sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageURI=$filetool.getURI($!{" ).append( field.getVelocityVarName() ).append( "Object}, ").append(content.getLanguageId()).append(" ))");
+                    sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageTitle=$UtilMethods.espaceForVelocity($!{" ).append( field.getVelocityVarName() ).append( "Object.getTitle()}) )");
+                    sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageFriendlyName=$UtilMethods.espaceForVelocity($!{" ).append( field.getVelocityVarName() ).append( "Object.getFriendlyName()}) )");
 
-				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageInode=$" ).append( field.getVelocityVarName() ).append( "Object.getInode() )");
-				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageIdentifier=$" ).append( field.getVelocityVarName() ).append( "Object.getIdentifier() )");
-				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageWidth=$" ).append( field.getVelocityVarName() ).append( "Object.getWidth() )");
-				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageHeight=$" ).append( field.getVelocityVarName() ).append( "Object.getHeight() )");
-				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageExtension=$" ).append( field.getVelocityVarName() ).append( "Object.getExtension() )");
-				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageURI=$filetool.getURI($" ).append( field.getVelocityVarName() ).append( "Object, ").append(content.getLanguageId()).append(" ))");
-				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageTitle=$UtilMethods.espaceForVelocity($" ).append( field.getVelocityVarName() ).append( "Object.getTitle()) )");
-				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageFriendlyName=$UtilMethods.espaceForVelocity($" ).append( field.getVelocityVarName() ).append( "Object.getFriendlyName()) )");
+                    sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImagePath=$!{" ).append( field.getVelocityVarName() ).append( "Object.getPath()})");
+                    sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageName=$!{" ).append( field.getVelocityVarName() ).append( "Object.getFileName()})");
 
-				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImagePath=$" ).append( field.getVelocityVarName() ).append( "Object.getPath())");
-				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "ImageName=$" ).append( field.getVelocityVarName() ).append( "Object.getFileName())");
+                } else {
+                    sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileInode=$!{" ).append( field.getVelocityVarName() ).append( "Object.getInode()} )");
+                    sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileIdentifier=$!{" ).append( field.getVelocityVarName() ).append( "Object.getIdentifier()} )");
+                    sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileExtension=$!{" ).append( field.getVelocityVarName() ).append( "Object.getExtension()} )");
+                    sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileURI=$filetool.getURI($!{" ).append( field.getVelocityVarName() ).append( "Object}, ").append(content.getLanguageId()).append(" ))");
+                    sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileTitle=$!{" ).append( field.getVelocityVarName() ).append( "Object.getTitle()} )");
+                    sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileFriendlyName=$UtilMethods.espaceForVelocity($!{" ).append( field.getVelocityVarName() ).append( "Object.getFriendlyName()} ))");
 
+                    sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FilePath=$UtilMethods.espaceForVelocity($!{" ).append( field.getVelocityVarName() ).append( "Object.getPath()}) )");
+                    sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileName=$UtilMethods.espaceForVelocity($!{" ).append( field.getVelocityVarName() ).append( "Object.getFileName()} ))");
+                } 
 			}//	http://jira.dotmarketing.net/browse/DOTCMS-2178
 			else if (field.getFieldType().equals(Field.FieldType.BINARY.toString())){
 				java.io.File binFile;
@@ -286,29 +302,6 @@ public class ContentletServices {
 				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "BinaryFileSize=\"" ).append( UtilMethods.espaceForVelocity(filesize) ).append( "\" )");
 				String binaryFileURI= fileName.length()>0? UtilMethods.espaceForVelocity("/contentAsset/raw-data/"+content.getIdentifier()+"/"+ field.getVelocityVarName() + "/" + content.getInode()):"";
 				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "BinaryFileURI=\"" ).append( binaryFileURI).append("\" )");
-			}else if (field.getFieldType().equals(Field.FieldType.FILE.toString())) {
-				String identifierValue= content.getStringProperty(field.getVelocityVarName());
-				if( InodeUtils.isSet(identifierValue) ) {
-					if (EDIT_MODE){
-						sb.append("#set($" ).append( field.getVelocityVarName() ).append( "Object= $filetool.getFile('" ).append( identifierValue ).append( "',false,").append(content.getLanguageId()).append(" ))");
-					}else{
-						sb.append("#set($" ).append( field.getVelocityVarName() ).append( "Object= $filetool.getFile('" ).append( identifierValue ).append( "',true,").append(content.getLanguageId()).append(" ))");
-					}
-				}else{
-					sb.append("#set($" ).append( field.getVelocityVarName() ).append( "Object= $filetool.getNewFile())");
-				}
-
-				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileInode=$" ).append( field.getVelocityVarName() ).append( "Object.getInode() )");
-				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileIdentifier=$" ).append( field.getVelocityVarName() ).append( "Object.getIdentifier() )");
-				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileExtension=$" ).append( field.getVelocityVarName() ).append( "Object.getExtension() )");
-				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileURI=$filetool.getURI($" ).append( field.getVelocityVarName() ).append( "Object, ").append(content.getLanguageId()).append(" ))");
-				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileTitle=$" ).append( field.getVelocityVarName() ).append( "Object.getTitle() )");
-				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileFriendlyName=$UtilMethods.espaceForVelocity($" ).append( field.getVelocityVarName() ).append( "Object.getFriendlyName() ))");
-
-				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FilePath=$UtilMethods.espaceForVelocity($" ).append( field.getVelocityVarName() ).append( "Object.getPath()) )");
-				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "FileName=$UtilMethods.espaceForVelocity($" ).append( field.getVelocityVarName() ).append( "Object.getFileName()) )");
-
-
 			} else if (field.getFieldType().equals(Field.FieldType.SELECT.toString())) {
 				sb.append("#set($" ).append( field.getVelocityVarName() ).append( "SelectLabelsValues=\"" ).append( field.getValues().replaceAll("\\r\\n", " ").replaceAll("\\n", " ") ).append( "\")");
 			} else if (field.getFieldType().equals(Field.FieldType.RADIO.toString())) {

@@ -31,8 +31,6 @@ import static com.dotcms.util.CollectionsUtils.map;
  */
 public class ContentTypeHelper implements Serializable {
 
-    private static final String N_ENTRIES_FIELD_NAME = "nEntries";
-
     private static final Map<Locale, Map<String, String>> BASE_CONTENT_TYPE_LABELS = new HashMap<>();
 
     private static class SingletonHolder {
@@ -79,38 +77,38 @@ public class ContentTypeHelper implements Serializable {
         List<BaseContentTypesView> result = list();
 
 
-            Locale locale = LocaleUtil.getLocale(request);
-            Map<String, String> baseContentTypeNames = this.getBaseContentTypeNames(locale);
-            BaseContentTypesViewCollection baseContentTypesViewCollection = new BaseContentTypesViewCollection();
+        Locale locale = LocaleUtil.getLocale(request);
+        Map<String, String> baseContentTypeNames = this.getBaseContentTypeNames(locale);
+        BaseContentTypesViewCollection baseContentTypesViewCollection = new BaseContentTypesViewCollection();
 
-            types.stream()
-                    .forEach(type -> {
+        types.stream()
+                .forEach(type -> {
 
-                        baseContentTypesViewCollection.add(new ContentTypeView(
-                                type.baseType().toString(), 
-                                type.name(), 
-                                type.id(),
-                                contentTypeUtil.getActionUrl(request, type, user)
-                            ));
+                    baseContentTypesViewCollection.add(new ContentTypeView(
+                            type.baseType().toString(),
+                            type.name(),
+                            type.id(),
+                            contentTypeUtil.getActionUrl(request, type, user)
+                    ));
 
-                                
-                    });
 
-            result = baseContentTypesViewCollection.getStructureTypeView(baseContentTypeNames);
+                });
 
-            addRecents(request, user, BaseContentType.CONTENT, result);
-            addRecents(request, user, BaseContentType.WIDGET, result);
-        
+        result = baseContentTypesViewCollection.getStructureTypeView(baseContentTypeNames);
+
+        addRecents(request, user, BaseContentType.CONTENT, result);
+        addRecents(request, user, BaseContentType.WIDGET, result);
+
 
         return result;
     }
 
     private void addRecents(final HttpServletRequest request, final User user, BaseContentType baseType,
-                                            List<BaseContentTypesView>  baseContentTypesView)
+                            List<BaseContentTypesView>  baseContentTypesView)
             throws DotDataException, LanguageException {
 
         Locale locale = LocaleUtil.getLocale(request);
-        
+
         List<ContentTypeView> recentsContent = new ArrayList<>();
         List<ContentType> types = APILocator.getContentTypeAPI(user, true).recentlyUsed(baseType, -1);
         for(ContentType type : types){
@@ -141,7 +139,8 @@ public class ContentTypeHelper implements Serializable {
                     BaseContentType.FORM.name(), LanguageUtil.get(locale, "Form"),
                     BaseContentType.FILEASSET.name(), LanguageUtil.get(locale, "File"),
                     BaseContentType.HTMLPAGE.name(), LanguageUtil.get(locale, "HTMLPage"),
-                    BaseContentType.PERSONA.name(), LanguageUtil.get(locale, "Persona")
+                    BaseContentType.PERSONA.name(), LanguageUtil.get(locale, "Persona"),
+                    BaseContentType.VANITY_URL.name(), LanguageUtil.get(locale, "VanityURL")
             );
 
             BASE_CONTENT_TYPE_LABELS.put(locale, map);
@@ -150,46 +149,6 @@ public class ContentTypeHelper implements Serializable {
         return map;
 
     } // getBaseContentTypeNames.
-
-    public List<Map<String, Object>> getContentTypes(User user, String query, int offset, int limit, String orderby, String direction)
-            throws DotDataException {
-        List<Structure> structures = this.structureAPI.find(user, false, false, query, orderby,
-                limit, offset, direction);
-        Map<String, Long> entriesByContentTypes = getEntriesByContentTypes(user);
-
-        List<Map<String, Object>> result = structures.stream()
-                .map(contentType -> {
-                    Map<String, Object> map = contentType.getMap();
-
-                    if (entriesByContentTypes != null) {
-                        String key = contentType.getVelocityVarName().toLowerCase();
-                        Long contentTypeEntriesNumber = entriesByContentTypes.get(key) == null ? 0l :
-                                entriesByContentTypes.get(key);
-                        map.put(N_ENTRIES_FIELD_NAME, contentTypeEntriesNumber);
-                    }
-
-                    return map;
-                })
-                .collect(Collectors.toList());
-
-        if (N_ENTRIES_FIELD_NAME.equals(orderby)){
-            result.sort( (contentType1, contentType2) -> {
-                long l1 = (long) contentType1.get(N_ENTRIES_FIELD_NAME);
-                long l2 = (long) contentType2.get(N_ENTRIES_FIELD_NAME);
-                return "asc".equals(direction) ? (int) (l1 - l2) : (int) (l2 - l1);
-            });
-        }
-
-        return result;
-    }
-
-    private Map<String, Long> getEntriesByContentTypes(User user) {
-        try {
-            return APILocator.getContentTypeAPI(user, true).getEntriesByContentTypes();
-        } catch (Exception e) {
-            return null;
-        }
-    }
 
     public long getContentTypesCount(String condition) throws DotDataException {
         return this.structureAPI.countStructures(condition);

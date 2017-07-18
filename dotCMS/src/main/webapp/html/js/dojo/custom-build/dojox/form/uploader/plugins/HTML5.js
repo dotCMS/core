@@ -165,7 +165,14 @@ var pluginsHTML5 = declare("dojox.form.uploader.plugins.HTML5", [], {
 			if(xhr.readyState === 4){
 //				console.info("COMPLETE")
 				clearInterval(timer);
-				this.onComplete(JSON.parse(xhr.responseText.replace(/^\{\}&&/,'')));
+				try{
+					this.onComplete(JSON.parse(xhr.responseText.replace(/^\{\}&&/,'')));
+				}catch(e){
+					var msg = "Error parsing server result:";
+					console.error(msg, e);
+					console.error(xhr.responseText);
+					this.onError(msg, e);
+				}
 			}
 		});
 		xhr.open("POST", this.getUrl());

@@ -19,11 +19,15 @@ class MSSQLCategorySQL extends CategorySQL{
 		return "drop table category_reorder";
 	}
 	
-	public String getCreateSortChildren(String inode) {
+	public String getCreateSortChildren() {
 		return " SELECT category.inode, row_number() over (order by sort_order) rnum " +
 				" into category_reorder from inode category_1_, category, tree where " +
-				"category.inode = tree.child and tree.parent = '" + inode + "' and category_1_.inode = category.inode " +
+				"category.inode = tree.child and tree.parent = ? and category_1_.inode = category.inode " +
 				" and category_1_.type = 'category' order by sort_order; ";
 	}
+
+    public String createCategoryReorderTable() {
+        return "CREATE TABLE category_reorder(inode NVARCHAR(36), rnum int)";
+    }
 
 }
