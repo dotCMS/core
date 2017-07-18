@@ -113,9 +113,12 @@ public class DbConnectionFactoryTest extends IntegrationTestBase {
 
             assertThat("Already in transaction", !alreadyTransaction);
             if (nest < 10) {
-                testNestedTransactionsWrap(nest + 1);
+                try {
+                    testNestedTransactionsWrap(nest + 1);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
-            return null;
         });
 
     }

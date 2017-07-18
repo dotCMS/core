@@ -1,44 +1,66 @@
-/*
- * Created on Sep 23, 2004
- *
- */
 package com.dotmarketing.portlets.languagesmanager.action;
 
-
-
 import java.sql.SQLException;
+
+import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
+import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
 
-
 /**
+ * This Struts action will handle all the requests related to adding, updating or deleting a system
+ * Language. This action is called from the Languages editing page.
+ * 
  * @author alex
  * @author davidtorresv
+ * @version N/A
+ * @since Mar 22, 2012
  *
  */
 public class EditLanguageAction extends DotPortletAction {
 	
-	private LanguageAPI langAPI = APILocator.getLanguageAPI();
+	private final LanguageAPI languageAPI;
+
+	/**
+	 * Default class constructor.
+	 */
+	public EditLanguageAction() {
+        this(APILocator.getLanguageAPI());
+    }
 	
-	
+	@VisibleForTesting
+    public EditLanguageAction(final LanguageAPI languageAPI) {
+	    this.languageAPI = APILocator.getLanguageAPI();
+    }
+
+    /**
+     * Handles all the actions associated to a system language.
+     *
+     * @param mapping - Contains all the mapping information for this Action, as specified in the
+     *        Struts configuration file.
+     * @param form - The form containing the information selected by the user in the UI.
+     * @param config - The configuration parameters for this portlet.
+     * @param req - The HTTP Request wrapper.
+     * @param res - The HTTP Response wrapper.
+     * @throws Exception An error occurred when editing a field.
+     */
     public void processAction(ActionMapping mapping, ActionForm form, PortletConfig config, ActionRequest req,
         ActionResponse res) throws Exception {
         
@@ -88,50 +110,74 @@ public class EditLanguageAction extends DotPortletAction {
 		}
         
         setForward(req, "portlet.ext.languagesmanager.edit_language");
-        
     }
 
-    /*here I retrieve the language from the database if I come from the views languages or from the form to save it*/
+    /**
+     * Retrieves the language from the database if it comes from the Languages page, or from the
+     * form to save it.
+     * 
+     * @param req - The HTTP Request wrapper.
+     * @param res - The HTTP Response wrapper.
+     * @param config - The configuration parameters for this portlet.
+     * @param form - The form containing the information selected by the user in the UI.
+     * @param languageId - The ID of the language that will be saved/updated.
+     * @throws Exception An error occurred when retrieving a language.
+     */
     private void _retrieveLanguage(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, String languageId)
     throws Exception {
-        Language language = langAPI.getLanguage(languageId);
-        if(language == null)
+        Language language = languageAPI.getLanguage(languageId);
+        if(language == null) {
         	language = new Language();
+        }
         req.setAttribute(WebKeys.LANGUAGE_MANAGER_LANGUAGE, language);
     }
     
-    
-   /* here I save the language if it exits or not in the database*/
+    /**
+     * Saves or updates the specified language.
+     * 
+     * @param req - The HTTP Request wrapper.
+     * @param res - The HTTP Response wrapper.
+     * @param config - The configuration parameters for this portlet.
+     * @param form - The form containing the information selected by the user in the UI.
+     * @throws Exception An error occurred when saving a language.
+     */
    private void _save(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form) throws Exception {
 		Language language = (Language) req.getAttribute(WebKeys.LANGUAGE_MANAGER_LANGUAGE) ;
-		
 		BeanUtils.copyProperties(language,form);
-		if(language.getLanguageCode() != "" && language.getCountryCode() != ""){
+        if (UtilMethods.isSet(language.getLanguageCode()) && UtilMethods.isSet(language.getLanguage())) {
 			try{
-				langAPI.saveLanguage(language);
-			}
-			catch(Exception e ){
+				languageAPI.saveLanguage(language);
+			} catch(Exception e ){
 				SessionMessages.add(req,"message", "message.languagemanager.languagenotsaved");
 				throw new SQLException();
 			}
 			SessionMessages.add(req,"message", "message.languagemanager.language_save");
-			_sendToReferral(req, res, "");
-
+			_sendToReferral(req, res, StringPool.BLANK);
 		}else{
 			SessionMessages.add(req,"message", "message.languagemanager.language_should_not_be_empty");
 			setForward(req, "portlet.ext.languagesmanager.edit_language");
 		}
-		
 	}
-   /* here I delete the language from the database*/
+
+   /**
+    * Deletes the specified language.
+    * 
+    * @param req - The HTTP Request wrapper.
+    * @param res - The HTTP Response wrapper.
+    * @param config - The configuration parameters for this portlet.
+    * @param form - The form containing the information selected by the user in the UI.
+    * @param languageId - The ID of the language that will be deleted.
+    * @throws Exception An error occurred when retrieving a language.
+    */
 	private void _delete(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, String languageId){
-		Language language = langAPI.getLanguage(languageId);
+		Language language = languageAPI.getLanguage(languageId);
 		try{
-			langAPI.deleteLanguage(language);
+			languageAPI.deleteLanguage(language);
 			SessionMessages.add(req,"message", "message.language.deleted");
         	Logger.debug(this, "deleted");
 		}catch (Exception e){
 			SessionMessages.add(req,"message", "message.language.content");
 		}
 	}
+
 }

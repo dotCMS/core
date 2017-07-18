@@ -1076,5 +1076,98 @@ public class DotConnect {
         }
     }
 
+    private void setParams(final PreparedStatement preparedStatement,
+                           final Object... params) throws SQLException {
+
+        for (int i = 0; i < params.length; ++i) {
+
+            preparedStatement.setObject(i+1, params[i]);
+        }
+    }
+
+    /**
+     * Executes an update operation for a preparedStatement, returns the number of affected rows.
+     * If the connection is get from a transaction context, will used it. Otherwise will create and handle an atomic transaction.
+     * @param preparedStatement String
+     * @param parameters Object array of parameters for the preparedStatement (if it does not have any, can be null). Not any checking of them
+     * @return int rows affected
+     * @throws DotDataException
+     */
+    public int executeUpdate (final String preparedStatement,
+                              final Object... parameters) throws DotDataException {
+
+        final boolean isNewTransaction = DbConnectionFactory.startTransactionIfNeeded();
+        Connection connection = null;
+        int rowsAffected = 0;
+
+        try {
+
+            connection   =  DbConnectionFactory.getConnection();
+            rowsAffected =  this.executeUpdate(connection,
+                    preparedStatement, parameters);
+
+            if (isNewTransaction) {
+                connection.commit();
+            }
+        } catch (DotDataException e) {
+
+            if (isNewTransaction) {
+                this.rollback(connection);
+            }
+           throw e;
+        } catch (Exception e) {
+
+            Logger.error(DotConnect.class, e.getMessage(), e);
+            throw new DotDataException(e.getMessage(), e);
+        } finally {
+
+            if (isNewTransaction) {
+                closeQuietly(connection);
+            }
+        }
+
+        return rowsAffected;
+    } // executeUpdate.
+
+    protected void rollback(final Connection connection) throws DotDataException {
+
+        if (null != connection) {
+
+            try {
+                connection.rollback();
+            } catch (SQLException e) {
+                throw new DotDataException(e.getMessage(), e);
+            }
+        }
+    } // rollback.
+
+    /**
+     * Executes an update operation for a preparedStatement
+     * @param connection {@link Connection}
+     * @param preparedStatementString String
+     * @param parameters Object array of parameters for the preparedStatement (if it does not have any, can be null). Not any checking of them
+     * @return int rows affected
+     * @throws DotDataException
+     */
+    public int executeUpdate (final Connection connection, final String preparedStatementString,
+                              final Object... parameters) throws DotDataException {
+
+
+        PreparedStatement preparedStatement = null;
+        int rowsAffected = 0;
+
+        try {
+
+            preparedStatement = connection.prepareStatement(preparedStatementString);
+            this.setParams(preparedStatement, parameters);
+            rowsAffected = preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+
+            Logger.error(DotConnect.class, e.getMessage(), e);
+            throw new DotDataException(e.getMessage(), e);
+        }
+
+        return rowsAffected;
+    } // executeUpdate.
 
 }

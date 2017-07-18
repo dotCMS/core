@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
 import com.dotcms.contenttype.model.type.ImmutableFormContentType;
+import com.dotcms.contenttype.model.type.ImmutableKeyValueContentType;
 import com.dotcms.contenttype.model.type.ImmutablePageContentType;
 import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
@@ -45,6 +46,7 @@ public class ImplClassContentTypeTransformer implements ContentTypeTransformer{
 	 *            - The Content Type to transform.
 	 * @return The specific Content Type sub-class based on its type.
 	 * @throws DotStateException
+	 *             The specified Content Type could not be determined.
 	 */
 	private static ContentType transformToSubclass(ContentType type) throws DotStateException{
 		final BaseContentType TYPE = type.baseType();
@@ -63,8 +65,10 @@ public class ImplClassContentTypeTransformer implements ContentTypeTransformer{
 				return ImmutablePersonaContentType.builder().from(type).build();
 			case VANITY_URL:
 				return ImmutableVanityUrlContentType.builder().from(type).build();
+			case KEY_VALUE:
+				return ImmutableKeyValueContentType.builder().from(type).build();
 			default:
-				throw new DotStateException("invalid content type");
+				throw new DotStateException("Invalid content type.");
 		}
 	}
 

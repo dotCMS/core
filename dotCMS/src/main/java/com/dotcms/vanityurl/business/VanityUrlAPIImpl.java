@@ -55,7 +55,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
     @VisibleForTesting
     public VanityUrlAPIImpl(final ContentletAPI contentletAPI,
-            final VanityUrlServices vanityUrlServices) {
+                            final VanityUrlServices vanityUrlServices) {
 
         this.contentletAPI = contentletAPI;
         this.vanityUrlServices = vanityUrlServices;
@@ -68,7 +68,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
     @Override
     public List<VanityUrl> getActiveVanityUrlsBySiteAndLanguage(final String siteId,
-            final long languageId, final User user) {
+                                                                final long languageId, final User user) {
 
         final String luceneQuery = GET_ACTIVE_VANITY_URL + " +conHost:" + siteId
                 + GET_VANITY_URL_LANGUAGE_ID
@@ -146,7 +146,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
     @Override
     public CachedVanityUrl getLiveCachedVanityUrl(final String uri, final Host site,
-            final long languageId, final User user) {
+                                                  final long languageId, final User user) {
 
         String siteId = (site != null ? site.getIdentifier() : Host.SYSTEM_HOST);
 
@@ -229,7 +229,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
      * @return a CachedVanityUrl object
      */
     private CachedVanityUrl searchLiveCachedVanityUrlBySiteAndLanguage(final String uri,
-            final String siteId, final long languageId) {
+                                                                       final String siteId, final long languageId) {
 
         CachedVanityUrl result = null;
 

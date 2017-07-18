@@ -220,7 +220,7 @@ public class CMSFilterTest {
 
     /**
      * Creates a vanity url that will change the cmsHomePage(redirect) to about-us/index.
-     * 
+     *
      * @throws IOException
      * @throws DotDataException
      */
@@ -235,7 +235,7 @@ public class CMSFilterTest {
             vanityURLContentlet = createVanityUrl("cmsHomePage", defaultHost.getIdentifier(), "/cmsHomePage",
                     "/about-us/" + CMSFilter.CMS_INDEX_PAGE, 200, 1, defaultLanguageId);
             contentletAPI.isInodeIndexed(vanityURLContentlet.getInode(), true);
-            
+
             CMSFilter cmsFilter = new CMSFilter();
             HttpServletResponse res = Mockito.mock(HttpServletResponse.class);
             MockResponseWrapper response = new MockResponseWrapper(res);
@@ -257,7 +257,7 @@ public class CMSFilterTest {
             //Delete the test Vanity URL
             contentletAPI.delete(vanityURLContentlet, user, false);
 
-            
+
             //And save it
             vanityURLContentlet = createVanityUrl("cmsHomePage Host", Host.SYSTEM_HOST, "/cmsHomePage",
                     "/about-us/" + CMSFilter.CMS_INDEX_PAGE, 200, 1, defaultLanguageId);
@@ -537,7 +537,7 @@ public class CMSFilterTest {
      * Creates a new Vanity URL contentlet
      */
     private Contentlet createVanityUrl(String title, String site, String uri,
-            String forwardTo, int action, int order, long languageId)
+                                       String forwardTo, int action, int order, long languageId)
             throws DotDataException, DotSecurityException {
         //Create the new Contentlet
         Contentlet contentlet = new Contentlet();

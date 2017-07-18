@@ -165,7 +165,7 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
 
     @Override
     public void setCachedVanityUrls(final String key,
-            final Set<CachedVanityUrl> cachedVanityUrlList) {
+                                    final Set<CachedVanityUrl> cachedVanityUrlList) {
         cache.put( key, cachedVanityUrlList, getCachedVanityUrlGroup());
     }
 
