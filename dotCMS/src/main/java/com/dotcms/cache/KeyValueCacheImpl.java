@@ -114,18 +114,20 @@ public class KeyValueCacheImpl implements KeyValueCache {
 
     @Override
     public KeyValue getByLanguageAndContentType(final String key, final long languageId, final String contentTypeId) {
+
+        KeyValue keyValue = null;
+
         try {
+
             @SuppressWarnings("unchecked")
-            Map<Long, Map<String, KeyValue>> cachedValues = Map.class.cast(this.cache.get(key, BY_LANGUAGE_CONTENT_TYPE_GROUP));
-            if (null != cachedValues) {
-                if (cachedValues.containsKey(languageId)) {
-                    return cachedValues.get(languageId).get(contentTypeId);
-                }
-            }
+            final Map<Long, Map<String, KeyValue>> cachedValues = Map.class.cast(this.cache.get(key, BY_LANGUAGE_CONTENT_TYPE_GROUP));
+            keyValue = (null != cachedValues && cachedValues.containsKey(languageId))?
+                            cachedValues.get(languageId).get(contentTypeId):null;
         } catch (DotCacheException e) {
             Logger.debug(this, String.format("Cache entry with key %s was not found.", key), e);
         }
-        return null;
+
+        return keyValue;
     }
 
     @Override

@@ -1,13 +1,10 @@
 package com.dotmarketing.db;
 
-import com.dotcms.repackage.org.apache.poi.ss.formula.functions.T;
-import com.dotcms.util.Delegate;
 import com.dotcms.util.VoidDelegate;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 
 import java.util.concurrent.Callable;
-import java.util.function.Consumer;
 
 public class LocalTransaction {
 
@@ -65,7 +62,7 @@ public class LocalTransaction {
 	 *      return null;
 	 *  }); 
 	 */
-	static public void wrap(final VoidDelegate<Void> callable) throws DotDataException {
+	static public void wrap(final VoidDelegate callable) throws DotDataException {
         final boolean localTransaction = DbConnectionFactory.startTransactionIfNeeded();
         try {
             callable.execute();

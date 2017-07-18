@@ -27,7 +27,7 @@ import com.dotmarketing.exception.DotDataException;
  * @since Jul 13, 2016
  *
  */
-public interface VoidDelegate<T> {
+public interface VoidDelegate {
 
 	/**
 	 * This method will be called by the parent routine, delegating the specific job.

@@ -341,6 +341,7 @@ public class APILocator extends Locator<APIIndex>{
 	 * @return The {@link FieldAPI} class.
 	 * @deprecated
 	 */
+	@Deprecated
 	public static com.dotmarketing.portlets.structure.business.FieldAPI getFieldAPI(){
 		return (com.dotmarketing.portlets.structure.business.FieldAPI)getInstance(APIIndex.FIELD_API);
 	}
@@ -616,6 +617,7 @@ public class APILocator extends Locator<APIIndex>{
 	 *             {@link APILocator#getContentTypeAPI(User)} in order to interact
 	 *             with Content Types.
 	 */
+	@Deprecated
 	public static StructureAPI getStructureAPI() {
 	    return (StructureAPI)getInstance(APIIndex.STRUCTURE_API);
 	}
