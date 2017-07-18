@@ -43,7 +43,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 	 * Inits the service with the user {@link ViewContext}
 	 * @param obj
 	 */
-	// TODO: remove me
+	// TODO: couldn't find a place where this is used, however it hasn't been removed since it is a deeper research to determine if it is safe to remove.
 	public void init(final Object obj) {
 		ViewContext context = (ViewContext) obj;
 		this.request = context.getRequest(); // todo: this is just getting it for the user, so instead of getting the request should get the user.
