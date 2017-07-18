@@ -1,1 +1,2 @@
-export * from './field-types.service';
+export * from './field.service';
+export * from './field-drag-drop.service';

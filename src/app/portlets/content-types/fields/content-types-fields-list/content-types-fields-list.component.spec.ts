@@ -3,7 +3,8 @@ import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement } from '@angular/core';
 import { ContentTypesFieldsListComponent } from './content-types-fields-list.component';
 import { By } from '@angular/platform-browser';
-import { Field, FieldTypesService } from '../service';
+import { FieldService, FieldDragDropService } from '../service';
+import { Field } from '../';
 
 import { DragulaModule } from 'ng2-dragula';
 import { DragulaService } from 'ng2-dragula';
@@ -17,8 +18,6 @@ describe('ContentTypesFieldsListComponent', () => {
 
     beforeEach(async(() => {
 
-        let fieldTypesService = {};
-
         DOTTestBed.configureTestingModule({
             declarations: [
                 ContentTypesFieldsListComponent
@@ -27,8 +26,9 @@ describe('ContentTypesFieldsListComponent', () => {
                 DragulaModule
             ],
             providers: [
-                { provide: FieldTypesService, useValue:  fieldTypesService },
-                DragulaService
+                DragulaService,
+                FieldDragDropService,
+                FieldService
             ]
         });
 
@@ -39,7 +39,7 @@ describe('ContentTypesFieldsListComponent', () => {
     }));
 
     it('should renderer each items', () => {
-        let fieldTypesService = fixture.debugElement.injector.get(FieldTypesService);
+        let fieldService = fixture.debugElement.injector.get(FieldService);
         let itemsData = [
             {
                 name: 'Text'
@@ -55,10 +55,10 @@ describe('ContentTypesFieldsListComponent', () => {
             }
         ];
 
-        spyOn(fieldTypesService, 'loadFieldTypes').and.returnValue(Observable.of(itemsData));
+        spyOn(fieldService, 'loadFieldTypes').and.returnValue(Observable.of(itemsData));
 
-        let dragulaService = fixture.debugElement.injector.get(DragulaService);
-        spyOn(dragulaService, 'setOptions');
+        let fieldDragDropService = fixture.debugElement.injector.get(FieldDragDropService);
+        spyOn(fieldDragDropService, 'setFieldBagOptions');
 
         comp.ngOnInit();
 
@@ -84,19 +84,17 @@ describe('ContentTypesFieldsListComponent', () => {
                 },
             };
 
-        let fieldTypesService = fixture.debugElement.injector.get(FieldTypesService);
+        let fieldTypesService = fixture.debugElement.injector.get(FieldService);
         spyOn(fieldTypesService, 'loadFieldTypes').and.returnValue(Observable.of([]));
 
-        let dragulaService = fixture.debugElement.injector.get(DragulaService);
-        spyOn(dragulaService, 'setOptions').and.callFake((name, opts) => {
-            this.opts = opts;
-            this.name = name;
-        });
+        let fieldDragDropService = fixture.debugElement.injector.get(FieldDragDropService);
+        spyOn(fieldDragDropService, 'setFieldBagOptions');
 
         comp.ngOnInit();
 
         fixture.detectChanges();
-        expect(dragulaOptions.copy).toEqual(this.opts.copy);
-        expect(dragulaName).toEqual(this.name);
+
+        expect(fieldDragDropService.setFieldBagOptions).toHaveBeenCalled();
+
     });
 });

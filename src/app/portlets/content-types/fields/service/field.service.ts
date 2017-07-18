@@ -1,12 +1,13 @@
-
-import {Injectable} from '@angular/core';
+import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs/Observable';
+import { Field, FieldType, FieldRow } from '../';
 
 /**
  * Provide method to handle with the Field Types
  */
 @Injectable()
-export class FieldTypesService {
+export class FieldService {
+
     loadFieldTypes(): Observable<FieldType[]> {
         return Observable.of([
             {
@@ -23,17 +24,4 @@ export class FieldTypesService {
             }
         ]);
     }
-}
-
-export interface FieldType {
-    name: string;
-}
-
-export interface Field {
-    fixed: boolean;
-    indexed: boolean;
-    name: string;
-    required: boolean;
-    type: string;
-    velocityVarName: string;
 }

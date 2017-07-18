@@ -1,9 +1,8 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { Field } from '../service/field-types.service';
+import { Field } from '../';
 
 /**
- * It is a Field drop into the Content types drop zone
- *
+ * This display field after being dropped into a Content Type Drop zone
  * @export
  * @class ContentTypesFieldDragabbleItemComponent
  */
@@ -15,7 +14,4 @@ export class ContentTypesFieldDragabbleItemComponent {
     @Input() field: Field;
     @Output() remove: EventEmitter<Field> = new EventEmitter();
 
-    removeField(): void {
-        this.remove.emit(this.field);
-    }
 }

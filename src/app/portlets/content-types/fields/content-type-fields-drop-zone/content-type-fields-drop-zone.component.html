@@ -1,0 +1,17 @@
+<div class="content-type-fields-drop-zone__container"
+     dragula="fields-row-bag"
+     [dragulaModel]="fieldRows"
+     data-drag-type="target">
+
+    <content-type-fields-row *ngFor="let row of fieldRows"
+                 [fieldRow]="row">
+    </content-type-fields-row>
+
+    <div *ngIf="!fieldRows.length"
+         class="content-type-fields-drop-zone__message">Drop fields here
+    </div>
+</div>  
+
+<button (click)="updateJson()">Json</button>  
+
+

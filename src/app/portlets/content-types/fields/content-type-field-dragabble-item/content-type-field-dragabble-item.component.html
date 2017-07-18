@@ -2,5 +2,5 @@
 <span>{{field.name}}</span>
 <button pButton iconButton flat 
         icon="fa-remove"
-        (click)="removeField()">
+        (click)="this.remove.emit(this.field)">
 </button> 

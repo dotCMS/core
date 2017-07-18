@@ -20,13 +20,12 @@ import { OverlayPanelModule } from 'primeng/primeng';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 import { StringUtils } from '../../../api/util/string.utils';
-import { FieldsDropZoneComponent, FieldsRowComponent } from '../fields';
 
 @Component({
-    selector: 'fields-drop-zone',
+    selector: 'content-type-fields-drop-zone',
     template: ''
 })
-class TestFieldsRowComponent {
+class TestContentTypeFieldsRowComponent {
 
 }
 
@@ -75,7 +74,7 @@ describe('ContentTypesCreateComponent', () => {
                 ContentTypesCreateComponent,
                 TestContentTypesForm,
                 TestContentTypeLayout,
-                TestFieldsRowComponent
+                TestContentTypeFieldsRowComponent
             ],
             imports: [
                 RouterTestingModule.withRoutes([{

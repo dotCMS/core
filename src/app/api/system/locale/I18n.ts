@@ -133,7 +133,7 @@ export class I18nService {
           resolve(cNode);
         });
       });
-      cNode.$markAsLoading(promise);
+      cNode.$markAsLoading(<Promise<TreeNode>> promise);
     }
 
     return Observable.defer(() => {

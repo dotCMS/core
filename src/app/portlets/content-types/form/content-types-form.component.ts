@@ -1,7 +1,7 @@
-import { BaseComponent } from '../../../../view/components/_common/_base/base-component';
+import { BaseComponent } from '../../../view/components/_common/_base/base-component';
 import { Component, ViewChild, Input, Output, EventEmitter, Renderer2 } from '@angular/core';
-import { DotcmsConfig } from '../../../../api/services/system/dotcms-config';
-import { MessageService } from '../../../../api/services/messages-service';
+import { DotcmsConfig } from '../../../api/services/system/dotcms-config';
+import { MessageService } from '../../../api/services/messages-service';
 import { NgForm, FormGroup, FormBuilder, Validators, FormControl } from '@angular/forms';
 import { Observable } from 'rxjs/Observable';
 import { SelectItem } from 'primeng/components/common/api';
@@ -266,7 +266,7 @@ export class ContentTypesFormComponent extends BaseComponent {
 
     private updateFormControls(res): void {
         if (res.license.isCommunity) {
-            this.form.get('workflow').disable(true);
+            this.form.get('workflow').disable();
         }
     }
 }

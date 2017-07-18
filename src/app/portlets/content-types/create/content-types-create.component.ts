@@ -8,7 +8,7 @@ import { LoginService } from '../../../api/services/login-service';
 import { MessageService } from '../../../api/services/messages-service';
 import { Observable } from 'rxjs/Observable';
 import { StringUtils } from '../../../api/util/string.utils';
-import { ContentTypesFormComponent } from '../common/content-types-form';
+import { ContentTypesFormComponent } from '../form';
 
 /**
  * Portlet component for edit content types
@@ -26,7 +26,6 @@ export class ContentTypesCreateComponent extends BaseComponent {
     private contentTypeName: Observable<string>;
     private contentTypeType: string;
     private contentTypeIcon: string;
-    private readyToAddFields = false;
 
     constructor(private route: ActivatedRoute, private router: Router, private contentTypesInfoService: ContentTypesInfoService,
     private stringUtils: StringUtils, messageService: MessageService, private crudService: CrudService,
@@ -69,7 +68,6 @@ export class ContentTypesCreateComponent extends BaseComponent {
 
     private handleFormSubmissionResponse(res: any): void {
         this.form.resetForm();
-        this.readyToAddFields = true;
     }
 
     private setOwnerToContentTypeData(): void {

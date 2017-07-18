@@ -3,7 +3,7 @@ import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DebugElement } from '@angular/core';
 import { ContentTypesFieldDragabbleItemComponent } from './content-type-field-dragabble-item.component';
 import { By } from '@angular/platform-browser';
-import { Field } from '../service';
+import { Field } from '../';
 
 describe('ContentTypesFieldDragabbleItemComponent', () => {
     let comp: ContentTypesFieldDragabbleItemComponent;
@@ -31,11 +31,11 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
     it('should has a span', () => {
         let field =  {
+            dataType: 'dataType',
             fixed: true,
             indexed: true,
             name: 'Field name',
             required: true,
-            type: 'type',
             velocityVarName: 'velocityName'
         };
 
@@ -50,11 +50,11 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
     it('should has a remove button', fakeAsync(() => {
         let field =  {
+            dataType: 'dataType',
             fixed: true,
             indexed: true,
             name: 'Field name',
             required: true,
-            type: 'type',
             velocityVarName: 'velocityName'
         };
 

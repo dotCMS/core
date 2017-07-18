@@ -3,13 +3,13 @@ import { By } from '@angular/platform-browser';
 import { ComponentFixture, async } from '@angular/core/testing';
 import { ContentTypesFormComponent } from './content-types-form.component';
 import { DebugElement, SimpleChange } from '@angular/core';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
+import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DropdownModule, OverlayPanelModule, ButtonModule, InputTextModule, TabViewModule } from 'primeng/primeng';
-import { DotcmsConfig } from '../../../../api/services/system/dotcms-config';
+import { DotcmsConfig } from '../../../api/services/system/dotcms-config';
 import { Observable } from 'rxjs/Observable';
-import { FieldValidationMessageModule } from '../../../../view/components/_common/field-validation-message/file-validation-message.module';
-import { MessageService } from '../../../../api/services/messages-service';
-import { MockMessageService } from '../../../../test/message-service.mock';
+import { FieldValidationMessageModule } from '../../../view/components/_common/field-validation-message/file-validation-message.module';
+import { MessageService } from '../../../api/services/messages-service';
+import { MockMessageService } from '../../../test/message-service.mock';
 import { ReactiveFormsModule } from '@angular/forms';
 
 describe('ContentTypesFormComponent', () => {

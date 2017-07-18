@@ -6,7 +6,6 @@
         (onSubmit)="handleFormSubmit($event)"
         (onCancel)="router.navigate(['../'], { relativeTo: route })">
     </content-types-form>
-    <div *ngIf="readyToAddFields">
-        <fields-drop-zone></fields-drop-zone>
-    </div>
+
+    <content-type-fields-drop-zone></content-type-fields-drop-zone>
 </content-type-layout>

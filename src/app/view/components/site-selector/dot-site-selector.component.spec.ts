@@ -89,6 +89,7 @@ describe('Site Selector Component', () => {
     searchableDropdownComponent.pageChange.emit({
       filter: filter,
       first: 10,
+      page: 2,
       pageCount: 10,
       rows: 0
     });

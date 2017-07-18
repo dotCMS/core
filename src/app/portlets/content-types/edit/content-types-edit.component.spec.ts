@@ -4,9 +4,9 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
 import { ContentTypesEditComponent } from './content-types-edit.component';
-import { ContentTypesFormComponent} from '../common/content-types-form';
+import { ContentTypesFormComponent} from '../form';
 import { ContentTypesInfoService } from '../../../api/services/content-types-info';
-import { ContentTypesLayoutComponent } from '../common/content-type-layout/content-types-layout.component';
+import { ContentTypesLayoutComponent } from '../layout';
 import { CrudService } from '../../../api/services/crud/crud.service';
 import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';
 import { DOTTestBed } from '../../../test/dot-test-bed';
@@ -20,13 +20,16 @@ import { OverlayPanelModule } from 'primeng/primeng';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 import { StringUtils } from '../../../api/util/string.utils';
+import { ContentType } from '../main';
+import { tick, fakeAsync } from '@angular/core/testing';
+import { Field } from '../fields';
 
 @Component({
-    selector: 'fields-drop-zone',
+    selector: 'content-type-fields-drop-zone',
     template: ''
 })
-class TestFieldsRowComponent {
-
+class TestContentTypeFieldsDropZone {
+    @Input() fields: Field[];
 }
 
 @Component({
@@ -75,7 +78,7 @@ describe('ContentTypesEditComponent', () => {
                 ContentTypesEditComponent,
                 TestContentTypesForm,
                 TestContentTypeLayout,
-                TestFieldsRowComponent
+                TestContentTypeFieldsDropZone
             ],
             imports: [
                 RouterTestingModule.withRoutes([{
@@ -115,7 +118,7 @@ describe('ContentTypesEditComponent', () => {
         expect(contentTypeForm).not.toBeNull();
     });
 
-    it('should get the content type data with the id in the url', async(() => {
+    it('should get the content type data with the id in the url', () => {
         url = [
             new UrlSegment('edit', { name: 'edit' }),
             new UrlSegment('1234-identifier', { name: '1234-identifier' })
@@ -132,9 +135,9 @@ describe('ContentTypesEditComponent', () => {
         fixture.detectChanges();
 
         expect(crudService.getDataById).toHaveBeenCalledWith('v1/contenttype', '1234-identifier');
-    }));
+    });
 
-    it('should have call content types endpoint with widget data', async(() => {
+    it('should have call content types endpoint with widget data', () => {
         url = [
             new UrlSegment('edit', { name: 'edit' }),
             new UrlSegment('1234-identifier', { name: '1234-identifier' })
@@ -169,5 +172,5 @@ describe('ContentTypesEditComponent', () => {
             id: '1234-identifier',
             name: 'Hello World'
         });
-    }));
+    });
 });

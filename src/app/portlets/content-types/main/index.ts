@@ -1,3 +1,6 @@
+
+import { Field } from '../fields';
+
 export * from './content-types.component';
 
 export interface ContentType {
@@ -5,7 +8,7 @@ export interface ContentType {
     defaultType: boolean;
     description?: string;
     detailPage?: string;
-    fields?: Array<string>;
+    fields?: Array<Field>;
     fixed: boolean;
     folder: string;
     host: string;

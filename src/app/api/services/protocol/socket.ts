@@ -39,7 +39,9 @@ export class EventsSocket extends Protocol {
     constructor(private url: Url, configParams: ConfigParams, loggerService: LoggerService,
                 private coreWebService: CoreWebService) {
 
-        super(loggerService, configParams.websocketReconnectTime);
+        super(loggerService, {
+            timeWaitToReconnect: configParams.websocketReconnectTime
+        });
 
         this.isWebSocketServerSupport = configParams.disabledWebsockets ? WEB_SOCKET_SERVER_SUPPORT.NOT_SUPPORTED
             : WEB_SOCKET_SERVER_SUPPORT.DONT_NOW;
