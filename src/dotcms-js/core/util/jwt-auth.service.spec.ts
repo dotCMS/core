@@ -2,7 +2,6 @@ import {inject, TestBed} from '@angular/core/testing';
 import {BaseRequestOptions, ConnectionBackend, Http, ResponseOptions, Response} from '@angular/http';
 import {MockBackend, MockConnection} from '@angular/http/testing';
 
-import {FileSystemService} from './filesystem.service';
 import {JWTAuthService} from './jwt-auth.service';
 import {LocalStoreService} from './local-store.service';
 import {LoggerService} from './logger.service';
@@ -28,7 +27,6 @@ describe('JWT Auth Service', () => {
                     }
                 },
                 {provide: AppConfig, useValue: AppConfig},
-                {provide: FileSystemService, useClass: FileSystemService},
                 {provide: JWTAuthService, useClass: JWTAuthService},
                 {provide: LoggerService, useClass: LoggerService},
                 {provide: NotificationService, useClass: NotificationService},

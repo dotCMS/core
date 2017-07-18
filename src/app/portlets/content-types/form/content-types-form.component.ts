@@ -187,7 +187,7 @@ export class ContentTypesFormComponent extends BaseComponent {
     private getDateVarOptions(fields): SelectItem[] {
         let dateVarOptions = fields
             .filter(item => {
-                return item.dataType === 'DATE_TIME' && item.indexed;
+                return item.clazz === 'com.dotcms.contenttype.model.field.ImmutableDateTimeField' && item.indexed;
             })
             .map(item => {
                 return {

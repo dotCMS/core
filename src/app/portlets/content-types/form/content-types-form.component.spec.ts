@@ -198,13 +198,13 @@ describe('ContentTypesFormComponent', () => {
         comp.data = {
             fields: [
                 {
-                    dataType: 'DATE_TIME',
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
                     id: '123',
                     indexed: true,
                     name: 'Date 1'
                 },
                 {
-                    dataType: 'DATE_TIME',
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
                     id: '456',
                     indexed: true,
                     name: 'Date 2'
