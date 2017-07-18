@@ -55,7 +55,7 @@ public class Task04200CreateDefaultVanityURL extends AbstractJDBCStartupTask {
     private static final int INT_2 = 2;
     private static final int INT_1 = 1;
     private static final String TEXT_FIELD = "com.dotcms.contenttype.model.field.TextField";
-    private static final String CUSTOM_FIELD ="com.dotcms.contenttype.model.field.CustomField";
+    private static final String CUSTOM_FIELD = "com.dotcms.contenttype.model.field.CustomField";
     private static final String SELECT_FIELD = "com.dotcms.contenttype.model.field.SelectField";
 
     @Override
@@ -142,7 +142,6 @@ public class Task04200CreateDefaultVanityURL extends AbstractJDBCStartupTask {
         fields.add(setFieldElements("Title", TEXT_FIELD, "",
                 "text1", true, true, true, "title", INT_1, "", "", "", "", true, false, true));
 
-
         fields.add(setFieldElements("Site", CUSTOM_FIELD, "",
                 "text2", true, false, true, "site", INT_2,
                 "$velutil.mergeTemplate('/static/content/site_selector_field_render.vtl')", "", "",
@@ -153,7 +152,7 @@ public class Task04200CreateDefaultVanityURL extends AbstractJDBCStartupTask {
                         true, true, true, "uri", INT_3, "", "", "", "", true, false, true));
 
         fields.add(setFieldElements("Action", SELECT_FIELD, "",
-                "integer1", true, true, false, "action", INT_4,
+                "integer1", true, true, true, "action", INT_4,
                 "200 - Forward|200\r\n301 - Permanent Redirect|301\r\n302 - Temporary Redirect|302\r\n401 - Auth Required|401\r\n403 - Auth Failed|403\r\n404 - Missing|404\r\n500 - Error|500",
                 "", "", "", true, false, true));
 
@@ -164,8 +163,7 @@ public class Task04200CreateDefaultVanityURL extends AbstractJDBCStartupTask {
                         "", "", "", true, false, false));
 
         fields.add(setFieldElements("Order", TEXT_FIELD, "",
-                "integer2", true, true, false, "order", INT_6, "", "", "", "0", true, false, true));
-
+                "integer2", true, false, true, "order", INT_6, "", "", "", "0", true, false, true));
 
         return fields;
     }
