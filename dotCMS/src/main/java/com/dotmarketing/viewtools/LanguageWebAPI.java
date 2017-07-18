@@ -72,7 +72,7 @@ public class LanguageWebAPI implements ViewTool {
 	}
 
 	/**
-	 * Return if the DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE property is activated or not
+	 * Return if the MULTILINGUAGE_FALLBACK property is activated or not
 	 * defaults to false
 	 * @return boolean
 	 */

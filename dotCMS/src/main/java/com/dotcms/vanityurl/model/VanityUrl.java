@@ -14,7 +14,7 @@ import java.util.Map;
  *
  * @author oswaldogallango
  */
-public interface VanityUrl extends Serializable, Versionable, Permissionable, Treeable, Ruleable, Comparable {
+public interface VanityUrl extends Serializable, Versionable, Permissionable, Treeable, Ruleable {
 
     /**
      * Get the Vanity URL identifier

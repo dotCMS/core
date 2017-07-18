@@ -98,9 +98,9 @@ var pushHandler = new dotcms.dojo.push.PushHandler('Push Publish');
                     <portlet:param name="referer" value="<%= referer %>" />
                     <portlet:param name="<%= Constants.CMD %>" value="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, \"edit\")) %>" /></portlet:actionURL>">
 					<img
-					src="/html/images/languages/<%= strLangCode %>_<%= strCountryCode %>.gif"
+					src="/html/images/languages/<%= strLangCode %>_<%= (UtilMethods.isSet(strCountryCode) ? strCountryCode : strLangCode) %>.gif"
 					border="0" />
-					<%= strLanguage+"&nbsp;("+strCountryCode+")&nbsp;" %>
+					<%= strLanguage %>&nbsp;<%= (UtilMethods.isSet(strCountryCode) ? ("(" + strCountryCode + ")&nbsp;") : StringPool.BLANK) %>
 			    </a>
 			</td>
 		    <% } else { %>
