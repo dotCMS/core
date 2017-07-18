@@ -339,6 +339,7 @@ public class ImportContentletsAction extends DotPortletAction {
 				session.setAttribute(ENCODE_TYPE, encodeType);
 				detector.reset();
 			}catch (IOException e){
+            	Logger.error(this.getClass(), e.getMessage());
 				throw e;
 			}
         }
