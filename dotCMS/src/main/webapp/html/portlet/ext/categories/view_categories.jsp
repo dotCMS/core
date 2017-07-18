@@ -71,6 +71,13 @@
 
     dojo.connect(dojo.global, "onhashchange", refresh);
 
+    var actions = "";
+
+    var previousGlobalInode = "";
+    var previousGlobalName = "";
+
+    var currentGlobalInode = "0";
+    var currentGlobalName = "Top Level";
 
     function refresh() {
 
@@ -81,6 +88,31 @@
         } else {
             doSearchHash(hashValue);
         }
+
+        //alert("Refresh Previous: " + previousGlobalInode + " - " + previousGlobalName);
+        //alert("Refresh Current: " + currentGlobalInode + " - " + currentGlobalName);
+        //alert("Start " + actions);
+
+        if (actions == "") {
+            prepareCrumbs(previousGlobalInode, previousGlobalName);
+        } /*else if (actions == "back") {
+		 var previousInode = previousGlobalInode;
+		 previousGlobalInode = currentGlobalInode;
+		 currentGlobalInode = previousInode;
+
+		 var previousIName = previousGlobalIName;
+		 previousGlobalIName = currentGlobalIName;
+		 currentGlobalIName = previousIName;
+
+		 prepareCrumbs(currentGlobalInode, currentGlobalName);
+		 actions = "";
+		 }*/
+
+        if (actions == "breadcrum") {
+            actions = "";
+        }
+
+        //alert("End " + actions);
     }
 
     var grid;
@@ -472,11 +504,22 @@
     // drill down of a category, load the children, properties
     function drillDown(index) {
 
+        previousGlobalInode = currentGlobalInode;
+        previousGlobalName = currentGlobalName;
+
         var inode = grid.store.getValue(grid.getItem(index), 'inode');
         var name = grid.store.getValue(grid.getItem(index), 'category_name');
         var velVar = grid.store.getValue(grid.getItem(index), 'category_velocity_var_name');
         var key = grid.store.getValue(grid.getItem(index), 'category_key');
         var keywords = grid.store.getValue(grid.getItem(index), 'keywords');
+
+        currentGlobalInode = inode;
+        currentGlobalName = name;
+
+        actions = "breadcrum";
+
+        //alert("Drill Previous: " + previousGlobalInode + " - " + previousGlobalName);
+        //alert("Drill Current: " + currentGlobalInode + " - " + currentGlobalName);
 
         prepareCrumbs(inode, name);
         dojo.byId("propertiesNA").style.display = "none";
@@ -499,6 +542,16 @@
 
     // roll up of a category, load the children, properties
     function rollUp(inode, name) {
+        previousGlobalInode = currentGlobalInode;
+        previousGlobalName = currentGlobalName;
+
+        currentGlobalInode = inode;
+        currentGlobalName = name;
+
+        actions = "breadcrum";
+
+        //alert("Roll Previous: " + previousGlobalInode + " - " + previousGlobalName);
+        //alert("Roll Current: " + currentGlobalInode + " - " + currentGlobalName);
 
         prepareCrumbs(inode, name);
 
