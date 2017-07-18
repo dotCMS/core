@@ -818,7 +818,6 @@
 					<div class="portlet-toolbar__actions-primary">
 						<%@ include file="/html/portlet/ext/common/sub_nav_inc.jsp" %>
 
-
 						<!-- ++++++++++++++++++++++++++++  -->
 						<!-- +++++ Start breadcrumps ++++  -->
 
@@ -828,60 +827,59 @@
 								boolean _amITheFirst = true;
 						%>
 
-						<div class="portlet-toolbar">
-							<div class="subNavCrumbTrail" id="subNavCrumbTrail">
-								<ul id="ulNav">
-									<% if (!showHostSelector) {  _amITheFirst = false; %>
-									<li id="selectHostDiv"
-											<%if(UtilMethods.isSet(_browserCrumbUrl)){ %>
-										onclick="window.location='<%=_browserCrumbUrl%>';"
-											<%} %>
-									>
-										<span class="hostStoppedIcon" style="float:left;margin-right:5px;"></span>
-										<%=LanguageUtil.get(pageContext, "Global-Page")%>
-									</li>
-									<% } %>
+						<div class="subNavCrumbTrailCategories" id="subNavCrumbTrail">
+							<ul id="ulNav">
+								<% if (!showHostSelector) {  _amITheFirst = false; %>
+								<li id="selectHostDiv"
+										<%if(UtilMethods.isSet(_browserCrumbUrl)){ %>
+									onclick="window.location='<%=_browserCrumbUrl%>';"
+										<%} %>
+								>
+									<span class="hostStoppedIcon" style="float:left;margin-right:5px;"></span>
+									<%=LanguageUtil.get(pageContext, "Global-Page")%>
+								</li>
+								<% } %>
 
-									<% for (CrumbTrailEntry crumbTrailEntry : crumbTrailEntries) {
-										if (UtilMethods.isSet(crumbTrailEntry.getLink())) { %>
-									<li style="cursor: pointer"
-											<%if(_amITheFirst){%> id="selectHostDiv"<%} %>
+								<% for (CrumbTrailEntry crumbTrailEntry : crumbTrailEntries) {
+									if (UtilMethods.isSet(crumbTrailEntry.getLink())) { %>
+								<li style="cursor: pointer"
+										<%if(_amITheFirst){%> id="selectHostDiv"<%} %>
+								>
+									<% if (_amITheFirst) { %>
+									<span class="publishIcon"></span>
+									<% }
+										_amITheFirst = false;
+									%>
+									<a href="
+                                        <%= crumbTrailEntry.getLink() %>"
 									>
-										<% if (_amITheFirst) { %>
-										<span class="publishIcon"></span>
-										<% }
-											_amITheFirst = false;
-										%>
-										<a href="
-											<%= crumbTrailEntry.getLink() %>"
-										>
-											<%=crumbTrailEntry.getTitle()%>
-										</a>
-									</li>
-									<%
-									} else {
-									%>
-									<li class="lastCrumb" id="lastCrumb"><span><%=crumbTrailEntry.getTitle()%></span></li>
-									<%
-										}
-									%>
-									<%
-										}
-									%>
-								</ul>
+										<%=crumbTrailEntry.getTitle()%>
+									</a>
+								</li>
 								<%
-									if (showHostSelector) {
+								} else {
 								%>
-								<div class="changeHost" onclick="dijit.popup.open({popup: myDialog, around: dojo.byId('changeHostId')})">
-									<span id="changeHostId"><%=LanguageUtil.get(pageContext, "Change-Host")%></span>
-									<span class="chevronExpandIcon"></span>
-								</div>
+								<li class="lastCrumb" id="lastCrumb"><span><%=crumbTrailEntry.getTitle()%></span></li>
 								<%
 									}
 								%>
-								<div class="clear"></div>
-
+								<%
+									}
+								%>
+							</ul>
+							<%
+								if (showHostSelector) {
+							%>
+							<div class="changeHost" onclick="dijit.popup.open({popup: myDialog, around: dojo.byId('changeHostId')})">
+								<span id="changeHostId"><%=LanguageUtil.get(pageContext, "Change-Host")%></span>
+								<span class="chevronExpandIcon"></span>
 							</div>
+							<%
+								}
+							%>
+							<div class="clear"></div>
+
+===
 						</div>
 
 						<%
@@ -899,6 +897,7 @@
                                 }
                             }
 						</script>
+
 
 						<!-- ++++++ End breadcrumps +++++  -->
 						<!-- ++++++++++++++++++++++++++++  -->
@@ -923,6 +922,8 @@
 					<button dojoType="dijit.form.Button" type="button" onClick="doSearch(true);" iconClass="resetIcon"><%= LanguageUtil.get(pageContext,"Reorder") %></button>
 				</div>
 				<input type="hidden" name="fullCommand" id="fullCommand" value="">
+
+
 			</div>
 			<!-- END Children Tab -->
 
@@ -982,9 +983,16 @@
 				<!-- END Permission Tab -->
 
 			</div>
+
+
 		</div>
 		<!-- END Tabs -->
+
+
 	</div>
+
+
+
 
 	<script language="Javascript">
         /**

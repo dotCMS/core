@@ -1,6 +1,6 @@
 package com.dotmarketing.exception;
 
-public class DotSecurityException extends Exception {
+public class DotSecurityException extends RuntimeException {
 
 	/**
 	 * 

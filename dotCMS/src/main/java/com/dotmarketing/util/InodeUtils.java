@@ -13,6 +13,7 @@ import com.dotmarketing.portlets.contentlet.business.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.report.model.Report;
+import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -25,6 +26,9 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import static com.dotcms.util.CollectionsUtils.entry;
+import static com.dotcms.util.CollectionsUtils.imap;
+import static com.dotcms.util.CollectionsUtils.mapEntries;
 
 public class InodeUtils {
 
@@ -85,60 +89,30 @@ public class InodeUtils {
 		return result;
 	}
 
-	public static Class getClassByDBType(String type) {
+	private final static Map<String, Class> typeClassMap = imap(
+			entry("contentlet",    Contentlet.class),
+			entry("identifier",    Identifier.class),
+			entry("template",      Template.class),
+			entry("virtual_link",  VirtualLink.class),
+			entry("user_proxy",    UserProxy.class),
+			entry("structure",     Structure.class),
+			entry("workflow_task",    WorkflowTask.class),
+			entry("relationship",     Relationship.class),
+			entry("workflow_comment", WorkflowComment.class),
+			entry("workflow_history", WorkflowHistory.class),
+			entry("folder",       Folder.class),
+			entry("category",     Category.class),
+			entry("containers",   Container.class),
+			entry("links", 		  Link.class),
+			entry("report_asset", Report.class),
+			entry("field",		  Field.class)
+	);
 
-		if (type == null) {
-			return Inode.class;
-		}
-		if (type.equals("contentlet")) {
-			return Contentlet.class;
-		}
-		if (type.equals("identifier")) {
-			return Identifier.class;
-		}
+	public static Class getClassByDBType(final String type) {
 
-		else if (type.equals("template")) {
-			return Template.class;
-		} else if (type.equals("virtual_link")) {
-			return VirtualLink.class;
-		} else if (type.equals("user_proxy")) {
-			return UserProxy.class;
-		} else if (type.equals("structure")) {
-			return Structure.class;
-		} else if (type.equals("workflow_task")) {
-			return WorkflowTask.class;
-		} else if (type.equals("relationship")) {
-			return Relationship.class;
+		return (type != null && typeClassMap.containsKey(type))? typeClassMap.get(type): Inode.class;
+	} // getClassByDBType.
 
-		} else if (type.equals("workflow_comment")) {
-			return WorkflowComment.class;
-		}		
-
-		else if (type.equals("workflow_history")) {
-			return WorkflowHistory.class;
-		}
-
-		else if (type.equals("folder")) {
-			return Folder.class;
-		}
-
-		else if (type.equals("category")) {
-			return Category.class;
-
-		} else if (type.equals("template")) {
-			return Template.class;
-		} else if (type.equals("containers")) {
-			return Container.class;
-		} else if (type.equals("links")) {
-			return Link.class;
-		} else if (type.equals("report_asset")) {
-			return Report.class;
-		} else {
-
-			return Inode.class;
-		}
-
-	}
 
 	/**
 	 * This method hits the DB, table inode to get the Type of the Asset.

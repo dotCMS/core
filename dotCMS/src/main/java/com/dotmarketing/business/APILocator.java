@@ -220,6 +220,14 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
+	 * Creates a single instance of the {@link PermissionableAPI} class.
+	 * @return The {@link PermissionableAPI} instance.
+	 */
+	public static PermissionableAPI getPermissionableAPI() {
+		return (PermissionableAPI)getInstance(APIIndex.PERMISSIONABLE_API);
+	}
+
+	/**
 	 * Creates a single instance of the {@link RoleAPI} class.
 	 *
 	 * @return The {@link RoleAPI} class.
@@ -880,6 +888,7 @@ enum APIIndex
 	EVENT_API,
 	EVENT_RECURRENCE_API,
 	PERMISSION_API,
+	PERMISSIONABLE_API,
 	ROLE_API,
 	USER_API,
 	LOGIN_AS_USER_API,
@@ -944,6 +953,7 @@ enum APIIndex
 	Object create() {
 		switch(this) {
 		case PERMISSION_API: return new PermissionBitAPIImpl();
+		case PERMISSIONABLE_API: return new PermissionableAPIImpl();
 		case ROLE_API: return new RoleAPIImpl();
 		case USER_API: return new UserAPIImpl();
 		case LOGIN_AS_USER_API: return LoginAsAPIImpl.getInstance();
