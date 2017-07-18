@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Set;
@@ -70,7 +71,14 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     public List<VanityUrl> getActiveVanityUrlsBySiteAndLanguage(final String siteId,
                                                                 final long languageId, final User user) {
 
-        final String luceneQuery = GET_ACTIVE_VANITY_URL + " +conHost:" + siteId
+        String HOST_QUERY;
+        if (null != siteId && !siteId.equals(Host.SYSTEM_HOST)) {
+            HOST_QUERY = String.format(" +(conhost:%s conhost:%s)", siteId, Host.SYSTEM_HOST);
+        } else {
+            HOST_QUERY = String.format(" +conhost:%s", Host.SYSTEM_HOST);
+        }
+
+        final String luceneQuery = GET_ACTIVE_VANITY_URL + HOST_QUERY
                 + GET_VANITY_URL_LANGUAGE_ID
                 + languageId;
         return searchAndPopulate(luceneQuery, user);
@@ -148,7 +156,16 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     public CachedVanityUrl getLiveCachedVanityUrl(final String uri, final Host site,
                                                   final long languageId, final User user) {
 
-        String siteId = (site != null ? site.getIdentifier() : Host.SYSTEM_HOST);
+        String siteId;
+        if (null != site) {
+            if (site.isSystemHost()) {
+                siteId = Host.SYSTEM_HOST;
+            } else {
+                siteId = site.getIdentifier();
+            }
+        } else {
+            siteId = Host.SYSTEM_HOST;
+        }
 
         //First lets try with the cache
         CachedVanityUrl result = vanityUrlServices
@@ -247,7 +264,8 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                 if (cachedVanityUrls.isEmpty()) {
 
                     //Initialize the Cached Vanity URL cache if is null
-                    vanityUrlServices.initializeVanityUrlCache(siteId, languageId);
+                    getActiveVanityUrlsBySiteAndLanguage(siteId, languageId,
+                            APILocator.systemUser());
 
                     //Get the list of site cached Vanities URLs
                     cachedVanityUrls = vanityUrlServices
@@ -306,7 +324,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
             }
 
             vanityUrls = new PriorityQueue<>(contentResults.size(),
-                    (vanity1, vanity2) -> vanity1.getOrder() - vanity2.getOrder());
+                    Comparator.comparingInt(VanityUrl::getOrder));
 
             contentResults.stream().forEach((Contentlet con) -> {
                 VanityUrl vanityUrl = getVanityUrlFromContentlet(con);
