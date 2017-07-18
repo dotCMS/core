@@ -3,6 +3,7 @@ package com.dotcms.vanityurl.business;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.services.VanityUrlServices;
 import com.dotcms.util.VanityUrlUtil;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
@@ -17,16 +18,15 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import java.util.Collections;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.regex.Matcher;
 
 /**
@@ -38,88 +38,42 @@ import java.util.regex.Matcher;
  */
 public class VanityUrlAPIImpl implements VanityUrlAPI {
 
-    private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
-    private final VanityUrl cache404VanityUrl = new DefaultVanityUrl();
+    private final ContentletAPI contentletAPI;
+    private final VanityUrlServices vanityUrlServices;
 
     private static final String GET_VANITY_URL_BASE_TYPE =
             "+baseType:" + BaseContentType.VANITY_URL.getType();
-    private static final String GET_ALL_VANITY_URL = GET_VANITY_URL_BASE_TYPE + " +working:true";
     private static final String GET_ACTIVE_VANITY_URL =
             GET_VANITY_URL_BASE_TYPE + " +live:true +deleted:false";
     private static final String GET_VANITY_URL_LANGUAGE_ID = " +languageId:";
     private static final int CODE_404_VALUE = 404;
 
     public VanityUrlAPIImpl() {
-        cache404VanityUrl.setInode(VanityUrlAPI.CACHE_404_VANITY_URL);
-        cache404VanityUrl.setIdentifier(VanityUrlAPI.CACHE_404_VANITY_URL);
-        cache404VanityUrl.setAction(CODE_404_VALUE);
+        this(APILocator.getContentletAPI(),
+                VanityUrlServices.getInstance());
     }
 
-    @Override
-    public List<VanityUrl> getAllVanityUrls(final User user) {
-        ImmutableList.Builder<VanityUrl> results = ImmutableList.builder();
-        TreeSet vanityTreeSet = new TreeSet<VanityUrl>();
-        try {
-            List<Contentlet> contentResults = contentletAPI
-                    .search(GET_ALL_VANITY_URL,
-                            0, 0, StringPool.BLANK, user, false);
-            contentResults.stream()
-                    .forEach((Contentlet con) -> vanityTreeSet.add(getVanityUrlFromContentlet(con)));
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this, "Error searching for all Vanity URLs", e);
-        }
+    @VisibleForTesting
+    public VanityUrlAPIImpl(final ContentletAPI contentletAPI,
+            final VanityUrlServices vanityUrlServices) {
 
-        return results.addAll(vanityTreeSet).build();
+        this.contentletAPI = contentletAPI;
+        this.vanityUrlServices = vanityUrlServices;
     }
 
     @Override
     public List<VanityUrl> getActiveVanityUrls(final User user) {
-        ImmutableList.Builder<VanityUrl> results = new ImmutableList.Builder();
-        TreeSet vanityTreeSet = new TreeSet<VanityUrl>();
-        try {
-            List<Contentlet> contentResults = contentletAPI
-                    .search(GET_ACTIVE_VANITY_URL, 0, 0, StringPool.BLANK, user, false);
-            contentResults.stream().forEach((Contentlet con) -> {
-                VanityUrl vanityUrl = getVanityUrlFromContentlet(con);
-                addToVanityURLCache(vanityUrl);
-                vanityTreeSet.add(vanityUrl);
-            });
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this, "Error searching for active Vanity URLs", e);
-        }
-        return results.addAll(vanityTreeSet).build();
+        return searchAndPopulate(GET_ACTIVE_VANITY_URL, user);
     }
 
     @Override
-    public List<VanityUrl> getActiveVanityUrlsByHostAndLanguage(final String hostId,
+    public List<VanityUrl> getActiveVanityUrlsBySiteAndLanguage(final String siteId,
             final long languageId, final User user) {
-        ImmutableList.Builder<VanityUrl> results = new ImmutableList.Builder();
-        TreeSet vanityTreeSet = new TreeSet<VanityUrl>();
-        try {
-            List<Contentlet> contentResults = contentletAPI
-                    .search(GET_ACTIVE_VANITY_URL + " +conHost:" + hostId
-                            + GET_VANITY_URL_LANGUAGE_ID
-                            + languageId, 0, 0, StringPool.BLANK, user, false);
-            contentResults.stream().forEach((Contentlet con) -> {
-                VanityUrl vanityUrl = getVanityUrlFromContentlet(con);
-                addToVanityURLCache(vanityUrl);
-                vanityTreeSet.add(vanityUrl);
-            });
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this, "Error searching for active Vanity URLs", e);
-        }
-        return results.addAll(vanityTreeSet).build();
-    }
 
-    @Override
-    public List<CachedVanityUrl> getActiveCachedVanityUrls(final User user) {
-        ImmutableList.Builder<CachedVanityUrl> results = new ImmutableList.Builder();
-        List<VanityUrl> vanityUrls = getActiveVanityUrls(user);
-        vanityUrls.stream().forEach((VanityUrl vanityUrl) -> {
-            addToVanityURLCache(vanityUrl);
-            results.add(new CachedVanityUrl(vanityUrl));
-        });
-        return results.build();
+        final String luceneQuery = GET_ACTIVE_VANITY_URL + " +conHost:" + siteId
+                + GET_VANITY_URL_LANGUAGE_ID
+                + languageId;
+        return searchAndPopulate(luceneQuery, user);
     }
 
     @Override
@@ -141,21 +95,12 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         DefaultVanityUrl vanityUrl = new DefaultVanityUrl();
         vanityUrl.setStructureInode(con.getContentTypeId());
         try {
-            contentletAPI.copyProperties((Contentlet) vanityUrl, con.getMap());
+            contentletAPI.copyProperties(vanityUrl, con.getMap());
         } catch (Exception e) {
             throw new DotStateException("Vanity Url Copy Failed", e);
         }
         vanityUrl.setHost(con.getHost());
-        if (UtilMethods.isSet(con.getFolder())) {
-            try {
-                Folder folder = APILocator.getFolderAPI()
-                        .find(con.getFolder(), APILocator.systemUser(), false);
-                vanityUrl.setFolder(folder.getInode());
-            } catch (Exception e) {
-                vanityUrl = new DefaultVanityUrl();
-                Logger.warn(this, "Unable to convert contentlet to Vanity Url " + con, e);
-            }
-        }
+        vanityUrl.setFolder(con.getFolder());
 
         return vanityUrl;
     }
@@ -168,9 +113,9 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     private void addToVanityURLCache(VanityUrl vanityUrl) {
         try {
             if (vanityUrl.isLive()) {
-                VanityUrlServices.getInstance().updateCache(vanityUrl);
+                vanityUrlServices.updateCache(vanityUrl);
             } else {
-                VanityUrlServices.getInstance().invalidateVanityUrl(vanityUrl);
+                vanityUrlServices.invalidateVanityUrl(vanityUrl);
             }
         } catch (DotDataException | DotRuntimeException | DotSecurityException e) {
             Logger.error(this,
@@ -182,39 +127,49 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     /**
      * Add a 404 Vanity URL to the vanityURLCache
      *
-     * @param hostId The current host Id
+     * @param siteId The current site Id
      * @param uri The current URI
      * @param languageId The current language Id
      */
-    private void add404URIToCache(String hostId, String uri, long languageId) {
+    private void add404URIToCache(String siteId, String uri, long languageId) {
+
+        VanityUrl cache404VanityUrl = new DefaultVanityUrl();
+        cache404VanityUrl.setInode(VanityUrlAPI.CACHE_404_VANITY_URL);
+        cache404VanityUrl.setIdentifier(VanityUrlAPI.CACHE_404_VANITY_URL);
+        cache404VanityUrl.setAction(CODE_404_VALUE);
         cache404VanityUrl.setLanguageId(languageId);
         cache404VanityUrl.setURI(uri);
-        cache404VanityUrl.setSite(hostId);
+        cache404VanityUrl.setSite(siteId);
 
-        VanityUrlServices.getInstance().updateCache(cache404VanityUrl);
+        vanityUrlServices.updateCache(cache404VanityUrl);
     }
 
     @Override
-    public CachedVanityUrl getLiveCachedVanityUrl(final String uri, final Host host,
+    public CachedVanityUrl getLiveCachedVanityUrl(final String uri, final Host site,
             final long languageId, final User user) {
 
-        String hostId = (host != null ? host.getIdentifier() : Host.SYSTEM_HOST);
+        String siteId = (site != null ? site.getIdentifier() : Host.SYSTEM_HOST);
 
-        CachedVanityUrl result = VanityUrlServices.getInstance()
-                .getCachedVanityUrlByUri(uri, hostId, languageId);
+        //First lets try with the cache
+        CachedVanityUrl result = vanityUrlServices
+                .getCachedVanityUrlByUri(uri, siteId, languageId);
 
         if (patternMatches(result, uri)) {
             return result;
         } else {
-            //Search for the URI in the vanityURL cached by host and language Ids
-            result = searchLiveCachedVanityUrlByHostAndLanguage(uri, hostId, languageId);
+            //Search for the URI in the vanityURL cached by site and language Ids
+            result = searchLiveCachedVanityUrlBySiteAndLanguage(uri, siteId, languageId);
         }
 
         if (result == null) {
 
             try {
+
+                //Search for the list of ContentTypes of type VanityURL
                 List<ContentType> vanityUrlContentTypes = APILocator.getContentTypeAPI(user)
                         .findByType(BaseContentType.VANITY_URL);
+
+                //Verify if this Content Type has a Multilinguable fallback
                 if (!vanityUrlContentTypes.isEmpty()
                         && ((VanityUrlContentType) vanityUrlContentTypes.get(0)).fallback()) {
 
@@ -222,14 +177,14 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                     long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage()
                             .getId();
 
-                    result = VanityUrlServices.getInstance()
-                            .getCachedVanityUrlByUri(uri, hostId, defaultLanguageId);
+                    result = vanityUrlServices
+                            .getCachedVanityUrlByUri(uri, siteId, defaultLanguageId);
 
                     if (patternMatches(result, uri)) {
                         return result;
                     } else {
-                        //Search for the URI in the vanityURL cached by host and default language Ids
-                        result = searchLiveCachedVanityUrlByHostAndLanguage(uri, hostId,
+                        //Search for the URI in the vanityURL cached by site and default language Ids
+                        result = searchLiveCachedVanityUrlBySiteAndLanguage(uri, siteId,
                                 defaultLanguageId);
                     }
                 }
@@ -240,9 +195,9 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
             if (result == null) {
                 //Add 404 to cache
-                add404URIToCache(hostId, uri, languageId);
-                result = VanityUrlServices.getInstance()
-                        .getCachedVanityUrlByUri(uri, hostId, languageId);
+                add404URIToCache(siteId, uri, languageId);
+                result = vanityUrlServices
+                        .getCachedVanityUrlByUri(uri, siteId, languageId);
             }
         }
 
@@ -266,42 +221,112 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     }
 
     /**
-     * Search CachedVanity Url checking if the Uri is in the Host Id and language Id cache
+     * Search CachedVanity Url checking if the Uri is in the Site Id and language Id cache
      *
      * @param uri The current uri
-     * @param hostId the current host Id
+     * @param siteId the current site Id
      * @param languageId the current language Id
      * @return a CachedVanityUrl object
      */
-    private CachedVanityUrl searchLiveCachedVanityUrlByHostAndLanguage(final String uri,
-            final String hostId, final long languageId) {
+    private CachedVanityUrl searchLiveCachedVanityUrlBySiteAndLanguage(final String uri,
+            final String siteId, final long languageId) {
+
         CachedVanityUrl result = null;
 
-        //Get the list of host cached Vanities URLs
-        Set<CachedVanityUrl> cachedVanityUrls = VanityUrlServices.getInstance()
-                .getVanityUrlByHostAndLanguage(hostId, languageId);
+        //Get the list of site cached Vanities URLs
+        Set<CachedVanityUrl> cachedVanityUrls = vanityUrlServices
+                .getVanityUrlBySiteAndLanguage(siteId, languageId);
 
         if (cachedVanityUrls.isEmpty()) {
-            //Initialize the Cached Vanity URL cache if is null
-            VanityUrlServices.getInstance().initializeVanityUrlCache(hostId, languageId);
-            cachedVanityUrls = VanityUrlServices.getInstance()
-                    .getVanityUrlByHostAndLanguage(hostId, languageId);
+
+            synchronized (VanityUrlAPIImpl.class) {
+
+                cachedVanityUrls = vanityUrlServices
+                        .getVanityUrlBySiteAndLanguage(siteId, languageId);
+
+                if (cachedVanityUrls.isEmpty()) {
+
+                    //Initialize the Cached Vanity URL cache if is null
+                    vanityUrlServices.initializeVanityUrlCache(siteId, languageId);
+
+                    //Get the list of site cached Vanities URLs
+                    cachedVanityUrls = vanityUrlServices
+                            .getVanityUrlBySiteAndLanguage(siteId, languageId);
+                }
+            }
         }
 
-        //Validates if onw of the host cachedVanityUrls matches the uri
+        //Validates if onw of the site cachedVanityUrls matches the uri
         for (CachedVanityUrl vanity : cachedVanityUrls) {
             if (patternMatches(vanity, uri)) {
                 result = vanity;
                 break;
             }
         }
+
+        /*
+        At this point we already found and saved in cache the VanityURL that matches with the given
+        URL but adding a new VanityURL to the cache for the completed requested URL
+        and not just the regex used can save us time.
+         */
+        if (null != result) {
+            if (!result.getUrl().equals(uri)) {
+                CachedVanityUrl cachedVanityUrl = new CachedVanityUrl(result, uri);
+                vanityUrlServices.updateCache(cachedVanityUrl);
+            }
+        }
+
         return result;
     }
 
+    /**
+     * Using a given lucene query this method searches for VanityURLs, each VanityURL found is
+     * added into the cache.
+     * <br>
+     * Note this method does not uses cache, always does the ES search, the intention of this method
+     * is mainly to populate the cache with the found data.
+     *
+     * @param luceneQuery query for the ES search
+     * @param user to use in the ES search
+     * @return A list of VanityURLs
+     */
+    private List<VanityUrl> searchAndPopulate(final String luceneQuery, final User user) {
+
+        final ImmutableList.Builder<VanityUrl> results = new ImmutableList.Builder();
+        final PriorityQueue<VanityUrl> vanityUrls;
+        List<VanityUrl> vanityUrlsToReturn = Collections.emptyList();
+
+        try {
+            final List<Contentlet> contentResults = contentletAPI
+                    .search(luceneQuery, 0, 0, StringPool.BLANK, user, false);
+
+            //Verify if we have something to process
+            if (null == contentResults || contentResults.isEmpty()) {
+                return results.build();
+            }
+
+            vanityUrls = new PriorityQueue<>(contentResults.size(),
+                    (vanity1, vanity2) -> vanity1.getOrder() - vanity2.getOrder());
+
+            contentResults.stream().forEach((Contentlet con) -> {
+                VanityUrl vanityUrl = getVanityUrlFromContentlet(con);
+                addToVanityURLCache(vanityUrl);
+                vanityUrls.offer(vanityUrl);
+            });
+
+            vanityUrlsToReturn = results.addAll(vanityUrls).build();
+        } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, "Error searching for active Vanity URLs [" + luceneQuery + "]", e);
+        }
+
+        return vanityUrlsToReturn;
+    }
+
     @Override
-    public void validateVanityUrl(Contentlet contentlet) throws DotContentletValidationException {
+    public void validateVanityUrl(Contentlet contentlet) {
+
         VanityUrl vanityUrl = getVanityUrlFromContentlet(contentlet);
-        User user = null;
+        User user;
         try {
             user = APILocator.getUserAPI().loadUserById(contentlet.getModUser());
         } catch (Exception e) {
@@ -314,7 +339,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
             }
         }
 
-        if (!VanityUrlUtil.isPatternValid(vanityUrl.getURI())) {
+        if (!VanityUrlUtil.isValidRegex(vanityUrl.getURI())) {
             Language l = APILocator.getLanguageAPI().getLanguage(user.getLanguageId());
             String message = APILocator.getLanguageAPI()
                     .getStringKey(l, "message.vanity.url.error.invalidURIPattern");

@@ -79,14 +79,18 @@ public class DefaultVanityUrlHandler implements VanityUrlHandler {
             final String rewrite, final HttpServletResponse response) throws IOException {
         VanityUrlResult vanityUrlResult = null;
 
-        if (vanityUrl.getResponse() == HttpServletResponse.SC_OK) {
+        if (HttpServletResponse.SC_OK == vanityUrl.getResponse()) {
             //then forward
             response.setStatus(vanityUrl.getResponse());
-        } else if (vanityUrl.getResponse() == HttpServletResponse.SC_MOVED_PERMANENTLY
-                || vanityUrl.getResponse() == HttpServletResponse.SC_FOUND) {
+        } else if (HttpServletResponse.SC_MOVED_PERMANENTLY == vanityUrl.getResponse()
+                || HttpServletResponse.SC_FOUND == vanityUrl.getResponse()) {
             //redirect
             response.setStatus(vanityUrl.getResponse());
-            response.sendRedirect(rewrite);
+            if (HttpServletResponse.SC_MOVED_PERMANENTLY == vanityUrl.getResponse()) {
+                response.setHeader("Location", rewrite);
+            } else {
+                response.sendRedirect(rewrite);
+            }
 
             vanityUrlResult = DEFAULT_RESULT;
         } else {
