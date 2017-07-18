@@ -74,13 +74,23 @@
 
     function refresh() {
 
-        var hashValue = decodeURIComponent(dojo.hash());
+        var hashReceived = decodeURIComponent(dojo.hash());
+        var inode = "0";
+        var name = "<%= LanguageUtil.get(pageContext, "Top-Level") %>";
+        var hashToSend = null;
 
-        if(typeof hashValue == "undefined" || hashValue == '') {
-            doSearchHash(null);
-        } else {
-            doSearchHash(hashValue);
+        if(typeof hashReceived != "undefined" && hashReceived != '') {
+            var query = hashReceived.substring(hashReceived.indexOf("?") + 1, hashReceived.length);
+            var queryObject = dojo.queryToObject(query);
+            inode = queryObject.inode==''?0:queryObject.inode;
+            name = queryObject.name;
+            hashToSend = hashReceived;
         }
+
+        buildCrumbs(inode, name);
+        doSearchHash(hashToSend);
+        refreshCrumbs();
+
     }
 
     var grid;
@@ -273,7 +283,7 @@
     // search handling
     function doSearch(reorder, importing) {
         var params = dojo.byId("catFilter").value.trim();
-        params = "?donothing&inode="+currentInodeOrIdentifier+"&q="+params;
+        params = "?donothing&inode="+currentInodeOrIdentifier+"&name="+currentCatName+"&q="+params;
         if(reorder) {
             params = params + "&reorder=true";
         }
@@ -405,10 +415,7 @@
 
     var myCrumbs = new Array();
 
-
-
     function refreshCrumbs() {
-
         if(myCrumbs.length ==0){
             myCrumbs[0] = "0---------<%= LanguageUtil.get(pageContext, "Top-Level") %>";
         }
@@ -433,16 +440,15 @@
             }
         }
 
-
-
-
     }
 
-
-
     function prepareCrumbs(inode, name) {
+        buildCrumbs(inode, name);
+        doSearch();
+        refreshCrumbs();
+    }
 
-
+    function buildCrumbs(inode, name) {
         dijit.byId("mainTabContainer").selectChild(dijit.byId("TabOne"));
         if(inode =="0"){
             currentInodeOrIdentifier="";
@@ -464,10 +470,7 @@
         newCrumbs[newCrumbs.length] = inode + "---------" + name;
         myCrumbs = newCrumbs;
         dijit.byId('catFilter').attr('value', '');
-
-        doSearch();
-        refreshCrumbs();
-    }
+	}
 
     // drill down of a category, load the children, properties
     function drillDown(index) {
@@ -634,6 +637,7 @@
                 grid.selection.clear();
 
                 var message = "";
+                var messageStyle = "color:green; font-size:11px;";
 
                 switch (result) {
                     case 0:
@@ -646,15 +650,19 @@
                         break;
                     case 1:
                         message = '<%= LanguageUtil.get(pageContext, "message.category.permission.error") %>';
+                        messageStyle = "color:red; font-size:11px;";
+                        error = true;
                         clearAddDialog();
                         break;
                     case 2:
                         message = '<%= LanguageUtil.get(pageContext, "error.category.folder.taken") %>';
+                        messageStyle = "color:red; font-size:11px;";
                         break;
                     default:
                 }
 
                 dojo.byId("savedMessage").innerHTML = message;
+                dojo.byId("savedMessage").style = messageStyle;
             }
         });
     }
@@ -1002,7 +1010,7 @@
 <!-- START Add Category pop up -->
 <div id="add_category_dialog"  dojoType="dijit.Dialog" style="display:none;width:300px" draggable="true" title="<%= LanguageUtil.get(pageContext, "add-category") %>" >
 	<div dojoType="dijit.layout.ContentPane">
-		<span id="savedMessage" style="color:red; font-size:11px;"></span>
+		<span id="savedMessage"></span>
 		<form id="addCatPropertiesForm" dojoType="dijit.form.Form" style="max-width: 260px; max-height: 300px;">
 			<div class="form-inline">
 				<dl>

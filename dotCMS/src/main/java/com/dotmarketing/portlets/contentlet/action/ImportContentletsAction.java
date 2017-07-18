@@ -22,12 +22,14 @@ import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.mozilla.universalchardet.UniversalDetector;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil.ImportAuditResults;
+import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.struts.ImportContentletsForm;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.AdminLogger;
@@ -281,15 +283,27 @@ public class ImportContentletsAction extends DotPortletAction {
 				};
 				t.start();
 				req.setAttribute("previewResults", (HashMap<String, List<String>>) session.getAttribute("previewResults"));
+				session.removeAttribute("previewResults");
 				req.setAttribute("importId", importId);
 				setForward(req, "portlet.ext.contentlet.import_contentlets_preview");
 			}		
 		}else  if(cmd != null && cmd.equals("downloadCSVTemplate")){
 			_downloadCSVTemplate(req, res,config,form);
 		} else {
-			
 			if(UtilMethods.isSet(req.getParameter("selectedStructure")) && UtilMethods.isSet(req.getAttribute("ImportContentletsForm"))){
 				((ImportContentletsForm)req.getAttribute("ImportContentletsForm")).setStructure(req.getParameter("selectedStructure"));
+			}
+			if (session.getAttribute("previewResults")!= null){
+				HashMap<String, List<String>>
+					results =
+					(HashMap<String, List<String>>) session.getAttribute("previewResults");
+				ContentletCache contentletCache = CacheLocator.getContentletCache();
+				if (results.get("updatedInodes") != null) {
+					for (String inode : results.get("updatedInodes")) {
+						contentletCache.remove(inode);
+					}
+					session.removeAttribute("previewResults");
+				}
 			}
 			
 			ImportAuditResults audits = ImportAuditUtil.loadAuditResults(user.getUserId());
@@ -308,21 +322,26 @@ public class ImportContentletsAction extends DotPortletAction {
 	 */
 	private void detectEncodeType(final HttpSession session, final File file) throws IOException {
 
-		String encodeType=null;
+		String encodeType   = null;
 
 		if (null != file && file.exists()) {
             byte[] buf = new byte[4096];
-            FileInputStream fis = new FileInputStream(file);
-            UniversalDetector detector = new UniversalDetector(null);
-            int nread;
-            while ((nread = fis.read(buf)) > 0 && !detector.isDone()) {
-                detector.handleData(buf, 0, nread);
-            }
-            detector.dataEnd();
-            encodeType = detector.getDetectedCharset();
-            session.setAttribute(ENCODE_TYPE, encodeType);
-            detector.reset();
-            fis.close();
+            try (FileInputStream fis = new FileInputStream(file)){
+
+
+				UniversalDetector detector = new UniversalDetector(null);
+				int nread;
+				while ((nread = fis.read(buf)) > 0 && !detector.isDone()) {
+					detector.handleData(buf, 0, nread);
+				}
+				detector.dataEnd();
+				encodeType = detector.getDetectedCharset();
+				session.setAttribute(ENCODE_TYPE, encodeType);
+				detector.reset();
+			}catch (IOException e){
+            	Logger.error(this.getClass(), e.getMessage());
+				throw e;
+			}
         }
 	}
 

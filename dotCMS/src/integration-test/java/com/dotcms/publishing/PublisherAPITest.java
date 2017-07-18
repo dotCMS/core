@@ -35,11 +35,14 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -146,6 +149,7 @@ public class PublisherAPITest extends IntegrationTestBase {
             final List<Folder> folderList = folderAPI
                     .findFoldersByHost(defaultHost, systemUser, false);
             final Folder folder = folderList.get(0);
+            Logger.info(this, "Using folder: " + folder.getName());
 
             /* Push publish the folder. */
             // Set up Bundle.
@@ -182,7 +186,8 @@ public class PublisherAPITest extends IntegrationTestBase {
             publisherConfig.setAssets(Lists.newArrayList(publishQueueElement));
             publisherConfig.setLuceneQueries(Lists.newArrayList());
             publisherConfig.setUser(systemUser);
-            publisherConfig.setStartDate(new Date());
+            // Set yesterday's date in order bundle.xml has different info and file be modified.
+            publisherConfig.setStartDate(new Date(new Date().getTime() - 24*3600*1000));
             publisherConfig.setPublishers(Lists.newArrayList(PushPublisher.class));
 
             // Push Publish.
@@ -205,9 +210,24 @@ public class PublisherAPITest extends IntegrationTestBase {
             final Map<String, Long> firstFileDates = getFileDatesByFolder(bundleFolder,
                     getNoBundleXMLFileFilter());
 
+            // Let's wait 2 seconds between runs so we have different millis in files.
+            Logger.info(this, "Waiting 2 seconds before 2nd PP run");
+            Thread.sleep(2000);
+
             /* Push publish retry. */
             // As we are using the same config and bundle,
             // the PublishAuditStatus.getStatusPojo().getNumTries() should be > 0.
+            publisherConfig = new PushPublisherConfig();
+            publisherConfig.setId(bundle.getId());
+            publisherConfig.setOperation(Operation.PUBLISH);
+            publisherConfig.setLanguage(languageAPI.getDefaultLanguage().getId());
+            publisherConfig.setAssets(Lists.newArrayList(publishQueueElement));
+            publisherConfig.setLuceneQueries(Lists.newArrayList());
+            publisherConfig.setUser(systemUser);
+            // Set today's date in order bundle.xml has different info and file be modified.
+            publisherConfig.setStartDate(new Date());
+            publisherConfig.setPublishers(Lists.newArrayList(PushPublisher.class));
+
             publisherAPI.publish(publisherConfig);
 
             /* Check the file dates */
@@ -217,21 +237,27 @@ public class PublisherAPITest extends IntegrationTestBase {
                     bundleTarGzFirstDate, bundleTarGzSecondDate);
             final long bundleXMLSecondDate = bundleXML.lastModified();
             // bundle.xml file should be updated each PP process, so dates shouldn't be the same.
-            assertTrue("bundle.xml file should be updated each PP process",
-                    bundleXMLFirstDate < bundleXMLSecondDate);
+            assertNotEquals("bundle.xml file should be updated each PP process",
+                    bundleXMLFirstDate, bundleXMLSecondDate);
 
             final Map<String, Long> secondFileDates = getFileDatesByFolder(bundleFolder,
                     getNoBundleXMLFileFilter());
 
             // We want to check bundle folder contains same file and they were not modified.
             for (String filePath : secondFileDates.keySet()) {
+                Logger.info(this, "Checking file: " + filePath);
                 assertTrue("Check bundle folder contains same file " + filePath,
                         firstFileDates.containsKey(filePath));
-                assertTrue("Check dates were not modified" + filePath,
-                        firstFileDates.get(filePath).equals(secondFileDates.get(filePath)));
+                assertEquals("Check dates were not modified" + filePath,
+                        firstFileDates.get(filePath), secondFileDates.get(filePath));
             }
 
-        } catch (DotDataException | DotSecurityException | DotPublisherException | DotPublishingException e) {
+        } catch (DotDataException
+                | DotSecurityException
+                | DotPublisherException
+                | DotPublishingException
+                | InterruptedException
+                | FileNotFoundException e) {
             fail(e.getMessage());
         } finally {
             try {
@@ -258,10 +284,11 @@ public class PublisherAPITest extends IntegrationTestBase {
      * fileFilter} is {@code null} then all pathnames are accepted
      * @return Returns a {@link Map} with Key:File.getAbsolutePath and Value:File.lastModified
      */
-    private Map<String, Long> getFileDatesByFolder(final File folder, FileFilter fileFilter) {
+    private Map<String, Long> getFileDatesByFolder(final File folder, FileFilter fileFilter)
+            throws FileNotFoundException {
         Map<String, Long> fileDates = Maps.newHashMap();
 
-        for (File file : folder.listFiles(fileFilter)) {
+        for (File file : FileUtil.listFilesRecursively(folder, fileFilter)) {
             fileDates.put(file.getAbsolutePath(), new Long(file.lastModified()));
         }
 

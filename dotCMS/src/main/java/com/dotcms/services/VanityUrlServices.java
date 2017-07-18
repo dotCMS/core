@@ -77,13 +77,15 @@ public class VanityUrlServices {
     public void invalidateAllVanityUrlVersions(Contentlet vanityUrl) {
         try {
             Identifier identifier = identifierAPI.find(vanityUrl.getIdentifier());
+
             List<Contentlet> contentletVersions = contentletAPI
                     .findAllVersions(identifier, APILocator.systemUser(), false);
+
             contentletVersions.stream()
                     .filter(con -> vanityUrl.getLanguageId() == con.getLanguageId())
-                    .forEach(this::removeFromCache);
+                    .forEach(vanityURLCache::remove);
 
-            removeFromCache(vanityUrl);
+            vanityURLCache.remove(vanityUrl);
         } catch (DotDataException | DotRuntimeException | DotSecurityException e) {
             Logger.error(VanityUrlServices.class,
                     "Error trying to invalidate Vanity URL identifier:" + vanityUrl.getIdentifier(),
@@ -92,47 +94,23 @@ public class VanityUrlServices {
     }
 
     /**
-     * Remove the vanity Url contentlet version from cache
-     */
-    private void removeFromCache(Contentlet contentlet) {
-        try {
-            vanityURLCache.remove(VanityUrlUtil.sanitizeKey(contentlet));
-            vanityURLCache
-                    .removeCachedVanityUrls(VanityUrlUtil.sanitizeSecondCachedKey(contentlet));
-        } catch (DotDataException | DotRuntimeException | DotSecurityException e) {
-            Logger.error(VanityUrlServices.class,
-                    "Error trying to invalidate Vanity URL identifier:" + contentlet
-                            .getIdentifier(), e);
-        }
-    }
-
-    /**
      * Load in cache the active vanities Urls
      */
     public void initializeVanityUrlCache() {
-        List<CachedVanityUrl> activeVanityUrls = APILocator.getVanityUrlAPI()
-                .getActiveCachedVanityUrls(APILocator.systemUser());
-        activeVanityUrls.stream().forEach((CachedVanityUrl vanity) -> {
-            Set<CachedVanityUrl> currentCachedVanities = CacheLocator.getVanityURLCache()
-                    .getCachedVanityUrls(vanity.getSiteId());
-            currentCachedVanities.add(vanity);
-            CacheLocator.getVanityURLCache().setCachedVanityUrls(VanityUrlUtil
-                            .sanitizeSecondCacheKey(vanity.getSiteId(), vanity.getLanguageId()),
-                    currentCachedVanities);
-        });
+        APILocator.getVanityUrlAPI()
+                .getActiveVanityUrls(APILocator.systemUser());
     }
 
     /**
      * Load in cache the active vanities Urls
-     * searching by host and languageId
+     * searching by site and languageId
      *
-     * @param hostId The current host Id
+     * @param siteId The current site Id
      * @param languageId The current language Id
      */
-    public void initializeVanityUrlCache(String hostId, long languageId) {
-        List<VanityUrl> activeVanityUrls = APILocator.getVanityUrlAPI()
-                .getActiveVanityUrlsByHostAndLanguage(hostId, languageId, APILocator.systemUser());
-        activeVanityUrls.forEach(this::updateCache);
+    public void initializeVanityUrlCache(String siteId, long languageId) {
+        APILocator.getVanityUrlAPI()
+                .getActiveVanityUrlsBySiteAndLanguage(siteId, languageId, APILocator.systemUser());
     }
 
     /**
@@ -141,49 +119,40 @@ public class VanityUrlServices {
      * @param vanity The vanity URL to add
      */
     public void updateCache(VanityUrl vanity) {
-        try {
-            //Update primary Cache
-            vanityURLCache
-                    .add(VanityUrlUtil
-                                    .sanitizeKey(vanity.getSite(), vanity.getURI(), vanity.getLanguageId()),
-                            vanity);
+        vanityURLCache.update(vanity);
+    }
 
-            //update Secondary cache
-            Set<CachedVanityUrl> hostCachedVanityUrl = vanityURLCache
-                    .getCachedVanityUrls(VanityUrlUtil
-                            .sanitizeSecondCacheKey(vanity.getSite(), vanity.getLanguageId()));
-            hostCachedVanityUrl.add(new CachedVanityUrl(vanity));
-
-            vanityURLCache.setCachedVanityUrls(
-                    VanityUrlUtil.sanitizeSecondCacheKey(vanity.getSite(), vanity.getLanguageId()),
-                    hostCachedVanityUrl);
-        } catch (DotRuntimeException e) {
-            Logger.error(this, "Error trying to add Vanity URL to cache", e);
-        }
+    /**
+     * Add the vanity URL to the caches
+     *
+     * @param vanity The vanity URL to add
+     */
+    public void updateCache(CachedVanityUrl vanity) {
+        vanityURLCache.update(vanity);
     }
 
     /**
      * Get the cached vanity Url from the primary cache
      *
      * @param uri The current uri
-     * @param hostId The current host Id
+     * @param siteId The current site Id
      * @param languageId The current language Id
      * @return CachedVanityUrl object
      */
-    public CachedVanityUrl getCachedVanityUrlByUri(String uri, String hostId, long languageId) {
-        return vanityURLCache.get(VanityUrlUtil.sanitizeKey(hostId, uri, languageId));
+    public CachedVanityUrl getCachedVanityUrlByUri(String uri, String siteId, long languageId) {
+        return vanityURLCache.get(VanityUrlUtil.sanitizeKey(siteId, uri, languageId));
     }
 
     /**
-     * Get the list of cached Vanity Url associated to a host
+     * Get the list of cached Vanity Url associated to a site
      *
-     * @param hostId The current host Id
+     * @param siteId The current site Id
      * @param languageId The current language Id
      * @return A set of CachedVanityUrl
      */
-    public Set<CachedVanityUrl> getVanityUrlByHostAndLanguage(String hostId, long languageId) {
+    public Set<CachedVanityUrl> getVanityUrlBySiteAndLanguage(String siteId, long languageId) {
         return CacheLocator.getVanityURLCache()
-                .getCachedVanityUrls(VanityUrlUtil.sanitizeSecondCacheKey(hostId, languageId));
+                .getCachedVanityUrls(VanityUrlUtil.sanitizeSecondCacheKey(siteId, languageId));
     }
 
 }
