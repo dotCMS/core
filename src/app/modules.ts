@@ -1,5 +1,6 @@
 import {
   AutoCompleteModule,
+  BreadcrumbModule,
   ButtonModule,
   CalendarModule,
   CheckboxModule,
@@ -13,11 +14,13 @@ import {
   RadioButtonModule,
   SplitButtonModule,
   TabViewModule,
-  ToolbarModule
+  ToolbarModule,
+  TreeTableModule
 } from 'primeng/primeng';
 
 export const NGFACES_MODULES = [
   AutoCompleteModule,
+  BreadcrumbModule,
   ButtonModule,
   CalendarModule,
   CheckboxModule,
@@ -32,5 +35,6 @@ export const NGFACES_MODULES = [
   SharedModule,
   SplitButtonModule,
   TabViewModule,
-  ToolbarModule
+  ToolbarModule,
+  TreeTableModule
 ];

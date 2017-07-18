@@ -1,4 +1,5 @@
 // RULES ENGINE COMPONENTS
+
 import { AddToBundleDialogComponent } from './view/components/push-publish/add-to-bundle-dialog-component';
 import { AddToBundleDialogContainer } from './view/components/push-publish/add-to-bundle-dialog-container';
 import { AreaPickerDialogComponent } from './view/components/_common/google-map/area-picker-dialog.component';
@@ -19,6 +20,12 @@ import { RuleEngineContainer } from './portlets/rule-engine/rule-engine.containe
 import { ServersideCondition } from './portlets/rule-engine/condition-types/serverside-condition/serverside-condition';
 import { VisitorsLocationComponent } from './portlets/rule-engine/custom-types/visitors-location/visitors-location.component';
 import { VisitorsLocationContainer } from './portlets/rule-engine/custom-types/visitors-location/visitors-location.container';
+import {SiteSelectorComponent as SiteSelectorComponentDotJS} from '../dotcms-js/components/site-selector/site-selector.component';
+import {BreadcrumbComponent} from '../dotcms-js/components/breadcrumb/breadcrumb.component';
+import {SiteTreeTableComponent} from '../dotcms-js/components/site-treetable/site-treetable.component';
+import {SiteDatatableComponent} from '../dotcms-js/components/site-datatable/site-datatable.component';
+import {TreeableDetailComponent} from '../dotcms-js/components/treeable-detail/treeable-detail.component';
+import {DotBrowserComponent} from './portlets/dot-browser/dot-browser-component';
 
 const RULES_ENGINE_COMPONENTS = [
     AddToBundleDialogComponent,
@@ -78,7 +85,9 @@ export const COMPONENTS = [
     ...RULES_ENGINE_COMPONENTS,
     Accordion,
     AccordionGroup,
+    BreadcrumbComponent,
     CustomTimeComponent,
+    DotBrowserComponent,
     DotLoadingIndicator,
     DropdownComponent,
     ForgotPasswordComponent,
@@ -101,12 +110,16 @@ export const COMPONENTS = [
     PatternLibrary,
     ResetPasswordComponent,
     ResetPasswordContainer,
+    SiteDatatableComponent,
     SiteSelectorComponent,
+    SiteSelectorComponentDotJS,
+    SiteTreeTableComponent,
     ToolbarAddContenletBodyComponent,
     ToolbarAddContenletComponent,
+    ToolbarComponent,
     ToolbarNotifications,
     ToolbarUserComponent,
-    ToolbarComponent
+    TreeableDetailComponent
 ];
 
 // CUSTOM PIPES

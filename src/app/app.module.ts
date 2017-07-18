@@ -57,7 +57,7 @@ type StoreType = {
     AppComponent,
     ...PIPES,
     ...COMPONENTS,
-    ...DIRECTIVES,
+    ...DIRECTIVES
   ],
   imports: [ // import Angular's modules
     ...NGFACES_MODULES,

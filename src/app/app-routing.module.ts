@@ -14,11 +14,16 @@ import { Routes, RouterModule, PreloadAllModules } from '@angular/router';
 import { RoutingPrivateAuthService } from './api/services/routing-private-auth-service';
 import { RoutingPublicAuthService } from './api/services/routing-public-auth-service';
 import { RuleEngineContainer } from './portlets/rule-engine/rule-engine.container';
+import {DotBrowserComponent} from './portlets/dot-browser/dot-browser-component';
 
 let angularComponents: any[] = [
     {
         component: RuleEngineContainer,
         id: 'rules'
+    },
+    {
+        component: DotBrowserComponent,
+        id: 'dot-browser'
     },
     {
         id: 'content-types-angular',

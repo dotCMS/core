@@ -18,5 +18,8 @@ import {NotLicensedService} from './api/services/not-licensed-service';
 export class AppComponent {
     constructor(private dotcmsConfig: DotcmsConfig, notLicensedService: NotLicensedService) {
         notLicensedService.init();
+        document.ondragover = document.ondrop = (ev) => {
+            ev.preventDefault();
+        };
     }
 }
