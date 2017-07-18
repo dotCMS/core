@@ -31,7 +31,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @Gson.TypeAdapters
 @Value.Immutable
 public abstract class VanityUrlContentType extends ContentType implements Expireable,
-        MultilinguableFallback {
+		Multilinguable {
 
 	private static final long serialVersionUID = 1L;
 
@@ -77,7 +77,7 @@ public abstract class VanityUrlContentType extends ContentType implements Expire
 		Field actionField = ImmutableSelectField.builder().name(ACTION_FIELD_NAME)
 				.variable(ACTION_FIELD_VAR)
 				.required(Boolean.TRUE).fixed(Boolean.TRUE).indexed(Boolean.TRUE)
-				.searchable(Boolean.TRUE).sortOrder(order++)
+				.searchable(Boolean.TRUE).listed(Boolean.TRUE).sortOrder(order++)
 				.dataType(DataTypes.INTEGER)
 				.values("200 - Forward|200\r\n301 - Permanent Redirect|301\r\n302 - Temporary Redirect|302\r\n401 - Auth Required|401\r\n403 - Auth Failed|403\r\n404 - Missing|404\r\n500 - Error|500")
 				.build();

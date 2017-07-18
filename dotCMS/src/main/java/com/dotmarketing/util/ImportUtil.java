@@ -154,6 +154,7 @@ public class ImportUtil {
         results.put("results", new ArrayList<String>());
         results.put("counters", new ArrayList<String>());
         results.put("identifiers", new ArrayList<String>());
+        results.put("updatedInodes", new ArrayList<String>());
         results.put("lastInode", new ArrayList<String>());
 
         Structure contentType = CacheLocator.getContentTypeCache().getStructureByInode (contentTypeInode);
@@ -1007,6 +1008,8 @@ public class ImportUtil {
                         }
                         if(columnExists) {
                             contentlets.add(con);
+                            //Keep a register of all contentlets to be updated
+                            results.get("updatedInodes").add(con.getInode());
                         }
                     }
                 }
