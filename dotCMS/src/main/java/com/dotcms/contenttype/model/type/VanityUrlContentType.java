@@ -31,7 +31,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @Gson.TypeAdapters
 @Value.Immutable
 public abstract class VanityUrlContentType extends ContentType implements Expireable,
-		Multilinguable {
+		MultilinguableFallback {
 
 	private static final long serialVersionUID = 1L;
 
