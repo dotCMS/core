@@ -9,7 +9,7 @@ import java.util.List;
 import com.dotcms.publisher.pusher.wrapper.CategoryWrapper;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
-import static com.dotcms.enterprise.publishing.remote.bundler.CategoryFullBundler.CATEGORY_EXTENSION;
+import static com.dotcms.enterprise.publishing.remote.bundler.CategoryFullBundler.CATEGORY_FULL_EXTENSION;
 
 public class PushCategoryUtil {
 	
@@ -55,7 +55,7 @@ public class PushCategoryUtil {
 	public int getCategoryXMLCount(){
 		int count = 0;
 		for(File f:categories){
-			if(f.getName().endsWith(CATEGORY_EXTENSION))
+			if(f.getName().endsWith(CATEGORY_FULL_EXTENSION))
 				count++;
 		}
 		return count;

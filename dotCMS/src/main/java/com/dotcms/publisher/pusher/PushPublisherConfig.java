@@ -32,7 +32,7 @@ public class PushPublisherConfig extends PublisherConfig {
 		CATEGORIES,
 		WORKFLOWS,
 		LANGUAGES,
-		RULES,
+		RULES
 	}
 
 	private List<PublishingEndPoint> endpoints;
