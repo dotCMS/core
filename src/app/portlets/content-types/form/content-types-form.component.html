@@ -31,7 +31,7 @@
                 </div>
                 <div class="form__group">
                     <label for="content-type-form-host" class="form__label">{{i18nMessages['Host-Folder']}}</label>
-                    <p-dropdown [options]="sitesOrFolderOptions" id="content-type-form-host" name="host" formControlName="host" [autoWidth]="false"></p-dropdown>
+                    <dot-site-selector-component id="content-type-form-host" formControlName="host"></dot-site-selector-component> 
                 </div>
                 <div class="form__group">
                     <label for="content-type-form-workflow" class="form__label">{{i18nMessages['Workflow']}}</label>

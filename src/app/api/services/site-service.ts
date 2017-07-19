@@ -35,7 +35,7 @@ export class SiteService {
             let siteToExclude = eventTypeWrapper.data.data.identifier;
 
             if (siteToExclude === this.selectedSite.identifier) {
-                this.getOneSite().subscribe( site => this.switchSite(site));
+                this.getOneSite().subscribe(site => this.switchSite(site));
             }
         });
 
@@ -60,6 +60,22 @@ export class SiteService {
      */
     get currentSite(): Site {
         return this.selectedSite;
+    }
+
+    /**
+     * Get a site by the id
+     *
+     * @param {string} id
+     * @returns {Observable<Site>}
+     * @memberof SiteService
+     */
+    getSiteById(id: string): Observable<Site> {
+        return this.coreWebService.requestView({
+            method: RequestMethod.Get,
+            url: `content/id/${id}`,
+        })
+        .pluck('contentlets')
+        .map(sites => sites[0]);
     }
 
     /**

@@ -17,7 +17,7 @@ export class ResponseView {
     private bodyJsonObject: any;
     private headers: Headers;
 
-    public constructor( private resp: Response ) {
+    public constructor(private resp: Response ) {
         try {
             this.bodyJsonObject = resp.json();
             this.headers = resp.headers;
@@ -32,6 +32,10 @@ export class ResponseView {
 
     get i18nMessagesMap(): any{
         return this.bodyJsonObject.i18nMessagesMap;
+    }
+
+    get contentlets(): any {
+        return this.bodyJsonObject.contentlets;
     }
 
     get entity(): any {

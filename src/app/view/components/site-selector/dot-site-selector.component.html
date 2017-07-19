@@ -1,15 +1,17 @@
-<searchable-dropdown        *ngIf="totalRecords > 1"
-                            #searchableDropdown    
-                            [data]="sitesCurrentPage"
-                            [totalRecords]="paginationService.totalRecords"
-                            [rows]="10"
-                            [pageLinkSize] = "3"
-                            labelPropertyName = "name"
-                            (filterChange)="handleFilterChange($event)"
-                            (pageChange)="handlePageChange($event)"
-                            (change)="siteChange($event)"
-                            [(ngModel)]="currentSite"
-                            class="site-selector__field">
+<searchable-dropdown
+    *ngIf="totalRecords > 1"
+    #searchableDropdown
+    (change)="siteChange($event)"
+    (filterChange)="handleFilterChange($event)"
+    (pageChange)="handlePageChange($event)"
+    [data]="sitesCurrentPage"
+    [ngModel]="currentSite | async"
+    [pageLinkSize]="3"
+    [rows]="10"
+    [totalRecords]="paginationService.totalRecords"
+    class="site-selector__field"
+    labelPropertyName="hostname"
+    >
 </searchable-dropdown>
 
-<span *ngIf="totalRecords == 1" class="site-selector__title">{{currentSite ? currentSite.name : ''}}</span>
+<span *ngIf="totalRecords == 1" class="site-selector__title">{{currentSite ? currentSite.hostname : '' | async}}</span>

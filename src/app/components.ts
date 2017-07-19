@@ -75,7 +75,6 @@ import { NotificationsList, NotificationsItem } from './view/components/_common/
 import { PatternLibrary } from './view/components/_common/pattern-library/pattern-library';
 import { ResetPasswordComponent } from './view/components/login/reset-password-component/reset-password-component';
 import { ResetPasswordContainer } from './view/components/login/reset-password-component/reset-password-container';
-import { SiteSelectorComponent } from './view/components/site-selector/dot-site-selector.component';
 import { ToolbarAddContenletComponent, ToolbarAddContenletBodyComponent } from './view/components/toolbar-add-contentlet/toolbar-add-contentlet';
 import { ToolbarNotifications } from './view/components/toolbar-notifications/toolbar-notifications';
 import { ToolbarUserComponent } from './view/components/toolbar-user/toolbar-user';
@@ -111,7 +110,6 @@ export const COMPONENTS = [
     ResetPasswordComponent,
     ResetPasswordContainer,
     SiteDatatableComponent,
-    SiteSelectorComponent,
     SiteSelectorComponentDotJS,
     SiteTreeTableComponent,
     ToolbarAddContenletBodyComponent,

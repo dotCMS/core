@@ -1,4 +1,4 @@
-import { fakeAsync, tick } from '@angular/core/testing';
+import { fakeAsync, tick, async } from '@angular/core/testing';
 import {
   Response,
   ResponseOptions,
@@ -39,6 +39,8 @@ describe('Site Service', () => {
                 this.lastSwitchSiteConnection = connection;
             } else if (url.indexOf('v1/site') !== -1) {
                 this.lastPaginateSiteConnection = connection;
+            } else if (url.indexOf('content') !== -1) {
+                this.lastContentApiConnection = connection;
             }
         });
     });
@@ -48,8 +50,7 @@ describe('Site Service', () => {
         let newCurrentSite: Site;
         let loginService: LoginServiceMock = this.injector.get(LoginService);
 
-        this.siteService = this.injector.get(SiteService);
-        this.siteService.switchSite$.subscribe( site => newCurrentSite = site);
+        this.siteService.switchSite$.subscribe(site => newCurrentSite = site);
 
         let mockResponse = {
                 entity: {
@@ -123,4 +124,21 @@ describe('Site Service', () => {
             })
         })));
     }
+
+    it('get a site by id', () => {
+        this.siteService.getSiteById('123').subscribe(res => {
+            expect(res).toEqual({ hostname: 'hello.host.com', identifier: '123' });
+        });
+
+        this.lastContentApiConnection.mockRespond(new Response(new ResponseOptions({
+            body: JSON.stringify({
+                'contentlets': [
+                    {
+                        'hostname': 'hello.host.com',
+                        'identifier': '123'
+                    }
+                ]
+            })
+        })));
+    });
 });

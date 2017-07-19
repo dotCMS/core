@@ -1,12 +1,12 @@
 import {BrowserModule}  from '@angular/platform-browser';
-import {FormsModule} from "@angular/forms";
+import {FormsModule} from '@angular/forms';
 import {HttpModule, JsonpModule} from '@angular/http';
-import {LocationStrategy, HashLocationStrategy} from "@angular/common";
-import {Logger, LOG_LOGGER_PROVIDERS, Options as LoggerOptions, Level as LoggerLevel} from "angular2-logger/core";
+import {LocationStrategy, HashLocationStrategy} from '@angular/common';
+import {Logger, LOG_LOGGER_PROVIDERS, Options as LoggerOptions, Level as LoggerLevel} from 'angular2-logger/core';
 import {NgModule} from '@angular/core';
 
 import {AppComponent} from './app.component';
-import {routing} from "./app.routing";
+import {routing} from './app.routing';
 
 // DOTJS SERVICES
 import {
@@ -22,7 +22,7 @@ import {
     SiteBrowserState,
     SiteSelectorService,
     SiteTreetableService,
-} from "../../dotcms-js";
+} from '../../dotcms-js';
 
 // DOTJS MODULES
 import {
@@ -31,18 +31,28 @@ import {
     DotcmsSiteSelectorModule,
     DotcmsSiteTreeTableModule,
     DotcmsTreeableDetailModule,
-} from "../../dotcms-js";
+} from '../../dotcms-js';
 
 // SHOWCASE PAGES
-import {BreadcrumbDemoShowcase} from "../components/breadcrumb/breadcrumb";
-import {IntroDemoShowcase} from "../components/intro/intro";
-import {SiteDatatableDemoShowcase} from "../components/site-datatable/site-datatable";
-import {SiteSelectorDemoShowcase} from "../components/site-selector/site-selector";
-import {SiteTreeTableDemoShowcase} from "../components/site-treetable/site-treetable";
-import {TreeableDetailComponentDemoShowcase} from "../components/treeable-detail/treeable-detail";
+import {BreadcrumbDemoShowcase} from '../components/breadcrumb/breadcrumb';
+import {IntroDemoShowcase} from '../components/intro/intro';
+import {SiteDatatableDemoShowcase} from '../components/site-datatable/site-datatable';
+import {SiteSelectorDemoShowcase} from '../components/site-selector/site-selector';
+import {SiteTreeTableDemoShowcase} from '../components/site-treetable/site-treetable';
+import {TreeableDetailComponentDemoShowcase} from '../components/treeable-detail/treeable-detail';
 import {TieredMenuModule, CodeHighlighterModule} from 'primeng/primeng';
 
 @NgModule({
+    bootstrap: [ AppComponent ],
+    declarations: [
+        AppComponent,
+        BreadcrumbDemoShowcase,
+        IntroDemoShowcase,
+        SiteDatatableDemoShowcase,
+        SiteSelectorDemoShowcase,
+        SiteTreeTableDemoShowcase,
+        TreeableDetailComponentDemoShowcase
+    ],
     imports: [
         BrowserModule,
         FormsModule,
@@ -59,15 +69,6 @@ import {TieredMenuModule, CodeHighlighterModule} from 'primeng/primeng';
         CodeHighlighterModule,
 
         routing,
-    ],
-    declarations: [
-        AppComponent,
-        BreadcrumbDemoShowcase,
-        IntroDemoShowcase,
-        SiteDatatableDemoShowcase,
-        SiteSelectorDemoShowcase,
-        SiteTreeTableDemoShowcase,
-        TreeableDetailComponentDemoShowcase
     ],
     providers: [
         Logger,
@@ -86,6 +87,5 @@ import {TieredMenuModule, CodeHighlighterModule} from 'primeng/primeng';
         {provide: LocalStoreService, useClass: LocalStoreService},
         {provide: LocationStrategy, useClass: HashLocationStrategy}
     ],
-    bootstrap: [ AppComponent ]
 })
 export class AppModule { }

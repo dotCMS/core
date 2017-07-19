@@ -1,14 +1,24 @@
-import { Component, ViewEncapsulation, ViewChild, forwardRef, Output, EventEmitter, Input, SimpleChanges } from '@angular/core';
+import {
+    Component,
+    ViewEncapsulation,
+    ViewChild,
+    forwardRef,
+    Output,
+    EventEmitter,
+    Input,
+    SimpleChanges
+} from '@angular/core';
+import { AutoComplete } from 'primeng/primeng';
+import { BaseComponent } from '../_common/_base/base-component';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DotcmsConfig } from '../../../api/services/system/dotcms-config';
+import { IframeOverlayService } from '../../../api/services/iframe-overlay-service';
+import { MessageService } from '../../../api/services/messages-service';
+import { Observable } from 'rxjs/Rx';
+import { PaginatorService } from '../../../api/services/paginator';
+import { SearchableDropdownComponent } from '../_common/searchable-dropdown/component';
 import { Site } from '../../../api/services/site-service';
 import { SiteService } from '../../../api/services/site-service';
-import { MessageService } from '../../../api/services/messages-service';
-import { BaseComponent } from '../_common/_base/base-component';
-import { AutoComplete } from 'primeng/primeng';
-import { IframeOverlayService } from '../../../api/services/iframe-overlay-service';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { SearchableDropdownComponent } from '../_common/searchable-dropdown/component';
-import { PaginatorService } from '../../../api/services/paginator';
 
 /**
  * It is dropdown of sites, it handle pagination and global search
@@ -29,17 +39,15 @@ import { PaginatorService } from '../../../api/services/paginator';
     ],
     selector: 'dot-site-selector-component',
     styles: [require('./dot-site-selector.component.scss')],
-    templateUrl: 'dot-site-selector.component.html',
+    templateUrl: 'dot-site-selector.component.html'
 })
 export class SiteSelectorComponent implements ControlValueAccessor {
-
     private static readonly MIN_CHARECTERS_TO_SERACH = 3;
 
     @ViewChild('searchableDropdown') searchableDropdown: SearchableDropdownComponent;
     @Output() change: EventEmitter<Site> = new EventEmitter();
 
-    public value: string;
-    private currentSite: Site;
+    private currentSite: Observable<Site>;
     private sitesCurrentPage: Site[];
     private filteredSitesResults: Array<any>;
     private paginationPage = 1;
@@ -50,17 +58,26 @@ export class SiteSelectorComponent implements ControlValueAccessor {
 
     propagateChange = (_: any) => {};
 
-    constructor(private siteService: SiteService, private config: DotcmsConfig, private iframeOverlayService: IframeOverlayService,
-        private paginationService: PaginatorService) {
-
-    }
+    constructor(
+        private config: DotcmsConfig,
+        private iframeOverlayService: IframeOverlayService,
+        private paginationService: PaginatorService,
+        private siteService: SiteService
+    ) {}
 
     ngOnInit(): void {
         this.paginationService.url = 'v1/site';
         this.paginateSites();
 
-        this.currentSite = this.siteService.currentSite;
-        this.siteService.switchSite$.subscribe(site => this.currentSite = site);
+        if (this.siteService.currentSite) {
+            this.currentSite = Observable.of(this.siteService.currentSite);
+            this.propagateChange(this.siteService.currentSite);
+        } else {
+            this.siteService.switchSite$.subscribe(site => {
+                this.currentSite = Observable.of(site);
+                this.propagateChange(site.identifier);
+            });
+        }
     }
 
     /**
@@ -87,9 +104,9 @@ export class SiteSelectorComponent implements ControlValueAccessor {
      * @param {number} [page=1]
      * @memberof SiteSelectorComponent
      */
-    paginateSites(filter = '',  offset = 0): void {
+    paginateSites(filter = '', offset = 0): void {
         this.paginationService.filter = filter;
-        this.paginationService.getWithOffset(offset).subscribe( items => {
+        this.paginationService.getWithOffset(offset).subscribe(items => {
             this.sitesCurrentPage = items;
             this.totalRecords = this.totalRecords | this.paginationService.totalRecords;
         });
@@ -101,7 +118,7 @@ export class SiteSelectorComponent implements ControlValueAccessor {
      * @memberof SiteSelectorComponent
      */
     siteChange(site: Site): void {
-        let value =  site.identifier;
+        let value = site.identifier;
         this.change.emit(site);
         this.propagateChange(value);
     }
@@ -112,8 +129,9 @@ export class SiteSelectorComponent implements ControlValueAccessor {
      * @memberof SearchableDropdownComponent
      */
     writeValue(value: string): void {
-        this.value = value;
-        this.selectCurrentSite(value);
+        if (value) {
+            this.selectCurrentSite(value);
+        }
     }
 
     /**
@@ -127,10 +145,12 @@ export class SiteSelectorComponent implements ControlValueAccessor {
 
     registerOnTouched(): void {}
 
-    private selectCurrentSite(value: string): void {
-        if (this.sitesCurrentPage) {
-            let selected = this.sitesCurrentPage.filter( site => site.identifier === this.value);
-            this.currentSite = selected.length > 0 ? selected[0] : this.currentSite;
-        }
+    private getSiteByIdFromCurrentPage(siteId: string): Site {
+        return this.sitesCurrentPage && this.sitesCurrentPage.filter(site => site.identifier === siteId)[0];
+    }
+
+    private selectCurrentSite(siteId: string): void {
+        let selectedInCurrentPage = this.getSiteByIdFromCurrentPage(siteId);
+        this.currentSite = selectedInCurrentPage ? Observable.of(selectedInCurrentPage) : this.siteService.getSiteById(siteId);
     }
 }

@@ -1,4 +1,3 @@
-
 import { SearchableDropdownComponent } from './component';
 import { NgModule } from '@angular/core';
 import { OverlayPanelModule, ButtonModule, InputTextModule, DataListModule } from 'primeng/primeng';
@@ -22,10 +21,11 @@ export const SEARCHABLE_NGFACES_MODULES = [
         SearchableDropdownComponent
     ],
     imports: [
+        CommonModule,
+        FormsModule,
         ...SEARCHABLE_NGFACES_MODULES
     ],
-    providers: [
-    ]
+    providers: []
 })
 export class SearchableDropDownModule {
 

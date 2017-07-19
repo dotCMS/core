@@ -6,6 +6,7 @@ import { NgForm, FormGroup, FormBuilder, Validators, FormControl } from '@angula
 import { Observable } from 'rxjs/Observable';
 import { SelectItem } from 'primeng/components/common/api';
 import { trigger, state, style, transition, animate } from '@angular/animations';
+import { SiteSelectorComponent } from '../../../view/components/site-selector/dot-site-selector.component';
 
 /**
  * Form component to create or edit content types
@@ -30,10 +31,12 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
             ]
         )
     ],
+    providers: [SiteSelectorComponent],
     selector: 'content-types-form',
     styles: [require('./content-types-form.component.scss')],
     templateUrl: 'content-types-form.component.html'
 })
+
 export class ContentTypesFormComponent extends BaseComponent {
     @Input() data: any;
     @Input() icon: string;
@@ -48,7 +51,6 @@ export class ContentTypesFormComponent extends BaseComponent {
     public formState = 'collapsed';
     public submitAttempt = false;
     private dateVarOptions: SelectItem[] = [];
-    private sitesOrFolderOptions = [];
     private workflowOptions: SelectItem[] = [];
 
     constructor(public messageService: MessageService, private renderer: Renderer2, private fb: FormBuilder,

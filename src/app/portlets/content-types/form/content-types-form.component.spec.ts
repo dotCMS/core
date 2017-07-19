@@ -2,15 +2,20 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, async } from '@angular/core/testing';
 import { ContentTypesFormComponent } from './content-types-form.component';
-import { DebugElement, SimpleChange } from '@angular/core';
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { DropdownModule, OverlayPanelModule, ButtonModule, InputTextModule, TabViewModule } from 'primeng/primeng';
+import { DebugElement, SimpleChange } from '@angular/core';
 import { DotcmsConfig } from '../../../api/services/system/dotcms-config';
-import { Observable } from 'rxjs/Observable';
+import { DropdownModule, OverlayPanelModule, ButtonModule, InputTextModule, TabViewModule } from 'primeng/primeng';
 import { FieldValidationMessageModule } from '../../../view/components/_common/field-validation-message/file-validation-message.module';
+import { LoginService } from '../../../api/services/login-service';
+import { LoginServiceMock } from '../../../test/login-service.mock';
 import { MessageService } from '../../../api/services/messages-service';
 import { MockMessageService } from '../../../test/message-service.mock';
+import { Observable } from 'rxjs/Observable';
 import { ReactiveFormsModule } from '@angular/forms';
+import { RequestMethod } from '@angular/http';
+import { SiteSelectorModule } from '../../../view/components/site-selector/dot-site-selector.module';
+import { SocketFactory } from '../../../api/services/protocol/socket-factory';
 
 describe('ContentTypesFormComponent', () => {
     let comp: ContentTypesFormComponent;
@@ -48,11 +53,14 @@ describe('ContentTypesFormComponent', () => {
                 InputTextModule,
                 OverlayPanelModule,
                 ReactiveFormsModule,
-                TabViewModule
+                TabViewModule,
+                SiteSelectorModule
             ],
             providers: [
+                { provide: LoginService, useClass: LoginServiceMock },
                 { provide: MessageService, useValue: messageServiceMock },
                 DotcmsConfig,
+                SocketFactory
             ]
         });
 
@@ -135,7 +143,7 @@ describe('ContentTypesFormComponent', () => {
         expect(comp.form.valid).toBeFalsy();
     });
 
-    it('form should render basic fields for non-content types', () => {
+    it('form should render basic fields for non-content types', async(() => {
         expect(Object.keys(comp.form.controls).length).toBe(4);
         expect(comp.form.get('name')).not.toBeNull();
         expect(comp.form.get('host')).not.toBeNull();
@@ -143,12 +151,25 @@ describe('ContentTypesFormComponent', () => {
         expect(comp.form.get('workflow')).not.toBeNull();
         expect(comp.form.get('detailPage')).toBeNull();
         expect(comp.form.get('urlMapPattern')).toBeNull();
-    });
+
+        let fields = [
+            '#content-type-form-description',
+            '#content-type-form-host',
+            '#content-type-form-name',
+            '#content-type-form-workflow'
+        ];
+
+        fields.forEach(field => {
+            expect(fixture.debugElement.query(By.css(field))).not.toBeNull();
+        });
+    }));
 
     it('form should render extra fields for content types', () => {
         comp.ngOnChanges({
             type: new SimpleChange(null, 'content', true)
         });
+
+        fixture.detectChanges();
 
         expect(Object.keys(comp.form.controls).length).toBe(6);
         expect(comp.form.get('name')).not.toBeNull();
@@ -157,6 +178,19 @@ describe('ContentTypesFormComponent', () => {
         expect(comp.form.get('workflow')).not.toBeNull();
         expect(comp.form.get('detailPage')).not.toBeNull();
         expect(comp.form.get('urlMapPattern')).not.toBeNull();
+
+        let fields = [
+            '#content-type-form-description',
+            '#content-type-form-detail-page',
+            '#content-type-form-host',
+            '#content-type-form-name',
+            '#content-type-form-url-map-pattern',
+            '#content-type-form-workflow'
+        ];
+
+        fields.forEach(field => {
+            expect(fixture.debugElement.query(By.css(field))).not.toBeNull();
+        });
     });
 
     it('form should render dates fields in edit mode', () => {
@@ -169,6 +203,8 @@ describe('ContentTypesFormComponent', () => {
             type: new SimpleChange(null, 'content', true)
         });
 
+        fixture.detectChanges();
+
         expect(Object.keys(comp.form.controls).length).toBe(8);
         expect(comp.form.get('name')).not.toBeNull();
         expect(comp.form.get('host')).not.toBeNull();
@@ -178,6 +214,21 @@ describe('ContentTypesFormComponent', () => {
         expect(comp.form.get('urlMapPattern')).not.toBeNull();
         expect(comp.form.get('publishDateVar')).not.toBeNull();
         expect(comp.form.get('expireDateVar')).not.toBeNull();
+
+        let fields = [
+            '#content-type-form-description',
+            '#content-type-form-detail-page',
+            '#content-type-form-host',
+            '#content-type-form-name',
+            '#content-type-form-url-map-pattern',
+            '#content-type-form-workflow',
+            '#content-type-form-publish-date-field',
+            '#content-type-form-expire-date-field'
+        ];
+
+        fields.forEach(field => {
+            expect(fixture.debugElement.query(By.css(field))).not.toBeNull();
+        });
     });
 
     it('form should render disabled dates fields', () => {
