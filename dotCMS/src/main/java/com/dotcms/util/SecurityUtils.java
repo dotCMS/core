@@ -1,17 +1,10 @@
 package com.dotcms.util;
 
-import java.net.URL;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
 import com.liferay.util.Xss;
 
 /**
@@ -55,31 +48,11 @@ public class SecurityUtils {
 	 * @return
 	 * @throws IllegalArgumentException
 	 */
-    public static String stripReferer ( HttpServletRequest request, String referer ) throws IllegalArgumentException {
+	public static String stripReferer ( HttpServletRequest request, String referer ) throws IllegalArgumentException {
 
     	if(referer==null) return referer;
 
         String ref = referer;
-        if(Config.getBooleanProperty("DISABLE_EXTERNAL_REFERERS", false) && ref.contains("://")) {
-
-            try {
-
-                //Search for the system user
-                User systemUser = APILocator.getUserAPI().getSystemUser();
-
-                /*
-                 Now we need to identify if this referer url is a external or internal URL, externals URLs
-                 could lead to security threats.
-                  */
-                URL url = new URL( referer );
-                String refererHost = url.getHost();
-
-                String serverName = request.getServerName();
-
-            } catch ( Exception e ) {
-                throw new IllegalArgumentException( "Error validating URL " + referer, e );
-            }
-        }
         
         ref = Xss.strip(ref);
         
