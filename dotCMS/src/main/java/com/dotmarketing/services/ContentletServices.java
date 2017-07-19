@@ -158,7 +158,10 @@ public class ContentletServices {
         ContentletMapServices.invalidateWorking(contentlet);
     }
 
-	private static void invalidate(Contentlet content, Identifier identifier, boolean EDIT_MODE) throws DotDataException, DotSecurityException {
+	private static void invalidate(final Contentlet content,
+                                   final Identifier identifier,
+                                   final boolean EDIT_MODE) throws DotDataException, DotSecurityException {
+
 		removeContentletFile(content, identifier, EDIT_MODE);
 
 		if(content.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {
@@ -167,6 +170,10 @@ public class ContentletServices {
 		if(content != null && content.isVanityUrl()){
 			//remove from cache
 			VanityUrlServices.getInstance().invalidateVanityUrl(content);
+		}
+		if(content != null && content.isKeyValue()){
+			//remove from cache
+			CacheLocator.getKeyValueCache().remove(content);
 		}
 	}
 

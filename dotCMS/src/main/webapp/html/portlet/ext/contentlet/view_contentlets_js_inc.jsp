@@ -1864,7 +1864,18 @@
 
                                         for (var n = 0; n < languages.length; ++n) {
                                             if (languages[n][0] == languageId) {
-	                                            locale = "<img style='margin-top: 3px;' src='/html/images/languages/" + languages[n][1] + "_" + languages[n][2] + ".gif' width='16px' height='11px' />&nbsp;(" + languages[n][1] + "_" + languages[n][2] + ")";
+	                                            langCode = "";
+	                                            floag = "";
+	                                            if (languages[n][1]) {
+	                                               langCode = languages[n][1];
+	                                            }
+	                                            if (languages[n][2]) {
+                                                   langCode += "_" + languages[n][2];
+                                                   flag = langCode;
+                                                } else {
+                                                   flag = langCode + "_" + langCode;
+                                                }
+	                                            locale = "<img style='margin-top: 3px;' src='/html/images/languages/" + flag + ".gif' width='16px' height='11px' />&nbsp;(" + langCode + ")";
 	                                            break;
                                         	}
                                         }

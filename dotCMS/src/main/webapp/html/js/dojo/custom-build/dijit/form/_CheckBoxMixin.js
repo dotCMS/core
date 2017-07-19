@@ -47,7 +47,7 @@ define("dijit/form/_CheckBoxMixin", [
 		_setLabelAttr: undefined,
 
 		_getSubmitValue: function(/*String*/ value){
-			return (value == null || value === "") ? "on" : value;
+			return !value && value !== 0 ? "on" : value;
 		},
 
 		_setValueAttr: function(newValue){
@@ -59,7 +59,7 @@ define("dijit/form/_CheckBoxMixin", [
 		reset: function(){
 			this.inherited(arguments);
 			// Handle unlikely event that the <input type=checkbox> value attribute has changed
-			this._set("value", this._getSubmitValue(this.params.value));
+			this._set("value", this.params.value || "on");
 			domAttr.set(this.focusNode, 'value', this.value);
 		},
 

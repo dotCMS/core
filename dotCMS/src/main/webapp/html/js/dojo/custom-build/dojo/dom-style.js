@@ -188,7 +188,7 @@ define("dojo/dom-style", ["./sniff", "./dom"], function(has, dom){
 	function _toStyleValue(node, type, value){
 		//TODO: should we really be doing string case conversion here? Should we cache it? Need to profile!
 		type = type.toLowerCase();
-		if(has("ie") || has("trident")){
+		if(has("ie")){
 			if(value == "auto"){
 				if(type == "height"){ return node.offsetHeight; }
 				if(type == "width"){ return node.offsetWidth; }
@@ -207,7 +207,8 @@ define("dojo/dom-style", ["./sniff", "./dom"], function(has, dom){
 		return _pixelNamesCache[type] ? toPixel(node, value) : value;
 	}
 
-	var _floatAliases = {cssFloat: 1, styleFloat: 1, "float": 1};
+	var _floatStyle = has("ie") ? "styleFloat" : "cssFloat",
+		_floatAliases = {"cssFloat": _floatStyle, "styleFloat": _floatStyle, "float": _floatStyle};
 
 	// public API
 
@@ -239,7 +240,7 @@ define("dojo/dom-style", ["./sniff", "./dom"], function(has, dom){
 		if(l == 2 && op){
 			return _getOpacity(n);
 		}
-		name = _floatAliases[name] ? "cssFloat" in n.style ? "cssFloat" : "styleFloat" : name;
+		name = _floatAliases[name] || name;
 		var s = style.getComputedStyle(n);
 		return (l == 1) ? s : _toStyleValue(n, name, s[name] || n.style[name]); /* CSS2Properties||String||Number */
 	};
@@ -291,7 +292,7 @@ define("dojo/dom-style", ["./sniff", "./dom"], function(has, dom){
 		//	|	});
 
 		var n = dom.byId(node), l = arguments.length, op = (name == "opacity");
-		name = _floatAliases[name] ? "cssFloat" in n.style ? "cssFloat" : "styleFloat" : name;
+		name = _floatAliases[name] || name;
 		if(l == 3){
 			return op ? _setOpacity(n, value) : n.style[name] = value; // Number
 		}

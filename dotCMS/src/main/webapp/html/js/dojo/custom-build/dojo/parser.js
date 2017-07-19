@@ -812,12 +812,17 @@ define(
 			//	|		parser.parse({ noStart:true, rootNode: someNode });
 
 			// determine the root node and options based on the passed arguments.
-			if(rootNode && typeof rootNode != "string" && !("nodeType" in rootNode)){
-				// If called as parse(options) rather than parse(), parse(rootNode), or parse(rootNode, options)...
+			var root;
+			if(!options && rootNode && rootNode.rootNode){
 				options = rootNode;
-				rootNode = options.rootNode;
+				root = options.rootNode;
+			}else if(rootNode && dlang.isObject(rootNode) && !("nodeType" in rootNode)){
+				options = rootNode;
+			}else{
+				root = rootNode;
 			}
-			var root = rootNode ? dhtml.byId(rootNode) : dwindow.body();
+			root = root ? dhtml.byId(root) : dwindow.body();
+
 			options = options || {};
 
 			var mixin = options.template ? { template: true } : {},

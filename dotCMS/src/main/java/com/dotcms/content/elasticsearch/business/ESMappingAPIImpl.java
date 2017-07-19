@@ -92,11 +92,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 * @throws ElasticsearchException
 	 * @throws IOException
 	 */
-    public  boolean putMapping(String indexName, String type, String mapping) throws ElasticsearchException, IOException{
+	public  boolean putMapping(String indexName, String type, String mapping) throws ElasticsearchException, IOException{
 
-    	ListenableActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices().preparePutMapping().setIndices(indexName).setType(type).setSource(mapping).execute();
-    	return lis.actionGet().isAcknowledged();
-    }
+		ListenableActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices().preparePutMapping().setIndices(indexName).setType(type).setSource(mapping).execute();
+		return lis.actionGet().isAcknowledged();
+	}
 
 	/**
 	 * This method takes a mapping string, a type and puts it as the mapping
@@ -107,42 +107,42 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 * @throws ElasticsearchException
 	 * @throws IOException
 	 */
-    public  boolean putMapping(String indexName, String type, String mapping, String settings) throws ElasticsearchException, IOException{
-    	ListenableActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices().preparePutMapping().setIndices(indexName).setType(type).setSource(mapping).execute();
-    	return lis.actionGet().isAcknowledged();
-    }
+	public  boolean putMapping(String indexName, String type, String mapping, String settings) throws ElasticsearchException, IOException{
+		ListenableActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices().preparePutMapping().setIndices(indexName).setType(type).setSource(mapping).execute();
+		return lis.actionGet().isAcknowledged();
+	}
 
-    public  boolean setSettings(String indexName,   String settings) throws ElasticsearchException, IOException{
-    	new ESClient().getClient().admin().indices().prepareUpdateSettings().setSettings(settings).setIndices( indexName).execute().actionGet();
-    	return true;
-    }
+	public  boolean setSettings(String indexName,   String settings) throws ElasticsearchException, IOException{
+		new ESClient().getClient().admin().indices().prepareUpdateSettings().setSettings(settings).setIndices( indexName).execute().actionGet();
+		return true;
+	}
 
 
 
-    /**
-     * Gets the mapping params for an index and type
-     * @param index
-     * @param type
-     * @return
-     * @throws ElasticsearchException
-     * @throws IOException
-     */
-    public  String getMapping(String index, String type) throws ElasticsearchException, IOException{
+	/**
+	 * Gets the mapping params for an index and type
+	 * @param index
+	 * @param type
+	 * @return
+	 * @throws ElasticsearchException
+	 * @throws IOException
+	 */
+	public  String getMapping(String index, String type) throws ElasticsearchException, IOException{
 
-    	return new ESClient().getClient().admin().cluster().state(new ClusterStateRequest())
-        .actionGet().getState().metaData().indices()
-        .get(index).mapping(type).source().string();
+		return new ESClient().getClient().admin().cluster().state(new ClusterStateRequest())
+				.actionGet().getState().metaData().indices()
+				.get(index).mapping(type).source().string();
 
-    }
-    
-    public  String getSettings(String index, String type) throws ElasticsearchException, IOException{
+	}
 
-    	return new ESClient().getClient().admin().cluster().state(new ClusterStateRequest())
-    	        .actionGet().getState().metaData().indices()
-    	        
-    	        .get(index).settings().getAsMap().toString();
+	public  String getSettings(String index, String type) throws ElasticsearchException, IOException{
 
-    }
+		return new ESClient().getClient().admin().cluster().state(new ClusterStateRequest())
+				.actionGet().getState().metaData().indices()
+
+				.get(index).settings().getAsMap().toString();
+
+	}
 
 
 
@@ -216,85 +216,85 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			contentletMap.put(ESMappingConstants.TITLE, con.getTitle());
 			contentletMap.put(ESMappingConstants.STRUCTURE_NAME, st.getVelocityVarName()); // marked for DEPRECATION
 			contentletMap.put(ESMappingConstants.CONTENT_TYPE, st.getVelocityVarName());
-            contentletMap.put(ESMappingConstants.STRUCTURE_TYPE, st.getStructureType() + ""); // marked for DEPRECATION
-            contentletMap.put(ESMappingConstants.BASE_TYPE, st.getStructureType() + "");
-            contentletMap.put(ESMappingConstants.TYPE, ESMappingConstants.CONTENT);
-            contentletMap.put(ESMappingConstants.INODE, con.getInode());
-            contentletMap.put(ESMappingConstants.MOD_DATE, datetimeFormat.format(con.getModDate()));
-            contentletMap.put(ESMappingConstants.OWNER, con.getOwner()==null ? "0" : con.getOwner());
-            contentletMap.put(ESMappingConstants.MOD_USER, con.getModUser());
-            contentletMap.put(ESMappingConstants.LIVE, Boolean.toString(con.isLive()));
-            contentletMap.put(ESMappingConstants.WORKING, Boolean.toString(con.isWorking()));
-            contentletMap.put(ESMappingConstants.LOCKED, Boolean.toString(con.isLocked()));
-            contentletMap.put(ESMappingConstants.DELETED, Boolean.toString(con.isArchived()));
-            contentletMap.put(ESMappingConstants.LANGUAGE_ID, Long.toString(con.getLanguageId()));
-            contentletMap.put(ESMappingConstants.IDENTIFIER, ident.getId());
-            contentletMap.put(ESMappingConstants.CONTENTLET_HOST, ident.getHostId());
-            contentletMap.put(ESMappingConstants.CONTENTLET_FOLER, conFolder!=null && InodeUtils.isSet(conFolder.getInode()) ? conFolder.getInode() : con.getFolder());
-            contentletMap.put(ESMappingConstants.PARENT_PATH, ident.getParentPath());
-            contentletMap.put(ESMappingConstants.PATH, ident.getPath());
-            // makes shorties searchable regardless of length
-            contentletMap.put(ESMappingConstants.SHORT_ID, ident.getId().replace("-", ""));
-            contentletMap.put(ESMappingConstants.SHORT_INODE, con.getInode().replace("-", ""));
-            try{
-            	WorkflowTask task = APILocator.getWorkflowAPI().findTaskByContentlet(con);
-            	if(task!=null && task.getId()!=null){
-            		contentletMap.put(ESMappingConstants.WORKFLOW_CREATED_BY, task.getCreatedBy());
-                    contentletMap.put(ESMappingConstants.WORKFLOW_ASSIGN, task.getAssignedTo());
-            		contentletMap.put(ESMappingConstants.WORKFLOW_STEP, task.getStatus());
-            		contentletMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, datetimeFormat.format(task.getModDate()));
-            	}
-            			
-            }
-            catch(DotDataException e){
-            	Logger.error(this.getClass(), "unable to add workflow info to index:" + e, e);
-            }
-            
-            
-            
-            if(UtilMethods.isSet(ident.getSysPublishDate()))
-                contentletMap.put(ESMappingConstants.PUBLISH_DATE, datetimeFormat.format(ident.getSysPublishDate()));
-            else
-                contentletMap.put(ESMappingConstants.PUBLISH_DATE, datetimeFormat.format(cvi.getVersionTs()));
+			contentletMap.put(ESMappingConstants.STRUCTURE_TYPE, st.getStructureType() + ""); // marked for DEPRECATION
+			contentletMap.put(ESMappingConstants.BASE_TYPE, st.getStructureType() + "");
+			contentletMap.put(ESMappingConstants.TYPE, ESMappingConstants.CONTENT);
+			contentletMap.put(ESMappingConstants.INODE, con.getInode());
+			contentletMap.put(ESMappingConstants.MOD_DATE, datetimeFormat.format(con.getModDate()));
+			contentletMap.put(ESMappingConstants.OWNER, con.getOwner()==null ? "0" : con.getOwner());
+			contentletMap.put(ESMappingConstants.MOD_USER, con.getModUser());
+			contentletMap.put(ESMappingConstants.LIVE, Boolean.toString(con.isLive()));
+			contentletMap.put(ESMappingConstants.WORKING, Boolean.toString(con.isWorking()));
+			contentletMap.put(ESMappingConstants.LOCKED, Boolean.toString(con.isLocked()));
+			contentletMap.put(ESMappingConstants.DELETED, Boolean.toString(con.isArchived()));
+			contentletMap.put(ESMappingConstants.LANGUAGE_ID, Long.toString(con.getLanguageId()));
+			contentletMap.put(ESMappingConstants.IDENTIFIER, ident.getId());
+			contentletMap.put(ESMappingConstants.CONTENTLET_HOST, ident.getHostId());
+			contentletMap.put(ESMappingConstants.CONTENTLET_FOLER, conFolder!=null && InodeUtils.isSet(conFolder.getInode()) ? conFolder.getInode() : con.getFolder());
+			contentletMap.put(ESMappingConstants.PARENT_PATH, ident.getParentPath());
+			contentletMap.put(ESMappingConstants.PATH, ident.getPath());
+			// makes shorties searchable regardless of length
+			contentletMap.put(ESMappingConstants.SHORT_ID, ident.getId().replace("-", ""));
+			contentletMap.put(ESMappingConstants.SHORT_INODE, con.getInode().replace("-", ""));
+			try{
+				WorkflowTask task = APILocator.getWorkflowAPI().findTaskByContentlet(con);
+				if(task!=null && task.getId()!=null){
+					contentletMap.put(ESMappingConstants.WORKFLOW_CREATED_BY, task.getCreatedBy());
+					contentletMap.put(ESMappingConstants.WORKFLOW_ASSIGN, task.getAssignedTo());
+					contentletMap.put(ESMappingConstants.WORKFLOW_STEP, task.getStatus());
+					contentletMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, datetimeFormat.format(task.getModDate()));
+				}
 
-            if(UtilMethods.isSet(ident.getSysExpireDate()))
-                contentletMap.put(ESMappingConstants.EXPIRE_DATE, datetimeFormat.format(ident.getSysExpireDate()));
-            else
-                contentletMap.put(ESMappingConstants.EXPIRE_DATE, "29990101000000");
+			}
+			catch(DotDataException e){
+				Logger.error(this.getClass(), "unable to add workflow info to index:" + e, e);
+			}
 
-            contentletMap.put(ESMappingConstants.VERSION_TS, datetimeFormat.format(cvi.getVersionTs()));
 
-            String urlMap = null;
-            try{
-            	urlMap = APILocator.getContentletAPI().getUrlMapForContentlet(con, APILocator.getUserAPI().getSystemUser(), true);
-                if(urlMap != null){
-                	contentletMap.put(ESMappingConstants.URL_MAP,urlMap );
-                }
-            }
-            catch(Exception e){
-            	Logger.warn(this.getClass(), "Cannot get URLMap for contentlet.id : " + ((ident != null) ? ident.getId() : con) + " , reason: "+e.getMessage());
-            	throw new DotRuntimeException(urlMap, e);
-            }
 
-            for(Entry<String,String> entry : contentletMap.entrySet()){
-                final String lcasek=entry.getKey().toLowerCase();
+			if(UtilMethods.isSet(ident.getSysPublishDate()))
+				contentletMap.put(ESMappingConstants.PUBLISH_DATE, datetimeFormat.format(ident.getSysPublishDate()));
+			else
+				contentletMap.put(ESMappingConstants.PUBLISH_DATE, datetimeFormat.format(cvi.getVersionTs()));
+
+			if(UtilMethods.isSet(ident.getSysExpireDate()))
+				contentletMap.put(ESMappingConstants.EXPIRE_DATE, datetimeFormat.format(ident.getSysExpireDate()));
+			else
+				contentletMap.put(ESMappingConstants.EXPIRE_DATE, "29990101000000");
+
+			contentletMap.put(ESMappingConstants.VERSION_TS, datetimeFormat.format(cvi.getVersionTs()));
+
+			String urlMap = null;
+			try{
+				urlMap = APILocator.getContentletAPI().getUrlMapForContentlet(con, APILocator.getUserAPI().getSystemUser(), true);
+				if(urlMap != null){
+					contentletMap.put(ESMappingConstants.URL_MAP,urlMap );
+				}
+			}
+			catch(Exception e){
+				Logger.warn(this.getClass(), "Cannot get URLMap for contentlet.id : " + ((ident != null) ? ident.getId() : con) + " , reason: "+e.getMessage());
+				throw new DotRuntimeException(urlMap, e);
+			}
+
+			for(Entry<String,String> entry : contentletMap.entrySet()){
+				final String lcasek=entry.getKey().toLowerCase();
 				final String lcasev = UtilMethods.isSet(entry.getValue()) ? entry.getValue().toLowerCase() : null;
-                mlowered.put(lcasek, lcasev);
-                mlowered.put(lcasek + "_dotraw", lcasev);
-            }
+				mlowered.put(lcasek, lcasev);
+				mlowered.put(lcasek + "_dotraw", lcasev);
+			}
 
-            if(con.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
-                // see if we have content metadata
-                File contentMeta=APILocator.getFileAssetAPI().getContentMetadataFile(con.getInode());
-                if(contentMeta.exists() && contentMeta.length()>0) {
+			if(con.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
+				// see if we have content metadata
+				File contentMeta=APILocator.getFileAssetAPI().getContentMetadataFile(con.getInode());
+				if(contentMeta.exists() && contentMeta.length()>0) {
 
-                    String contentData=APILocator.getFileAssetAPI().getContentMetadataAsString(contentMeta);
+					String contentData=APILocator.getFileAssetAPI().getContentMetadataAsString(contentMeta);
 
-                    String lvar=con.getStructure().getVelocityVarName().toLowerCase();
+					String lvar=con.getStructure().getVelocityVarName().toLowerCase();
 
-                    mlowered.put(lvar+".metadata.content", contentData);
-                }
-            }
+					mlowered.put(lvar+".metadata.content", contentData);
+				}
+			}
 
 			//The url is now stored under the identifier for html pages, so we need to index that also.
 			if(con.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
@@ -302,104 +302,104 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				mlowered.put(con.getStructure().getVelocityVarName().toLowerCase() + ".url_dotraw", ident.getAssetName());
 			}
 
-            return mlowered;
+			return mlowered;
 		} catch (Exception e) {
 			//Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotMappingException(e.getMessage(), e);
 		}
 	}
 
-    public Object toMappedObj(Contentlet con) throws DotMappingException {
+	public Object toMappedObj(Contentlet con) throws DotMappingException {
 		return toJson(con);
 	}
 
 	@SuppressWarnings("unchecked")
 	protected void loadCategories(Contentlet con, Map<String,String> m) throws DotDataException, DotSecurityException {
-	    // first we check if there is a category field in the structure. We don't hit db if not needed
-	    boolean thereiscategory=false;
-	    Structure st=CacheLocator.getContentTypeCache().getStructureByInode(con.getStructureInode());
-	    List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
-	    for(Field f : fields)
-	        thereiscategory = thereiscategory ||
-	         f.getFieldType().equals(FieldType.CATEGORY.toString());
+		// first we check if there is a category field in the structure. We don't hit db if not needed
+		boolean thereiscategory=false;
+		Structure st=CacheLocator.getContentTypeCache().getStructureByInode(con.getStructureInode());
+		List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
+		for(Field f : fields)
+			thereiscategory = thereiscategory ||
+					f.getFieldType().equals(FieldType.CATEGORY.toString());
 
-	    String categoriesString="";
+		String categoriesString="";
 
-	    if(thereiscategory) {
-    	    String categoriesSQL = "select category.category_velocity_var_name as cat_velocity_var "+
-                    " from  category join tree on (tree.parent = category.inode) join contentlet c on (c.inode = tree.child) " +
-                    " where c.inode = ?";
-    	    DotConnect db = new DotConnect();
-            db.setSQL(categoriesSQL);
-            db.addParam(con.getInode());
-            ArrayList<String> categories=new ArrayList<String>();
-    	    List<HashMap<String, String>> categoriesResults = db.loadResults();
-    	    for (HashMap<String, String> crow : categoriesResults)
-    	        categories.add(crow.get("cat_velocity_var"));
+		if(thereiscategory) {
+			String categoriesSQL = "select category.category_velocity_var_name as cat_velocity_var "+
+					" from  category join tree on (tree.parent = category.inode) join contentlet c on (c.inode = tree.child) " +
+					" where c.inode = ?";
+			DotConnect db = new DotConnect();
+			db.setSQL(categoriesSQL);
+			db.addParam(con.getInode());
+			ArrayList<String> categories=new ArrayList<String>();
+			List<HashMap<String, String>> categoriesResults = db.loadResults();
+			for (HashMap<String, String> crow : categoriesResults)
+				categories.add(crow.get("cat_velocity_var"));
 
-    	    categoriesString=UtilMethods.join(categories, " ").trim();
+			categoriesString=UtilMethods.join(categories, " ").trim();
 
-	        for(Field f : fields) {
-	            if(f.getFieldType().equals(FieldType.CATEGORY.toString())) {
-    	            String catString="";
-    	            if(!categories.isEmpty()) {
-        	            String catId=f.getValues();
+			for(Field f : fields) {
+				if(f.getFieldType().equals(FieldType.CATEGORY.toString())) {
+					String catString="";
+					if(!categories.isEmpty()) {
+						String catId=f.getValues();
 
-        	            // we get all subcategories (recursive)
-        	            Category category=APILocator.getCategoryAPI().find(catId, APILocator.getUserAPI().getSystemUser(), false);
-        	            List<Category> childrens=APILocator.getCategoryAPI().getAllChildren(
-        	                    category, APILocator.getUserAPI().getSystemUser(), false);
+						// we get all subcategories (recursive)
+						Category category=APILocator.getCategoryAPI().find(catId, APILocator.getUserAPI().getSystemUser(), false);
+						List<Category> childrens=APILocator.getCategoryAPI().getAllChildren(
+								category, APILocator.getUserAPI().getSystemUser(), false);
 
-        	            // we look for categories that match childrens for the
-        	            // categoryId of the field
-        	            ArrayList<String> fieldCategories=new ArrayList<String>();
-        	            for(String catvelvarname : categories)
-        	                for(Category chCat : childrens)
-        	                    if(chCat.getCategoryVelocityVarName().equals(catvelvarname))
-        	                        fieldCategories.add(catvelvarname);
+						// we look for categories that match childrens for the
+						// categoryId of the field
+						ArrayList<String> fieldCategories=new ArrayList<String>();
+						for(String catvelvarname : categories)
+							for(Category chCat : childrens)
+								if(chCat.getCategoryVelocityVarName().equals(catvelvarname))
+									fieldCategories.add(catvelvarname);
 
-        	            // after matching them we create the JSON field
-        	            if(!fieldCategories.isEmpty())
-            	            catString=UtilMethods.join(fieldCategories, " ").trim();
-    	            }
-    	            m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), catString);
-	            }
-	        }
-	    }
+						// after matching them we create the JSON field
+						if(!fieldCategories.isEmpty())
+							catString=UtilMethods.join(fieldCategories, " ").trim();
+					}
+					m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), catString);
+				}
+			}
+		}
 
-        m.put(ESMappingConstants.CATEGORIES, categoriesString);
+		m.put(ESMappingConstants.CATEGORIES, categoriesString);
 	}
 
 	@SuppressWarnings("unchecked")
 	protected void loadPermissions(Contentlet con, Map<String,String> m) throws DotDataException {
-        PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-        List<Permission> permissions = permissionAPI.getPermissions(con, false, false, false);
-        StringBuilder permissionsSt = new StringBuilder();
-        boolean ownerCanRead = false;
-        boolean ownerCanWrite = false;
-        boolean ownerCanPub = false;
-        for (Permission permission : permissions) {
-            String str = "P" + permission.getRoleId() + "." + permission.getPermission() + "P ";
-            if (permissionsSt.toString().indexOf(str) < 0) {
-                permissionsSt.append(str);
-            }
-            if(APILocator.getRoleAPI().loadCMSOwnerRole().getId().equals(String.valueOf(permission.getRoleId()))){
-                if(permission.getPermission() == PERMISSION_READ){
-                    ownerCanRead = true;
-                }else if(permission.getPermission() == PERMISSION_WRITE){
-                    ownerCanRead = true;
-                    ownerCanWrite = true;
-                }else if(permission.getPermission() == PERMISSION_PUBLISH){
-                    ownerCanRead = true;
-                    ownerCanWrite = true;
-                    ownerCanPub = true;
-                }
-            }
-        }
-        m.put(ESMappingConstants.PERMISSIONS, permissionsSt.toString());
-        m.put(ESMappingConstants.OWNER_CAN_READ, Boolean.toString(ownerCanRead));
-        m.put(ESMappingConstants.OWNER_CAN_WRITE, Boolean.toString(ownerCanWrite));
-        m.put(ESMappingConstants.OWNER_CAN_PUBLISH, Boolean.toString(ownerCanPub));
+		PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+		List<Permission> permissions = permissionAPI.getPermissions(con, false, false, false);
+		StringBuilder permissionsSt = new StringBuilder();
+		boolean ownerCanRead = false;
+		boolean ownerCanWrite = false;
+		boolean ownerCanPub = false;
+		for (Permission permission : permissions) {
+			String str = "P" + permission.getRoleId() + "." + permission.getPermission() + "P ";
+			if (permissionsSt.toString().indexOf(str) < 0) {
+				permissionsSt.append(str);
+			}
+			if(APILocator.getRoleAPI().loadCMSOwnerRole().getId().equals(String.valueOf(permission.getRoleId()))){
+				if(permission.getPermission() == PERMISSION_READ){
+					ownerCanRead = true;
+				}else if(permission.getPermission() == PERMISSION_WRITE){
+					ownerCanRead = true;
+					ownerCanWrite = true;
+				}else if(permission.getPermission() == PERMISSION_PUBLISH){
+					ownerCanRead = true;
+					ownerCanWrite = true;
+					ownerCanPub = true;
+				}
+			}
+		}
+		m.put(ESMappingConstants.PERMISSIONS, permissionsSt.toString());
+		m.put(ESMappingConstants.OWNER_CAN_READ, Boolean.toString(ownerCanRead));
+		m.put(ESMappingConstants.OWNER_CAN_WRITE, Boolean.toString(ownerCanWrite));
+		m.put(ESMappingConstants.OWNER_CAN_PUBLISH, Boolean.toString(ownerCanPub));
 	}
 
 	public static final FastDateFormat dateFormat = FastDateFormat.getInstance("yyyyMMdd");
@@ -411,260 +411,260 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public static final FastDateFormat timeFormat = FastDateFormat.getInstance("HHmmss");
 
 	protected void loadFields(Contentlet con, Map<String, String> m) throws DotDataException {
-		
+
 		// https://github.com/dotCMS/dotCMS/issues/6152
 		DecimalFormatSymbols otherSymbols = new DecimalFormatSymbols();
 		otherSymbols.setDecimalSeparator('.');
-		
+
 		DecimalFormat numFormatter = new DecimalFormat("0000000000000000000.000000000000000000", otherSymbols);
-		
-	    FieldAPI fAPI=APILocator.getFieldAPI();
-	    List<Field> fields = new ArrayList<Field>(FieldsCache.getFieldsByStructureInode(con.getStructureInode()));
 
-	    Structure st=con.getStructure();
-        for (Field f : fields) {
-            if (f.getFieldType().equals(Field.FieldType.BINARY.toString())
-                    || f.getFieldContentlet() != null && (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_TYPE_SYSTEM_FIELD) && !f.getFieldType().equals(Field.FieldType.TAG.toString()))) {
-                continue;
-            }
-            if(!f.isIndexed()){
-            	continue;
-            }
-            try {
-                if(fAPI.isElementConstant(f)){
-                    m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), (f.getValues() == null ? "":f.getValues().toString()));
-                    continue;
-                }
+		FieldAPI fAPI=APILocator.getFieldAPI();
+		List<Field> fields = new ArrayList<Field>(FieldsCache.getFieldsByStructureInode(con.getStructureInode()));
 
-                Object valueObj = con.get(f.getVelocityVarName());
-                if(valueObj == null){
-                    valueObj = "";
-                }
-                if (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_TYPE_SECTION_DIVIDER)) {
-                    valueObj = "";
-                }
+		Structure st=con.getStructure();
+		for (Field f : fields) {
+			if (f.getFieldType().equals(Field.FieldType.BINARY.toString())
+					|| f.getFieldContentlet() != null && (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_TYPE_SYSTEM_FIELD) && !f.getFieldType().equals(Field.FieldType.TAG.toString()))) {
+				continue;
+			}
+			if(!f.isIndexed()){
+				continue;
+			}
+			try {
+				if(fAPI.isElementConstant(f)){
+					m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), (f.getValues() == null ? "":f.getValues().toString()));
+					continue;
+				}
 
-                if(!UtilMethods.isSet(valueObj)) {
-                    m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), "");
-                }
-                else if(f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_TIME)) {
-                	try{
-                        String timeStr=timeFormat.format(valueObj);
-                        m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), timeStr);
-                	}
-                	catch(Exception e){
-                		m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(),"");
-                	}
-                }
-                else if (f.getFieldType().equals(ESMappingConstants.FIELD_ELASTIC_TYPE_DATE)) {
-                    try {
-                        String dateString = dateFormat.format(valueObj);
-                        m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), dateString);
-                    }
-                    catch(Exception ex) {
-                        m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(),"");
-                    }
-                } else if(f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_DATE_TIME)) {
-                    try {
-                        String datetimeString = datetimeFormat.format(valueObj);
-                        m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), datetimeString);
-                    }
-                    catch(Exception ex) {
-                        m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(),"");
-                    }
-                } else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_CATEGORY)) {
-                    // moved the logic to loadCategories
-                } else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_CHECKBOX) || f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_MULTI_SELECT)) {
-                    if (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_BOOLEAN)) {
-                        m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), valueObj.toString());
-                    } else {
-                        m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), UtilMethods.listToString(valueObj.toString()));
-                    }
-                } else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_KEY_VALUE)){
-                    boolean fileMetadata=f.getVelocityVarName().equals(FileAssetAPI.META_DATA_FIELD) && st.getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET;
-                	if(!fileMetadata || LicenseUtil.getLevel()>199) {
+				Object valueObj = con.get(f.getVelocityVarName());
+				if(valueObj == null){
+					valueObj = "";
+				}
+				if (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_TYPE_SECTION_DIVIDER)) {
+					valueObj = "";
+				}
 
-                	    m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), (String)valueObj);
-                        Map<String,Object> keyValueMap = KeyValueFieldUtil.JSONValueToHashMap((String)valueObj);
+				if(!UtilMethods.isSet(valueObj)) {
+					m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), "");
+				}
+				else if(f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_TIME)) {
+					try{
+						String timeStr=timeFormat.format(valueObj);
+						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), timeStr);
+					}
+					catch(Exception e){
+						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(),"");
+					}
+				}
+				else if (f.getFieldType().equals(ESMappingConstants.FIELD_ELASTIC_TYPE_DATE)) {
+					try {
+						String dateString = dateFormat.format(valueObj);
+						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), dateString);
+					}
+					catch(Exception ex) {
+						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(),"");
+					}
+				} else if(f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_DATE_TIME)) {
+					try {
+						String datetimeString = datetimeFormat.format(valueObj);
+						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), datetimeString);
+					}
+					catch(Exception ex) {
+						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(),"");
+					}
+				} else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_CATEGORY)) {
+					// moved the logic to loadCategories
+				} else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_CHECKBOX) || f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_MULTI_SELECT)) {
+					if (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_BOOLEAN)) {
+						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), valueObj.toString());
+					} else {
+						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), UtilMethods.listToString(valueObj.toString()));
+					}
+				} else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_KEY_VALUE)){
+					boolean fileMetadata=f.getVelocityVarName().equals(FileAssetAPI.META_DATA_FIELD) && st.getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET;
+					if(!fileMetadata || LicenseUtil.getLevel()>199) {
 
-                        Set<String> allowedFields=null;
-                        if(fileMetadata) {
-                    	    // http://jira.dotmarketing.net/browse/DOTCMS-7243
-                    	    List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(
-                                    f.getInode(), APILocator.getUserAPI().getSystemUser(), false);
-                            for(FieldVariable fv : fieldVariables) {
-                                if(fv.getKey().equals(ESMappingConstants.DOT_INDEX_PATTERN)) {
-                                    String[] names=fv.getValue().split(",");
-                                    allowedFields=new HashSet<String>();
-                                    for(String n : names)
-                                        allowedFields.add(n.trim().toLowerCase());
-                                }
-                            }
-                            // aditional fields from the configuration file
-                            String configFields=Config.getStringProperty("INDEX_METADATA_FIELDS", "");
-                            if(configFields.trim().length()>0) {
-                                String[] names=configFields.split(",");
-                                if(names.length>0 && allowedFields==null)
-                                    allowedFields=new HashSet<String>();
-                                for(String n : names)
-                                    allowedFields.add(n.trim().toLowerCase());
-                            }
-                        }
+						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), (String)valueObj);
+						Map<String,Object> keyValueMap = KeyValueFieldUtil.JSONValueToHashMap((String)valueObj);
 
-                		if(keyValueMap!=null && !keyValueMap.isEmpty())
-                			for(String key : keyValueMap.keySet())
-                			    if(allowedFields==null || allowedFields.contains(key.toLowerCase()))
-                			        m.put(st.getVelocityVarName() + "." + f.getVelocityVarName() + "." + key, (String)keyValueMap.get(key));
-                	}
-                } else if(f.getFieldType().equals(Field.FieldType.TAG.toString())) {
+						Set<String> allowedFields=null;
+						if(fileMetadata) {
+							// http://jira.dotmarketing.net/browse/DOTCMS-7243
+							List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(
+									f.getInode(), APILocator.getUserAPI().getSystemUser(), false);
+							for(FieldVariable fv : fieldVariables) {
+								if(fv.getKey().equals(ESMappingConstants.DOT_INDEX_PATTERN)) {
+									String[] names=fv.getValue().split(",");
+									allowedFields=new HashSet<String>();
+									for(String n : names)
+										allowedFields.add(n.trim().toLowerCase());
+								}
+							}
+							// aditional fields from the configuration file
+							String configFields=Config.getStringProperty("INDEX_METADATA_FIELDS", "");
+							if(configFields.trim().length()>0) {
+								String[] names=configFields.split(",");
+								if(names.length>0 && allowedFields==null)
+									allowedFields=new HashSet<String>();
+								for(String n : names)
+									allowedFields.add(n.trim().toLowerCase());
+							}
+						}
 
-                    StringBuilder personaTags = new StringBuilder();
-                    StringBuilder tagg = new StringBuilder();
-                    List<Tag> tagList = APILocator.getTagAPI().getTagsByInode(con.getInode());
-                    if(tagList ==null || tagList.size()==0) continue;
-                    
-                    final String tagDelimit = Config.getStringProperty("ES_TAG_DELIMITER_PATTERN", ",,");
-                    
-                    
-                    for ( Tag t : tagList ) {
-                    	if(t.getTagName() ==null) continue;
-                    	String myTag = t.getTagName().trim();
-                        tagg.append(myTag).append(tagDelimit);
-                        if ( t.isPersona() ) {
-                            personaTags.append(myTag).append(' ');
-                        }
-                    }
-                    if(tagg.length() >tagDelimit.length()){
-                    	String taggStr = tagg.substring(0, tagg.length()-tagDelimit.length());
-                        m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), taggStr.replaceAll(",,", " "));
-                        m.put(ESMappingConstants.TAGS, taggStr);
-                    }
+						if(keyValueMap!=null && !keyValueMap.isEmpty())
+							for(String key : keyValueMap.keySet())
+								if(allowedFields==null || allowedFields.contains(key.toLowerCase()))
+									m.put(st.getVelocityVarName() + "." + f.getVelocityVarName() + "." + key, (String)keyValueMap.get(key));
+					}
+				} else if(f.getFieldType().equals(Field.FieldType.TAG.toString())) {
+
+					StringBuilder personaTags = new StringBuilder();
+					StringBuilder tagg = new StringBuilder();
+					List<Tag> tagList = APILocator.getTagAPI().getTagsByInode(con.getInode());
+					if(tagList ==null || tagList.size()==0) continue;
+
+					final String tagDelimit = Config.getStringProperty("ES_TAG_DELIMITER_PATTERN", ",,");
 
 
-                    if ( Structure.STRUCTURE_TYPE_PERSONA != con.getStructure().getStructureType() ) {
-                        if ( personaTags.length() > tagDelimit.length() ) {
-                        	String personaStr = personaTags.substring(0, personaTags.length()-tagDelimit.length());
-                            m.put(st.getVelocityVarName() + "."+ESMappingConstants.PERSONAS, personaStr);
-                            m.put(ESMappingConstants.PERSONAS, personaStr);
-                        }
-                    }
+					for ( Tag t : tagList ) {
+						if(t.getTagName() ==null) continue;
+						String myTag = t.getTagName().trim();
+						tagg.append(myTag).append(tagDelimit);
+						if ( t.isPersona() ) {
+							personaTags.append(myTag).append(' ');
+						}
+					}
+					if(tagg.length() >tagDelimit.length()){
+						String taggStr = tagg.substring(0, tagg.length()-tagDelimit.length());
+						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), taggStr.replaceAll(",,", " "));
+						m.put(ESMappingConstants.TAGS, taggStr);
+					}
 
-                } else {
-                    if (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_BOOLEAN)) {
-                        m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), valueObj.toString());
-                    } else if (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_FLOAT) || f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_INTEGER)) {
-                        m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), numFormatter.format(valueObj));
-                    } else {
-                        m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), valueObj.toString());
-                    }
-                }
-            } catch (Exception e) {
-                Logger.warn(ESMappingAPIImpl.class, "Error indexing field: " + f.getFieldName()
-                        + " of contentlet: " + con.getInode(), e);
-                throw new DotDataException(e.getMessage(),e);
-            }
-        }
+
+					if ( Structure.STRUCTURE_TYPE_PERSONA != con.getStructure().getStructureType() ) {
+						if ( personaTags.length() > tagDelimit.length() ) {
+							String personaStr = personaTags.substring(0, personaTags.length()-tagDelimit.length());
+							m.put(st.getVelocityVarName() + "."+ESMappingConstants.PERSONAS, personaStr);
+							m.put(ESMappingConstants.PERSONAS, personaStr);
+						}
+					}
+
+				} else {
+					if (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_BOOLEAN)) {
+						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), valueObj.toString());
+					} else if (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_FLOAT) || f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_INTEGER)) {
+						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), numFormatter.format(valueObj));
+					} else {
+						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), valueObj.toString());
+					}
+				}
+			} catch (Exception e) {
+				Logger.warn(ESMappingAPIImpl.class, "Error indexing field: " + f.getFieldName()
+						+ " of contentlet: " + con.getInode(), e);
+				throw new DotDataException(e.getMessage(),e);
+			}
+		}
 	}
 	public String toJsonString(Map<String, Object> map) throws IOException{
 		return mapper.writeValueAsString(map);
 	}
 	public List<String> dependenciesLeftToReindex(Contentlet con) throws DotStateException, DotDataException, DotSecurityException {
-	    List<String> dependenciesToReindex = new ArrayList<String>();
+		List<String> dependenciesToReindex = new ArrayList<String>();
 
-	    ContentletAPI conAPI=APILocator.getContentletAPI();
+		ContentletAPI conAPI=APILocator.getContentletAPI();
 
-	    String relatedSQL = "select tree.* from tree where parent = ? or child = ? order by tree_order";
-	    DotConnect db = new DotConnect();
-	    db.setSQL(relatedSQL);
-        db.addParam(con.getIdentifier());
-        db.addParam(con.getIdentifier());
-        ArrayList<HashMap<String, String>> relatedContentlets = db.loadResults();
+		String relatedSQL = "select tree.* from tree where parent = ? or child = ? order by tree_order";
+		DotConnect db = new DotConnect();
+		db.setSQL(relatedSQL);
+		db.addParam(con.getIdentifier());
+		db.addParam(con.getIdentifier());
+		ArrayList<HashMap<String, String>> relatedContentlets = db.loadResults();
 
-        if(relatedContentlets.size()>0) {
+		if(relatedContentlets.size()>0) {
 
-            List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType(con.getStructure());
+			List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType(con.getStructure());
 
-            for(Relationship rel : relationships) {
+			for(Relationship rel : relationships) {
 
-                List<Contentlet> oldDocs = new ArrayList <Contentlet>();
+				List<Contentlet> oldDocs = new ArrayList <Contentlet>();
 
-                String q = "";
-                boolean isSameStructRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
+				String q = "";
+				boolean isSameStructRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
 
-                if(isSameStructRelationship)
-                    q = "+type:content +(" + rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_PARENT+":" + con.getIdentifier() + " " +
-                        rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_CHILD+":" + con.getIdentifier() + ") ";
-                else
-                    q = "+type:content +" + rel.getRelationTypeValue() + ":" + con.getIdentifier();
+				if(isSameStructRelationship)
+					q = "+type:content +(" + rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_PARENT+":" + con.getIdentifier() + " " +
+							rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_CHILD+":" + con.getIdentifier() + ") ";
+				else
+					q = "+type:content +" + rel.getRelationTypeValue() + ":" + con.getIdentifier();
 
-                oldDocs  = conAPI.search(q, -1, 0, null, APILocator.getUserAPI().getSystemUser(), false);
+				oldDocs  = conAPI.search(q, -1, 0, null, APILocator.getUserAPI().getSystemUser(), false);
 
-                List<String> oldRelatedIds = new ArrayList<String>();
-                if(oldDocs.size() > 0) {
-                    for(Contentlet oldDoc : oldDocs) {
-                        oldRelatedIds.add(oldDoc.getIdentifier());
-                    }
-                }
+				List<String> oldRelatedIds = new ArrayList<String>();
+				if(oldDocs.size() > 0) {
+					for(Contentlet oldDoc : oldDocs) {
+						oldRelatedIds.add(oldDoc.getIdentifier());
+					}
+				}
 
-                List<String> newRelatedIds = new ArrayList<String>();
-                for(HashMap<String, String> relatedEntry : relatedContentlets) {
-                    String childId = relatedEntry.get(ESMappingConstants.CHILD);
-                    String parentId = relatedEntry.get(ESMappingConstants.PARENT);
-                    if(relatedEntry.get(ESMappingConstants.RELATION_TYPE).equals(rel.getRelationTypeValue())) {
-                        if(con.getIdentifier().equalsIgnoreCase(childId)) {
-                            newRelatedIds.add(parentId);
-                            oldRelatedIds.remove(parentId);
-                        } else {
-                            newRelatedIds.add(childId);
-                            oldRelatedIds.remove(childId);
-                        }
-                    }
-                }
+				List<String> newRelatedIds = new ArrayList<String>();
+				for(HashMap<String, String> relatedEntry : relatedContentlets) {
+					String childId = relatedEntry.get(ESMappingConstants.CHILD);
+					String parentId = relatedEntry.get(ESMappingConstants.PARENT);
+					if(relatedEntry.get(ESMappingConstants.RELATION_TYPE).equals(rel.getRelationTypeValue())) {
+						if(con.getIdentifier().equalsIgnoreCase(childId)) {
+							newRelatedIds.add(parentId);
+							oldRelatedIds.remove(parentId);
+						} else {
+							newRelatedIds.add(childId);
+							oldRelatedIds.remove(childId);
+						}
+					}
+				}
 
-                //Taking the disjunction of both collections will give the old list of dependencies that need to be removed from the
-                //re-indexation and the list of new dependencies no re-indexed yet
-                dependenciesToReindex.addAll(CollectionUtils.disjunction(oldRelatedIds, newRelatedIds));
-            }
-        }
-        return dependenciesToReindex;
+				//Taking the disjunction of both collections will give the old list of dependencies that need to be removed from the
+				//re-indexation and the list of new dependencies no re-indexed yet
+				dependenciesToReindex.addAll(CollectionUtils.disjunction(oldRelatedIds, newRelatedIds));
+			}
+		}
+		return dependenciesToReindex;
 	}
 
 	protected void loadRelationshipFields(Contentlet con, Map<String,String> m) throws DotStateException, DotDataException {
-	    DotConnect db = new DotConnect();
-        db.setSQL("select * from tree where parent = ? or child = ? order by tree_order asc");
-        db.addParam(con.getIdentifier());
-        db.addParam(con.getIdentifier());
+		DotConnect db = new DotConnect();
+		db.setSQL("select * from tree where parent = ? or child = ? order by tree_order asc");
+		db.addParam(con.getIdentifier());
+		db.addParam(con.getIdentifier());
 
-        for(Map<String, Object> relatedEntry : db.loadObjectResults()) {
+		for(Map<String, Object> relatedEntry : db.loadObjectResults()) {
 
-            String childId = relatedEntry.get(ESMappingConstants.CHILD).toString();
-            String parentId = relatedEntry.get(ESMappingConstants.PARENT).toString();
-            String relType=relatedEntry.get(ESMappingConstants.RELATION_TYPE).toString();
-            String order = relatedEntry.get(ESMappingConstants.TREE_ORDER).toString();
+			String childId = relatedEntry.get(ESMappingConstants.CHILD).toString();
+			String parentId = relatedEntry.get(ESMappingConstants.PARENT).toString();
+			String relType=relatedEntry.get(ESMappingConstants.RELATION_TYPE).toString();
+			String order = relatedEntry.get(ESMappingConstants.TREE_ORDER).toString();
 
-            Relationship rel = FactoryLocator.getRelationshipFactory().byTypeValue(relType);
+			Relationship rel = FactoryLocator.getRelationshipFactory().byTypeValue(relType);
 
-            if(rel!=null && InodeUtils.isSet(rel.getInode())) {
-                boolean isSameStructRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
+			if(rel!=null && InodeUtils.isSet(rel.getInode())) {
+				boolean isSameStructRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
 
-                String propName = isSameStructRelationship ?
-                        (con.getIdentifier().equals(parentId)?rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_CHILD:rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_PARENT)
-                        : rel.getRelationTypeValue();
+				String propName = isSameStructRelationship ?
+						(con.getIdentifier().equals(parentId)?rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_CHILD:rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_PARENT)
+						: rel.getRelationTypeValue();
 
-                String orderKey = rel.getRelationTypeValue()+ESMappingConstants.SUFFIX_ORDER;
+				String orderKey = rel.getRelationTypeValue()+ESMappingConstants.SUFFIX_ORDER;
 
-                if(relatedEntry.get(ESMappingConstants.RELATION_TYPE).equals(rel.getRelationTypeValue())) {
-                    String me = con.getIdentifier();
-                    String related = me.equals(childId)? parentId : childId;
+				if(relatedEntry.get(ESMappingConstants.RELATION_TYPE).equals(rel.getRelationTypeValue())) {
+					String me = con.getIdentifier();
+					String related = me.equals(childId)? parentId : childId;
 
-                    // put a pointer to the related content
-                    m.put(propName, (m.get(propName) != null ? m.get(propName) : "") + related + " " );
+					// put a pointer to the related content
+					m.put(propName, (m.get(propName) != null ? m.get(propName) : "") + related + " " );
 
-                    // make a way to sort
-                    m.put(orderKey, (m.get(orderKey)!=null ? m.get(orderKey) : "") + related + "_" + order + " ");
-                }
-            }
-        }
+					// make a way to sort
+					m.put(orderKey, (m.get(orderKey)!=null ? m.get(orderKey) : "") + related + "_" + order + " ");
+				}
+			}
+		}
 
 	}
 

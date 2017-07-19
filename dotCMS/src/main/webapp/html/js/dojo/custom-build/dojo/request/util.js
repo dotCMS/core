@@ -5,9 +5,8 @@ define("dojo/request/util", [
 	'../Deferred',
 	'../io-query',
 	'../_base/array',
-	'../_base/lang',
-	'../promise/Promise'
-], function(exports, RequestError, CancelError, Deferred, ioQuery, array, lang, Promise){
+	'../_base/lang'
+], function(exports, RequestError, CancelError, Deferred, ioQuery, array, lang){
 	exports.deepCopy = function deepCopy(target, source){
 		for(var name in source){
 			var tval = target[name],
@@ -42,9 +41,6 @@ define("dojo/request/util", [
 	function okHandler(response){
 		return freeze(response);
 	}
-	function dataHandler (response) {
-		return response.data !== undefined ? response.data : response.text;
-	}
 
 	exports.deferred = function deferred(response, cancel, isValid, isReady, handleResponse, last){
 		var def = new Deferred(function(reason){
@@ -74,22 +70,13 @@ define("dojo/request/util", [
 			);
 		}
 
-		var dataPromise = responsePromise.then(dataHandler);
+		var dataPromise = responsePromise.then(function(response){
+				return response.data || response.text;
+			});
 
-		// http://bugs.dojotoolkit.org/ticket/16794
-		// The following works around a leak in IE9 through the
-		// prototype using lang.delegate on dataPromise and
-		// assigning the result a property with a reference to
-		// responsePromise.
-		var promise = new Promise();
-		for (var prop in dataPromise) {
-			if (dataPromise.hasOwnProperty(prop)) {
-				promise[prop] = dataPromise[prop];
-			}
-		}
-		promise.response = responsePromise;
-		freeze(promise);
-		// End leak fix
+		var promise = freeze(lang.delegate(dataPromise, {
+			response: responsePromise
+		}));
 
 
 		if(last){

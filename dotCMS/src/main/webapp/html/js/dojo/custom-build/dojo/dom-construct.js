@@ -263,22 +263,19 @@ define("dojo/dom-construct", ["exports", "./_base/kernel", "./sniff", "./_base/w
 		return tag; // DomNode
 	};
 
-	function _empty(/*DomNode*/ node){
-		if(node.canHaveChildren){
+	var _empty = has("ie") ?
+		function(/*DomNode*/ node){
 			try{
-				// fast path
-				node.innerHTML = "";
-				return;
-			}catch(e){
-				// innerHTML is readOnly (e.g. TABLE (sub)elements in quirks mode)
-				// Fall through (saves bytes)
+				node.innerHTML = ""; // really fast when it works
+			}catch(e){ // IE can generate Unknown Error
+				for(var c; c = node.lastChild;){ // intentional assignment
+					_destroy(c, node); // destroy is better than removeChild so TABLE elements are removed in proper order
+				}
 			}
-		}
-		// SVG/strict elements don't support innerHTML/canHaveChildren, and OBJECT/APPLET elements in quirks node have canHaveChildren=false
-		for(var c; c = node.lastChild;){ // intentional assignment
-			_destroy(c, node); // destroy is better than removeChild so TABLE subelements are removed in proper order
-		}
-	}
+		} :
+		function(/*DomNode*/ node){
+			node.innerHTML = "";
+		};
 
 	exports.empty = function empty(/*DOMNode|String*/ node){
 		 // summary:
@@ -298,16 +295,11 @@ define("dojo/dom-construct", ["exports", "./_base/kernel", "./sniff", "./_base/w
 
 
 	function _destroy(/*DomNode*/ node, /*DomNode*/ parent){
-		// in IE quirks, node.canHaveChildren can be false but firstChild can be non-null (OBJECT/APPLET)
 		if(node.firstChild){
 			_empty(node);
 		}
 		if(parent){
-			// removeNode(false) doesn't leak in IE 6+, but removeChild() and removeNode(true) are known to leak under IE 8- while 9+ is TBD.
-			// In IE quirks mode, PARAM nodes as children of OBJECT/APPLET nodes have a removeNode method that does nothing and
-			// the parent node has canHaveChildren=false even though removeChild correctly removes the PARAM children.
-			// In IE, SVG/strict nodes don't have a removeNode method nor a canHaveChildren boolean.
-			has("ie") && parent.canHaveChildren && "removeNode" in node ? node.removeNode(false) : parent.removeChild(node);
+			parent.removeChild(node);
 		}
 	}
 	exports.destroy = function destroy(/*DOMNode|String*/ node){

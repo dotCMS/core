@@ -1,25 +1,15 @@
 define("dojox/widget/Portlet", [
 	"dojo/_base/declare",
 	"dojo/_base/kernel",
-	"dojo/_base/lang",
-	"dojo/_base/array",
-	"dojo/_base/event",
-	"dojo/_base/connect",
-	"dojo/dom-style",
-	"dojo/dom-class",
-	"dojo/dom-construct",
 	"dojo/fx",
-	"dijit/registry",
 	"dijit/TitlePane",
-	"dijit/_Container",
 	"./PortletSettings",
 	"./PortletDialogSettings"
-	], function(declare, kernel, lang, array, event, connect, domStyle, domClass, domConstruct, fx, registry,
-				TitlePane, _Container, PortletSettings, PortletDialogSettings){
+	], function(declare, kernel, fx, TitlePane, PortletSettings, PortletDialogSettings){
 	
 	kernel.experimental("dojox.widget.Portlet");
 	
-	return declare("dojox.widget.Portlet", [TitlePane, _Container],{
+	return declare("dojox.widget.Portlet", [TitlePane, dijit._Container],{
 		// summary:
 		//		A container widget that is designed to be contained
 		//		in a dojox.layout.GridContainer. Child widgets can insert
@@ -61,21 +51,21 @@ define("dojox/widget/Portlet", [
 			this.inherited(arguments);
 
 			// Hide the portlet until it is fully constructed.
-			domStyle.set(this.domNode, "visibility", "hidden");
+			dojo.style(this.domNode, "visibility", "hidden");
 		},
 
 		postCreate: function(){
 			this.inherited(arguments);
 
 			// Add the portlet classes
-			domClass.add(this.domNode, "dojoxPortlet");
-			domClass.remove(this.arrowNode, "dijitArrowNode");
-			domClass.add(this.arrowNode, "dojoxPortletIcon dojoxArrowDown");
-			domClass.add(this.titleBarNode, "dojoxPortletTitle");
-			domClass.add(this.hideNode, "dojoxPortletContentOuter");
+			dojo.addClass(this.domNode, "dojoxPortlet");
+			dojo.removeClass(this.arrowNode, "dijitArrowNode");
+			dojo.addClass(this.arrowNode, "dojoxPortletIcon dojoxArrowDown");
+			dojo.addClass(this.titleBarNode, "dojoxPortletTitle");
+			dojo.addClass(this.hideNode, "dojoxPortletContentOuter");
 
 			// Choose the class to add depending on if the portlet is draggable or not.
-			domClass.add(this.domNode, "dojoxPortlet-" + (!this.dragRestriction ? "movable" : "nonmovable"));
+			dojo.addClass(this.domNode, "dojoxPortlet-" + (!this.dragRestriction ? "movable" : "nonmovable"));
 
 			var _this = this;
 			if(this.resizeChildren){
@@ -90,8 +80,8 @@ define("dojox/widget/Portlet", [
 
 				// Subscribe to all possible child-selection events that could affect this
 				// portlet
-				var doSelectSubscribe = lang.hitch(this, function(id, lastId){
-					var widget = registry.byId(id);
+				var doSelectSubscribe = dojo.hitch(this, function(id, lastId){
+					var widget = dijit.byId(id);
 					if(widget.selectChild){
 						var s = this.subscribe(id + "-selectChild", function(child){
 							var n = _this.domNode.parentNode;
@@ -112,7 +102,7 @@ define("dojox/widget/Portlet", [
 						// Record the StackContainer and child widget that this portlet
 						// is in, so it can figure out whether or not it is visible.
 						// If it is not visible, it will not update it's size dynamically.
-						var child = registry.byId(lastId);
+						var child = dijit.byId(lastId);
 						if(widget && child){
 							_this._parents.push({parent: widget, child: child});
 						}
@@ -134,8 +124,8 @@ define("dojox/widget/Portlet", [
 
 			// Prevent clicks on icons from causing a drag to start.
 			this.connect(this.titleBarNode, "onmousedown", function(evt){
-				if (domClass.contains(evt.target, "dojoxPortletIcon")) {
-					event.stop(evt);
+				if (dojo.hasClass(evt.target, "dojoxPortletIcon")) {
+					dojo.stopEvent(evt);
 					return false;
 				}
 				return true;
@@ -147,8 +137,8 @@ define("dojox/widget/Portlet", [
 			this.connect(this._wipeIn, "onEnd", function(){_this._publish();});
 
 			if(this.closable){
-				this.closeIcon = this._createIcon("dojoxCloseNode", "dojoxCloseNodeHover", lang.hitch(this, "onClose"));
-				domStyle.set(this.closeIcon, "display", "");
+				this.closeIcon = this._createIcon("dojoxCloseNode", "dojoxCloseNodeHover", dojo.hitch(this, "onClose"));
+				dojo.style(this.closeIcon, "display", "");
 			}
 		},
 
@@ -159,7 +149,7 @@ define("dojox/widget/Portlet", [
 			this._placeSettingsWidgets();
 
 			// Start up the children
-			array.forEach(children, function(child){
+			dojo.forEach(children, function(child){
 				try{
 					if(!child.started && !child._started){
 						child.startup()
@@ -173,7 +163,7 @@ define("dojox/widget/Portlet", [
 			this.inherited(arguments);
 
 			//this._updateSize();
-			domStyle.set(this.domNode, "visibility", "visible");
+			dojo.style(this.domNode, "visibility", "visible");
 		},
 
 		_placeSettingsWidgets: function(){
@@ -183,10 +173,10 @@ define("dojox/widget/Portlet", [
 			//		create an icon for them in the title bar which when clicked,
 			//		calls their toggle() method.
 
-			array.forEach(this.getChildren(), lang.hitch(this, function(child){
+			dojo.forEach(this.getChildren(), dojo.hitch(this, function(child){
 				if(child.portletIconClass && child.toggle && !child.get("portlet")){
-					this._createIcon(child.portletIconClass, child.portletIconHoverClass, lang.hitch(child, "toggle"));
-					domConstruct.place(child.domNode, this.containerNode, "before");
+					this._createIcon(child.portletIconClass, child.portletIconHoverClass, dojo.hitch(child, "toggle"));
+					dojo.place(child.domNode, this.containerNode, "before");
 					child.set("portlet", this);
 					this._settingsWidget = child;
 				}
@@ -197,20 +187,20 @@ define("dojox/widget/Portlet", [
 			// summary:
 			//		creates an icon in the title bar.
 
-			var icon = domConstruct.create("div",{
+			var icon = dojo.create("div",{
 				"class": "dojoxPortletIcon " + clazz,
 				"waiRole": "presentation"
 			});
-			domConstruct.place(icon, this.arrowNode, "before");
+			dojo.place(icon, this.arrowNode, "before");
 
 			this.connect(icon, "onclick", fn);
 
 			if(hoverClazz){
 				this.connect(icon, "onmouseover", function(){
-					domClass.add(icon, hoverClazz);
+					dojo.addClass(icon, hoverClazz);
 				});
 				this.connect(icon, "onmouseout", function(){
-					domClass.remove(icon, hoverClazz);
+					dojo.removeClass(icon, hoverClazz);
 				});
 			}
 			return icon;
@@ -222,7 +212,7 @@ define("dojox/widget/Portlet", [
 			//		persist this, so it is up to the client to
 			//		listen to this method and persist the closed state
 			//		in their own way.
-			domStyle.set(this.domNode, "display", "none");
+			dojo.style(this.domNode, "display", "none");
 		},
 
 		onSizeChange: function(widget){
@@ -247,10 +237,10 @@ define("dojox/widget/Portlet", [
 			}
 			// Delay applying the size change in case the size
 			// changes very frequently, for performance reasons.
-			this._timer = setTimeout(lang.hitch(this, function(){
+			this._timer = setTimeout(dojo.hitch(this, function(){
 				var size ={
-					w: domStyle.get(this.domNode, "width"),
-					h: domStyle.get(this.domNode, "height")
+					w: dojo.style(this.domNode, "width"),
+					h: dojo.style(this.domNode, "height")
 				};
 
 				// If the Portlet is in a StackWidget, and it is not
@@ -277,9 +267,9 @@ define("dojox/widget/Portlet", [
 				this._timer = null;
 				var kids = this.getChildren();
 
-				array.forEach(kids, function(child){
+				dojo.forEach(kids, function(child){
 					for(var i = 0; i < fns.length; i++){
-						if(lang.isFunction(child[fns[i]])){
+						if(dojo.isFunction(child[fns[i]])){
 							try{
 								child[fns[i]]();
 							} catch(e){
@@ -303,7 +293,7 @@ define("dojox/widget/Portlet", [
 			//		Publishes an event that all other portlets listen to.
 			//		This causes them to update their child widgets if their
 			//		size has changed.
-			connect.publish("/Portlet/sizechange",[this]);
+			dojo.publish("/Portlet/sizechange",[this]);
 		},
 
 		_onTitleClick: function(evt){
@@ -343,7 +333,7 @@ define("dojox/widget/Portlet", [
 
 		_setCss: function(){
 			this.inherited(arguments);
-			domStyle.set(this.arrowNode, "display", this.toggleable ? "":"none");
+			dojo.style(this.arrowNode, "display", this.toggleable ? "":"none");
 		}
 	});
 });

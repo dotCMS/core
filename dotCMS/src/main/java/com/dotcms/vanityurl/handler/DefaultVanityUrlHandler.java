@@ -28,8 +28,8 @@ public class DefaultVanityUrlHandler implements VanityUrlHandler {
 
     @Override
     public VanityUrlResult handle(final CachedVanityUrl vanityUrl,
-            final HttpServletResponse response, final Host host,
-            final long languageId) throws IOException {
+                                  final HttpServletResponse response, final Host host,
+                                  final long languageId) throws IOException {
         String rewrite = null;
         String queryString = null;
         CMSFilter.IAm iAm = CMSFilter.IAm.NOTHING_IN_THE_CMS;
@@ -76,7 +76,7 @@ public class DefaultVanityUrlHandler implements VanityUrlHandler {
      * @throws IOException
      */
     private VanityUrlResult processVanityResponse(final CachedVanityUrl vanityUrl,
-            final String rewrite, final HttpServletResponse response) throws IOException {
+                                                  final String rewrite, final HttpServletResponse response) throws IOException {
         VanityUrlResult vanityUrlResult = null;
 
         if (HttpServletResponse.SC_OK == vanityUrl.getResponse()) {

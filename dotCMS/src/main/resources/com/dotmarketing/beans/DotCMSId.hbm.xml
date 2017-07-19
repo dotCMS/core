@@ -416,17 +416,6 @@
 			<property column="chapter_officer" length="255" name="chapterOfficer" type="string" />
 		</joined-subclass>
 
-		<joined-subclass name="com.dotmarketing.portlets.virtuallinks.model.VirtualLink" table="virtual_link">
-			<key column="inode" />
-			<property name="title" length="255" type="string" column="title" />
-			<property name="url" type="string">
-				<column name="url" length="255" index="idx_virtual_link_1" />
-			</property>
-
-			<property name="uri" length="255" type="string" column="uri" />
-			<property name="active" type="boolean" />
-		</joined-subclass>
-
 		<joined-subclass name="com.dotmarketing.portlets.structure.model.Relationship" table="relationship">
 			<key column="inode" />
 			<property name="parentStructureInode" type="string" length="36" >

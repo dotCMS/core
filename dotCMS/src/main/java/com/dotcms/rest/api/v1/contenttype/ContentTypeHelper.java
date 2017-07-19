@@ -9,7 +9,6 @@ import com.dotcms.util.ContentTypeUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.structure.business.StructureAPI;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -18,12 +17,9 @@ import com.liferay.util.LocaleUtil;
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.dotcms.util.CollectionsUtils.imap;
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * Contentlet helper.
@@ -140,6 +136,7 @@ public class ContentTypeHelper implements Serializable {
                     BaseContentType.FILEASSET.name(), LanguageUtil.get(locale, "File"),
                     BaseContentType.HTMLPAGE.name(), LanguageUtil.get(locale, "HTMLPage"),
                     BaseContentType.PERSONA.name(), LanguageUtil.get(locale, "Persona"),
+                    BaseContentType.KEY_VALUE.name(), LanguageUtil.get(locale, "KeyValue"),
                     BaseContentType.VANITY_URL.name(), LanguageUtil.get(locale, "VanityURL")
             );
 

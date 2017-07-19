@@ -1,6 +1,6 @@
 require({cache:{
 'url:dojox/image/resources/Lightbox.html':"<div class=\"dojoxLightbox\" dojoAttachPoint=\"containerNode\">\n\t<div style=\"position:relative\">\n\t\t<div dojoAttachPoint=\"imageContainer\" class=\"dojoxLightboxContainer\" dojoAttachEvent=\"onclick: _onImageClick\">\n\t\t\t<img dojoAttachPoint=\"imgNode\" src=\"${imgUrl}\" class=\"${imageClass}\" alt=\"${title}\">\n\t\t\t<div class=\"dojoxLightboxFooter\" dojoAttachPoint=\"titleNode\">\n\t\t\t\t<div class=\"dijitInline LightboxClose\" dojoAttachPoint=\"closeButtonNode\"></div>\n\t\t\t\t<div class=\"dijitInline LightboxNext\" dojoAttachPoint=\"nextButtonNode\"></div>\t\n\t\t\t\t<div class=\"dijitInline LightboxPrev\" dojoAttachPoint=\"prevButtonNode\"></div>\n\t\t\t\t<div class=\"dojoxLightboxText\" dojoAttachPoint=\"titleTextNode\"><span dojoAttachPoint=\"textNode\">${title}</span><span dojoAttachPoint=\"groupCount\" class=\"dojoxLightboxGroupText\"></span></div>\n\t\t\t</div>\n\t\t</div>\n\t</div>\n</div>"}});
-define("dojox/image/Lightbox", ["require", "dojo", "dijit", "dojox", "dojo/text!./resources/Lightbox.html", "dijit/Dialog", "dojox/fx/_base"], function(require, dojo, dijit, dojox, template){
+define("dojox/image/Lightbox", ["dojo", "dijit", "dojox", "dojo/text!./resources/Lightbox.html", "dijit/Dialog", "dojox/fx/_base"], function(dojo, dijit, dojox, template){
 
 	dojo.experimental("dojox.image.Lightbox");
 	dojo.getObject("image", true, dojox);
@@ -196,7 +196,7 @@ define("dojox/image/Lightbox", ["require", "dojo", "dijit", "dojox", "dojo/text!
 
 		// errorImg: Url
 		//		Path to the image used when a 404 is encountered
-		errorImg: require.toUrl("./resources/images/warning.png"),
+		errorImg: dojo.moduleUrl("dojox.image","resources/images/warning.png"),
 
 		templateString: template, 
 		

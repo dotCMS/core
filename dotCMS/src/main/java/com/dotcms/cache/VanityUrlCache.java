@@ -80,5 +80,4 @@ public abstract class VanityUrlCache implements Cachable {
      * @param key The current key composed of the host Id and languageId
      */
     public abstract void removeCachedVanityUrls(String key);
-
 }

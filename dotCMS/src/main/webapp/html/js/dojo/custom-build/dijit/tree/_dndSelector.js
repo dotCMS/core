@@ -204,14 +204,9 @@ define("dijit/tree/_dndSelector", [
 			// ignore click on expando node
 			if(!this.current || this.tree.isExpandoNode(e.target, this.current)){ return; }
 
-			if(e.type == "mousedown" && mouse.isLeft(e)){
+			if(mouse.isLeft(e)){
 				// Prevent text selection while dragging on desktop, see #16328.   But don't call preventDefault()
-				// for mobile because it will break things completely, see #15838.  Also, don't preventDefault() on
-				// MSPointerDown or pointerdown events, because that stops the mousedown event from being generated,
-				// see #17709.
-				// TODO: remove this completely in 2.0.  It shouldn't be needed since dojo/dnd/Manager already
-				// calls preventDefault() for the "selectstart" event.  It can also be achieved via CSS:
-				// http://stackoverflow.com/questions/826782/css-rule-to-disable-text-selection-highlighting
+				// for mobile because it will break things completely, see #15838.
 				e.preventDefault();
 			}else if(e.type != "touchstart"){
 				// Ignore right click

@@ -11,9 +11,6 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.beans.WebAsset;
-
-import com.dotmarketing.cache.VirtualLinksCache;
-
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -25,7 +22,6 @@ import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.ContainerServices;
 import com.dotmarketing.services.TemplateServices;
@@ -276,8 +272,6 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 			//Get the identifier of the webAsset
 			Identifier identifier = APILocator.getIdentifierAPI().find(currWebAsset);
 
-			VersionInfo auxVersionInfo = null;
-
 			//### Get and delete the webAsset ###
 			List<Versionable> webAssetList = new ArrayList<Versionable>();
 			webAssetList.addAll(APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false));
@@ -298,25 +292,8 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 				APILocator.getTemplateAPI().associateContainers(new ArrayList<Container>(), (Template)currWebAsset);
 				CacheLocator.getTemplateCache().remove(currWebAsset.getInode());
 			}
-			else if(currWebAsset instanceof Link)
-			{
-				VersionInfo vi = APILocator.getVersionableAPI().getVersionInfo(currWebAsset.getIdentifier());
 
-				if(!UtilMethods.isSet(vi)) {
-					auxVersionInfo = getVersionInfo(currWebAsset, identifier,
-							webAssetList, "links");
-				}
-
-				VirtualLinksCache.removePathFromCache(((Link)currWebAsset).getUrl());
-			}
-
-			if(auxVersionInfo==null || !UtilMethods.isSet(auxVersionInfo.getIdentifier())) { // null auxVersionInfo  indicates everything goes fine
-				APILocator.getVersionableAPI().deleteVersionInfo(currWebAsset.getVersionId());
-			} else {	// not null auxVersionInfo indicates VersionInfo is incorrect (bad asset_type, etc) so we had to get it providing the asset_type, instead of using identifier's asset_type
-				String ident = auxVersionInfo.getIdentifier();
-				HibernateUtil.delete(auxVersionInfo);
-				CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(ident);
-			}
+			APILocator.getVersionableAPI().deleteVersionInfo(currWebAsset.getVersionId());
 
 			for(Versionable webAsset : webAssetList)
 			{

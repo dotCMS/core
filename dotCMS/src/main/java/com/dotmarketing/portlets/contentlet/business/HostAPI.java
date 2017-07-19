@@ -249,13 +249,6 @@ public interface HostAPI {
 	public void updateCache(Host host);
 
 	/**
-	 * Updates the VirtualLinks of the host with the new hostname
-	 *
-	 * @param host
-	 */
-	public void updateVirtualLinks(Host workinghost,Host updatedhost) throws DotDataException;
-
-	/**
 	 * Updates the MenuLinks of the host with the new hostname
 	 *
 	 * @param host
