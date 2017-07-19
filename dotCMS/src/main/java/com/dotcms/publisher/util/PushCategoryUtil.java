@@ -1,24 +1,25 @@
 package com.dotcms.publisher.util;
 
+import com.dotcms.publisher.pusher.wrapper.CategoryWrapper;
+import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import com.dotcms.publisher.pusher.wrapper.CategoryWrapper;
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
-import static com.dotcms.enterprise.publishing.remote.bundler.CategoryFullBundler.CATEGORY_FULL_EXTENSION;
 
 public class PushCategoryUtil {
 	
 	private Collection<File> categories;
 	private XStream xstream;
+	private String CategoryExtension;
 	
-	public PushCategoryUtil(Collection<File> categories){
+	public PushCategoryUtil(Collection<File> categories, String categoryExtension){
 		this.categories = categories;
 		xstream=new XStream(new DomDriver());
+		this.CategoryExtension = categoryExtension;
 	}
 	
 	/**
@@ -55,7 +56,7 @@ public class PushCategoryUtil {
 	public int getCategoryXMLCount(){
 		int count = 0;
 		for(File f:categories){
-			if(f.getName().endsWith(CATEGORY_FULL_EXTENSION))
+			if(f.getName().endsWith(CategoryExtension))
 				count++;
 		}
 		return count;
