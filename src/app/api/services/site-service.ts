@@ -72,7 +72,7 @@ export class SiteService {
     getSiteById(id: string): Observable<Site> {
         return this.coreWebService.requestView({
             method: RequestMethod.Get,
-            url: `content/id/${id}`,
+            url: `content/render/false/query/+contentType:host%20+identifier:${id}`,
         })
         .pluck('contentlets')
         .map(sites => sites[0]);
