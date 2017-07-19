@@ -49,8 +49,6 @@ import com.dotmarketing.logConsole.model.LogMapperRow;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
-import com.dotmarketing.portlets.virtuallinks.business.VirtualLinkAPI;
-import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.startup.runalways.Task00004LoadStarter;
 import com.liferay.portal.SystemException;
@@ -1385,15 +1383,9 @@ public class ImportExportUtil {
                                 }
                                 HibernateUtil.commitTransaction();
                             }else{
-								if (obj instanceof VirtualLink) {
-									// Lower-case all URLs in Vanity URLs
-									VirtualLink vanityUrl = VirtualLink.class.cast(obj);
-									String[] url = vanityUrl.getUrl().split(VirtualLinkAPI.URL_SEPARATOR);
-									vanityUrl.setUrl(url[0] + VirtualLinkAPI.URL_SEPARATOR + url[1].toLowerCase());
-									HibernateUtil.saveWithPrimaryKey(vanityUrl, prop);
-								} else {
-									HibernateUtil.saveWithPrimaryKey(obj, prop);
-								}
+								
+								HibernateUtil.saveWithPrimaryKey(obj, prop);
+								
                                 HibernateUtil.commitTransaction();
                             }
                         } catch (Exception e) {

@@ -248,11 +248,7 @@ define("dijit/_TimePicker", [
 
 		_setConstraintsAttr: function(/* Object */ constraints){
 			// brings in visibleRange, increments, etc.
-			for (var key in { clickableIncrement: 1, visibleIncrement: 1, visibleRange: 1 }) {
-				if (key in constraints) {
-					this[key] = constraints[key];
-				}
-			}
+			lang.mixin(this, constraints);
 
 			// locale needs the lang in the constraints as locale
 			if(!constraints.locale){

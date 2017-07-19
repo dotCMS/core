@@ -57,7 +57,6 @@
 	var editPermission = <%= PermissionAPI.PERMISSION_WRITE %>;
 	var publishPermission = <%= PermissionAPI.PERMISSION_PUBLISH %>;
 	var editPermissionsPermission = <%= PermissionAPI.PERMISSION_EDIT_PERMISSIONS %>;
-	var createVirtualLinksPermission = <%= PermissionAPI.PERMISSION_CREATE_VIRTUAL_LINKS %>;
 	var addChildrenPermission = <%= PermissionAPI.PERMISSION_CAN_ADD_CHILDREN %>;
 
 	var hostClassName = '<%= Host.class.getCanonicalName() %>'
@@ -276,7 +275,6 @@
 			'edit-permission-' + id,
 			'publish-permission-' + id,
 			'edit-permissions-permission-' + id,
-			'virtual-links-permission-' + id,
 			'permissionsAccordionPane-' + id,
 
 			'hosts-view-permission-' + id,
@@ -286,7 +284,6 @@
 			'hosts-edit-permission-' + id,
 			'hosts-publish-permission-' + id,
 			'hosts-edit-permissions-permission-' + id,
-			'hosts-virtual-links-permission-' + id,
 
 
 			'folders-view-permission-' + id,
@@ -296,7 +293,6 @@
 			'folders-edit-permission-' + id,
 			'folders-publish-permission-' + id,
 			'folders-edit-permissions-permission-' + id,
-			'folders-virtual-links-permission-' + id,
 
 			'containers-view-permission-' + id,
 			'containers-add-children-permission-' + id,
@@ -305,7 +301,6 @@
 			'containers-edit-permission-' + id,
 			'containers-publish-permission-' + id,
 			'containers-edit-permissions-permission-' + id,
-			'containers-virtual-links-permission-' + id,
 
 			'templates-view-permission-' + id,
 			'templates-add-children-permission-' + id,
@@ -314,7 +309,6 @@
 			'templates-edit-permission-' + id,
 			'templates-publish-permission-' + id,
 			'templates-edit-permissions-permission-' + id,
-			'templates-virtual-links-permission-' + id,
 
 			'template-layouts-view-permission-' + id,
 			'template-layouts-add-children-permission-' + id,
@@ -323,7 +317,6 @@
 			'template-layouts-edit-permission-' + id,
 			'template-layouts-publish-permission-' + id,
 			'template-layouts-edit-permissions-permission-' + id,
-			'template-layouts-virtual-links-permission-' + id,
 
 			'pages-view-permission-' + id,
 			'pages-add-children-permission-' + id,
@@ -332,7 +325,6 @@
 			'pages-edit-permission-' + id,
 			'pages-publish-permission-' + id,
 			'pages-edit-permissions-permission-' + id,
-			'pages-virtual-links-permission-' + id,
 
 			'links-view-permission-' + id,
 			'links-add-children-permission-' + id,
@@ -341,7 +333,6 @@
 			'links-edit-permission-' + id,
 			'links-publish-permission-' + id,
 			'links-edit-permissions-permission-' + id,
-			'links-virtual-links-permission-' + id,
 
 			'structures-view-permission-' + id,
 			'structures-add-children-permission-' + id,
@@ -350,7 +341,6 @@
 			'structures-edit-permission-' + id,
 			'structures-publish-permission-' + id,
 			'structures-edit-permissions-permission-' + id,
-			'structures-virtual-links-permission-' + id,
 
 			'content-view-permission-' + id,
 			'content-add-children-permission-' + id,
@@ -359,7 +349,6 @@
 			'content-edit-permission-' + id,
 			'content-publish-permission-' + id,
 			'content-edit-permissions-permission-' + id,
-			'content-virtual-links-permission-' + id,
 
 			'categories-view-permission-' + id,
 			'categories-add-children-permission-' + id,
@@ -368,7 +357,6 @@
 			'categories-edit-permission-' + id,
 			'categories-publish-permission-' + id,
 			'categories-edit-permissions-permission-' + id,
-			'categories-virtual-links-permission-' + id,
 
             'rules-view-permission-' + id,
             'rules-add-children-permission-' + id,
@@ -377,7 +365,6 @@
             'rules-edit-permission-' + id,
             'rules-publish-permission-' + id,
             'rules-edit-permissions-permission-' + id,
-            'rules-virtual-links-permission-' + id,
 
 			'cascadeChangesCheckbox-' + id,
 			'applyChangesButton-' + id
@@ -580,8 +567,6 @@
 			permission = permission | publishPermission;
 		if(dijit.byId(prefix + 'edit-permissions-permission-' + id) && dijit.byId(prefix + 'edit-permissions-permission-' + id).attr('value') == 'on')
 			permission = permission | editPermissionsPermission;
-		if(dijit.byId(prefix + 'virtual-links-permission-' + id) && dijit.byId(prefix + 'virtual-links-permission-' + id).attr('value') == 'on')
-			permission = permission | createVirtualLinksPermission;
 
 		return permission;
 
@@ -621,10 +606,6 @@
                 ((dijit.byId('edit-permissions-permission-' + id).attr('value') == 'on' && item.editPermissionsPermissionChecked=="") ||
                  (dijit.byId('edit-permissions-permission-' + id).attr('value') == false && item.editPermissionsPermissionChecked!="")))
             return true;
-        if(dijit.byId('virtual-links-permission-' + id) &&
-                ((dijit.byId('virtual-links-permission-' + id).attr('value') == 'on' && item.virtualLinksPermissionChecked=="") ||
-                 (dijit.byId('virtual-links-permission-' + id).attr('value') == false && item.virtualLinksPermissionChecked!="")))
-            return true;
 
         var changedType=function(item,type) {
             if(dijit.byId(type+'-view-permission-' + id) &&
@@ -650,10 +631,6 @@
             if(dijit.byId(type+'-edit-permissions-permission-' + id) &&
                     ((dijit.byId(type+'-edit-permissions-permission-' + id).attr('value') == 'on' && item[type+'EditPermissionsPermissionChecked']=="") ||
                      (dijit.byId(type+'-edit-permissions-permission-' + id).attr('value') == false && item[type+'EditPermissionsPermissionChecked']!="")))
-                return true;
-            if(dijit.byId(type+'-virtual-links-permission-' + id) &&
-                    ((dijit.byId(type+'-virtual-links-permission-' + id).attr('value') == 'on' && item[type+'VirtualLinksPermissionChecked']=="") ||
-                     (dijit.byId(type+'-virtual-links-permission-' + id).attr('value') == false && item[type+'VirtualLinksPermissionChecked']!="")))
                 return true;
         }
 
@@ -733,10 +710,6 @@
 
 	}
 
-	function virtualLinksPermissionChanged (type, id) {
-
-	}
-
 	//Permissions tab utility functions
 	function getPermissionCheckboxDijits (type, id) {
 		var prefix = type?type + "-":"";
@@ -745,14 +718,11 @@
 		var editPermissionCheckbox = dijit.byId(prefix + 'edit-permission-' + id);
 		var publishPermissionCheckbox = dijit.byId(prefix + 'publish-permission-' + id);
 		var editPermissionsPermissionCheckbox = dijit.byId(prefix + 'edit-permissions-permission-' + id);
-		var virtualLinksPermissionCheckbox = dijit.byId(prefix + 'virtual-links-permissions-permission-' + id);
 		return {
 			viewPermissionCheckbox: viewPermissionCheckbox,
 			addChildrenPermissionCheckbox: addChildrenPermissionCheckbox,
 			editPermissionCheckbox: editPermissionCheckbox,
-			publishPermissionCheckbox: publishPermissionCheckbox,
-			editPermissionsPermissionCheckbox: editPermissionsPermissionCheckbox,
-			virtualLinksPermissionCheckbox: virtualLinksPermissionCheckbox
+			publishPermissionCheckbox: publishPermissionCheckbox
 		};
 
 	}
@@ -926,14 +896,6 @@
 			item[prefix + "PermissionChecked"] = ''
 		}
 
-		prefix = "virtualLinks";
-		if(assetType) prefix = assetType + "VirtualLinks";
-		if(hasPermissionSet(permissions, permissionType, createVirtualLinksPermission)) {
-			item[prefix + "PermissionChecked"] = 'checked="checked"'
-		} else {
-			item[prefix + "PermissionChecked"] = ''
-		}
-
 	}
 
 	function fillEmptyTemplatePermissionOptions (item, assetType) {
@@ -956,10 +918,6 @@
 
 		prefix = "editPermissions";
 		if(assetType) prefix = assetType + "EditPermissions";
-		item[prefix + "PermissionChecked"] = ''
-
-		prefix = "virtualLinks";
-		if(assetType) prefix = assetType + "VirtualLinks";
 		item[prefix + "PermissionChecked"] = ''
 
 	}

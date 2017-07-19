@@ -651,14 +651,6 @@ create table web_form (
    categories varchar(255),
    primary key (web_form_id)
 );
-create table virtual_link (
-   inode varchar(36) not null,
-   title varchar(255),
-   url varchar(255),
-   uri varchar(255),
-   active tinyint(1),
-   primary key (inode)
-);
 create table analytic_summary_period (
    id bigint not null auto_increment,
    full_date datetime,
@@ -1518,8 +1510,6 @@ create index idx_recipiets_1 on recipient (email);
 create index idx_recipiets_2 on recipient (sent);
 alter table recipient add index fk30e172195fb51eb (inode), add constraint fk30e172195fb51eb foreign key (inode) references inode (inode);
 create index idx_user_webform_1 on web_form (form_type);
-create index idx_virtual_link_1 on virtual_link (url);
-alter table virtual_link add index fkd844f8ae5fb51eb (inode), add constraint fkd844f8ae5fb51eb foreign key (inode) references inode (inode);
 create index idx_analytic_summary_period_4 on analytic_summary_period (month);
 create index idx_analytic_summary_period_3 on analytic_summary_period (week);
 create index idx_analytic_summary_period_2 on analytic_summary_period (day);

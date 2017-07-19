@@ -95,8 +95,6 @@ import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.structure.business.StructureAPIImpl;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.business.TemplateAPIImpl;
-import com.dotmarketing.portlets.virtuallinks.business.VirtualLinkAPI;
-import com.dotmarketing.portlets.virtuallinks.business.VirtualLinkAPIImpl;
 import com.dotmarketing.portlets.widget.business.WidgetAPI;
 import com.dotmarketing.portlets.widget.business.WidgetAPIImpl;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -471,15 +469,6 @@ public class APILocator extends Locator<APIIndex>{
 	 */
 	public static MenuLinkAPI getMenuLinkAPI(){
 		return (MenuLinkAPI) getInstance(APIIndex.MENULINK_API);
-	}
-
-	/**
-	 * Creates a single instance of the {@link VirtualLinkAPI} class.
-	 *
-	 * @return The {@link VirtualLinkAPI} class.
-	 */
-	public static VirtualLinkAPI getVirtualLinkAPI(){
-		return (VirtualLinkAPI) getInstance(APIIndex.VIRTUALLINK_API);
 	}
 
 	/**
@@ -952,7 +941,6 @@ enum APIIndex
 	FILE_API,
 	HTMLPAGE_API,
 	MENULINK_API,
-	VIRTUALLINK_API,
 	DASHBOARD_API,
 	SITESEARCH_API,
 	VERSIONABLE_API,
@@ -1019,7 +1007,6 @@ enum APIIndex
     		case HOST_VARIABLE_API : return new HostVariableAPIImpl();
     		case FORM_API: return new FormAPIImpl();
     		case MENULINK_API: return new MenuLinkAPIImpl();
-    		case VIRTUALLINK_API: return new VirtualLinkAPIImpl();
     		case DASHBOARD_API: return new DashboardAPIImpl();
     		case SITESEARCH_API: return new ESSiteSearchAPI();
     		case FILEASSET_API: return new FileAssetAPIImpl();

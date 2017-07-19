@@ -18,7 +18,7 @@ var ret = {
 	 },
 	 =====*/
 
-	doc: dojo.global["document"] || null,
+	doc: this["document"] || null,
 	/*=====
 	doc: {
 		// summary:

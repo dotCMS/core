@@ -30,7 +30,6 @@ define("dijit/_editor/nls/FontChoice", { root:
 ,
 "zh": true,
 "zh-tw": true,
-"uk": true,
 "tr": true,
 "th": true,
 "sv": true,
@@ -58,7 +57,6 @@ define("dijit/_editor/nls/FontChoice", { root:
 "da": true,
 "cs": true,
 "ca": true,
-"bg": true,
 "az": true,
 "ar": true
 });

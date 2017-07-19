@@ -1,12 +1,12 @@
 define("dojox/widget/PortletDialogSettings", [
 	"dojo/_base/declare",
-	"dojo/_base/window",
-	"dojo/dom-style",
-	"./PortletSettings",
+	"dojo/_base/kernel",
+	"dojo/fx",
+	"dijit/TitlePane",
 	"dijit/Dialog"
-	], function(declare, window, domStyle, PortletSettings, Dialog){
+	], function(declare, kernel, fx, TitlePane, Dialog){
 		
-	return declare("dojox.widget.PortletDialogSettings", [PortletSettings],{
+	return declare("dojox.widget.PortletDialogSettings", [dojox.widget.PortletSettings],{
 			// summary:
 			//		A settings widget to be used with a dojox.widget.Portlet, which displays
 			//		the contents of this widget in a dijit.Dialog box.
@@ -25,18 +25,18 @@ define("dojox/widget/PortletDialogSettings", [
 				
 				if(!this.dialog){
 					//require("dijit.Dialog");
-					this.dialog = new Dialog({title: this.title});
+					this.dialog = new dijit.Dialog({title: this.title});
 
-					window.body().appendChild(this.dialog.domNode);
+					dojo.body().appendChild(this.dialog.domNode);
 
 					// Move this widget inside the dialog
 					this.dialog.containerNode.appendChild(this.domNode);
 
-					domStyle.set(this.dialog.domNode,{
+					dojo.style(this.dialog.domNode,{
 						"width" : this.dimensions[0] + "px",
 						"height" : this.dimensions[1] + "px"
 					});
-					domStyle.set(this.domNode, "display", "");
+					dojo.style(this.domNode, "display", "");
 				}
 				if(this.dialog.open){
 					this.dialog.hide();

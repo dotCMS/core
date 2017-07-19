@@ -44,7 +44,7 @@ define("dojox/charting/StoreSeries", ["dojo/_base/array", "dojo/_base/declare", 
 	
 			this.data = [];
 
-			this._initialRendering = true;
+			this._initialRendering = false;
 			this.fetch();
 		},
 	

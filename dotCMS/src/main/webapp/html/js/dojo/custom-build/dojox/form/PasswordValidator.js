@@ -286,10 +286,11 @@ return declare("dojox.form.PasswordValidator", FormValueWidget, {
 		});
 	},
 
-	_setRequiredAttr: function(value){
+	_setRequiredAttribute: function(value){
 		this.required = value;
 		domAttr.set(this.focusNode, "required", value);
 		this.focusNode.setAttribute("aria-required", value);
+		this._refreshState();
 		array.forEach(this._inputWidgets, function(i){
 			if(i && i.set){ i.set("required", value);}
 		});

@@ -24,7 +24,6 @@ define("dojo/uacss", ["./dom-geometry", "./_base/lang", "./ready", "./sniff", ".
 	var
 		html = baseWindow.doc.documentElement,
 		ie = has("ie"),
-		trident = has("trident"),
 		opera = has("opera"),
 		maj = Math.floor,
 		ff = has("ff"),
@@ -49,10 +48,6 @@ define("dojo/uacss", ["./dom-geometry", "./_base/lang", "./ready", "./sniff", ".
 		classes["dj_ie"] = true;
 		classes["dj_ie" + maj(ie)] = true;
 		classes["dj_iequirks"] = has("quirks");
-	}
-	if(trident){
-		classes["dj_trident"] = true;
-		classes["dj_trident" + maj(trident)] = true;
 	}
 	if(ff){
 		classes["dj_ff" + maj(ff)] = true;

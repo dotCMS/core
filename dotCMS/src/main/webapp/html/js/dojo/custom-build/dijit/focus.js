@@ -22,8 +22,6 @@ define("dijit/focus", [
 	// module:
 	//		dijit/focus
 
-	var lastFocusin;
-
 	var FocusManager = declare([Stateful, Evented], {
 		// summary:
 		//		Tracks the currently focused node, and which widgets are currently "active".
@@ -92,69 +90,81 @@ define("dijit/focus", [
 
 			// TODO: make this function private in 2.0; Editor/users should call registerIframe(),
 
+			var _this = this;
+			var mousedownListener = function(evt){
+				_this._justMouseDowned = true;
+				setTimeout(function(){ _this._justMouseDowned = false; }, 0);
+
+				// workaround weird IE bug where the click is on an orphaned node
+				// (first time clicking a Select/DropDownButton inside a TooltipDialog)
+				if(has("ie") && evt && evt.srcElement && evt.srcElement.parentNode == null){
+					return;
+				}
+
+				_this._onTouchNode(effectiveNode || evt.target || evt.srcElement, "mouse");
+			};
+
 			// Listen for blur and focus events on targetWindow's document.
-			var _this = this,
-				body = targetWindow.document && targetWindow.document.body;
+			// Using attachEvent()/addEventListener() rather than on() to try to catch mouseDown events even
+			// if other code calls evt.stopPropagation().  But rethink for 2.0 since that doesn't work for attachEvent(),
+			// which watches events at the bubbling phase rather than capturing phase, like addEventListener(..., false).
+			// Connect to <html> (rather than document) on IE to avoid memory leaks, but document on other browsers because
+			// (at least for FF) the focus event doesn't fire on <html> or <body>.
+			var doc = has("ie") ? targetWindow.document.documentElement : targetWindow.document;
+			if(doc){
+				if(has("ie")){
+					targetWindow.document.body.attachEvent('onmousedown', mousedownListener);
+					var focusinListener = function(evt){
+						// IE reports that nodes like <body> have gotten focus, even though they have tabIndex=-1,
+						// ignore those events
+						var tag = evt.srcElement.tagName.toLowerCase();
+						if(tag == "#document" || tag == "body"){ return; }
 
-			if(body){
-				var mdh = on(body, 'mousedown', function(evt){
-					_this._justMouseDowned = true;
-					// Use a 13 ms timeout to work-around Chrome resolving too fast and focusout
-					// events not seeing that a mousedown just happened when a popup closes.
-					// See https://bugs.dojotoolkit.org/ticket/17668
-					setTimeout(function(){ _this._justMouseDowned = false; }, 13);
-
-					// workaround weird IE bug where the click is on an orphaned node
-					// (first time clicking a Select/DropDownButton inside a TooltipDialog).
-					// actually, strangely this is happening on latest chrome too.
-					if(evt && evt.target && evt.target.parentNode == null){
-						return;
-					}
-
-					_this._onTouchNode(effectiveNode || evt.target, "mouse");
-				});
-
-				var fih = on(body, 'focusin', function(evt){
-
-					lastFocusin = (new Date()).getTime();
-
-					// When you refocus the browser window, IE gives an event with an empty srcElement
-					if(!evt.target.tagName) { return; }
-
-					// IE reports that nodes like <body> have gotten focus, even though they have tabIndex=-1,
-					// ignore those events
-					var tag = evt.target.tagName.toLowerCase();
-					if(tag == "#document" || tag == "body"){ return; }
-
-					if(a11y.isFocusable(evt.target)){
-						_this._onFocusNode(effectiveNode || evt.target);
-					}else{
 						// Previous code called _onTouchNode() for any activate event on a non-focusable node.   Can
 						// probably just ignore such an event as it will be handled by onmousedown handler above, but
 						// leaving the code for now.
-						_this._onTouchNode(effectiveNode || evt.target);
-					}
-				});
+						if(a11y.isTabNavigable(evt.srcElement)){
+							_this._onFocusNode(effectiveNode || evt.srcElement);
+						}else{
+							_this._onTouchNode(effectiveNode || evt.srcElement);
+						}
+					};
+					doc.attachEvent('onfocusin', focusinListener);
+					var focusoutListener =  function(evt){
+						_this._onBlurNode(effectiveNode || evt.srcElement);
+					};
+					doc.attachEvent('onfocusout', focusoutListener);
 
-				var foh = on(body, 'focusout', function(evt){
-					// IE9+ has a problem where focusout events come after the corresponding focusin event.  At least
-					// when moving focus from the Editor's <iframe> to a normal DOMNode.
-					if((new Date()).getTime() < lastFocusin + 100){
-						return;
-					}
+					return {
+						remove: function(){
+							targetWindow.document.detachEvent('onmousedown', mousedownListener);
+							doc.detachEvent('onfocusin', focusinListener);
+							doc.detachEvent('onfocusout', focusoutListener);
+							doc = null;	// prevent memory leak (apparent circular reference via closure)
+						}
+					};
+				}else{
+					doc.body.addEventListener('mousedown', mousedownListener, true);
+					doc.body.addEventListener('touchstart', mousedownListener, true);
+					var focusListener = function(evt){
+						_this._onFocusNode(effectiveNode || evt.target);
+					};
+					doc.addEventListener('focus', focusListener, true);
+					var blurListener = function(evt){
+						_this._onBlurNode(effectiveNode || evt.target);
+					};
+					doc.addEventListener('blur', blurListener, true);
 
-					_this._onBlurNode(effectiveNode || evt.target);
-				});
-
-				return {
-					remove: function(){
-						mdh.remove();
-						fih.remove();
-						foh.remove();
-						mdh = fih = foh = null;
-						body = null;	// prevent memory leak (apparent circular reference via closure)
-					}
-				};
+					return {
+						remove: function(){
+							doc.body.removeEventListener('mousedown', mousedownListener, true);
+							doc.body.removeEventListener('touchstart', mousedownListener, true);
+							doc.removeEventListener('focus', focusListener, true);
+							doc.removeEventListener('blur', blurListener, true);
+							doc = null;	// prevent memory leak (apparent circular reference via closure)
+						}
+					};
+				}
 			}
 		},
 

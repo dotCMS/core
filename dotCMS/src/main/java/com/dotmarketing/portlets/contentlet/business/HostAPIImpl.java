@@ -30,7 +30,6 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.SQLQueryFactory;
-import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -48,7 +47,6 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
@@ -925,27 +923,6 @@ public class HostAPIImpl implements HostAPI {
             ret.add(tok.nextToken());
         }
         return ret;
-    }
-
-    @SuppressWarnings("unchecked")
-    public void updateVirtualLinks(Host workinghost,Host updatedhost) throws DotDataException {//DOTCMS-5025
-
-        String workingHostName = workinghost.getHostname();
-        String updatedHostName = updatedhost.getHostname();
-        if(!workingHostName.equals(updatedHostName)) {
-            HibernateUtil dh = new HibernateUtil(VirtualLink.class);
-            List<VirtualLink> resultList = new ArrayList<VirtualLink>();
-            dh.setQuery("select inode from inode in class " + VirtualLink.class.getName() + " where inode.url like ?");
-            dh.setParam(workingHostName+":/%");
-            resultList = dh.list();
-            for (VirtualLink vl : resultList) {
-                String workingURL = vl.getUrl();
-                String newURL = updatedHostName+workingURL.substring(workingHostName.length());//gives url with updatedhostname
-                vl.setUrl(newURL);
-                HibernateUtil.saveOrUpdate(vl);
-                VirtualLinksCache.removePathFromCache(vl.getUrl());
-            }
-        }
     }
 
     @SuppressWarnings("unchecked")

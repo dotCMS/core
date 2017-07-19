@@ -4,8 +4,6 @@ define("dojo/promise/instrumentation", [
 	"../_base/lang",
 	"../_base/array"
 ], function(tracer, has, lang, arrayUtil){
-	has.add("config-useDeferredInstrumentation", "report-unhandled-rejections");
-
 	function logError(error, rejection, deferred){
 		var stack = "";
 		if(error && error.stack){
@@ -30,22 +28,17 @@ define("dojo/promise/instrumentation", [
 	var activeTimeout = false;
 	var unhandledWait = 1000;
 	function trackUnhandledRejections(error, handled, rejection, deferred){
-		// try to find the existing tracking object
-		if(!arrayUtil.some(errors, function(obj){
-			if(obj.error === error){
-				// found the tracking object for this error
-				if(handled){
-					// if handled, update the state
-					obj.handled = true;
+		if(handled){
+			arrayUtil.some(errors, function(obj, ix){
+				if(obj.error === error){
+					errors.splice(ix, 1);
+					return true;
 				}
-				return true;
-			}
-		})){
-			// no tracking object has been setup, create one
+			});
+		}else if(!arrayUtil.some(errors, function(obj){ return obj.error === error; })){
 			errors.push({
 				error: error,
 				rejection: rejection,
-				handled: handled,
 				deferred: deferred,
 				timestamp: new Date().getTime()
 			});
@@ -60,12 +53,8 @@ define("dojo/promise/instrumentation", [
 		var now = new Date().getTime();
 		var reportBefore = now - unhandledWait;
 		errors = arrayUtil.filter(errors, function(obj){
-			// only report the error if we have waited long enough and
-			// it hasn't been handled
 			if(obj.timestamp < reportBefore){
-				if(!obj.handled){
-					logError(obj.error, obj.rejection, obj.deferred);
-				}
+				logError(obj.error, obj.rejection, obj.deferred);
 				return false;
 			}
 			return true;
