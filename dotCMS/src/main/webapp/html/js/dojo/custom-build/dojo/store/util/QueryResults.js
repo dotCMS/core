@@ -30,33 +30,25 @@ var QueryResults = function(results){
 	if(!results){
 		return results;
 	}
-
-	var isPromise = !!results.then;
 	// if it is a promise it may be frozen
-	if(isPromise){
+	if(results.then){
 		results = lang.delegate(results);
 	}
 	function addIterativeMethod(method){
-		// Always add the iterative methods so a QueryResults is
-		// returned whether the environment is ES3 or ES5
-		results[method] = function(){
-			var args = arguments;
-			var result = Deferred.when(results, function(results){
-				Array.prototype.unshift.call(args, results);
-				return QueryResults(array[method].apply(array, args));
-			});
-			// forEach should only return the result of Deferred.when()
-			// when we're wrapping a promise
-			if(method !== "forEach" || isPromise){
-				return result;
-			}
-		};
+		if(!results[method]){
+			results[method] = function(){
+				var args = arguments;
+				return Deferred.when(results, function(results){
+					Array.prototype.unshift.call(args, results);
+					return QueryResults(array[method].apply(array, args));
+				});
+			};
+		}
 	}
-
 	addIterativeMethod("forEach");
 	addIterativeMethod("filter");
 	addIterativeMethod("map");
-	if(results.total == null){
+	if(!results.total){
 		results.total = Deferred.when(results, function(results){
 			return results.length;
 		});

@@ -36,8 +36,8 @@ define("dojo/when", [
 		var nativePromise = receivedPromise && valueOrPromise instanceof Promise;
 
 		if(!receivedPromise){
-			if(arguments.length > 1){
-				return callback ? callback(valueOrPromise) : valueOrPromise;
+			if(callback){
+				return callback(valueOrPromise);
 			}else{
 				return new Deferred().resolve(valueOrPromise);
 			}

@@ -90,15 +90,12 @@ validate.isNumberFormat = function(value, flags){
 	// flags: Object?
 	//		- flags.format  A string or an Array of strings for multiple formats.
 	// example:
-	// |	require(["dojox/validate/_base"], function(validate){
-	// |		// returns true:
-	// |		validate.isNumberFormat("123-45", { format:"###-##" });
-	// |	});		
+	//	|	// returns true:
+	//	|	dojox.validate.isNumberFormat("123-45", { format:"###-##" });
 	// example:
 	//		Check Multiple formats:
-	// |	require(["dojox/validate/_base"], function(validate){
-	// |		validate.isNumberFormat("123-45", {
-	// |			format:["### ##","###-##","## ###"]
+	// |	dojox.validate.isNumberFormat("123-45", {
+	// |		format:["### ##","###-##","## ###"]
 	// |	});
 	//
 

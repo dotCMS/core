@@ -108,10 +108,10 @@ define("dojox/charting/action2d/TouchZoomAndPan", ["dojo/_base/lang", "dojo/_bas
 			//		Connect this action to the chart. On Safari this adds a new glass view plot
 			//		to the chart that's why Chart.render() must be called after connect.
 			this.inherited(arguments);
-			// this is needed to workaround issue on iOS Safari + SVG, because a touch start action
+			// this is needed to workaround issue on Safari + SVG, because a touch start action
 			// started above a item that is removed during the touch action will stop
 			// dispatching touch events!
-			if(has("ios") && this.chart.surface.declaredClass.indexOf("svg")!=-1){
+			if(has("safari") && this.chart.surface.declaredClass.indexOf("svg")!=-1){
 				this.chart.addPlot(this._uName, {type: GlassView});
 			}
 		},
@@ -119,7 +119,7 @@ define("dojox/charting/action2d/TouchZoomAndPan", ["dojo/_base/lang", "dojo/_bas
 		disconnect: function(){
 			// summary:
 			//		Disconnect this action from the chart.
-			if(has("ios") && this.chart.surface.declaredClass.indexOf("svg")!=-1){
+			if(has("safari") && this.chart.surface.declaredClass.indexOf("svg")!=-1){
 				this.chart.removePlot(this._uName);
 			}
 			this.inherited(arguments);

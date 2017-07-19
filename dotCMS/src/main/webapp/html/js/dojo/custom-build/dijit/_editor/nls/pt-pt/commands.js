@@ -31,7 +31,7 @@ define(
 	'toggleTableBorder': 'Alternar contorno da tabela',
 	'deleteTable': 'Eliminar tabela',
 	'tableProp': 'Propriedades da tabela',
-	'htmlToggle': 'Origem HTML',
+	'htmlToggle': 'Código-fonte de HTML',
 	'foreColor': 'Cor de primeiro plano',
 	'hiliteColor': 'Cor de segundo plano',
 	'plainFormatBlock': 'Estilo de parágrafo',
@@ -44,8 +44,6 @@ define(
 	"print": "Imprimir",
 	"newPage": "Nova página",
 	/* Error messages */
-	'systemShortcut': 'A acção "${0}" apenas está disponível no navegador utilizando um atalho de teclado. Utilize ${1}.',
-	'ctrlKey':'ctrl+${0}',
-	'appleKey':'\u2318${0}' // "command" or open-apple key on Macintosh
+	'systemShortcut': 'A acção "${0}" apenas está disponível no navegador utilizando um atalho de teclado. Utilize ${1}.'
 })
 );

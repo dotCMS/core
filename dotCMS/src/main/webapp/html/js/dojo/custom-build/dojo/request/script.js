@@ -2,7 +2,6 @@ define("dojo/request/script", [
 	'module',
 	'./watch',
 	'./util',
-	'../_base/kernel',
 	'../_base/array',
 	'../_base/lang',
 	'../on',
@@ -12,7 +11,7 @@ define("dojo/request/script", [
 	'../_base/window'/*=====,
 	'../request',
 	'../_base/declare' =====*/
-], function(module, watch, util, kernel, array, lang, on, dom, domConstruct, has, win/*=====, request, declare =====*/){
+], function(module, watch, util, array, lang, on, dom, domConstruct, has, win/*=====, request, declare =====*/){
 	has.add('script-readystatechange', function(global, document){
 		var script = document.createElement('script');
 		return typeof script['onreadystatechange'] !== 'undefined' &&
@@ -23,7 +22,7 @@ define("dojo/request/script", [
 		counter = 0,
 		loadEvent = has('script-readystatechange') ? 'readystatechange' : 'load',
 		readyRegExp = /complete|loaded/,
-		callbacks = kernel.global[mid + '_callbacks'] = {},
+		callbacks = this[mid + '_callbacks'] = {},
 		deadScripts = [];
 
 	function attach(id, url, frameDoc){
@@ -132,8 +131,7 @@ define("dojo/request/script", [
 		if(options.jsonp){
 			var queryParameter = new RegExp('[?&]' + options.jsonp + '=');
 			if(!queryParameter.test(url)){
-				url += (~url.indexOf('?') ? '&' : '?') +
-					options.jsonp + '=' +
+				url += queryParameter +
 					(options.frameDoc ? 'parent.' : '') +
 					mid + '_callbacks.' + dfd.id;
 			}

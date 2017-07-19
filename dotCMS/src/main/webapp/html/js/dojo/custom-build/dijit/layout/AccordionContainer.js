@@ -180,9 +180,7 @@ define("dijit/layout/AccordionContainer", [
 
 			// and then the actual content widget (changing it from prior-sibling to last-child),
 			// wrapped by a <div class=dijitAccordionChildWrapper>
-			this.containerNode = domConstruct.place("<div class='dijitAccordionChildWrapper' role='tabpanel' style='display:none'>", this.domNode);
-			this.containerNode.setAttribute("aria-labelledby", this.button.id);
-
+			this.containerNode = domConstruct.place("<div class='dijitAccordionChildWrapper' style='display:none'>", this.domNode);
 			domConstruct.place(this.contentWidget.domNode, this.containerNode);
 		},
 
@@ -267,7 +265,7 @@ define("dijit/layout/AccordionContainer", [
 		buildRendering: function(){
 			this.inherited(arguments);
 			this.domNode.style.overflow = "hidden";		// TODO: put this in dijit.css
-			this.domNode.setAttribute("role", "tablist");
+			this.domNode.setAttribute("role", "tablist");	// TODO: put this in template
 		},
 
 		startup: function(){
@@ -298,7 +296,7 @@ define("dijit/layout/AccordionContainer", [
 			// get cumulative height of all the unselected title bars
 			var totalCollapsedHeight = 0;
 			array.forEach(this.getChildren(), function(child){
-				if(child != openPane){
+	            if(child != openPane){
 					// Using domGeometry.getMarginSize() rather than domGeometry.position() since claro has 1px bottom margin
 					// to separate accordion panes.  Not sure that works perfectly, it's probably putting a 1px
 					// margin below the bottom pane (even though we don't want one).

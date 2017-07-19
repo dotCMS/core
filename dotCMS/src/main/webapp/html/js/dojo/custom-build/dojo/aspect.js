@@ -4,7 +4,7 @@ define("dojo/aspect", [], function(){
 	//		dojo/aspect
 
 	"use strict";
-	var undefined;
+	var undefined, nextId = 0;
 	function advise(dispatcher, type, advice, receiveArguments){
 		var previous = dispatcher[type];
 		var around = type == "around";
@@ -15,41 +15,34 @@ define("dojo/aspect", [], function(){
 			});
 			signal = {
 				remove: function(){
-					if(advised){
-						advised = dispatcher = advice = null;
-					}
+					signal.cancelled = true;
 				},
 				advice: function(target, args){
-					return advised ?
-						advised.apply(target, args) :  // called the advised function
-						previous.advice(target, args); // cancelled, skip to next one
+					return signal.cancelled ?
+						previous.advice(target, args) : // cancelled, skip to next one
+						advised.apply(target, args);	// called the advised function
 				}
 			};
 		}else{
 			// create the remove handler
 			signal = {
 				remove: function(){
-					if(signal.advice){
-						var previous = signal.previous;
-						var next = signal.next;
-						if(!next && !previous){
-							delete dispatcher[type];
+					var previous = signal.previous;
+					var next = signal.next;
+					if(!next && !previous){
+						delete dispatcher[type];
+					}else{
+						if(previous){
+							previous.next = next;
 						}else{
-							if(previous){
-								previous.next = next;
-							}else{
-								dispatcher[type] = next;
-							}
-							if(next){
-								next.previous = previous;
-							}
+							dispatcher[type] = next;
 						}
-
-						// remove the advice to signal that this signal has been removed
-						dispatcher = advice = signal.advice = null;
+						if(next){
+							next.previous = previous;
+						}
 					}
 				},
-				id: dispatcher.nextId++,
+				id: nextId++,
 				advice: advice,
 				receiveArguments: receiveArguments
 			};
@@ -57,7 +50,7 @@ define("dojo/aspect", [], function(){
 		if(previous && !around){
 			if(type == "after"){
 				// add the listener to the end of the list
-				// note that we had to change this loop a little bit to workaround a bizarre IE10 JIT bug
+				// note that we had to change this loop a little bit to workaround a bizarre IE10 JIT bug 
 				while(previous.next && (previous = previous.next)){}
 				previous.next = signal;
 				signal.previous = previous;
@@ -79,14 +72,12 @@ define("dojo/aspect", [], function(){
 			if(!existing || existing.target != target){
 				// no dispatcher in place
 				target[methodName] = dispatcher = function(){
-					var executionId = dispatcher.nextId;
+					var executionId = nextId;
 					// before advice
 					var args = arguments;
 					var before = dispatcher.before;
 					while(before){
-						if(before.advice){
-							args = before.advice.apply(this, args) || args;
-						}
+						args = before.advice.apply(this, args) || args;
 						before = before.next;
 					}
 					// around advice
@@ -96,14 +87,12 @@ define("dojo/aspect", [], function(){
 					// after advice
 					var after = dispatcher.after;
 					while(after && after.id < executionId){
-						if(after.advice){
-							if(after.receiveArguments){
-								var newResults = after.advice.apply(this, args);
-								// change the return value only if a new value was returned
-								results = newResults === undefined ? results : newResults;
-							}else{
-								results = after.advice.call(this, results, args);
-							}
+						if(after.receiveArguments){
+							var newResults = after.advice.apply(this, args);
+							// change the return value only if a new value was returned
+							results = newResults === undefined ? results : newResults;
+						}else{
+							results = after.advice.call(this, results, args);
 						}
 						after = after.next;
 					}
@@ -115,7 +104,6 @@ define("dojo/aspect", [], function(){
 					}};
 				}
 				dispatcher.target = target;
-				dispatcher.nextId = dispatcher.nextId || 0;
 			}
 			var results = advise((dispatcher || existing), type, advice, receiveArguments);
 			advice = null;

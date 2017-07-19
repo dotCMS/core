@@ -25,7 +25,6 @@ define("dojo/sniff", ["./has"], function(has){
 		has.add("quirks", document.compatMode == "BackCompat");
 		has.add("ios", /iPhone|iPod|iPad/.test(dua));
 		has.add("android", parseFloat(dua.split("Android ")[1]) || undefined);
-		has.add("trident", parseFloat(dav.split("Trident/")[1]) || undefined);
 
 		if(!has("webkit")){
 			// Opera
@@ -36,7 +35,7 @@ define("dojo/sniff", ["./has"], function(has){
 			}
 
 			// Mozilla and firefox
-			if(dua.indexOf("Gecko") >= 0 && !has("khtml") && !has("webkit") && !has("trident")){
+			if(dua.indexOf("Gecko") >= 0 && !has("khtml") && !has("webkit")){
 				has.add("mozilla", tv);
 			}
 			if(has("mozilla")){

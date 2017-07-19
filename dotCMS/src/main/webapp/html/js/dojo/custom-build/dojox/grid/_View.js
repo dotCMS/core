@@ -700,7 +700,7 @@ define("dojox/grid/_View", [
 		_nativeScroll: false,
 
 		doscroll: function(inEvent){
-			if(has('ff') >= 13 || has('chrome')){
+			if(has('ff') >= 13){
 				this._nativeScroll = true;
 			}
 			//var s = dojo.marginBox(this.headerContentNode.firstChild);

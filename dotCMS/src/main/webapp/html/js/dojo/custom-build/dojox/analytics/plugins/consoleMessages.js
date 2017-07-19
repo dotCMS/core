@@ -5,7 +5,7 @@ define("dojox/analytics/plugins/consoleMessages", ["dojo/_base/lang","../_base",
 
 		// summary:
 		//		plugin to have analyitcs return the base info dojo collects
-		consoleMessages.addData = lang.hitch(dxa, "addData", "consoleMessages");
+		this.addData = lang.hitch(dxa, "addData", "consoleMessages");
 
 		var lvls = config["consoleLogFuncs"] || ["error", "warn", "info", "rlog"];
 		if(!console){
@@ -13,7 +13,7 @@ define("dojox/analytics/plugins/consoleMessages", ["dojo/_base/lang","../_base",
 		}
 
 		for(var i = 0; i < lvls.length; i++){
-			var fnName = lvls[i], _addData = lang.hitch(consoleMessages, "addData", fnName);
+			var fnName = lvls[i], _addData = lang.hitch(this, "addData", fnName);
 			if(console[fnName]){
 				aspect.after(console, fnName, _addData,true);
 			}else{

@@ -313,6 +313,7 @@ define("dijit/form/_AutoCompleterMixin", [
 			if(this._opened){
 				this.inherited(arguments);
 				this.domNode.setAttribute("aria-expanded", "false");
+				this.focusNode.removeAttribute("aria-activedescendant");
 			}
 		},
 
@@ -340,8 +341,6 @@ define("dijit/form/_AutoCompleterMixin", [
 				}
 				this._refreshState();
 			}
-			// Remove aria-activedescendant since it may not be removed if they select with arrows then blur with mouse
-			this.focusNode.removeAttribute("aria-activedescendant");
 		},
 
 		_setItemAttr: function(/*item*/ item, /*Boolean?*/ priorityChange, /*String?*/ displayedValue){
@@ -403,9 +402,6 @@ define("dijit/form/_AutoCompleterMixin", [
 			}
 			this._setCaretPos(this.focusNode, this.focusNode.value.length);
 			this._handleOnChange(this.value, true);
-			// Remove aria-activedescendant since the drop down is no loner visible
-			// after closeDropDown() but _announceOption() adds it back in
-			this.focusNode.removeAttribute("aria-activedescendant");
 		},
 
 		_startSearchAll: function(){
@@ -431,6 +427,8 @@ define("dijit/form/_AutoCompleterMixin", [
 					dir: this.dir,
 					textDir: this.textDir
 				});
+				this.focusNode.removeAttribute("aria-activedescendant");
+				this.textbox.setAttribute("aria-owns",popupId); // associate popup with textbox
 			}
 			this._lastInput = key; // Store exactly what was entered by the user.
 			this.inherited(arguments);

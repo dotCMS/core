@@ -1,5 +1,5 @@
 require({cache:{
-'url:dijit/form/templates/CheckBox.html':"<div class=\"dijit dijitReset dijitInline\" role=\"presentation\"\n\t><input\n\t \t${!nameAttrSetting} type=\"${type}\" role=\"${type}\" aria-checked=\"false\" ${checkedAttrSetting}\n\t\tclass=\"dijitReset dijitCheckBoxInput\"\n\t\tdata-dojo-attach-point=\"focusNode\"\n\t \tdata-dojo-attach-event=\"ondijitclick:_onClick\"\n/></div>\n"}});
+'url:dijit/form/templates/CheckBox.html':"<div class=\"dijit dijitReset dijitInline\" role=\"presentation\"\n\t><input\n\t \t${!nameAttrSetting} type=\"${type}\" role=\"${type}\" aria-checked=\"false\" ${checkedAttrSetting}\n\t\tclass=\"dijitReset dijitCheckBoxInput\"\n\t\tdata-dojo-attach-point=\"focusNode\"\n\t \tdata-dojo-attach-event=\"onclick:_onClick\"\n/></div>\n"}});
 define("dijit/form/CheckBox", [
 	"require",
 	"dojo/_base/declare", // declare
@@ -10,8 +10,7 @@ define("dijit/form/CheckBox", [
 	"./ToggleButton",
 	"./_CheckBoxMixin",
 	"dojo/text!./templates/CheckBox.html",
-	"dojo/NodeList-dom", // NodeList.addClass/removeClass
-	"dijit/a11yclick"	// template uses ondijitclick
+	"dojo/NodeList-dom" // NodeList.addClass/removeClass
 ], function(require, declare, domAttr, has, query, ready, ToggleButton, _CheckBoxMixin, template){
 
 	// module:
@@ -89,11 +88,10 @@ define("dijit/form/CheckBox", [
 		postMixInProperties: function(){
 			this.inherited(arguments);
 
-			// Need to set initial checked state via node.setAttribute so that form submit works
-			// and IE8 radio button tab order is preserved.
+			// Need to set initial checked state as part of template, so that form submit works.
 			// domAttr.set(node, "checked", bool) doesn't work on IE until node has been attached
 			// to <body>, see #8666
-			this.checkedAttrSetting = "";
+			this.checkedAttrSetting = this.checked ? "checked" : "";
 		},
 
 		 _fillContent: function(){

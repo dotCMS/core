@@ -145,8 +145,8 @@ define("dojox/widget/_CalendarBase", [
 			//Populate the footer with today's date.
 			var today = new Date();
 
-			this.footer.innerHTML = "Today: " +
-				dojoDateLocale.format(today, {
+			this.footer.innerHTML = "Today: "
+				+ dojoDateLocale.format(today, {
 					formatLength:this.footerFormat,
 					selector:'date',
 					locale:this.lang});
@@ -208,7 +208,7 @@ define("dojox/widget/_CalendarBase", [
 				value = new Date(value);
 				this.displayMonth = new Date(value);
 				this._internalValue = value;
-				if(!this.isDisabledDate(value, this.lang) && this._currentChild === 0){
+				if(!this.isDisabledDate(value, this.lang) && this._currentChild == 0){
 					this.value = value;
 					this.onChange(value);
 				}
@@ -217,7 +217,6 @@ define("dojox/widget/_CalendarBase", [
 				}
 				return true;
 			}
-			this.onExecute();
 			return false;
 		},
 
@@ -383,11 +382,6 @@ define("dojox/widget/_CalendarBase", [
 			this._slideTable(child, amount, function(){
 				child.set("value", month);
 			});
-		},
-
-		onExecute:function(){
-			// summary:
-			//		Stub for child classes to override.
 		}
 	});
 });
