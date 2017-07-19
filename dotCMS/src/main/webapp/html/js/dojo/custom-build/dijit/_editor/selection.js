@@ -354,9 +354,16 @@ var selection = {
 				// use IE specific crud.
 				range = doc.selection.createRange();
 				try{
+					newRange = node.ownerDocument.body.createControlRange();
+					if(newRange){
+						newRange.addElement(node);
+					}
+				}catch(e1){
+					try{
 						newRange = node.ownerDocument.body.createTextRange();
 						newRange.moveToElementText(node);
 					}catch(e2){/* squelch */}
+				}
 				if(range && newRange){
 					// We can finally compare similar to W3C
 					if(range.compareEndPoints("EndToStart", newRange) === 1){

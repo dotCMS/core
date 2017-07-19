@@ -197,25 +197,7 @@ define("dojox/mobile/Heading", [
 				this.backButton.set("moveTo", moveTo);
 			}
 		},
-		
-		_setHrefAttr: function(/*String*/href){
-			// tags:
-			//		private
-			this._set("href", href);
-			if(this.backButton){
-				this.backButton.set("href", href);
-			}
-		},
-		
-		_setTransitionAttr: function(/*String*/transition){
-			// tags:
-			//		private
-			this._set("transition", transition);
-			if(this.backButton){
-				this.backButton.set("transition", transition);
-			}
-		},
-		
+
 		_setLabelAttr: function(/*String*/label){
 			// tags:
 			//		private

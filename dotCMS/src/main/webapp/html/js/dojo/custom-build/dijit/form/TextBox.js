@@ -62,6 +62,14 @@ define("dijit/form/TextBox", [
 			}
 		},
 
+		_onInput: function(e){
+			this.inherited(arguments);
+			if(this.intermediateChanges){ // _TextBoxMixin uses onInput
+				// allow the key to post to the widget input box
+				this.defer(function(){ this._handleOnChange(this.get('value'), false); });
+			}
+		},
+
 		_setPlaceHolderAttr: function(v){
 			this._set("placeHolder", v);
 			if(!this._phspan){
@@ -76,17 +84,9 @@ define("dijit/form/TextBox", [
 			this._updatePlaceHolder();
 		},
 
-		_onInput: function(/*Event*/ evt){
-			// summary:
-			//		Called AFTER the input event has happened
-			//		See if the placeHolder text should be removed or added while editing.
-			this.inherited(arguments);
-			this._updatePlaceHolder();
-		},
-
 		_updatePlaceHolder: function(){
 			if(this._phspan){
-				this._phspan.style.display = (this.placeHolder && !this.textbox.value) ? "" : "none";
+				this._phspan.style.display=(this.placeHolder&&!this.focused&&!this.textbox.value)?"":"none";
 			}
 		},
 
@@ -133,7 +133,7 @@ define("dijit/form/TextBox", [
 		}
 	});
 
-	if(has("ie") < 9){
+	if(has("ie")){
 		TextBox.prototype._isTextSelected = function(){
 			var range = this.ownerDocument.selection.createRange();
 			var parent = range.parentElement();

@@ -13,15 +13,11 @@ define("dojox/html/metrics", ["dojo/_base/kernel","dojo/_base/lang", "dojo/_base
 			'small':0, 'medium':0, 'large':0, 'x-large':0, 'xx-large':0
 		};
 	
-		var oldStyle;	
 		if(has("ie")){
-			//	We do a font-size fix if and only if one isn't applied already.
-			// NOTE: If someone set the fontSize on the HTML Element, this will kill it.
-			oldStyle = Window.doc.documentElement.style.fontSize || "";
-			if(!oldStyle){
-				Window.doc.documentElement.style.fontSize="100%";
-			}
-		}		
+			//	we do a font-size fix if and only if one isn't applied already.
+			//	NOTE: If someone set the fontSize on the HTML Element, this will kill it.
+			Window.doc.documentElement.style.fontSize="100%";
+		}
 	
 		//	set up the measuring node.
 		var div=Window.doc.createElement("div");
@@ -43,11 +39,6 @@ define("dojox/html/metrics", ["dojo/_base/kernel","dojo/_base/lang", "dojo/_base
 		for(var p in heights){
 			ds.fontSize = p;
 			heights[p] = Math.round(div.offsetHeight * 12/16) * 16/12 / 1000;
-		}
-
-		if(has("ie")){
-			// Restore the font to its old style.
-			Window.doc.documentElement.style.fontSize = oldStyle;
 		}
 		
 		Window.body().removeChild(div);

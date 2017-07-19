@@ -183,15 +183,11 @@ define("dojox/calendar/StoreMixin", ["dojo/_base/declare", "dojo/_base/array", "
 		_setStoreAttr: function(value){
 			this.displayedItemsInvalidated = true;
 			var r;
-			if(this._observeHandler){
-				this._observeHandler.remove();
-				this._observeHandler = null;
-			}
-			if(value){				
+			if(value){
 				var results = value.query(this.query);
 				if(results.observe){
 					// user asked us to observe the store
-					this._observeHandler = results.observe(lang.hitch(this, this._updateItems), true);
+					results.observe(lang.hitch(this, this._updateItems), true);
 				}				
 				results = results.map(lang.hitch(this, function(item){
 					return this.itemToRenderItem(item, value);

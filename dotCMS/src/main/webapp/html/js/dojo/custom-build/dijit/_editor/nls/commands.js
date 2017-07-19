@@ -53,7 +53,6 @@ define("dijit/_editor/nls/commands", { root:
 ,
 "zh": true,
 "zh-tw": true,
-"uk": true,
 "tr": true,
 "th": true,
 "sv": true,
@@ -81,7 +80,6 @@ define("dijit/_editor/nls/commands", { root:
 "da": true,
 "cs": true,
 "ca": true,
-"bg": true,
 "az": true,
 "ar": true
 });

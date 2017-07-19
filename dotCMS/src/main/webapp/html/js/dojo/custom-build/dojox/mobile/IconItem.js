@@ -392,7 +392,7 @@ define("dojox/mobile/IconItem", [
 			// tags:
 			//		private
 			this.inherited(arguments);
-			this.iconNode && domStyle.set(this.iconNode, "opacity",
+			domStyle.set(this.iconNode, "opacity",
 						 selected ? this.getParent().pressedIconOpacity : 1);
 		}
 	});

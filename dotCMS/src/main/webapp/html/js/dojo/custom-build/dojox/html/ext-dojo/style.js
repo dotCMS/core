@@ -35,7 +35,7 @@ define("dojox/html/ext-dojo/style", ["dojo/_base/kernel", "dojo/dom-style", "doj
 				}else if(to){
 					return extStyle.getTransformOrigin(node);
 				}else{
-					return sget.apply(this, arguments);
+					return arguments.length == 2 ? sget(node, name) : sget(node);
 				}
 			};
 			DOMStyle.set = function(/*DOMNode|String*/ node, /*String|Object*/ name, /*String?*/ value){
@@ -48,7 +48,7 @@ define("dojox/html/ext-dojo/style", ["dojo/_base/kernel", "dojo/dom-style", "doj
 				}else if(to){
 					return extStyle.setTransformOrigin(n, value);
 				}else{
-					return sset.apply(this, arguments);
+					return arguments.length == 3 ? sset(n, name, value) : sset(n, name);
 				}
 			};
 			// prefixes and property names

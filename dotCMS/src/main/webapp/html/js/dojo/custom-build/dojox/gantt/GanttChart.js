@@ -788,7 +788,7 @@ define("dojox/gantt/GanttChart", [
 				newMonth = date.getMonth();
 				lastYear = date.getFullYear();
 				if(newMonth != oldMonth){
-					this.addMonthInPanelTime(newMonthRow, mcount, oldMonth, oldMonth !== 11 ? lastYear : lastYear - 1);
+					this.addMonthInPanelTime(newMonthRow, mcount, oldMonth, lastYear);
 					mcount = 0;
 					oldMonth = newMonth;
 				}
@@ -857,7 +857,7 @@ define("dojox/gantt/GanttChart", [
 					newMonth = date.getMonth();
 					lastYear = date.getFullYear();
 					if(newMonth != oldMonth){
-						this.addMonthInPanelTime(prows[1], mcount, oldMonth, oldMonth !== 11 ? lastYear : lastYear - 1);
+						this.addMonthInPanelTime(prows[1], mcount, oldMonth, lastYear);
 						mcount = 0;
 						oldMonth = newMonth;
 					}

@@ -1,4 +1,4 @@
-define("dojox/rpc/JsonRPC", ["dojo", "dojox", "dojox/rpc/Service", "dojo/errors/RequestError"], function(dojo, dojox, Service, RequestError) {
+define("dojox/rpc/JsonRPC", ["dojo", "dojox", "dojox/rpc/Service"], function(dojo, dojox) {
 
 	function jsonRpcEnvelope(version){
 		return {
@@ -23,9 +23,7 @@ define("dojox/rpc/JsonRPC", ["dojo", "dojox", "dojox/rpc/Service", "dojo/errors/
 			},
 	
 			deserialize: function(obj){
-				if ('Error' == obj.name // old xhr
-					|| obj instanceof RequestError // new xhr
-				){
+				if ('Error' == obj.name){
 					obj = dojo.fromJson(obj.responseText);
 				}
 				if(obj.error) {

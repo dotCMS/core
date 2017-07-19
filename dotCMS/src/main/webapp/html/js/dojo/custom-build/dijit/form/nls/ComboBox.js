@@ -8,7 +8,6 @@ define("dijit/form/nls/ComboBox", { root:
 ,
 "zh": true,
 "zh-tw": true,
-"uk": true,
 "tr": true,
 "th": true,
 "sv": true,
@@ -36,7 +35,6 @@ define("dijit/form/nls/ComboBox", { root:
 "da": true,
 "cs": true,
 "ca": true,
-"bg": true,
 "az": true,
 "ar": true
 });
