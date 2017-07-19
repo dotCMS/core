@@ -3204,7 +3204,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         cc.remove(h.getIdentifier());
                     }
 
-                    hostAPI.updateVirtualLinks(new Host(workingContentlet), new Host(contentlet));//DOTCMS-5025
                     hostAPI.updateMenuLinks(new Host(workingContentlet), new Host(contentlet));
 
                     //update tag references

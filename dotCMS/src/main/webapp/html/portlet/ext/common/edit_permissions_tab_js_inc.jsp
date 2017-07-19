@@ -95,7 +95,6 @@
 	var editPermission = <%= PermissionAPI.PERMISSION_WRITE %>;
 	var publishPermission = <%= PermissionAPI.PERMISSION_PUBLISH %>;
 	var editPermissionsPermission = <%= PermissionAPI.PERMISSION_EDIT_PERMISSIONS %>;
-	var createVirtualLinksPermission = <%= PermissionAPI.PERMISSION_CREATE_VIRTUAL_LINKS %>;
 	var addChildrenPermission = <%= PermissionAPI.PERMISSION_CAN_ADD_CHILDREN %>;
 
 	var hostClassName = '<%= Host.class.getCanonicalName() %>'
@@ -455,7 +454,6 @@
 		if(checkboxesList.editPermissionsPermissionCheckbox) checkboxesList.editPermissionsPermissionCheckbox.destroy();
 		if(checkboxesList.publishPermissionCheckbox) checkboxesList.publishPermissionCheckbox.destroy();
 		if(checkboxesList.viewPermissionCheckbox) checkboxesList.viewPermissionCheckbox.destroy();
-		if(checkboxesList.virtualLinksPermissionCheckbox) checkboxesList.virtualLinksPermissionCheckbox.destroy();
 	}
 
 	function checkRolePermissionsRemoved(permissionSet) {
@@ -499,8 +497,6 @@
 			permission = permission | publishPermission;
 		if(isPermissionChecked(prefix + 'edit-permissions-permission-' + id))
 			permission = permission | editPermissionsPermission;
-		if(isPermissionChecked(prefix + 'virtual-links-permission-' + id))
-			permission = permission | createVirtualLinksPermission;
 
 		return permission;
 
@@ -545,10 +541,6 @@
                 ((dijit.byId('edit-permissions-permission-' + id).attr('value') == 'on' && item.editPermissionsPermissionChecked=="") ||
                  (dijit.byId('edit-permissions-permission-' + id).attr('value') == false && item.editPermissionsPermissionChecked!="")))
             return true;
-        if(dijit.byId('virtual-links-permission-' + id) &&
-                ((dijit.byId('virtual-links-permission-' + id).attr('value') == 'on' && item.virtualLinksPermissionChecked=="") ||
-                 (dijit.byId('virtual-links-permission-' + id).attr('value') == false && item.virtualLinksPermissionChecked!="")))
-            return true;
 
         var changedType=function(item,type) {
             if(dijit.byId(type+'-view-permission-' + id) &&
@@ -574,10 +566,6 @@
             if(dijit.byId(type+'-edit-permissions-permission-' + id) &&
                     ((dijit.byId(type+'-edit-permissions-permission-' + id).attr('value') == 'on' && item[type+'EditPermissionsPermissionChecked']=="") ||
                      (dijit.byId(type+'-edit-permissions-permission-' + id).attr('value') == false && item[type+'EditPermissionsPermissionChecked']!="")))
-                return true;
-            if(dijit.byId(type+'-virtual-links-permission-' + id) &&
-                    ((dijit.byId(type+'-virtual-links-permission-' + id).attr('value') == 'on' && item[type+'VirtualLinksPermissionChecked']=="") ||
-                     (dijit.byId(type+'-virtual-links-permission-' + id).attr('value') == false && item[type+'VirtualLinksPermissionChecked']!="")))
                 return true;
         }
 
@@ -654,10 +642,6 @@
 			if(checkboxes.editPermissionCheckbox) checkboxes.editPermissionCheckbox.attr('value', 'on');
 			if(checkboxes.publishPermissionCheckbox) checkboxes.publishPermissionCheckbox.attr('value', 'on');
 		}
-
-	}
-
-	function virtualLinksPermissionChanged (type, id) {
 
 	}
 
@@ -821,8 +805,6 @@
 			checkboxes.publishPermissionCheckbox.attr('disabled', false);
 		if(checkboxes.editPermissionsPermissionCheckbox)
 			checkboxes.editPermissionsPermissionCheckbox.attr('disabled', false);
-		if(checkboxes.virtualLinksPermissionCheckbox)
-			checkboxes.virtualLinksPermissionCheckbox.attr('disabled', false);
 		if(dijit.byId('cascadeChangesCheckbox'))
 			dijit.byId('cascadeChangesCheckbox').attr('disabled', false);
 
@@ -866,14 +848,12 @@
 		var editPermissionCheckbox = dijit.byId(prefix + 'edit-permission-' + id);
 		var publishPermissionCheckbox = dijit.byId(prefix + 'publish-permission-' + id);
 		var editPermissionsPermissionCheckbox = dijit.byId(prefix + 'edit-permissions-permission-' + id);
-		var virtualLinksPermissionCheckbox = dijit.byId(prefix + 'virtual-links-permission-' + id);
 		return {
 			viewPermissionCheckbox: viewPermissionCheckbox,
 			addChildrenPermissionCheckbox: addChildrenPermissionCheckbox,
 			editPermissionCheckbox: editPermissionCheckbox,
 			publishPermissionCheckbox: publishPermissionCheckbox,
-			editPermissionsPermissionCheckbox: editPermissionsPermissionCheckbox,
-			virtualLinksPermissionCheckbox: virtualLinksPermissionCheckbox
+			editPermissionsPermissionCheckbox: editPermissionsPermissionCheckbox
 		};
 
 	}
@@ -899,34 +879,24 @@
 		role["publish-permission-style"] = '';
 		role["edit-permissions-permission-style"] = '';
 		role["add-children-permission-style"] = '';
-		role["virtual-links-permission-style"] = '';
 		if(assetType == 'com.dotmarketing.portlets.folders.model.Folder') {
-			role["virtual-links-permission-style"] = 'display:none';
 			role["publish-permission-style"] = 'display:none';
 		} else if(assetType == 'com.dotmarketing.beans.Host') {
 			role["publish-permission-style"] = 'display:none';
 		} else if(assetType == 'com.dotmarketing.portlets.structure.model.Structure') {
 			role["add-children-permission-style"] = 'display: none'
-			role["virtual-links-permission-style"] = 'display: none'
 		} else if(assetType == 'com.dotmarketing.portlets.categories.model.Category') {
 			role["publish-permission-style"] = 'display:none';
 			role["add-children-permission-style"] = 'display: none'
-			role["virtual-links-permission-style"] = 'display: none'
 		} else if(assetType == 'com.dotmarketing.portlets.report.model.Report') {
 			role["publish-permission-style"] = 'display:none';
 			role["add-children-permission-style"] = 'display: none'
-			role["virtual-links-permission-style"] = 'display: none'
 		}
 		<% if(UtilMethods.isSet(contentletAux) && contentletAux.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {%>
-        else if(assetType == contentClassName) {
-            role["virtual-links-permission-style"] = 'display: none';
-            // hola mundo
-        }
      <% } %>
 		
 		else {
 			role["add-children-permission-style"] = 'display: none'
-			role["virtual-links-permission-style"] = 'display: none'
 		}
 
 		role["icon"] = '/html/images/shim.gif';
@@ -988,14 +958,6 @@
 		prefix = "editPermissions";
 		if(assetType) prefix = assetType + "EditPermissions";
 		if(hasPermissionSet(permissions, permissionType, editPermissionsPermission)) {
-			role[prefix + "PermissionChecked"] = 'checked="checked"'
-		} else {
-			role[prefix + "PermissionChecked"] = ''
-		}
-
-		prefix = "virtualLinks";
-		if(assetType) prefix = assetType + "VirtualLinks";
-		if(hasPermissionSet(permissions, permissionType, createVirtualLinksPermission)) {
 			role[prefix + "PermissionChecked"] = 'checked="checked"'
 		} else {
 			role[prefix + "PermissionChecked"] = ''

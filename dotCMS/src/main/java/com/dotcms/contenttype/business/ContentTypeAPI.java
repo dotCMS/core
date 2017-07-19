@@ -25,7 +25,6 @@ import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
  * <li> Forms
  * <li> HTMLPage
  * <li> Menu Link
- * <li> Virtual Link
  * <li> Container
  * <li> Template
  * <li> User
@@ -43,13 +42,13 @@ public interface ContentTypeAPI {
    * Name of Structures already set by dotcms
    */
   final Set<String> reservedStructureNames = ImmutableSet.of("host", "folder", "file", "forms", "html page",
-      "menu link", "virtual link", "container", "template", "user");
+      "menu link", "container", "template", "user");
 
   /**
    * Variable Name of the Structures already set by dotcms
    */
   final Set<String> reservedStructureVars = ImmutableSet.of("host", "folder", "file", "forms", "htmlpage", "menulink",
-      "virtuallink", "container", "template", "user", "calendarEvent");
+		  "container", "template", "user", "calendarEvent");
 
   /**
    * Deletes the given Content Type
