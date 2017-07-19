@@ -76,16 +76,6 @@ public class SecurityUtils {
 
                 String serverName = request.getServerName();
 
-                //Verify if we want to move inside the same app
-                if ( !refererHost.equals( serverName ) ) {
-
-                    //Trying to find the host in our list of host
-                    Host foundHost = APILocator.getHostAPI().findByName( refererHost, systemUser, false );
-                    if ( !UtilMethods.isSet( foundHost ) ) {
-                        foundHost = APILocator.getHostAPI().findByAlias( refererHost, systemUser, false );
-                    }
-                }
-
             } catch ( Exception e ) {
                 throw new IllegalArgumentException( "Error validating URL " + referer, e );
             }

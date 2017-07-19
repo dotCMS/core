@@ -14,17 +14,12 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
-import com.liferay.util.servlet.SessionMessages;
 
 /**
  * 
