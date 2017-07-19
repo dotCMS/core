@@ -73,46 +73,28 @@
 
     var actions = "";
 
-    var previousGlobalInode = "";
-    var previousGlobalName = "";
-
-    var currentGlobalInode = "0";
-    var currentGlobalName = "Top Level";
-
     function refresh() {
+        var hashReceived = decodeURIComponent(dojo.hash());
+        var inode = "0";
+        var name = "<%= LanguageUtil.get(pageContext, "Top-Level") %>";
+        var hashToSend = null;
 
-        var hashValue = decodeURIComponent(dojo.hash());
-
-        if(typeof hashValue == "undefined" || hashValue == '') {
-            doSearchHash(null);
-        } else {
-            doSearchHash(hashValue);
+        if(typeof hashReceived != "undefined" && hashReceived != '') {
+            var query = hashReceived.substring(hashReceived.indexOf("?") + 1, hashReceived.length);
+            var queryObject = dojo.queryToObject(query);
+            inode = queryObject.inode==''?0:queryObject.inode;
+            name = queryObject.name;
+            hashToSend = hashReceived;
         }
-
-        //alert("Refresh Previous: " + previousGlobalInode + " - " + previousGlobalName);
-        //alert("Refresh Current: " + currentGlobalInode + " - " + currentGlobalName);
-        //alert("Start " + actions);
 
         if (actions == "") {
-            prepareCrumbs(previousGlobalInode, previousGlobalName);
-        } /*else if (actions == "back") {
-		 var previousInode = previousGlobalInode;
-		 previousGlobalInode = currentGlobalInode;
-		 currentGlobalInode = previousInode;
-
-		 var previousIName = previousGlobalIName;
-		 previousGlobalIName = currentGlobalIName;
-		 currentGlobalIName = previousIName;
-
-		 prepareCrumbs(currentGlobalInode, currentGlobalName);
-		 actions = "";
-		 }*/
-
-        if (actions == "breadcrum") {
-            actions = "";
+            // nothing to do here, browser back or forward pressed
+        } else {
+            buildCrumbs(inode, name);
+            doSearchHash(hashToSend);
+            refreshCrumbs();
         }
-
-        //alert("End " + actions);
+        actions = "";
     }
 
     var grid;
@@ -305,7 +287,7 @@
     // search handling
     function doSearch(reorder, importing) {
         var params = dojo.byId("catFilter").value.trim();
-        params = "?donothing&inode="+currentInodeOrIdentifier+"&q="+params;
+        params = "?donothing&inode="+currentInodeOrIdentifier+"&name="+currentCatName+"&q="+params;
         if(reorder) {
             params = params + "&reorder=true";
         }
@@ -437,10 +419,7 @@
 
     var myCrumbs = new Array();
 
-
-
     function refreshCrumbs() {
-
         if(myCrumbs.length ==0){
             myCrumbs[0] = "0---------<%= LanguageUtil.get(pageContext, "Top-Level") %>";
         }
@@ -465,16 +444,15 @@
             }
         }
 
-
-
-
     }
 
-
-
     function prepareCrumbs(inode, name) {
+        buildCrumbs(inode, name);
+        doSearch();
+        refreshCrumbs();
+    }
 
-
+    function buildCrumbs(inode, name) {
         dijit.byId("mainTabContainer").selectChild(dijit.byId("TabOne"));
         if(inode =="0"){
             currentInodeOrIdentifier="";
@@ -484,42 +462,30 @@
         }
         currentCatName = name;
 
-        var newCrumbs = new Array();
-        for(i=0;i<myCrumbs.length;i++){
-            var ix = myCrumbs[i].split("---------")[0];
-            var nx = myCrumbs[i].split("---------")[1];
-            if(inode == ix){
-                break;
-            }
-            newCrumbs[i] = myCrumbs[i];
-        }
-        newCrumbs[newCrumbs.length] = inode + "---------" + name;
-        myCrumbs = newCrumbs;
-        dijit.byId('catFilter').attr('value', '');
+		var newCrumbs = new Array();
+		for(i=0;i<myCrumbs.length;i++){
+			var ix = myCrumbs[i].split("---------")[0];
+			var nx = myCrumbs[i].split("---------")[1];
+			if(inode == ix){
+				break;
+			}
+			newCrumbs[i] = myCrumbs[i];
+		}
+		newCrumbs[newCrumbs.length] = inode + "---------" + name;
+		myCrumbs = newCrumbs;
+		dijit.byId('catFilter').attr('value', '');
 
-        doSearch();
-        refreshCrumbs();
     }
 
     // drill down of a category, load the children, properties
     function drillDown(index) {
-
-        previousGlobalInode = currentGlobalInode;
-        previousGlobalName = currentGlobalName;
+        actions = "breadcrums";
 
         var inode = grid.store.getValue(grid.getItem(index), 'inode');
         var name = grid.store.getValue(grid.getItem(index), 'category_name');
         var velVar = grid.store.getValue(grid.getItem(index), 'category_velocity_var_name');
         var key = grid.store.getValue(grid.getItem(index), 'category_key');
         var keywords = grid.store.getValue(grid.getItem(index), 'keywords');
-
-        currentGlobalInode = inode;
-        currentGlobalName = name;
-
-        actions = "breadcrum";
-
-        //alert("Drill Previous: " + previousGlobalInode + " - " + previousGlobalName);
-        //alert("Drill Current: " + currentGlobalInode + " - " + currentGlobalName);
 
         prepareCrumbs(inode, name);
         dojo.byId("propertiesNA").style.display = "none";
@@ -542,16 +508,7 @@
 
     // roll up of a category, load the children, properties
     function rollUp(inode, name) {
-        previousGlobalInode = currentGlobalInode;
-        previousGlobalName = currentGlobalName;
-
-        currentGlobalInode = inode;
-        currentGlobalName = name;
-
-        actions = "breadcrum";
-
-        //alert("Roll Previous: " + previousGlobalInode + " - " + previousGlobalName);
-        //alert("Roll Current: " + currentGlobalInode + " - " + currentGlobalName);
+        actions = "breadcrums";
 
         prepareCrumbs(inode, name);
 
