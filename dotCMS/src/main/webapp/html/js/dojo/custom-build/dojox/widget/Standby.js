@@ -210,25 +210,16 @@ return declare("dojox.widget.Standby", [_Widget, _TemplatedMixin],{
 		// summary:
 		//		Function to hide the blocking overlay and status icon or text.
 		if(this._displayed){
-			// Ideally would come up with something better than try/catch,
-			// but don't see another simple workaround for
-			// https://bugs.dojotoolkit.org/ticket/18196 and
-			// https://bugs.dojotoolkit.org/ticket/14984
-			try{
-				if(this._anim){
-					this._anim.stop();
-					delete this._anim;
-				}
-				this._size();
-			}catch(e){
-				console.error(e);
-			}finally{
-				this._fadeOut();
-				this._displayed = false;
-				if(this._resizeCheck !== null){
-					clearInterval(this._resizeCheck);
-					this._resizeCheck = null;
-				}
+			if(this._anim){
+				this._anim.stop();
+				delete this._anim;
+			}
+			this._size();
+			this._fadeOut();
+			this._displayed = false;
+			if(this._resizeCheck !== null){
+				clearInterval(this._resizeCheck);
+				this._resizeCheck = null;
 			}
 		}
 	},
@@ -327,7 +318,7 @@ return declare("dojox.widget.Standby", [_Widget, _TemplatedMixin],{
 					//are any parent zIndexs to overlay.
 					var cNode = target.parentNode;
 					var oldZi = -100000;
-					while(cNode && cNode !== baseWindow.body() && target !== baseWindow.body()){
+					while(cNode && cNode !== baseWindow.body()){
 						zi = domStyle.get(cNode, "zIndex");
 						if(!zi || zi === "auto"){
 							cNode = cNode.parentNode;

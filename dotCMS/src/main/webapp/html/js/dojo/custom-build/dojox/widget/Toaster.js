@@ -17,7 +17,7 @@ define("dojox/widget/Toaster", [
 ], function(declare, lang, connect, baseFx, domStyle, domClass, domGeometry, registry, WidgetBase, Templated, BackgroundIframe, coreFx, has, baseWindow, window){
 
 	lang.getObject("dojox.widget", true);
-
+	
 	var capitalize = function(/* String */w){
 	    return w.substring(0,1).toUpperCase() + w.substring(1);
 	};
@@ -101,7 +101,7 @@ define("dojox/widget/Toaster", [
 			//		type of message; possible values in messageTypes enumeration ("message", "warning", "error", "fatal")
 			// duration:
 			//		duration in milliseconds to display message before removing it. Widget has default value.
-			duration = (duration === undefined) ? this.duration : duration;
+			duration = duration||this.duration;
 			// sync animations so there are no ghosted fades and such
 			if(this.slideAnim){
 				if(this.slideAnim.status() != "playing"){
@@ -249,9 +249,7 @@ define("dojox/widget/Toaster", [
 			style.clip = "rect(0px, " + nodeSize.w + "px, " + nodeSize.h + "px, 0px)";
 			if(has("ie")){
 				if(!this.bgIframe){
-					if (!this.clipNode.id) {
-						this.clipNode.id = registry.getUniqueId("dojox_widget_Toaster_clipNode");
-					}
+					this.clipNode.id = registry.getUniqueId("dojox_widget_Toaster_clipNode");
 					this.bgIframe = new BackgroundIframe(this.clipNode);
 				}
 				var iframe = this.bgIframe.iframe;

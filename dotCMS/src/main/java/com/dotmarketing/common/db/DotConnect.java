@@ -1165,6 +1165,9 @@ public class DotConnect {
 
             Logger.error(DotConnect.class, e.getMessage(), e);
             throw new DotDataException(e.getMessage(), e);
+        } finally {
+
+            closeQuietly(preparedStatement);
         }
 
         return rowsAffected;

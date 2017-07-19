@@ -9,7 +9,6 @@ public enum PermissionLevel {
 	final int PERMISSION_PUBLISH = 4;
 	final int PERMISSION_EDIT_PERMISSIONS = 8;
 	final int PERMISSION_CAN_ADD_CHILDREN = 16;
-	final int PERMISSION_CREATE_VIRTUAL_LINKS = 32;
 */
 	
 	NONE(0),
@@ -19,8 +18,7 @@ public enum PermissionLevel {
 	WRITE(2),
 	PUBLISH(4),
 	EDIT_PERMISSIONS(8),
-	CAN_ADD_CHILDREN(16),
-	CREATE_VIRTUAL_LINKS(32);
+	CAN_ADD_CHILDREN(16);
 
 	@Override
 	public String toString() {

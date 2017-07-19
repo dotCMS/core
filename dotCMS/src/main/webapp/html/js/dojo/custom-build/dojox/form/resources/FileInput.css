@@ -107,9 +107,10 @@
 	background-color: #fff;
 	background-repeat: repeat-x;
 	background-position: top left;
-	background-image: -moz-linear-gradient(rgba(127, 127, 127, 0.2) 0%, rgba(127, 127, 127, 0) 2px);
-	background-image: -webkit-linear-gradient(rgba(127, 127, 127, 0.2) 0%, rgba(127, 127, 127, 0) 2px);
-	background-image: linear-gradient(rgba(127, 127, 127, 0.2) 0%, rgba(127, 127, 127, 0) 2px);
+/*
+    the following url does not exist; commented out to quiet build errors; tracked at #15697
+	background-image:url("../../../dijit/themes/claro/form/images/textBox_back.png");
+*/
 	line-height:normal;
 	padding:0.2em 0.3em;
 }

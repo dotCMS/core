@@ -213,14 +213,6 @@ define("dojox/mobile/View", [
 				}
 			}
 			this._clearClasses(toNode); // just in case toNode is a sibling of an ancestor.
-			
-			// #16337
-			// Uninitialization may fail to clear _inProgress when multiple
-			// performTransition calls occur in a short duration of time.
-			var toWidget = registry.byNode(toNode);
-			if(toWidget){
-				toWidget._inProgress = false;
-			}
 		},
 
 		convertToId: function(moveTo){
@@ -280,8 +272,7 @@ define("dojox/mobile/View", [
 			//		Transition forward to a blank view, and then open another page.
 			//	|	performTransition(null, 1, "slide", null, function(){location.href = href;});
 
-			if(this._inProgress){ return; } // transition is in progress
-			this._inProgress = true;
+			if(this._detail){ return; } // transition is in progress
 			
 			// normalize the arg
 			var detail, optArgs;
@@ -566,7 +557,6 @@ define("dojox/mobile/View", [
 				}
 			}
 			this._detail = this._optArgs = this._arguments = undefined;
-			this._inProgress = false;
 		},
 
 		isVisible: function(/*Boolean?*/checkAncestors){

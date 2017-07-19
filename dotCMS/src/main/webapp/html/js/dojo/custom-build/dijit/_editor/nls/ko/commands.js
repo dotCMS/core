@@ -1,14 +1,14 @@
 define(
 "dijit/_editor/nls/ko/commands", ({
-	'bold': '굵은체',
+	'bold': '굵게',
 	'copy': '복사',
 	'cut': '잘라내기',
 	'delete': '삭제',
 	'indent': '들여쓰기',
-	'insertHorizontalRule': '수평 자',
+	'insertHorizontalRule': '가로 줄',
 	'insertOrderedList': '번호 목록',
 	'insertUnorderedList': '글머리표 목록',
-	'italic': '기울임체',
+	'italic': '기울임꼴',
 	'justifyCenter': '가운데 맞춤',
 	'justifyFull': '양쪽 맞춤',
 	'justifyLeft': '왼쪽 맞춤',
@@ -34,8 +34,8 @@ define(
 	'htmlToggle': 'HTML 소스',
 	'foreColor': '전경색',
 	'hiliteColor': '배경색',
-	'plainFormatBlock': '단락 스타일',
-	'formatBlock': '단락 스타일',
+	'plainFormatBlock': '단락 양식',
+	'formatBlock': '단락 양식',
 	'fontSize': '글꼴 크기',
 	'fontName': '글꼴 이름',
 	'tabIndent': '탭 들여쓰기',
@@ -44,7 +44,7 @@ define(
 	"print": "인쇄",
 	"newPage": "새 페이지",
 	/* Error messages */
-	'systemShortcut': '"${0}" 조치는 브라우저에서 키보드 단축키를 이용해서만 사용할 수 있습니다. ${1}을(를) 사용하십시오.',
+	'systemShortcut': '"${0}" 조치는 브라우저에서 키보드 단축키를 통해서만 사용 가능합니다. ${1}을(를) 사용하십시오.',
 	'ctrlKey':'ctrl+${0}',
 	'appleKey':'\u2318${0}' // "command" or open-apple key on Macintosh
 })

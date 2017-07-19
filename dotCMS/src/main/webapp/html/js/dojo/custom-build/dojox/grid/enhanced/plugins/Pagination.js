@@ -897,7 +897,7 @@ var Pagination = declare("dojox.grid.enhanced.plugins.Pagination", _Plugin, {
 		}else{
 			this.option.pageSizes = this.pageSizes;
 		}
-		this.defaultPageSize = this.option.defaultPageSize >= 1 ? parseInt(this.option.defaultPageSize, 10) : this.option.pageSizes[0];
+		this.defaultPageSize = this.option.defaultPageSize >= 1 ? parseInt(this.option.defaultPageSize, 10) : this.pageSizes[0];
 		this.option.maxPageStep = this.option.maxPageStep > 0 ? this.option.maxPageStep : this.maxPageStep;
 		this.option.position = lang.isString(this.option.position) ? this.option.position.toLowerCase() : this.position;
 		this._nls = [

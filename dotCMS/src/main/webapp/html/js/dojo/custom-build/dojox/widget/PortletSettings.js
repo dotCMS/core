@@ -1,14 +1,11 @@
 define("dojox/widget/PortletSettings", [
 	"dojo/_base/declare",
-	"dojo/_base/lang",
-	"dojo/dom-style",
-	"dojo/dom-class",
+	"dojo/_base/kernel",
 	"dojo/fx",
-	"dijit/_Container",
-	"dijit/layout/ContentPane"
-	], function(declare, lang, domStyle, domClass, fx, _Container, ContentPane){
+	"dijit/TitlePane"
+	], function(declare, kernel, fx, TitlePane){
 		
-return declare("dojox.widget.PortletSettings", [_Container, ContentPane], {
+return declare("dojox.widget.PortletSettings", [dijit._Container, dijit.layout.ContentPane], {
 	// summary:
 	//		A settings widget to be used with a dojox.widget.Portlet.
 	// description:
@@ -32,11 +29,11 @@ return declare("dojox.widget.PortletSettings", [_Container, ContentPane], {
 		//		Sets the require CSS classes on the widget.
 
 		// Start the PortletSettings widget hidden, always.
-		domStyle.set(this.domNode, "display", "none");
-		domClass.add(this.domNode, "dojoxPortletSettingsContainer");
+		dojo.style(this.domNode, "display", "none");
+		dojo.addClass(this.domNode, "dojoxPortletSettingsContainer");
 
 		// Remove the unwanted content pane class.
-		domClass.remove(this.domNode, "dijitContentPane");
+		dojo.removeClass(this.domNode, "dijitContentPane");
 	},
 
 	_setPortletAttr: function(portlet){
@@ -49,20 +46,20 @@ return declare("dojox.widget.PortletSettings", [_Container, ContentPane], {
 		// summary:
 		//		Toggles the visibility of this widget.
 		var n = this.domNode;
-		if(domStyle.get(n, "display") == "none"){
-			domStyle.set(n,{
+		if(dojo.style(n, "display") == "none"){
+			dojo.style(n,{
 				"display": "block",
 				"height": "1px",
 				"width": "auto"
 			});
-			fx.wipeIn({
+			dojo.fx.wipeIn({
 				node: n
 			}).play();
 		}else{
-			fx.wipeOut({
+			dojo.fx.wipeOut({
 				node: n,
-				onEnd: lang.hitch(this, function(){
-					domStyle.set(n,{"display": "none", "height": "", "width":""});
+				onEnd: dojo.hitch(this, function(){
+					dojo.style(n,{"display": "none", "height": "", "width":""});
 				}
 			)}).play();
 		}

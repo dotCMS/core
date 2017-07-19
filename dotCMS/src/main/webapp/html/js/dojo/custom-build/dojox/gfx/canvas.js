@@ -779,7 +779,7 @@ function(g, lang, arr, declare, win, domGeom, dom, gfxBase, gs, pathLib, ga, m, 
 		_render: function(force){
 			// summary:
 			//		render the all shapes
-			if(!this.rawNode || (!force && this.pendingImageCount)){ return; }
+			if(!force && this.pendingImageCount){ return; }
 			var ctx = this.rawNode.getContext("2d");
 			ctx.clearRect(0, 0, this.rawNode.width, this.rawNode.height);
 			this.render(ctx);

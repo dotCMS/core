@@ -26,11 +26,9 @@
 }
 .mblToolBarButtonHasLeftArrow {
   padding-right: 0;
-  padding-left: 10px;
 }
 .mblToolBarButtonHasRightArrow {
   padding-left: 0;
-  padding-right: 10px;
 }
 .mblToolBarButtonArrow {
   position: absolute;
@@ -79,7 +77,6 @@
 }
 .mblToolBarButtonText .mblToolBarButtonLabel {
   padding-right: 10px;
-  height: 29px;
 }
 .mblToolBarButtonHasLeftArrow .mblToolBarButtonIcon {
   padding-left: 4px;

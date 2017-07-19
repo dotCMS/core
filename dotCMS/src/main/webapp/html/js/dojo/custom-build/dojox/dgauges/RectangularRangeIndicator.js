@@ -68,7 +68,7 @@ define("dojox/dgauges/RectangularRangeIndicator", ["dojo/_base/declare", "dojox/
 			//		Internal method.
 			// tags:
 			//		private
-			var gp = [startX, startY, startX, endPosition, startX + endThickness, endPosition, startX + startThickness, startY, startX, startY]
+			var gp = [startX, startY, startX, endPosition, startX + endThickness, endPosition, startX, startY + startThickness, startX, startY]
 			if(fill && fill.colors){
 				// Configure gradient
 				fill.x1 = startX;
