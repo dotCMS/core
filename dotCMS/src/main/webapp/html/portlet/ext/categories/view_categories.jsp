@@ -78,6 +78,7 @@
         var inode = "0";
         var name = "<%= LanguageUtil.get(pageContext, "Top-Level") %>";
         var hashToSend = null;
+        var hashLevel = 0;
 
         if(typeof hashReceived != "undefined" && hashReceived != '') {
             var query = hashReceived.substring(hashReceived.indexOf("?") + 1, hashReceived.length);
@@ -85,9 +86,16 @@
             inode = queryObject.inode==''?0:queryObject.inode;
             name = queryObject.name;
             hashToSend = hashReceived;
+            hashLevel = queryObject.currentlevel;
         }
 
-        buildCrumbs(inode, name);
+        if(hashLevel>currentLevel) {
+            buildCrumbsBackButton(oldInodeOrIdentifier, oldCatName);
+            hashToSend = "?inode="+oldInodeOrIdentifier;
+		} else {
+			buildCrumbsHash(inode, name);
+		}
+
         doSearchHash(hashToSend);
         refreshCrumbs();
 
@@ -99,7 +107,10 @@
     var currentCatName;  // inode of the category
     var lastTabSelected;
     var parentCats = new Array();
-
+    var currentLevel = 0;
+    var oldCrumbs;
+    var oldInodeOrIdentifier;
+    var oldCatName;
 
     // format the name column of the grid to be an <a> element
     var formatHref = function(value, index) {
@@ -283,7 +294,8 @@
     // search handling
     function doSearch(reorder, importing) {
         var params = dojo.byId("catFilter").value.trim();
-        params = "?donothing&inode="+currentInodeOrIdentifier+"&name="+currentCatName+"&q="+params;
+        params = "?donothing&currentlevel="+currentLevel+"&inode="+currentInodeOrIdentifier+"&name="+currentCatName
+			+"&q="+params;
         if(reorder) {
             params = params + "&reorder=true";
         }
@@ -448,7 +460,24 @@
         refreshCrumbs();
     }
 
+    function buildCrumbsBackButton(inode, name) {
+        buildCrumbsFromArray(inode, name, oldCrumbs);
+    }
+
+    function buildCrumbsHash(inode, name) {
+        buildCrumbsFromArray(inode, name, myCrumbs);
+    }
+
     function buildCrumbs(inode, name) {
+        oldCrumbs = myCrumbs;
+        oldInodeOrIdentifier = currentInodeOrIdentifier;
+        oldCatName = currentCatName;
+        buildCrumbsFromArray(inode, name, myCrumbs);
+	}
+
+    function buildCrumbsFromArray(inode, name, crumbsArray) {
+        currentLevel = myCrumbs.length;
+
         dijit.byId("mainTabContainer").selectChild(dijit.byId("TabOne"));
         if(inode =="0"){
             currentInodeOrIdentifier="";
@@ -459,13 +488,13 @@
         currentCatName = name;
 
         var newCrumbs = new Array();
-        for(i=0;i<myCrumbs.length;i++){
-            var ix = myCrumbs[i].split("---------")[0];
-            var nx = myCrumbs[i].split("---------")[1];
+        for(i=0;i<crumbsArray.length;i++){
+            var ix = crumbsArray[i].split("---------")[0];
+            var nx = crumbsArray[i].split("---------")[1];
             if(inode == ix){
                 break;
             }
-            newCrumbs[i] = myCrumbs[i];
+            newCrumbs[i] = crumbsArray[i];
         }
         newCrumbs[newCrumbs.length] = inode + "---------" + name;
         myCrumbs = newCrumbs;
