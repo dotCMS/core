@@ -856,7 +856,8 @@ public class ContentResource {
 									hu.setParam(cat);
 									category=(Category)hu.load();
                                     if(category!=null && InodeUtils.isSet(category.getCategoryId()) 
-                                            && APILocator.getPermissionAPI().doesUserHavePermission(category, PermissionAPI.PERMISSION_USE, init.getUser(), allowFrontEndSaving)) {
+                                            && APILocator.getPermissionAPI().doesUserHavePermission
+                                            (category, PermissionAPI.PERMISSION_USE, init.getUser(), allowFrontEndSaving)) {
                                         cats.add(category);
 									}
 								}
