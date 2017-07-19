@@ -1,10 +1,8 @@
 package com.dotmarketing.business;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.dotcms.business.SystemCache;
+import com.dotcms.cache.KeyValueCache;
+import com.dotcms.cache.KeyValueCacheImpl;
 import com.dotcms.cache.VanityUrlCache;
 import com.dotcms.cache.VanityUrlCacheImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesCache;
@@ -21,8 +19,6 @@ import com.dotcms.publisher.endpoint.business.PublishingEndPointCache;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointCacheImpl;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.transport.CacheTransport;
-import com.dotmarketing.business.jgroups.JGroupsCacheTransport;
-import com.dotmarketing.business.jgroups.NullTransport;
 import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.FolderCacheImpl;
@@ -74,16 +70,19 @@ import com.dotmarketing.velocity.DotResourceCache;
 import com.dotmarketing.viewtools.navigation.NavToolCache;
 import com.dotmarketing.viewtools.navigation.NavToolCacheImpl;
 
+import java.util.List;
+import java.util.Set;
+
 
 /**
  * FactoryLocator is a factory method to get single(ton) service objects.
  * This is a kind of implementation, and there may be others.
+ * 
  * @author Carlos Rivas (crivas)
  * @author Jason Tesser
  * @version 1.6
  * @since 1.6
  */
-
 public class CacheLocator extends Locator<CacheIndex>{
 
     private static class CommitListenerCacheWrapper implements DotCacheAdministrator {
@@ -171,6 +170,7 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static PermissionCache getPermissionCache() {
 		return (PermissionCache)getInstance(CacheIndex.Permission);
 	}
+
     public static RoleCache getRoleCache() {
         return (RoleCache)getInstance(CacheIndex.Role);
     }
@@ -198,7 +198,6 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static DotResourceCache getVeloctyResourceCache(){
 		return (DotResourceCache)getInstance(CacheIndex.Velocity);
 	}
-
 
     public static LogMapperCache getLogMapperCache () {
         return ( LogMapperCache ) getInstance( CacheIndex.LogMapper );
@@ -231,6 +230,7 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static IdentifierCache getIdentifierCache() {
 		return (IdentifierCache)getInstance(CacheIndex.Identifier);
 	}
+
 	public static HTMLPageCache getHTMLPageCache() {
 		return (HTMLPageCache)getInstance(CacheIndex.HTMLPage);
 	}
@@ -246,18 +246,23 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static TemplateCache getTemplateCache() {
 		return (TemplateCache)getInstance(CacheIndex.Template);
 	}
+
 	public static HostCache getHostCache() {
 		return (HostCache)getInstance(CacheIndex.Host);
 	}
+
 	public static BlockDirectiveCache getBlockDirectiveCache() {
 		return (BlockDirectiveCache)getInstance(CacheIndex.Block_Directive);
 	}
+
 	public static BlockPageCache getBlockPageCache() {
 		return (BlockPageCache) getInstance(CacheIndex.Block_Page);
 	}
+
 	public static VersionableCache getVersionableCache() {
 		return (VersionableCache)getInstance(CacheIndex.Versionable);
 	}
+
 	public static FolderCache getFolderCache() {
 		return (FolderCache)getInstance(CacheIndex.FolderCache);
 	}
@@ -311,9 +316,20 @@ public class CacheLocator extends Locator<CacheIndex>{
     public static ContentTypeCache2 getContentTypeCache2() {
         return (ContentTypeCache2) getInstance(CacheIndex.ContentTypeCache2);
     }
+
     public static VanityUrlCache getVanityURLCache() {
 		return (VanityUrlCache) getInstance(CacheIndex.VanityURLCache);
 	}
+
+    /**
+     * 
+     * @return
+     */
+    public static KeyValueCache getKeyValueCache() {
+    	return (KeyValueCache) getInstance(CacheIndex.KeyValueCache);
+    }
+
+
 	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
 	 * on a put where the non legacy one will not.
@@ -324,7 +340,6 @@ public class CacheLocator extends Locator<CacheIndex>{
 	}
 
 	private static Object getInstance(CacheIndex index) {
-
 		if(instance == null){
 			init();
 			if(instance == null){
@@ -338,7 +353,6 @@ public class CacheLocator extends Locator<CacheIndex>{
 		Logger.debug(CacheLocator.class, instance.audit(index));
 
 		return serviceRef;
-
 	 }
 
 	@Override
@@ -361,8 +375,14 @@ public class CacheLocator extends Locator<CacheIndex>{
 
 }
 
-
-
+/**
+ * 
+ * @author Carlos Rivas (crivas)
+ * @author Jason Tesser
+ * @version 1.6
+ * @since 1.6
+ *
+ */
 enum CacheIndex
 {
 	System("System"),
@@ -406,49 +426,52 @@ enum CacheIndex
 	NewNotification("NewNotification Cache"),
 	VanityURLCache("Vanity URL Cache"),
 	ContentTypeCache("Legacy Content Type Cache"),
-	ContentTypeCache2("New Content Type Cache");
+	ContentTypeCache2("New Content Type Cache"),
+	KeyValueCache("Key/Value Cache");
+
 	Cachable create() {
 		switch(this) {
-		case System: return new SystemCache();
-		case Permission: return new PermissionCacheImpl();
-      	case Category: return new CategoryCacheImpl();
-      	case Tag: return new TagCacheImpl();
-      	case TagInode: return new TagInodeCacheImpl();
-      	case Role: return new RoleCacheImpl();
-      	case Contentlet: return new ContentletCacheImpl();
-      	case Velocity : return new DotResourceCache();
-      	case Relationship: return new RelationshipCacheImpl();
-        case LogMapper: return new LogMapperCacheImpl();
-      	case Plugin : return new PluginCacheImpl();
-      	case Language : return new LanguageCacheImpl();
-      	case User : return new UserCacheImpl();
-      	case Userproxy : return new UserProxyCacheImpl();
-      	case Layout : return new LayoutCacheImpl();
-      	case CMSRole : return new com.dotmarketing.business.RoleCacheImpl();
-      	case HTMLPage : return new HTMLPageCacheImpl();
-      	case Menulink : return new MenuLinkCacheImpl();
-      	case Container : return new ContainerCacheImpl();
-      	case Template : return new TemplateCacheImpl();
-      	case Host : return new HostCacheImpl();
-      	case Identifier : return new IdentifierCacheImpl();
-      	case HostVariables : return new HostVariablesCacheImpl();
-      	case Block_Directive : return new BlockDirectiveCacheImpl();
-      	case Block_Page : return new BlockPageCacheImpl();
-      	case Versionable : return new VersionableCacheImpl();
-      	case FolderCache : return new FolderCacheImpl();
-      	case WorkflowCache : return new WorkflowCacheImpl();
-      	case VirtualLinkCache : return new VirtualLinkCacheImpl();
-      	case Indicies: return new IndiciesCacheImpl();
-      	case NavTool: return new NavToolCacheImpl();
-      	case PublishingEndPoint: return new PublishingEndPointCacheImpl();
-      	case PushedAssets: return new PushedAssetsCacheImpl();
-      	case CSSCache: return new CSSCacheImpl();
-      	case NewNotification: return new NewNotificationCacheImpl();
-      	case RulesCache : return new RulesCacheImpl();
-      	case SiteVisitCache : return new SiteVisitCacheImpl();
-      	case ContentTypeCache: return new LegacyContentTypeCacheImpl();
-      	case ContentTypeCache2: return new ContentTypeCache2Impl();
-      	case VanityURLCache : return new VanityUrlCacheImpl();
+			case System: return new SystemCache();
+			case Permission: return new PermissionCacheImpl();
+	      	case Category: return new CategoryCacheImpl();
+	      	case Tag: return new TagCacheImpl();
+	      	case TagInode: return new TagInodeCacheImpl();
+	      	case Role: return new RoleCacheImpl();
+	      	case Contentlet: return new ContentletCacheImpl();
+	      	case Velocity : return new DotResourceCache();
+	      	case Relationship: return new RelationshipCacheImpl();
+	        case LogMapper: return new LogMapperCacheImpl();
+	      	case Plugin : return new PluginCacheImpl();
+	      	case Language : return new LanguageCacheImpl();
+	      	case User : return new UserCacheImpl();
+	      	case Userproxy : return new UserProxyCacheImpl();
+	      	case Layout : return new LayoutCacheImpl();
+	      	case CMSRole : return new com.dotmarketing.business.RoleCacheImpl();
+	      	case HTMLPage : return new HTMLPageCacheImpl();
+	      	case Menulink : return new MenuLinkCacheImpl();
+	      	case Container : return new ContainerCacheImpl();
+	      	case Template : return new TemplateCacheImpl();
+	      	case Host : return new HostCacheImpl();
+	      	case Identifier : return new IdentifierCacheImpl();
+	      	case HostVariables : return new HostVariablesCacheImpl();
+	      	case Block_Directive : return new BlockDirectiveCacheImpl();
+	      	case Block_Page : return new BlockPageCacheImpl();
+	      	case Versionable : return new VersionableCacheImpl();
+	      	case FolderCache : return new FolderCacheImpl();
+	      	case WorkflowCache : return new WorkflowCacheImpl();
+	      	case VirtualLinkCache : return new VirtualLinkCacheImpl();
+	      	case Indicies: return new IndiciesCacheImpl();
+	      	case NavTool: return new NavToolCacheImpl();
+	      	case PublishingEndPoint: return new PublishingEndPointCacheImpl();
+	      	case PushedAssets: return new PushedAssetsCacheImpl();
+	      	case CSSCache: return new CSSCacheImpl();
+	      	case NewNotification: return new NewNotificationCacheImpl();
+	      	case RulesCache : return new RulesCacheImpl();
+	      	case SiteVisitCache : return new SiteVisitCacheImpl();
+	      	case ContentTypeCache: return new LegacyContentTypeCacheImpl();
+	      	case ContentTypeCache2: return new ContentTypeCache2Impl();
+	      	case VanityURLCache : return new VanityUrlCacheImpl();
+	      	case KeyValueCache : return new KeyValueCacheImpl();
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}
@@ -471,5 +494,5 @@ enum CacheIndex
 		}
 		return null;
 	}
-}
 
+}

@@ -292,9 +292,9 @@ public class SubmitContentUtil {
 	 * @return Contentlet
 	 * @throws DotDataException
 	 */
-	private static Contentlet setAllFields(String structureName, List<String> parametersName, List<String[]> values) throws DotDataException{
+	private static Contentlet setAllFields(String structureVelVarName, List<String> parametersName, List<String[]> values) throws DotDataException{
 		LanguageAPI lAPI = APILocator.getLanguageAPI();
-		Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(structureName);
+		Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(structureVelVarName);
 		String contentletInode = null;
 		long contentLanguageId = 1;
 		Field fileField = new Field(),imageField=new Field(),binaryField=new Field();
@@ -454,7 +454,7 @@ public class SubmitContentUtil {
 		/**
 		 * Set the content values
 		 */
-		contentlet = SubmitContentUtil.setAllFields(st.getName(), parametersName, values);
+		contentlet = SubmitContentUtil.setAllFields(st.getVelocityVarName(), parametersName, values);
 
 
 		/**

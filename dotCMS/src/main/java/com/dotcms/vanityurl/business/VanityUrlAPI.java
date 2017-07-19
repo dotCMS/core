@@ -45,7 +45,7 @@ public interface VanityUrlAPI {
      * @return a List of all Cached Vanity URLs contentlets live
      */
     List<VanityUrl> getActiveVanityUrlsBySiteAndLanguage(final String siteId, final long languageId,
-            final User user);
+                                                         final User user);
 
     /**
      * Return the live version of the Cached vanityurl URL contentlet with the specified URI
@@ -57,7 +57,7 @@ public interface VanityUrlAPI {
      * @return the live version of the vanityurl URL contentlet
      */
     CachedVanityUrl getLiveCachedVanityUrl(final String uri, final Host site, final long languageId,
-            final User user);
+                                           final User user);
 
     /**
      * Convert the contentlet into a Vanity URL object

@@ -1,14 +1,16 @@
 package com.dotmarketing.db;
 
-import java.util.concurrent.Callable;
-
+import com.dotcms.util.VoidDelegate;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.util.Logger;
+
+import java.util.concurrent.Callable;
 
 public class LocalTransaction {
 
-	/**
+
+
+    /**
 	 * 
 	 * @param callable
 	 * @return
@@ -29,22 +31,12 @@ public class LocalTransaction {
 	 */
 
 	static public <T> T wrapReturn(final Callable<T> callable) throws DotDataException{
-		boolean localTransaction = DbConnectionFactory.startTransactionIfNeeded();
+		final boolean localTransaction = DbConnectionFactory.startTransactionIfNeeded();
+		T result = null;
 		try {
-			T result= callable.call();
-			return result;
+			result= callable.call();
 		} catch (Exception e) {
-			if(localTransaction){
-				DbConnectionFactory.rollbackTransaction();
-			}
-			Throwable t = e;
-			while(t.getCause()!=null){
-				t=t.getCause();
-			}
-			if(t instanceof DotDataException){
-				throw (DotDataException) t;
-			}
-			throw new DotDataException(t.getMessage(),t);
+            handleException(localTransaction, e);
 		} finally {
 			if (localTransaction) {
 				try {
@@ -54,11 +46,12 @@ public class LocalTransaction {
 				}
 			}
 		}
+		return result;
 	}
 	
 	/**
 	 * 
-	 * this will accept a method with a return of void and wrap it in a transaction
+	 * this will accept a method that does not need to return anything and wrap it in a transaction
 	 * if it is not in one already.  At the end of the call, it will 
 	 * return the db connection to the connection pool
 	 * 
@@ -69,7 +62,34 @@ public class LocalTransaction {
 	 *      return null;
 	 *  }); 
 	 */
-	static public <T> T wrap(final Callable<T> callable) throws DotDataException{
-		return wrapReturn(callable);
+	static public void wrap(final VoidDelegate callable) throws DotDataException {
+        final boolean localTransaction = DbConnectionFactory.startTransactionIfNeeded();
+        try {
+            callable.execute();
+        } catch (Exception e) {
+            handleException(localTransaction, e);
+        } finally {
+            if (localTransaction) {
+                try {
+                    DbConnectionFactory.closeAndCommit();
+                } catch (DotHibernateException e) {
+                    throw new DotDataException(e.getMessage(), e);
+                }
+            }
+        }
 	}
+
+    private static void handleException(boolean localTransaction, Exception e) throws DotDataException {
+        if(localTransaction){
+            DbConnectionFactory.rollbackTransaction();
+        }
+        Throwable t = e;
+        while(t.getCause()!=null){
+            t=t.getCause();
+        }
+        if(t instanceof DotDataException){
+            throw (DotDataException) t;
+        }
+        throw new DotDataException(t.getMessage(),t);
+    }
 }

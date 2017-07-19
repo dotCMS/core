@@ -21,24 +21,29 @@
     String errorPage = "/cms" + status + "Page";
     Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
     // Get from virtual link
-    if (CmsUrlUtil.getInstance().isVanityUrl(errorPage, host, languageId)) {
-      CachedVanityUrl vanityurl = APILocator.getVanityUrlAPI().getLiveCachedVanityUrl(errorPage, host, languageId, APILocator.systemUser());
-      String uri = vanityurl.getForwardTo();
-      if (!UtilMethods.isSet(uri)) {
-        vanityurl = APILocator.getVanityUrlAPI().getLiveCachedVanityUrl(errorPage, null, languageId, APILocator.systemUser());
-        uri = vanityurl.getForwardTo();
-      }
-      if (uri.contains("://")) {
-        response.setStatus(301);
-        response.setHeader("Location", uri);
+    try {
+      if (CmsUrlUtil.getInstance().isVanityUrl(errorPage, host, languageId)) {
+        CachedVanityUrl vanityurl = APILocator.getVanityUrlAPI().getLiveCachedVanityUrl(errorPage, host, languageId, APILocator.systemUser());
+        String uri = vanityurl.getForwardTo();
+        if (!UtilMethods.isSet(uri)) {
+          vanityurl = APILocator.getVanityUrlAPI().getLiveCachedVanityUrl(errorPage, null, languageId, APILocator.systemUser());
+          uri = vanityurl.getForwardTo();
+        }
+        if (uri.contains("://")) {
+          response.setStatus(301);
+          response.setHeader("Location", uri);
 
-      } else {
-        Logger.debug(this, errorPage + " path is: " + uri);
-        request.setAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE, uri);
-        request.getRequestDispatcher("/servlets/VelocityServlet").forward(request, response);
+        } else {
+          Logger.debug(this, errorPage + " path is: " + uri);
+          request.setAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE, uri);
+          request.getRequestDispatcher("/servlets/VelocityServlet").forward(request, response);
+        }
+        return;
       }
-      return;
+    } catch (Exception e) {
+        Logger.error(this, e.getMessage(), e);
     }
+
     if (status == 401) {
       String referer = (session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN) != null)
           ? (String) session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN)

@@ -21,7 +21,9 @@ public enum BaseContentType {
 	FILEASSET(4, FileAssetContentType.class),
 	HTMLPAGE(5, PageContentType.class),
 	PERSONA(6, PersonaContentType.class),
-	VANITY_URL(7, VanityUrlContentType.class);
+	VANITY_URL(7, VanityUrlContentType.class),
+	KEY_VALUE(8, KeyValueContentType.class);
+
 
 	final int type;
 	Class<? extends ContentType> immutableClass;
@@ -40,16 +42,20 @@ public enum BaseContentType {
 	}
 
 	/**
-	 * Gets the integer representation of this value.
+	 * Gets the integer representation of this Content Type.
+	 * 
 	 * @return the integer representation
-     */
+	 */
 	@JsonValue
 	public int getType() {
 		return type;
 	}
 
 	/**
+	 * Returns the immutable class associated to the specified Content Type.
 	 * 
+	 * @return The immutable class.
+	 *
 	 * @return
 	 */
 	public Class<? extends ContentType> immutableClass() {
@@ -57,7 +63,12 @@ public enum BaseContentType {
 	}
 
 	/**
+	 * Returns the appropriate Content Type based on its integer representation.
 	 * 
+	 * @param value
+	 *            - The numeric representation of a Content Type.
+	 * @return The associated Content Type.
+	 *
 	 * @param value
 	 * @return
 	 */
@@ -72,7 +83,13 @@ public enum BaseContentType {
 	}
 
 	/**
+	 * Returns the appropriate immutable Content Type based on its integer
+	 * representation.
 	 * 
+	 * @param value
+	 *            - The numeric representation of an immutable Content Type.
+	 * @return The associated immutable Content Type.
+	 *
 	 * @param value
 	 * @return
 	 */
