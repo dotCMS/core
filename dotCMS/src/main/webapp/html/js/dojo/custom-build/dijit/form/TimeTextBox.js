@@ -42,21 +42,38 @@ define("dijit/form/TimeTextBox", [
 		value: new Date(""),		// value.toString()="NaN"
 		//FIXME: in markup, you have no control over daylight savings
 
-		_onInput: function(){
+		_onKey: function(evt){
+			if(this.disabled || this.readOnly){ return; }
 			this.inherited(arguments);
 
-			// set this.filterString to the filter to apply to the drop down list;
-			// it will be used in openDropDown()
-			var val = this.get('displayedValue');
-			this.filterString = (val && !this.parse(val, this.constraints)) ? val.toLowerCase() : "";
+			// If the user has backspaced or typed some numbers, then filter the result list
+			// by what they typed.  Maybe there's a better way to detect this, like _handleOnChange()?
+			switch(evt.keyCode){
+				case keys.ENTER:
+				case keys.TAB:
+				case keys.ESCAPE:
+				case keys.DOWN_ARROW:
+				case keys.UP_ARROW:
+					// these keys have special meaning
+					break;
+				default:
+					// defer() because the keystroke hasn't yet appeared in the <input>,
+					// so the get('displayedValue') call below won't give the result we want.
+					this.defer(function(){
+						// set this.filterString to the filter to apply to the drop down list;
+						// it will be used in openDropDown()
+						var val = this.get('displayedValue');
+						this.filterString = (val && !this.parse(val, this.constraints)) ? val.toLowerCase() : "";
 
-			// close the drop down and reopen it, in order to filter the items shown in the list
-			// and also since the drop down may need to be repositioned if the number of list items has changed
-			// and it's being displayed above the <input>
-			if(this._opened){
-				this.closeDropDown();
+						// close the drop down and reopen it, in order to filter the items shown in the list
+						// and also since the drop down may need to be repositioned if the number of list items has changed
+						// and it's being displayed above the <input>
+						if(this._opened){
+							this.closeDropDown();
+						}
+						this.openDropDown();
+					});
 			}
-			this.openDropDown();
 		}
 	});
 });

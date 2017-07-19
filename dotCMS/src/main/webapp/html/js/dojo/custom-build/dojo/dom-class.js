@@ -117,7 +117,7 @@ define("dojo/dom-class", ["./_base/lang", "./_base/array", "./dom"], function(la
 			//		A string class name to look for.
 			// example:
 			//		Do something if a node with id="someNode" has class="aSillyClassName" present
-			//	|	if(domClass.contains("someNode","aSillyClassName")){ ... }
+			//	|	if(dojo.hasClass("someNode","aSillyClassName")){ ... }
 
 			return ((" " + dom.byId(node)[className] + " ").indexOf(" " + classStr + " ") >= 0); // Boolean
 		},
@@ -235,7 +235,7 @@ define("dojo/dom-class", ["./_base/lang", "./_base/array", "./dom"], function(la
 		replace: function replaceClass(/*DomNode|String*/ node, /*String|Array*/ addClassStr, /*String|Array?*/ removeClassStr){
 			// summary:
 			//		Replaces one or more classes on a node if not present.
-			//		Operates more quickly than calling domClass.remove and domClass.add
+			//		Operates more quickly than calling dojo.removeClass and dojo.addClass
 			//
 			// node: String|DOMNode
 			//		String ID or DomNode reference to remove the class from.
@@ -289,7 +289,7 @@ define("dojo/dom-class", ["./_base/lang", "./_base/array", "./dom"], function(la
 			//
 			// condition:
 			//		If passed, true means to add the class, false means to remove.
-			//		Otherwise domClass.contains(node, classStr) is used to detect the class presence.
+			//		Otherwise dojo.hasClass(node, classStr) is used to detect the class presence.
 			//
 			// example:
 			//	|	require(["dojo/dom-class"], function(domClass){
