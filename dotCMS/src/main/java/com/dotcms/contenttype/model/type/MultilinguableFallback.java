@@ -5,7 +5,7 @@ package com.dotcms.contenttype.model.type;
  * a value in the current language to search with the default language
  * Created by oswaldogallango on 2017-06-19.
  */
-public interface Multilinguable {
+public interface MultilinguableFallback {
 
     /**
      * Get if the the search should be done using

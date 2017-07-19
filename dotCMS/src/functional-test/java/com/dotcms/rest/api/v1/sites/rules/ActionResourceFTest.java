@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.sites.rules;
 
-import com.dotcms.IntegrationTestBase;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.javax.ws.rs.client.Entity;
@@ -25,7 +24,7 @@ import java.util.Map;
 
 import static org.junit.Assert.*;
 
-public class ActionResourceFTest extends IntegrationTestBase {
+public class ActionResourceFTest {
 
     private final FunctionalTestConfig config;
     private final String actionletEndpointUrl;

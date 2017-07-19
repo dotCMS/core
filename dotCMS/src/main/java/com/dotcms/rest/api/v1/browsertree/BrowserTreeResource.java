@@ -62,6 +62,48 @@ public class BrowserTreeResource implements Serializable {
     }
 
     @GET
+    @Path ("/sitename/{sitename}/uri/")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response loadAssetsUnder(
+            @Context final HttpServletRequest req,
+            @PathParam("sitename")   final String sitename
+    ) {
+        Response response = null;
+        final InitDataObject initData = this.webResource.init(null, true, req, true, null);
+        final User user = initData.getUser();
+        final List<Map<String, Object>> assetResults;
+
+        try {
+            Locale locale = LocaleUtil.getLocale(user, req);
+
+            assetResults = browserTreeHelper.getTreeablesUnder(sitename,user,"/")
+                    .stream()
+                    .map(treeable -> {
+                        try {
+                            return treeable.getMap();
+                        } catch (Exception e) {
+                            Logger.error(this,"Data Exception while converting to map", e);
+                            throw new DotRuntimeException("Data Exception while converting to map",e);
+                        }
+                    })
+                    .collect(Collectors.toList());;
+
+            response = Response.ok(new ResponseEntityView
+                    (map(   "result",         assetResults
+                    ),
+                            this.i18NUtil.getMessagesMap(locale, "Invalid-option-selected",
+                                    "cancel", "Change-Host"))
+            ).build(); // 200
+        } catch (Exception e) { // this is an unknown error, so we report as a 500.
+            Logger.error(this,"Error handling loadAssetsUnder Get Request", e);
+            response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        return response;
+    }
+
+    @GET
     @Path ("/sitename/{sitename}/uri/{uri : .+}")
     @JSONP
     @NoCache

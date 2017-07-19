@@ -1,6 +1,7 @@
 package com.dotcms.vanityurl.model;
 
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 /**
@@ -77,15 +78,5 @@ public class DefaultVanityUrl extends Contentlet implements VanityUrl {
         setProperty(VanityUrlContentType.ORDER_FIELD_VAR, order);
     }
 
-    @Override
-    public int compareTo(Object o) {
-        VanityUrl vanityUrl = (VanityUrl) o;
-        if (this.getOrder() == vanityUrl.getOrder()) {
-            return 0;
-        } else if (this.getOrder() < vanityUrl.getOrder()) {
-            return -1;
-        } else {
-            return 1;
-        }
-    }
+
 }
