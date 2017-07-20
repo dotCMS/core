@@ -615,7 +615,7 @@
                         }
 
                         dia.hide();
-                        doSearch();
+                        doSearch(false, true);
                         grid.selection.clear();
                     }
                 });
