@@ -174,12 +174,11 @@ return {
 				p!="has" && has.add(prefix + p, featureSet[p], 0, booting);
 			}
 		};
-		var global = (function () { return this; })();
 		result =  1  ?
 			// must be a built version of the dojo loader; all config stuffed in require.rawConfig
 			require.rawConfig :
 			// a foreign loader
-			global.dojoConfig || global.djConfig || {};
+			this.dojoConfig || this.djConfig || {};
 		adviseHas(result, "config", 1);
 		adviseHas(result.has, "", 1);
 	}

@@ -45,6 +45,7 @@ return declare( "dijit.form._ListBase", null, {
 				eventType
 			),
 			function(evt){
+				evt.preventDefault();
 				self[callbackFuncName](evt, this);
 			}
 		));
@@ -57,7 +58,7 @@ return declare( "dijit.form._ListBase", null, {
 		while(first && first.style.display == "none"){
 			first = first.nextSibling;
 		}
-		this._setSelectedAttr(first, true);
+		this._setSelectedAttr(first);
 	},
 
 	selectLastNode: function(){
@@ -67,7 +68,7 @@ return declare( "dijit.form._ListBase", null, {
 		while(last && last.style.display == "none"){
 			last = last.previousSibling;
 		}
-		this._setSelectedAttr(last, true);
+		this._setSelectedAttr(last);
 	},
 
 	selectNextNode: function(){
@@ -85,7 +86,7 @@ return declare( "dijit.form._ListBase", null, {
 			if(!next){
 				this.selectFirstNode();
 			}else{
-				this._setSelectedAttr(next, true);
+				this._setSelectedAttr(next);
 			}
 		}
 	},
@@ -106,19 +107,14 @@ return declare( "dijit.form._ListBase", null, {
 			if(!prev){
 				this.selectLastNode();
 			}else{
-				this._setSelectedAttr(prev, true);
+				this._setSelectedAttr(prev);
 			}
 		}
 	},
 
-	_setSelectedAttr: function(/*DomNode*/ node, /*Boolean*/ scroll){
+	_setSelectedAttr: function(/*DomNode*/ node){
 		// summary:
 		//		Does the actual select.
-		// node:
-		//		The option to select
-		// scroll:
-		//		If necessary, scroll node into view.  Set to false for mouse/touch to
-		//		avoid jumping problems on mobile/RTL, see https://bugs.dojotoolkit.org/ticket/17739.
 		if(this.selected != node){
 			var selectedNode = this.selected;
 			if(selectedNode){
@@ -127,9 +123,7 @@ return declare( "dijit.form._ListBase", null, {
 			}
 			if(node){
 				this.selected = node;
-				if(scroll){
-					winUtils.scrollIntoView(node);
-				}
+				winUtils.scrollIntoView(node);
 				this.onSelect(node);
 			}
 		}else if(node){

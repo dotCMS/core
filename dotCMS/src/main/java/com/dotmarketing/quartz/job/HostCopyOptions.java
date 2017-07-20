@@ -17,7 +17,6 @@ public class HostCopyOptions implements Serializable {
 	private boolean copyLinks = true;
 	private boolean copyContentOnPages = true;
 	private boolean copyContentOnHost = true;
-	private boolean copyVirtualLinks = true;
 	private boolean copyHostVariables = true;
 	
 	public HostCopyOptions(boolean copyAll) {
@@ -27,12 +26,11 @@ public class HostCopyOptions implements Serializable {
 		this.copyLinks = true;
 		this.copyContentOnPages = true;
 		this.copyContentOnHost = true;
-		this.copyVirtualLinks = true;
 		this.copyHostVariables = true;
 	}
 
 	public HostCopyOptions(boolean copyTemplatesAndContainers, boolean copyFolders,
-						   boolean copyLinks, boolean copyContentOnPages, boolean copyContentOnHost, boolean copyVirtualLinks,
+						   boolean copyLinks, boolean copyContentOnPages, boolean copyContentOnHost, 
 						   boolean copyHostVariables) {
 		super();
 		this.copyTemplatesAndContainers = copyTemplatesAndContainers;
@@ -42,7 +40,6 @@ public class HostCopyOptions implements Serializable {
 		this.copyLinks = copyLinks;
 		this.copyContentOnPages = copyContentOnPages;
 		this.copyContentOnHost = copyContentOnHost;
-		this.copyVirtualLinks = copyVirtualLinks;
 		this.copyHostVariables = copyHostVariables;
 		this.copyAll = false;
 	}
@@ -69,10 +66,6 @@ public class HostCopyOptions implements Serializable {
 
 	public boolean isCopyContentOnHost() {
 		return copyContentOnHost;
-	}
-
-	public boolean isCopyVirtualLinks() {
-		return copyVirtualLinks;
 	}
 
 	public boolean isCopyHostVariables() {

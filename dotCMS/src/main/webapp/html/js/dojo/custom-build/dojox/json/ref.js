@@ -63,7 +63,7 @@ return dojox.json.ref = {
 		var pathResolveRegex = /^(.*\/)?(\w+:\/\/)|[^\/\.]+\/\.\.\/|^.*\/(\/)/;
 		var addProp = this._addProp;
 		var F = function(){};
-		function walk(it, stop, defaultId, needsPrefix, schema, defaultObject, parent){
+		function walk(it, stop, defaultId, needsPrefix, schema, defaultObject){
 			// this walks the new graph, resolving references and making other changes
 		 	var i, update, val, id = idAttribute in it ? it[idAttribute] : defaultId;
 		 	if(idAttribute in it || ((id !== undefined) && needsPrefix)){
@@ -119,8 +119,10 @@ return dojox.json.ref = {
 					val=it[i];
 					if((typeof val =='object') && val && !(val instanceof Date) && i != '__parent'){
 						ref=val[refAttribute] || (idAsRef && val[idAttribute]);
-						if(it != reWalk && (!ref || !val.__parent)){
-							val.__parent = parent ? parent : target;
+						if(!ref || !val.__parent){
+							if(it != reWalk){
+								val.__parent = target;
+							}
 						}
 						if(ref){ // a reference was found
 							// make sure it is a safe reference
@@ -164,8 +166,7 @@ return dojox.json.ref = {
 									propertyDefinition,
 									// if we have an existing object child, we want to
 									// maintain it's identity, so we pass it as the default object
-									target != it && typeof target[i] == 'object' && target[i],
-									it
+									target != it && typeof target[i] == 'object' && target[i]
 								);
 							}
 						}

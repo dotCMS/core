@@ -9,9 +9,8 @@ define("dojox/grid/_Builder", [
 	"dojo/dnd/Moveable",
 	"dojox/html/metrics",
 	"./util",
-	"dojo/_base/html",
-	"dojo/dom-geometry"
-], function(dojox, array, lang, win, event, has, connect, Moveable, metrics, util, html, domGeometry){
+	"dojo/_base/html"
+], function(dojox, array, lang, win, event, has, connect, Moveable, metrics, util, html){
 
 	var dg = dojox.grid;
 
@@ -358,17 +357,28 @@ define("dojox/grid/_Builder", [
 
 		// event helpers
 		getCellX: function(e){
-			var n, x, pos;
-			// Calculate starting x position
-			n = ascendDom(e.target, makeNotTagName("th"));
-			if(n){
-				// We have a proper parent node, use that for position
-				pos = domGeometry.position(n);
-				x = e.clientX - pos.x;
-			}else{
-				// Fall back to layerX
-				x = e.layerX;
+			var n, x = e.layerX;
+			if(has('mozilla') || has('ie') >= 9){
+				n = ascendDom(e.target, makeNotTagName("th"));
+				x -= (n && n.offsetLeft) || 0;
+				var t = e.sourceView.getScrollbarWidth();
+				if(!this.grid.isLeftToRight()/*&& e.sourceView.headerNode.scrollLeft < t*/){
+					//fix #11253
+					table = ascendDom(n,makeNotTagName("table"));
+					x -= (table && table.offsetLeft) || 0;
+				}
+				//x -= getProp(ascendDom(e.target, mkNotTagName("td")), "offsetLeft") || 0;
 			}
+			n = ascendDom(e.target, function(){
+				if(!n || n == e.cellNode){
+					return false;
+				}
+				// Mozilla 1.8 (FF 1.5) has a bug that makes offsetLeft = -parent border width
+				// when parent has border, overflow: hidden, and is positioned
+				// handle this problem here ... not a general solution!
+				x += (n.offsetLeft < 0 ? 0 : n.offsetLeft);
+				return true;
+			});
 			return x;
 		},
 

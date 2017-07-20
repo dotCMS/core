@@ -55,8 +55,6 @@ import com.dotmarketing.portlets.personas.business.PersonaFactory;
 import com.dotmarketing.portlets.personas.business.PersonaFactoryImpl;
 import com.dotmarketing.portlets.templates.business.TemplateFactory;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImpl;
-import com.dotmarketing.portlets.virtuallinks.business.VirtualLinkFactory;
-import com.dotmarketing.portlets.virtuallinks.business.VirtualLinkFactoryImpl;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.business.WorkflowFactoryImpl;
 import com.dotmarketing.tag.business.TagFactory;
@@ -154,10 +152,6 @@ public class FactoryLocator extends Locator<FactoryIndex>{
 
     public static ContainerFactory getContainerFactory(){
     	return (ContainerFactory) getInstance(FactoryIndex.CONTAINER_FACTORY);
-    }
-
-    public static VirtualLinkFactory getVirtualLinkFactory(){
-    	return (VirtualLinkFactory) getInstance(FactoryIndex.VIRTUALLINK_FACTORY);
     }
 
     public static DashboardFactory getDashboardFactory(){
@@ -283,7 +277,6 @@ enum FactoryIndex
 	HTMLPAGE_FACTORY,
 	MENULINK_FACTORY,
 	CONTAINER_FACTORY,
-	VIRTUALLINK_FACTORY,
 	IDENTIFIER_FACTORY,
 	VERSIONABLE_FACTORY,
 	FOLDER_FACTORY,
@@ -323,7 +316,6 @@ enum FactoryIndex
             case ROLE_FACTORY : return new RoleFactoryImpl();
             case MENULINK_FACTORY : return new MenuLinkFactoryImpl();
             case CONTAINER_FACTORY : return new ContainerFactoryImpl();
-            case VIRTUALLINK_FACTORY : return new VirtualLinkFactoryImpl();
             case DASHBOARD_FACTORY : return DashboardProxy.getDashboardFactory();
             case IDENTIFIER_FACTORY : return new IdentifierFactoryImpl();
             case VERSIONABLE_FACTORY : return new VersionableFactoryImpl();

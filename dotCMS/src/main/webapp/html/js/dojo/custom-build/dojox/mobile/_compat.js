@@ -101,7 +101,6 @@ return {
 					toNode.style.display = "";
 					anim = fx.combine([s1,s2]);
 					connect.connect(anim, "onEnd", this, function(){
-						if(!this._inProgress){ return; } // transition has been aborted
 						fromNode.style.display = "none";
 						fromNode.style.left = "0px";
 						toNode.style.position = "relative";
@@ -133,7 +132,6 @@ return {
 					toNode.style.display = "";
 					anim = fx.combine([s1,s2]);
 					connect.connect(anim, "onEnd", this, function(){
-						if(!this._inProgress){ return; } // transition has been aborted
 						fromNode.style.display = "none";
 						toNode.style.position = "relative";
 						this.invokeCallback();
@@ -149,7 +147,6 @@ return {
 					toNode.style.position = "absolute";
 					toNode.style.left = "0px";
 					connect.connect(anim, "onEnd", this, function(){
-						if(!this._inProgress){ return; } // transition has been aborted
 						fromNode.style.display = "none";
 						toNode.style.position = "relative";
 						toNode.style.display = "";
@@ -173,7 +170,6 @@ return {
 					toNode.style.display = "";
 					domStyle.set(toNode, "opacity", 0);
 					connect.connect(anim, "onEnd", this, function(){
-						if(!this._inProgress){ return; } // transition has been aborted
 						fromNode.style.display = "none";
 						toNode.style.position = "relative";
 						domStyle.set(fromNode, "opacity", 1);

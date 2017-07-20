@@ -12,11 +12,11 @@ define("dojo/request/xhr", [
 		return typeof XMLHttpRequest !== 'undefined';
 	});
 	has.add('dojo-force-activex-xhr', function(){
-		return has('activex') && window.location.protocol === 'file:';
+		return has('activex') && !document.addEventListener && window.location.protocol === 'file:';
 	});
 
 	has.add('native-xhr2', function(){
-		if(!has('native-xhr') || has('dojo-force-activex-xhr')){ return; }
+		if(!has('native-xhr')){ return; }
 		var x = new XMLHttpRequest();
 		return typeof x['addEventListener'] !== 'undefined' &&
 			(typeof opera === 'undefined' || typeof x['upload'] !== 'undefined');
@@ -77,7 +77,7 @@ define("dojo/request/xhr", [
 			}
 			function onError(evt){
 				var _xhr = evt.target;
-				var error = new RequestError('Unable to load ' + response.url + ' status: ' + _xhr.status, response);
+				var error = new RequestError('Unable to load ' + response.url + ' status: ' + _xhr.status, response); 
 				dfd.handleResponse(response, error);
 			}
 
@@ -97,7 +97,6 @@ define("dojo/request/xhr", [
 				_xhr.removeEventListener('load', onLoad, false);
 				_xhr.removeEventListener('error', onError, false);
 				_xhr.removeEventListener('progress', onProgress, false);
-				_xhr = null;
 			};
 		};
 	}else{
@@ -118,16 +117,15 @@ define("dojo/request/xhr", [
 		};
 	}
 
-	function getHeader(headerName){
-		return this.xhr.getResponseHeader(headerName);
-	}
-
 	var undefined,
 		defaultOptions = {
 			data: null,
 			query: null,
 			sync: false,
-			method: 'GET'
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/x-www-form-urlencoded'
+			}
 		};
 	function xhr(url, options, returnDeferred){
 		var response = util.parseArgs(
@@ -161,14 +159,15 @@ define("dojo/request/xhr", [
 			return returnDeferred ? dfd : dfd.promise;
 		}
 
-		response.getHeader = getHeader;
+		response.getHeader = function(headerName){
+			return this.xhr.getResponseHeader(headerName);
+		};
 
 		if(addListeners){
 			remover = addListeners(_xhr, dfd, response);
 		}
 
-		// IE11 treats data: undefined different than other browsers
-		var data = typeof(options.data) === 'undefined' ? null : options.data,
+		var data = options.data,
 			async = !options.sync,
 			method = options.method;
 
@@ -181,7 +180,7 @@ define("dojo/request/xhr", [
 			}
 
 			var headers = options.headers,
-				contentType = 'application/x-www-form-urlencoded';
+				contentType;
 			if(headers){
 				for(var hdr in headers){
 					if(hdr.toLowerCase() === 'content-type'){

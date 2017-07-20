@@ -2109,7 +2109,6 @@ function(
 						
 			this._onItemEditEnd(lang.mixin(this._createItemEditEvent(), {
 				item: this.renderItemToItem(p.editedItem, store),
-				renderItem: p.editedItem,
 				eventSource: eventSource,
 				completed: !canceled
 			}));
@@ -2132,8 +2131,8 @@ function(
 					var store = this.get("store");
 					store.put(e.item);
 				}else{			
-					e.renderItem.startTime = this._editStartTimeSave; 
-					e.renderItem.endTime = this._editEndTimeSave;
+					e.item.startTime = this._editStartTimeSave; 
+					e.item.endTime = this._editEndTimeSave;
 				}
 			}
 		},

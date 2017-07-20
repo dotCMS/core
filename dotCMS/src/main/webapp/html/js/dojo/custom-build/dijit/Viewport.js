@@ -25,8 +25,6 @@ define("dijit/Viewport", [
 
 	var Viewport = new Evented();
 
-	var focusedNode;
-
 	ready(200, function(){
 		var oldBox = winUtils.getBox();
 		Viewport._rlh = on(win.global, "resize", function(){
@@ -46,43 +44,7 @@ define("dijit/Viewport", [
 				}
 			}, 500);
 		}
-
-		// On iOS, keep track of the focused node so we can guess when the keyboard is/isn't being displayed.
-		if(has("ios")){
-			on(document, "focusin", function(evt){
-				focusedNode = evt.target;
-			});
-			on(document, "focusout", function(evt){
-				focusedNode = null;
-			});
-		}
 	});
-
-	Viewport.getEffectiveBox = function(/*Document*/ doc){
-		// summary:
-		//		Get the size of the viewport, or on mobile devices, the part of the viewport not obscured by the
-		//		virtual keyboard.
-
-		var box = winUtils.getBox(doc);
-
-		// Account for iOS virtual keyboard, if it's being shown.  Unfortunately no direct way to check or measure.
-		var tag = focusedNode && focusedNode.tagName && focusedNode.tagName.toLowerCase();
-		if(has("ios") && focusedNode && !focusedNode.readOnly && (tag == "textarea" || (tag == "input" &&
-			/^(color|email|number|password|search|tel|text|url)$/.test(focusedNode.type)))){
-
-			// Box represents the size of the viewport.  Some of the viewport is likely covered by the keyboard.
-			// Estimate height of visible viewport assuming viewport goes to bottom of screen, but is covered by keyboard.
-			box.h *= (orientation == 0 || orientation == 180 ? 0.66 : 0.40);
-
-			// Above measurement will be inaccurate if viewport was scrolled up so far that it ends before the bottom
-			// of the screen.   In this case, keyboard isn't covering as much of the viewport as we thought.
-			// We know the visible size is at least the distance from the top of the viewport to the focused node.
-			var rect = focusedNode.getBoundingClientRect();
-			box.h = Math.max(box.h, rect.top + rect.height);
-		}
-
-		return box;
-	};
 
 	return Viewport;
 });

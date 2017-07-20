@@ -55,8 +55,6 @@ import com.dotmarketing.portlets.structure.factories.RelationshipCache;
 import com.dotmarketing.portlets.structure.factories.RelationshipCacheImpl;
 import com.dotmarketing.portlets.templates.business.TemplateCache;
 import com.dotmarketing.portlets.templates.business.TemplateCacheImpl;
-import com.dotmarketing.portlets.virtuallinks.business.VirtualLinkCache;
-import com.dotmarketing.portlets.virtuallinks.business.VirtualLinkCacheImpl;
 import com.dotmarketing.portlets.workflows.business.WorkflowCache;
 import com.dotmarketing.portlets.workflows.business.WorkflowCacheImpl;
 import com.dotmarketing.tag.business.TagCache;
@@ -270,10 +268,6 @@ public class CacheLocator extends Locator<CacheIndex>{
 		return (WorkflowCache) getInstance(CacheIndex.WorkflowCache);
 	}
 
-	public static VirtualLinkCache getVirtualLinkCache() {
-		return (VirtualLinkCache) getInstance(CacheIndex.VirtualLinkCache);
-	}
-
 	public static HostVariablesCache getHostVariablesCache() {
 		return (HostVariablesCache)getInstance(CacheIndex.HostVariables);
 	}
@@ -412,7 +406,6 @@ enum CacheIndex
 	Versionable("Versionable"),
 	FolderCache("FolderCache"),
 	WorkflowCache("Workflow Cache"),
-	VirtualLinkCache("Virtual Link Cache"),
 	HostVariables("Host Variables"),
 	Block_Directive("Block Directive"),
 	Block_Page("Block Page"),
@@ -459,7 +452,6 @@ enum CacheIndex
 	      	case Versionable : return new VersionableCacheImpl();
 	      	case FolderCache : return new FolderCacheImpl();
 	      	case WorkflowCache : return new WorkflowCacheImpl();
-	      	case VirtualLinkCache : return new VirtualLinkCacheImpl();
 	      	case Indicies: return new IndiciesCacheImpl();
 	      	case NavTool: return new NavToolCacheImpl();
 	      	case PublishingEndPoint: return new PublishingEndPointCacheImpl();

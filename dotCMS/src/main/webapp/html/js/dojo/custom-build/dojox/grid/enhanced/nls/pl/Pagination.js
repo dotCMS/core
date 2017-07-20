@@ -1,6 +1,6 @@
 define(
 "dojox/grid/enhanced/nls/pl/Pagination", ({
-	"descTemplate": "${2} - ${3} / ${1}",
+	"descTemplate": "Od ${2} do ${3} z ${1} ${0}",
 	"firstTip": "Pierwsza strona",
 	"lastTip": "Ostatnia strona",
 	"nextTip": "Następna strona",

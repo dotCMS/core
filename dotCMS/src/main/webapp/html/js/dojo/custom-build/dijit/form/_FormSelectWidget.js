@@ -112,8 +112,8 @@ var _FormSelectWidget = declare("dijit.form._FormSelectWidget", _FormValueWidget
 		//		If not passed a value, then all options will be returned
 		//
 		// returns:
-		//		The option corresponding with the given value or index.
-		//		null is returned if any of the following are true:
+		//		The option corresponding with the given value or index.  null
+		//		is returned if any of the following are true:
 		//
 		//		- A string value is passed in which doesn't exist
 		//		- An index is passed in which is outside the bounds of the array of options
@@ -123,35 +123,38 @@ var _FormSelectWidget = declare("dijit.form._FormSelectWidget", _FormValueWidget
 		//		if the value property matches - NOT if the exact option exists
 		// NOTE: if passing in an array, null elements will be placed in the returned
 		//		array when a value is not found.
-		var opts = this.options || [];
+		var lookupValue = valueOrIdx, opts = this.options || [], l = opts.length;
 
-		if(valueOrIdx == null){
+		if(lookupValue === undefined){
 			return opts; // __SelectOption[]
 		}
-		if(lang.isArray(valueOrIdx)){
-			return array.map(valueOrIdx, "return this.getOptions(item);", this); // __SelectOption[]
-		}
-		if(lang.isString(valueOrIdx)){
-			valueOrIdx = { value: valueOrIdx };
+		if(lang.isArray(lookupValue)){
+			return array.map(lookupValue, "return this.getOptions(item);", this); // __SelectOption[]
 		}
 		if(lang.isObject(valueOrIdx)){
 			// We were passed an option - so see if it's in our array (directly),
 			// and if it's not, try and find it by value.
-
-			if(!array.some(opts, function(option, idx){
-				for(var a in valueOrIdx){
-					if(!(a in option) || option[a] != valueOrIdx[a]){ // == and not === so that 100 matches '100'
-						return false;
-					}
+			if(!array.some(this.options, function(o, idx){
+				if(o === lookupValue ||
+					(o.value && o.value === lookupValue.value)){
+					lookupValue = idx;
+					return true;
 				}
-				valueOrIdx = idx;
-				return true; // stops iteration through opts
+				return false;
 			})){
-				valueOrIdx = -1;
+				lookupValue = -1;
 			}
 		}
-		if(valueOrIdx >= 0 && valueOrIdx < opts.length){
-			return opts[valueOrIdx]; // __SelectOption
+		if(typeof lookupValue == "string"){
+			for(var i=0; i<l; i++){
+				if(opts[i].value === lookupValue){
+					lookupValue = i;
+					break;
+				}
+			}
+		}
+		if(typeof lookupValue == "number" && lookupValue >= 0 && lookupValue < l){
+			return this.options[lookupValue]; // __SelectOption
 		}
 		return null; // null
 	},
@@ -162,7 +165,8 @@ var _FormSelectWidget = declare("dijit.form._FormSelectWidget", _FormValueWidget
 		//		of the option is empty or missing, a separator is created instead.
 		//		Passing in an array of options will yield slightly better performance
 		//		since the children are only loaded once.
-		array.forEach(lang.isArray(option) ? option : [option], function(i){
+		if(!lang.isArray(option)){ option = [option]; }
+		array.forEach(option, function(i){
 			if(i && lang.isObject(i)){
 				this.options.push(i);
 			}
@@ -178,16 +182,16 @@ var _FormSelectWidget = declare("dijit.form._FormSelectWidget", _FormValueWidget
 		//		which case, the select option with a matching value is removed).
 		//		You can also pass in an array of those values for a slightly
 		//		better performance since the children are only loaded once.
-		//		For numeric option values, specify {value: number} as the argument.
-		var oldOpts = this.getOptions(lang.isArray(valueOrIdx) ? valueOrIdx : [valueOrIdx]);
-		array.forEach(oldOpts, function(option){
+		if(!lang.isArray(valueOrIdx)){ valueOrIdx = [valueOrIdx]; }
+		var oldOpts = this.getOptions(valueOrIdx);
+		array.forEach(oldOpts, function(i){
 			// We can get null back in our array - if our option was not found.  In
 			// that case, we don't want to blow up...
-			if(option){
+			if(i){
 				this.options = array.filter(this.options, function(node){
-					return (node.value !== option.value || node.label !== option.label);
+					return (node.value !== i.value || node.label !== i.label);
 				});
-				this._removeOptionItem(option);
+				this._removeOptionItem(i);
 			}
 		}, this);
 		this._loadChildren();
@@ -199,8 +203,9 @@ var _FormSelectWidget = declare("dijit.form._FormSelectWidget", _FormValueWidget
 		//		is matched based on the value of the entered option.  Passing
 		//		in an array of new options will yield better performance since
 		//		the children will only be loaded once.
-		array.forEach(lang.isArray(newOption) ? newOption : [newOption], function(i){
-			var oldOpt = this.getOptions({ value: i.value }), k;
+		if(!lang.isArray(newOption)){ newOption = [newOption]; }
+		array.forEach(newOption, function(i){
+			var oldOpt = this.getOptions(i), k;
 			if(oldOpt){
 				for(k in i){ oldOpt[k] = i[k]; }
 			}
@@ -208,7 +213,9 @@ var _FormSelectWidget = declare("dijit.form._FormSelectWidget", _FormValueWidget
 		this._loadChildren();
 	},
 
-	setStore: function(store, selectedValue, fetchArgs){
+	setStore: function(store,
+						selectedValue,
+						fetchArgs){
 		// summary:
 		//		Sets the store you would like to use with this select widget.
 		//		The selected value is the value of the new store to set.  This
@@ -295,16 +302,10 @@ var _FormSelectWidget = declare("dijit.form._FormSelectWidget", _FormValueWidget
 			this.removeOption(this.options);
 		}
 
-			// Cancel listener for updates to old (dojo.data) store
+		// Cancel listener for updates to old store
 		if(this._queryRes && this._queryRes.close){
 			this._queryRes.close();
 		}
-			
-			// Cancel listener for updates to new (dojo.store) store
-			if(this._observeHandle && this._observeHandle.remove){
-				this._observeHandle.remove();
-				this._observeHandle = null;
-			}
 
 		// If user has specified new query and query options along with this new store, then use them.
 		if(fetchArgs.query){
@@ -323,7 +324,7 @@ var _FormSelectWidget = declare("dijit.form._FormSelectWidget", _FormValueWidget
 			when(this._queryRes, lang.hitch(this, function(items){
 
 				if(this.sortByLabel && !fetchArgs.sort && items.length){
-					if(store.getValue){
+					if(items[0].getValue){
 						// Old dojo.data API to access items, remove for 2.0
 						items.sort(sorter.createSortFunction([{
 							attribute: store.getLabelAttributes(items[0])[0]
@@ -347,8 +348,7 @@ var _FormSelectWidget = declare("dijit.form._FormSelectWidget", _FormValueWidget
 
 				// Register listener for store updates
 				if(this._queryRes.observe){
-						// observe returns yet another handle that needs its own explicit gc
-						this._observeHandle = this._queryRes.observe(lang.hitch(this, function(object, deletedFrom, insertedInto){
+					this._queryRes.observe(lang.hitch(this, function(object, deletedFrom, insertedInto){
 						if(deletedFrom == insertedInto){
 							this._onSetItem(object);
 						}else{
@@ -397,28 +397,33 @@ var _FormSelectWidget = declare("dijit.form._FormSelectWidget", _FormValueWidget
 			this._pendingValue = newValue;
 			return;
 		}
-		if(newValue == null){
-			return;
-		}
-		if(lang.isArray(newValue)){
-			newValue = array.map(newValue, function(value){ return lang.isObject(value) ? value : { value: value }; }); // __SelectOption[]
-		}else if(lang.isObject(newValue)){
-			newValue = [newValue];
-		}else{
-			newValue = [{ value: newValue }];
-		}
-		newValue = array.filter(this.getOptions(newValue), function(i){ return i && i.value; });
 		var opts = this.getOptions() || [];
-		if(!this.multiple && (!newValue[0] || !newValue[0].value) && !!opts.length){
+		if(!lang.isArray(newValue)){
+			newValue = [newValue];
+		}
+		array.forEach(newValue, function(i, idx){
+			if(!lang.isObject(i)){
+				i = i + "";
+			}
+			if(typeof i === "string"){
+				newValue[idx] = array.filter(opts, function(node){
+					return node.value === i;
+				})[0] || {value: "", label: ""};
+			}
+		}, this);
+
+		// Make sure some sane default is set
+		newValue = array.filter(newValue, function(i){ return i && i.value; });
+		if(!this.multiple && (!newValue[0] || !newValue[0].value) && opts.length){
 			newValue[0] = opts[0];
 		}
-		array.forEach(opts, function(opt){
-			opt.selected = array.some(newValue, function(v){ return v.value === opt.value; });
+		array.forEach(opts, function(i){
+			i.selected = array.some(newValue, function(v){ return v.value === i.value; });
 		});
-		var val = array.map(newValue, function(opt){ return opt.value; });
+		var	val = array.map(newValue, function(i){ return i.value; }),
+			disp = array.map(newValue, function(i){ return i.label; });
 
 		if(typeof val == "undefined" || typeof val[0] == "undefined"){ return; } // not fully initialized yet or a failed value lookup
-		var disp = array.map(newValue, function(opt){ return opt.label; });
 		this._setDisplay(this.multiple ? disp : disp[0]);
 		this.inherited(arguments, [ this.multiple ? val : val[0], priorityChange ]);
 		this._updateSelection();
@@ -427,7 +432,11 @@ var _FormSelectWidget = declare("dijit.form._FormSelectWidget", _FormValueWidget
 	_getDisplayedValueAttr: function(){
 		// summary:
 		//		returns the displayed value of the widget
-		var ret = array.map([].concat(this.get('selectedOptions')), function(v){
+		var val = this.get("value");
+		if(!lang.isArray(val)){
+			val = [val];
+		}
+		var ret = array.map(this.getOptions(val), function(v){
 			if(v && "label" in v){
 				return v.label;
 			}else if(v){
@@ -436,12 +445,6 @@ var _FormSelectWidget = declare("dijit.form._FormSelectWidget", _FormValueWidget
 			return null;
 		}, this);
 		return this.multiple ? ret : ret[0];
-	},
-
-	_setDisplayedValueAttr: function(label){
-		// summary:
-		//		Sets the displayed value of the widget
-		this.set('value', this.getOptions(typeof label == "string" ? { label: label } : label));
 	},
 
 	_loadChildren: function(){
@@ -463,7 +466,10 @@ var _FormSelectWidget = declare("dijit.form._FormSelectWidget", _FormValueWidget
 		// summary:
 		//		Sets the "selected" class on the item for styling purposes
 		this._set("value", this._getValueFromOpts());
-		var val = [].concat(this.value);
+		var val = this.value;
+		if(!lang.isArray(val)){
+			val = [val];
+		}
 		if(val && val[0]){
 			array.forEach(this._getChildren(), function(child){
 				var isSelected = array.some(val, function(v){
@@ -511,7 +517,7 @@ var _FormSelectWidget = declare("dijit.form._FormSelectWidget", _FormValueWidget
 	},
 	_onDeleteItem: function(/*item*/ item){
 		var store = this.store;
-		this.removeOption({value: store.getIdentity(item) });
+		this.removeOption(store.getIdentity(item));
 	},
 	_onSetItem: function(/*item*/ item){
 		this.updateOption(this._getOptionObjForItem(item));
@@ -608,7 +614,7 @@ var _FormSelectWidget = declare("dijit.form._FormSelectWidget", _FormValueWidget
 		this.inherited(arguments);
 
 		// Make our event connections for updating state
-		aspect.after(this, "onChange", lang.hitch(this, "_updateSelection"));
+		this.connect(this, "onChange", "_updateSelection");
 
 		// moved from startup
 		//		Connects in our store, if we have one defined
@@ -637,12 +643,6 @@ var _FormSelectWidget = declare("dijit.form._FormSelectWidget", _FormValueWidget
 		// Cancel listener for store updates
 		if(this._queryRes && this._queryRes.close){
 			this._queryRes.close();
-			}
-
-			// Cancel listener for updates to new (dojo.store) store
-			if(this._observeHandle && this._observeHandle.remove){
-				this._observeHandle.remove();
-				this._observeHandle = null;
 		}
 
 		this.inherited(arguments);
@@ -679,7 +679,7 @@ var _FormSelectWidget = declare("dijit.form._FormSelectWidget", _FormValueWidget
 		// summary:
 		//		hooks into this.attr to provide a mechanism for getting the
 		//		option items for the current value of the widget.
-		return this.getOptions({ selected: true });
+		return this.getOptions(this.get("value"));
 	},
 
 	_pseudoLoadChildren: function(/*item[]*/ /*===== items =====*/){

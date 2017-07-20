@@ -11,7 +11,6 @@
 <%@page import="com.dotmarketing.business.UserAPI"%>
 <%@page import="com.dotmarketing.business.web.HostWebAPI"%>
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
-<%@page import="com.dotmarketing.cache.VirtualLinksCache"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.util.URLUtils"%>
 <%@page import="com.dotmarketing.util.URLUtils.ParsedURL"%>

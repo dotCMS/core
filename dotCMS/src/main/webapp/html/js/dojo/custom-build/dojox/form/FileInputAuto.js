@@ -127,7 +127,6 @@ var FileInputAuto = declare("dojox.form.FileInputAuto", FileInput,
 			// this is how all other sane browsers do it
 			_newForm = document.createElement('form');
 			_newForm.setAttribute("enctype","multipart/form-data");
-                        _newForm.setAttribute("method","post");
 		}
 		_newForm.appendChild(this.fileInput);
 		win.body().appendChild(_newForm);
