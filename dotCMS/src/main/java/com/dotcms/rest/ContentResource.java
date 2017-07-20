@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -75,6 +76,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.content.util.ContentUtils;
 import com.liferay.portal.model.User;
@@ -726,12 +728,19 @@ public class ContentResource {
 			else if(part.getContentDisposition()!=null) {
 				InputStream input=part.getEntityAs(InputStream.class);
 				String filename=part.getContentDisposition().getFileName();
-				java.io.File tmp=new java.io.File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
-						+ java.io.File.separator + user.getUserId()
-						+ java.io.File.separator + System.currentTimeMillis()
-						+ java.io.File.separator + filename);
+				
+				java.io.File tmpFolder =new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
+		                        + UUIDUtil.uuid());
+				tmpFolder.mkdirs();
+				
+		
+				java.io.File tmp=new File(tmpFolder.getAbsolutePath() 
+						+ File.separator + filename);
 				if(tmp.exists())
 					tmp.delete();
+				
+				
+				
 				try {
 					FileUtils.copyInputStreamToFile(input, tmp);
 					for(Field ff : FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode())) {
