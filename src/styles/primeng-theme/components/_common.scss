@@ -15,34 +15,6 @@ input, select, textarea, button {
 ----------------------------------*/
 
 // This will extend in all the form fields like: inputtext, dropdown, textarea and others like it.
-#field-default-state {
-    background: $field-normal-bgcolor;
-    border: none;
-    color: $field-normal-color;
-    font-weight: normal;
-}
-
-#field-hover-state {
-    background: $field-hover-bgcolor;
-    color: $field-hover-color;
-}
-
-#field-active-state {
-    background: $field-active-bgcolor;
-    color: $field-active-color;
-}
-
-#field-disabled-state {
-    background-image: none;
-    background: $field-disabled-bgcolor;
-    color: $field-disabled-color;
-}
-
-#ui-hover-state {
-    background: $gray-lighter;
-    color: $field-hover-color;
-}
-
 .ui-state-default {
     @extend #field-default-state;
 }

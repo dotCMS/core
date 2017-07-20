@@ -1,5 +1,4 @@
 import { BaseComponent } from '../../../view/components/_common/_base/base-component';
-import { Router, ActivatedRoute, Params } from '@angular/router';
 import { Component, ViewChild, Input, Output, EventEmitter, Renderer2 } from '@angular/core';
 import { DotcmsConfig } from '../../../api/services/system/dotcms-config';
 import { MessageService } from '../../../api/services/messages-service';
@@ -19,26 +18,29 @@ import { SiteSelectorComponent } from '../../../view/components/_common/site-sel
  */
 @Component({
     animations: [
-        trigger(
-            'enterAnimation', [
-                state('expanded', style({
+        trigger('enterAnimation', [
+            state(
+                'expanded',
+                style({
                     height: '*',
-                    overflow: 'visible',
-                })),
-                state('collapsed', style({
+                    overflow: 'visible'
+                })
+            ),
+            state(
+                'collapsed',
+                style({
                     height: '0px',
-                    overflow: 'hidden',
-                })),
-                transition('expanded <=> collapsed', animate('250ms ease-in-out')),
-            ]
-        )
+                    overflow: 'hidden'
+                })
+            ),
+            transition('expanded <=> collapsed', animate('250ms ease-in-out'))
+        ])
     ],
     providers: [SiteSelectorComponent],
     selector: 'content-types-form',
     styles: [require('./content-types-form.component.scss')],
     templateUrl: 'content-types-form.component.html'
 })
-
 export class ContentTypesFormComponent extends BaseComponent {
     @Input() data: any;
     @Input() icon: string;
@@ -49,6 +51,7 @@ export class ContentTypesFormComponent extends BaseComponent {
     @Output() onDelete: EventEmitter<any> = new EventEmitter();
 
     @ViewChild('contentTypesForm') contentTypesForm: NgForm;
+
     public actionButtonLabel: string;
     public form: FormGroup;
     public formState = 'collapsed';
@@ -57,36 +60,45 @@ export class ContentTypesFormComponent extends BaseComponent {
     private dateVarOptions: SelectItem[] = [];
     private workflowOptions: SelectItem[] = [];
 
-    constructor(public messageService: MessageService, private renderer: Renderer2, private fb: FormBuilder,
-        private dotcmsConfig: DotcmsConfig) {
-        super([
-            'Detail-Page',
-            'Expire-Date-Field',
-            'Host-Folder',
-            'Identifier',
-            'No-Date-Fields-Defined',
-            'Properties',
-            'Publish-Date-Field',
-            'URL-Map-Pattern-hint1',
-            'URL-Pattern',
-            'Variable',
-            'Workflow',
-            'Only-Default-Scheme-is-available-in-Community',
-            'cancel',
-            'description',
-            'name',
-            'save',
-            'update',
-            'edit',
-            'delete'
-        ], messageService);
+    constructor(
+        public messageService: MessageService,
+        private renderer: Renderer2,
+        private fb: FormBuilder,
+        private dotcmsConfig: DotcmsConfig
+    ) {
+        super(
+            [
+                'Detail-Page',
+                'Expire-Date-Field',
+                'Host-Folder',
+                'Identifier',
+                'No-Date-Fields-Defined',
+                'Properties',
+                'Publish-Date-Field',
+                'URL-Map-Pattern-hint1',
+                'URL-Pattern',
+                'Variable',
+                'Workflow',
+                'Only-Default-Scheme-is-available-in-Community',
+                'cancel',
+                'description',
+                'name',
+                'save',
+                'update',
+                'edit',
+                'delete'
+            ],
+            messageService
+        );
     }
 
     ngOnInit(): void {
         this.initWorkflowtFieldOptions();
 
         this.messageService.messageMap$.subscribe(res => {
-            this.actionButtonLabel = this.isEditMode ? this.i18nMessages['update'] : this.i18nMessages['save'];
+            this.actionButtonLabel = this.isEditMode
+                ? this.i18nMessages['update']
+                : this.i18nMessages['save'];
             this.formOptions = [
                 {
                     command: this.toggleForm.bind(this),
@@ -106,10 +118,10 @@ export class ContentTypesFormComponent extends BaseComponent {
 
     ngOnChanges(changes): void {
         let isFirstChange =
-            changes.data && changes.data.firstChange ||
-            changes.name && changes.name.firstChange ||
-            changes.type && changes.type.firstChange ||
-            changes.icon && changes.icon.firstChange;
+            (changes.data && changes.data.firstChange) ||
+            (changes.name && changes.name.firstChange) ||
+            (changes.type && changes.type.firstChange) ||
+            (changes.icon && changes.icon.firstChange);
 
         if (isFirstChange) {
             this.initFormGroup();
@@ -172,8 +184,14 @@ export class ContentTypesFormComponent extends BaseComponent {
     }
 
     private addContentSpecificFields(): void {
-        this.form.addControl('detailPage', new FormControl(this.data && this.data.detailPage  || ''));
-        this.form.addControl('urlMapPattern', new FormControl(this.data && this.data.urlMapPattern  || ''));
+        this.form.addControl(
+            'detailPage',
+            new FormControl((this.data && this.data.detailPage) || '')
+        );
+        this.form.addControl(
+            'urlMapPattern',
+            new FormControl((this.data && this.data.urlMapPattern) || '')
+        );
     }
 
     private addEditModeSpecificFields(): void {
@@ -195,7 +213,10 @@ export class ContentTypesFormComponent extends BaseComponent {
     private getDateVarOptions(fields): SelectItem[] {
         let dateVarOptions = fields
             .filter(item => {
-                return item.clazz === 'com.dotcms.contenttype.model.field.ImmutableDateTimeField' && item.indexed;
+                return (
+                    item.clazz === 'com.dotcms.contenttype.model.field.ImmutableDateTimeField' &&
+                    item.indexed
+                );
             })
             .map(item => {
                 return {
@@ -230,9 +251,7 @@ export class ContentTypesFormComponent extends BaseComponent {
         this.form = this.fb.group({
             description: '',
             host: '',
-            name: ['', [
-                Validators.required,
-            ]],
+            name: ['', [Validators.required]],
             workflow: ''
         });
     }

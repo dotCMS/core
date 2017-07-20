@@ -1,0 +1,49 @@
+@import "theme-variables";
+
+#inputtext-normal-border {
+    box-shadow: 0 $field-normal-border-size 0 $field-normal-border-color;
+}
+
+#inputtext-hover-border {
+    box-shadow: 0 $field-hover-border-size 0 $field-hover-border-color;
+}
+
+#inputtext-active-border {
+    box-shadow: 0 $field-active-border-size 0 $field-active-border-color;
+}
+
+#inputtext-disabled-border {
+    box-shadow: 0 $field-disabled-border-size 0 $field-disabled-border-color;
+}
+
+#inputtext-error-border {
+    box-shadow: 0 $field-active-border-size 0 $red;
+}
+
+#field-default-state {
+    background: $field-normal-bgcolor;
+    border: none;
+    color: $field-normal-color;
+    font-weight: normal;
+}
+
+#field-hover-state {
+    background: $field-hover-bgcolor;
+    color: $field-hover-color;
+}
+
+#field-active-state {
+    background: $field-active-bgcolor;
+    color: $field-active-color;
+}
+
+#field-disabled-state {
+    background-image: none;
+    background: $field-disabled-bgcolor;
+    color: $field-disabled-color;
+}
+
+#ui-hover-state {
+    background: $gray-lighter;
+    color: $field-hover-color;
+}

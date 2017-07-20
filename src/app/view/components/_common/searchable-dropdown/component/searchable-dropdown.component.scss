@@ -1,5 +1,60 @@
+@import "../../../../../../styles/primeng-theme/utils/extends";
 
+searchable-dropdown {
+    .ui-button {
+        @extend #inputtext-normal-border;
+        border-radius: 0;
+        padding-right: $dropdown-height + $basic-padding;
 
-li {
-    list-style:none;
+        &:hover,
+        &:active,
+        &:focus {
+            @extend #field-hover-state;
+            @extend #inputtext-normal-border;
+        }
+
+        .ui-button-text {
+            padding: 0;
+        }
+    }
+}
+
+.searchable-dropdown__data-list {
+    .ui-datalist-content {
+        margin: $basic-padding 0;
+        width: 300px;
+    }
+
+    .ui-datalist-data {
+        span {
+            cursor: pointer;
+            display: block;
+            padding: $basic-padding / 2;
+            transition: background-color $basic-speed ease-in;
+
+            &.selected {
+                font-weight: bold;
+            }
+
+            &:hover {
+                background-color: $gray-lighter;
+            }
+        }
+    }
+}
+
+.searchable-dropdown__search-field {
+    padding-right: $basic-padding * 3;
+    width: 100%;
+}
+
+.searchable-dropdown__search {
+    position: relative
+}
+
+.searchable-dropdown__search-icon {
+    color: $gray-light;
+    position: absolute;
+    right: 0;
+    top: 9px;
 }

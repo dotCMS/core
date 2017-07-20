@@ -1,27 +1,30 @@
 import {
-        Component,
-        ElementRef,
-        EventEmitter,
-        Input,
-        NgZone,
-        Output,
-        ViewChild,
-        ViewEncapsulation,
-        forwardRef
-    } from '@angular/core';
-import { DataTableColumn } from '../../listing-data-table/listing-data-table-component';
-import { Observable } from 'rxjs/Rx';
+    Component,
+    ElementRef,
+    EventEmitter,
+    Input,
+    NgZone,
+    Output,
+    ViewChild,
+    ViewEncapsulation,
+    forwardRef
+} from '@angular/core';
+import { BaseComponent } from '../../_base/base-component';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { DataTableColumn } from '../../listing-data-table/listing-data-table-component';
+import { MessageService } from '../../../../../api/services/messages-service';
+import { Observable } from 'rxjs/Rx';
 import { OverlayPanel } from 'primeng/primeng';
 
 /**
  * Dropdown with pagination and global search
  * @export
+ * @extends {BaseComponent}
  * @class SearchableDropdownComponent
  * @implements {ControlValueAccessor}
  */
 @Component({
-    encapsulation: ViewEncapsulation.Emulated,
+    encapsulation: ViewEncapsulation.None,
     providers: [
         {
             multi: true,
@@ -31,31 +34,47 @@ import { OverlayPanel } from 'primeng/primeng';
     ],
     selector: 'searchable-dropdown',
     styles: [require('./searchable-dropdown.component.scss')],
-    templateUrl: './searchable-dropdown.component.html',
+    templateUrl: './searchable-dropdown.component.html'
 })
-export class SearchableDropdownComponent implements ControlValueAccessor {
-
+export class SearchableDropdownComponent extends BaseComponent
+    implements ControlValueAccessor {
     @Input() data: string[];
-    @Input() totalRecords: number;
-    @Input() rows: number;
-    @Input() pageLinkSize = 3;
     @Input() labelPropertyName;
+    @Input() pageLinkSize = 3;
+    @Input() rows: number;
+    @Input() totalRecords: number;
 
-    @ViewChild('searchInput') inputElRef: ElementRef;
+    @Output() change: EventEmitter<any> = new EventEmitter();
+    @Output() filterChange: EventEmitter<string> = new EventEmitter();
+    @Output() hide: EventEmitter<any> = new EventEmitter();
+    @Output() pageChange: EventEmitter<PaginationEvent> = new EventEmitter();
+    @Output() show: EventEmitter<any> = new EventEmitter();
+
+    @ViewChild('searchInput') searchInput: ElementRef;
     @ViewChild('searchPanel') searchPanelRef: OverlayPanel;
 
-    @Output() filterChange: EventEmitter<string> = new EventEmitter();
-    @Output() pageChange: EventEmitter<PaginationEvent> = new EventEmitter();
-    @Output() change: EventEmitter<any> = new EventEmitter();
-
-    public value: any = {};
-    private valueString = '';
+    value: any = {};
+    valueString = '';
     propagateChange = (_: any) => {};
 
+    constructor(messageService: MessageService) {
+        super(['search'], messageService);
+    }
+
     ngOnInit(): void {
-        Observable.fromEvent(this.inputElRef.nativeElement, 'keyup')
+        Observable.fromEvent(this.searchInput.nativeElement, 'keyup')
             .debounceTime(500)
-            .subscribe((keyboardEvent: Event) => this.filterChange.emit(keyboardEvent.target['value']));
+            .subscribe((keyboardEvent: Event) =>
+                this.filterChange.emit(keyboardEvent.target['value'])
+            );
+    }
+
+    hideDialogHandler(): void {
+        if (this.searchInput.nativeElement.value.length) {
+            this.searchInput.nativeElement.value = '';
+            this.paginate({});
+        }
+        this.hide.emit();
     }
 
     /**
@@ -65,7 +84,7 @@ export class SearchableDropdownComponent implements ControlValueAccessor {
      */
     paginate(event): void {
         let paginationEvent = Object.assign({}, event);
-        paginationEvent.filter = this.inputElRef.nativeElement.value;
+        paginationEvent.filter = this.searchInput.nativeElement.value;
         this.pageChange.emit(paginationEvent);
     }
 

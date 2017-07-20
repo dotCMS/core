@@ -1,23 +1,31 @@
-<p-overlayPanel appendTo="body" #searchPanel>
-
-    <input #searchInput pInputText type="text"/>
-
-    <p-dataList [value]="data"
-                [pageLinks]="pageLinkSize"
-                [totalRecords]="totalRecords"
-                [paginator]="true" 
-                [lazy]="true"
-                [rows]="rows"
-                (onLazyLoad)="paginate($event)">
+<p-overlayPanel 
+    #searchPanel
+    appendTo="body"
+    (onAfterShow)="show.emit()"
+    (onAfterHide)="hideDialogHandler()">
+    <header class="searchable-dropdown__search">
+        <i class="fa fa-search searchable-dropdown__search-icon"></i>
+        <input #searchInput pInputText [placeholder]="i18nMessages['search']" type="text" class="searchable-dropdown__search-field"/>
+    </header>
+    <p-dataList
+        (onLazyLoad)="paginate($event)"
+        [lazy]="true"
+        [pageLinks]="pageLinkSize"
+        [paginator]="true" 
+        [rows]="rows"
+        [totalRecords]="totalRecords"
+        [value]="data"
+        class="searchable-dropdown__data-list">
         <ng-template let-item pTemplate="item">
-            <span (click)="handleClick(item)">{{item[labelPropertyName]}}</span>
+            <span [class.selected]="item[labelPropertyName] === valueString" (click)="handleClick(item)">{{item[labelPropertyName]}}</span>
         </ng-template>
     </p-dataList>
 </p-overlayPanel>
 
-<button ripple pButton type="button" 
-        icon="fa-sort-desc" 
-        iconPos="right" 
-        [label]="valueString"
-        (click)="searchPanel.toggle($event)">
+<button ripple pButton
+    (click)="searchPanel.toggle($event)"
+    [label]="valueString"
+    icon="fa-caret-down" 
+    iconPos="right" 
+    type="button" >
 </button>

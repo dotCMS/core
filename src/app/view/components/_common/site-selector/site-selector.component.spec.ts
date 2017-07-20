@@ -27,6 +27,10 @@ describe('Site Selector Component', () => {
 
   beforeEach(async(() => {
 
+    let messageServiceMock = new MockMessageService({
+        'search': 'Search'
+    });
+
     let siteServiceMock = new SiteServiceMock();
 
     DOTTestBed.configureTestingModule({
@@ -35,7 +39,8 @@ describe('Site Selector Component', () => {
             SearchableDropDownModule
         ],
         providers: [
-          {provide: SiteService, useValue: siteServiceMock},
+          { provide: MessageService, useValue: messageServiceMock },
+          { provide: SiteService, useValue: siteServiceMock },
           IframeOverlayService, PaginatorService
         ]
     });

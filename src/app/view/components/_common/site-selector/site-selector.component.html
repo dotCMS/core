@@ -3,7 +3,9 @@
     #searchableDropdown
     (change)="siteChange($event)"
     (filterChange)="handleFilterChange($event)"
+    (hide)="hide.emit()"
     (pageChange)="handlePageChange($event)"
+    (show)="show.emit()"
     [data]="sitesCurrentPage"
     [ngModel]="currentSite | async"
     [pageLinkSize]="3"

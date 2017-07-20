@@ -19,7 +19,7 @@ import { ConfirmationService } from 'primeng/primeng';
  */
 @Component({
     selector: 'content-types-edit',
-    templateUrl: './content-types-edit.component.html',
+    templateUrl: './content-types-edit.component.html'
 })
 export class ContentTypesEditComponent extends BaseComponent {
     @ViewChild('form') form: ContentTypesFormComponent;
@@ -30,33 +30,46 @@ export class ContentTypesEditComponent extends BaseComponent {
     private data: ContentType;
     private licenseInfo: any;
 
-    constructor(messageService: MessageService, private route: ActivatedRoute,
-        private crudService: CrudService, public router: Router, private stringUtils: StringUtils,
-        private contentTypesInfoService: ContentTypesInfoService, private confirmationService: ConfirmationService) {
-        super([
-            'File',
-            'Content',
-            'Form',
-            'Persona',
-            'Widget',
-            'Page',
-            'message.structure.cantdelete',
-            'message.structure.delete.structure.and.content',
-            'Yes',
-            'No'
-        ], messageService);
+    constructor(
+        messageService: MessageService,
+        private confirmationService: ConfirmationService,
+        private contentTypesInfoService: ContentTypesInfoService,
+        private crudService: CrudService,
+        private route: ActivatedRoute,
+        private stringUtils: StringUtils,
+        public router: Router
+    ) {
+        super(
+            [
+                'File',
+                'Content',
+                'Form',
+                'Persona',
+                'Widget',
+                'Page',
+                'message.structure.cantdelete',
+                'message.structure.delete.structure.and.content',
+                'Yes',
+                'No'
+            ],
+            messageService
+        );
     }
 
     ngOnInit(): void {
         this.route.url.subscribe(res => {
-            this.contentTypeItem = this.crudService.getDataById('v1/contenttype', res[1].path).map(res => {
-                let type = this.contentTypesInfoService.getLabel(res.clazz);
-                this.contentTypeName = this.messageService.messageMap$.pluck(this.stringUtils.titleCase(type));
-                this.contentTypeType = type;
-                this.contentTypeIcon = this.contentTypesInfoService.getIcon(res.clazz);
-                this.data = res;
-                return res;
-            });
+            this.contentTypeItem = this.crudService
+                .getDataById('v1/contenttype', res[1].path)
+                .map(res => {
+                    let type = this.contentTypesInfoService.getLabel(res.clazz);
+                    this.contentTypeName = this.messageService.messageMap$.pluck(
+                        this.stringUtils.titleCase(type)
+                    );
+                    this.contentTypeType = type;
+                    this.contentTypeIcon = this.contentTypesInfoService.getIcon(res.clazz);
+                    this.data = res;
+                    return res;
+                });
         });
     }
 
@@ -68,17 +81,12 @@ export class ContentTypesEditComponent extends BaseComponent {
     public deleteContentType($event): void {
         this.confirmationService.confirm({
             accept: () => {
-                this.crudService.delete(`v1/contenttype/id/`, this.data.id)
-                    .subscribe((data) => {
-                        this.router.navigate(['../'], { relativeTo: this.route });
-                    });
+                this.crudService.delete(`v1/contenttype/id/`, this.data.id).subscribe(data => {
+                    this.router.navigate(['../'], { relativeTo: this.route });
+                });
             },
-            header: this.i18nMessages[
-                'message.structure.cantdelete'
-            ],
-            message: this.i18nMessages[
-                'message.structure.delete.structure.and.content'
-            ],
+            header: this.i18nMessages['message.structure.cantdelete'],
+            message: this.i18nMessages['message.structure.delete.structure.and.content']
         });
     }
 
@@ -91,12 +99,12 @@ export class ContentTypesEditComponent extends BaseComponent {
      */
     public handleFormSubmit($event): void {
         let contentTypeData: ContentType = Object.assign({}, this.data, $event.value);
-        this.crudService.putData(`v1/contenttype/id/${this.data.id}`, contentTypeData)
+        this.crudService
+            .putData(`v1/contenttype/id/${this.data.id}`, contentTypeData)
             .subscribe(this.handleFormSubmissionResponse.bind(this));
     }
 
     private handleFormSubmissionResponse(res: any): void {
         this.form.resetForm();
     }
-
 }

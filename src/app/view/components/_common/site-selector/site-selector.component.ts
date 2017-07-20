@@ -46,23 +46,25 @@ export class SiteSelectorComponent implements ControlValueAccessor {
 
     @ViewChild('searchableDropdown') searchableDropdown: SearchableDropdownComponent;
     @Output() change: EventEmitter<Site> = new EventEmitter();
+    @Output() show: EventEmitter<any> = new EventEmitter();
+    @Output() hide: EventEmitter<any> = new EventEmitter();
 
-    private currentSite: Observable<Site>;
-    private sitesCurrentPage: Site[];
-    private filteredSitesResults: Array<any>;
-    private paginationPage = 1;
-    private paginationPerPage: number;
+    currentSite: Observable<Site>;
+    totalRecords: number;
+    sitesCurrentPage: Site[];
     private paginatorLinks: number;
     private paginationQuery = '';
-    private totalRecords: number;
+    private paginationPerPage: number;
+    private paginationPage = 1;
+    private filteredSitesResults: Array<any>;
 
     propagateChange = (_: any) => {};
 
     constructor(
         private config: DotcmsConfig,
         private iframeOverlayService: IframeOverlayService,
-        private paginationService: PaginatorService,
-        private siteService: SiteService
+        private siteService: SiteService,
+        public paginationService: PaginatorService
     ) {}
 
     ngOnInit(): void {
@@ -163,11 +165,16 @@ export class SiteSelectorComponent implements ControlValueAccessor {
     registerOnTouched(): void {}
 
     private getSiteByIdFromCurrentPage(siteId: string): Site {
-        return this.sitesCurrentPage && this.sitesCurrentPage.filter(site => site.identifier === siteId)[0];
+        return (
+            this.sitesCurrentPage &&
+            this.sitesCurrentPage.filter(site => site.identifier === siteId)[0]
+        );
     }
 
     private selectCurrentSite(siteId: string): void {
         let selectedInCurrentPage = this.getSiteByIdFromCurrentPage(siteId);
-        this.currentSite = selectedInCurrentPage ? Observable.of(selectedInCurrentPage) : this.siteService.getSiteById(siteId);
+        this.currentSite = selectedInCurrentPage
+            ? Observable.of(selectedInCurrentPage)
+            : this.siteService.getSiteById(siteId);
     }
 }

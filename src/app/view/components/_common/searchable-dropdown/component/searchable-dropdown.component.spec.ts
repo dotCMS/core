@@ -1,12 +1,14 @@
+import { By } from '@angular/platform-browser';
 import { ComponentFixture, async } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { DebugElement } from '@angular/core';
-import { SearchableDropdownComponent } from './searchable-dropdown.component';
+import { MessageService } from '../../../../../api/services/messages-service';
+import { MockMessageService } from '../../../../../test/message-service.mock';
 import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
-import { By } from '@angular/platform-browser';
+import { SearchableDropdownComponent } from './searchable-dropdown.component';
 import { fakeAsync, tick } from '@angular/core/testing';
 
-describe('Searchable Dropdown Component', () => {
+describe('SearchableDropdownComponent', () => {
 
   const NROWS = 6;
 
@@ -20,10 +22,16 @@ describe('Searchable Dropdown Component', () => {
 
   beforeEach(async(() => {
 
+    let messageServiceMock = new MockMessageService({
+        'search': 'Search'
+    });
+
     DOTTestBed.configureTestingModule({
         declarations: [ SearchableDropdownComponent ],
         imports: [ ...SEARCHABLE_NGFACES_MODULES],
-        providers: []
+        providers: [
+            { provide: MessageService, useValue: messageServiceMock },
+        ]
     });
 
     fixture = DOTTestBed.createComponent(SearchableDropdownComponent);
