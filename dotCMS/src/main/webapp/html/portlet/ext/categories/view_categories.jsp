@@ -69,8 +69,6 @@
 
     var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Syncronization")%>');
 
-//    dojo.connect(dojo.global, "onhashchange", refresh);
-
     dojo.subscribe("/dojo/hashchange", refresh);
 
 
@@ -319,7 +317,7 @@
 		}
 
         if(reorder) {
-            queryStringObject.reorder = false;
+            queryStringObject.reorder = true;
         }
 
         var queryString = dojo.objectToQuery(queryStringObject);
@@ -551,7 +549,6 @@
         dojo.byId("CatKey").value = key;
         dojo.byId("CatKeywords").value = keywords;
         dijit.byId('catFilter').attr('value', '');
-//        doSearch();
     }
 
     // roll up of a category, load the children, properties
@@ -589,7 +586,6 @@
         dojo.byId("CatKey").value = key;
         dojo.byId("CatKeywords").value = keywords;
         dijit.byId('catFilter').attr('value', '');
-//        doSearch();
 
     }
     // delete muliple or single category, via ajax
@@ -687,7 +683,7 @@
         var keywords = dojo.byId(prefix+"CatKeywords").value;
         CategoryAjax.saveOrUpdateCategory(save, currentInodeOrIdentifier, name, velVar, key, keywords, {
             callback:function(result) {
-                doSearch();
+                doSearch(false, true);
                 grid.selection.clear();
 
                 var message = "";
