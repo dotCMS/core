@@ -600,7 +600,7 @@
                         }
 
                         dia.hide();
-                        doSearch();
+                        doSearch(false, true);
                         grid.selection.clear();
                     }
                 });
@@ -634,7 +634,7 @@
                         }
 
                         grid.selection.clear();
-                        doSearch();
+                        doSearch(false, true);
                         dia.hide();
                     }
                 });
@@ -668,7 +668,7 @@
         var keywords = dojo.byId(prefix+"CatKeywords").value;
         CategoryAjax.saveOrUpdateCategory(save, currentInodeOrIdentifier, name, velVar, key, keywords, {
             callback:function(result) {
-                doSearch();
+                doSearch(false, true);
                 grid.selection.clear();
 
                 var message = "";
@@ -949,7 +949,7 @@
 					</div>
 					<div class="portlet-toolbar__actions-secondary">
 						<div class="inline-form">
-							<input  name="catFilter" id="catFilter" onkeyup="doSearch();" type="text" dojoType="dijit.form.TextBox" placeholder="<%= LanguageUtil.get(pageContext, "message.filter.categories") %>">
+							<input  name="catFilter" id="catFilter" onkeyup="doSearch(false, true);" type="text" dojoType="dijit.form.TextBox" placeholder="<%= LanguageUtil.get(pageContext, "message.filter.categories") %>">
 							<button dojoType="dijit.form.Button" onclick="clearCatFilter()" type="button"><%= LanguageUtil.get(pageContext, "Clear") %></button>
 						</div>
 					</div>
