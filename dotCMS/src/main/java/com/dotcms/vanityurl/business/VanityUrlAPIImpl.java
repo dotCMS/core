@@ -317,20 +317,31 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 			});
 
 			vanityUrlsToReturn = results.addAll(vanityUrls).build();
-		} catch (Exception e) {
-			if (e instanceof IndexMissingException || e.getCause() instanceof IndexMissingException) {
+		}
+		catch (IndexMissingException e){
+			/*
+			 * We catch this exception in order to avoid to stop the
+			 * initialization of dotCMS if for some reason at this point we
+			 * don't have indexes.
+			 */
+			Logger.error(this, "Error when initializing Vanity URLs, no index found ", e);
+		}
+		catch (DotDataException | DotSecurityException e ){
+			Logger.error(this, "Error searching for active Vanity URLs [" + luceneQuery + "]", e);
+		}
+		catch (Exception e){
+			if ( e.getCause() instanceof IndexMissingException){
 				/*
 				 * We catch this exception in order to avoid to stop the
 				 * initialization of dotCMS if for some reason at this point we
 				 * don't have indexes.
 				 */
 				Logger.error(this, "Error when initializing Vanity URLs, no index found ", e);
-			} else if (e instanceof DotDataException || e instanceof DotSecurityException) {
-					Logger.error(this, "Error searching for active Vanity URLs [" + luceneQuery + "]", e);
-				} else {
-					throw new DotRuntimeException("Error searching and populating the Vanity URL Cache", e);
-				}
+			}else{
+				throw new DotRuntimeException("Error searching and populating the Vanity URL Cache", e);
+			}
 		}
+
 
 		return vanityUrlsToReturn;
 	}
