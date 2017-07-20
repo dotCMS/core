@@ -21,7 +21,6 @@
     String errorPage = "/cms" + status + "Page";
     Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
     // Get from virtual link
-    try {
       if (CmsUrlUtil.getInstance().isVanityUrl(errorPage, host, languageId)) {
         CachedVanityUrl vanityurl = APILocator.getVanityUrlAPI().getLiveCachedVanityUrl(errorPage, host, languageId, APILocator.systemUser());
         String uri = vanityurl.getForwardTo();
@@ -40,9 +39,6 @@
         }
         return;
       }
-    } catch (Exception e) {
-        Logger.error(this, e.getMessage(), e);
-    }
 
     if (status == 401) {
       String referer = (session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN) != null)
