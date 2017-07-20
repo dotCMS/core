@@ -74,15 +74,6 @@
     var backOrForward = false;
     var actions = "";
 
-    function printCrumbs(title, crumbsArray) {
-        var crumbs = "";
-        for(i = 0; i < crumbsArray.length; i++) {
-            var name = crumbsArray[i].split("---------")[1];
-            crumbs = crumbs + " - " + name;
-        }
-        alert(title + ": " + crumbs);
-	}
-
     function refresh() {
         var hashReceived = decodeURIComponent(dojo.hash());
         var inode = "0";
@@ -99,7 +90,6 @@
 
         if (actions == "") {
             // browser back or forward pressed
-			//printCrumbs("Back or FWD", previousCrumbs);
 			backOrForward = true;
         }
 
