@@ -71,7 +71,17 @@
 
     dojo.connect(dojo.global, "onhashchange", refresh);
 
+    var backOrForward = false;
     var actions = "";
+
+    function printCrumbs(title, crumbsArray) {
+        var crumbs = "";
+        for(i = 0; i < crumbsArray.length; i++) {
+            var name = crumbsArray[i].split("---------")[1];
+            crumbs = crumbs + " - " + name;
+        }
+        alert(title + ": " + crumbs);
+	}
 
     function refresh() {
         var hashReceived = decodeURIComponent(dojo.hash());
@@ -88,13 +98,17 @@
         }
 
         if (actions == "") {
-            // nothing to do here, browser back or forward pressed
-        } else {
-            buildCrumbs(inode, name);
-            doSearchHash(hashToSend);
-            refreshCrumbs();
+            // browser back or forward pressed
+			//printCrumbs("Back or FWD", previousCrumbs);
+			backOrForward = true;
         }
+
+        buildCrumbs(inode, name);
+		doSearchHash(hashToSend);
+		refreshCrumbs();
+
         actions = "";
+        backOrForward = false;
     }
 
     var grid;
@@ -416,12 +430,20 @@
         dojo.byId("savedMessage").innerHTML = "";
     }
 
-
+    var previousCrumbs = new Array();
     var myCrumbs = new Array();
 
     function refreshCrumbs() {
-        if(myCrumbs.length ==0){
-            myCrumbs[0] = "0---------<%= LanguageUtil.get(pageContext, "Top-Level") %>";
+        var crumbsArray = new Array();
+
+        if (backOrForward) {
+            crumbsArray = previousCrumbs;
+        } else {
+            crumbsArray = myCrumbs;
+        }
+
+        if (crumbsArray.length ==0) {
+            crumbsArray[0] = "0---------<%= LanguageUtil.get(pageContext, "Top-Level") %>";
         }
 
         //dojo.empty("ulNav");
@@ -432,11 +454,11 @@
             }
         );
 
-        for(i=0;i<myCrumbs.length;i++){
-            var inode = myCrumbs[i].split("---------")[0];
-            var name = myCrumbs[i].split("---------")[1];
+        for (i = 0; i < crumbsArray.length; i++) {
+            var inode = crumbsArray[i].split("---------")[0];
+            var name = crumbsArray[i].split("---------")[1];
 
-            if(i+1 == myCrumbs.length){
+            if (i + 1 == crumbsArray.length) {
                 dojo.place("<li  style=\"cursor:pointer\" i class=\"lastCrumb\" ><b>"+name+"</b></li>", "ulNav", "last");
             }
             else{
@@ -463,22 +485,37 @@
         currentCatName = name;
 
 		var newCrumbs = new Array();
-		for(i=0;i<myCrumbs.length;i++){
-			var ix = myCrumbs[i].split("---------")[0];
-			var nx = myCrumbs[i].split("---------")[1];
-			if(inode == ix){
-				break;
-			}
-			newCrumbs[i] = myCrumbs[i];
-		}
-		newCrumbs[newCrumbs.length] = inode + "---------" + name;
-		myCrumbs = newCrumbs;
-		dijit.byId('catFilter').attr('value', '');
+		var crumbsArray = new Array();
 
+		if (backOrForward) {
+		    crumbsArray = previousCrumbs;
+		} else {
+		    crumbsArray = myCrumbs;
+		}
+
+        for (i = 0; i < crumbsArray.length; i++) {
+            var ix = crumbsArray[i].split("---------")[0];
+            var nx = crumbsArray[i].split("---------")[1];
+            if(inode == ix) {
+                break;
+            }
+            newCrumbs[i] = crumbsArray[i];
+        }
+
+        newCrumbs[newCrumbs.length] = inode + "---------" + name;
+        if (backOrForward) {
+            previousCrumbs = newCrumbs;
+            myCrumbs = previousCrumbs;
+		} else {
+            myCrumbs = newCrumbs;
+		}
+
+        dijit.byId('catFilter').attr('value', '');
     }
 
     // drill down of a category, load the children, properties
     function drillDown(index) {
+        previousCrumbs = myCrumbs;
         actions = "breadcrums";
 
         var inode = grid.store.getValue(grid.getItem(index), 'inode');
@@ -508,6 +545,7 @@
 
     // roll up of a category, load the children, properties
     function rollUp(inode, name) {
+        previousCrumbs = myCrumbs;
         actions = "breadcrums";
 
         prepareCrumbs(inode, name);
