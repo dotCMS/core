@@ -85,10 +85,10 @@ public class LoginEditModeServlet extends HttpServlet {
 		request.getRequestDispatcher("/c").forward(request,response);
 	}
 
-    private String findAssetURI(Contentlet cont) throws DotStateException, DotDataException {
-        if(UtilMethods.isSet(cont.getMap().get("URL_MAP_FOR_CONTENT")))
+    private String findAssetURI(Contentlet cont) throws Throwable {
+        if(UtilMethods.isSet(cont.getMap().get("URL_MAP_FOR_CONTENT"))) {
             return cont.getMap().get("URL_MAP_FOR_CONTENT").toString();
-        else {
+        } else {
             HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(cont);
             return page.getURI();
         }
