@@ -463,7 +463,6 @@ public class StructureAjax {
             //Save the structure in order to update the modDate
             StructureFactory.saveStructure( structure );
 
-			//VirtualLinksCache.clearCache();
 			//String message = "message.structure.reorderfield";
 			//SessionMessages.add(request, "message",message);
 			return LanguageUtil.get(d.getCompanyId(),d.getLocale(), "message.structure.reorderfield");

@@ -160,7 +160,6 @@ public class Host extends Contentlet implements Permissionable,Treeable,Parentab
 		accepted.add(new PermissionSummary("add-children", "add-children-permission-description", PermissionAPI.PERMISSION_WRITE));
 		accepted.add(new PermissionSummary("edit", "edit-permission-description", PermissionAPI.PERMISSION_WRITE));
 		accepted.add(new PermissionSummary("publish", "publish-permission-description", PermissionAPI.PERMISSION_PUBLISH));
-		accepted.add(new PermissionSummary("create-virtual-link", "create-virtual-link-permission-description", PermissionAPI.PERMISSION_CREATE_VIRTUAL_LINKS));
 		accepted.add(new PermissionSummary("edit-permissions", "edit-permissions-permission-description", PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
 		return accepted;
 	}

@@ -4,7 +4,7 @@ function(dojo, aspect, dom, on, has, mouse, ready, win){
 	// module:
 	//		dojo/touch
 
-	var hasTouch = has("touch");
+	var hasTouch = false;
 
 	// TODO: get iOS version from dojo/sniff after #15827 is fixed
 	var ios4 = false;

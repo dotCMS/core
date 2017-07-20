@@ -123,10 +123,6 @@ public class TestShortyIdApi {
 		dc.addParam("relationship");
 		res = dc.loadObjectResults();
 		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "relationship" });
-		dc.setSQL(GET_INODE, 2);
-		dc.addParam("virtual_link");
-		res = dc.loadObjectResults();
-		builder.add(new String[] { res.get(1).get("inode").toString(), "inode", "virtual_link" });
 		this.expectedIds = builder.build();
 	}
 
