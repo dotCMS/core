@@ -69,25 +69,42 @@
 
     var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Syncronization")%>');
 
-    dojo.connect(dojo.global, "onhashchange", refresh);
+    dojo.subscribe("/dojo/hashchange", refresh);
 
 
-    function refresh() {
+    function refresh(hash) {
 
-        var hashReceived = decodeURIComponent(dojo.hash());
+        var hashReceived = hash;
         var inode = "0";
         var name = "<%= LanguageUtil.get(pageContext, "Top-Level") %>";
         var hashToSend = null;
+        var hashLevel = 0;
+        var queryObject;
 
         if(typeof hashReceived != "undefined" && hashReceived != '') {
             var query = hashReceived.substring(hashReceived.indexOf("?") + 1, hashReceived.length);
-            var queryObject = dojo.queryToObject(query);
+            queryObject = dojo.queryToObject(query);
             inode = queryObject.inode==''?0:queryObject.inode;
             name = queryObject.name;
             hashToSend = hashReceived;
+            hashLevel = queryObject.currentLevel;
+            dijit.byId('catFilter').attr('value', queryObject.q);
         }
 
-        buildCrumbs(inode, name);
+        if(hashLevel>currentLevel) {
+            buildCrumbsBackButton(oldInodeOrIdentifier, oldCatName);
+
+            if(hashToSend!=null) {
+                queryObject = dojo.queryToObject(hashToSend);
+                queryObject.inode = oldInodeOrIdentifier;
+                queryObject.name = oldCatName;
+			}
+            hashToSend = dojo.objectToQuery(queryObject);
+
+		} else {
+            buildCrumbsHash(inode, name);
+		}
+
         doSearchHash(hashToSend);
         refreshCrumbs();
 
@@ -99,7 +116,10 @@
     var currentCatName;  // inode of the category
     var lastTabSelected;
     var parentCats = new Array();
-
+    var currentLevel = 0;
+    var oldCrumbs;
+    var oldInodeOrIdentifier;
+    var oldCatName;
 
     // format the name column of the grid to be an <a> element
     var formatHref = function(value, index) {
@@ -148,7 +168,8 @@
     };
 
     function createStore(params) {
-        if (params == null) params = '';
+
+        params = params==null ? '' : '?' + params;
 
         myStore = new dojox.data.QueryReadStore({
             url: '/categoriesServlet' + convertStringToUnicode(params)
@@ -282,21 +303,31 @@
 
     // search handling
     function doSearch(reorder, importing) {
-        var params = dojo.byId("catFilter").value.trim();
-        params = "?donothing&inode="+currentInodeOrIdentifier+"&name="+currentCatName+"&q="+params;
+        var filter = dojo.byId("catFilter").value.trim();
+
+        var queryStringObject = {
+            currentLevel : currentLevel,
+			inode : currentInodeOrIdentifier,
+			name : currentCatName,
+			q : filter
+		}
+
         if(reorder) {
-            params = params + "&reorder=true";
+            queryStringObject.reorder = true;
         }
 
+        var queryString = dojo.objectToQuery(queryStringObject);
+
         grid.destroy(true);
-        createStore(params);
+        createStore(queryString);
         createGrid();
         grid.startup();
 
         if(!importing) {
-            dojo.hash(params);
+            dojo.hash(queryString);
         }
     }
+
 
     function doSearchHash(params)  {
         grid.destroy(true);
@@ -448,7 +479,25 @@
         refreshCrumbs();
     }
 
+    function buildCrumbsBackButton(inode, name) {
+        buildCrumbsFromArray(inode, name, oldCrumbs);
+    }
+
+    function buildCrumbsHash(inode, name) {
+        buildCrumbsFromArray(inode, name, myCrumbs);
+    }
+
     function buildCrumbs(inode, name) {
+        oldCrumbs = myCrumbs;
+        oldInodeOrIdentifier = currentInodeOrIdentifier;
+        oldCatName = currentCatName;
+        buildCrumbsFromArray(inode, name, myCrumbs);
+        dijit.byId('catFilter').attr('value', '');
+	}
+
+    function buildCrumbsFromArray(inode, name, crumbsArray) {
+        currentLevel = myCrumbs.length;
+
         dijit.byId("mainTabContainer").selectChild(dijit.byId("TabOne"));
         if(inode =="0"){
             currentInodeOrIdentifier="";
@@ -459,17 +508,16 @@
         currentCatName = name;
 
         var newCrumbs = new Array();
-        for(i=0;i<myCrumbs.length;i++){
-            var ix = myCrumbs[i].split("---------")[0];
-            var nx = myCrumbs[i].split("---------")[1];
+        for(i=0;i<crumbsArray.length;i++){
+            var ix = crumbsArray[i].split("---------")[0];
+            var nx = crumbsArray[i].split("---------")[1];
             if(inode == ix){
                 break;
             }
-            newCrumbs[i] = myCrumbs[i];
+            newCrumbs[i] = crumbsArray[i];
         }
         newCrumbs[newCrumbs.length] = inode + "---------" + name;
         myCrumbs = newCrumbs;
-        dijit.byId('catFilter').attr('value', '');
 	}
 
     // drill down of a category, load the children, properties
@@ -497,7 +545,6 @@
         dojo.byId("CatKey").value = key;
         dojo.byId("CatKeywords").value = keywords;
         dijit.byId('catFilter').attr('value', '');
-        doSearch();
     }
 
     // roll up of a category, load the children, properties
@@ -535,7 +582,6 @@
         dojo.byId("CatKey").value = key;
         dojo.byId("CatKeywords").value = keywords;
         dijit.byId('catFilter').attr('value', '');
-        doSearch();
 
     }
     // delete muliple or single category, via ajax
@@ -565,7 +611,7 @@
                         }
 
                         dia.hide();
-                        doSearch();
+                        doSearch(false, true);
                         grid.selection.clear();
                     }
                 });
@@ -633,7 +679,7 @@
         var keywords = dojo.byId(prefix+"CatKeywords").value;
         CategoryAjax.saveOrUpdateCategory(save, currentInodeOrIdentifier, name, velVar, key, keywords, {
             callback:function(result) {
-                doSearch();
+                doSearch(false, true);
                 grid.selection.clear();
 
                 var message = "";
