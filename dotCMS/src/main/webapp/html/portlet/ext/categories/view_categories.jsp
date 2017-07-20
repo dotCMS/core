@@ -169,11 +169,7 @@
 
     function createStore(params) {
 
-        if (params == null) {
-            params = '';
-        } else {
-            params = '?' + params;
-		}
+        params = params==null ? '' : '?' + params;
 
         myStore = new dojox.data.QueryReadStore({
             url: '/categoriesServlet' + convertStringToUnicode(params)
