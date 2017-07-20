@@ -16,7 +16,7 @@ import { LoginServiceMock } from '../../../test/login-service.mock';
 import { MessageService } from '../../../api/services/messages-service';
 import { MockMessageService } from '../../../test/message-service.mock';
 import { Observable } from 'rxjs/Observable';
-import { OverlayPanelModule } from 'primeng/primeng';
+import { OverlayPanelModule, ConfirmationService } from 'primeng/primeng';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 import { StringUtils } from '../../../api/util/string.utils';
@@ -87,8 +87,9 @@ describe('ContentTypesCreateComponent', () => {
                 { provide: MessageService, useValue: messageServiceMock },
                 {
                     provide: ActivatedRoute,
-                    useValue: {}
+                    useValue: {'params': Observable.from([{ id: '1234' }])}
                 },
+                ConfirmationService,
                 CrudService,
                 ContentTypesInfoService,
                 StringUtils

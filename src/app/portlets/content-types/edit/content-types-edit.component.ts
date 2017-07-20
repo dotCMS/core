@@ -8,6 +8,7 @@ import { CrudService } from '../../../api/services/crud';
 import { MessageService } from '../../../api/services/messages-service';
 import { Observable } from 'rxjs/Observable';
 import { StringUtils } from '../../../api/util/string.utils';
+import { ConfirmationService } from 'primeng/primeng';
 
 /**
  * Portlet component for edit content types
@@ -31,7 +32,7 @@ export class ContentTypesEditComponent extends BaseComponent {
 
     constructor(messageService: MessageService, private route: ActivatedRoute,
         private crudService: CrudService, public router: Router, private stringUtils: StringUtils,
-        private contentTypesInfoService: ContentTypesInfoService) {
+        private contentTypesInfoService: ContentTypesInfoService, private confirmationService: ConfirmationService) {
         super([
             'File',
             'Content',
@@ -39,6 +40,10 @@ export class ContentTypesEditComponent extends BaseComponent {
             'Persona',
             'Widget',
             'Page',
+            'message.structure.cantdelete',
+            'message.structure.delete.structure.and.content',
+            'Yes',
+            'No'
         ], messageService);
     }
 
@@ -52,6 +57,28 @@ export class ContentTypesEditComponent extends BaseComponent {
                 this.data = res;
                 return res;
             });
+        });
+    }
+
+    /**
+     * Delete a content type using the ID
+     * @param {any} $event
+     * @memberof ContentTypesEditComponent
+     */
+    public deleteContentType($event): void {
+        this.confirmationService.confirm({
+            accept: () => {
+                this.crudService.delete(`v1/contenttype/id/`, this.data.id)
+                    .subscribe((data) => {
+                        this.router.navigate(['../'], { relativeTo: this.route });
+                    });
+            },
+            header: this.i18nMessages[
+                'message.structure.cantdelete'
+            ],
+            message: this.i18nMessages[
+                'message.structure.delete.structure.and.content'
+            ],
         });
     }
 
@@ -71,4 +98,5 @@ export class ContentTypesEditComponent extends BaseComponent {
     private handleFormSubmissionResponse(res: any): void {
         this.form.resetForm();
     }
+
 }

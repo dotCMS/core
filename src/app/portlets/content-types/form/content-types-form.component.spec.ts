@@ -1,6 +1,6 @@
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, async } from '@angular/core/testing';
+import { ComponentFixture, async, fakeAsync, tick } from '@angular/core/testing';
 import { ContentTypesFormComponent } from './content-types-form.component';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DebugElement, SimpleChange } from '@angular/core';
@@ -16,12 +16,17 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { RequestMethod } from '@angular/http';
 import { SiteSelectorModule } from '../../../view/components/_common/site-selector/site-selector.module';
 import { SocketFactory } from '../../../api/services/protocol/socket-factory';
+import { Router, ActivatedRoute, Params } from '@angular/router';
 
 describe('ContentTypesFormComponent', () => {
     let comp: ContentTypesFormComponent;
     let fixture: ComponentFixture<ContentTypesFormComponent>;
     let de: DebugElement;
     let el: HTMLElement;
+    let deleteAction: any;
+    let mockRouter = {
+        navigate: jasmine.createSpy('navigate')
+    };
 
     beforeEach(async(() => {
 
@@ -59,6 +64,8 @@ describe('ContentTypesFormComponent', () => {
             providers: [
                 { provide: LoginService, useClass: LoginServiceMock },
                 { provide: MessageService, useValue: messageServiceMock },
+                { provide: ActivatedRoute, useValue: {'params': Observable.from([{ id: '1234' }])} },
+                { provide: Router, useValue: mockRouter },
                 DotcmsConfig,
                 SocketFactory
             ]
@@ -109,16 +116,6 @@ describe('ContentTypesFormComponent', () => {
         });
     }));
 
-    it('should focus on the name field on load', async(() => {
-        let nameDebugEl: DebugElement = fixture.debugElement.query(By.css('#content-type-form-name'));
-
-        spyOn(nameDebugEl.nativeElement, 'focus');
-
-        fixture.detectChanges();
-
-        expect(nameDebugEl.nativeElement.focus).toHaveBeenCalledTimes(1);
-    }));
-
     it('should have a button to expand/collapse the form', () => {
         let expandFormButton: DebugElement = fixture.debugElement.query(By.css('#custom-type-form-expand-button'));
         expect(expandFormButton).toBeDefined();
@@ -126,18 +123,82 @@ describe('ContentTypesFormComponent', () => {
 
     it('should call toogleForm method on action button click', () => {
         spyOn(comp, 'toggleForm');
-        let expandFormButton: DebugElement = fixture.debugElement.query(By.css('#content-type-form-expand-button'));
-        expandFormButton.triggerEventHandler('click', null);
+        comp.data = {
+            fields: [
+                {
+                    dataType: 'DATE_TIME',
+                    id: '123',
+                    indexed: true,
+                    name: 'Date 1'
+                }
+            ]
+        };
+        comp.ngOnChanges({
+            data: new SimpleChange(null, comp.data, true)
+        });
+        fixture.detectChanges();
+        let expandFormEditButton: DebugElement = fixture
+            .debugElement.query(By.css('.content-type__form-actions p-splitButton .ui-menu-list .ui-menuitem:first-child a'));
+
+        expandFormEditButton.nativeNode.click();
         expect(comp.toggleForm).toHaveBeenCalledTimes(1);
     });
 
+    it('should call delete method on action button click', () => {
+        comp.data = {
+            fields: [
+                {
+                    dataType: 'DATE_TIME',
+                    id: '123',
+                    indexed: true,
+                    name: 'Date 1'
+                }
+            ]
+        };
+        comp.ngOnChanges({
+            data: new SimpleChange(null, comp.data, true)
+        });
+        comp.onDelete.subscribe(() => this.action = true);
+        fixture.detectChanges();
+
+        let expandFormDeleteButton: DebugElement = fixture
+            .debugElement.query(By.css('.content-type__form-actions p-splitButton .ui-menu-list .ui-menuitem:nth-child(2) a'));
+
+        expandFormDeleteButton.nativeNode.click();
+        expect(true).toBe(this.action);
+    });
+
     it('should toggle formState property on action button click', () => {
-        let expandFormButton: DebugElement = fixture.debugElement.query(By.css('#content-type-form-expand-button'));
-        expandFormButton.triggerEventHandler('click', null);
+        comp.data = {
+            fields: [
+                {
+                    dataType: 'DATE_TIME',
+                    id: '123',
+                    indexed: true,
+                    name: 'Date 1'
+                }
+            ]
+        };
+        comp.ngOnChanges({
+            data: new SimpleChange(null, comp.data, true)
+        });
+        fixture.detectChanges();
+        let expandFormButton: DebugElement = fixture
+            .debugElement.query(By.css('.content-type__form-actions p-splitButton .ui-menu-list .ui-menuitem:first-child a'));
+        expandFormButton.nativeNode.click();
         expect(comp.formState).toBe('expanded');
-        expandFormButton.triggerEventHandler('click', null);
+        expandFormButton.nativeNode.click();
         expect(comp.formState).toBe('collapsed');
     });
+
+    it('should toggle formState when the user focus on the name field', async(() => {
+        let nameDebugEl: DebugElement = fixture.debugElement.query(By.css('#content-type-form-name'));
+        spyOn(nameDebugEl.nativeElement, 'focus');
+        nameDebugEl.nativeNode.focus();
+        fixture.detectChanges();
+        expect(nameDebugEl.nativeElement.focus).toHaveBeenCalledTimes(1);
+        expect(comp.formState).toBe('collapsed');
+    }));
 
     it('form should be invalid by default', () => {
         expect(comp.form.valid).toBeFalsy();

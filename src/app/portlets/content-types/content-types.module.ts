@@ -19,7 +19,9 @@ import { RoutingPrivateAuthService } from '../../api/services/routing-private-au
 import { SiteSelectorModule } from '../../view/components/_common/site-selector/site-selector.module';
 import { SiteService } from '../../api/services/site-service';
 import { StringUtils } from '../../api/util/string.utils';
-import { TabViewModule, OverlayPanelModule, DropdownModule, ButtonModule, InputTextModule } from 'primeng/primeng';
+import { DragulaModule } from 'ng2-dragula';
+import { DragulaService } from 'ng2-dragula';
+import { FieldService, FieldDragDropService } from './fields/service';
 import {
     ContentTypesFieldsListComponent,
     ContentTypeFieldsDropZoneComponent,
@@ -27,9 +29,15 @@ import {
     ContentTypesFieldDragabbleItemComponent,
     ContentTypeFieldsRowListComponent
 } from './fields';
-import { DragulaModule } from 'ng2-dragula';
-import { DragulaService } from 'ng2-dragula';
-import { FieldService, FieldDragDropService } from './fields/service';
+import {
+    TabViewModule,
+    OverlayPanelModule,
+    DropdownModule,
+    ButtonModule,
+    InputTextModule,
+    SplitButtonModule,
+    ConfirmDialogModule
+} from 'primeng/primeng';
 
 @NgModule({
     declarations: [
@@ -53,9 +61,11 @@ import { FieldService, FieldDragDropService } from './fields/service';
         ContentTypesRoutingModule,
         DragulaModule,
         DropdownModule,
+        ConfirmDialogModule,
         FieldValidationMessageModule,
         FormsModule,
         InputTextModule,
+        SplitButtonModule,
         ListingDataTableModule,
         OverlayPanelModule,
         ReactiveFormsModule,

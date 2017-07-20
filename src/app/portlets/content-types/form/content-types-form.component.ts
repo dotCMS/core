@@ -1,9 +1,11 @@
 import { BaseComponent } from '../../../view/components/_common/_base/base-component';
+import { Router, ActivatedRoute, Params } from '@angular/router';
 import { Component, ViewChild, Input, Output, EventEmitter, Renderer2 } from '@angular/core';
 import { DotcmsConfig } from '../../../api/services/system/dotcms-config';
 import { MessageService } from '../../../api/services/messages-service';
 import { NgForm, FormGroup, FormBuilder, Validators, FormControl } from '@angular/forms';
 import { Observable } from 'rxjs/Observable';
+import { SplitButtonModule, MenuItem, ConfirmationService } from 'primeng/primeng';
 import { SelectItem } from 'primeng/components/common/api';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { SiteSelectorComponent } from '../../../view/components/_common/site-selector/site-selector.component';
@@ -44,12 +46,14 @@ export class ContentTypesFormComponent extends BaseComponent {
     @Input() type: string;
     @Output() onCancel: EventEmitter<any> = new EventEmitter();
     @Output() onSubmit: EventEmitter<any> = new EventEmitter();
+    @Output() onDelete: EventEmitter<any> = new EventEmitter();
 
     @ViewChild('contentTypesForm') contentTypesForm: NgForm;
     public actionButtonLabel: string;
     public form: FormGroup;
     public formState = 'collapsed';
     public submitAttempt = false;
+    public formOptions: MenuItem[];
     private dateVarOptions: SelectItem[] = [];
     private workflowOptions: SelectItem[] = [];
 
@@ -72,7 +76,9 @@ export class ContentTypesFormComponent extends BaseComponent {
             'description',
             'name',
             'save',
-            'update'
+            'update',
+            'edit',
+            'delete'
         ], messageService);
     }
 
@@ -81,6 +87,18 @@ export class ContentTypesFormComponent extends BaseComponent {
 
         this.messageService.messageMap$.subscribe(res => {
             this.actionButtonLabel = this.isEditMode ? this.i18nMessages['update'] : this.i18nMessages['save'];
+            this.formOptions = [
+                {
+                    command: this.toggleForm.bind(this),
+                    label: this.i18nMessages['edit']
+                },
+                {
+                    command: () => {
+                        this.onDelete.emit();
+                    },
+                    label: this.i18nMessages['delete']
+                }
+            ];
         });
 
         this.dotcmsConfig.getConfig().subscribe(this.updateFormControls.bind(this));
@@ -105,18 +123,6 @@ export class ContentTypesFormComponent extends BaseComponent {
         if (changes.type && changes.type.currentValue === 'content') {
             this.addContentSpecificFields();
         }
-    }
-
-    ngAfterViewInit(): void {
-        let nameEl = this.renderer.selectRootElement('#content-type-form-name');
-        nameEl.focus();
-
-        Observable.fromEvent(nameEl, 'keyup')
-            .map((event: KeyboardEvent) => event.target)
-            .debounceTime(250)
-            .subscribe((target: EventTarget) => {
-                this.handleNameFielEvent(target);
-            });
     }
 
     /**
@@ -217,13 +223,6 @@ export class ContentTypesFormComponent extends BaseComponent {
         }
         if (field === 'expireDateVar' && publishDateVar.value === $event.value) {
             publishDateVar.patchValue(null);
-        }
-    }
-
-    private handleNameFielEvent(el: EventTarget): void {
-        let value: string = (<HTMLInputElement> el).value;
-        if (!value && this.formState === 'expanded' || value && value.length && this.formState === 'collapsed') {
-            this.toggleForm();
         }
     }
 

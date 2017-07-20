@@ -6,10 +6,17 @@
         [name]="contentTypeName | async"
         [icon]="contentTypeIcon"
         (onSubmit)="handleFormSubmit($event)"
-        (onCancel)="router.navigate(['../'], { relativeTo: route })">
+        (onCancel)="router.navigate(['../'], { relativeTo: route })"
+        (onDelete)="deleteContentType($event)">
     </content-types-form>
 
     <content-type-fields-drop-zone *ngIf="data && data.fields"
                                    [fields]="data.fields">
                                 </content-type-fields-drop-zone>
 </content-type-layout>
+<p-confirmDialog width="425" #cd>
+    <p-footer>
+        <button type="button" pButton [label]="i18nMessages['No']" (click)="cd.reject()"></button>
+        <button type="button" pButton [label]="i18nMessages['Yes']" (click)="cd.accept()"></button>
+    </p-footer>
+</p-confirmDialog>

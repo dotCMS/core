@@ -8,13 +8,13 @@
             <div class="ui-g-6">
                 <div class="form__group content-type__form-title">
                     <i class="fa" [ngClass]="icon"></i>
-                    <input pInputText type="text" id="content-type-form-name" [placeholder]="name ? name + ' ' + i18nMessages['name'] : ''" name="name"
+                    <input pInputText type="text" id="content-type-form-name" (focus)="formState === 'collapsed' && toggleForm()" [placeholder]="name ? name + ' ' + i18nMessages['name'] : ''" name="name"
                         formControlName="name" />
                     <field-validation-message message="Name is required" [submitted]="submitAttempt" [field]="form.controls.name"></field-validation-message>
                 </div>
             </div>
             <div class="ui-g-6 content-type__form-actions">
-                <button id="content-type-form-expand-button" type="button" tabindex="-1" pButton primary iconButton icon="fa-pencil" (click)="toggleForm()"></button>
+                <p-splitButton iconButton *ngIf="data" [model]="formOptions"></p-splitButton>
             </div>
         </div>
     </div>
@@ -69,6 +69,7 @@
             </div>
         </div>
         <div class="form__buttons">
+            <button pButton type="button" flat id="content-type-form-collapse" label="Collapse" (click)="toggleForm()"></button>
             <button pButton type="button" flat id="content-type-form-cancel" label="{{i18nMessages['cancel']}}" (click)="onCancelHandle($event)"></button>
             <button pButton type="submit" id="content-type-form-submit" label="{{actionButtonLabel}}"></button>
         </div>
