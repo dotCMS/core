@@ -14,4 +14,4 @@
     >
 </searchable-dropdown>
 
-<span *ngIf="totalRecords == 1" class="site-selector__title">{{currentSite ? currentSite.hostname : '' | async}}</span>
+<span *ngIf="totalRecords == 1" class="site-selector__title">{{currentSite ? currentSite.value.hostname : '' | async}}</span>

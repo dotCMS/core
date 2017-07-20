@@ -1,6 +1,6 @@
 import { Component, ViewEncapsulation, ViewChild, Output, EventEmitter } from '@angular/core';
 import { SiteService, Site } from '../../../api/services/site-service';
-import { SiteSelectorComponent } from '../site-selector/dot-site-selector.component';
+import { SiteSelectorComponent } from '../_common/site-selector/site-selector.component';
 
 @Component({
     encapsulation: ViewEncapsulation.None,

@@ -144,6 +144,15 @@ export class PaginatorService {
     }
 
     /**
+     * Request the current page
+     * @returns {Observable<any[]>}
+     * @memberof PaginatorService
+     */
+    public getCurrentPage(): Observable<any[]> {
+        return this.getPage(this.currentPage);
+    }
+
+    /**
      * Request the next page
      * @returns {Observable<any[]>}
      * @memberof PaginatorService

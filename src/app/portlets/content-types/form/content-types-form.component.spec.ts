@@ -14,7 +14,7 @@ import { MockMessageService } from '../../../test/message-service.mock';
 import { Observable } from 'rxjs/Observable';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RequestMethod } from '@angular/http';
-import { SiteSelectorModule } from '../../../view/components/site-selector/dot-site-selector.module';
+import { SiteSelectorModule } from '../../../view/components/_common/site-selector/site-selector.module';
 import { SocketFactory } from '../../../api/services/protocol/socket-factory';
 
 describe('ContentTypesFormComponent', () => {

@@ -9,16 +9,16 @@ import {
     SimpleChanges
 } from '@angular/core';
 import { AutoComplete } from 'primeng/primeng';
-import { BaseComponent } from '../_common/_base/base-component';
+import { BaseComponent } from '../_base/base-component';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { DotcmsConfig } from '../../../api/services/system/dotcms-config';
-import { IframeOverlayService } from '../../../api/services/iframe-overlay-service';
+import { DotcmsConfig } from '../../../../api/services/system/dotcms-config';
+import { IframeOverlayService } from '../../../../api/services/iframe-overlay-service';
 import { MessageService } from '../../../api/services/messages-service';
-import { Observable } from 'rxjs/Rx';
-import { PaginatorService } from '../../../api/services/paginator';
-import { SearchableDropdownComponent } from '../_common/searchable-dropdown/component';
-import { Site } from '../../../api/services/site-service';
-import { SiteService } from '../../../api/services/site-service';
+import { PaginatorService } from '../../../../api/services/paginator';
+import { SearchableDropdownComponent } from '../searchable-dropdown/component';
+import { Site } from '../../../../api/services/site-service';
+import { SiteService } from '../../../../api/services/site-service';
+import { Observable } from 'rxjs/Observable';
 
 /**
  * It is dropdown of sites, it handle pagination and global search
@@ -37,9 +37,9 @@ import { SiteService } from '../../../api/services/site-service';
             useExisting: forwardRef(() => SiteSelectorComponent)
         }
     ],
-    selector: 'dot-site-selector-component',
-    styles: [require('./dot-site-selector.component.scss')],
-    templateUrl: 'dot-site-selector.component.html'
+    selector: 'site-selector-component',
+    styles: [require('./site-selector.component.scss')],
+    templateUrl: 'site-selector.component.html',
 })
 export class SiteSelectorComponent implements ControlValueAccessor {
     private static readonly MIN_CHARECTERS_TO_SERACH = 3;
@@ -67,7 +67,8 @@ export class SiteSelectorComponent implements ControlValueAccessor {
 
     ngOnInit(): void {
         this.paginationService.url = 'v1/site';
-        this.paginateSites();
+
+        this.getSitesList();
 
         if (this.siteService.currentSite) {
             this.currentSite = Observable.of(this.siteService.currentSite);
@@ -78,6 +79,21 @@ export class SiteSelectorComponent implements ControlValueAccessor {
                 this.propagateChange(site.identifier);
             });
         }
+
+        this.siteService.refreshSites$.subscribe(site => this.handleSitesRefresh());
+    }
+
+    /**
+     * Manage the sites refresh when a event happen
+     * @memberof SiteSelectorComponent
+     */
+    handleSitesRefresh(): void {
+        this.paginationService.getCurrentPage().subscribe((items) => {
+            // items.splice(0) is used to return a new object and trigger the change detection in angular
+            this.sitesCurrentPage = items.splice(0);
+            this.totalRecords = this.paginationService.totalRecords;
+            this.currentSite = Observable.of(this.siteService.currentSite);
+        });
     }
 
     /**
@@ -86,7 +102,7 @@ export class SiteSelectorComponent implements ControlValueAccessor {
      * @memberof SiteSelectorComponent
      */
     handleFilterChange(filter): void {
-        this.paginateSites(filter);
+        this.getSitesList(filter);
     }
 
     /**
@@ -95,7 +111,7 @@ export class SiteSelectorComponent implements ControlValueAccessor {
      * @memberof SiteSelectorComponent
      */
     handlePageChange(event): void {
-        this.paginateSites(event.filter, event.first);
+        this.getSitesList(event.filter, event.first);
     }
 
     /**
@@ -104,10 +120,11 @@ export class SiteSelectorComponent implements ControlValueAccessor {
      * @param {number} [page=1]
      * @memberof SiteSelectorComponent
      */
-    paginateSites(filter = '', offset = 0): void {
+    getSitesList(filter = '',  offset = 0): void {
         this.paginationService.filter = filter;
-        this.paginationService.getWithOffset(offset).subscribe(items => {
-            this.sitesCurrentPage = items;
+        this.paginationService.getWithOffset(offset).subscribe( items => {
+            // items.splice(0) is used to return a new object and trigger the change detection in angular
+            this.sitesCurrentPage = items.splice(0);
             this.totalRecords = this.totalRecords | this.paginationService.totalRecords;
         });
     }

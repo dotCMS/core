@@ -1,22 +1,22 @@
 import { ComponentFixture, async } from '@angular/core/testing';
 import { DebugElement, ElementRef } from '@angular/core';
-import { SiteSelectorComponent } from './dot-site-selector.component';
+import { SiteSelectorComponent } from './site-selector.component';
 import { By } from '@angular/platform-browser';
-import { DOTTestBed } from '../../../test/dot-test-bed';
-import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
+import { DOTTestBed } from '../../../../test/dot-test-bed';
+import { SearchableDropDownModule } from '../searchable-dropdown/searchable-dropdown.module';
 import { OverlayPanelModule, ButtonModule, InputTextModule, PaginatorModule } from 'primeng/primeng';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { MessageService } from '../../../api/services/messages-service';
-import { MockMessageService } from '../../../test/message-service.mock';
-import { SiteServiceMock } from '../../../test/site-service.mock';
-import { IframeOverlayService } from '../../../api/services/iframe-overlay-service';
-import { SiteService } from '../../../api/services/site-service';
+import { MessageService } from '../../../../api/services/messages-service';
+import { MockMessageService } from '../../../../test/message-service.mock';
+import { SiteServiceMock } from '../../../../test/site-service.mock';
+import { IframeOverlayService } from '../../../../api/services/iframe-overlay-service';
+import { SiteService } from '../../../../api/services/site-service';
 import { Observable } from 'rxjs/Observable';
-import { DotcmsConfig } from '../../../api/services/system/dotcms-config';
-import { SearchableDropdownComponent } from '../_common/searchable-dropdown/component/searchable-dropdown.component';
+import { DotcmsConfig } from '../../../../api/services/system/dotcms-config';
+import { SearchableDropdownComponent } from '../searchable-dropdown/component/searchable-dropdown.component';
 import { fakeAsync, tick } from '@angular/core/testing';
-import { PaginatorService } from '../../../api/services/paginator';
+import { PaginatorService } from '../../../../api/services/paginator';
 
 describe('Site Selector Component', () => {
 
@@ -46,7 +46,7 @@ describe('Site Selector Component', () => {
     el = de.nativeElement;
   }));
 
-  it('Should call paginateSites', () => {
+  it('Should call getSitesList', () => {
     let site1 = {
       identifier: 1,
       name: 'Site 1'
@@ -66,8 +66,27 @@ describe('Site Selector Component', () => {
     comp.ngOnInit();
 
     expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
-
   });
+
+  it('Should call refresh if a event happen', async(() => {
+    let site1 = {
+      identifier: 1,
+      name: 'Site 1'
+    };
+
+    let site2 = {
+      identifier: 2,
+      name: 'Site 2'
+    };
+
+    let siteService = de.injector.get(SiteService);
+    let spy = spyOn(siteService, 'refreshSites$').and.returnValue(Observable.of([site1, site2]));
+
+    comp.ngOnInit();
+    fixture.detectChanges();
+
+    expect(spy.calls.any()).toEqual(false);
+  }));
 
   it('Should change Page', fakeAsync(() => {
 
@@ -89,7 +108,7 @@ describe('Site Selector Component', () => {
     searchableDropdownComponent.pageChange.emit({
       filter: filter,
       first: 10,
-      page: 2,
+      page: page,
       pageCount: 10,
       rows: 0
     });

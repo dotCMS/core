@@ -13,6 +13,7 @@ import { DotcmsEventsService } from './dotcms-events-service';
 import { DotcmsEventsServiceMock } from '../../test/dotcms-events-service.mock';
 import { LoginServiceMock } from '../../test/login-service.mock';
 import { SiteService, Site } from './site-service';
+import { Observable } from "rxjs/Observable";
 
 describe('Site Service', () => {
     let currentSite: Site =  {
@@ -99,10 +100,11 @@ describe('Site Service', () => {
                     identifier: '5'
                 }
             },
-            eventType: 'eventType'
+            eventType: 'ARCHIVE_SITE'
         };
 
         dotcmsEventsService.tiggerSubscribeTo('ARCHIVE_SITE', data);
+        tick();
         this.lastPaginateSiteConnection.mockRespond(new Response(new ResponseOptions({
             body: JSON.stringify({
                 entity: [
@@ -112,18 +114,34 @@ describe('Site Service', () => {
         })));
         respondSwitchSiteRequest.bind(this)();
 
-        tick();
         expect(newCurrentSite).toEqual(this.siteService.currentSite);
     }));
 
-    function respondSwitchSiteRequest(): void {
-        this.lastSwitchSiteConnection.mockRespond(new Response(new ResponseOptions({
-            body: JSON.stringify({
-                entity: {
+    it('should refresh sites when an event happend', fakeAsync(() => {
+        let events: string[] = ['SAVE_SITE', 'PUBLISH_SITE', 'UPDATE_SITE_PERMISSIONS', 'UN_ARCHIVE_SITE', 'UPDATE_SITE', 'ARCHIVE_SITE'];
+        let dotcmsEventsService: DotcmsEventsServiceMock = this.injector.get(DotcmsEventsService);
+        let siteService = this.injector.get(SiteService);
+        let data = {
+            data: {
+                data: {
+                    identifier: '5'
                 }
-            })
-        })));
-    }
+            },
+            eventType: 'ARCHIVE_SITE'
+        };
+
+        this.siteService.switchSite(currentSite);
+
+        respondSwitchSiteRequest.bind(this)();
+
+        spyOn(siteService, 'siteEventsHandler');
+
+        dotcmsEventsService.triggerSubscribeToEvents(events, data);
+
+        tick();
+
+        expect(siteService.siteEventsHandler).toHaveBeenCalledWith(data);
+    }));
 
     it('get a site by id', () => {
         this.siteService.getSiteById('123').subscribe(res => {
@@ -141,4 +159,13 @@ describe('Site Service', () => {
             })
         })));
     });
+
+    function respondSwitchSiteRequest(): void {
+        this.lastSwitchSiteConnection.mockRespond(new Response(new ResponseOptions({
+            body: JSON.stringify({
+                entity: {
+                }
+            })
+        })));
+    }
 });

@@ -16,7 +16,7 @@ import { MessageService } from '../../api/services/messages-service';
 import { NgModule } from '@angular/core';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { RoutingPrivateAuthService } from '../../api/services/routing-private-auth-service';
-import { SiteSelectorModule } from '../../view/components/site-selector/dot-site-selector.module';
+import { SiteSelectorModule } from '../../view/components/_common/site-selector/site-selector.module';
 import { SiteService } from '../../api/services/site-service';
 import { StringUtils } from '../../api/util/string.utils';
 import { TabViewModule, OverlayPanelModule, DropdownModule, ButtonModule, InputTextModule } from 'primeng/primeng';

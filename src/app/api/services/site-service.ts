@@ -17,8 +17,9 @@ export class SiteService {
     private sitesCounter: number;
     private selectedSite: Site;
     private urls: any;
-
+    private events: string[] = ['SAVE_SITE', 'PUBLISH_SITE', 'UPDATE_SITE_PERMISSIONS', 'UN_ARCHIVE_SITE', 'UPDATE_SITE', 'ARCHIVE_SITE'];
     private _switchSite$: Subject<Site> = new Subject<Site>();
+    private _refreshSites$: Subject<Site> = new Subject<Site>();
 
     constructor(loginService: LoginService, dotcmsEventsService: DotcmsEventsService,
                 private coreWebService: CoreWebService, private loggerService: LoggerService) {
@@ -29,17 +30,49 @@ export class SiteService {
             switchSiteUrl: 'v1/site/switch'
         };
 
-        dotcmsEventsService.subscribeTo('ARCHIVE_SITE').subscribe(eventTypeWrapper => {
-            this.loggerService.debug('Capturing Site event', eventTypeWrapper.eventType, eventTypeWrapper.data);
+        dotcmsEventsService.subscribeToEvents(['ARCHIVE_SITE', 'UPDATE_SITE']).subscribe((data) => this.eventResponse(data));
 
-            let siteToExclude = eventTypeWrapper.data.data.identifier;
-
-            if (siteToExclude === this.selectedSite.identifier) {
-                this.getOneSite().subscribe(site => this.switchSite(site));
-            }
-        });
+        dotcmsEventsService.subscribeToEvents(this.events).subscribe((data) => this.siteEventsHandler(data));
 
         loginService.watchUser(this.loadCurrentSite.bind(this));
+    }
+
+    /**
+     * Manage the response when an event happen
+     * @param {void} eventTypeWrapper
+     * @returns {*}
+     * @memberof SiteService
+     */
+    eventResponse(eventTypeWrapper): void {
+        this.loggerService.debug('Capturing Site event', eventTypeWrapper.eventType, eventTypeWrapper.data);
+        // TODO the backend needs a change in the response 'data.data'.
+        let siteIdentifier = eventTypeWrapper.data.data.identifier;
+        if (siteIdentifier === this.selectedSite.identifier) {
+            if (eventTypeWrapper.eventType === 'ARCHIVE_SITE') {
+                this.getOneSite().subscribe( site => this.switchSite(site));
+            } else {
+                this.loadCurrentSite();
+            }
+        }
+    }
+
+    /**
+     * Refresh the sites list if a event happen
+     * @param {any} eventTypeWrapper
+     * @memberof SiteService
+     */
+    siteEventsHandler(eventTypeWrapper): void {
+        this._refreshSites$.next(eventTypeWrapper.data.data);
+    }
+
+    /**
+     * Observable trigger when an site event happens
+     * @readonly
+     * @type {Observable<Site>}
+     * @memberof SiteService
+     */
+    get refreshSites$(): Observable<Site> {
+        return this._refreshSites$.asObservable();
     }
 
     /**

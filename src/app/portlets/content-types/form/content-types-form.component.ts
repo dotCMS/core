@@ -6,7 +6,7 @@ import { NgForm, FormGroup, FormBuilder, Validators, FormControl } from '@angula
 import { Observable } from 'rxjs/Observable';
 import { SelectItem } from 'primeng/components/common/api';
 import { trigger, state, style, transition, animate } from '@angular/animations';
-import { SiteSelectorComponent } from '../../../view/components/site-selector/dot-site-selector.component';
+import { SiteSelectorComponent } from '../../../view/components/_common/site-selector/site-selector.component';
 
 /**
  * Form component to create or edit content types
