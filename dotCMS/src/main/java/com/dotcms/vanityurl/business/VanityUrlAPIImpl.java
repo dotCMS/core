@@ -29,6 +29,8 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.regex.Matcher;
 
+import org.elasticsearch.indices.IndexMissingException;
+
 /**
  * Implementation class for the {@link VanityUrlAPI}.
  *
@@ -290,37 +292,59 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
      * @param user to use in the ES search
      * @return A list of VanityURLs
      */
-    private List<VanityUrl> searchAndPopulate(final String luceneQuery, final User user) {
+	private List<VanityUrl> searchAndPopulate(final String luceneQuery, final User user) {
 
-        final ImmutableList.Builder<VanityUrl> results = new ImmutableList.Builder();
-        final PriorityQueue<VanityUrl> vanityUrls;
-        List<VanityUrl> vanityUrlsToReturn = Collections.emptyList();
+		final ImmutableList.Builder<VanityUrl> results = new ImmutableList.Builder();
+		final PriorityQueue<VanityUrl> vanityUrls;
+		List<VanityUrl> vanityUrlsToReturn = Collections.emptyList();
 
-        try {
-            final List<Contentlet> contentResults = contentletAPI
-                    .search(luceneQuery, 0, 0, StringPool.BLANK, user, false);
+		try {
+			final List<Contentlet> contentResults = contentletAPI.search(luceneQuery, 0, 0, StringPool.BLANK, user,
+					false);
 
-            //Verify if we have something to process
-            if (null == contentResults || contentResults.isEmpty()) {
-                return results.build();
-            }
+			// Verify if we have something to process
+			if (null == contentResults || contentResults.isEmpty()) {
+				return results.build();
+			}
 
-            vanityUrls = new PriorityQueue<>(contentResults.size(),
-                    (vanity1, vanity2) -> vanity1.getOrder() - vanity2.getOrder());
+			vanityUrls = new PriorityQueue<>(contentResults.size(),
+					(vanity1, vanity2) -> vanity1.getOrder() - vanity2.getOrder());
 
-            contentResults.stream().forEach((Contentlet con) -> {
-                VanityUrl vanityUrl = getVanityUrlFromContentlet(con);
-                addToVanityURLCache(vanityUrl);
-                vanityUrls.offer(vanityUrl);
-            });
+			contentResults.stream().forEach((Contentlet con) -> {
+				VanityUrl vanityUrl = getVanityUrlFromContentlet(con);
+				addToVanityURLCache(vanityUrl);
+				vanityUrls.offer(vanityUrl);
+			});
 
-            vanityUrlsToReturn = results.addAll(vanityUrls).build();
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this, "Error searching for active Vanity URLs [" + luceneQuery + "]", e);
-        }
+			vanityUrlsToReturn = results.addAll(vanityUrls).build();
+		}
+		catch (IndexMissingException e){
+			/*
+			 * We catch this exception in order to avoid to stop the
+			 * initialization of dotCMS if for some reason at this point we
+			 * don't have indexes.
+			 */
+			Logger.error(this, "Error when initializing Vanity URLs, no index found ", e);
+		}
+		catch (DotDataException | DotSecurityException e ){
+			Logger.error(this, "Error searching for active Vanity URLs [" + luceneQuery + "]", e);
+		}
+		catch (Exception e){
+			if ( e.getCause() instanceof IndexMissingException){
+				/*
+				 * We catch this exception in order to avoid to stop the
+				 * initialization of dotCMS if for some reason at this point we
+				 * don't have indexes.
+				 */
+				Logger.error(this, "Error when initializing Vanity URLs, no index found ", e);
+			}else{
+				throw new DotRuntimeException("Error searching and populating the Vanity URL Cache", e);
+			}
+		}
 
-        return vanityUrlsToReturn;
-    }
+
+		return vanityUrlsToReturn;
+	}
 
     @Override
     public void validateVanityUrl(Contentlet contentlet) {
