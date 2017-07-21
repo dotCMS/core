@@ -11,8 +11,9 @@
     </content-types-form>
 
     <content-type-fields-drop-zone *ngIf="data && data.fields"
-                                   [fields]="data.fields">
-                                </content-type-fields-drop-zone>
+                                   [fields]="data.fields"
+                                   (saveFields)="saveFields($event)">
+    </content-type-fields-drop-zone>
 </content-type-layout>
 <p-confirmDialog width="425" #cd>
     <p-footer>

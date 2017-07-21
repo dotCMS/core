@@ -8,6 +8,8 @@ import { MessageService } from '../../../api/services/messages-service';
 import { Observable } from 'rxjs/Observable';
 import { StringUtils } from '../../../api/util/string.utils';
 import { ContentTypesFormComponent } from '../form';
+import { Field } from '../fields';
+import { FieldService } from '../fields/service';
 import { BaseComponent } from '../../../view/components/_common/_base/base-component';
 
 /**
@@ -23,14 +25,17 @@ import { BaseComponent } from '../../../view/components/_common/_base/base-compo
 })
 export class ContentTypesCreateComponent extends BaseComponent {
     @ViewChild('form') form: ContentTypesFormComponent;
-    contentTypeName: Observable<string>;
-    contentTypeType: string;
-    contentTypeIcon: string;
+    private contentTypeName: Observable<string>;
+    private contentTypeType: string;
+    private contentTypeIcon: string;
+    private contentTypeId: string;
+    private fields: Field[] = [];
 
     constructor(
         messageService: MessageService,
         private contentTypesInfoService: ContentTypesInfoService,
         private crudService: CrudService,
+        private fieldService: FieldService,
         private loginService: LoginService,
         private route: ActivatedRoute,
         public router: Router,
@@ -76,10 +81,19 @@ export class ContentTypesCreateComponent extends BaseComponent {
 
         this.crudService
             .postData('v1/contenttype', contentTypeData)
-            .subscribe(this.handleFormSubmissionResponse.bind(this));
+            .subscribe(resp => this.handleFormSubmissionResponse(resp));
     }
 
-    private handleFormSubmissionResponse(res: any): void {
+    /**
+     * Save fields
+     * @param fieldsToSave Fields to be save
+     */
+    saveFields(fieldsToSave: Field[]): void {
+        this.fieldService.saveFields(this.contentTypeId, fieldsToSave).subscribe(fields => this.fields = fields);
+    }
+
+    private handleFormSubmissionResponse(res: ContentType[]): void {
+        this.contentTypeId = res[0].id;
         this.form.resetForm();
     }
 

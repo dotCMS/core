@@ -5,6 +5,7 @@ import { ContentTypeFieldsDropZoneComponent } from './';
 import { By } from '@angular/platform-browser';
 import { Field, FieldRow } from '../';
 import { DragulaModule } from 'ng2-dragula';
+import { FieldDragDropService } from '../service';
 
 @Component({
     selector: 'content-type-fields-row',
@@ -31,6 +32,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 DragulaModule
             ],
             providers: [
+                FieldDragDropService
             ]
         });
 
@@ -54,24 +56,30 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
     it('should has a fields container', () => {
 
-        let fields = [
+        let fields: Field[] = [
             {
-                dataType: 'text'
+                clazz: 'text',
+                name: 'field 1'
             },
             {
-                dataType: 'text'
+                clazz: 'text',
+                name: 'field 2'
             },
             {
-                dataType: 'TAB_DIVIDER'
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
+                name: 'field 3'
             },
             {
-                dataType: 'text'
+                clazz: 'text',
+                name: 'field 4'
             },
             {
-                dataType: 'LINE_DIVIDER'
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField',
+                name: 'field 5'
             },
             {
-                dataType: 'text'
+                clazz: 'text',
+                name: 'field 6'
             },
         ];
 

@@ -1,6 +1,7 @@
-import { Component, SimpleChanges, Input } from '@angular/core';
-import { FieldService } from '../service';
-import { FieldRow, Field, FieldColumn } from '../';
+import { Component, SimpleChanges, Input, Output, EventEmitter } from '@angular/core';
+import { FieldService, FieldDragDropService } from '../service';
+import { FieldRow, Field, FieldColumn, TAB_DIVIDER, LINE_DIVIDER } from '../';
+
 /**
  * Display all the Field Types
  *
@@ -14,82 +15,84 @@ import { FieldRow, Field, FieldColumn } from '../';
 })
 export class ContentTypeFieldsDropZoneComponent {
 
-    private static readonly TAB_DIVIDER: Field = {
-        dataType: 'TAB_DIVIDER'
-    };
-
-    private static readonly LINE_DIVIDER: Field = {
-        dataType: 'LINE_DIVIDER'
-    };
-
     fieldRows: FieldRow[] = [];
     @Input() fields: Field[];
+    @Output('saveFields') saveFieldsEvent = new EventEmitter<Field[]>();
+
+    constructor(private fieldDragDropService: FieldDragDropService) {
+
+    }
+
+    ngOnInit(): void {
+        this.fieldDragDropService.fieldDrop$.subscribe(() => this.saveFields());
+    }
 
     ngOnChanges(changes: SimpleChanges): void {
+
         if (changes.fields.currentValue) {
             let fields = changes.fields.currentValue;
+
             if (Array.isArray(fields)) {
-                this.fieldRows = this.getRowFields(changes.fields.currentValue);
+                this.fieldRows = this.getRowFields(fields);
             } else {
                 throw 'Fields attribute must be a Array';
             }
         }
     }
 
-    updateJson(): void {
-        let fields: Field[] = this.getFields();
+    /**
+     * Emit the saveField event, this method is call when a Field is dropped into the content type drop zone
+     */
+    saveFields(): void {
+        this.saveFieldsEvent.emit(this.getFields());
+    }
+
+    private splitFieldsByLineDiveder(fields: Field[]): Field[][] {
+        let result: Field[][] = [];
+        let currentFields: Field[] = [];
+
+        fields.map(field => {
+            if (field.clazz === LINE_DIVIDER.clazz) {
+                result.push(currentFields);
+                currentFields = [];
+            }
+            currentFields.push(field);
+        });
+
+        if (currentFields.length) {
+            result.push(currentFields);
+        }
+
+        return result;
     }
 
     private getRowFields(fields: Field[]): FieldRow[] {
         let fieldRows: FieldRow[] = [];
-        let currentFieldRow: FieldRow = new FieldRow();
-        let currentFieldColumn: FieldColumn = {
-            fields: []
-        };
+        let splitFields: Field[][] = this.splitFieldsByLineDiveder(fields);
 
-        fields.forEach(field => {
-            if (field.dataType === ContentTypeFieldsDropZoneComponent.TAB_DIVIDER.dataType) {
-                currentFieldRow.columns.push(currentFieldColumn);
-                currentFieldColumn = {
-                    fields: []
-                };
-            } else if (field.dataType === ContentTypeFieldsDropZoneComponent.LINE_DIVIDER.dataType) {
-                currentFieldRow.columns.push(currentFieldColumn);
-                currentFieldColumn = {
-                    fields: []
-                };
-
-                fieldRows.push(currentFieldRow);
-                currentFieldRow = new FieldRow();
-            } else {
-                currentFieldColumn.fields.push(field);
-            }
+        fieldRows = splitFields.map(fields => {
+            let fieldRow: FieldRow = new FieldRow();
+            fieldRow.addFields(fields);
+            return fieldRow;
         });
-
-        if (currentFieldColumn.fields.length) {
-            currentFieldRow.columns.push(currentFieldColumn);
-        }
-
-        if (currentFieldRow.columns.length) {
-            fieldRows.push(currentFieldRow);
-        }
 
         return fieldRows;
     }
 
     private getFields(): Field[] {
+
         let fields: Field[] = [];
 
         this.fieldRows.forEach((fieldRow, rowIndex) => {
 
             if (rowIndex) {
-                fields.push(Object.assign({}, ContentTypeFieldsDropZoneComponent.LINE_DIVIDER));
+                fields.push(fieldRow.lineDivider);
             }
 
             fieldRow.columns.forEach( (fieldColumn, colIndex) => {
 
                 if (colIndex) {
-                    fields.push(Object.assign({}, ContentTypeFieldsDropZoneComponent.TAB_DIVIDER));
+                    fields.push(fieldColumn.tabDivider);
                 }
 
                 fieldColumn.fields.forEach( field => fields.push(field));

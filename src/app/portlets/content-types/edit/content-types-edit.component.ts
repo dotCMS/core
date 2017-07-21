@@ -8,6 +8,8 @@ import { CrudService } from '../../../api/services/crud';
 import { MessageService } from '../../../api/services/messages-service';
 import { Observable } from 'rxjs/Observable';
 import { StringUtils } from '../../../api/util/string.utils';
+import { Field } from '../fields';
+import { FieldService } from '../fields/service';
 import { ConfirmationService } from 'primeng/primeng';
 
 /**
@@ -35,6 +37,7 @@ export class ContentTypesEditComponent extends BaseComponent {
         private confirmationService: ConfirmationService,
         private contentTypesInfoService: ContentTypesInfoService,
         private crudService: CrudService,
+        private fieldService: FieldService,
         private route: ActivatedRoute,
         private stringUtils: StringUtils,
         public router: Router
@@ -102,6 +105,14 @@ export class ContentTypesEditComponent extends BaseComponent {
         this.crudService
             .putData(`v1/contenttype/id/${this.data.id}`, contentTypeData)
             .subscribe(this.handleFormSubmissionResponse.bind(this));
+    }
+
+    /**
+     * Save fields
+     * @param fieldsToSave Fields to be save
+     */
+    saveFields(fields: Field[]): void {
+        this.fieldService.saveFields(this.data.id, fields).subscribe(fields => this.data.fields = fields);
     }
 
     private handleFormSubmissionResponse(res: any): void {

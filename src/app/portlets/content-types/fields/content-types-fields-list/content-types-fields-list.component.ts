@@ -24,12 +24,8 @@ export class ContentTypesFieldsListComponent {
         this.fieldService.loadFieldTypes()
             .subscribe(fields => this.fieldTypes = fields.map(fieldType =>   {
                 return {
-                    dataType: fieldType.name,
-                    fixed: false,
-                    indexed: false,
-                    name: fieldType.name,
-                    required: false,
-                    velocityVarName: ''
+                    clazz: fieldType.clazz,
+                    name: fieldType.label
                 };
             }));
 

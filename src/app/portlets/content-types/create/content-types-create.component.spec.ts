@@ -20,13 +20,16 @@ import { OverlayPanelModule, ConfirmationService } from 'primeng/primeng';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 import { StringUtils } from '../../../api/util/string.utils';
+import { FieldService } from '../fields/service';
+import { CONTENT_TYPE_INITIAL_DATA } from '../main';
 
 @Component({
     selector: 'content-type-fields-drop-zone',
     template: ''
 })
 class TestContentTypeFieldsRowComponent {
-
+    @Input() fields: Field[];
+    @Output() saveFields = new EventEmitter<Field[]>();
 }
 
 @Component({
@@ -92,6 +95,7 @@ describe('ContentTypesCreateComponent', () => {
                 ConfirmationService,
                 CrudService,
                 ContentTypesInfoService,
+                FieldService,
                 StringUtils
             ]
         });
@@ -140,29 +144,39 @@ describe('ContentTypesCreateComponent', () => {
 
         fixture.detectChanges();
 
-        let crudService = fixture.debugElement.injector.get(CrudService);
-        spyOn(crudService, 'postData').and.returnValue(Observable.of({}));
-
-        comp.handleFormSubmit({
-            originalEvent: Event,
-            value: {
-                host: '12345',
-                name: 'Hello World'
-            }
-        });
-
-        let mockData = {
+        let mockData = [{
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             defaultType: false,
             fixed: false,
             folder: 'SYSTEM_FOLDER',
             host: '12345',
+            id: '1',
             name: 'Hello World',
             owner: '123',
             system: false
+        }];
+
+        let crudService = fixture.debugElement.injector.get(CrudService);
+        spyOn(crudService, 'postData').and.callFake((url, contentType) => {
+            this.url = url;
+            this.contentType = contentType;
+            return Observable.of(mockData);
+        });
+
+        let event = {
+            originalEvent: Event,
+            value: {
+                host: '12345',
+                name: 'Hello World'
+            }
         };
 
-        expect(crudService.postData).toHaveBeenCalledWith('v1/contenttype', mockData);
+        comp.handleFormSubmit(event);
+
+        expect('v1/contenttype').toEqual(this.url);
+        expect(event.value.host).toEqual(this.contentType.host);
+        expect(event.value.name).toEqual(this.contentType.name);
+        expect('content').toEqual(comp.contentTypeType);
     });
 
     it('should have call content types endpoint with widget data', () => {
@@ -173,10 +187,22 @@ describe('ContentTypesCreateComponent', () => {
 
         route.url = Observable.of(url);
 
+        let mockData = [{
+            clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+            defaultType: false,
+            fixed: false,
+            folder: 'SYSTEM_FOLDER',
+            host: '12345',
+            id: '1',
+            name: 'Hello World',
+            owner: '123',
+            system: false
+        }];
+
         fixture.detectChanges();
 
         let crudService = fixture.debugElement.injector.get(CrudService);
-        spyOn(crudService, 'postData').and.returnValue(Observable.of({}));
+        spyOn(crudService, 'postData').and.returnValue(Observable.of(mockData));
 
         comp.handleFormSubmit({
             originalEvent: Event,
@@ -186,17 +212,6 @@ describe('ContentTypesCreateComponent', () => {
             }
         });
 
-        let mockData = {
-            clazz: 'com.dotcms.contenttype.model.type.ImmutableWidgetContentType',
-            defaultType: false,
-            fixed: false,
-            folder: 'SYSTEM_FOLDER',
-            host: '12345',
-            name: 'Hello World',
-            owner: '123',
-            system: false
-        };
-
-        expect(crudService.postData).toHaveBeenCalledWith('v1/contenttype', mockData);
+        expect('widget').toEqual(comp.contentTypeType);
     });
 });

@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
 import { FieldService, FieldDragDropService } from '../service';
-import { DragulaService } from 'ng2-dragula';
-import { FieldRow } from '../';
+import { FieldRow, LINE_DIVIDER } from '../';
 
 /**
  * Fields row container

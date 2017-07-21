@@ -92,22 +92,19 @@ export class CoreWebService {
 
     let request = this.getRequestOpts(options);
 
-    return Observable.create(observer => {
-
-      this._http.request(request).subscribe(
+    return this._http.request(request).map(
           resp => {
             if (resp.json().errors && resp.json().errors.length > 0) {
-              observer.error(new ResponseView(resp));
+              throw new ResponseView(resp);
             } else {
-              observer.next(new ResponseView(resp));
+              return new ResponseView(resp);
             }
           },
           resp => {
             this.handleHttpError(resp);
-            observer.error( new ResponseView( resp ) );
+            throw new ResponseView(resp);
           }
       );
-    });
   }
 
   public subscribeTo(httpErrorCode: number): Observable<any> {

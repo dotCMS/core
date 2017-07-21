@@ -2,6 +2,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs/Observable';
 import { DragulaService } from 'ng2-dragula';
+import { Subject } from 'rxjs/Rx';
 
 /**
  * Provide method to handle with the Field Types
@@ -11,8 +12,16 @@ export class FieldDragDropService {
     private static readonly FIELD_BAG_NAME = 'fields-bag';
     private static readonly FIELD_ROW_BAG_NAME = 'fields-row-bag';
 
-    constructor(private dragulaService: DragulaService) {
+    private _fieldDrop: Subject<any> = new Subject();
 
+    constructor(private dragulaService: DragulaService) {
+        dragulaService.dropModel.subscribe((value) => {
+            let bagName = value[0];
+
+            if (bagName === FieldDragDropService.FIELD_BAG_NAME) {
+                this._fieldDrop.next();
+            }
+        });
     }
 
     /**
@@ -43,6 +52,10 @@ export class FieldDragDropService {
                 moves: this.shouldMove
             });
         }
+    }
+
+    get fieldDrop$(): Observable<any> {
+        return this._fieldDrop.asObservable();
     }
 
     private shouldMove(el, target): boolean {

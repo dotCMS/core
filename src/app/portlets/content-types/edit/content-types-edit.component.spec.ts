@@ -23,6 +23,7 @@ import { StringUtils } from '../../../api/util/string.utils';
 import { ContentType } from '../main';
 import { tick, fakeAsync } from '@angular/core/testing';
 import { Field } from '../fields';
+import { FieldService } from '../fields/service';
 
 @Component({
     selector: 'content-type-fields-drop-zone',
@@ -92,6 +93,7 @@ describe('ContentTypesEditComponent', () => {
                 { provide: ActivatedRoute, useValue: {'params': Observable.from([{ id: '1234' }])} },
                 CrudService,
                 ContentTypesInfoService,
+                FieldService,
                 StringUtils,
                 ConfirmationService
             ]

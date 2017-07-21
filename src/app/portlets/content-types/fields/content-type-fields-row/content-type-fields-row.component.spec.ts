@@ -4,7 +4,7 @@ import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/c
 import { ContentTypeFieldsRowComponent } from './';
 import { By } from '@angular/platform-browser';
 import { FieldDragDropService  } from '../service';
-import { Field, FieldRow } from '../';
+import { Field, FieldRow, FieldColumn } from '../';
 import { DragulaModule } from 'ng2-dragula';
 import { Observable } from 'rxjs/Observable';
 
@@ -46,24 +46,23 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
     it('should has row and columns', () => {
         let fieldRow = new FieldRow();
-        fieldRow.addColumn({
-            fields: [
-                {
-                    dataType: 'text'
-                },
-                {
-                    dataType: 'image'
-                }
-            ]
-        });
+        fieldRow.columns.push(new FieldColumn([
+            {
+                clazz: 'text',
+                name: 'field-1'
+            },
+            {
+                clazz: 'image',
+                name: 'field-1'
+            }
+        ]));
 
-        fieldRow.addColumn({
-            fields: [
-                {
-                    dataType: 'text'
-                }
-            ]
-        });
+        fieldRow.columns.push(new FieldColumn([
+            {
+                clazz: 'text',
+                name: 'field-1'
+            }
+        ]));
 
         comp.fieldRow = fieldRow;
 

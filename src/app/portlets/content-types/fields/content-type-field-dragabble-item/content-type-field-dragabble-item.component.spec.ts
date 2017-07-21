@@ -31,7 +31,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
     it('should has a span', () => {
         let field =  {
-            dataType: 'dataType',
+            fieldType: 'fieldType',
             fixed: true,
             indexed: true,
             name: 'Field name',
@@ -50,7 +50,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
     it('should has a remove button', fakeAsync(() => {
         let field =  {
-            dataType: 'dataType',
+            fieldType: 'fieldType',
             fixed: true,
             indexed: true,
             name: 'Field name',

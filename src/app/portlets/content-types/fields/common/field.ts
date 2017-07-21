@@ -1,13 +1,16 @@
 
 export interface Field {
-    dataType: string;
+    clazz?: string;
+    contentTypeId?: string;
     fixed?: boolean;
+    id?: string;
     indexed?: boolean;
     listed?: boolean;
     name?: string;
     readOnly?: boolean;
     required?: boolean;
+    searchable?: boolean;
     sortOrder?: number;
     unique?: boolean;
-    velocityVarName?: string;
+    variable?: string;
 }

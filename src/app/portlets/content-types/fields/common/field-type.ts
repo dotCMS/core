@@ -1,3 +1,4 @@
 export interface FieldType {
-    name: string;
+    label: string;
+    clazz: string;
 }

@@ -42,16 +42,16 @@ describe('ContentTypesFieldsListComponent', () => {
         let fieldService = fixture.debugElement.injector.get(FieldService);
         let itemsData = [
             {
-                name: 'Text'
+                label: 'Text'
             },
             {
-                name: 'Date'
+                label: 'Date'
             },
             {
-                name: 'Checkbox'
+                label: 'Checkbox'
             },
             {
-                name: 'Image'
+                label: 'Image'
             }
         ];
 
@@ -67,7 +67,7 @@ describe('ContentTypesFieldsListComponent', () => {
         let itemsElements = de.queryAll(By.css('li'));
 
         expect(itemsData.length).toEqual(itemsElements.length);
-        itemsData.forEach((fieldType, index) => expect(fieldType.name).toEqual(itemsElements[index].nativeElement.textContent));
+        itemsData.forEach((fieldType, index) => expect(fieldType.label).toEqual(itemsElements[index].nativeElement.textContent));
 
         let ulElement = de.query(By.css('ul'));
 
