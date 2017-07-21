@@ -197,17 +197,7 @@ public class InitServlet extends HttpServlet {
         }
 
         //Initialize the Cached Vanity URL cache
-        try {
-            VanityUrlServices.getInstance().initializeVanityUrlCache();
-        } catch (Exception e) {
-            if (e instanceof IndexMissingException || e.getCause() instanceof IndexMissingException) {
-                /*
-                We catch this exception in order to avoid to stop the initialization of dotCMS if for
-                some reason at this point we don't have indexes.
-                 */
-                Logger.error(this, "Error when initializing Vanity URLs, no index found", e);
-            }
-        }
+        VanityUrlServices.getInstance().initializeVanityUrlCache();
 
         Language language = langAPI.getDefaultLanguage();
 

@@ -9,7 +9,6 @@
  */
 package com.dotmarketing.cms.urlmap.filters;
 
-import com.dotcms.util.VanityUrlUtil;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotmarketing.beans.Host;

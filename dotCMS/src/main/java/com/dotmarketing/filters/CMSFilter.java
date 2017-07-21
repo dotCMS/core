@@ -126,7 +126,6 @@ public class CMSFilter implements Filter {
         // get the users language
         long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 
-        try {
             if (urlUtil.isFileAsset(uri, host, languageId)) {
                 iAm = IAm.FILE;
             } else if (urlUtil.isVanityUrl(uri, host, languageId)) {
@@ -136,9 +135,6 @@ public class CMSFilter implements Filter {
             } else if (urlUtil.isFolder(uri, host)) {
                 iAm = IAm.FOLDER;
             }
-        } catch (Exception e) {
-            Logger.error(this, e.getMessage(), e);
-        }
 
         String vanityURLRewrite = null;
         String queryString = request.getQueryString();

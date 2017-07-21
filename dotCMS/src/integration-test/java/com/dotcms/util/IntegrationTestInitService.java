@@ -3,6 +3,7 @@ package com.dotcms.util;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
+import com.liferay.util.SystemProperties;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -21,6 +22,8 @@ public class IntegrationTestInitService {
 
     private static AtomicBoolean initCompleted;
 
+    static { SystemProperties.getProperties(); }
+    
     private IntegrationTestInitService() {
         initCompleted = new AtomicBoolean(false);
     }
