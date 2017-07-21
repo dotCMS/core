@@ -123,6 +123,7 @@ public class URLMapFilter implements Filter {
         //Look for this Vanity URL in cache
         CachedVanityUrl vanityUrl = APILocator.getVanityUrlAPI()
                 .getLiveCachedVanityUrl(uri, host, languageId, user);
+        //And if we found something make sure is not a 404
         String pointer = vanityUrl != null && !VanityUrlAPI.CACHE_404_VANITY_URL
                 .equals(vanityUrl.getVanityUrlId()) && InodeUtils
                 .isSet(vanityUrl.getVanityUrlId()) ? vanityUrl.getForwardTo() : null;

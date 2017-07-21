@@ -15,6 +15,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+import com.google.common.collect.ImmutableSet;
 import java.util.List;
 import java.util.Set;
 
@@ -27,7 +28,7 @@ import java.util.Set;
  */
 public class VanityUrlServices {
 
-    private static VanityUrlServices vanituUrlService;
+    private static VanityUrlServices vanityURLServices;
     private final VanityUrlCache vanityURLCache = CacheLocator.getVanityURLCache();
     private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
     private final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
@@ -38,14 +39,14 @@ public class VanityUrlServices {
      * @return a VanityUrlServices
      */
     public static VanityUrlServices getInstance() {
-        if (vanituUrlService == null) {
+        if (vanityURLServices == null) {
 
             synchronized (VanityUrlServices.class) {
-                vanituUrlService = new VanityUrlServices();
+                vanityURLServices = new VanityUrlServices();
             }
 
         }
-        return vanituUrlService;
+        return vanityURLServices;
     }
 
     private VanityUrlServices() {
@@ -172,7 +173,10 @@ public class VanityUrlServices {
 
             if (null != systemHostFoundVanities) {
                 if (null != foundVanities) {
-                    foundVanities.addAll(systemHostFoundVanities);
+                    foundVanities = ImmutableSet.<CachedVanityUrl>builder()
+                            .addAll(foundVanities)
+                            .addAll(systemHostFoundVanities)
+                            .build();
                 } else {
                     foundVanities = systemHostFoundVanities;
                 }

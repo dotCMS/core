@@ -145,14 +145,11 @@ public class CMSFilter implements Filter {
         // if a vanity URL
         if (iAm == IAm.VANITY_URL) {
             UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
-            CachedVanityUrl vanityUrl = APILocator.getVanityUrlAPI()
-                    .getLiveCachedVanityUrl(("/".equals(uri) ? "/cmsHomePage"
-                                    : uri.endsWith("/") ? uri.substring(0, uri.length() - 1) : uri), host,
-                            languageId, userWebAPI.getUser(request));
 
             VanityUrlHandler vanityUrlHandler = vanityUrlHandlerResolver.getVanityUrlHandler();
             VanityUrlResult vanityUrlResult = vanityUrlHandler
-                    .handle(vanityUrl, response, host, languageId);
+                    .handle(uri, response, host, languageId, userWebAPI.getUser(request));
+
             if (vanityUrlResult.isResult()) {
                 closeDbSilently();
                 return;
