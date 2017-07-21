@@ -10,6 +10,7 @@ import java.util.List;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.enterprise.cluster.action.business.ServerActionAPI;
 import com.dotcms.enterprise.cluster.action.model.ServerActionBean;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.Logger;
@@ -55,7 +56,17 @@ public class ClusterServerActionThread extends Thread {
 						serverActionAPI.handleServerAction(serverActionBean);
 					}
 					connection.commit();
+				}else{
+				    
+				    // Always try to get a license!
+				    LicenseManager.getInstance().takeLicenseFromRepoIfNeeded();
+				    
 				}
+				
+				
+				
+				
+				
 				
 			} catch (Exception e) {
 				try {

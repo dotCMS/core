@@ -1,27 +1,36 @@
 package com.dotcms.cluster.business;
 
-import com.dotcms.cluster.bean.Server;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import com.dotcms.cluster.bean.Server;
+import com.dotcms.cluster.bean.ServerPort;
+import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.LocalTransaction;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
+
 public class ServerAPIImpl implements ServerAPI {
 
+    private static String SERVER_ID=null;
 	private ServerFactory serverFactory;
 
 	public ServerAPIImpl() {
@@ -35,52 +44,111 @@ public class ServerAPIImpl implements ServerAPI {
 	public Server getServer(String serverId) {
 		return serverFactory.getServer(serverId);
 	}
+	@Override
+    public Server getOrCreateServer(final String serverId) throws DotDataException {
+	    Server tryServer = getServer(serverId);
+        if(tryServer==null || tryServer.getServerId() ==null)  {
+            LocalTransaction.wrap(() ->{
+                Server newServer = new Server();
+                newServer.setServerId(serverId);
+                newServer.setIpAddress(ClusterFactory.getIPAdress());
+    
+                String hostName = "localhost";
+                try {
+                    hostName = InetAddress.getLocalHost().getHostName();
+    
+                } catch (UnknownHostException e) {
+                    Logger.error(ClusterFactory.class, "Error trying to get the host name. ", e);
+                }
+    
+                newServer.setName(hostName);
+    
+                saveServer(newServer);
+    
+                // set up ports
+    
+                String port=ClusterFactory.getNextAvailablePort(newServer.getServerId(), ServerPort.CACHE_PORT);
+                Config.setProperty(ServerPort.CACHE_PORT.getPropertyName(), port);
+                newServer.setCachePort(Integer.parseInt(port));
+    
+                port=new ESClient().getNextAvailableESPort(newServer.getServerId(), newServer.getIpAddress(), String.valueOf(newServer.getEsTransportTcpPort()));
+                Config.setProperty(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName(), port);
+                newServer.setEsTransportTcpPort(Integer.parseInt(port));
+    
+                port=ClusterFactory.getNextAvailablePort(newServer.getServerId(), ServerPort.ES_HTTP_PORT);
+                Config.setProperty(ServerPort.ES_HTTP_PORT.getPropertyName(), port);
+                newServer.setEsHttpPort(Integer.parseInt(port));
+    
+               updateServer(newServer);
+    
+                try {
+                    writeHeartBeatToDisk(newServer.getServerId());
+                } catch (IOException e) {
+                    Logger.error(ClusterFactory.class, "Could not write Server ID to file system" , e);
+                }
+       
+            });
 
-	public String readServerId() {
+        }
+        
 
-		String realPath = ConfigUtils.getDynamicContentPath() + java.io.File.separator + "server_id.dat";
+        return serverFactory.getServer(serverId);
+    }
 
-		Logger.debug(ServerAPIImpl.class, "Reading " + realPath);
-
-		BufferedReader br = null;
-		String serverId = null;
-		try {
-			br = new BufferedReader(new FileReader(new File(realPath)));
-			serverId = br.readLine();
-		} catch (FileNotFoundException e) {
-			Logger.debug(ServerAPIImpl.class, "Server ID not found (" + realPath + " file doesn't exists)");
-		} catch (IOException e) {
-			Logger.error(ServerAPIImpl.class, "Could not read Server ID from File", e);
-		} finally {
-			try {
-				if(br!=null)
-					br.close();
-			} catch (IOException e) {
-				Logger.error(ServerAPIImpl.class, "Could not close BufferedReader for Server File", e);
-			}
-		}
-
-		Logger.debug(ServerAPIImpl.class, "ServerID: " + serverId);
-
-        return serverId;
-
-	}
-
-	public  void writeServerIdToDisk(String serverId) throws IOException {
-
+	private File serverIdFile(){
+	    
         String dynamicContentPath = ConfigUtils.getDynamicContentPath();
 
+        
         String realPath;
         if ( dynamicContentPath.endsWith( File.separator ) ) {
             realPath = ConfigUtils.getDynamicContentPath() + "server_id.dat";
         } else {
             realPath = ConfigUtils.getDynamicContentPath() + File.separator + "server_id.dat";
         }
-        File serverFile = new File(realPath);
+        Logger.debug(ServerAPIImpl.class, "Server Id " + realPath);
 
-		if(serverFile.exists())
+        return new File(realPath);
+
+	}
+	
+	
+	
+	
+	@Override
+	public String readServerId()  {
+	    // once set this should never change
+	    if(SERVER_ID==null){
+    	    try{
+        	    File serverFile = serverIdFile();
+        
+        	    if(!serverFile.exists()){
+        	        writeServerIdToDisk(UUIDUtil.uuid());
+        	    }
+        
+        		BufferedReader br =  new BufferedReader(new FileReader(serverFile));
+        		SERVER_ID = br.readLine();
+        		br.close();
+        
+        		Logger.debug(ServerAPIImpl.class, "ServerID: " + SERVER_ID);
+        
+    
+    	    }
+    	    catch(IOException ioe){
+    	        throw new DotStateException("Unable to read server id at " + serverIdFile() + " please make sure that the directory exists and is readable and writeable. If problems persist, try deleting the file.  The system will recreate a new one on startup", ioe);
+    	    }
+	    }
+	    return SERVER_ID;
+	}
+
+	private  void writeServerIdToDisk(String serverId) throws IOException {
+
+
+        File serverFile = serverIdFile();
+
+		if(serverFile.exists()){
 			serverFile.delete();
-
+		}
 		OutputStream os = new FileOutputStream(serverFile);
 		os.write(serverId.getBytes());
 		os.flush();
@@ -128,7 +196,9 @@ public class ServerAPIImpl implements ServerAPI {
 	}
 
 	public void updateHeartbeat() throws DotDataException {
-		serverFactory.updateHeartbeat(readServerId());
+
+	    serverFactory.updateHeartbeat(readServerId());
+
 	}
 
 	public void updateServer(Server server) throws DotDataException{
@@ -169,7 +239,10 @@ public class ServerAPIImpl implements ServerAPI {
 	}
 
 	@Override
-	public Server getCurrentServer() {
-		return getServer(readServerId());
+	public Server getCurrentServer() throws DotDataException {
+
+	    return getOrCreateServer(readServerId());
+
+		
 	}
 }

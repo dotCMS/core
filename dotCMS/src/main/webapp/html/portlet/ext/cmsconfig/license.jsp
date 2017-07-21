@@ -310,7 +310,12 @@
                                     dojo.create("a",{href:"javascript:licenseAdmin.del('"+serial+"')"},optd));
                         }
 
-                        dojo.create("td", { innerHTML: (!lic.serverid || lic.serverid === "") ? "Available" : lic.serverid + (lic.available ? " (Available)" : "")}, row);
+                        if(lic.serverid==licenseAdmin.currentServerId  ) {
+                            dojo.create("td", { innerHTML: lic.serverid + " (this server)" }, row);
+                        }
+                        else{
+                        	dojo.create("td", { innerHTML: lic.serverid }, row);
+                        }
                         dojo.create("td", { innerHTML: lic.idDisplay}, row);
                         dojo.create("td", { innerHTML: !lic.available || lic.serverid ? lic.lastping : ""}, row);
                         dojo.create("td", { innerHTML: lic.perpetual ? "Perpetual" : lic.validUntil}, row);

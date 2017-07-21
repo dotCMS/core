@@ -3,6 +3,7 @@ package com.dotmarketing.servlets;
 import com.dotcms.cluster.business.HazelcastUtil;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.dotcms.repackage.org.apache.commons.lang.SystemUtils;
 
@@ -95,51 +96,9 @@ public class InitServlet extends HttpServlet {
 
 
 
-        Company company = PublicCompanyFactory.getDefaultCompany();
-        TimeZone companyTimeZone = company.getTimeZone();
-        TimeZone.setDefault(companyTimeZone);
-        Logger.info(this, "InitServlet: Setting Default Timezone: " + companyTimeZone.getDisplayName());
-
-        String _dbType = DbConnectionFactory.getDBType();
-        String _dailect = "";
-        try {
-            _dailect = HibernateUtil.getDialect();
-        } catch (DotHibernateException e3) {
-            Logger.error(InitServlet.class, e3.getMessage(), e3);
-        }
-        String _companyId = PublicCompanyFactory.getDefaultCompanyId();
-        Logger.info(this, "");
-        Logger.info(this, "   Initializing dotCMS");
-        Logger.info(this, "   Using database: " + _dbType);
-        Logger.info(this, "   Using dialect : " + _dailect);
-        Logger.info(this, "   Company Name  : " + _companyId);
-
-        if(Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false)){
-
-            Logger.info(this, "   Clustering    : Enabled");
-
-            //Get the current license level
-            int licenseLevel = LicenseUtil.getLevel();
-            if ( licenseLevel > 100 ) {
-                //		Logger.info(this, "   Server        :" + Config.getIntProperty("DIST_INDEXATION_SERVER_ID", 0)  + " of cluster " + Config.getStringProperty("DIST_INDEXATION_SERVERS_IDS", "...unknown"));
-                try {
-                    /*
-                     Without a license this testCluster call will fail as the LicenseManager calls the ClusterFactory.removeNodeFromCluster()
-                     if a license is not found.
-                     */
-                    ((ChainableCacheAdministratorImpl) CacheLocator.getCacheAdministrator().getImplementationObject()).testCluster();
-                    Logger.info( this, "     Ping Sent" );
-                } catch ( Exception e ) {
-                    Logger.error( this, "   Ping Error: " + e.getMessage() );
-                }
-            }
-        }
-        else{
-            Logger.info(this, "   Clustering    : Disabled");
-        }
-
-
-        Logger.info(this, "");
+        new StartupLogger().log();
+        
+        
 
         //Check and start the ES Content Store
         APILocator.getContentletIndexAPI().checkAndInitialiazeIndex();
