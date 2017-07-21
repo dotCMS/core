@@ -8,11 +8,13 @@ import java.sql.SQLException;
 import java.util.List;
 
 import com.dotcms.cluster.business.ServerAPI;
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.action.business.ServerActionAPI;
 import com.dotcms.enterprise.cluster.action.model.ServerActionBean;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
 /**
@@ -29,6 +31,10 @@ public class ClusterServerActionThread extends Thread {
 	private final ServerActionAPI serverActionAPI = APILocator.getServerActionAPI();
 	
 	private static ClusterServerActionThread instance;
+	
+	private static long noLicense=0;
+	
+	
 	
 	public void run() {
 		while (!die) {
@@ -56,13 +62,21 @@ public class ClusterServerActionThread extends Thread {
 						serverActionAPI.handleServerAction(serverActionBean);
 					}
 					connection.commit();
-				}else{
-				    
-				    // Always try to get a license!
-				    LicenseManager.getInstance().takeLicenseFromRepoIfNeeded();
-				    
 				}
-				
+				    
+				if(LicenseUtil.getLevel()==100 ){
+				    if(noLicense==0){
+				        noLicense=System.currentTimeMillis();
+				    }
+				    //no license for a minute, that is crazy!
+				    if(System.currentTimeMillis() - noLicense > 1000*Config.getLongProperty("CLUSTER_AUTO_RELICENSE_DELAY_SECONDS", 60)){
+				        noLicense=0;
+				        LicenseManager.getInstance().takeLicenseFromRepoIfNeeded();
+				    }
+				}else{
+				    noLicense=0;
+				}
+
 				
 				
 				
