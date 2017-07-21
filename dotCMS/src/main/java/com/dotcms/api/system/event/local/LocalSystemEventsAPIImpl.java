@@ -16,9 +16,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Default implementation.
+ * The implementation will be provided by {@link LocalSystemEventsAPIFactory}
  * @author
  */
-public class LocalSystemEventsAPIImpl implements LocalSystemEventsAPI, Serializable {
+class LocalSystemEventsAPIImpl implements LocalSystemEventsAPI, Serializable {
 
     public static final String LOCAL_SYSTEM_EVENTS_THREAD_POOL_SUBMITTER_NAME = "localsystemevents.submmiter";
 
