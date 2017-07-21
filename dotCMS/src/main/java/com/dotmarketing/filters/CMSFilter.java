@@ -4,7 +4,6 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.vanityurl.handler.VanityUrlHandler;
 import com.dotcms.vanityurl.handler.VanityUrlHandlerResolver;
-import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
@@ -20,7 +19,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.NumberOfTimeVisitedCounter;
 import com.dotmarketing.util.PageRequestModeUtil;
@@ -126,15 +124,15 @@ public class CMSFilter implements Filter {
         // get the users language
         long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 
-            if (urlUtil.isFileAsset(uri, host, languageId)) {
-                iAm = IAm.FILE;
-            } else if (urlUtil.isVanityUrl(uri, host, languageId)) {
-                iAm = IAm.VANITY_URL;
-            } else if (urlUtil.isPageAsset(uri, host, languageId)) {
-                iAm = IAm.PAGE;
-            } else if (urlUtil.isFolder(uri, host)) {
-                iAm = IAm.FOLDER;
-            }
+        if (urlUtil.isFileAsset(uri, host, languageId)) {
+            iAm = IAm.FILE;
+        } else if (urlUtil.isVanityUrl(uri, host, languageId)) {
+            iAm = IAm.VANITY_URL;
+        } else if (urlUtil.isPageAsset(uri, host, languageId)) {
+            iAm = IAm.PAGE;
+        } else if (urlUtil.isFolder(uri, host)) {
+            iAm = IAm.FOLDER;
+        }
 
         String vanityURLRewrite = null;
         String queryString = request.getQueryString();
