@@ -1,6 +1,6 @@
 package com.dotmarketing.business;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -29,25 +29,27 @@ public class LanguageAPITest {
 	public void languageCache() throws Exception{
 
 		int existingLanguagesCount = APILocator.getLanguageAPI().getLanguages().size();
-		CacheLocator.getLanguageCache().putLanguages(APILocator.getLanguageAPI().getLanguages());
+		APILocator.getLanguageAPI().getLanguages();
 		Assert.assertEquals(existingLanguagesCount,CacheLocator.getLanguageCache().getLanguages().size());
 		
-		Language lan = APILocator.getLanguageAPI().getLanguage(102);
-		lan = new Language();
+		Language lan = new Language();
 		lan.setCountry("Italy");
 		lan.setCountryCode("IT");
 		lan.setLanguageCode("it");
 		lan.setLanguage("Italian");
 		APILocator.getLanguageAPI().saveLanguage(lan);
+		lan = APILocator.getLanguageAPI().getLanguage("it", "IT");
 		
+		existingLanguagesCount = APILocator.getLanguageAPI().getLanguages().size();
 		CacheLocator.getLanguageCache().clearCache();
-		CacheLocator.getLanguageCache().putLanguages(APILocator.getLanguageAPI().getLanguages());
-		Assert.assertEquals(existingLanguagesCount+1, CacheLocator.getLanguageCache().getLanguages().size());
+		APILocator.getLanguageAPI().getLanguages();
+		Assert.assertEquals(existingLanguagesCount, CacheLocator.getLanguageCache().getLanguages().size());
 		
 		APILocator.getLanguageAPI().deleteLanguage(lan);
 		
+		existingLanguagesCount = APILocator.getLanguageAPI().getLanguages().size();
 		CacheLocator.getLanguageCache().clearCache();
-		CacheLocator.getLanguageCache().putLanguages(APILocator.getLanguageAPI().getLanguages());
+		APILocator.getLanguageAPI().getLanguages();
 		Assert.assertEquals(existingLanguagesCount,CacheLocator.getLanguageCache().getLanguages().size());		
 	}
 }
