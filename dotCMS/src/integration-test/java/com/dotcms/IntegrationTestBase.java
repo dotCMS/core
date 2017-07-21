@@ -164,7 +164,7 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
         final User systemUser = APILocator.systemUser();
 
         for (Category category : categoriesToDelete) {
-            if (category != null && UtilMethods.isSet(category.getIdentifier())) {
+            if (category != null && UtilMethods.isSet(category.getInode())) {
                 try {
                     categoryAPI.delete(category, systemUser, false);
                 } catch (DotDataException | DotSecurityException e) {
