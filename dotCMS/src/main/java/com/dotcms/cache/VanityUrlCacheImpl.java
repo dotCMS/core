@@ -82,7 +82,7 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
             flush completely the primary group.
              */
             Set<CachedVanityUrl> secondaryCachedVanities = this
-                    .getCachedVanityUrls(VanityUrlUtil.sanitizeSecondCachedKey(vanityURL));
+                    .getCachedVanityUrls(VanityUrlUtil.sanitizeSecondCacheKey(vanityURL));
             if (null != secondaryCachedVanities) {
                 for (CachedVanityUrl toRemove : secondaryCachedVanities) {
                     //Now remove from the primary group
@@ -141,7 +141,7 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
             }
 
             this.remove(VanityUrlUtil.sanitizeKey(vanityURL));
-            this.removeCachedVanityUrls(VanityUrlUtil.sanitizeSecondCachedKey(vanityURL));
+            this.removeCachedVanityUrls(VanityUrlUtil.sanitizeSecondCacheKey(vanityURL));
 
         } catch (DotDataException | DotRuntimeException | DotSecurityException e) {
             Logger.debug(VanityUrlServices.class,

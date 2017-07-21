@@ -166,6 +166,11 @@ public class VanityUrlServices {
             foundVanities = CacheLocator.getVanityURLCache()
                     .getCachedVanityUrls(VanityUrlUtil.sanitizeSecondCacheKey(siteId, languageId));
 
+            //null means we need to initialize the cache for this site
+            if (null == foundVanities) {
+                return foundVanities;
+            }
+
             //Now search in cache with the SYSTEM_HOST
             Set<CachedVanityUrl> systemHostFoundVanities = CacheLocator.getVanityURLCache()
                     .getCachedVanityUrls(
