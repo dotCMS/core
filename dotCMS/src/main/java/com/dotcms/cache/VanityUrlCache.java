@@ -69,11 +69,12 @@ public abstract class VanityUrlCache implements Cachable {
     public abstract Set<CachedVanityUrl> getCachedVanityUrls(String key);
 
     /**
-     * Associate a list of CachedVanityUrl to a Host Id and language id key
-     * @param key The current key composed of the host Id and languageId
+     * Associate a list of CachedVanityUrl to a Host Id and language id
+     *
      * @param cachedVanityUrlList The list of CachedVanityUrls
      */
-    public abstract void setCachedVanityUrls(String key, Set<CachedVanityUrl> cachedVanityUrlList);
+    public abstract void setCachedVanityUrls(final String siteId, Long languageId,
+            final Set<CachedVanityUrl> cachedVanityUrlList);
 
     /**
      * remove the associate a list of CachedVanityUrl associated to a Host Id and language id key

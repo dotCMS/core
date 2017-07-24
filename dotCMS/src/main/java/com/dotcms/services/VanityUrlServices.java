@@ -4,6 +4,7 @@ import com.dotcms.cache.VanityUrlCache;
 import com.dotcms.util.VanityUrlUtil;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -14,6 +15,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+import com.google.common.collect.ImmutableSet;
 import java.util.List;
 import java.util.Set;
 
@@ -26,7 +28,7 @@ import java.util.Set;
  */
 public class VanityUrlServices {
 
-    private static VanityUrlServices vanituUrlService;
+    private static VanityUrlServices vanityURLServices;
     private final VanityUrlCache vanityURLCache = CacheLocator.getVanityURLCache();
     private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
     private final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
@@ -37,14 +39,14 @@ public class VanityUrlServices {
      * @return a VanityUrlServices
      */
     public static VanityUrlServices getInstance() {
-        if (vanituUrlService == null) {
+        if (vanityURLServices == null) {
 
             synchronized (VanityUrlServices.class) {
-                vanituUrlService = new VanityUrlServices();
+                vanityURLServices = new VanityUrlServices();
             }
 
         }
-        return vanituUrlService;
+        return vanityURLServices;
     }
 
     private VanityUrlServices() {
@@ -102,18 +104,6 @@ public class VanityUrlServices {
     }
 
     /**
-     * Load in cache the active vanities Urls
-     * searching by site and languageId
-     *
-     * @param siteId The current site Id
-     * @param languageId The current language Id
-     */
-    public void initializeVanityUrlCache(String siteId, long languageId) {
-        APILocator.getVanityUrlAPI()
-                .getActiveVanityUrlsBySiteAndLanguage(siteId, languageId, APILocator.systemUser());
-    }
-
-    /**
      * Add the vanity URL to the caches
      *
      * @param vanity The vanity URL to add
@@ -132,7 +122,7 @@ public class VanityUrlServices {
     }
 
     /**
-     * Get the cached vanity Url from the primary cache
+     * Get the cached vanity Url from the primary cache for a given site and SYSTEM_HOST
      *
      * @param uri The current uri
      * @param siteId The current site Id
@@ -140,19 +130,69 @@ public class VanityUrlServices {
      * @return CachedVanityUrl object
      */
     public CachedVanityUrl getCachedVanityUrlByUri(String uri, String siteId, long languageId) {
-        return vanityURLCache.get(VanityUrlUtil.sanitizeKey(siteId, uri, languageId));
+
+        CachedVanityUrl foundVanity;
+        if (null != siteId && !siteId.equals(Host.SYSTEM_HOST)) {
+
+            //First search in cache with the given site
+            foundVanity = vanityURLCache.get(VanityUrlUtil.sanitizeKey(siteId, uri, languageId));
+
+            //If nothing found lets try with the SYSTEM_HOST
+            if (null == foundVanity) {
+                foundVanity = vanityURLCache
+                        .get(VanityUrlUtil.sanitizeKey(Host.SYSTEM_HOST, uri, languageId));
+            }
+        } else {
+            foundVanity = vanityURLCache
+                    .get(VanityUrlUtil.sanitizeKey(Host.SYSTEM_HOST, uri, languageId));
+        }
+
+        return foundVanity;
     }
 
     /**
-     * Get the list of cached Vanity Url associated to a site
+     * Get the list of cached Vanity URLs associated to a given site and SYSTEM_HOST
      *
      * @param siteId The current site Id
      * @param languageId The current language Id
      * @return A set of CachedVanityUrl
      */
     public Set<CachedVanityUrl> getVanityUrlBySiteAndLanguage(String siteId, long languageId) {
-        return CacheLocator.getVanityURLCache()
-                .getCachedVanityUrls(VanityUrlUtil.sanitizeSecondCacheKey(siteId, languageId));
+
+        Set<CachedVanityUrl> foundVanities;
+        if (null != siteId && !siteId.equals(Host.SYSTEM_HOST)) {
+
+            //First search in cache with the given site id
+            foundVanities = CacheLocator.getVanityURLCache()
+                    .getCachedVanityUrls(VanityUrlUtil.sanitizeSecondCacheKey(siteId, languageId));
+
+            //null means we need to initialize the cache for this site
+            if (null == foundVanities) {
+                return foundVanities;
+            }
+
+            //Now search in cache with the SYSTEM_HOST
+            Set<CachedVanityUrl> systemHostFoundVanities = CacheLocator.getVanityURLCache()
+                    .getCachedVanityUrls(
+                            VanityUrlUtil.sanitizeSecondCacheKey(Host.SYSTEM_HOST, languageId));
+
+            if (null != systemHostFoundVanities) {
+                if (null != foundVanities) {
+                    foundVanities = ImmutableSet.<CachedVanityUrl>builder()
+                            .addAll(foundVanities)
+                            .addAll(systemHostFoundVanities)
+                            .build();
+                } else {
+                    foundVanities = systemHostFoundVanities;
+                }
+            }
+        } else {
+            foundVanities = CacheLocator.getVanityURLCache()
+                    .getCachedVanityUrls(
+                            VanityUrlUtil.sanitizeSecondCacheKey(Host.SYSTEM_HOST, languageId));
+        }
+
+        return foundVanities;
     }
 
 }
