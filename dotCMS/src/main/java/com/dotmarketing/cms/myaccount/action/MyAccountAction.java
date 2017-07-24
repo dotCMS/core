@@ -248,7 +248,7 @@ public class MyAccountAction extends DispatchAction {
 	public static boolean subscribeDotCMSMailingList(User user) {
 		String to = "dotcms-subscribe@yahoogroups.com";
 		String from = user.getEmailAddress();
-		String subject = "Subscriber to dotCMS mailing list";
+		String subject = "Subscribe to dotCMS mailing list";
 		return sendEmailForMailingList(to, from, subject);
 	}
 
