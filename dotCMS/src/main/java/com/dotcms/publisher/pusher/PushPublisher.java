@@ -1,5 +1,9 @@
 package com.dotcms.publisher.pusher;
 
+import com.dotcms.api.system.event.local.LocalSystemEventsAPI;
+import com.dotcms.api.system.event.local.type.AllEndpointsFailureEvent;
+import com.dotcms.api.system.event.local.type.AllEndpointsSuccessEvent;
+import com.dotcms.api.system.event.local.type.SingleEndpointFailureEvent;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.publishing.remote.bundler.BundleXMLAsc;
 import com.dotcms.enterprise.publishing.remote.bundler.CategoryBundler;
@@ -87,6 +91,7 @@ public class PushPublisher extends Publisher {
 
     private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
     private PublishingEndPointAPI publishingEndPointAPI = APILocator.getPublisherEndPointAPI();
+    private LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
     
     private static final String PROTOCOL_HTTP = "http";
     private static final String PROTOCOL_HTTPS = "https";
@@ -260,13 +265,22 @@ public class PushPublisher extends Publisher {
 				PushPublishLogger.log(this.getClass(), "Status Update: Bundle sent");
 				pubAuditAPI.updatePublishAuditStatus(this.config.getId(),
 						PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY, currentStatusHistory);
+
+				//Triggering event listener when all endpoints are successfully sent
+				localSystemEventsAPI.asyncNotify(new AllEndpointsSuccessEvent());
 			} else {
 				if (errorCounter == totalEndpoints) {
 					pubAuditAPI.updatePublishAuditStatus(this.config.getId(),
 							PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS, currentStatusHistory);
+
+					//Triggering event listener when all endpoints failed during the process
+					localSystemEventsAPI.asyncNotify(new AllEndpointsFailureEvent());
 				} else {
 					pubAuditAPI.updatePublishAuditStatus(this.config.getId(),
 							PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS, currentStatusHistory);
+
+					//Triggering event listener when at least one endpoint is successfully sent but others failed
+					localSystemEventsAPI.asyncNotify(new SingleEndpointFailureEvent());
 				}
 			}
 			return this.config;
