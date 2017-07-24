@@ -1,3 +1,15 @@
+@import "../../../../../styles/variables";
+
+ul {
+    margin: 0;
+    padding: 0;
+}
+
 li {
+    border: solid 1px $gray-lighter;
+    cursor: move;
     list-style: none;
+    margin: $basic-padding / 2;
+    padding: $basic-padding;
+    touch-action: none;
 }
