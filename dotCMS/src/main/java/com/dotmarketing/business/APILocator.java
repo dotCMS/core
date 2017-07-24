@@ -2,6 +2,8 @@ package com.dotmarketing.business;
 
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
+import com.dotcms.api.system.event.local.LocalSystemEventsAPI;
+import com.dotcms.api.system.event.local.LocalSystemEventsAPIFactory;
 import com.dotcms.api.tree.TreeableAPI;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
@@ -838,6 +840,15 @@ public class APILocator extends Locator<APIIndex>{
         return (KeyValueAPI) getInstance(APIIndex.KEY_VALUE_API);
     }
 
+	/**
+	 * Creates a single instance of the {@link LocalSystemEventsAPI}
+	 *
+	 * @return The {@link LocalSystemEventsAPI} class.
+	 */
+	public static LocalSystemEventsAPI getLocalSystemEventsAPI() {
+		return (LocalSystemEventsAPI) getInstance(APIIndex.LOCAL_SYSTEM_EVENTS_API);
+	}
+
     /**
      * Creates a single instance of the {@link LanguageVariableAPI}
      *
@@ -975,6 +986,7 @@ enum APIIndex
 	SECURITY_LOGGER_API,
 	FILE_WATCHER_API,
 	KEY_VALUE_API,
+	LOCAL_SYSTEM_EVENTS_API,
 	LANGUAGE_VARIABLE_API,
 	VANITY_URLS_API;
 
@@ -1043,6 +1055,7 @@ enum APIIndex
     		case VANITY_URLS_API: return new VanityUrlAPIImpl();
     		case KEY_VALUE_API: return new KeyValueAPIImpl();
     		case LANGUAGE_VARIABLE_API: return new LanguageVariableAPIImpl();
+			case LOCAL_SYSTEM_EVENTS_API: return LocalSystemEventsAPIFactory.getInstance().getLocalSystemEventsAPI();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

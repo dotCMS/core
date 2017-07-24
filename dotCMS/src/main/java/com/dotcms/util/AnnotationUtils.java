@@ -1,16 +1,14 @@
 package com.dotcms.util;
 
 
+import com.dotcms.repackage.org.apache.commons.collections.keyvalue.MultiKey;
+import com.google.common.collect.ImmutableSet;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-
-import com.dotcms.repackage.org.apache.commons.collections.keyvalue.MultiKey;
 
 
 /**
@@ -242,5 +240,32 @@ public class AnnotationUtils {
 
         return null;
     } // getMethodAnnotatedBy.
+
+    /**
+     * Get all methods annotated by annotationType, not looking for super class. Just the subclass
+     * @param object {@link Object}
+     * @param annotationType {@link Class}
+     * @return Set returns an immutable set with the methods annotated by annotationType
+     */
+    public static Set<Method> getMethodsAnnotatedBy (final Object object,
+                                                     final Class<? extends Annotation> annotationType) {
+
+        final ImmutableSet.Builder<Method> setBuilder =
+            new ImmutableSet.Builder<Method>();
+        final Class clazz = object.getClass();
+
+        if (null != clazz) {
+
+            for (Method method : clazz.getMethods()) {
+
+                if (isMethodAnnotatedBy(method, annotationType)) {
+
+                    setBuilder.add(method);
+                }
+            }
+        }
+
+        return setBuilder.build();
+    } // getMethodsAnnotatedBy.
 
 } // E:O:F:AnnotationUtils,
