@@ -5,9 +5,9 @@ import com.dotcms.concurrent.DotSubmitter;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 
-import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -15,11 +15,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * The implementation will be provided by {@link LocalSystemEventsAPIFactory}
  * @author
  */
-class LocalSystemEventsAPIImpl implements LocalSystemEventsAPI, Serializable {
+class LocalSystemEventsAPIImpl implements LocalSystemEventsAPI {
 
     public static final String LOCAL_SYSTEM_EVENTS_THREAD_POOL_SUBMITTER_NAME = "localsystemevents.submmiter";
+    public static final String NO_ANY_SUBSCRIBERS_ASSOCIATED_TO_THE_EVENT_TYPE = "No any subscribers, associated to the event type: ";
 
-    private final ConcurrentHashMap<Class<?>, CopyOnWriteArrayList<EventSubscriber>>  eventSubscriberByEventTypeMap;
+    private final ConcurrentMap<Class<?>, CopyOnWriteArrayList<EventSubscriber>>  eventSubscriberByEventTypeMap;
     private final DotSubmitter dotSubmitter;
     private final EventSubscriberFinder eventSubscriberFinder;
     private volatile EventSubscriber<OrphanEvent> orphanEventSubscriber;
@@ -32,7 +33,7 @@ class LocalSystemEventsAPIImpl implements LocalSystemEventsAPI, Serializable {
     }
 
     @VisibleForTesting
-    public LocalSystemEventsAPIImpl(final ConcurrentHashMap<Class<?>, CopyOnWriteArrayList<EventSubscriber>> eventSubscriberByEventTypeMap,
+    public LocalSystemEventsAPIImpl(final ConcurrentMap<Class<?>, CopyOnWriteArrayList<EventSubscriber>> eventSubscriberByEventTypeMap,
                                     final DotConcurrentFactory dotConcurrentFactory,
                                     final EventSubscriberFinder eventSubscriberFinder,
                                     final EventSubscriber<OrphanEvent> orphanEventSubscriber) {
@@ -87,7 +88,7 @@ class LocalSystemEventsAPIImpl implements LocalSystemEventsAPI, Serializable {
             return null != this.eventSubscriberByEventTypeMap.remove(eventType);
         } else {
 
-            Logger.info(this, "No any subscribers, associated to the event type: " + eventType);
+            Logger.info(this, NO_ANY_SUBSCRIBERS_ASSOCIATED_TO_THE_EVENT_TYPE + eventType);
         }
 
         return false;
@@ -116,12 +117,12 @@ class LocalSystemEventsAPIImpl implements LocalSystemEventsAPI, Serializable {
                 return null != eventSubscribers.remove(indexFound);
             } else {
 
-                Logger.info(this, "No any subscribers, associated to the event type: "
+                Logger.info(this, NO_ANY_SUBSCRIBERS_ASSOCIATED_TO_THE_EVENT_TYPE
                         + eventType + " and id: " + subscriberId);
             }
         } else {
 
-            Logger.info(this, "No any subscribers, associated to the event type: " + eventType);
+            Logger.info(this, NO_ANY_SUBSCRIBERS_ASSOCIATED_TO_THE_EVENT_TYPE + eventType);
         }
 
         return false;

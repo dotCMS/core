@@ -26,7 +26,7 @@ public class DefaultOrphanEventSubscriber implements EventSubscriber<OrphanEvent
     @Override
     public void notify(final OrphanEvent event) {
 
-        if (INFO_LEVEL.equals(event)) {
+        if (INFO_LEVEL.equals(logLevel)) {
 
             Logger.info(this, "The Event: " + event + ", has not any subscribers associated");
         } else {

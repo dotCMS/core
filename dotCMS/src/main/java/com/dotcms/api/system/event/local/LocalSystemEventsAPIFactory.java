@@ -25,7 +25,13 @@ public class LocalSystemEventsAPIFactory implements Serializable {
 	 * Singleton holder using initialization on demand
 	 */
 	private static class SingletonHolder {
+
 		private static final LocalSystemEventsAPIFactory INSTANCE = new LocalSystemEventsAPIFactory();
+
+
+		private  SingletonHolder() {
+			throw new IllegalStateException("Utility class");
+		}
 	}
 
 	/**

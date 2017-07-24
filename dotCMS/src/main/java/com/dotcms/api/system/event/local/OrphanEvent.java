@@ -1,28 +1,27 @@
 package com.dotcms.api.system.event.local;
 
-import java.io.Serializable;
 
 /**
  * This is a wrapper event for orphan (events with not subscribed associated)
  * @author jsanca
  */
-public class OrphanEvent implements Serializable {
+public class OrphanEvent {
 
-    private final Object orphanEvent;
+    private final Object event;
 
-    public OrphanEvent(Object orphanEvent) {
-        this.orphanEvent = orphanEvent;
+    public OrphanEvent(Object event) {
+        this.event = event;
     }
 
-    public Object getOrphanEvent() {
-        return orphanEvent;
+    public Object getEvent() {
+        return event;
     }
 
     @Override
     public String toString() {
         return "OrphanEvent{" +
-                "orphanEvent=" +
-                    ((null != orphanEvent)?orphanEvent.toString(): "null") +
+                "event=" +
+                    ((null != event)? event.toString(): "null") +
                 '}';
     }
 } // E:O:F:OrphanEvent.
