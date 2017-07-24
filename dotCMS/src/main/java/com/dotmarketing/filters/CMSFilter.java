@@ -4,7 +4,6 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.vanityurl.handler.VanityUrlHandler;
 import com.dotcms.vanityurl.handler.VanityUrlHandlerResolver;
-import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
@@ -20,7 +19,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.NumberOfTimeVisitedCounter;
 import com.dotmarketing.util.PageRequestModeUtil;
@@ -126,18 +124,14 @@ public class CMSFilter implements Filter {
         // get the users language
         long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 
-        try {
-            if (urlUtil.isFileAsset(uri, host, languageId)) {
-                iAm = IAm.FILE;
-            } else if (urlUtil.isVanityUrl(uri, host, languageId)) {
-                iAm = IAm.VANITY_URL;
-            } else if (urlUtil.isPageAsset(uri, host, languageId)) {
-                iAm = IAm.PAGE;
-            } else if (urlUtil.isFolder(uri, host)) {
-                iAm = IAm.FOLDER;
-            }
-        } catch (Exception e) {
-            Logger.error(this, e.getMessage(), e);
+        if (urlUtil.isFileAsset(uri, host, languageId)) {
+            iAm = IAm.FILE;
+        } else if (urlUtil.isVanityUrl(uri, host, languageId)) {
+            iAm = IAm.VANITY_URL;
+        } else if (urlUtil.isPageAsset(uri, host, languageId)) {
+            iAm = IAm.PAGE;
+        } else if (urlUtil.isFolder(uri, host)) {
+            iAm = IAm.FOLDER;
         }
 
         String vanityURLRewrite = null;
@@ -145,25 +139,11 @@ public class CMSFilter implements Filter {
         // if a vanity URL
         if (iAm == IAm.VANITY_URL) {
             UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
-            CachedVanityUrl vanityUrl = APILocator.getVanityUrlAPI()
-                    .getLiveCachedVanityUrl(("/".equals(uri) ? "/cmsHomePage"
-                                    : uri.endsWith("/") ? uri.substring(0, uri.length() - 1) : uri), host,
-                            languageId, userWebAPI.getUser(request));
-
-            if (vanityUrl == null || VanityUrlAPI.CACHE_404_VANITY_URL
-                    .equals(vanityUrl.getVanityUrlId()) || (
-                    !InodeUtils.isSet(vanityUrl.getVanityUrlId()) && !UtilMethods
-                            .isSet(vanityUrl.getForwardTo()))) {
-                vanityUrl = APILocator.getVanityUrlAPI()
-                        .getLiveCachedVanityUrl(("/".equals(uri) ? "/cmsHomePage"
-                                        : uri.endsWith("/") ? uri.substring(0, uri.length() - 1) : uri),
-                                null,
-                                languageId, userWebAPI.getUser(request));
-            }
 
             VanityUrlHandler vanityUrlHandler = vanityUrlHandlerResolver.getVanityUrlHandler();
             VanityUrlResult vanityUrlResult = vanityUrlHandler
-                    .handle(vanityUrl, response, host, languageId);
+                    .handle(uri, response, host, languageId, userWebAPI.getUser(request));
+
             if (vanityUrlResult.isResult()) {
                 closeDbSilently();
                 return;

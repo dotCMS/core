@@ -58,21 +58,25 @@ dojo.ready(function() {
 	var fieldWidth = "300px";
 	new dijit.form.TextBox({
 		name: "languageCode",
+		value: "<%=language.getLanguageCode()%>",
 		style: "width: " + fieldWidth
 	}, "languageCode");
 
 	new dijit.form.TextBox({
 		name: "countryCode",
+		value: "<%=language.getCountryCode()%>",
 		style: "width: " + fieldWidth
 	}, "countryCode");
 
 	new dijit.form.TextBox({
 		name: "language",
+		value: "<%=language.getLanguage()%>",
 		style: "width: " + fieldWidth
 	}, "language");
 
 	new dijit.form.TextBox({
 		name: "country",
+		value: "<%=language.getCountry()%>",
 		style: "width: " + fieldWidth
 	}, "country");
 })

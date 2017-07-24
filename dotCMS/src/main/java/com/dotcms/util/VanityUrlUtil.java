@@ -69,7 +69,7 @@ public class VanityUrlUtil {
      * @param vanityUrl The vanity Url contentlet
      * @return String with the sanitized key name
      */
-    public static String sanitizeSecondCachedKey(final Contentlet vanityUrl)
+    public static String sanitizeSecondCacheKey(final Contentlet vanityUrl)
             throws DotDataException, DotSecurityException {
 
         return sanitizeSecondCacheKey(

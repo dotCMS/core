@@ -3,10 +3,12 @@ package com.dotcms.vanityurl.handler;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.filters.CmsUrlUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
 
@@ -19,12 +21,27 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class DefaultVanityUrlHandler implements VanityUrlHandler {
 
+    private static final String CMS_HOME_PAGE = "/cmsHomePage";
+
     private static final VanityUrlResult DEFAULT_RESULT = new VanityUrlResult(null, null,
             CMSFilter.IAm.NOTHING_IN_THE_CMS, true);
 
     private static final CmsUrlUtil urlUtil = CmsUrlUtil.getInstance();
 
     private static final int LIMIT = 2;
+
+    @Override
+    public VanityUrlResult handle(final String uri,
+            final HttpServletResponse response, final Host host,
+            final long languageId, final User user) throws IOException {
+
+        CachedVanityUrl vanityUrl = APILocator.getVanityUrlAPI()
+                .getLiveCachedVanityUrl(("/".equals(uri) ? CMS_HOME_PAGE
+                                : uri.endsWith("/") ? uri.substring(0, uri.length() - 1) : uri), host,
+                        languageId, user);
+
+        return handle(vanityUrl, response, host, languageId);
+    }
 
     @Override
     public VanityUrlResult handle(final CachedVanityUrl vanityUrl,
