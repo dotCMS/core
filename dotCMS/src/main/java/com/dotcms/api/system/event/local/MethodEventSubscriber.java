@@ -11,6 +11,7 @@ import java.lang.reflect.Method;
  */
 public class MethodEventSubscriber implements EventSubscriber {
 
+    public static final String FOR_EVENT = ", for event: ";
     private final Method method;
     private final Object subcriber;
     private final String id;
@@ -35,19 +36,19 @@ public class MethodEventSubscriber implements EventSubscriber {
 
         try {
 
-            this.method.invoke(this.subcriber, new Object[] { event });
+            this.method.invoke(this.subcriber, event );
         } catch (IllegalArgumentException e) {
 
-            throw new DotRuntimeException("Invalid Argument on method: " + this.id + ", for event: " + event, e);
+            throw new DotRuntimeException("Invalid Argument on method: " + this.id + FOR_EVENT + event, e);
         } catch (IllegalAccessException e) {
 
-            throw new DotRuntimeException("Method is not inaccessible: "  + this.id + ", for event: " + event, e);
+            throw new DotRuntimeException("Method is not inaccessible: "  + this.id + FOR_EVENT + event, e);
         } catch (InvocationTargetException e) {
 
-            throw new DotRuntimeException("Invocation error on method: "  + this.id + ", for event: " + event, e);
+            throw new DotRuntimeException("Invocation error on method: "  + this.id + FOR_EVENT + event, e);
         } catch (Exception e) {
 
-            throw new DotRuntimeException("Error on method: "  + this.id + ", for event: " + event, e);
+            throw new DotRuntimeException("Error on method: "  + this.id + FOR_EVENT + event, e);
         }
     }
 

@@ -17,8 +17,13 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class AnnotationUtils {
 
-    private static final Map<com.dotcms.repackage.org.apache.commons.collections.keyvalue.MultiKey, String []> attributesAnnotatedByCacheMap =
-            new ConcurrentHashMap<MultiKey, String[]>(256);
+    private static final Map<MultiKey, String []> attributesAnnotatedByCacheMap =
+            new ConcurrentHashMap<>(256);
+
+    private AnnotationUtils(){
+        throw new IllegalStateException("Utility class");
+    }
+
 
     /**
      * Determinate if the bean is annotated by specified annotation
@@ -93,7 +98,7 @@ public class AnnotationUtils {
                     attributesAnnotatedByCacheMap.get(multiKey);
         } else {
 
-            final List<String> fieldList = new ArrayList<String>();
+            final List<String> fieldList = new ArrayList<>();
             for (Field field : beanClass.getDeclaredFields()) {
 
                 if (isFieldAnnotatedBy(field, annotationType)) {
@@ -251,7 +256,7 @@ public class AnnotationUtils {
                                                      final Class<? extends Annotation> annotationType) {
 
         final ImmutableSet.Builder<Method> setBuilder =
-            new ImmutableSet.Builder<Method>();
+            new ImmutableSet.Builder<>();
         final Class clazz = object.getClass();
 
         if (null != clazz) {
