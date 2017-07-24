@@ -1,9 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import com.dotcms.keyvalue.model.KeyValue;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -46,6 +42,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.DotRunnable;
+import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -111,16 +108,11 @@ import com.dotmarketing.util.TrashUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.springframework.beans.BeanUtils;
-
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -144,6 +136,11 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.springframework.beans.BeanUtils;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -450,6 +447,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         APILocator.getPersonaAPI().enableDisablePersonaTag(contentlet, true);
                     }
                 }
+
+                /*
+                Adding a commit listener in order to invalidate the VanityURL cache when this
+                content finished to index.
+                 */
+                addVanityURLCommitListener(contentlet);
 
                 // by now, the publish event is making a duplicate reload events on the site browser
                 // so we decided to comment it out by now, and
@@ -2127,6 +2130,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
             contentletSystemEventUtil.pushUnpublishEvent(contentlet);
+
+            /*
+            Adding a commit listener in order to invalidate the VanityURL cache when this
+            content finished to index.
+             */
+            addVanityURLCommitListener(contentlet);
+
         } catch(DotDataException | DotStateException| DotSecurityException e) {
             ActivityLogger.logInfo(getClass(), "Error Unpublishing Content", "StartDate: " +contentPushPublishDate+ "; "
                     + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -5640,6 +5650,41 @@ public class ESContentletAPIImpl implements ContentletAPI {
                               boolean respectFrontendRoles, boolean generateSystemEvent) throws IllegalArgumentException,
             DotDataException, DotSecurityException, DotContentletStateException, DotContentletValidationException {
         return checkin(contentlet, contentRelationships, cats, selectedPermissions, user, respectFrontendRoles, true, generateSystemEvent);
+    }
+
+    /**
+     * On the commit event checks if the contentlet is indexed in order to invalidate it from
+     * cache.
+     *
+     * @param contentlet VanityURL to invalidate
+     */
+    private void addVanityURLCommitListener(Contentlet contentlet) {
+
+        try {
+            HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+                public void run() {
+                    try {
+                        if (contentlet.isVanityUrl()) {
+
+                            //When the contentlet finished to index we need to invalidate it on cache
+                            boolean indexed = APILocator.getContentletAPI()
+                                    .isInodeIndexed(contentlet.getInode(),
+                                            contentlet.isLive());
+                            if (indexed) {
+                                //Invalidate this VanityURL
+                                VanityUrlServices.getInstance().invalidateVanityUrl(contentlet);
+                            }
+                        }
+                    } catch (Exception e) {
+                        Logger.error(this,
+                                String.format("Unable to invalidate VanityURL in cache [%s]",
+                                        contentlet.getIdentifier()), e);
+                    }
+                }
+            });
+        } catch (DotHibernateException e) {
+            throw new DotRuntimeException(e);
+        }
     }
 
 }
