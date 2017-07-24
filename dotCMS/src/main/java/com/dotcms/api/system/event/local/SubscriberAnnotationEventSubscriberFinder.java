@@ -27,7 +27,7 @@ public class SubscriberAnnotationEventSubscriberFinder implements EventSubscribe
      *         this strategy (in ways that this interface does not define).
      */
     @Override
-    public Map<Class<?>, EventSubscriber> findSubscriber(final Object subcriber) {
+    public Map<Class<?>, EventSubscriber> findSubscribers(final Object subcriber) {
 
         final ImmutableMap.Builder<Class<?>, EventSubscriber> eventTypeSubscriberMap =
                 new ImmutableMap.Builder<>();

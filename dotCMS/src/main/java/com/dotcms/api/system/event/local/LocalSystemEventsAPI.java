@@ -26,14 +26,14 @@ public interface LocalSystemEventsAPI {
      * Unsubscribes all the {@link EventSubscriber} related to eventType.
      * @param eventType {@link Class}
      */
-    void unsubscribe (Class<?> eventType);
+    boolean unsubscribe (Class<?> eventType);
 
     /**
      * Unsubscribes a specific subscribed
      * @param eventType {@link Class}
      * @param subscriberId {@link String}
      */
-    void unsubscribe (final Class<?> eventType, String subscriberId);
+    boolean unsubscribe (final Class<?> eventType, String subscriberId);
 
     /**
      * Do an async notification to all registered handlers
@@ -47,4 +47,20 @@ public interface LocalSystemEventsAPI {
      * @param event
      */
     public void notify(final Object event);
+
+    /**
+     * Find the subscriber
+     * @param eventType {@link Class}
+     * @param subscriberId {@link String}
+     * @return EventSubscriber
+     */
+    EventSubscriber findSubscriber (final Class<?> eventType, String subscriberId);
+
+    /**
+     * Set's the Event Subscriber for the Orphan Events (events with not subscriber associated)
+     * By default the subscriber is {@link DefaultOrphanEventSubscriber}
+     *
+     * @param orphanEventSubscriber {@link EventSubscriber}
+     */
+    void setOrphanEventSubscriber (EventSubscriber<OrphanEvent> orphanEventSubscriber);
 } // E:O:F:LocalSystemEventsAPI.

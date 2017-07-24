@@ -17,5 +17,5 @@ public interface EventSubscriberFinder {
      * @throws IllegalArgumentException if {@code source} is not appropriate for
      *         this strategy (in ways that this interface does not define).
      */
-    Map<Class<?>, EventSubscriber> findSubscriber(Object subcriber);
+    Map<Class<?>, EventSubscriber> findSubscribers(Object subcriber);
 } // E:O:F:EventSubscriberFinder.
