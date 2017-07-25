@@ -214,12 +214,12 @@ public class UserFactoryLiferayImpl extends UserFactory {
 	}
 
 	@Override
-	public List<User> getUsersByName(String filter, int start, int limit) throws DotDataException {
+	public List<User> getUsersByName(final String filter, final int start, final int limit) throws DotDataException {
 
-		filter = SQLUtil.sanitizeParameter(filter);
+		String sanitizeFilter = SQLUtil.sanitizeParameter(filter);
 		DotConnect dotConnect = new DotConnect();
-		boolean isFilteredByName = UtilMethods.isSet(filter);
-		filter = (isFilteredByName ? filter : "");
+		boolean isFilteredByName = UtilMethods.isSet(sanitizeFilter);
+		sanitizeFilter = (isFilteredByName ? sanitizeFilter : "");
 		StringBuffer baseSql = new StringBuffer("select user_.userId from user_ where companyid = ? and userid <> 'system' ");
 		String userFullName = dotConnect.concat( new String[]{ "firstname", "' '", "lastname" } );
 
@@ -241,7 +241,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 
 		dotConnect.addParam(PublicCompanyFactory.getDefaultCompanyId());
 		if(isFilteredByName) {
-			dotConnect.addParam("%"+filter.toLowerCase()+"%");
+			dotConnect.addParam("%"+sanitizeFilter.toLowerCase()+"%");
 		}
 
 		if(start > -1)

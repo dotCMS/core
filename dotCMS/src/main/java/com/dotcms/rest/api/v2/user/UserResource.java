@@ -9,13 +9,10 @@ import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.api.v1.contenttype.ContentTypeHelper;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.PaginationUtil;
-import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotcms.util.pagination.UserPaginator;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
