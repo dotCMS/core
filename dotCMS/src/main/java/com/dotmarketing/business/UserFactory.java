@@ -75,7 +75,16 @@ public abstract class UserFactory {
 	 * @author Jason Tesser
      */
     protected abstract List<User> getUsersByName(String filter, int start,int limit) throws DotDataException;
-	
+
+	/**
+	 * This Method return the number of user that have a name like the filter string.
+	 *
+	 * @param filter compare string.
+	 * @return
+	 * @throws DotDataException
+	 */
+	protected abstract long getCountUsersByName(String filter) throws DotDataException;
+
     /**
      * 
      * @param userId Can be null

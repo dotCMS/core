@@ -424,11 +424,14 @@ public class UserResource implements Serializable {
 	 * currently logged-in user is automatically removed from the result list.
 	 *
 	 * @return The list of users that can be impersonated.
+	 *
+	 * @deprecated use {@link com.dotcms.rest.api.v2.user.UserResource#loginAsData(HttpServletRequest, String, int, int)}
 	 */
 	@GET
 	@Path("/loginAsData")
 	@JSONP
 	@NoCache
+	@Deprecated
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public final Response loginAsData(@Context final HttpServletRequest request, @QueryParam("filter") String filter,
 			@QueryParam("includeUsersCount") boolean includeUsersCount) {

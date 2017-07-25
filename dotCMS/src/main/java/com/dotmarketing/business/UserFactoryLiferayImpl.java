@@ -182,9 +182,40 @@ public class UserFactoryLiferayImpl extends UserFactory {
 			throw new DotDataException(e.getMessage(), e);
 		}
 	}
-	
+
+	@Override
+	public long getCountUsersByName(String filter) throws DotDataException {
+		filter = SQLUtil.sanitizeParameter(filter);
+		DotConnect dotConnect = new DotConnect();
+		boolean isFilteredByName = UtilMethods.isSet(filter);
+		filter = (isFilteredByName ? filter : "");
+		StringBuffer baseSql = new StringBuffer("select count(*) as count from user_ where companyid = ? and userid <> 'system' ");
+		String userFullName = dotConnect.concat( new String[]{ "firstname", "' '", "lastname" } );
+
+		if( isFilteredByName ) {
+			baseSql.append(" and lower(");
+			baseSql.append(userFullName);
+			baseSql.append(") like ?");
+		}
+
+		baseSql.append(" and delete_in_progress = ");
+		baseSql.append(DbConnectionFactory.getDBFalse());
+
+		String sql = baseSql.toString();
+		dotConnect.setSQL(sql);
+		Logger.debug( UserFactoryLiferayImpl.class,"::getCountUsersByName -> query: " + dotConnect.getSQL() );
+
+		dotConnect.addParam(PublicCompanyFactory.getDefaultCompanyId());
+		if(isFilteredByName) {
+			dotConnect.addParam("%"+filter.toLowerCase()+"%");
+		}
+
+		return dotConnect.getInt("count");
+	}
+
 	@Override
 	public List<User> getUsersByName(String filter, int start, int limit) throws DotDataException {
+
 		filter = SQLUtil.sanitizeParameter(filter);
 		DotConnect dotConnect = new DotConnect();
 		boolean isFilteredByName = UtilMethods.isSet(filter);
@@ -212,14 +243,14 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		if(isFilteredByName) {
 			dotConnect.addParam("%"+filter.toLowerCase()+"%");
 		}
-		
+
 		if(start > -1)
 			dotConnect.setStartRow(start);
 		if(limit > -1)
 			dotConnect.setMaxRows(limit);
 
 		ArrayList<Map<String, Object>> results = dotConnect.loadResults();
-		
+
 		// Since limit is a small number, convert each row to appropriate entity
 		ArrayList<User> users = new ArrayList<User>();
 
@@ -232,7 +263,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 			uc.add(u.getUserId(), u);
 		}
 
-		return users;   
+		return users;
 	}
 	
 	@Override
