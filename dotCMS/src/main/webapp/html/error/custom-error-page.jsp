@@ -24,10 +24,7 @@
       if (CmsUrlUtil.getInstance().isVanityUrl(errorPage, host, languageId)) {
         CachedVanityUrl vanityurl = APILocator.getVanityUrlAPI().getLiveCachedVanityUrl(errorPage, host, languageId, APILocator.systemUser());
         String uri = vanityurl.getForwardTo();
-        if (!UtilMethods.isSet(uri)) {
-          vanityurl = APILocator.getVanityUrlAPI().getLiveCachedVanityUrl(errorPage, null, languageId, APILocator.systemUser());
-          uri = vanityurl.getForwardTo();
-        }
+
         if (uri.contains("://")) {
           response.setStatus(301);
           response.setHeader("Location", uri);

@@ -255,12 +255,6 @@ public class CmsUrlUtil {
 				UtilMethods.isSet(cachedVanityUrl) && !cachedVanityUrl.getVanityUrlId()
 						.equals(VanityUrlAPI.CACHE_404_VANITY_URL);
 
-		if (!isVanityURL) {
-			cachedVanityUrl = APILocator.getVanityUrlAPI()
-					.getLiveCachedVanityUrl(uri, null, languageId, APILocator.systemUser());
-			isVanityURL = UtilMethods.isSet(cachedVanityUrl) && !cachedVanityUrl.getVanityUrlId()
-					.equals(VanityUrlAPI.CACHE_404_VANITY_URL);
-		}
 		// Still support legacy cmsHomePage
 		if ("/".equals(uri) && !isVanityURL) {
 			uri = "/cmsHomePage";
@@ -268,18 +262,9 @@ public class CmsUrlUtil {
 					.getLiveCachedVanityUrl(uri, host, languageId, APILocator.systemUser());
 			isVanityURL = UtilMethods.isSet(cachedVanityUrl) && !cachedVanityUrl.getVanityUrlId()
 					.equals(VanityUrlAPI.CACHE_404_VANITY_URL);
-
-			if (!isVanityURL) {
-				cachedVanityUrl = APILocator.getVanityUrlAPI()
-						.getLiveCachedVanityUrl(uri, null, languageId, APILocator.systemUser());
-				isVanityURL =
-						UtilMethods.isSet(cachedVanityUrl) && !cachedVanityUrl.getVanityUrlId()
-								.equals(VanityUrlAPI.CACHE_404_VANITY_URL);
-			}
 		}
 
 		return isVanityURL;
-
 	}
 
 	/**

@@ -1,10 +1,26 @@
 package com.dotmarketing.filters;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.net.URLDecoder;
+import java.util.Optional;
+
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.logging.LogFactory;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.vanityurl.handler.VanityUrlHandler;
 import com.dotcms.vanityurl.handler.VanityUrlHandlerResolver;
-import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
@@ -20,39 +36,19 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.NumberOfTimeVisitedCounter;
 import com.dotmarketing.util.PageRequestModeUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.util.Xss;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.net.URLDecoder;
-import java.util.Optional;
-import java.util.Set;
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import org.apache.commons.logging.LogFactory;
 
 public class CMSFilter implements Filter {
 
-    private final HttpServletRequestThreadLocal requestThreadLocal =
-            HttpServletRequestThreadLocal.INSTANCE;
-
+    @Override
     public void destroy() {
 
     }
-
-    String ASSET_PATH = null;
 
     CmsUrlUtil urlUtil = CmsUrlUtil.getInstance();
 
@@ -67,7 +63,7 @@ public class CMSFilter implements Filter {
     }
 
     VanityUrlAPI vanityUrlAPI = APILocator.getVanityUrlAPI();
-
+    private final String RELATIVE_ASSET_PATH = APILocator.getFileAssetAPI().getRelativeAssetsRootPath();
     public static final String CMS_INDEX_PAGE = Config.getStringProperty("CMS_INDEX_PAGE", "index");
     public static final String CMS_FILTER_IDENTITY = "CMS_FILTER_IDENTITY";
     public static final String CMS_FILTER_URI_OVERRIDE = "CMS_FILTER_URLMAP_OVERRIDE";
@@ -79,8 +75,6 @@ public class CMSFilter implements Filter {
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
 
-        // set the request in the threadlocal.
-        this.requestThreadLocal.setRequest(request);
 
         final String uri =
                 (request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null) ? (String) request
@@ -118,7 +112,7 @@ public class CMSFilter implements Filter {
 		 * the cms, give them a 404
 		 */
 
-        if (UtilMethods.isSet(ASSET_PATH) && uri.startsWith(ASSET_PATH)) {
+        if (UtilMethods.isSet(RELATIVE_ASSET_PATH) && uri.startsWith(RELATIVE_ASSET_PATH)) {
             response.sendError(403, "Forbidden");
             return;
         }
@@ -126,42 +120,28 @@ public class CMSFilter implements Filter {
         // get the users language
         long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 
-            if (urlUtil.isFileAsset(uri, host, languageId)) {
-                iAm = IAm.FILE;
-            } else if (urlUtil.isVanityUrl(uri, host, languageId)) {
-                iAm = IAm.VANITY_URL;
-            } else if (urlUtil.isPageAsset(uri, host, languageId)) {
-                iAm = IAm.PAGE;
-            } else if (urlUtil.isFolder(uri, host)) {
-                iAm = IAm.FOLDER;
-            }
+        if (urlUtil.isFileAsset(uri, host, languageId)) {
+            iAm = IAm.FILE;
+        } else if (urlUtil.isVanityUrl(uri, host, languageId)) {
+            iAm = IAm.VANITY_URL;
+        } else if (urlUtil.isPageAsset(uri, host, languageId)) {
+            iAm = IAm.PAGE;
+        } else if (urlUtil.isFolder(uri, host)) {
+            iAm = IAm.FOLDER;
+        }
 
         String vanityURLRewrite = null;
         String queryString = request.getQueryString();
         // if a vanity URL
         if (iAm == IAm.VANITY_URL) {
             UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
-            CachedVanityUrl vanityUrl = APILocator.getVanityUrlAPI()
-                    .getLiveCachedVanityUrl(("/".equals(uri) ? "/cmsHomePage"
-                                    : uri.endsWith("/") ? uri.substring(0, uri.length() - 1) : uri), host,
-                            languageId, userWebAPI.getUser(request));
-
-            if (vanityUrl == null || VanityUrlAPI.CACHE_404_VANITY_URL
-                    .equals(vanityUrl.getVanityUrlId()) || (
-                    !InodeUtils.isSet(vanityUrl.getVanityUrlId()) && !UtilMethods
-                            .isSet(vanityUrl.getForwardTo()))) {
-                vanityUrl = APILocator.getVanityUrlAPI()
-                        .getLiveCachedVanityUrl(("/".equals(uri) ? "/cmsHomePage"
-                                        : uri.endsWith("/") ? uri.substring(0, uri.length() - 1) : uri),
-                                null,
-                                languageId, userWebAPI.getUser(request));
-            }
 
             VanityUrlHandler vanityUrlHandler = vanityUrlHandlerResolver.getVanityUrlHandler();
             VanityUrlResult vanityUrlResult = vanityUrlHandler
-                    .handle(vanityUrl, response, host, languageId);
+                    .handle(uri, response, host, languageId, userWebAPI.getUser(request));
+
             if (vanityUrlResult.isResult()) {
-                closeDbSilently();
+                DbConnectionFactory.closeSilently();
                 return;
             }
             if (vanityUrlResult.getQueryString() != null) {
@@ -191,7 +171,7 @@ public class CMSFilter implements Filter {
                 if (!UtilMethods.isSet(vanityURLRewrite)) {
                     response.setStatus(301);
                 }
-                closeDbSilently();
+                DbConnectionFactory.closeSilently();
                 return;
             } else {
                 if (UtilMethods.isSet(vanityURLRewrite)) {
@@ -313,20 +293,6 @@ public class CMSFilter implements Filter {
     }
 
 
-    public void init(FilterConfig config) throws ServletException {
-        this.ASSET_PATH = APILocator.getFileAssetAPI().getRealAssetsRootPath();
-    }
-
-    @Deprecated
-    private static Set<String> excludeList = null;
-    @Deprecated
-    private static final Integer mutex = new Integer(0);
-
-
-    @Deprecated
-    private static void buildExcludeList() {
-        // not needed anymore
-    }
 
     @Deprecated
     public static void addExclude(String URLPattern) {
@@ -344,20 +310,6 @@ public class CMSFilter implements Filter {
         return true;
     }
 
-    private void closeDbSilently() {
-        try {
-            HibernateUtil.closeSession();
-        } catch (Exception e) {
-
-        } finally {
-            try {
-
-                DbConnectionFactory.closeConnection();
-            } catch (Exception e) {
-
-            }
-        }
-    }
 
     private String xssCheck(String uri, String queryString) throws ServletException {
 
@@ -378,6 +330,12 @@ public class CMSFilter implements Filter {
         }
 
         return rewrite;
+    }
+
+    @Override
+    public void init(FilterConfig arg0) throws ServletException {
+        // TODO Auto-generated method stub
+        
     }
 
 
