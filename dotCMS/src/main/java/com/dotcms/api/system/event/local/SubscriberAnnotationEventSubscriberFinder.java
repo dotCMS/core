@@ -44,14 +44,14 @@ public class SubscriberAnnotationEventSubscriberFinder implements EventSubscribe
                     if (1 != parameterTypes.length) {
 
                         throw new IllegalArgumentException(
-                                "A method annotated by Subscriber must have just one argument (the event type), see " +
+                                "A method annotated with Subscriber must have just one argument (the event type), see " +
                                         subcriber.getClass() + method);
                     }
 
                     if (method.isAccessible()) {
 
                         throw new IllegalArgumentException(
-                                "A method annotated by Subscriber must accessible in order to be called, see " +
+                                "A method annotated with Subscriber must accessible in order to be called, see " +
                                         subcriber.getClass() + method);
                     }
 

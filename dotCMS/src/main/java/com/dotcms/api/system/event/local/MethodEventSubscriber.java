@@ -6,7 +6,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
- * This implemention wraps a method in order to be called on notify.
+ * This implementation wraps a method in order to be called on notify.
  * @author jsanca
  */
 public class MethodEventSubscriber implements EventSubscriber {
@@ -42,7 +42,7 @@ public class MethodEventSubscriber implements EventSubscriber {
             throw new DotRuntimeException("Invalid Argument on method: " + this.id + FOR_EVENT + event, e);
         } catch (IllegalAccessException e) {
 
-            throw new DotRuntimeException("Method is not inaccessible: "  + this.id + FOR_EVENT + event, e);
+            throw new DotRuntimeException("Method is not accessible: "  + this.id + FOR_EVENT + event, e);
         } catch (InvocationTargetException e) {
 
             throw new DotRuntimeException("Invocation error on method: "  + this.id + FOR_EVENT + event, e);
