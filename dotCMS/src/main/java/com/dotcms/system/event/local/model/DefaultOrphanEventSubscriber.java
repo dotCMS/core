@@ -1,4 +1,4 @@
-package com.dotcms.system.event.local.domain;
+package com.dotcms.system.event.local.model;
 
 import com.dotcms.system.event.local.type.OrphanEvent;
 import com.dotmarketing.util.Config;

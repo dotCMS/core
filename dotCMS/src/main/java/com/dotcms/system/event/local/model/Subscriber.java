@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.dotcms.system.event.local.domain;
+package com.dotcms.system.event.local.model;
 
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 

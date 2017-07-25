@@ -1,8 +1,8 @@
 package com.dotcms.system.event.local.business;
 
-import com.dotcms.system.event.local.domain.EventSubscriber;
-import com.dotcms.system.event.local.domain.MethodEventSubscriber;
-import com.dotcms.system.event.local.domain.Subscriber;
+import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotcms.system.event.local.model.MethodEventSubscriber;
+import com.dotcms.system.event.local.model.Subscriber;
 import com.google.common.collect.ImmutableMap;
 
 import java.lang.reflect.Method;

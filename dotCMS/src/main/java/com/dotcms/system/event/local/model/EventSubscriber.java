@@ -1,4 +1,4 @@
-package com.dotcms.system.event.local.domain;
+package com.dotcms.system.event.local.model;
 
 /**
  * Interface for the EventSubscriber.

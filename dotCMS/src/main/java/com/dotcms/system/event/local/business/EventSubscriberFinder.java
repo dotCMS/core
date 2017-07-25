@@ -1,6 +1,6 @@
 package com.dotcms.system.event.local.business;
 
-import com.dotcms.system.event.local.domain.EventSubscriber;
+import com.dotcms.system.event.local.model.EventSubscriber;
 
 import java.util.Map;
 

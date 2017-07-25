@@ -1,7 +1,7 @@
 package com.dotcms.system.event.local;
 
-import com.dotcms.system.event.local.domain.EventSubscriber;
-import com.dotcms.system.event.local.domain.Subscriber;
+import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotcms.system.event.local.model.Subscriber;
 
 /**
  * Just for testing
