@@ -11,6 +11,7 @@ import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
 import com.dotcms.contenttype.business.FieldAPIImpl;
 import com.dotcms.contenttype.business.FieldFactoryImpl;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
@@ -18,6 +19,10 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.liferay.portal.model.User;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class ContentTypeBaseTest extends IntegrationTestBase {
 
@@ -82,4 +87,28 @@ public class ContentTypeBaseTest extends IntegrationTestBase {
 		dc.setSQL("update structure set url_map_pattern =null, page_detail=null where structuretype =3");
 		dc.loadResult();
 	}
+
+	/**
+	 * Sorts an unmodifiable list by variable name
+	 *
+	 * @param list The list to be sorted
+	 * @return Sorted List of Field
+	 */
+	protected List<Field> sortListByVariable(List<Field> list) {
+		List<Field> sortedList = new ArrayList<Field>();
+		if (!list.isEmpty()) {
+			List unmodifiableList = Collections.unmodifiableList(list);
+			List<Field> newList = new ArrayList<Field>(unmodifiableList);
+
+			Collections.sort(newList, (fieldOne, fieldTwo) -> {
+				//use instanceof to verify the references are indeed of the type in question
+				return ((Field) fieldOne).variable()
+					.compareTo(((Field) fieldTwo).variable());
+			});
+
+			sortedList = newList;
+		}
+		return sortedList;
+	}
+
 }
