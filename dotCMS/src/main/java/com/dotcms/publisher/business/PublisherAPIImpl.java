@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.api.system.event.local.LocalSystemEventsAPI;
+import com.dotcms.api.system.event.local.type.AddedToQueueEvent;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.ObjectAlreadyExistsException;
@@ -60,6 +62,8 @@ public class PublisherAPIImpl extends PublisherAPI{
 	private PublishQueueMapper mapper = null;
 
 	private static PublisherAPIImpl instance= null;
+
+	private LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
 
 	/**
 	 * Returns a single instance of this class.
@@ -298,6 +302,9 @@ public class PublisherAPIImpl extends PublisherAPI{
 		resultMap.put( "errors", errorsList.size() );
 		resultMap.put( "bundleId", bundleId );
 		resultMap.put( "total", identifiers != null ? identifiers.size() : 0 );
+
+		//Triggering event listener
+		localSystemEventsAPI.asyncNotify(new AddedToQueueEvent());
 		return resultMap;
     }
 
