@@ -8,6 +8,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.liferay.portal.model.User;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.List;
@@ -70,20 +71,23 @@ public class UserPaginator implements Paginator<Map<String, Object>> {
             List<String> rolesId = list( roleAPI.loadRoleByKey(Role.ADMINISTRATOR).getId(), roleAPI.loadCMSAdminRole().getId() );
             List<User> users = userAPI.getUsersByName(filter, offset, limit, user, false);
             return users.stream()
-                    .map(userItem -> {
-                        try{
-                            Map<String, Object> userMap = userItem.toMap();
-                            String id = userItem.getUserId();
-                            userMap.put("requestPassword", roleAPI.doesUserHaveRoles(id, rolesId));
-
-                            return userMap;
-                        }catch(Exception e){
-                            return null;
-                        }
-                    })
+                    .map(userItem -> getUserObjectMap(rolesId, userItem))
                     .collect(Collectors.toList());
         } catch (DotDataException e) {
             throw new DotRuntimeException(e);
+        }
+    }
+
+    @Nullable
+    private Map<String, Object> getUserObjectMap(List<String> rolesId, User userItem) {
+        try{
+            Map<String, Object> userMap = userItem.toMap();
+            String id = userItem.getUserId();
+            userMap.put("requestPassword", roleAPI.doesUserHaveRoles(id, rolesId));
+
+            return userMap;
+        }catch(Exception e){
+            return null;
         }
     }
 }

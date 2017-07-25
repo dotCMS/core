@@ -189,7 +189,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		DotConnect dotConnect = new DotConnect();
 		boolean isFilteredByName = UtilMethods.isSet(filter);
 		filter = (isFilteredByName ? filter : "");
-		StringBuffer baseSql = new StringBuffer("select count(*) as count from user_ where companyid = ? and userid <> 'system' ");
+		StringBuilder baseSql = new StringBuilder("select count(*) as count from user_ where companyid = ? and userid <> 'system' ");
 		String userFullName = dotConnect.concat( new String[]{ "firstname", "' '", "lastname" } );
 
 		if( isFilteredByName ) {

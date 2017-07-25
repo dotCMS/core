@@ -6,8 +6,6 @@ import static com.dotcms.util.CollectionsUtils.map;
 
 import java.io.Serializable;
 import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -19,15 +17,12 @@ import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.*;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.api.v1.authentication.AuthenticationForm;
 import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.NoSuchUserException;
