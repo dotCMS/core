@@ -1,9 +1,9 @@
 package com.dotcms.publisher.pusher;
 
-import com.dotcms.api.system.event.local.LocalSystemEventsAPI;
-import com.dotcms.api.system.event.local.type.AllEndpointsFailureEvent;
-import com.dotcms.api.system.event.local.type.AllEndpointsSuccessEvent;
-import com.dotcms.api.system.event.local.type.SingleEndpointFailureEvent;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.type.pushpublish.AllEndpointsFailureEvent;
+import com.dotcms.system.event.local.type.pushpublish.AllEndpointsSuccessEvent;
+import com.dotcms.system.event.local.type.pushpublish.SingleEndpointFailureEvent;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.publishing.remote.bundler.BundleXMLAsc;
 import com.dotcms.enterprise.publishing.remote.bundler.CategoryBundler;
@@ -92,7 +92,7 @@ public class PushPublisher extends Publisher {
     private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
     private PublishingEndPointAPI publishingEndPointAPI = APILocator.getPublisherEndPointAPI();
     private LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
-    
+
     private static final String PROTOCOL_HTTP = "http";
     private static final String PROTOCOL_HTTPS = "https";
     private static final String HTTP_PORT = "80";
@@ -364,7 +364,7 @@ public class PushPublisher extends Publisher {
         if ( buildOSGIBundle ) {
             list.add( OSGIBundler.class );
         }
-        if ( buildAsset || buildLanguages) {
+        if ( buildAsset ) {
             list.add( DependencyBundler.class );
             list.add( HostBundler.class );
             list.add( ContentBundler.class );
@@ -382,7 +382,10 @@ public class PushPublisher extends Publisher {
             list.add( LanguageBundler.class );
         } else {
 			list.add(DependencyBundler.class);
-			if (buildRules) {
+			if (buildLanguages) {
+				list.add(LanguageVariablesBundler.class);
+				list.add(LanguageBundler.class);
+			} else if (buildRules) {
 				list.add(HostBundler.class);
 				list.add(RuleBundler.class);
 			}

@@ -2,8 +2,8 @@ package com.dotmarketing.business;
 
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
-import com.dotcms.api.system.event.local.LocalSystemEventsAPI;
-import com.dotcms.api.system.event.local.LocalSystemEventsAPIFactory;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPIFactory;
 import com.dotcms.api.tree.TreeableAPI;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
