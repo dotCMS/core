@@ -333,7 +333,7 @@ dependencies {
 
 
     compile group: 'org.apache.xmlgraphics', name: 'batik-rasterizer', version:'1.8'
-    compile (group: 'com.amazonaws', name: 'aws-java-sdk-s3', version:'1.11.66')  {
+    compile (group: 'com.amazonaws', name: 'aws-java-sdk-s3', version:'1.10.12')  {
         exclude(group: 'commons-logging')
         exclude(group: 'org.slf4j')
     }
