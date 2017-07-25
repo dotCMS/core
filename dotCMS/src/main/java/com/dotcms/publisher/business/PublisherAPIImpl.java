@@ -63,6 +63,8 @@ public class PublisherAPIImpl extends PublisherAPI{
 
 	private static PublisherAPIImpl instance= null;
 
+	private LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
+
 	/**
 	 * Returns a single instance of this class.
 	 * 
@@ -302,8 +304,6 @@ public class PublisherAPIImpl extends PublisherAPI{
 		resultMap.put( "total", identifiers != null ? identifiers.size() : 0 );
 
 		//Triggering event listener
-		LocalSystemEventsAPI localSystemEventsAPI =
-				APILocator.getLocalSystemEventsAPI();
 		localSystemEventsAPI.asyncNotify(new AddedToQueueEvent());
 		return resultMap;
     }
