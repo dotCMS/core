@@ -47,7 +47,7 @@ public interface LocalSystemEventsAPI {
 
 
     /**
-     * param sync notification to all registered handlers.
+     * Creates a sync notification to all registered handlers.
      * @param event
      */
     public void notify(final Object event);
