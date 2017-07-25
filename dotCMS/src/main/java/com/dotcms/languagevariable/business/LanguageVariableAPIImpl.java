@@ -23,8 +23,6 @@ import com.liferay.portal.model.User;
  */
 public class LanguageVariableAPIImpl implements LanguageVariableAPI {
 
-
-    public static final String LANGUAGEVARIABLE = "Languagevariable";
     private final KeyValueAPI keyValueAPI;
     private final LanguageAPI languageAPI;
 
