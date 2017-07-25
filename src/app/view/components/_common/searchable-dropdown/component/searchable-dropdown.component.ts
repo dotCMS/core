@@ -7,7 +7,8 @@ import {
     Output,
     ViewChild,
     ViewEncapsulation,
-    forwardRef
+    forwardRef,
+    SimpleChanges
 } from '@angular/core';
 import { BaseComponent } from '../../_base/base-component';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
@@ -43,6 +44,7 @@ export class SearchableDropdownComponent extends BaseComponent
     @Input() pageLinkSize = 3;
     @Input() rows: number;
     @Input() totalRecords: number;
+    @Input() placeholder = '';
 
     @Output() change: EventEmitter<any> = new EventEmitter();
     @Output() filterChange: EventEmitter<string> = new EventEmitter();
@@ -59,6 +61,12 @@ export class SearchableDropdownComponent extends BaseComponent
 
     constructor(messageService: MessageService) {
         super(['search'], messageService);
+    }
+
+    ngOnChanges(change: SimpleChanges): void {
+        if (change.placeholder && change.placeholder.currentValue) {
+            this.valueString = change.placeholder.currentValue;
+        }
     }
 
     ngOnInit(): void {
@@ -95,7 +103,7 @@ export class SearchableDropdownComponent extends BaseComponent
      */
     writeValue(value: any): void {
         this.value = value;
-        this.valueString = value ? value[this.labelPropertyName] : '';
+        this.valueString = value ? value[this.labelPropertyName] : this.placeholder;
     }
 
     /**
@@ -117,6 +125,7 @@ export class SearchableDropdownComponent extends BaseComponent
      * @memberof SearchableDropdownComponent
      */
     private handleClick(item: any): void {
+
         if (this.value !== item) {
             this.value = item;
             this.valueString = item[this.labelPropertyName];

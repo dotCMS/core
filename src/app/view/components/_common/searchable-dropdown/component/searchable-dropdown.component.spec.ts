@@ -1,7 +1,7 @@
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, async } from '@angular/core/testing';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
-import { DebugElement } from '@angular/core';
+import { DebugElement, SimpleChange } from '@angular/core';
 import { MessageService } from '../../../../../api/services/messages-service';
 import { MockMessageService } from '../../../../../test/message-service.mock';
 import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
@@ -126,5 +126,15 @@ describe('SearchableDropdownComponent', () => {
 
     let items = fixture.debugElement.queryAll(By.css('span'));
     items[0].triggerEventHandler('click', null);
+  });
+
+  it('should be valueString equals to placeholder', () => {
+    let placeholderValue = 'testing placeholder';
+
+    comp.ngOnChanges({
+        placeholder: new SimpleChange(null, placeholderValue, true)
+    });
+
+    expect(placeholderValue).toEqual(comp.valueString);
   });
 });

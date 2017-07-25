@@ -24,7 +24,6 @@ export class LoginService {
     private _loginAsUsersList$: Subject<User[]>;
     private country = '';
     private lang = '';
-    private loginAsUserList: User[];
     private urls: any;
     private nUsers = -1;
 
@@ -33,12 +32,10 @@ export class LoginService {
                 private loggerService: LoggerService) {
 
         this._loginAsUsersList$ = <Subject<User[]>> new Subject();
-        this.loginAsUserList = [];
         this.urls = {
             changePassword: 'v1/changePassword',
             getAuth: 'v1/authentication/logInUser',
             loginAs: 'v1/users/loginas',
-            loginAsUserList: 'v1/users/loginAsData',
             logout: 'v1/logout',
             logoutAs: 'v1/users/logoutas',
             recoverPassword: 'v1/forgotpassword',
@@ -123,43 +120,6 @@ export class LoginService {
     }
 
     /**
-     * Get login as user list
-     * @returns {Observable<User[]>}
-     */
-    public getLoginAsUsersList(filter: string): Observable<User[]> {
-        return Observable.create(observer => {
-
-            let needLoadUsers = this.loginAsUserList.length === 0 || this.nUsers > this.loginAsUserList.length;
-            this.loggerService.debug('is it need load users?', needLoadUsers);
-
-            if (needLoadUsers) {
-                let includeNUsers = this.nUsers === -1;
-
-                this.loggerService.debug('loading users, filter:', filter);
-
-                this.loadLoginAsUsersList(includeNUsers, filter).subscribe(entity => {
-                    this.loggerService.debug('Users Loaded', entity);
-                    this.loginAsUserList = <User[]> entity['users'];
-
-                    if (includeNUsers) {
-                        this.nUsers = <number> entity['nUsers'];
-                    }
-
-                    observer.next(this.loginAsUserList);
-                });
-            } else {
-                this.loggerService.debug('filtering users...');
-                if (!filter) {
-                    observer.next(this.loginAsUserList);
-                }else {
-                    observer.next(
-                        this.loginAsUserList.filter(user => user.fullName.toLowerCase().indexOf(filter.toLowerCase()) >= 0));
-                }
-            }
-        });
-    }
-
-    /**
      * Get the server information to configure the login component
      * @param language language and country to get the internationalized messages
      * @param i18nKeys array of message key to internationalize
@@ -176,25 +136,17 @@ export class LoginService {
     }
 
     /**
-     * Get a user from the login as user list
-     * @param userId
-     * @returns {User[]}
-     */
-    public getLoginAsUser(userId: string): User {
-        return this.loginAsUserList.filter(item => item.userId === userId)[0];
-    }
-
-    /**
      * Do the login as request and return an Observable.
-     * @param options
+     * @param user user to loginas
+     * @param password loginin user's password
      * @returns {Observable<R>}
      */
     // TODO: password in the url is a no-no, fix asap. Sanchez and Jose have an idea.
-    public loginAs(options: any): Observable<any> {
+    public loginAs(userData: {user: User, password: string}): Observable<any> {
         return this.coreWebService.requestView({
             body: {
-                password: options.password,
-                userId: options.userId
+                password: userData.password,
+                userId: userData.user.userId
             },
             method: RequestMethod.Post,
             url: this.urls.loginAs,
@@ -202,9 +154,9 @@ export class LoginService {
             if (!res.entity.loginAs) {
                 throw res.errorsMessages;
             }
-            let loginAsUser = this.getLoginAsUser(options.userId);
+
             this.setAuth({
-                loginAsUser: loginAsUser,
+                loginAsUser: userData.user,
                 user: this._auth.user
             });
             return res;
