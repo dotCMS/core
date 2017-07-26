@@ -45,14 +45,10 @@ import com.liferay.util.Xss;
 
 public class CMSFilter implements Filter {
 
-    @Override
-    public void destroy() {
-
-    }
-
-    CmsUrlUtil urlUtil = CmsUrlUtil.getInstance();
-
-    VanityUrlHandlerResolver vanityUrlHandlerResolver = VanityUrlHandlerResolver.getInstance();
+    private final HttpServletRequestThreadLocal requestThreadLocal =
+            HttpServletRequestThreadLocal.INSTANCE;
+    private CmsUrlUtil urlUtil = CmsUrlUtil.getInstance();
+    private VanityUrlHandlerResolver vanityUrlHandlerResolver = VanityUrlHandlerResolver.getInstance();
 
     public enum IAm {
         PAGE,
@@ -70,11 +66,18 @@ public class CMSFilter implements Filter {
 
     private static VisitorAPI visitorAPI = APILocator.getVisitorAPI();
 
+    @Override
+    public void init(FilterConfig arg0) throws ServletException {
+
+    }
+
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
             throws IOException, ServletException {
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
 
+        // Set the request in the thread local.
+        this.requestThreadLocal.setRequest(request);
 
         final String uri =
                 (request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null) ? (String) request
@@ -258,6 +261,11 @@ public class CMSFilter implements Filter {
 
     }
 
+    @Override
+    public void destroy() {
+
+    }
+
     private void countSiteVisit(HttpServletRequest request, HttpServletResponse response) {
 
         HttpSession session = request.getSession(false);
@@ -331,12 +339,5 @@ public class CMSFilter implements Filter {
 
         return rewrite;
     }
-
-    @Override
-    public void init(FilterConfig arg0) throws ServletException {
-        // TODO Auto-generated method stub
-        
-    }
-
 
 }
