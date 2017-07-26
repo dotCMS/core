@@ -58,6 +58,7 @@ import com.liferay.util.FileUtil;
  */
 public class FileAssetAPIImpl implements FileAssetAPI {
 
+    private final static String DEFAULT_RELATIVE_ASSET_PATH = "/assets";
 	private SystemEventsAPI systemEventsAPI;
 	ContentletAPI contAPI;
 	PermissionAPI perAPI;
@@ -468,7 +469,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
         if (UtilMethods.isSet(realPath) && !realPath.endsWith(java.io.File.separator))
             realPath = realPath + java.io.File.separator;
 
-        String assetPath = Config.getStringProperty("ASSET_PATH");
+        String assetPath = Config.getStringProperty("ASSET_PATH", DEFAULT_RELATIVE_ASSET_PATH);
         if (UtilMethods.isSet(assetPath) && !assetPath.endsWith(java.io.File.separator))
             assetPath = assetPath + java.io.File.separator;
 
@@ -501,7 +502,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	 */
 	public String getRelativeAssetsRootPath() {
         String path = "";
-        path = Config.getStringProperty("ASSET_PATH");
+        path = Config.getStringProperty("ASSET_PATH", DEFAULT_RELATIVE_ASSET_PATH);
         return path;
     }
 
@@ -524,11 +525,11 @@ public class FileAssetAPIImpl implements FileAssetAPI {
         String _inode = inode;
         String path = "";
 
-        String realPath = Config.getStringProperty("ASSET_REAL_PATH");
+        String realPath = Config.getStringProperty("ASSET_REAL_PATH", null);
         if (UtilMethods.isSet(realPath) && !realPath.endsWith(java.io.File.separator))
             realPath = realPath + java.io.File.separator;
 
-        String assetPath = Config.getStringProperty("ASSET_PATH");
+        String assetPath = Config.getStringProperty("ASSET_PATH", DEFAULT_RELATIVE_ASSET_PATH);
         if (UtilMethods.isSet(assetPath) && !assetPath.endsWith(java.io.File.separator))
             assetPath = assetPath + java.io.File.separator;
 

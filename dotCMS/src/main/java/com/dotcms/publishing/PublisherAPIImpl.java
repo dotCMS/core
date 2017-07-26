@@ -1,8 +1,8 @@
 package com.dotcms.publishing;
 
-import com.dotcms.api.system.event.local.LocalSystemEventsAPI;
-import com.dotcms.api.system.event.local.type.PushPublishEndEvent;
-import com.dotcms.api.system.event.local.type.PushPublishStartEvent;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.type.pushpublish.PushPublishEndEvent;
+import com.dotcms.system.event.local.type.pushpublish.PushPublishStartEvent;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;

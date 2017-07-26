@@ -18,6 +18,8 @@ import com.liferay.portal.model.User;
  *
  */
 public interface LanguageVariableAPI {
+	
+	public static final String LANGUAGEVARIABLE = "Languagevariable";
 
     /**
      * Returns the Language Variable value associated to the specified key and language ID. This
