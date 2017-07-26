@@ -2372,7 +2372,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 if ( DbConnectionFactory.isMsSql() ) {
                     whereField.append(" DATALENGTH (").append(field.getFieldContentlet()).append(")");
                 } else if ( DbConnectionFactory.isOracle() ) {
-                    whereField.append("'").append(field.getFieldContentlet()).append("'").append(" != ");
+                	whereField.append("TO_CHAR(").append(field.getFieldContentlet()).append(") != ");
                 } else {
                     whereField.append(field.getFieldContentlet()).append(" != ");
                 }
