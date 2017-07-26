@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.dotcms.enterprise.rules.RulesAPI;
+import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publishing.DotBundleException;
@@ -49,6 +50,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 
 /**
  * The main purpose of this class is to determine all possible content
@@ -311,6 +313,7 @@ public class DependencyManager {
 		setContainerDependencies();
 		setStructureDependencies();
 		setLinkDependencies();
+		setLanguageDependencies();
 		setContentDependencies();
 		setRuleDependencies();
 
@@ -1077,6 +1080,26 @@ public class DependencyManager {
 			Logger.error(this, "Dependencies for rule [" + ruleToProcess + "] could not be set: " + e.getMessage(), e);
 		} catch (DotSecurityException e) {
 			Logger.error(this, "Dependencies for rule [" + ruleToProcess + "] could not be set: " + e.getMessage(), e);
+		}
+	}
+	
+	private void setLanguageDependencies(){
+		ContentletAPI contentletAPI = APILocator.getContentletAPI();
+		
+		try{
+			for(String lang : languages){
+				String keyValueQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE + " +languageId:" + lang;
+				List<Contentlet> listKeyValueLang = contentletAPI.search(keyValueQuery, 0, -1, StringPool.BLANK, user, false);
+				for(Contentlet keyValue : listKeyValueLang){
+					contents.addOrClean(keyValue.getIdentifier(),keyValue.getModDate());
+					contentsSet.add(keyValue.getIdentifier());
+				}
+				
+			}
+			
+			
+		}catch (Exception e){
+			Logger.error(this, e.getMessage(),e);
 		}
 	}
 

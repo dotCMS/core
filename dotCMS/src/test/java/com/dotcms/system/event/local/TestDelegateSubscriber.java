@@ -1,4 +1,6 @@
-package com.dotcms.api.system.event.local;
+package com.dotcms.system.event.local;
+
+import com.dotcms.system.event.local.model.EventSubscriber;
 
 /**
  * Just for testing

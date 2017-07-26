@@ -1,6 +1,7 @@
-package com.dotcms.api.system.event.local;
+package com.dotcms.system.event.local;
 
 import com.dotcms.UnitTestBase;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import org.junit.Assert;

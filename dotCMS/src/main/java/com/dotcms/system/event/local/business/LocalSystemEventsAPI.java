@@ -1,22 +1,26 @@
-package com.dotcms.api.system.event.local;
+package com.dotcms.system.event.local.business;
+
+import com.dotcms.system.event.local.model.DefaultOrphanEventSubscriber;
+import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotcms.system.event.local.type.OrphanEvent;
 
 /**
- * A local system events allows to add classes, annotated by Subscriber annotation.
+ * A local system event allows to add classes, annotated by Subscriber annotation.
  * The method must have just one parameter that will be the Event Type, when this event type is notified, all class subscribed will
- * be triggered the event.
+ * be triggered.
  * @author jsanca
  */
 public interface LocalSystemEventsAPI {
 
     /**
-     * Do the subscription of all methods annotation with Subscriber.
-     * The method most have just one parameter witch is the event to received when the notification is triggered.
+     * Do the subscription of all methods annotated with Subscriber.
+     * The method must have just one parameter which is the event to be received when the notification is triggered.
      * @param subscriber
      */
     void subscribe (Object subscriber);
 
     /**
-     * Do the subscription for a
+     * Do the subscription for an event
      * @param eventType {@link Class} eventType
      * @param subscriber {@link EventSubscriber}
      */
@@ -29,27 +33,27 @@ public interface LocalSystemEventsAPI {
     boolean unsubscribe (Class<?> eventType);
 
     /**
-     * Unsubscribes a specific subscribed
+     * Unsubscribes a specific subscriber
      * @param eventType {@link Class}
      * @param subscriberId {@link String}
      */
     boolean unsubscribe (final Class<?> eventType, String subscriberId);
 
     /**
-     * Do an async notification to all registered handlers
+     * Creates an async notification to all registered handlers
      * @param event {@link Object}
      */
     void asyncNotify (Object event);
 
 
     /**
-     * Do sync notification to all registered handlers.
+     * Creates a sync notification to all registered handlers.
      * @param event
      */
     public void notify(final Object event);
 
     /**
-     * Find the subscriber
+     * Finds the subscriber
      * @param eventType {@link Class}
      * @param subscriberId {@link String}
      * @return EventSubscriber
@@ -57,7 +61,7 @@ public interface LocalSystemEventsAPI {
     EventSubscriber findSubscriber (final Class<?> eventType, String subscriberId);
 
     /**
-     * Set's the Event Subscriber for the Orphan Events (events with not subscriber associated)
+     * Sets the Event Subscriber for the Orphan Events (events with not subscriber associated)
      * By default the subscriber is {@link DefaultOrphanEventSubscriber}
      *
      * @param orphanEventSubscriber {@link EventSubscriber}

@@ -1,8 +1,8 @@
-package com.dotcms.api.system.event.local;
+package com.dotcms.system.event.local.type;
 
 
 /**
- * This is a wrapper event for orphan (events with not subscribed associated)
+ * This is a wrapper event for orphan (events with not subscriber associated)
  * @author jsanca
  */
 public class OrphanEvent {

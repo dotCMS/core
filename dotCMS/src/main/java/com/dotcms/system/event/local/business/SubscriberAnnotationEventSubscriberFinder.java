@@ -1,5 +1,8 @@
-package com.dotcms.api.system.event.local;
+package com.dotcms.system.event.local.business;
 
+import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotcms.system.event.local.model.MethodEventSubscriber;
+import com.dotcms.system.event.local.model.Subscriber;
 import com.google.common.collect.ImmutableMap;
 
 import java.lang.reflect.Method;
@@ -44,19 +47,19 @@ public class SubscriberAnnotationEventSubscriberFinder implements EventSubscribe
                     if (1 != parameterTypes.length) {
 
                         throw new IllegalArgumentException(
-                                "A method annotated by Subscriber must have just one argument (the event type), see " +
+                                "A method annotated with Subscriber must have just one argument (the event type), see " +
                                         subcriber.getClass() + method);
                     }
 
                     if (method.isAccessible()) {
 
                         throw new IllegalArgumentException(
-                                "A method annotated by Subscriber must accessible in order to be called, see " +
+                                "A method annotated with Subscriber must accessible in order to be called, see " +
                                         subcriber.getClass() + method);
                     }
 
                     eventTypeSubscriberMap.put(parameterTypes[0],
-                            new MethodEventSubscriber (method, subcriber));
+                            new MethodEventSubscriber(method, subcriber));
                 }
             }
         }

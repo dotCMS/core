@@ -161,7 +161,7 @@ public class AjaxFileUploadServlet extends HttpServlet {
 						fileName = fileItem.getName();
 					}
 					fileName = ContentletUtil.sanitizeFileName(fileName);
-
+					fieldName = ContentletUtil.sanitizeFileName(fieldName);
 					File tempUserFolder = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + userId +
 							File.separator + fieldName);
 
