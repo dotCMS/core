@@ -86,9 +86,7 @@ public class JSONCategoriesServlet extends HttpServlet implements Servlet {
 			String startStr = request.getParameter("start");
 			String countStr = request.getParameter("count");
 			String sort = request.getParameter("sort");
-			if("-sort_order".equals(sort)){
-				sort = "sort_order";
-			}
+
 			if(UtilMethods.isSet(startStr) && UtilMethods.isSet(countStr)) {
 				start = Integer.parseInt(request.getParameter("start"));
 				count = Integer.parseInt(request.getParameter("count"));
