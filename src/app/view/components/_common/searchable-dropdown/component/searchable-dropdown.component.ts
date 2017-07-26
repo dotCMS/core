@@ -72,9 +72,9 @@ export class SearchableDropdownComponent extends BaseComponent
     ngOnInit(): void {
         Observable.fromEvent(this.searchInput.nativeElement, 'keyup')
             .debounceTime(500)
-            .subscribe((keyboardEvent: Event) =>
-                this.filterChange.emit(keyboardEvent.target['value'])
-            );
+            .subscribe((keyboardEvent: Event) => {
+                this.filterChange.emit(keyboardEvent.target['value']);
+            });
     }
 
     hideDialogHandler(): void {

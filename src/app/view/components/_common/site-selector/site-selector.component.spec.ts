@@ -4,7 +4,12 @@ import { SiteSelectorComponent } from './site-selector.component';
 import { By } from '@angular/platform-browser';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { SearchableDropDownModule } from '../searchable-dropdown/searchable-dropdown.module';
-import { OverlayPanelModule, ButtonModule, InputTextModule, PaginatorModule } from 'primeng/primeng';
+import {
+    OverlayPanelModule,
+    ButtonModule,
+    InputTextModule,
+    PaginatorModule
+} from 'primeng/primeng';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MessageService } from '../../../../api/services/messages-service';
@@ -19,132 +24,145 @@ import { fakeAsync, tick } from '@angular/core/testing';
 import { PaginatorService } from '../../../../api/services/paginator';
 
 describe('Site Selector Component', () => {
+    let comp: SiteSelectorComponent;
+    let fixture: ComponentFixture<SiteSelectorComponent>;
+    let de: DebugElement;
+    let el: HTMLElement;
 
-  let comp: SiteSelectorComponent;
-  let fixture: ComponentFixture<SiteSelectorComponent>;
-  let de: DebugElement;
-  let el: HTMLElement;
+    beforeEach(
+        async(() => {
+            let messageServiceMock = new MockMessageService({
+                search: 'Search'
+            });
 
-  beforeEach(async(() => {
+            let siteServiceMock = new SiteServiceMock();
 
-    let messageServiceMock = new MockMessageService({
-        'search': 'Search'
+            DOTTestBed.configureTestingModule({
+                declarations: [SiteSelectorComponent],
+                imports: [SearchableDropDownModule],
+                providers: [
+                    { provide: MessageService, useValue: messageServiceMock },
+                    { provide: SiteService, useValue: siteServiceMock },
+                    IframeOverlayService,
+                    PaginatorService
+                ]
+            });
+
+            fixture = DOTTestBed.createComponent(SiteSelectorComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement;
+            el = de.nativeElement;
+        })
+    );
+
+    it('should set extra params to paginator service', () => {
+        comp.archive = true;
+        comp.live = false;
+
+        fixture.detectChanges();
+
+        let paginatorService = de.injector.get(PaginatorService);
+
+        expect(paginatorService.extraParams.get('archive')).toBe('true');
+        expect(paginatorService.extraParams.get('live')).toBe('false');
+
     });
 
-    let siteServiceMock = new SiteServiceMock();
+    it('should call getSitesList', () => {
+        let site1 = {
+            identifier: 1,
+            name: 'Site 1'
+        };
 
-    DOTTestBed.configureTestingModule({
-        declarations: [ SiteSelectorComponent ],
-        imports: [
-            SearchableDropDownModule
-        ],
-        providers: [
-          { provide: MessageService, useValue: messageServiceMock },
-          { provide: SiteService, useValue: siteServiceMock },
-          IframeOverlayService, PaginatorService
-        ]
+        let site2 = {
+            identifier: 2,
+            name: 'Site 2'
+        };
+
+        let siteService = de.injector.get(SiteService);
+        spyOn(siteService, 'switchSite$').and.returnValue(Observable.of(site1));
+
+        let paginatorService = de.injector.get(PaginatorService);
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([site1, site2]));
+
+        fixture.detectChanges();
+
+        expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
     });
 
-    fixture = DOTTestBed.createComponent(SiteSelectorComponent);
-    comp = fixture.componentInstance;
-    de = fixture.debugElement;
-    el = de.nativeElement;
-  }));
+    it('should call refresh if a event happen', async(() => {
+        let site1 = {
+            identifier: 1,
+            name: 'Site 1'
+        };
 
-  it('Should call getSitesList', () => {
-    let site1 = {
-      identifier: 1,
-      name: 'Site 1'
-    };
+        let site2 = {
+            identifier: 2,
+            name: 'Site 2'
+        };
 
-    let site2 = {
-      identifier: 2,
-      name: 'Site 2'
-    };
+        let siteService = de.injector.get(SiteService);
+        let spy = spyOn(siteService, 'refreshSites$').and.returnValue(
+            Observable.of([site1, site2])
+        );
 
-    let siteService = de.injector.get(SiteService);
-    spyOn(siteService, 'switchSite$').and.returnValue(Observable.of(site1));
+        fixture.detectChanges();
 
-    let paginatorService = de.injector.get(PaginatorService);
-    spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([site1, site2]));
+        expect(spy.calls.any()).toEqual(false);
+    }));
 
-    comp.ngOnInit();
+    it('should change Page', fakeAsync(() => {
+        let filter = 'filter';
+        let page = 1;
 
-    expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
-  });
+        let paginatorService = de.injector.get(PaginatorService);
+        paginatorService.totalRecords = 2;
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
 
-  it('Should call refresh if a event happen', async(() => {
-    let site1 = {
-      identifier: 1,
-      name: 'Site 1'
-    };
+        let siteService = de.injector.get(SiteService);
+        spyOn(siteService, 'switchSite$').and.returnValue(Observable.of({}));
 
-    let site2 = {
-      identifier: 2,
-      name: 'Site 2'
-    };
+        fixture.detectChanges();
 
-    let siteService = de.injector.get(SiteService);
-    let spy = spyOn(siteService, 'refreshSites$').and.returnValue(Observable.of([site1, site2]));
+        let searchableDropdownComponent: SearchableDropdownComponent = de.query(
+            By.css('searchable-dropdown')
+        ).componentInstance;
 
-    comp.ngOnInit();
-    fixture.detectChanges();
+        searchableDropdownComponent.pageChange.emit({
+            filter: filter,
+            first: 10,
+            page: page,
+            pageCount: 10,
+            rows: 0
+        });
 
-    expect(spy.calls.any()).toEqual(false);
-  }));
+        tick();
+        expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+        expect(paginatorService.getWithOffset).toHaveBeenCalledWith(10);
+    }));
 
-  it('Should change Page', fakeAsync(() => {
+    it('should paginate when the filter change', fakeAsync(() => {
+        let filter = 'filter';
+        let first = 2;
 
-    let filter = 'filter';
-    let page = 1;
+        let paginatorService = de.injector.get(PaginatorService);
+        paginatorService.totalRecords = 2;
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
 
-    let paginatorService = de.injector.get(PaginatorService);
-    paginatorService.totalRecords = 2;
-    spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
+        let siteService = de.injector.get(SiteService);
+        spyOn(siteService, 'switchSite$').and.returnValue(Observable.of({}));
 
-    let siteService = de.injector.get(SiteService);
-    spyOn(siteService, 'switchSite$').and.returnValue(Observable.of({}));
+        fixture.detectChanges();
 
-    comp.ngOnInit();
+        let searchableDropdownComponent: SearchableDropdownComponent = de.query(
+            By.css('searchable-dropdown')
+        ).componentInstance;
 
-    fixture.detectChanges();
-    let searchableDropdownComponent: SearchableDropdownComponent = de.query(By.css('searchable-dropdown')).componentInstance;
+        searchableDropdownComponent.filterChange.emit(filter);
+        comp.handleFilterChange(filter);
 
-    searchableDropdownComponent.pageChange.emit({
-      filter: filter,
-      first: 10,
-      page: page,
-      pageCount: 10,
-      rows: 0
-    });
-
-    tick();
-    expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
-    expect(paginatorService.getWithOffset).toHaveBeenCalledWith(10);
-  }));
-
-  it('Should paginate when the filter change', fakeAsync(() => {
-
-    let filter = 'filter';
-    let first = 2;
-
-    let paginatorService = de.injector.get(PaginatorService);
-    paginatorService.totalRecords = 2;
-    spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
-
-    let siteService = de.injector.get(SiteService);
-    spyOn(siteService, 'switchSite$').and.returnValue(Observable.of({}));
-
-    comp.ngOnInit();
-
-    fixture.detectChanges();
-    let searchableDropdownComponent: SearchableDropdownComponent = de.query(By.css('searchable-dropdown')).componentInstance;
-
-    searchableDropdownComponent.filterChange.emit(filter);
-    comp.handleFilterChange(filter);
-
-    tick();
-    expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
-    expect(paginatorService.filter).toEqual(filter);
-  }));
+        tick();
+        expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+        expect(paginatorService.filter).toEqual(filter);
+    }));
 });

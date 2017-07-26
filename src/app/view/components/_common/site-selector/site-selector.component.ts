@@ -44,14 +44,17 @@ import { Observable } from 'rxjs/Observable';
 export class SiteSelectorComponent implements ControlValueAccessor {
     private static readonly MIN_CHARECTERS_TO_SERACH = 3;
 
-    @ViewChild('searchableDropdown') searchableDropdown: SearchableDropdownComponent;
+    @Input() archive: boolean = null;
+    @Input() live: boolean = null;
     @Output() change: EventEmitter<Site> = new EventEmitter();
-    @Output() show: EventEmitter<any> = new EventEmitter();
     @Output() hide: EventEmitter<any> = new EventEmitter();
+    @Output() show: EventEmitter<any> = new EventEmitter();
+    @ViewChild('searchableDropdown') searchableDropdown: SearchableDropdownComponent;
 
     currentSite: Observable<Site>;
     totalRecords: number;
     sitesCurrentPage: Site[];
+
     private paginatorLinks: number;
     private paginationQuery = '';
     private paginationPerPage: number;
@@ -69,6 +72,14 @@ export class SiteSelectorComponent implements ControlValueAccessor {
 
     ngOnInit(): void {
         this.paginationService.url = 'v1/site';
+
+        if (this.archive !== null) {
+            this.paginationService.extraParams.append('archive', this.archive.toString());
+        }
+
+        if (this.live !== null) {
+            this.paginationService.extraParams.append('live', this.live.toString());
+        }
 
         this.getSitesList();
 
@@ -123,7 +134,9 @@ export class SiteSelectorComponent implements ControlValueAccessor {
      * @memberof SiteSelectorComponent
      */
     getSitesList(filter = '',  offset = 0): void {
-        this.paginationService.filter = filter;
+        if (filter.length) {
+            this.paginationService.filter = filter;
+        }
         this.paginationService.getWithOffset(offset).subscribe( items => {
             // items.splice(0) is used to return a new object and trigger the change detection in angular
             this.sitesCurrentPage = items.splice(0);

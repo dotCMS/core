@@ -27,7 +27,8 @@ export class PaginatorService {
     private _url: string;
     private _filter: string;
     private _sortField: string;
-    private _sortOrder: OrderDirection = OrderDirection.ASC;
+    private _sortOrder: OrderDirection;
+    private _extraParams: URLSearchParams = new URLSearchParams();
 
     constructor(private coreWebService: CoreWebService) {
     }
@@ -47,11 +48,19 @@ export class PaginatorService {
         return this._filter;
     }
 
-    set filter(filter: string){
+    set filter(filter: string) {
         if (this._filter !== filter) {
             this.links = {};
             this._filter = filter;
         }
+    }
+
+    set extraParams(extraParams: URLSearchParams) {
+        this._extraParams = extraParams;
+    }
+
+    get extraParams(): URLSearchParams {
+        return this._extraParams;
     }
 
     get sortField(): string{
@@ -87,6 +96,10 @@ export class PaginatorService {
     public get(url?: string): Observable<any[]> {
         let params: URLSearchParams = new URLSearchParams();
 
+        if (this.filter) {
+            params.set('filter', `${this.filter}`);
+        }
+
         if (this.sortField) {
             params.set('orderby', this.sortField);
         }
@@ -95,14 +108,14 @@ export class PaginatorService {
             params.set('direction', OrderDirection[this.sortOrder]);
         }
 
-        if (this.filter) {
-            params.set('filter', `${this.filter}`);
+        if (this.extraParams) {
+            params.appendAll(this.extraParams);
         }
 
         return this.coreWebService.requestView({
             method: RequestMethod.Get,
             search: params,
-            url: !url ? this.url : url
+            url: url || this.url
         }).map(response => {
             this.setLinks(response.header(PaginatorService.LINK_HEADER_NAME));
             this.paginationPerPage = parseInt(response.header(PaginatorService.PAGINATION_PER_PAGE_HEADER_NAME), 10);
