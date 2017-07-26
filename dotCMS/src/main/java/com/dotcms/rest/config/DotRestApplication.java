@@ -79,6 +79,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 
 					REST_CLASSES.add(PersonaResource.class);
 					REST_CLASSES.add(UserResource.class);
+					REST_CLASSES.add(com.dotcms.rest.api.v2.user.UserResource.class);
 					REST_CLASSES.add(TagResource.class);
 
 					REST_CLASSES.add(RulesEnginePortlet.class);
