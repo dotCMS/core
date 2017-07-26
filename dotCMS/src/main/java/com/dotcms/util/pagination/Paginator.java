@@ -31,4 +31,13 @@ public interface Paginator<T> {
      */
     public abstract Collection<T> getItems(User user, String filter, boolean showArchived, int limit, int offset,
                                            String orderby, OrderDirection direction);
+
+    default Collection<T> getItems(User user, String filter, int limit, int offset){
+        return getItems(user, filter, false,  limit,  offset, null, null);
+    }
+
+    default Collection<T> getItems(User user, String filter, int limit, int offset, String orderby,
+                                   OrderDirection direction){
+        return getItems(user, filter, false,  limit,  offset, orderby, direction);
+    }
 }
