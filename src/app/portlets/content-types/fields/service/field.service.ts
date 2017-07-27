@@ -15,24 +15,10 @@ export class FieldService {
     }
 
     loadFieldTypes(): Observable<FieldType[]> {
-        return Observable.of([
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-                label: 'Text'
-            },
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableDateField',
-                label: 'Date'
-            },
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableCheckboxField',
-                label: 'Checkbox'
-            },
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableImageField',
-                label: 'Image'
-            }
-        ]);
+        return this.coreWebService.requestView({
+            method: RequestMethod.Get,
+            url: '/v1/fieldTypes'
+        }).pluck('entity');
     }
 
     /**
