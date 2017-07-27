@@ -1,6 +1,5 @@
-<p-dialog header="{{i18nMessages['login-as']}}" [(visible)]="visible" appendTo="body" modal="modal" resizable class="login-as">
+<p-dialog header="{{i18nMessages['login-as']}}" [(visible)]="visible" appendTo="body" modal="modal" resizable class="login-as" [width]="250">
     <!--TODO: manage errors on required fields and errors messages -->
-
     <form [formGroup]="form" (ngSubmit)="doLoginAs($event)" id="login-as-form" novalidate>    
         <div class="form__group">
             <!--TODO: get rid of this let autoComplete when this is fixed: https://github.com/primefaces/primeng/issues/745-->

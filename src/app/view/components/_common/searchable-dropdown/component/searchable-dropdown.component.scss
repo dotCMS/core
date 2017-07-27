@@ -5,6 +5,8 @@ searchable-dropdown {
         @extend #inputtext-normal-border;
         border-radius: 0;
         padding-right: $dropdown-height + $basic-padding;
+        text-align: left;
+        width: 100%;
 
         &:hover,
         &:active,

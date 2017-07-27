@@ -16,13 +16,13 @@
     }
 
     .ui-dialog-titlebar,
-    .ui-dialog-content,
-    .ui-dialog-buttonpane {
+    .ui-dialog-content {
         margin: 0;
         padding: $basic-padding * 2;
     }
 
     .ui-dialog-buttonpane {
+        padding: $basic-padding * 2 0;
         text-align: center;
 
         button {
