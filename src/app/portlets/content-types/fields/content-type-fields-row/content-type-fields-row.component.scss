@@ -1,17 +1,49 @@
-content-type-field-dragabble-item{
+:host {
     display: block;
+    margin-bottom: 10px;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
 }
 
 div {
+    border: solid 1px;
+    display: flex;
     padding: 2px;
     width: 100%;
-    display: flex;
 }
 
-span{    
+span {    
     background-color: gainsboro;
-    height: 50px;
-    width: 15%;
-    display: inline-table;
-    margin-left: 1%; 
+    border: solid 5px white;
+    display: block;
+    min-height: 32px;
+    padding: 0 10px;
+}
+
+.header {
+    background: black;
+    margin: 0 auto;
+    padding: 0;
+    width: 100px;
+    border: 0;
+
+    a {
+        color: white;
+        display: inline-block;
+        height: 24px;
+        line-height: 24px;
+        text-align: center;
+    }
+}
+
+.row-drag-button {
+    cursor: move;
+    width: 80px;
+}
+
+.row-remove {
+    background: red;
+    width: 20px;
 }

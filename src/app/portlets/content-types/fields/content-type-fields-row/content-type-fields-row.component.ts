@@ -37,6 +37,6 @@ export class ContentTypeFieldsRowComponent {
      */
     getColumnWidth(): string {
         let nColumns = this.fieldRow.columns.length;
-        return `${(100 - nColumns) / nColumns}%`;
+        return `${100 / nColumns}%`;
     }
 }

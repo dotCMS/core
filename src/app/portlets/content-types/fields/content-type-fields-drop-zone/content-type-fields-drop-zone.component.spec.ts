@@ -55,18 +55,17 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
     });
 
     it('should has a fields container', () => {
-
         let fields: Field[] = [
             {
-                clazz: 'text',
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField',
                 name: 'field 1'
             },
             {
-                clazz: 'text',
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
                 name: 'field 2'
             },
             {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
+                clazz: 'text',
                 name: 'field 3'
             },
             {
@@ -74,13 +73,25 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 name: 'field 4'
             },
             {
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
+                name: 'field 2'
+            },
+            {
+                clazz: 'text',
+                name: 'field 3'
+            },
+            {
                 clazz: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField',
                 name: 'field 5'
             },
             {
-                clazz: 'text',
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
                 name: 'field 6'
             },
+            {
+                clazz: 'text',
+                name: 'field 7'
+            }
         ];
 
         comp.ngOnChanges({

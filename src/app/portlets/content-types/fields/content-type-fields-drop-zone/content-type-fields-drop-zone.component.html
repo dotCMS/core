@@ -3,9 +3,12 @@
      [dragulaModel]="fieldRows"
      data-drag-type="target">
 
-    <content-type-fields-row *ngFor="let row of fieldRows"
-                 [fieldRow]="row">
-    </content-type-fields-row>
+    <ng-template ngFor let-row [ngForOf]="fieldRows">
+        <content-type-fields-row
+            *ngIf="row.columns.length"
+            [fieldRow]="row">
+        </content-type-fields-row>
+    </ng-template>
 
     <div *ngIf="!fieldRows.length"
          class="content-type-fields-drop-zone__message">Drop fields here

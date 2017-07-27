@@ -52,33 +52,28 @@ export class FieldRow {
     addFields(fields:  Field[]): void {
         let offset = 0;
 
-        if (fields[0].clazz === LINE_DIVIDER.clazz) {
+        if (fields[0] && fields[0].clazz === LINE_DIVIDER.clazz) {
             this.lineDivider = fields[0];
             offset = 1;
         }
 
         let fieldsSplitByTabDivider: Field[][] = this.splitFieldsByTabDiveder(fields.splice(offset));
-        fieldsSplitByTabDivider.forEach(
-            fields => this.columns.push(new FieldColumn(fields))
-        );
+        fieldsSplitByTabDivider.forEach(fields =>  {
+            this.columns.push(new FieldColumn(fields));
+        });
     }
 
     private splitFieldsByTabDiveder(fields: Field[]): Field[][] {
         let result: Field[][] = [];
-        let currentFields: Field[] = [];
+        let currentFields: Field[];
 
         fields.map(field => {
             if (field.clazz === TAB_DIVIDER.clazz) {
-                result.push(currentFields);
                 currentFields = [];
+                result.push(currentFields);
             }
             currentFields.push(field);
         });
-
-        if (currentFields.length) {
-            result.push(currentFields);
-        }
-
         return result;
     }
 }

@@ -1,4 +1,3 @@
-
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs/Observable';
 import { DragulaService } from 'ng2-dragula';
@@ -15,12 +14,12 @@ export class FieldDragDropService {
     private _fieldDrop: Subject<any> = new Subject();
 
     constructor(private dragulaService: DragulaService) {
-        dragulaService.dropModel.subscribe((value) => {
-            let bagName = value[0];
+        dragulaService.dropModel.subscribe(value => {
+            this._fieldDrop.next();
+        });
 
-            if (bagName === FieldDragDropService.FIELD_BAG_NAME) {
-                this._fieldDrop.next();
-            }
+        dragulaService.removeModel.subscribe(value => {
+            this._fieldDrop.next();
         });
     }
 
@@ -33,8 +32,7 @@ export class FieldDragDropService {
 
         if (!fieldBagOpts) {
             this.dragulaService.setOptions(FieldDragDropService.FIELD_BAG_NAME, {
-                copy: true,
-                moves: this.shouldMove
+                copy: this.shouldCopy
             });
         }
     }
@@ -48,8 +46,8 @@ export class FieldDragDropService {
 
         if (!fieldRowBagOpts) {
             this.dragulaService.setOptions(FieldDragDropService.FIELD_ROW_BAG_NAME, {
-                copy: true,
-                moves: this.shouldMove
+                copy: this.shouldCopy,
+                moves: this.shouldMoveRow
             });
         }
     }
@@ -58,7 +56,21 @@ export class FieldDragDropService {
         return this._fieldDrop.asObservable();
     }
 
-    private shouldMove(el, target): boolean {
-        return target.dataset.dragType === 'source';
+    private shouldCopy(
+        el: HTMLElement,
+        source: HTMLElement,
+        handle: HTMLElement,
+        sibling: HTMLElement
+    ): boolean {
+        return source.dataset.dragType === 'source';
+    }
+
+    private shouldMoveRow(
+        el: HTMLElement,
+        source: HTMLElement,
+        handle: HTMLElement,
+        sibling: HTMLElement
+    ): boolean {
+        return source.dataset.dragType === 'source' || handle.classList.contains('row-drag-button');
     }
 }
