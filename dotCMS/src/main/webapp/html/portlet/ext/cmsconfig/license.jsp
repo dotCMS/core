@@ -10,6 +10,7 @@
 <%@page import="java.util.Date"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="java.text.SimpleDateFormat"%>
 
 <%
@@ -33,7 +34,7 @@
     }
 
 
-    boolean isCommunity =LicenseUtil.getLevel()==100;
+    boolean isCommunity =LicenseUtil.getLevel()==LicenseLevel.COMMUNITY.level;
 
     String expireString = "unknown";
     Date expires = null;

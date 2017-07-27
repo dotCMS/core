@@ -11,6 +11,7 @@ import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.action.business.ServerActionAPI;
 import com.dotcms.enterprise.cluster.action.model.ServerActionBean;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -63,8 +64,8 @@ public class ClusterServerActionThread extends Thread {
 					}
 					connection.commit();
 				}
-				    
-				if(LicenseUtil.getLevel()==100 ){
+
+				if(LicenseUtil.getLevel()== LicenseLevel.COMMUNITY.level){
 				    if(noLicense==0){
 				        noLicense=System.currentTimeMillis();
 				    }

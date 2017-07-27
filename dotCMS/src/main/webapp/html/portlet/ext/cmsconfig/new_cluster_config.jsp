@@ -2,6 +2,7 @@
 <%@page import="com.dotmarketing.util.Config"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@ page import="com.dotmarketing.util.Config" %>
 
 <%  if(!Config.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", true)) { //In case user tries to acess jsp directly%>
@@ -11,7 +12,7 @@
     }
 %>
 
-<%  if( LicenseUtil.getLevel()<300){ %>
+<%  if( LicenseUtil.getLevel()<LicenseLevel.PROFESSIONAL.level){ %>
     <%@ include file="/html/portlet/ext/cmsconfig/network/not_licensed.jsp" %>
 <%
         return;

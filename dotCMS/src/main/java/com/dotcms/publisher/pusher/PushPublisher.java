@@ -1,6 +1,7 @@
 package com.dotcms.publisher.pusher;
 
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.BundleXMLAsc;
 import com.dotcms.enterprise.publishing.remote.bundler.CategoryBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundler;
@@ -95,7 +96,7 @@ public class PushPublisher extends Publisher {
 
     @Override
     public PublisherConfig init ( PublisherConfig config ) throws DotPublishingException {
-        if ( LicenseUtil.getLevel() < 300 ) {
+        if ( LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level ) {
             throw new RuntimeException( "need an enterprise pro license to run this bundler" );
         }
         
@@ -120,7 +121,7 @@ public class PushPublisher extends Publisher {
 	 */
     @Override
     public PublisherConfig process ( final PublishStatus status ) throws DotPublishingException {
-		if(LicenseUtil.getLevel()<300) {
+		if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
 	        throw new RuntimeException("An Enterprise Pro License is required to run this publisher.");
         }
 	    PublishAuditHistory currentStatusHistory = null;

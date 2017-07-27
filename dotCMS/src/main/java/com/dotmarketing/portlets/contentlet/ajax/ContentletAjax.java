@@ -21,6 +21,7 @@ import javax.servlet.http.HttpSession;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -548,7 +549,7 @@ public class ContentletAjax {
 		    luceneQuery.append("-contentType:Host ");
 		    luceneQuery.append("-baseType:3 ");
 		}
-		if (LicenseUtil.getLevel() < 300) {
+		if (LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
 			luceneQuery.append("-contentType:Persona ");
 		}
 		// Stores (database name,type description) pairs to catch certain field types.

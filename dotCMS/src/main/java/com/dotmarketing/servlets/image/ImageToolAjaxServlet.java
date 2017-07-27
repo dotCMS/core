@@ -1,6 +1,7 @@
 package com.dotmarketing.servlets.image;
 
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -61,7 +62,7 @@ public class ImageToolAjaxServlet extends HttpServlet {
 		} catch (Exception e) {
 			Logger.warn(this.getClass(), "Unauthorized access to ImageToolAjax from IP + "+ request.getRemoteAddr() +", no user found");
 		} 
-	    if(user ==null || "100".equals(LicenseUtil.getLevel())){
+	    if(user ==null || LicenseUtil.getLevel() == LicenseLevel.COMMUNITY.level){
 	    	response.getWriter().println("Unauthorized");
 	    	return;
 	    }

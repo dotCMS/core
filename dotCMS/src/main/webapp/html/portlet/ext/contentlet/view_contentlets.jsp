@@ -19,6 +19,7 @@
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 
 <iframe id="AjaxActionJackson" name="AjaxActionJackson" style="border:0; width:0; height:0;"></iframe>
 <%
@@ -174,7 +175,7 @@
             ,
     };
 
-    boolean enterprise = LicenseUtil.getLevel() > 199;
+    boolean enterprise = LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level;
 
     PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
     List<PublishingEndPoint> sendingEndpointsList = pepAPI.getReceivingEndPoints();

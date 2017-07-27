@@ -2,6 +2,7 @@ package com.dotcms;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.org.apache.commons.httpclient.NameValuePair;
 import com.dotcms.repackage.org.apache.commons.httpclient.methods.PostMethod;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpClient;
@@ -17,7 +18,7 @@ public class LicenseTestUtil {
 	
 	public static void getLicense() throws Exception{
 		
-		if(LicenseUtil.getLevel()<200) {
+		if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
 			String license;
 			HttpServletRequest req=Mockito.mock(HttpServletRequest.class);
 			Mockito.when(req.getParameter("iwantTo")).thenReturn("request_code");

@@ -341,7 +341,7 @@ task deployWarTomcatDev (dependsOn: 'deployWarTomcat') {
 }
 deployWarTomcatDev.finalizedBy 'generateMoveCleanEnterpriseTomcat'
 deployWarTomcatDev.group='dotCMS Development'
-deployWarTomcatDev.description='Same as deployWarTomcat but will use the no obfuscated version of the enterprise jars. (Useful for development)'
+deployWarTomcatDev.description='Same as deployWarTomcat but will use the no obfuscated version of the enterprise jar. (Useful for development)'
 
 //Same as deployWarTomcatDev but will ONLY use the no obfuscated version of the enterprise jar.
 //(Useful for development)

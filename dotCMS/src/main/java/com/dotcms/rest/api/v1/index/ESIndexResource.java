@@ -14,6 +14,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.enterprise.license.LicenseLevel;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.status.IndexStatus;
 import org.elasticsearch.snapshots.SnapshotRestoreException;
@@ -106,7 +107,7 @@ public class ESIndexResource {
     }
 
     public static void restoreIndex(final File file, final String alias, String index, final boolean clear) throws DotDataException {
-        if(LicenseUtil.getLevel()>=200) {
+        if(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) {
             if(UtilMethods.isSet(alias)) {
                 String indexName=APILocator.getESIndexAPI()
                          .getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices())

@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
+import com.dotcms.enterprise.license.LicenseLevel;
 import org.apache.tools.tar.TarBuffer;
 
 import com.dotcms.enterprise.LicenseUtil;
@@ -88,8 +89,8 @@ public class BundlePublisher extends Publisher {
 
     @Override
     public PublisherConfig init(PublisherConfig config) throws DotPublishingException {
-        if (LicenseUtil.getLevel() < 200) {
-            throw new RuntimeException("need an enterprise licence to run this");
+        if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
+            throw new RuntimeException("need an enterprise license to run this");
         }
         handlers = new ArrayList<IHandler>();
         handlers.add(new BundleXMLascHandler(config));
@@ -128,7 +129,7 @@ public class BundlePublisher extends Publisher {
      */
     @Override
     public PublisherConfig process ( final PublishStatus status ) throws DotPublishingException {
-        if ( LicenseUtil.getLevel() < 300 ) {
+        if ( LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level ) {
             throw new RuntimeException( "need an enterprise license to run this" );
         }
 

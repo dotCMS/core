@@ -23,6 +23,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
 
@@ -156,12 +157,12 @@ public abstract class VelocityServlet extends HttpServlet {
         }
 
 		
-		if (DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() < 299) {
+		if (DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() <= LicenseLevel.PROFESSIONAL.level) {
 			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
 			return;
 		}
 
-		if (DbConnectionFactory.isOracle() && LicenseUtil.getLevel() < 399) {
+		if (DbConnectionFactory.isOracle() && LicenseUtil.getLevel() <= LicenseLevel.PRIME.level) {
 			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
 			return;
 		}
@@ -654,15 +655,15 @@ public abstract class VelocityServlet extends HttpServlet {
 		// to check user has permission to write on this page
         boolean hasWritePermOverHTMLPage = permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_WRITE, user );
         boolean hasPublishPermOverHTMLPage = permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_PUBLISH, user );
-        boolean hasRemotePublishPermOverHTMLPage = hasPublishPermOverHTMLPage && LicenseUtil.getLevel() > 199;
+        boolean hasRemotePublishPermOverHTMLPage = hasPublishPermOverHTMLPage && LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level;
         boolean hasEndPoints = UtilMethods.isSet( receivingEndpoints ) && !receivingEndpoints.isEmpty();
 
         context.put( "EDIT_HTMLPAGE_PERMISSION", new Boolean( hasWritePermOverHTMLPage ) );
         context.put( "PUBLISH_HTMLPAGE_PERMISSION", new Boolean( hasPublishPermOverHTMLPage ) );
         context.put( "REMOTE_PUBLISH_HTMLPAGE_PERMISSION", new Boolean( hasRemotePublishPermOverHTMLPage ) );
         context.put( "REMOTE_PUBLISH_END_POINTS", new Boolean( hasEndPoints ) );
-        context.put( "canAddForm", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
-        context.put( "canViewDiff", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
+        context.put( "canAddForm", new Boolean( LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level ? true : false ) );
+        context.put( "canViewDiff", new Boolean( LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level ? true : false ) );
 
         context.put( "HTMLPAGE_ASSET_STRUCTURE_TYPE", htmlPage.isContent() ? ((Contentlet)htmlPage).getStructureInode() : APILocator.getHTMLPageAssetAPI().DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
         context.put("HTMLPAGE_IS_CONTENT", htmlPage.isContent());
@@ -896,7 +897,7 @@ public abstract class VelocityServlet extends HttpServlet {
         boolean hasAddChildrenPermOverHTMLPage = permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_CAN_ADD_CHILDREN, backendUser );
         boolean hasWritePermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_WRITE, backendUser);
         boolean hasPublishPermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_PUBLISH, backendUser);
-        boolean hasRemotePublishPermOverHTMLPage = hasPublishPermOverHTMLPage && LicenseUtil.getLevel() > 199;
+        boolean hasRemotePublishPermOverHTMLPage = hasPublishPermOverHTMLPage && LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level;
         boolean hasEndPoints = UtilMethods.isSet( receivingEndpoints ) && !receivingEndpoints.isEmpty();
 
         context.put( "ADD_CHILDREN_HTMLPAGE_PERMISSION", new Boolean( hasAddChildrenPermOverHTMLPage ) );
@@ -904,8 +905,8 @@ public abstract class VelocityServlet extends HttpServlet {
         context.put( "PUBLISH_HTMLPAGE_PERMISSION", new Boolean( hasPublishPermOverHTMLPage ) );
         context.put( "REMOTE_PUBLISH_HTMLPAGE_PERMISSION", new Boolean( hasRemotePublishPermOverHTMLPage ) );
         context.put( "REMOTE_PUBLISH_END_POINTS", new Boolean(hasEndPoints) );
-        context.put( "canAddForm", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
-        context.put( "canViewDiff", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
+        context.put( "canAddForm", new Boolean( LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level ? true : false ) );
+        context.put( "canViewDiff", new Boolean( LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level ? true : false ) );
         
         context.put( "HTMLPAGE_ASSET_STRUCTURE_TYPE", htmlPage.isContent() ? ((Contentlet)htmlPage).getStructureInode() : "0");
         context.put( "HTMLPAGE_IS_CONTENT" , htmlPage.isContent());

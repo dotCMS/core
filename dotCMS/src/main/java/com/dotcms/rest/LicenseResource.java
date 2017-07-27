@@ -4,6 +4,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.action.ResetLicenseServerAction;
 import com.dotcms.enterprise.cluster.action.ServerAction;
 import com.dotcms.enterprise.cluster.action.model.ServerActionBean;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.DELETE;
 import com.dotcms.repackage.javax.ws.rs.GET;
@@ -145,10 +146,10 @@ public class LicenseResource {
         InitDataObject initData = webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
         String serial = initData.getParamsMap().get("serial");
         
-        final long currentLevel=LicenseUtil.getLevel();
-        final String currentSerial=currentLevel>100 ? LicenseUtil.getSerial() : "";
+        final long currentLevel = LicenseUtil.getLevel();
+        final String currentSerial = currentLevel > LicenseLevel.COMMUNITY.level ? LicenseUtil.getSerial() : "";
         
-        if(currentLevel<200 || !currentSerial.equals(serial)) {
+        if(currentLevel < LicenseLevel.STANDARD.level || !currentSerial.equals(serial)) {
             
             try {
                 HibernateUtil.startTransaction();
@@ -172,7 +173,7 @@ public class LicenseResource {
             }
         }
         
-        if(currentLevel==100 || currentSerial.equals(LicenseUtil.getSerial())) {
+        if(currentLevel==LicenseLevel.COMMUNITY.level || currentSerial.equals(LicenseUtil.getSerial())) {
             return Response.notModified().build();
         }
         else {
