@@ -108,7 +108,7 @@ class LocalSystemEventsAPIImpl implements LocalSystemEventsAPI {
         if (null != subscriberMap && !subscriberMap.isEmpty()) {
 
             subscriberMap.forEach((eventType, eventSubscriber) ->
-                    unsubscribed.set( unsubscribed.get() | this.unsubscribe(eventType, eventSubscriber.getId()) ));
+                    unsubscribed.set( unsubscribed.get() || this.unsubscribe(eventType, eventSubscriber.getId()) ));
         }
 
         return unsubscribed.get();
