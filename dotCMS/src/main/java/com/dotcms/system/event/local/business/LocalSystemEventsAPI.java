@@ -33,6 +33,12 @@ public interface LocalSystemEventsAPI {
     boolean unsubscribe (Class<?> eventType);
 
     /**
+     * Unsubscribes all methods annotated with Subscriber.
+     * @param subscriber {@link Object}
+     */
+    boolean unsubscribe (Object subscriber);
+
+    /**
      * Unsubscribes a specific subscriber
      * @param eventType {@link Class}
      * @param subscriberId {@link String}
