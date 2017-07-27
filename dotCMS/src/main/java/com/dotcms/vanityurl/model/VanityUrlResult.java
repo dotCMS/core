@@ -1,7 +1,6 @@
 package com.dotcms.vanityurl.model;
 
 import com.dotcms.vanityurl.handler.VanityUrlHandler;
-import com.dotmarketing.filters.CMSFilter;
 
 /**
  * This class implements the Vanity URL response object
@@ -14,7 +13,6 @@ import com.dotmarketing.filters.CMSFilter;
 public class VanityUrlResult {
 
     private final String queryString;
-    private final CMSFilter.IAm iAm;
     private final String rewrite;
     private final boolean result;
 
@@ -22,13 +20,11 @@ public class VanityUrlResult {
      * Create a Vanity URL Object
      * @param rewrite The modified URL
      * @param queryString The query string of the modified url
-     * @param iAm The type of URL (page, folder or file)
      * @param result If the rewrite was processed by the handler
      */
-    public VanityUrlResult(final String rewrite, final String queryString, final CMSFilter.IAm iAm, final boolean result) {
+    public VanityUrlResult(final String rewrite, final String queryString, final boolean result) {
         this.rewrite = rewrite;
         this.queryString = queryString;
-        this.iAm = iAm;
         this.result = result;
     }
 
@@ -51,15 +47,6 @@ public class VanityUrlResult {
     }
 
     /**
-     * Get the IAm enum value
-     *
-     * @return a IAM enum value
-     */
-    public CMSFilter.IAm getiAm() {
-        return iAm;
-    }
-
-    /**
      * Get if this value was already processed
      * for the Handler
      *
@@ -68,6 +55,5 @@ public class VanityUrlResult {
     public boolean isResult() {
         return result;
     }
-
 
 }

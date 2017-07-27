@@ -7,16 +7,6 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.REGEX;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.STARTS_WITH;
 
-import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.beans.Host;
@@ -24,6 +14,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSFilter;
+import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
@@ -36,6 +27,14 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 /**
  * This conditionlet will allow CMS users to check whether a user has already
@@ -186,7 +185,7 @@ public class VisitedUrlConditionlet extends Conditionlet<VisitedUrlConditionlet.
 
         try {
             uri = HttpRequestDataUtil.getUri(request);
-            Object rewriteOpt = request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE);
+            Object rewriteOpt = request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE);
 			if(rewriteOpt != null)
 				uri = (String) rewriteOpt;
         } catch (UnsupportedEncodingException e) {

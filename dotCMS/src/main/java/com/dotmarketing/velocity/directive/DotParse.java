@@ -5,18 +5,17 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.filters.CMSFilter;
+import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.io.Writer;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.ResourceNotFoundException;
-
-import javax.servlet.http.HttpServletRequest;
-import java.io.Writer;
 
 
 public class DotParse extends DotDirective {
@@ -98,7 +97,8 @@ public class DotParse extends DotDirective {
       
       
       // add the edit control if we have run through a page render
-      if (!context.containsKey("dontShowIcon") && params.editMode &&  (request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE)!=null)) {
+      if (!context.containsKey("dontShowIcon") && params.editMode &&  (request.getAttribute(
+              Constants.CMS_FILTER_URI_OVERRIDE)!=null)) {
         if (APILocator.getPermissionAPI().doesUserHavePermission(c, PermissionAPI.PERMISSION_READ, user)) {
           String editIcon = new String(EDIT_ICON).replace("${_dotParseInode}", c.getInode()).replace("${_dotParsePath}",
               id.getParentPath());

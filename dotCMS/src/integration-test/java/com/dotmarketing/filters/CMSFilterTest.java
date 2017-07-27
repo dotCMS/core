@@ -150,7 +150,7 @@ public class CMSFilterTest {
             cmsFilter.doFilter(request, response, chain);
             Assert.assertEquals(200, response.getStatus());
             Assert.assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE,
-                    request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE));
+                    request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
 
             Logger.info(this.getClass(),
                     "/testLink2 should forward to /about-us/" + CMSFilter.CMS_INDEX_PAGE);
@@ -159,7 +159,7 @@ public class CMSFilterTest {
             cmsFilter.doFilter(request, response, chain);
             Assert.assertEquals(200, response.getStatus());
             Assert.assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE,
-                    request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE));
+                    request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
 
             Logger.info(this.getClass(),
                     "/testLink3 should redirect to http://demo.dotcms.com/about-us/"
@@ -251,9 +251,9 @@ public class CMSFilterTest {
             Assert.assertEquals(200, response.getStatus());
             Logger.info(this.getClass(),
                     "looking for /about-us/" + CMSFilter.CMS_INDEX_PAGE + ", got:" + request
-                            .getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE));
+                            .getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
             Assert.assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE,
-                    request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE));
+                    request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
             //Delete the test Vanity URL
             contentletAPI.delete(vanityURLContentlet, user, false);
 
@@ -272,9 +272,9 @@ public class CMSFilterTest {
             Assert.assertEquals(200, response.getStatus());
             Logger.info(this.getClass(),
                     "looking for /about-us" + CMSFilter.CMS_INDEX_PAGE + ", got:" + request
-                            .getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE));
+                            .getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
             Assert.assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE,
-                    request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE));
+                    request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
 
         } catch (Exception e) {
 
@@ -463,9 +463,9 @@ public class CMSFilterTest {
             new CMSFilter().doFilter(request, response, chain);
             Logger.info(this.getClass(),
                     "looking for /products/" + CMSFilter.CMS_INDEX_PAGE + " , got;" + request
-                            .getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE));
+                            .getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
             Assert.assertEquals("/products/" + CMSFilter.CMS_INDEX_PAGE,
-                    request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE));
+                    request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
             Logger.info(this.getClass(), "looking for 200, got;" + response.getStatus());
             Assert.assertEquals(200, response.getStatus());
         } catch (ServletException e) {
