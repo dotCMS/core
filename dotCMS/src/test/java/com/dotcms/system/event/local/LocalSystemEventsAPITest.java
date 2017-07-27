@@ -133,6 +133,36 @@ public class LocalSystemEventsAPITest extends UnitTestBase {
     } // deleteAnnotatedSubscriberTest.
 
     @Test
+    public void deleteAnnotated2SubscriberTest() throws DotDataException {
+
+        final TestAnnotatedForDelete2Subscriber testAnnotatedSubscriber =
+                new TestAnnotatedForDelete2Subscriber();
+
+        final LocalSystemEventsAPI localSystemEventsAPI =
+                APILocator.getLocalSystemEventsAPI();
+        localSystemEventsAPI.subscribe(testAnnotatedSubscriber);
+
+        localSystemEventsAPI.notify(new TestEventType1("works??"));
+        localSystemEventsAPI.notify(new TestEventType2("really works??"));
+
+        Assert.assertTrue(2 == testAnnotatedSubscriber.getCalled());
+
+        localSystemEventsAPI.notify(new TestEventType1("works??"));
+        localSystemEventsAPI.notify(new TestEventType2("really works??"));
+
+        Assert.assertTrue(4 == testAnnotatedSubscriber.getCalled());
+
+        Assert.assertTrue(localSystemEventsAPI.unsubscribe(testAnnotatedSubscriber));
+
+        localSystemEventsAPI.notify(new TestEventType1("works??"));
+        localSystemEventsAPI.notify(new TestEventType2("really works??"));
+
+        // new message not received, so the counter still on 4
+        Assert.assertTrue(4 == testAnnotatedSubscriber.getCalled());
+
+    } // deleteAnnotatedSubscriberTest.
+
+    @Test
     public void invalidAnnotatedSubscriberTest() throws DotDataException {
 
         final TestInvalidAnnotatedSubscriber testAnnotatedSubscriber =

@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Default implementation.
@@ -96,6 +97,22 @@ class LocalSystemEventsAPIImpl implements LocalSystemEventsAPI {
 
         return false;
     } // unsubscribe.
+
+    @Override
+    public boolean unsubscribe(final Object subscriber) {
+
+        final AtomicBoolean unsubscribed = new AtomicBoolean(false);
+        final  Map<Class<?>, EventSubscriber> subscriberMap =
+                this.eventSubscriberFinder.findSubscribers(subscriber);
+
+        if (null != subscriberMap && !subscriberMap.isEmpty()) {
+
+            subscriberMap.forEach((eventType, eventSubscriber) ->
+                    unsubscribed.set( unsubscribed.get() || this.unsubscribe(eventType, eventSubscriber.getId()) ));
+        }
+
+        return unsubscribed.get();
+    }
 
     @Override
     public boolean unsubscribe(final Class<?> eventType, final String subscriberId) {
