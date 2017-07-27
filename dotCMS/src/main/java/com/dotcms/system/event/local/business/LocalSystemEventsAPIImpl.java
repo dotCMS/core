@@ -101,14 +101,17 @@ class LocalSystemEventsAPIImpl implements LocalSystemEventsAPI {
     @Override
     public boolean unsubscribe(final Object subscriber) {
 
-        final AtomicBoolean unsubscribed = new AtomicBoolean(false);
+        final AtomicBoolean unsubscribed = new AtomicBoolean(true);
         final  Map<Class<?>, EventSubscriber> subscriberMap =
                 this.eventSubscriberFinder.findSubscribers(subscriber);
 
         if (null != subscriberMap && !subscriberMap.isEmpty()) {
 
             subscriberMap.forEach((eventType, eventSubscriber) ->
-                    unsubscribed.set( unsubscribed.get() || this.unsubscribe(eventType, eventSubscriber.getId()) ));
+                    unsubscribed
+                            .set(this.unsubscribe(eventType, eventSubscriber.getId())
+                                    && unsubscribed
+                                    .get()));
         }
 
         return unsubscribed.get();
