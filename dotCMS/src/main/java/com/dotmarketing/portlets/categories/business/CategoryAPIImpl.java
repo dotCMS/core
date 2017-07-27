@@ -157,6 +157,17 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 	}
 
+    @Override
+	public void saveRemote(Category parent, Category object, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        object.setModDate(new Date());
+	    catFactory.save(object);
+
+        if(parent != null) {
+            catFactory.addChild(parent, object, null);
+            perAPI.copyPermissions(parent, object);
+        }
+    }
+
 	public void publishRemote(Category parent, Category object, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		catFactory.saveRemote(object);
 
