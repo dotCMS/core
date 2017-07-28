@@ -1,6 +1,5 @@
 package com.dotcms;
 
-import com.dotcms.keyvalue.business.KeyValueAPITest;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -11,17 +10,20 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.business.CategoryAPI;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.BaseMessageResources;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.sql.SQLException;
 import java.util.List;
-
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -126,7 +128,7 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
                     userAPI.delete(user, userAPI.getSystemUser(), false);
                 }
             } catch (DotSecurityException | DotDataException e) {
-                Assert.fail("Can't delete Folder: " + user.getFullName() + ", with id:" + user
+                Assert.fail("Can't delete User: " + user.getFullName() + ", with id:" + user
                         .getUserId()
                         + ", Exception: " + e.getMessage());
             }
@@ -146,9 +148,28 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
                     hostAPI.archive(host, systemUser, false);
                     hostAPI.delete(host, systemUser, false);
                 } catch (DotDataException | DotSecurityException e) {
-                    Assert.fail("Can't delete Folder: " + host.getName() + ", with id:" + host
+                    Assert.fail("Can't delete Host: " + host.getName() + ", with id:" + host
                             .getIdentifier()
                             + ", Exception: " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    /**
+     * Util method to delete all the categories.
+     */
+    public void cleanCategories(List<Category> categoriesToDelete) {
+        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+        final User systemUser = APILocator.systemUser();
+
+        for (Category category : categoriesToDelete) {
+            if (category != null && UtilMethods.isSet(category.getInode())) {
+                try {
+                    categoryAPI.delete(category, systemUser, false);
+                } catch (DotDataException | DotSecurityException e) {
+                    Assert.fail("Can't delete Category: " + category.getCategoryName() + ", with id:"
+                                + category.getInode() + ", Exception: " + e.getMessage());
                 }
             }
         }

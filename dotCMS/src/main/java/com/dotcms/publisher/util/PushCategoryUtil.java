@@ -1,5 +1,9 @@
 package com.dotcms.publisher.util;
 
+import com.dotcms.publisher.pusher.wrapper.CategoryWrapper;
+import com.dotcms.publishing.DotPublishingException;
+import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -10,14 +14,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.commons.io.IOUtils;
 
-import com.dotcms.publisher.pusher.wrapper.CategoryWrapper;
-import com.dotcms.publishing.DotPublishingException;
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
-import static com.dotcms.enterprise.publishing.remote.bundler.CategoryBundler.CATEGORY_EXTENSION;
 
 public class PushCategoryUtil {
 
@@ -28,7 +26,7 @@ public class PushCategoryUtil {
 
 	private int categoriesCount;
 	
-	public PushCategoryUtil(Collection<File> categories) throws DotPublishingException {
+	public PushCategoryUtil(Collection<File> categories, String categoryExtension) throws DotPublishingException {
 		xstream=new XStream(new DomDriver());
 
 		categoriesByInode = new HashMap<>();
@@ -37,7 +35,7 @@ public class PushCategoryUtil {
 
 		for(File categoryFile : categories){
 
-			if(categoryFile.getName().endsWith(CATEGORY_EXTENSION))
+			if(categoryFile.getName().endsWith(categoryExtension))
 				categoriesCount++;
 
 			if(categoryFile.isDirectory())
@@ -86,6 +84,6 @@ public class PushCategoryUtil {
 	}
 	
 	public int getCategoryXMLCount(){
-		return categoriesCount;
+        return categoriesCount;
 	}
 }
