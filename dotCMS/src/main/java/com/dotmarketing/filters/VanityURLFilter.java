@@ -29,7 +29,7 @@ public class VanityURLFilter implements Filter {
             .getInstance();
     private CMSUrlUtil urlUtil = CMSUrlUtil.getInstance();
 
-    public void init(FilterConfig arg0) throws ServletException {
+    public void init(FilterConfig filterConfig) throws ServletException {
     }
 
     public void doFilter(ServletRequest req, ServletResponse res,

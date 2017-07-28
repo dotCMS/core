@@ -66,7 +66,7 @@ public class CMSFilter implements Filter {
 
         //Get the URI and query string from the request
         String uri = urlUtil.getURIFromRequest(request);
-        final Boolean overridedURI = urlUtil.wasURIOverridden(request);
+        final Boolean overriddenURI = urlUtil.wasURIOverridden(request);
         String queryString = urlUtil.getURLQueryStringFromRequest(request);
 
         //Check for possible XSS hacks
@@ -122,10 +122,10 @@ public class CMSFilter implements Filter {
                 }
 
                 /*
-                At this point if rewrite is different than null is because probably a VanityURL set
+                At this point if the URI was overridden is probably because a VanityURL set
                  it, and in that case we need to respect the status code set by the VanityURL.
                  */
-                if (overridedURI) {
+                if (!overriddenURI) {
                     response.setStatus(301);
                 }
                 DbConnectionFactory.closeSilently();
