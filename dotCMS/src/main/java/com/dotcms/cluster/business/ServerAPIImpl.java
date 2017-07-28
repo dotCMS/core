@@ -118,6 +118,7 @@ public class ServerAPIImpl implements ServerAPI {
 	@Override
 	public String readServerId()  {
 	    // once set this should never change
+		BufferedReader br = null;
 	    if(SERVER_ID==null){
     	    try{
         	    File serverFile = serverIdFile();
@@ -125,8 +126,8 @@ public class ServerAPIImpl implements ServerAPI {
         	    if(!serverFile.exists()){
         	        writeServerIdToDisk(UUIDUtil.uuid());
         	    }
-        
-        		BufferedReader br =  new BufferedReader(new FileReader(serverFile));
+
+        		br =  new BufferedReader(new FileReader(serverFile));
         		SERVER_ID = br.readLine();
         		br.close();
         
@@ -136,7 +137,13 @@ public class ServerAPIImpl implements ServerAPI {
     	    }
     	    catch(IOException ioe){
     	        throw new DotStateException("Unable to read server id at " + serverIdFile() + " please make sure that the directory exists and is readable and writeable. If problems persist, try deleting the file.  The system will recreate a new one on startup", ioe);
-    	    }
+    	    } finally{
+				try {
+					br.close();
+				} catch (IOException e) {
+					Logger.error(this.getClass(), e.getMessage());
+				}
+			}
 	    }
 	    return SERVER_ID;
 	}

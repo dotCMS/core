@@ -16,6 +16,7 @@ import com.dotcms.enterprise.license.LicenseManager;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 
 /**
@@ -70,19 +71,14 @@ public class ClusterServerActionThread extends Thread {
 				        noLicense=System.currentTimeMillis();
 				    }
 				    //no license for a minute, that is crazy!
-				    if(System.currentTimeMillis() - noLicense > 1000*Config.getLongProperty("CLUSTER_AUTO_RELICENSE_DELAY_SECONDS", 60)){
-				        noLicense=0;
+					if (System.currentTimeMillis() - noLicense > DateUtil.SECOND_MILLIS *
+							Config.getLongProperty("CLUSTER_AUTO_RELICENSE_DELAY_SECONDS", 60)) {
+						noLicense=0;
 				        LicenseManager.getInstance().takeLicenseFromRepoIfNeeded();
 				    }
 				}else{
 				    noLicense=0;
 				}
-
-				
-				
-				
-				
-				
 			} catch (Exception e) {
 				try {
 					Logger.error(ClusterServerActionThread.class, 
