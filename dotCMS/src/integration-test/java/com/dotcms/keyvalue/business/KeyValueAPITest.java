@@ -4,19 +4,6 @@ import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyV
 import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
 import static com.dotcms.integrationtestutil.content.ContentUtils.updateTestKeyValueContent;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.util.List;
-
-import com.dotmarketing.util.Logger;
-import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.cache.KeyValueCache;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -35,6 +22,12 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.util.Date;
+import java.util.List;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * This Integration Test will verify the correct and expected behavior of the {@link KeyValueAPI}.
@@ -51,12 +44,6 @@ public class KeyValueAPITest extends IntegrationTestBase {
 
     private static long englishLanguageId;
     private static long spanishLanguageId;
-
-    private static final String KEY_1 = "com.dotcms.test.key1";
-    private static final String VALUE_1 = "Test Key #1";
-
-
-
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -84,10 +71,16 @@ public class KeyValueAPITest extends IntegrationTestBase {
     @Test
     public void saveKeyValueContent() throws DotContentletValidationException, DotContentletStateException,
                     IllegalArgumentException, DotDataException, DotSecurityException {
+
+        String key1 = "com.dotcms.test.key1." + new Date().getTime();
+        String value1 = "Test Key #1";
+        
         final Contentlet contentletEnglish =
-                        createTestKeyValueContent(KEY_1, VALUE_1, englishLanguageId, keyValueContentType, systemUser);
+                createTestKeyValueContent(key1, value1, englishLanguageId, keyValueContentType,
+                        systemUser);
         final Contentlet contentletSpanish =
-                        createTestKeyValueContent(KEY_1, VALUE_1, spanishLanguageId, keyValueContentType, systemUser);
+                createTestKeyValueContent(key1, value1, spanishLanguageId, keyValueContentType,
+                        systemUser);
 
         Assert.assertTrue("Failed creating a new english Contentlet using the Key/Value Content Type.",
                         UtilMethods.isSet(contentletEnglish.getIdentifier()));
@@ -103,9 +96,14 @@ public class KeyValueAPITest extends IntegrationTestBase {
     @Test
     public void updateKeyValueContent() throws DotContentletValidationException, DotContentletStateException,
                     IllegalArgumentException, DotDataException, DotSecurityException {
+
+        String key1 = "com.dotcms.test.key1." + new Date().getTime();
+        String value1 = "Test Key #1";
+
         final KeyValueAPI keyValueAPI = APILocator.getKeyValueAPI();
         final KeyValueCache cache = CacheLocator.getKeyValueCache();
-        Contentlet contentlet = createTestKeyValueContent(KEY_1, VALUE_1, englishLanguageId, keyValueContentType, systemUser);
+        Contentlet contentlet = createTestKeyValueContent(key1, value1, englishLanguageId,
+                keyValueContentType, systemUser);
 
         Assert.assertTrue("Failed creating a new Contentlet using the Key/Value Content Type.",
                         UtilMethods.isSet(contentlet.getIdentifier()));
@@ -113,14 +111,16 @@ public class KeyValueAPITest extends IntegrationTestBase {
         KeyValue testKeyValue = keyValueAPI.fromContentlet(contentlet);
         KeyValue keyValue =
                         keyValueAPI.get(testKeyValue.getKey(), englishLanguageId, keyValueContentType, systemUser, Boolean.FALSE);
-        KeyValue cachedKeyValue = cache.getByLanguageAndContentType(KEY_1, englishLanguageId, keyValueContentType.id());
+        KeyValue cachedKeyValue = cache
+                .getByLanguageAndContentType(key1, englishLanguageId, keyValueContentType.id());
 
         Assert.assertNotNull("Key/Value cache MUST NOT be null.", cachedKeyValue);
 
         final String newValue = keyValue.getValue() + ".updatedvalue";
         contentlet = updateTestKeyValueContent(contentlet, keyValue.getKey(), newValue, englishLanguageId, keyValueContentType,
                         systemUser);
-        cachedKeyValue = cache.getByLanguageAndContentType(KEY_1, englishLanguageId, keyValueContentType.id());
+        cachedKeyValue = cache
+                .getByLanguageAndContentType(key1, englishLanguageId, keyValueContentType.id());
 
         System.out.print("cachedKeyValue: " + cachedKeyValue + "\n");
         Assert.assertNull("Key/Value cache MUST BE null.", cachedKeyValue);
@@ -134,12 +134,19 @@ public class KeyValueAPITest extends IntegrationTestBase {
     @Test
     public void getKeyValueList() throws DotContentletValidationException, DotContentletStateException, IllegalArgumentException,
                     DotDataException, DotSecurityException {
+
+        String key1 = "com.dotcms.test.key1." + new Date().getTime();
+        String value1 = "Test Key #1";
+
         final KeyValueAPI keyValueAPI = APILocator.getKeyValueAPI();
         final Contentlet contentlet =
-                        createTestKeyValueContent(KEY_1, VALUE_1, englishLanguageId, keyValueContentType, systemUser);
+                createTestKeyValueContent(key1, value1, englishLanguageId, keyValueContentType,
+                        systemUser);
         final Contentlet contentlet2 =
-                        createTestKeyValueContent(KEY_1, VALUE_1 + "spanish", spanishLanguageId, keyValueContentType, systemUser);
-        final List<KeyValue> keyValueList = keyValueAPI.get(KEY_1, systemUser, keyValueContentType, Boolean.FALSE);
+                createTestKeyValueContent(key1, value1 + "spanish", spanishLanguageId,
+                        keyValueContentType, systemUser);
+        final List<KeyValue> keyValueList = keyValueAPI
+                .get(key1, systemUser, keyValueContentType, Boolean.FALSE);
 
         Assert.assertTrue("Failed creating a new Contentlet using the Key/Value Content Type.",
                         UtilMethods.isSet(contentlet.getIdentifier()));
@@ -157,12 +164,17 @@ public class KeyValueAPITest extends IntegrationTestBase {
     @Test
     public void keyValueCache() throws DotContentletValidationException, DotContentletStateException, IllegalArgumentException,
                     DotDataException, DotSecurityException {
+
+        String key1 = "com.dotcms.test.key1." + new Date().getTime();
+        String value1 = "Test Key #1";
+
         final KeyValueAPI keyValueAPI = APILocator.getKeyValueAPI();
         final KeyValueCache cache = CacheLocator.getKeyValueCache();
         cache.clearCache();
         final Contentlet contentlet =
-                        createTestKeyValueContent(KEY_1, VALUE_1, englishLanguageId, keyValueContentType, systemUser);
-        List<KeyValue> keyValues = cache.get(KEY_1);
+                createTestKeyValueContent(key1, value1, englishLanguageId, keyValueContentType,
+                        systemUser);
+        List<KeyValue> keyValues = cache.get(key1);
 
         Assert.assertNull(String.format("Key/Value cache MUST BE EMPTY at this point. It had %s elements.",
                         null != keyValues ? keyValues.size() : ""), keyValues);
@@ -185,15 +197,20 @@ public class KeyValueAPITest extends IntegrationTestBase {
     @Test
     public void keyValueLanguageCache() throws DotContentletValidationException, DotContentletStateException,
                     IllegalArgumentException, DotDataException, DotSecurityException {
+
+        String key1 = "com.dotcms.test.key1." + new Date().getTime();
+        String value1 = "Test Key #1";
+
         final KeyValueAPI keyValueAPI = APILocator.getKeyValueAPI();
         final KeyValueCache cache = CacheLocator.getKeyValueCache();
         cache.clearCache();
         final Contentlet contentlet =
-                        createTestKeyValueContent(KEY_1, VALUE_1, englishLanguageId, keyValueContentType, systemUser);
-        List<KeyValue> keyValues = cache.getByLanguage(KEY_1, englishLanguageId);
+                createTestKeyValueContent(key1, value1, englishLanguageId, keyValueContentType,
+                        systemUser);
+        List<KeyValue> keyValues = cache.getByLanguage(key1, englishLanguageId);
 
         Assert.assertNull(String.format("Key/Value cache MUST BE EMPTY at this point. It had %s elements.",
-                        null != cache.get(KEY_1) ? cache.get(KEY_1) : ""), cache.get(KEY_1));
+                null != cache.get(key1) ? cache.get(key1) : ""), cache.get(key1));
 
         KeyValue testKeyValue = keyValueAPI.fromContentlet(contentlet);
 
@@ -220,16 +237,21 @@ public class KeyValueAPITest extends IntegrationTestBase {
     @Test
     public void keyValueContentTypeCache() throws DotContentletValidationException, DotContentletStateException,
                     IllegalArgumentException, DotDataException, DotSecurityException {
+
+        String key1 = "com.dotcms.test.key1." + new Date().getTime();
+        String value1 = "Test Key #1";
+
         final KeyValueAPI keyValueAPI = APILocator.getKeyValueAPI();
         final KeyValueCache cache = CacheLocator.getKeyValueCache();
         cache.clearCache();
         final Contentlet contentlet =
-                        createTestKeyValueContent(KEY_1, VALUE_1, englishLanguageId, keyValueContentType, systemUser);
+                createTestKeyValueContent(key1, value1, englishLanguageId, keyValueContentType,
+                        systemUser);
 
-        List<KeyValue> keyValues = cache.getByContentType(KEY_1, keyValueContentType.id());
+        List<KeyValue> keyValues = cache.getByContentType(key1, keyValueContentType.id());
 
         Assert.assertNull(String.format("Key/Value cache MUST BE EMPTY at this point. It had %s elements.",
-                        null != cache.get(KEY_1) ? cache.get(KEY_1) : ""), cache.get(KEY_1));
+                null != cache.get(key1) ? cache.get(key1) : ""), cache.get(key1));
 
         KeyValue testKeyValue = keyValueAPI.fromContentlet(contentlet);
         keyValues = keyValueAPI.get(testKeyValue.getKey(), keyValueContentType, systemUser, Boolean.FALSE);
@@ -251,12 +273,18 @@ public class KeyValueAPITest extends IntegrationTestBase {
     @Test
     public void keyValueLanguageContentTypeCache() throws DotContentletValidationException, DotContentletStateException,
                     IllegalArgumentException, DotDataException, DotSecurityException {
+
+        String key1 = "com.dotcms.test.key1." + new Date().getTime();
+        String value1 = "Test Key #1";
+
         final KeyValueAPI keyValueAPI = APILocator.getKeyValueAPI();
         final KeyValueCache cache = CacheLocator.getKeyValueCache();
         cache.clearCache();
         final Contentlet contentlet =
-                        createTestKeyValueContent(KEY_1, VALUE_1, englishLanguageId, keyValueContentType, systemUser);
-        KeyValue cachedKeyValue = cache.getByLanguageAndContentType(KEY_1, englishLanguageId, keyValueContentType.id());
+                createTestKeyValueContent(key1, value1, englishLanguageId, keyValueContentType,
+                        systemUser);
+        KeyValue cachedKeyValue = cache
+                .getByLanguageAndContentType(key1, englishLanguageId, keyValueContentType.id());
 
         Assert.assertNull("Key/Value cache MUST BE NULL at this point.", cachedKeyValue);
 
@@ -266,7 +294,8 @@ public class KeyValueAPITest extends IntegrationTestBase {
 
         Assert.assertNotNull("Key/Value object MUST NOT be null.", keyValue);
         Assert.assertNotNull("Key/Value cache MUST NOT be null.",
-                        cache.getByLanguageAndContentType(KEY_1, englishLanguageId, keyValueContentType.id()));
+                cache.getByLanguageAndContentType(key1, englishLanguageId,
+                        keyValueContentType.id()));
 
         deleteContentlets(systemUser, contentlet);
     }
