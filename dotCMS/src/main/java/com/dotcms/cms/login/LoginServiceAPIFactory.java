@@ -3,6 +3,7 @@ package com.dotcms.cms.login;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.util.LogTime;
 import com.dotcms.util.ReflectionUtils;
 import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.beans.Host;
@@ -223,6 +224,7 @@ public class LoginServiceAPIFactory implements Serializable {
             return LoginServiceAPI.super.isLoggedIn(req);
         }
 
+        @LogTime
         @Override
         public boolean doActionLogin(String userId,
                                      final String password,

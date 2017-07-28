@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.javax.inject.Inject;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.POST;
 import com.dotcms.repackage.javax.ws.rs.Path;
@@ -79,6 +80,7 @@ public class AuthenticationResource implements Serializable {
         this.responseUtil = responseUtil;
         this.authenticationHelper = authenticationHelper;
     }
+
 
     @POST
     @JSONP

@@ -3,17 +3,21 @@ package com.dotcms.api.aop;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 
-public interface DelegateInvocation<T> extends Serializable {
+/**
+ * Delegate to proceed a method invocation on an AOP context for a {@link MethodInterceptor}
+ * @param <T>
+ */
+public interface DelegateMethodInvocation<T> extends Serializable {
 
     /**
-     * The
-     * @return
+     * Gets the methods intercepted
+     * @return Method
      */
     Method getMethod();
 
     /**
-     *
-     * @return
+     * Gets the method arguments
+     * @return Object array
      */
     Object[] getArguments();
 
@@ -30,4 +34,4 @@ public interface DelegateInvocation<T> extends Serializable {
      */
     T getTarget();
 
-} // E:O:F:DelegateInvocation.
+} // E:O:F:DelegateMethodInvocation.
