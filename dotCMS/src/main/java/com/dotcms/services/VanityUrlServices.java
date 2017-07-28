@@ -1,6 +1,8 @@
 package com.dotcms.services;
 
 import com.dotcms.cache.VanityUrlCache;
+import com.dotcms.system.event.local.type.content.CommitListenerEvent;
+import com.dotcms.system.event.local.model.Subscriber;
 import com.dotcms.util.VanityUrlUtil;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
@@ -193,6 +195,36 @@ public class VanityUrlServices {
         }
 
         return foundVanities;
+    }
+
+    /**
+     * Subscriber that listen to events of type CommitListenerEvent, this event will be trigger when
+     * the commit listener related to this event is executed.
+     */
+    @Subscriber
+    public void onCommitListener(CommitListenerEvent commitListenerEvent) {
+
+        Contentlet contentlet = commitListenerEvent.getContentlet();
+
+        try {
+            if (contentlet.isVanityUrl()) {
+
+                //When the contentlet finished to index we need to invalidate it on cache
+                boolean indexed = APILocator.getContentletAPI()
+                        .isInodeIndexed(contentlet.getInode(),
+                                contentlet.isLive());
+                if (indexed) {
+                    //Invalidate this VanityURL
+                    VanityUrlServices.getInstance().invalidateVanityUrl(contentlet);
+                }
+
+            }
+        } catch (Exception e) {
+            Logger.error(this,
+                    String.format("Unable to invalidate VanityURL in cache [%s]",
+                            contentlet.getIdentifier()), e);
+        }
+
     }
 
 }

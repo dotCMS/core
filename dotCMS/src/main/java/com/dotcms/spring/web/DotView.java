@@ -1,16 +1,13 @@
 package com.dotcms.spring.web;
 
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.velocity.VelocityContext;
-import org.springframework.web.servlet.View;
-
-import com.dotmarketing.filters.CMSFilter;
+import com.dotmarketing.filters.Constants;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.VelocityServlet;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.velocity.VelocityContext;
+import org.springframework.web.servlet.View;
 
 public class DotView implements View {
 
@@ -44,7 +41,7 @@ public class DotView implements View {
             request.setAttribute(VelocityServlet.VELOCITY_CONTEXT, ctx);
             
             // override the page path
-            request.setAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE, pagePath);
+            request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE, pagePath);
 
             request.getRequestDispatcher("/servlets/VelocityServlet").forward(request, response);
 
