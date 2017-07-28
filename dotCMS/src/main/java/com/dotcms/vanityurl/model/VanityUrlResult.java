@@ -14,18 +14,18 @@ public class VanityUrlResult {
 
     private final String queryString;
     private final String rewrite;
-    private final boolean result;
+    private final boolean resolved;
 
     /**
      * Create a Vanity URL Object
      * @param rewrite The modified URL
      * @param queryString The query string of the modified url
-     * @param result If the rewrite was processed by the handler
+     * @param resolved If the rewrite was processed by the handler
      */
-    public VanityUrlResult(final String rewrite, final String queryString, final boolean result) {
+    public VanityUrlResult(final String rewrite, final String queryString, final boolean resolved) {
         this.rewrite = rewrite;
         this.queryString = queryString;
-        this.result = result;
+        this.resolved = resolved;
     }
 
     /**
@@ -52,8 +52,8 @@ public class VanityUrlResult {
      *
      * @return true if was processed, false if not
      */
-    public boolean isResult() {
-        return result;
+    public boolean isResolved() {
+        return resolved;
     }
 
 }

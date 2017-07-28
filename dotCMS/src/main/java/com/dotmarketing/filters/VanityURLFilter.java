@@ -7,7 +7,6 @@ import com.dotcms.vanityurl.handler.VanityUrlHandler;
 import com.dotcms.vanityurl.handler.VanityUrlHandlerResolver;
 import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.Logger;
@@ -26,8 +25,6 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class VanityURLFilter implements Filter {
 
-    private final String RELATIVE_ASSET_PATH = APILocator.getFileAssetAPI()
-            .getRelativeAssetsRootPath();
     private VanityUrlHandlerResolver vanityUrlHandlerResolver = VanityUrlHandlerResolver
             .getInstance();
     private CMSUrlUtil urlUtil = CMSUrlUtil.getInstance();
@@ -68,7 +65,8 @@ public class VanityURLFilter implements Filter {
                     .handle(uri, response, site, languageId,
                             WebAPILocator.getUserWebAPI().getUser(request));
 
-            if (vanityUrlResult.isResult()) {
+            //If the handler already resolved the requested URI we stop the processing here
+            if (vanityUrlResult.isResolved()) {
                 DbConnectionFactory.closeSilently();
                 return;
             }

@@ -64,7 +64,7 @@ public class DefaultVanityUrlHandler implements VanityUrlHandler {
             return DEFAULT_RESULT;
         }
         if (UtilMethods.isSet(rewrite)) {
-            if (rewrite != null && rewrite.contains("?")) {
+            if (null != rewrite && rewrite.contains("?")) {
                 String[] arr = rewrite.split("\\?", LIMIT);
                 rewrite = arr[0];
                 if (arr.length > 1) {
