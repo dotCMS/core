@@ -662,8 +662,8 @@ public abstract class VelocityServlet extends HttpServlet {
         context.put( "PUBLISH_HTMLPAGE_PERMISSION", new Boolean( hasPublishPermOverHTMLPage ) );
         context.put( "REMOTE_PUBLISH_HTMLPAGE_PERMISSION", new Boolean( hasRemotePublishPermOverHTMLPage ) );
         context.put( "REMOTE_PUBLISH_END_POINTS", new Boolean( hasEndPoints ) );
-        context.put( "canAddForm", new Boolean( LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level ? true : false ) );
-        context.put( "canViewDiff", new Boolean( LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level ? true : false ) );
+        context.put( "canAddForm", Boolean.valueOf( LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level ? true : false ) );
+        context.put( "canViewDiff", Boolean.valueOf( LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level ? true : false ) );
 
         context.put( "HTMLPAGE_ASSET_STRUCTURE_TYPE", htmlPage.isContent() ? ((Contentlet)htmlPage).getStructureInode() : APILocator.getHTMLPageAssetAPI().DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
         context.put("HTMLPAGE_IS_CONTENT", htmlPage.isContent());
