@@ -134,7 +134,7 @@ public class Task04210CreateDefaultLanguageVariable implements StartupTask {
         Map<String, Object> keyField = setFieldElements(KeyValueContentType.KEY_VALUE_KEY_FIELD_NAME,
                         LegacyFieldTypes.TEXT.implClass().getName(), StringPool.BLANK, "text1", isRequired, isListed, isIndexed,
                         KeyValueContentType.KEY_VALUE_KEY_FIELD_VAR, 1, StringPool.BLANK, StringPool.BLANK, StringPool.BLANK,
-                        StringPool.BLANK, isFixed, !isReadOnly, isSearchable, !isUnique);
+                        StringPool.BLANK, isFixed, !isReadOnly, isSearchable, isUnique);
         Map<String, Object> valuField = setFieldElements(KeyValueContentType.KEY_VALUE_VALUE_FIELD_NAME,
                         LegacyFieldTypes.TEXT_AREA.implClass().getName(), StringPool.BLANK, "text_area1", isRequired, isListed,
                         !isIndexed, KeyValueContentType.KEY_VALUE_VALUE_FIELD_VAR, 2, StringPool.BLANK, StringPool.BLANK,

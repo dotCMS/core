@@ -1,6 +1,7 @@
 package com.dotcms.publisher.util;
 
 import com.dotcms.publisher.pusher.wrapper.CategoryWrapper;
+import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import java.io.File;
@@ -8,18 +9,50 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.apache.commons.io.IOUtils;
+
 
 public class PushCategoryUtil {
-	
-	private Collection<File> categories;
+
 	private XStream xstream;
-	private String CategoryExtension;
+
+	private Map<String, File> categoriesByInode;
+	private Set<String> categoriesTopLevel;
+
+	private int categoriesCount;
 	
-	public PushCategoryUtil(Collection<File> categories, String categoryExtension){
-		this.categories = categories;
+	public PushCategoryUtil(Collection<File> categories, String categoryExtension) throws DotPublishingException {
 		xstream=new XStream(new DomDriver());
-		this.CategoryExtension = categoryExtension;
+
+		categoriesByInode = new HashMap<>();
+		categoriesTopLevel = new HashSet<>();
+		categoriesCount = 0;
+
+		for(File categoryFile : categories){
+
+			if(categoryFile.getName().endsWith(categoryExtension))
+				categoriesCount++;
+
+			if(categoryFile.isDirectory())
+				continue;
+
+			try {
+				CategoryWrapper wrapper = getCategoryWrapperFromFile(categoryFile);
+
+				categoriesByInode.put(wrapper.getCategory().getInode(), categoryFile);
+
+				if(wrapper.isTopLevel())
+					categoriesTopLevel.add(wrapper.getCategory().getInode());
+
+			} catch (FileNotFoundException fnfe) {
+				throw new DotPublishingException(fnfe.getMessage(),fnfe);
+			}
+		}
 	}
 	
 	/**
@@ -29,36 +62,28 @@ public class PushCategoryUtil {
 	 */
 	public List<CategoryWrapper> findTopLevelWrappers() throws FileNotFoundException {
 		List<CategoryWrapper> topLevels = new ArrayList<CategoryWrapper>();
-		for(File category : categories){
-			if(category.isDirectory()) continue;
-			CategoryWrapper wrapper = getCategoryWrapperFromFile(category);
-			if(wrapper.isTopLevel())
-				topLevels.add(wrapper);
+		for(String categoryInode : categoriesTopLevel){
+			File categoryFile = categoriesByInode.get(categoryInode);
+			topLevels.add( getCategoryWrapperFromFile(categoryFile) );
 		}
 		return topLevels;
 	}
-	
+
 	public CategoryWrapper getCategoryWrapperFromInode(String inode) throws FileNotFoundException {
-		CategoryWrapper wrapper = null;
-		for(File category : categories){
-			if(category.isDirectory()) continue;
-			wrapper = getCategoryWrapperFromFile(category);
-			if(inode.equals(wrapper.getCategory().getInode()))
-				return wrapper;
-		}
-		return wrapper;
+		File categoryFile = categoriesByInode.get(inode);
+		return (categoryFile != null) ? getCategoryWrapperFromFile(categoryFile) : null;
 	}
 	
 	private CategoryWrapper getCategoryWrapperFromFile(File category) throws FileNotFoundException {
-		return (CategoryWrapper)xstream.fromXML(new FileInputStream(category));
+		FileInputStream fis = new FileInputStream(category);
+		try {
+			return (CategoryWrapper)xstream.fromXML(fis);
+		} finally {
+			IOUtils.closeQuietly(fis);
+		}
 	}
 	
 	public int getCategoryXMLCount(){
-		int count = 0;
-		for(File f:categories){
-			if(f.getName().endsWith(CategoryExtension))
-				count++;
-		}
-		return count;
+        return categoriesCount;
 	}
 }

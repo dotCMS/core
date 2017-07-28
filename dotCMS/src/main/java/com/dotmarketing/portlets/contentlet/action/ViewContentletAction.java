@@ -7,6 +7,7 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -123,7 +124,13 @@ public class ViewContentletAction extends DotPortletAction {
 		}
 		else
 		{
-			if(req.getParameter("structure_id") != null){
+			if(req.getParameter("baseType") != null){
+				BaseContentType baseContentType = BaseContentType.getBaseContentType(Integer.parseInt(req.getParameter("baseType")));
+				List<ContentType> contentTypes = contentTypeAPI.findByType(baseContentType);
+				List<Structure> structures = new StructureTransformer(contentTypes).asStructureList();
+				req.setAttribute(WebKeys.Structure.STRUCTURES, structures);
+				req.setAttribute("DONT_SHOW_ALL", true);
+			} else if(req.getParameter("structure_id") != null){
 
 				Structure st = null;
 
@@ -137,7 +144,7 @@ public class ViewContentletAction extends DotPortletAction {
 				if(st.getStructureType()==Structure.STRUCTURE_TYPE_FORM){
 					List<Structure> structures =StructureFactory.getStructuresByUser(user,"structuretype="+st.getStructureType(), "upper(name)", -1, 0, "asc");
 					req.setAttribute(WebKeys.Structure.STRUCTURES, structures);
-					req.setAttribute("SHOW_FORMS_ONLY", true);
+					req.setAttribute("DONT_SHOW_ALL", true);
 				}else{
 					List<Structure> structures = this.structureAPI.find(user, false, true);
 					req.setAttribute(WebKeys.Structure.STRUCTURES, structures);
