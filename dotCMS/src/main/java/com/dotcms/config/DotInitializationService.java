@@ -3,6 +3,7 @@ package com.dotcms.config;
 import com.dotcms.api.system.event.PayloadVerifierFactoryInitializer;
 import com.dotcms.api.system.event.SystemEventProcessorFactoryInitializer;
 import com.dotcms.repackage.org.apache.commons.lang.time.StopWatch;
+import com.dotcms.system.event.local.business.LocalSystemEventSubscribersInitializer;
 import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.util.*;
 
@@ -104,7 +105,8 @@ public class DotInitializationService implements Serializable {
 
         return linkSet(
                 new SystemEventProcessorFactoryInitializer(),
-                new PayloadVerifierFactoryInitializer());
+                new PayloadVerifierFactoryInitializer(),
+                new LocalSystemEventSubscribersInitializer());
     } // getInternalInitializers.
 
     private Set<DotInitializer> getServiceLoaderInitializers() {
