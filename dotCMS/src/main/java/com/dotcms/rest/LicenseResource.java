@@ -45,6 +45,7 @@ import javax.servlet.http.HttpSession;
 public class LicenseResource {
 
     private final WebResource webResource = new WebResource();
+    private static final String SERVER_ID  = "serverid";
 
     @GET
     @Path("/all/{params:.*}")
@@ -61,8 +62,8 @@ public class LicenseResource {
                     String value = (entry.getValue()==null) ? "" : String.valueOf(entry.getValue());
                     obj.put(key, value );
                     //Lets exclude some data we don' want/need to expose
-                    if ( "serverid".equals(key) ) {
-                        obj.put("serverid",  LicenseUtil.getDisplayServerId(value) );
+                    if ( SERVER_ID.equals(key) ) {
+                        obj.put(SERVER_ID,  LicenseUtil.getDisplayServerId(value) );
                         obj.put( "fullserverid", value );
                     } else if ( "id".equals(key) ) {
                         obj.put( "idDisplay", LicenseUtil.getDisplaySerial(value) );
@@ -187,7 +188,7 @@ public class LicenseResource {
         InitDataObject initData = webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
         
         String localServerId = APILocator.getServerAPI().readServerId();
-        String remoteServerId = initData.getParamsMap().get("serverid");
+        String remoteServerId = initData.getParamsMap().get(SERVER_ID);
         String serial = initData.getParamsMap().get("serial");
 
         

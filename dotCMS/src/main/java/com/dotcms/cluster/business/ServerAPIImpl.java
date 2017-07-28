@@ -1,17 +1,5 @@
 package com.dotcms.cluster.business;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.Date;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.content.elasticsearch.util.ESClient;
@@ -19,14 +7,16 @@ import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDUtil;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
+
+import java.io.*;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ServerAPIImpl implements ServerAPI {
 
@@ -49,43 +39,7 @@ public class ServerAPIImpl implements ServerAPI {
 	    Server tryServer = getServer(serverId);
         if(tryServer==null || tryServer.getServerId() ==null)  {
             LocalTransaction.wrap(() ->{
-                Server newServer = new Server();
-                newServer.setServerId(serverId);
-                newServer.setIpAddress(ClusterFactory.getIPAdress());
-    
-                String hostName = "localhost";
-                try {
-                    hostName = InetAddress.getLocalHost().getHostName();
-    
-                } catch (UnknownHostException e) {
-                    Logger.error(ClusterFactory.class, "Error trying to get the host name. ", e);
-                }
-    
-                newServer.setName(hostName);
-    
-                saveServer(newServer);
-    
-                // set up ports
-    
-                String port=ClusterFactory.getNextAvailablePort(newServer.getServerId(), ServerPort.CACHE_PORT);
-                Config.setProperty(ServerPort.CACHE_PORT.getPropertyName(), port);
-                newServer.setCachePort(Integer.parseInt(port));
-    
-                port=new ESClient().getNextAvailableESPort(newServer.getServerId(), newServer.getIpAddress(), String.valueOf(newServer.getEsTransportTcpPort()));
-                Config.setProperty(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName(), port);
-                newServer.setEsTransportTcpPort(Integer.parseInt(port));
-    
-                port=ClusterFactory.getNextAvailablePort(newServer.getServerId(), ServerPort.ES_HTTP_PORT);
-                Config.setProperty(ServerPort.ES_HTTP_PORT.getPropertyName(), port);
-                newServer.setEsHttpPort(Integer.parseInt(port));
-    
-               updateServer(newServer);
-    
-                try {
-                    writeHeartBeatToDisk(newServer.getServerId());
-                } catch (IOException e) {
-                    Logger.error(ClusterFactory.class, "Could not write Server ID to file system" , e);
-                }
+				getServerTransaction(serverId);
        
             });
 
@@ -94,6 +48,47 @@ public class ServerAPIImpl implements ServerAPI {
 
         return serverFactory.getServer(serverId);
     }
+
+	private void getServerTransaction(String serverId) throws DotDataException {
+		Server newServer = new Server();
+		newServer.setServerId(serverId);
+		newServer.setIpAddress(ClusterFactory.getIPAdress());
+
+		String hostName = "localhost";
+		try {
+            hostName = InetAddress.getLocalHost().getHostName();
+
+        } catch (UnknownHostException e) {
+            Logger.error(ClusterFactory.class, "Error trying to get the host name. ", e);
+        }
+
+		newServer.setName(hostName);
+
+		saveServer(newServer);
+
+		// set up ports
+
+		String port=ClusterFactory.getNextAvailablePort(newServer.getServerId(), ServerPort.CACHE_PORT);
+		Config.setProperty(ServerPort.CACHE_PORT.getPropertyName(), port);
+		newServer.setCachePort(Integer.parseInt(port));
+
+		port=new ESClient().getNextAvailableESPort(newServer.getServerId(), newServer.getIpAddress(),
+                String.valueOf(newServer.getEsTransportTcpPort()));
+		Config.setProperty(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName(), port);
+		newServer.setEsTransportTcpPort(Integer.parseInt(port));
+
+		port=ClusterFactory.getNextAvailablePort(newServer.getServerId(), ServerPort.ES_HTTP_PORT);
+		Config.setProperty(ServerPort.ES_HTTP_PORT.getPropertyName(), port);
+		newServer.setEsHttpPort(Integer.parseInt(port));
+
+		updateServer(newServer);
+
+		try {
+            writeHeartBeatToDisk(newServer.getServerId());
+        } catch (IOException e) {
+            Logger.error(ClusterFactory.class, "Could not write Server ID to file system" , e);
+        }
+	}
 
 	private File serverIdFile(){
 	    
@@ -134,9 +129,10 @@ public class ServerAPIImpl implements ServerAPI {
         		Logger.debug(ServerAPIImpl.class, "ServerID: " + SERVER_ID);
         
     
-    	    }
-    	    catch(IOException ioe){
-    	        throw new DotStateException("Unable to read server id at " + serverIdFile() + " please make sure that the directory exists and is readable and writeable. If problems persist, try deleting the file.  The system will recreate a new one on startup", ioe);
+    	    } catch(IOException ioe){
+    	        throw new DotStateException("Unable to read server id at " + serverIdFile() +
+						" please make sure that the directory exists and is readable and writeable. If problems" +
+						" persist, try deleting the file.  The system will recreate a new one on startup", ioe);
     	    } finally{
 				try {
 					br.close();
