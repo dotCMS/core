@@ -1,6 +1,5 @@
 package com.dotcms.contenttype.model.field;
 
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -9,7 +8,7 @@ import com.liferay.portal.model.User;
 import java.util.*;
 
 /**
- * Created by freddyrodriguez on 7/27/17.
+ * Factory of {@link FieldType}
  */
 public class FieldTypeFactory {
 
@@ -17,6 +16,8 @@ public class FieldTypeFactory {
 
     private static class SingletonHolder {
         private static final FieldTypeFactory INSTANCE = new FieldTypeFactory();
+
+        private SingletonHolder(){}
     }
 
     public static FieldTypeFactory getInstance() {
@@ -54,7 +55,7 @@ public class FieldTypeFactory {
                 String helpText = UtilMethods.escapeSingleQuotes( LanguageUtil.get( user, field.getContentTypeFieldHelpTextKey() ) );
                 Collection<ContentTypeFieldProperties> fieldContentTypeProperties = field.getFieldContentTypeProperties();
 
-                if (fieldContentTypeProperties != null) {
+                if (!fieldContentTypeProperties.isEmpty()) {
                     FieldType fieldType = new FieldType(id, label, fieldContentTypeProperties, helpText, fieldClass.getName());
                     fieldTypes.add(fieldType);
                 }

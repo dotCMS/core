@@ -4,7 +4,6 @@ package com.dotcms.contenttype.model.field;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
@@ -43,7 +42,7 @@ public class FieldTypeResource {
     @JSONP
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-    public Response getFieldTypes(@Context final HttpServletRequest req) throws DotDataException, DotSecurityException {
+    public Response getFieldTypes(@Context final HttpServletRequest req) {
 
         final InitDataObject initData = this.webResource.init(null, true, req, true, null);
         User user = initData.getUser();

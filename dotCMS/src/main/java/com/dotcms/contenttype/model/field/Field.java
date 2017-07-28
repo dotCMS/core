@@ -247,7 +247,7 @@ public abstract class Field implements FieldIf, Serializable {
    * @return
    */
   public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
-    return null;
+    return Collections.emptyList();
   }
 
   /**
@@ -267,7 +267,6 @@ public abstract class Field implements FieldIf, Serializable {
   @JsonIgnore
   public String getContentTypeFieldLabelKey(){
     String legacyName = LegacyFieldTypes.getLegacyName(this.getClass());
-    String key = legacyName.substring(0, 1).toUpperCase() + legacyName.substring(1);
-    return key;
+    return legacyName.substring(0, 1).toUpperCase() + legacyName.substring(1);
   }
 }
