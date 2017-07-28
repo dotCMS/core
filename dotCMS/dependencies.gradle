@@ -205,6 +205,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jboss-logging', version:'3.3.0.Final_2'
     compile group: 'com.dotcms.lib', name: 'dot.txtmark', version:'0.14-SNAPSHOT_1'
     compile group: 'com.dotcms.lib', name: 'dot.HikariCP', version:'2.4.6_1'
+
     compile group: 'org.springframework', name: 'spring-asm', version:'3.1.0.RELEASE'
     compile(group: 'org.springframework', name: 'spring-beans', version:'3.1.0.RELEASE') {
         exclude(module: 'commons-logging')
@@ -346,8 +347,11 @@ dependencies {
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-guava:2.4.0'
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.6.3'
 
+
     compileOnly "org.immutables:value:2.3.3:annotations"
-    apt         "org.immutables:value:2.3.3"
+    //apt         "org.immutables:value:2.3.3"
 
     compile 'org.immutables:gson:2.3.3'
+
+    compile group: 'org.aspectj', name: 'aspectjrt', version:'1.8.4'
 }
