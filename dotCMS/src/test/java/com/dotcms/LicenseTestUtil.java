@@ -23,7 +23,7 @@ public class LicenseTestUtil {
 			HttpServletRequest req=Mockito.mock(HttpServletRequest.class);
 			Mockito.when(req.getParameter("iwantTo")).thenReturn("request_code");
 			Mockito.when(req.getParameter("license_type")).thenReturn("trial");
-			Mockito.when(req.getParameter("license_level")).thenReturn("400");
+			Mockito.when(req.getParameter("license_level")).thenReturn(String.valueOf(LicenseLevel.PRIME.level));
 
 			final StringBuilder reqcode=new StringBuilder();
 
