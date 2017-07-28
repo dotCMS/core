@@ -63,13 +63,12 @@ public class DefaultVanityUrlHandler implements VanityUrlHandler {
 
             return DEFAULT_RESULT;
         }
-        if (UtilMethods.isSet(rewrite)) {
-            if (null != rewrite && rewrite.contains("?")) {
-                String[] arr = rewrite.split("\\?", LIMIT);
-                rewrite = arr[0];
-                if (arr.length > 1) {
-                    queryString = arr[1];
-                }
+        //Search for a query string
+        if (UtilMethods.isSet(rewrite) && rewrite.contains("?")) {
+            String[] arr = rewrite.split("\\?", LIMIT);
+            rewrite = arr[0];
+            if (arr.length > 1) {
+                queryString = arr[1];
             }
         }
         return new VanityUrlResult(rewrite, queryString, false);

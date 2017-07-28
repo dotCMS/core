@@ -346,7 +346,7 @@ public class CMSUrlUtil {
 				Logger.error(this, "Encoding failure. Unable to encode URI " + uri);
 				throw new ServletException(e.getMessage(), e);
 			}
-		} else if (queryString != null && !UtilMethods.decodeURL(queryString).equals(null)) {
+		} else if (queryString != null && null != UtilMethods.decodeURL(queryString)) {
 			if (Xss.ParamsHaveXSS(queryString)) {
 				Logger.warn(this, "XSS Found in Query String: " + queryString);
 				rewrite = uri;
