@@ -9,8 +9,6 @@
  */
 package com.dotmarketing.cms.urlmap.filters;
 
-import com.dotcms.vanityurl.business.VanityUrlAPI;
-import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -25,8 +23,8 @@ import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.filters.CMSFilter;
-import com.dotmarketing.filters.CmsUrlUtil;
+import com.dotmarketing.filters.CMSUrlUtil;
+import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.StructureUtil;
@@ -36,7 +34,6 @@ import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
@@ -45,7 +42,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import java.io.IOException;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -74,8 +70,7 @@ public class URLMapFilter implements Filter {
     private UserWebAPI wuserAPI;
     private HostWebAPI whostAPI;
     private boolean urlFallthrough;
-    CmsUrlUtil cmsUrlUtil = CmsUrlUtil.getInstance();
-
+    private CMSUrlUtil cmsUrlUtil = CMSUrlUtil.getInstance();
 
     public void destroy() {
 
@@ -90,8 +85,8 @@ public class URLMapFilter implements Filter {
 
         HttpServletRequest request = (HttpServletRequest) req;
         HttpSession optSession = request.getSession(false);
-        String uri = request.getRequestURI();
-        uri = URLDecoder.decode(uri, "UTF-8");
+
+        String uri = cmsUrlUtil.getURIFromRequest(request);
 
         String previewPage = request.getParameter("previewPage");
         long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
@@ -117,17 +112,6 @@ public class URLMapFilter implements Filter {
         // http://jira.dotmarketing.net/browse/DOTCMS-6079
         if (uri.endsWith("/")) {
             uri = uri.substring(0, uri.length() - 1);
-        }
-
-        //Look for this Vanity URL in cache
-        CachedVanityUrl vanityUrl = APILocator.getVanityUrlAPI()
-                .getLiveCachedVanityUrl(uri, host, languageId, user);
-        //And if we found something make sure is not a 404
-        String pointer = vanityUrl != null && !VanityUrlAPI.CACHE_404_VANITY_URL
-                .equals(vanityUrl.getVanityUrlId()) && InodeUtils
-                .isSet(vanityUrl.getVanityUrlId()) ? vanityUrl.getForwardTo() : null;
-        if (UtilMethods.isSet(pointer)) {
-            uri = pointer;
         }
 
         String mastRegEx = null;
@@ -315,7 +299,7 @@ public class URLMapFilter implements Filter {
 
                     if ((cons != null && cons.size() > 0) || !urlFallthrough) {
 
-                        request.setAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE, ident.getURI());
+                        request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE, ident.getURI());
 
                     }
 

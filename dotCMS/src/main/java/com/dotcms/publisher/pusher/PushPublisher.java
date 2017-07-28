@@ -364,7 +364,7 @@ public class PushPublisher extends Publisher {
         if ( buildOSGIBundle ) {
             list.add( OSGIBundler.class );
         }
-        if ( buildAsset ) {
+        if ( buildAsset || buildLanguages) {
             list.add( DependencyBundler.class );
             list.add( HostBundler.class );
             list.add( ContentBundler.class );
@@ -382,10 +382,7 @@ public class PushPublisher extends Publisher {
             list.add( LanguageBundler.class );
         } else {
 			list.add(DependencyBundler.class);
-			if (buildLanguages) {
-				list.add(LanguageVariablesBundler.class);
-				list.add(LanguageBundler.class);
-			} else if (buildRules) {
+			if (buildRules) {
 				list.add(HostBundler.class);
 				list.add(RuleBundler.class);
 			}
