@@ -97,7 +97,7 @@ idea {
         excludeDirs += file('.idea')
         excludeDirs += file('.gradle')
         //if you prefer different output folders
-        inheritOutputDirs = false
+        inheritOutputDirs = true
         outputDir = file('build/classes/main')
         testOutputDir = file('build/classes/test')
 
