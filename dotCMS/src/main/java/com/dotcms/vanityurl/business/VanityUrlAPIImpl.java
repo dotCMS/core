@@ -330,6 +330,12 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                     CacheLocator.getVanityURLCache().setCachedVanityUrls(
                             siteId, languageId,
                             ImmutableSet.<CachedVanityUrl>builder().build());
+
+                    if (!Host.SYSTEM_HOST.equals(siteId)) {
+                        CacheLocator.getVanityURLCache().setCachedVanityUrls(
+                                Host.SYSTEM_HOST, languageId,
+                                ImmutableSet.<CachedVanityUrl>builder().build());
+                    }
                 }
 
                 return results.build();
@@ -343,6 +349,33 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                 addToVanityURLCache(vanityUrl);
                 vanityUrls.offer(vanityUrl);
             });
+
+            /*
+             * If a site was sent we need to make sure it was initialized in the cache
+             */
+            if (null != siteId && null != languageId) {
+                Set<CachedVanityUrl> vanitiesForHost = CacheLocator.getVanityURLCache()
+                        .getCachedVanityUrls(VanityUrlUtil
+                                .sanitizeSecondCacheKey(siteId,
+                                        languageId));
+                if (null == vanitiesForHost) {
+                    CacheLocator.getVanityURLCache().setCachedVanityUrls(
+                            siteId, languageId,
+                            ImmutableSet.<CachedVanityUrl>builder().build());
+                }
+
+                if (!Host.SYSTEM_HOST.equals(siteId)) {
+                    Set<CachedVanityUrl> vanitiesForSystemHost = CacheLocator.getVanityURLCache()
+                            .getCachedVanityUrls(VanityUrlUtil
+                                    .sanitizeSecondCacheKey(Host.SYSTEM_HOST,
+                                            languageId));
+                    if (null == vanitiesForSystemHost) {
+                        CacheLocator.getVanityURLCache().setCachedVanityUrls(
+                                Host.SYSTEM_HOST, languageId,
+                                ImmutableSet.<CachedVanityUrl>builder().build());
+                    }
+                }
+            }
 
             vanityUrlsToReturn = results.addAll(vanityUrls).build();
         } catch (IndexMissingException e) {
