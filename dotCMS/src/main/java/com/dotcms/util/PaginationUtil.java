@@ -82,18 +82,18 @@ public class PaginationUtil {
 		return perPage * currentPage;
 	}
 
-	public Response getPage(HttpServletRequest req, User user, String filter, int pageParam, int perPageParam) {
+	public Response getPage(final HttpServletRequest req, final User user, final String filter, final int pageParam, final int perPageParam) {
 		return getPage(req, user, filter, pageParam, perPageParam, StringUtils.EMPTY, (OrderDirection) null, null);
 	}
 
-	public Response getPage(HttpServletRequest req, User user, String filter, int pageParam,
-							int perPageParam, String orderBy, String direction) {
+	public Response getPage(final HttpServletRequest req, final User user, final String filter, final int pageParam,
+							final int perPageParam, final String orderBy, final String direction) {
 		return getPage(req, user, filter, pageParam, perPageParam, orderBy,
 				OrderDirection.valueOf(direction), null);
 	}
 
-	public Response getPage(HttpServletRequest req, User user, String filter, int pageParam,
-							int perPageParam, Map<String, Object> extraParams) {
+	public Response getPage(final HttpServletRequest req, User user, final String filter, final int pageParam,
+							final int perPageParam, final Map<String, Object>  extraParams) {
 		return getPage(req, user, filter, pageParam, perPageParam, null, null, extraParams);
 	}
 
@@ -109,17 +109,17 @@ public class PaginationUtil {
 	 * @param direction Order direction (ASC, DESC)
 	 * @return
 	 */
-	public Response getPage(HttpServletRequest req, User user, String filter, int page, int perPage, String orderBy,
-							OrderDirection direction, Map<String, Object> extraParams) {
+	public Response getPage(final HttpServletRequest req, final User user, final String filter, final int page,
+							final int perPage, final String orderBy, final OrderDirection direction, final Map<String, Object> extraParams) {
 
-		int pageValue = page == 0 ? FIRST_PAGE_INDEX : page;
-		int perPageValue = perPage == 0 ? perPageDefault : perPage;
-		int minIndex = getMinIndex(pageValue, perPageValue);
-		String sanitizefilter = SQLUtil.sanitizeParameter(filter);
+		final int pageValue = page == 0 ? FIRST_PAGE_INDEX : page;
+		final int perPageValue = perPage == 0 ? perPageDefault : perPage;
+		final int minIndex = getMinIndex(pageValue, perPageValue);
+		final String sanitizefilter = SQLUtil.sanitizeParameter(filter);
 
-		Collection items = paginator.getItems(user, sanitizefilter, perPageValue, minIndex, orderBy, direction, extraParams);
-		long totalRecords = paginator.getTotalRecords(filter);
-		String linkHeaderValue = getHeaderValue(req.getRequestURL().toString(), sanitizefilter, pageValue, perPageValue,
+		final Collection items = paginator.getItems(user, sanitizefilter, perPageValue, minIndex, orderBy, direction, extraParams);
+		final long totalRecords = paginator.getTotalRecords(filter);
+		final String linkHeaderValue = getHeaderValue(req.getRequestURL().toString(), sanitizefilter, pageValue, perPageValue,
 				totalRecords, orderBy, direction, extraParams);
 
 		return Response.
@@ -157,8 +157,9 @@ public class PaginationUtil {
 	 * @param direction
 	 * @return
 	 */
-	private static String getHeaderValue(String urlBase, String filter, int page, int perPage, long totalRecords,
-										 String orderBy, OrderDirection direction,  Map<String, Object> extraParams) {
+	private static String getHeaderValue(final String urlBase, final String filter, final int page, final int perPage,
+										 final long totalRecords, final String orderBy, final OrderDirection direction,
+										 final Map<String, Object> extraParams) {
 		final List<String> links = new ArrayList<>();
 
 		links.add(StringUtil.format(LINK_TEMPLATE, map(
@@ -213,7 +214,7 @@ public class PaginationUtil {
 	private static String getUrl(String urlBase, String filter, int page, int perPage,
 								 String orderBy, OrderDirection direction, Map<String, Object> extraParams){
 
-		Map<String, String> params = new HashMap<>();
+		final Map<String, String> params = new HashMap<>();
 
 		if (UtilMethods.isSet(filter)){
 			params.put(FILTER, String.valueOf(filter));
@@ -230,12 +231,12 @@ public class PaginationUtil {
 		}
 
 		if (UtilMethods.isSet(orderBy)) {
-			params.put(ORDER_BY, orderBy.toString());
+			params.put(ORDER_BY, orderBy);
 		}
 
 		if (extraParams != null) {
-			for (Map.Entry<String, Object> extraParamsEntry : extraParams.entrySet()) {
-				Object value = extraParamsEntry.getValue();
+			for (final Map.Entry<String, Object> extraParamsEntry : extraParams.entrySet()) {
+				final Object value = extraParamsEntry.getValue();
 
 				if (value != null) {
 					params.put(extraParamsEntry.getKey(), value.toString());
@@ -243,23 +244,23 @@ public class PaginationUtil {
 			}
 		}
 
-		StringBuilder buffer = new StringBuilder(urlBase);
+		final StringBuilder buffer = new StringBuilder(urlBase);
 
 		boolean firstParam = true;
 
-		for (Map.Entry<String, String> paramsEntry : params.entrySet()) {
+		for (final Map.Entry<String, String> paramsEntry : params.entrySet()) {
 
 			if (firstParam){
-				buffer.append("?");
+				buffer.append('?');
 			}else{
-				buffer.append("&");
+				buffer.append('&');
 			}
 
 
 			try {
-				String encode = URLEncoder.encode(paramsEntry.getValue(), "UTF-8");
+				final String encode = URLEncoder.encode(paramsEntry.getValue(), "UTF-8");
 				buffer.append(paramsEntry.getKey())
-						.append("=")
+						.append('=')
 						.append(encode);
 			} catch (UnsupportedEncodingException e) {
 				continue;

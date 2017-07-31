@@ -37,8 +37,8 @@ public class SitePaginator implements Paginator<Host> {
     }
 
     @Override
-    public Collection<Host> getItems(User user, String filter, int limit, int offset,
-                                     String orderby, OrderDirection direction, Map<String, Object> extraParams) {
+    public Collection<Host> getItems(final User user, final String filter, final int limit, final int offset,
+                                     final String orderby, final OrderDirection direction, final Map<String, Object> extraParams) {
 
         Boolean showArchived = null;
         Boolean showLive = null;

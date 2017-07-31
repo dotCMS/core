@@ -78,7 +78,7 @@ public class SiteResourceTest extends UnitTestBase {
         final PaginatedArrayList<Host> hosts = getSites();
         final PaginationUtil paginationUtil = mock(PaginationUtil.class);
 
-        Response responseExpected = Response.ok(new ResponseEntityView(hosts)).build();
+        final Response responseExpected = Response.ok(new ResponseEntityView(hosts)).build();
 
         Config.CONTEXT = context;
         Config.CONTEXT = context;
@@ -94,7 +94,7 @@ public class SiteResourceTest extends UnitTestBase {
         SiteResource siteResource =
                 new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI, paginationUtil);
 
-        Response response = siteResource.sites(request, "filter", false, false,false, page, count);
+        final Response response = siteResource.sites(request, "filter", false, false,false, page, count);
 
         RestUtilTest.verifySuccessResponse(response);
 
