@@ -115,7 +115,9 @@ public class SiteResource implements Serializable {
     public final Response sites(
             @Context final HttpServletRequest req,
             @QueryParam(PaginationUtil.FILTER)   final String filterParam,
-            @QueryParam(PaginationUtil.ARCHIVED) final boolean showArchived,
+            @QueryParam(SitePaginator.ARCHIVE_PARAMETER_NAME) final Boolean showArchived,
+            @QueryParam(SitePaginator.LIVE_PARAMETER_NAME) final Boolean showLive,
+            @QueryParam(SitePaginator.SYSTEM_PARAMETER_NAME) final Boolean showSystem,
             @QueryParam(PaginationUtil.PAGE) final int page,
             @QueryParam(PaginationUtil.PER_PAGE) final int perPage
     ) {
@@ -130,7 +132,9 @@ public class SiteResource implements Serializable {
         final String sanitizedFilter = !"all".equals(filter) ? filter : StringUtils.EMPTY;
 
         try {
-            response = paginationUtil.getPage(req, user, sanitizedFilter, showArchived, page, perPage);
+            response = paginationUtil.getPage(req, user, sanitizedFilter, page, perPage,
+                    map(SitePaginator.ARCHIVE_PARAMETER_NAME, showArchived, SitePaginator.LIVE_PARAMETER_NAME, showLive,
+                            SitePaginator.SYSTEM_PARAMETER_NAME, showSystem));
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
             response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }

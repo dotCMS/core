@@ -48,10 +48,10 @@ public class PaginationUtilTest {
         List items = new ArrayList<>();
 
         when( req.getRequestURL() ).thenReturn( baseURL );
-        when( paginator.getItems( user, filter, showArchived, perPage, offset, orderBy, direction ) ).thenReturn( items );
+        when( paginator.getItems( user, filter, perPage, offset, orderBy, direction ) ).thenReturn( items );
         when( paginator.getTotalRecords( filter )).thenReturn( totalRecords );
 
-        Response response = paginationUtil.getPage(req, user, filter, showArchived, page, perPage, orderBy, direction);
+        Response response = paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, null);
 
         Object entity = ((ResponseEntityView) response.getEntity()).getEntity();
 

@@ -85,7 +85,8 @@ public class SiteResourceTest extends UnitTestBase {
 
         when(initDataObject.getUser()).thenReturn(user);
         when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
-        when(paginationUtil.getPage(request, user, "filter",  Boolean.FALSE, 1, count)).thenReturn(responseExpected);
+        when(paginationUtil.getPage(request, user, "filter",1, count,
+                map("archive", false, "live", false, "system", false))).thenReturn(responseExpected);
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session);
         when(request.getSession(false)).thenReturn(session);
@@ -93,7 +94,7 @@ public class SiteResourceTest extends UnitTestBase {
         SiteResource siteResource =
                 new SiteResource(webResource, new SiteHelper( hostAPI ), I18NUtil.INSTANCE, userAPI, paginationUtil);
 
-        Response response = siteResource.sites(request, "filter", false, page, count);
+        Response response = siteResource.sites(request, "filter", false, false,false, page, count);
 
         RestUtilTest.verifySuccessResponse(response);
 
