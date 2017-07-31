@@ -1,11 +1,5 @@
 package com.dotmarketing.portlets.categories.business;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -18,6 +12,11 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.UUID;
 /**
  *	This class is an specific implementation of the CategoryAPI API to manage
  *  dotCMS categories
@@ -125,7 +124,10 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 	public void save(Category parent, Category object, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-		boolean isANewCategory = false;
+        // Checking that we have a unique key.
+	    object = checkUniqueKey(object, user);
+
+	    boolean isANewCategory = false;
 
 		//Checking permissions
 		if(InodeUtils.isSet(object.getInode()) || parent == null) {
@@ -154,6 +156,17 @@ public class CategoryAPIImpl implements CategoryAPI {
 		}
 
 	}
+
+    @Override
+	public void saveRemote(Category parent, Category object, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        object.setModDate(new Date());
+	    catFactory.save(object);
+
+        if(parent != null) {
+            catFactory.addChild(parent, object, null);
+            perAPI.copyPermissions(parent, object);
+        }
+    }
 
 	public void publishRemote(Category parent, Category object, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		catFactory.saveRemote(object);
@@ -573,5 +586,62 @@ public class CategoryAPIImpl implements CategoryAPI {
 	        return catFactory.suggestVelocityVarName(categoryVelVarName);
 	    }
 	}
+
+    /**
+     * Util method to check and generate (if necessary) a unique key for the Category.
+     *
+     * @return {@link Category} with a unique key.
+     */
+    private Category checkUniqueKey(Category category, User user)
+            throws DotDataException, DotSecurityException {
+
+        // If the category is new or if the category doesn't have any key: Let's generate a potential
+        // key and test until we have a unique one.
+        if (!InodeUtils.isSet(category.getInode()) || !UtilMethods.isSet(category.getKey())) {
+            final String potentialKey = getPotentialKeyFromCategory(category);
+            final String uniqueKey = getUniqueKey(potentialKey, user, 1);
+            category.setKey(uniqueKey);
+        } else {
+            // If the category is already in the DB, let's double check that the key is unique,
+            // maybe the the user is editing the category and changing it's key and that key
+            // already used by another Category.
+            final Category categoryInDB = findByKey(category.getKey(), user, false);
+            if (UtilMethods.isSet(categoryInDB)
+                    && !category.getInode().equals(categoryInDB.getInode())) {
+                final String uniqueKey = getUniqueKey(category.getKey(), user, 1);
+                category.setKey(uniqueKey);
+            }
+        }
+        return category;
+    }
+
+	/**
+     * Util method to check is a {@link String} key is unique among the other Category keys. In case
+     * it is repeated ths method will concat "-" + a consecutive number.
+     */
+    private String getUniqueKey(String key, User user, Integer consecutive)
+            throws DotDataException, DotSecurityException {
+
+        if (findByKey(key, user, false) != null) {
+            key = getUniqueKey(key + "-" + consecutive, user, ++consecutive);
+        }
+
+        return key;
+    }
+
+    /**
+     * Util method to explore potential keys in this order:
+     * 1. Category Key.
+     * 2. Category Variable Name.
+     * 3. "key" string.
+     */
+    private String getPotentialKeyFromCategory(Category category) {
+        if (UtilMethods.isSet(category.getKey())) {
+            return category.getKey();
+        } else {
+            return UtilMethods.isSet(category.getCategoryVelocityVarName()) ? category
+                    .getCategoryVelocityVarName() : "key";
+        }
+    }
 
 }

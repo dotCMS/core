@@ -23,7 +23,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
 
@@ -41,6 +40,7 @@ import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.tools.view.context.ChainedContext;
 
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotmarketing.beans.ContainerStructure;
@@ -64,6 +64,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.ClickstreamFactory;
 import com.dotmarketing.filters.CMSFilter;
+import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -113,8 +114,8 @@ public abstract class VelocityServlet extends HttpServlet {
 	protected void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
 
 		final String uri =URLDecoder.decode(
-				(req.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE)!=null) 
-					? (String) req.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE) 
+				(req.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE)!=null)
+					? (String) req.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE)
 							: req.getRequestURI()
 				, "UTF-8");
 	
@@ -180,7 +181,7 @@ public abstract class VelocityServlet extends HttpServlet {
 
 			if(uri==null){
 				response.sendError(500, "VelocityServlet called without running through the CMS Filter");
-				Logger.error(this.getClass(), "You cannot call the VelocityServlet without passing the requested url via a  requestAttribute called  " + CMSFilter.CMS_FILTER_URI_OVERRIDE);
+				Logger.error(this.getClass(), "You cannot call the VelocityServlet without passing the requested url via a  requestAttribute called  " + Constants.CMS_FILTER_URI_OVERRIDE);
 				return;
 			}
 

@@ -55,7 +55,7 @@ public class TimeMachineFilter implements Filter {
 
     private static final String ERROR_404 = "/html/portlet/ext/timemachine/timemachine_404.jsp";
 
-    CmsUrlUtil urlUtil = CmsUrlUtil.getInstance();
+    CMSUrlUtil urlUtil = CMSUrlUtil.getInstance();
 
     @Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {

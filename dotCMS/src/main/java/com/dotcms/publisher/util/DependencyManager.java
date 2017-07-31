@@ -1,15 +1,10 @@
 package com.dotcms.publisher.util;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.dotcms.enterprise.rules.RulesAPI;
+import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.pusher.PushPublisherConfig.AssetTypes;
 import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
@@ -27,6 +22,7 @@ import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
@@ -49,6 +45,13 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * The main purpose of this class is to determine all possible content
@@ -85,6 +88,7 @@ public class DependencyManager {
 	private DependencySet workflows;
 	private DependencySet languages;
 	private DependencySet rules;
+	private DependencySet categories;
 
 	private Set<String> hostsSet;
 	private Set<String> foldersSet;
@@ -128,6 +132,7 @@ public class DependencyManager {
 		workflows = new DependencySet(config.getId(),"workflows",config.isDownloading(), isPublish, config.isStatic());
 		languages = new DependencySet(config.getId(),"languages",config.isDownloading(), isPublish, config.isStatic());
 		this.rules = new DependencySet(config.getId(), PushPublisherConfig.AssetTypes.RULES.toString(), config.isDownloading(), isPublish, config.isStatic());
+		categories = new DependencySet(config.getId(), AssetTypes.CATEGORIES.toString(), config.isDownloading(), isPublish, config.isStatic());
 
 		// these ones are for being iterated over to solve the asset's dependencies
 		hostsSet = new HashSet<String>();
@@ -311,6 +316,7 @@ public class DependencyManager {
 		setContainerDependencies();
 		setStructureDependencies();
 		setLinkDependencies();
+		setLanguageDependencies();
 		setContentDependencies();
 		setRuleDependencies();
 
@@ -326,6 +332,7 @@ public class DependencyManager {
 		config.setWorkflows(workflows);
 		config.setLanguages(languages);
 		config.setRules(this.rules);
+		config.setCategories(categories);
 	}
 
 	/**
@@ -1000,7 +1007,14 @@ public class DependencyManager {
 				structures.addOrClean( con.getStructureInode(), struct.getModDate());
 				structureDependencyHelper(con.getStructureInode());
 			}
-		}
+
+			// Evaluate all the categories from this contentlet to include as dependency.
+            final List<Category> categoriesFromContentlet = APILocator.getCategoryAPI()
+                    .getParents(con, APILocator.systemUser(), false);
+            for (Category category : categoriesFromContentlet) {
+                categories.addOrClean(category.getCategoryId(), category.getModDate());
+            }
+        }
 
 	}
 
@@ -1077,6 +1091,26 @@ public class DependencyManager {
 			Logger.error(this, "Dependencies for rule [" + ruleToProcess + "] could not be set: " + e.getMessage(), e);
 		} catch (DotSecurityException e) {
 			Logger.error(this, "Dependencies for rule [" + ruleToProcess + "] could not be set: " + e.getMessage(), e);
+		}
+	}
+	
+	private void setLanguageDependencies(){
+		ContentletAPI contentletAPI = APILocator.getContentletAPI();
+		
+		try{
+			for(String lang : languages){
+				String keyValueQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE + " +languageId:" + lang;
+				List<Contentlet> listKeyValueLang = contentletAPI.search(keyValueQuery, 0, -1, StringPool.BLANK, user, false);
+				for(Contentlet keyValue : listKeyValueLang){
+					contents.addOrClean(keyValue.getIdentifier(),keyValue.getModDate());
+					contentsSet.add(keyValue.getIdentifier());
+				}
+				
+			}
+			
+			
+		}catch (Exception e){
+			Logger.error(this, e.getMessage(),e);
 		}
 	}
 

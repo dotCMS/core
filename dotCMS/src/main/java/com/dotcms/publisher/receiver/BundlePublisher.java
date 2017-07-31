@@ -13,11 +13,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
-import com.dotcms.enterprise.license.LicenseLevel;
 import org.apache.tools.tar.TarBuffer;
 
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.publishing.remote.handler.BundleXMLascHandler;
+import com.dotcms.enterprise.publishing.remote.handler.CategoryFullHandler;
 import com.dotcms.enterprise.publishing.remote.handler.CategoryHandler;
 import com.dotcms.enterprise.publishing.remote.handler.ContainerHandler;
 import com.dotcms.enterprise.publishing.remote.handler.ContentHandler;
@@ -48,7 +49,6 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
-import com.dotcms.repackage.org.apache.commons.compress.archivers.ArchiveEntry;
 import com.dotcms.repackage.org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import com.dotcms.repackage.org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
@@ -97,6 +97,7 @@ public class BundlePublisher extends Publisher {
         //The order is really important
         handlers.add(new UserHandler(config));
         handlers.add(new CategoryHandler(config));
+        handlers.add(new CategoryFullHandler(config));
         handlers.add(new HostHandler(config));
         handlers.add(new FolderHandler(config));
         handlers.add(new WorkflowHandler(config));

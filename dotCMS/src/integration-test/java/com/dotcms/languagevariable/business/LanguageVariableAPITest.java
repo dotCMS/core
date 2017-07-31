@@ -62,13 +62,13 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
 
         IntegrationTestInitService.getInstance().init();
         systemUser = APILocator.systemUser();
+        final String contentTypeVelocityVarName = LanguageVariableAPI.LANGUAGEVARIABLE;
         try {
             // Using the provided Language Variable Content Type
-            languageVariableContentType = APILocator.getContentTypeAPI(systemUser).find("Languagevariable");
+            languageVariableContentType = APILocator.getContentTypeAPI(systemUser).find(contentTypeVelocityVarName);
         } catch (Exception e) {
             // Content Type not found, then create it
             final String contentTypeName = "Language Variable";
-            final String contentTypeVelocityVarName = "Languagevariable";
             systemUser = APILocator.systemUser();
             final Host site = APILocator.getHostAPI().findDefaultHost(systemUser, Boolean.FALSE);
             ContentTypeAPI contentTypeApi = APILocator.getContentTypeAPI(systemUser);

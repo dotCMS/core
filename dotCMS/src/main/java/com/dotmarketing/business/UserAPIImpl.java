@@ -122,6 +122,11 @@ public class UserAPIImpl implements UserAPI {
 	}
 
 	@Override
+	public long getCountUsersByName(String filter) throws DotDataException {
+		return uf.getCountUsersByName(filter);
+	}
+
+	@Override
 	public List<User> getUsersByName(String filter, int start,int limit, User user, boolean respectFrontEndRoles) throws DotDataException {
 		return uf.getUsersByName(filter, start, limit);
 	}

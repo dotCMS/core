@@ -56,6 +56,8 @@
     String structureSelected = "";
     if(UtilMethods.isSet(request.getParameter("structure_id"))){
         structureSelected=request.getParameter("structure_id");
+    } else if(UtilMethods.isSet(request.getParameter("baseType"))){
+    	structureSelected = structures.get(0).getInode();
     }
 
     if (lastSearch != null && !UtilMethods.isSet(structureSelected)) {
@@ -211,7 +213,7 @@
         identifier: "name",
         label: "label",
         items: [
-            <%if(request.getAttribute("SHOW_FORMS_ONLY") == null){%>
+            <%if(request.getAttribute("DONT_SHOW_ALL") == null){%>
             {
                 name: "_all",
                 label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All" )) %>",
