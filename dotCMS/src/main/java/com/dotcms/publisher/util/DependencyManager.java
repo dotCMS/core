@@ -972,6 +972,16 @@ public class DependencyManager {
 			folders.addOrClean( con.getFolder(), f.getModDate()); // adding content folder
 
 			languages.addOrClean(Long.toString(con.getLanguageId()), new Date()); // will be included only when hasn't been sent ever
+			String keyValueQuery = "+contentType:" + LanguageVariableAPI.LANGUAGEVARIABLE + " +languageId:" + con.getLanguageId();
+			List<Contentlet> listKeyValueLang = APILocator.getContentletAPI().search(keyValueQuery, 0, -1, StringPool.BLANK, user, false);//search for language variables
+			if(!listKeyValueLang.isEmpty()){//if there is any language variable add the content type
+			    Structure struct = CacheLocator.getContentTypeCache().getStructureByInode(listKeyValueLang.get(0).getContentTypeId());
+			    structures.addOrClean(struct.getIdentifier(), struct.getModDate());
+			    structureDependencyHelper(struct.getIdentifier());
+			}
+			for(Contentlet keyValue : listKeyValueLang){//add the language variable
+			    contents.addOrClean(keyValue.getIdentifier(),keyValue.getModDate());
+			}
 
 			try {
 				if (Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_ALL_FOLDER_PAGES", false)
