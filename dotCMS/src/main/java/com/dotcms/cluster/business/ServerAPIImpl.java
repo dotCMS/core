@@ -114,18 +114,19 @@ public class ServerAPIImpl implements ServerAPI {
 	public String readServerId()  {
 	    // once set this should never change
 		BufferedReader br = null;
+		FileReader reader = null;
 	    if(SERVER_ID==null){
     	    try{
+
         	    File serverFile = serverIdFile();
         
         	    if(!serverFile.exists()){
         	        writeServerIdToDisk(UUIDUtil.uuid());
         	    }
 
-        		br =  new BufferedReader(new FileReader(serverFile));
+        	    reader = new FileReader(serverFile);
+        		br =  new BufferedReader(reader);
         		SERVER_ID = br.readLine();
-        		br.close();
-        
         		Logger.debug(ServerAPIImpl.class, "ServerID: " + SERVER_ID);
         
     
@@ -135,7 +136,13 @@ public class ServerAPIImpl implements ServerAPI {
 						" persist, try deleting the file.  The system will recreate a new one on startup", ioe);
     	    } finally{
 				try {
-					br.close();
+					if (reader != null){
+						reader.close();
+					}
+					if (br != null){
+						br.close();
+					}
+
 				} catch (IOException e) {
 					Logger.error(this.getClass(), e.getMessage());
 				}
