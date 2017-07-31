@@ -142,6 +142,10 @@ dependencies {
     integrationTestCompile sourceSets.test.output
     functionalTestCompile sourceSets.test.output
     functionalTestCompile sourceSets.integrationTest.output
+
+    if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDev')) {
+        configurations.compile.exclude group: 'com.dotcms.enterprise', module: 'ee'
+    }
 }
 
 // Import and apply the dependencies from the dependencies scripts.
@@ -233,12 +237,6 @@ war {
             java {
                 //We only want to compile using the submodules code when using the deployWarTomcatDev task
                 if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDev')) {
-                    if (enterpriseSrcFolder.exists()) {
-                        srcDirs = ["src/main/java", "$enterpriseProjectHome/src/main/java"]
-                    } else {
-                        srcDirs = ["src/main/java"]
-                    }
-                } else if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDevEE')) {
                     if (enterpriseSrcFolder.exists()) {
                         srcDirs = ["src/main/java", "$enterpriseProjectHome/src/main/java"]
                     } else {
@@ -342,15 +340,6 @@ task deployWarTomcatDev (dependsOn: 'deployWarTomcat') {
 deployWarTomcatDev.finalizedBy 'generateMoveCleanEnterpriseTomcat'
 deployWarTomcatDev.group='dotCMS Development'
 deployWarTomcatDev.description='Same as deployWarTomcat but will use the no obfuscated version of the enterprise jar. (Useful for development)'
-
-//Same as deployWarTomcatDev but will ONLY use the no obfuscated version of the enterprise jar.
-//(Useful for development)
-task deployWarTomcatDevEE (dependsOn: 'deployWarTomcat') {
-
-}
-deployWarTomcatDevEE.finalizedBy 'generateMoveCleanEnterpriseTomcat'
-deployWarTomcatDevEE.group='dotCMS Development'
-deployWarTomcatDevEE.description='Same as deployWarTomcatDev but will ONLY use the no obfuscated version of the enterprise jar. (Useful for development)'
 
 //Executes a pull or clone to get tomcat from the repository
 task clonePullTomcat(type: ClonePullTomcatTask) {
