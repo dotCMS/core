@@ -46,7 +46,6 @@ public class SitePaginatorTest {
     @Test
     public void testGetItems(){
         final String filter = "filter";
-        final boolean showArchived = true;
         final int limit = 5;
         final int offset = 4;
         final User user = new User();

@@ -92,7 +92,7 @@ public class PaginationUtil {
 				OrderDirection.valueOf(direction), null);
 	}
 
-	public Response getPage(final HttpServletRequest req, User user, final String filter, final int pageParam,
+	public Response getPage(final HttpServletRequest req, final User user, final String filter, final int pageParam,
 							final int perPageParam, final Map<String, Object>  extraParams) {
 		return getPage(req, user, filter, pageParam, perPageParam, null, null, extraParams);
 	}
@@ -211,8 +211,8 @@ public class PaginationUtil {
 	 * @param direction
 	 * @return
 	 */
-	private static String getUrl(String urlBase, String filter, int page, int perPage,
-								 String orderBy, OrderDirection direction, Map<String, Object> extraParams){
+	private static String getUrl(final String urlBase, final String filter, final int page, final int perPage,
+								 final String orderBy, final OrderDirection direction, final Map<String, Object> extraParams){
 
 		final Map<String, String> params = new HashMap<>();
 
@@ -252,6 +252,7 @@ public class PaginationUtil {
 
 			if (firstParam){
 				buffer.append('?');
+				firstParam = false;
 			}else{
 				buffer.append('&');
 			}
