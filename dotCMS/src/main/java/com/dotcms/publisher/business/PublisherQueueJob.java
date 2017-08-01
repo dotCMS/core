@@ -350,19 +350,17 @@ public class PublisherQueueJob implements StatefulJob {
 						// If bundle was installed in some groups only
 						bundleStatus = PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS;
 						pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
-					} else if (( countGroupFailed > 0 && endpointTrackingMap.size() == 0 ) ||
-							   ( countGroupFailed == endpointTrackingMap.size() )) {
+					} else if (countGroupFailed > 0 && countGroupFailed == endpointTrackingMap.size()) {
 						// If bundle cannot be installed in all groups
 						bundleStatus = PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS;
 						pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
-					} else if (( countGroupOk > 0 && endpointTrackingMap.size() == 0 ) ||
-							   ( countGroupOk == endpointTrackingMap.size() )) {
+					} else if (countGroupOk > 0 && countGroupOk == endpointTrackingMap.size()) {
 						// If bundle was installed in all groups
 						PushPublishLogger.log(this.getClass(), "Status Update: Success");
 						bundleStatus = PublishAuditStatus.Status.SUCCESS;
 						pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
 						pubAPI.deleteElementsFromPublishQueueTable(bundleAudit.getBundleId());
-					} else if ( countGroupPublishing == endpointTrackingMap.size() ) {
+					} else if ( countGroupPublishing > 0 && countGroupPublishing == endpointTrackingMap.size() ) {
 						// If bundle is still publishing in all groups
 						bundleStatus = PublishAuditStatus.Status.PUBLISHING_BUNDLE;
 						pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
