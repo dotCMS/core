@@ -1,8 +1,8 @@
 package com.dotcms.services;
 
 import com.dotcms.cache.VanityUrlCache;
-import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.system.event.local.model.Subscriber;
+import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.VanityUrlUtil;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
@@ -17,9 +17,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
-import com.google.common.collect.ImmutableSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * This service allows to invalidate the Vanity URL Cache
@@ -102,7 +100,7 @@ public class VanityUrlServices {
      */
     public void initializeVanityUrlCache() {
         APILocator.getVanityUrlAPI()
-                .getActiveVanityUrls(APILocator.systemUser());
+                .initializeVanityURLsCache(APILocator.systemUser());
     }
 
     /**
@@ -150,51 +148,6 @@ public class VanityUrlServices {
         }
 
         return foundVanity;
-    }
-
-    /**
-     * Get the list of cached Vanity URLs associated to a given site and SYSTEM_HOST
-     *
-     * @param siteId The current site Id
-     * @param languageId The current language Id
-     * @return A set of CachedVanityUrl
-     */
-    public Set<CachedVanityUrl> getVanityUrlBySiteAndLanguage(String siteId, long languageId) {
-
-        Set<CachedVanityUrl> foundVanities;
-        if (null != siteId && !siteId.equals(Host.SYSTEM_HOST)) {
-
-            //First search in cache with the given site id
-            foundVanities = CacheLocator.getVanityURLCache()
-                    .getCachedVanityUrls(VanityUrlUtil.sanitizeSecondCacheKey(siteId, languageId));
-
-            //null means we need to initialize the cache for this site
-            if (null == foundVanities) {
-                return foundVanities;
-            }
-
-            //Now search in cache with the SYSTEM_HOST
-            Set<CachedVanityUrl> systemHostFoundVanities = CacheLocator.getVanityURLCache()
-                    .getCachedVanityUrls(
-                            VanityUrlUtil.sanitizeSecondCacheKey(Host.SYSTEM_HOST, languageId));
-
-            if (null != systemHostFoundVanities) {
-                if (null != foundVanities) {
-                    foundVanities = ImmutableSet.<CachedVanityUrl>builder()
-                            .addAll(foundVanities)
-                            .addAll(systemHostFoundVanities)
-                            .build();
-                } else {
-                    foundVanities = systemHostFoundVanities;
-                }
-            }
-        } else {
-            foundVanities = CacheLocator.getVanityURLCache()
-                    .getCachedVanityUrls(
-                            VanityUrlUtil.sanitizeSecondCacheKey(Host.SYSTEM_HOST, languageId));
-        }
-
-        return foundVanities;
     }
 
     /**
