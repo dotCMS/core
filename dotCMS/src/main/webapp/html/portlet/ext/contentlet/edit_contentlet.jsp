@@ -105,7 +105,12 @@
 
 	//Variable used to return after the work is done with the contentlet
 	String referer = "";
-	if (request.getParameter("referer") != null) {
+	if (request.getHeader("referer") != null && 
+	                (request.getHeader("referer").contains("baseType") || 
+	                                request.getHeader("referer").contains("structure_id"))){
+	    referer = request.getHeader("referer");
+	}
+	else if (request.getParameter("referer") != null) {
 		referer = request.getParameter("referer");
 	} else {
 		Map params = new HashMap();

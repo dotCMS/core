@@ -78,9 +78,6 @@
         ContentletAjax.cancelContentEdit(workingContentletInode,currentContentletInode,ref,langId,cancelEditCallback);
     }
     function cancelEditCallback(callbackData){
-        <%if(structure.getStructureType()==Structure.STRUCTURE_TYPE_FORM){%>
-        callbackData=callbackData+"&structure_id=<%=structure.getInode()%>";
-        <%}%>
 
         if(callbackData.indexOf("referer") != -1){
             var sourceReferer = callbackData.substring(callbackData.indexOf("referer"));
@@ -587,9 +584,6 @@
         // if we have a referer and the contentlet comes back checked in
         if((data["referer"] != null && data["referer"] != '' && !data["contentletLocked"]) || data["htmlPageReferer"] != null ) {
 
-            <%if(structure.getStructureType()==Structure.STRUCTURE_TYPE_FORM){%>
-            self.location = data["referer"]+"&structure_id=<%=structure.getInode()%>&content_inode=" + data["contentletInode"];
-            <%}else{%>
             if(data["isHtmlPage"]){
                 self.location = data["htmlPageReferer"];
             } else if(data["sourceReferer"]){
@@ -597,7 +591,6 @@
             }else{
                 self.location = data["referer"] + "&content_inode=" + data["contentletInode"];
             }
-            <%}%>
             return;
         }
         resetHasChanged();
