@@ -1349,6 +1349,14 @@ public interface ContentletAPI {
 	public boolean isInodeIndexed(String inode, boolean live);
 
 	/**
+	 * Waits until the contentlet with the given inode is indexed with the given status conditions.
+	 * <p><strong>Example of the resulting query when using this method:</strong>
+	 * +inode:﻿38a3f133-85e1-4b07-b55e-179f38303b90 +live:false +working:true </p> <p>This method
+	 * will time out after 30 seconds returning false</p>
+	 */
+	public boolean isInodeIndexed(String inode, boolean live, boolean working);
+
+	/**
 	 * Method will time out after 30 seconds returning false
 	 * @param inode
 	 * @param secondsToWait - how long to wait before timing out

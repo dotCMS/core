@@ -474,13 +474,13 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                             VanityUrlUtil.sanitizeSecondCacheKey(Host.SYSTEM_HOST, languageId));
 
             if (null != systemHostFoundVanities) {
-                return ImmutableSet.<CachedVanityUrl>builder()
+                foundVanities = ImmutableSet.<CachedVanityUrl>builder()
                         .addAll(foundVanities)
                         .addAll(systemHostFoundVanities)
                         .build();
             } else {
                 //This means we need to initialize the cache for the SYSTEM_HOST
-                return null;
+                foundVanities = null;
             }
         }
 

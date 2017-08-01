@@ -165,7 +165,7 @@ public class VanityUrlServices {
                 //When the contentlet finished to index we need to invalidate it on cache
                 boolean indexed = APILocator.getContentletAPI()
                         .isInodeIndexed(contentlet.getInode(),
-                                contentlet.isLive());
+                                contentlet.isLive(), contentlet.isWorking());
                 if (indexed) {
                     //Invalidate this VanityURL
                     VanityUrlServices.getInstance().invalidateVanityUrl(contentlet);

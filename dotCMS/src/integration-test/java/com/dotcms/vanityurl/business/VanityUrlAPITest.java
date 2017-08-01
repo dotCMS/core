@@ -440,6 +440,10 @@ public class VanityUrlAPITest {
                 "/testing" + currentTime + "/testing/index", Host.SYSTEM_HOST);
     }
 
+    /**
+     * Testing how the cache is working with multiple vanities using the same URI and the
+     * combinations of existing vanities in other different Sites
+     */
     @Test
     public void sameURLSystemHost()
             throws DotDataException, DotSecurityException {
@@ -563,11 +567,7 @@ public class VanityUrlAPITest {
             //Unpublish the VanityURL
             //------------------------------------
             contentletAPI.unpublish(vanityURL2, user, false);
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                //Do nothing....
-            }
+            contentletAPI.isInodeIndexed(vanityURL2.getInode(), false, true);
 
             //Should NOT be in cache
             vanityURLCached = vanityUrlCache.get(VanityUrlUtil.sanitizeKey(vanityURL2));
@@ -584,11 +584,7 @@ public class VanityUrlAPITest {
             //Unpublish the VanityURL
             //------------------------------------
             contentletAPI.unpublish(vanityURL1, user, false);
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                //Do nothing....
-            }
+            contentletAPI.isInodeIndexed(vanityURL1.getInode(), false, true);
 
             //Should NOT be in cache
             vanityURLCached = vanityUrlCache.get(VanityUrlUtil.sanitizeKey(vanityURL1));
