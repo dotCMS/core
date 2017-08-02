@@ -13,8 +13,6 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
@@ -26,16 +24,16 @@ import javax.servlet.http.HttpServletRequest;
 public class FieldTypeResource {
 
     private final WebResource webResource;
-    private FieldTypeFactory fieldTypeFactory;
+    private FieldTypeAPI fieldTypeAPI;
 
     public FieldTypeResource() {
-        this(new WebResource(), FieldTypeFactory.getInstance());
+        this(new WebResource(), FieldTypeAPI.getInstance());
     }
 
     @VisibleForTesting
-    public FieldTypeResource(final WebResource webresource, FieldTypeFactory fieldTypeFactory) {
+    public FieldTypeResource(final WebResource webresource, FieldTypeAPI fieldTypeAPI) {
         this.webResource = webresource;
-        this.fieldTypeFactory = fieldTypeFactory;
+        this.fieldTypeAPI = fieldTypeAPI;
     }
 
     @GET
@@ -47,6 +45,6 @@ public class FieldTypeResource {
         final InitDataObject initData = this.webResource.init(null, true, req, true, null);
         User user = initData.getUser();
 
-        return Response.ok( new ResponseEntityView( fieldTypeFactory.getFieldTypes(user) ) ).build();
+        return Response.ok( new ResponseEntityView( fieldTypeAPI.getFieldTypes(user) ) ).build();
     }
 }

@@ -10,22 +10,22 @@ import java.util.*;
 /**
  * Factory of {@link FieldType}
  */
-public class FieldTypeFactory {
+public class FieldTypeAPI {
 
     private Map<String, Field> fieldsMap;
 
     private static class SingletonHolder {
-        private static final FieldTypeFactory INSTANCE = new FieldTypeFactory();
+        private static final FieldTypeAPI INSTANCE = new FieldTypeAPI();
 
         private SingletonHolder(){}
     }
 
-    public static FieldTypeFactory getInstance() {
+    public static FieldTypeAPI getInstance() {
 
-        return FieldTypeFactory.SingletonHolder.INSTANCE;
+        return FieldTypeAPI.SingletonHolder.INSTANCE;
     }
 
-    private FieldTypeFactory(){
+    private FieldTypeAPI(){
         fieldsMap = new HashMap<>();
         LegacyFieldTypes[] legacyFieldTypes = LegacyFieldTypes.values();
 

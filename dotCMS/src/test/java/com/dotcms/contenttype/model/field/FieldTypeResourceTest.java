@@ -27,7 +27,7 @@ public class FieldTypeResourceTest {
     @Test
     public void testGetFieldTypes() throws JSONException, DotSecurityException, DotDataException {
         final WebResource webResource = mock(WebResource.class);
-        FieldTypeFactory fieldTypeFactory = mock(FieldTypeFactory.class);
+        FieldTypeAPI fieldTypeAPI = mock(FieldTypeAPI.class);
 
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
@@ -41,9 +41,9 @@ public class FieldTypeResourceTest {
         when(webResource.init(null, true, request, true, null)).thenReturn(initDataObject);
 
         List<FieldType> fieldTypes = list(fieldType1, fieldType2);
-        when(fieldTypeFactory.getFieldTypes(user)).thenReturn(fieldTypes);
+        when(fieldTypeAPI.getFieldTypes(user)).thenReturn(fieldTypes);
 
-        FieldTypeResource fieldTypeResource = new FieldTypeResource(webResource, fieldTypeFactory);
+        FieldTypeResource fieldTypeResource = new FieldTypeResource(webResource, fieldTypeAPI);
 
 
         Response response = fieldTypeResource.getFieldTypes(request);
