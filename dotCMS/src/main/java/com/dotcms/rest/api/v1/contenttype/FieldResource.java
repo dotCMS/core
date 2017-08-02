@@ -74,7 +74,7 @@ public class FieldResource implements Serializable {
 			} else {
 
 				field = fapi.save(field, user);
-	
+
 				response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
 			}
 		} catch (DotStateException e) {
