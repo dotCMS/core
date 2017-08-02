@@ -31,6 +31,11 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class CMSUrlUtil {
 
+	/**
+	 * Variable used for get the vanity filtered list from the dotmarketing.
+	 */
+	public static final String VANITY_FILTERED_LIST = "vanity.filtered.list";
+
 	private static CMSUrlUtil urlUtil;
 	private static final String CONTENTLET = "contentlet";
 	private static final String HTMLPAGE = "htmlpage";
@@ -38,6 +43,9 @@ public class CMSUrlUtil {
 	private static final String FOLDER = "folder";
 	private static final String NOT_FOUND = "NOTFOUND";
 	private static final String UNABLE_TO_FIND = "Unable to find ";
+
+	private static final String [] VANITY_FILTERED_LIST_ARRAY =
+			Config.getStringArrayProperty(VANITY_FILTERED_LIST);
 
 	/**
 	 * Get the CmsUrlUtil singleton instance
@@ -276,6 +284,29 @@ public class CMSUrlUtil {
 	}
 
 	/**
+	 * Determine if the url should be filtered from the vanity treatment
+	 * Exists a blacklist on dotmarketing called: vanity.filtered.list=,
+	 * which is separated list by commas.
+	 * The algorithm basically checks if the url starts with any of the elements on the list.
+	 * @param url {@link String} url to test
+	 * @return boolean true if it is filtered (on the blacklist)
+	 */
+	public boolean isVanityUrlFiltered(final String url) {
+
+		if (null != url) {
+			for (String vanityFiltered : VANITY_FILTERED_LIST_ARRAY) {
+
+				if (url.startsWith(vanityFiltered)) {
+
+					return true;
+				}
+			}
+		}
+
+		return false;
+	} // isVanityUrlFiltered.
+
+	/**
 	 * Indicate if the user have permision to read
 	 * the contentlet associated to the identifier
 	 *
@@ -387,5 +418,6 @@ public class CMSUrlUtil {
 				.getAttribute(CMS_FILTER_QUERY_STRING_OVERRIDE)
 				: request.getQueryString();
 	}
+
 
 }
