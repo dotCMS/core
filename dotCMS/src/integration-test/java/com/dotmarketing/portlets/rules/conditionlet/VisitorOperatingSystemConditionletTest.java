@@ -1,8 +1,7 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.UnitTestBase;
-import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import eu.bitwalker.useragentutils.OperatingSystem;
 import org.junit.Assert;
@@ -13,12 +12,14 @@ import org.mockito.Mockito;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
-import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS_NOT;
 
 
-public class VisitorOperatingSystemConditionletTest extends UnitTestBase {
+public class VisitorOperatingSystemConditionletTest {
 
     private HttpServletRequest request;
     private HttpServletResponse response;
@@ -26,6 +27,7 @@ public class VisitorOperatingSystemConditionletTest extends UnitTestBase {
 
     @BeforeClass
     public static void prepare () throws Exception {
+        IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
     }
 
