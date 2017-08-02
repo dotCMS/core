@@ -1,7 +1,7 @@
 package com.dotcms.rest.annotation;
 
 import com.dotcms.repackage.javax.annotation.Priority;
-import com.dotcms.repackage.javax.inject.Singleton;
+import javax.inject.Singleton;
 import com.dotcms.repackage.javax.ws.rs.Priorities;
 import com.dotcms.repackage.javax.ws.rs.container.ContainerRequestContext;
 import com.dotcms.repackage.javax.ws.rs.container.ContainerResponseContext;

@@ -350,4 +350,8 @@ dependencies {
     apt         "org.immutables:value:2.3.3"
 
     compile 'org.immutables:gson:2.3.3'
+
+    compile     group: 'com.google.inject',name: 'guice', version:'4.0'
+    compile     group: 'javax.inject',name: 'javax.inject', version:'1'
+//    compile     group: 'org.glassfish.hk2',name: 'guice-bridge', version:'2.4.0'
 }

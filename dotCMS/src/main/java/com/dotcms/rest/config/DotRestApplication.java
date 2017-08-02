@@ -3,6 +3,7 @@ package com.dotcms.rest.config;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.dotcms.api.di.test.TestDiResource;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.rest.RulesEnginePortlet;
 import com.dotcms.rest.TagResource;
@@ -114,6 +115,8 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 
 					REST_CLASSES.add(BrowserTreeResource.class);
 					REST_CLASSES.add(ContentTypeResource.class);
+
+					REST_CLASSES.add(TestDiResource.class);
 				}
 			}
 		}

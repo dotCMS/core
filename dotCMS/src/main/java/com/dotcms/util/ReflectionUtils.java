@@ -2,6 +2,8 @@ package com.dotcms.util;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 
 import com.dotmarketing.util.Logger;
 
@@ -140,6 +142,18 @@ public class ReflectionUtils implements Serializable {
     } // getTypes.
 
     /**
+     * Get the {@link Class} for the type, if it is {@link ParameterizedType} will
+     * return the raw type.
+     * @param type {@link Type}
+     * @return Class
+     */
+    public static final Class<?> getClassFor (final Type type) {
+
+        return  type instanceof ParameterizedType?
+                (Class<?>) ParameterizedType.class.cast(type).getRawType():
+                (Class<?>) type;
+    }
+    /**
      * Get a {@link Class} based on a name, null in case of error.
      * @param className {@link String}
      * @return Class
@@ -158,6 +172,29 @@ public class ReflectionUtils implements Serializable {
         }
 
         return clazz;
-    }
+    } // getClassFor.
+
+    /**
+     * Get the interfaces for a clazz
+     * @param clazz {@link Class}
+     * @return Class array
+     */
+    public static final Class[] getInterfaces (final Class<?> clazz) {
+
+        return clazz.getInterfaces();
+    } // getInterfaces.
+
+    /**
+     * Get the first interfaces, null if not implement any
+     * @param clazz {@link Class}
+     * @return Class
+     */
+    public static final Class getFirstInterface (final Class<?> clazz) {
+
+        final Class[] interfaces = getInterfaces(clazz);
+        return null != interfaces && interfaces.length > 0? interfaces[0]:null;
+    } // getFirstInterface.
+
+
 
 } // E:O:F:ReflectionUtils.

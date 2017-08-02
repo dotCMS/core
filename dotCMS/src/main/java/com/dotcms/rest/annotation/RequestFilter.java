@@ -2,7 +2,7 @@ package com.dotcms.rest.annotation;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.inject.Singleton;
+import javax.inject.Singleton;
 import com.dotcms.repackage.javax.ws.rs.container.ContainerRequestContext;
 import com.dotcms.repackage.javax.ws.rs.container.ContainerRequestFilter;
 import com.dotcms.repackage.javax.ws.rs.container.ResourceInfo;

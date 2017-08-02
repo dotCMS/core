@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.dotcms.api.di.DotBean;
+import com.dotcms.util.LogTime;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -11,6 +13,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 
+@DotBean
 public class ShortyIdAPIImpl implements ShortyIdAPI {
 
   public long getDbHits() {
@@ -21,7 +24,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   public static final int MINIMUM_SHORTY_ID_LENGTH = Config.getIntProperty("MINIMUM_SHORTY_ID_LENGTH", 10);
 
     
-    
+
     @Override
     public Optional<ShortyId> getShorty(final String shortStr) {
         try {
@@ -47,6 +50,7 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
     return new ShortyId(shorty, ShortType.CACHE_MISS.toString(), ShortType.CACHE_MISS, ShortType.CACHE_MISS);
   }
 
+  @LogTime
   @Override
   public String shortify(final String shortStr) {
     try {

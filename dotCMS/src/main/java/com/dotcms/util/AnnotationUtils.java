@@ -4,6 +4,7 @@ package com.dotcms.util;
 import com.dotcms.repackage.org.apache.commons.collections.keyvalue.MultiKey;
 import com.google.common.collect.ImmutableSet;
 
+import javax.inject.Qualifier;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -273,4 +274,38 @@ public class AnnotationUtils {
         return setBuilder.build();
     } // getMethodsAnnotatedBy.
 
+    /**
+     * Determine if the annotation is annotated by some specific annotations
+     * @param annotation  {@link Annotation}
+     * @param annotationType {@link Class}
+     * @return boolean
+     */
+    public static boolean isAnnotationAnnotatedBy(final Annotation annotation,
+                                                  final Class<? extends Annotation> annotationType) {
+
+        return (annotation.annotationType().isAnnotationPresent(annotationType));
+    } // isAnnotationAnnotatedBy.
+
+    /**
+     * Get the field annotations annotated by
+     * @param field {@link Field}
+     * @param annotationType {@link Class} annotation child
+     * @return  Collection immutable set of annotations annotated by annotationType argument.
+     */
+    public static Collection<Annotation> getFieldAnnotationsAnnotatedBy (final Field field,
+                                                                         final Class<? extends Annotation> annotationType) {
+
+        final ImmutableSet.Builder<Annotation> setBuilder =
+                new ImmutableSet.Builder<>();
+
+        for (Annotation annotation : field.getAnnotations()) {
+
+            if (isAnnotationAnnotatedBy(annotation, annotationType)) {
+
+                setBuilder.add(annotation);
+            }
+        }
+
+        return setBuilder.build();
+    } // getFieldAnnotationsAnnotatedBy.
 } // E:O:F:AnnotationUtils,
