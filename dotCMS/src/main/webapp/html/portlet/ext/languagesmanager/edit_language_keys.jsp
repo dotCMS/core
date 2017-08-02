@@ -15,7 +15,7 @@
     boolean first=true;
     for (Language lang : languages) {
         if(!first) buff.append(","); else first=false;
-        final String ccode=lang.getLanguageCode()  + "_" + lang.getCountryCode();
+        final String ccode= LanguageUtil.getLocale(lang.getLanguageCode(), lang.getCountryCode());
         final String imgURL="/html/images/languages/"+ccode+".gif";
         final String display=lang.getLanguage() + (UtilMethods.isSet(lang.getCountry()) ? " - " + lang.getCountry().trim() : "");
         buff.append("{");

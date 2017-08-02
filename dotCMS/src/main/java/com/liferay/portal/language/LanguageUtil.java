@@ -27,6 +27,7 @@ import com.dotcms.repackage.org.apache.struts.taglib.TagUtils;
 import com.dotcms.repackage.org.apache.struts.util.MessageResources;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
@@ -549,5 +550,21 @@ public class LanguageUtil {
 		}
 
 		return defaultLocale;
+	}
+	
+	/**
+	 * According the language and the country gets the locale, if there is no country checks the 
+	 * dotmarketing-config.properties to the default locale regarding that language. If there is no 
+	 * property set it will be set the language as the country.
+	 * 
+	 * @param languageCode
+	 * @param countryCode
+	 * @return
+	 */
+	public static String getLocale(String languageCode, String countryCode){
+	    if(countryCode==null || countryCode.isEmpty()){
+	        countryCode = Config.getStringProperty("language.default.country.mapping." + languageCode, languageCode);
+	    }
+	    return languageCode + "_" + countryCode;
 	}
 }
