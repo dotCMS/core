@@ -31,11 +31,6 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class CMSUrlUtil {
 
-	/**
-	 * Variable used for get the vanity filtered list from the dotmarketing.
-	 */
-	public static final String VANITY_FILTERED_LIST = "vanity.filtered.list";
-
 	private static CMSUrlUtil urlUtil;
 	private static final String CONTENTLET = "contentlet";
 	private static final String HTMLPAGE = "htmlpage";
@@ -45,7 +40,7 @@ public class CMSUrlUtil {
 	private static final String UNABLE_TO_FIND = "Unable to find ";
 
 	private static final String [] VANITY_FILTERED_LIST_ARRAY =
-			Config.getStringArrayProperty(VANITY_FILTERED_LIST);
+			new String[] {"/html","/api","/dotAdmin","/dwr","/webdav","/dA","/contentAsset","/c","/DOTSASS","/DOTLESS"};
 
 	/**
 	 * Get the CmsUrlUtil singleton instance
