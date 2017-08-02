@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.base.CaseFormat;
 import com.dotcms.repackage.org.apache.logging.log4j.util.Strings;
 import com.dotcms.visitor.domain.Visitor;
@@ -444,7 +445,7 @@ public class VelocityUtil {
 	 * @throws DotDataException
 	 */
 	public static String getPageCacheKey(HttpServletRequest request, HttpServletResponse response) throws DotDataException, DotSecurityException {
-		if (LicenseUtil.getLevel() <= 100) {
+		if (LicenseUtil.getLevel() <= LicenseLevel.COMMUNITY.level) {
 			return null;
 		}
 		// don't cache posts

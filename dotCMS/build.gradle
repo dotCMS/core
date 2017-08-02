@@ -90,7 +90,23 @@ project.test {
 idea {
 
     module {
-        //and some extra test source dirs
+
+        name = 'dotCMS'
+        contentRoot = file('..')
+        excludeDirs += file('build')
+        excludeDirs += file('.idea')
+        excludeDirs += file('.gradle')
+        //if you prefer different output folders
+        inheritOutputDirs = true
+        outputDir = file('build/classes/main')
+        testOutputDir = file('build/classes/test')
+
+        //Extra source dirs
+        sourceDirs += file('src/main/enterprise/src/main/java')
+        excludeDirs += file('src/main/enterprise/build')
+
+
+        //Extra test source dirs
         testSourceDirs += file('integration-test/java')
         testSourceDirs += file('functional-test/java')
 
@@ -126,19 +142,22 @@ dependencies {
     integrationTestCompile sourceSets.test.output
     functionalTestCompile sourceSets.test.output
     functionalTestCompile sourceSets.integrationTest.output
+
+    if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDev')) {
+        configurations.compile.exclude group: 'com.dotcms.enterprise', module: 'ee'
+    }
 }
 
 // Import and apply the dependencies from the dependencies scripts.
 apply from: "$rootDir/dependencies.gradle"
 
 def enterpriseSrcFolder = file("$enterpriseProjectHome/src/main/java")
-def licenseSrcFolder    = file("$licenseProjectHome/src/main/java")
 
-if (enterpriseSrcFolder.exists() && licenseSrcFolder.exists()){
+if (enterpriseSrcFolder.exists()){
 	sourceSets {
     	main {
         	java {
-            	srcDirs = ["src/main/java", "$enterpriseProjectHome/src/main/java", "$licenseProjectHome/src/main/java"]
+            	srcDirs = ["src/main/java", "$enterpriseProjectHome/src/main/java"]
 	        }
     	}
 	}
@@ -212,6 +231,25 @@ processResources {
 war.dependsOn 'deployPlugins','installDotcmsUI'
 
 war {
+
+    sourceSets {
+        main {
+            java {
+                //We only want to compile using the submodules code when using the deployWarTomcatDev task
+                if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDev')) {
+                    if (enterpriseSrcFolder.exists()) {
+                        srcDirs = ["src/main/java", "$enterpriseProjectHome/src/main/java"]
+                    } else {
+                        srcDirs = ["src/main/java"]
+                    }
+                } else {
+                    srcDirs = ["src/main/java"]
+                }
+
+            }
+        }
+    }
+
     classpath = classpath - sourceSets.main.output.classesDir
 
     if (gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
@@ -294,14 +332,16 @@ task deployWarTomcatDist(type: DeployWarTomcatTask) {
 deployWarTomcatDist.group='dotCMS Util'
 deployWarTomcatDist.description='Same as deployWarTomcat but ran inside the Distribution. (Useful for development)'
 
-//Same as deploy-war-tomcat but will use the no obfuscated version of the license and enterprise jars.
+
+//Same as deployWarTomcat but will use the no obfuscated version of the enterprise jars.
 //(Useful for development)
 task deployWarTomcatDev (dependsOn: 'deployWarTomcat') {
 
 }
-deployWarTomcatDev.finalizedBy 'generateMoveCleanLicenseTomcat', 'generateMoveCleanEnterpriseTomcat'
+deployWarTomcatDev.finalizedBy 'generateMoveCleanEnterpriseTomcat'
 deployWarTomcatDev.group='dotCMS Development'
-deployWarTomcatDev.description='Same as deployWarTomcat but will use the no obfuscated version of the license and enterprise jars. (Useful for development)'
+
+deployWarTomcatDev.description='Same as deployWarTomcat but will use the no obfuscated version of the enterprise jar. (Useful for development)'
 
 //Executes a pull or clone to get tomcat from the repository
 task clonePullTomcat(type: ClonePullTomcatTask) {
@@ -662,25 +702,6 @@ restoreBackupWarTomcatData.description='Restores content of assets, dotsecure, M
 
 undeployPlugins.finalizedBy 'deployConfig'
 
-//Generates a no obfuscated version of the license jar
-task generateMoveCleanLicenseTomcat(type: GradleBuild) {
-    buildFile = "$licenseProjectHome/build.gradle"
-    tasks = gradle.startParameter.taskNames.contains('clean') ? ['clean', 'build'] : ['build']
-	startParameter.projectProperties = [dotcmsReleaseVersion: "$dotcmsReleaseVersion"]
-
-	doLast {
-		delete fileTree("$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"){
-			include "eelic-*", "eelic_*"
-		}
-		copy{
-			from "$licenseProjectHome/build/libs"
-			into "$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"
-			include "eelic_clean.jar"
-		}
-	}
-}
-generateMoveCleanLicenseTomcat.group='dotCMS Util'
-generateMoveCleanLicenseTomcat.description='Creates a no-obfuscated license JAR and moves it into WEB-INF/lib .'
 
 //Generates a no obfuscated version of the enterprise jar
 task generateMoveCleanEnterpriseTomcat(type: GradleBuild) {

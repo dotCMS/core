@@ -12,6 +12,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Map;
 
 import com.dotcms.enterprise.LicenseService;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.business.APILocator;
@@ -64,7 +65,7 @@ public class ESIndexHelper implements Serializable{
 	public String getIndexNameOrAlias(Map<String, String> map, String indexAttr, String aliasAttr, ESIndexAPI esIndexAPI) {
 		String indexName = map.get(indexAttr);
 		String indexAlias = map.get(aliasAttr);
-		if (UtilMethods.isSet(indexAlias) && licenseService.getLevel() >= 200) {
+		if (UtilMethods.isSet(indexAlias) && licenseService.getLevel() >= LicenseLevel.STANDARD.level) {
 			String currentIndexName = esIndexAPI.getAliasToIndexMap(siteSearchAPI.listIndices()).get(aliasAttr);
 			if (UtilMethods.isSet(currentIndexName))
 				indexName = currentIndexName;

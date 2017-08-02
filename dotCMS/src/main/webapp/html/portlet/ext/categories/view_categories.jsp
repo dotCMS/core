@@ -6,11 +6,12 @@
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI" %>
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@include file="/html/portlet/ext/categories/init.jsp"%>
 <%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
 
 <%
-	boolean enterprise = LicenseUtil.getLevel() > 199;
+	boolean enterprise = LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level;
 
 	PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 	List<PublishingEndPoint> sendingEndpointsList = pepAPI.getReceivingEndPoints();

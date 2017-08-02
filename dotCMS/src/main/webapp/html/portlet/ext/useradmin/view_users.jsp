@@ -6,6 +6,7 @@
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI" %>
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 
 <%
 	int additionalVariablesCount = Config.getIntProperty("MAX_NUMBER_VARIABLES_TO_SHOW", 0);
@@ -19,7 +20,7 @@
 %>
 
 <script type="text/javascript">
-    <% Boolean enterprise = (LicenseUtil.getLevel() > 199); %>
+    <% Boolean enterprise = (LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level); %>
     var enterprise = <%=enterprise%>;
     <%
     PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();

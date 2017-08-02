@@ -4,6 +4,7 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="java.util.*"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="com.dotmarketing.filters.CMSFilter"%>
 <%
 
@@ -688,8 +689,8 @@
                 fieldDiv.appendChild(thumbnailParentDiv);
             }
 
-            var licence = <%=LicenseUtil.getLevel()%>;
-            if ( licence < 199 ||  fieldRelatedData['fileName'].toLowerCase().endsWith("svg")){
+            var license = <%=LicenseUtil.getLevel()%>;
+            if ( license <= LicenseLevel.STANDARD.level ||  fieldRelatedData['fileName'].toLowerCase().endsWith("svg")){
                 var newFileDialogTitle = "<%=LanguageUtil.get(pageContext,"Image") %>";
 
                 var newFileDialogContent = '<div style="text-align:center;margin:auto;overflow:auto;width:700px;height:400px;">'

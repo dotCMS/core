@@ -21,6 +21,7 @@
 <%@page import="com.dotmarketing.util.URLEncoder"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.business.CacheLocator"%>
@@ -29,7 +30,7 @@
 
 Object c = LicenseUtil.getLevel();
 %>
-<%if( LicenseUtil.getLevel() < 200){ %>
+<%if( LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){ %>
 	<div class="portlet-wrapper">
 		<div class="subNavCrumbTrail">
 			<ul id="subNavCrumbUl">

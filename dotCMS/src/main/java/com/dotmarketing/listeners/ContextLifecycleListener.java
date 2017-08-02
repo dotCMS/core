@@ -1,6 +1,5 @@
 package com.dotmarketing.listeners;
 
-import com.dotcms.enterprise.ClusterThreadProxy;
 import com.dotcms.util.AsciiArt;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.reindex.ReindexThread;
@@ -39,13 +38,6 @@ public class ContextLifecycleListener implements ServletContextListener {
 
         } catch (Exception e) {
             Logger.error(this, "A error ocurred trying to shutdown the ReindexThread.");
-        }
-
-        try {
-        	ClusterThreadProxy.shutdownThread();
-
-        } catch (Exception e) {
-            Logger.error(this, "A error ocurred trying to shutdown the ClusterThread.");
         }
 
         try {

@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.*;
 import org.apache.velocity.runtime.resource.ResourceManager;
@@ -134,7 +135,7 @@ public class PageServices {
 		}
 
 		// set the page cache var
-		if(htmlPage.getCacheTTL() > 0 && LicenseUtil.getLevel() > 99){
+		if(htmlPage.getCacheTTL() > 0 && LicenseUtil.getLevel() >= LicenseLevel.COMMUNITY.level){
 			sb.append("#set($dotPageCacheDate = \"").append( new java.util.Date() ).append("\")");
 			sb.append("#set($dotPageCacheTTL = \"").append( htmlPage.getCacheTTL()  ).append("\")");
 		}

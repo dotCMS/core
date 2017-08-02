@@ -56,6 +56,8 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     public static final String DOTCMS_CONCURRENT_QUEUECAPACITY          = "dotcms.concurrent.queuecapacity";
     public static final String MBEAN_OBJECT_NAME = "org.dotcms:type=DotConcurrent";
 
+    public static final String DOT_SYSTEM_THREAD_POOL = "dotSystemPool";
+
 
     /**
      * Used to keep the instance of the JWT Service.
@@ -189,7 +191,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
      */
     public DotSubmitter getSubmitter () {
 
-        return this.getSubmitter(StringUtils.EMPTY);
+        return this.getSubmitter(DOT_SYSTEM_THREAD_POOL);
     } // getSubmitter.
 
     /**

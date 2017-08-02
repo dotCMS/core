@@ -1,4 +1,5 @@
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="com.liferay.portal.util.Constants"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.dotmarketing.util.Config" %>
@@ -36,7 +37,7 @@
 		UserAjax.getUserRolesValues('<%=user.getUserId()%>', '<%=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)%>', getUserRolesValuesCallBack);
 	});
 
-	var enterprise = <%=LicenseUtil.getLevel() > 199%>;
+	var enterprise = <%=LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level%>;
 
 	<%PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 		List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndPoints();%>

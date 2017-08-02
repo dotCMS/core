@@ -10,6 +10,7 @@
 <%@page import="java.util.Date"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="java.text.SimpleDateFormat"%>
 
 <%
@@ -33,7 +34,7 @@
     }
 
 
-    boolean isCommunity =LicenseUtil.getLevel()==100;
+    boolean isCommunity =LicenseUtil.getLevel()==LicenseLevel.COMMUNITY.level;
 
     String expireString = "unknown";
     Date expires = null;
@@ -65,7 +66,7 @@
 	    isCommunity		:"<%=isCommunity%>",
 	    
 	    requestTrial : function(){
-	    	var data = {"licenseLevel":"500","licenseType":"trial"};
+	    	var data = {"licenseLevel":"<%=LicenseLevel.PLATFORM.level%>","licenseType":"trial"};
 	   		
 	    	var xhrArgs = {
 	    		url: "/api/license/requestCode/licenseType/"+ data.licenseType +'/licenseLevel/'+ data.licenseLevel,
@@ -110,7 +111,7 @@
 	    		dojo.byId("licenseCode").value="";
 	    		return;
 	    	}
-	    	if(dijit.byId("license_level").getValue() == "100"){
+	    	if(dijit.byId("license_level").getValue() == "<%=LicenseLevel.COMMUNITY.level%>"){
 	    		//console.log("code request: " + dijit.byId("license_level").getValue());
 	    		dojo.byId("licenseCode").value="";
 	    		return;
@@ -310,7 +311,12 @@
                                     dojo.create("a",{href:"javascript:licenseAdmin.del('"+serial+"')"},optd));
                         }
 
-                        dojo.create("td", { innerHTML: (!lic.serverid || lic.serverid === "") ? "Available" : lic.serverid + (lic.available ? " (Available)" : "")}, row);
+                        if(lic.serverid==licenseAdmin.currentServerId  ) {
+                            dojo.create("td", { innerHTML: lic.serverid + " (this server)" }, row);
+                        }
+                        else{
+                        	dojo.create("td", { innerHTML: lic.serverid }, row);
+                        }
                         dojo.create("td", { innerHTML: lic.idDisplay}, row);
                         dojo.create("td", { innerHTML: !lic.available || lic.serverid ? lic.lastping : ""}, row);
                         dojo.create("td", { innerHTML: lic.perpetual ? "Perpetual" : lic.validUntil}, row);
@@ -634,11 +640,11 @@
 									<th style="text-align: right;"><label for="license_level"><%= LanguageUtil.get(pageContext, "request-license-level") %>: </label></th>
 									<td>
 										<select onchange="licenseAdmin.doCodeRequest()" style="width:160px;" data-dojo-id="license_level" id="license_level" name="license_level" data-dojo-type="dijit.form.Select">
-											<option value="100"></option>
-											<option value="200"><%= LanguageUtil.get(pageContext, "request-license-standard") %></option>
-											<option value="300"><%= LanguageUtil.get(pageContext, "request-license-professional") %></option>
-											<option value="400"><%= LanguageUtil.get(pageContext, "request-license-prime") %></option>
-											<option value="500"><%= LanguageUtil.get(pageContext, "request-license-platform") %></option>
+											<option value="<%=LicenseLevel.COMMUNITY.level%>"></option>
+											<option value="<%=LicenseLevel.STANDARD.level%>"><%= LanguageUtil.get(pageContext, "request-license-standard") %></option>
+											<option value="<%=LicenseLevel.PROFESSIONAL.level%>"><%= LanguageUtil.get(pageContext, "request-license-professional") %></option>
+											<option value="<%=LicenseLevel.PRIME.level%>"><%= LanguageUtil.get(pageContext, "request-license-prime") %></option>
+											<option value="<%=LicenseLevel.PLATFORM.level%>"><%= LanguageUtil.get(pageContext, "request-license-platform") %></option>
 										</select>
 									</td>
 								</tr>

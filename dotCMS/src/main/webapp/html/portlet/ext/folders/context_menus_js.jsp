@@ -2,6 +2,7 @@
 <%@ include file="/html/portlet/ext/folders/init.jsp" %>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
@@ -13,7 +14,7 @@
 %>
 <script language="JavaScript">
 
-var enterprise = <%=LicenseUtil.getLevel() > 199%>;
+var enterprise = <%=LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level%>;
 
 <%  boolean inFrame=(UtilMethods.isSet(request.getSession().getAttribute(WebKeys.IN_FRAME)) && (boolean)request.getSession().getAttribute(WebKeys.IN_FRAME))?true:false;
     String locationMode = inFrame?"window.location":"top.location";

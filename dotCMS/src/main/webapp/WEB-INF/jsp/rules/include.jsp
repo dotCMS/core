@@ -1,4 +1,5 @@
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@ page import="com.dotmarketing.util.Config" %>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotcms.repackage.org.apache.struts.Globals"%>
@@ -9,7 +10,7 @@
 
 
 
-<%if( LicenseUtil.getLevel() < 200){ %>
+<%if( LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){ %>
 	<div class="portlet-wrapper">
 		<div class="subNavCrumbTrail">
 			<ul id="subNavCrumbUl">

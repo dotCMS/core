@@ -10,6 +10,7 @@
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="java.util.List"%>
 
 <%
@@ -57,7 +58,7 @@
 	var publishConfirmMessage = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publish-host-confirm")) %>';
 	var makeDefaultConfirmMessage = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "make-default-host-confirm")) %>';
 
-	var enterprise = <%=LicenseUtil.getLevel() > 199%>;
+	var enterprise = <%=LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level%>;
 
 	<%PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 		List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndPoints();%>
