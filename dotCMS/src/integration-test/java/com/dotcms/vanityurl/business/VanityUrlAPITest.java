@@ -456,7 +456,7 @@ public class VanityUrlAPITest {
             long currentTime = System.currentTimeMillis();
             String uri = "/testing" + currentTime + "(.*)";
             String requestedURL = "/testing" + currentTime;
-            String nonExistingURL = "/nonexisting/should404/index" + currentTime;
+            final String nonExistingURL = "/nonexisting/should404/index" + currentTime;
 
             //------------------------------------
             //Create a VanityURL for the default host

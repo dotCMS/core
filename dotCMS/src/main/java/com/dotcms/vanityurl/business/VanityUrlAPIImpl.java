@@ -82,11 +82,11 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         if (null != siteId && !siteId.equals(Host.SYSTEM_HOST)) {
 
             //Verify if we already have cache values for the given host and the System Host
-            Set<CachedVanityUrl> foundVanities = getVanityUrlBySiteAndLanguageFromCache(siteId,
+            final Set<CachedVanityUrl> foundVanities = getVanityUrlBySiteAndLanguageFromCache(siteId,
                     languageId,
                     false);
 
-            Set<CachedVanityUrl> foundSystemHostVanities = getVanityUrlBySiteAndLanguageFromCache(
+            final Set<CachedVanityUrl> foundSystemHostVanities = getVanityUrlBySiteAndLanguageFromCache(
                     Host.SYSTEM_HOST, languageId, false);
 
             //No cache was initialized, we need to include both hosts in the search
@@ -337,7 +337,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
      * @return A list of VanityURLs
      */
     private void searchAndPopulate(final String luceneQuery, final User user,
-            String siteId, Long languageId, Boolean includedSystemHostOnLuceneQuery) {
+            String siteId, Long languageId, final Boolean includedSystemHostOnLuceneQuery) {
 
         try {
             final List<Contentlet> contentResults = contentletAPI
@@ -454,9 +454,9 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
      * contents
      * @return A set of CachedVanityUrl, if null is because the cache needs to be initialized
      */
-    private Set<CachedVanityUrl> getVanityUrlBySiteAndLanguageFromCache(String siteId,
-            long languageId,
-            Boolean includeSystemHost) {
+    private Set<CachedVanityUrl> getVanityUrlBySiteAndLanguageFromCache(final String siteId,
+            final long languageId,
+            final Boolean includeSystemHost) {
 
         //First search in cache with the given site id
         Set<CachedVanityUrl> foundVanities = CacheLocator.getVanityURLCache()
@@ -469,7 +469,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
         if (includeSystemHost && !siteId.equals(Host.SYSTEM_HOST)) {
             //Now search in cache with the SYSTEM_HOST
-            Set<CachedVanityUrl> systemHostFoundVanities = CacheLocator.getVanityURLCache()
+            final Set<CachedVanityUrl> systemHostFoundVanities = CacheLocator.getVanityURLCache()
                     .getCachedVanityUrls(
                             VanityUrlUtil.sanitizeSecondCacheKey(Host.SYSTEM_HOST, languageId));
 
