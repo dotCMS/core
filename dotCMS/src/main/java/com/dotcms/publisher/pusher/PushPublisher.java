@@ -7,6 +7,7 @@ import com.dotcms.system.event.local.type.pushpublish.SingleEndpointFailureEvent
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.publishing.remote.bundler.BundleXMLAsc;
 import com.dotcms.enterprise.publishing.remote.bundler.CategoryBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.CategoryFullBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentTypeBundler;
@@ -358,13 +359,10 @@ public class PushPublisher extends Publisher {
         if ( buildUsers ) {
             list.add( UserBundler.class );
         }
-        if ( buildCategories ) {
-            list.add( CategoryBundler.class );
-        }
         if ( buildOSGIBundle ) {
             list.add( OSGIBundler.class );
         }
-        if ( buildAsset ) {
+        if ( buildAsset || buildLanguages) {
             list.add( DependencyBundler.class );
             list.add( HostBundler.class );
             list.add( ContentBundler.class );
@@ -382,15 +380,17 @@ public class PushPublisher extends Publisher {
             list.add( LanguageBundler.class );
         } else {
 			list.add(DependencyBundler.class);
-			if (buildLanguages) {
-				list.add(LanguageVariablesBundler.class);
-				list.add(LanguageBundler.class);
-			} else if (buildRules) {
+			if (buildRules) {
 				list.add(HostBundler.class);
 				list.add(RuleBundler.class);
 			}
         }
         list.add( BundleXMLAsc.class );
+        if ( buildCategories ) { // If we are PP from the categories portlet.
+            list.add( CategoryFullBundler.class );
+        } else { // If we are PP from anywhere else, for example a contentlet, site, folder, etc.
+            list.add(CategoryBundler.class);
+        }
         return list;
     }
 

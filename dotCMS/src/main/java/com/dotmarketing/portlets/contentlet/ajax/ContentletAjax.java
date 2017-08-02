@@ -513,6 +513,7 @@ public class ContentletAjax {
 		// Building search params and lucene query
 		StringBuffer luceneQuery = new StringBuffer();
 		String specialCharsToEscape = "([+\\-!\\(\\){}\\[\\]^\"~*?:\\\\]|[&\\|]{2})";
+		String specialCharsToEscapeForMetaData = "([+\\-!\\(\\){}\\[\\]^\"~?:/\\\\]{2})";
 		Map<String, Object> lastSearchMap = new HashMap<String, Object>();
 
 		if (UtilMethods.isSet(sess)) {
@@ -668,7 +669,7 @@ public class ContentletAjax {
 									metakey = StringUtils.camelCaseLower(metakey);
 									String metaVal = "*" +splitter[splitter.length-1]+"*";
 									fieldValue = metakey + ":" + metaVal;
-									luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + "." + fieldValue.toString().replaceAll(specialCharsToEscape, "\\\\$1") + " ");
+									luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + "." + fieldValue.toString().replaceAll(specialCharsToEscapeForMetaData, "\\\\$1") + " ");
 								} catch (Exception e) {
 									Logger.debug(this, "An error occured when processing field name '" + fieldbcontentname + "'");
 								}

@@ -18,6 +18,7 @@ import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.jboss.util.Strings;
+import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.services.VanityUrlServices;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -449,10 +450,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
 
                 /*
-                Adding a commit listener in order to invalidate the VanityURL cache when this
-                content finished to index.
+                Triggers a local system event when this contentlet commit listener is executed,
+                anyone who need it can subscribed to this commit listener event, on this case will be
+                mostly use it in order to invalidate this contentlet cache.
                  */
-                addVanityURLCommitListener(contentlet);
+                triggerCommitListenerEvent(contentlet);
 
                 // by now, the publish event is making a duplicate reload events on the site browser
                 // so we decided to comment it out by now, and
@@ -2132,10 +2134,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentletSystemEventUtil.pushUnpublishEvent(contentlet);
 
             /*
-            Adding a commit listener in order to invalidate the VanityURL cache when this
-            content finished to index.
+            Triggers a local system event when this contentlet commit listener is executed,
+            anyone who need it can subscribed to this commit listener event, on this case will be
+            mostly use it in order to invalidate this contentlet cache.
              */
-            addVanityURLCommitListener(contentlet);
+            triggerCommitListenerEvent(contentlet);
 
         } catch(DotDataException | DotStateException| DotSecurityException e) {
             ActivityLogger.logInfo(getClass(), "Error Unpublishing Content", "StartDate: " +contentPushPublishDate+ "; "
@@ -5211,49 +5214,59 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(!UtilMethods.isSet(inode)){
             Logger.warn(this, "Requested Inode is not indexed because Inode is not set");
         }
-        SearchHits lc;
-        boolean found = false;
-        int counter = 0;
-        while(counter < 300){
-            try {
-                lc = conFac.indexSearch("+inode:" + inode+(live?" +live:true":""), 0, 0, "modDate");
-            } catch (Exception e) {
-                Logger.error(this.getClass(),e.getMessage(),e);
-                return false;
-            }
-            if(lc.getTotalHits() > 0){
-                found = true;
-                return true;
-            }
-            try{
-                Thread.sleep(100);
-            }catch (Exception e) {
-                Logger.debug(this, "Cannot sleep : ", e);
-            }
-            counter++;
+
+        return isInodeIndexedWithQuery("+inode:" + inode + (live ? " +live:true" : ""));
+    }
+
+    @Override
+    public boolean isInodeIndexed(String inode, boolean live, boolean working) {
+        if (!UtilMethods.isSet(inode)) {
+            Logger.warn(this, "Requested Inode is not indexed because Inode is not set");
         }
-        return found;
+
+        return isInodeIndexedWithQuery(
+                "+inode:" + inode + String.format(" +live:%s +working:%s", live, working));
     }
 
     @Override
     public boolean isInodeIndexed(String inode, int secondsToWait) {
+
+        if (!UtilMethods.isSet(inode)) {
+            Logger.warn(this, "Requested Inode is not indexed because Inode is not set");
+        }
+
+        return isInodeIndexedWithQuery("+inode:" + inode, secondsToWait);
+    }
+
+    private boolean isInodeIndexedWithQuery(String luceneQuery) {
+        return isInodeIndexedWithQuery(luceneQuery, -1);
+    }
+
+    private boolean isInodeIndexedWithQuery(String luceneQuery, int secondsToWait) {
+
+        int limit = 300;
+        if (-1 != secondsToWait) {
+            limit = (secondsToWait / 10);
+        }
         SearchHits lc;
         boolean found = false;
         int counter = 0;
-        while(counter <= (secondsToWait / 10)) {
+        while (counter < limit) {
             try {
-                lc = conFac.indexSearch("+inode:" + inode, 0, 0, "modDate");
+                lc = conFac.indexSearch(
+                        luceneQuery,
+                        0, 0, "modDate");
             } catch (Exception e) {
-                Logger.error(this.getClass(),e.getMessage(),e);
+                Logger.error(this.getClass(), e.getMessage(), e);
                 return false;
             }
-            if(lc.getTotalHits() > 0){
+            if (lc.getTotalHits() > 0) {
                 found = true;
-                return true;
+                break;
             }
-            try{
+            try {
                 Thread.sleep(100);
-            }catch (Exception e) {
+            } catch (Exception e) {
                 Logger.debug(this, "Cannot sleep : ", e);
             }
             counter++;
@@ -5653,33 +5666,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * On the commit event checks if the contentlet is indexed in order to invalidate it from
-     * cache.
+     * Triggers a local system event when this contentlet commit listener is executed,
+     * anyone who need it can subscribed to this commit listener event, on this case will be
+     * mostly use it in order to invalidate this contentlet cache.
      *
-     * @param contentlet VanityURL to invalidate
+     * @param contentlet Contentlet to be processed by the Commit listener event
      */
-    private void addVanityURLCommitListener(Contentlet contentlet) {
+    private void triggerCommitListenerEvent(Contentlet contentlet) {
 
         try {
             HibernateUtil.addCommitListener(new FlushCacheRunnable() {
                 public void run() {
-                    try {
-                        if (contentlet.isVanityUrl()) {
-
-                            //When the contentlet finished to index we need to invalidate it on cache
-                            boolean indexed = APILocator.getContentletAPI()
-                                    .isInodeIndexed(contentlet.getInode(),
-                                            contentlet.isLive());
-                            if (indexed) {
-                                //Invalidate this VanityURL
-                                VanityUrlServices.getInstance().invalidateVanityUrl(contentlet);
-                            }
-                        }
-                    } catch (Exception e) {
-                        Logger.error(this,
-                                String.format("Unable to invalidate VanityURL in cache [%s]",
-                                        contentlet.getIdentifier()), e);
-                    }
+                    //Triggering event listener when this commit listener is executed
+                    APILocator.getLocalSystemEventsAPI()
+                            .asyncNotify(new CommitListenerEvent(contentlet));
                 }
             });
         } catch (DotHibernateException e) {

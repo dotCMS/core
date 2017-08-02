@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.categories.business;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -25,6 +26,7 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Date;
@@ -727,6 +729,189 @@ public class CategoryAPITest extends IntegrationTestBase {
             } catch (Exception e) {
                 fail(e.getMessage());
             }
+        }
+    }
+
+    @Test
+    public void getCategoryTreeUp_hierarchyLevelThree_Success(){
+        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+
+        List<Category> categoriesToDelete = Lists.newArrayList();
+
+        try {
+            //Create Parent Category.
+            Category parentCategory = new Category();
+            parentCategory.setCategoryName( "Parent Category" );
+            parentCategory.setKey( "parent" );
+            parentCategory.setCategoryVelocityVarName( "parent" );
+            parentCategory.setSortOrder( (String) null );
+            parentCategory.setKeywords( null );
+
+            categoryAPI.save( null, parentCategory, user, false );
+            categoriesToDelete.add(parentCategory);
+
+            //Create First Child Category.
+            Category childCategoryA = new Category();
+            childCategoryA.setCategoryName( "Category A" );
+            childCategoryA.setKey( "categoryA" );
+            childCategoryA.setCategoryVelocityVarName( "categoryA" );
+            childCategoryA.setSortOrder( 1 );
+            childCategoryA.setKeywords( null );
+
+            categoryAPI.save( parentCategory, childCategoryA, user, false );
+            categoriesToDelete.add(childCategoryA);
+
+            //Create Second Child Category.
+            Category childCategoryB = new Category();
+            childCategoryB.setCategoryName( "Category B" );
+            childCategoryB.setKey( "categoryB" );
+            childCategoryB.setCategoryVelocityVarName( "categoryB" );
+            childCategoryB.setSortOrder( 2 );
+            childCategoryB.setKeywords( null );
+
+            categoryAPI.save( parentCategory, childCategoryB, user, false );
+            categoriesToDelete.add(childCategoryB);
+
+            //Create First Grand-Child Category.
+            Category childCategoryA2 = new Category();
+            childCategoryA2.setCategoryName( "Category A-2" );
+            childCategoryA2.setKey( "categoryA2" );
+            childCategoryA2.setCategoryVelocityVarName( "categoryA2" );
+            childCategoryA2.setSortOrder( 1 );
+            childCategoryA2.setKeywords( null );
+
+            categoryAPI.save( childCategoryA, childCategoryA2, user, false );
+            categoriesToDelete.add(childCategoryA2);
+
+            final List<Category> categoryTreeUp = categoryAPI.getCategoryTreeUp
+                    (childCategoryA2, user, false);
+
+            // First element should be a Fake Category. We need to start checking on the second element.
+            assertEquals("We should have 4 categories", 4, categoryTreeUp.size());
+            assertEquals("Second element should be the Parent", parentCategory, categoryTreeUp.get(1));
+            assertEquals("Third element should be Child", childCategoryA, categoryTreeUp.get(2));
+            assertEquals("Last element should be current category", childCategoryA2, categoryTreeUp.get(3));
+
+        } catch ( Exception e ) {
+            fail( e.getMessage() );
+        } finally {
+            cleanCategories(categoriesToDelete);
+        }
+    }
+
+    /**
+     * Test cases:
+     * 1. Creating a new category without a key (with valid varName)
+     * 2. Creating a new category with key.
+     * 3. Creating a new Category with repeated key.
+     * 4. Updating an old category with no key.
+     * 5. Updating an old category with new key.
+     * 6. Updating an old category with repeated key.
+     */
+    @Test
+    public void checkUniqueKey_severalCases_Success() {
+        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+
+        List<Category> categoriesToDelete = Lists.newArrayList();
+
+        try {
+            ///////////////////////////////////////////////////////////////
+            //1. Creating a new category without a key (with valid varName)
+            ///////////////////////////////////////////////////////////////
+            Category newCategoryWithoutKey = new Category();
+            newCategoryWithoutKey.setCategoryName("Category Without Key");
+            newCategoryWithoutKey.setCategoryVelocityVarName("category-wo-key");
+
+            categoryAPI.save(null, newCategoryWithoutKey, user, false);
+            newCategoryWithoutKey = categoryAPI
+                    .find(newCategoryWithoutKey.getCategoryId(), user, false);
+            categoriesToDelete.add(newCategoryWithoutKey);
+
+            assertNotNull("Category should have a key after API save method.",
+                    newCategoryWithoutKey.getKey());
+
+            ///////////////////////////////////////////////////////////////
+            //2. Creating a new category with key.
+            ///////////////////////////////////////////////////////////////
+            final String keyFromCategoryWithKey = "category-w-key-diff-var";
+
+            Category newCategoryWithKey = new Category();
+            newCategoryWithKey.setCategoryName("Category With Key");
+            newCategoryWithKey.setCategoryVelocityVarName("category-w-key");
+            newCategoryWithKey.setKey(keyFromCategoryWithKey);
+
+            categoryAPI.save(null, newCategoryWithKey, user, false);
+            newCategoryWithKey = categoryAPI.find(newCategoryWithKey.getCategoryId(), user, false);
+            categoriesToDelete.add(newCategoryWithKey);
+
+            assertNotNull("Category should have a key after API save method.",
+                    newCategoryWithKey.getKey());
+            assertEquals("Category key should be the same because is unique.",
+                    keyFromCategoryWithKey, newCategoryWithKey.getKey());
+
+            ///////////////////////////////////////////////////////////////
+            //3. Creating a new Category with repeated key.
+            ///////////////////////////////////////////////////////////////
+            Category newCategoryWithRepeaterKey = new Category();
+            newCategoryWithRepeaterKey.setCategoryName("Category With R Key");
+            newCategoryWithRepeaterKey.setCategoryVelocityVarName("category-w-r-key");
+            newCategoryWithRepeaterKey.setKey(keyFromCategoryWithKey);
+
+            categoryAPI.save(null, newCategoryWithRepeaterKey, user, false);
+            newCategoryWithRepeaterKey = categoryAPI
+                    .find(newCategoryWithRepeaterKey.getCategoryId(), user, false);
+            categoriesToDelete.add(newCategoryWithRepeaterKey);
+
+            assertNotNull("Category should have a key after API save method.",
+                    newCategoryWithRepeaterKey.getKey());
+            assertNotEquals("Category should have a diff key after API save method.",
+                    keyFromCategoryWithKey, newCategoryWithRepeaterKey.getKey());
+
+            ///////////////////////////////////////////////////////////////
+            //4. Updating an old category with no key.
+            ///////////////////////////////////////////////////////////////
+            newCategoryWithoutKey.setKey("");
+
+            categoryAPI.save(null, newCategoryWithoutKey, user, false);
+            newCategoryWithoutKey = categoryAPI
+                    .find(newCategoryWithoutKey.getCategoryId(), user, false);
+
+            assertNotNull("Category should have a key after API save method.",
+                    newCategoryWithoutKey.getKey());
+
+            ///////////////////////////////////////////////////////////////
+            //5. Updating an old category with new key.
+            ///////////////////////////////////////////////////////////////
+            final String newKeyForUpdate = "category-w-n-key";
+            newCategoryWithoutKey.setKey(newKeyForUpdate);
+
+            categoryAPI.save(null, newCategoryWithoutKey, user, false);
+            newCategoryWithoutKey = categoryAPI
+                    .find(newCategoryWithoutKey.getCategoryId(), user, false);
+
+            assertNotNull("Category should have a key after API save method.",
+                    newCategoryWithoutKey.getKey());
+            assertEquals("Category should be new.", newKeyForUpdate,
+                    newCategoryWithoutKey.getKey());
+
+            ///////////////////////////////////////////////////////////////
+            //6. Updating an old category with repeated key.
+            ///////////////////////////////////////////////////////////////
+            newCategoryWithoutKey.setKey(keyFromCategoryWithKey);
+
+            categoryAPI.save(null, newCategoryWithoutKey, user, false);
+            newCategoryWithoutKey = categoryAPI
+                    .find(newCategoryWithoutKey.getCategoryId(), user, false);
+
+            assertNotNull("Category should have a key after API save method.",
+                    newCategoryWithoutKey.getKey());
+            assertNotEquals("Category should be another cause key was already in use.",
+                    keyFromCategoryWithKey, newCategoryWithoutKey.getKey());
+
+        } catch (Exception e) {
+            fail(e.getMessage());
+        } finally {
+            cleanCategories(categoriesToDelete);
         }
     }
 

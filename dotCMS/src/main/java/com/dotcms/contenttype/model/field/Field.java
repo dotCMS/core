@@ -1,11 +1,7 @@
 package com.dotcms.contenttype.model.field;
 
 import java.io.Serializable;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.elasticsearch.common.Nullable;
 import org.immutables.value.Value;
@@ -26,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.google.common.collect.ImmutableMap;
+
 
 @JsonTypeInfo(
 	use = Id.CLASS,
@@ -243,5 +240,33 @@ public abstract class Field implements FieldIf, Serializable {
   @Value.Lazy
   public FieldValueRenderer listRenderer() {
     return new FieldValueRenderer() {};
+  }
+
+  /**
+   * Field' properties to be set by the UI
+   * @return
+   */
+  public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
+    return Collections.emptyList();
+  }
+
+  /**
+   * Key for the Field' help text
+   * @return
+   */
+  @JsonIgnore
+  public String getContentTypeFieldHelpTextKey(){
+    String legacyName = LegacyFieldTypes.getLegacyName(this.getClass());
+    return "field.type.help." + legacyName;
+  }
+
+  /**
+   * Key for the Field'label
+   * @return
+   */
+  @JsonIgnore
+  public String getContentTypeFieldLabelKey(){
+    String legacyName = LegacyFieldTypes.getLegacyName(this.getClass());
+    return legacyName.substring(0, 1).toUpperCase() + legacyName.substring(1);
   }
 }

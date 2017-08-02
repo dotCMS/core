@@ -1353,6 +1353,8 @@ public interface ContentletAPIPreHook {
       return true;
     }
 
+	public default boolean isInodeIndexed(String inode, boolean live, boolean working) { return true; }
+
 	/**
 	 * Method will time out after 30 seconds returning false
 	 * @param inode

@@ -1,6 +1,8 @@
 package com.dotcms.services;
 
 import com.dotcms.cache.VanityUrlCache;
+import com.dotcms.system.event.local.model.Subscriber;
+import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.VanityUrlUtil;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
@@ -15,9 +17,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
-import com.google.common.collect.ImmutableSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * This service allows to invalidate the Vanity URL Cache
@@ -100,7 +100,7 @@ public class VanityUrlServices {
      */
     public void initializeVanityUrlCache() {
         APILocator.getVanityUrlAPI()
-                .getActiveVanityUrls(APILocator.systemUser());
+                .initializeVanityURLsCache(APILocator.systemUser());
     }
 
     /**
@@ -151,48 +151,33 @@ public class VanityUrlServices {
     }
 
     /**
-     * Get the list of cached Vanity URLs associated to a given site and SYSTEM_HOST
-     *
-     * @param siteId The current site Id
-     * @param languageId The current language Id
-     * @return A set of CachedVanityUrl
+     * Subscriber that listen to events of type CommitListenerEvent, this event will be trigger when
+     * the commit listener related to this event is executed.
      */
-    public Set<CachedVanityUrl> getVanityUrlBySiteAndLanguage(String siteId, long languageId) {
+    @Subscriber
+    public void onCommitListener(CommitListenerEvent commitListenerEvent) {
 
-        Set<CachedVanityUrl> foundVanities;
-        if (null != siteId && !siteId.equals(Host.SYSTEM_HOST)) {
+        Contentlet contentlet = commitListenerEvent.getContentlet();
 
-            //First search in cache with the given site id
-            foundVanities = CacheLocator.getVanityURLCache()
-                    .getCachedVanityUrls(VanityUrlUtil.sanitizeSecondCacheKey(siteId, languageId));
+        try {
+            if (contentlet.isVanityUrl()) {
 
-            //null means we need to initialize the cache for this site
-            if (null == foundVanities) {
-                return foundVanities;
-            }
-
-            //Now search in cache with the SYSTEM_HOST
-            Set<CachedVanityUrl> systemHostFoundVanities = CacheLocator.getVanityURLCache()
-                    .getCachedVanityUrls(
-                            VanityUrlUtil.sanitizeSecondCacheKey(Host.SYSTEM_HOST, languageId));
-
-            if (null != systemHostFoundVanities) {
-                if (null != foundVanities) {
-                    foundVanities = ImmutableSet.<CachedVanityUrl>builder()
-                            .addAll(foundVanities)
-                            .addAll(systemHostFoundVanities)
-                            .build();
-                } else {
-                    foundVanities = systemHostFoundVanities;
+                //When the contentlet finished to index we need to invalidate it on cache
+                boolean indexed = APILocator.getContentletAPI()
+                        .isInodeIndexed(contentlet.getInode(),
+                                contentlet.isLive(), contentlet.isWorking());
+                if (indexed) {
+                    //Invalidate this VanityURL
+                    VanityUrlServices.getInstance().invalidateVanityUrl(contentlet);
                 }
+
             }
-        } else {
-            foundVanities = CacheLocator.getVanityURLCache()
-                    .getCachedVanityUrls(
-                            VanityUrlUtil.sanitizeSecondCacheKey(Host.SYSTEM_HOST, languageId));
+        } catch (Exception e) {
+            Logger.error(this,
+                    String.format("Unable to invalidate VanityURL in cache [%s]",
+                            contentlet.getIdentifier()), e);
         }
 
-        return foundVanities;
     }
 
 }

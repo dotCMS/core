@@ -1,5 +1,6 @@
 package com.dotmarketing.servlets;
 
+import com.dotmarketing.filters.Constants;
 import java.io.IOException;
 import java.util.StringTokenizer;
 
@@ -141,7 +142,7 @@ public class SpeedyAssetServlet extends HttpServlet {
 
 
     private Identifier resolveIdentifier(HttpServletRequest request) {
-      Identifier ident = (Identifier) request.getAttribute(CMSFilter.CMS_FILTER_IDENTITY);
+      Identifier ident = (Identifier) request.getAttribute(Constants.CMS_FILTER_IDENTITY);
       if(ident==null){
         if(request.getParameter("path")==null) {
           // Getting the identifier from the path like /dotAsset/{identifier}.{ext} E.G. /dotAsset/1234.js

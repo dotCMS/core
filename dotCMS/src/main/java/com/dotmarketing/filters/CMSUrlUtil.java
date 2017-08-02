@@ -1,5 +1,8 @@
 package com.dotmarketing.filters;
 
+import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
+import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
+
 import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotmarketing.beans.Host;
@@ -16,14 +19,19 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.Xss;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.List;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Utilitary class used by the CMS Filter
  */
-public class CmsUrlUtil {
+public class CMSUrlUtil {
 
-	private static CmsUrlUtil urlUtil;
+	private static CMSUrlUtil urlUtil;
 	private static final String CONTENTLET = "contentlet";
 	private static final String HTMLPAGE = "htmlpage";
 	private static final String FILE_ASSET = "file_asset";
@@ -36,18 +44,18 @@ public class CmsUrlUtil {
 	 *
 	 * @return a CmsUrlUtil instance
 	 */
-	public static CmsUrlUtil getInstance() {
+	public static CMSUrlUtil getInstance() {
 		if (urlUtil == null) {
 
-			synchronized (CmsUrlUtil.class) {
-				urlUtil = new CmsUrlUtil();
+			synchronized (CMSUrlUtil.class) {
+				urlUtil = new CMSUrlUtil();
 			}
 
 		}
 		return urlUtil;
 	}
 
-	private CmsUrlUtil() {
+	private CMSUrlUtil() {
 	}
 
 	/**
@@ -323,4 +331,61 @@ public class CmsUrlUtil {
 				.isVanityUrl(uri, host, languageId)
 				|| urlUtil.isPageAsset(uri, host, languageId) || urlUtil.isFolder(uri, host));
 	}
+
+	/**
+	 * Checks in the given uri and query string for possible XSS hacks
+	 */
+	String xssCheck(String uri, String queryString) throws ServletException {
+
+		String rewrite = null;
+		if (Xss.URIHasXSS(uri)) {
+			Logger.warn(this, "XSS Found in request URI: " + uri);
+			try {
+				rewrite = Xss.encodeForURL(uri);
+			} catch (Exception e) {
+				Logger.error(this, "Encoding failure. Unable to encode URI " + uri);
+				throw new ServletException(e.getMessage(), e);
+			}
+		} else if (queryString != null && null != UtilMethods.decodeURL(queryString)) {
+			if (Xss.ParamsHaveXSS(queryString)) {
+				Logger.warn(this, "XSS Found in Query String: " + queryString);
+				rewrite = uri;
+			}
+		}
+
+		return rewrite;
+	}
+
+	/**
+	 * Search for an overridden URI by a filter and if nothing is found the URI will be read from
+	 * the request.
+	 */
+	public String getURIFromRequest(HttpServletRequest request)
+			throws UnsupportedEncodingException {
+
+		return (request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null) ? (String) request
+				.getAttribute(CMS_FILTER_URI_OVERRIDE)
+				: URLDecoder.decode(request.getRequestURI(), "UTF-8");
+	}
+
+	/**
+	 * Verifies if the URI was overridden by a filter
+	 */
+	Boolean wasURIOverridden(HttpServletRequest request)
+			throws UnsupportedEncodingException {
+		return (request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null);
+	}
+
+	/**
+	 * Search for an overridden query string by a filter and if nothing is found the query string
+	 * will be read from the request.
+	 */
+	String getURLQueryStringFromRequest(HttpServletRequest request)
+			throws UnsupportedEncodingException {
+
+		return (request.getAttribute(CMS_FILTER_QUERY_STRING_OVERRIDE) != null) ? (String) request
+				.getAttribute(CMS_FILTER_QUERY_STRING_OVERRIDE)
+				: request.getQueryString();
+	}
+
 }
