@@ -8,6 +8,7 @@
 <%@page import="com.dotcms.repackage.javax.portlet.WindowState"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
 <%@page import="java.util.List"%>
@@ -53,7 +54,7 @@
         var selectedStructureVarName = '';
         var bindTagFieldEvent;
 
-        var enterprise = <%=LicenseUtil.getLevel() > 199%>;
+        var enterprise = <%=LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level%>;
         var formNum=100;
 		var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpointsList) && !sendingEndpointsList.isEmpty()%>;
 

@@ -11,6 +11,7 @@
 <%@page import="com.dotmarketing.portlets.languagesmanager.business.*"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 
 <script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>
 
@@ -797,7 +798,7 @@ try {
 	}
 	
 
-	<% if(LicenseUtil.getLevel() > 199){ %>	
+	<% if(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level){ %>
 	dojo.addOnLoad(function(){
 		setStatsView('month');
 	});
@@ -833,7 +834,7 @@ try {
 	.urlWrapper{position:relative;}
 	.urlWrapper span{display:block;position:absolute;top:-9px;left:0;width:95%;overflow:hidden;white-space:nowrap;cursor:pointer;}
 </style>
-<% if(LicenseUtil.getLevel() > 199){ %>	
+<% if(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level){ %>
 
 <form id="fm" method="post">
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">

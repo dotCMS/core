@@ -10,9 +10,7 @@ import com.dotcms.util.GeoIp2CityDbUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.ChainableCacheAdministratorImpl;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -28,38 +26,24 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.quartz.job.ShutdownHookThread;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.model.Company;
+import com.dotmarketing.util.*;
 import com.liferay.portal.util.ReleaseInfo;
+import org.apache.lucene.search.BooleanQuery;
+import org.quartz.SchedulerException;
+
+import javax.management.*;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.URL;
+import java.net.*;
 import java.net.URLEncoder;
-import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.MBeanRegistrationException;
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.ObjectName;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import org.apache.lucene.search.BooleanQuery;
-import org.quartz.SchedulerException;
 
 public class InitServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
@@ -102,51 +86,9 @@ public class InitServlet extends HttpServlet {
 
 
 
-        Company company = PublicCompanyFactory.getDefaultCompany();
-        TimeZone companyTimeZone = company.getTimeZone();
-        TimeZone.setDefault(companyTimeZone);
-        Logger.info(this, "InitServlet: Setting Default Timezone: " + companyTimeZone.getDisplayName());
-
-        String _dbType = DbConnectionFactory.getDBType();
-        String _dailect = "";
-        try {
-            _dailect = HibernateUtil.getDialect();
-        } catch (DotHibernateException e3) {
-            Logger.error(InitServlet.class, e3.getMessage(), e3);
-        }
-        String _companyId = PublicCompanyFactory.getDefaultCompanyId();
-        Logger.info(this, "");
-        Logger.info(this, "   Initializing dotCMS");
-        Logger.info(this, "   Using database: " + _dbType);
-        Logger.info(this, "   Using dialect : " + _dailect);
-        Logger.info(this, "   Company Name  : " + _companyId);
-
-        if(Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false)){
-
-            Logger.info(this, "   Clustering    : Enabled");
-
-            //Get the current license level
-            int licenseLevel = LicenseUtil.getLevel();
-            if ( licenseLevel > 100 ) {
-                //		Logger.info(this, "   Server        :" + Config.getIntProperty("DIST_INDEXATION_SERVER_ID", 0)  + " of cluster " + Config.getStringProperty("DIST_INDEXATION_SERVERS_IDS", "...unknown"));
-                try {
-                    /*
-                     Without a license this testCluster call will fail as the LicenseManager calls the ClusterFactory.removeNodeFromCluster()
-                     if a license is not found.
-                     */
-                    ((ChainableCacheAdministratorImpl) CacheLocator.getCacheAdministrator().getImplementationObject()).testCluster();
-                    Logger.info( this, "     Ping Sent" );
-                } catch ( Exception e ) {
-                    Logger.error( this, "   Ping Error: " + e.getMessage() );
-                }
-            }
-        }
-        else{
-            Logger.info(this, "   Clustering    : Disabled");
-        }
-
-
-        Logger.info(this, "");
+        new StartupLogger().log();
+        
+        
 
         //Check and start the ES Content Store
         APILocator.getContentletIndexAPI().checkAndInitialiazeIndex();

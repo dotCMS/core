@@ -9,6 +9,7 @@
 <%@ include file="/html/portlet/ext/structure/init.jsp" %>
 <%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
 <%@ page import="com.dotmarketing.business.APILocator" %>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI" %>
@@ -55,12 +56,12 @@
 	List<Integer> structureTypes = new ArrayList<Integer>();
 	structureTypes.add(STRUCTURE_TYPE_CONTENT);
 	structureTypes.add(STRUCTURE_TYPE_WIDGET);
-	if ( LicenseUtil.getLevel() > 100 ) {
+	if ( LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level ) {
 		structureTypes.add( STRUCTURE_TYPE_FORM );
 	}
 	structureTypes.add(STRUCTURE_TYPE_FILEASSET);
 	structureTypes.add(STRUCTURE_TYPE_HTMLPAGE);
-	if(LicenseUtil.getLevel() > 199){
+	if(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level){
 		structureTypes.add(STRUCTURE_TYPE_PERSONA);
 	}
 	structureTypes.add(CONTENT_TYPE_VANITY_URL);
@@ -81,7 +82,7 @@
 			request, WindowState.MAXIMIZED.toString(), params);
 
 
-	boolean enterprise = LicenseUtil.getLevel() > 199;
+	boolean enterprise = LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level;
 
 	PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 	List<PublishingEndPoint> sendingEndpointsList = pepAPI.getReceivingEndPoints();

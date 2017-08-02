@@ -1,18 +1,17 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.UnitTestBase;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.web.LanguageWebAPI;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
+import com.dotmarketing.util.WebKeys;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
-import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
-import com.dotmarketing.portlets.rules.model.ParameterModel;
-import com.dotmarketing.util.WebKeys;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -26,7 +25,7 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
  * @author Jonathan Gamba
  *         Date: 1/14/16
  */
-public class CurrentSessionLanguageConditionletTest extends UnitTestBase {
+public class CurrentSessionLanguageConditionletTest {
 
     private HttpServletRequest request;
     private HttpServletResponse response;
@@ -36,6 +35,7 @@ public class CurrentSessionLanguageConditionletTest extends UnitTestBase {
 
     @BeforeClass
     public static void prepare () throws Exception {
+        IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
     }
 

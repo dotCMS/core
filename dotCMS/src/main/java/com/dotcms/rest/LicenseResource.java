@@ -4,6 +4,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.action.ResetLicenseServerAction;
 import com.dotcms.enterprise.cluster.action.ServerAction;
 import com.dotcms.enterprise.cluster.action.model.ServerActionBean;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.DELETE;
 import com.dotcms.repackage.javax.ws.rs.GET;
@@ -44,6 +45,7 @@ import javax.servlet.http.HttpSession;
 public class LicenseResource {
 
     private final WebResource webResource = new WebResource();
+    private static final String SERVER_ID  = "serverid";
 
     @GET
     @Path("/all/{params:.*}")
@@ -56,19 +58,16 @@ public class LicenseResource {
             for ( Map<String, Object> lic : LicenseUtil.getLicenseRepoList() ) {
                 JSONObject obj = new JSONObject();
                 for ( Map.Entry<String, Object> entry : lic.entrySet() ) {
-
+                    String key = entry.getKey();
+                    String value = (entry.getValue()==null) ? "" : String.valueOf(entry.getValue());
+                    obj.put(key, value );
                     //Lets exclude some data we don' want/need to expose
-                    if ( entry.getKey().equals( "serverid" ) ) {
-                        obj.put( entry.getKey(), entry.getValue() != null ? LicenseUtil.getDisplayServerId( (String) lic.get( "serverId" ) ) : "" );
-                        obj.put( "fullserverid", entry.getValue() != null ? entry.getValue() : "" );
-                    } else if ( entry.getKey().equals( "serverId" ) || entry.getKey().equals( "license" ) ) {
-                        //Just ignore these fields
-                    } else if ( entry.getKey().equals( "id" ) ) {
-                        obj.put( entry.getKey(), entry.getKey() != null ? entry.getValue() : "" );
-                        obj.put( "idDisplay", entry.getValue() != null ? LicenseUtil.getDisplaySerial( (String) entry.getValue() ) : "" );
-                    } else {
-                        obj.put( entry.getKey(), entry.getKey() != null ? entry.getValue() : "" );
-                    }
+                    if ( SERVER_ID.equals(key) ) {
+                        obj.put(SERVER_ID,  LicenseUtil.getDisplayServerId(value) );
+                        obj.put( "fullserverid", value );
+                    } else if ( "id".equals(key) ) {
+                        obj.put( "idDisplay", LicenseUtil.getDisplaySerial(value) );
+                    } 
 
                 }
                 array.put( obj );
@@ -148,10 +147,10 @@ public class LicenseResource {
         InitDataObject initData = webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
         String serial = initData.getParamsMap().get("serial");
         
-        final long currentLevel=LicenseUtil.getLevel();
-        final String currentSerial=currentLevel>100 ? LicenseUtil.getSerial() : "";
+        final long currentLevel = LicenseUtil.getLevel();
+        final String currentSerial = currentLevel > LicenseLevel.COMMUNITY.level ? LicenseUtil.getSerial() : "";
         
-        if(currentLevel<200 || !currentSerial.equals(serial)) {
+        if(currentLevel < LicenseLevel.STANDARD.level || !currentSerial.equals(serial)) {
             
             try {
                 HibernateUtil.startTransaction();
@@ -175,7 +174,7 @@ public class LicenseResource {
             }
         }
         
-        if(currentLevel==100 || currentSerial.equals(LicenseUtil.getSerial())) {
+        if(currentLevel==LicenseLevel.COMMUNITY.level || currentSerial.equals(LicenseUtil.getSerial())) {
             return Response.notModified().build();
         }
         else {
@@ -189,7 +188,7 @@ public class LicenseResource {
         InitDataObject initData = webResource.init(params, true, request, true, PortletID.CONFIGURATION.toString());
         
         String localServerId = APILocator.getServerAPI().readServerId();
-        String remoteServerId = initData.getParamsMap().get("serverid");
+        String remoteServerId = initData.getParamsMap().get(SERVER_ID);
         String serial = initData.getParamsMap().get("serial");
 
         
