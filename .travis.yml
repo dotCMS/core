@@ -7,7 +7,7 @@ addons:
     organization: dotcms-github
     branches:
     - master
-    - sonarqube-test1
+    - sonarqube-test-main-branch
 jdk:
 - oraclejdk8
 before_install:
