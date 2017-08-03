@@ -15,7 +15,7 @@ import java.util.Map;
  * Paginator util for Host
  */
 public class SitePaginator implements Paginator<Host> {
-    public static final String ARCHIVE_PARAMETER_NAME = "archive";
+    public static final String ARCHIVED_PARAMETER_NAME = "archive";
     public static final  String LIVE_PARAMETER_NAME = "live";
     public static final  String SYSTEM_PARAMETER_NAME = "system";
 
@@ -36,6 +36,7 @@ public class SitePaginator implements Paginator<Host> {
         return totalResults;
     }
 
+
     @Override
     public Collection<Host> getItems(final User user, final String filter, final int limit, final int offset,
                                      final String orderby, final OrderDirection direction, final Map<String, Object> extraParams) {
@@ -45,7 +46,7 @@ public class SitePaginator implements Paginator<Host> {
         boolean showSystem = false;
 
         if (extraParams != null) {
-            showArchived = (Boolean) extraParams.get(ARCHIVE_PARAMETER_NAME);
+            showArchived = (Boolean) extraParams.get(ARCHIVED_PARAMETER_NAME);
             showLive = (Boolean) extraParams.get(LIVE_PARAMETER_NAME);
             showSystem = (Boolean) Boolean.valueOf(String.valueOf(extraParams.get(SYSTEM_PARAMETER_NAME)));
         }
