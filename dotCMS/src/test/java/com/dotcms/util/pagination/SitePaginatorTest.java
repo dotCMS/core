@@ -70,7 +70,7 @@ public class SitePaginatorTest {
                 .thenReturn( hosts );
 
         final Collection<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
-                map(SitePaginator.ARCHIVE_PARAMETER_NAME, showArchived));
+                map(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived));
 
         assertEquals(totalRecords, sitePaginator.getTotalRecords(filter));
         assertEquals(hosts, items);
@@ -105,7 +105,7 @@ public class SitePaginatorTest {
                 .thenReturn( hosts );
 
         final Collection<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
-                map(SitePaginator.ARCHIVE_PARAMETER_NAME, showArchived, SitePaginator.LIVE_PARAMETER_NAME, !showStopped));
+                map(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived, SitePaginator.LIVE_PARAMETER_NAME, !showStopped));
 
         assertEquals(totalRecords, sitePaginator.getTotalRecords(filter));
         assertEquals(hosts, items);
