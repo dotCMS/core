@@ -13,9 +13,11 @@ if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
     -Dsonar.github.repository=$TRAVIS_REPO_SLUG \
     -Dsonar.github.oauth=$SONAR_GITHUB_TOKEN \
     -Dsonar.github.repository=dotCMS/core \
-    -Dsonar.scanner.skip=false
+    -Dsonar.scanner.skip=false \
+    -Dsonar.verbose=true
 
 else
   sonar-scanner \
-    -Dsonar.scanner.skip=false
+    -Dsonar.scanner.skip=false \
+    -Dsonar.verbose=true
 fi
