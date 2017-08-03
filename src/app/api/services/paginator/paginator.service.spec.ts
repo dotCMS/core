@@ -35,8 +35,8 @@ describe('PaginatorService setting', () => {
     });
 
     it('should do a request with extra params', () => {
-        this.paginatorService.extraParams.append('hello', 'world');
-        this.paginatorService.extraParams.append('hola', 'mundo');
+        this.paginatorService.addExtraParams('hello', 'world');
+        this.paginatorService.addExtraParams('hola', 'mundo');
         this.paginatorService.get().subscribe(items => this.result = items);
         expect(this.lastConnection.request.url).toContain('v1/urldemo?hello=world&hola=mundo');
     });

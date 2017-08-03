@@ -55,8 +55,10 @@ export class PaginatorService {
         }
     }
 
-    set extraParams(extraParams: URLSearchParams) {
-        this._extraParams = extraParams;
+    addExtraParams(name: string, value: any): void {
+        if (value !== null) {
+            this.extraParams.append(name, value.toString());
+        }
     }
 
     get extraParams(): URLSearchParams {

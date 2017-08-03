@@ -46,6 +46,7 @@ export class SiteSelectorComponent implements ControlValueAccessor {
 
     @Input() archive: boolean = null;
     @Input() live: boolean = null;
+    @Input() system = true;
     @Output() change: EventEmitter<Site> = new EventEmitter();
     @Output() hide: EventEmitter<any> = new EventEmitter();
     @Output() show: EventEmitter<any> = new EventEmitter();
@@ -73,13 +74,9 @@ export class SiteSelectorComponent implements ControlValueAccessor {
     ngOnInit(): void {
         this.paginationService.url = 'v1/site';
 
-        if (this.archive !== null) {
-            this.paginationService.extraParams.append('archive', this.archive.toString());
-        }
-
-        if (this.live !== null) {
-            this.paginationService.extraParams.append('live', this.live.toString());
-        }
+        this.paginationService.addExtraParams('archive', this.archive);
+        this.paginationService.addExtraParams('live', this.live);
+        this.paginationService.addExtraParams('system', this.system);
 
         this.getSitesList();
 
