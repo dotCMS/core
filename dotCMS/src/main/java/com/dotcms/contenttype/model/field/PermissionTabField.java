@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.model.field;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.immutables.value.Value;
@@ -8,6 +9,8 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import static com.dotcms.util.CollectionsUtils.list;
 
 @JsonSerialize(as = ImmutablePermissionTabField.class)
 @JsonDeserialize(as = ImmutablePermissionTabField.class)
@@ -35,5 +38,14 @@ public abstract class PermissionTabField extends Field implements OnePerContentT
 		return DataTypes.SYSTEM;
 	};
 	public abstract static class Builder implements FieldBuilder {}
-	
+
+	@JsonIgnore
+	public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
+		return list(ContentTypeFieldProperties.LABEL, ContentTypeFieldProperties.DISPLAY_TYPE);
+	}
+
+	@JsonIgnore
+	public String getContentTypeFieldLabelKey(){
+		return "Permissions-Field";
+	}
 }

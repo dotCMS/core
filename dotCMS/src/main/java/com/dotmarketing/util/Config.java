@@ -11,6 +11,7 @@ import com.dotcms.util.ReflectionUtils;
 import com.dotcms.util.SystemEnvironmentConfigurationInterpolator;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.google.common.collect.ImmutableSet;
 
 import java.io.*;
 import java.net.URL;
@@ -533,7 +534,7 @@ public class Config {
 	@SuppressWarnings("unchecked")
 	public static Iterator<String> getKeys () {
 	    _refreshProperties ();
-	    return props.getKeys();
+	    return ImmutableSet.copyOf(props.getKeys()).iterator();
 	}
 
 	/**
@@ -544,7 +545,7 @@ public class Config {
 	@SuppressWarnings ( "unchecked" )
 	public static Iterator<String> subset ( String prefix ) {
 		_refreshProperties();
-		return props.subset(prefix).getKeys();
+		return ImmutableSet.copyOf(props.subset(prefix).getKeys()).iterator();
 	}
 
 	/**

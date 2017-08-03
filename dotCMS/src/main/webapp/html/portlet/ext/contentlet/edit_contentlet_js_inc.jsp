@@ -4,6 +4,7 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="java.util.*"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="com.dotmarketing.filters.CMSFilter"%>
 <%
 
@@ -78,9 +79,6 @@
         ContentletAjax.cancelContentEdit(workingContentletInode,currentContentletInode,ref,langId,cancelEditCallback);
     }
     function cancelEditCallback(callbackData){
-        <%if(structure.getStructureType()==Structure.STRUCTURE_TYPE_FORM){%>
-        callbackData=callbackData+"&structure_id=<%=structure.getInode()%>";
-        <%}%>
 
         if(callbackData.indexOf("referer") != -1){
             var sourceReferer = callbackData.substring(callbackData.indexOf("referer"));
@@ -587,9 +585,6 @@
         // if we have a referer and the contentlet comes back checked in
         if((data["referer"] != null && data["referer"] != '' && !data["contentletLocked"]) || data["htmlPageReferer"] != null ) {
 
-            <%if(structure.getStructureType()==Structure.STRUCTURE_TYPE_FORM){%>
-            self.location = data["referer"]+"&structure_id=<%=structure.getInode()%>&content_inode=" + data["contentletInode"];
-            <%}else{%>
             if(data["isHtmlPage"]){
                 self.location = data["htmlPageReferer"];
             } else if(data["sourceReferer"]){
@@ -597,7 +592,6 @@
             }else{
                 self.location = data["referer"] + "&content_inode=" + data["contentletInode"];
             }
-            <%}%>
             return;
         }
         resetHasChanged();
@@ -688,8 +682,8 @@
                 fieldDiv.appendChild(thumbnailParentDiv);
             }
 
-            var licence = <%=LicenseUtil.getLevel()%>;
-            if ( licence < 199 ||  fieldRelatedData['fileName'].toLowerCase().endsWith("svg")){
+            var license = <%=LicenseUtil.getLevel()%>;
+            if ( license <= LicenseLevel.STANDARD.level ||  fieldRelatedData['fileName'].toLowerCase().endsWith("svg")){
                 var newFileDialogTitle = "<%=LanguageUtil.get(pageContext,"Image") %>";
 
                 var newFileDialogContent = '<div style="text-align:center;margin:auto;overflow:auto;width:700px;height:400px;">'
