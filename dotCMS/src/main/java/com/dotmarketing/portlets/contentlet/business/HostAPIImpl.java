@@ -19,6 +19,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
@@ -986,20 +987,39 @@ public class HostAPIImpl implements HostAPI {
 
     }
 
+
+    public PaginatedArrayList<Host> searchByStopped(String filter, boolean showStopped, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles){
+        String condition = String.format(" +live:%b", !showStopped);
+        return search(filter, condition, showSystemHost, limit, offset, user, respectFrontendRoles);
+    }
+
+    public PaginatedArrayList<Host> search(String filter, boolean showArchived, boolean showStopped, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles){
+        String condition = String.format(" +deleted:%b +live:%b", showArchived, !showStopped);
+        return search(filter, condition, showSystemHost, limit, offset, user, respectFrontendRoles);
+    }
+
+    public PaginatedArrayList<Host> search(String filter, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles){
+        return search(filter, StringUtils.EMPTY, showSystemHost, limit, offset, user, respectFrontendRoles);
+    }
+
 	public PaginatedArrayList<Host> search(String filter, boolean showArchived, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles) {
+        String condition = String.format(" +deleted:%b", showArchived);
+        return search(filter, condition, showSystemHost, limit, offset, user, respectFrontendRoles);
+    }
+
+    private PaginatedArrayList<Host> search(String filter, String condition, boolean showSystemHost, int limit, int offset, User user, boolean respectFrontendRoles) {
         try {
 
             Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
-            StringBuilder condition = new StringBuilder( String.format(" +deleted:%b", showArchived) );
-
+            StringBuilder conditionBuffer = new StringBuilder( condition );
 
             if(UtilMethods.isSet(filter)){
-                condition.append( String.format(" +Host.hostName:%s*", filter.trim() ) );
+                conditionBuffer.append( String.format(" +Host.hostName:%s*", filter.trim() ) );
             }
             if(!showSystemHost){
-                condition.append( " +Host.isSystemHost:false" );
+                conditionBuffer.append( " +Host.isSystemHost:false" );
             }
-            PaginatedArrayList<Contentlet> list = (PaginatedArrayList<Contentlet>)APILocator.getContentletAPI().search("+structureInode:" + st.getInode() + condition, limit, offset, "Host.hostName", user, respectFrontendRoles);
+            PaginatedArrayList<Contentlet> list = (PaginatedArrayList<Contentlet>)APILocator.getContentletAPI().search("+structureInode:" + st.getInode() + conditionBuffer.toString(), limit, offset, "Host.hostName", user, respectFrontendRoles);
 
             return convertToHostPaginatedArrayList(list);
         } catch (Exception e) {

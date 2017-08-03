@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.rules.business;
 
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Ruleable;
@@ -85,7 +86,7 @@ public final class RulesEngine {
 	public static void fireRules(HttpServletRequest req, HttpServletResponse res, Ruleable parent, Rule.FireOn fireOn) {
 
         //Check for the proper license level, the rules engine is an enterprise feature only
-        if ( LicenseUtil.getLevel() < 200 ) {
+        if ( LicenseUtil.getLevel() < LicenseLevel.STANDARD.level ) {
             return;
         }
         if(res.isCommitted()) {

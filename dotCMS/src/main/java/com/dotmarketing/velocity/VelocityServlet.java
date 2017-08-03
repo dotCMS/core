@@ -5,11 +5,44 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
-import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
+import java.io.File;
+import java.io.FilterWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.net.URLDecoder;
+import java.util.*;
+import java.util.Calendar;
+
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
+
+import com.dotmarketing.portlets.rules.business.RulesEngine;
+import com.dotmarketing.portlets.rules.model.Rule;
+import com.dotmarketing.util.*;
+import com.liferay.portal.language.LanguageException;
+
+import org.apache.velocity.Template;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.exception.MethodInvocationException;
+import org.apache.velocity.exception.ParseErrorException;
+import org.apache.velocity.exception.ResourceNotFoundException;
+import org.apache.velocity.runtime.RuntimeConstants;
+import org.apache.velocity.tools.view.context.ChainedContext;
+
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -23,6 +56,7 @@ import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -35,59 +69,17 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.rules.business.RulesEngine;
-import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.CookieUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageRequestModeUtil;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityProfiler;
-import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.viewtools.DotTemplateTool;
 import com.dotmarketing.viewtools.RequestWrapper;
 import com.dotmarketing.viewtools.content.ContentMap;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
-import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.servlet.SessionMessages;
-import java.io.File;
-import java.io.FilterWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import org.apache.velocity.Template;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.exception.MethodInvocationException;
-import org.apache.velocity.exception.ParseErrorException;
-import org.apache.velocity.exception.ResourceNotFoundException;
-import org.apache.velocity.runtime.RuntimeConstants;
-import org.apache.velocity.tools.view.context.ChainedContext;
 
 public abstract class VelocityServlet extends HttpServlet {
 
@@ -166,12 +158,12 @@ public abstract class VelocityServlet extends HttpServlet {
         }
 
 		
-		if (DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() < 299) {
+		if (DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() <= LicenseLevel.PROFESSIONAL.level) {
 			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
 			return;
 		}
 
-		if (DbConnectionFactory.isOracle() && LicenseUtil.getLevel() < 399) {
+		if (DbConnectionFactory.isOracle() && LicenseUtil.getLevel() <= LicenseLevel.PRIME.level) {
 			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
 			return;
 		}
@@ -664,15 +656,15 @@ public abstract class VelocityServlet extends HttpServlet {
 		// to check user has permission to write on this page
         boolean hasWritePermOverHTMLPage = permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_WRITE, user );
         boolean hasPublishPermOverHTMLPage = permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_PUBLISH, user );
-        boolean hasRemotePublishPermOverHTMLPage = hasPublishPermOverHTMLPage && LicenseUtil.getLevel() > 199;
+        boolean hasRemotePublishPermOverHTMLPage = hasPublishPermOverHTMLPage && LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level;
         boolean hasEndPoints = UtilMethods.isSet( receivingEndpoints ) && !receivingEndpoints.isEmpty();
 
         context.put( "EDIT_HTMLPAGE_PERMISSION", new Boolean( hasWritePermOverHTMLPage ) );
         context.put( "PUBLISH_HTMLPAGE_PERMISSION", new Boolean( hasPublishPermOverHTMLPage ) );
         context.put( "REMOTE_PUBLISH_HTMLPAGE_PERMISSION", new Boolean( hasRemotePublishPermOverHTMLPage ) );
         context.put( "REMOTE_PUBLISH_END_POINTS", new Boolean( hasEndPoints ) );
-        context.put( "canAddForm", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
-        context.put( "canViewDiff", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
+        context.put( "canAddForm", Boolean.valueOf( LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level ? true : false ) );
+        context.put( "canViewDiff", Boolean.valueOf( LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level ? true : false ) );
 
         context.put( "HTMLPAGE_ASSET_STRUCTURE_TYPE", htmlPage.isContent() ? ((Contentlet)htmlPage).getStructureInode() : APILocator.getHTMLPageAssetAPI().DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
         context.put("HTMLPAGE_IS_CONTENT", htmlPage.isContent());
@@ -906,7 +898,7 @@ public abstract class VelocityServlet extends HttpServlet {
         boolean hasAddChildrenPermOverHTMLPage = permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_CAN_ADD_CHILDREN, backendUser );
         boolean hasWritePermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_WRITE, backendUser);
         boolean hasPublishPermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_PUBLISH, backendUser);
-        boolean hasRemotePublishPermOverHTMLPage = hasPublishPermOverHTMLPage && LicenseUtil.getLevel() > 199;
+        boolean hasRemotePublishPermOverHTMLPage = hasPublishPermOverHTMLPage && LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level;
         boolean hasEndPoints = UtilMethods.isSet( receivingEndpoints ) && !receivingEndpoints.isEmpty();
 
         context.put( "ADD_CHILDREN_HTMLPAGE_PERMISSION", new Boolean( hasAddChildrenPermOverHTMLPage ) );
@@ -914,8 +906,8 @@ public abstract class VelocityServlet extends HttpServlet {
         context.put( "PUBLISH_HTMLPAGE_PERMISSION", new Boolean( hasPublishPermOverHTMLPage ) );
         context.put( "REMOTE_PUBLISH_HTMLPAGE_PERMISSION", new Boolean( hasRemotePublishPermOverHTMLPage ) );
         context.put( "REMOTE_PUBLISH_END_POINTS", new Boolean(hasEndPoints) );
-        context.put( "canAddForm", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
-        context.put( "canViewDiff", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
+        context.put( "canAddForm", Boolean.valueOf( LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level ? true : false ) );
+        context.put( "canViewDiff", Boolean.valueOf( LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level ? true : false ) );
         
         context.put( "HTMLPAGE_ASSET_STRUCTURE_TYPE", htmlPage.isContent() ? ((Contentlet)htmlPage).getStructureInode() : "0");
         context.put( "HTMLPAGE_IS_CONTENT" , htmlPage.isContent());

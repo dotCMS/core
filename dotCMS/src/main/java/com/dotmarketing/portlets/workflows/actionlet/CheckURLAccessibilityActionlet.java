@@ -6,6 +6,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 
@@ -63,7 +64,7 @@ public class CheckURLAccessibilityActionlet extends WorkFlowActionlet {
 
 	@Override
 	public void executeAction(WorkflowProcessor processor, Map<String, WorkflowActionClassParameter> params) throws WorkflowActionFailureException {
-	    if(LicenseUtil.getLevel()<200)
+	    if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level)
             return; // the apis will do nothing anyway
 	    
         WebContext ctx = WebContextFactory.get();

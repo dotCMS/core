@@ -20,6 +20,7 @@ import java.util.Set;
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
@@ -482,7 +483,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					}
 				} else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_KEY_VALUE)){
 					boolean fileMetadata=f.getVelocityVarName().equals(FileAssetAPI.META_DATA_FIELD) && st.getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET;
-					if(!fileMetadata || LicenseUtil.getLevel()>199) {
+					if(!fileMetadata || LicenseUtil.getLevel()>= LicenseLevel.STANDARD.level) {
 
 						m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), (String)valueObj);
 						Map<String,Object> keyValueMap = KeyValueFieldUtil.JSONValueToHashMap((String)valueObj);

@@ -22,9 +22,25 @@
 
 package com.liferay.portal.servlet;
 
-import com.dotcms.cluster.common.ClusterServerActionThread;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
+
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.servlet.jsp.PageContext;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.dotcms.config.DotInitializationService;
-import com.dotcms.enterprise.ClusterThreadProxy;
 import com.dotcms.repackage.com.httpbridge.webproxy.http.TaskController;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.action.ActionServlet;
@@ -34,7 +50,6 @@ import com.dotcms.repackage.org.dom4j.DocumentException;
 import com.dotcms.repackage.org.dom4j.Element;
 import com.dotcms.repackage.org.dom4j.io.SAXReader;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.servlets.InitServlet;
@@ -46,7 +61,6 @@ import com.liferay.portal.ejb.CompanyLocalManagerUtil;
 import com.liferay.portal.ejb.PortletManagerUtil;
 import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.events.EventsProcessor;
-import com.liferay.portal.events.StartupAction;
 import com.liferay.portal.job.JobScheduler;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.Portlet;
@@ -54,26 +68,19 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.struts.PortletRequestProcessor;
 import com.liferay.portal.struts.StrutsUtil;
-import com.liferay.portal.util.*;
-import com.liferay.util.*;
+import com.liferay.portal.util.ContentUtil;
+import com.liferay.portal.util.PortalInstances;
+import com.liferay.portal.util.PortalUtil;
+import com.liferay.portal.util.PropsUtil;
+import com.liferay.portal.util.ShutdownUtil;
+import com.liferay.portal.util.WebAppPool;
+import com.liferay.portal.util.WebKeys;
+import com.liferay.util.GetterUtil;
+import com.liferay.util.Http;
+import com.liferay.util.ParamUtil;
+import com.liferay.util.StringUtil;
 import com.liferay.util.servlet.EncryptedServletRequest;
 import com.liferay.util.servlet.UploadServletRequest;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.servlet.jsp.PageContext;
-import java.io.File;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TreeMap;
 
 /**
  * <a href="MainServlet.java.html"><b><i>View Source</i></b></a>
@@ -106,22 +113,7 @@ public class MainServlet extends ActionServlet {
 				throw new ServletException(e1);
 			}
 
-			// Starting the reindexation threads
-			ClusterThreadProxy.createThread();
-			if (Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false)) {
-				ClusterThreadProxy.startThread(Config.getIntProperty("DIST_INDEXATION_SLEEP", 500), Config.getIntProperty("DIST_INDEXATION_INIT_DELAY", 5000));
-			}
 
-			ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", 500), Config.getIntProperty("REINDEX_THREAD_INIT_DELAY", 5000));
-
-			//Start Cluster Server Action Thread.
-			ClusterServerActionThread.startThread(Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP", 2000));
-
-			try {
-				EventsProcessor.process(new String[] { StartupAction.class.getName() }, true);
-			} catch (Exception e) {
-				Logger.error(this, e.getMessage(), e);
-			}
 
 			// Context path
 

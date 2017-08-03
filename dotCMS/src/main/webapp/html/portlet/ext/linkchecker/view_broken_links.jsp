@@ -1,4 +1,5 @@
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.util.PortletURLUtil"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
@@ -12,7 +13,7 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 
 
-<% if(LicenseUtil.getLevel()< 199){ %>
+<% if(LicenseUtil.getLevel() <= LicenseLevel.STANDARD.level){ %>
 <%@ include file="/html/portlet/ext/linkchecker/not_licensed.jsp" %>
 
 <%return;} %>

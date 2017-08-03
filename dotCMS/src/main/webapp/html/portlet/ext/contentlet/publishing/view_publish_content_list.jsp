@@ -16,6 +16,7 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI" %>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <script type="text/javascript">
 
     dojo.require("dijit.form.Button");
@@ -25,7 +26,7 @@
     dojo.require("dotcms.dojo.push.PushHandler");
     var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
 
-    <% Boolean enterprise = (LicenseUtil.getLevel() > 199); %>
+    <% Boolean enterprise = (LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level); %>
     var enterprise = <%=enterprise%>;
     <%
     PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();

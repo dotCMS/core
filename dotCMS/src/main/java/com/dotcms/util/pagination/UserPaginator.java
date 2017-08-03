@@ -49,8 +49,8 @@ public class UserPaginator implements Paginator<Map<String, Object>> {
     }
 
     @Override
-    public Collection<Map<String, Object>> getItems(User user, String filter, boolean showArchived, int limit, int offset,
-                                                    String orderby, OrderDirection direction) {
+    public Collection<Map<String, Object>> getItems(User user, String filter, int limit, int offset,
+                                                    String orderby, OrderDirection direction, Map<String, Object> extraParams) {
 
         return getItems(user, filter, limit, offset);
     }
