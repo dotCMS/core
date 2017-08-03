@@ -70,7 +70,7 @@
         var language;
 
         <%for (Language language: languages) {%>
-                language = new Array(<%= language.getId() %>, "<%= language.getLanguageCode() %>", "<%= language.getCountryCode() %>", "<%= language.getLanguage() %>", "<%= language.getCountry() %>", "<%= LanguageUtil.getLocale(language.getLanguageCode(), language.getCountryCode()) %>");
+                language = new Array(<%= language.getId() %>, "<%= language.getLanguageCode() %>", "<%= language.getCountryCode() %>", "<%= language.getLanguage() %>", "<%= language.getCountry() %>", "<%= LanguageUtil.getLiteralLocale(language.getLanguageCode(), language.getCountryCode()) %>");
                 languages[languages.length] = language;
         <%      } %>
 

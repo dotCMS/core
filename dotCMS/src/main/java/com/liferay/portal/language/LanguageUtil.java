@@ -561,10 +561,11 @@ public class LanguageUtil {
 	 * @param countryCode
 	 * @return
 	 */
-	public static String getLocale(String languageCode, String countryCode){
-	    if(countryCode==null || countryCode.isEmpty()){
-	        countryCode = Config.getStringProperty("language.default.country.mapping." + languageCode, languageCode);
-	    }
-	    return languageCode + "_" + countryCode;
-	}
+    public static String getLiteralLocale(final String languageCode, final String countryCode) {
+        final String newCountryCode = (countryCode == null || countryCode.isEmpty()) ? Config
+                        .getStringProperty("language.default.country.mapping." + languageCode,
+                                        languageCode)
+                        : countryCode;
+        return languageCode + "_" + newCountryCode;
+    }
 }

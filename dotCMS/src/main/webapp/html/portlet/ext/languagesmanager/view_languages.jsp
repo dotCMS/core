@@ -81,7 +81,7 @@ var pushHandler = new dotcms.dojo.push.PushHandler('Push Publish');
 			    final String strLanguage = ((com.dotmarketing.portlets.languagesmanager.model.Language)list.get(l)).getLanguage();
 			    final String strLangCode = ((com.dotmarketing.portlets.languagesmanager.model.Language)list.get(l)).getLanguageCode();
 			    final String strCountryCode = ((com.dotmarketing.portlets.languagesmanager.model.Language)list.get(l)).getCountryCode();
-			    final String langIcon = LanguageUtil.getLocale(strLangCode, strCountryCode);
+			    final String langIcon = LanguageUtil.getLiteralLocale(strLangCode, strCountryCode);
 			%>
 			<td id="tdLanguage-<%=String.valueOf(longLanguageId)%>" class="tdLanguage" 
                 data-href-edit-variables="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">

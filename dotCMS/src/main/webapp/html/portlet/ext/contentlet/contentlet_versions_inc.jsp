@@ -90,7 +90,7 @@
 			<%= LanguageUtil.get(pageContext, "Working-Version") %>
 		<% } %>
 		</td>
-		<td> <img src="/html/images/languages/<%= LanguageUtil.getLocale(langV.getLanguageCode(), langV.getCountryCode()) %>.gif"/>&nbsp;<%=langV.getLanguage()+"&nbsp;"+(UtilMethods.isSet(langV.getCountryCode()) ? ("(" + langV.getCountryCode() + ")&nbsp;") : StringPool.BLANK) %></td>
+		<td> <img src="/html/images/languages/<%= LanguageUtil.getLiteralLocale(langV.getLanguageCode(), langV.getCountryCode()) %>.gif"/>&nbsp;<%=langV.getLanguage()+"&nbsp;"+(UtilMethods.isSet(langV.getCountryCode()) ? ("(" + langV.getCountryCode() + ")&nbsp;") : StringPool.BLANK) %></td>
 		<td><a  href="javascript: editVersion ('<%= vinode %>');"><%= title %></a></td>
 <%
 	String modUserName = "";
