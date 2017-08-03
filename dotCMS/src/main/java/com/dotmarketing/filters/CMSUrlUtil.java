@@ -289,7 +289,7 @@ public class CMSUrlUtil {
 	public boolean isVanityUrlFiltered(final String url) {
 
 		if (null != url) {
-			for (String vanityFiltered : VANITY_FILTERED_LIST_ARRAY) {
+			for (final String vanityFiltered : VANITY_FILTERED_LIST_ARRAY) {
 
 				if (url.startsWith(vanityFiltered)) {
 

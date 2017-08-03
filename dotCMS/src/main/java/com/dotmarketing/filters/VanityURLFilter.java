@@ -70,11 +70,10 @@ public class VanityURLFilter implements Filter {
         //Get the URI from the request and check for possible XSS hacks
         final String uri         = this.urlUtil.getURIFromRequest(request);
         final boolean isFiltered = this.urlUtil.isVanityUrlFiltered (uri);
+        //Getting the site form the request
+        final Host site = this.getHost(request, uri); // note: this should be call here to include the host in the request
 
         if (!isFiltered) {
-
-            //Getting the site form the request
-            final Host site = this.getHost(request, uri);
 
             //Get the user language
             final long languageId = this.languageWebAPI.getLanguage(request).getId();
