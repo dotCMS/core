@@ -44,7 +44,7 @@ public class UserResourceTest {
         Response responseExpected = Response.ok(new ResponseEntityView(users)).build();
 
         final PaginationUtil paginationUtil = mock(PaginationUtil.class);
-        when(paginationUtil.getPage(request, user, filter, false, page, perPage )).thenReturn(responseExpected);
+        when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
 
 
         final UserResource resource = new UserResource( webResource, paginationUtil );

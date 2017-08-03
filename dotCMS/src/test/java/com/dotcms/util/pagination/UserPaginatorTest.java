@@ -85,7 +85,7 @@ public class UserPaginatorTest {
         when(userAPI.getUsersByName( filter, offset, limit, user, false ))
                 .thenReturn( users );
 
-        Collection<Map<String, Object>> items = userPaginator.getItems(user, filter, showArchived, limit, offset, null, null);
+        Collection<Map<String, Object>> items = userPaginator.getItems(user, filter, limit, offset);
 
         assertEquals(usersMap, items);
     }
@@ -114,7 +114,7 @@ public class UserPaginatorTest {
                 .thenThrow(new DotDataException(""));
 
         try {
-            userPaginator.getItems(user, filter, showArchived, limit, offset, null, null);
+            userPaginator.getItems(user, filter, limit, offset);
             assertTrue(false);
         } catch (DotRuntimeException e) {
             assertTrue(true);

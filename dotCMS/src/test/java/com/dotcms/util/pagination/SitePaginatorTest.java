@@ -12,6 +12,9 @@ import static org.mockito.Mockito.when;
 import com.liferay.portal.model.User;
 
 import java.util.Collection;
+import java.util.Map;
+
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * test {@link SitePaginator}
@@ -21,37 +24,106 @@ public class SitePaginatorTest {
     HostAPI hostAPI;
     SitePaginator sitePaginator;
 
+    PaginatedArrayList<Host> hosts;
+    int totalRecords;
+
     @Before
     public void init(){
         hostAPI = mock(HostAPI.class);
         sitePaginator = new SitePaginator( hostAPI );
-    }
 
-    @Test
-    public void testGetItems(){
-        String filter = "filter";
-        boolean showArchived = true;
-        int limit = 5;
-        int offset = 4;
-        User user = new User();
-        int totalRecords = 5;
+        totalRecords = 5;
 
-        PaginatedArrayList<Host> hosts = new PaginatedArrayList<>();
+        hosts = new PaginatedArrayList<>();
         hosts.setTotalResults( totalRecords );
         hosts.add( mock( Host.class ) );
         hosts.add( mock( Host.class ) );
         hosts.add( mock( Host.class ) );
         hosts.add( mock( Host.class ) );
         hosts.add( mock( Host.class ) );
+    }
 
-        when(hostAPI.search( filter, showArchived, false, limit, offset, user, false ))
+    @Test
+    public void testGetItems(){
+        final String filter = "filter";
+        final int limit = 5;
+        final int offset = 4;
+        final User user = new User();
+
+        when(hostAPI.search( filter, false, limit, offset, user, false ))
                 .thenReturn( hosts );
 
-        Collection<Host> items = sitePaginator.getItems(user, filter, showArchived, limit, offset, null, null);
+        final Collection<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null);
 
         assertEquals(totalRecords, sitePaginator.getTotalRecords(filter));
         assertEquals(hosts, items);
     }
 
+    public void testGetItemsWithArchived(){
+        final String filter = "filter";
+        final boolean showArchived = true;
+        final int limit = 5;
+        final int offset = 4;
+        final User user = new User();
 
+        when(hostAPI.search( filter, showArchived,false, limit, offset, user, false ))
+                .thenReturn( hosts );
+
+        final Collection<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
+                map(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived));
+
+        assertEquals(totalRecords, sitePaginator.getTotalRecords(filter));
+        assertEquals(hosts, items);
+    }
+
+    public void testGetItemsWithStopped(){
+        final String filter = "filter";
+        final boolean showStopped = true;
+        final int limit = 5;
+        final int offset = 4;
+        final User user = new User();
+
+        when(hostAPI.searchByStopped( filter, !showStopped,false, limit, offset, user, false ))
+                .thenReturn( hosts );
+
+        final Collection<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
+                map(SitePaginator.LIVE_PARAMETER_NAME, !showStopped));
+
+        assertEquals(totalRecords, sitePaginator.getTotalRecords(filter));
+        assertEquals(hosts, items);
+    }
+
+    public void testGetItemsWithStoppedAndArchived(){
+        final String filter = "filter";
+        final boolean showArchived = true;
+        final boolean showStopped = true;
+        final int limit = 5;
+        final int offset = 4;
+        final User user = new User();
+
+        when(hostAPI.search( filter, showArchived, !showStopped,false, limit, offset, user, false ))
+                .thenReturn( hosts );
+
+        final Collection<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
+                map(SitePaginator.ARCHIVED_PARAMETER_NAME, showArchived, SitePaginator.LIVE_PARAMETER_NAME, !showStopped));
+
+        assertEquals(totalRecords, sitePaginator.getTotalRecords(filter));
+        assertEquals(hosts, items);
+    }
+
+    public void testGetItemsWithSystem(){
+        final String filter = "filter";
+        final int limit = 5;
+        final int offset = 4;
+        final User user = new User();
+
+        when(hostAPI.search( filter,true, limit, offset, user, false ))
+                .thenReturn( hosts );
+
+        final Collection<Host> items = sitePaginator.getItems(user, filter, limit, offset, null, null,
+                map(SitePaginator.SYSTEM_PARAMETER_NAME, true));
+
+        assertEquals(totalRecords, sitePaginator.getTotalRecords(filter));
+        assertEquals(hosts, items);
+    }
 }
