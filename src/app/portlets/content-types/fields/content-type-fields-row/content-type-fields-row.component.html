@@ -11,11 +11,11 @@
         data-drag-type="target"
         dragula="fields-bag">
        
-        <content-type-field-dragabble-item
+        <content-type-field-dragabble-item 
             *ngFor="let field of column.fields"
             [field]="field"
-            (remove)="removeField($event)">
-
+            (remove)="removeField($event)"
+            (edit)="this.editField.emit(field)">
         </content-type-field-dragabble-item>
     </span>
 </div>

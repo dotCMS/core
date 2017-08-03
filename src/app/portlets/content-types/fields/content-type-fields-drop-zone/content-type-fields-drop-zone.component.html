@@ -6,13 +6,19 @@
     <ng-template ngFor let-row [ngForOf]="fieldRows">
         <content-type-fields-row
             *ngIf="row.columns.length"
-            [fieldRow]="row">
+            [fieldRow]="row"
+            (editField)="editField($event)">
         </content-type-fields-row>
     </ng-template>
 
     <div *ngIf="!fieldRows.length"
          class="content-type-fields-drop-zone__message">Drop fields here
     </div>
-</div>  
-
-
+</div>
+<p-dialog [header]="formData && formData.id ? i18nMessages['edit'] : i18nMessages['created']" [(visible)]="displayDialog" modal="modal" width="300" [responsive]="true">
+    <content-type-fields-properties-form #fieldPropertiesForm (fieldProperties)="saveFields($event)" [formFieldData]="formData"></content-type-fields-properties-form>
+    <p-footer>
+        <button type="button" pButton (click)="fieldPropertiesForm.saveFieldProperties(fieldPropertiesForm.form.value, fieldPropertiesForm.form.valid)" [label]="i18nMessages['Save']"></button>
+        <button type="button" pButton (click)="removeFieldsWithoutId()" [label]="i18nMessages['Cancel']"></button>
+    </p-footer>
+</p-dialog>

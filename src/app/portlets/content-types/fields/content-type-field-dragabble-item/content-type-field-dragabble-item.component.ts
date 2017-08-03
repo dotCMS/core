@@ -14,4 +14,5 @@ import { Field } from '../';
 export class ContentTypesFieldDragabbleItemComponent {
     @Input() field: Field;
     @Output() remove: EventEmitter<Field> = new EventEmitter();
+    @Output() edit: EventEmitter<Field> = new EventEmitter();
 }

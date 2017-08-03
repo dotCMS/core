@@ -1,0 +1,11 @@
+<form [formGroup]="form" (ngSubmit)="saveFieldProperties()" novalidate>
+    <div class="ui-g">
+        <div class="ui-g-12">
+            <div class="form__group">
+                <label class="form__label">Name</label>
+                <input pInputText type="text" formControlName="name">
+                <field-validation-message message="Name is required" [submitted]="submitted" [field]="form.controls.name"></field-validation-message>
+            </div>
+        </div>
+    </div>
+</form>

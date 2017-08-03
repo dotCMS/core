@@ -27,7 +27,8 @@ import {
     ContentTypeFieldsDropZoneComponent,
     ContentTypeFieldsRowComponent,
     ContentTypesFieldDragabbleItemComponent,
-    ContentTypeFieldsRowListComponent
+    ContentTypeFieldsRowListComponent,
+    ContentTypeFieldsPropertiesFormComponent
 } from './fields';
 import {
     TabViewModule,
@@ -36,7 +37,8 @@ import {
     ButtonModule,
     InputTextModule,
     SplitButtonModule,
-    ConfirmDialogModule
+    ConfirmDialogModule,
+    DialogModule
 } from 'primeng/primeng';
 
 @NgModule({
@@ -45,12 +47,13 @@ import {
         ContentTypesEditComponent,
         ContentTypesFieldDragabbleItemComponent,
         ContentTypesFieldsListComponent,
+        ContentTypeFieldsPropertiesFormComponent,
         ContentTypesFormComponent,
         ContentTypesLayoutComponent,
         ContentTypesPortletComponent,
         ContentTypeFieldsDropZoneComponent,
         ContentTypeFieldsRowComponent,
-        ContentTypeFieldsRowListComponent
+        ContentTypeFieldsRowListComponent,
     ],
     exports: [
         ContentTypesPortletComponent
@@ -62,6 +65,7 @@ import {
         DragulaModule,
         DropdownModule,
         ConfirmDialogModule,
+        DialogModule,
         FieldValidationMessageModule,
         FormsModule,
         InputTextModule,

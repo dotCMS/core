@@ -15,7 +15,7 @@ export class FieldDragDropService {
 
     constructor(private dragulaService: DragulaService) {
         dragulaService.dropModel.subscribe(value => {
-            this._fieldDrop.next();
+            this._fieldDrop.next(value);
         });
 
         dragulaService.removeModel.subscribe(value => {
