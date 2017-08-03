@@ -66,10 +66,23 @@ public class HibernateUtil {
 	public HibernateUtil(SessionFactory sessionFac){
 		this.sessionFactory = sessionFac;
 	}
-	
+
+	public enum TransactionListenerStatus {
+		ENABLED, DISABLED;
+	}
+
 	public static final String addToIndex="-add-to-index";
 	public static final String removeFromIndex="-remove-from-index";
 
+	/**
+	 * Status for listeners of thread-local -based transactions. This allows to control whether listeners are appended or not (ENABLED by default)
+	 */
+	private static final ThreadLocal< TransactionListenerStatus > listenersStatus = new ThreadLocal< TransactionListenerStatus >(){
+        protected TransactionListenerStatus initialValue() {
+            return TransactionListenerStatus.ENABLED;
+        }
+    };
+	
 	private static final ThreadLocal< Map<String,DotRunnable> > commitListeners=new ThreadLocal<Map<String,DotRunnable>>() {
 	    protected java.util.Map<String,DotRunnable> initialValue() {
 	        return new LinkedHashMap<String,DotRunnable>();
@@ -702,33 +715,52 @@ public class HibernateUtil {
 		}
 	}
 
+	/**
+	 * Returns the listeners status currently associated to the thread-local -based transaction (ENABLED by default)
+	 */
+	public static TransactionListenerStatus getTransactionListenersStatus() {
+		return listenersStatus.get();
+	}
+	/**
+	 * Allows to override the status of the listeners associated to the current thread-local -based transaction (DISABLED if overriden)
+	 * When using TransactionListenerStatus.DISABLED, client code should be aware of controlling the operations that are suppossed to be done by listeners
+	 * @param status TransactionListenerStatus
+	 */
+	public static void setTransactionListenersStatus(TransactionListenerStatus status) {
+		listenersStatus.set(status);
+	}
+	
 	public static void addCommitListener(DotRunnable listener) throws DotHibernateException {
 	    addCommitListener(UUIDGenerator.generateUuid(),listener);
 	}
 
 	public static void addCommitListener(String tag, DotRunnable listener) throws DotHibernateException {
-	    try {
-    	    if(getSession().connection().getAutoCommit())
-    	        listener.run();
-    	    else {
-    	    	commitListeners.get().put(tag,listener);
-    	    }
-	    }
-	    catch(Exception ex) {
-	        throw new DotHibernateException(ex.getMessage(),ex);
-	    }
+		if (getTransactionListenersStatus() != TransactionListenerStatus.DISABLED) {
+			try {
+	    	    if(getSession().connection().getAutoCommit())
+	    	        listener.run();
+	    	    else {
+	    	    	commitListeners.get().put(tag,listener);
+	    	    }
+		    }
+		    catch(Exception ex) {
+		        throw new DotHibernateException(ex.getMessage(),ex);
+		    }
+		}
 	}
 
 	public static void addRollbackListener(DotRunnable listener) throws DotHibernateException{
-        try {
-            if(getSession().connection().getAutoCommit())
-                listener.run();
-            else
-                rollbackListeners.get().add(listener);
-        }
-        catch(Exception ex) {
-            throw new DotHibernateException(ex.getMessage(),ex);
-        }
+		if (getTransactionListenersStatus() != TransactionListenerStatus.DISABLED) {
+	        try {
+	            if(getSession().connection().getAutoCommit())
+	                listener.run();
+	            else
+	                rollbackListeners.get().add(listener);
+	        }
+	        catch(Exception ex) {
+	            throw new DotHibernateException(ex.getMessage(),ex);
+	        }
+		}
     }
 
 
