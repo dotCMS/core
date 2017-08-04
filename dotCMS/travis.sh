@@ -1,12 +1,12 @@
 #!/bin/bash
 
-echo '=============================='
+echo "=============================="
 pwd
 ls -al
-echo '=============================='
+echo "=============================="
 
-./gradlew clean
-./gradlew compileJava
+./dotCMS/gradlew clean
+./dotCMS/gradlew compileJava
 
 if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
   echo "--------------------------------------------------"
@@ -22,7 +22,7 @@ if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
     -Dsonar.github.oauth=$SONAR_GITHUB_TOKEN \
     -Dsonar.github.repository=dotCMS/core \
     -Dsonar.scanner.skip=false \
-    -Dsonar.java.binaries=build/classes/main
+    -Dsonar.java.binaries=dotCMS/build/classes/main
 
 else
   sonar-scanner \
