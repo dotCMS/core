@@ -19,6 +19,7 @@ jdk:
 - oraclejdk8
 before_install:
 - chmod +x dotCMS/travis.sh
+- chmod +x dotCMS/gradlew
 before_script:
  - "echo $JAVA_OPTS"
  - "export JAVA_OPTS=-Xmx1024m"

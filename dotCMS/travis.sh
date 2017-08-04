@@ -1,7 +1,7 @@
 #!/bin/bash
 
-gradlew clean
-gradlew compileJava
+./gradlew clean
+./gradlew compileJava
 
 if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
   echo "--------------------------------------------------"
