@@ -1,5 +1,10 @@
 #!/bin/bash
 
+echo '=============================='
+pwd
+ls -al
+echo '=============================='
+
 ./gradlew clean
 ./gradlew compileJava
 
