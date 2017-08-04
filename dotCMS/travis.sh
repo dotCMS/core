@@ -13,6 +13,8 @@ echo "...."
 ls -al dotCMS/
 echo "...."
 ls -al dotCMS/build
+ls -al dotCMS/build/classes
+ls -al dotCMS/build/classes/main
 echo "=============================="
 
 if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
