@@ -60,12 +60,12 @@ public class BrowserTreeHelper {
     public List<Treeable> getTreeablesUnder(String siteName, User user, String uri) throws DotDataException, DotSecurityException {
 
         List<Treeable> assets = new ArrayList<Treeable>();
-        Host host = hostAPI.findByName(siteName,user,true);
+        Host host = hostAPI.findByName(siteName,user,false);
         if(uri.equals("/")){
-            assets.addAll(host.getChildren(user,true,true,false,true));
+            assets.addAll(host.getChildren(user,true,true,false,false));
         }else{
-            Folder folder = folderAPI.findFolderByPath(uri,host,user,true);
-            assets.addAll(folder.getChildren(user,true,true,false,true));
+            Folder folder = folderAPI.findFolderByPath(uri,host,user,false);
+            assets.addAll(folder.getChildren(user,true,true,false,false));
         }
 
         return assets

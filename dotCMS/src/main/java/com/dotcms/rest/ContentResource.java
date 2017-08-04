@@ -1084,6 +1084,9 @@ public class ContentResource {
 			if(st!=null && InodeUtils.isSet(st.getInode())) {
 				// basic data
 				contentlet.setStructureInode(st.getInode());
+				if(!UtilMethods.isSet(contentlet.getStructureInode())){
+					Logger.error(this, "should not be here");
+				}
 				if(map.containsKey("languageId")) {
 					contentlet.setLanguageId(Long.parseLong((String)map.get("languageId")));
 				}
