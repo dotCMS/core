@@ -2,8 +2,6 @@ package com.dotcms.util;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.liferay.portal.language.LanguageException;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.util.LocaleUtil;
 
 import java.io.Serializable;

@@ -569,8 +569,7 @@ public class LanguageUtil {
     }
 
     public static String getDefaultCountry(final String languageCode) {
-        final String defaultCountryCode = Config.getStringProperty("language.default.country.mapping." + languageCode,languageCode);
-        return defaultCountryCode;
+        return Config.getStringProperty("language.default.country.mapping." + languageCode,languageCode);
     }
 
     public static Language getUserLanguage(final Language lang, final Locale locale) {
