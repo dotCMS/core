@@ -6,7 +6,14 @@ ls -al
 echo "=============================="
 
 ./dotCMS/gradlew -p dotCMS/ clean
-./dotCMS/gradlew -p . compileJava
+./dotCMS/gradlew -p dotCMS/ compileJava
+
+echo "=============================="
+echo "...."
+ls -al dotCMS/
+echo "...."
+ls -al dotCMS/build
+echo "=============================="
 
 if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
   echo "--------------------------------------------------"
