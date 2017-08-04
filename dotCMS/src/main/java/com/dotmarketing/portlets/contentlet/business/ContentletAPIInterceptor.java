@@ -1880,6 +1880,23 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
+	public boolean isInodeIndexed(String inode, boolean live, boolean working) {
+		for (ContentletAPIPreHook pre : preHooks) {
+			boolean preResult = pre.isInodeIndexed(inode, live, working);
+			if (!preResult) {
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException(
+						"The following prehook failed " + pre.getClass().getName());
+			}
+		}
+		boolean c = conAPI.isInodeIndexed(inode, live, working);
+		for (ContentletAPIPostHook post : postHooks) {
+			post.isInodeIndexed(inode, live, working, c);
+		}
+		return c;
+	}
+
+	@Override
 	public boolean isInodeIndexed(String inode,boolean live) {
         for(ContentletAPIPreHook pre : preHooks){
             boolean preResult = pre.isInodeIndexed(inode,live);

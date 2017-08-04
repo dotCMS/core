@@ -40,6 +40,7 @@ import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.tools.view.context.ChainedContext;
 
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotmarketing.beans.ContainerStructure;
@@ -63,6 +64,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.ClickstreamFactory;
 import com.dotmarketing.filters.CMSFilter;
+import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -112,8 +114,8 @@ public abstract class VelocityServlet extends HttpServlet {
 	protected void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
 
 		final String uri =URLDecoder.decode(
-				(req.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE)!=null) 
-					? (String) req.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE) 
+				(req.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE)!=null)
+					? (String) req.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE)
 							: req.getRequestURI()
 				, "UTF-8");
 	
@@ -156,12 +158,12 @@ public abstract class VelocityServlet extends HttpServlet {
         }
 
 		
-		if (DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() < 299) {
+		if (DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() <= LicenseLevel.PROFESSIONAL.level) {
 			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
 			return;
 		}
 
-		if (DbConnectionFactory.isOracle() && LicenseUtil.getLevel() < 399) {
+		if (DbConnectionFactory.isOracle() && LicenseUtil.getLevel() <= LicenseLevel.PRIME.level) {
 			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
 			return;
 		}
@@ -179,7 +181,7 @@ public abstract class VelocityServlet extends HttpServlet {
 
 			if(uri==null){
 				response.sendError(500, "VelocityServlet called without running through the CMS Filter");
-				Logger.error(this.getClass(), "You cannot call the VelocityServlet without passing the requested url via a  requestAttribute called  " + CMSFilter.CMS_FILTER_URI_OVERRIDE);
+				Logger.error(this.getClass(), "You cannot call the VelocityServlet without passing the requested url via a  requestAttribute called  " + Constants.CMS_FILTER_URI_OVERRIDE);
 				return;
 			}
 
@@ -654,15 +656,15 @@ public abstract class VelocityServlet extends HttpServlet {
 		// to check user has permission to write on this page
         boolean hasWritePermOverHTMLPage = permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_WRITE, user );
         boolean hasPublishPermOverHTMLPage = permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_PUBLISH, user );
-        boolean hasRemotePublishPermOverHTMLPage = hasPublishPermOverHTMLPage && LicenseUtil.getLevel() > 199;
+        boolean hasRemotePublishPermOverHTMLPage = hasPublishPermOverHTMLPage && LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level;
         boolean hasEndPoints = UtilMethods.isSet( receivingEndpoints ) && !receivingEndpoints.isEmpty();
 
         context.put( "EDIT_HTMLPAGE_PERMISSION", new Boolean( hasWritePermOverHTMLPage ) );
         context.put( "PUBLISH_HTMLPAGE_PERMISSION", new Boolean( hasPublishPermOverHTMLPage ) );
         context.put( "REMOTE_PUBLISH_HTMLPAGE_PERMISSION", new Boolean( hasRemotePublishPermOverHTMLPage ) );
         context.put( "REMOTE_PUBLISH_END_POINTS", new Boolean( hasEndPoints ) );
-        context.put( "canAddForm", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
-        context.put( "canViewDiff", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
+        context.put( "canAddForm", Boolean.valueOf( LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level ? true : false ) );
+        context.put( "canViewDiff", Boolean.valueOf( LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level ? true : false ) );
 
         context.put( "HTMLPAGE_ASSET_STRUCTURE_TYPE", htmlPage.isContent() ? ((Contentlet)htmlPage).getStructureInode() : APILocator.getHTMLPageAssetAPI().DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
         context.put("HTMLPAGE_IS_CONTENT", htmlPage.isContent());
@@ -896,7 +898,7 @@ public abstract class VelocityServlet extends HttpServlet {
         boolean hasAddChildrenPermOverHTMLPage = permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_CAN_ADD_CHILDREN, backendUser );
         boolean hasWritePermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_WRITE, backendUser);
         boolean hasPublishPermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_PUBLISH, backendUser);
-        boolean hasRemotePublishPermOverHTMLPage = hasPublishPermOverHTMLPage && LicenseUtil.getLevel() > 199;
+        boolean hasRemotePublishPermOverHTMLPage = hasPublishPermOverHTMLPage && LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level;
         boolean hasEndPoints = UtilMethods.isSet( receivingEndpoints ) && !receivingEndpoints.isEmpty();
 
         context.put( "ADD_CHILDREN_HTMLPAGE_PERMISSION", new Boolean( hasAddChildrenPermOverHTMLPage ) );
@@ -904,8 +906,8 @@ public abstract class VelocityServlet extends HttpServlet {
         context.put( "PUBLISH_HTMLPAGE_PERMISSION", new Boolean( hasPublishPermOverHTMLPage ) );
         context.put( "REMOTE_PUBLISH_HTMLPAGE_PERMISSION", new Boolean( hasRemotePublishPermOverHTMLPage ) );
         context.put( "REMOTE_PUBLISH_END_POINTS", new Boolean(hasEndPoints) );
-        context.put( "canAddForm", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
-        context.put( "canViewDiff", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
+        context.put( "canAddForm", Boolean.valueOf( LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level ? true : false ) );
+        context.put( "canViewDiff", Boolean.valueOf( LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level ? true : false ) );
         
         context.put( "HTMLPAGE_ASSET_STRUCTURE_TYPE", htmlPage.isContent() ? ((Contentlet)htmlPage).getStructureInode() : "0");
         context.put( "HTMLPAGE_IS_CONTENT" , htmlPage.isContent());

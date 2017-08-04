@@ -1,8 +1,14 @@
 package com.dotcms.publisher.pusher;
 
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.type.pushpublish.AllEndpointsFailureEvent;
+import com.dotcms.system.event.local.type.pushpublish.AllEndpointsSuccessEvent;
+import com.dotcms.system.event.local.type.pushpublish.SingleEndpointFailureEvent;
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.BundleXMLAsc;
 import com.dotcms.enterprise.publishing.remote.bundler.CategoryBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.CategoryFullBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentTypeBundler;
@@ -87,7 +93,8 @@ public class PushPublisher extends Publisher {
 
     private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
     private PublishingEndPointAPI publishingEndPointAPI = APILocator.getPublisherEndPointAPI();
-    
+    private LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
+
     private static final String PROTOCOL_HTTP = "http";
     private static final String PROTOCOL_HTTPS = "https";
     private static final String HTTP_PORT = "80";
@@ -95,7 +102,7 @@ public class PushPublisher extends Publisher {
 
     @Override
     public PublisherConfig init ( PublisherConfig config ) throws DotPublishingException {
-        if ( LicenseUtil.getLevel() < 300 ) {
+        if ( LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level ) {
             throw new RuntimeException( "need an enterprise pro license to run this bundler" );
         }
         
@@ -120,7 +127,7 @@ public class PushPublisher extends Publisher {
 	 */
     @Override
     public PublisherConfig process ( final PublishStatus status ) throws DotPublishingException {
-		if(LicenseUtil.getLevel()<300) {
+		if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
 	        throw new RuntimeException("An Enterprise Pro License is required to run this publisher.");
         }
 	    PublishAuditHistory currentStatusHistory = null;
@@ -260,13 +267,22 @@ public class PushPublisher extends Publisher {
 				PushPublishLogger.log(this.getClass(), "Status Update: Bundle sent");
 				pubAuditAPI.updatePublishAuditStatus(this.config.getId(),
 						PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY, currentStatusHistory);
+
+				//Triggering event listener when all endpoints are successfully sent
+				localSystemEventsAPI.asyncNotify(new AllEndpointsSuccessEvent());
 			} else {
 				if (errorCounter == totalEndpoints) {
 					pubAuditAPI.updatePublishAuditStatus(this.config.getId(),
 							PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS, currentStatusHistory);
+
+					//Triggering event listener when all endpoints failed during the process
+					localSystemEventsAPI.asyncNotify(new AllEndpointsFailureEvent());
 				} else {
 					pubAuditAPI.updatePublishAuditStatus(this.config.getId(),
 							PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS, currentStatusHistory);
+
+					//Triggering event listener when at least one endpoint is successfully sent but others failed
+					localSystemEventsAPI.asyncNotify(new SingleEndpointFailureEvent());
 				}
 			}
 			return this.config;
@@ -344,13 +360,10 @@ public class PushPublisher extends Publisher {
         if ( buildUsers ) {
             list.add( UserBundler.class );
         }
-        if ( buildCategories ) {
-            list.add( CategoryBundler.class );
-        }
         if ( buildOSGIBundle ) {
             list.add( OSGIBundler.class );
         }
-        if ( buildAsset ) {
+        if ( buildAsset || buildLanguages) {
             list.add( DependencyBundler.class );
             list.add( HostBundler.class );
             list.add( ContentBundler.class );
@@ -368,15 +381,17 @@ public class PushPublisher extends Publisher {
             list.add( LanguageBundler.class );
         } else {
 			list.add(DependencyBundler.class);
-			if (buildLanguages) {
-				list.add(LanguageVariablesBundler.class);
-				list.add(LanguageBundler.class);
-			} else if (buildRules) {
+			if (buildRules) {
 				list.add(HostBundler.class);
 				list.add(RuleBundler.class);
 			}
         }
         list.add( BundleXMLAsc.class );
+        if ( buildCategories ) { // If we are PP from the categories portlet.
+            list.add( CategoryFullBundler.class );
+        } else { // If we are PP from anywhere else, for example a contentlet, site, folder, etc.
+            list.add(CategoryBundler.class);
+        }
         return list;
     }
 

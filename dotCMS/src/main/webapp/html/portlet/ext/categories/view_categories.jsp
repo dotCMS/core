@@ -6,11 +6,12 @@
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint" %>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI" %>
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@include file="/html/portlet/ext/categories/init.jsp"%>
 <%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
 
 <%
-	boolean enterprise = LicenseUtil.getLevel() > 199;
+	boolean enterprise = LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level;
 
 	PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 	List<PublishingEndPoint> sendingEndpointsList = pepAPI.getReceivingEndPoints();
@@ -71,9 +72,10 @@
 
     dojo.connect(dojo.global, "onhashchange", refresh);
 
+    var backOrForward = false;
+    var actions = "";
 
     function refresh() {
-
         var hashReceived = decodeURIComponent(dojo.hash());
         var inode = "0";
         var name = "<%= LanguageUtil.get(pageContext, "Top-Level") %>";
@@ -87,10 +89,17 @@
             hashToSend = hashReceived;
         }
 
-        buildCrumbs(inode, name);
-        doSearchHash(hashToSend);
-        refreshCrumbs();
+        if (actions == "") {
+            // browser back or forward pressed
+			backOrForward = true;
+        }
 
+        buildCrumbs(inode, name);
+		doSearchHash(hashToSend);
+		refreshCrumbs();
+
+        actions = "";
+        backOrForward = false;
     }
 
     var grid;
@@ -412,12 +421,20 @@
         dojo.byId("savedMessage").innerHTML = "";
     }
 
-
+    var previousCrumbs = new Array();
     var myCrumbs = new Array();
 
     function refreshCrumbs() {
-        if(myCrumbs.length ==0){
-            myCrumbs[0] = "0---------<%= LanguageUtil.get(pageContext, "Top-Level") %>";
+        var crumbsArray = new Array();
+
+        if (backOrForward) {
+            crumbsArray = previousCrumbs;
+        } else {
+            crumbsArray = myCrumbs;
+        }
+
+        if (crumbsArray.length ==0) {
+            crumbsArray[0] = "0---------<%= LanguageUtil.get(pageContext, "Top-Level") %>";
         }
 
         //dojo.empty("ulNav");
@@ -428,11 +445,11 @@
             }
         );
 
-        for(i=0;i<myCrumbs.length;i++){
-            var inode = myCrumbs[i].split("---------")[0];
-            var name = myCrumbs[i].split("---------")[1];
+        for (i = 0; i < crumbsArray.length; i++) {
+            var inode = crumbsArray[i].split("---------")[0];
+            var name = crumbsArray[i].split("---------")[1];
 
-            if(i+1 == myCrumbs.length){
+            if (i + 1 == crumbsArray.length) {
                 dojo.place("<li  style=\"cursor:pointer\" i class=\"lastCrumb\" ><b>"+name+"</b></li>", "ulNav", "last");
             }
             else{
@@ -458,22 +475,39 @@
         }
         currentCatName = name;
 
-        var newCrumbs = new Array();
-        for(i=0;i<myCrumbs.length;i++){
-            var ix = myCrumbs[i].split("---------")[0];
-            var nx = myCrumbs[i].split("---------")[1];
-            if(inode == ix){
+		var newCrumbs = new Array();
+		var crumbsArray = new Array();
+
+		if (backOrForward) {
+		    crumbsArray = previousCrumbs;
+		} else {
+		    crumbsArray = myCrumbs;
+		}
+
+        for (i = 0; i < crumbsArray.length; i++) {
+            var ix = crumbsArray[i].split("---------")[0];
+            var nx = crumbsArray[i].split("---------")[1];
+            if(inode == ix) {
                 break;
             }
-            newCrumbs[i] = myCrumbs[i];
+            newCrumbs[i] = crumbsArray[i];
         }
+
         newCrumbs[newCrumbs.length] = inode + "---------" + name;
-        myCrumbs = newCrumbs;
+        if (backOrForward) {
+            previousCrumbs = newCrumbs;
+            myCrumbs = previousCrumbs;
+		} else {
+            myCrumbs = newCrumbs;
+		}
+
         dijit.byId('catFilter').attr('value', '');
-	}
+    }
 
     // drill down of a category, load the children, properties
     function drillDown(index) {
+        previousCrumbs = myCrumbs;
+        actions = "breadcrums";
 
         var inode = grid.store.getValue(grid.getItem(index), 'inode');
         var name = grid.store.getValue(grid.getItem(index), 'category_name');
@@ -502,6 +536,8 @@
 
     // roll up of a category, load the children, properties
     function rollUp(inode, name) {
+        previousCrumbs = myCrumbs;
+        actions = "breadcrums";
 
         prepareCrumbs(inode, name);
 
@@ -565,7 +601,7 @@
                         }
 
                         dia.hide();
-                        doSearch();
+                        doSearch(false, true);
                         grid.selection.clear();
                     }
                 });
@@ -599,7 +635,7 @@
                         }
 
                         grid.selection.clear();
-                        doSearch();
+                        doSearch(false, true);
                         dia.hide();
                     }
                 });
@@ -633,7 +669,7 @@
         var keywords = dojo.byId(prefix+"CatKeywords").value;
         CategoryAjax.saveOrUpdateCategory(save, currentInodeOrIdentifier, name, velVar, key, keywords, {
             callback:function(result) {
-                doSearch();
+                doSearch(false, true);
                 grid.selection.clear();
 
                 var message = "";
@@ -914,7 +950,7 @@
 					</div>
 					<div class="portlet-toolbar__actions-secondary">
 						<div class="inline-form">
-							<input  name="catFilter" id="catFilter" onkeyup="doSearch();" type="text" dojoType="dijit.form.TextBox" placeholder="<%= LanguageUtil.get(pageContext, "message.filter.categories") %>">
+							<input  name="catFilter" id="catFilter" onkeyup="doSearch(false, true);" type="text" dojoType="dijit.form.TextBox" placeholder="<%= LanguageUtil.get(pageContext, "message.filter.categories") %>">
 							<button dojoType="dijit.form.Button" onclick="clearCatFilter()" type="button"><%= LanguageUtil.get(pageContext, "Clear") %></button>
 						</div>
 					</div>

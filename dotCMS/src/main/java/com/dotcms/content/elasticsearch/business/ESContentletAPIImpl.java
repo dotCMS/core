@@ -1,9 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import com.dotcms.keyvalue.model.KeyValue;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -22,6 +18,7 @@ import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.jboss.util.Strings;
+import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.services.VanityUrlServices;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -46,6 +43,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.DotRunnable;
+import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -111,16 +109,11 @@ import com.dotmarketing.util.TrashUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.springframework.beans.BeanUtils;
-
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -144,6 +137,11 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.springframework.beans.BeanUtils;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -450,6 +448,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         APILocator.getPersonaAPI().enableDisablePersonaTag(contentlet, true);
                     }
                 }
+
+                /*
+                Triggers a local system event when this contentlet commit listener is executed,
+                anyone who need it can subscribed to this commit listener event, on this case will be
+                mostly use it in order to invalidate this contentlet cache.
+                 */
+                triggerCommitListenerEvent(contentlet);
 
                 // by now, the publish event is making a duplicate reload events on the site browser
                 // so we decided to comment it out by now, and
@@ -2127,6 +2132,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
             contentletSystemEventUtil.pushUnpublishEvent(contentlet);
+
+            /*
+            Triggers a local system event when this contentlet commit listener is executed,
+            anyone who need it can subscribed to this commit listener event, on this case will be
+            mostly use it in order to invalidate this contentlet cache.
+             */
+            triggerCommitListenerEvent(contentlet);
+
         } catch(DotDataException | DotStateException| DotSecurityException e) {
             ActivityLogger.logInfo(getClass(), "Error Unpublishing Content", "StartDate: " +contentPushPublishDate+ "; "
                     + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
@@ -5201,49 +5214,59 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(!UtilMethods.isSet(inode)){
             Logger.warn(this, "Requested Inode is not indexed because Inode is not set");
         }
-        SearchHits lc;
-        boolean found = false;
-        int counter = 0;
-        while(counter < 300){
-            try {
-                lc = conFac.indexSearch("+inode:" + inode+(live?" +live:true":""), 0, 0, "modDate");
-            } catch (Exception e) {
-                Logger.error(this.getClass(),e.getMessage(),e);
-                return false;
-            }
-            if(lc.getTotalHits() > 0){
-                found = true;
-                return true;
-            }
-            try{
-                Thread.sleep(100);
-            }catch (Exception e) {
-                Logger.debug(this, "Cannot sleep : ", e);
-            }
-            counter++;
+
+        return isInodeIndexedWithQuery("+inode:" + inode + (live ? " +live:true" : ""));
+    }
+
+    @Override
+    public boolean isInodeIndexed(String inode, boolean live, boolean working) {
+        if (!UtilMethods.isSet(inode)) {
+            Logger.warn(this, "Requested Inode is not indexed because Inode is not set");
         }
-        return found;
+
+        return isInodeIndexedWithQuery(
+                "+inode:" + inode + String.format(" +live:%s +working:%s", live, working));
     }
 
     @Override
     public boolean isInodeIndexed(String inode, int secondsToWait) {
+
+        if (!UtilMethods.isSet(inode)) {
+            Logger.warn(this, "Requested Inode is not indexed because Inode is not set");
+        }
+
+        return isInodeIndexedWithQuery("+inode:" + inode, secondsToWait);
+    }
+
+    private boolean isInodeIndexedWithQuery(String luceneQuery) {
+        return isInodeIndexedWithQuery(luceneQuery, -1);
+    }
+
+    private boolean isInodeIndexedWithQuery(String luceneQuery, int secondsToWait) {
+
+        int limit = 300;
+        if (-1 != secondsToWait) {
+            limit = (secondsToWait / 10);
+        }
         SearchHits lc;
         boolean found = false;
         int counter = 0;
-        while(counter <= (secondsToWait / 10)) {
+        while (counter < limit) {
             try {
-                lc = conFac.indexSearch("+inode:" + inode, 0, 0, "modDate");
+                lc = conFac.indexSearch(
+                        luceneQuery,
+                        0, 0, "modDate");
             } catch (Exception e) {
-                Logger.error(this.getClass(),e.getMessage(),e);
+                Logger.error(this.getClass(), e.getMessage(), e);
                 return false;
             }
-            if(lc.getTotalHits() > 0){
+            if (lc.getTotalHits() > 0) {
                 found = true;
-                return true;
+                break;
             }
-            try{
+            try {
                 Thread.sleep(100);
-            }catch (Exception e) {
+            } catch (Exception e) {
                 Logger.debug(this, "Cannot sleep : ", e);
             }
             counter++;
@@ -5640,6 +5663,28 @@ public class ESContentletAPIImpl implements ContentletAPI {
                               boolean respectFrontendRoles, boolean generateSystemEvent) throws IllegalArgumentException,
             DotDataException, DotSecurityException, DotContentletStateException, DotContentletValidationException {
         return checkin(contentlet, contentRelationships, cats, selectedPermissions, user, respectFrontendRoles, true, generateSystemEvent);
+    }
+
+    /**
+     * Triggers a local system event when this contentlet commit listener is executed,
+     * anyone who need it can subscribed to this commit listener event, on this case will be
+     * mostly use it in order to invalidate this contentlet cache.
+     *
+     * @param contentlet Contentlet to be processed by the Commit listener event
+     */
+    private void triggerCommitListenerEvent(Contentlet contentlet) {
+
+        try {
+            HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+                public void run() {
+                    //Triggering event listener when this commit listener is executed
+                    APILocator.getLocalSystemEventsAPI()
+                            .asyncNotify(new CommitListenerEvent(contentlet));
+                }
+            });
+        } catch (DotHibernateException e) {
+            throw new DotRuntimeException(e);
+        }
     }
 
 }

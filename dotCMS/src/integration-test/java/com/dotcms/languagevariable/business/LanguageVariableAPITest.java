@@ -4,6 +4,7 @@ import static com.dotcms.integrationtestutil.content.ContentUtils.createTestLang
 import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
 
 import com.liferay.util.SystemProperties;
+import java.util.Date;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -62,13 +63,13 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
 
         IntegrationTestInitService.getInstance().init();
         systemUser = APILocator.systemUser();
+        final String contentTypeVelocityVarName = LanguageVariableAPI.LANGUAGEVARIABLE;
         try {
             // Using the provided Language Variable Content Type
-            languageVariableContentType = APILocator.getContentTypeAPI(systemUser).find("Languagevariable");
+            languageVariableContentType = APILocator.getContentTypeAPI(systemUser).find(contentTypeVelocityVarName);
         } catch (Exception e) {
             // Content Type not found, then create it
             final String contentTypeName = "Language Variable";
-            final String contentTypeVelocityVarName = "Languagevariable";
             systemUser = APILocator.systemUser();
             final Host site = APILocator.getHostAPI().findDefaultHost(systemUser, Boolean.FALSE);
             ContentTypeAPI contentTypeApi = APILocator.getContentTypeAPI(systemUser);
@@ -89,9 +90,12 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
     @Test
     public void saveLanguageVariableContent() throws DotContentletValidationException, DotContentletStateException,
                     IllegalArgumentException, DotDataException, DotSecurityException {
-        final Contentlet contentletEnglish = createTestLanguageVariableContent(KEY_1, VALUE_1, englishLanguageId,
+
+        final Contentlet contentletEnglish = createTestLanguageVariableContent(
+                KEY_1 + new Date().getTime(), VALUE_1, englishLanguageId,
                         languageVariableContentType, systemUser);
-        final Contentlet contentletSpanish = createTestLanguageVariableContent(KEY_1, VALUE_1, spanishLanguageId,
+        final Contentlet contentletSpanish = createTestLanguageVariableContent(
+                KEY_1 + new Date().getTime(), VALUE_1, spanishLanguageId,
                         languageVariableContentType, systemUser);
 
         Assert.assertTrue("Failed creating a new english Contentlet using the Language Variable Content Type.",
@@ -109,13 +113,18 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
     public void getLanguageVariable() throws DotContentletValidationException, DotContentletStateException,
                     IllegalArgumentException, DotDataException, DotSecurityException {
         final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
-        final Contentlet contentlet = createTestLanguageVariableContent(KEY_1, VALUE_1, englishLanguageId,
+
+        String key = KEY_1 + new Date().getTime();
+
+        final Contentlet contentlet = createTestLanguageVariableContent(key, VALUE_1,
+                englishLanguageId,
                         languageVariableContentType, systemUser);
 
         Assert.assertTrue("Failed creating a new Contentlet using the Language Variable Content Type.",
                         UtilMethods.isSet(contentlet.getIdentifier()));
 
-        final String languageVariable = languageVariableAPI.getLanguageVariable(KEY_1, englishLanguageId, systemUser);
+        final String languageVariable = languageVariableAPI
+                .getLanguageVariable(key, englishLanguageId, systemUser);
 
         Assert.assertTrue("Language Variable CANNOT BE null/empty.", UtilMethods.isSet(languageVariable));
 
@@ -145,13 +154,16 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
         portugueseLanguage = languageAPI.getLanguage(PORTUGAL_LANGUAGE_CODE, PORTUGAL_COUNTRY_CODE);
         fallbackPortugueseLanguage = languageAPI.getFallbackLanguage(PORTUGAL_LANGUAGE_CODE);
 
-        final Contentlet fallbackContentlet = createTestLanguageVariableContent(KEY_1, VALUE_1,
+        String key = KEY_1 + new Date().getTime();
+
+        final Contentlet fallbackContentlet = createTestLanguageVariableContent(key, VALUE_1,
                         fallbackPortugueseLanguage.getId(), languageVariableContentType, systemUser);
 
         Assert.assertTrue("Failed creating a fallback portuguese Contentlet using the Language Variable Content Type.",
                         UtilMethods.isSet(fallbackContentlet.getIdentifier()));
 
-        final String languageVariable = languageVariableAPI.getLanguageVariable(KEY_1, portugueseLanguage.getId(), systemUser);
+        final String languageVariable = languageVariableAPI
+                .getLanguageVariable(key, portugueseLanguage.getId(), systemUser);
 
         Assert.assertTrue("Language Variable CANNOT BE null/empty.", UtilMethods.isSet(languageVariable));
 
@@ -168,20 +180,24 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
     @Test
     public void getLanguageVariableUsingDefaultContentToDefaultLanguage() throws DotContentletValidationException,
                     DotContentletStateException, IllegalArgumentException, DotDataException, DotSecurityException {
+
         final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
-        final Contentlet contentlet = createTestLanguageVariableContent(KEY_1, VALUE_1, englishLanguageId,
+
+        String key = KEY_1 + new Date().getTime();
+
+        final Contentlet contentlet = createTestLanguageVariableContent(key, VALUE_1, englishLanguageId,
                         languageVariableContentType, systemUser);
 
         Assert.assertTrue("Failed creating a new Contentlet using the Language Variable Content Type.",
                         UtilMethods.isSet(contentlet.getIdentifier()));
 
         Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, Boolean.FALSE);
-        String languageVariable = languageVariableAPI.getLanguageVariable(KEY_1, spanishLanguageId, systemUser);
+        String languageVariable = languageVariableAPI.getLanguageVariable(key, spanishLanguageId, systemUser);
 
-        Assert.assertTrue("Language Variable MUST BE null/empty.", UtilMethods.isSet(languageVariable) && languageVariable.equals(KEY_1));
+        Assert.assertTrue("Language Variable MUST BE null/empty.", UtilMethods.isSet(languageVariable) && languageVariable.equals(key));
 
         Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, Boolean.TRUE);
-        languageVariable = languageVariableAPI.getLanguageVariable(KEY_1, spanishLanguageId, systemUser);
+        languageVariable = languageVariableAPI.getLanguageVariable(key, spanishLanguageId, systemUser);
 
         Assert.assertTrue("Language Variable CANNOT BE null/empty.", UtilMethods.isSet(languageVariable));
 

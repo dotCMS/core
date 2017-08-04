@@ -3,10 +3,8 @@ package com.dotcms.vanityurl.business;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
-import java.util.List;
 
 /**
  * This API provides access to the information related to Vanity URLs
@@ -24,7 +22,7 @@ public interface VanityUrlAPI {
     public static final String CACHE_404_VANITY_URL = "CACHE_404_VANITY_URL";
 
     /**
-     * Searches for live VanityURLs, each VanityURL found is added into the cache.
+     * Searches and populates the cache for live VanityURLs, each VanityURL found is added into the cache.
      * <br>
      * Note this method does not uses cache, always does the ES search, the intention of this method
      * is mainly to populate the cache with the found data.
@@ -32,20 +30,7 @@ public interface VanityUrlAPI {
      * @param user The current user
      * @return a List of all Cached Vanity URLs contentlets live
      */
-    List<VanityUrl> getActiveVanityUrls(final User user);
-
-    /**
-     * Searches for live VanityURLs by Site and Language id, each VanityURL found is added into
-     * the cache.
-     * <br>
-     * Note this method does not uses cache, always does the ES search, the intention of this method
-     * is mainly to populate the cache with the found data.
-     *
-     * @param user The current user
-     * @return a List of all Cached Vanity URLs contentlets live
-     */
-    List<VanityUrl> getActiveVanityUrlsBySiteAndLanguage(final String siteId, final long languageId,
-                                                         final User user);
+    void initializeVanityURLsCache(final User user);
 
     /**
      * Return the live version of the Cached vanityurl URL contentlet with the specified URI

@@ -21,6 +21,7 @@ import javax.servlet.http.HttpSession;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -513,6 +514,7 @@ public class ContentletAjax {
 		// Building search params and lucene query
 		StringBuffer luceneQuery = new StringBuffer();
 		String specialCharsToEscape = "([+\\-!\\(\\){}\\[\\]^\"~*?:\\\\]|[&\\|]{2})";
+		String specialCharsToEscapeForMetaData = "([+\\-!\\(\\){}\\[\\]^\"~?:/\\\\]{2})";
 		Map<String, Object> lastSearchMap = new HashMap<String, Object>();
 
 		if (UtilMethods.isSet(sess)) {
@@ -548,7 +550,7 @@ public class ContentletAjax {
 		    luceneQuery.append("-contentType:Host ");
 		    luceneQuery.append("-baseType:3 ");
 		}
-		if (LicenseUtil.getLevel() < 300) {
+		if (LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
 			luceneQuery.append("-contentType:Persona ");
 		}
 		// Stores (database name,type description) pairs to catch certain field types.
@@ -668,7 +670,7 @@ public class ContentletAjax {
 									metakey = StringUtils.camelCaseLower(metakey);
 									String metaVal = "*" +splitter[splitter.length-1]+"*";
 									fieldValue = metakey + ":" + metaVal;
-									luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + "." + fieldValue.toString().replaceAll(specialCharsToEscape, "\\\\$1") + " ");
+									luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + "." + fieldValue.toString().replaceAll(specialCharsToEscapeForMetaData, "\\\\$1") + " ");
 								} catch (Exception e) {
 									Logger.debug(this, "An error occured when processing field name '" + fieldbcontentname + "'");
 								}

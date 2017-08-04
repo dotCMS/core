@@ -19,6 +19,7 @@
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 
 <iframe id="AjaxActionJackson" name="AjaxActionJackson" style="border:0; width:0; height:0;"></iframe>
 <%
@@ -55,6 +56,8 @@
     String structureSelected = "";
     if(UtilMethods.isSet(request.getParameter("structure_id"))){
         structureSelected=request.getParameter("structure_id");
+    } else if(UtilMethods.isSet(request.getParameter("baseType"))){
+    	structureSelected = structures.get(0).getInode();
     }
 
     if (lastSearch != null && !UtilMethods.isSet(structureSelected)) {
@@ -174,7 +177,7 @@
             ,
     };
 
-    boolean enterprise = LicenseUtil.getLevel() > 199;
+    boolean enterprise = LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level;
 
     PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
     List<PublishingEndPoint> sendingEndpointsList = pepAPI.getReceivingEndPoints();
@@ -210,7 +213,7 @@
         identifier: "name",
         label: "label",
         items: [
-            <%if(request.getAttribute("SHOW_FORMS_ONLY") == null){%>
+            <%if(request.getAttribute("DONT_SHOW_ALL") == null){%>
             {
                 name: "_all",
                 label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "All" )) %>",

@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.dotcms.enterprise.license.LicenseLevel;
 import org.junit.Test;
 
 import com.dotcms.UnitTestBase;
@@ -63,7 +65,7 @@ public class ESIndexHelperTest extends UnitTestBase {
 
 		when(siteSearchAPI.listIndices()).thenReturn(aliasList);
 		when(esIndexAPI.getAliasToIndexMap(aliasList)).thenReturn(indexInfo);
-		when(LicenseService.getLevel()).thenReturn(200);
+		when(LicenseService.getLevel()).thenReturn(LicenseLevel.STANDARD.level);
 
 		ESIndexHelper esIndexHelper = new ESIndexHelper(siteSearchAPI,LicenseService);
 

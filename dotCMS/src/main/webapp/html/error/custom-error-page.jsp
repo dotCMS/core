@@ -1,16 +1,14 @@
-<%@page import="java.util.Enumeration"%>
-<%@page import="com.dotmarketing.factories.ClickstreamFactory"%>
-<%@page import="com.dotmarketing.util.WebKeys"%>
-<%@page import="com.dotmarketing.filters.CMSFilter"%>
-<%@page import="com.dotmarketing.filters.CmsUrlUtil"%>
-<%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@page import="com.dotmarketing.beans.Host"%>
-<%@page import="com.dotmarketing.business.web.WebAPILocator"%>
-<%@page import="com.dotmarketing.util.Logger"%>
-<%@page import="com.dotmarketing.db.DbConnectionFactory"%>
-<%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotcms.vanityurl.model.CachedVanityUrl"%>
+<%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotmarketing.business.web.WebAPILocator"%>
+<%@page import="com.dotmarketing.db.DbConnectionFactory"%>
+<%@page import="com.dotmarketing.factories.ClickstreamFactory"%>
+<%@page import="com.dotmarketing.filters.CMSUrlUtil"%>
+<%@page import="com.dotmarketing.filters.Constants"%>
+<%@page import="com.dotmarketing.util.Logger"%>
+<%@page import="com.dotmarketing.util.WebKeys"%>
+<%@page import="com.liferay.portal.language.LanguageUtil"%>
 
 <%
   int status = response.getStatus();
@@ -21,28 +19,21 @@
     String errorPage = "/cms" + status + "Page";
     Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
     // Get from virtual link
-    try {
-      if (CmsUrlUtil.getInstance().isVanityUrl(errorPage, host, languageId)) {
+      if (CMSUrlUtil.getInstance().isVanityUrl(errorPage, host, languageId)) {
         CachedVanityUrl vanityurl = APILocator.getVanityUrlAPI().getLiveCachedVanityUrl(errorPage, host, languageId, APILocator.systemUser());
         String uri = vanityurl.getForwardTo();
-        if (!UtilMethods.isSet(uri)) {
-          vanityurl = APILocator.getVanityUrlAPI().getLiveCachedVanityUrl(errorPage, null, languageId, APILocator.systemUser());
-          uri = vanityurl.getForwardTo();
-        }
+
         if (uri.contains("://")) {
           response.setStatus(301);
           response.setHeader("Location", uri);
 
         } else {
           Logger.debug(this, errorPage + " path is: " + uri);
-          request.setAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE, uri);
+          request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE, uri);
           request.getRequestDispatcher("/servlets/VelocityServlet").forward(request, response);
         }
         return;
       }
-    } catch (Exception e) {
-        Logger.error(this, e.getMessage(), e);
-    }
 
     if (status == 401) {
       String referer = (session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN) != null)

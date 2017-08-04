@@ -1,4 +1,5 @@
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="java.net.URLEncoder"%>
 <%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
 <%@page import="com.dotmarketing.util.Config"%>
@@ -34,7 +35,7 @@ String error = "";
 boolean success = false;
 
 %>
-<%if(LicenseUtil.getLevel() < 200){ %>
+<%if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){ %>
 	<div class="portlet-wrapper">
 	
 		<div class="subNavCrumbTrail">
