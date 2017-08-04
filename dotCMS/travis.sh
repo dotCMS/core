@@ -5,8 +5,8 @@ pwd
 ls -al
 echo "=============================="
 
-./dotCMS/gradlew clean
-./dotCMS/gradlew compileJava
+./dotCMS/gradlew -p dotCMS/ clean
+./dotCMS/gradlew -p . compileJava
 
 if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
   echo "--------------------------------------------------"
