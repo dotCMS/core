@@ -168,7 +168,7 @@ public class LanguageWebAPI implements ViewTool {
 	public String get(String key, String languageId) {
 		String value = null;
 		try {
-			Language lang = langAPI.getLanguage(languageId);
+			Language lang = LanguageUtil.getUserLanguage(langAPI.getLanguage(languageId), request.getLocale());
 			value = langAPI.getStringKey(lang, key);
 
 			if ((!UtilMethods.isSet(value) || value.equals(key))
