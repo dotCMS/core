@@ -1,5 +1,8 @@
 #!/bin/bash
 
+./gradlew clean
+./gradlew deployWarTomcat
+
 if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
   echo "--------------------------------------------------"
   echo ">> Running sonar scanner in change preview mode"

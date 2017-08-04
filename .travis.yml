@@ -8,17 +8,24 @@ addons:
     branches:
     - master
     - sonarqube-test-main-branch
+cache:
+  directories:
+    - '$HOME/.m2/repository'
+    - '$HOME/.sonar/cache'
+    - '$HOME/.gradle'
+    - '.gradle'
+    - 'dotCMS/.gradle'
 jdk:
 - oraclejdk8
 before_install:
-- chmod +x travis.sh
+- chmod +x dotCMS/travis.sh
 before_script:
  - "echo $JAVA_OPTS"
  - "export JAVA_OPTS=-Xmx1024m"
 script:
 - export SONAR_SCANNER_OPTS="-Xmx512m"
 - export SONARQUBE_SKIPPED=false
-- ./travis.sh
+- ./dotCMS/travis.sh
 env:
   global:
   - secure: NM3GcS3C5bpA22g0IhZo6HeNDjRZD4CW9GLhlgumxDpsrstQ97x986JudZgcEOP5723JwKQMMpkpZZMLmacI6fR9VHaKmpwyXRCjZHs/MrCdk5eGy3lL7zy0oRORWf1zRMpb6wNp5srufREnp1uK4PL+lmCi0fAWbNjM+8KqoNCI3TELTyI1cUtikO9XiQ0VZjgFJuyJYuRWuXpsJTGdk3MVwufia/13QSmxRhHZrKBTUzwPzgdynx6ZRZXdV+Hs91QsVzAN2WecKrPYX1OFf+A2GsrfnZHmwHiYFqNxUaMDavYxBJ+rDmhzC7DhElcIJqkIBiFHoRfNO5+u5Ph9GNPfLV3iiKb63MfPWDKPkq+llkQi0S+Qg2QHs045iwVSx+xWFm9EtvWhzl7Y82WXy7gdAPrmlDCRmUBoIEl1pShsGeXUUwLtbCPkKjbrzpWkkKXl9eqTg5YpTG0gTBS1LyOUtnso+yrPH0LEs+FMmoF/caPp00/2QX06GZt/61jveoqw8IJM3hb5qDXHWkiU1dKE0zLpr05GicJf70pWbB+U/qU8v+t2kk35MrWwf/4C39Wv9/dS+q0q+/JdUrafGyWQFj3AW1lTNDWFPyxv4mpxVwlmfuw2p8xMd/4M7BXUrT2jS+yr65QuOnUCsvpuBtk3hcdZH8Idy7dZzu2jkb4=
