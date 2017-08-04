@@ -37,5 +37,7 @@ if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
 
 else
   sonar-scanner \
-    -Dsonar.scanner.skip=false
+    -Dsonar.scanner.skip=false \
+    -Dsonar.java.binaries=dotCMS/build/classes/main \
+    -Dsonar.java.libraries=dotCMS/build/pluginsLib/*.jar
 fi
