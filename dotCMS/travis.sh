@@ -1,7 +1,7 @@
 #!/bin/bash
 
-./gradlew clean
-./gradlew compileJava
+gradlew clean
+gradlew compileJava
 
 if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
   echo "--------------------------------------------------"
@@ -16,7 +16,8 @@ if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
     -Dsonar.github.repository=$TRAVIS_REPO_SLUG \
     -Dsonar.github.oauth=$SONAR_GITHUB_TOKEN \
     -Dsonar.github.repository=dotCMS/core \
-    -Dsonar.scanner.skip=false
+    -Dsonar.scanner.skip=false \
+    -Dsonar.java.binaries=build/classes/main
 
 else
   sonar-scanner \
