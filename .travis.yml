@@ -12,7 +12,6 @@ cache:
     - '$HOME/.m2/repository'
     - '$HOME/.sonar/cache'
     - '$HOME/.gradle'
-    - '.gradle'
     - 'dotCMS/.gradle'
 jdk:
 - oraclejdk8

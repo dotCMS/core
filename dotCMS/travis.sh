@@ -5,15 +5,16 @@ pwd
 ls -al
 echo "=============================="
 
-./dotCMS/gradlew -p dotCMS/ clean
-./dotCMS/gradlew -p dotCMS/ compileJava
+./dotCMS/gradlew -p dotCMS/ war
 
 echo "=============================="
-echo "...."
-ls -al dotCMS/
-echo "...."
+echo "dotCMS"
+ls -al dotCMS
+echo "dotCMS/build"
 ls -al dotCMS/build
+echo "dotCMS/build/classes"
 ls -al dotCMS/build/classes
+echo "dotCMS/build/classes/main"
 ls -al dotCMS/build/classes/main
 echo "=============================="
 
@@ -31,7 +32,8 @@ if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
     -Dsonar.github.oauth=$SONAR_GITHUB_TOKEN \
     -Dsonar.github.repository=dotCMS/core \
     -Dsonar.scanner.skip=false \
-    -Dsonar.java.binaries=dotCMS/build/classes/main
+    -Dsonar.java.binaries=dotCMS/build/classes/main \
+    -Dsonar.java.libraries=dotCMS/build/pluginsLib/*.jar
 
 else
   sonar-scanner \
