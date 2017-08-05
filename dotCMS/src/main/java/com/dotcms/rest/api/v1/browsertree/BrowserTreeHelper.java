@@ -62,10 +62,10 @@ public class BrowserTreeHelper {
         List<Treeable> assets = new ArrayList<Treeable>();
         Host host = hostAPI.findByName(siteName,user,false);
         if(uri.equals("/")){
-            assets.addAll(host.getChildren(user,true,true,false,false));
+            assets.addAll(host.getChildren(user,false,true,false,false));
         }else{
             Folder folder = folderAPI.findFolderByPath(uri,host,user,false);
-            assets.addAll(folder.getChildren(user,true,true,false,false));
+            assets.addAll(folder.getChildren(user,false,true,false,false));
         }
 
         return assets
