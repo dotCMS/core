@@ -67,7 +67,7 @@ public class LicenseResource {
                         obj.put( "fullserverid", value );
                     } else if ( "id".equals(key) ) {
                         obj.put( "idDisplay", LicenseUtil.getDisplaySerial(value) );
-                    } 
+                    }
 
                 }
                 array.put( obj );
