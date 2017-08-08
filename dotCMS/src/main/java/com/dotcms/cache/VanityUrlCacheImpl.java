@@ -68,7 +68,7 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
         }
     }
 
-    private void cleanBySecondaryRegion(String key) {
+    private void cleanBySecondaryRegion(final String key) {
 
         Set<CachedVanityUrl> secondaryCachedVanities = this
                 .getCachedVanityUrls(key);
@@ -253,7 +253,7 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
                 ImmutableSet.copyOf(cachedVanityUrlList), getCachedVanityUrlGroup());
     }
 
-    private void removeCachedVanityUrls(String key) {
+    private void removeCachedVanityUrls(final String key) {
         try {
             cache.remove(key, getCachedVanityUrlGroup());
         } catch (Exception e) {

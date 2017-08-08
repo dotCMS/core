@@ -639,7 +639,7 @@ public class VanityUrlAPITest {
         try {
             long currentTime = System.currentTimeMillis();
             String uri = "/testing" + currentTime + "(.*)";
-            String requestedURL = "/testing" + currentTime;
+            final String requestedURL = "/testing" + currentTime;
 
             //------------------------------------
             //Create a VanityURL for the System Host
@@ -678,7 +678,7 @@ public class VanityUrlAPITest {
 
             currentTime = System.currentTimeMillis();
             uri = "/testing_1_" + currentTime + "(.*)";
-            String requestedURL1 = "/testing_1_" + currentTime;
+            final String requestedURL1 = "/testing_1_" + currentTime;
 
             vanityURL1 = this
                     .createVanityUrl("test Vanity Url " + System.currentTimeMillis(),
