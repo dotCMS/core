@@ -25,13 +25,17 @@ public class ContextCloseableMethodInterceptor implements MethodInterceptor<Obje
 
         final ContextCloseable contextCloseable =
                 getMethodAnnotation(delegate.getMethod(), ContextCloseable.class);
+        Object methodReturn = null;
 
-        final Object methodReturn = delegate.proceed();
+        try {
+            methodReturn = delegate.proceed();
+        } finally {
 
-        if (null != contextCloseable && contextCloseable.connection()
-                && !DbConnectionFactory.inTransaction()) {
+            if (null != contextCloseable && contextCloseable.connection()
+                    && !DbConnectionFactory.inTransaction()) {
 
-            DbConnectionFactory.closeSilently();
+                DbConnectionFactory.closeSilently();
+            }
         }
 
         return methodReturn;
