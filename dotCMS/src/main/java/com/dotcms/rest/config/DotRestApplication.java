@@ -18,6 +18,7 @@ import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
 import com.dotcms.rest.api.v1.contenttype.FieldResource;
 import com.dotcms.rest.api.v1.contenttype.FieldVariableResource;
 import com.dotcms.rest.api.v1.event.EventsResource;
+import com.dotcms.rest.api.v1.folder.FolderResource;
 import com.dotcms.rest.api.v1.languages.LanguagesResource;
 import com.dotcms.rest.api.v1.menu.MenuResource;
 import com.dotcms.rest.api.v1.personas.PersonaResource;
@@ -113,6 +114,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(RoleResource.class);
 					REST_CLASSES.add(CreateJsonWebTokenResource.class);
 					REST_CLASSES.add(EventsResource.class);
+					REST_CLASSES.add(FolderResource.class);
 
 					REST_CLASSES.add(BrowserTreeResource.class);
 					REST_CLASSES.add(ContentTypeResource.class);

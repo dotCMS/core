@@ -76,8 +76,10 @@ public class PushUtils {
 				if (file.isFile()) {
 			        // Add the file to the archive
 					BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
-					IOUtils.copy(new FileInputStream(file), taos);
+					FileInputStream in = new FileInputStream(file);
+					IOUtils.copy(in, taos);
 					taos.closeArchiveEntry();
+					in.close();
 					bis.close();
 				} else if (file.isDirectory()) {
 					//Logger.info(this.getClass(),file.getPath().substring(bundleRoot.length()));
