@@ -18,6 +18,7 @@ public class HostWrapper implements ContentWrapper {
 	private Identifier id;
 	private List<Map<String,Object>> multiTree;
 	private List<Map<String,Object>> tree;
+	private List<String> categories;
 	private List<Tag> tags;
 	private Operation operation;
 	private Map<String, List<Tag>> contentTags;
@@ -57,7 +58,13 @@ public class HostWrapper implements ContentWrapper {
 		this.tree = tree;
 	}
 
-
+    public List<String> getCategories() {
+    	return categories;
+    }
+	public void setCategories(List<String> categories) {
+		this.categories = categories;
+	}
+    
 	public List<Tag> getTags() {
 		return tags;
 	}

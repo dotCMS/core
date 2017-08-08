@@ -75,10 +75,10 @@ public class PushUtils {
 	    			taos.putArchiveEntry(new TarArchiveEntry(file, dir + "/" + file.getName()));
 				if (file.isFile()) {
 			        // Add the file to the archive
-					BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
-					IOUtils.copy(new FileInputStream(file), taos);
-					taos.closeArchiveEntry();
-					bis.close();
+					try(BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
+						IOUtils.copy(bis, taos);
+						taos.closeArchiveEntry();
+					}
 				} else if (file.isDirectory()) {
 					//Logger.info(this.getClass(),file.getPath().substring(bundleRoot.length()));
 			         // close the archive entry

@@ -360,7 +360,7 @@ public class PublisherQueueJob implements StatefulJob {
 						bundleStatus = PublishAuditStatus.Status.SUCCESS;
 						pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
 						pubAPI.deleteElementsFromPublishQueueTable(bundleAudit.getBundleId());
-					} else if ( countGroupPublishing > 0 && countGroupPublishing == endpointTrackingMap.size() ) {
+					} else if ( countGroupPublishing == endpointTrackingMap.size() ) {
 						// If bundle is still publishing in all groups
 						bundleStatus = PublishAuditStatus.Status.PUBLISHING_BUNDLE;
 						pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
