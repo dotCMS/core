@@ -8,6 +8,9 @@ import {SiteBrowserState} from './site-browser.state';
  * Stores and returns the DotSettings class
  */
 @Injectable()
+@Inject('config')
+@Inject('localStoreService')
+@Inject('siteBrowserState')
 export class SettingsStorageService {
 
     configKey: string;

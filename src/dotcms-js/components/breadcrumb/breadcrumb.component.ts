@@ -5,6 +5,7 @@ import EventEmitter = NodeJS.EventEmitter;
 import {SiteBrowserState} from '../../core/util/site-browser.state';
 import {BreadcrumbModule} from 'primeng/components/breadcrumb/breadcrumb';
 import {CommonModule} from '@angular/common';
+import {Site} from '../../core/treeable/shared/site.model';
 
 /**
  * The BreadcrumbComponent provides a PrimeNG Component for providing navigation with dotCMS Components
@@ -14,7 +15,7 @@ import {CommonModule} from '@angular/common';
 @Component({
     selector: 'breadcrumb',
     styles: [require('./../app.css')],
-    template: require('./breadcrumb.html')
+    template: `<p-breadcrumb [model]="pathItems"></p-breadcrumb>`
 })
 @Inject('updateService')
 export class BreadcrumbComponent {
@@ -24,8 +25,8 @@ export class BreadcrumbComponent {
     constructor(private updateService: SiteBrowserState) {
         this.buildMenuItemsFromURI(this.updateService.getURI());
         updateService.currentSite.subscribe(
-            siteName => {
-                this.onSiteChange(siteName);
+            site => {
+                this.onSiteChange(site);
             });
         updateService.currentFolder.subscribe(
             folderName => {
@@ -41,9 +42,9 @@ export class BreadcrumbComponent {
      * Called when the [[SiteBrowserState]] Site is changed. This is managed via a Subscription
      * @param siteName
      */
-    onSiteChange(siteName: string): void {
+    onSiteChange(site: Site): void {
         this.pathItems = [];
-        this.addSiteItem(siteName);
+        this.addSiteItem(site);
     }
 
     /**
@@ -67,15 +68,15 @@ export class BreadcrumbComponent {
         return uri;
     }
 
-    private addSiteItem(siteName: string): void {
+    private addSiteItem(site: Site): void {
         this.pathItems.push({
             command: (event: Event) => {
-                this.updateService.changeSite(siteName);
+                this.updateService.changeSite(site);
                 this.updateService.changeURI(null);
                 this.updateService.changeFolder(null);
                 setTimeout(() => {
                 }, 100);
-            }, label: siteName
+            }, label: site.hostname
         });
     }
 
@@ -92,11 +93,11 @@ export class BreadcrumbComponent {
 
     private buildMenuItemsFromURI(uri: string): void {
         this.pathItems = [];
-        let siteName: string = this.updateService.getSelectedSite();
-        if (!siteName) {
+        let site: Site = this.updateService.getSelectedSite();
+        if (!site || !site.hostname) {
             return;
         }
-        this.addSiteItem(siteName);
+        this.addSiteItem(site);
         if (uri) {
             let folders: string[] = uri.split('/');
             for (let i = 0; i < folders.length; i++) {

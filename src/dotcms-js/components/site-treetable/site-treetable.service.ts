@@ -7,6 +7,7 @@ import {Treeable} from '../../core/treeable/shared/treeable.model';
 import {SiteBrowserService} from '../../core/util/site-browser.service';
 
 @Injectable()
+@Inject('siteBrowserService')
 export class SiteTreetableService {
 
     constructor

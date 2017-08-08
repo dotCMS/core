@@ -36,6 +36,10 @@ import { FieldValidationMessageModule } from './view/components/_common/field-va
 import { ListingDataTableModule } from './view/components/listing-data-table/listing-data-table.module';
 import { SiteSelectorModule } from './view/components/_common/site-selector/site-selector.module';
 import { SearchableDropDownModule } from './view/components/_common/searchable-dropdown';
+import {DotcmsTreeableDetailModule} from '../dotcms-js/components/treeable-detail/treeable-detail.component';
+import {DotcmsSiteDatatableModule} from '../dotcms-js/components/site-datatable/site-datatable.component';
+import {DotcmsSiteTreeTableModule} from '../dotcms-js/components/site-treetable/site-treetable.component';
+import {DotcmsBreadcrumbModule} from '../dotcms-js/components/breadcrumb/breadcrumb.component';
 
 // Application wide providers
 const APP_PROVIDERS = [
@@ -79,6 +83,10 @@ type StoreType = {
     ReactiveFormsModule,
     SearchableDropDownModule,
     SiteSelectorModule,
+    DotcmsTreeableDetailModule,
+    DotcmsSiteDatatableModule,
+    DotcmsSiteTreeTableModule,
+    DotcmsBreadcrumbModule,
     // AppRoutingModule should always be the last one
     AppRoutingModule
   ],

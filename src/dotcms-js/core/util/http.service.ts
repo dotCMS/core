@@ -1,4 +1,4 @@
-import {Injectable} from '@angular/core';
+import {Inject, Injectable} from '@angular/core';
 import {Http, Headers, Response, RequestMethod, RequestOptions} from '@angular/http';
 import {Observable} from 'rxjs';
 
@@ -14,6 +14,9 @@ import {LoggerService} from './logger.service';
  *
  */
 @Injectable()
+@Inject('http')
+@Inject('log')
+@Inject('settingsStorageService')
 export class HttpClient {
     public progress$: any;
     private progressObserver: any;

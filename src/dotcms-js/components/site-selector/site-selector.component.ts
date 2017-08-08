@@ -12,13 +12,25 @@ import {FormsModule} from '@angular/forms';
 @Component({
     selector: 'site-selector',
     styles: [require('./../app.css')],
-    templateUrl: 'site-selector.html'
+    template: `<div>
+        <p-autoComplete [(ngModel)]="host" [suggestions]="filteredHosts" (completeMethod)="filterHosts($event)"
+                        [size]="30"
+                        [minLength]="1" placeholder="Hint: type 'd'" [dropdown]="true"
+                        (onDropdownClick)="handleDropdownClick($event)"
+                        (onSelect)="siteSelected($event)" field="hostname">
+            <ng-template let-host pTemplate="item">
+                <div class="ui-helper-clearfix" style="border-bottom:1px solid #D5D5D5">
+                    <div style="font-size:18px;float:right;margin:10px 10px 0 0">{{host.hostname}}</div>
+                </div>
+            </ng-template>
+        </p-autoComplete>
+    </div>`
 })
 export class SiteSelectorComponent {
 
     sites: Site[];
-    filteredHosts: any[];
-    host = '';
+    filteredHosts: Site[];
+    host: Site;
 
     constructor(
         private updateService: SiteBrowserState,
@@ -59,11 +71,11 @@ export class SiteSelectorComponent {
         this.filteredHosts = [];
         this.sites = hosts;
         for (let i = 0; i < this.sites.length; i++) {
-            let site = this.sites[i].hostname;
-            if (event && site.toLowerCase().indexOf(event.query.toLowerCase()) === 0) {
+            let site = this.sites[i];
+            if (event && site.hostname.toLowerCase().indexOf(event.query.toLowerCase()) === 0) {
                 this.filteredHosts.push(site);
             }else {
-                this.filteredHosts[i] = this.sites[i].hostname;
+                this.filteredHosts[i] = this.sites[i];
             }
         }
     }

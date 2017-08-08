@@ -1,6 +1,6 @@
 import {Response} from '@angular/http';
 import {Observable} from 'rxjs';
-import {Injectable} from '@angular/core';
+import {Inject, Injectable} from '@angular/core';
 import {HttpClient} from '../../core/util/http.service';
 import {NotificationService} from '../../core/util/notification.service';
 import {Site} from '../../core/treeable/shared/site.model';
@@ -8,11 +8,14 @@ import {ErrorObservable} from 'rxjs/observable/ErrorObservable';
 import {LoggerService} from '../../core/util/logger.service';
 
 @Injectable()
+@Inject('dotHttpClient')
+@Inject('log')
+@Inject('notificationService')
 export class SiteSelectorService {
 
     constructor
     (
-        private httpClient: HttpClient,
+        private dotHttpClient: HttpClient,
         private log: LoggerService,
         private notificationService: NotificationService
     ) {}
@@ -23,7 +26,7 @@ export class SiteSelectorService {
      * @returns {Observable<R|T>}
      */
     filterForSites(searchQuery: string): Observable<Site[]> {
-    return this.httpClient.get('/api/v1/site?filter=' + searchQuery + '&archived=false')
+    return this.dotHttpClient.get('/api/v1/site?filter=' + searchQuery + '&archived=false')
         .map((res: Response) => this.extractDataFilter(res))
         .catch(err => this.handleError(err));
     }
@@ -33,13 +36,16 @@ export class SiteSelectorService {
      * @returns {Observable<R|T>}
      */
     getSites(): Observable<Site[]> {
-        return this.httpClient.get('/api/v1/site/')
+        return this.dotHttpClient.get('/api/v1/site/')
             .map((res: Response) => this.extractDataDropdown(res))
             .catch(err => this.handleError(err));
     }
 
     private extractDataDropdown(res: Response): Site[] {
         let obj = JSON.parse(res.text());
+        if (obj.entity.sites && obj.entity.sites.results && obj.entity.sites.results.length > 0) {
+            return obj.entity.sites.results;
+        }
         return obj.entity;
     }
 

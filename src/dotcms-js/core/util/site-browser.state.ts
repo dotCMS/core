@@ -1,6 +1,7 @@
 import {Injectable} from '@angular/core';
 import {BehaviorSubject, Observable} from 'rxjs';
 import {Treeable} from '../treeable/shared/treeable.model';
+import {Site} from '../treeable/shared/site.model';
 
 /**
  * Manages the state of objects in dotcms-js so compoents can Observe changes and reload as needed
@@ -10,10 +11,10 @@ export class SiteBrowserState {
 
     currentFolder: Observable<string>;
     currentSetingsUpdated: Observable<boolean>;
-    currentSite: Observable<string>;
+    currentSite: Observable<Site>;
     currentTreeable: Observable<Treeable>;
     currentURI: Observable<string>;
-    private currentSiteSubject: BehaviorSubject<string> = new BehaviorSubject<string>(null);
+    private currentSiteSubject: BehaviorSubject<Site> = new BehaviorSubject<Site>(null);
     private currentFolderSubject: BehaviorSubject<string> = new BehaviorSubject<string>(null);
     private currentURISubject: BehaviorSubject<string> = new BehaviorSubject<string>(null);
     private currentTreeableSubject: BehaviorSubject<Treeable> = new BehaviorSubject<Treeable>(null);
@@ -26,12 +27,12 @@ export class SiteBrowserState {
         this.currentURI = this.currentURISubject.asObservable();
     }
 
-    changeSite(siteName: string): void {
+    changeSite(siteName: Site): void {
         this.currentSiteSubject.next(siteName);
     }
 
-    getSelectedSite(): string {
-        return <string> this.currentSiteSubject.getValue();
+    getSelectedSite(): Site {
+        return <Site> this.currentSiteSubject.getValue();
     }
 
     changeFolder(folderName: string): void {

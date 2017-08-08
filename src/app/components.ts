@@ -21,10 +21,10 @@ import { ServersideCondition } from './portlets/rule-engine/condition-types/serv
 import { VisitorsLocationComponent } from './portlets/rule-engine/custom-types/visitors-location/visitors-location.component';
 import { VisitorsLocationContainer } from './portlets/rule-engine/custom-types/visitors-location/visitors-location.container';
 import {SiteSelectorComponent as SiteSelectorComponentDotJS} from '../dotcms-js/components/site-selector/site-selector.component';
-import {BreadcrumbComponent} from '../dotcms-js/components/breadcrumb/breadcrumb.component';
-import {SiteTreeTableComponent} from '../dotcms-js/components/site-treetable/site-treetable.component';
-import {SiteDatatableComponent} from '../dotcms-js/components/site-datatable/site-datatable.component';
-import {TreeableDetailComponent} from '../dotcms-js/components/treeable-detail/treeable-detail.component';
+import {DotcmsBreadcrumbModule} from '../dotcms-js/components/breadcrumb/breadcrumb.component';
+import {DotcmsSiteTreeTableModule} from '../dotcms-js/components/site-treetable/site-treetable.component';
+import {DotcmsSiteDatatableModule} from '../dotcms-js/components/site-datatable/site-datatable.component';
+import {DotcmsTreeableDetailModule} from '../dotcms-js/components/treeable-detail/treeable-detail.component';
 import {DotBrowserComponent} from './portlets/dot-browser/dot-browser-component';
 
 const RULES_ENGINE_COMPONENTS = [

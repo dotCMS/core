@@ -14,6 +14,7 @@ declare class Notification {
  * Can change icons by setting iconPath in the AppConfig if needed
  */
 @Injectable()
+@Inject('config')
 export class NotificationService {
 
     iconPath: string;

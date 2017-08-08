@@ -3,6 +3,7 @@
  * the your AppConfig in the app.module ts file of your application
  */
 export class AppConfig  {
-    iconPath = './src/assets/images/icons';
-    dotCMSURLKey = 'siteURLJWT';
+    public iconPath = './src/assets/images/icons';
+    public dotCMSURLKey = 'siteURLJWT';
+    constructor() {}
 }

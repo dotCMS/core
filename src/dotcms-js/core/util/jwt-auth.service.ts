@@ -1,4 +1,4 @@
-import {Injectable} from '@angular/core';
+import {Inject, Injectable} from '@angular/core';
 import {NotificationService} from './notification.service';
 import {LoggerService} from './logger.service';
 import {Http, Headers, Response, RequestMethod, RequestOptions} from '@angular/http';
@@ -11,13 +11,17 @@ import 'rxjs/add/operator/map';
  * Service for managing JWT Auth Token from dotCMS Site/Host
  */
 @Injectable()
+@Inject('http')
+@Inject('notificationService')
+@Inject('log')
+@Inject('settingsStorageService')
 export class JWTAuthService {
 
     constructor
     (
         private http: Http,
         private notificationService: NotificationService,
-        private loggerService: LoggerService,
+        private log: LoggerService,
         private settingsStorageService: SettingsStorageService
     ) {}
 
@@ -78,7 +82,7 @@ export class JWTAuthService {
         let errMsg = (error.message) ? error.message :
             error.status ? `${error.status} - ${error.statusText}` : 'Server error';
         if (errMsg) {
-            this.loggerService.error(errMsg);
+            this.log.error(errMsg);
             this.notificationService.displayErrorMessage('There was an error; please try again : ' + errMsg);
             return Observable.throw(errMsg);
         }

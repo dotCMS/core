@@ -1,4 +1,4 @@
-import {Injectable} from '@angular/core';
+import {Inject, Injectable} from '@angular/core';
 import {Response} from '@angular/http';
 import {HttpClient} from './http.service';
 import {Observable} from 'rxjs';
@@ -14,6 +14,9 @@ import {LoggerService} from '../../core/util/logger.service';
  * in dotCMS are anything that live on a host/folder.
  */
 @Injectable()
+@Inject('httpClient')
+@Inject('notificationService')
+@Inject('log')
 export class SiteBrowserService {
 
     constructor

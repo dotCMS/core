@@ -10,6 +10,7 @@ import {Folder} from '../../core/treeable/shared/folder.model';
 import {CommonModule} from '@angular/common';
 import {DataTableModule} from 'primeng/components/datatable/datatable';
 import {FileService} from '../../core/util/file.services';
+import {Site} from '../../core/treeable/shared/site.model';
 
 /**
  * The SiteDataTableComponent is a PrimeNG Component which provides a DataTable to display dotCMS Host/Folder Navigation
@@ -20,12 +21,47 @@ import {FileService} from '../../core/util/file.services';
 @Component({
     selector: 'site-datatable',
     styles: [require('./../app.css')],
-    template: require('./site-datatable.html')
+    template: `<div (drop)="handleDrop($event, p-column)" (dragover)="handleDragOver($event)">
+        <p-dataTable [value]="treeables" selectionMode="single"
+                     (onRowDblclick)="doubleClick($event)" (onRowSelect)="selectTreeable($event)">
+            <p-column class="browser-dropzone" field="title" header="Name" [sortable]="true">
+                <template let-col let-treeable="rowData" pTemplate type="body">
+                <span [ngSwitch]="treeable.type">
+                    <span *ngSwitchCase="'folder'" class="{{treeable.type=='folder' ? 'fa fa-folder aria-hidden=true':''}}"></span>
+                    <span *ngSwitchCase="'file_asset'">
+                        <img *ngIf="treeable.isImage() && treeable.extension!='ico'" src="{{dotCMSURL}}/contentAsset/image/{{treeable.identifier}}/fileAsset/filter/Thumbnail/thumbnail_w/25/thumbnail_h/25">
+                        <span *ngIf="!treeable.isImage() || treeable.extension=='ico'" class="fa fa-file" aria-hidden="true"></span>
+                    </span>
+                </span>
+                    <span>{{treeable.title}}</span>
+                </template>
+            </p-column>
+            <p-column field="type" header="Type" [sortable]="true" [style]="{'width':'100px'}">
+                <template let-col let-treeable="rowData" pTemplate type="body">
+                    <span>{{treeable.displayType}}</span>
+                </template>
+            </p-column>
+            <p-column field="live" header="Status" [style]="{'width':'70px'}">
+                <template let-col let-treeable="rowData" pTemplate type="body">
+                    <div *ngIf="treeable.type=='file_asset'">
+                        <span *ngIf="treeable.live" class="liveIcon"></span>
+                        <span *ngIf="!treeable.live" class="workingIcon"></span>
+                    </div>
+                </template>
+            </p-column>
+            <p-column field="modUserName" header="Editor" [sortable]="true" [style]="{'width':'150px'}"></p-column>
+            <p-column field="modDate" header="Modified" [sortable]="true" [style]="{'width':'200px'}">
+                <template let-col let-treeable="rowData" pTemplate type="body">
+                    <span>{{treeable.modDate | date: 'MM/dd/yy hh:mm:ss a'}}</span>
+                </template>
+            </p-column>
+        </p-dataTable>
+    </div>`
 })
 export class SiteDatatableComponent {
 
     dotCMSURL = '';
-    siteName = '';
+    site: Site;
     treeables: Treeable[];
 
     constructor(private updateService: SiteBrowserState,
@@ -36,14 +72,14 @@ export class SiteDatatableComponent {
                 private messageService: NotificationService) {
 
         if (settingsStorageService.getSettings()) {this.dotCMSURL = settingsStorageService.getSettings().site; }
-        this.siteName = updateService.getSelectedSite();
+        this.site = updateService.getSelectedSite();
         if (updateService.getURI()) {
             this.loadFolder(updateService.getURI());
         }
         updateService.currentSite
-            .subscribe(siteName => {
-                if (siteName) {
-                    this.loadSite(siteName);
+            .subscribe(site => {
+                if (site && site.hostname) {
+                    this.loadSite(site);
                 }
             });
         updateService.currentURI
@@ -90,7 +126,7 @@ export class SiteDatatableComponent {
      * @param uri
      */
     loadFolder(uri: string): void {
-        this.siteBrowserService.getTreeableAssetsUnderFolder(this.siteName, uri)
+        this.siteBrowserService.getTreeableAssetsUnderFolder(this.site.hostname, uri)
             .subscribe((treeables: Treeable[]) => this.treeables = treeables);
         setTimeout(() => {}, 100);
     }
@@ -99,9 +135,9 @@ export class SiteDatatableComponent {
      * This function is called when the [[SiteBrowserState]] Site is changed
      * @param siteName
      */
-    loadSite(siteName: string): void {
-        this.siteName = siteName;
-        this.siteBrowserService.getTreeableAssetsUnderSite(siteName)
+    loadSite(site: Site): void {
+        this.site = site;
+        this.siteBrowserService.getTreeableAssetsUnderSite(site.hostname)
             .subscribe((treeables: Treeable[]) => this.treeables = treeables);
         setTimeout(() => {}, 100);
     }
@@ -135,6 +171,9 @@ export class SiteDatatableComponent {
         }
         for (let i = 0; i < files.length; i++) {
             let file: File = files[i];
+            if (fileContentTypeID == null || fileContentTypeID.trim() === '') {
+                this.log.error('st inode is empty');
+            }
             this.fileService.uploadFile(file, pathToUploadTo, fileContentTypeID);
         }
         this.log.debug('Path 4: ' + pathToUploadTo);

@@ -1,3 +1,5 @@
+*.d.ts
+
 # Logs
 logs
 *.log
@@ -43,7 +45,7 @@ npm-debug.log
 /tsd_typings/
 
 # Dist #
-/dist
+/dist/
 /public/__build__/
 /src/*/__build__/
 /__build__/**

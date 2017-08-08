@@ -22,7 +22,7 @@ import {
     SiteBrowserState,
     SiteSelectorService,
     SiteTreetableService,
-} from '../../dotcms-js';
+} from '../../../dotcms-js';
 
 // DOTJS MODULES
 import {
@@ -31,7 +31,7 @@ import {
     DotcmsSiteSelectorModule,
     DotcmsSiteTreeTableModule,
     DotcmsTreeableDetailModule,
-} from '../../dotcms-js';
+} from '../../../dotcms-js';
 
 // SHOWCASE PAGES
 import {BreadcrumbDemoShowcase} from '../components/breadcrumb/breadcrumb';
