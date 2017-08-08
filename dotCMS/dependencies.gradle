@@ -346,7 +346,7 @@ dependencies {
     compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.6.3'
 
     compileOnly "org.immutables:value:2.3.3:annotations"
-    apt         "org.immutables:value:2.3.3"
-
     compile 'org.immutables:gson:2.3.3'
+
+    compile group: 'org.aspectj', name: 'aspectjrt', version:'1.8.4'
 }
