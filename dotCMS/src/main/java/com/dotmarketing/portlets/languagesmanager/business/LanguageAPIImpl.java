@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
+import com.dotcms.business.ContextCloseable;
+import com.dotcms.business.LocalTransactional;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.repackage.org.apache.commons.lang.math.NumberUtils;
 import com.dotmarketing.business.APILocator;
@@ -56,43 +58,29 @@ public class LanguageAPIImpl implements LanguageAPI {
 	}
 
 	@Override
+    @LocalTransactional
 	public void deleteLanguage(final Language language) {
 
-        try {
-
-            wrap(() -> factory.deleteLanguage(language));
-            Logger.debug(this, "deleteLanguage");
-        } catch (DotDataException e) {
-
-            if ( Logger.isErrorEnabled(LanguageAPIImpl.class) ) {
-                Logger.error(LanguageAPIImpl.class, e.getMessage(), e);
-            }
-        }
-
+        this.factory.deleteLanguage(language);
+        Logger.debug(this, "deleteLanguage");
 	}
 
     @Override
+    @LocalTransactional
     public void deleteFallbackLanguage(final Language fallbackLanguage) {
 
-	    int rowsAffected = 0;
-
-		try {
-
-            rowsAffected = wrapReturn(() -> this.factory.deleteLanguageById(fallbackLanguage));
-            Logger.debug(this, "deleteFallbackLanguage, rowsAffected: " + rowsAffected);
-        } catch (DotDataException e) {
-
-			if ( Logger.isErrorEnabled(LanguageAPIImpl.class) ) {
-				Logger.error(LanguageAPIImpl.class, e.getMessage(), e);
-			}
-		}
+	    final int rowsAffected =
+                this.factory.deleteLanguageById(fallbackLanguage);
+        Logger.debug(this, "deleteFallbackLanguage, rowsAffected: " + rowsAffected);
 	} // deleteFallbackLanguage.
 
+    @ContextCloseable
     @Override
 	public Language getLanguage(final String languageCode, final String countryCode) {
 		return factory.getLanguage(languageCode, countryCode);
 	}
 
+    @ContextCloseable
 	@Override
     public boolean isAssetTypeLanguage(final String id) {
         if (!NumberUtils.isDigits(id)) {
@@ -109,78 +97,74 @@ public class LanguageAPIImpl implements LanguageAPI {
         return false;
     }
 
+    @ContextCloseable
 	@Override
 	public Language getLanguage(final String id) {
 		return factory.getLanguage(id);
 	}
 
 	@Override
+	@LocalTransactional
 	public Language createDefaultLanguage() {
 
-        Language  language = null;
+        final Language  language =
+				this.factory.createDefaultLanguage();
+        Logger.debug(this, "Created default language");
 
-        try {
-
-            language = wrapReturn(() -> factory.createDefaultLanguage());
-            Logger.debug(this, "Created default language");
-        } catch (DotDataException e) {
-
-            if ( Logger.isErrorEnabled(LanguageAPIImpl.class) ) {
-                Logger.error(LanguageAPIImpl.class, e.getMessage(), e);
-            }
-        }
 		return language;
 	}
 
+	@ContextCloseable
 	@Override
 	public Language getLanguage(final long id) {
 		return factory.getLanguage(id);
 	}
 
+	@ContextCloseable
 	@Override
 	public List<Language> getLanguages() {
 		return factory.getLanguages();
 	}
 
+	@LocalTransactional
 	@Override
 	public void saveLanguage(final Language language) {
-        try {
 
-            wrap(() -> factory.saveLanguage(language));
-            Logger.debug(this, "Created language: " + language);
-        } catch (DotDataException e) {
-
-            if ( Logger.isErrorEnabled(LanguageAPIImpl.class) ) {
-                Logger.error(LanguageAPIImpl.class, e.getMessage(), e);
-            }
-        }
+        factory.saveLanguage(language);
+        Logger.debug(this, "Created language: " + language);
 	}
 
+    @ContextCloseable
 	@Override
 	public String getLanguageCodeAndCountry(final long id, final String langId) {
 		return factory.getLanguageCodeAndCountry(id, langId);
 	}
 
+    @ContextCloseable
 	@Override
 	public Language getDefaultLanguage() {
 		return factory.getDefaultLanguage();
 	}
 
+    @ContextCloseable
 	@Override
 	public boolean hasLanguage(final String id) {
 		return factory.hasLanguage(id);
 	}
 
+    @ContextCloseable
 	@Override
 	public boolean hasLanguage(final long id) {
 		return factory.hasLanguage(id);
 	}
 
+    @ContextCloseable
 	@Override
 	public boolean hasLanguage(final String languageCode, final String countryCode) {
 		return factory.hasLanguage(languageCode, countryCode);
 	}
 
+    @ContextCloseable
 	@Override
 	public List<LanguageKey> getLanguageKeys(final String langCode) {
 		final List<LanguageKey> list = factory.getLanguageKeys(langCode);
@@ -188,6 +172,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 		return list;
 	}
 
+    @ContextCloseable
 	@Override
 	public List<LanguageKey> getLanguageKeys(final String langCode, final String countryCode) {
 		final List<LanguageKey> list = factory.getLanguageKeys(langCode, countryCode);
@@ -195,6 +180,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 		return list;
 	}
 
+    @ContextCloseable
 	@Override
 	public List<LanguageKey> getLanguageKeys(final Language lang) {
 		final String langCode = lang.getLanguageCode();
@@ -216,21 +202,14 @@ public class LanguageAPIImpl implements LanguageAPI {
 	}
 
 	@Override
+    @LocalTransactional
 	public void createLanguageFiles(final Language lang) {
 
-        try {
-
-            wrap(() -> factory.createLanguageFiles(lang));
-            Logger.debug(this, "Created language file for lang: " + lang);
-        } catch (DotDataException e) {
-
-            if ( Logger.isErrorEnabled(LanguageAPIImpl.class) ) {
-                Logger.error(LanguageAPIImpl.class, e.getMessage(), e);
-            }
-        }
-
+        this.factory.createLanguageFiles(lang);
+        Logger.debug(this, "Created language file for lang: " + lang);
 	}
 
+	@LocalTransactional
 	@Override
 	public void saveLanguageKeys(final Language lang, final Map<String, String> generalKeys,
                                  final Map<String, String> specificKeys, final Set<String> toDeleteKeys) throws DotDataException {
@@ -261,7 +240,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 
         try {
 
-            wrap(() -> factory.saveLanguageKeys(lang, generalKeys, specificKeys, toDeleteKeys));
+            factory.saveLanguageKeys(lang, generalKeys, specificKeys, toDeleteKeys);
             Logger.debug(this, "Created language file for lang: " + lang);
         } catch (DotDataException e) {
 
@@ -271,6 +250,7 @@ public class LanguageAPIImpl implements LanguageAPI {
         }
 	}
 
+	@ContextCloseable
 	@Override
     public String getStringKey ( final Language lang, final String key ) {
 
@@ -318,33 +298,39 @@ public class LanguageAPIImpl implements LanguageAPI {
 		return user;
 	}
 
+	@ContextCloseable
 	@Override
 	public boolean getBooleanKey(final Language lang, final String key) {
 		return Boolean.parseBoolean(getStringKey(lang, key));
 	}
 
+    @ContextCloseable
 	@Override
 	public boolean getBooleanKey(final Language lang, final String key, final boolean defaultVal) {
 		return (getStringKey(lang, key) != null)?
 			Boolean.parseBoolean(getStringKey(lang, key)):defaultVal;
 	}
 
+    @ContextCloseable
 	@Override
 	public float getFloatKey(final Language lang, final String key) {
 		return Float.parseFloat(getStringKey(lang, key));
 	}
 
+    @ContextCloseable
 	@Override
 	public float getFloatKey(final Language lang, final String key, final float defaultVal) {
 		return (getStringKey(lang, key) != null)?
 			Float.parseFloat(getStringKey(lang, key)):defaultVal;
 	}
 
+    @ContextCloseable
 	@Override
 	public int getIntKey(final Language lang, final String key) {
 		return Integer.parseInt(getStringKey(lang, key));
 	}
 
+    @ContextCloseable
 	@Override
 	public int getIntKey(final Language lang, final String key, final int defaultVal) {
 		return (getStringKey(lang, key) != null)?
@@ -356,6 +342,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 		CacheLocator.getLanguageCache().clearCache();
 	}
 
+	@ContextCloseable
     @Override
     public Language getFallbackLanguage(final String languageCode) {
         return this.factory.getFallbackLanguage(languageCode);
