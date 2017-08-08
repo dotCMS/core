@@ -1,0 +1,163 @@
+buildscript {
+    repositories {
+        maven { url "http://repo.dotcms.com/artifactory/libs-release" }
+        jcenter()
+    }
+    dependencies {
+        classpath 'org.ajoberstar:grgit:1.7.0'
+        classpath 'com.dotcms.lib:dot.commons-io:2.0.1_2'
+    }
+}
+
+plugins {
+    id "net.ltgt.apt" version "0.9"
+}
+
+
+
+configurations {
+    compile
+    buildlibs
+    starter
+    provided
+    felix
+}
+
+configurations.all({
+    // dynamic: e.g. 'version: 2.0+'
+    resolutionStrategy.cacheDynamicVersionsFor 1, 'hours'
+    // changing: e.g. 'version 2.0.0-SNAPSHOT'
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+
+    /*POM relocation to an other version number is not fully supported in Gradle : xml-apis#xml-apis;2.0.2 relocated to xml-apis#xml-apis;1.0.b2.
+            Please update your dependency to directly use the correct version 'xml-apis#xml-apis;1.0.b2'.
+    Resolution will only pick dependencies of the relocated element.  Artifacts and other metadata will be ignored.*/
+    resolutionStrategy {
+        force 'xml-apis:xml-apis:1.4.01'
+    }
+})
+
+
+// Apply the java plugin to add support for Java.
+apply plugin: 'java'
+apply plugin: 'war'
+
+// In this section you declare where to find the dependencies of your project.
+repositories {
+    maven { url "http://repo.dotcms.com/artifactory/libs-release" }
+    maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
+}
+
+
+dependencies {
+    /*****  Felix libs need to be placed in the WEB-INF/felix/bundle directory. This was previously handled using a pre-build copy task.  *****/
+    felix group: 'org.apache.felix', name: 'org.apache.felix.bundlerepository', version:'2.0.8'
+    felix group: 'org.apache.felix', name: 'org.apache.felix.fileinstall',      version:'3.5.8'
+    felix group: 'org.apache.felix', name: 'org.apache.felix.gogo.command',     version:'1.0.2'
+    felix group: 'org.apache.felix', name: 'org.apache.felix.gogo.runtime',     version:'1.0.2'
+    felix group: 'org.apache.felix', name: 'org.apache.felix.gogo.shell',       version:'1.0.0'
+
+    /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
+    compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
+
+    starter group: 'com.dotcms', name: 'starter', version: '20170614', ext: 'zip'
+
+    providedCompile "javax.servlet:javax.servlet-api:3.1.0"
+    providedCompile fileTree("../libs/buildlibs").include('**/*.jar')
+    providedCompile fileTree("../libs/buildlibs").include('jtds-*.jar', 'mail.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'sqljdbc*.jar')
+
+    if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDev')) {
+        configurations.compile.exclude group: 'com.dotcms.enterprise', module: 'ee'
+    }
+
+    apt         "org.immutables:value:2.3.3"
+}
+
+// Import and apply the dependencies from the dependencies scripts.
+apply from: "$rootDir/dependencies.gradle"
+
+def enterpriseSrcFolder = file("$enterpriseProjectHome/src/main/java")
+
+if (enterpriseSrcFolder.exists()){
+	sourceSets {
+    	main {
+        	java {
+            	srcDirs = ["src/main/java", "$enterpriseProjectHome/src/main/java"]
+	        }
+    	}
+	}
+}
+
+ant.lifecycleLogLevel = "INFO"
+
+ext {
+    // Open the Git repository in the current directory.
+
+    dotcmsReleaseBuild = ''
+    dotcmsReleaseName='dotCMS Platform'
+    dotcmsReleaseCodename='Panther'
+    dotcmsReleaseBuild='999999'
+    dotcmsReleaseDdate='Jun 08, 1986'
+    dotcmsReleaseDdate = getDate()
+    serverFolder = "$tomcatDistInstallLocation-$tomcatInstallVersion"
+    homeFolder = serverFolder + webAppRootFolder
+    dotcmsHome = serverFolder + webAppRootFolder
+
+    if (project.gradle.startParameter.taskNames.contains('deployWarTomcat') || project.gradle.startParameter.taskNames.contains('createDist')){
+        try {
+            git = org.ajoberstar.grgit.Grgit.open(file('..'))
+            dotcmsReleaseBuild = git.head().abbreviatedId // abbreviatedId of head() method.
+        } catch (Exception exception) {
+            //Do nothing, this will fail only if git is not installed on this machine
+        }
+    }
+}
+
+if (project.hasProperty('jarBaseName')) {
+    archivesBaseName = "$jarBaseName"
+}else{
+    archivesBaseName = 'dotcms_'+dotcmsReleaseVersion+'_'+dotcmsReleaseBuild
+}
+
+// Compile Java.
+compileJava {
+    targetCompatibility = 1.8
+    sourceCompatibility = 1.8
+    options.incremental = true
+
+}
+
+jar{
+    exclude 'com/dotcms/enterprise/**'
+}
+
+war {
+
+    sourceSets {
+        main {
+            java {
+                //We only want to compile using the submodules code when using the deployWarTomcatDev task
+                if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDev') && enterpriseSrcFolder.exists()) {
+                    srcDirs = ["src/main/java", "$enterpriseProjectHome/src/main/java"]
+                } else {
+                    srcDirs = ["src/main/java"]
+                }
+
+            }
+        }
+    }
+
+    sourceSets.main.output.generatedSourcesDir = "src/main/generated"
+    classpath = classpath - sourceSets.main.output.classesDir
+}
+
+task deployWarTomcat() {
+    dependsOn 'war'
+}
+
+// Util methods.
+def getDate() {
+    def fmt = new java.text.SimpleDateFormat("MMMM dd, yyyy", Locale.US)
+    def formattedDate = fmt.format(new Date())
+    return formattedDate
+}
