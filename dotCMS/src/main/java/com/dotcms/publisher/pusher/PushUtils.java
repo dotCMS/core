@@ -78,9 +78,6 @@ public class PushUtils {
 					try(BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
 						IOUtils.copy(bis, taos);
 						taos.closeArchiveEntry();
-					}catch(IOException e){
-						Logger.error(PushUtils.class, e.getMessage());
-						throw e;
 					}
 				} else if (file.isDirectory()) {
 					//Logger.info(this.getClass(),file.getPath().substring(bundleRoot.length()));
