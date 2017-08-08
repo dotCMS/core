@@ -352,3 +352,9 @@ dotCMS requires a Java 8 Runtime Environment (JRE) or a Java 7 Development Kit (
 | Forums/Listserv        | [via Google Groups](https://groups.google.com/forum/#!forum/dotCMS) |
 | Twitter       | @dotCMS                         |
 | Main Site | [dotCMS.com](http://dotcms.com/)                  |
+
+## Packaging dotcms-js
+We eventually will have a cleaner system but for now to package dotcms-js you should run 
+npm run build:dotcms-js
+Then copy the package-dotcms-js.json to build-dotcms-js/package.json changing the build number. 
+Then run npm publish. 
