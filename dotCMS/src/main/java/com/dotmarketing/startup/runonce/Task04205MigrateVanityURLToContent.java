@@ -49,7 +49,7 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
     private static final String SELECT_DEFAULT_LANGUAGE = "select id from language where language_code = ? and country_code = ?";
     private static final String INSERT_IDENTIFIER_QUERY = "insert into identifier(id, parent_path, "
             + "asset_name, host_inode, asset_type) values (?,?,?,?,?)";
-    private String INSERT_CONTENTLET_QUERY =
+    private String insertContentletQuery =
             "insert into contentlet(inode, show_on_menu, sort_order, title, mod_date, mod_user, "
                     + " friendly_name, structure_inode, identifier, language_id, text1, text2, text3, text4, "
                     + " integer1, integer2, integer3, integer4, integer5, integer6, integer7, integer8, "
@@ -85,13 +85,15 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
     @Override
     public void executeUpgrade() throws DotDataException {
 
+        Connection conn =null;
         Logger.info(this, "============= Running Task04205MigrateVanityURLToContent =============");
         try {
 
 			/* drop virtual link constraints*/
             dropConstraints();
 
-            DbConnectionFactory.getConnection().setAutoCommit(true);
+            conn = DbConnectionFactory.getConnection();
+            conn.setAutoCommit(true);
             DotConnect dc = new DotConnect();
 
             //Update Inode Table, since previously the type was 'virtual_link' and now needs to be 'contentlet'
@@ -138,6 +140,15 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
             Logger.error(this,
                     String.format(ERROR_MESSAGE,
                             e.getMessage()), e);
+        } finally {
+            try {
+                conn.close();
+            }catch (SQLException e){
+                Logger.error(this,
+                        String.format(ERROR_MESSAGE,
+                                e.getMessage()), e);
+            }
+
         }
         Logger.info(this,
                 "============= Finished Task04205MigrateVanityURLToContent =============");
@@ -194,10 +205,10 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
             // Insert on Contentlet Table
             if (DbConnectionFactory.isMySql()) {
                 // Use correct escape char when using reserved words as column names
-                INSERT_CONTENTLET_QUERY = INSERT_CONTENTLET_QUERY
+                insertContentletQuery = insertContentletQuery
                         .replaceAll("\"", "`");
             }
-            dc.setSQL(INSERT_CONTENTLET_QUERY);
+            dc.setSQL(insertContentletQuery);
             dc.addParam(inode); // inode
             dc.addParam(false); // show_on_menu
             dc.addParam(0); // sort_order
@@ -389,7 +400,9 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
                     conn.close();
                 }
             } catch (SQLException ex) {
-                throw new DotDataException(ex.getMessage(), ex);
+                Logger.error(this,
+                        String.format(ERROR_MESSAGE,
+                                ex.getMessage()), ex);
             }
         }
     }
