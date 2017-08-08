@@ -4,7 +4,11 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.uuid.shorty.ShortType;
+import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Permission;
@@ -39,6 +43,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedSet;
@@ -984,7 +989,23 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		try {
 
 			Logger.debug( PermissionAPI.class, String.format("::getRoles -> before loading inode object(%s)", inode) );
-			inodeObj = InodeFactory.getInode(inode, Inode.class);
+			
+			//Using the ShortyAPI to identify the nature of this inode
+            Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(inode);
+            
+          //Hibernate won't handle structures, thats why we need a special case here
+            if ( ShortType.STRUCTURE == shortOpt.get().subType ) {
+
+                //Search for the given ContentType inode
+                ContentType foundContentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(inode);
+                if ( null != foundContentType ) {
+                    //Transform the found content type to a Structure
+                    inodeObj = new StructureTransformer(foundContentType).asStructure();
+                }
+            } else {
+                inodeObj = InodeFactory.getInode(inode, Inode.class);
+            }
+			
 			permissionList = getPermissions(inodeObj, true);
 
 			roleList = loadRolesForPermission(permissionList, permissionType, filter);
