@@ -15,14 +15,6 @@ import java.util.Set;
 public abstract class VanityUrlCache implements Cachable {
 
     /**
-     * Add or update in the cache the given Vanity URL
-     * based on given the given key
-     *
-     * @return CachedVanityUrl object
-     */
-    public abstract CachedVanityUrl add(String key, CachedVanityUrl vanityUrl);
-
-    /**
      * Retrieves the Cached Vanity URL associated to the given
      * key
      *
@@ -76,9 +68,4 @@ public abstract class VanityUrlCache implements Cachable {
     public abstract void setCachedVanityUrls(final String siteId, Long languageId,
             final Set<CachedVanityUrl> cachedVanityUrlList);
 
-    /**
-     * remove the associate a list of CachedVanityUrl associated to a Host Id and language id key
-     * @param key The current key composed of the host Id and languageId
-     */
-    public abstract void removeCachedVanityUrls(String key);
 }
