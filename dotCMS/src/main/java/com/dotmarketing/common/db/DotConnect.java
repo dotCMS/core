@@ -29,7 +29,6 @@ public class DotConnect {
 	private static Map<Connection, Map<String, PreparedStatement>> stmts = new LRUMap(200);
 	
 	ArrayList<Object> paramList;
-	ArrayList<Object> timestampList;
 
     ArrayList<Object> results;
     
@@ -501,18 +500,6 @@ public class DotConnect {
     public DotConnect addParam(java.util.Date x) {
         Logger.debug(this, "db.addParam " + paramList.size() + " (date): " + x);
         paramList.add(paramList.size(), x!=null ? new Timestamp(x.getTime()) : x);
-        return this;
-    }
-
-    /**
-     * Adds a {@link Timestamp} parameter to the prepared SQL statement.
-     *
-     * @param timestamp
-     *            the timestamp to be added
-     */
-    public DotConnect addParam(Timestamp timestamp) {
-        Logger.debug(this, "db.addParam " + paramList.size() + " (timestamp): " + timestamp);
-        paramList.add(paramList.size(), timestamp);
         return this;
     }
 
