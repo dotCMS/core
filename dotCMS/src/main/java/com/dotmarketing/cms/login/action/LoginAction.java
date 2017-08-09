@@ -101,6 +101,9 @@ public class LoginAction extends DispatchAction {
 	            	if (cookie != null) {
 	            		cookie.setMaxAge(-1);
 	            		cookie.setPath("/");
+
+	            		CookieUtil.setHttpOnlyCookie(cookie);
+
 	                    response.addCookie(cookie);
 	            	}
 	            }
