@@ -1,9 +1,15 @@
 package com.dotmarketing.common.db;
 
 import java.math.BigDecimal;
-import java.sql.*;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.*;
-import java.util.Date;
 
 import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
