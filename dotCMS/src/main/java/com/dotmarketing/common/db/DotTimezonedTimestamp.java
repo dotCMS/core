@@ -20,7 +20,7 @@ public class DotTimezonedTimestamp {
     }
 
     public Timestamp getTimestamp() {
-        return timestamp;
+        return new Timestamp(timestamp.getTime());
     }
 
     public String getTimezone() {
