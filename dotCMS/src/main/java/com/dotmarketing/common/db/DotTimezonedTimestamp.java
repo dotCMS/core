@@ -10,17 +10,17 @@ import java.util.Date;
 
 public class DotTimezonedTimestamp {
     private final String timezone;
-    private final Timestamp timestamp;
+    private final Date date;
 
     private DotTimezonedTimestamp(Date date, String timezone) {
         Preconditions.checkArgument(UtilMethods.isSet(date), "Provided date cannot be null or empty");
         Preconditions.checkArgument(UtilMethods.isSet(timezone), "Provided timezone cannot be null or empty");
         this.timezone = timezone;
-        this.timestamp = new Timestamp(date.getTime());
+        this.date = date;
     }
 
     public Timestamp getTimestamp() {
-        return new Timestamp(timestamp.getTime());
+        return new Timestamp(date.getTime());
     }
 
     public String getTimezone() {
