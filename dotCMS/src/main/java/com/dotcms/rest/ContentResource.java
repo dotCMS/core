@@ -1154,10 +1154,10 @@ public class ContentResource {
 													contentlet.setHost(hh.getIdentifier());
 													contentlet.setFolder(folder.getInode());
 													if(st.getStructureType()==BaseContentType.FILEASSET.getType()){
-													    StringBuilder URI = new StringBuilder();
-													    URI.append(split[1].endsWith("/")?split[1]:split[1]+"/");
-													    URI.append(contentlet.getMap().get("fileName").toString());
-                                                        Identifier existingIdent = APILocator.getIdentifierAPI().find(hh,URI.toString());
+													    StringBuilder fileUri = new StringBuilder();
+													    fileUri.append(split[1].endsWith("/")?split[1]:split[1]+"/");
+													    fileUri.append(contentlet.getMap().get("fileName").toString());
+                                                        Identifier existingIdent = APILocator.getIdentifierAPI().find(hh,fileUri.toString());
 														if(existingIdent != null && UtilMethods.isSet(existingIdent.getId()) && UtilMethods.isSet(contentlet.getIdentifier())){
 															contentlet.setIdentifier(existingIdent.getId());
 														}
