@@ -56,10 +56,11 @@ function cancelEdit(form) {
 
 dojo.ready(function() {
 	var fieldWidth = "300px";
-	new dijit.form.TextBox({
+	new dijit.form.ValidationTextBox({
 		name: "languageCode",
 		value: "<%=language.getLanguageCode()%>",
-		style: "width: " + fieldWidth
+		style: "width: " + fieldWidth,
+		promptMessage: "<%= LanguageUtil.get(pageContext, "LanguageCode-Required") %>"
 	}, "languageCode");
 
 	new dijit.form.TextBox({
@@ -68,10 +69,11 @@ dojo.ready(function() {
 		style: "width: " + fieldWidth
 	}, "countryCode");
 
-	new dijit.form.TextBox({
+	new dijit.form.ValidationTextBox({
 		name: "language",
 		value: "<%=language.getLanguage()%>",
-		style: "width: " + fieldWidth
+		style: "width: " + fieldWidth,
+		promptMessage: "<%= LanguageUtil.get(pageContext, "LanguageDescription-Required") %>"
 	}, "language");
 
 	new dijit.form.TextBox({
@@ -108,15 +110,16 @@ dojo.ready(function() {
 		    <dd><html:text size="30" property="languageCode" maxlength="2" styleId="languageCode" /></dd>
 	    </dl>
 		<dl>
-		    <dt><%= LanguageUtil.get(pageContext, "Country-Code") %>:</dt>
-		    <dd><html:text size="30" property="countryCode" maxlength="2" styleId="countryCode" /></dd>
-	    </dl>
-		<dl>
 		    <dt><%= LanguageUtil.get(pageContext, "Language") %>:</dt>
 		    <dd>
 				<html:text size="30" property="language" styleId="language" />
 				<div class="hint-text"><%= LanguageUtil.get(pageContext, "descriptive") %></div>
 			</dd>
+	    </dl>
+		<dl>
+		    <dt><%= LanguageUtil.get(pageContext, "Country-Code") %>:</dt>
+		    <dd><html:text size="30" property="countryCode" maxlength="2" styleId="countryCode" /></dd>
+
 	    </dl>
 		<dl>
 		    <dt><%= LanguageUtil.get(pageContext, "Country") %>:</dt>
