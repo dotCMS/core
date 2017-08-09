@@ -231,7 +231,7 @@ processResources {
 
 // By default the war task compiles everything under src/main/java into WEB-INF/classes/
 // but, instead, we want to compile everything on a .jar file and put it under WEB-INF/lib.
-war.dependsOn 'immutables','deployPlugins','installDotcmsUI'
+war.dependsOn 'deployPlugins','installDotcmsUI'
 
 war {
 
@@ -488,6 +488,10 @@ task customDistWar(type: War) {
 customDistWar.group='dotCMS Development'
 customDistWar.description='Builds a dotCMS as a war. (Task mean to be use from a distribution structure using the buildwar.sh script. This task will just use the already deployed folder inside the app server and compressed into a war file.)'
 
+compileAspect.dependsOn 'immutables'
+compileAspect {
+    println "\nCompiling Aspect..."
+}
 // This task defines if the immutables folder is generated, otherwise will generate it.
 task immutables() {
     doLast {
