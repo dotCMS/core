@@ -1,15 +1,9 @@
 package com.dotmarketing.common.db;
 
 import java.math.BigDecimal;
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.*;
+import java.util.Date;
 
 import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
@@ -21,6 +15,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import static com.dotcms.util.CollectionsUtils.*;
 
 /**
  * Description of the Class
@@ -34,6 +29,7 @@ public class DotConnect {
 	private static Map<Connection, Map<String, PreparedStatement>> stmts = new LRUMap(200);
 	
 	ArrayList<Object> paramList;
+	ArrayList<Object> timestampList;
 
     ArrayList<Object> results;
     
@@ -50,6 +46,9 @@ public class DotConnect {
     int startRow = 0;
     
     boolean forceQuery=false;
+
+    private static Map<Class, StatementObjectSetter> statementSetterHandlerMap =
+            map(DotTimezonedTimestamp.class, DotConnect::setTimestampWithTimezone);
 
     public DotConnect() {
         Logger.debug(this, "------------ DotConnect() --------------------");
@@ -504,8 +503,19 @@ public class DotConnect {
         paramList.add(paramList.size(), x!=null ? new Timestamp(x.getTime()) : x);
         return this;
     }
-    
-    
+
+    /**
+     * Adds a {@link Timestamp} parameter to the prepared SQL statement.
+     *
+     * @param timestamp
+     *            the timestamp to be added
+     */
+    public DotConnect addParam(Timestamp timestamp) {
+        Logger.debug(this, "db.addParam " + paramList.size() + " (timestamp): " + timestamp);
+        paramList.add(paramList.size(), timestamp);
+        return this;
+    }
+
     private void executeQuery() throws SQLException{
         Connection conn = DbConnectionFactory.getConnection();
         executeQuery(conn);
@@ -583,12 +593,16 @@ public class DotConnect {
 	        		}
 	        		afterPreparation = System.nanoTime();
 	        	}
-	        	
-	        	
+
 	        	//statement.setMaxRows(maxRows);
 		        Logger.debug(this, "SQL = " + statement.toString());
 		        for (int i = 0; i < paramList.size(); i++) {
-		            statement.setObject(i + 1, paramList.get(i));
+		            Object param = paramList.get(i);
+		            if(param!=null && statementSetterHandlerMap.containsKey(param.getClass())) {
+		                statementSetterHandlerMap.get(param.getClass()).execute(statement, i+1, param);
+                    } else {
+                        statement.setObject(i + 1, paramList.get(i));
+                    }
 		        }
 				if (!starter.toLowerCase().trim().contains("select")) { // if it is NOT a read operation
 		        	beforeQueryExecution = System.nanoTime();
@@ -1172,5 +1186,18 @@ public class DotConnect {
 
         return rowsAffected;
     } // executeUpdate.
+
+    private static void setTimestampWithTimezone(PreparedStatement statement, int parameterIndex, Object timestamp) {
+
+        final DotTimezonedTimestamp dotTimezonedTimestamp = (DotTimezonedTimestamp) timestamp;
+        final Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(dotTimezonedTimestamp.getTimezone()));
+
+        try {
+            statement.setTimestamp(parameterIndex, dotTimezonedTimestamp.getTimestamp(), calendar);
+        } catch(SQLException e) {
+            Logger.error(DotConnect.class, "Error setting Timestamp to PreparedStatement. " +
+                    "Parameter Index " + parameterIndex + "; Timestamp: " + timestamp, e);
+        }
+    }
 
 }
