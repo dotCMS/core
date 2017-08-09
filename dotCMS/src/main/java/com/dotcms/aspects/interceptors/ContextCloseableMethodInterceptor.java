@@ -15,9 +15,6 @@ public class ContextCloseableMethodInterceptor implements MethodInterceptor<Obje
 
     public static final ContextCloseableMethodInterceptor INSTANCE = new ContextCloseableMethodInterceptor();
 
-    public ContextCloseableMethodInterceptor() {
-
-    }
 
     @Override
     public Object invoke(final DelegateMethodInvocation<Object> delegate) throws Throwable {

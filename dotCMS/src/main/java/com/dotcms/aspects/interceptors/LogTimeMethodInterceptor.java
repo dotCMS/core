@@ -14,7 +14,7 @@ import java.lang.reflect.Method;
 public class LogTimeMethodInterceptor implements MethodInterceptor<Object> {
 
     public static final LogTimeMethodInterceptor INSTANCE = new LogTimeMethodInterceptor();
-    private final LogTimeUtil logTimeUtil;
+    private final transient LogTimeUtil logTimeUtil;
 
     public LogTimeMethodInterceptor() {
         this (LogTimeUtil.INSTANCE);

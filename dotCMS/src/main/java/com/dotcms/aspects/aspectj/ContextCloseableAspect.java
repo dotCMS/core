@@ -2,7 +2,6 @@ package com.dotcms.aspects.aspectj;
 
 import com.dotcms.aspects.MethodInterceptor;
 import com.dotcms.aspects.interceptors.ContextCloseableMethodInterceptor;
-import com.dotcms.business.LocalTransactional;
 import com.google.common.annotations.VisibleForTesting;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -22,7 +21,7 @@ public class ContextCloseableAspect {
     }
 
     @VisibleForTesting
-    public ContextCloseableAspect(MethodInterceptor<Object> interceptor) {
+    public ContextCloseableAspect(final MethodInterceptor<Object> interceptor) {
         this.interceptor = interceptor;
     }
 

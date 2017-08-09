@@ -21,7 +21,7 @@ public class LogTimeAspect {
     }
 
     @VisibleForTesting
-    public LogTimeAspect(MethodInterceptor<Object> interceptor) {
+    public LogTimeAspect(final MethodInterceptor<Object> interceptor) {
         this.interceptor = interceptor;
     }
 

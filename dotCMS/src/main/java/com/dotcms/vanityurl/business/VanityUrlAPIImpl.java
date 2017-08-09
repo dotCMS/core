@@ -1,5 +1,6 @@
 package com.dotcms.vanityurl.business;
 
+import com.dotcms.business.ContextCloseable;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
@@ -61,6 +62,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         this.vanityUrlServices = vanityUrlServices;
     }
 
+    @ContextCloseable
     @Override
     public void initializeVanityURLsCache(final User user) {
         searchAndPopulate(GET_ACTIVE_VANITY_URL, user, null, null, true);
@@ -111,6 +113,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         searchAndPopulate(luceneQuery, user, siteId, languageId, includedSystemHost);
     }
 
+    @ContextCloseable
     @Override
     public VanityUrl getVanityUrlFromContentlet(final Contentlet con) {
         if (con != null) {
@@ -179,6 +182,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         vanityUrlServices.updateCache(cache404VanityUrl);
     }
 
+    @ContextCloseable
     @Override
     public CachedVanityUrl getLiveCachedVanityUrl(final String uri, final Host site,
             final long languageId, final User user) {
@@ -418,6 +422,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         }
     }
 
+    @ContextCloseable
     @Override
     public void validateVanityUrl(Contentlet contentlet) {
 

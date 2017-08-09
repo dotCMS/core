@@ -22,7 +22,7 @@ public class LocalTransactionalAspect {
     }
 
     @VisibleForTesting
-    public LocalTransactionalAspect(MethodInterceptor<Object> interceptor) {
+    public LocalTransactionalAspect(final MethodInterceptor<Object> interceptor) {
         this.interceptor = interceptor;
     }
 

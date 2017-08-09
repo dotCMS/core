@@ -8,15 +8,15 @@ import com.dotmarketing.exception.DotRuntimeException;
  */
 public class DotAspectException extends DotRuntimeException {
 
-    public DotAspectException(String x) {
+    public DotAspectException(final String x) {
         super(x);
     }
 
-    public DotAspectException(Throwable x) {
+    public DotAspectException(final Throwable x) {
         super(x);
     }
 
-    public DotAspectException(String x, Throwable e) {
+    public DotAspectException(final String x, final Throwable e) {
         super(x, e);
     }
 }
