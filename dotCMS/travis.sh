@@ -6,7 +6,7 @@ ls -al
 echo "=============================="
 
 cd dotCMS/
-./dotCMS/gradlew war
+./gradlew war
 cd ..
 
 echo "=============================="
