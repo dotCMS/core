@@ -591,7 +591,7 @@
 										<%= LanguageUtil.get(pageContext, "VanityURL") %>
                                         <%} else if (form.getStructureType() == 8){%>
                                         <%= LanguageUtil.get(pageContext, "KeyValue") %>
-										<%}%>&nbsp;%>&nbsp;
+										<%}%>&nbsp;
 										<a target="_blank" href="/api/v1/contenttype/id/<%=structure.getInode() %>">json</a>
 										<%}else{ %>
 										<select onchange="changeStructureType()" dojoType="dijit.form.FilteringSelect" name="structureType" id="structureType" style="width:150px" value="<%= form.getStructureType()  %>" >
