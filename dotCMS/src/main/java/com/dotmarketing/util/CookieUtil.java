@@ -143,7 +143,7 @@ public class CookieUtil {
     /**
      * Set HttpOnly to cookie on demand and if needed
      */
- 	public static void setHttpOnlyCookie(Cookie cookie) {
+ 	public static void setHttpOnlyCookie(final Cookie cookie) {
  		//https://github.com/dotCMS/core/issues/11912
  		if (Config.getBooleanProperty(COOKIES_HTTP_ONLY, false)) {
  			cookie.setHttpOnly(true);			
