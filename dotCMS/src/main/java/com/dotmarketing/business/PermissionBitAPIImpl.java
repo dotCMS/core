@@ -994,7 +994,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
             Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(inode);
             
           //Hibernate won't handle structures, thats why we need a special case here
-            if ( ShortType.STRUCTURE == shortOpt.get().subType ) {
+            if ( shortOpt.isPresent() && ShortType.STRUCTURE == shortOpt.get().subType ) {
 
                 //Search for the given ContentType inode
                 ContentType foundContentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(inode);
