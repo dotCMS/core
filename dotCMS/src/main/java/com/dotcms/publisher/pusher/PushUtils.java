@@ -1,11 +1,7 @@
 package com.dotcms.publisher.pusher;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.Files;
 import java.util.Collection;
 import java.util.zip.GZIPOutputStream;
 
@@ -32,22 +28,22 @@ public class PushUtils {
 	{
 		Logger.info(PushUtils.class, "Compressing "+files.size() + " to "+output.getAbsoluteFile());
 	               // Create the output stream for the output file
-		FileOutputStream fos = new FileOutputStream(output);
-	               // Wrap the output file stream in streams that will tar and gzip everything
-		TarArchiveOutputStream taos = new TarArchiveOutputStream(
-			new GZIPOutputStream(new BufferedOutputStream(fos)));
 
-	               // TAR originally didn't support long file names, so enable the support for it
-		taos.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
+		// try-with-resources handles close of streams
+		try(OutputStream fos = Files.newOutputStream(output.toPath());
+			// Wrap the output file stream in streams that will tar and gzip everything
+			TarArchiveOutputStream taos = new TarArchiveOutputStream(
+				new GZIPOutputStream(new BufferedOutputStream(fos))) ) {
 
-	               // Get to putting all the files in the compressed output file
-		for (File f : files) {
-			addFilesToCompression(taos, f, ".", bundleRoot);
+			// TAR originally didn't support long file names, so enable the support for it
+			taos.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
+
+			// Get to putting all the files in the compressed output file
+			for (File f : files) {
+				addFilesToCompression(taos, f, ".", bundleRoot);
+			}
 		}
 
-	               // Close everything up
-		taos.close();
-		fos.close();
 		return output;
 	}
 	
@@ -75,7 +71,7 @@ public class PushUtils {
 	    			taos.putArchiveEntry(new TarArchiveEntry(file, dir + "/" + file.getName()));
 				if (file.isFile()) {
 			        // Add the file to the archive
-					try(BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
+					try(BufferedInputStream bis = new BufferedInputStream(Files.newInputStream(file.toPath()))) {
 						IOUtils.copy(bis, taos);
 						taos.closeArchiveEntry();
 					}
