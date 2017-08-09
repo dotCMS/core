@@ -11,6 +11,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -162,14 +163,25 @@ public class VanityUrlServices {
         try {
             if (contentlet.isVanityUrl()) {
 
-                //When the contentlet finished to index we need to invalidate it on cache
-                boolean indexed = APILocator.getContentletAPI()
-                        .isInodeIndexed(contentlet.getInode(),
-                                contentlet.isLive(), contentlet.isWorking());
-                if (indexed) {
-                    //Invalidate this VanityURL
-                    VanityUrlServices.getInstance().invalidateVanityUrl(contentlet);
-                }
+                LocalTransaction.wrap(() -> {
+
+                    //When the contentlet finished to index we need to invalidate it on cache
+                    boolean indexed = false;
+                    try {
+                        indexed = APILocator.getContentletAPI()
+                                .isInodeIndexed(contentlet.getInode(),
+                                        contentlet.isLive(), contentlet.isWorking());
+                    } catch (DotSecurityException e) {
+                        Logger.error(this,
+                                String.format("Unable to invalidate VanityURL in cache [%s]",
+                                        contentlet.getIdentifier()), e);
+                    }
+
+                    if (indexed) {
+                        //Invalidate this VanityURL
+                        VanityUrlServices.getInstance().invalidateVanityUrl(contentlet);
+                    }
+                });
 
             }
         } catch (Exception e) {

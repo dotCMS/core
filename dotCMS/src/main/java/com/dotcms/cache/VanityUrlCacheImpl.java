@@ -40,8 +40,7 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
         cache = CacheLocator.getCacheAdministrator();
     }
 
-    @Override
-    public CachedVanityUrl add(final String key, final CachedVanityUrl vanityUrl) {
+    private CachedVanityUrl add(final String key, final CachedVanityUrl vanityUrl) {
         // Add the key to the cache
         cache.put(key, vanityUrl, getPrimaryGroup());
         //Add this site to the list of related sites to the cached VanitiesURLs
@@ -69,6 +68,26 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
         }
     }
 
+    private void cleanBySecondaryRegion(final String key) {
+
+        Set<CachedVanityUrl> secondaryCachedVanities = this
+                .getCachedVanityUrls(key);
+
+        if (null != secondaryCachedVanities) {
+
+            /*
+            Before to remove this group from cache lets remove all the related Vanities
+             */
+            for (CachedVanityUrl toRemove : secondaryCachedVanities) {
+                //Now remove from the primary group
+                this.remove(VanityUrlUtil.sanitizeKey(toRemove.getSiteId(), toRemove.getUrl(),
+                        toRemove.getLanguageId()));
+            }
+
+            this.removeCachedVanityUrls(key);
+        }
+    }
+
     @Override
     public void remove(final Contentlet vanityURL) {
 
@@ -81,15 +100,7 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
             remove each of those records from the primary cache group, we do this in order to avoid to
             flush completely the primary group.
              */
-            Set<CachedVanityUrl> secondaryCachedVanities = this
-                    .getCachedVanityUrls(VanityUrlUtil.sanitizeSecondCacheKey(vanityURL));
-            if (null != secondaryCachedVanities) {
-                for (CachedVanityUrl toRemove : secondaryCachedVanities) {
-                    //Now remove from the primary group
-                    this.remove(VanityUrlUtil.sanitizeKey(toRemove.getSiteId(), toRemove.getUrl(),
-                            toRemove.getLanguageId()));
-                }
-            }
+            cleanBySecondaryRegion(VanityUrlUtil.sanitizeSecondCacheKey(vanityURL));
 
             /*
             Now we want to clean up the 404 cache records and only touch other sites if we
@@ -126,11 +137,12 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
 
                                         //We found a 404 record, we need to remove this site from the cache
                                         deleteForHost = Boolean.TRUE;
+                                        break;
                                     }
                                 }
 
                                 if (deleteForHost) {
-                                    this.removeCachedVanityUrls(VanityUrlUtil
+                                    cleanBySecondaryRegion(VanityUrlUtil
                                             .sanitizeSecondCacheKey(site,
                                                     vanityURL.getLanguageId()));
                                 }
@@ -141,7 +153,6 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
             }
 
             this.remove(VanityUrlUtil.sanitizeKey(vanityURL));
-            this.removeCachedVanityUrls(VanityUrlUtil.sanitizeSecondCacheKey(vanityURL));
 
         } catch (DotDataException | DotRuntimeException | DotSecurityException e) {
             Logger.debug(VanityUrlServices.class,
@@ -242,8 +253,7 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
                 ImmutableSet.copyOf(cachedVanityUrlList), getCachedVanityUrlGroup());
     }
 
-    @Override
-    public void removeCachedVanityUrls(String key) {
+    private void removeCachedVanityUrls(final String key) {
         try {
             cache.remove(key, getCachedVanityUrlGroup());
         } catch (Exception e) {

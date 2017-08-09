@@ -1,5 +1,6 @@
 package com.dotcms.util;
 
+import com.dotcms.config.DotInitializationService;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
@@ -40,6 +41,9 @@ public class IntegrationTestInitService {
             CacheLocator.init();
     		FactoryLocator.init();
     		APILocator.init();
+
+            // Init other dotCMS services.
+            DotInitializationService.getInstance().initialize();
 
             initCompleted.set(true);
         }
