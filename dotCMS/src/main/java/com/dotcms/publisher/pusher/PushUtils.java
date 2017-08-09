@@ -3,9 +3,9 @@ package com.dotcms.publisher.pusher;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Collection;
 import java.util.zip.GZIPOutputStream;
 
@@ -75,7 +75,7 @@ public class PushUtils {
 	    			taos.putArchiveEntry(new TarArchiveEntry(file, dir + "/" + file.getName()));
 				if (file.isFile()) {
 			        // Add the file to the archive
-					try(BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
+					try(BufferedInputStream bis = new BufferedInputStream(Files.newInputStream(file.toPath()))) {
 						IOUtils.copy(bis, taos);
 						taos.closeArchiveEntry();
 					}
