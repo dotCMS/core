@@ -29,10 +29,12 @@ require('rxjs/Rx');
 
 var testing = require('@angular/core/testing');
 var browser = require('@angular/platform-browser-dynamic/testing');
+var animation = require('@angular/platform-browser/animations');
 
 testing.TestBed.initTestEnvironment(
   browser.BrowserDynamicTestingModule,
-  browser.platformBrowserDynamicTesting()
+  browser.platformBrowserDynamicTesting(),
+  animation.BrowserAnimationsModule
 );
 
 /*

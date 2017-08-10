@@ -24,9 +24,9 @@ import { BaseComponent } from '../../../view/components/_common/_base/base-compo
     templateUrl: './content-types-create.component.html'
 })
 export class ContentTypesCreateComponent extends BaseComponent {
+    contentTypeType: string;
     @ViewChild('form') form: ContentTypesFormComponent;
     private contentTypeName: Observable<string>;
-    private contentTypeType: string;
     private contentTypeIcon: string;
     private contentTypeId: string;
     private fields: Field[] = [];
