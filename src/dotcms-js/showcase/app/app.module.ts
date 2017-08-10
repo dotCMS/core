@@ -11,7 +11,7 @@ import {routing} from './app.routing';
 // DOTJS SERVICES
 import {
     AppConfig,
-    FileSystemService,
+    // FileSystemService,
     HttpClient,
     JWTAuthService,
     LocalStoreService,
@@ -75,7 +75,7 @@ import {TieredMenuModule, CodeHighlighterModule} from 'primeng/primeng';
         {provide: HttpClient, useClass: HttpClient},
         {provide: AppConfig, useValue: AppConfig},
         {provide: NotificationService, useClass: NotificationService},
-        {provide: FileSystemService, useClass: FileSystemService},
+        // {provide: FileSystemService, useClass: FileSystemService},
         {provide: SiteTreetableService, useClass: SiteTreetableService},
         {provide: SiteBrowserService, useClass: SiteBrowserService},
         {provide: SiteSelectorService, useClass: SiteSelectorService},
