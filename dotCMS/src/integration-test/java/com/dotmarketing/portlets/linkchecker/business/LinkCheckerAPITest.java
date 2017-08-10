@@ -203,7 +203,7 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
         List<InvalidLink> invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
         assertTrue(invalids!=null);
         assertTrue(invalids.size()>0);
-        assertEquals(3,invalids.size());
+        assertEquals(4,invalids.size());
 
         for(InvalidLink il : invalids) {
             assertEquals(il.getTitle(),"short title");
