@@ -28,9 +28,9 @@ public class CookiesFilter implements Filter {
 			FilterChain filterChain) throws IOException, ServletException {
 		
 		HttpServletRequest req = (HttpServletRequest) request;
-		HttpServletResponse res = (HttpServletResponse) response;
+		HttpServletResponse res = new CookieServletResponse(request, response);
 		CookieUtil.setCookiesSecurityHeaders(req, res); 
-        filterChain.doFilter(request, response);
+        filterChain.doFilter(req, res);
 	}
 	
 	public void destroy() {
