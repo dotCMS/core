@@ -7,11 +7,8 @@ import javax.servlet.http.HttpServletRequest;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-import com.dotcms.uuid.shorty.ShortType;
-import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Permission;
@@ -143,22 +140,7 @@ public class PermissionAjax {
 						if ( Host.SYSTEM_HOST.equals(assetInode) ) {
 							permParent = hostAPI.find(assetInode, systemUser, false);
 						} else {
-
-							//Using the ShortyAPI to identify the nature of this inode
-							Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(assetInode);
-
-							//Hibernate won't handle structures, thats why we need a special case here
-							if ( ShortType.STRUCTURE == shortOpt.get().subType ) {
-
-								//Search for the given ContentType inode
-								ContentType foundContentType = contentTypeAPI.find(assetInode);
-								if ( null != foundContentType ) {
-									//Transform the found content type to a Structure
-									permParent = new StructureTransformer(foundContentType).asStructure();
-								}
-							} else {
-								permParent = InodeFactory.getInode(assetInode, Inode.class);
-							}
+						    permParent = InodeUtils.getInode(assetInode);
 						}
 
 						if(permParent !=null || InodeUtils.isSet(permParent.getPermissionId())){
