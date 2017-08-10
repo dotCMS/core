@@ -22,6 +22,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { StringUtils } from '../../../api/util/string.utils';
 import { FieldService } from '../fields/service';
 import { CONTENT_TYPE_INITIAL_DATA } from '../main';
+import {Field} from '../fields/common/field';
 
 @Component({
     selector: 'content-type-fields-drop-zone',
