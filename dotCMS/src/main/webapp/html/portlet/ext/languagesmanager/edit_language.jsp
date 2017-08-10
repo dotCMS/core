@@ -106,11 +106,11 @@ dojo.ready(function() {
 			</dl>
 	    <%} %>
 	    <dl>
-		    <dt><%= LanguageUtil.get(pageContext, "Language-Code") %>:</dt>
+		    <dt class="required2"><%= LanguageUtil.get(pageContext, "Language-Code") %>:</dt>
 		    <dd><html:text size="30" property="languageCode" maxlength="2" styleId="languageCode" /></dd>
 	    </dl>
 		<dl>
-		    <dt><%= LanguageUtil.get(pageContext, "Language") %>:</dt>
+		    <dt class="required2"><%= LanguageUtil.get(pageContext, "Language") %>:</dt>
 		    <dd>
 				<html:text size="30" property="language" styleId="language" />
 				<div class="hint-text"><%= LanguageUtil.get(pageContext, "descriptive") %></div>
