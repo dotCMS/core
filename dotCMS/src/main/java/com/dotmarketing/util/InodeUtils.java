@@ -189,16 +189,16 @@ public class InodeUtils {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public static Inode getInode(String inode) throws DotDataException, DotSecurityException{
+	public static Inode getInode(final String inode) throws DotDataException, DotSecurityException{
 	    Inode inodeObj = null;
         //Using the ShortyAPI to identify the nature of this inode
-        Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(inode);
+        final Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(inode);
         
       //Hibernate won't handle structures, thats why we need a special case here
         if ( shortOpt.isPresent() && ShortType.STRUCTURE == shortOpt.get().subType ) {
 
             //Search for the given ContentType inode
-            ContentType foundContentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(inode);
+            final ContentType foundContentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(inode);
             if ( null != foundContentType ) {
                 //Transform the found content type to a Structure
                 inodeObj = new StructureTransformer(foundContentType).asStructure();
