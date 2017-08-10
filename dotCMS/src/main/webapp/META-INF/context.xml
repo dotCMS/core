@@ -46,7 +46,7 @@
     <!-- MYSQL UTF8
     <Resource name="jdbc/dotCMSPool" auth="Container"
           type="javax.sql.DataSource" driverClassName="com.mysql.jdbc.Driver"
-          url="jdbc:mysql://localhost/dotcms?characterEncoding=UTF-8"
+          url="jdbc:mysql://localhost/dotcms?characterEncoding=UTF-8&amp;useLegacyDatetimeCode=false&amp;serverTimezone=UTC"
           username="{your db user}" password="{your db password}" maxTotal="60" maxIdle="10" maxWaitMillis="60000"
           removeAbandonedOnBorrow="true" removeAbandonedOnMaintenance="true" removeAbandonedTimeout="60" logAbandoned="true"
           timeBetweenEvictionRunsMillis="30000" validationQuery="SELECT 1" testOnBorrow="true" testWhileIdle="true" />
