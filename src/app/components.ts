@@ -85,7 +85,6 @@ export const COMPONENTS = [
     ...RULES_ENGINE_COMPONENTS,
     Accordion,
     AccordionGroup,
-    BreadcrumbComponent,
     CustomTimeComponent,
     DotBrowserComponent,
     DotLoadingIndicator,
@@ -110,15 +109,12 @@ export const COMPONENTS = [
     PatternLibrary,
     ResetPasswordComponent,
     ResetPasswordContainer,
-    SiteDatatableComponent,
     SiteSelectorComponentDotJS,
-    SiteTreeTableComponent,
     ToolbarAddContenletBodyComponent,
     ToolbarAddContenletComponent,
     ToolbarComponent,
     ToolbarNotifications,
-    ToolbarUserComponent,
-    TreeableDetailComponent
+    ToolbarUserComponent
 ];
 
 // CUSTOM PIPES
