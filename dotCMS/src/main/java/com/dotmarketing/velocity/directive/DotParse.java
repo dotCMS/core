@@ -5,10 +5,12 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -92,7 +94,10 @@ public class DotParse extends DotDirective {
         throw new ResourceNotFoundException(errorMessage);
       }
 
-      Contentlet c = APILocator.getContentletAPI().find(inode, params.user, params.live);
+      
+      boolean respectFrontEndRolesForVTL = (!params.live) ? Config.getBooleanProperty("RESPECT_FRONTEND_ROLES_FOR_DOTPARSE", true) : params.live;
+      
+      Contentlet c = APILocator.getContentletAPI().find(inode, params.user, respectFrontEndRolesForVTL);
       FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(c);
       
       
@@ -117,7 +122,9 @@ public class DotParse extends DotDirective {
       if( e instanceof ResourceNotFoundException ) {
         throw (ResourceNotFoundException) e;
       }
-      
+      else if(e instanceof DotSecurityException){
+          throw new ResourceNotFoundException(e) ;
+      }
       throw new DotStateException(e);
     }
   }
