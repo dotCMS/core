@@ -21,6 +21,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import static com.dotcms.util.CollectionsUtils.*;
 
 /**
  * Description of the Class
@@ -50,6 +51,9 @@ public class DotConnect {
     int startRow = 0;
     
     boolean forceQuery=false;
+
+    private static Map<Class, StatementObjectSetter> statementSetterHandlerMap =
+            map(DotTimezonedTimestamp.class, DotConnect::setTimestampWithTimezone);
 
     public DotConnect() {
         Logger.debug(this, "------------ DotConnect() --------------------");
@@ -504,8 +508,7 @@ public class DotConnect {
         paramList.add(paramList.size(), x!=null ? new Timestamp(x.getTime()) : x);
         return this;
     }
-    
-    
+
     private void executeQuery() throws SQLException{
         Connection conn = DbConnectionFactory.getConnection();
         executeQuery(conn);
@@ -583,12 +586,16 @@ public class DotConnect {
 	        		}
 	        		afterPreparation = System.nanoTime();
 	        	}
-	        	
-	        	
+
 	        	//statement.setMaxRows(maxRows);
 		        Logger.debug(this, "SQL = " + statement.toString());
 		        for (int i = 0; i < paramList.size(); i++) {
-		            statement.setObject(i + 1, paramList.get(i));
+		            Object param = paramList.get(i);
+		            if(param!=null && statementSetterHandlerMap.containsKey(param.getClass())) {
+		                statementSetterHandlerMap.get(param.getClass()).execute(statement, i+1, param);
+                    } else {
+                        statement.setObject(i + 1, paramList.get(i));
+                    }
 		        }
 				if (!starter.toLowerCase().trim().contains("select")) { // if it is NOT a read operation
 		        	beforeQueryExecution = System.nanoTime();
@@ -1076,5 +1083,18 @@ public class DotConnect {
         }
     }
 
+
+    private static void setTimestampWithTimezone(PreparedStatement statement, int parameterIndex, Object timestamp) {
+
+        final DotTimezonedTimestamp dotTimezonedTimestamp = (DotTimezonedTimestamp) timestamp;
+        final Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(dotTimezonedTimestamp.getTimezone()));
+
+        try {
+            statement.setTimestamp(parameterIndex, dotTimezonedTimestamp.getTimestamp(), calendar);
+        } catch(SQLException e) {
+            Logger.error(DotConnect.class, "Error setting Timestamp to PreparedStatement. " +
+                    "Parameter Index " + parameterIndex + "; Timestamp: " + timestamp, e);
+        }
+    }
 
 }
