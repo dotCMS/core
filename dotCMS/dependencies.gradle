@@ -204,6 +204,14 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jboss-logging', version:'3.3.0.Final_2'
     compile group: 'com.dotcms.lib', name: 'dot.txtmark', version:'0.14-SNAPSHOT_1'
     compile group: 'com.dotcms.lib', name: 'dot.HikariCP', version:'2.4.6_1'
+
+    // AWS Libraries
+    compile group: 'com.dotcms.lib', name: 'dot.aws-java-sdk-core', version:'1.11.66_1'
+    compile group: 'com.dotcms.lib', name: 'dot.aws-java-sdk-kms', version:'1.11.66_1'
+    compile group: 'com.dotcms.lib', name: 'dot.aws-java-sdk-s3', version:'1.11.66_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jmespath-java', version:'1.11.66_1'
+
+
     compile group: 'org.springframework', name: 'spring-asm', version:'3.1.0.RELEASE'
     compile(group: 'org.springframework', name: 'spring-beans', version:'3.1.0.RELEASE') {
         exclude(module: 'commons-logging')
@@ -329,13 +337,10 @@ dependencies {
         exclude(group: 'org.slf4j')
     }
 
-
+    compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.2'
 
     compile group: 'org.apache.xmlgraphics', name: 'batik-rasterizer', version:'1.8'
-    compile (group: 'com.amazonaws', name: 'aws-java-sdk-s3', version:'1.10.12')  {
-        exclude(group: 'commons-logging')
-        exclude(group: 'org.slf4j')
-    }
+
     compile group: 'org.apache.xmlgraphics', name: 'batik-anim', version:'1.8'
     compile (group: 'org.apache.xmlgraphics', name: 'xmlgraphics-commons', version:'1.5') {
         exclude(group: 'commons-logging')
