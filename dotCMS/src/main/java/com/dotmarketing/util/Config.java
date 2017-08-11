@@ -66,7 +66,7 @@ public class Config {
 	//Config internal properties
 	private static int refreshInterval = 5; //In minutes, Default 5 can be overridden in the config file as config.refreshinterval int property
 	private static Date lastRefreshTime = new Date ();
-	private static PropertiesConfiguration props = null;
+	protected static PropertiesConfiguration props = null;
 	private static ClassLoader classLoader = null;
     protected static URL dotmarketingPropertiesUrl = null;
     protected static URL clusterPropertiesUrl = null;

@@ -984,7 +984,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		try {
 
 			Logger.debug( PermissionAPI.class, String.format("::getRoles -> before loading inode object(%s)", inode) );
-			inodeObj = InodeFactory.getInode(inode, Inode.class);
+			
+			inodeObj = InodeUtils.getInode(inode);
+			
 			permissionList = getPermissions(inodeObj, true);
 
 			roleList = loadRolesForPermission(permissionList, permissionType, filter);
