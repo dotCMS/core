@@ -14,6 +14,8 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionBitAPIImpl;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -53,6 +55,7 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 /**
@@ -67,6 +70,7 @@ public class URLMapFilter implements Filter {
 
     private List<PatternCache> patternsCache = new ArrayList<>();
     private ContentletAPI conAPI;
+    private PermissionAPI perAPI;
     private UserWebAPI wuserAPI;
     private HostWebAPI whostAPI;
     private boolean urlFallthrough;
@@ -84,6 +88,7 @@ public class URLMapFilter implements Filter {
             ServletException {
 
         HttpServletRequest request = (HttpServletRequest) req;
+        HttpServletResponse response = (HttpServletResponse) res;
         HttpSession optSession = request.getSession(false);
 
         String uri = cmsUrlUtil.getURIFromRequest(request);
@@ -232,11 +237,11 @@ public class URLMapFilter implements Filter {
                         }
 
                         cons = conAPI.searchIndex(query.toString(), 2, 0,
-                                (hostIsRequired ? "conhost, modDate" : "modDate"), user, true);
+                                (hostIsRequired ? "conhost, modDate" : "modDate"), wuserAPI.getSystemUser(), true);
                         int idx = 0;
                         if (checkIndex && cons.size() == 2) {
                             // prefer session setting
-                            Contentlet second = conAPI.find(cons.get(1).getInode(), user, true);
+                            Contentlet second = conAPI.find(cons.get(1).getInode(), wuserAPI.getSystemUser(), true);
                             if (second.getLanguageId() == sessionLang) {
                                 idx = 1;
                             }
@@ -245,7 +250,12 @@ public class URLMapFilter implements Filter {
                         if (optSession != null) {
                             optSession.setAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE,
                                     String.valueOf(
-                                            conAPI.find(c.getInode(), user, true).getLanguageId()));
+                                            conAPI.find(c.getInode(), wuserAPI.getSystemUser(), true).getLanguageId()));
+                        }
+                        Contentlet con = conAPI.find(c.getInode(), wuserAPI.getSystemUser(), true);
+                        if(!perAPI.doesUserHavePermission(con, PermissionBitAPIImpl.PERMISSION_READ,user,true)){
+                            response.sendRedirect("/dotCMS/login?referrer="+UtilMethods.encodeURIComponent(url));
+                            return;
                         }
                         request.setAttribute(WebKeys.WIKI_CONTENTLET, c.getIdentifier());
                         request.setAttribute(WebKeys.WIKI_CONTENTLET_INODE, c.getInode());
@@ -317,7 +327,7 @@ public class URLMapFilter implements Filter {
         conAPI = APILocator.getContentletAPI();
         wuserAPI = WebAPILocator.getUserWebAPI();
         whostAPI = WebAPILocator.getHostWebAPI();
-
+        perAPI = APILocator.getPermissionAPI();
         // persistant on disk cache makes this necessary
         CacheLocator.getContentTypeCache().clearURLMasterPattern();
         urlFallthrough = Config.getBooleanProperty("URLMAP_FALLTHROUGH", true);
