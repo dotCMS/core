@@ -186,7 +186,8 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
             "http://thisisabadhostover.dotcms.comx.", // yeah small typo
             "mailto:dev@dotcms.com", // should ignore this one
             "webcalc://somehostnomatter.itsbad.", // should ignore this
-            "http://www.oracle.com./index.html" // this is a good link
+            "http://www.oracle.com./index.html", // bad URL
+            "https://github.com/dotCMS/core" // this is a good link
         };
         HashSet<String> links=new HashSet<String>(Arrays.asList(extlinks));
         StringBuilder sb=new StringBuilder("<html><body>\n");
