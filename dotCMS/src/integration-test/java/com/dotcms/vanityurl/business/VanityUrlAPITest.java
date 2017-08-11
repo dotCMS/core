@@ -604,13 +604,26 @@ public class VanityUrlAPITest {
 
 
         } finally {
-            contentletAPI.archive(vanityURL, user, false);
-            contentletAPI.archive(vanityURL1, user, false);
-            contentletAPI.archive(vanityURL2, user, false);
+            if (null != vanityURL) {
+                contentletAPI.archive(vanityURL, user, false);
+            }
+            if (null != vanityURL1) {
+                contentletAPI.archive(vanityURL1, user, false);
+            }
+            if (null != vanityURL2) {
+                contentletAPI.archive(vanityURL2, user, false);
+            }
 
-            contentletAPI.delete(vanityURL, user, false);
-            contentletAPI.delete(vanityURL1, user, false);
-            contentletAPI.delete(vanityURL2, user, false);
+            if (null != vanityURL) {
+                contentletAPI.delete(vanityURL, user, false);
+            }
+
+            if (null != vanityURL1) {
+                contentletAPI.delete(vanityURL1, user, false);
+            }
+            if (null != vanityURL2) {
+                contentletAPI.delete(vanityURL2, user, false);
+            }
         }
     }
 
