@@ -197,6 +197,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         cache404VanityUrl.setLanguageId(languageId);
         cache404VanityUrl.setURI(uri);
         cache404VanityUrl.setSite(siteId);
+        cache404VanityUrl.setOrder(0); // todo: verify if this value is ok
 
         vanityUrlServices.updateCache(cache404VanityUrl);
     }
