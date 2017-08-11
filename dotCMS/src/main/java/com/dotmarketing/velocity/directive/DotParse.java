@@ -93,10 +93,8 @@ public class DotParse extends DotDirective {
         String errorMessage = String.format("Not found %s version of [%s]", (live) ? "Live" : "Working", templatePath);
         throw new ResourceNotFoundException(errorMessage);
       }
-
-      
       boolean respectFrontEndRolesForVTL = (!params.live) ? Config.getBooleanProperty("RESPECT_FRONTEND_ROLES_FOR_DOTPARSE", true) : params.live;
-      
+
       Contentlet c = APILocator.getContentletAPI().find(inode, params.user, respectFrontEndRolesForVTL);
       FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(c);
       
@@ -113,19 +111,27 @@ public class DotParse extends DotDirective {
 
 
       return asset.getFileAsset().getAbsolutePath();
-    } catch (Exception e) {
-      Logger.warn(this.getClass(), " - unable to resolve " + templatePath + " getting this: "+ e.getMessage() );
-      if(e.getStackTrace().length>0)
-        Logger.warn(this.getClass(), " - at " + e.getStackTrace()[0]);
-      
-      //If we didn't find the resource don't change the exception type
-      if( e instanceof ResourceNotFoundException ) {
-        throw (ResourceNotFoundException) e;
-      }
-      else if(e instanceof DotSecurityException){
-          throw new ResourceNotFoundException(e) ;
-      }
-      throw new DotStateException(e);
+    } 
+    catch (ResourceNotFoundException e) {
+        Logger.warn(this.getClass(), " - unable to resolve " + templatePath + " getting this: "+ e.getMessage() );
+        if(e.getStackTrace().length>0){
+          Logger.warn(this.getClass(), " - at " + e.getStackTrace()[0]);
+        }
+        throw e;
+    }
+    catch (DotSecurityException  e) {
+        Logger.warn(this.getClass(), " - unable to resolve " + templatePath + " getting this: "+ e.getMessage() );
+        if(e.getStackTrace().length>0){
+            Logger.warn(this.getClass(), " - at " + e.getStackTrace()[0]);
+        }
+        throw new ResourceNotFoundException(e);
+    }
+    catch (Exception e) {
+        Logger.warn(this.getClass(), " - unable to resolve " + templatePath + " getting this: "+ e.getMessage() );
+        if(e.getStackTrace().length>0){
+            Logger.warn(this.getClass(), " - at " + e.getStackTrace()[0]);
+        }
+        throw new DotStateException(e);
     }
   }
 
