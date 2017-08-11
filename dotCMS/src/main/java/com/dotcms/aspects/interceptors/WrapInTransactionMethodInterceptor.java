@@ -2,18 +2,18 @@ package com.dotcms.aspects.interceptors;
 
 import com.dotcms.aspects.DelegateMethodInvocation;
 import com.dotcms.aspects.MethodInterceptor;
-import com.dotcms.business.LocalTransactional;
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.db.LocalTransaction;
 
 /**
- * Method handler for the {@link LocalTransactional} annotation aspect
+ * Method handler for the {@link WrapInTransaction} annotation aspect
  * @author jsanca
  */
-public class LocalTransactionalMethodInterceptor implements MethodInterceptor<Object> {
+public class WrapInTransactionMethodInterceptor implements MethodInterceptor<Object> {
 
-    public static final LocalTransactionalMethodInterceptor INSTANCE = new LocalTransactionalMethodInterceptor();
+    public static final WrapInTransactionMethodInterceptor INSTANCE = new WrapInTransactionMethodInterceptor();
 
-    protected LocalTransactionalMethodInterceptor() {
+    protected WrapInTransactionMethodInterceptor() {
 
     }
 

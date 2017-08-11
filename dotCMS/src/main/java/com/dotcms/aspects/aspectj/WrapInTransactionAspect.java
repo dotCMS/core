@@ -1,39 +1,40 @@
 package com.dotcms.aspects.aspectj;
 
 import com.dotcms.aspects.MethodInterceptor;
-import com.dotcms.aspects.interceptors.ContextCloseableMethodInterceptor;
+import com.dotcms.aspects.interceptors.WrapInTransactionMethodInterceptor;
+import com.dotcms.business.WrapInTransaction;
 import com.google.common.annotations.VisibleForTesting;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 
 /**
- * This aspect handles the @{@link com.dotcms.business.ContextCloseable} with AspectJ
+ * This aspect handles the @{@link WrapInTransaction} with AspectJ
  * @author jsanca
  */
 @Aspect
-public class ContextCloseableAspect {
+public class WrapInTransactionAspect {
 
     private final MethodInterceptor<Object> interceptor;
 
-    public ContextCloseableAspect() {
-        this(ContextCloseableMethodInterceptor.INSTANCE);
+    public WrapInTransactionAspect() {
+        this(WrapInTransactionMethodInterceptor.INSTANCE);
     }
 
     @VisibleForTesting
-    public ContextCloseableAspect(final MethodInterceptor<Object> interceptor) {
+    public WrapInTransactionAspect(final MethodInterceptor<Object> interceptor) {
         this.interceptor = interceptor;
     }
 
     /**
-     * Aspect implementation for the {@link com.dotcms.business.ContextCloseable} annotation
+     * Aspect implementation for the {@link WrapInTransaction} annotation
      *
      * @param point Joint point
      * @return The result of call
      * @throws Throwable If something goes wrong inside
      */
     @Around("execution(* *(..))"
-            + " && @annotation(com.dotcms.business.ContextCloseable)")
+            + " && @annotation(com.dotcms.business.WrapInTransaction)")
     public Object invoke(final ProceedingJoinPoint point) throws Throwable {
 
         return

@@ -2,26 +2,26 @@ package com.dotcms.aspects.interceptors;
 
 import com.dotcms.aspects.DelegateMethodInvocation;
 import com.dotcms.aspects.MethodInterceptor;
-import com.dotcms.business.ContextCloseable;
+import com.dotcms.business.CloseDB;
 import com.dotmarketing.db.DbConnectionFactory;
 
 import static com.dotcms.util.AnnotationUtils.getMethodAnnotation;
 
 /**
- * Method handler for the {@link com.dotcms.business.ContextCloseable} annotation aspect
+ * Method handler for the {@link CloseDB} annotation aspect
  * @author jsanca
  */
-public class ContextCloseableMethodInterceptor implements MethodInterceptor<Object> {
+public class CloseDBMethodInterceptor implements MethodInterceptor<Object> {
 
-    public static final ContextCloseableMethodInterceptor INSTANCE = new ContextCloseableMethodInterceptor();
+    public static final CloseDBMethodInterceptor INSTANCE = new CloseDBMethodInterceptor();
 
 
     @Override
     public Object invoke(final DelegateMethodInvocation<Object> delegate) throws Throwable {
 
 
-        final ContextCloseable contextCloseable =
-                getMethodAnnotation(delegate.getMethod(), ContextCloseable.class);
+        final CloseDB contextCloseable =
+                getMethodAnnotation(delegate.getMethod(), CloseDB.class);
         Object methodReturn = null;
 
         try {
