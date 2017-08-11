@@ -167,7 +167,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
      *
      * @param vanityUrl The vanityurl URL object
      */
-    private void addToSingleVanityURLCache(VanityUrl vanityUrl) {
+    private void addToSingleVanityURLCache(final VanityUrl vanityUrl) {
         try {
             if (vanityUrl.isLive()) {
                 vanityUrlServices.addSingleCache(vanityUrl);
@@ -197,7 +197,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         cache404VanityUrl.setLanguageId(languageId);
         cache404VanityUrl.setURI(uri);
         cache404VanityUrl.setSite(siteId);
-        cache404VanityUrl.setOrder(0); // todo: verify if this value is ok
+        cache404VanityUrl.setOrder(0);
 
         vanityUrlServices.updateCache(cache404VanityUrl);
     }
@@ -513,22 +513,21 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                 this.vanityUrlServices.getCachedVanityUrlList(siteId, languageId);
 
         //null means we need to initialize the cache for this site
-        if (null != foundVanities) {
+        if (null != foundVanities &&
+                includeSystemHost &&
+                !siteId.equals(Host.SYSTEM_HOST)) {
+            //Now search in cache with the SYSTEM_HOST
+            final List<CachedVanityUrl> systemHostFoundVanities =
+                    this.vanityUrlServices.getCachedVanityUrlList(Host.SYSTEM_HOST, languageId);
 
-            if (includeSystemHost && !siteId.equals(Host.SYSTEM_HOST)) {
-                //Now search in cache with the SYSTEM_HOST
-                final List<CachedVanityUrl> systemHostFoundVanities =
-                        this.vanityUrlServices.getCachedVanityUrlList(Host.SYSTEM_HOST, languageId);
-
-                if (null != systemHostFoundVanities) {
-                    foundVanities = ImmutableList.<CachedVanityUrl>builder()
-                            .addAll(foundVanities)
-                            .addAll(systemHostFoundVanities)
-                            .build();
-                } else {
-                    //This means we need to initialize the cache for the SYSTEM_HOST
-                    foundVanities = null;
-                }
+            if (null != systemHostFoundVanities) {
+                foundVanities = ImmutableList.<CachedVanityUrl>builder()
+                        .addAll(foundVanities)
+                        .addAll(systemHostFoundVanities)
+                        .build();
+            } else {
+                //This means we need to initialize the cache for the SYSTEM_HOST
+                foundVanities = null;
             }
         }
 
