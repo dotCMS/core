@@ -15,8 +15,14 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+
+import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
+
+import static com.dotcms.util.CollectionsUtils.toImmutableList;
 
 /**
  * This class implements {@link VanityUrlCache} the cache for Vanity URLs.
@@ -70,7 +76,7 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
 
     private void cleanBySecondaryRegion(final String key) {
 
-        Set<CachedVanityUrl> secondaryCachedVanities = this
+        final List<CachedVanityUrl> secondaryCachedVanities = this
                 .getCachedVanityUrls(key);
 
         if (null != secondaryCachedVanities) {
@@ -115,7 +121,7 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
 
                         if (!Host.SYSTEM_HOST.equals(site)) {
 
-                            Set<CachedVanityUrl> siteCachedVanityUrl = this
+                            final List<CachedVanityUrl> siteCachedVanityUrl = this
                                     .getCachedVanityUrls(VanityUrlUtil
                                             .sanitizeSecondCacheKey(site,
                                                     vanityURL.getLanguageId()));
@@ -176,21 +182,22 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
         try {
 
             //Update primary Cache
-            this.add(VanityUrlUtil
-                            .sanitizeKey(vanity.getSiteId(), vanity.getUrl(), vanity.getLanguageId()),
-                    vanity);
+            this.addSingle(vanity);
 
             //Update Secondary cache
-            Set<CachedVanityUrl> siteCachedVanityUrl = this.getCachedVanityUrls(VanityUrlUtil
+            List<CachedVanityUrl> siteCachedVanityUrl = this.getCachedVanityUrls(VanityUrlUtil
                     .sanitizeSecondCacheKey(vanity.getSiteId(), vanity.getLanguageId()));
 
             if (null != siteCachedVanityUrl) {
-                siteCachedVanityUrl = ImmutableSet.<CachedVanityUrl>builder()
+                siteCachedVanityUrl = ImmutableList.<CachedVanityUrl>builder()
                         .add(vanity)
                         .addAll(siteCachedVanityUrl)
-                        .build();
+                        .build()
+                        .stream()
+                        .sorted(Comparator.comparing(CachedVanityUrl::getOrder))
+                        .collect(toImmutableList());
             } else {
-                siteCachedVanityUrl = ImmutableSet.<CachedVanityUrl>builder()
+                siteCachedVanityUrl = ImmutableList.<CachedVanityUrl>builder()
                         .add(vanity)
                         .build();
             }
@@ -200,6 +207,29 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
         } catch (DotRuntimeException e) {
             Logger.debug(this, "Error trying to update Vanity URL in cache", e);
         }
+    }
+
+    @Override
+    public void addSingle(final VanityUrl vanity) {
+
+        //Update primary Cache
+        this.addSingle(new CachedVanityUrl(vanity));
+    }
+
+    @Override
+    public void addSingle(final CachedVanityUrl vanity) {
+
+        final String key = VanityUrlUtil
+                .sanitizeKey(vanity.getSiteId(), vanity.getUrl(), vanity.getLanguageId());
+
+        final CachedVanityUrl currentCachedVanityUrl = this.get(key);
+        // we just override if the new vanity has a lower order than the current one.
+        final CachedVanityUrl cachedVanityUrlToPut   =
+                (null != currentCachedVanityUrl && currentCachedVanityUrl.getOrder() < vanity.getOrder())?
+                    currentCachedVanityUrl: vanity;
+
+        //Update primary Cache
+        this.add(key, cachedVanityUrlToPut);
     }
 
     @Override
@@ -234,10 +264,10 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
     }
 
     @Override
-    public Set<CachedVanityUrl> getCachedVanityUrls(final String key) {
-        Set<CachedVanityUrl> vanityUrlList = null;
+    public List<CachedVanityUrl> getCachedVanityUrls(final String key) {
+        List<CachedVanityUrl> vanityUrlList = null;
         try {
-            vanityUrlList = (Set<CachedVanityUrl>) cache.get( key, getCachedVanityUrlGroup());
+            vanityUrlList = (List<CachedVanityUrl>) cache.get( key, getCachedVanityUrlGroup());
         } catch (Exception e) {
             Logger.debug(this, "Cache Entry not found", e);
         }
@@ -247,10 +277,10 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
 
     @Override
     public void setCachedVanityUrls(final String siteId, Long languageId,
-            final Set<CachedVanityUrl> cachedVanityUrlList) {
+            final List<CachedVanityUrl> cachedVanityUrlList) {
         cache.put(VanityUrlUtil
                         .sanitizeSecondCacheKey(siteId, languageId),
-                ImmutableSet.copyOf(cachedVanityUrlList), getCachedVanityUrlGroup());
+                            cachedVanityUrlList, getCachedVanityUrlGroup());
     }
 
     private void removeCachedVanityUrls(final String key) {
