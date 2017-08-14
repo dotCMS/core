@@ -18,6 +18,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+
 import java.util.List;
 
 /**
@@ -123,6 +124,15 @@ public class VanityUrlServices {
     }
 
     /**
+     * Add single {@link CachedVanityUrl} to the cache not affecting secondaries caches.
+     * @param vanityUrl {@link CachedVanityUrl}
+     */
+    public void addSingleCache(final VanityUrl vanityUrl) {
+
+        this.vanityURLCache.addSingle(vanityUrl);
+    }
+
+    /**
      * Get the cached vanity Url from the primary cache for a given site and SYSTEM_HOST
      *
      * @param uri The current uri
@@ -150,6 +160,34 @@ public class VanityUrlServices {
 
         return foundVanity;
     }
+
+    /**
+     * Set the list of cached vanity urls list
+     * @param siteId The current site Id
+     * @param languageId The current language Id
+     * @param vanityUrlList List of {@link CachedVanityUrl}
+     */
+    public void setCachedVanityUrlList(final String siteId,
+                                       final long   languageId,
+                                       final List<CachedVanityUrl>   vanityUrlList) {
+
+        this.vanityURLCache.setCachedVanityUrls(siteId, languageId, vanityUrlList);
+    } // setCachedVanityUrlList.
+
+    /**
+     * Set the list of cached vanity urls list
+     * @param siteId The current site Id
+     * @param languageId The current language Id
+     * @return List of {@link CachedVanityUrl}
+     */
+    public List<CachedVanityUrl> getCachedVanityUrlList(final String siteId,
+                                       final long   languageId) {
+
+        return this.vanityURLCache
+                .getCachedVanityUrls(VanityUrlUtil
+                        .sanitizeSecondCacheKey(siteId,
+                                languageId));
+    } // setCachedVanityUrlList.
 
     /**
      * Subscriber that listen to events of type CommitListenerEvent, this event will be trigger when
@@ -189,7 +227,7 @@ public class VanityUrlServices {
                     String.format("Unable to invalidate VanityURL in cache [%s]",
                             contentlet.getIdentifier()), e);
         }
-
     }
+
 
 }
