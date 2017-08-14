@@ -1,5 +1,9 @@
 package com.dotcms.vanityurl.business;
 
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.CollectionsUtils.toImmutableList;
+
+import com.dotcms.business.CloseDB;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
@@ -24,13 +28,12 @@ import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import org.elasticsearch.indices.IndexMissingException;
-
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
-
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.CollectionsUtils.toImmutableList;
+import org.elasticsearch.indices.IndexMissingException;
 
 /**
  * Implementation class for the {@link VanityUrlAPI}.
@@ -471,6 +474,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                     this.vanityUrlServices.setCachedVanityUrlList (k.hostId(), k.languageId(), vanityUrlBuilder.build()));
     } // addSecondaryVanityURLCacheCollection.
 
+    @CloseDB
     @Override
     public void validateVanityUrl(Contentlet contentlet) {
 
