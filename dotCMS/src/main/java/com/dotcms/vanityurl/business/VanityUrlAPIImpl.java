@@ -64,6 +64,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         this.vanityUrlServices = vanityUrlServices;
     }
 
+    @CloseDB
     @Override
     public void initializeVanityURLsCache(final User user) {
         searchAndPopulate(GET_ACTIVE_VANITY_URL, user, null, null, true);
@@ -114,6 +115,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         searchAndPopulate(luceneQuery, user, siteId, languageId, includedSystemHost);
     }
 
+    @CloseDB
     @Override
     public VanityUrl getVanityUrlFromContentlet(final Contentlet con) {
         if (con != null) {
@@ -210,6 +212,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
     }
 
+    @CloseDB
     @Override
     public CachedVanityUrl getLiveCachedVanityUrl(final String uri, final Host site,
             final long languageId, final User user) {
