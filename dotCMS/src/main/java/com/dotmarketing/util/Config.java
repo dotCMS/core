@@ -11,6 +11,7 @@ import com.dotcms.util.ReflectionUtils;
 import com.dotcms.util.SystemEnvironmentConfigurationInterpolator;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.google.common.collect.ImmutableSet;
 
 import java.io.*;
 import java.net.URL;
@@ -65,7 +66,7 @@ public class Config {
 	//Config internal properties
 	private static int refreshInterval = 5; //In minutes, Default 5 can be overridden in the config file as config.refreshinterval int property
 	private static Date lastRefreshTime = new Date ();
-	private static PropertiesConfiguration props = null;
+	protected static PropertiesConfiguration props = null;
 	private static ClassLoader classLoader = null;
     protected static URL dotmarketingPropertiesUrl = null;
     protected static URL clusterPropertiesUrl = null;
@@ -533,7 +534,7 @@ public class Config {
 	@SuppressWarnings("unchecked")
 	public static Iterator<String> getKeys () {
 	    _refreshProperties ();
-	    return props.getKeys();
+	    return ImmutableSet.copyOf(props.getKeys()).iterator();
 	}
 
 	/**
@@ -544,7 +545,7 @@ public class Config {
 	@SuppressWarnings ( "unchecked" )
 	public static Iterator<String> subset ( String prefix ) {
 		_refreshProperties();
-		return props.subset(prefix).getKeys();
+		return ImmutableSet.copyOf(props.subset(prefix).getKeys()).iterator();
 	}
 
 	/**

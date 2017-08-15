@@ -1,11 +1,11 @@
 package com.dotcms.publisher.endpoint.ajax;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Configuration;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3EndPointPublisher;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
+import com.dotcms.repackage.com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;

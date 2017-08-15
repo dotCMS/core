@@ -3,6 +3,7 @@ package com.dotcms.workflow;
 import java.util.List;
 
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
@@ -27,7 +28,7 @@ public class EscalationThread extends DotStatefulJob {
         final String wfActionAssign=Config.getStringProperty("ESCALATION_DEFAULT_ASSIGN","");
         final String wfActionComments=Config.getStringProperty("ESCALATION_DEFAULT_COMMENT", "Task time out");
 
-        if(LicenseUtil.getLevel()>=200) {
+        if(LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) {
             try {
                 HibernateUtil.startTransaction();
                 List<WorkflowTask> tasks = wapi.findExpiredTasks();

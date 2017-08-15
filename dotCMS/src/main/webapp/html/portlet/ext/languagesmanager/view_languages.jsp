@@ -2,6 +2,7 @@
 
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
 <%@page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
@@ -25,7 +26,7 @@ var cmsAdminUser = true;
 var cmsAdminUser = false;
 <% } %>
 
-var enterprise = <%=LicenseUtil.getLevel() > 199%>;
+var enterprise = <%=LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level%>;
 <%PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 List<PublishingEndPoint> sendingEndpoints = pepAPI.getReceivingEndPoints();%>
 var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty()%>;
@@ -81,6 +82,7 @@ var pushHandler = new dotcms.dojo.push.PushHandler('Push Publish');
 			    final String strLanguage = ((com.dotmarketing.portlets.languagesmanager.model.Language)list.get(l)).getLanguage();
 			    final String strLangCode = ((com.dotmarketing.portlets.languagesmanager.model.Language)list.get(l)).getLanguageCode();
 			    final String strCountryCode = ((com.dotmarketing.portlets.languagesmanager.model.Language)list.get(l)).getCountryCode();
+			    final String langIcon = LanguageUtil.getLiteralLocale(strLangCode, strCountryCode);
 			%>
 			<td id="tdLanguage-<%=String.valueOf(longLanguageId)%>" class="tdLanguage" 
                 data-href-edit-variables="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
@@ -98,7 +100,7 @@ var pushHandler = new dotcms.dojo.push.PushHandler('Push Publish');
                     <portlet:param name="referer" value="<%= referer %>" />
                     <portlet:param name="<%= Constants.CMD %>" value="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, \"edit\")) %>" /></portlet:actionURL>">
 					<img
-					src="/html/images/languages/<%= strLangCode %>_<%= (UtilMethods.isSet(strCountryCode) ? strCountryCode : strLangCode) %>.gif"
+					src="/html/images/languages/<%= langIcon %>.gif"
 					border="0" />
 					<%= strLanguage %>&nbsp;<%= (UtilMethods.isSet(strCountryCode) ? ("(" + strCountryCode + ")&nbsp;") : StringPool.BLANK) %>
 			    </a>

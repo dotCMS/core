@@ -16,7 +16,7 @@ public interface ServerAPI {
 
 	public String readServerId();
 
-	public  void writeServerIdToDisk(String serverId) throws IOException;
+
 
 	public void updateHeartbeat() throws DotDataException;
 
@@ -51,7 +51,10 @@ public interface ServerAPI {
 	/**
 	 *
 	 * @return the server where the API call is made.
+	 * @throws DotDataException 
      */
-    Server getCurrentServer();
+    Server getCurrentServer() throws DotDataException;
+
+    Server getOrCreateServer(String serverId) throws DotDataException;
 
 }

@@ -1,9 +1,14 @@
 package com.dotcms.vanityurl.business;
 
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.CollectionsUtils.toImmutableList;
+
+import com.dotcms.business.CloseDB;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.org.apache.commons.collections.keyvalue.MultiKey;
 import com.dotcms.services.VanityUrlServices;
 import com.dotcms.util.VanityUrlUtil;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
@@ -11,7 +16,6 @@ import com.dotcms.vanityurl.model.DefaultVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -22,14 +26,12 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.PriorityQueue;
-import java.util.Set;
+import java.util.Map;
 import java.util.regex.Matcher;
 import org.elasticsearch.indices.IndexMissingException;
 
@@ -59,24 +61,53 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
     @VisibleForTesting
     public VanityUrlAPIImpl(final ContentletAPI contentletAPI,
-                            final VanityUrlServices vanityUrlServices) {
+            final VanityUrlServices vanityUrlServices) {
 
         this.contentletAPI = contentletAPI;
         this.vanityUrlServices = vanityUrlServices;
     }
 
+    @CloseDB
     @Override
-    public List<VanityUrl> getActiveVanityUrls(final User user) {
-        return searchAndPopulate(GET_ACTIVE_VANITY_URL, user, null, null);
+    public void initializeVanityURLsCache(final User user) {
+        searchAndPopulate(GET_ACTIVE_VANITY_URL, user, null, null, true);
     }
 
-    @Override
-    public List<VanityUrl> getActiveVanityUrlsBySiteAndLanguage(final String siteId,
-                                                                final long languageId, final User user) {
+    /**
+     * Searches and populates the cache for live VanityURLs by Site and Language id, each VanityURL
+     * found is added into the cache. <br> Note this method does not uses cache, always does the ES
+     * search, the intention of this method is mainly to populate the cache with the found data.
+     *
+     * @param user The current user
+     */
+    private void initializeActiveVanityURLsCacheBySiteAndLanguage(String siteId,
+            final long languageId, final User user) {
 
         String HOST_QUERY;
+        Boolean includedSystemHost = Boolean.FALSE;
+
         if (null != siteId && !siteId.equals(Host.SYSTEM_HOST)) {
-            HOST_QUERY = String.format(" +(conhost:%s conhost:%s)", siteId, Host.SYSTEM_HOST);
+
+            //Verify if we already have cache values for the given host and the System Host
+            final List<CachedVanityUrl> foundVanities = getVanityUrlBySiteAndLanguageFromCache(siteId,
+                    languageId,
+                    false);
+
+            final List<CachedVanityUrl> foundSystemHostVanities = getVanityUrlBySiteAndLanguageFromCache(
+                    Host.SYSTEM_HOST, languageId, false);
+
+            //No cache was initialized, we need to include both hosts in the search
+            if (null == foundVanities && null == foundSystemHostVanities) {
+                includedSystemHost = Boolean.TRUE;
+                HOST_QUERY = String.format(" +(conhost:%s conhost:%s)", siteId, Host.SYSTEM_HOST);
+            } else {
+                if (null == foundVanities) {//We just need to initialize the values for the given host
+                    HOST_QUERY = String.format(" +(conhost:%s)", siteId);
+                } else {
+                    siteId = Host.SYSTEM_HOST;//We just need to initialize the values for the given System Host
+                    HOST_QUERY = String.format(" +(conhost:%s)", Host.SYSTEM_HOST);
+                }
+            }
         } else {
             HOST_QUERY = String.format(" +conhost:%s", Host.SYSTEM_HOST);
         }
@@ -84,9 +115,10 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         final String luceneQuery = GET_ACTIVE_VANITY_URL + HOST_QUERY
                 + GET_VANITY_URL_LANGUAGE_ID
                 + languageId;
-        return searchAndPopulate(luceneQuery, user, siteId, languageId);
+        searchAndPopulate(luceneQuery, user, siteId, languageId, includedSystemHost);
     }
 
+    @CloseDB
     @Override
     public VanityUrl getVanityUrlFromContentlet(final Contentlet con) {
         if (con != null) {
@@ -136,6 +168,25 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     }
 
     /**
+     * Add the Vanity URL to the vanityURLCache, without affecting any secondary cache.
+     *
+     * @param vanityUrl The vanityurl URL object
+     */
+    private void addToSingleVanityURLCache(final VanityUrl vanityUrl) {
+        try {
+            if (vanityUrl.isLive()) {
+                vanityUrlServices.addSingleCache(vanityUrl);
+            } else {
+                vanityUrlServices.invalidateVanityUrl(vanityUrl);
+            }
+        } catch (DotDataException | DotRuntimeException | DotSecurityException e) {
+            Logger.error(this,
+                    "Error trying to add Vanity URL identifier:" + vanityUrl.getIdentifier()
+                            + " to VanityURLCache", e);
+        }
+    }
+
+    /**
      * Add a 404 Vanity URL to the vanityURLCache
      *
      * @param siteId The current site Id
@@ -151,24 +202,25 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         cache404VanityUrl.setLanguageId(languageId);
         cache404VanityUrl.setURI(uri);
         cache404VanityUrl.setSite(siteId);
+        cache404VanityUrl.setOrder(0);
 
         vanityUrlServices.updateCache(cache404VanityUrl);
     }
 
+    private String getSiteId (final Host site) {
+
+        return
+            (null != site && !site.isSystemHost())?
+                        site.getIdentifier():Host.SYSTEM_HOST;
+
+    }
+
+    @CloseDB
     @Override
     public CachedVanityUrl getLiveCachedVanityUrl(final String uri, final Host site,
-                                                  final long languageId, final User user) {
+            final long languageId, final User user) {
 
-        String siteId;
-        if (null != site) {
-            if (site.isSystemHost()) {
-                siteId = Host.SYSTEM_HOST;
-            } else {
-                siteId = site.getIdentifier();
-            }
-        } else {
-            siteId = Host.SYSTEM_HOST;
-        }
+        final String siteId = this.getSiteId(site);
 
         //First lets try with the cache
         CachedVanityUrl result = vanityUrlServices
@@ -249,30 +301,30 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
      * @return a CachedVanityUrl object
      */
     private CachedVanityUrl searchLiveCachedVanityUrlBySiteAndLanguage(final String uri,
-                                                                       final String siteId, final long languageId) {
+            final String siteId, final long languageId) {
 
         CachedVanityUrl result = null;
 
         //Get the list of site cached Vanities URLs
-        Set<CachedVanityUrl> cachedVanityUrls = vanityUrlServices
-                .getVanityUrlBySiteAndLanguage(siteId, languageId);
+        List<CachedVanityUrl> cachedVanityUrls = getVanityUrlBySiteAndLanguageFromCache(siteId,
+                languageId,
+                true);
 
         if (null == cachedVanityUrls) {
 
             synchronized (VanityUrlAPIImpl.class) {
 
-                cachedVanityUrls = vanityUrlServices
-                        .getVanityUrlBySiteAndLanguage(siteId, languageId);
+                cachedVanityUrls = getVanityUrlBySiteAndLanguageFromCache(siteId, languageId, true);
 
                 if (null == cachedVanityUrls) {
 
                     //Initialize the Cached Vanity URL cache if is null
-                    getActiveVanityUrlsBySiteAndLanguage(siteId, languageId,
+                    initializeActiveVanityURLsCacheBySiteAndLanguage(siteId, languageId,
                             APILocator.systemUser());
 
                     //Get the list of site cached Vanities URLs
-                    cachedVanityUrls = vanityUrlServices
-                            .getVanityUrlBySiteAndLanguage(siteId, languageId);
+                    cachedVanityUrls = getVanityUrlBySiteAndLanguageFromCache(siteId, languageId,
+                            true);
                 }
             }
         }
@@ -309,75 +361,41 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
      *
      * @param luceneQuery query for the ES search
      * @param user to use in the ES search
+     * @param includedSystemHostOnLuceneQuery True is the search will include the System Host
      * @return A list of VanityURLs
      */
-    private List<VanityUrl> searchAndPopulate(final String luceneQuery, final User user,
-            String siteId, Long languageId) {
-
-        final ImmutableList.Builder<VanityUrl> results = new ImmutableList.Builder<>();
-        final PriorityQueue<VanityUrl> vanityUrls;
-        List<VanityUrl> vanityUrlsToReturn = Collections.emptyList();
+    private void searchAndPopulate(final String luceneQuery, final User user,
+            String siteId, Long languageId, final Boolean includedSystemHostOnLuceneQuery) {
 
         try {
+
             final List<Contentlet> contentResults = contentletAPI
                     .search(luceneQuery, 0, 0, StringPool.BLANK, user, false);
 
-            //Verify if we have something to process
+            //Verify if we found something
             if (null == contentResults || contentResults.isEmpty()) {
 
                 //Empty is a valid cache value
-                if (null != contentResults && (null != siteId && null != languageId)) {
-                    CacheLocator.getVanityURLCache().setCachedVanityUrls(
-                            siteId, languageId,
-                            ImmutableSet.<CachedVanityUrl>builder().build());
-
-                    if (!Host.SYSTEM_HOST.equals(siteId)) {
-                        CacheLocator.getVanityURLCache().setCachedVanityUrls(
-                                Host.SYSTEM_HOST, languageId,
-                                ImmutableSet.<CachedVanityUrl>builder().build());
-                    }
-                }
-
-                return results.build();
+                this.setEmptyCaches(siteId, languageId, includedSystemHostOnLuceneQuery);
+                return;
             }
 
-            vanityUrls = new PriorityQueue<>(contentResults.size(),
-                    Comparator.comparingInt(VanityUrl::getOrder));
+            final List<VanityUrl> vanityUrls = contentResults.stream()
+                    .map(this::getVanityUrlFromContentlet)
+                    .sorted(Comparator.comparing(VanityUrl::getOrder))
+                    .collect(toImmutableList());
 
-            contentResults.stream().forEach((Contentlet con) -> {
-                VanityUrl vanityUrl = getVanityUrlFromContentlet(con);
-                addToVanityURLCache(vanityUrl);
-                vanityUrls.offer(vanityUrl);
-            });
+            // adds to caches.
+            vanityUrls.forEach(this::addToSingleVanityURLCache);
+            this.addSecondaryVanityURLCacheCollection (vanityUrls);
 
             /*
              * If a site was sent we need to make sure it was initialized in the cache
              */
             if (null != siteId && null != languageId) {
-                Set<CachedVanityUrl> vanitiesForHost = CacheLocator.getVanityURLCache()
-                        .getCachedVanityUrls(VanityUrlUtil
-                                .sanitizeSecondCacheKey(siteId,
-                                        languageId));
-                if (null == vanitiesForHost) {
-                    CacheLocator.getVanityURLCache().setCachedVanityUrls(
-                            siteId, languageId,
-                            ImmutableSet.<CachedVanityUrl>builder().build());
-                }
 
-                if (!Host.SYSTEM_HOST.equals(siteId)) {
-                    Set<CachedVanityUrl> vanitiesForSystemHost = CacheLocator.getVanityURLCache()
-                            .getCachedVanityUrls(VanityUrlUtil
-                                    .sanitizeSecondCacheKey(Host.SYSTEM_HOST,
-                                            languageId));
-                    if (null == vanitiesForSystemHost) {
-                        CacheLocator.getVanityURLCache().setCachedVanityUrls(
-                                Host.SYSTEM_HOST, languageId,
-                                ImmutableSet.<CachedVanityUrl>builder().build());
-                    }
-                }
+                this.checkSiteLanguageVanities(siteId, languageId, includedSystemHostOnLuceneQuery);
             }
-
-            vanityUrlsToReturn = results.addAll(vanityUrls).build();
         } catch (IndexMissingException e) {
             /*
 			 * We catch this exception in order to avoid to stop the
@@ -400,10 +418,63 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                         e);
             }
         }
-
-        return vanityUrlsToReturn;
     }
 
+    private void checkSiteLanguageVanities(final String siteId,
+                                           final Long languageId,
+                                           final Boolean includedSystemHostOnLuceneQuery) {
+
+        if (null == this.vanityUrlServices.getCachedVanityUrlList(siteId, languageId)) {
+
+            this.vanityUrlServices.setCachedVanityUrlList(siteId, languageId, Collections.EMPTY_LIST);
+        }
+
+        if (includedSystemHostOnLuceneQuery && !Host.SYSTEM_HOST.equals(siteId) &&
+                null == this.vanityUrlServices.getCachedVanityUrlList(Host.SYSTEM_HOST, languageId)) {
+
+            this.vanityUrlServices.setCachedVanityUrlList(Host.SYSTEM_HOST, languageId, Collections.EMPTY_LIST);
+        }
+    } // checkSiteLanguageVanities.
+
+    private void setEmptyCaches(final String siteId,
+                                final Long languageId,
+                                final Boolean includedSystemHostOnLuceneQuery) {
+
+        if (null != siteId && null != languageId) {
+            this.vanityUrlServices.setCachedVanityUrlList(
+                    siteId, languageId,
+                    Collections.EMPTY_LIST);
+
+            if (includedSystemHostOnLuceneQuery && !Host.SYSTEM_HOST.equals(siteId)) {
+                this.vanityUrlServices.setCachedVanityUrlList(
+                        Host.SYSTEM_HOST, languageId,
+                        Collections.EMPTY_LIST);
+            }
+        }
+    } // setEmptyCaches.
+
+    private void addSecondaryVanityURLCacheCollection(final List<VanityUrl> vanityUrls) {
+
+        final Map<SiteLanguageKey, ImmutableList.Builder<CachedVanityUrl>> vanityPerSiteLanguageMap
+                = map();
+        SiteLanguageKey key = null;
+
+        for (final VanityUrl vanityUrl : vanityUrls) {
+
+            key = new SiteLanguageKey(vanityUrl.getSite(), vanityUrl.getLanguageId());
+            if (!vanityPerSiteLanguageMap.containsKey(key)) {
+
+                vanityPerSiteLanguageMap.put(key, new ImmutableList.Builder());
+            }
+
+            vanityPerSiteLanguageMap.get(key).add(new CachedVanityUrl(vanityUrl));
+        }
+
+        vanityPerSiteLanguageMap.forEach( (k, vanityUrlBuilder) ->
+                    this.vanityUrlServices.setCachedVanityUrlList (k.hostId(), k.languageId(), vanityUrlBuilder.build()));
+    } // addSecondaryVanityURLCacheCollection.
+
+    @CloseDB
     @Override
     public void validateVanityUrl(Contentlet contentlet) {
 
@@ -431,4 +502,57 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
     }
 
+    /**
+     * Get the list of cached Vanity URLs associated to a given site and SYSTEM_HOST
+     *
+     * @param siteId The current site Id
+     * @param languageId The current language Id
+     * @param includeSystemHost True if we want to include in the result the SYSTEM_HOST cache
+     * contents
+     * @return A set of CachedVanityUrl, if null is because the cache needs to be initialized
+     */
+    private List<CachedVanityUrl> getVanityUrlBySiteAndLanguageFromCache(final String siteId,
+            final long languageId,
+            final Boolean includeSystemHost) {
+
+        //First search in cache with the given site id
+        List<CachedVanityUrl> foundVanities =
+                this.vanityUrlServices.getCachedVanityUrlList(siteId, languageId);
+
+        //null means we need to initialize the cache for this site
+        if (null != foundVanities &&
+                includeSystemHost &&
+                !siteId.equals(Host.SYSTEM_HOST)) {
+            //Now search in cache with the SYSTEM_HOST
+            final List<CachedVanityUrl> systemHostFoundVanities =
+                    this.vanityUrlServices.getCachedVanityUrlList(Host.SYSTEM_HOST, languageId);
+
+            if (null != systemHostFoundVanities) {
+                foundVanities = ImmutableList.<CachedVanityUrl>builder()
+                        .addAll(foundVanities)
+                        .addAll(systemHostFoundVanities)
+                        .build();
+            } else {
+                //This means we need to initialize the cache for the SYSTEM_HOST
+                foundVanities = null;
+            }
+        }
+
+        return foundVanities;
+    } // getVanityUrlBySiteAndLanguageFromCache.
+
+    private static class SiteLanguageKey extends MultiKey {
+
+        protected SiteLanguageKey(final String hostId, final long languageId) {
+            super(hostId, languageId);
+        }
+
+        String hostId () {
+            return (String)this.getKey(0);
+        }
+
+        long languageId () {
+            return (long)this.getKey(1);
+        }
+    }
 }

@@ -1,19 +1,16 @@
 package com.dotcms.util;
 
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableList;
 import org.elasticsearch.common.collect.MapBuilder;
 
 import java.io.Serializable;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import java.util.Arrays;
+import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
 
 /**
  * This utility class provides common use methods for creating and interacting
@@ -718,5 +715,43 @@ public class CollectionsUtils implements Serializable {
 		}
 		return defaultValue;
 	}
+
+    /**
+     * Returns a {@code Collector} that accumulates the input elements into a
+     * new {@link ImmutableList}.
+     *
+     * @param <T> the type of the input elements
+     * @return a {@code Collector} which collects all the input elements into immutable list
+     */
+	public static <T> Collector<T, ImmutableList.Builder<T>, ImmutableList<T>> toImmutableList () {
+	    return new ImmutableListCollector<>();
+    }
+
+	private static class ImmutableListCollector<T> implements Collector<T, ImmutableList.Builder<T>, ImmutableList<T>> {
+        @Override
+        public Supplier<ImmutableList.Builder<T>> supplier() {
+            return ImmutableList.Builder::new;
+        }
+
+        @Override
+        public BiConsumer<ImmutableList.Builder<T>, T> accumulator() {
+            return (b, e) -> b.add(e);
+        }
+
+        @Override
+        public BinaryOperator<ImmutableList.Builder<T>> combiner() {
+            return (b1, b2) -> b1.addAll(b2.build());
+        }
+
+        @Override
+        public Function<ImmutableList.Builder<T>, ImmutableList<T>> finisher() {
+            return ImmutableList.Builder::build;
+        }
+
+        @Override
+        public Set<Characteristics> characteristics() {
+            return ImmutableSet.of();
+        }
+    } // ImmutableListCollector.
 
 }

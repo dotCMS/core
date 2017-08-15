@@ -1,4 +1,5 @@
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <script type="text/javascript" src="/html/portlet/ext/workflows/schemes/workflow_js.jsp" ></script>
 
@@ -17,7 +18,7 @@
 		<div class="clear"></div>
 	</div>
 	
-	<%if(LicenseUtil.getLevel() < 200){ %>
+	<%if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){ %>
 	
 	
 	

@@ -10,9 +10,10 @@
 <%@ page import="com.dotcms.publisher.environment.business.EnvironmentAPI"%>
 <%@ page import="com.dotcms.publisher.environment.bean.Environment"%>
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@ page import="com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher" %>
 
-<%	if( LicenseUtil.getLevel()<300){ %>
+<%	if( LicenseUtil.getLevel()<LicenseLevel.PROFESSIONAL.level){ %>
 <%@ include file="/html/portlet/ext/cmsconfig/publishing/not_licensed.jsp" %>
 <%return;} %>
 

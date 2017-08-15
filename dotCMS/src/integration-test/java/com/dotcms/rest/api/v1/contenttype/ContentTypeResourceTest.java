@@ -154,14 +154,14 @@ public class ContentTypeResourceTest {
 		Response responseExpected = Response.ok(new ResponseEntityView(contentTypes)).build();
 
 		final PaginationUtil paginationUtil = mock(PaginationUtil.class);
-		when(paginationUtil.getPage(request, user, filter, showArchived, page, perPage, orderBy, direction.toString())).thenReturn(responseExpected);
+		when(paginationUtil.getPage(request, user, filter, page, perPage, orderBy, direction.toString())).thenReturn(responseExpected);
 
 
 		final ContentTypeResource resource = new ContentTypeResource(new ContentTypeHelper(), webResource, paginationUtil);
 		Response response = null;
 
 		RestUtilTest.verifySuccessResponse(
-				response = resource.getContentTypes(request, filter, showArchived, page, perPage, orderBy, direction.toString())
+				response = resource.getContentTypes(request, filter, page, perPage, orderBy, direction.toString())
 		);
 
 		assertEquals(responseExpected.getEntity(), response.getEntity());

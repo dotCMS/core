@@ -1,7 +1,7 @@
 package com.dotcms.util;
 
-import com.liferay.portal.language.LanguageException;
-import com.liferay.portal.language.LanguageUtil;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.util.LocaleUtil;
 
 import java.io.Serializable;
@@ -81,15 +81,15 @@ public class I18NUtil implements Serializable {
         final Map<String, String> messagesMap = map();
 
         if (null != messagesKey) {
-
+            final Language lang = APILocator.getLanguageAPI().getLanguage(locale.getLanguage(), locale.getCountry());
             messagesKey.forEach(
                     messageKey -> {
 
                         try {
-
+                            
                             messagesMap.put(messageKey,
-                                    LanguageUtil.get(locale, messageKey));
-                        } catch (LanguageException e) {
+                                    APILocator.getLanguageAPI().getStringKey(lang, messageKey));
+                        } catch (Exception e) {
 
                             messagesMap.put(messageKey,
                                     messageKey);

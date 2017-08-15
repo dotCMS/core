@@ -59,7 +59,7 @@ public class UserResource {
         final User user = initData.getUser();
 
         try {
-            response = this.paginationUtil.getPage( request, user, filter, false, page, perPage );
+            response = this.paginationUtil.getPage( request, user, filter, page, perPage );
         } catch (Exception e) {
 
             response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);

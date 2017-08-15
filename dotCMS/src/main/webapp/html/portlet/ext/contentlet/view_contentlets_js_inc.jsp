@@ -8,6 +8,7 @@
 <%@page import="com.dotcms.repackage.javax.portlet.WindowState"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
 <%@page import="java.util.List"%>
@@ -53,7 +54,7 @@
         var selectedStructureVarName = '';
         var bindTagFieldEvent;
 
-        var enterprise = <%=LicenseUtil.getLevel() > 199%>;
+        var enterprise = <%=LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level%>;
         var formNum=100;
 		var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpointsList) && !sendingEndpointsList.isEmpty()%>;
 
@@ -70,7 +71,7 @@
         var language;
 
         <%for (Language language: languages) {%>
-                language = new Array(<%= language.getId() %>, "<%= language.getLanguageCode() %>", "<%= language.getCountryCode() %>", "<%= language.getLanguage() %>", "<%= language.getCountry() %>");
+                language = new Array(<%= language.getId() %>, "<%= language.getLanguageCode() %>", "<%= language.getCountryCode() %>", "<%= language.getLanguage() %>", "<%= language.getCountry() %>", "<%= LanguageUtil.getLiteralLocale(language.getLanguageCode(), language.getCountryCode()) %>");
                 languages[languages.length] = language;
         <%      } %>
 
@@ -1864,18 +1865,11 @@
 
                                         for (var n = 0; n < languages.length; ++n) {
                                             if (languages[n][0] == languageId) {
-	                                            langCode = "";
-	                                            floag = "";
-	                                            if (languages[n][1]) {
-	                                               langCode = languages[n][1];
-	                                            }
-	                                            if (languages[n][2]) {
-                                                   langCode += "_" + languages[n][2];
-                                                   flag = langCode;
-                                                } else {
-                                                   flag = langCode + "_" + langCode;
-                                                }
-	                                            locale = "<img style='margin-top: 3px;' src='/html/images/languages/" + flag + ".gif' width='16px' height='11px' />&nbsp;(" + langCode + ")";
+                                            	displayLang = languages[n][1];
+                                            	if(languages[n][2]){
+                                            		displayLang += "_" + languages[n][2];
+                                            	}
+	                                            locale = "<img style='margin-top: 3px;' src='/html/images/languages/" + languages[n][5] + ".gif' width='16px' height='11px' />&nbsp;(" + displayLang + ")";
 	                                            break;
                                         	}
                                         }

@@ -5221,49 +5221,59 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(!UtilMethods.isSet(inode)){
             Logger.warn(this, "Requested Inode is not indexed because Inode is not set");
         }
-        SearchHits lc;
-        boolean found = false;
-        int counter = 0;
-        while(counter < 300){
-            try {
-                lc = conFac.indexSearch("+inode:" + inode+(live?" +live:true":""), 0, 0, "modDate");
-            } catch (Exception e) {
-                Logger.error(this.getClass(),e.getMessage(),e);
-                return false;
-            }
-            if(lc.getTotalHits() > 0){
-                found = true;
-                return true;
-            }
-            try{
-                Thread.sleep(100);
-            }catch (Exception e) {
-                Logger.debug(this, "Cannot sleep : ", e);
-            }
-            counter++;
+
+        return isInodeIndexedWithQuery("+inode:" + inode + (live ? " +live:true" : ""));
+    }
+
+    @Override
+    public boolean isInodeIndexed(String inode, boolean live, boolean working) {
+        if (!UtilMethods.isSet(inode)) {
+            Logger.warn(this, "Requested Inode is not indexed because Inode is not set");
         }
-        return found;
+
+        return isInodeIndexedWithQuery(
+                "+inode:" + inode + String.format(" +live:%s +working:%s", live, working));
     }
 
     @Override
     public boolean isInodeIndexed(String inode, int secondsToWait) {
+
+        if (!UtilMethods.isSet(inode)) {
+            Logger.warn(this, "Requested Inode is not indexed because Inode is not set");
+        }
+
+        return isInodeIndexedWithQuery("+inode:" + inode, secondsToWait);
+    }
+
+    private boolean isInodeIndexedWithQuery(String luceneQuery) {
+        return isInodeIndexedWithQuery(luceneQuery, -1);
+    }
+
+    private boolean isInodeIndexedWithQuery(String luceneQuery, int secondsToWait) {
+
+        int limit = 300;
+        if (-1 != secondsToWait) {
+            limit = (secondsToWait / 10);
+        }
         SearchHits lc;
         boolean found = false;
         int counter = 0;
-        while(counter <= (secondsToWait / 10)) {
+        while (counter < limit) {
             try {
-                lc = conFac.indexSearch("+inode:" + inode, 0, 0, "modDate");
+                lc = conFac.indexSearch(
+                        luceneQuery,
+                        0, 0, "modDate");
             } catch (Exception e) {
-                Logger.error(this.getClass(),e.getMessage(),e);
+                Logger.error(this.getClass(), e.getMessage(), e);
                 return false;
             }
-            if(lc.getTotalHits() > 0){
+            if (lc.getTotalHits() > 0) {
                 found = true;
-                return true;
+                break;
             }
-            try{
+            try {
                 Thread.sleep(100);
-            }catch (Exception e) {
+            } catch (Exception e) {
                 Logger.debug(this, "Cannot sleep : ", e);
             }
             counter++;

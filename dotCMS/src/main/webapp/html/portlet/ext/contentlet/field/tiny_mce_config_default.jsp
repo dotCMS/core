@@ -1,4 +1,5 @@
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.util.InodeUtils"%>
 
@@ -20,7 +21,7 @@ var tinyMCEProps = {
         		"emoticons template paste textcolor colorpicker textpattern validation dotimageclipboard compat3x"
     		],
 
-    		toolbar1: "styleselect | bold italic underline strikethrough |  alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | image dotimageclipboard  | link unlink  | <%= LicenseUtil.getLevel()>=200 ? ",validation":"" %>",
+    		toolbar1: "styleselect | bold italic underline strikethrough |  alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | image dotimageclipboard  | link unlink  | <%= LicenseUtil.getLevel()>=LicenseLevel.STANDARD.level ? ",validation":"" %>",
 
     		paste_auto_cleanup_on_paste : true,
 

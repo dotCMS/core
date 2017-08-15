@@ -43,15 +43,15 @@ public class PaginationUtilTest {
         long totalRecords = 10;
         StringBuffer baseURL = new StringBuffer("/baseURL");
 
-        String headerLink = "</baseURL?filter=filter&archived=false&page=1&per_page=5&direction=ASC&orderby=name>;rel=\"first\",</baseURL?filter=filter&archived=false&page=2&per_page=5&direction=ASC&orderby=name>;rel=\"last\",</baseURL?filter=filter&archived=false&page={pageValue}&per_page=5&direction=ASC&orderby=name>;rel=\"x-page\",</baseURL?filter=filter&archived=false&page=1&per_page=5&direction=ASC&orderby=name>;rel=\"prev\"";
+        String headerLink = "</baseURL?filter=filter&per_page=5&orderby=name&page=1&direction=ASC>;rel=\"first\",</baseURL?filter=filter&per_page=5&orderby=name&page=2&direction=ASC>;rel=\"last\",</baseURL?filter=filter&per_page=5&orderby=name&direction=ASC>;rel=\"x-page\",</baseURL?filter=filter&per_page=5&orderby=name&page=1&direction=ASC>;rel=\"prev\"";
 
         List items = new ArrayList<>();
 
         when( req.getRequestURL() ).thenReturn( baseURL );
-        when( paginator.getItems( user, filter, showArchived, perPage, offset, orderBy, direction ) ).thenReturn( items );
+        when( paginator.getItems( user, filter, perPage, offset, orderBy, direction ) ).thenReturn( items );
         when( paginator.getTotalRecords( filter )).thenReturn( totalRecords );
 
-        Response response = paginationUtil.getPage(req, user, filter, showArchived, page, perPage, orderBy, direction);
+        Response response = paginationUtil.getPage(req, user, filter, page, perPage, orderBy, direction, null);
 
         Object entity = ((ResponseEntityView) response.getEntity()).getEntity();
 

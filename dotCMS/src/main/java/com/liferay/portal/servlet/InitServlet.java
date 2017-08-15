@@ -25,7 +25,6 @@ package com.liferay.portal.servlet;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 
-import com.dotcms.enterprise.ClusterThreadProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;

@@ -51,6 +51,7 @@ public class ConfigTestHelper extends Config {
 
         }
 
+        props = null;
         dotmarketingPropertiesUrl = getUrlToTestResource("it-dotmarketing-config.properties");
         clusterPropertiesUrl = getUrlToTestResource("it-dotcms-config-cluster.properties");
         setToolboxPath();
