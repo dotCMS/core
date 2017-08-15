@@ -353,5 +353,5 @@ dependencies {
     compileOnly "org.immutables:value:2.3.3:annotations"
     compile 'org.immutables:gson:2.3.3'
 
-    compile group: 'org.aspectj', name: 'aspectjrt', version:'1.8.4'
+    compile group: 'org.aspectj', name: 'aspectjrt', version:'1.8.10'
 }
