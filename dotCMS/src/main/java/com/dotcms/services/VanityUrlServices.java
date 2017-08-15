@@ -3,8 +3,9 @@ package com.dotcms.services;
 import com.dotcms.cache.VanityUrlCache;
 import com.dotcms.system.event.local.model.Subscriber;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
-import com.dotcms.util.VanityUrlUtil;
+import com.dotcms.vanityurl.model.CacheVanityKey;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
+import com.dotcms.vanityurl.model.SecondaryCacheVanityKey;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -146,16 +147,16 @@ public class VanityUrlServices {
         if (null != siteId && !siteId.equals(Host.SYSTEM_HOST)) {
 
             //First search in cache with the given site
-            foundVanity = vanityURLCache.get(VanityUrlUtil.sanitizeKey(siteId, uri, languageId));
+            foundVanity = vanityURLCache.get(new CacheVanityKey(siteId, languageId, uri));
 
             //If nothing found lets try with the SYSTEM_HOST
             if (null == foundVanity) {
                 foundVanity = vanityURLCache
-                        .get(VanityUrlUtil.sanitizeKey(Host.SYSTEM_HOST, uri, languageId));
+                        .get(new CacheVanityKey(Host.SYSTEM_HOST, languageId, uri));
             }
         } else {
             foundVanity = vanityURLCache
-                    .get(VanityUrlUtil.sanitizeKey(Host.SYSTEM_HOST, uri, languageId));
+                    .get(new CacheVanityKey(Host.SYSTEM_HOST, languageId, uri));
         }
 
         return foundVanity;
@@ -171,7 +172,8 @@ public class VanityUrlServices {
                                        final long   languageId,
                                        final List<CachedVanityUrl>   vanityUrlList) {
 
-        this.vanityURLCache.setCachedVanityUrls(siteId, languageId, vanityUrlList);
+        this.vanityURLCache.setCachedVanityUrls(
+                new SecondaryCacheVanityKey(siteId, languageId), vanityUrlList);
     } // setCachedVanityUrlList.
 
     /**
@@ -184,8 +186,7 @@ public class VanityUrlServices {
                                        final long   languageId) {
 
         return this.vanityURLCache
-                .getCachedVanityUrls(VanityUrlUtil
-                        .sanitizeSecondCacheKey(siteId,
+                .getCachedVanityUrls(new SecondaryCacheVanityKey(siteId,
                                 languageId));
     } // setCachedVanityUrlList.
 
@@ -194,7 +195,7 @@ public class VanityUrlServices {
      * the commit listener related to this event is executed.
      */
     @Subscriber
-    public void onCommitListener(CommitListenerEvent commitListenerEvent) {
+    public void onCommitListener(final CommitListenerEvent commitListenerEvent) {
 
         Contentlet contentlet = commitListenerEvent.getContentlet();
 
@@ -228,6 +229,5 @@ public class VanityUrlServices {
                             contentlet.getIdentifier()), e);
         }
     }
-
 
 }
