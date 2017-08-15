@@ -43,7 +43,9 @@ public class DownloadUtil {
 
         /* Setting cache friendly headers */
         response.setHeader("Expires", httpDate.get().format(expiration.getTime()));
-        response.setHeader("Cache-Control", "public, max-age="+seconds);
+        if (!response.containsHeader("Cache-Control")) {
+            response.setHeader("Cache-Control", "public, max-age=" + seconds);
+        }
 
 
         String ifModifiedSince = request.getHeader("If-Modified-Since");

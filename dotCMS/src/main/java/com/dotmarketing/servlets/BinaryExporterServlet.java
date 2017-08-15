@@ -425,8 +425,9 @@ public class BinaryExporterServlet extends HttpServlet {
 					httpDate.setTimeZone(TimeZone.getTimeZone("GMT"));
 		            /* Setting cache friendly headers */
 		            resp.setHeader("Expires", httpDate.format(expiration.getTime()));
-		            resp.setHeader("Cache-Control", "public, max-age="+seconds);
-
+		            if (!resp.containsHeader("Cache-Control")) {
+						resp.setHeader("Cache-Control", "public, max-age=" + seconds);
+					}
 		            String ifNoneMatch = req.getHeader("If-None-Match");
 
 		            /*
@@ -449,7 +450,9 @@ public class BinaryExporterServlet extends HttpServlet {
 				    GregorianCalendar expiration = new GregorianCalendar();
 					expiration.add(java.util.Calendar.MONTH, -1);
 					resp.setHeader("Expires", DownloadUtil.httpDate.get().format(expiration.getTime()));
-					resp.setHeader("Cache-Control", "max-age=-1");
+					if (!resp.containsHeader("Cache-Control")) {
+						resp.setHeader("Cache-Control", "max-age=-1");
+					}
 				}
 			}
 
