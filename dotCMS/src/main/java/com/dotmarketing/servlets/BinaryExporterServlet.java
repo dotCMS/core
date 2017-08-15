@@ -198,8 +198,6 @@ public class BinaryExporterServlet extends HttpServlet {
         boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
         
 		ServletOutputStream out = null;
-		FileChannel from = null;
-		WritableByteChannel to = null;
 		RandomAccessFile input = null;
 		FileInputStream is = null;
         
@@ -466,14 +464,11 @@ public class BinaryExporterServlet extends HttpServlet {
 			String rangeHeader = req.getHeader("range");
 			if(UtilMethods.isSet(rangeHeader)){
 
-				try (FileInputStream fileInputStream = new FileInputStream(data.getDataFile())) {
+				try {
 					out = resp.getOutputStream();
-					from = fileInputStream.getChannel();
-					to = Channels.newChannel(out);
-					
-					boolean responseSent = false;
+
 					byte[] dataBytes = Files.toByteArray(data.getDataFile());
-		            //ServletOutputStream sos = resp.getOutputStream();
+
 					//extract range header
 					 resp.setHeader("Accept-Ranges", "bytes");
 					// Range header should match format "bytes=n-n,n-n,n-n...". If not, then return 416.
@@ -533,20 +528,11 @@ public class BinaryExporterServlet extends HttpServlet {
 							out.println();
 							out.println("--" + SpeedyAssetServletUtil.MULTIPART_BOUNDARY + "--");
 						}
-						responseSent = true;
 					}
 				} catch (Exception e) {
 					Logger.warn(this, e + " Error for = " + req.getRequestURI() + (req.getQueryString() != null?"?"+req.getQueryString():"") );
 					Logger.debug(this, "Error serving asset = " + req.getRequestURI() + (req.getQueryString() != null?"?"+req.getQueryString():""), e);
 
-				} finally{
-					if(to!=null){
-						try{
-							to.close();
-						}catch(Exception e){
-							Logger.debug(BinaryExporterServlet.class, e.getMessage(), e);
-						}
-					}
 				}
 			}else{
 				is = new FileInputStream(data.getDataFile());
@@ -621,23 +607,6 @@ public class BinaryExporterServlet extends HttpServlet {
 		}
 		// close our resources no matter what
 		finally{
-			if(from!=null){
-				try{
-					from.close();
-				}
-				catch(Exception e){
-					Logger.debug(BinaryExporterServlet.class, e.getMessage());
-				}
-			}
-
-			if(to!=null){
-				try{
-					to.close();
-				}
-				catch(Exception e){
-					Logger.debug(BinaryExporterServlet.class, e.getMessage());
-				}
-			}
 			
 			if(input!=null){
 				try{
