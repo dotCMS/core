@@ -224,6 +224,8 @@ public class PaginationUtil {
 
 		if (page != -1){
 			params.put(PAGE, String.valueOf(page));
+		}else{
+			params.put(PAGE, "pageValue");
 		}
 
 		if (UtilMethods.isSet(direction)) {
