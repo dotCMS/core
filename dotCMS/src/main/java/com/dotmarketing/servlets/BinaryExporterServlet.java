@@ -38,10 +38,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -181,7 +178,7 @@ public class BinaryExporterServlet extends HttpServlet {
         
 		ServletOutputStream out = null;
 		RandomAccessFile input = null;
-		FileInputStream is = null;
+		InputStream is = null;
         
 		try {
 			User user = userWebAPI.getLoggedInUser(req);
@@ -517,7 +514,7 @@ public class BinaryExporterServlet extends HttpServlet {
 
 				}
 			}else{
-				is = (FileInputStream) java.nio.file.Files.newInputStream(data.getDataFile().toPath());
+				is = java.nio.file.Files.newInputStream(data.getDataFile().toPath());
 	            int count = 0;
 	            byte[] buffer = new byte[4096];
 	            out = resp.getOutputStream();
