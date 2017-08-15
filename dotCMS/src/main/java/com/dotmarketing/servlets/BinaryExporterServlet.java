@@ -1,36 +1,5 @@
 package com.dotmarketing.servlets;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
-import java.nio.channels.WritableByteChannel;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.TimeZone;
-
-import javax.imageio.ImageIO;
-import javax.imageio.spi.IIORegistry;
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.io.Files;
@@ -55,16 +24,29 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Constants;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import static com.liferay.util.HttpHeaders.*;
+
+import javax.imageio.ImageIO;
+import javax.imageio.spi.IIORegistry;
+import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+import static com.liferay.util.HttpHeaders.CACHE_CONTROL;
+import static com.liferay.util.HttpHeaders.EXPIRES;
 
 /**
  *
@@ -192,7 +174,7 @@ public class BinaryExporterServlet extends HttpServlet {
         if ( session != null && session.getAttribute( Contentlet.TEMP_BINARY_IMAGE_INODES_LIST ) != null ) {
             tempBinaryImageInodes = (List<String>) session.getAttribute( Contentlet.TEMP_BINARY_IMAGE_INODES_LIST );
         } else {
-            tempBinaryImageInodes = new ArrayList<String>();
+            tempBinaryImageInodes = new ArrayList<>();
         }
 
         boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
@@ -535,7 +517,7 @@ public class BinaryExporterServlet extends HttpServlet {
 
 				}
 			}else{
-				is = new FileInputStream(data.getDataFile());
+				is = (FileInputStream) java.nio.file.Files.newInputStream(data.getDataFile().toPath());
 	            int count = 0;
 	            byte[] buffer = new byte[4096];
 	            out = resp.getOutputStream();
@@ -552,7 +534,6 @@ public class BinaryExporterServlet extends HttpServlet {
               resp.sendError(HttpServletResponse.SC_NOT_FOUND);
             }
 		} catch (DotRuntimeException e) {
-			//Logger.error(BinaryExporterServlet.class, e.getMessage());
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
             if(!resp.isCommitted()){
               resp.sendError(HttpServletResponse.SC_NOT_FOUND);
