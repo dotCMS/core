@@ -106,6 +106,8 @@ idea {
 
         //Extra source dirs
         sourceDirs += file('src/main/enterprise/src/main/java')
+        sourceDirs += file('src/main/generated')
+        generatedSourceDirs += file('src/main/generated')
         excludeDirs += file('src/main/enterprise/build')
 
 
