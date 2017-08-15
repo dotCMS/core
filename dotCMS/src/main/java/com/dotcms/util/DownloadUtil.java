@@ -43,7 +43,10 @@ public class DownloadUtil {
         String _eTag = "dot:" + assetId + ":" + _lastModified + ":" + fileSize;
 
         /* Setting cache friendly headers */
-        response.setHeader("Expires", httpDate.get().format(expiration.getTime()));
+        if (!response.containsHeader(HttpHeaders.EXPIRES)) {
+            response.setHeader(HttpHeaders.EXPIRES, httpDate.get().format(expiration.getTime()));
+        }
+
         if (!response.containsHeader(HttpHeaders.CACHE_CONTROL)) {
             response.setHeader(HttpHeaders.CACHE_CONTROL, "public, max-age=" + seconds);
         }

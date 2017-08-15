@@ -425,7 +425,10 @@ public class BinaryExporterServlet extends HttpServlet {
 					SimpleDateFormat httpDate = new SimpleDateFormat(Constants.RFC2822_FORMAT);
 					httpDate.setTimeZone(TimeZone.getTimeZone("GMT"));
 		            /* Setting cache friendly headers */
-		            resp.setHeader("Expires", httpDate.format(expiration.getTime()));
+					if (!resp.containsHeader(HttpHeaders.EXPIRES)) {
+						resp.setHeader(HttpHeaders.EXPIRES, httpDate.format(expiration.getTime()));
+					}
+
 		            if (!resp.containsHeader(HttpHeaders.CACHE_CONTROL)) {
 						resp.setHeader(HttpHeaders.CACHE_CONTROL, "public, max-age=" + seconds);
 					}
@@ -450,7 +453,10 @@ public class BinaryExporterServlet extends HttpServlet {
 				}else{
 				    GregorianCalendar expiration = new GregorianCalendar();
 					expiration.add(java.util.Calendar.MONTH, -1);
-					resp.setHeader("Expires", DownloadUtil.httpDate.get().format(expiration.getTime()));
+					if (!resp.containsHeader(HttpHeaders.EXPIRES)) {
+						resp.setHeader(HttpHeaders.EXPIRES, DownloadUtil.httpDate.get().format(expiration.getTime()));
+					}
+
 					if (!resp.containsHeader(HttpHeaders.CACHE_CONTROL)) {
 						resp.setHeader(HttpHeaders.CACHE_CONTROL, "max-age=-1");
 					}
@@ -537,9 +543,8 @@ public class BinaryExporterServlet extends HttpServlet {
 					if(to!=null){
 						try{
 							to.close();
-						}
-						catch(Exception e){
-							Logger.debug(BinaryExporterServlet.class, e.getMessage());
+						}catch(Exception e){
+							Logger.debug(BinaryExporterServlet.class, e.getMessage(), e);
 						}
 					}
 				}
