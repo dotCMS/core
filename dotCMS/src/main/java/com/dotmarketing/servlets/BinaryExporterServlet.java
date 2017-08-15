@@ -64,6 +64,7 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.liferay.util.HttpHeaders;
 
 /**
  *
@@ -425,8 +426,8 @@ public class BinaryExporterServlet extends HttpServlet {
 					httpDate.setTimeZone(TimeZone.getTimeZone("GMT"));
 		            /* Setting cache friendly headers */
 		            resp.setHeader("Expires", httpDate.format(expiration.getTime()));
-		            if (!resp.containsHeader("Cache-Control")) {
-						resp.setHeader("Cache-Control", "public, max-age=" + seconds);
+		            if (!resp.containsHeader(HttpHeaders.CACHE_CONTROL)) {
+						resp.setHeader(HttpHeaders.CACHE_CONTROL, "public, max-age=" + seconds);
 					}
 		            String ifNoneMatch = req.getHeader("If-None-Match");
 
@@ -450,8 +451,8 @@ public class BinaryExporterServlet extends HttpServlet {
 				    GregorianCalendar expiration = new GregorianCalendar();
 					expiration.add(java.util.Calendar.MONTH, -1);
 					resp.setHeader("Expires", DownloadUtil.httpDate.get().format(expiration.getTime()));
-					if (!resp.containsHeader("Cache-Control")) {
-						resp.setHeader("Cache-Control", "max-age=-1");
+					if (!resp.containsHeader(HttpHeaders.CACHE_CONTROL)) {
+						resp.setHeader(HttpHeaders.CACHE_CONTROL, "max-age=-1");
 					}
 				}
 			}
@@ -459,9 +460,9 @@ public class BinaryExporterServlet extends HttpServlet {
 			String rangeHeader = req.getHeader("range");
 			if(UtilMethods.isSet(rangeHeader)){
 
-				try {
+				try (FileInputStream fileInputStream = new FileInputStream(data.getDataFile())) {
 					out = resp.getOutputStream();
-					from = new FileInputStream(data.getDataFile()).getChannel();
+					from = fileInputStream.getChannel();
 					to = Channels.newChannel(out);
 					
 					boolean responseSent = false;
@@ -532,7 +533,16 @@ public class BinaryExporterServlet extends HttpServlet {
 					Logger.warn(this, e + " Error for = " + req.getRequestURI() + (req.getQueryString() != null?"?"+req.getQueryString():"") );
 					Logger.debug(this, "Error serving asset = " + req.getRequestURI() + (req.getQueryString() != null?"?"+req.getQueryString():""), e);
 
-				} 
+				} finally{
+					if(to!=null){
+						try{
+							to.close();
+						}
+						catch(Exception e){
+							Logger.debug(BinaryExporterServlet.class, e.getMessage());
+						}
+					}
+				}
 			}else{
 				is = new FileInputStream(data.getDataFile());
 	            int count = 0;

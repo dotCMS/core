@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
+import com.liferay.util.HttpHeaders;
 
 public class DownloadUtil {
     private DownloadUtil() {} 
@@ -43,8 +44,8 @@ public class DownloadUtil {
 
         /* Setting cache friendly headers */
         response.setHeader("Expires", httpDate.get().format(expiration.getTime()));
-        if (!response.containsHeader("Cache-Control")) {
-            response.setHeader("Cache-Control", "public, max-age=" + seconds);
+        if (!response.containsHeader(HttpHeaders.CACHE_CONTROL)) {
+            response.setHeader(HttpHeaders.CACHE_CONTROL, "public, max-age=" + seconds);
         }
 
 
