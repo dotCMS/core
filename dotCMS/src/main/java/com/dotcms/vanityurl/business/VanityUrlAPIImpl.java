@@ -1,8 +1,5 @@
 package com.dotcms.vanityurl.business;
 
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.CollectionsUtils.toImmutableList;
-
 import com.dotcms.business.CloseDB;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -10,7 +7,6 @@ import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.collections.keyvalue.MultiKey;
 import com.dotcms.services.VanityUrlServices;
-import com.dotcms.util.VanityUrlUtil;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.DefaultVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
@@ -28,12 +24,18 @@ import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import org.elasticsearch.indices.IndexMissingException;
+
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
-import org.elasticsearch.indices.IndexMissingException;
+
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.CollectionsUtils.toImmutableList;
+import static com.dotcms.util.VanityUrlUtil.*;
+import static java.util.stream.IntStream.range;
 
 /**
  * Implementation class for the {@link VanityUrlAPI}.
@@ -226,8 +228,11 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         CachedVanityUrl result = vanityUrlServices
                 .getCachedVanityUrlByUri(uri, siteId, languageId);
 
-        if (patternMatches(result, uri)) {
-            return result;
+        VanityMatches matches =
+                patternMatches(result, uri);
+        if (matches.isPatternMatches()) {
+
+            return processExpressions(result, matches.getGroups());
         } else {
             //Search for the URI in the vanityURL cached by site and language Ids
             result = searchLiveCachedVanityUrlBySiteAndLanguage(uri, siteId, languageId);
@@ -252,8 +257,10 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                     result = vanityUrlServices
                             .getCachedVanityUrlByUri(uri, siteId, defaultLanguageId);
 
-                    if (patternMatches(result, uri)) {
-                        return result;
+                    matches = patternMatches(result, uri);
+                    if (matches.isPatternMatches()) {
+
+                        return processExpressions(result, matches.getGroups());
                     } else {
                         //Search for the URI in the vanityURL cached by site and default language Ids
                         result = searchLiveCachedVanityUrlBySiteAndLanguage(uri, siteId,
@@ -283,13 +290,21 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
      * @param uri The current uri
      * @return true if the CachedVanityUrl match, false if not
      */
-    private boolean patternMatches(CachedVanityUrl cachedVanityUrl, String uri) {
-        boolean patternMatches = false;
+    private VanityMatches patternMatches(final CachedVanityUrl cachedVanityUrl,
+                                         final String uri) {
         if (cachedVanityUrl != null) {
-            Matcher matcher = cachedVanityUrl.getPattern().matcher(uri);
-            patternMatches = matcher.matches();
+
+            final Matcher matcher = cachedVanityUrl.getPattern().matcher(uri);
+            if (matcher.matches() && matcher.groupCount() > 0) {
+
+                final String [] matches = new String[matcher.groupCount()];
+                range(0, matcher.groupCount())
+                        .forEach( i -> matches[i] = matcher.group(i));
+                new VanityMatches(Boolean.TRUE, matches);
+            }
         }
-        return patternMatches;
+
+        return new VanityMatches(Boolean.FALSE, null);
     }
 
     /**
@@ -329,11 +344,15 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
             }
         }
 
+        VanityMatches matches = null;
         if (null != cachedVanityUrls) {
             //Validates if onw of the site cachedVanityUrls matches the uri
             for (CachedVanityUrl vanity : cachedVanityUrls) {
-                if (patternMatches(vanity, uri)) {
-                    result = vanity;
+
+                matches = patternMatches(vanity, uri);
+                if (matches.isPatternMatches()) {
+
+                    result = processExpressions(vanity, matches.getGroups());
                     break;
                 }
             }
@@ -492,7 +511,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
             }
         }
 
-        if (!VanityUrlUtil.isValidRegex(vanityUrl.getURI())) {
+        if (!isValidRegex(vanityUrl.getURI())) {
             Language l = APILocator.getLanguageAPI().getLanguage(user.getLanguageId());
             String message = APILocator.getLanguageAPI()
                     .getStringKey(l, "message.vanity.url.error.invalidURIPattern");
@@ -553,6 +572,26 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
         long languageId () {
             return (long)this.getKey(1);
+        }
+    }
+
+    private static class VanityMatches {
+
+        private final boolean patternMatches;
+        private final String  [] groups;
+
+        public VanityMatches(final boolean patternMatches,
+                             final String[] groups) {
+            this.patternMatches = patternMatches;
+            this.groups = groups;
+        }
+
+        public boolean isPatternMatches() {
+            return patternMatches;
+        }
+
+        public String[] getGroups() {
+            return groups;
         }
     }
 }

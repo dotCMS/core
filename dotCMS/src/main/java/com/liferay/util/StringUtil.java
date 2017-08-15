@@ -317,6 +317,55 @@ public class StringUtil {
 		}
 	}
 
+	/**
+	 * Replace each oldSub with a newSub (if exists)
+	 * Pre: if any of the parameter is null, will return the same builder pass as parameter
+	 * Pre: oldSub must be equals to newStubs, otherwise will return the same builder pass as parameter
+	 * @param builder {@link StringBuilder}
+	 * @param oldSubs {@link String} array (to replace)
+	 * @param newSubs {@link String} array (the replacement)
+	 * @return StringBuilder
+	 */
+	public static StringBuilder replaceAll (final StringBuilder builder,
+										 final String[] oldSubs,
+										 final String[] newSubs) {
+
+		if (builder != null && oldSubs != null
+				&& newSubs != null && (oldSubs.length == newSubs.length)) {
+
+			for (int i = 0; i < oldSubs.length; i++) {
+				replaceOnce(builder, oldSubs[i], newSubs[i]);
+			}
+		}
+
+		return builder;
+	} // replace.
+
+	/**
+	 * Replace once the oldSub with a newSub (if exists)
+	 * Pre: if any of the parameter is null, will return the same builder pass as parameter
+	 * Pre: oldSub must be equals to newStubs, otherwise will return the same builder pass as parameter
+	 * @param builder {@link StringBuilder}
+	 * @param oldSub {@link String} to replace
+	 * @param newSub {@link String} the replacement
+	 * @return StringBuilder
+	 */
+	public static StringBuilder replaceOnce (final StringBuilder builder,
+										 final String oldSub,
+										 final String newSub) {
+
+		if (builder != null && oldSub != null
+				&& newSub != null) {
+
+			final int index = builder.indexOf(oldSub);
+			if (index != -1) {
+				builder.replace(index, index + oldSub.length(), newSub);
+			}
+		}
+
+		return builder;
+	} // replaceOnce.
+
 	public static String replace(String s, String[] oldSubs, String[] newSubs) {
 		if ((s == null) || (oldSubs == null) || (newSubs == null)) {
 			return null;
