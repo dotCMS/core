@@ -1,10 +1,13 @@
 package com.dotcms.util;
 
 import com.dotcms.vanityurl.model.CachedVanityUrl;
+import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotmarketing.util.Logger;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import com.dotmarketing.util.Logger;
+
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 

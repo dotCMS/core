@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
+import static com.liferay.util.HttpHeaders.*;
 
 public class DownloadUtil {
     private DownloadUtil() {} 
@@ -42,8 +43,13 @@ public class DownloadUtil {
         String _eTag = "dot:" + assetId + ":" + _lastModified + ":" + fileSize;
 
         /* Setting cache friendly headers */
-        response.setHeader("Expires", httpDate.get().format(expiration.getTime()));
-        response.setHeader("Cache-Control", "public, max-age="+seconds);
+        if (!response.containsHeader(EXPIRES)) {
+            response.setHeader(EXPIRES, httpDate.get().format(expiration.getTime()));
+        }
+
+        if (!response.containsHeader(CACHE_CONTROL)) {
+            response.setHeader(CACHE_CONTROL, "public, max-age=" + seconds);
+        }
 
 
         String ifModifiedSince = request.getHeader("If-Modified-Since");
