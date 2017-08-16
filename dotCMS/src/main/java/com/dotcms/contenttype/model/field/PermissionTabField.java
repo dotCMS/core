@@ -41,7 +41,7 @@ public abstract class PermissionTabField extends Field implements OnePerContentT
 
 	@JsonIgnore
 	public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
-		return list(ContentTypeFieldProperties.LABEL, ContentTypeFieldProperties.DISPLAY_TYPE);
+		return list(ContentTypeFieldProperties.NAME);
 	}
 
 	@JsonIgnore

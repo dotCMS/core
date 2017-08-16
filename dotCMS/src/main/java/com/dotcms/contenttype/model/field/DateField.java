@@ -52,10 +52,9 @@ public abstract class DateField extends Field {
 
     @JsonIgnore
     public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
-        return list(ContentTypeFieldProperties.LABEL, ContentTypeFieldProperties.REQUIRED,
-                ContentTypeFieldProperties.HINT, ContentTypeFieldProperties.DEFAULT_TEXT,
-                ContentTypeFieldProperties.USER_SEARCHABLE, ContentTypeFieldProperties.INDEXED,
-                ContentTypeFieldProperties.LISTED, ContentTypeFieldProperties.DATA_TYPE,
-                ContentTypeFieldProperties.RADIO_DATE);
+        return list(ContentTypeFieldProperties.NAME, ContentTypeFieldProperties.REQUIRED,
+                ContentTypeFieldProperties.HINT, ContentTypeFieldProperties.DEFAULT_VALUE,
+                ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.INDEXED,
+                ContentTypeFieldProperties.LISTED, ContentTypeFieldProperties.DATA_TYPE);
     }
 }

@@ -44,8 +44,7 @@ public abstract class ImageField extends Field {
 
 	@JsonIgnore
 	public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
-		return list(ContentTypeFieldProperties.LABEL, ContentTypeFieldProperties.REQUIRED,
-				ContentTypeFieldProperties.DISPLAY_TYPE, ContentTypeFieldProperties.HINT,
-				ContentTypeFieldProperties.DATA_TYPE, ContentTypeFieldProperties.RADIO_TEXT);
+		return list(ContentTypeFieldProperties.NAME, ContentTypeFieldProperties.REQUIRED, ContentTypeFieldProperties.HINT,
+				ContentTypeFieldProperties.DATA_TYPE);
 	}
 }

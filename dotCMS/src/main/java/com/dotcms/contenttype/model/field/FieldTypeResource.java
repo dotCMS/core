@@ -13,9 +13,14 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Collection;
+import java.util.Map;
+
+import static com.dotcms.util.CollectionsUtils.toImmutableList;
 
 /**
  * This end-point provides access to information associated to dotCMS FieldType.
@@ -45,6 +50,10 @@ public class FieldTypeResource {
         final InitDataObject initData = this.webResource.init(null, true, req, true, null);
         User user = initData.getUser();
 
-        return Response.ok( new ResponseEntityView( fieldTypeAPI.getFieldTypes(user) ) ).build();
+        ImmutableList<Map<String, Object>> fieldTypesMap = fieldTypeAPI.getFieldTypes(user).stream()
+                .map(fieldType -> fieldType.toMap())
+                .collect(toImmutableList());
+
+        return Response.ok( new ResponseEntityView( fieldTypesMap ) ).build();
     }
 }

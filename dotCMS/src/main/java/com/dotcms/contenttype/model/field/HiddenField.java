@@ -42,8 +42,7 @@ public abstract class HiddenField extends Field {
 
 	@JsonIgnore
 	public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
-		return list(ContentTypeFieldProperties.LABEL, ContentTypeFieldProperties.VALUE,
-				ContentTypeFieldProperties.TEXT_AREA_VALUES);
+		return list(ContentTypeFieldProperties.NAME, ContentTypeFieldProperties.VALUES);
 	}
 
 	@JsonIgnore
