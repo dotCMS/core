@@ -134,8 +134,6 @@ public class EditFieldAction extends DotPortletAction {
                         field.setSearchable(fieldForm.isSearchable());
                         field.setListed(fieldForm.isListed());
 
-                        Structure contentType = CacheLocator.getContentTypeCache().getStructureByInode(field.getStructureInode());
-
                         com.dotcms.contenttype.model.field.Field newField = APILocator.getContentTypeFieldAPI().find(field.getIdentifier());
                         if(LegacyFieldTypes.CONSTANT.implClass().getCanonicalName().equals(newField.typeName()) ||  
                                         LegacyFieldTypes.HIDDEN.implClass().getCanonicalName().equals(newField.typeName())){
