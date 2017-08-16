@@ -1,5 +1,6 @@
 package com.dotcms.vanityurl.handler;
 
+import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotmarketing.beans.Host;
@@ -61,7 +62,7 @@ public class DefaultVanityUrlHandler implements VanityUrlHandler {
 
         if (UtilMethods.isSet(rewrite) && rewrite.contains("//")) {
             //if the forward is and external url
-            response.sendRedirect(rewrite);
+            new CircuitBreakerUrl(rewrite).doOut(response);
 
             return DEFAULT_RESULT;
         }
