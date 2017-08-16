@@ -6,7 +6,7 @@ import {RoutingService, Menu} from '../../../api/services/routing-service';
 
     providers: [],
     selector: 'dot-main-nav',
-    styles: [require('./main-navigation.scss')],
+    styleUrls: ['./main-navigation.scss'],
     templateUrl: 'main-navigation.html',
 })
 export class MainNavigation {
@@ -29,7 +29,7 @@ export class MainNavigation {
         routingService.currentPortlet$.subscribe(id => {
             this.open = !this.open;
             this.menuItemIdActive = id;
-            let menuSelected = this.getMenuSelected(id);
+            const menuSelected = this.getMenuSelected(id);
             this.menuActiveTabName = menuSelected ? menuSelected.tabName : null;
         });
     }

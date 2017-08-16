@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs/Observable';
-import { Field, FieldType, FieldRow, TAB_DIVIDER, LINE_DIVIDER } from '../common';
+import { Field, FieldType, FieldRow, TAB_DIVIDER, LINE_DIVIDER } from '../shared';
 import { CoreWebService } from '../../../../api/services/core-web-service';
 import { RequestMethod } from '@angular/http';
 

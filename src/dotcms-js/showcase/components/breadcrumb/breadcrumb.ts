@@ -1,12 +1,12 @@
-import {Component, ViewEncapsulation} from '@angular/core';
-import {SiteBrowserState} from "../../../core/util/site-browser.state";
+import { Component, ViewEncapsulation, OnInit, OnDestroy } from '@angular/core';
+import { SiteBrowserState } from '../../../../dotcms-js';
 
 @Component({
-    template: require('./breadcrumb.html'),
+    template: './breadcrumb.html',
     encapsulation: ViewEncapsulation.None,
 
 })
-export class BreadcrumbDemoShowcase {
+export class BreadcrumbDemoShowcase implements OnInit, OnDestroy {
 
     constructor(private updateService: SiteBrowserState) {}
 

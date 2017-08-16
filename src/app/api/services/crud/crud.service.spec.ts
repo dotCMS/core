@@ -20,7 +20,7 @@ describe('CrudService', () => {
     });
 
     it('should post data and return an entity', fakeAsync(() => {
-        let body = {
+        const body = {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             defaultType: false,
             description: 'This is the content type description',

@@ -21,7 +21,7 @@ import { trigger, transition, style, animate } from '@angular/animations';
         '(document:click)': 'handleClick($event)',
     },
     selector: 'dot-dropdown-component',
-    styles: [require('./dropdown-component.scss')],
+    styleUrls: ['./dropdown-component.scss'],
     templateUrl: 'dropdown-component.html'
 })
 

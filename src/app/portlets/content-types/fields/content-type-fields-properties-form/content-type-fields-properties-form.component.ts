@@ -1,6 +1,6 @@
 import { Component, Output, EventEmitter, Input, SimpleChanges } from '@angular/core';
 import { FormGroup, FormControl, FormBuilder, Validators } from '@angular/forms';
-import { Field } from '../index';
+import { Field } from '../shared';
 
 @Component({
     selector: 'content-type-fields-properties-form',

@@ -1,55 +1,19 @@
 // RULES ENGINE COMPONENTS
 
-import { AddToBundleDialogComponent } from './view/components/push-publish/add-to-bundle-dialog-component';
-import { AddToBundleDialogContainer } from './view/components/push-publish/add-to-bundle-dialog-container';
-import { AreaPickerDialogComponent } from './view/components/_common/google-map/area-picker-dialog.component';
-import { ConditionComponent } from './portlets/rule-engine/rule-condition-component';
-import { ConditionGroupComponent } from './portlets/rule-engine/rule-condition-group-component';
-import { Dropdown, InputOption } from './portlets/rule-engine/semantic/modules/dropdown/dropdown';
-import { InputDate } from './portlets/rule-engine/semantic/elements/input-date/input-date';
-import { InputText } from './portlets/rule-engine/semantic/elements/input-text/input-text';
-import { InputToggle } from './portlets/rule-engine/input/toggle/inputToggle';
-import { ModalDialogComponent } from './view/components/_common/modal-dialog/dialog-component';
-import { PushPublishDialogComponent } from './view/components/push-publish/push-publish-dialog-component';
-import { PushPublishDialogContainer } from './view/components/push-publish/push-publish-dialog-container';
-import { RestDropdown } from './portlets/rule-engine/semantic/modules/restdropdown/RestDropdown';
-import { RuleActionComponent } from './portlets/rule-engine/rule-action-component';
-import { RuleComponent } from './portlets/rule-engine/rule-component';
-import { RuleEngineComponent } from './portlets/rule-engine/rule-engine';
-import { RuleEngineContainer } from './portlets/rule-engine/rule-engine.container';
-import { ServersideCondition } from './portlets/rule-engine/condition-types/serverside-condition/serverside-condition';
-import { VisitorsLocationComponent } from './portlets/rule-engine/custom-types/visitors-location/visitors-location.component';
-import { VisitorsLocationContainer } from './portlets/rule-engine/custom-types/visitors-location/visitors-location.container';
-import {SiteSelectorComponent as SiteSelectorComponentDotJS} from '../dotcms-js/components/site-selector/site-selector.component';
-import {DotcmsBreadcrumbModule} from '../dotcms-js/components/breadcrumb/breadcrumb.component';
-import {DotcmsSiteTreeTableModule} from '../dotcms-js/components/site-treetable/site-treetable.component';
-import {DotcmsSiteDatatableModule} from '../dotcms-js/components/site-datatable/site-datatable.component';
-import {DotcmsTreeableDetailModule} from '../dotcms-js/components/treeable-detail/treeable-detail.component';
-import {DotBrowserComponent} from './portlets/dot-browser/dot-browser-component';
+// import { AddToBundleDialogComponent } from './view/components/push-publish/add-to-bundle-dialog-component';
+// import { AddToBundleDialogContainer } from './view/components/push-publish/add-to-bundle-dialog-container';
+import { AreaPickerDialogComponent } from './portlets/rule-engine/google-map/area-picker-dialog.component';
+import { ModalDialogComponent } from './portlets/rule-engine/modal-dialog/dialog-component';
+// import { PushPublishDialogComponent } from './view/components/push-publish/push-publish-dialog-component';
+// import { PushPublishDialogContainer } from './view/components/push-publish/push-publish-dialog-container';
 
-const RULES_ENGINE_COMPONENTS = [
-    AddToBundleDialogComponent,
-    AddToBundleDialogContainer,
-    AreaPickerDialogComponent,
-    ConditionComponent,
-    ConditionGroupComponent,
-    Dropdown,
-    InputDate,
-    InputOption,
-    InputText,
-    InputToggle,
-    ModalDialogComponent,
-    PushPublishDialogComponent,
-    PushPublishDialogContainer,
-    RestDropdown,
-    RuleActionComponent,
-    RuleComponent,
-    RuleEngineComponent,
-    RuleEngineContainer,
-    ServersideCondition,
-    VisitorsLocationComponent,
-    VisitorsLocationContainer,
-];
+// import {SiteSelectorComponent as SiteSelectorComponentDotJS} from '../dotcms-js/components/site-selector/site-selector.component';
+// import {DotcmsBreadcrumbModule} from '../dotcms-js/components/breadcrumb/breadcrumb.component';
+// import {DotcmsSiteTreeTableModule} from '../dotcms-js/components/site-treetable/site-treetable.component';
+// import {DotcmsSiteDatatableModule} from '../dotcms-js/components/site-datatable/site-datatable.component';
+// import {DotcmsTreeableDetailModule} from '../dotcms-js/components/treeable-detail/treeable-detail.component';
+// import {DotBrowserComponent} from './portlets/dot-browser/dot-browser-component';
+
 
 // CUSTOM COMPONENTS
 import { Accordion, AccordionGroup } from './view/components/_common/accordion/accordion';
@@ -76,17 +40,15 @@ import { PatternLibrary } from './view/components/_common/pattern-library/patter
 import { ResetPasswordComponent } from './view/components/login/reset-password-component/reset-password-component';
 import { ResetPasswordContainer } from './view/components/login/reset-password-component/reset-password-container';
 import { SiteSelectorComponent } from './view/components/_common/site-selector/site-selector.component';
-import { ToolbarAddContenletComponent, ToolbarAddContenletBodyComponent } from './view/components/toolbar-add-contentlet/toolbar-add-contentlet';
 import { ToolbarNotifications } from './view/components/toolbar-notifications/toolbar-notifications';
 import { ToolbarUserComponent } from './view/components/toolbar-user/toolbar-user';
 import { ToolbarComponent } from './view/components/toolbar/toolbar.component';
 
 export const COMPONENTS = [
-    ...RULES_ENGINE_COMPONENTS,
     Accordion,
     AccordionGroup,
     CustomTimeComponent,
-    DotBrowserComponent,
+    // DotBrowserComponent,
     DotLoadingIndicator,
     DropdownComponent,
     ForgotPasswordComponent,
@@ -109,7 +71,7 @@ export const COMPONENTS = [
     PatternLibrary,
     ResetPasswordComponent,
     ResetPasswordContainer,
-    SiteSelectorComponentDotJS,
+    // SiteSelectorComponentDotJS,
     ToolbarAddContenletBodyComponent,
     ToolbarAddContenletComponent,
     ToolbarComponent,
@@ -128,6 +90,10 @@ export const PIPES = [
 import { MessageKeyDirective } from './view/directives/message-keys';
 import { DotRippleEffectDirective } from './view/directives/ripple/ripple-effect';
 import { MaterialDesignTextfield } from './view/directives/md-inputtext/md-inputtext';
+import {
+    ToolbarAddContenletBodyComponent,
+    ToolbarAddContenletComponent
+} from './view/components/toolbar-add-contentlet/toolbar-add-contentlet';
 
 export const DIRECTIVES = [
     MessageKeyDirective,

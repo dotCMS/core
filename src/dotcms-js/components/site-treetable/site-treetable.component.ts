@@ -11,7 +11,7 @@ import {Site} from '../../core/treeable/shared/site.model';
 
 @Component({
     selector: 'site-treetable',
-    styles: [require('./../app.css')],
+    styleUrls: ['./../app.css'],
     template: `<div class="ContentSideSections Implementation"
                     (drop)="handleDrop($event, p-column)" (dragover)="handleDragOver($event)">
         <p-treeTable [value]="lazyFiles" [(selection)]="selectedNode" [style]="&#123;'margin-top':'30px'&#125;"

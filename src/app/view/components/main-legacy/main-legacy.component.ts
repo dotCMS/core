@@ -4,7 +4,7 @@ import {Component, ViewEncapsulation} from '@angular/core';
     encapsulation: ViewEncapsulation.None,
     providers: [],
     selector: 'dot-main-component',
-    styles: [require('./main-legacy.component.scss')],
+    styleUrls: ['./main-legacy.component.scss'],
     templateUrl: './main-legacy.component.html',
 })
 export class MainComponentLegacy {

@@ -5,6 +5,9 @@ import {BehaviorSubject, Observable} from 'rxjs/Rx';
 import _ from 'lodash';
 import { KeyCode } from '../../../../../api/util/key-util';
 import { LoggerService } from '../../../../../api/services/logger.service';
+declare var jQuery: any;
+declare var $: any;
+
 
 /**
  * Angular 2 wrapper around Semantic UI Dropdown Module.
@@ -119,7 +122,7 @@ export class Dropdown implements AfterViewInit, OnDestroy, ControlValueAccessor 
   }
 
   hasOption(option: InputOption): boolean {
-    let x = this._optionsAry.filter((opt) => {
+    const x = this._optionsAry.filter((opt) => {
       return option.value === opt.value;
     });
     return x.length !== 0;
@@ -183,7 +186,7 @@ export class Dropdown implements AfterViewInit, OnDestroy, ControlValueAccessor 
       },
       // tslint:disable-next-line:only-arrow-functions
       onLabelCreate:  function(value, text): any {
-        let $label = this;
+        const $label = this;
         return self.onLabelCreate($label, value, text);
       },
       onLabelSelect: ($selectedLabels) => {
@@ -208,7 +211,7 @@ export class Dropdown implements AfterViewInit, OnDestroy, ControlValueAccessor 
       config.maxSelections = this.maxSelections;
     }
 
-    let el = this.elementRef.nativeElement;
+    const el = this.elementRef.nativeElement;
     this._$dropdown = $(el).children('.ui.dropdown');
     this._$dropdown.dropdown(config);
     this._applyArrowNavFix(this._$dropdown);
@@ -288,7 +291,7 @@ export class Dropdown implements AfterViewInit, OnDestroy, ControlValueAccessor 
     Observable.interval(10).takeWhile(() => {
       count++;
       if (count > 100) {
-        throw 'Dropdown element not found.';
+        throw new Error('Dropdown element not found.');
       }
       return this._$dropdown == null;
     }).subscribe(() => {
@@ -308,8 +311,8 @@ export class Dropdown implements AfterViewInit, OnDestroy, ControlValueAccessor 
    * @private
    */
   private _applyArrowNavFix($dropdown): void {
-    let $searchField = $dropdown.children('input.search');
-    let enterEvent = this.enter;
+    const $searchField = $dropdown.children('input.search');
+    const enterEvent = this.enter;
     $searchField.on('keyup', (event: any) => {
       if (DO_NOT_SEARCH_ON_THESE_KEY_EVENTS[event.keyCode]) {
         if (event.keyCode === KeyCode.ENTER && enterEvent) {

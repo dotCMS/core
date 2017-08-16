@@ -4,7 +4,7 @@ import {SiteBrowserState} from "../../../core/util/site-browser.state";
 import {Treeable} from "../../../core/treeable/shared/treeable.model";
 
 @Component({
-    template: require('./treeable-detail.html'),
+    template: './treeable-detail.html',
     encapsulation: ViewEncapsulation.None,
 
 })

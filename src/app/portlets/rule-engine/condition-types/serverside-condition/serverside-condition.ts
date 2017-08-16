@@ -3,12 +3,12 @@ import {FormBuilder} from '@angular/forms';
 import {ParameterDefinition} from '../../../../api/util/CwInputModel';
 import {CwDropdownInputModel} from '../../../../api/util/CwInputModel';
 import {CwComponent} from '../../../../api/util/CwComponent';
-import {ServerSideFieldModel} from '../../../../api/rule-engine/ServerSideFieldModel';
+import {ServerSideFieldModel} from '../../services/ServerSideFieldModel';
 import {I18nService} from '../../../../api/system/locale/I18n';
 import {ObservableHack} from '../../../../api/util/ObservableHack';
 import {CwRestDropdownInputModel} from '../../../../api/util/CwInputModel';
 import {Verify} from '../../../../api/validation/Verify';
-import {ParameterModel} from '../../../../api/rule-engine/Rule';
+import {ParameterModel} from '../../services/Rule';
 import {LoggerService} from '../../../../api/services/logger.service';
 
 @Component({

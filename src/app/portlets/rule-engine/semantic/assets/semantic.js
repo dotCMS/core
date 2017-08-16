@@ -19,7 +19,6 @@
  */
 
 ;(function ($, window, document, undefined) {
-
 $.site = $.fn.site = function(parameters) {
   var
     time           = new Date().getTime(),

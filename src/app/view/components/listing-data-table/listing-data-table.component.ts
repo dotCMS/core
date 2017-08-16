@@ -1,22 +1,24 @@
+import { Component, Input, Output, EventEmitter, OnChanges } from '@angular/core';
+
+import { LazyLoadEvent } from 'primeng/primeng';
+
+import { ActionHeaderOptions, ButtonAction } from '../../../shared/models/action-header';
 import { BaseComponent } from '../_common/_base/base-component';
-import { ActionHeaderOptions, ButtonAction } from './action-header/action-header';
-import { Component, Input, Output } from '@angular/core';
 import { CrudService } from '../../../api/services/crud';
+import { DataTableColumn } from '../../../shared/models/data-table/data-table-column';
 import { DotcmsConfig } from '../../../api/services/system/dotcms-config';
 import { FormatDateService } from '../../../api/services/format-date-service';
-import { LazyLoadEvent } from 'primeng/primeng';
 import { LoggerService } from '../../../api/services/logger.service';
 import { MessageService } from '../../../api/services/messages-service';
-import { EventEmitter } from '@angular/core';
 import { PaginatorService, OrderDirection } from '../../../api/services/paginator';
+
 @Component({
     providers: [PaginatorService],
     selector: 'listing-data-table',
-    styles: [require('./listing-data-table.component.scss')],
+    styleUrls: ['./listing-data-table.component.scss'],
     templateUrl: 'listing-data-table.component.html'
 })
-export class ListingDataTableComponent extends BaseComponent {
-
+export class ListingDataTableComponent extends BaseComponent implements OnChanges {
     @Input() columns: DataTableColumn[];
     @Input() url: string;
     @Input() actionHeaderOptions: ActionHeaderOptions;
@@ -25,19 +27,23 @@ export class ListingDataTableComponent extends BaseComponent {
     @Input() sortField: string;
     @Input() multipleSelection = false;
 
-    @Output() rowWasClicked: EventEmitter<any> = new EventEmitter;
+    @Output() rowWasClicked: EventEmitter<any> = new EventEmitter();
 
     readonly DATE_FORMAT = 'date';
 
-    private paginatorRows: number;
-    private paginatorLinks: number;
-    private items: any[];
-    private filter;
-    private dateColumns: DataTableColumn[];
+    paginatorRows: number;
+    paginatorLinks: number;
+    items: any[];
+    filter;
+    dateColumns: DataTableColumn[];
 
-    constructor(private crudService: CrudService, messageService: MessageService, public loggerService: LoggerService,
-                    private paginatorService: PaginatorService, private formatDateService: FormatDateService) {
-
+    constructor(
+        private crudService: CrudService,
+        messageService: MessageService,
+        public loggerService: LoggerService,
+        private paginatorService: PaginatorService,
+        private formatDateService: FormatDateService
+    ) {
         super(['global-search'], messageService);
         this.paginatorService.url = this.url;
     }
@@ -48,7 +54,9 @@ export class ListingDataTableComponent extends BaseComponent {
         }
 
         if (changes.columns && changes.columns.currentValue) {
-            this.dateColumns = changes.columns.currentValue.filter(column => column.format === this.DATE_FORMAT);
+            this.dateColumns = changes.columns.currentValue.filter(
+                column => column.format === this.DATE_FORMAT
+            );
             this.loadData(0);
         }
     }
@@ -67,16 +75,19 @@ export class ListingDataTableComponent extends BaseComponent {
 
     loadData(offset: number, sortFieldParam?: string, sortOrderParam?: OrderDirection): void {
         if (this.columns) {
-            let sortField = sortFieldParam || this.sortField;
-            let sortOrder = sortOrderParam || this.sortOrder;
+            const sortField = sortFieldParam || this.sortField;
+            const sortOrder = sortOrderParam || this.sortOrder;
 
             this.paginatorService.filter = this.filter;
             this.paginatorService.sortField = sortField;
-            this.paginatorService.sortOrder = sortOrder === 1 ? OrderDirection.ASC : OrderDirection.DESC;
+            this.paginatorService.sortOrder =
+                sortOrder === 1 ? OrderDirection.ASC : OrderDirection.DESC;
 
-            this.paginatorService.getWithOffset(offset).subscribe(
-                items => this.items = this.dateColumns ? this.formatData(items) : items
-            );
+            this.paginatorService
+                .getWithOffset(offset)
+                .subscribe(
+                    items => (this.items = this.dateColumns ? this.formatData(items) : items)
+                );
         }
     }
 
@@ -88,24 +99,20 @@ export class ListingDataTableComponent extends BaseComponent {
      * @memberof ListingDataTableComponent
      */
     getAlign(col: DataTableColumn): string {
-        return col.textAlign ? col.textAlign :
-            (this.items && this.items[0] && typeof this.items[0][col.fieldName] === 'number') ? 'right' : 'left';
+        return col.textAlign
+            ? col.textAlign
+            : this.items && this.items[0] && typeof this.items[0][col.fieldName] === 'number'
+              ? 'right'
+              : 'left';
     }
 
     private formatData(items: any[]): any[] {
-        return items.map((item) => {
-            this.dateColumns.forEach((col) => item[col.fieldName] = this.formatDateService.getRelative(item[col.fieldName]));
+        return items.map(item => {
+            this.dateColumns.forEach(
+                col =>
+                    (item[col.fieldName] = this.formatDateService.getRelative(item[col.fieldName]))
+            );
             return item;
         });
     }
-}
-
-export interface DataTableColumn {
-    fieldName: string;
-    format?: string;
-    header: string;
-    icon?: (any) => string;
-    sortable?: boolean;
-    textAlign?: string;
-    width?: string;
 }

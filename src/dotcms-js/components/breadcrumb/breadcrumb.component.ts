@@ -1,7 +1,6 @@
 import {MenuItem} from 'primeng/components/common/api';
 import {Component, Inject, NgModule} from '@angular/core';
 import {Subscription} from 'rxjs';
-import EventEmitter = NodeJS.EventEmitter;
 import {SiteBrowserState} from '../../core/util/site-browser.state';
 import {BreadcrumbModule} from 'primeng/components/breadcrumb/breadcrumb';
 import {CommonModule} from '@angular/common';
@@ -14,7 +13,7 @@ import {Site} from '../../core/treeable/shared/site.model';
  */
 @Component({
     selector: 'breadcrumb',
-    styles: [require('./../app.css')],
+    styleUrls: ['./../app.css'],
     template: `<p-breadcrumb [model]="pathItems"></p-breadcrumb>`
 })
 @Inject('updateService')
@@ -23,10 +22,13 @@ export class BreadcrumbComponent {
     private pathItems: MenuItem[];
 
     constructor(private updateService: SiteBrowserState) {
+        console.log('constructor');
         this.buildMenuItemsFromURI(this.updateService.getURI());
         updateService.currentSite.subscribe(
             site => {
-                this.onSiteChange(site);
+                if (site) {
+                    this.onSiteChange(site);
+                }
             });
         updateService.currentFolder.subscribe(
             folderName => {

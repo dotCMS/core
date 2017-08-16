@@ -20,7 +20,7 @@ import {Site} from '../../core/treeable/shared/site.model';
  */
 @Component({
     selector: 'site-datatable',
-    styles: [require('./../app.css')],
+    styleUrls: ['./../app.css'],
     template: `<div (drop)="handleDrop($event, p-column)" (dragover)="handleDragOver($event)">
         <p-dataTable [value]="treeables" selectionMode="single"
                      (onRowDblclick)="doubleClick($event)" (onRowSelect)="selectTreeable($event)">

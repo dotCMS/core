@@ -1,20 +1,21 @@
-import {BaseComponent} from '../_common/_base/base-component';
-import {Component, ViewEncapsulation, ElementRef, ViewChild } from '@angular/core';
-import {DotcmsEventsService} from '../../../api/services/dotcms-events-service';
-import {INotification, NotificationsService} from '../../../api/services/notifications-service';
-import {MessageService} from '../../../api/services/messages-service';
-import {LoginService} from '../../../api/services/login-service';
-import {IframeOverlayService} from '../../../api/services/iframe-overlay-service';
-import {DropdownComponent} from '../_common/dropdown-component/dropdown-component';
+import { Component, ViewEncapsulation, ElementRef, ViewChild } from '@angular/core';
+
+import { BaseComponent } from '../_common/_base/base-component';
+import { DotcmsEventsService } from '../../../api/services/dotcms-events-service';
+import { DropdownComponent } from '../_common/dropdown-component/dropdown-component';
+import { INotification } from '../../../shared/models/notifications';
+import { IframeOverlayService } from '../../../api/services/iframe-overlay-service';
+import { LoginService } from '../../../api/services/login-service';
+import { MessageService } from '../../../api/services/messages-service';
+import { NotificationsService } from '../../../api/services/notifications-service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
     selector: 'dot-toolbar-notifications',
-    styles: [require('./toolbar-notifications.scss')],
+    styleUrls: ['./toolbar-notifications.scss'],
     templateUrl: 'toolbar-notifications.html'
 })
 export class ToolbarNotifications extends BaseComponent {
-
     @ViewChild(DropdownComponent) dropdown: DropdownComponent;
     private elementRef;
     private isNotificationsMarkedAsRead = false;
@@ -23,10 +24,18 @@ export class ToolbarNotifications extends BaseComponent {
     private showNotifications = false;
     private existsMoreToLoad = false;
 
-    constructor(private dotcmsEventsService: DotcmsEventsService, private notificationService: NotificationsService,
-                myElement: ElementRef, messageService: MessageService, private loginService: LoginService,
-                private iframeOverlayService: IframeOverlayService) {
-        super(['notifications_dismissall', 'notifications_title', 'notifications_load_more'], messageService);
+    constructor(
+        private dotcmsEventsService: DotcmsEventsService,
+        private notificationService: NotificationsService,
+        myElement: ElementRef,
+        messageService: MessageService,
+        private loginService: LoginService,
+        private iframeOverlayService: IframeOverlayService
+    ) {
+        super(
+            ['notifications_dismissall', 'notifications_title', 'notifications_load_more'],
+            messageService
+        );
         this.elementRef = myElement;
     }
 
@@ -46,15 +55,14 @@ export class ToolbarNotifications extends BaseComponent {
 
     // tslint:disable-next-line:no-unused-variable
     private dismissAllNotifications(): void {
-        let items = this.notifications.map(item => item.id);
-        this.notificationService.dismissNotifications({'items': items}).subscribe(res => {
+        const items = this.notifications.map(item => item.id);
+        this.notificationService.dismissNotifications({ items: items }).subscribe(res => {
             // TODO: I think we should get here res and err
             if (res.errors.length) {
                 return;
             }
 
             this.clearNotitications();
-
         });
     }
 
@@ -80,34 +88,35 @@ export class ToolbarNotifications extends BaseComponent {
             this.isNotificationsMarkedAsRead = true;
             this.notificationsUnreadCount = 0;
         });
-
     }
 
     // tslint:disable-next-line:no-unused-variable
     private onDismissNotification($event): void {
-        let notificationId = $event.id;
+        const notificationId = $event.id;
 
-        this.notificationService.dismissNotifications({items: [notificationId]}).subscribe(res => {
-            if (res.errors.length) {
-                return;
-            }
+        this.notificationService
+            .dismissNotifications({ items: [notificationId] })
+            .subscribe(res => {
+                if (res.errors.length) {
+                    return;
+                }
 
-            this.notifications = this.notifications.filter(item => {
-                return item.id !== notificationId;
+                this.notifications = this.notifications.filter(item => {
+                    return item.id !== notificationId;
+                });
+
+                if (this.notificationsUnreadCount) {
+                    this.notificationsUnreadCount--;
+                }
+
+                if (!this.notifications.length && !this.notificationsUnreadCount) {
+                    this.clearNotitications();
+                }
             });
-
-            if (this.notificationsUnreadCount) {
-                this.notificationsUnreadCount--;
-            }
-
-            if (!this.notifications.length && !this.notificationsUnreadCount) {
-                this.clearNotitications();
-            }
-        });
     }
 
     private subscribeToNotifications(): void {
-        this.dotcmsEventsService.subscribeTo('NOTIFICATION').subscribe((res) => {
+        this.dotcmsEventsService.subscribeTo('NOTIFICATION').subscribe(res => {
             this.notifications.unshift(res.data);
             this.notificationsUnreadCount++;
             this.isNotificationsMarkedAsRead = false;

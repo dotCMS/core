@@ -1,7 +1,7 @@
 import { Component, ViewEncapsulation } from '@angular/core';
 
 @Component({
-    template: require('./site-selector.html'),
+    template: './site-selector.html',
     encapsulation: ViewEncapsulation.None,
 
 })

@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { Field, FieldRow } from '../';
+import { Field, FieldRow } from '../shared';
 
 /**
  * Display all the Field Types
@@ -9,7 +9,7 @@ import { Field, FieldRow } from '../';
  */
 @Component({
     selector: 'content-type-fields-row',
-    styles: [require('./content-type-fields-row.component.scss')],
+    styleUrls: ['./content-type-fields-row.component.scss'],
     templateUrl: './content-type-fields-row.component.html',
 })
 export class ContentTypeFieldsRowComponent {
@@ -22,7 +22,7 @@ export class ContentTypeFieldsRowComponent {
      */
     removeField(field: Field): void {
         this.fieldRow.columns = this.fieldRow.columns.map(col => {
-            let index: number = col.fields.indexOf(field);
+            const index: number = col.fields.indexOf(field);
 
             if (index !== -1) {
                 col.fields.splice(index, 1);
@@ -37,7 +37,7 @@ export class ContentTypeFieldsRowComponent {
      * @memberof ContentTypeFieldsRowComponent
      */
     getColumnWidth(): string {
-        let nColumns = this.fieldRow.columns.length;
+        const nColumns = this.fieldRow.columns.length;
         return `${100 / nColumns}%`;
     }
 }

@@ -1,0 +1,78 @@
+@import "styles/variables";
+@import "styles/mixins";
+@import "styles/forms";
+@import "styles/typography";
+
+// FONT AWESOME
+@import "../node_modules/font-awesome/css/font-awesome.css";
+
+// PRIME NG
+@import "../node_modules/primeng/resources/primeng.css";
+@import "styles/primeng-theme/base";
+
+// DIRECTIVES
+@import "app/view/directives/ripple/ripple-effects.scss";
+@import "app/view/directives/md-inputtext/md-inputtext.scss";
+
+// // GOOGLE FONTS
+@import url("https://fonts.googleapis.com/css?family=Roboto:400,700");
+
+//DRAGULA
+@import  "../node_modules/dragula/dist/dragula.css";
+
+*, *:before, *:after {
+    box-sizing: border-box;
+}
+
+html, body {
+    color: $black;
+    font-family: $body-text;
+    font-size: $body-font-size-base;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+// For the login component user photo background
+body {
+    background-position: top center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+code {
+    background: $gray-lighter;
+    padding: 2px;
+}
+
+p {
+    line-height: 1.5em;
+}
+
+a {
+    color: $brand-primary;
+
+    &:hover {
+        text-decoration: none;
+    }
+
+    &.link-secondary {
+        color: $brand-secondary;
+    }
+}
+
+// This is legacy code, needs to once we refactor rule-engine component and remove semantic-ui
+@font-face {
+    font-family: "Icons";
+    src: url("${rules-engine-fonts-url}/icons.eot");
+    src: url("${rules-engine-fonts-url}/icons.eot?#iefix") format("embedded-opentype"),
+         url("${rules-engine-fonts-url}/icons.woff2") format("woff2"),
+         url("${rules-engine-fonts-url}/icons.woff") format("woff"),
+         url("${rules-engine-fonts-url}/icons.ttf") format("truetype"),
+         url("${rules-engine-fonts-url}/icons.svg#icons") format("svg");
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-decoration: inherit;
+    text-transform: none;
+}

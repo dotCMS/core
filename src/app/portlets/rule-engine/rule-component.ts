@@ -11,7 +11,7 @@ import {
     V_RULE_UPDATE_EXPANDED_STATE, RULE_CONDITION_UPDATE_PARAMETER, RULE_CONDITION_UPDATE_OPERATOR,
     RULE_CONDITION_UPDATE_TYPE, ConditionGroupModel, ActionModel, RULE_RULE_ACTION_DELETE, RULE_RULE_ACTION_CREATE,
     RULE_CONDITION_GROUP_CREATE, RuleService
-} from '../../api/rule-engine/Rule';
+} from './services/Rule';
 
 import {I18nService} from '../../api/system/locale/I18n';
 import {UserModel} from '../../api/auth/UserModel';
@@ -20,7 +20,7 @@ import {
     ConditionActionEvent,
     RuleActionActionEvent, RuleActionEvent, ConditionGroupActionEvent
 } from './rule-engine.container';
-import {ServerSideTypeModel} from '../../api/rule-engine/ServerSideFieldModel';
+import {ServerSideTypeModel} from './services/ServerSideFieldModel';
 import {IPublishEnvironment} from '../../api/services/bundle-service';
 import { LoggerService } from '../../api/services/logger.service';
 

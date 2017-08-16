@@ -22,7 +22,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { StringUtils } from '../../../api/util/string.utils';
 import { FieldService } from '../fields/service';
 import { CONTENT_TYPE_INITIAL_DATA } from '../main';
-import {Field} from '../fields/common/field';
+import {Field} from '../fields/shared/field';
 
 @Component({
     selector: 'content-type-fields-drop-zone',
@@ -64,7 +64,7 @@ describe('ContentTypesCreateComponent', () => {
     let url: UrlSegment[];
 
     beforeEach(async(() => {
-        let messageServiceMock = new MockMessageService({
+        const messageServiceMock = new MockMessageService({
             'Content': 'Content',
             'File': 'File',
             'Form': 'Form',
@@ -109,7 +109,7 @@ describe('ContentTypesCreateComponent', () => {
     }));
 
     it('should have Content Types Layout', () => {
-        let contentTypeLayout = de.query(By.css('content-type-layout'));
+        const contentTypeLayout = de.query(By.css('content-type-layout'));
         expect(contentTypeLayout).not.toBeNull();
     });
 
@@ -123,9 +123,9 @@ describe('ContentTypesCreateComponent', () => {
 
         fixture.detectChanges();
 
-        let contentTypeLayout = de.query(By.css('content-type-layout'));
-        let contentTypeForm = contentTypeLayout.query(By.css('content-types-form'));
-        let contentTypeFormComponentInstance = contentTypeForm.componentInstance;
+        const contentTypeLayout = de.query(By.css('content-type-layout'));
+        const contentTypeForm = contentTypeLayout.query(By.css('content-types-form'));
+        const contentTypeFormComponentInstance = contentTypeForm.componentInstance;
 
         expect(contentTypeForm).not.toBeNull();
 
@@ -145,7 +145,7 @@ describe('ContentTypesCreateComponent', () => {
 
         fixture.detectChanges();
 
-        let mockData = [{
+        const mockData = [{
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             defaultType: false,
             fixed: false,
@@ -157,14 +157,14 @@ describe('ContentTypesCreateComponent', () => {
             system: false
         }];
 
-        let crudService = fixture.debugElement.injector.get(CrudService);
+        const crudService = fixture.debugElement.injector.get(CrudService);
         spyOn(crudService, 'postData').and.callFake((url, contentType) => {
             this.url = url;
             this.contentType = contentType;
             return Observable.of(mockData);
         });
 
-        let event = {
+        const event = {
             originalEvent: Event,
             value: {
                 host: '12345',
@@ -188,7 +188,7 @@ describe('ContentTypesCreateComponent', () => {
 
         route.url = Observable.of(url);
 
-        let mockData = [{
+        const mockData = [{
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             defaultType: false,
             fixed: false,
@@ -202,7 +202,7 @@ describe('ContentTypesCreateComponent', () => {
 
         fixture.detectChanges();
 
-        let crudService = fixture.debugElement.injector.get(CrudService);
+        const crudService = fixture.debugElement.injector.get(CrudService);
         spyOn(crudService, 'postData').and.returnValue(Observable.of(mockData));
 
         comp.handleFormSubmit({

@@ -4,7 +4,7 @@ import {Component, ViewEncapsulation} from '@angular/core';
     encapsulation: ViewEncapsulation.None,
 
     selector: 'not-licensed-component',
-    styles: [require('./not-licensed-component.scss')],
+    styleUrls: ['./not-licensed-component.scss'],
     templateUrl: 'not-licensed-component.html',
 })
 export class NotLicensedComponent {

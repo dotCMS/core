@@ -1,10 +1,10 @@
 import { Component, Input } from '@angular/core';
 import { GravatarService } from '../../../../api/services/gravatar-service';
-let md5 = require('md5');
+import * as md5 from 'md5';
 
 @Component({
     selector: 'gravatar',
-    styles: [require('./gravatar.component.scss')],
+    styleUrls: ['./gravatar.component.scss'],
     templateUrl: './gravatar.component.html'
 })
 

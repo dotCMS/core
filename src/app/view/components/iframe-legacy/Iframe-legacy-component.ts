@@ -14,7 +14,7 @@ import {IframeOverlayService} from '../../../api/services/iframe-overlay-service
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
     selector: 'dot-iframe',
-    styles: [require('./iframe-legacy-component.scss')],
+    styleUrls: ['./iframe-legacy-component.scss'],
     templateUrl: 'iframe-legacy-component.html'
 })
 export class IframeLegacyComponent extends SiteChangeListener {
@@ -49,7 +49,7 @@ export class IframeLegacyComponent extends SiteChangeListener {
 
         this.initComponent();
 
-        let events: string[] = ['SAVE_FOLDER', 'UPDATE_FOLDER', 'DELETE_FOLDER', 'SAVE_PAGE_ASSET', 'UPDATE_PAGE_ASSET',
+        const events: string[] = ['SAVE_FOLDER', 'UPDATE_FOLDER', 'DELETE_FOLDER', 'SAVE_PAGE_ASSET', 'UPDATE_PAGE_ASSET',
             'ARCHIVE_PAGE_ASSET', 'UN_ARCHIVE_PAGE_ASSET', 'DELETE_PAGE_ASSET', 'PUBLISH_PAGE_ASSET',
             'UN_PUBLISH_PAGE_ASSET', 'SAVE_FILE_ASSET', 'UPDATE_FILE_ASSET', 'ARCHIVE_FILE_ASSET',
             'UN_ARCHIVE_FILE_ASSET', 'DELETE_FILE_ASSET', 'PUBLISH_FILE_ASSET', 'UN_PUBLISH_FILE_ASSET', 'SAVE_LINK',
@@ -121,7 +121,7 @@ export class IframeLegacyComponent extends SiteChangeListener {
      */
     checkSessionExpired(): void {
         if (this.iframeElement && this.iframeElement.contentWindow) {
-            let currentPath = this.iframeElement.contentWindow.location.pathname;
+            const currentPath = this.iframeElement.contentWindow.location.pathname;
 
             if (currentPath.indexOf('/c/portal_public/login') !== -1) {
                 this.loginService.logOutUser().subscribe(data => {
@@ -139,8 +139,8 @@ export class IframeLegacyComponent extends SiteChangeListener {
      */
     reloadIframePortlet(url: string): void {
         if (url !== undefined && url !== '') {
-            let urlSplit = url.split('/');
-            let id = urlSplit[urlSplit.length - 1];
+            const urlSplit = url.split('/');
+            const id = urlSplit[urlSplit.length - 1];
             this.iframe = this.loadURL(this.routingService.getPortletURL(id));
         }
     }

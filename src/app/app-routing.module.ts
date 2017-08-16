@@ -1,41 +1,42 @@
-import { ForgotPasswordContainer } from './view/components/login/forgot-password-component/forgot-password-container';
-import { IframeLegacyComponent } from './view/components/iframe-legacy/iframe-legacy-component';
-import { LogOutContainer } from './view/components/login/login-component/log-out-container';
-import { LoginContainer } from './view/components/login/login-component/login-container';
-import { LoginPageComponent } from './view/components/login/login-page-component';
-import { MainComponentLegacy } from './view/components/main-legacy/main-legacy.component';
-import { MainCoreLegacyComponent } from './view/components/main-core-legacy/main-core-legacy-component';
-import { ModuleWithProviders}  from '@angular/core';
-import { NgModule } from '@angular/core';
-import { NotLicensedComponent } from './view/components/not-licensed/not-licensed-component';
-import { PatternLibrary } from './view/components/_common/pattern-library/pattern-library';
-import { ResetPasswordContainer } from './view/components/login/reset-password-component/reset-password-container';
-import { Routes, RouterModule, PreloadAllModules } from '@angular/router';
-import { RoutingPrivateAuthService } from './api/services/routing-private-auth-service';
 import { RoutingPublicAuthService } from './api/services/routing-public-auth-service';
+import { RoutingPrivateAuthService } from './api/services/routing-private-auth-service';
+import { Routes, RouterModule, PreloadAllModules } from '@angular/router';
+import { ResetPasswordContainer } from './view/components/login/reset-password-component/reset-password-container';
+import { PatternLibrary } from './view/components/_common/pattern-library/pattern-library';
+import { NotLicensedComponent } from './view/components/not-licensed/not-licensed-component';
+import { NgModule } from '@angular/core';
+import { ModuleWithProviders} from '@angular/core';
+import { MainCoreLegacyComponent } from './view/components/main-core-legacy/main-core-legacy-component';
+import { MainComponentLegacy } from './view/components/main-legacy/main-legacy.component';
+import { LoginPageComponent } from './view/components/login/login-page-component';
+import { LoginContainer } from './view/components/login/login-component/login-container';
+import { LogOutContainer } from './view/components/login/login-component/log-out-container';
+import { IframeLegacyComponent } from './view/components/iframe-legacy/iframe-legacy-component';
+import { ForgotPasswordContainer } from './view/components/login/forgot-password-component/forgot-password-container';
 import { RuleEngineContainer } from './portlets/rule-engine/rule-engine.container';
-import {DotBrowserComponent} from './portlets/dot-browser/dot-browser-component';
+import { DotBrowserComponent } from './portlets/dot-browser/dot-browser-component';
+import { environment } from '../environments/environment';
 
-let angularComponents: any[] = [
+const angularComponents: any[] = [
+    {
+        id: 'content-types-angular',
+        loadChildren: 'app/portlets/content-types/content-types.module#ContentTypesModule'
+    },
     {
         component: RuleEngineContainer,
         id: 'rules'
     },
     {
         component: DotBrowserComponent,
-        id: 'dot-browser'
-    },
-    {
-        id: 'content-types-angular',
-        loadChildren: './portlets/content-types/content-types.module#ContentTypesModule',
+        id: 'dot-browser',
     },
 ];
 
-let mainComponentChildren = [
+const mainComponentChildren = [
     {
         path: '',
         pathMatch: 'full',
-        redirectTo: (process.env.ENV && process.env.ENV === process.env.DEV_MODE) ? 'pl' : 'home',
+        redirectTo: environment.production ? 'home' : 'pl'
     },
     {
         component: PatternLibrary,
@@ -52,11 +53,11 @@ let mainComponentChildren = [
     }
 ];
 
-let angularChildren: any[] = [
+const angularChildren: any[] = [
     {
         path: '',
         pathMatch: 'full',
-        redirectTo: (process.env.ENV && process.env.ENV === 'DEV') ? 'c/pl' : 'c/home',
+        redirectTo: environment.production ? 'c/home' : 'c/pl'
     },
     {
         component: PatternLibrary,
@@ -73,7 +74,7 @@ let angularChildren: any[] = [
     },
 ];
 angularComponents.forEach(item => {
-    let route: any = {
+    const route: any = {
         canActivate: [RoutingPrivateAuthService],
         path: item.path ? item.path : item.id
     };

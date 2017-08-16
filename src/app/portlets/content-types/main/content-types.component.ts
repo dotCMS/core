@@ -1,9 +1,10 @@
-import { ActionHeaderOptions } from '../../../view/components/listing-data-table/action-header/action-header';
 import { ActivatedRoute, Router } from '@angular/router';
-import { BaseComponent } from '../../../view/components/_common/_base/base-component';
 import { Component, ViewEncapsulation } from '@angular/core';
+
+import { ActionHeaderOptions } from '../../../shared/models/action-header';
+import { BaseComponent } from '../../../view/components/_common/_base/base-component';
 import { ContentTypesInfoService } from '../../../api/services/content-types-info';
-import { DataTableColumn } from '../../../view/components/listing-data-table/listing-data-table.component';
+import { DataTableColumn } from '../../../shared/models/data-table';
 import { MessageService } from '../../../api/services/messages-service';
 
 /**
@@ -105,15 +106,15 @@ export class ContentTypesPortletComponent extends BaseComponent {
                 fieldName: 'name',
                 header: this.i18nMessages['Structure-Name'],
                 icon: (item: any): string => this.contentTypesInfoService.getIcon(item.baseType),
-                sortable: true,
+                sortable: true
             },
             {
                 fieldName: 'variable',
-                header: this.i18nMessages['Variable'],
+                header: this.i18nMessages['Variable']
             },
             {
                 fieldName: 'description',
-                header: this.i18nMessages['Description'],
+                header: this.i18nMessages['Description']
             },
             {
                 fieldName: 'nEntries',

@@ -11,7 +11,7 @@ import { FormGroup, FormBuilder, FormControl } from '@angular/forms';
     encapsulation: ViewEncapsulation.None,
     providers: [],
     selector: 'dot-login-as',
-    styles: [require('./login-as.scss')],
+    styleUrls: ['./login-as.scss'],
     templateUrl: 'login-as.html'
 })
 export class LoginAsComponent extends BaseComponent {

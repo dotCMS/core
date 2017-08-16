@@ -9,7 +9,7 @@ import { StringFormat } from '../../../api/util/stringFormat';
     encapsulation: ViewEncapsulation.None,
 
     selector: 'dot-my-account',
-    styles: [require('./dot-my-account-component.scss')],
+    styleUrls: ['./dot-my-account-component.scss'],
     templateUrl: 'dot-my-account-component.html',
 })
 
@@ -60,7 +60,7 @@ export class MyAccountComponent extends BaseComponent {
     }
 
     private loadUser(auth: Auth): void {
-        let user: User = auth.user;
+        const user: User = auth.user;
         this.accountUser.email = user.emailAddress;
         this.accountUser.givenName = user.firstName;
         this.accountUser.surname = user.lastName;

@@ -10,7 +10,7 @@ import { Field, FieldType } from '../';
  */
 @Component({
     selector: 'content-types-fields-list',
-    styles: [require('./content-types-fields-list.component.scss')],
+    styleUrls: ['./content-types-fields-list.component.scss'],
     templateUrl: './content-types-fields-list.component.html',
 })
 export class ContentTypesFieldsListComponent {

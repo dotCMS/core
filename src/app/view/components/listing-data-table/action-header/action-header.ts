@@ -1,16 +1,19 @@
-import { BaseComponent } from '../../_common/_base/base-component';
-import { Component, Input, SimpleChanges, ViewEncapsulation } from '@angular/core';
+import { Component, Input, SimpleChanges, ViewEncapsulation, OnChanges } from '@angular/core';
+
 import { ConfirmationService } from 'primeng/primeng';
+
+import { BaseComponent } from '../../_common/_base/base-component';
 import { MessageService } from '../../../../api/services/messages-service';
+import { ActionHeaderOptions, ButtonAction } from '../../../../shared/models/action-header';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
     selector: 'action-header',
-    styles: [require('./action-header.scss')],
+    styleUrls: ['./action-header.scss'],
     templateUrl: 'action-header.html'
 })
 
-export class ActionHeaderComponent extends BaseComponent {
+export class ActionHeaderComponent extends BaseComponent implements OnChanges {
     @Input() selectedItems = [];
     @Input() options: ActionHeaderOptions;
     public dynamicOverflow = 'visible';
@@ -19,7 +22,7 @@ export class ActionHeaderComponent extends BaseComponent {
         super(['selected'], messageService);
     }
 
-    private ngOnChanges(changes: SimpleChanges): any {
+    ngOnChanges(changes: SimpleChanges): any {
         if (changes.selected) {
             this.hideDinamycOverflow();
         }
@@ -35,11 +38,12 @@ export class ActionHeaderComponent extends BaseComponent {
                 .filter(model => model.deleteOptions)
                 .forEach(model => {
                     if (typeof model.command === 'function') {
-                        let callback = model.command ;
+                        const callback = model.command ;
                         model.command = ($event) => {
-                            let originalEvent = $event;
+                            const originalEvent = $event;
+
                             this.confirmationService.confirm({
-                                accept: ($event) => {
+                                accept: () => {
                                     callback(originalEvent);
                                 },
                                 header: model.deleteOptions.confirmHeader,
@@ -59,32 +63,4 @@ export class ActionHeaderComponent extends BaseComponent {
             }, 300);
         }
     }
-}
-
-export interface ButtonAction {
-    label: string;
-    model: ButtonModel[];
-}
-
-export interface ButtonModel {
-    command: any;
-    deleteOptions?: ActionHeaderDeleteOptions;
-    icon?: string;
-    isDelete?: boolean;
-    label: string;
-}
-
-export interface ActionHeaderOptions {
-    primary?: ActionHeaderOptionsPrimary;
-    secondary?: ButtonAction[];
-}
-
-export interface ActionHeaderDeleteOptions {
-    confirmHeader?: string;
-    confirmMessage?: string;
-}
-
-export interface ActionHeaderOptionsPrimary {
-    command: (event?: any) => void;
-    model: ButtonModel[];
 }

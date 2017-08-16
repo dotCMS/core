@@ -8,11 +8,12 @@ import {
     ViewChild,
     ViewEncapsulation,
     forwardRef,
-    SimpleChanges
+    SimpleChanges,
+    OnChanges,
+    OnInit
 } from '@angular/core';
 import { BaseComponent } from '../../_base/base-component';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { DataTableColumn } from '../../listing-data-table/listing-data-table-component';
 import { MessageService } from '../../../../../api/services/messages-service';
 import { Observable } from 'rxjs/Rx';
 import { OverlayPanel } from 'primeng/primeng';
@@ -34,11 +35,11 @@ import { OverlayPanel } from 'primeng/primeng';
         }
     ],
     selector: 'searchable-dropdown',
-    styles: [require('./searchable-dropdown.component.scss')],
+    styleUrls: ['./searchable-dropdown.component.scss'],
     templateUrl: './searchable-dropdown.component.html'
 })
 export class SearchableDropdownComponent extends BaseComponent
-    implements ControlValueAccessor {
+    implements ControlValueAccessor, OnChanges, OnInit {
     @Input() data: string[];
     @Input() labelPropertyName;
     @Input() pageLinkSize = 3;
@@ -91,7 +92,7 @@ export class SearchableDropdownComponent extends BaseComponent
      * @memberof SearchableDropdownComponent
      */
     paginate(event): void {
-        let paginationEvent = Object.assign({}, event);
+        const paginationEvent = Object.assign({}, event);
         paginationEvent.filter = this.searchInput.nativeElement.value;
         this.pageChange.emit(paginationEvent);
     }
@@ -125,7 +126,6 @@ export class SearchableDropdownComponent extends BaseComponent
      * @memberof SearchableDropdownComponent
      */
     private handleClick(item: any): void {
-
         if (this.value !== item) {
             this.value = item;
             this.valueString = item[this.labelPropertyName];

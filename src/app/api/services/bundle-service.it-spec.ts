@@ -1,19 +1,19 @@
-import {Injector} from '@angular/core';
+import {ReflectiveInjector} from '@angular/core';
 import {ApiRoot} from '../../api/persistence/ApiRoot';
 import {UserModel} from '../../api/auth/UserModel';
 import {I18nService} from '../system/locale/I18n';
-import {HTTP_PROVIDERS} from '@angular/http';
+import { BrowserModule } from '@angular/platform-browser';
 import {BundleService, IUser, IBundle, IPublishEnvironment} from './bundle-service';
-import {RuleModel, IRule, RuleService} from '../rule-engine/Rule';
+import {RuleModel, IRule, RuleService} from '../../portlets/rule-engine/services/Rule';
 
 
-let injector = Injector.resolveAndCreate([
+const injector = ReflectiveInjector.resolveAndCreate([
   ApiRoot,
   RuleService,
   BundleService,
   I18nService,
   UserModel,
-  HTTP_PROVIDERS
+  BrowserModule
 ]);
 
 describe('Integration.api.services.bundle-service', () => {
@@ -47,7 +47,7 @@ describe('Integration.api.services.bundle-service', () => {
 
   it('Should add rule to bundle',  done => {
 
-    let clientRule: IRule = {
+    const clientRule: IRule = {
       name: `TestRule-${new Date().getTime()}`
     };
     ruleService.createRule(new RuleModel(clientRule)).subscribe((serverRule: RuleModel) => {
@@ -71,7 +71,7 @@ describe('Integration.api.services.bundle-service', () => {
   });
 
   it('Should push publish rule directly', done => {
-    let clientRule: IRule = {
+    const clientRule: IRule = {
       name: `TestRule-${new Date().getTime()}`
     };
     ruleService.createRule(new RuleModel(clientRule)).subscribe((serverRule: RuleModel) => {

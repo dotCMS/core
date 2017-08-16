@@ -4,7 +4,7 @@ import {Component, OnInit, ViewEncapsulation} from '@angular/core';
     encapsulation: ViewEncapsulation.None,
     providers: [],
     selector: 'dot-browser',
-    styles: [require('./dot-browser.scss')],
+    styleUrls: ['./dot-browser.scss'],
     templateUrl: 'dot-browser.html'
 })
 

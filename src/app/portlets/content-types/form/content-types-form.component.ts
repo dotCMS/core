@@ -38,7 +38,7 @@ import { SiteSelectorComponent } from '../../../view/components/_common/site-sel
     ],
     providers: [SiteSelectorComponent],
     selector: 'content-types-form',
-    styles: [require('./content-types-form.component.scss')],
+    styleUrls: ['./content-types-form.component.scss'],
     templateUrl: 'content-types-form.component.html'
 })
 export class ContentTypesFormComponent extends BaseComponent {
@@ -117,7 +117,7 @@ export class ContentTypesFormComponent extends BaseComponent {
     }
 
     ngOnChanges(changes): void {
-        let isFirstChange =
+        const isFirstChange =
             (changes.data && changes.data.firstChange) ||
             (changes.name && changes.name.firstChange) ||
             (changes.type && changes.type.firstChange) ||
@@ -197,11 +197,11 @@ export class ContentTypesFormComponent extends BaseComponent {
     private addEditModeSpecificFields(): void {
         this.dateVarOptions = this.getDateVarOptions(this.data.fields);
 
-        let publishDateVar = new FormControl({
+        const publishDateVar = new FormControl({
             disabled: !this.dateVarOptions.length,
             value: this.data.publishDateVar || null
         });
-        let expireDateVar = new FormControl({
+        const expireDateVar = new FormControl({
             disabled: !this.dateVarOptions.length,
             value: this.data.expireDateVar || null
         });
@@ -211,7 +211,7 @@ export class ContentTypesFormComponent extends BaseComponent {
     }
 
     private getDateVarOptions(fields): SelectItem[] {
-        let dateVarOptions = fields
+        const dateVarOptions = fields
             .filter(item => {
                 return (
                     item.clazz === 'com.dotcms.contenttype.model.field.ImmutableDateTimeField' &&
@@ -236,8 +236,8 @@ export class ContentTypesFormComponent extends BaseComponent {
     }
 
     private handleDateVarChange($event, field): void {
-        let expireDateVar = this.form.get('expireDateVar');
-        let publishDateVar = this.form.get('publishDateVar');
+        const expireDateVar = this.form.get('expireDateVar');
+        const publishDateVar = this.form.get('publishDateVar');
 
         if (field === 'publishDateVar' && expireDateVar.value === $event.value) {
             expireDateVar.patchValue(null);
@@ -266,7 +266,7 @@ export class ContentTypesFormComponent extends BaseComponent {
     }
 
     private populateForm(): void {
-        let formData: any = {
+        const formData: any = {
             description: this.data.description || '',
             host: this.data.host || '',
             name: this.data.name || '',

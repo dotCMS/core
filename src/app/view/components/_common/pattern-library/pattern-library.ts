@@ -7,7 +7,7 @@ import { FormGroup, FormBuilder } from '@angular/forms';
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
     selector: 'pattern-library',
-    styles: [require('./pattern-library.scss')],
+    styleUrls: ['./pattern-library.scss'],
     templateUrl: 'pattern-library.html'
 })
 

@@ -10,7 +10,7 @@ import { MenuItem } from 'primeng/primeng';
 @Component({
     encapsulation: ViewEncapsulation.None,
     selector: 'action-button',
-    styles: [require('./action-button.component.scss')],
+    styleUrls: ['./action-button.component.scss'],
     templateUrl: 'action-button.component.html'
 })
 

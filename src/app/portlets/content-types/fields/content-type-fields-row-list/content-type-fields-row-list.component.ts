@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { FieldService, FieldDragDropService } from '../service';
-import { FieldRow, LINE_DIVIDER } from '../';
+import { FieldRow, LINE_DIVIDER } from '../shared';
 
 /**
  * Fields row container
@@ -10,7 +10,7 @@ import { FieldRow, LINE_DIVIDER } from '../';
  */
 @Component({
     selector: 'content-type-fields-row-list',
-    styles: [require('./content-type-fields-row-list.component.scss')],
+    styleUrls: ['./content-type-fields-row-list.component.scss'],
     templateUrl: './content-type-fields-row-list.component.html',
 })
 export class ContentTypeFieldsRowListComponent {

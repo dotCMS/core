@@ -1,56 +1,22 @@
 {
-  "compilerOptions": {
-    "target": "es5",
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
-    "sourceMap": true,
-    "noEmit": true,
-    "noEmitHelpers": true,
-    "importHelpers": true,
-    "strictNullChecks": false,
-    "noImplicitAny": false,
-    "suppressImplicitAnyIndexErrors":true,
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "es6"
-    ],
-    "typeRoots": [
-      "node_modules/@types"
-    ],
-    "types": [
-      "googlemaps",
-      "jasmine",
-      "jquery",
-      "node",
-      "source-map",
-      "uglify-js",
-      "webpack"
-    ]
-  },
-  "exclude": [
-    "node_modules",
-    "dist",
-    "src/**/*.spec.ts",
-    "src/**/*.it-spec.ts",
-    "src/**/*.e2e.ts",
-    "src/app/e2e/**/*.ts",
-    "src/**/boot.ts",
-    "src/**/demo.ts",
-    "src/main.browser.aot.ts",
-    "src/app/portlets/rule-engine/condition-types/serverside-condition/index.ts",
-    "src/app/portlets/rule-engine/semantic/elements/input-date/index.ts"
-  ],
-  "awesomeTypescriptLoaderOptions": {
-    "forkChecker": true,
-    "useWebpackText": true
-  },
-  "compileOnSave": false,
-  "buildOnSave": false,
-  "atom": {
-    "rewriteTsconfig": false
-  }
+    "compileOnSave": false,
+    "compilerOptions": {
+        "allowJs": true, // TODO NG: remove with rules
+        "allowUnreachableCode": true, // TODO NG: remove with rules
+        "outDir": "./dist/out-tsc",
+        "sourceMap": true,
+        "declaration": false,
+        "moduleResolution": "node",
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "target": "es5",
+        "typeRoots": [
+            "node_modules/@types"
+        ],
+        "lib": [
+            "es2017",
+            "dom",
+            "dom.iterable"
+        ]
+    }
 }

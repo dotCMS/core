@@ -4,7 +4,7 @@ import {LoggerService} from '../../../../api/services/logger.service';
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
     selector: 'dot-loading-indicator',
-    styles: [require('./dot-loading-indicator.scss')],
+    styleUrls: ['./dot-loading-indicator.scss'],
     templateUrl: 'dot-loading-indicator.html'
 })
 

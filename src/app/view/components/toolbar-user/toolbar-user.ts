@@ -9,7 +9,7 @@ import {IframeOverlayService} from '../../../api/services/iframe-overlay-service
 
 @Component({
     selector: 'toolbar-user',
-    styles: [require('./toolbar-user.scss')],
+    styleUrls: ['./toolbar-user.scss'],
     templateUrl: 'toolbar-user.html',
 
 })

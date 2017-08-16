@@ -1,4 +1,3 @@
-import { ActionHeaderComponent, ButtonAction } from '../listing-data-table/action-header/action-header';
 import { ActionButtonComponent } from '../_common/action-button/action-button.component';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, async } from '@angular/core/testing';
@@ -15,6 +14,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { Observable } from 'rxjs/Observable';
 import { tick, fakeAsync } from '@angular/core/testing';
 import { PaginatorService } from '../../../api/services/paginator';
+import { ActionHeaderComponent } from './action-header/action-header';
 
 describe('Listing Component', () => {
 
@@ -150,7 +150,7 @@ describe('Listing Component', () => {
 
     rows.forEach((row, rowIndex) => {
         if (rowIndex) {
-            let cells = row.querySelectorAll('td');
+            const cells = row.querySelectorAll('td');
             let item = this.items[rowIndex - 1];
 
             cells.forEach((cell, cellIndex) => {

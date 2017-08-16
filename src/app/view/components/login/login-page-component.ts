@@ -5,7 +5,7 @@ import {LoggerService} from '../../../api/services/logger.service';
 @Component({
     encapsulation: ViewEncapsulation.None,
     selector: 'dot-login-page-component',
-    styles: [require('./login-page.scss')],
+    styleUrls: ['./login-page.scss'],
     templateUrl: 'login-page-component.html',
 })
 
@@ -25,7 +25,7 @@ export class LoginPageComponent {
         this.loginService.getLoginFormInfo('', []).subscribe((data) => {
 
             // Translate labels and messages
-            let entity = data.entity;
+            const entity = data.entity;
 
             // Set background color and image with the values provided by the service
             if (entity.backgroundColor !== 'undefined' && entity.backgroundColor !== '') {

@@ -2,7 +2,7 @@ import { ConnectionBackend, RequestOptions, BaseRequestOptions, Http } from '@an
 import { Logger } from 'angular2-logger/core';
 import { MockBackend } from '@angular/http/testing';
 import { TestBed, TestModuleMetadata, ComponentFixture } from '@angular/core/testing';
-import { Type, Provider, Injector, ReflectiveInjector, Component } from '@angular/core';
+import { Type, Provider, Injector, ReflectiveInjector, Component, LOCALE_ID } from '@angular/core';
 import { ApiRoot } from '../api/persistence/ApiRoot';
 import { BrowserUtil } from '../api/util/browser-util';
 import { Config } from '../api/util/config';
@@ -21,16 +21,15 @@ import { NGFACES_MODULES } from '../modules';
     selector: 'p-confirmDialog',
     template: ''
 })
-class FakeConfirmDialogComponent {
-}
+class FakeConfirmDialogComponent {}
 
 export class DOTTestBed {
-
     private static DEFAULT_CONFIG = {
         imports: [...NGFACES_MODULES, FormsModule],
         providers: [
-            {provide: ConnectionBackend, useClass: MockBackend},
-            {provide: RequestOptions, useClass: BaseRequestOptions},
+            { provide: ConnectionBackend, useClass: MockBackend },
+            { provide: RequestOptions, useClass: BaseRequestOptions },
+            {provide: LOCALE_ID, useValue: {}},
             ApiRoot,
             BrowserUtil,
             Config,
@@ -47,13 +46,12 @@ export class DOTTestBed {
     };
 
     public static configureTestingModule(config: TestModuleMetadata): void {
-
         // tslint:disable-next-line:forin
-        for (let property in DOTTestBed.DEFAULT_CONFIG) {
+        for (const property in DOTTestBed.DEFAULT_CONFIG) {
             if (config[property]) {
                 DOTTestBed.DEFAULT_CONFIG[property]
-                    .filter( provider => !config[property].includes(provider))
-                    .forEach( item => config[property].unshift(item));
+                    .filter(provider => !config[property].includes(provider))
+                    .forEach(item => config[property].unshift(item));
             } else {
                 config[property] = DOTTestBed.DEFAULT_CONFIG[property];
             }
@@ -75,12 +73,11 @@ export class DOTTestBed {
     }
 
     public static resolveAndCreate(providers: Provider[], parent?: Injector): ReflectiveInjector {
-        let finalProviders = [];
+        const finalProviders = [];
 
-        DOTTestBed.DEFAULT_CONFIG.providers
-            .forEach( provider => finalProviders.push(provider));
+        DOTTestBed.DEFAULT_CONFIG.providers.forEach(provider => finalProviders.push(provider));
 
-        providers.forEach( provider => finalProviders.push(provider));
+        providers.forEach(provider => finalProviders.push(provider));
 
         return ReflectiveInjector.resolveAndCreate(finalProviders, parent);
     }

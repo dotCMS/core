@@ -3,12 +3,6 @@ import {CoreWebService} from '../services/core-web-service';
 import {RequestMethod} from '@angular/http';
 import {Observable} from 'rxjs/Rx';
 
-export interface INotification {
-    id: string;
-    title: string;
-    message: string;
-}
-
 @Injectable()
 export class NotificationsService {
     private urls: any;
@@ -25,7 +19,7 @@ export class NotificationsService {
     getLastNotifications(): Observable<any> {
         return this.coreWebService.request({
             method: RequestMethod.Get,
-            url: this.urls.getLastNotificationsUrl
+        url: this.urls.getLastNotificationsUrl
         });
     }
 

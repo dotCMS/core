@@ -3,12 +3,12 @@ import {Component, EventEmitter, ViewEncapsulation} from '@angular/core';
 import {
     RuleModel, RuleService, ConditionGroupModel, ConditionModel, ActionModel,
     RuleEngineState
-} from '../../api/rule-engine/Rule';
+} from './services/Rule';
 import {CwChangeEvent} from '../../api/util/CwEvent';
-import {ServerSideFieldModel, ServerSideTypeModel} from '../../api/rule-engine/ServerSideFieldModel';
-import {ConditionService} from '../../api/rule-engine/Condition';
-import {ActionService} from '../../api/rule-engine/Action';
-import {ConditionGroupService} from '../../api/rule-engine/ConditionGroup';
+import {ServerSideFieldModel, ServerSideTypeModel} from './services/ServerSideFieldModel';
+import {ConditionService} from './services/Condition';
+import {ActionService} from './services/Action';
+import {ConditionGroupService} from './services/ConditionGroup';
 import {I18nService} from '../../api/system/locale/I18n';
 import {Observable} from 'rxjs/Observable';
 import {CwError} from '../../api/system/http-response-util';
@@ -328,7 +328,7 @@ export class RuleEngineContainer {
 
   onUpdateConditionGroupOperator(event: ConditionGroupActionEvent): void {
     this.loggerService.info('RuleEngineContainer', 'onUpdateConditionGroupOperator');
-    let group = event.payload.conditionGroup;
+    const group = event.payload.conditionGroup;
     group.operator = <string> event.payload.value;
     if (group.key != null) {
       this.patchConditionGroup(event.payload.rule, group);
@@ -337,8 +337,8 @@ export class RuleEngineContainer {
   }
 
   onDeleteConditionGroup(event: ConditionGroupActionEvent): void {
-    let rule = event.payload.rule;
-    let group = event.payload.conditionGroup;
+    const rule = event.payload.rule;
+    const group = event.payload.conditionGroup;
     this._conditionGroupService.remove(rule.key, group).subscribe();
     rule._conditionGroups = rule._conditionGroups.filter((aryGroup) => aryGroup.key !== group.key );
   }
@@ -348,9 +348,9 @@ export class RuleEngineContainer {
     let rule = event.payload.rule;
     this.ruleUpdating(rule, true);
     try {
-      let group = event.payload.conditionGroup;
-      let priority = group._conditions.length ? group._conditions[group._conditions.length - 1].priority + 1 : 1;
-      let entity = new ConditionModel({_type: new ServerSideTypeModel(), operator: 'AND', priority: priority});
+      const group = event.payload.conditionGroup;
+      const priority = group._conditions.length ? group._conditions[group._conditions.length - 1].priority + 1 : 1;
+      const entity = new ConditionModel({_type: new ServerSideTypeModel(), operator: 'AND', priority: priority});
       group._conditions.push(entity);
       this.ruleUpdated(rule);
     } catch (e) {
@@ -363,10 +363,10 @@ export class RuleEngineContainer {
     this.loggerService.info('RuleEngineContainer', 'onUpdateConditionType');
     try {
       let condition = event.payload.condition;
-      let group = event.payload.conditionGroup;
-      let rule = event.payload.rule;
-      let idx = event.payload.index;
-      let type: ServerSideTypeModel = this._ruleService._conditionTypes[<string> event.payload.value];
+      const group = event.payload.conditionGroup;
+      const rule = event.payload.rule;
+      const idx = event.payload.index;
+      const type: ServerSideTypeModel = this._ruleService._conditionTypes[<string> event.payload.value];
       // replace the condition rather than mutate it to force event for 'onPush' NG2 components.
       condition = new ConditionModel({_type: type, id: condition.key, operator: condition.operator, priority: condition.priority});
       group._conditions[idx] = condition;
@@ -378,14 +378,14 @@ export class RuleEngineContainer {
 
   onUpdateConditionParameter(event: ConditionActionEvent): void {
     this.loggerService.info('RuleEngineContainer', 'onUpdateConditionParameter');
-    let condition = event.payload.condition;
+    const condition = event.payload.condition;
     condition.setParameter(event.payload.name, event.payload.value);
     this.patchCondition(event.payload.rule, event.payload.conditionGroup, condition);
   }
 
   onUpdateConditionOperator(event: ConditionActionEvent): void {
     this.loggerService.info('RuleEngineContainer', 'onUpdateConditionOperator');
-    let condition = event.payload.condition;
+    const condition = event.payload.condition;
     condition.operator = <string> event.payload.value;
     this.patchCondition(event.payload.rule, event.payload.conditionGroup, condition);
   }
@@ -407,7 +407,7 @@ export class RuleEngineContainer {
         }
         if (rule._conditionGroups.length === 0) {
           this.loggerService.info('RuleEngineContainer', 'conditionGroups', 'Add stub group if Groups are empty');
-          let group = new ConditionGroupModel({operator: 'AND', priority: 1});
+          const group = new ConditionGroupModel({operator: 'AND', priority: 1});
           group._conditions.push(new ConditionModel({_type: new ServerSideTypeModel(), operator: 'AND', priority: 1}));
           rule._conditionGroups.push(group);
         }
@@ -454,14 +454,14 @@ export class RuleEngineContainer {
         this._ruleService.updateRule(rule.key, rule).subscribe(() => {
           this.ruleUpdated(rule);
         }, (e: CwError) => {
-          let ruleError = this._handle403Error(e) ? null : {invalid: e.message};
+          const ruleError = this._handle403Error(e) ? null : {invalid: e.message};
           this.ruleUpdated(rule, ruleError);
         });
       } else {
         this._ruleService.createRule(rule).subscribe(() => {
           this.ruleUpdated(rule);
         }, (e: CwError) => {
-          let ruleError = this._handle403Error(e) ? null : {invalid: e.message};
+          const ruleError = this._handle403Error(e) ? null : {invalid: e.message};
           this.ruleUpdated(rule, ruleError);
         });
       }
@@ -479,14 +479,14 @@ export class RuleEngineContainer {
         this._ruleActionService.createRuleAction(rule.key, ruleAction).subscribe((result) => {
           this.ruleUpdated(rule);
         }, (e: CwError) => {
-          let ruleError = this._handle403Error(e) ? null : {invalid: e.message};
+          const ruleError = this._handle403Error(e) ? null : {invalid: e.message};
           this.ruleUpdated(rule, ruleError);
         });
       } else {
         this._ruleActionService.updateRuleAction(rule.key, ruleAction).subscribe((result) => {
           this.ruleUpdated(rule);
         }, (e: any) => {
-          let ruleError = this._handle403Error(e) ? null : {invalid: e.message};
+          const ruleError = this._handle403Error(e) ? null : {invalid: e.message};
           this.ruleUpdated(rule, ruleError);
         });
       }
@@ -505,7 +505,7 @@ export class RuleEngineContainer {
           this._conditionService.save(group.key, condition).subscribe((result) => {
             this.ruleUpdated(rule);
           }, (e: any) => {
-            let ruleError = this._handle403Error(e) ? null : {invalid: e.message};
+            const ruleError = this._handle403Error(e) ? null : {invalid: e.message};
             this.ruleUpdated(rule, ruleError);
           });
         } else {
@@ -515,7 +515,7 @@ export class RuleEngineContainer {
                 group.conditions[condition.key] = true;
                 this.ruleUpdated(rule);
               }, (e: CwError) => {
-                let ruleError = this._handle403Error(e) ? null : {invalid: e.message};
+                const ruleError = this._handle403Error(e) ? null : {invalid: e.message};
                 this.ruleUpdated(rule, ruleError);
               });
             });
@@ -524,7 +524,7 @@ export class RuleEngineContainer {
               group.conditions[condition.key] = true;
               this.ruleUpdated(rule);
             }, (e: CwError) => {
-              let ruleError = this._handle403Error(e) ? null : {invalid: e.message};
+              const ruleError = this._handle403Error(e) ? null : {invalid: e.message};
               this.ruleUpdated(rule, ruleError);
             });
           }
@@ -578,7 +578,7 @@ export class RuleEngineContainer {
     let handled = false;
     try {
       if (e && e.response.status === HttpCode.FORBIDDEN) {
-        let errorJson = e.response.json();
+        const errorJson = e.response.json();
         if (errorJson && errorJson.error) {
           this.state.globalError = errorJson.error.replace('dotcms.api.error.forbidden: ', '');
           handled = true;

@@ -13,7 +13,6 @@ import { BaseComponent } from '../_base/base-component';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DotcmsConfig } from '../../../../api/services/system/dotcms-config';
 import { IframeOverlayService } from '../../../../api/services/iframe-overlay-service';
-import { MessageService } from '../../../api/services/messages-service';
 import { PaginatorService } from '../../../../api/services/paginator';
 import { SearchableDropdownComponent } from '../searchable-dropdown/component';
 import { Site } from '../../../../api/services/site-service';
@@ -38,7 +37,7 @@ import { Observable } from 'rxjs/Observable';
         }
     ],
     selector: 'site-selector-component',
-    styles: [require('./site-selector.component.scss')],
+    styleUrls: ['./site-selector.component.scss'],
     templateUrl: 'site-selector.component.html',
 })
 export class SiteSelectorComponent implements ControlValueAccessor {
@@ -147,7 +146,7 @@ export class SiteSelectorComponent implements ControlValueAccessor {
      * @memberof SiteSelectorComponent
      */
     siteChange(site: Site): void {
-        let value = site.identifier;
+        const value = site.identifier;
         this.change.emit(site);
         this.propagateChange(value);
     }
@@ -182,7 +181,7 @@ export class SiteSelectorComponent implements ControlValueAccessor {
     }
 
     private selectCurrentSite(siteId: string): void {
-        let selectedInCurrentPage = this.getSiteByIdFromCurrentPage(siteId);
+        const selectedInCurrentPage = this.getSiteByIdFromCurrentPage(siteId);
         this.currentSite = selectedInCurrentPage
             ? Observable.of(selectedInCurrentPage)
             : this.siteService.getSiteById(siteId);

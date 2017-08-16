@@ -6,7 +6,7 @@ import { DragulaService } from 'ng2-dragula';
 @Component({
     encapsulation: ViewEncapsulation.None,
     selector: 'content-type-layout',
-    styles: [require('./content-types-layout.component.scss')],
+    styleUrls: ['./content-types-layout.component.scss'],
     templateUrl: 'content-types-layout.component.html'
 })
 

@@ -1,0 +1,35 @@
+{
+    "/admin": {
+        "target": "http://localhost:8080",
+        "changeOrigin": false
+    },
+    "/html": {
+        "target": "http://localhost:8080",
+        "changeOrigin": false
+    },
+    "/api/ws": {
+        "target": "http://localhost:8080",
+        "changeOrigin": false,
+        "ws": true
+    },
+    "/api": {
+        "target": "http://localhost:8080",
+        "changeOrigin": false
+    },
+    "/c": {
+        "target": "http://localhost:8080",
+        "changeOrigin": false
+    },
+    "/dwr": {
+        "target": "http://localhost:8080",
+        "changeOrigin": false
+    },
+    "/DotAjaxDirector": {
+        "target": "http://localhost:8080",
+        "changeOrigin": false
+    },
+    "/image/company_logo": {
+        "target": "http://localhost:8080",
+        "changeOrigin": false
+    }
+}

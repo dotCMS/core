@@ -36,19 +36,17 @@
                         </span>
                     </div>
                     <div class="form__group">
-                        <div class="ui-g">
-                            <div class="ui-g-12 ui-lg-6">
-                                <p-checkbox [(ngModel)]="myAccountRememberMe" binary="true" [label]="rememberMeLabel"></p-checkbox>
-                            </div>
-                            <div class="ui-g-12 ui-lg-6">
-                                <p-dropdown [options]="languages"
-                                            [style]="{'width':'auto'}"
-                                            id="login-component-language-select"
-                                            [(ngModel)]="language"
-                                            (onChange)="changeLanguage($event.value)"
-                                            [disabled]="isLoginInProgress">
-                                </p-dropdown>
-                            </div>
+                        <div class="ui-g-12 ui-lg-6">
+                            <p-checkbox [(ngModel)]="myAccountRememberMe" binary="true" [label]="rememberMeLabel"></p-checkbox>
+                        </div>
+                        <div class="ui-g-12 ui-lg-6">
+                            <p-dropdown [options]="languages"
+                                        [style]="{'width':'auto'}"
+                                        id="login-component-language-select"
+                                        [(ngModel)]="language"
+                                        (onChange)="changeLanguage($event.value)"
+                                        [disabled]="isLoginInProgress">
+                            </p-dropdown>
                         </div>
                     </div>
                     <div class="form__group">

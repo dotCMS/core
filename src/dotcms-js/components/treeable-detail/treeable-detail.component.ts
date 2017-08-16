@@ -9,7 +9,7 @@ import {FormsModule} from '@angular/forms';
 
 @Component({
     selector: 'treeable-detail',
-    styles: [require('./../app.css')],
+    styleUrls: ['./../app.css'],
     template: `<div *ngIf="treeable.type=='file_asset'">
         <div>
             <img *ngIf="treeable.isImage() && treeable.extension!='ico'" src="{{dotCMSURL}}/contentAsset/image/{{treeable.identifier}}/fileAsset/filter/Thumbnail/thumbnail_w/225/thumbnail_h/225">

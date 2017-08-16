@@ -1,10 +1,10 @@
 import { Component, EventEmitter, Input, Output} from '@angular/core';
-import {ServerSideTypeModel} from '../../api/rule-engine/ServerSideFieldModel';
+import {ServerSideTypeModel} from './services/ServerSideFieldModel';
 import {I18nService} from '../../api/system/locale/I18n';
 import {
     RULE_CONDITION_UPDATE_PARAMETER, RULE_CONDITION_UPDATE_TYPE,
     RULE_CONDITION_DELETE, RULE_CONDITION_UPDATE_OPERATOR, ConditionModel
-} from '../../api/rule-engine/Rule';
+} from './services/Rule';
 import {LoggerService} from '../../api/services/logger.service';
 
 @Component({

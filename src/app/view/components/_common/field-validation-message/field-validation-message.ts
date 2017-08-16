@@ -8,7 +8,7 @@ import { NgControl } from '@angular/forms';
 
 @Component({
   selector: 'field-validation-message',
-  styles: [require('./field-validation-message.scss')],
+  styleUrls: ['./field-validation-message.scss'],
   templateUrl: './field-validation-message.html'
 })
 export class FieldValidationMessageComponent {

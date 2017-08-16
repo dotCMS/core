@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { Field } from '../';
+import { Field } from '../shared';
 
 /**
  * This display field after being dropped into a Content Type Drop zone

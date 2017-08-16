@@ -1,13 +1,14 @@
-import {BaseComponent} from '../_base/base-component';
-import {Component, ViewEncapsulation, Input, Output, EventEmitter} from '@angular/core';
-import {INotification} from '../../../../api/services/notifications-service';
-import {MessageService} from '../../../../api/services/messages-service';
+import { Component, ViewEncapsulation, Input, Output, EventEmitter} from '@angular/core';
+
+import { BaseComponent } from '../_base/base-component';
+import { INotification } from '../../../../shared/models/notifications';
+import { MessageService } from '../../../../api/services/messages-service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
     providers: [],
     selector: 'dot-notifications-item',
-    styles: [require('./notifications-item.scss')],
+    styleUrls: ['./notifications-item.scss'],
     templateUrl: 'notifications-item.html',
 
 })
@@ -29,7 +30,7 @@ export class NotificationsItem extends BaseComponent {
 
     ngOnInit(): void {
         // TODO: hand more than one action
-        let actions = this.data.actions ? this.data.actions[0] : null;
+        const actions = this.data.actions ? this.data.actions[0] : null;
         this.showLinkAction = actions && actions.actionType === 'LINK' &&
             (actions.text || actions.text !== '') && actions.action && actions.action !== '';
 
@@ -52,7 +53,7 @@ export class NotificationsItem extends BaseComponent {
     encapsulation: ViewEncapsulation.Emulated,
     providers: [],
     selector: 'dot-notifications-list',
-    styles: [require('./notifications-list.scss')],
+    styleUrls: ['./notifications-list.scss'],
     templateUrl: 'notifications-list.html',
 })
 export class NotificationsList {

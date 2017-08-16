@@ -10,7 +10,7 @@ import { RoutingService } from '../../../api/services/routing-service';
 @Component({
     encapsulation: ViewEncapsulation.None,
     selector: 'toolbar-add-contentlet-body',
-    styles: [require('./toolbar-add-contentlet-body.scss')],
+    styleUrls: ['./toolbar-add-contentlet-body.scss'],
     templateUrl: 'toolbar-add-contentlet-body.html',
 })
 export class ToolbarAddContenletBodyComponent {
@@ -39,7 +39,7 @@ export class ToolbarAddContenletBodyComponent {
     encapsulation: ViewEncapsulation.None,
     providers: [ContentletService],
     selector: 'toolbar-add-contentlet',
-    styles: [require('./toolbar-add-contentlet.scss')],
+    styleUrls: ['./toolbar-add-contentlet.scss'],
     templateUrl: 'toolbar-add-contentlet.html',
 
 })
@@ -104,11 +104,11 @@ export class ToolbarAddContenletComponent extends BaseComponent {
         this.showMore = false;
 
         this.structureTypeViewSelected = this.recent.map(structureTypeView => {
-            let currentPage = this.currentPage % (structureTypeView.types.length / this.NUMBER_BY_PAGE );
+            const currentPage = this.currentPage % (structureTypeView.types.length / this.NUMBER_BY_PAGE );
             this.showMore = this.showMore || structureTypeView.types.length > this.NUMBER_BY_PAGE;
 
-            let startIndex = currentPage * this.NUMBER_BY_PAGE;
-            let endIndex = startIndex + this.NUMBER_BY_PAGE;
+            const startIndex = currentPage * this.NUMBER_BY_PAGE;
+            const endIndex = startIndex + this.NUMBER_BY_PAGE;
 
             return {
                 label: structureTypeView.label,

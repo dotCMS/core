@@ -1,12 +1,12 @@
 import { Component, EventEmitter, Input, Output} from '@angular/core';
 
-import {ServerSideTypeModel} from '../../api/rule-engine/ServerSideFieldModel';
+import {ServerSideTypeModel} from './services/ServerSideFieldModel';
 import {I18nService} from '../../api/system/locale/I18n';
 import {Observable} from 'rxjs/Observable';
 import { ConditionActionEvent, ConditionGroupActionEvent} from './rule-engine.container';
 import {
     RULE_CONDITION_GROUP_UPDATE_OPERATOR, RULE_CONDITION_CREATE, ConditionGroupModel, ConditionModel
-} from '../../api/rule-engine/Rule';
+} from './services/Rule';
 import {LoggerService} from '../../api/services/logger.service';
 
 @Component({

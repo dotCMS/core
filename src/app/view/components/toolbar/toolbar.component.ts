@@ -12,7 +12,7 @@ import { SiteSelectorComponent } from '../_common/site-selector/site-selector.co
 @Component({
     encapsulation: ViewEncapsulation.None,
     selector: 'toolbar-component',
-    styles: [require('./toolbar.component.scss')],
+    styleUrls: ['./toolbar.component.scss'],
     templateUrl: './toolbar.component.html'
 })
 export class ToolbarComponent {

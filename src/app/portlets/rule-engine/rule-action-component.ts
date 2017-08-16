@@ -1,11 +1,11 @@
 import { Component, EventEmitter, Input, Output} from '@angular/core';
 
 import {I18nService} from '../../api/system/locale/I18n';
-import {ServerSideTypeModel} from '../../api/rule-engine/ServerSideFieldModel';
+import {ServerSideTypeModel} from './services/ServerSideFieldModel';
 import {
     RULE_RULE_ACTION_UPDATE_TYPE, RULE_RULE_ACTION_UPDATE_PARAMETER,
     RULE_RULE_ACTION_DELETE, ActionModel
-} from '../../api/rule-engine/Rule';
+} from './services/Rule';
 import {RuleActionActionEvent} from './rule-engine.container';
 import {LoggerService} from '../../api/services/logger.service';
 

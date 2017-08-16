@@ -1,9 +1,9 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {Observable} from 'rxjs/Rx';
-import {RuleModel, RULE_CREATE} from '../../api/rule-engine/Rule';
+import {RuleModel, RULE_CREATE} from './services/Rule';
 import {I18nService} from '../../api/system/locale/I18n';
 import {CwFilter} from '../../api/util/CwFilter';
-import {ServerSideTypeModel} from '../../api/rule-engine/ServerSideFieldModel';
+import {ServerSideTypeModel} from './services/ServerSideFieldModel';
 import {
     ConditionActionEvent, RuleActionActionEvent, RuleActionEvent,
     ConditionGroupActionEvent
@@ -11,8 +11,6 @@ import {
 import {IPublishEnvironment} from '../../api/services/bundle-service';
 
 const I8N_BASE = 'api.sites.ruleengine';
-
-import './semantic/assets/semantic.js';
 
 /**
  *

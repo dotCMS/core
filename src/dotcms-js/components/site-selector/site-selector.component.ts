@@ -11,7 +11,7 @@ import {FormsModule} from '@angular/forms';
 @Inject('updateService')
 @Component({
     selector: 'site-selector',
-    styles: [require('./../app.css')],
+    styleUrls: ['./../app.css'],
     template: `<div>
         <p-autoComplete [(ngModel)]="host" [suggestions]="filteredHosts" (completeMethod)="filterHosts($event)"
                         [size]="30"
