@@ -6,7 +6,7 @@ import org.immutables.gson.Gson;
 import org.immutables.value.Value;
 
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.ImmutableHiddenField;
+import com.dotcms.contenttype.model.field.ImmutableConstantField;
 import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -35,7 +35,7 @@ public abstract class FormContentType extends ContentType implements Expireable{
 	public  List<Field> requiredFields(){
 		
 		
-		Field titleField = ImmutableHiddenField.builder()
+		Field titleField = ImmutableConstantField.builder()
 				.name("Form Title")
 				.variable("formTitle")
 				.indexed(true)
@@ -44,7 +44,7 @@ public abstract class FormContentType extends ContentType implements Expireable{
 				.searchable(true)
 				.build();
 		
-		Field emailField = ImmutableHiddenField.builder()
+		Field emailField = ImmutableConstantField.builder()
 				.name("Form Email")
 				.variable("formEmail")
 				.sortOrder(2)
@@ -54,7 +54,7 @@ public abstract class FormContentType extends ContentType implements Expireable{
 				.build();
 		
 		
-		Field returnField = ImmutableHiddenField.builder()
+		Field returnField = ImmutableConstantField.builder()
 				.name("Form Return Page")
 				.variable("formReturnPage")
 				.sortOrder(3)
