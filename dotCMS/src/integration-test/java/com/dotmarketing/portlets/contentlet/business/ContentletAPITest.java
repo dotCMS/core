@@ -2871,42 +2871,29 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         try {
             typeWithBinary = createContentType("testCheckinWithoutVersioning", BaseContentType.CONTENT);
-
             com.dotcms.contenttype.model.field.Field textField = createTextField("Title", typeWithBinary.id());
-
             com.dotcms.contenttype.model.field.Field binaryField = createBinaryField("File", typeWithBinary.id());
-
             File textFileVersion1 = createTempFileWithText(FILE_V1_NAME, FILE_V1_NAME);
-
             Map<String, Object> fieldValues = map(textField.variable(), "contentV1",
                     binaryField.variable(), textFileVersion1);
-
             Contentlet contentletWithBinary = createContentWithFieldValues(typeWithBinary.id(), fieldValues);
 
             // let's verify that newly saved file exists
             assertTrue(doesBinaryExistInAssetsTree(contentletWithBinary.getInode(), binaryField.variable(), FILE_V1_NAME));
 
             File textFileVersion2 = createTempFileWithText(FILE_V2_NAME, FILE_V2_NAME);
-
-            contentletWithBinary.setStringProperty(textField.variable(), "testCheckoutWithoutVersion Updated");
-
             // replace old binary with new one
             contentletWithBinary.setBinary(binaryField.variable(), textFileVersion2);
-
-            List<Permission> checkedoutContentPermissions = permissionAPI.getPermissions(contentletWithBinary);
-
             Contentlet contentWithoutVersioning = contentletAPI.checkinWithoutVersioning(contentletWithBinary,
-                    new HashMap<>(), null, checkedoutContentPermissions, user, false);
+                    new HashMap<>(), null, permissionAPI.getPermissions(contentletWithBinary), user, false);
 
             // we've just checkedIn without versioning, so old binary should not exist
             assertFalse(doesBinaryExistInAssetsTree(contentletWithBinary.getInode(), binaryField.variable(), FILE_V1_NAME));
 
             // new binary should exist
             assertTrue(doesBinaryExistInAssetsTree(contentWithoutVersioning.getInode(), binaryField.variable(), FILE_V2_NAME));
-
         } finally {
             if(typeWithBinary!=null) contentTypeAPI.delete(typeWithBinary);
-
         }
     }
 
