@@ -6,6 +6,9 @@ import com.dotcms.vanityurl.model.DefaultVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
 import org.junit.Test;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import static org.junit.Assert.*;
 
 public class VanityUrlUtilTest extends UnitTestBase {
@@ -194,5 +197,20 @@ public class VanityUrlUtilTest extends UnitTestBase {
         assertNotNull(newCachedVanityUrl);
         assertTrue(cachedVanityUrl != newCachedVanityUrl);
         assertEquals("http://www.dotcms.com/helloworld?a=hello&b=world&c=dot", newCachedVanityUrl.getForwardTo());
+    }
+
+    @Test
+    public void processExpressions8Test()  {
+
+        final Pattern pattern = Pattern.compile("^/am/([0-9]+)/([a-c]+)/([d-f]+)$");
+        final Matcher matcher = pattern.matcher("/am/123/abc/def");
+
+        if (matcher.matches() && matcher.groupCount() > 0) {
+
+            System.out.println(matcher.group(1));
+            System.out.println(matcher.group(2));
+            System.out.println(matcher.group(3));
+        }
+
     }
 }

@@ -1,19 +1,13 @@
 package com.dotcms.util;
 
 import com.dotcms.vanityurl.model.CachedVanityUrl;
-import com.dotcms.vanityurl.model.CachedVanityUrl;
-import com.dotmarketing.util.Logger;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import com.dotmarketing.util.Logger;
 
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.liferay.util.StringUtil.replaceAll;
-import static java.util.stream.IntStream.rangeClosed;
+import static com.liferay.util.StringUtil.GROUP_REPLACEMENT_PREFIX;
+import static com.liferay.util.StringUtil.replaceAllGroups;
 
 /**
  * This class provide some utility methods to interact with
@@ -24,25 +18,6 @@ import static java.util.stream.IntStream.rangeClosed;
  * @since June 12, 2017
  */
 public class VanityUrlUtil {
-
-
-    public static final char EXPRESSION_REPLACEMENT_PREFIX = '$';
-
-    private static final Map<Integer, String []> expressionReplacementCacheMap =
-                            new ConcurrentHashMap<>(map ( 1,  new String[] { EXPRESSION_REPLACEMENT_PREFIX+"1" } ,
-
-                                    2, new String[] { EXPRESSION_REPLACEMENT_PREFIX+"1", EXPRESSION_REPLACEMENT_PREFIX+"2" },
-
-                                    3, new String[] { EXPRESSION_REPLACEMENT_PREFIX+"1", EXPRESSION_REPLACEMENT_PREFIX+"2",
-                                            EXPRESSION_REPLACEMENT_PREFIX+"3" },
-
-                                    4, new String[] { EXPRESSION_REPLACEMENT_PREFIX+"1", EXPRESSION_REPLACEMENT_PREFIX+"2",
-                                            EXPRESSION_REPLACEMENT_PREFIX+"3", EXPRESSION_REPLACEMENT_PREFIX+"4" },
-
-                                    5, new String[] { EXPRESSION_REPLACEMENT_PREFIX+"1", EXPRESSION_REPLACEMENT_PREFIX+"2",
-                                            EXPRESSION_REPLACEMENT_PREFIX+"3", EXPRESSION_REPLACEMENT_PREFIX+"4",
-                                            EXPRESSION_REPLACEMENT_PREFIX+"5" }));
-
 
     private VanityUrlUtil() {
 
@@ -78,12 +53,12 @@ public class VanityUrlUtil {
         CachedVanityUrl cachedVanityUrlToReturn = cachedVanityUrl;
 
         if (null != cachedVanityUrl && null != matches && matches.length > 0 &&
-                -1 != cachedVanityUrl.getForwardTo().indexOf(EXPRESSION_REPLACEMENT_PREFIX)) {
+                -1 != cachedVanityUrl.getForwardTo().indexOf(GROUP_REPLACEMENT_PREFIX)) {
 
             // Replace the expressions on the vanity forward.
             final StringBuilder builder =
                     new StringBuilder(cachedVanityUrl.getForwardTo());
-            replaceAll(builder, getReplacementArray(matches.length), matches);
+            replaceAllGroups(builder, matches);
 
             // check if there was any replacement already
             final String newForwardTo = builder.toString();
@@ -97,33 +72,4 @@ public class VanityUrlUtil {
         return cachedVanityUrlToReturn;
     } // processExpressions
 
-    /**
-     * Get the array with the list of string to replace, usually a sequence of $1, $2, $3, etc...
-     * @param matchesLength {@link Integer}
-     * @return String array
-     */
-    private static String [] getReplacementArray (final int matchesLength) {
-
-        if (!expressionReplacementCacheMap.containsKey(matchesLength)) {
-
-            expressionReplacementCacheMap.put(matchesLength, buildReplacementArray (matchesLength));
-        }
-
-        return expressionReplacementCacheMap.get(matchesLength);
-    } // getReplacementArray.
-
-    /**
-     * Builds a replacement array
-     * @param matchesLength {@link Integer}
-     * @return String array
-     */
-    private static String [] buildReplacementArray (final int matchesLength) {
-
-        final String [] replacementArray = new String [matchesLength];
-
-        rangeClosed(1, matchesLength).forEach(i ->
-                replacementArray [i - 1] =  EXPRESSION_REPLACEMENT_PREFIX + String.valueOf(i) );
-
-        return replacementArray;
-    } // buildReplaceArray.
 } // E:O:F:VanityUrlUtil.

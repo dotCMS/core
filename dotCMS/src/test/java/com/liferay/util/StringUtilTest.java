@@ -4,6 +4,7 @@ import com.dotcms.UnitTestBase;
 import org.junit.Test;
 
 import static com.liferay.util.StringUtil.replaceAll;
+import static com.liferay.util.StringUtil.replaceAllGroups;
 import static com.liferay.util.StringUtil.replaceOnce;
 import static org.junit.Assert.assertEquals;
 
@@ -140,6 +141,28 @@ public class StringUtilTest  extends UnitTestBase {
     }
 
     @Test
+    public void testReplaceAllSingle(){
+
+        final StringBuilder builder =
+                new StringBuilder("$1$1 is a test, and $1 is another test, $1 this is a great test");
+
+        replaceAll(builder, "$1", "this");
+
+        assertEquals( "thisthis is a test, and this is another test, this this is a great test", builder.toString() );
+    }
+
+    @Test
+    public void testReplaceAll3(){
+
+        final StringBuilder builder =
+                new StringBuilder("$1 is a test, and $1 is another test, $2 are great, are not $2");
+
+        replaceAll(builder, new String []{"$1", "$2"}, new String[] {"this", "these"});
+
+        assertEquals( "this is a test, and this is another test, these are great, are not these", builder.toString() );
+    }
+
+    @Test
     public void testReplaceAllExtraNotMatchReplacements(){
 
         final StringBuilder builder =
@@ -148,6 +171,17 @@ public class StringUtilTest  extends UnitTestBase {
         replaceAll(builder, new String [] {"$1","$2","$3"}, new String [] {"this", "these","those"});
 
         assertEquals( "somethingtochangethisthese", builder.toString() );
+    }
+
+    @Test
+    public void testReplaceAllGroup(){
+
+        final StringBuilder builder =
+                new StringBuilder("$1 is a test, and $1 is another test, $2 are great, are not $2");
+
+        replaceAllGroups(builder, new String[] {"this", "these"});
+
+        assertEquals( "this is a test, and this is another test, these are great, are not these", builder.toString() );
     }
 
 }

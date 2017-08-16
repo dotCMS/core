@@ -88,7 +88,7 @@ public class VanityURLFilter implements Filter {
 
                 //If the handler already resolved the requested URI we stop the processing here
                 if (vanityUrlResult.isResolved()) {
-                    DbConnectionFactory.closeSilently();
+                    DbConnectionFactory.closeSilently(); // todo: not sure if this is necessary
                     return;
                 }
 

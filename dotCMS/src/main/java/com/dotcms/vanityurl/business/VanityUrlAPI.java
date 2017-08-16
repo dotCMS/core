@@ -59,4 +59,15 @@ public interface VanityUrlAPI {
      */
     void validateVanityUrl(Contentlet contentlet);
 
+
+    /**
+     * Indicates if the uri belongs to a VanityUrl
+     *
+     * @param url The current url
+     * @param host The current host
+     * @param languageId The current language Id
+     * @return true if the URI is a vanity URL, false if not
+     */
+    boolean isVanityUrl(String url, Host host, long languageId);
+
 }

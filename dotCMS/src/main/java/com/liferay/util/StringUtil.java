@@ -46,6 +46,11 @@ import com.dotmarketing.util.Logger;
  */
 public class StringUtil {
 
+	/**
+	 * Prefix for a group replacement, such as $1, $2, etc.
+	 */
+	public static final char GROUP_REPLACEMENT_PREFIX = '$';
+
 	public static String add(String s, String add) {
 		return add(s, add, StringPool.COMMA);
 	}
@@ -318,6 +323,30 @@ public class StringUtil {
 	}
 
 	/**
+	 * Replace all groups with a newSub (if exists)
+	 * A group is a string that starts with $, such as $1, $2, etc; you can have more than one match.
+	 * Pre: if any of the parameter is null, will return the same builder pass as parameter
+	 * Pre: newSubs length must be more than one
+	 * @param builder {@link StringBuilder}
+	 * @param newSubs {@link String} array (the replacement)
+	 * @return StringBuilder
+	 */
+	public static StringBuilder replaceAllGroups (final StringBuilder builder,
+											final String[] newSubs) {
+
+		if (builder != null
+				&& newSubs != null && ( newSubs.length > 0)) {
+
+			for (int i = 0; i < newSubs.length; i++) {
+				replaceAll(builder,
+						GROUP_REPLACEMENT_PREFIX + String.valueOf(i+1), newSubs[i]);
+			}
+		}
+
+		return builder;
+	} // replaceAllGroups.
+
+	/**
 	 * Replace each oldSub with a newSub (if exists)
 	 * Pre: if any of the parameter is null, will return the same builder pass as parameter
 	 * Pre: oldSub must be equals to newStubs, otherwise will return the same builder pass as parameter
@@ -334,12 +363,12 @@ public class StringUtil {
 				&& newSubs != null && (oldSubs.length == newSubs.length)) {
 
 			for (int i = 0; i < oldSubs.length; i++) {
-				replaceOnce(builder, oldSubs[i], newSubs[i]);
+				replaceAll(builder, oldSubs[i], newSubs[i]);
 			}
 		}
 
 		return builder;
-	} // replace.
+	} // replaceAll.
 
 	/**
 	 * Replace once the oldSub with a newSub (if exists)
@@ -365,6 +394,32 @@ public class StringUtil {
 
 		return builder;
 	} // replaceOnce.
+
+	/**
+	 * Replace all oldSub with a newSub (if exists)
+	 * Pre: if any of the parameter is null, will return the same builder pass as parameter
+	 * Pre: oldSub must be equals to newStubs, otherwise will return the same builder pass as parameter
+	 * @param builder {@link StringBuilder}
+	 * @param oldSub {@link String} to replace
+	 * @param newSub {@link String} the replacement
+	 * @return StringBuilder
+	 */
+	public static StringBuilder replaceAll (final StringBuilder builder,
+											 final String oldSub,
+											 final String newSub) {
+
+		if (builder != null && oldSub != null
+				&& newSub != null) {
+
+			int index = builder.indexOf(oldSub);
+			while (index != -1) {
+				builder.replace(index, index + oldSub.length(), newSub);
+				index = builder.indexOf(oldSub, index);
+			}
+		}
+
+		return builder;
+	} // replaceAll.
 
 	public static String replace(String s, String[] oldSubs, String[] newSubs) {
 		if ((s == null) || (oldSubs == null) || (newSubs == null)) {
