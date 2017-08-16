@@ -2897,6 +2897,41 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
 
+    @Test
+    public void testCheckinWithoutVersioning_ShouldPreserveBinary_WhenOtherFieldsAreUpdated()
+            throws DotDataException, DotSecurityException, IOException {
+        final String BINARY_NAME = "testCheckinWithoutVersioningBinary.txt";
+        ContentType typeWithBinary = null;
+
+        try {
+            typeWithBinary = createContentType("testCheckinWithoutVersioning", BaseContentType.CONTENT);
+            com.dotcms.contenttype.model.field.Field textField = createTextField("Title", typeWithBinary.id());
+            com.dotcms.contenttype.model.field.Field binaryField = createBinaryField("File", typeWithBinary.id());
+            File textFileVersion1 = createTempFileWithText(BINARY_NAME, BINARY_NAME);
+            Map<String, Object> fieldValues = map(textField.variable(), "contentV1",
+                    binaryField.variable(), textFileVersion1);
+            Contentlet contentletWithBinary = createContentWithFieldValues(typeWithBinary.id(), fieldValues);
+
+            // let's verify that newly saved file exists
+            assertTrue(doesBinaryExistInAssetsTree(contentletWithBinary.getInode(), binaryField.variable(), BINARY_NAME));
+
+            //let's update a field different from the binary
+            contentletWithBinary.setStringProperty(textField.variable(), "contentV2");
+            Contentlet contentWithoutVersioning = contentletAPI.checkinWithoutVersioning(contentletWithBinary,
+                    new HashMap<>(), null, permissionAPI.getPermissions(contentletWithBinary), user, false);
+
+            // lets verify the binary is still in FS and referenced by the content
+            assertTrue(doesBinaryExistInAssetsTree(contentWithoutVersioning.getInode(), binaryField.variable(), BINARY_NAME));
+
+            File binaryFromContentlet = contentWithoutVersioning.getBinary(binaryField.variable());
+            assertEquals(binaryFromContentlet.getName(), BINARY_NAME);
+
+        } finally {
+            if(typeWithBinary!=null) contentTypeAPI.delete(typeWithBinary);
+        }
+
+    }
+
     private boolean doesBinaryExistInAssetsTree(String inode, String varName, String binaryName) {
 
         FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
