@@ -21,6 +21,7 @@
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@page import="com.liferay.portal.util.ReleaseInfo"%>
 
 
 <%@ include file="/html/portlet/ext/cmsmaintenance/init.jsp"%>
@@ -341,7 +342,6 @@ var doCleanAssets = function () {
 
 dojo.ready(function() {
 	doCleanAssetsCallback();
-	getVersionInfo();
 });
 
 function doCleanAssetsCallback() {
@@ -1230,26 +1230,6 @@ function assetHostListTable_deleteHost(hostId){
 	}
 }
 
-function getVersionInfo(){
-
-    var myParameters= {"messagesKey":[],"language":"","country":""};
-
-    var xhrArgs = {
-                    url: "/api/v1/loginform",
-                    postData: dojo.toJson(myParameters),
-                    handleAs: "text",
-                    headers: { "Content-Type": "application/json", "Accept": "application/json" },
-                    load: function(data) {
-                        var result = JSON.parse(data);
-                        document.getElementById('version-info').innerHTML += result.entity.version + "&nbsp;&#40;" + result.entity.buildDateString + "&#41;";
-                    },
-                    error: function(response, ioArgs) {
-                        console.error("HTTP status code: ", ioArgs.xhr.status);
-                    }
-                }
-
-        var deferred = dojo.xhrPost(xhrArgs);
-    }
 </script>
 
 <style>
@@ -1819,7 +1799,7 @@ dd.leftdl {
     <div id="systemProps" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "System-Properties") %>" >
 		<br>&nbsp;<br>
 		<div style="width:80%;margin: 0 auto;">
-		    <h2 id="version-info"><%=LanguageUtil.get(pageContext, "version") %>&#58;&nbsp;</h2>
+		    <h2 id="version-info"><%=LanguageUtil.get(pageContext, "version") %>&#58;&nbsp;<%=ReleaseInfo.getVersion() %>&nbsp;&#40;<%=ReleaseInfo.getBuildDateString() %>&#41;</h2>
             <br>&nbsp;<br>
 	        <table class="listingTable shadowBox">
 	            <thead>
