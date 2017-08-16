@@ -176,8 +176,8 @@ public class FileUtil {
 
         if (hardLinks) {
 
-            // I think we need to be sure to unlink first
-            if (destination.exists()) {
+            // I think we need to be sure to unlink first if source and destination and paths are different
+            if (destination.exists() && !source.getAbsolutePath().equalsIgnoreCase(destination.getAbsolutePath())) {
                 Path destinationPath = Paths.get(destination.getAbsolutePath());
                 //"If the file is a symbolic link then the symbolic link itself, not the final target of the link, is deleted."
                 Files.delete(destinationPath);
