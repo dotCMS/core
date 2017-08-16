@@ -6,7 +6,7 @@ import java.util.function.Supplier;
  * Encapsulates utils method to extend the Java Functions API
  * @author jsanca
  */
-public class FunctionUtils { // todo: to make a test
+public class FunctionUtils {
 
     /**
      * The idea behind this method is to concat a consequent callback if value is true.
