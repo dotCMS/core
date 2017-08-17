@@ -59,6 +59,7 @@ import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.portal.PortletAPIImpl;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.business.journal.DistributedJournalAPIImpl;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.plugin.business.PluginAPIImpl;
@@ -1052,13 +1053,32 @@ enum APIIndex
     		case COMPANY_API: return CompanyAPIFactory.getInstance().getCompanyAPI();
     		case SECURITY_LOGGER_API: return SecurityLoggerServiceAPIFactory.getInstance().getSecurityLoggerAPI();
     		case FILE_WATCHER_API: return createFileWatcherAPI();
-    		case VANITY_URLS_API: return new VanityUrlAPIImpl();
-    		case KEY_VALUE_API: return new KeyValueAPIImpl();
+    		case VANITY_URLS_API: return createVanityUrlAPI();
+			case KEY_VALUE_API: return new KeyValueAPIImpl();
     		case LANGUAGE_VARIABLE_API: return new LanguageVariableAPIImpl();
 			case LOCAL_SYSTEM_EVENTS_API: return LocalSystemEventsAPIFactory.getInstance().getLocalSystemEventsAPI();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
+
+	/**
+	 * Correctly initializes a new single instance of the {@link VanityUrlAPI}.
+	 *
+	 * @return The {@link VanityUrlAPI}.
+	 */
+	private static VanityUrlAPI createVanityUrlAPI () {
+
+		VanityUrlAPI vanityUrlAPI = null;
+
+		try {
+
+			vanityUrlAPI = new VanityUrlAPIImpl();
+		} catch (DotDataException e) {
+			Logger.error(APILocator.class, "The Vanity API couldn't be created", e);
+		}
+
+		return vanityUrlAPI;
+	} // createVanityUrlAPI.
 
     /**
      * Correctly initializes a new single instance of the {@link FileWatcherAPI}.

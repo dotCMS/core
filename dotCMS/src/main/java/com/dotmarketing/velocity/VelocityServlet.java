@@ -5,44 +5,12 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
-import java.io.File;
-import java.io.FilterWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.net.URLDecoder;
-import java.util.*;
-import java.util.Calendar;
-
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
-import com.dotcms.visitor.business.VisitorAPI;
-import com.dotcms.visitor.domain.Visitor;
-
-import com.dotmarketing.portlets.rules.business.RulesEngine;
-import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.util.*;
-import com.liferay.portal.language.LanguageException;
-
-import org.apache.velocity.Template;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.exception.MethodInvocationException;
-import org.apache.velocity.exception.ParseErrorException;
-import org.apache.velocity.exception.ResourceNotFoundException;
-import org.apache.velocity.runtime.RuntimeConstants;
-import org.apache.velocity.tools.view.context.ChainedContext;
-
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
+import com.dotcms.visitor.business.VisitorAPI;
+import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -56,7 +24,6 @@ import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -64,22 +31,65 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.ClickstreamFactory;
 import com.dotmarketing.filters.CMSFilter;
+import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.rules.business.RulesEngine;
+import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.CookieUtil;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageRequestModeUtil;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityProfiler;
+import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.viewtools.DotTemplateTool;
 import com.dotmarketing.viewtools.RequestWrapper;
 import com.dotmarketing.viewtools.content.ContentMap;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.servlet.SessionMessages;
+import java.io.File;
+import java.io.FilterWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import org.apache.velocity.Template;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.exception.MethodInvocationException;
+import org.apache.velocity.exception.ParseErrorException;
+import org.apache.velocity.exception.ResourceNotFoundException;
+import org.apache.velocity.runtime.RuntimeConstants;
+import org.apache.velocity.tools.view.context.ChainedContext;
 
 public abstract class VelocityServlet extends HttpServlet {
 
@@ -479,10 +489,6 @@ public abstract class VelocityServlet extends HttpServlet {
     			Logger.warn(this, "Exception trying to getUser: " + nsue.getMessage(), nsue);
     		}
     
-    		boolean signedIn = false;
-    		if (user != null) {
-    			signedIn = true;
-    		}
     		Logger.debug(VelocityServlet.class, "Page Permissions for URI=" + uri);
 
     
@@ -495,41 +501,13 @@ public abstract class VelocityServlet extends HttpServlet {
     			throw new ResourceNotFoundException(String.format("Resource %s not found in Live mode!", uri));
             }
 
-    		// Check if the page is visible by a CMS Anonymous role
-    		if (!permissionAPI.doesUserHavePermission(page, PERMISSION_READ, user, true)) {
-    			// this page is protected. not anonymous access
-
-    			/*******************************************************************
-    			 * If we need to redirect someone somewhere to login before seeing a
-    			 * page, we need to edit the /portal/401.jsp page to sendRedirect
-    			 * the user to the proper login page. We are not using the
-    			 * REDIRECT_TO_LOGIN variable in the config any longer.
-    			 ******************************************************************/
-    			if (!signedIn) {
-    				// No need for the below LAST_PATH attribute on the front end
-    				// http://jira.dotmarketing.net/browse/DOTCMS-2675
-    				// request.getSession().setAttribute(WebKeys.LAST_PATH,
-    				// new ObjectValuePair(uri, request.getParameterMap()));
-    				request.getSession().setAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, uri);
-    				Logger.debug(VelocityServlet.class, "VELOCITY CHECKING PERMISSION: Page doesn't have anonymous access" + uri);
-    				Logger.debug(VelocityServlet.class, "401 URI = " + uri);
-    				Logger.debug(VelocityServlet.class, "Unauthorized URI = " + uri);
-    				response.sendError(401, "The requested page/file is unauthorized");
-    				return;
-    			} else if (!permissionAPI.getReadRoles(ident).contains(APILocator.getRoleAPI().loadLoggedinSiteRole())) {
-    				// user is logged in need to check user permissions
-    				Logger.debug(VelocityServlet.class, "VELOCITY CHECKING PERMISSION: User signed in");
-
-    				// check user permissions on this asset
-    				if (!permissionAPI.doesUserHavePermission(ident, PERMISSION_READ, user, true)) {
-    					// the user doesn't have permissions to see this page
-    					// go to unauthorized page
-    					Logger.warn(VelocityServlet.class, "VELOCITY CHECKING PERMISSION: Page doesn't have any access for this user");
-    					response.sendError(403, "The requested page/file is forbidden");
-    					return;
-    				}
-    			}
-    		}
+			//Verify and handle the case for unauthorized access of this contentlet
+			Boolean unauthorized = CMSUrlUtil.getInstance()
+					.isUnauthorizedAndHandleError(page, uri, user, request,
+							response);
+			if (unauthorized) {
+				return;
+			}
 
 			//Fire the page rules until we know we have permission.
 			RulesEngine.fireRules(request, response, page, Rule.FireOn.EVERY_PAGE);
