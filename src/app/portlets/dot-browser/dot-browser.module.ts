@@ -3,57 +3,36 @@ import { CommonModule, LocationStrategy, HashLocationStrategy } from '@angular/c
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { DotBrowserComponent } from './dot-browser-component';
-import {
-    // COMPONENTS
-    SiteSelectorComponent,
-    DotcmsBreadcrumbModule,
-    DotcmsSiteTreeTableModule,
-    DotcmsSiteDatatableModule,
-    DotcmsTreeableDetailModule,
-    // SERVICES
-    AppConfig,
-    FileService,
-    HttpClient,
-    LocalStoreService,
-    LoggerService,
-    NotificationService,
-    SettingsStorageService,
-    SiteBrowserService,
-    SiteBrowserState,
-    SiteSelectorService,
-    SiteTreetableService
-} from '../../../dotcms-js';
 
 import {AutoCompleteModule} from 'primeng/primeng';
+import {
+  DotBreadcrumbModule, DotFileModule, DotFolderModule, DotHttpModule, DotNotificationModule, DotSettingsStorageModule,
+  DotSiteBrowserModule, DotSiteDatatableModule, DotSiteSelectorModule, DotSiteTreeTableModule, DotTreeableDetailModule
+} from 'dotcms-js/dotcms-js';
 
 
 @NgModule({
-    declarations: [DotBrowserComponent, SiteSelectorComponent],
+    declarations: [DotBrowserComponent],
     imports: [
         CommonModule,
-        DotcmsBreadcrumbModule,
-        DotcmsSiteDatatableModule,
-        DotcmsSiteTreeTableModule,
-        DotcmsTreeableDetailModule,
-        DotcmsTreeableDetailModule,
+        DotBreadcrumbModule,
+        DotSiteDatatableModule,
+        DotSiteTreeTableModule,
+        DotTreeableDetailModule,
+        DotSiteSelectorModule,
+        DotHttpModule,
+        DotSettingsStorageModule,
+        DotNotificationModule,
+        DotFileModule,
+        DotSiteBrowserModule,
+        DotFolderModule,
         AutoCompleteModule,
         FormsModule,
         ReactiveFormsModule
     ],
     exports: [],
     providers: [
-        { provide: LocationStrategy, useClass: HashLocationStrategy },
-        { provide: SettingsStorageService, useClass: SettingsStorageService },
-        { provide: HttpClient, useClass: HttpClient },
-        { provide: SiteSelectorService, useClass: SiteSelectorService },
-        { provide: SiteBrowserService, useClass: SiteBrowserService },
-        { provide: NotificationService, useClass: NotificationService },
-        { provide: AppConfig, useValue: AppConfig },
-        { provide: SiteBrowserState, useClass: SiteBrowserState },
-        { provide: SiteTreetableService, useClass: SiteTreetableService },
-        { provide: LoggerService, useClass: LoggerService },
-        { provide: LocalStoreService, useClass: LocalStoreService },
-        { provide: FileService, useClass: FileService },
+        { provide: LocationStrategy, useClass: HashLocationStrategy }
     ]
 })
 export class DotBrowserModule {}

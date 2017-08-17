@@ -41,7 +41,7 @@ import { environment } from '../environments/environment';
 
 
 
-let PROVIDERS: any[] = [
+const PROVIDERS: any[] = [
     // common env directives
     AccountService,
     ApiRoot,

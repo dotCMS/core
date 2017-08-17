@@ -5,7 +5,8 @@
     "scripts": {
         "ng": "ng",
         "start": "ng serve --proxy-config proxy.conf.json --port 3000",
-        "build": "ng build",
+        "build": "ng build --prod --aot=false --base-href=\"./\"",
+        "watch": "ng build --prod --aot=false --base-href=\"./\" -w --no-delete-output-path --sourcemap",
         "test": "ng test",
         "lint": "ng lint",
         "e2e": "ng e2e",
@@ -25,6 +26,7 @@
         "@angular/router": "^4.2.4",
         "angular2-logger": "^0.5.1",
         "core-js": "^2.4.1",
+        "dotcms-js": "^4.2.0-b80",
         "lodash": "4.16.6",
         "md5": "^2.2.1",
         "moment": "2.14.1",
