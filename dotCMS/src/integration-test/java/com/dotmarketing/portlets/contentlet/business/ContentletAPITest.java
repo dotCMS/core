@@ -63,6 +63,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
@@ -73,12 +74,8 @@ import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
+import java.io.*;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -2867,6 +2864,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         final String FILE_V1_NAME = "textFileVersion1.txt";
         final String FILE_V2_NAME = "textFileVersion2.txt";
+        final String FILE_V2_CONTENT = "textFileVersion2 CONTENT";
         ContentType typeWithBinary = null;
 
         try {
@@ -2879,19 +2877,25 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet contentletWithBinary = createContentWithFieldValues(typeWithBinary.id(), fieldValues);
 
             // let's verify that newly saved file exists
-            assertTrue(doesBinaryExistInAssetsTree(contentletWithBinary.getInode(), binaryField.variable(), FILE_V1_NAME));
+            assertTrue(getBinaryAsset(contentletWithBinary.getInode(), binaryField.variable(), FILE_V1_NAME).exists());
 
-            File textFileVersion2 = createTempFileWithText(FILE_V2_NAME, FILE_V2_NAME);
+            File textFileVersion2 = createTempFileWithText(FILE_V2_NAME, FILE_V2_CONTENT);
             // replace old binary with new one
             contentletWithBinary.setBinary(binaryField.variable(), textFileVersion2);
             Contentlet contentWithoutVersioning = contentletAPI.checkinWithoutVersioning(contentletWithBinary,
                     new HashMap<>(), null, permissionAPI.getPermissions(contentletWithBinary), user, false);
 
             // we've just checkedIn without versioning, so old binary should not exist
-            assertFalse(doesBinaryExistInAssetsTree(contentletWithBinary.getInode(), binaryField.variable(), FILE_V1_NAME));
+            assertFalse(getBinaryAsset(contentletWithBinary.getInode(), binaryField.variable(), FILE_V1_NAME).exists());
 
+            File newBinary = getBinaryAsset(contentWithoutVersioning.getInode(), binaryField.variable(), FILE_V2_NAME);
             // new binary should exist
-            assertTrue(doesBinaryExistInAssetsTree(contentWithoutVersioning.getInode(), binaryField.variable(), FILE_V2_NAME));
+            assertTrue(newBinary.exists());
+            // and content should be the expected
+            BufferedReader reader = Files.newReader(newBinary, Charset.defaultCharset());
+            String fileContent = reader.readLine();
+            assertEquals(fileContent, FILE_V2_CONTENT);
+
         } finally {
             if(typeWithBinary!=null) contentTypeAPI.delete(typeWithBinary);
         }
@@ -2901,28 +2905,36 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void testCheckinWithoutVersioning_ShouldPreserveBinary_WhenOtherFieldsAreUpdated()
             throws DotDataException, DotSecurityException, IOException {
         final String BINARY_NAME = "testCheckinWithoutVersioningBinary.txt";
+        final String BINARY_CONTENT = "testCheckinWithoutVersioningBinary CONTENT";
         ContentType typeWithBinary = null;
 
         try {
             typeWithBinary = createContentType("testCheckinWithoutVersioning", BaseContentType.CONTENT);
             com.dotcms.contenttype.model.field.Field textField = createTextField("Title", typeWithBinary.id());
             com.dotcms.contenttype.model.field.Field binaryField = createBinaryField("File", typeWithBinary.id());
-            File textFileVersion1 = createTempFileWithText(BINARY_NAME, BINARY_NAME);
+            File textFileVersion1 = createTempFileWithText(BINARY_NAME, BINARY_CONTENT);
             Map<String, Object> fieldValues = map(textField.variable(), "contentV1",
                     binaryField.variable(), textFileVersion1);
             Contentlet contentletWithBinary = createContentWithFieldValues(typeWithBinary.id(), fieldValues);
 
             // let's verify that newly saved file exists
-            assertTrue(doesBinaryExistInAssetsTree(contentletWithBinary.getInode(), binaryField.variable(), BINARY_NAME));
+            assertTrue(getBinaryAsset(contentletWithBinary.getInode(), binaryField.variable(), BINARY_NAME).exists());
 
             //let's update a field different from the binary
             contentletWithBinary.setStringProperty(textField.variable(), "contentV2");
             Contentlet contentWithoutVersioning = contentletAPI.checkinWithoutVersioning(contentletWithBinary,
                     new HashMap<>(), null, permissionAPI.getPermissions(contentletWithBinary), user, false);
 
-            // lets verify the binary is still in FS and referenced by the content
-            assertTrue(doesBinaryExistInAssetsTree(contentWithoutVersioning.getInode(), binaryField.variable(), BINARY_NAME));
+            // let's verify the binary is still in FS
+            File binaryFromAssetsDir = getBinaryAsset(contentWithoutVersioning.getInode(), binaryField.variable(), BINARY_NAME);
+            assertTrue(binaryFromAssetsDir.exists());
 
+            // let's also verify file content remains the same
+            BufferedReader reader = Files.newReader(binaryFromAssetsDir, Charset.defaultCharset());
+            String fileContent = reader.readLine();
+            assertEquals(fileContent, BINARY_CONTENT);
+
+            // let's verify the reference is still ok
             File binaryFromContentlet = contentWithoutVersioning.getBinary(binaryField.variable());
             assertEquals(binaryFromContentlet.getName(), BINARY_NAME);
 
@@ -2932,11 +2944,11 @@ public class ContentletAPITest extends ContentletBaseTest {
 
     }
 
-    private boolean doesBinaryExistInAssetsTree(String inode, String varName, String binaryName) {
+    private File getBinaryAsset(String inode, String varName, String binaryName) {
 
         FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
 
-        java.io.File binaryFromAssetsFolder = new java.io.File(fileAssetAPI.getRealAssetsRootPath()
+        File binaryFromAssetsFolder = new File(fileAssetAPI.getRealAssetsRootPath()
                 + separator
                 + inode.charAt(0)
                 + separator
@@ -2948,7 +2960,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                 + separator
                 + binaryName);
 
-        return binaryFromAssetsFolder.exists();
+        return binaryFromAssetsFolder;
     }
 
     private Contentlet createContentWithFieldValues(String contentTypeId, Map<String, Object> fieldValues)
