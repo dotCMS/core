@@ -1,6 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
+import com.dotcms.business.CloseDB;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.ConstantField;
@@ -231,6 +232,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return false;
     }
 
+    @CloseDB
     @Override
     public Contentlet find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         Contentlet c = conFac.find(inode);

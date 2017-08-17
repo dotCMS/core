@@ -1,5 +1,6 @@
 package com.dotmarketing.filters;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
 
@@ -10,7 +11,9 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Versionable;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -20,11 +23,13 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.Xss;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Utilitary class used by the CMS Filter
@@ -413,6 +418,64 @@ public class CMSUrlUtil {
 				.getAttribute(CMS_FILTER_QUERY_STRING_OVERRIDE)
 				: request.getQueryString();
 	}
+
+	/**
+	 * Verifies if a given user has READ permissions on a given permissionable object, if there is
+	 * no logged in user and the permissionable object requires authentication a 401 response error
+	 * is set in order to redirect the user to the login page and if an user is already logged in
+	 * but that logged in user does not have read permissions on the given permissionable object a
+	 * 403 response error is set.
+	 *
+	 * @param permissionable Permissionable object to validate
+	 * @param requestedURIForLogging The original requested URI, this URI is required as a parameter
+	 * just for logging purposes, is not used to calculate anything.
+	 * @param user Current user
+	 */
+	public Boolean isUnauthorizedAndHandleError(final Permissionable permissionable,
+			final String requestedURIForLogging, final User user,
+			final HttpServletRequest request, final HttpServletResponse response)
+			throws IOException, DotDataException {
+
+		final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+
+		// Check if the page is visible by a CMS Anonymous role
+		if (!permissionAPI
+				.doesUserHavePermission(permissionable, PERMISSION_READ, user, true)) {
+
+			if (null == user) {//Not logged in user
+
+				Logger.debug(this.getClass(),
+						"CHECKING PERMISSION: Page doesn't have anonymous access ["
+								+ requestedURIForLogging + "]");
+				Logger.debug(this.getClass(), "401 URI = " + requestedURIForLogging);
+				Logger.debug(this.getClass(), "Unauthorized URI = " + requestedURIForLogging);
+
+				request.getSession().setAttribute(
+						com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, requestedURIForLogging);
+				response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
+						"The requested page/file is unauthorized");
+				return true;
+			} else if (!permissionAPI.getRolesWithPermission(permissionable, PERMISSION_READ)
+					.contains(APILocator.getRoleAPI().loadLoggedinSiteRole())) {
+				// User is logged in need to check user permissions
+				if (!permissionAPI
+						.doesUserHavePermission(permissionable, PERMISSION_READ, user,
+								true)) {
+					// the user doesn't have permissions to see this page
+					// go to unauthorized page
+					Logger.warn(this.getClass(),
+							"CHECKING PERMISSION: Page doesn't have any access for this user ["
+									+ requestedURIForLogging + "]");
+					response.sendError(HttpServletResponse.SC_FORBIDDEN,
+							"The requested page/file is forbidden");
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
 
 
 }
