@@ -235,11 +235,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @CloseDB
     @Override
     public Contentlet find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        Contentlet c = conFac.find(inode);
-        if(c  == null)
+
+        final Contentlet contentlet = conFac.find(inode);
+
+        if(contentlet  == null) {
             return null;
-        if(perAPI.doesUserHavePermission(c, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
-            return c;
+        }
+
+        if(perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
+
+            return contentlet;
         }else{
             Object u = (user == null) ? user : user.getUserId();
             throw new DotSecurityException("User:" + u + " does not have permissions to Contentlet:" + inode);
