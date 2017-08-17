@@ -71,7 +71,7 @@ public class VanityURLFilter implements Filter {
         final String uri         = this.urlUtil.getURIFromRequest(request);
         final boolean isFiltered = this.urlUtil.isVanityUrlFiltered (uri);
         //Getting the site form the request
-        final Host site = this.getHost(request, uri); // note: this should be call here to include the host in the request
+        final Host site          = this.getHost(request, uri); // note: this should be call here to include the host in the request
 
         if (!isFiltered) {
 
@@ -88,24 +88,22 @@ public class VanityURLFilter implements Filter {
 
                 //If the handler already resolved the requested URI we stop the processing here
                 if (vanityUrlResult.isResolved()) {
-                    DbConnectionFactory.closeSilently(); // todo: not sure if this is necessary
                     return;
                 }
 
-            /*
-            If the VanityURL has a query string we need to add it to the request in order to override
-            in the other filters.
-             */
+                /*
+                If the VanityURL has a query string we need to add it to the request in order to override
+                in the other filters.
+                 */
                 if (vanityUrlResult.getQueryString() != null) {
                     request.setAttribute(CMS_FILTER_QUERY_STRING_OVERRIDE,
                             vanityUrlResult.getQueryString());
                 }
 
-            /*
-            Set into the request the VanityURL we need to use to rewrite the current URI
-             */
-                final String vanityURLRewrite = vanityUrlResult.getRewrite();
-                request.setAttribute(CMS_FILTER_URI_OVERRIDE, vanityURLRewrite);
+                /*
+                Set into the request the VanityURL we need to use to rewrite the current URI
+                 */
+                request.setAttribute(CMS_FILTER_URI_OVERRIDE, vanityUrlResult.getRewrite());
             }
         }
 

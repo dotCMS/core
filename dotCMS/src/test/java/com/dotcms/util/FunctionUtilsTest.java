@@ -27,10 +27,10 @@ public class FunctionUtilsTest extends UnitTestBase {
 
         final AtomicBoolean atomicBoolean = new AtomicBoolean(false);
 
-        assertTrue( FunctionUtils.ifElse(true, ()-> atomicBoolean.set(true), () -> atomicBoolean.set(false)));
+        assertTrue( FunctionUtils.ifOrElse(true, ()-> atomicBoolean.set(true), () -> atomicBoolean.set(false)));
         assertTrue( atomicBoolean.get() );
 
-        assertFalse( FunctionUtils.ifElse(()-> false, ()-> atomicBoolean.set(true), () -> atomicBoolean.set(false)));
+        assertFalse( FunctionUtils.ifOrElse(()-> false, ()-> atomicBoolean.set(true), () -> atomicBoolean.set(false)));
         assertFalse( atomicBoolean.get() );
     }
 

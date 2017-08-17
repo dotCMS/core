@@ -48,7 +48,7 @@ public class VanityUrlUtil {
      * @return {@link CachedVanityUrl}
      */
     public static CachedVanityUrl processExpressions (final CachedVanityUrl cachedVanityUrl,
-                                                      final String [] matches) {
+                                                      final String... matches) {
 
         CachedVanityUrl cachedVanityUrlToReturn = cachedVanityUrl;
 

@@ -12,7 +12,7 @@ public class FunctionUtils {
      * The idea behind this method is to concat a consequent callback if value is true.
             * For instance
      * <code>
-     *     return ifTrue (ifPasswordChanged(), () -> sendEmail(...))
+     *     return ifTrue (ifPasswordChanged(), () -> sendEmail(.
     * </code>
     * @param condition
      * @param callback
@@ -52,10 +52,10 @@ public class FunctionUtils {
      * @param <T>
      * @return boolean
      */
-    public static boolean ifElse (final boolean condition, final Callback onTrueCallback, final Callback onFalseCallback) {
+    public static boolean ifOrElse(final boolean condition, final Callback onTrueCallback, final Callback onFalseCallback) {
 
-        return OptionalBoolean.of(condition).ifTrue(onTrueCallback).ifFalse(onFalseCallback).get();
-    } // ifElse.
+        return OptionalBoolean.of(condition).ifTrue(onTrueCallback).orElse(onFalseCallback).get();
+    } // ifOrElse.
 
     /**
      * The idea behind this method is to concat a consequent callback if value is true or false.
@@ -69,10 +69,10 @@ public class FunctionUtils {
      * @param <T>
      * @return boolean
      */
-    public static boolean ifElse (final Supplier<Boolean> booleanSupplier, final Callback onTrueCallback, final Callback onFalseCallback) {
+    public static boolean ifOrElse(final Supplier<Boolean> booleanSupplier, final Callback onTrueCallback, final Callback onFalseCallback) {
 
-        return ifElse(booleanSupplier.get(), onTrueCallback, onFalseCallback);
-    } // ifElse.
+        return ifOrElse(booleanSupplier.get(), onTrueCallback, onFalseCallback);
+    } // ifOrElse.
 
 
     /**

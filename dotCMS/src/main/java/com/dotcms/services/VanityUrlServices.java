@@ -4,7 +4,6 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cache.VanityUrlCache;
 import com.dotcms.system.event.local.model.Subscriber;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
-import com.dotcms.util.OptionalBoolean;
 import com.dotcms.vanityurl.model.CacheVanityKey;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.SecondaryCacheVanityKey;
@@ -23,7 +22,7 @@ import com.dotmarketing.util.Logger;
 
 import java.util.List;
 
-import static com.dotcms.util.FunctionUtils.*;
+import static com.dotcms.util.FunctionUtils.ifOrElse;
 
 /**
  * This service allows to invalidate the Vanity URL Cache
@@ -209,13 +208,14 @@ public class VanityUrlServices {
             Logger.debug(this, "Invalidating the vanity: "
                     + contentlet);
 
-            ifElse( null != contentlet && contentlet.isVanityUrl() &&
-                                    this.contentletAPI.isInodeIndexed
-                                            (contentlet.getInode(),contentlet.isLive(), contentlet.isWorking()),
-                                    () -> this.invalidateVanityUrl(contentlet),
-                                    () -> Logger.error(this,
-                                            "Unable to invalidate VanityURL in cache:" +
-                                                    contentlet) );
+            if (null != contentlet && contentlet.isVanityUrl()) {
+                ifOrElse(this.contentletAPI.isInodeIndexed
+                                (contentlet.getInode(), contentlet.isLive(), contentlet.isWorking()),
+                        () -> this.invalidateVanityUrl(contentlet),
+                        () -> Logger.error(this,
+                                "Unable to invalidate VanityURL in cache:" +
+                                        contentlet));
+            }
         } catch (Exception e) {
             Logger.error(this,
                     String.format("Unable to invalidate VanityURL in cache [%s]",

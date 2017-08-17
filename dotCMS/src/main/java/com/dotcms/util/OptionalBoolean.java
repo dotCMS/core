@@ -14,7 +14,7 @@ import java.util.function.Predicate;
  * <code>
  *     return OptionalBoolean.of(evalCondition(request, response))
  *           .ifTrue(()  -> doSomethingOnTrue(request, response))
- *           .ifFalse(() -> doSomethingOnFalse(request, response))
+ *           .orElse(() -> doSomethingOnFalse(request, response))
  *       .get();
  * </code>
  *
@@ -83,7 +83,7 @@ public class OptionalBoolean {
      * @param other
      * @return OptionalBoolean to continue the chain
      */
-    public OptionalBoolean ifFalse(FunctionUtils.Callback other) {
+    public OptionalBoolean orElse(FunctionUtils.Callback other) {
 
         if  (value == null || !value) {
             other.call();
@@ -112,7 +112,7 @@ public class OptionalBoolean {
      * @param other
      * @return Boolean returns the value
      */
-    public Boolean ifFalseGet(FunctionUtils.Callback other) {
+    public Boolean orElseGet(FunctionUtils.Callback other) {
         if  (value == null || !value) {
             other.call();
         }

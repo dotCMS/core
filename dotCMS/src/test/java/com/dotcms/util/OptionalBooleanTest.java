@@ -17,10 +17,10 @@ public class OptionalBooleanTest  extends UnitTestBase {
         final AtomicBoolean changeOnFalseGet = new AtomicBoolean(false);
         final AtomicBoolean changeOnFalse = new AtomicBoolean(false);
 
-        optionalBoolean.ifFalse(() -> changeOnFalse.set(true));
+        optionalBoolean.orElse(() -> changeOnFalse.set(true));
 
         assertFalse(optionalBoolean.isPresent());
-        assertEquals(null, optionalBoolean.ifFalseGet(() -> changeOnFalseGet.set(true)));
+        assertEquals(null, optionalBoolean.orElseGet(() -> changeOnFalseGet.set(true)));
         assertTrue(changeOnFalseGet.get());
         assertTrue(changeOnFalse.get());
 
@@ -54,10 +54,10 @@ public class OptionalBooleanTest  extends UnitTestBase {
         final AtomicBoolean changeOnFalseGet = new AtomicBoolean(false);
         final AtomicBoolean changeOnFalse = new AtomicBoolean(false);
 
-        optionalBoolean.ifFalse(() -> changeOnFalse.set(true));
+        optionalBoolean.orElse(() -> changeOnFalse.set(true));
 
         assertTrue(optionalBoolean.isPresent());
-        assertEquals(false, optionalBoolean.ifFalseGet(() -> changeOnFalseGet.set(true)));
+        assertEquals(false, optionalBoolean.orElseGet(() -> changeOnFalseGet.set(true)));
         assertTrue(changeOnFalseGet.get());
         assertTrue(changeOnFalse.get());
         assertFalse(optionalBoolean.get());
@@ -71,7 +71,7 @@ public class OptionalBooleanTest  extends UnitTestBase {
         final AtomicBoolean changeOnFalse = new AtomicBoolean(false);
 
         assertTrue(optionalBoolean.isPresent());
-        assertFalse(optionalBoolean.ifTrue(() -> changeOnTrue.set(true)).ifFalse(() -> changeOnFalse.set(true)).get());
+        assertFalse(optionalBoolean.ifTrue(() -> changeOnTrue.set(true)).orElse(() -> changeOnFalse.set(true)).get());
 
         assertFalse(changeOnTrue.get());
         assertTrue(changeOnFalse.get());
