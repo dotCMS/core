@@ -20,7 +20,7 @@ public class CloseDBMethodInterceptor implements MethodInterceptor<Object> {
     public Object invoke(final DelegateMethodInvocation<Object> delegate) throws Throwable {
 
 
-        final CloseDB contextCloseable =
+        final CloseDB closeDB =
                 getMethodAnnotation(delegate.getMethod(), CloseDB.class);
         Object methodReturn = null;
 
@@ -28,7 +28,7 @@ public class CloseDBMethodInterceptor implements MethodInterceptor<Object> {
             methodReturn = delegate.proceed();
         } finally {
 
-            if (null != contextCloseable && contextCloseable.connection()
+            if (null != closeDB && closeDB.connection()
                     && !DbConnectionFactory.inTransaction()) {
 
                 DbConnectionFactory.closeSilently();
