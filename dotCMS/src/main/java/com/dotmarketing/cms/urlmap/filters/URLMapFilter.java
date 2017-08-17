@@ -15,7 +15,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionBitAPIImpl;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -88,7 +87,7 @@ public class URLMapFilter implements Filter {
             ServletException {
 
         HttpServletRequest request = (HttpServletRequest) req;
-        HttpServletResponse response = (HttpServletResponse) res;
+        final HttpServletResponse response = (HttpServletResponse) res;
         HttpSession optSession = request.getSession(false);
 
         String uri = cmsUrlUtil.getURIFromRequest(request);
@@ -247,16 +246,22 @@ public class URLMapFilter implements Filter {
                             }
                         }
                         ContentletSearch c = cons.get(idx);
+                        Contentlet contentlet = conAPI
+                                .find(c.getInode(), wuserAPI.getSystemUser(), true);
+
                         if (optSession != null) {
                             optSession.setAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE,
-                                    String.valueOf(
-                                            conAPI.find(c.getInode(), wuserAPI.getSystemUser(), true).getLanguageId()));
+                                    String.valueOf(contentlet.getLanguageId()));
                         }
-                        Contentlet con = conAPI.find(c.getInode(), wuserAPI.getSystemUser(), true);
-                        if(!perAPI.doesUserHavePermission(con, PermissionBitAPIImpl.PERMISSION_READ,user,true)){
-                            response.sendRedirect("/dotCMS/login?referrer="+UtilMethods.encodeURIComponent(url));
+
+                        //Verify and handle the case for unauthorized access of this contentlet
+                        Boolean unauthorized = CMSUrlUtil.getInstance()
+                                .isUnauthorizedAndHandleError(contentlet, uri, user, request,
+                                        response);
+                        if (unauthorized) {
                             return;
                         }
+
                         request.setAttribute(WebKeys.WIKI_CONTENTLET, c.getIdentifier());
                         request.setAttribute(WebKeys.WIKI_CONTENTLET_INODE, c.getInode());
                         request.setAttribute(WebKeys.CLICKSTREAM_IDENTIFIER_OVERRIDE,

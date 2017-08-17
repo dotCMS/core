@@ -4,6 +4,7 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
+import com.dotcms.business.CloseDB;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
@@ -304,6 +305,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionAPI#doesUserHavePermission(com.dotmarketing.beans.Inode, int, com.liferay.portal.model.User, boolean)
 	 */
+	@CloseDB
 	public boolean doesUserHavePermission(Permissionable permissionable, int permissionType, User user, boolean respectFrontendRoles) throws DotDataException {
 
 		// if we have bad data
@@ -830,6 +832,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		return writePermissions;
 	}
 
+	@CloseDB
 	public Set<Role> getRolesWithPermission(Permissionable permissionable, int permission) throws DotDataException {
 
 		Set<Role> roles = new HashSet<Role>();
