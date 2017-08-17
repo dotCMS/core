@@ -432,15 +432,15 @@ public class ContentResource {
 						.ifPresent(contentlets::add);
 			} else if(inodePassed = UtilMethods.isSet(inode)) {
 				Optional.ofNullable(this.contentHelper.hydrateContentLet(APILocator.getContentletAPI()
-						.find(inode, user, true))).ifPresent(contentlets::add);
+						.find(inode, user, true)))
+						.ifPresent(contentlets::add);
 			} else if(queryPassed = UtilMethods.isSet(query)) {
 				String tmDate=(String)request.getSession().getAttribute("tm_date");
 				contentlets = ContentUtils.pull(query, offset, limit,orderBy,user,tmDate);
 			}
 
-			if (null == contentlets || contentlets.size() == 0) {
-				status = Optional.of(Status.NOT_FOUND);
-			}
+			status = (null == contentlets || contentlets.isEmpty())?
+					Optional.of(Status.NOT_FOUND): status;
 		} catch (DotSecurityException e) {
 
 			Logger.debug(this, "Permission error: " + e.getMessage(), e);
