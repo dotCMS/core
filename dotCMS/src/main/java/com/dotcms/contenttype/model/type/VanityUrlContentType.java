@@ -79,7 +79,7 @@ public abstract class VanityUrlContentType extends ContentType implements Expire
 				.required(Boolean.TRUE).fixed(Boolean.TRUE).indexed(Boolean.TRUE)
 				.searchable(Boolean.TRUE).listed(Boolean.TRUE).sortOrder(order++)
 				.dataType(DataTypes.INTEGER)
-				.values("200 - Forward|200\r\n301 - Permanent Redirect|301\r\n302 - Temporary Redirect|302\r\n401 - Auth Required|401\r\n403 - Auth Failed|403\r\n404 - Missing|404\r\n500 - Error|500")
+				.values("200 - Forward|200\r\n301 - Permanent Redirect|301\r\n302 - Temporary Redirect|302")
 				.build();
 		Field forwardToField = ImmutableCustomField.builder().name(FORWARD_TO_FIELD_NAME)
 				.variable(FORWARD_TO_FIELD_VAR)

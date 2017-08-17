@@ -26,12 +26,14 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import org.elasticsearch.indices.IndexMissingException;
 
@@ -43,6 +45,8 @@ import org.elasticsearch.indices.IndexMissingException;
  * @since June 12, 2017
  */
 public class VanityUrlAPIImpl implements VanityUrlAPI {
+    
+    private final Set<Integer> allowedActions = new ImmutableSet.Builder<Integer>().add(200).add(301).add(302).build();
 
     private final ContentletAPI contentletAPI;
     private final VanityUrlServices vanityUrlServices;
@@ -490,6 +494,14 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                 Logger.debug(this,e1.getMessage(),e1);
                 throw new DotContentletValidationException("User Not Found");
             }
+        }
+        
+        if(!allowedActions.contains(vanityUrl.getAction())){
+            Language l = APILocator.getLanguageAPI().getLanguage(user.getLanguageId());
+            String message = APILocator.getLanguageAPI()
+                    .getStringKey(l, "message.vanity.url.error.invalidAction");
+
+            throw new DotContentletValidationException(message);
         }
 
         if (!VanityUrlUtil.isValidRegex(vanityUrl.getURI())) {
