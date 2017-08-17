@@ -51,6 +51,7 @@ public class FieldType implements Comparable<FieldType>{
         return map("id", id,
                 "label", label,
                 "properties", propertiesName,
+                "clazz", clazz,
                 "helpText", helpText);
     }
 
