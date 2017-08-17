@@ -1,0 +1,84 @@
+buildscript {
+    repositories {
+        maven { url "http://repo.dotcms.com/artifactory/libs-release" }
+        jcenter()
+    }
+    dependencies {
+        classpath 'org.ajoberstar:grgit:1.7.0'
+        classpath 'com.dotcms.lib:dot.commons-io:2.0.1_2'
+    }
+}
+
+plugins {
+    id "net.ltgt.apt" version "0.9"
+}
+
+configurations {
+    compile
+    buildlibs
+    provided
+}
+
+configurations.all({
+    // dynamic: e.g. 'version: 2.0+'
+    resolutionStrategy.cacheDynamicVersionsFor 1, 'hours'
+    // changing: e.g. 'version 2.0.0-SNAPSHOT'
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+
+    /*POM relocation to an other version number is not fully supported in Gradle : xml-apis#xml-apis;2.0.2 relocated to xml-apis#xml-apis;1.0.b2.
+            Please update your dependency to directly use the correct version 'xml-apis#xml-apis;1.0.b2'.
+    Resolution will only pick dependencies of the relocated element.  Artifacts and other metadata will be ignored.*/
+    resolutionStrategy {
+        force 'xml-apis:xml-apis:1.4.01'
+    }
+})
+
+
+// Apply the java plugin to add support for Java.
+apply plugin: 'java'
+apply plugin: 'war'
+
+// In this section you declare where to find the dependencies of your project.
+repositories {
+    maven { url "http://repo.dotcms.com/artifactory/libs-release" }
+    maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
+}
+
+dependencies {
+
+    providedCompile "javax.servlet:javax.servlet-api:3.1.0"
+    providedCompile fileTree("../libs/buildlibs").include('**/*.jar')
+    providedCompile fileTree("../libs/buildlibs").include('jtds-*.jar', 'mail.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'sqljdbc*.jar')
+
+    if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDev')) {
+        configurations.compile.exclude group: 'com.dotcms.enterprise', module: 'ee'
+    }
+
+    apt "org.immutables:value:2.3.3"
+}
+
+// Import and apply the dependencies from the dependencies scripts.
+apply from: "$rootDir/dependencies.gradle"
+
+def enterpriseSrcFolder = file("$enterpriseProjectHome/src/main/java")
+
+if (enterpriseSrcFolder.exists()){
+	sourceSets {
+    	main {
+        	java {
+            	srcDirs = ["src/main/java", "$enterpriseProjectHome/src/main/java"]
+	        }
+    	}
+	}
+}
+
+ant.lifecycleLogLevel = "INFO"
+
+// Compile Java.
+compileJava {
+    targetCompatibility = 1.8
+    sourceCompatibility = 1.8
+    options.incremental = true
+
+    sourceSets.main.output.generatedSourcesDir = "$generatedSourceFolder"
+}

@@ -3,8 +3,9 @@ package com.dotcms.services;
 import com.dotcms.cache.VanityUrlCache;
 import com.dotcms.system.event.local.model.Subscriber;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
-import com.dotcms.util.VanityUrlUtil;
+import com.dotcms.vanityurl.model.CacheVanityKey;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
+import com.dotcms.vanityurl.model.SecondaryCacheVanityKey;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -18,6 +19,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+
 import java.util.List;
 
 /**
@@ -123,6 +125,15 @@ public class VanityUrlServices {
     }
 
     /**
+     * Add single {@link CachedVanityUrl} to the cache not affecting secondaries caches.
+     * @param vanityUrl {@link CachedVanityUrl}
+     */
+    public void addSingleCache(final VanityUrl vanityUrl) {
+
+        this.vanityURLCache.addSingle(vanityUrl);
+    }
+
+    /**
      * Get the cached vanity Url from the primary cache for a given site and SYSTEM_HOST
      *
      * @param uri The current uri
@@ -136,27 +147,55 @@ public class VanityUrlServices {
         if (null != siteId && !siteId.equals(Host.SYSTEM_HOST)) {
 
             //First search in cache with the given site
-            foundVanity = vanityURLCache.get(VanityUrlUtil.sanitizeKey(siteId, uri, languageId));
+            foundVanity = vanityURLCache.get(new CacheVanityKey(siteId, languageId, uri));
 
             //If nothing found lets try with the SYSTEM_HOST
             if (null == foundVanity) {
                 foundVanity = vanityURLCache
-                        .get(VanityUrlUtil.sanitizeKey(Host.SYSTEM_HOST, uri, languageId));
+                        .get(new CacheVanityKey(Host.SYSTEM_HOST, languageId, uri));
             }
         } else {
             foundVanity = vanityURLCache
-                    .get(VanityUrlUtil.sanitizeKey(Host.SYSTEM_HOST, uri, languageId));
+                    .get(new CacheVanityKey(Host.SYSTEM_HOST, languageId, uri));
         }
 
         return foundVanity;
     }
 
     /**
+     * Set the list of cached vanity urls list
+     * @param siteId The current site Id
+     * @param languageId The current language Id
+     * @param vanityUrlList List of {@link CachedVanityUrl}
+     */
+    public void setCachedVanityUrlList(final String siteId,
+                                       final long   languageId,
+                                       final List<CachedVanityUrl>   vanityUrlList) {
+
+        this.vanityURLCache.setCachedVanityUrls(
+                new SecondaryCacheVanityKey(siteId, languageId), vanityUrlList);
+    } // setCachedVanityUrlList.
+
+    /**
+     * Set the list of cached vanity urls list
+     * @param siteId The current site Id
+     * @param languageId The current language Id
+     * @return List of {@link CachedVanityUrl}
+     */
+    public List<CachedVanityUrl> getCachedVanityUrlList(final String siteId,
+                                       final long   languageId) {
+
+        return this.vanityURLCache
+                .getCachedVanityUrls(new SecondaryCacheVanityKey(siteId,
+                                languageId));
+    } // setCachedVanityUrlList.
+
+    /**
      * Subscriber that listen to events of type CommitListenerEvent, this event will be trigger when
      * the commit listener related to this event is executed.
      */
     @Subscriber
-    public void onCommitListener(CommitListenerEvent commitListenerEvent) {
+    public void onCommitListener(final CommitListenerEvent commitListenerEvent) {
 
         Contentlet contentlet = commitListenerEvent.getContentlet();
 
@@ -189,7 +228,6 @@ public class VanityUrlServices {
                     String.format("Unable to invalidate VanityURL in cache [%s]",
                             contentlet.getIdentifier()), e);
         }
-
     }
 
 }

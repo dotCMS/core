@@ -3101,6 +3101,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                                 // we move files that have been newly uploaded or edited
                                 if(oldFile==null || !oldFile.equals(incomingFile)){
+                                    if(!createNewVersion){
+                                        // If we're calling a checkinWithoutVersioning method, 
+                                        // then folder needs to be cleaned up in order to add the new file in it.
+                                        // Otherwise we will have the old file and incoming file at the same time
+                                        FileUtil.deltree(binaryFieldFolder);
+                                        binaryFieldFolder.mkdirs();
+                                    }
                                     // We want to copy (not move) cause the same file could be in
                                     // another field and we don't want to delete it in the first time.
                                     FileUtil.copyFile(incomingFile, newFile);
