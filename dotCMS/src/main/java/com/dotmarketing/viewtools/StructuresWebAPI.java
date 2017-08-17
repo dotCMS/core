@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
+import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -275,5 +276,11 @@ public class StructuresWebAPI implements ViewTool {
 
 	public boolean isFieldConstant(Field field){
 		return APILocator.getFieldAPI().isElementConstant(field);
+	}
+	
+	public boolean isFieldHidden(Field field) throws DotDataException{
+	    com.dotcms.contenttype.model.field.Field newField = APILocator.getContentTypeFieldAPI().find(field.getIdentifier());
+	    return LegacyFieldTypes.HIDDEN.implClass().getCanonicalName().equals(newField.typeName());
+
 	}
 }
