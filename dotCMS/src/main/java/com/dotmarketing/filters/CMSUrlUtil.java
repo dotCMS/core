@@ -432,8 +432,8 @@ public class CMSUrlUtil {
 	 * @param user Current user
 	 */
 	public Boolean isUnauthorizedAndHandleError(final Permissionable permissionable,
-			final String requestedURIForLogging, User user,
-			final HttpServletRequest request, HttpServletResponse response)
+			final String requestedURIForLogging, final User user,
+			final HttpServletRequest request, final HttpServletResponse response)
 			throws IOException, DotDataException {
 
 		final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
