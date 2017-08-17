@@ -14,7 +14,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -69,7 +68,6 @@ public class URLMapFilter implements Filter {
 
     private List<PatternCache> patternsCache = new ArrayList<>();
     private ContentletAPI conAPI;
-    private PermissionAPI perAPI;
     private UserWebAPI wuserAPI;
     private HostWebAPI whostAPI;
     private boolean urlFallthrough;
@@ -332,7 +330,6 @@ public class URLMapFilter implements Filter {
         conAPI = APILocator.getContentletAPI();
         wuserAPI = WebAPILocator.getUserWebAPI();
         whostAPI = WebAPILocator.getHostWebAPI();
-        perAPI = APILocator.getPermissionAPI();
         // persistant on disk cache makes this necessary
         CacheLocator.getContentTypeCache().clearURLMasterPattern();
         urlFallthrough = Config.getBooleanProperty("URLMAP_FALLTHROUGH", true);

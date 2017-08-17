@@ -431,12 +431,12 @@ public class CMSUrlUtil {
 	 * just for logging purposes, is not used to calculate anything.
 	 * @param user Current user
 	 */
-	public Boolean isUnauthorizedAndHandleError(Permissionable permissionable,
-			String requestedURIForLogging, User user,
-			HttpServletRequest request, HttpServletResponse response)
+	public Boolean isUnauthorizedAndHandleError(final Permissionable permissionable,
+			final String requestedURIForLogging, User user,
+			final HttpServletRequest request, HttpServletResponse response)
 			throws IOException, DotDataException {
 
-		PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+		final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
 		// Check if the page is visible by a CMS Anonymous role
 		if (!permissionAPI
