@@ -229,38 +229,6 @@ final class LoginServiceAPIImpl implements LoginServiceAPI {
             SecurityLogger.logInfo(this.getClass(), "Auto login failed (No user found) from IP: "
                             + request.getRemoteAddr() + " :  " + e);
 
-            if (useCASLoginFilter) {
-                String decryptedId = PublicEncryptionFactory.decryptString(encryptedId);
-                Logger.info(this.getClass(),
-                                "Try to retrieve user from LDAP/CAS with id: " + decryptedId);
-                User newUser = CASAuthUtils.loadUserFromLDAP(decryptedId);
-
-                if (UtilMethods.isSet(newUser)) {
-                    User user = null;
-
-                    try {
-                        user = (authByEmail)
-                                        ? userAPI.loadByUserByEmail(decryptedId, systemUser, false)
-                                        : userAPI.loadUserById(decryptedId, systemUser, false);
-
-
-                        String userIdFromCAS = (String) request.getSession(false)
-                                        .getAttribute("edu.yale.its.tp.cas.client.filter.user");
-
-                        if (UtilMethods.isSet(userIdFromCAS)) {
-                            CASAuthUtils.setUserValuesOnSession(user, request, response, true);
-                        }
-
-                        return true;
-
-                    } catch (Exception ex) {
-                        return false;
-                    }
-                } else
-                    Logger.info(this.getClass(), "Unable to retrieve user from LDAP/CAS with id: "
-                                    + decryptedId);
-            }
-
             doLogout(request, response);
 
             return false;
