@@ -2,6 +2,7 @@ package com.dotmarketing.servlets;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.com.google.common.io.Files;
 import com.dotcms.repackage.org.apache.commons.collections.LRUMap;
 import com.dotcms.util.DownloadUtil;
@@ -14,6 +15,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -38,6 +40,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+
+import org.quartz.utils.DBConnectionManager;
+
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -129,7 +134,6 @@ public class BinaryExporterServlet extends HttpServlet {
 		String uuid = uriPieces[2];
 		Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(uuid);
 		ShortyId shorty = shortOpt.isPresent() ? shortOpt.get() : APILocator.getShortyAPI().noShorty(uuid);
-		boolean isContent= (shorty.subType == ShortType.CONTENTLET);
 		uuid = shorty.longId;
 
 		Map<String, String[]> params = new HashMap<String, String[]>();
@@ -193,123 +197,131 @@ public class BinaryExporterServlet extends HttpServlet {
 			long lang = WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
 
 
-			if (isContent){
-				Contentlet content = null;
-				if(byInode) {
-					if(isTempBinaryImage)
-						content = contentAPI.find(assetInode, APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
-					else
-						content = contentAPI.find(assetInode, user, respectFrontendRoles);
-					assetIdentifier = content.getIdentifier();
-				} else {
-				    boolean live=userWebAPI.isLoggedToFrontend(req);
-				    boolean PREVIEW_MODE = false;
-					boolean EDIT_MODE = false;
 
-					if(session != null) {
-						PREVIEW_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null));
-						try {
-							EDIT_MODE = (((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null)));
-						} catch (Exception e) {
-							Logger.error(this, "Error: Unable to determine if there's a logged user.", e);
-						}
-					}
-					//GIT-4506
-					if(WebAPILocator.getUserWebAPI().isLoggedToBackend(req)){
-						if(!EDIT_MODE && !PREVIEW_MODE)// LIVE_MODE
-							live = true;
-						else
-							live = false;
-					}
-
-				    if (req.getSession(false) != null && req.getSession().getAttribute("tm_date")!=null) {
-				        live=true;
-				        Identifier ident=APILocator.getIdentifierAPI().find(assetIdentifier);
-				        if(UtilMethods.isSet(ident.getSysPublishDate()) || UtilMethods.isSet(ident.getSysExpireDate())) {
-				            Date fdate=new Date(Long.parseLong((String)req.getSession().getAttribute("tm_date")));
-				            if(UtilMethods.isSet(ident.getSysPublishDate()) && ident.getSysPublishDate().before(fdate))
-				                live=false;
-				            if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before(fdate))
-				                return; // expired!
-				        }
-				    }
-
-					//If the DEFAULT_FILE_TO_DEFAULT_LANGUAGE is true and the default language is NOT equals to the language we have in request/session...
-					if ( Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)
-							&& defaultLang != lang ) {
-
-						ContentletAPI contentletAPI = APILocator.getContentletAPI();
-
-						//Build the lucene query with the identifier and both languages, the default and one in session to see what we can find
-						StringBuilder query = new StringBuilder();
-						query.append("+(languageId:").append(defaultLang).append(" languageId:").append(lang).append(") ");
-						query.append("+identifier:").append(assetIdentifier).append(" +deleted:false ");
-						if ( live ) {
-							query.append("+live:true ");
-						} else {
-							query.append("+working:true ");
-						}
-
-						List<Contentlet> foundContentlets = contentletAPI.search(query.toString(), 2, -1, null, user, respectFrontendRoles);
-						if ( foundContentlets != null && !foundContentlets.isEmpty() ) {
-							//Prefer the contentlet with the session language
-							content = foundContentlets.get(0);
-							if ( content.getLanguageId() != lang && foundContentlets.size() == 2 ) {
-								content = foundContentlets.get(1);
-							}
-						} else {
-							Logger.error(this, "Content with Identifier [" + assetIdentifier + "] not found.");
-							resp.sendError(404);
-							return;
-						}
-
-					}
-					else {
-						/*
-						If the property DEFAULT_FILE_TO_DEFAULT_LANGUAGE is false OR the language in request/session
-						is equals to the default language, continue with the default behavior.
-						 */
-						content = contentAPI.findContentletByIdentifier(assetIdentifier, live, lang, user, respectFrontendRoles);
-					}
-					assetInode = content.getInode();
-				}
-
-                // If the user is NOT logged in the backend then we cannot show content that is NOT live.
-                // Temporal files should be allowed any time
-                if(!isTempBinaryImage && !WebAPILocator.getUserWebAPI().isLoggedToBackend(req)) {
-                    if (!APILocator.getVersionableAPI().hasLiveVersion(content) && respectFrontendRoles) {
-                        Logger.debug(this, "Content " + fieldVarName + " is not publish, with inode: "
-                                + content.getInode());
-                        resp.sendError(404);
-                        return;
-                    }
-                }
-
-				//Find the contentlet content type
-				ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find((content.getContentTypeId()));
-				//And the file asset field
-				com.dotcms.contenttype.model.field.Field field;
-
-				try {
-					field = APILocator.getContentTypeFieldAPI().byContentTypeAndVar(type, fieldVarName);
-				} catch (NotFoundInDbException e) {
-					Logger.debug(this,"Field " + fieldVarName + " does not exist within structure " + type.variable());
-					resp.sendError(404);
-					return;
-				}
-
+			Contentlet content = null;
+			if(byInode) {
 				if(isTempBinaryImage)
-					inputFile = contentAPI.getBinaryFile(content.getInode(), field.variable(), APILocator.getUserAPI().getSystemUser());
+					content = contentAPI.find(assetInode, APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
 				else
-					inputFile = contentAPI.getBinaryFile(content.getInode(), field.variable(), user);
-				if(inputFile == null){
-					Logger.debug(this,"binary file '" + fieldVarName + "' does not exist for inode " + content.getInode());
-					resp.sendError(404);
-					return;
+					content = contentAPI.find(assetInode, user, respectFrontendRoles);
+				assetIdentifier = content.getIdentifier();
+			} else {
+			    boolean live=userWebAPI.isLoggedToFrontend(req);
+			    boolean PREVIEW_MODE = false;
+				boolean EDIT_MODE = false;
+
+				if(session != null) {
+					PREVIEW_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null));
+					try {
+						EDIT_MODE = (((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null)));
+					} catch (Exception e) {
+						Logger.error(this, "Error: Unable to determine if there's a logged user.", e);
+					}
 				}
-				downloadName = inputFile.getName();
+				//GIT-4506
+				if(WebAPILocator.getUserWebAPI().isLoggedToBackend(req)){
+					if(!EDIT_MODE && !PREVIEW_MODE)// LIVE_MODE
+						live = true;
+					else
+						live = false;
+				}
+
+			    if (req.getSession(false) != null && req.getSession().getAttribute("tm_date")!=null) {
+			        live=true;
+			        Identifier ident=APILocator.getIdentifierAPI().find(assetIdentifier);
+			        if(UtilMethods.isSet(ident.getSysPublishDate()) || UtilMethods.isSet(ident.getSysExpireDate())) {
+			            Date fdate=new Date(Long.parseLong((String)req.getSession().getAttribute("tm_date")));
+			            if(UtilMethods.isSet(ident.getSysPublishDate()) && ident.getSysPublishDate().before(fdate))
+			                live=false;
+			            if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before(fdate))
+			                return; // expired!
+			        }
+			    }
+
+				//If the DEFAULT_FILE_TO_DEFAULT_LANGUAGE is true and the default language is NOT equals to the language we have in request/session...
+				if ( Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)
+						&& defaultLang != lang ) {
+
+					ContentletAPI contentletAPI = APILocator.getContentletAPI();
+
+					//Build the lucene query with the identifier and both languages, the default and one in session to see what we can find
+					StringBuilder query = new StringBuilder();
+					query.append("+(languageId:").append(defaultLang).append(" languageId:").append(lang).append(") ");
+					query.append("+identifier:").append(assetIdentifier).append(" +deleted:false ");
+					if ( live ) {
+						query.append("+live:true ");
+					} else {
+						query.append("+working:true ");
+					}
+
+					List<Contentlet> foundContentlets = contentletAPI.search(query.toString(), 2, -1, null, user, respectFrontendRoles);
+					if ( foundContentlets != null && !foundContentlets.isEmpty() ) {
+						//Prefer the contentlet with the session language
+						content = foundContentlets.get(0);
+						if ( content.getLanguageId() != lang && foundContentlets.size() == 2 ) {
+							content = foundContentlets.get(1);
+						}
+					} else {
+						Logger.error(this, "Content with Identifier [" + assetIdentifier + "] not found.");
+						resp.sendError(404);
+						return;
+					}
+
+				}
+				else {
+					/*
+					If the property DEFAULT_FILE_TO_DEFAULT_LANGUAGE is false OR the language in request/session
+					is equals to the default language, continue with the default behavior.
+					 */
+					content = contentAPI.findContentletByIdentifier(assetIdentifier, live, lang, user, respectFrontendRoles);
+				}
+				assetInode = content.getInode();
 			}
 
+            // If the user is NOT logged in the backend then we cannot show content that is NOT live.
+            // Temporal files should be allowed any time
+            if(!isTempBinaryImage && !WebAPILocator.getUserWebAPI().isLoggedToBackend(req)) {
+                if (!APILocator.getVersionableAPI().hasLiveVersion(content) && respectFrontendRoles) {
+                    Logger.debug(this, "Content " + fieldVarName + " is not publish, with inode: "
+                            + content.getInode());
+                    resp.sendError(404);
+                    return;
+                }
+            }
+
+			//Find the contentlet content type
+			ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find((content.getContentTypeId()));
+			//And the file asset field
+			com.dotcms.contenttype.model.field.Field field;
+
+			try {
+				field = APILocator.getContentTypeFieldAPI().byContentTypeAndVar(type, fieldVarName);
+			} catch (NotFoundInDbException e) {
+				Logger.debug(this,"Field " + fieldVarName + " does not exist within structure " + type.variable());
+				resp.sendError(404);
+				return;
+			}
+
+			if(isTempBinaryImage)
+				inputFile = contentAPI.getBinaryFile(content.getInode(), field.variable(), APILocator.getUserAPI().getSystemUser());
+			else
+				inputFile = contentAPI.getBinaryFile(content.getInode(), field.variable(), user);
+			if(inputFile == null){
+				Logger.debug(this,"binary file '" + fieldVarName + "' does not exist for inode " + content.getInode());
+				resp.sendError(404);
+				return;
+			}
+			downloadName = inputFile.getName();
+			
+
+			
+			if(downloadName.endsWith(".vtl") || downloadName.endsWith(".vm")){
+			    resp.sendError(403);
+			    DbConnectionFactory.closeSilently();
+			}
+			
+			
+			
 			//DOTCMS-5674
 			if(UtilMethods.isSet(fieldVarName)){
 				params.put("fieldVarName", new String[]{fieldVarName});
@@ -637,52 +649,6 @@ public class BinaryExporterServlet extends HttpServlet {
 
 
 
-	// Tries to find out whether this is content or a file
-private boolean isContent(String id, boolean byInode, long langId, boolean respectFrontendRoles) throws DotStateException, DotDataException, DotSecurityException{
-
-
-
-		if(cacheMisses.containsKey(id+byInode)){
-			throw new DotStateException("404 - Unable to find id:" + id);
-		}
-
-
-		if(byInode){
-			try {
-				Contentlet c =APILocator.getContentletAPI().find(id, userAPI.getSystemUser(), true);
-				if(c != null && c.getInode() != null)
-					return true;
-			} catch (Exception e) {
-				Logger.debug(this.getClass(), "Unable to find contentlet " + id);
-			}
-		}
-
-		else{
-			try {
-
-				//Lest try first to find the identifier in cache
-				Identifier identifier = APILocator.getIdentifierAPI().loadFromCache(id);
-				if ( identifier != null ) {
-					return "contentlet".equals(identifier.getAssetType());
-				}
-
-				//If not found in cache trying in the index
-				String luceneQuery = "+identifier:" + id;
-				List<Contentlet> foundContentlets = APILocator.getContentletAPI().search(luceneQuery, 0, -1, null, userAPI.getSystemUser(), false);
-				if ( foundContentlets != null && !foundContentlets.isEmpty() ) {
-					return true;
-				}
-
-			} catch (Exception e) {
-				Logger.debug(this.getClass(), "cant find identifier " + id);
-			}
-		}
-		cacheMisses.put(id+byInode, true);
-		throw new DotStateException("404 - Unable to find id:" + id);
-
-	}
-	@SuppressWarnings("deprecation")
-	private Map cacheMisses = new LRUMap(1000);
 
 	private Map<String,String[]> getURIParams(HttpServletRequest request){
 		String url = request.getRequestURI().toString();

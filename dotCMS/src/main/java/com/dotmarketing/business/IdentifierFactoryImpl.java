@@ -392,7 +392,13 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
         }
         identifier.setHostId( site != null ? site.getIdentifier() : null );
         if ( uuid != null ) {
+            try{
             HibernateUtil.saveWithPrimaryKey( identifier, uuid );
+            }
+            catch(Throwable t){
+                Logger.warn(this.getClass(), t.getCause().getMessage(),t.getCause());
+                throw t;
+            }
             ic.removeFromCacheByIdentifier(identifier.getId());
             ic.removeFromCacheByURI(identifier.getHostId(), identifier.getURI() );
         } else {

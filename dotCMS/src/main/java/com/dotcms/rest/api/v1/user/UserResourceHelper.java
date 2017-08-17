@@ -211,7 +211,7 @@ public class UserResourceHelper implements Serializable {
 				com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole())) {
 			if (!UtilMethods.isSet(loginAsUserPwd)) {
 				throw new DotDataException("The 'Login As' user password is required.", "loginas.error.missingloginaspwd");
-			} else if (LoginFactory.passwordMatch(loginAsUserPwd, currentUser) == false) {
+			} else if (APILocator.getLoginServiceAPI().passwordMatch(loginAsUserPwd, currentUser) == false) {
 				throw new DotDataException("The 'Login As' user password is invalid.",
 						"loginas.error.invalidloginascredentials");
 			}

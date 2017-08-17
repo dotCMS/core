@@ -110,7 +110,7 @@ public class CreateJsonWebTokenResourceTest extends UnitTestBase {
 
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(
+        when(loginService.doLogin(
                 userId,
                 pass,
                 false,
@@ -162,7 +162,7 @@ public class CreateJsonWebTokenResourceTest extends UnitTestBase {
 
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
+        when(loginService.doLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
             @Override
             public Boolean answer(InvocationOnMock invocation) throws Throwable {
@@ -207,7 +207,7 @@ public class CreateJsonWebTokenResourceTest extends UnitTestBase {
 
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
+        when(loginService.doLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
             @Override
             public Boolean answer(InvocationOnMock invocation) throws Throwable {
@@ -252,7 +252,7 @@ public class CreateJsonWebTokenResourceTest extends UnitTestBase {
 
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
+        when(loginService.doLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
             @Override
             public Boolean answer(InvocationOnMock invocation) throws Throwable {
@@ -297,7 +297,7 @@ public class CreateJsonWebTokenResourceTest extends UnitTestBase {
 
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
+        when(loginService.doLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
             @Override
             public Boolean answer(InvocationOnMock invocation) throws Throwable {
@@ -352,7 +352,7 @@ public class CreateJsonWebTokenResourceTest extends UnitTestBase {
         when(session.getAttribute(WebKeys.USER_ID)).thenReturn(userId);
         when(userLocalManager.getUserById(userId)).thenReturn(user);
         when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
+        when(loginService.doLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
             @Override
             public Boolean answer(InvocationOnMock invocation) throws Throwable {
@@ -406,7 +406,7 @@ public class CreateJsonWebTokenResourceTest extends UnitTestBase {
         when(request.getSession()).thenReturn(session); //
         when(session.getAttribute(WebKeys.USER_ID)).thenReturn(userId);
         when(userLocalManager.getUserById(userId)).thenReturn(user);
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenReturn(false);
+        when(loginService.doLogin(userId, pass, false, request, response)).thenReturn(false);
         when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
 
         final CreateJsonWebTokenResource createJsonWebTokenResource =
@@ -456,7 +456,7 @@ public class CreateJsonWebTokenResourceTest extends UnitTestBase {
         when(request.getSession()).thenReturn(session); //
         when(session.getAttribute(WebKeys.USER_ID)).thenReturn(userId);
         when(userLocalManager.getUserById(userId)).thenReturn(user);
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenReturn(true);
+        when(loginService.doLogin(userId, pass, false, request, response)).thenReturn(true);
         when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
 
         final CreateJsonWebTokenResource createJsonWebTokenResource =

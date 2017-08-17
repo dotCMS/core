@@ -86,9 +86,9 @@ public class AccountActivationAction extends DispatchAction {
 					//Logging in the user
 			        Company comp = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
 			        if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
-			        	LoginFactory.doLogin(user.getEmailAddress(), user.getPassword(), false, request, response);
+			            APILocator.getLoginServiceAPI().doLogin(user.getEmailAddress(), user.getPassword(), false, request, response);
 			        } else {
-			        	LoginFactory.doLogin(user.getUserId(), user.getPassword(), false, request, response);
+			            APILocator.getLoginServiceAPI().doLogin(user.getUserId(), user.getPassword(), false, request, response);
 			        }
 					
 					am.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage("message.account.user.activated"));

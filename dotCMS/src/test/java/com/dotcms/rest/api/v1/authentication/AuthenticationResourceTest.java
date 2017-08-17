@@ -94,7 +94,7 @@ public class AuthenticationResourceTest extends UnitTestBase {
 
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(
+        when(loginService.doLogin(
                 userId,
                 pass,
                 false,
@@ -146,7 +146,7 @@ public class AuthenticationResourceTest extends UnitTestBase {
 
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
+        when(loginService.doLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
             @Override
             public Boolean answer(InvocationOnMock invocation) throws Throwable {
@@ -191,7 +191,7 @@ public class AuthenticationResourceTest extends UnitTestBase {
 
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
+        when(loginService.doLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
             @Override
             public Boolean answer(InvocationOnMock invocation) throws Throwable {
@@ -236,7 +236,7 @@ public class AuthenticationResourceTest extends UnitTestBase {
 
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
+        when(loginService.doLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
             @Override
             public Boolean answer(InvocationOnMock invocation) throws Throwable {
@@ -281,7 +281,7 @@ public class AuthenticationResourceTest extends UnitTestBase {
 
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
+        when(loginService.doLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
             @Override
             public Boolean answer(InvocationOnMock invocation) throws Throwable {
@@ -327,7 +327,7 @@ public class AuthenticationResourceTest extends UnitTestBase {
 
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session); //
-        when(loginService.doActionLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
+        when(loginService.doLogin(userId, pass, false, request, response)).thenAnswer(new Answer<Boolean>() { // if this method is called, should fail
 
             @Override
             public Boolean answer(InvocationOnMock invocation) throws Throwable {

@@ -58,7 +58,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("site-search", user)) {
 				String userName = map.get("u");
 				String password = map.get("p");
-				LoginFactory.doLogin(userName, password, false, request, response);
+				APILocator.getLoginServiceAPI().doLogin(userName, password, false, request, response);
 				user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
 				if(user==null) {
 				    setUser(request);

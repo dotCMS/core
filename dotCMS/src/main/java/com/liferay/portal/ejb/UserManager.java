@@ -48,15 +48,6 @@ public interface UserManager {
 		throws com.liferay.portal.PortalException, 
 			com.liferay.portal.SystemException, java.rmi.RemoteException;
 
-	public int authenticateByEmailAddress(java.lang.String companyId,
-		java.lang.String emailAddress, java.lang.String password)
-		throws com.liferay.portal.PortalException, 
-			com.liferay.portal.SystemException, java.rmi.RemoteException;
-
-	public int authenticateByUserId(java.lang.String companyId,
-		java.lang.String userId, java.lang.String password)
-		throws com.liferay.portal.PortalException, 
-			com.liferay.portal.SystemException, java.rmi.RemoteException;
 
 	public com.liferay.util.KeyValuePair decryptUserId(
 		java.lang.String companyId, java.lang.String userId,

@@ -67,7 +67,7 @@ public class LogoutResource implements Serializable {
             this.log.debug("Doing the logout");
             User user = PortalUtil.getUser(request);
             
-            this.loginService.doActionLogout(request, response);
+            this.loginService.doLogout(request, response);
             
             if(null != user){
             	SecurityLogger.logInfo(this.getClass(), "User " + user.getFullName() + " (" + user.getUserId() + ") has logged out from IP: " + request.getRemoteAddr());

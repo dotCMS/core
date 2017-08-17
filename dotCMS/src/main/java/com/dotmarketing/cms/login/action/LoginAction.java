@@ -81,7 +81,9 @@ public class LoginAction extends DispatchAction {
 
 		try {
 
-	        if (LoginFactory.doLogin(form, request, response)) {
+		    
+
+	        if (APILocator.getLoginServiceAPI().doLogin(form.getUserName(), form.getPassword(), form.isRememberMe(), request, response)) {
 
 	        	if(!UtilMethods.isSet(referrer))
 	        		referrer = "/";

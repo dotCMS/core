@@ -42,7 +42,7 @@ public class LogoutResourceTest extends UnitTestBase {
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session); //
 
-        Mockito.doNothing().when(loginService).doActionLogout(
+        Mockito.doNothing().when(loginService).doLogout(
                 request,
                 response);
 

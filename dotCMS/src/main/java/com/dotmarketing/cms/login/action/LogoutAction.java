@@ -13,6 +13,7 @@ import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
 import com.dotcms.repackage.org.apache.struts.actions.DispatchAction;
 
 import com.dotcms.util.SecurityUtils;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.util.UtilMethods;
 
@@ -32,7 +33,7 @@ public class LogoutAction extends DispatchAction {
 
     		String referrer = request.getParameter("referrer");
     		
-        	LoginFactory.doLogout(request, response);
+    		APILocator.getLoginServiceAPI().doLogout(request, response);
 
 
             ActionMessages am = new ActionMessages();

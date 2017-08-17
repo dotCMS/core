@@ -1,5 +1,7 @@
 package com.dotmarketing.common.db;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -30,9 +32,14 @@ import static com.dotcms.util.CollectionsUtils.*;
  * @created February 25, 2002 Modified May 8, 2003 Hashtables converted to
  *          HashMaps results is now an arraylist
  */
-public class DotConnect {
+public class DotConnect implements Closeable {
     
-	private static Map<Connection, Map<String, PreparedStatement>> stmts = new LRUMap(200);
+	@Override
+    public void close() throws IOException {
+	    DbConnectionFactory.closeSilently();
+    }
+
+    private static Map<Connection, Map<String, PreparedStatement>> stmts = new LRUMap(200);
 	
 	ArrayList<Object> paramList;
 

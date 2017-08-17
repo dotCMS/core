@@ -62,46 +62,9 @@ public class UserManagerUtil {
 		}
 	}
 
-	public static int authenticateByEmailAddress(java.lang.String companyId,
-		java.lang.String emailAddress, java.lang.String password)
-		throws com.liferay.portal.PortalException, 
-			com.liferay.portal.SystemException {
-		try {
-			UserManager userManager = UserManagerFactory.getManager();
 
-			return userManager.authenticateByEmailAddress(companyId,
-				emailAddress, password);
-		}
-		catch (com.liferay.portal.PortalException pe) {
-			throw pe;
-		}
-		catch (com.liferay.portal.SystemException se) {
-			throw se;
-		}
-		catch (Exception e) {
-			throw new com.liferay.portal.SystemException(e);
-		}
-	}
 
-	public static int authenticateByUserId(java.lang.String companyId,
-		java.lang.String userId, java.lang.String password)
-		throws com.liferay.portal.PortalException, 
-			com.liferay.portal.SystemException {
-		try {
-			UserManager userManager = UserManagerFactory.getManager();
 
-			return userManager.authenticateByUserId(companyId, userId, password);
-		}
-		catch (com.liferay.portal.PortalException pe) {
-			throw pe;
-		}
-		catch (com.liferay.portal.SystemException se) {
-			throw se;
-		}
-		catch (Exception e) {
-			throw new com.liferay.portal.SystemException(e);
-		}
-	}
 
 	public static com.liferay.util.KeyValuePair decryptUserId(
 		java.lang.String companyId, java.lang.String userId,

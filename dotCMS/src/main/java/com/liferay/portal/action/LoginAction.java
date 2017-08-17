@@ -265,7 +265,7 @@ public class LoginAction extends Action {
 
 		String userId = login;
 
-		this.loginService.doActionLogin(userId, password, rememberMe, req, res);
+		this.loginService.doLogin(userId, password, rememberMe, req, res);
 	}
 
     /**

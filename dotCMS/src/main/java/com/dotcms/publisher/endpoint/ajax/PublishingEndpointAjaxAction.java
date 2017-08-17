@@ -59,7 +59,7 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 
 
 
-				LoginFactory.doLogin(userName, password, false, request, response);
+				APILocator.getLoginServiceAPI().doLogin(userName, password, false, request, response);
 				user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
 				if(user==null) {
 				    setUser(request);

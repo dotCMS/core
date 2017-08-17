@@ -99,7 +99,7 @@ public class CreateJsonWebTokenResource implements Serializable {
         try {
 
             authenticated =
-                    this.loginService.doActionLogin(userId,
+                    this.loginService.doLogin(userId,
                             createTokenForm.getPassword(),
                             false, request, response);
 

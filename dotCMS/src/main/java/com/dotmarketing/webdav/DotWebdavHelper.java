@@ -156,49 +156,17 @@ public class DotWebdavHelper {
 		}
 	}
 
-	public User authorizePrincipal(String username, String passwd)	throws DotSecurityException, NoSuchUserException, DotDataException {
-		User _user;
+	public User authorizePrincipal(String username, String password)	throws DotSecurityException, NoSuchUserException, DotDataException {
 
-		boolean useEmailAsLogin = true;
-		Company comp = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
-		if (comp.getAuthType().equals(Company.AUTH_TYPE_ID)) {
-			useEmailAsLogin = false;
-		}
-		try {
-			if (PRE_AUTHENTICATOR != null && !PRE_AUTHENTICATOR.equals("")) {
-				Authenticator authenticator;
-				authenticator = (Authenticator) new com.dotcms.repackage.bsh.Interpreter().eval("new " + PRE_AUTHENTICATOR + "()");
-				if (useEmailAsLogin) {
-					authenticator.authenticateByEmailAddress(comp.getCompanyId(), username, passwd);
-				} else {
-					authenticator.authenticateByUserId(comp.getCompanyId(), username, passwd);
-				}
-			}
-		}catch (AuthException ae) {
-			Logger.debug(this, "Username : " + username + " failed to login", ae);
-			throw new DotSecurityException(ae.getMessage(),ae);
-		}catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotSecurityException(e.getMessage(),e);
-		}
-		UserAPI userAPI=APILocator.getUserAPI();
-		if (comp.getAuthType().equals(Company.AUTH_TYPE_ID)) {
-			_user = userAPI.loadUserById(username,userAPI.getSystemUser(),false);
-		} else {
-			_user = userAPI.loadByUserByEmail(username, userAPI.getSystemUser(), false);
-		}
 
-        if (_user == null) {
-            throw new DotSecurityException("The user was returned NULL");
-        }
+            try {
+                APILocator.getLoginServiceAPI().doLogin(username, password) ;
+            } catch (com.liferay.portal.NoSuchUserException e) {
+                throw new DotSecurityException(e.getMessage());
+            }
+            return APILocator.getLoginServiceAPI().getLoggedInUser();
 
-        // Validate password and rehash when is needed
-        if (LoginFactory.passwordMatch(passwd, _user)) {
-            return _user;
-        } else {
-            Logger.debug(this, "The user's passwords didn't match");
-            throw new DotSecurityException("The user's passwords didn't match");
-        }
+
 	}
 
 	public boolean isFolder(String uriAux, User user) throws IOException {

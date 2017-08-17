@@ -66,7 +66,7 @@ public class LogoutAction extends Action {
 			}
 
 			try {
-				this.loginService.doActionLogout(req, res);
+				this.loginService.doLogout(req, res);
 			} catch (Exception e) {
 			}
 

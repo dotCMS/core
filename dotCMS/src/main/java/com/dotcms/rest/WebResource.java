@@ -356,7 +356,7 @@ public  class WebResource {
 
             try {
 
-                if(LoginFactory.doLogin(username, password)) {
+                if(APILocator.getLoginServiceAPI().doLogin(username, password)) {
                     Company comp = PublicCompanyFactory.getDefaultCompany();
 
                     if(comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {

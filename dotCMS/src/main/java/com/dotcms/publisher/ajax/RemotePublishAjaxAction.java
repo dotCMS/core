@@ -129,7 +129,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 								? map.get("passwd")
 									: null;
 
-				LoginFactory.doLogin(userName, password, false, request, response);
+				APILocator.getLoginServiceAPI().doLogin(userName, password, false, request, response);
 				user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
                 //Set the logged user in order to make it available from this action using the getUser() method
                 if ( user != null ) {

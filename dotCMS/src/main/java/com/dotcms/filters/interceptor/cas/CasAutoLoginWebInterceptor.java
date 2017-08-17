@@ -2,6 +2,7 @@ package com.dotcms.filters.interceptor.cas;
 
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.util.Config;
@@ -35,7 +36,7 @@ public class CasAutoLoginWebInterceptor implements WebInterceptor {
 
             if (UtilMethods.isSet(userID)) {
 
-                if (LoginFactory.doCookieLogin(PublicEncryptionFactory.encryptString
+                if (APILocator.getLoginServiceAPI().doCookieLogin(PublicEncryptionFactory.encryptString
                         (userID), request, response)) {
 
                     result = Result.SKIP;

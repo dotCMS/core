@@ -306,7 +306,7 @@ public class CreateAccountAction extends DispatchAction {
 		}
 
 		try {
-			LoginFactory.doLogin(form.getEmailAddress(), form.getPassword1(), true, request, response);
+		    APILocator.getLoginServiceAPI().doLogin(form.getEmailAddress(), form.getPassword1(), true, request, response);
 		} catch (Exception e) {
 		}
 	}
