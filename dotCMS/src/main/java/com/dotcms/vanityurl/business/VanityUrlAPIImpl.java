@@ -25,6 +25,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import org.elasticsearch.indices.IndexMissingException;
@@ -33,6 +34,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 
 import static com.dotcms.util.CollectionsUtils.map;
@@ -49,6 +51,8 @@ import static java.util.stream.IntStream.rangeClosed;
  * @since June 12, 2017
  */
 public class VanityUrlAPIImpl implements VanityUrlAPI {
+    
+    private final Set<Integer> allowedActions = new ImmutableSet.Builder<Integer>().add(200).add(301).add(302).build();
 
     public static final String URL_SUFFIX = "/";
     public static final String LEGACY_CMS_HOME_PAGE = "/cmsHomePage";
@@ -593,11 +597,19 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
             Logger.debug(this,e.getMessage(),e);
             user = this.systemUser;
         }
+        
+        final Language l = APILocator.getLanguageAPI().getLanguage(user.getLanguageId());
+        
+        if(!allowedActions.contains(vanityUrl.getAction())){
+            String message = APILocator.getLanguageAPI()
+                    .getStringKey(l, "message.vanity.url.error.invalidAction");
 
+            throw new DotContentletValidationException(message);
+        }
+      
         if (!isValidRegex(vanityUrl.getURI())) {
-            final Language language = this.languageAPI.getLanguage(user.getLanguageId());
-            final String message    = this.languageAPI
-                    .getStringKey(language, "message.vanity.url.error.invalidURIPattern");
+          String message = APILocator.getLanguageAPI()
+                    .getStringKey(l, "message.vanity.url.error.invalidURIPattern");
 
             throw new DotContentletValidationException(message);
         }
