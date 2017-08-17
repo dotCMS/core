@@ -496,8 +496,9 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
             }
         }
         
+        final Language l = APILocator.getLanguageAPI().getLanguage(user.getLanguageId());
+        
         if(!allowedActions.contains(vanityUrl.getAction())){
-            Language l = APILocator.getLanguageAPI().getLanguage(user.getLanguageId());
             String message = APILocator.getLanguageAPI()
                     .getStringKey(l, "message.vanity.url.error.invalidAction");
 
@@ -505,7 +506,6 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         }
 
         if (!VanityUrlUtil.isValidRegex(vanityUrl.getURI())) {
-            Language l = APILocator.getLanguageAPI().getLanguage(user.getLanguageId());
             String message = APILocator.getLanguageAPI()
                     .getStringKey(l, "message.vanity.url.error.invalidURIPattern");
 
