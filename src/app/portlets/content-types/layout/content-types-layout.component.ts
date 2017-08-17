@@ -15,7 +15,9 @@ export class ContentTypesLayoutComponent extends BaseComponent {
 
     constructor(messageService: MessageService) {
         super([
+            'contenttypes.sidebar.components.title',
             'fields',
+            'contenttypes.sidebar.layouts.title',
             'Permissions',
             'publisher_push_history',
         ], messageService);

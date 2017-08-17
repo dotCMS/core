@@ -1,12 +1,12 @@
 .ui-splitbutton {
-  .ui-button {
-    background: none;
-    box-shadow: none;
-    border: none;
-    vertical-align: middle;
-  }
+    .ui-button {
+        background: none;
+        box-shadow: none;
+        border: none;
+        vertical-align: middle;
+    }
 
-  .ui-button-text-only,
+    .ui-button-text-only,
     .ui-button-text-icon-left {
         .ui-button-text {
             padding-right: 0;
@@ -37,10 +37,6 @@ p-splitbutton {
         background: none;
 
         .ui-splitbutton {
-            .ui-c::before {
-                content: "\F142";
-                color: $black;
-            }
             .ui-corner-left {
                 display: none;
             }
@@ -50,8 +46,11 @@ p-splitbutton {
                 border-radius: 50%;
                 background: $white;
                 box-shadow: $md-shadow-1;
-                transition: background-color $basic-speed ease-in,
-                            box-shadow $basic-speed ease-in;
+                transition: background-color $basic-speed ease-in, box-shadow $basic-speed ease-in;
+
+                .fa-caret-down:before {
+                    content: "\F142";
+                }
 
                 &:not([disabled]) {
                     &:hover,

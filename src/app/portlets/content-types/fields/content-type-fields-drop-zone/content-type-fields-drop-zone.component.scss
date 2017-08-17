@@ -1,10 +1,29 @@
+@import "../../../../../styles/mixins";
+@import "../../../../../styles/variables";
 
-.content-type-fields-drop-zone__container{
-    border: 1px gray dashed;
-    width: 100%;
-    min-height: 200px;
+:host {
+    display: flex;
+    flex-grow: 1;
+    flex-direction: column;
+    margin-bottom: $gutter-border;
+    padding: 0 $gutter-border;
+}
+
+.content-type-fields-drop-zone__container {
+
+    &.empty {
+        border: 1px $gray-light dashed;
+        flex-grow: 1;
+        position: relative
+    }
 }
 
 .content-type-fields-drop-zone__message {
+    color: $gray-light;
+    font-size: $font-size-large;
+    margin-top: -9px;
+    position: absolute;
     text-align: center;
+    top: 50%;
+    width: 100%;
 }

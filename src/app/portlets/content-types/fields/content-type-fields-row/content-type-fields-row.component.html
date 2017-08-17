@@ -1,15 +1,24 @@
-<div class="header">
-    <a class="row-drag-button">Drag row ({{fieldRow.columns.length}})</a>
-    <a class="row-remove">[x]</a>
+<div class="row-header">
+    <span class="row-header__drag"><i class="fa fa-bars"></i></span>
+    <icon-button-tooltip 
+        class="row-header__remove"
+        icon="fa-trash"
+        [tooltipText]="i18nMessages['contenttypes.action.delete']">
+    </icon-button-tooltip>
 </div>
-<div>
+<div class="row-columns">
     <span
         *ngFor="let column of fieldRow.columns"
+        [class.empty]="!column.fields.length"
         [dragulaModel]="column.fields"
         [style.width]="getColumnWidth()"
-        class="fields-container"
+        class="row-columns__item"
         data-drag-type="target"
         dragula="fields-bag">
+
+        <span class="row-columns__item-empty-message" *ngIf="!column.fields.length">
+            {{i18nMessages['contenttypes.dropzone.rows.empty.message']}}
+        </span>
        
         <content-type-field-dragabble-item 
             *ngFor="let field of column.fields"

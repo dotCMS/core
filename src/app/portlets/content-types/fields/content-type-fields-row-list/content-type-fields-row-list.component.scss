@@ -1,15 +1,34 @@
 @import "../../../../../styles/variables";
 
-ul {
+.content-types-row-list {
     margin: 0;
     padding: 0;
 }
 
-li {
-    border: solid 1px $gray-lighter;
+.content-types-row-list__item {
     cursor: move;
+    display: flex;
     list-style: none;
-    margin: $basic-padding / 2;
-    padding: $basic-padding;
+    margin: $basic-padding * 2;
     touch-action: none;
+}
+
+.content-types-row-list__item-col {
+    background-color: $gray-light;
+    flex-grow: 1;
+    height: 20px;
+    margin: 0 $basic-padding / 2;
+    transition: background-color $basic-speed ease-in;
+
+    &:first-child {
+        margin-left: 0;
+    }
+
+    &:last-child {
+        margin-right: 0;
+    }
+
+    .content-types-row-list__item:hover & {
+        background-color: $brand-primary;
+    }
 }

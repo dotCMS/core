@@ -1,5 +1,6 @@
 @import "../../../../styles/mixins";
 @import "../../../../styles/variables";
+@import "../../../../styles/primeng-theme/utils/theme-variables";
 
 .content-type {
     .ui-tabview-nav {
@@ -14,16 +15,40 @@
     }
 }
 
+$top-height: ($toolbar-height + $tabview-nav-height);
+
 .content-type__fields-layout {
-    flex: 1 1 auto;
+    height: calc(100vh - #{$top-height});
     display: flex;
+    overflow: hidden;
 }
 
 .content-type__fields-main {
-    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    overflow: auto;
 }
 
 .content-type__fields-sidebar {
     border-left: solid 1px $gray-lighter;
     width: 200px;
+    display: flex;
+    flex-direction: column;
+
+    content-types-fields-list {
+        overflow: auto;
+    }
+
+    content-type-fields-row-list {
+        height: 200px;
+    }
+}
+
+.content-type__fields-sidebar-title {
+    background-color: $gray-lighter;
+    font-size: $font-size-medium;
+    font-weight: normal;
+    margin: 0;
+    padding: $basic-padding $basic-padding * 2;
 }

@@ -33,6 +33,10 @@ html, body {
     padding: 0;
 }
 
+html {
+    -ms-overflow-style: -ms-autohiding-scrollbar; // Hiding scrollbars in IE11 and Edge by default
+}
+
 // For the login component user photo background
 body {
     background-position: top center;

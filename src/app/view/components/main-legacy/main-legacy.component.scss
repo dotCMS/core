@@ -3,18 +3,15 @@
 $sidebar-width: 190px;
 
 .layout {
-    height: 100%;
-}
-
-.layout {
     display: flex;
-    overflow: hidden;
     flex-direction: column;
+    height: 100vh;
+    width: 100vw;
 }
 
 .layout__content {
-    flex: 1 1 auto;
     display: flex;
+    flex-grow: 1;
     overflow: hidden;
 }
 
@@ -24,17 +21,18 @@ $sidebar-width: 190px;
 }
 
 .layout__main {
-    flex: 1 1 auto;
+    flex-grow: 1;
 }
 
 .layout__sidebar {
     background-color: $white;
     border-right: solid 1px $gray-lighter;
-    flex: 0 0 auto;
-    transition: width $basic-speed cubic-bezier(0.25, 0.8, 0.25, 1);
+    flex-shrink: 0;
+    transition: width $basic-speed * 2 cubic-bezier(0.25, 0.8, 0.25, 1);
     width: $sidebar-width;
 
     .collapsed & {
+        overflow: hidden;
         width: 0;
     }
 }

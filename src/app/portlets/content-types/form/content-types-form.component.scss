@@ -1,6 +1,10 @@
 @import "../../../../styles/mixins";
 @import "../../../../styles/variables";
 
+:host {
+    display: block
+}
+
 .content-type__form-header {
     margin: $basic-padding * 3 0;
     position: relative;

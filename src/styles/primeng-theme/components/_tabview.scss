@@ -23,11 +23,11 @@
         }
     }
 
-
     .ui-tabview-nav {
         .ui-state-default a {
             color: $tabview-item-color;
             padding: $tabview-item-padding;
+            height: $tabview-nav-height;
             text-transform: uppercase;
         }
 
@@ -60,6 +60,6 @@
     }
 
     .ui-tabview-panel {
-      padding: 0;
+        padding: 0;
     }
 }

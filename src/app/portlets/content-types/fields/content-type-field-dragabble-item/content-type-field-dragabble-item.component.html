@@ -1,9 +1,15 @@
-<span>{{field.name}}</span>
-<button pButton iconButton flat 
-        icon="fa-remove"
+<span class="field__name">{{field.name}}</span>
+<div class="field__actions">
+    <icon-button-tooltip 
+        class="field__actions-delete"
+        icon="fa-trash"
+        [tooltipText]="i18nMessages['contenttypes.action.delete']"
         (click)="this.remove.emit(this.field)">
-</button> 
-<button pButton iconButton flat 
+    </icon-button-tooltip>
+    <icon-button-tooltip 
+        class="field__actions-edit"
         icon="fa-edit"
+        [tooltipText]="i18nMessages['contenttypes.action.edit']"
         (click)="this.edit.emit(this.field)">
-</button> 
+    </icon-button-tooltip>
+</div>

@@ -3,27 +3,13 @@
         <p-tabPanel header="{{i18nMessages['fields']}}">
             <div class="content-type__fields-layout" id="content-type-form-layout">
                 <div class="content-type__fields-main" id="content-type-form-main">
-                    <div class="container-fluid">
-                        <ng-content></ng-content>
-                    </div>
+                    <ng-content></ng-content>
                 </div>
                 <div class="content-type__fields-sidebar">
-                    <p-tabView>
-                        <p-tabPanel header="{{i18nMessages['fields']}}">
-                            <div class="container-fluid">
-                                <content-types-fields-list></content-types-fields-list>
-                            </div>
-
-                            <div class="container-fluid">
-                                <content-type-fields-row-list></content-type-fields-row-list>
-                            </div>
-                        </p-tabPanel>
-                        <p-tabPanel header="properties">
-                            <div class="container-fluid">
-                                Properties
-                            </div>
-                        </p-tabPanel>
-                    </p-tabView>
+                    <h4 class="content-type__fields-sidebar-title">{{i18nMessages['contenttypes.sidebar.components.title']}}</h4>
+                    <content-types-fields-list></content-types-fields-list>
+                    <h4 class="content-type__fields-sidebar-title">{{i18nMessages['contenttypes.sidebar.layouts.title']}}</h4>
+                    <content-type-fields-row-list></content-type-fields-row-list>
                 </div>
             </div>
         </p-tabPanel>

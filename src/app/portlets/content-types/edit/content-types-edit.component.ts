@@ -25,12 +25,12 @@ import { ConfirmationService } from 'primeng/primeng';
 })
 export class ContentTypesEditComponent extends BaseComponent {
     @ViewChild('form') form: ContentTypesFormComponent;
-    private contentTypeItem: Observable<any>;
-    private contentTypeName: Observable<string>;
-    private contentTypeType: string;
-    private contentTypeIcon: string;
-    private data: ContentType;
-    private licenseInfo: any;
+    contentTypeItem: Observable<any>;
+    contentTypeName: Observable<string>;
+    contentTypeType: string;
+    contentTypeIcon: string;
+    data: ContentType;
+    licenseInfo: any;
 
     constructor(
         messageService: MessageService,
@@ -64,7 +64,7 @@ export class ContentTypesEditComponent extends BaseComponent {
             this.contentTypeItem = this.crudService
                 .getDataById('v1/contenttype', res[1].path)
                 .map(res => {
-                    let type = this.contentTypesInfoService.getLabel(res.clazz);
+                    const type = this.contentTypesInfoService.getLabel(res.clazz);
                     this.contentTypeName = this.messageService.messageMap$.pluck(
                         this.stringUtils.titleCase(type)
                     );
@@ -101,7 +101,7 @@ export class ContentTypesEditComponent extends BaseComponent {
      * @memberof ContentTypesEditComponent
      */
     public handleFormSubmit($event): void {
-        let contentTypeData: ContentType = Object.assign({}, this.data, $event.value);
+        const contentTypeData: ContentType = Object.assign({}, this.data, $event.value);
         this.crudService
             .putData(`v1/contenttype/id/${this.data.id}`, contentTypeData)
             .subscribe(this.handleFormSubmissionResponse.bind(this));

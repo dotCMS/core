@@ -39,8 +39,8 @@ describe('ContentTypesFieldsListComponent', () => {
     }));
 
     it('should renderer each items', () => {
-        let fieldService = fixture.debugElement.injector.get(FieldService);
-        let itemsData = [
+        const fieldService = fixture.debugElement.injector.get(FieldService);
+        const itemsData = [
             {
                 label: 'Text'
             },
@@ -57,37 +57,37 @@ describe('ContentTypesFieldsListComponent', () => {
 
         spyOn(fieldService, 'loadFieldTypes').and.returnValue(Observable.of(itemsData));
 
-        let fieldDragDropService = fixture.debugElement.injector.get(FieldDragDropService);
+        const fieldDragDropService = fixture.debugElement.injector.get(FieldDragDropService);
         spyOn(fieldDragDropService, 'setFieldBagOptions');
 
         comp.ngOnInit();
 
         fixture.detectChanges();
 
-        let itemsElements = de.queryAll(By.css('li'));
+        const itemsElements = de.queryAll(By.css('li'));
 
         expect(itemsData.length).toEqual(itemsElements.length);
-        itemsData.forEach((fieldType, index) => expect(fieldType.label).toEqual(itemsElements[index].nativeElement.textContent));
+        itemsData.forEach((fieldType, index) => expect(itemsElements[index].nativeElement.textContent).toContain(fieldType.label));
 
-        let ulElement = de.query(By.css('ul'));
+        const ulElement = de.query(By.css('ul'));
 
         expect('fields-bag').toEqual(ulElement.attributes['ng-reflect-dragula']);
         expect('source').toEqual(ulElement.attributes['data-drag-type']);
     });
 
     it('should set the Dragula options', () => {
-        let dragulaName = 'fields-bag';
-        let dragulaOptions = {
+        const dragulaName = 'fields-bag';
+        const dragulaOptions = {
                 copy: true,
                 moves: (el, target, source, sibling) => {
                     return target.dataset.dragType === 'source';
                 },
             };
 
-        let fieldTypesService = fixture.debugElement.injector.get(FieldService);
+        const fieldTypesService = fixture.debugElement.injector.get(FieldService);
         spyOn(fieldTypesService, 'loadFieldTypes').and.returnValue(Observable.of([]));
 
-        let fieldDragDropService = fixture.debugElement.injector.get(FieldDragDropService);
+        const fieldDragDropService = fixture.debugElement.injector.get(FieldDragDropService);
         spyOn(fieldDragDropService, 'setFieldBagOptions');
 
         comp.ngOnInit();

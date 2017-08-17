@@ -3,24 +3,19 @@
     margin-right: 0;
     outline: none;
     transition: background-color $field-animation-speed ease-in,
-                box-shadow $field-animation-speed ease-in,
-                color $field-animation-speed ease-in;
+        box-shadow $field-animation-speed ease-in, color $field-animation-speed ease-in;
 
     @each $button, $states in $buttons-map {
         @if ($button == "basic") {
-
             @each $label, $props in $states {
-                @include button-properties($label, $props)
+                @include button-properties($label, $props);
             }
-
         } @else {
-
             &[#{$button}] {
                 @each $label, $props in $states {
-                    @include button-properties($label, $props)
+                    @include button-properties($label, $props);
                 }
             }
-
         }
     }
 }
@@ -32,7 +27,8 @@
         cursor: inherit;
     }
 
-    &[iconButton], &[actionButton] {
+    &[iconButton],
+    &[actionButton] {
         border-radius: 50%;
         border: none;
         transition: background-color $field-animation-speed;
@@ -52,19 +48,26 @@
             }
         }
 
-        &.inverse:not([disabled]) {
-            &.ui-state-default {
-                background: none;
-                box-shadow: none;
+        &.inverse {
+            &:disabled {
+                color: rgba($black, 0.2);
             }
 
-            &:hover {
-                background: rgba($black, 0.1);
-            }
+            &:not([disabled]) {
+                &.ui-state-default {
+                    background: none;
+                    box-shadow: none;
+                    color: $white;
+                }
 
-            .ui-button-text,
-            .ui-c {
-                color: $white;
+                &:hover {
+                    background: rgba($black, 0.1);
+                }
+
+                .ui-button-text,
+                .ui-c {
+                    color: $white;
+                }
             }
         }
     }
@@ -102,7 +105,6 @@
 }
 
 .ui-button-text {
-
     .ui-button-text-only & {
         padding: 0 $button-padding;
     }

@@ -9,7 +9,6 @@ $field-border-size: 1px;
 $field-padding: $basic-padding;
 $field-placeholder-color: $label-color;
 
-
 // FIELDS
 $field-normal-bgcolor: $field-bgcolor;
 $field-normal-color: $body-font-color;
@@ -252,6 +251,13 @@ $tabview-item-selected-color: $blue;
 $tabview-item-padding: 10px $basic-padding * 2; // To match the 40px height
 $tabview-item-border: 3px solid $white;
 $tabview-item-selected-border: 3px solid $blue;
+$tabview-nav-height: 40px;
 
 // MENU
 $menu-link-color: $black;
+
+// DIALOG
+$dialog-padding: $basic-padding * 2;
+$dialog-title-font-size: $font-size-large;
+$dialog-close-button-normal-color: $gray-light;
+$dialog-close-button-hover-color: $black;

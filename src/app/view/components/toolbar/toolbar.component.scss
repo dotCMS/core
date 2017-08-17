@@ -2,13 +2,12 @@
 @import "../../../../styles/variables";
 
 .layout__toolbar {
-    width: 100%;
     z-index: 1004; // Menu and dropdown options in primeng use 1003.
 }
 
 .layout__toolbar-inner {
     display: flex;
-    flex: 1;
+    flex-grow: 1;
     justify-content: space-between;
 }
 
@@ -32,7 +31,8 @@
     }
 
     site-selector-component {
-        .ui-button-text {
+        .ui-button-text,
+        .site-selector__title {
             color: $white;
             font-size: $font-size-large;
             text-overflow: ellipsis;

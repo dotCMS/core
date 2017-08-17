@@ -7,7 +7,7 @@
         "start": "ng serve --proxy-config proxy.conf.json --port 3000",
         "build": "ng build --prod --aot=false --base-href=\"./\"",
         "watch": "ng build --prod --aot=false --base-href=\"./\" -w --no-delete-output-path --sourcemap",
-        "test": "ng test",
+        "test": "ng test -sr",
         "lint": "ng lint",
         "e2e": "ng e2e",
         "devversionbump": "node -e \"var data = require('./dist/package.json');var fs = require('fs');data.version = data.version + \"-\" + new Date().getTime();fs.writeFileSync('./dist/package.json', JSON.stringify(data, null, 4));\"",

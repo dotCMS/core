@@ -33,15 +33,15 @@ xdescribe('ContentTypeFieldsDropZoneComponent', () => {
     let fixture: ComponentFixture<ContentTypeFieldsDropZoneComponent>;
     let de: DebugElement;
     let el: HTMLElement;
-    let mockRouter = {
+    const mockRouter = {
         navigate: jasmine.createSpy('navigate')
     };
-    let messageServiceMock = new MockMessageService({
-            'Save': 'Save',
-            'Cancel': 'Cancel',
-            'edit': 'Edit',
-            'Create-field': 'Create field'
-        });
+    const messageServiceMock = new MockMessageService({
+        'Save': 'Save',
+        'Cancel': 'Cancel',
+        'edit': 'Edit',
+        'Create-field': 'Create field'
+    });
 
     beforeEach(async(() => {
 
@@ -81,7 +81,7 @@ xdescribe('ContentTypeFieldsDropZoneComponent', () => {
 
         fixture.detectChanges();
 
-        let fieldsContainer = de.query(By.css('.content-type-fields-drop-zone__container'));
+        const fieldsContainer = de.query(By.css('.content-type-fields-drop-zone__container'));
 
         expect(fieldsContainer).not.toBeNull();
 
@@ -90,7 +90,7 @@ xdescribe('ContentTypeFieldsDropZoneComponent', () => {
     });
 
     it('should has a fields container', () => {
-        let fields: Field[] = [
+        const fields: Field[] = [
             {
                 clazz: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField',
                 name: 'field 1'
@@ -135,14 +135,14 @@ xdescribe('ContentTypeFieldsDropZoneComponent', () => {
 
         fixture.detectChanges();
 
-        let fieldsContainer = de.query(By.css('.content-type-fields-drop-zone__container'));
+        const fieldsContainer = de.query(By.css('.content-type-fields-drop-zone__container'));
 
         expect(fieldsContainer).not.toBeNull();
 
         expect('target').toEqual(fieldsContainer.attributes['data-drag-type']);
         expect('fields-row-bag').toEqual(fieldsContainer.attributes['dragula']);
 
-        let fieldRows = fieldsContainer.queryAll(By.css('content-type-fields-row'));
+        const fieldRows = fieldsContainer.queryAll(By.css('content-type-fields-row'));
         expect(2).toEqual(fieldRows.length);
 
         expect(2).toEqual(fieldRows[0].componentInstance.fieldRow.columns.length);

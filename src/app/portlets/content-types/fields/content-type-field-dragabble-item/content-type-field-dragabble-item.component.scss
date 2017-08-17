@@ -1,0 +1,41 @@
+@import "../../../../../styles/mixins";
+@import "../../../../../styles/variables";
+
+:host {
+    border-left: solid 3px $gray-lighter;
+    cursor: move;
+    display: flex;
+    margin: $basic-padding 0;
+    padding: $basic-padding * 2;
+    transition: border-left-color $basic-speed, box-shadow $basic-speed;
+
+    &:hover {
+        border-left-color: $brand-primary;
+        box-shadow: $md-shadow-2;
+    }
+
+    &:first-child {
+        margin-top: 0;
+    }
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+}
+
+.field__name {
+    flex-grow: 1;
+}
+
+.field__actions {
+    opacity: 0.25;
+    transition: opacity $basic-speed;
+    
+    & > * {
+        margin: 0 $basic-padding / 2;
+    }
+
+    :host:hover & {
+        opacity: 1;
+    }
+}

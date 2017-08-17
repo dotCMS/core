@@ -1,15 +1,31 @@
 @import "../../../../../styles/variables";
+$icon-size: $basic-padding * 3;
 
-ul {
-    margin: 0;
+.content-types-fields-list {
+    margin: $basic-padding 0 0;
     padding: 0;
+    list-style: none;
 }
 
-li {
-    border: solid 1px $gray-lighter;
+.content-types-fields-list__item {
     cursor: move;
-    list-style: none;
-    margin: $basic-padding / 2;
-    padding: $basic-padding;
+    padding: $basic-padding $basic-padding * 2;
     touch-action: none;
+    display: flex;
+    align-items: center;
+}
+
+.content-types-fields-list__item-icon {
+    color: $gray;
+    font-size: $basic-padding * 2;
+    height: $icon-size;
+    line-height: $icon-size;
+    margin-right: $basic-padding * 2;
+    text-align: center;
+    transition: color $basic-speed ease;
+    width: $icon-size;
+
+    .content-types-fields-list__item:hover & {
+        color: $body-font-color;
+    }
 }

@@ -1,5 +1,8 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
+
 import { Field, FieldRow } from '../shared';
+import { BaseComponent } from '../../../../view/components/_common/_base/base-component';
+import { MessageService } from '../../../../api/services/messages-service';
 
 /**
  * Display all the Field Types
@@ -12,9 +15,19 @@ import { Field, FieldRow } from '../shared';
     styleUrls: ['./content-type-fields-row.component.scss'],
     templateUrl: './content-type-fields-row.component.html',
 })
-export class ContentTypeFieldsRowComponent {
+export class ContentTypeFieldsRowComponent extends BaseComponent {
     @Input() fieldRow: FieldRow;
     @Output() editField: EventEmitter<Field> = new EventEmitter();
+
+    constructor(messageService: MessageService) {
+        super(
+            [
+                'contenttypes.dropzone.rows.empty.message',
+                'contenttypes.action.delete'
+            ],
+            messageService
+        );
+    }
 
     /**
      * Remove a field

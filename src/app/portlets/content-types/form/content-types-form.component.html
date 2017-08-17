@@ -2,7 +2,7 @@
     <div [innerHTML]="i18nMessages['URL-Map-Pattern-hint1']"></div>
 </p-overlayPanel>
 
-<form [formGroup]="form" (ngSubmit)="submitContent($event)" id="content-type-form-form" novalidate>
+<form [formGroup]="form" class="content-type__form container-fluid" (ngSubmit)="submitContent($event)" id="content-type-form-form" novalidate>
     <div class="content-type__form-header" id="content-type-form-header">
         <div class="ui-g">
             <div class="ui-g-6">
@@ -14,7 +14,11 @@
                 </div>
             </div>
             <div class="ui-g-6 content-type__form-actions">
-                <p-splitButton iconButton *ngIf="data" [model]="formOptions"></p-splitButton>
+                <!-- 
+                    [menuStyle] we need to align the menu options to the left because absoluted positioned
+                    elements are "hidden" with the overflow: auto of the parent
+                -->
+                <p-splitButton iconButton *ngIf="data" [model]="formOptions" [menuStyle]="{'margin-left':'-130px'}"></p-splitButton>
             </div>
         </div>
     </div>

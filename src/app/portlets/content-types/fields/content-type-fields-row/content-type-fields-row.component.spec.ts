@@ -7,6 +7,9 @@ import { FieldDragDropService  } from '../service';
 import { Field, FieldRow, FieldColumn } from '../';
 import { DragulaModule } from 'ng2-dragula';
 import { Observable } from 'rxjs/Observable';
+import { IconButtonTooltipModule } from '../../../../view/components/_common/icon-button-tooltip/icon-button-tooltip.module';
+import { MessageService } from '../../../../api/services/messages-service';
+import { MockMessageService } from '../../../../test/message-service.mock';
 
 @Component({
     selector: 'content-type-field-dragabble-item',
@@ -17,11 +20,15 @@ class TestContentTypeFieldDraggableItemComponent {
     @Output() remove: EventEmitter<Field> = new EventEmitter();
 }
 
-describe('ContentTypesFieldDragabbleItemComponent', () => {
+describe('ContentTypeFieldsRowComponent', () => {
     let comp: ContentTypeFieldsRowComponent;
     let fixture: ComponentFixture<ContentTypeFieldsRowComponent>;
     let de: DebugElement;
     let el: HTMLElement;
+
+    const messageServiceMock = new MockMessageService({
+        'contenttypes.dropzone.rows.empty.message': 'Add fields here',
+    });
 
     beforeEach(async(() => {
 
@@ -31,11 +38,13 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
                 TestContentTypeFieldDraggableItemComponent
             ],
             imports: [
-                DragulaModule
+                DragulaModule,
+                IconButtonTooltipModule
             ],
             providers: [
-                FieldDragDropService
-            ]
+                FieldDragDropService,
+                { provide: MessageService, useValue: messageServiceMock }
+            ],
         });
 
         fixture = DOTTestBed.createComponent(ContentTypeFieldsRowComponent);
@@ -45,7 +54,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
     }));
 
     it('should has row and columns', () => {
-        let fieldRow = new FieldRow();
+        const fieldRow = new FieldRow();
         fieldRow.columns.push(new FieldColumn([
             {
                 clazz: 'text',
@@ -68,14 +77,14 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
         fixture.detectChanges();
 
-        let spans = de.queryAll(By.css('span'));
-        expect(2).toEqual(spans.length);
+        const columns = de.queryAll(By.css('.row-columns__item'));
+        expect(2).toEqual(columns.length);
 
-        spans.forEach((span, index) => {
-            expect('fields-bag').toEqual(span.attributes['dragula']);
-            expect('target').toEqual(span.attributes['data-drag-type']);
+        columns.forEach((col, index) => {
+            expect('fields-bag').toEqual(col.attributes['dragula']);
+            expect('target').toEqual(col.attributes['data-drag-type']);
 
-            let draggableItems = span.queryAll(By.css('content-type-field-dragabble-item'));
+            const draggableItems = col.queryAll(By.css('content-type-field-dragabble-item'));
             expect(fieldRow.columns[index].fields.length).toEqual(draggableItems.length);
         });
     });

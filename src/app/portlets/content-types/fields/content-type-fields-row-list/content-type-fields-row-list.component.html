@@ -1,6 +1,8 @@
-<ul dragula="fields-row-bag"
+<ul class="content-types-row-list"
+    dragula="fields-row-bag"
     [dragulaModel]="fieldRows"
     data-drag-type="source">
-
-    <li *ngFor="let row of rows">Columns - {{row}}</li>
+    <li *ngFor="let row of rows" class="content-types-row-list__item">
+        <div class="content-types-row-list__item-col" *ngFor="let i of numberOfCols(row)"></div>
+    </li>
 </ul>

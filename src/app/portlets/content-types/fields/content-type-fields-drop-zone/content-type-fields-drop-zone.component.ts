@@ -1,8 +1,16 @@
 import { BaseComponent } from '../../../../view/components/_common/_base/base-component';
-import { Component, SimpleChanges, Input, Output, EventEmitter } from '@angular/core';
+import {
+    Component,
+    SimpleChanges,
+    Input,
+    Output,
+    EventEmitter,
+    OnInit,
+    OnChanges
+} from '@angular/core';
 import { FieldService, FieldDragDropService } from '../service';
 import { FieldRow, Field, FieldColumn, TAB_DIVIDER, LINE_DIVIDER } from '../shared';
-import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form/index';
+import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
 import { MessageService } from '../../../../api/services/messages-service';
 
 /**
@@ -16,12 +24,12 @@ import { MessageService } from '../../../../api/services/messages-service';
     styleUrls: ['./content-type-fields-drop-zone.component.scss'],
     templateUrl: './content-type-fields-drop-zone.component.html',
 })
-export class ContentTypeFieldsDropZoneComponent extends BaseComponent {
+export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements OnInit, OnChanges {
     displayDialog = false;
     fieldRows: FieldRow[] = [];
     formData: Field;
     @Input() fields: Field[];
-    @Output('saveFields') saveFieldsEvent = new EventEmitter<Field[]>();
+    @Output() saveFields = new EventEmitter<Field[]>();
 
     constructor(private fieldDragDropService: FieldDragDropService, messageService: MessageService) {
         super(
@@ -29,7 +37,8 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent {
                 'Save',
                 'Cancel',
                 'edit',
-                'Create-field'
+                'Create-field',
+                'contenttypes.dropzone.empty.message'
             ],
             messageService
         );
@@ -37,7 +46,7 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent {
 
     ngOnInit(): void {
         this.fieldDragDropService.fieldDrop$.subscribe((data) => {
-            let dragType = data[0];
+            const dragType = data[0];
 
             if (dragType === 'fields-bag') {
                 this.setDroppedField();
@@ -48,7 +57,7 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent {
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.fields.currentValue) {
-            let fields = changes.fields.currentValue;
+            const fields = changes.fields.currentValue;
 
             if (Array.isArray(fields)) {
                 this.fieldRows = this.getRowFields(fields);
@@ -63,7 +72,7 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent {
      * @param {Field} fieldToSave
      * @memberof ContentTypeFieldsDropZoneComponent
      */
-    saveFields(fieldToSave: Field): void {
+    saveFieldsHandler(fieldToSave: Field): void {
         const fields = this.getFields();
         // Needs a better implementation
         fields.map(field => {
@@ -76,7 +85,7 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent {
             return field;
         });
 
-        this.saveFieldsEvent.emit(fields);
+        this.saveFields.emit(fields);
         this.toggleDialog();
     }
 
@@ -185,7 +194,7 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent {
 
     private getRowFields(fields: Field[]): FieldRow[] {
         let fieldRows: FieldRow[] = [];
-        let splitFields: Field[][] = this.splitFieldsByLineDiveder(fields);
+        const splitFields: Field[][] = this.splitFieldsByLineDiveder(fields);
 
         fieldRows = splitFields.map(fields => {
             const fieldRow: FieldRow = new FieldRow();

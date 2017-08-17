@@ -1,6 +1,11 @@
-import { Component } from '@angular/core';
-import { FieldService, FieldDragDropService } from '../service';
+
+import { Component, OnInit } from '@angular/core';
+
+import { Observable } from 'rxjs/Observable';
+
+import { FIELD_ICONS } from './content-types-fields-icon-map';
 import { Field, FieldType } from '../';
+import { FieldService, FieldDragDropService } from '../service';
 
 /**
  * Show all the Field Types
@@ -11,24 +16,31 @@ import { Field, FieldType } from '../';
 @Component({
     selector: 'content-types-fields-list',
     styleUrls: ['./content-types-fields-list.component.scss'],
-    templateUrl: './content-types-fields-list.component.html',
+    templateUrl: './content-types-fields-list.component.html'
 })
-export class ContentTypesFieldsListComponent {
-    private fieldTypes: Field[];
+export class ContentTypesFieldsListComponent implements  OnInit {
+    fieldTypes: Field[];
 
-    constructor(private fieldService: FieldService, private fieldDragDropService: FieldDragDropService) {
-
-    }
+    constructor(
+        private fieldService: FieldService,
+        private fieldDragDropService: FieldDragDropService
+    ) {}
 
     ngOnInit(): void {
-        this.fieldService.loadFieldTypes()
-            .subscribe(fields => this.fieldTypes = fields.map(fieldType =>   {
-                return {
-                    clazz: fieldType.clazz,
-                    name: fieldType.label
-                };
-            }));
 
+        this.fieldService.loadFieldTypes()
+            .subscribe(fieldTypes => {
+                this.fieldTypes = fieldTypes.map(fieldType => {
+                    return {
+                        clazz: fieldType.clazz,
+                        name: fieldType.label
+                    };
+                });
+            });
         this.fieldDragDropService.setFieldBagOptions();
+    }
+
+    getIcon(id: string): string {
+        return FIELD_ICONS[id];
     }
 }

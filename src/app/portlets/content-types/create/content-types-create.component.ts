@@ -1,6 +1,6 @@
 import { ActivatedRoute, Router } from '@angular/router';
 import { CONTENT_TYPE_INITIAL_DATA, ContentType } from '../main';
-import { Component, ViewChild } from '@angular/core';
+import { Component, ViewChild, OnInit } from '@angular/core';
 import { ContentTypesInfoService } from '../../../api/services/content-types-info';
 import { CrudService } from '../../../api/services/crud';
 import { LoginService } from '../../../api/services/login-service';
@@ -23,7 +23,7 @@ import { BaseComponent } from '../../../view/components/_common/_base/base-compo
     selector: 'content-types-create',
     templateUrl: './content-types-create.component.html'
 })
-export class ContentTypesCreateComponent extends BaseComponent {
+export class ContentTypesCreateComponent extends BaseComponent implements OnInit {
     contentTypeType: string;
     @ViewChild('form') form: ContentTypesFormComponent;
     private contentTypeName: Observable<string>;
@@ -32,14 +32,14 @@ export class ContentTypesCreateComponent extends BaseComponent {
     private fields: Field[] = [];
 
     constructor(
+        public contentTypesInfoService: ContentTypesInfoService,
+        public crudService: CrudService,
+        public fieldService: FieldService,
+        public loginService: LoginService,
         messageService: MessageService,
-        private contentTypesInfoService: ContentTypesInfoService,
-        private crudService: CrudService,
-        private fieldService: FieldService,
-        private loginService: LoginService,
-        private route: ActivatedRoute,
-        public router: Router,
-        private stringUtils: StringUtils
+        public route: ActivatedRoute,
+        public stringUtils: StringUtils,
+        router: Router
     ) {
         super([
             'File',
@@ -53,7 +53,7 @@ export class ContentTypesCreateComponent extends BaseComponent {
 
     ngOnInit(): void {
         this.route.url.subscribe(res => {
-            let type = res[1].path;
+            const type = res[1].path;
             this.contentTypeName = this.messageService.messageMap$.pluck(this.stringUtils.titleCase(type));
             this.contentTypeType = type;
             this.contentTypeIcon = this.contentTypesInfoService.getIcon(type);
@@ -70,7 +70,7 @@ export class ContentTypesCreateComponent extends BaseComponent {
      * @memberof ContentTypesCreateComponent
      */
     public handleFormSubmit($event): void {
-        let contentTypeData: ContentType = Object.assign(
+        const contentTypeData: ContentType = Object.assign(
             {},
             CONTENT_TYPE_INITIAL_DATA,
             $event.value

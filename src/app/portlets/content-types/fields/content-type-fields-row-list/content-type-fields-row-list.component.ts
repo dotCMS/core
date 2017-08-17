@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+
 import { FieldService, FieldDragDropService } from '../service';
 import { FieldRow, LINE_DIVIDER } from '../shared';
 
@@ -13,12 +14,16 @@ import { FieldRow, LINE_DIVIDER } from '../shared';
     styleUrls: ['./content-type-fields-row-list.component.scss'],
     templateUrl: './content-type-fields-row-list.component.html',
 })
-export class ContentTypeFieldsRowListComponent {
-    private rows: number[] = [4, 3, 2, 1];
-    private fieldRows: FieldRow[];
+export class ContentTypeFieldsRowListComponent implements OnInit {
+    rows: number[] = [4, 3, 2, 1];
+    fieldRows: FieldRow[];
 
     constructor(private fieldDragDropService: FieldDragDropService) {
 
+    }
+
+    numberOfCols(n: number): number[] {
+        return Array(n).fill('');
     }
 
     ngOnInit(): void {
