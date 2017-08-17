@@ -259,29 +259,12 @@ public class CMSUrlUtil {
 	 * @param languageId The current language Id
 	 * @return true if the URI is a vanity URL, false if not
 	 */
-	public boolean isVanityUrl(String uri, Host host, long languageId) {
+	public boolean isVanityUrl(final String uri,
+							   final Host host,
+							   final long languageId) {
 
-		if (uri.length() > 1 && uri.endsWith("/")) {
-			uri = uri.substring(0, uri.length() - 1);
-		}
-
-		CachedVanityUrl cachedVanityUrl = APILocator.getVanityUrlAPI()
-				.getLiveCachedVanityUrl(uri, host, languageId, APILocator.systemUser());
-		boolean isVanityURL =
-				UtilMethods.isSet(cachedVanityUrl) && !cachedVanityUrl.getVanityUrlId()
-						.equals(VanityUrlAPI.CACHE_404_VANITY_URL);
-
-		// Still support legacy cmsHomePage
-		if ("/".equals(uri) && !isVanityURL) {
-			uri = "/cmsHomePage";
-			cachedVanityUrl = APILocator.getVanityUrlAPI()
-					.getLiveCachedVanityUrl(uri, host, languageId, APILocator.systemUser());
-			isVanityURL = UtilMethods.isSet(cachedVanityUrl) && !cachedVanityUrl.getVanityUrlId()
-					.equals(VanityUrlAPI.CACHE_404_VANITY_URL);
-		}
-
-		return isVanityURL;
-	}
+		return APILocator.getVanityUrlAPI().isVanityUrl(uri, host, languageId);
+	} // isVanityUrl.
 
 	/**
 	 * Determine if the url should be filtered from the vanity treatment

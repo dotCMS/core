@@ -65,6 +65,27 @@ public class CachedVanityUrl implements Serializable {
         this.order    = fromCachedVanityUrl.getOrder();
     }
 
+    /**
+     * Generates a CachedVanityUrl from another given CachedVanityUrl
+     *
+     * @param forwardTo replace the forward.
+     * @param fromCachedVanityUrl VanityURL to copy
+     *
+     */
+    public CachedVanityUrl(final String forwardTo,
+                           final CachedVanityUrl fromCachedVanityUrl) {
+
+
+        this.pattern     = fromCachedVanityUrl.pattern;
+        this.vanityUrlId = fromCachedVanityUrl.getVanityUrlId();
+        this.url         = fromCachedVanityUrl.url;
+        this.languageId  = fromCachedVanityUrl.getLanguageId();
+        this.siteId      = fromCachedVanityUrl.getSiteId();
+        this.forwardTo   = forwardTo;
+        this.response    = fromCachedVanityUrl.getResponse();
+        this.order       = fromCachedVanityUrl.getOrder();
+    }
+
     public int getOrder() {
         return order;
     }
