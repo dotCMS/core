@@ -1,5 +1,6 @@
 package com.dotmarketing.quartz.job;
 
+import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
@@ -56,8 +57,13 @@ public class FreeServerFromClusterJob implements StatefulJob {
 
                     if (shouldRewire) {
                         //Rewires the other nodes.
-                        ClusterFactory.addNodeToCacheCluster(APILocator.getServerAPI().getCurrentServer());
-                        ClusterFactory.addNodeToESCluster();
+                        if(ClusterUtils.isTransportAutoWire()) {
+                            ClusterFactory.addNodeToCacheCluster(APILocator.getServerAPI().getCurrentServer());
+                        }
+
+                        if(ClusterUtils.isESAutoWire()) {
+                            ClusterFactory.addNodeToESCluster();
+                        }
                     }
 
                 }
