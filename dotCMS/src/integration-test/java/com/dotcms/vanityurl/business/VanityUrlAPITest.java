@@ -20,17 +20,17 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * This class test the {@link VanityUrlAPI} methods
@@ -366,7 +366,7 @@ public class VanityUrlAPITest {
             Assert.assertEquals(200, vanityURLCached.getResponse());
 
             Contentlet vanityURLContentletUpdated = contentletAPI.checkout(vanityURLContentlet.getInode(), user, false);
-            vanityURLContentletUpdated.setLongProperty("action", 403);
+            vanityURLContentletUpdated.setLongProperty("action", 301);
             vanityURLContentletUpdated = contentletAPI.checkin(vanityURLContentletUpdated, user, false);
             publishVanityUrl(vanityURLContentletUpdated);
 
@@ -380,9 +380,59 @@ public class VanityUrlAPITest {
                     ));
             Assert.assertNotNull(vanityURLCached);
             Assert.assertNotEquals(VanityUrlAPI.CACHE_404_VANITY_URL, vanityURLCached.getVanityUrlId());
-            Assert.assertEquals(403, vanityURLCached.getResponse());
+            Assert.assertEquals(301, vanityURLCached.getResponse());
 
         }finally{
+            contentletAPI.delete(vanityURLContentlet, user, false);
+        }
+    }
+
+    /**
+     * Checks the proper validation of not allowed Action codes
+     */
+    @Test(expected = DotContentletValidationException.class)
+    public void checkInvalidActionTest() throws DotDataException, DotSecurityException {
+
+        long currentTime = System.currentTimeMillis();
+        Contentlet vanityURLContentlet = null;
+        try {
+            vanityURLContentlet = this
+                    .createVanityUrl("test Vanity Url " + currentTime, defaultHost.getIdentifier(),
+                            "/testing" + currentTime, "https://www.google.com", 200, 1,
+                            defaultLanguageId);
+            publishVanityUrl(vanityURLContentlet);
+
+            CachedVanityUrl vanityURLCached = vanityUrlCache.get(
+                    new CacheVanityKey(
+                            vanityURLContentlet
+                                    .getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
+                            vanityURLContentlet.getLanguageId(),
+                            vanityURLContentlet
+                                    .getStringProperty(VanityUrlContentType.URI_FIELD_VAR)
+                    ));
+            Assert.assertNull(vanityURLCached);
+
+            vanityUrlAPI.getLiveCachedVanityUrl("/testing" + currentTime, defaultHost,
+                    defaultLanguageId, user);
+            vanityURLCached = vanityUrlCache.get(
+                    new CacheVanityKey(
+                            vanityURLContentlet
+                                    .getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
+                            vanityURLContentlet.getLanguageId(),
+                            vanityURLContentlet
+                                    .getStringProperty(VanityUrlContentType.URI_FIELD_VAR)
+                    ));
+            Assert.assertNotNull(vanityURLCached);
+            Assert.assertNotEquals(VanityUrlAPI.CACHE_404_VANITY_URL,
+                    vanityURLCached.getVanityUrlId());
+            Assert.assertEquals(200, vanityURLCached.getResponse());
+
+            //Now lets try to add an invalid action code, this should throw a DotContentletValidationException
+            Contentlet vanityURLContentletUpdated = contentletAPI
+                    .checkout(vanityURLContentlet.getInode(), user, false);
+            vanityURLContentletUpdated.setLongProperty("action", 600);
+            contentletAPI.checkin(vanityURLContentletUpdated, user, false);
+        } finally {
             contentletAPI.delete(vanityURLContentlet, user, false);
         }
     }
@@ -526,8 +576,8 @@ public class VanityUrlAPITest {
 
         try {
             long currentTime = System.currentTimeMillis();
-            String uri = "/testing" + currentTime + "(.*)";
-            String requestedURL = "/testing" + currentTime;
+            String uri = "/" + currentTime + "_testing" + "(.*)";
+            String requestedURL = "/" + currentTime + "_testing";
             final String nonExistingURL = "/nonexisting/should404/index" + currentTime;
 
             //------------------------------------
@@ -637,7 +687,7 @@ public class VanityUrlAPITest {
             vanityURL2 = this
                     .createVanityUrl("test Vanity Url " + System.currentTimeMillis(),
                             Host.SYSTEM_HOST,
-                            uri, "https://www.google.com", 404, 1, defaultLanguageId);
+                            uri, "https://www.google.com", 200, 1, defaultLanguageId);
             publishVanityUrl(vanityURL2);
 
             //Should not exist in cache
