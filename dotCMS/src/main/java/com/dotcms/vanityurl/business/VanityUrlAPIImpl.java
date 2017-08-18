@@ -149,6 +149,11 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         searchAndPopulate(luceneQuery, user, siteId, languageId, includedSystemSite);
     } // initializeActiveVanityURLsCacheBySiteAndLanguage.
 
+    private boolean is404 (final CachedVanityUrl cachedVanityUrl) {
+
+        return UtilMethods.isSet(cachedVanityUrl) && VanityUrlAPI.CACHE_404_VANITY_URL
+                .equals(cachedVanityUrl.getVanityUrlId());
+    }
 
     @CloseDB
     @Override
@@ -159,35 +164,36 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         final String siteId = this.getSiteId(host);
 
         // tries first cache.
-        boolean isVanityURL = this.patternMatches(this.vanityUrlServices
-                .getCachedVanityUrlByUri(uri, siteId, languageId), uri).isPatternMatches();
+        final CachedVanityUrl cachedVanityUrl =
+                this.vanityUrlServices
+                        .getCachedVanityUrlByUri(uri, siteId, languageId);
+        boolean isVanityURL = !is404(cachedVanityUrl)
+                && this.patternMatches(cachedVanityUrl, uri).isPatternMatches();
 
         if (!isVanityURL) {
 
-            CachedVanityUrl cachedVanityUrl =
+            CachedVanityUrl liveCachedVanityUrl =
                     this.searchLiveCachedVanityUrlBySiteAndLanguage
                             (uri, siteId, languageId);
 
-            if (null == cachedVanityUrl) {
+            if (null == liveCachedVanityUrl) {
 
-                cachedVanityUrl =
+                liveCachedVanityUrl =
                         this.getFallback(uri, siteId, languageId, this.systemUser);
             }
 
             isVanityURL =
-                    UtilMethods.isSet(cachedVanityUrl)
-                            && !VanityUrlAPI.CACHE_404_VANITY_URL
-                                .equals(cachedVanityUrl.getVanityUrlId());
+                    !is404(liveCachedVanityUrl);
 
             // Still support legacy cmsHomePage
             if (URL_SUFFIX.equals(uri) && !isVanityURL) {
 
-                cachedVanityUrl =
+                liveCachedVanityUrl =
                         this.getLiveCachedVanityUrl
                                 (LEGACY_CMS_HOME_PAGE, host, languageId, this.systemUser);
-                isVanityURL = UtilMethods.isSet(cachedVanityUrl)
+                isVanityURL = UtilMethods.isSet(liveCachedVanityUrl)
                         && !VanityUrlAPI.CACHE_404_VANITY_URL
-                            .equals(cachedVanityUrl.getVanityUrlId());
+                            .equals(liveCachedVanityUrl.getVanityUrlId());
             }
         }
 
