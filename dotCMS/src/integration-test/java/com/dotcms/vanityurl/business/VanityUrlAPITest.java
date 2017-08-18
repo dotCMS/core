@@ -1,6 +1,9 @@
 package com.dotcms.vanityurl.business;
 
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import com.dotcms.cache.VanityUrlCache;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -120,7 +123,7 @@ public class VanityUrlAPITest {
 
         } catch (DotDataException | DotSecurityException e) {
             e.printStackTrace();
-            Assert.fail();
+            fail();
         } finally {
             try {
                 if (contentlet1 != null) {
@@ -205,7 +208,7 @@ public class VanityUrlAPITest {
 
         } catch (DotDataException | DotSecurityException e) {
             e.printStackTrace();
-            Assert.fail();
+            fail();
         } finally {
             try {
                 if (contentlet1 != null) {
@@ -256,7 +259,7 @@ public class VanityUrlAPITest {
 
         } catch (DotDataException | DotSecurityException e) {
             e.printStackTrace();
-            Assert.fail();
+            fail();
         } finally {
             try {
                 if (contentlet1 != null) {
@@ -390,7 +393,7 @@ public class VanityUrlAPITest {
     /**
      * Checks the proper validation of not allowed Action codes
      */
-    @Test(expected = DotContentletValidationException.class)
+    @Test
     public void checkInvalidActionTest() throws DotDataException, DotSecurityException {
 
         long currentTime = System.currentTimeMillis();
@@ -431,7 +434,16 @@ public class VanityUrlAPITest {
             Contentlet vanityURLContentletUpdated = contentletAPI
                     .checkout(vanityURLContentlet.getInode(), user, false);
             vanityURLContentletUpdated.setLongProperty("action", 600);
-            contentletAPI.checkin(vanityURLContentletUpdated, user, false);
+            try {
+                contentletAPI.checkin(vanityURLContentletUpdated, user, false);
+                fail("Using an invalid 600 action code, the checking method should fail...");
+            } catch (DotContentletValidationException e) {
+                e.printStackTrace();
+                assertEquals("message.vanity.url.error.invalidAction", e.getMessage());
+            } catch (Exception e) {
+                e.printStackTrace();
+                fail("Unexpected error saving VanityURL with invalid 600 action code");
+            }
         } finally {
             contentletAPI.delete(vanityURLContentlet, user, false);
         }
