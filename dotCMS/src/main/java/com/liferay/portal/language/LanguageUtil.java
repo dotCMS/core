@@ -28,7 +28,6 @@ import com.dotcms.repackage.org.apache.struts.util.MessageResources;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
