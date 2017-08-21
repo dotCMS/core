@@ -771,17 +771,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
         Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
         //Get the identifier's number of the related pages
         List<MultiTree> multitrees = (List<MultiTree>) MultiTreeFactory.getMultiTreeByChild(identifier.getInode());
+
         for(MultiTree multitree : multitrees)
         {
             //Get the Identifiers of the related pages
             Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find(multitree.getParent1());
+            Long languageId = -1L;
+            IHTMLPage page = null;
             //Get the pages
             try{
 
                 //Get the contenlet language in order to find the proper language page to invalidate
-                Long languageId = contentlet.getLanguageId();
+                languageId = contentlet.getLanguageId();
                 //Search for the page with a given identifier and for a given language (in case of Pages as content)
-                IHTMLPage page = loadPageByIdentifier(htmlPageIdentifier.getId(), true, languageId, APILocator.getUserAPI().getSystemUser(), false);
+                page = loadPageByIdentifier(htmlPageIdentifier.getId(), true, languageId, APILocator.getUserAPI().getSystemUser(), false);
 
                 if(page != null && page.isLive()){
                     //Rebuild the pages' files
@@ -789,8 +792,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
             }
             catch(Exception e){
-                Logger.error(this.getClass(), "Cannot publish related HTML Pages.  Fail");
-                Logger.debug(this.getClass(), "Cannot publish related HTML Pages.  Fail", e);
+                String htmlPageIdentifierId = htmlPageIdentifier!=null?htmlPageIdentifier.getId():null;
+                String pageInode = page!=null?page.getInode():null;
+                Logger.error(this.getClass(), "Cannot publish related HTML Pages" +
+                        ". htmlPageIdentifier.getId(): " + htmlPageIdentifierId +
+                        ". LanguageId:" + languageId +
+                        ". pageInode:" + pageInode, e);
             }
 
         }
