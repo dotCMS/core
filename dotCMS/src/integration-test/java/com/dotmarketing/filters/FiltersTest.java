@@ -46,7 +46,7 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-public class CMSFilterTest {
+public class FiltersTest {
 
     private static ContentletAPI contentletAPI;
     private static Host defaultHost;
