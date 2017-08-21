@@ -1,13 +1,14 @@
 package com.dotcms.rest;
 
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.json.JSONException;
-import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-
 import com.dotcms.repackage.javax.ws.rs.core.CacheControl;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONException;
+
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author Jonathan Gamba
@@ -82,11 +83,18 @@ public class ResourceResponse {
      * @param response String with the data to response, this response format should depend if exist of the <strong>"type"</strong> parameter
      * @return
      */
-    public Response response ( String response ) {
+    public Response response ( final String response ) {
         return response( response, null );
     }
 
-    public Response response ( String response, CacheControl cacheControl ) {
+    public Response response ( final String response, final CacheControl cacheControl ) {
+
+        return response( response, null, Optional.empty() );
+    }
+
+    public Response response ( String response,
+                               final CacheControl cacheControl,
+                               final Optional<Response.Status> status ) {
 
         String contentType = null;
         if ( UtilMethods.isSet( getType() ) ) {
@@ -112,16 +120,16 @@ public class ResourceResponse {
             }
         }
 
-        Response.ResponseBuilder responseBuilder;
-        if ( contentType != null ) {
-            responseBuilder = Response.ok( response, contentType );
-        } else {
-            /*
-            If the Content type of the response is null the default
-            will be the defined by the @Produces annotation of the RESTful method
-             */
-            responseBuilder = Response.ok( response );
-        }
+        final Response.ResponseBuilder responseBuilder =
+                ( contentType != null )?
+                    Response.ok( response, contentType ):
+                    /*
+                    If the Content type of the response is null the default
+                    will be the defined by the @Produces annotation of the RESTful method
+                     */
+                    Response.ok( response );
+
+        status.ifPresent( theStatus ->  responseBuilder.status(status.get()));
 
         if ( cacheControl != null ) {
             return responseBuilder.cacheControl( cacheControl ).build();
@@ -129,6 +137,7 @@ public class ResourceResponse {
 
         return responseBuilder.build();
     }
+
 
     public Response responseError ( String response ) {
         return responseError( response, HttpStatus.SC_INTERNAL_SERVER_ERROR );

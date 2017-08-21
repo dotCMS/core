@@ -1,6 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
+import com.dotcms.business.CloseDB;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.ConstantField;
@@ -231,13 +232,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return false;
     }
 
+    @CloseDB
     @Override
     public Contentlet find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        Contentlet c = conFac.find(inode);
-        if(c  == null)
+
+        final Contentlet contentlet = conFac.find(inode);
+
+        if(contentlet  == null) {
             return null;
-        if(perAPI.doesUserHavePermission(c, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
-            return c;
+        }
+
+        if(perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
+
+            return contentlet;
         }else{
             Object u = (user == null) ? user : user.getUserId();
             throw new DotSecurityException("User:" + u + " does not have permissions to Contentlet:" + inode);
@@ -3101,6 +3108,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                                 // we move files that have been newly uploaded or edited
                                 if(oldFile==null || !oldFile.equals(incomingFile)){
+                                    if(!createNewVersion){
+                                        // If we're calling a checkinWithoutVersioning method, 
+                                        // then folder needs to be cleaned up in order to add the new file in it.
+                                        // Otherwise we will have the old file and incoming file at the same time
+                                        FileUtil.deltree(binaryFieldFolder);
+                                        binaryFieldFolder.mkdirs();
+                                    }
                                     // We want to copy (not move) cause the same file could be in
                                     // another field and we don't want to delete it in the first time.
                                     FileUtil.copyFile(incomingFile, newFile);

@@ -2,17 +2,16 @@ package com.dotcms.cache;
 
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.services.VanityUrlServices;
-import com.dotcms.util.VanityUrlUtil;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
+import com.dotcms.vanityurl.model.CacheVanityKey;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
+import com.dotcms.vanityurl.model.SecondaryCacheVanityKey;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
@@ -46,9 +45,9 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
         cache = CacheLocator.getCacheAdministrator();
     }
 
-    private CachedVanityUrl add(final String key, final CachedVanityUrl vanityUrl) {
+    private CachedVanityUrl add(final CacheVanityKey key, final CachedVanityUrl vanityUrl) {
         // Add the key to the cache
-        cache.put(key, vanityUrl, getPrimaryGroup());
+        cache.put(key.toString(), vanityUrl, getPrimaryGroup());
         //Add this site to the list of related sites to the cached VanitiesURLs
         this.addSiteId(vanityUrl.getSiteId());
 
@@ -56,10 +55,10 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
     }
 
     @Override
-    public CachedVanityUrl get(final String key) {
+    public CachedVanityUrl get(final CacheVanityKey key) {
         CachedVanityUrl cachedVanityUrl = null;
         try {
-            cachedVanityUrl = (CachedVanityUrl) cache.get(key, getPrimaryGroup());
+            cachedVanityUrl = (CachedVanityUrl) cache.get(key.toString(), getPrimaryGroup());
         } catch (DotCacheException e) {
             Logger.debug(this, "Cache Entry not found", e);
         }
@@ -74,7 +73,7 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
         }
     }
 
-    private void cleanBySecondaryRegion(final String key) {
+    private void cleanBySecondaryRegion(final SecondaryCacheVanityKey key) {
 
         final List<CachedVanityUrl> secondaryCachedVanities = this
                 .getCachedVanityUrls(key);
@@ -86,11 +85,12 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
              */
             for (CachedVanityUrl toRemove : secondaryCachedVanities) {
                 //Now remove from the primary group
-                this.remove(VanityUrlUtil.sanitizeKey(toRemove.getSiteId(), toRemove.getUrl(),
-                        toRemove.getLanguageId()));
+                this.remove(new CacheVanityKey(toRemove.getSiteId(),
+                        toRemove.getLanguageId(),
+                        toRemove.getUrl()).toString());
             }
 
-            this.removeCachedVanityUrls(key);
+            this.removeCachedVanityUrls(key.toString());
         }
     }
 
@@ -99,14 +99,18 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
 
         try {
 
-            String siteId = vanityURL.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR);
+            final String siteId = vanityURL.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR);
 
             /*
             First get the records we want to remove from the secondary cache group and
             remove each of those records from the primary cache group, we do this in order to avoid to
             flush completely the primary group.
              */
-            cleanBySecondaryRegion(VanityUrlUtil.sanitizeSecondCacheKey(vanityURL));
+            cleanBySecondaryRegion(
+                    new SecondaryCacheVanityKey(
+                      vanityURL.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
+                      vanityURL.getLanguageId())
+                    );
 
             /*
             Now we want to clean up the 404 cache records and only touch other sites if we
@@ -115,57 +119,67 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
             if (Host.SYSTEM_HOST.equals(siteId)) {
 
                 //Get all the sites related to these cached VanityURLs
-                Set<String> sites = getSiteIds();
+                final Set<String> sites = getSiteIds();
                 if (null != sites) {
                     for (String site : sites) {
 
-                        if (!Host.SYSTEM_HOST.equals(site)) {
-
-                            final List<CachedVanityUrl> siteCachedVanityUrl = this
-                                    .getCachedVanityUrls(VanityUrlUtil
-                                            .sanitizeSecondCacheKey(site,
-                                                    vanityURL.getLanguageId()));
-
-                            if (null != siteCachedVanityUrl) {
-                                Boolean deleteForHost = Boolean.FALSE;
-
-                                for (CachedVanityUrl toRemove : siteCachedVanityUrl) {
-
-                                    //We care only about 404 records
-                                    if (VanityUrlAPI.CACHE_404_VANITY_URL
-                                            .equals(toRemove.getVanityUrlId())) {
-
-                                        //Remove from the cache this 404 record
-                                        this.remove(VanityUrlUtil
-                                                .sanitizeKey(toRemove.getSiteId(),
-                                                        toRemove.getUrl(),
-                                                        toRemove.getLanguageId()));
-
-                                        //We found a 404 record, we need to remove this site from the cache
-                                        deleteForHost = Boolean.TRUE;
-                                        break;
-                                    }
-                                }
-
-                                if (deleteForHost) {
-                                    cleanBySecondaryRegion(VanityUrlUtil
-                                            .sanitizeSecondCacheKey(site,
-                                                    vanityURL.getLanguageId()));
-                                }
-                            }
-                        }
+                        this.removeSite(vanityURL, site);
                     }
                 }
             }
 
-            this.remove(VanityUrlUtil.sanitizeKey(vanityURL));
+            this.remove(new CacheVanityKey(
+                                vanityURL.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
+                                vanityURL.getLanguageId(),
+                                vanityURL.getStringProperty(VanityUrlContentType.URI_FIELD_VAR)
+                            ).toString());
 
-        } catch (DotDataException | DotRuntimeException | DotSecurityException e) {
+
+        } catch (Exception e) {
             Logger.debug(VanityUrlServices.class,
                     "Error trying to invalidate Vanity URL with identifier:" + vanityURL
                             .getIdentifier(), e);
         }
     }
+
+    private void removeSite(final Contentlet vanityURL, final String site) {
+
+        if (!Host.SYSTEM_HOST.equals(site)) {
+
+            final List<CachedVanityUrl> siteCachedVanityUrl = this
+                    .getCachedVanityUrls(new SecondaryCacheVanityKey(site,
+                                    vanityURL.getLanguageId()));
+
+            if (null != siteCachedVanityUrl) {
+                Boolean deleteForHost = Boolean.FALSE;
+
+                for (CachedVanityUrl toRemove : siteCachedVanityUrl) {
+
+                    //We care only about 404 records
+                    if (VanityUrlAPI.CACHE_404_VANITY_URL
+                            .equals(toRemove.getVanityUrlId())) {
+
+                        //Remove from the cache this 404 record
+                        this.remove(new CacheVanityKey(
+                                            toRemove.getSiteId(),
+                                            toRemove.getLanguageId(),
+                                            toRemove.getUrl()
+                                    ).toString());
+
+                        //We found a 404 record, we need to remove this site from the cache
+                        deleteForHost = Boolean.TRUE;
+                        break;
+                    }
+                }
+
+                if (deleteForHost) {
+                    cleanBySecondaryRegion(
+                            new SecondaryCacheVanityKey(
+                                    site, vanityURL.getLanguageId()));
+                }
+            }
+        }
+    } // removeSite.
 
     @Override
     public void remove(final String key) {
@@ -179,14 +193,16 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
     @Override
     public void update(CachedVanityUrl vanity) {
 
+        final SecondaryCacheVanityKey key =
+                new SecondaryCacheVanityKey(vanity.getSiteId(), vanity.getLanguageId());
         try {
 
             //Update primary Cache
             this.addSingle(vanity);
 
             //Update Secondary cache
-            List<CachedVanityUrl> siteCachedVanityUrl = this.getCachedVanityUrls(VanityUrlUtil
-                    .sanitizeSecondCacheKey(vanity.getSiteId(), vanity.getLanguageId()));
+            List<CachedVanityUrl> siteCachedVanityUrl =
+                    this.getCachedVanityUrls(key);
 
             if (null != siteCachedVanityUrl) {
                 siteCachedVanityUrl = ImmutableList.<CachedVanityUrl>builder()
@@ -202,7 +218,7 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
                         .build();
             }
 
-            this.setCachedVanityUrls(vanity.getSiteId(), vanity.getLanguageId(),
+            this.setCachedVanityUrls(key,
                     siteCachedVanityUrl);
         } catch (DotRuntimeException e) {
             Logger.debug(this, "Error trying to update Vanity URL in cache", e);
@@ -219,8 +235,8 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
     @Override
     public void addSingle(final CachedVanityUrl vanity) {
 
-        final String key = VanityUrlUtil
-                .sanitizeKey(vanity.getSiteId(), vanity.getUrl(), vanity.getLanguageId());
+        final CacheVanityKey key =
+                new CacheVanityKey(vanity.getSiteId(), vanity.getLanguageId(), vanity.getUrl());
 
         final CachedVanityUrl currentCachedVanityUrl = this.get(key);
         // we just override if the new vanity has a lower order than the current one.
@@ -264,10 +280,10 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
     }
 
     @Override
-    public List<CachedVanityUrl> getCachedVanityUrls(final String key) {
+    public List<CachedVanityUrl> getCachedVanityUrls(final SecondaryCacheVanityKey key) {
         List<CachedVanityUrl> vanityUrlList = null;
         try {
-            vanityUrlList = (List<CachedVanityUrl>) cache.get( key, getCachedVanityUrlGroup());
+            vanityUrlList = (List<CachedVanityUrl>) cache.get( key.toString(), getCachedVanityUrlGroup());
         } catch (Exception e) {
             Logger.debug(this, "Cache Entry not found", e);
         }
@@ -276,10 +292,10 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
     }
 
     @Override
-    public void setCachedVanityUrls(final String siteId, Long languageId,
+    public void setCachedVanityUrls(final SecondaryCacheVanityKey secondaryCacheVanityKey,
             final List<CachedVanityUrl> cachedVanityUrlList) {
-        cache.put(VanityUrlUtil
-                        .sanitizeSecondCacheKey(siteId, languageId),
+
+        cache.put(secondaryCacheVanityKey.toString(),
                             cachedVanityUrlList, getCachedVanityUrlGroup());
     }
 

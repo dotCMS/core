@@ -75,7 +75,7 @@ public class ContentletBaseTest extends IntegrationTestBase {
     protected static ContentTypeAPI contentTypeAPI;
     protected static RelationshipAPI relationshipAPI;
     private static RoleAPI roleAPI;
-    private static PermissionAPI permissionAPI;
+    protected static PermissionAPI permissionAPI;
     private static HostAPI hostAPI;
     private static CategoryAPI categoryAPI;
     private static ContainerAPI containerAPI;

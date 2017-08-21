@@ -135,7 +135,7 @@ public class CMSFilterTest {
                     301, 1, defaultLanguageId);
 
             vanityUrl5 = createVanityUrl("test link5", Host.SYSTEM_HOST,
-                    "forbidden", "/products/" + CMSFilter.CMS_INDEX_PAGE, 403, 1, defaultLanguageId);
+                    "forbidden", "/products/" + CMSFilter.CMS_INDEX_PAGE, 302, 1, defaultLanguageId);
 
             VanityURLFilter filter = new VanityURLFilter();
             HttpServletResponse res = Mockito.mock(HttpServletResponse.class);

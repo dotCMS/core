@@ -298,11 +298,11 @@
                             dojo.create("span",{"class":"unlockIcon", title:"<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-tip-free") )%>"},
                                     dojo.create("a",{href:"javascript:licenseAdmin.free()"},optd));
                         
-                        } else if(!lic.available) {    
+                        } else if(lic.available == "false") {
                         	dojo.addClass(dojo.byId("generateCode"), "hidden");
                             dojo.create("span",{"class":"unlockIcon", title:"<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-tip-free") )%>"},
                                     dojo.create("a",{href:"javascript:licenseAdmin.free('"+lic.id+"','"+lic.fullserverid+"')"},optd));	
-                        } else if(lic.available) {
+                        } else {
 
                             dojo.create("span",{"class":"downloadIcon",title:"<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-tip-pick")) %>"},
                                     dojo.create("a",{href:"javascript:licenseAdmin.pick('"+serial+"')"},optd));

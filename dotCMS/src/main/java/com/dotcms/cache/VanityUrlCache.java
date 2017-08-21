@@ -1,6 +1,8 @@
 package com.dotcms.cache;
 
+import com.dotcms.vanityurl.model.CacheVanityKey;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
+import com.dotcms.vanityurl.model.SecondaryCacheVanityKey;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -21,7 +23,7 @@ public abstract class VanityUrlCache implements Cachable {
      *
      * @return CachedVanityUrl
      */
-    public abstract CachedVanityUrl get(String key);
+    public abstract CachedVanityUrl get(CacheVanityKey key);
 
     /**
      * Removes all entries from cache
@@ -70,17 +72,18 @@ public abstract class VanityUrlCache implements Cachable {
 
     /**
      * Get the associated list of CachedVanityUrl to current host Id and language Id key
-     * @param key The current key composed of the host Id and languageId
+     * @param key SecondaryCacheVanityKey The current key composed of the host Id and languageId
      * @return a list of CachedVanityUrl
      */
-    public abstract List<CachedVanityUrl> getCachedVanityUrls(String key);
+    public abstract List<CachedVanityUrl> getCachedVanityUrls(SecondaryCacheVanityKey key);
 
     /**
      * Associate a list of CachedVanityUrl to a Host Id and language id
      *
+     * @param secondaryCacheVanityKey SecondaryCacheVanityKey
      * @param cachedVanityUrlList The list of CachedVanityUrls
      */
-    public abstract void setCachedVanityUrls(final String siteId, Long languageId,
+    public abstract void setCachedVanityUrls(final SecondaryCacheVanityKey secondaryCacheVanityKey,
             final List<CachedVanityUrl> cachedVanityUrlList);
 
 }
