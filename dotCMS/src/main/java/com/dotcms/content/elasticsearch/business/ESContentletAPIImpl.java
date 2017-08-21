@@ -789,8 +789,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
             }
             catch(Exception e){
-                Logger.error(this.getClass(), "Cannot publish related HTML Pages.  Fail");
-                Logger.debug(this.getClass(), "Cannot publish related HTML Pages.  Fail", e);
+                Logger.error(this.getClass(), "Cannot publish related HTML Pages.  Fail", e);
             }
 
         }
