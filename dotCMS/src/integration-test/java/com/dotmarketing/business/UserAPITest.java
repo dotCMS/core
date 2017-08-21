@@ -1,7 +1,13 @@
 package com.dotmarketing.business;
 
-import com.dotcms.LicenseTestUtil;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -47,21 +53,14 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.model.User;
-
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * 
@@ -123,7 +122,7 @@ public class UserAPITest extends IntegrationTestBase {
 	 * @throws IOException If the url is malformed or if there is an issue opening the connection stream 
 	 */
 	@Test
-	public void delete() throws DotDataException,DotSecurityException, PortalException, SystemException, WebAssetException, IOException, Exception {
+	public void delete() throws Exception {
 
 		long langId =APILocator.getLanguageAPI().getDefaultLanguage().getId();
 		String id = String.valueOf( new Date().getTime());
@@ -509,12 +508,25 @@ public class UserAPITest extends IntegrationTestBase {
 
 		assertTrue(ftest.getOwner().equals(newUser.getUserId()));
 
-		/**
-		 * delete user and replace its references with the replacement user
+		//Verify we have the proper user set in the HTMLPage
+		page = htmlPageAssetAPI.getPageByPath(ftest.getPath() + page0Str, host, langId, true);
+		assertTrue(page.getOwner().equals(newUser.getUserId()));
+		assertTrue(page.getModUser().equals(newUser.getUserId()));
+
+		/*
+		 * delete user and replace its references with the replacement user, this delete method
+		 * does a lot of things, after the delete lets wait a bit in order to allow the reindex
+		 * of the modified contentlets to finish processing.
 		 */
 		userAPI.delete(newUser, replacementUser, systemUser,false);
+		APILocator.getContentletAPI().isInodeIndexed(page.getInode(), true);
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			//Do nothing...
+		}
 
-		/**
+		/*
 		 * Validate that the user was deleted and if its references were updated
 		 */
 		try {
@@ -630,28 +642,45 @@ public class UserAPITest extends IntegrationTestBase {
 
 	@Test
 	public void testGetUnDeletedUsers() throws DotDataException, DotSecurityException {
-		User newUser = null;
+
 		UserAPI userAPI = APILocator.getUserAPI();
-		String id = String.valueOf(new Date().getTime());
 
-		Calendar calendar = Calendar.getInstance();
-		calendar.add(Calendar.HOUR, -48);
+		//Getting the current list
+		List<User> currentUsers = userAPI.getUnDeletedUsers();
+		int currentUsersCount = 0;
+		if (null != currentUsers) {
+			currentUsersCount = currentUsers.size();
+		}
 
-		/**
+		/*
 		 * Add user
 		 */
-		String newUserName = "user" + id;
+		Calendar calendar = Calendar.getInstance();
+		calendar.add(Calendar.HOUR, -48);
+		String newUserName = "user" + System.currentTimeMillis();
 
-		newUser = UserTestUtil.getUser(newUserName, true, true, calendar.getTime());
+		User newUser = UserTestUtil.getUser(newUserName, true, true, calendar.getTime());
 
-		List<User> users = userAPI.getUnDeletedUsers();
+		List<User> foundUsers = userAPI.getUnDeletedUsers();
 
-		assertNotNull(users);
-		assertTrue(users.size() == 1);
-		assertTrue(users.get(0).getDeleteInProgress());
-		assertNotNull(users.get(0).getDeleteDate());
-		assertEquals(users.get(0).getFirstName(), newUserName);
+		assertNotNull(foundUsers);
+		assertEquals(foundUsers.size(), currentUsersCount + 1);
 
+		Boolean found = false;
+		for (User user : foundUsers) {
+			if (newUserName.equals(user.getFirstName())) {
+				assertTrue(user.getDeleteInProgress());
+				assertNotNull(user.getDeleteDate());
+				assertEquals(user.getFirstName(), newUserName);
+				found = true;
+			}
+		}
+
+		if (!found) {
+			fail("The user saved was not found in the retrieved list.");
+		}
+
+		//Clean up the created user
 		userAPI.delete(newUser, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
 	}
 

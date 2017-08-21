@@ -53,7 +53,7 @@ public class DefaultVanityUrlHandler implements VanityUrlHandler {
         }
 
         if (vanityUrlResult != null) {
-            // if a redirect or error ations was processed
+            // if a redirect or error actions was processed
             return vanityUrlResult;
         }
 
