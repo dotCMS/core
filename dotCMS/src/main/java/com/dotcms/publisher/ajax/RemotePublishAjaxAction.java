@@ -1,9 +1,36 @@
 package com.dotcms.publisher.ajax;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.lang.reflect.Method;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.elasticsearch.common.base.Strings;
+
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.publisher.bundle.bean.Bundle;
-import com.dotcms.publisher.business.*;
+import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditHistory;
+import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
@@ -11,7 +38,22 @@ import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.PushUtils;
 import com.dotcms.publisher.util.PublisherUtil;
-import com.dotcms.publishing.*;
+import com.dotcms.publishing.BundlerStatus;
+import com.dotcms.publishing.BundlerUtil;
+import com.dotcms.publishing.DotBundleException;
+import com.dotcms.publishing.DotPublishingException;
+import com.dotcms.publishing.IBundler;
+import com.dotcms.publishing.Publisher;
+import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
+import com.dotcms.repackage.org.apache.commons.fileupload.FileItem;
+import com.dotcms.repackage.org.apache.commons.fileupload.FileItemFactory;
+import com.dotcms.repackage.org.apache.commons.fileupload.FileUploadException;
+import com.dotcms.repackage.org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import com.dotcms.repackage.org.apache.commons.fileupload.servlet.ServletFileUpload;
+import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.org.apache.hadoop.mapred.lib.Arrays;
 import com.dotcms.rest.PublishThread;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -24,33 +66,18 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.dotcms.repackage.org.apache.commons.fileupload.FileItem;
-import com.dotcms.repackage.org.apache.commons.fileupload.FileItemFactory;
-import com.dotcms.repackage.org.apache.commons.fileupload.FileUploadException;
-import com.dotcms.repackage.org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import com.dotcms.repackage.org.apache.commons.fileupload.servlet.ServletFileUpload;
-import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.apache.hadoop.mapred.lib.Arrays;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.elasticsearch.common.base.Strings;
-
-import java.io.*;
-import java.lang.reflect.Method;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
 
 /**
  * This class handles the different action mechanisms related to the handling of 
@@ -250,28 +277,40 @@ public class RemotePublishAjaxAction extends AjaxAction {
         }
     }
 
-    /**
-     * Allow the user to send or try to send again failed and successfully sent bundles, in order to do that<br/>
-     * we send the bundle again to que publisher queue job which will try to remote publish again the bundle.
-     * @param request  HttpRequest
-     * @param response HttpResponse
-     * @throws IOException If fails sending back to the user a proper response
-     * @throws DotPublisherException If fails retrieving the Bundle related information like elements on it and statuses
-     * @throws LanguageException If fails using i18 messages
-     */
+	/**
+	 * Allows users to re-send either failed or successful bundles to the
+	 * specified publishing environments. In order to do this, the bundle is
+	 * sent once again to the publisher queue job which will try to remote
+	 * publish it.
+	 * 
+	 * @param request
+	 *            - The {@link HttpServletRequest} object.
+	 * @param response
+	 *            - The {@link HttpServletResponse} object.
+	 * @throws IOException
+	 *             A proper response could not be sent back to the user.
+	 * @throws DotPublisherException
+	 *             An error occurred when retrieving bundle related information,
+	 *             such as the pushed elements, status, etc.
+	 * @throws LanguageException
+	 *             An error occurred when internationalizing error messages.
+	 */
     public void retry ( HttpServletRequest request, HttpServletResponse response ) throws IOException, DotPublisherException, LanguageException {
-
         PublisherAPI publisherAPI = PublisherAPI.getInstance();
         PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
 
-        //Read the parameters
+        // Read the parameters
         String bundlesIds = request.getParameter( "bundlesIds" );
-        String[] ids = bundlesIds.split( "," );
+		final String forcePush = request.getParameter("forcePush");
+		final boolean isForcePush = UtilMethods.isSet(forcePush) ? Boolean.valueOf(forcePush) : Boolean.FALSE;
+		final String strategy = request.getParameter("deliveryStrategy");
+		final DeliveryStrategy deliveryStrategy = "1".equals(strategy) ? DeliveryStrategy.ALL_ENDPOINTS
+				: DeliveryStrategy.FAILED_ENDPOINTS;
 
+		String[] ids = bundlesIds.split( "," );
         StringBuilder responseMessage = new StringBuilder();
 
         for ( String bundleId : ids ) {
-
             if ( bundleId.trim().isEmpty() ) {
                 continue;
             }
@@ -318,7 +357,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 try{
                     awss3Publisher.init(configStatic);
                     awss3Publisher.process(null);
-
                     //Success...
                     appendMessage( responseMessage, "publisher_retry.success",
                         bundleId + PublisherConfig.STATIC_SUFFIX, false );
@@ -328,7 +366,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
                     appendMessage( responseMessage, "publisher_retry.error.adding.to.queue",
                         bundleId + PublisherConfig.STATIC_SUFFIX, true );
                 }
-
             }
 
             //Checking push publish.
@@ -350,7 +387,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
             }
 
             try {
-
                 //Read the bundle to see what kind of configuration we need to apply
                 String bundlePath = ConfigUtils.getBundlePath() + File.separator + basicConfig.getId();
                 File xml = new File( bundlePath + File.separator + "bundle.xml" );
@@ -362,19 +398,19 @@ public class RemotePublishAjaxAction extends AjaxAction {
                     appendMessage( responseMessage, "publisher_retry.error.cannot.retry.received", bundleId, true );
                     continue;
                 }
-
-                if ( status.getStatus().equals( Status.SUCCESS ) ) {
-
-                    //Get the bundle
-                    Bundle bundle = APILocator.getBundleAPI().getBundleById( bundleId );
-                    if ( bundle == null ) {
-                        Logger.error( this.getClass(), "No Bundle with id: " + bundleId + " found." );
-                        appendMessage( responseMessage, "publisher_retry.error.not.found", bundleId, true );
-                        continue;
-                    }
-                    bundle.setForcePush( true );
-                    APILocator.getBundleAPI().updateBundle( bundle );
-                }
+                //Get the bundle
+				Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
+				if (null == bundle) {
+					Logger.error(this.getClass(), "No Bundle with id: " + bundleId + " found.");
+					appendMessage(responseMessage, "publisher_retry.error.not.found", bundleId, true);
+					continue;
+				}
+				if (status.getStatus().equals(Status.SUCCESS)) {
+					bundle.setForcePush(Boolean.TRUE);
+				} else {
+					bundle.setForcePush(isForcePush);
+				}
+                APILocator.getBundleAPI().updateBundle( bundle );
 
                 //Clean the number of tries, we want to try it again
                 auditHistory.setNumTries( 0 );
@@ -398,11 +434,12 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 
                 //Now depending of the operation lets add it to the queue job
                 if ( config.getOperation().equals( PushPublisherConfig.Operation.PUBLISH ) ) {
-                    publisherAPI.addContentsToPublish( new ArrayList<String>( identifiers ), bundleId, new Date(), getUser() );
-                } else {
-                    publisherAPI.addContentsToUnpublish( new ArrayList<String>( identifiers ), bundleId, new Date(), getUser() );
-                }
-
+					publisherAPI.addContentsToPublish(new ArrayList<String>(identifiers), bundleId, new Date(),
+							getUser(), deliveryStrategy);
+				} else {
+					publisherAPI.addContentsToUnpublish(new ArrayList<String>(identifiers), bundleId, new Date(),
+							getUser(), deliveryStrategy);
+				}
                 //Success...
                 appendMessage( responseMessage, "publisher_retry.success", bundleId, false );
             } catch ( Exception e ) {
@@ -410,7 +447,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 appendMessage( responseMessage, "publisher_retry.error.adding.to.queue", bundleId, true );
             }
         }
-
         response.getWriter().println( responseMessage.toString() );
     }
 
@@ -682,7 +718,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
             out.print( "<html><head><script>isLoaded = true;</script></head><body><textarea>{'status':'success'}</textarea></body></html>" );
 
         } catch ( DotPublisherException e ) {
-            // TODO Auto-generated catch block
             out.print( "<html><head><script>isLoaded = true;</script></head><body><textarea>{'status':'error'}</textarea></body></html>" );
         }
 
@@ -840,6 +875,12 @@ public class RemotePublishAjaxAction extends AjaxAction {
         }
     }
 
+    /**
+     * 
+     * @param response
+     * @param e
+     * @throws IOException
+     */
     private static void sendGeneralError( HttpServletResponse response, Throwable e) throws IOException {
         Logger.error( RemotePublishAjaxAction.class, e.getMessage(), e );
         response.sendError( HttpStatus.SC_INTERNAL_SERVER_ERROR, "Error Adding content to Bundle: " + e.getMessage() );
