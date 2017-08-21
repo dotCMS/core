@@ -437,12 +437,9 @@ public class VanityUrlAPITest {
             try {
                 contentletAPI.checkin(vanityURLContentletUpdated, user, false);
                 fail("Using an invalid 600 action code, the checking method should fail...");
-            } catch (DotContentletValidationException e) {
-                e.printStackTrace();
-                assertEquals("message.vanity.url.error.invalidAction", e.getMessage());
             } catch (Exception e) {
                 e.printStackTrace();
-                fail("Unexpected error saving VanityURL with invalid 600 action code");
+                assertEquals("message.vanity.url.error.invalidAction", e.getMessage());
             }
         } finally {
             contentletAPI.delete(vanityURLContentlet, user, false);
