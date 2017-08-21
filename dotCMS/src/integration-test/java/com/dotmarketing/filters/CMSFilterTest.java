@@ -1,24 +1,17 @@
 package com.dotmarketing.filters;
 
+import static com.dotcms.vanityurl.business.VanityUrlAPIImpl.LEGACY_CMS_HOME_PAGE;
 import static org.mockito.Matchers.startsWith;
 
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.VanityUrlContentType;
-import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
+import com.dotcms.util.FiltersUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.servlets.SpeedyAssetServlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -29,10 +22,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import javax.servlet.FilterChain;
 import javax.servlet.RequestDispatcher;
@@ -61,14 +52,8 @@ public class CMSFilterTest {
     private static Host defaultHost;
     private static HostAPI hostAPI;
     private static User user;
-    private static LanguageAPI languageAPI;
     private static long defaultLanguageId;
-    private static ContentTypeAPI contentTypeAPI;
-    private static PermissionAPI permissionAPI;
-    private static ContentType contentType;
-
-    private static final String VANITY_URL_CONTENT_TYPE_NAME = "Vanity URL";
-    private static final String VANITY_URL_CONTENT_TYPE_VARNAME = "Vanityurl";
+    private static FiltersUtil filtersUtil;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -97,14 +82,11 @@ public class CMSFilterTest {
         /* APIs initialization */
         hostAPI = APILocator.getHostAPI();
         contentletAPI = APILocator.getContentletAPI();
-        languageAPI = APILocator.getLanguageAPI();
-        contentTypeAPI = APILocator.getContentTypeAPI(user);
-        permissionAPI = APILocator.getPermissionAPI();
+        filtersUtil = FiltersUtil.getInstance();
 
         /* Default variables */
         defaultHost = hostAPI.findDefaultHost(user, false);
-        defaultLanguageId = languageAPI.getDefaultLanguage().getId();
-        getContentType();
+        defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
     }
 
     @Test
@@ -119,23 +101,28 @@ public class CMSFilterTest {
 
         // build them up
         try {
-            vanityUrl1 = createVanityUrl("test link1", Host.SYSTEM_HOST, "/testLink1",
+            vanityUrl1 = filtersUtil.createVanityUrl("test link1", Host.SYSTEM_HOST, "/testLink1",
                     "/about-us/" + CMSFilter.CMS_INDEX_PAGE, 200, 1, defaultLanguageId);
+            filtersUtil.publishVanityUrl(vanityUrl1);
 
-            vanityUrl2 = createVanityUrl("test link2", defaultHost.getIdentifier(),
+            vanityUrl2 = filtersUtil.createVanityUrl("test link2", defaultHost.getIdentifier(),
                     "/testLink2", "/about-us/" + CMSFilter.CMS_INDEX_PAGE, 200, 1,
                     defaultLanguageId);
+            filtersUtil.publishVanityUrl(vanityUrl2);
 
-            vanityUrl3 = createVanityUrl("test link3", defaultHost.getIdentifier(),
+            vanityUrl3 = filtersUtil.createVanityUrl("test link3", defaultHost.getIdentifier(),
                     "/testLink3", "http://demo.dotcms.com/about-us/" + CMSFilter.CMS_INDEX_PAGE,
                     301, 1, defaultLanguageId);
+            filtersUtil.publishVanityUrl(vanityUrl3);
 
-            vanityUrl4 = createVanityUrl("test link4", defaultHost.getIdentifier(),
+            vanityUrl4 = filtersUtil.createVanityUrl("test link4", defaultHost.getIdentifier(),
                     "/testLink4", "http://demo.dotcms.com/about-us/" + CMSFilter.CMS_INDEX_PAGE,
                     301, 1, defaultLanguageId);
+            filtersUtil.publishVanityUrl(vanityUrl4);
 
-            vanityUrl5 = createVanityUrl("test link5", Host.SYSTEM_HOST,
+            vanityUrl5 = filtersUtil.createVanityUrl("test link5", Host.SYSTEM_HOST,
                     "forbidden", "/products/" + CMSFilter.CMS_INDEX_PAGE, 302, 1, defaultLanguageId);
+            filtersUtil.publishVanityUrl(vanityUrl5);
 
             VanityURLFilter filter = new VanityURLFilter();
             HttpServletResponse res = Mockito.mock(HttpServletResponse.class);
@@ -224,14 +211,17 @@ public class CMSFilterTest {
     @Test
     public void redirectHomePageTest() throws IOException, DotDataException {
 
-        //Init APIs and test values
         Contentlet vanityURLContentlet = null;
-        // build them up
+
+        String forwardTo = "/about-us/" + CMSFilter.CMS_INDEX_PAGE;
         try {
 
-            vanityURLContentlet = createVanityUrl("cmsHomePage", defaultHost.getIdentifier(), "/cmsHomePage",
-                    "/about-us/" + CMSFilter.CMS_INDEX_PAGE, 200, 1, defaultLanguageId);
-            contentletAPI.isInodeIndexed(vanityURLContentlet.getInode(), true);
+            //Create the VanityURL
+            vanityURLContentlet = filtersUtil
+                    .createVanityUrl("cmsHomePage", defaultHost.getIdentifier(),
+                            LEGACY_CMS_HOME_PAGE,
+                            forwardTo, 200, 1, defaultLanguageId);
+            filtersUtil.publishVanityUrl(vanityURLContentlet);
 
             VanityURLFilter filter = new VanityURLFilter();
             FilterChain chain = Mockito.mock(FilterChain.class);
@@ -252,11 +242,11 @@ public class CMSFilterTest {
             //Delete the test Vanity URL
             contentletAPI.delete(vanityURLContentlet, user, false);
 
-
             //And save it
-            vanityURLContentlet = createVanityUrl("cmsHomePage Host", Host.SYSTEM_HOST, "/cmsHomePage",
+            vanityURLContentlet = filtersUtil.createVanityUrl("cmsHomePage Host", Host.SYSTEM_HOST,
+                    LEGACY_CMS_HOME_PAGE,
                     "/about-us/" + CMSFilter.CMS_INDEX_PAGE, 200, 1, defaultLanguageId);
-            contentletAPI.isInodeIndexed(vanityURLContentlet.getInode(), true);
+            filtersUtil.publishVanityUrl(vanityURLContentlet);
 
             Logger.info(this.getClass(), "demo.dotcms.com:/cmsHomePage should forward to /about-us/"
                     + CMSFilter.CMS_INDEX_PAGE);
@@ -289,15 +279,15 @@ public class CMSFilterTest {
         }
     }
 
-    private HttpServletRequest getMockRequest(String hostname, String uri) {
+    private HttpServletRequest getMockRequest(String hostName, String uri) {
 
         HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         Mockito.when(request.getAttribute("host")).thenReturn(defaultHost);
         Mockito.when(request.getRequestURI()).thenReturn(uri);
         Mockito.when(request.getRequestURL())
-                .thenReturn(new StringBuffer("http://" + hostname + uri));
+                .thenReturn(new StringBuffer("http://" + hostName + uri));
         Mockito.when(request.getCookies()).thenReturn(new Cookie[]{});
-        Mockito.when(request.getServerName()).thenReturn(hostname);
+        Mockito.when(request.getServerName()).thenReturn(hostName);
         Mockito.when(request.getSession()).thenReturn(new MockSession());
         Mockito.when(request.getSession(Mockito.anyBoolean())).thenReturn(new MockSession());
         Mockito.when(request.getRequestDispatcher("/servlets/VelocityServlet"))
@@ -470,98 +460,6 @@ public class CMSFilterTest {
         }
 
 
-    }
-
-    /**
-     * Get the Vanity Url Content Type. If the content Type doesn't
-     * exist then it will be created
-     *
-     * @return a Vanity Url Content Type
-     */
-    private static ContentType getContentType() throws DotDataException, DotSecurityException {
-        String query = " velocity_var_name = '" + VANITY_URL_CONTENT_TYPE_VARNAME + "'";
-        List<ContentType> contentTypes = contentTypeAPI.search(query);
-
-        if (contentTypes.size() == 0) {
-            contentType = createVanityUrl();
-        }else {
-            contentType = contentTypes.get(0);
-        }
-
-        return contentType;
-    }
-
-    /**
-     * Create a VanityUrl content type
-     *
-     * @return A new vanity Url content Type
-     */
-    private static ContentType createVanityUrl() throws DotDataException, DotSecurityException {
-        BaseContentType base = BaseContentType
-                .getBaseContentType(BaseContentType.VANITY_URL.getType());
-
-        final ContentType type = new ContentType() {
-            @Override
-            public String name() {
-                return VANITY_URL_CONTENT_TYPE_NAME;
-            }
-
-            @Override
-            public String id() {
-                return null;
-            }
-
-            @Override
-            public String description() {
-                return null;
-            }
-
-            @Override
-            public String variable() {
-                return VANITY_URL_CONTENT_TYPE_VARNAME;
-            }
-
-            @Override
-            public BaseContentType baseType() {
-                return base;
-            }
-        };
-
-        return contentTypeAPI.save(new ImplClassContentTypeTransformer(type).from());
-    }
-
-    /**
-     * Creates a new Vanity URL contentlet
-     */
-    private Contentlet createVanityUrl(String title, String site, String uri,
-                                       String forwardTo, int action, int order, long languageId)
-            throws DotDataException, DotSecurityException {
-        //Create the new Contentlet
-        Contentlet contentlet = new Contentlet();
-        contentlet.setStructureInode(contentType.inode());
-        contentlet.setHost(defaultHost.getIdentifier());
-        contentlet.setLanguageId(languageId);
-
-        contentlet.setStringProperty(VanityUrlContentType.TITLE_FIELD_VAR, title);
-        contentlet.setStringProperty(VanityUrlContentType.SITE_FIELD_VAR, site);
-        contentlet.setStringProperty(VanityUrlContentType.URI_FIELD_VAR, uri);
-        contentlet.setStringProperty(VanityUrlContentType.FORWARD_TO_FIELD_VAR, forwardTo);
-        contentlet.setLongProperty(VanityUrlContentType.ACTION_FIELD_VAR, action);
-        contentlet.setLongProperty(VanityUrlContentType.ORDER_FIELD_VAR, order);
-
-        //Get The permissions of the Content Type
-        List<Permission> contentTypePermissions = permissionAPI.getPermissions(contentType);
-
-        //Validate if the contenlet is OK
-        contentletAPI.validateContentlet(contentlet, new ArrayList());
-
-        //Save the contentlet
-        contentlet = contentletAPI.checkin(contentlet, contentTypePermissions, user, true);
-        contentletAPI.isInodeIndexed(contentlet.getInode());
-        //Publish Vanity Url
-        contentletAPI.publish(contentlet, user, false);
-        contentletAPI.isInodeIndexed(contentlet.getInode());
-        return contentlet;
     }
 
     class MockRequestWrapper extends HttpServletRequestWrapper {
