@@ -56,6 +56,8 @@ public class Host extends Contentlet implements Permissionable,Treeable,Parentab
 	public static final String SYSTEM_HOST = "SYSTEM_HOST";
 
 	public static final String TAG_STORAGE = "tagStorage";
+	
+    public static final String HOST_VELOCITY_VAR_NAME = "Host";
 
 	@Override
 	public String getInode() {

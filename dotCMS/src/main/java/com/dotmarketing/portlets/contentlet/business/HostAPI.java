@@ -20,8 +20,6 @@ import com.liferay.portal.model.User;
  *
  */
 public interface HostAPI {
-    
-    public final String HOST_VELOCITY_VAR_NAME = "Host";
 
 	/**
 	 * Will return a List of a host's aliases If no host aliases will return empty list
