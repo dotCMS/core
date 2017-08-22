@@ -2714,6 +2714,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    if(dc.loadResults().size()>0){
 				    	if(contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null){
 				    		Logger.debug(this, "forcing checking with no version as the _dont_validate_me is set and inode exists");
+				    		Logger.info(this, "Setting createNewVersion to false. Contentlet Inode:"
+                                    + contentlet.getInode() + ". Contentlet Identifier:" + contentlet.getIdentifier()
+                                    + ". Number of results from contentlet with same inode: " + dc.loadResults().size());
 				    		createNewVersion = false;
 				    	}else{
 				    		throw new DotContentletStateException("Contentlet must not exist already");
@@ -2722,12 +2725,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				        saveWithExistingID=true;
 				        existingInode=contentlet.getInode();
 				        contentlet.setInode(null);
+				        Logger.info(this, "Setting null to inode for Contentlet with inode:" + existingInode);
 
 				        Identifier ident=APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
 				        if(ident==null || !UtilMethods.isSet(ident.getId())) {
 				            existingIdentifier=contentlet.getIdentifier();
 				            contentlet.setIdentifier(null);
-				        }
+                            Logger.info(this, "Setting null to identifier for Contentlet with identifier:"
+                                    + existingIdentifier);
+
+                        }
 				    }
 				}
 				if (!createNewVersion && contentlet != null && !InodeUtils.isSet(contentlet.getInode()))
