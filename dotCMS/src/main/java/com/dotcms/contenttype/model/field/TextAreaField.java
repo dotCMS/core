@@ -42,6 +42,6 @@ public abstract class TextAreaField extends Field {
 	public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
 		return list(ContentTypeFieldProperties.REQUIRED, ContentTypeFieldProperties.NAME,
 				ContentTypeFieldProperties.REGEX_CHECK, ContentTypeFieldProperties.DEFAULT_VALUE, ContentTypeFieldProperties.HINT,
-				ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.INDEXED, ContentTypeFieldProperties.DATA_TYPE);
+				ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.INDEXED);
 	}
 }

@@ -46,8 +46,7 @@ public abstract class MultiSelectField extends SelectableValuesField{
 		return list(ContentTypeFieldProperties.NAME, ContentTypeFieldProperties.REQUIRED,
 				ContentTypeFieldProperties.VALUES, ContentTypeFieldProperties.DEFAULT_VALUE,
 				ContentTypeFieldProperties.HINT, ContentTypeFieldProperties.SEARCHABLE,
-				ContentTypeFieldProperties.INDEXED, ContentTypeFieldProperties.DATA_TYPE,
-				ContentTypeFieldProperties.UNIQUE);
+				ContentTypeFieldProperties.INDEXED, ContentTypeFieldProperties.UNIQUE);
 	}
 
 	@JsonIgnore

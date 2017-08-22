@@ -40,6 +40,6 @@ public abstract class FileField extends Field {
 	@JsonIgnore
 	public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
 		return list(ContentTypeFieldProperties.NAME, ContentTypeFieldProperties.REQUIRED,
-				ContentTypeFieldProperties.DATA_TYPE, ContentTypeFieldProperties.HINT);
+				ContentTypeFieldProperties.HINT);
 	}
 }

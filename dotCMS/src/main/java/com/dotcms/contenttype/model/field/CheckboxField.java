@@ -45,6 +45,6 @@ public abstract class CheckboxField extends SelectableValuesField{
 		return list(ContentTypeFieldProperties.NAME, ContentTypeFieldProperties.REQUIRED,
 				ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.INDEXED,
 				ContentTypeFieldProperties.VALUES, ContentTypeFieldProperties.DEFAULT_VALUE,
-				ContentTypeFieldProperties.HINT, ContentTypeFieldProperties.DATA_TYPE);
+				ContentTypeFieldProperties.HINT);
 	}
 }

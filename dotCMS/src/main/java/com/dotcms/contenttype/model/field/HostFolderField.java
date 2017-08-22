@@ -48,7 +48,7 @@ public abstract class HostFolderField extends Field implements OnePerContentType
 		return list(ContentTypeFieldProperties.NAME, ContentTypeFieldProperties.REQUIRED,
 				ContentTypeFieldProperties.VALUES, ContentTypeFieldProperties.DEFAULT_VALUE,
 				ContentTypeFieldProperties.HINT, ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.INDEXED,
-				ContentTypeFieldProperties.LISTED, ContentTypeFieldProperties.DATA_TYPE);
+				ContentTypeFieldProperties.LISTED);
 	}
 
 	@JsonIgnore

@@ -44,7 +44,7 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
       }
     } catch (Exception e) {
       try {
-      	JSONObject jo = new JSONObject(json);
+        JSONObject jo = new JSONObject(json);
         if (jo.has("fields")) {
           l = fromJsonArray(jo.getJSONArray("fields"));
         } else {
@@ -89,7 +89,14 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
   private Field fromJsonStr(String input) throws DotStateException {
 
     try {
-      return (Field) mapper.readValue(input, Field.class);
+      JSONObject jo = new JSONObject(input);
+      Object categories = jo.get("categories");
+
+      if (categories != null){
+        jo.put("values", categories);
+      }
+
+      return (Field) mapper.readValue(jo.toString(), Field.class);
     } catch (Exception e) {
       throw new DotStateException(e);
     }

@@ -51,7 +51,7 @@ public abstract class DateTimeField extends Field {
 		return list(ContentTypeFieldProperties.NAME, ContentTypeFieldProperties.REQUIRED,
 				ContentTypeFieldProperties.HINT, ContentTypeFieldProperties.DEFAULT_VALUE,
 				ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.INDEXED,
-				ContentTypeFieldProperties.LISTED, ContentTypeFieldProperties.DATA_TYPE);
+				ContentTypeFieldProperties.LISTED);
 	}
 
 	@JsonIgnore

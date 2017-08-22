@@ -45,7 +45,7 @@ public abstract class SelectField extends SelectableValuesField {
 		return list(ContentTypeFieldProperties.REQUIRED, ContentTypeFieldProperties.NAME,
 				ContentTypeFieldProperties.VALUES, ContentTypeFieldProperties.DEFAULT_VALUE,
 				ContentTypeFieldProperties.HINT, ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.INDEXED,
-				ContentTypeFieldProperties.LISTED, ContentTypeFieldProperties.DATA_TYPE, ContentTypeFieldProperties.DATA_TYPE,
+				ContentTypeFieldProperties.LISTED, ContentTypeFieldProperties.DATA_TYPE,
 				ContentTypeFieldProperties.UNIQUE);
 	}
 }
