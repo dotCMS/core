@@ -295,17 +295,17 @@ public class FiltersTest {
 
         try {
 
-            List<ContentType> listContentType = APILocator.getContentTypeAPI(user).findUrlMapped();
+            final List<ContentType> listContentType = APILocator.getContentTypeAPI(user).findUrlMapped();
             ContentType newsContentType =  null;
-            for(ContentType ct : listContentType){
-                if(("news").equalsIgnoreCase(ct.variable())){
-                    newsContentType = ct;
+            for(final ContentType contentType : listContentType){
+                if(("news").equalsIgnoreCase(contentType.variable())){
+                    newsContentType = contentType;
                     break;
                 }
             }
             final Contentlet urlmapContentlet = contentletAPI.findByStructure(new StructureTransformer(newsContentType).asStructure(), user, true, -1, 0).get(0);
 
-            String forwardTo = "/news/" + urlmapContentlet.getStringProperty("urlTitle");
+            final String forwardTo = "/news/" + urlmapContentlet.getStringProperty("urlTitle");
 
             //Create the VanityURL
             vanityURLContentlet = filtersUtil
@@ -319,8 +319,8 @@ public class FiltersTest {
 
             Logger.info(this.getClass(),
                     "/urlnews should forward to " + forwardTo);
-            HttpServletRequest request = getMockRequest("demo.dotcms.com", "/urlnews");
-            MockResponseWrapper response = new MockResponseWrapper(
+            final HttpServletRequest request = getMockRequest("demo.dotcms.com", "/urlnews");
+            final MockResponseWrapper response = new MockResponseWrapper(
                     Mockito.mock(HttpServletResponse.class));
             filter.doFilter(request, response, chain);
             Logger.info(this.getClass(), "looking for 200, got:" + response.getStatus());
