@@ -11,5 +11,5 @@ public interface ReturnableDelegate<T> {
      *
      * @return Object the information returned
      */
-    public T execute();
+    public T execute() throws Throwable;
 } // E:O:F:ReturnableDelegate.

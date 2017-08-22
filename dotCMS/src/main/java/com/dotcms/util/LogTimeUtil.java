@@ -24,7 +24,7 @@ public class LogTimeUtil {
      * @param <T>
      * @return
      */
-    public <T> T logTime (final ReturnableDelegate<T> delegate, final Supplier<String> messageSupplier) {
+    public <T> T logTime (final ReturnableDelegate<T> delegate, final Supplier<String> messageSupplier) throws Throwable {
 
         T methodReturn = null;
 

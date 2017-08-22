@@ -38,13 +38,9 @@ public class AspectJDelegateMethodInvocation<T> implements DelegateMethodInvocat
     }
 
     @Override
-    public Object proceed() {
+    public Object proceed() throws Throwable {
 
-        try {
             return this.joinPoint.proceed();
-        } catch (Throwable throwable) {
-            throw new DotAspectException(throwable);
-        }
     }
 
     @Override

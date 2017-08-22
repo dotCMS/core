@@ -1,10 +1,9 @@
 package com.dotmarketing.db;
 
+import com.dotcms.util.ReturnableDelegate;
 import com.dotcms.util.VoidDelegate;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
-
-import java.util.concurrent.Callable;
 
 public class LocalTransaction {
 
@@ -30,12 +29,12 @@ public class LocalTransaction {
 	 *  }); 
 	 */
 
-	static public <T> T wrapReturn(final Callable<T> callable) throws DotDataException{
+	static public <T> T wrapReturn(final ReturnableDelegate<T> callable) throws DotDataException{
 		final boolean localTransaction = DbConnectionFactory.startTransactionIfNeeded();
 		T result = null;
 		try {
-			result= callable.call();
-		} catch (Exception e) {
+			result= callable.execute();
+		} catch (Throwable e) {
             handleException(localTransaction, e);
 		} finally {
 			if (localTransaction) {
@@ -79,7 +78,7 @@ public class LocalTransaction {
         }
 	}
 
-    private static void handleException(boolean localTransaction, Exception e) throws DotDataException {
+    private static void handleException(boolean localTransaction, Throwable  e) throws DotDataException {
         if(localTransaction){
             DbConnectionFactory.rollbackTransaction();
         }

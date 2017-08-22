@@ -1,7 +1,5 @@
 package com.dotcms.aspects;
 
-import com.dotcms.util.Delegate;
-
 import java.io.Serializable;
 import java.lang.reflect.Method;
 
@@ -27,7 +25,7 @@ public interface DelegateMethodInvocation<T> extends Serializable {
      * Proceeds to the next interceptor in the chain
      * @return Object usually the method
      */
-    Object proceed();
+    Object proceed() throws Throwable;
 
     /**
      * Returns the instance that holds the method.
