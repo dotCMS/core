@@ -64,7 +64,7 @@ public class HostAPIImpl implements HostAPI {
     private final SystemEventsAPI systemEventsAPI;
     private final String contentTypeCondition;
     private StringBuilder queryBuffer;
-    private User systemUser;
+    private final User systemUser;
 
     public HostAPIImpl() {
         this.systemEventsAPI = APILocator.getSystemEventsAPI();
@@ -271,7 +271,7 @@ public class HostAPIImpl implements HostAPI {
             List<Contentlet> list = APILocator.getContentletAPI().search(queryBuffer.toString(), 0, 0, null, user, respectFrontendRoles);
             if(list.size() > 1){
                 for(Contentlet cont: list){
-                    boolean isDefaultHost = (Boolean)cont.get(Host.IS_DEFAULT_KEY);
+                    final boolean isDefaultHost = (Boolean)cont.get(Host.IS_DEFAULT_KEY);
                     if(isDefaultHost){
                         host = new Host(cont);
                         if(host.isDefault()){
@@ -373,7 +373,7 @@ public class HostAPIImpl implements HostAPI {
         List<Map<String,String>> ret = dc.loadResults();
         for(Map<String,String> m : ret) {
             String inode=m.get("inode");
-            Contentlet con=APILocator.getContentletAPI().find(inode, systemUser, false);
+            final Contentlet con=APILocator.getContentletAPI().find(inode, systemUser, false);
             hosts.add(new Host(con));
         }
 
