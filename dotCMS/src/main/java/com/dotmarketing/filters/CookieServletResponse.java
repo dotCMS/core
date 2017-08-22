@@ -22,12 +22,12 @@ import com.dotmarketing.util.Config;
 public class CookieServletResponse extends HttpServletResponseWrapper {
 
 
-    public CookieServletResponse(HttpServletRequest request, HttpServletResponse response) {
+    public CookieServletResponse(HttpServletResponse response) {
         super(response);
     }
 
-    public CookieServletResponse(ServletRequest request, ServletResponse response) {
-        this((HttpServletRequest) request, (HttpServletResponse) response);
+    public CookieServletResponse(ServletResponse response) {
+        this((HttpServletResponse) response);
     }
 
     @Override
