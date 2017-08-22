@@ -153,7 +153,7 @@ export class PaginatorService {
      * @memberof PaginatorServic
      */
     public getPage(pageParam = 1): Observable<any[]> {
-        let urlPage = this.links['x-page'] ? this.links['x-page'].replace('{pageValue}', String(pageParam))
+        let urlPage = this.links['x-page'] ? this.links['x-page'].replace('pageValue', String(pageParam))
                         : undefined;
         return this.get(urlPage);
     }

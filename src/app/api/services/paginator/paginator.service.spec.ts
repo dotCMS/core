@@ -58,7 +58,7 @@ describe('PaginatorService getting', () => {
 
         headerLink = `</baseURL?filter=filter&page=1>;rel="first",
             </baseURL?filter=filter&page=5>;rel="last",
-            </baseURL?filter=filter&page={pageValue}>;rel="x-page",
+            </baseURL?filter=filter&page=pageValue>;rel="x-page",
             </baseURL?filter=filter&page=4>;rel="next",
             </baseURL?filter=filter&page=2>;rel="prev"`;
 
