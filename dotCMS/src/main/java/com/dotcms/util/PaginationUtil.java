@@ -41,6 +41,7 @@ public class PaginationUtil {
 	private static final String PAGINATION_CURRENT_PAGE_HEADER_NAME = "X-Pagination-Current-Page";
 	private static final String PAGINATION_MAX_LINK_PAGES_HEADER_NAME = "X-Pagination-Link-Pages";
 	private static final String PAGINATION_TOTAL_ENTRIES_HEADER_NAME = "X-Pagination-Total-Entries";
+	public static final String PAGE_VALUE_TEMPLATE = "pageValue";
 
 	private Paginator paginator;
 
@@ -221,10 +222,7 @@ public class PaginationUtil {
 		}
 
 		params.put(PER_PAGE, String.valueOf(perPage));
-
-		if (page != -1){
-			params.put(PAGE, String.valueOf(page));
-		}
+		params.put (PAGE, (-1 != page) ? String.valueOf(page) : PAGE_VALUE_TEMPLATE);
 
 		if (UtilMethods.isSet(direction)) {
 			params.put(DIRECTION, direction.toString());

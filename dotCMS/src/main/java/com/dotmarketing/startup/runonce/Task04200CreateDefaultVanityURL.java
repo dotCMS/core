@@ -153,7 +153,7 @@ public class Task04200CreateDefaultVanityURL extends AbstractJDBCStartupTask {
 
 		fields.add(setFieldElements("Action", SELECT_FIELD, "",
 				"integer1", true, true, true, "action", INT_4,
-				"200 - Forward|200\r\n301 - Permanent Redirect|301\r\n302 - Temporary Redirect|302\r\n401 - Auth Required|401\r\n403 - Auth Failed|403\r\n404 - Missing|404\r\n500 - Error|500",
+				"200 - Forward|200\r\n301 - Permanent Redirect|301\r\n302 - Temporary Redirect|302",
 				"", "", "", true, false, true));
 
 		fields.add(

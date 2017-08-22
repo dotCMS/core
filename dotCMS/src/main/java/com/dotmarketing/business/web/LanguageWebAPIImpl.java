@@ -5,6 +5,7 @@ import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.business.CloseDB;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -114,6 +115,7 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
      * third,      is there a language in session, if so use it
      * finally     use the default language
      */
+    @CloseDB
     @Override
     public Language getLanguage(HttpServletRequest httpRequest) {
         final Language current = currentLanguage(httpRequest);

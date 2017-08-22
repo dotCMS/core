@@ -738,9 +738,9 @@
                     }
                 }
             }
-    %>
-    <option onload="this.value='<%=com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils.escapeJavaScript(pairvalue)%>'" <%=selected%>><%=name%></option>
-    <%
+            %>
+            <option value="<%=com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils.escapeHtml(pairvalue)%>" <%=selected%>><%=name%></option>
+            <%
         }
     %>
     </select>

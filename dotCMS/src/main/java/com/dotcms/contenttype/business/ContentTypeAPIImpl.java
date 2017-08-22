@@ -293,8 +293,6 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     query = query.replace("{1}", String.valueOf(type.getType()));
     query = query.replace("{2}", String.valueOf(limit));
 
-    System.out.println("----");
-
     try {
       SearchResponse raw = APILocator.getEsSearchAPI().esSearchRaw(query.toLowerCase(), false, user, false);
 

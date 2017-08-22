@@ -14,7 +14,7 @@
                             <div class="portlet-toolbar__actions-primary">
                                 <div class="inline-form">
                                     <label for="filterTextBox"><%= LanguageUtil.get(pageContext, "Filter")%>:</label>
-                                    <input dojoType="dijit.form.TextBox" dojoAttachEvent="onKeyup: _filter" trim="true" dojoAttachPoint="filterTextBox" />
+                                    <input dojoType="dijit.form.TextBox" dojoAttachEvent="onKeyUp: _filter" trim="true" dojoAttachPoint="filterTextBox" />
                                     <button dojoType="dijit.form.Button" dojoAttachEvent="onClick: _clearFilter" type="button" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Clear")%></button>
 
                                     <span style="display: none;" dojoAttachPoint="uploadFileButton">

@@ -10,7 +10,6 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -46,10 +45,8 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
-import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
@@ -128,39 +125,21 @@ public class EditFieldAction extends DotPortletAction {
 
                 Field field = (Field) req.getAttribute(WebKeys.Field.FIELD);
                 if (InodeUtils.isSet(field.getInode())) {
-                    if (field.isFixed()
-                            || (field.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString())
-                                    || field.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())
-                                    || field.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString())
-                                    || field.getFieldType().equals(Field.FieldType.PERMISSIONS_TAB.toString())
-                                    || field.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString())
-                                    || field.getFieldContentlet().equals(FieldAPI.ELEMENT_CONSTANT) || field
-                                    .getFieldType().equals(Field.FieldType.HIDDEN.toString()))) {
+                    if (field.isFixed()) {
+                        
                         FieldForm fieldForm = (FieldForm) form;
                         field.setFieldName(fieldForm.getFieldName());
+                        field.setHint(fieldForm.getHint());
+                        field.setDefaultValue(fieldForm.getDefaultValue());
+                        field.setSearchable(fieldForm.isSearchable());
+                        field.setListed(fieldForm.isListed());
 
-                        // This is what you can change on a fixed field
-                        if (field.isFixed()) {
-                            field.setHint(fieldForm.getHint());
-                            field.setDefaultValue(fieldForm.getDefaultValue());
-                            field.setSearchable(fieldForm.isSearchable());
-                            field.setListed(fieldForm.isListed());
-                        }
-
-                        Structure contentType = CacheLocator.getContentTypeCache().getStructureByInode(field.getStructureInode());
-
-                        if (((contentType.getStructureType() == Structure.STRUCTURE_TYPE_CONTENT) && !fAPI
-                                .isElementConstant(field))
-                                || ((contentType.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET) && fAPI
-                                        .isElementConstant(field))
-                                || ((contentType.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) && fAPI
-                                        .isElementConstant(field))
-                                || ((contentType.getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) && fAPI
-                                        .isElementConstant(field))
-                                || ((contentType.getStructureType() == Structure.STRUCTURE_TYPE_FORM) && fAPI
-                                        .isElementConstant(field))) {
+                        com.dotcms.contenttype.model.field.Field newField = APILocator.getContentTypeFieldAPI().find(field.getIdentifier());
+                        if(LegacyFieldTypes.CONSTANT.implClass().getCanonicalName().equals(newField.typeName()) ||  
+                                        LegacyFieldTypes.HIDDEN.implClass().getCanonicalName().equals(newField.typeName())){
                             field.setValues(fieldForm.getValues());
                         }
+                        
                         BeanUtils.copyProperties(fieldForm, field);
                     }
                 }

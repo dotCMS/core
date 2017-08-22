@@ -4,11 +4,8 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.business.CloseDB;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.uuid.shorty.ShortType;
-import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Permission;
@@ -43,7 +40,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedSet;
@@ -309,6 +305,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionAPI#doesUserHavePermission(com.dotmarketing.beans.Inode, int, com.liferay.portal.model.User, boolean)
 	 */
+	@CloseDB
 	public boolean doesUserHavePermission(Permissionable permissionable, int permissionType, User user, boolean respectFrontendRoles) throws DotDataException {
 
 		// if we have bad data
@@ -835,6 +832,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		return writePermissions;
 	}
 
+	@CloseDB
 	public Set<Role> getRolesWithPermission(Permissionable permissionable, int permission) throws DotDataException {
 
 		Set<Role> roles = new HashSet<Role>();
@@ -990,21 +988,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 			Logger.debug( PermissionAPI.class, String.format("::getRoles -> before loading inode object(%s)", inode) );
 			
-			//Using the ShortyAPI to identify the nature of this inode
-            Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(inode);
-            
-          //Hibernate won't handle structures, thats why we need a special case here
-            if ( shortOpt.isPresent() && ShortType.STRUCTURE == shortOpt.get().subType ) {
-
-                //Search for the given ContentType inode
-                ContentType foundContentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(inode);
-                if ( null != foundContentType ) {
-                    //Transform the found content type to a Structure
-                    inodeObj = new StructureTransformer(foundContentType).asStructure();
-                }
-            } else {
-                inodeObj = InodeFactory.getInode(inode, Inode.class);
-            }
+			inodeObj = InodeUtils.getInode(inode);
 			
 			permissionList = getPermissions(inodeObj, true);
 

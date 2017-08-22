@@ -1,21 +1,23 @@
 buildscript {
     repositories {
         maven { url "http://repo.dotcms.com/artifactory/libs-release" }
+        maven { url "https://maven.eveoh.nl/content/repositories/releases" }
         jcenter()
     }
     dependencies {
         classpath 'org.ajoberstar:grgit:1.7.0'
         classpath 'org.unbroken-dome.gradle-plugins:gradle-testsets-plugin:1.0.2'
         classpath 'com.dotcms.lib:dot.commons-io:2.0.1_2'
+        classpath 'nl.eveoh:gradle-aspectj:1.6'
     }
 }
 
 plugins {
-    id "net.ltgt.apt" version "0.9"
+    id "com.moowork.node" version "1.1.1"
 }
 
-plugins {
-    id "com.moowork.node" version "1.1.1"
+project.ext {
+    aspectjVersion = '1.8.4'
 }
 
 node {
@@ -55,6 +57,7 @@ configurations.all({
 
 // Apply the java plugin to add support for Java.
 apply plugin: 'java'
+apply plugin: 'aspectj'
 apply plugin: 'war'
 apply plugin: 'org.unbroken-dome.test-sets'
 apply plugin: 'idea'
@@ -103,6 +106,8 @@ idea {
 
         //Extra source dirs
         sourceDirs += file('src/main/enterprise/src/main/java')
+        sourceDirs += file('src/main/generated')
+        generatedSourceDirs += file('src/main/generated')
         excludeDirs += file('src/main/enterprise/build')
 
 
@@ -238,12 +243,12 @@ war {
                 //We only want to compile using the submodules code when using the deployWarTomcatDev task
                 if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDev')) {
                     if (enterpriseSrcFolder.exists()) {
-                        srcDirs = ["src/main/java", "$enterpriseProjectHome/src/main/java"]
+                        srcDirs = ["src/main/java", "$generatedSourceFolder", "$enterpriseProjectHome/src/main/java"]
                     } else {
-                        srcDirs = ["src/main/java"]
+                        srcDirs = ["src/main/java", "$generatedSourceFolder"]
                     }
                 } else {
-                    srcDirs = ["src/main/java"]
+                    srcDirs = ["src/main/java", "$generatedSourceFolder"]
                 }
 
             }
@@ -484,6 +489,46 @@ task customDistWar(type: War) {
 }
 customDistWar.group='dotCMS Development'
 customDistWar.description='Builds a dotCMS as a war. (Task mean to be use from a distribution structure using the buildwar.sh script. This task will just use the already deployed folder inside the app server and compressed into a war file.)'
+
+compileAspect.dependsOn 'immutables'
+compileAspect {
+    println "\nCompiling Aspect..."
+}
+// This task defines if the immutables folder is generated, otherwise will generate it.
+task immutables() {
+    doLast {
+        println "\nChecking immutables..."
+        def generatedFolder = new File("$generatedSourceFolder");
+        if (!generatedFolder.exists()) {
+
+            println "Generating immutables...\n"
+
+            def gradleTask = "compileJava"
+            def artefactBuild = project.tasks.create([name: "artefactBuild_$gradleTask", type: GradleBuild])
+            artefactBuild.buildFile = project.file("immutables.gradle")
+            artefactBuild.tasks = [gradleTask]
+            artefactBuild.execute()
+        } else {
+            println "Immutables already generated, skipping generation... (Delete $generatedSourceFolder folder in order to regenerate them)\n"
+        }
+    }
+}
+immutables.group='dotCMS Development'
+immutables.description='Compiles the source code using the compileJava task and generate the immutables, those immutables will be located under the src/main/generated folder'
+
+task cleanImmutables() {
+    doLast {
+        println "\nDeleting immutables folder..."
+        delete "$generatedSourceFolder"
+    }
+}
+cleanImmutables.group='dotCMS Development'
+cleanImmutables.description='Deletes the folder where the immutables are generated'
+
+clean {
+    println "\nExecuting clean task..."
+}
+clean.finalizedBy 'cleanImmutables'
 
 // This task finds all th plugins and runs 'ant build' inside each one.
 // In order to compile everything it need the dependency jars in a folder ($buildDir/pluginsLib)

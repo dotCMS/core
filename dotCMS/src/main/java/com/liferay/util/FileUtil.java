@@ -161,6 +161,10 @@ public class FileUtil {
         if (!source.exists()) {
             throw new IOException("Source file does not exist" + source);
         }
+
+        if(source.getAbsolutePath().equalsIgnoreCase(destination.getAbsolutePath())) {
+        	return;
+		}
         
         validateEmptyFile(source);
 
