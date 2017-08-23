@@ -77,7 +77,8 @@ import com.dotmarketing.util.UtilMethods;
  */
 public class PublisherQueueJob implements StatefulJob {
 
-	private static final String BUNDLE_ID = "BundleId";
+	private static final String BUNDLE_ID     = "BundleId";
+	private static final String ENDPOINT_NAME = "EndpointName";
 
 	public static final Integer MAX_NUM_TRIES = Config.getIntProperty("PUBLISHER_QUEUE_MAX_TRIES", 3);
 
@@ -92,7 +93,7 @@ public class PublisherQueueJob implements StatefulJob {
 	 * will send a bundle to publish (see
 	 * {@link com.dotcms.publishing.PublisherAPI#publish(PublisherConfig)}).
 	 *
-	 * @param jobExecution
+	 * @param jobExecutionContext
 	 *            - Context Containing the current job context information (the
 	 *            data).
 	 * @throws JobExecutionException
@@ -124,12 +125,8 @@ public class PublisherQueueJob implements StatefulJob {
 					Logger.info(this, "");
 				}
 				for ( Map<String, Object> bundle : bundles ) {
-					Logger.info(this, "===========================================================");
-					Logger.info(this, "Processing bundle:");
-					Logger.info(this, "-> ID:     " + bundle.get("bundle_id"));
-					Logger.info(this, "-> Status: "
+					Logger.info(this, "Processing bundle: ID: " + bundle.get("bundle_id") + " Status: "
 							+ (UtilMethods.isSet(bundle.get("status")) ? bundle.get("status") : "Starting"));
-					Logger.info(this, "===========================================================");
 					Date publishDate = (Date) bundle.get("publish_date");
 					if ( publishDate.before(new Date()) ) {
 						tempBundleId = (String) bundle.get("bundle_id");
@@ -251,6 +248,7 @@ public class PublisherQueueJob implements StatefulJob {
 						// For each end-point (server) in the group
 						for ( String endpointID : endpointsGroup.keySet() ) {
 							PublishingEndPoint targetEndpoint = endpointAPI.findEndPointById(endpointID);
+							MDC.put(ENDPOINT_NAME, ENDPOINT_NAME + "=" + targetEndpoint.getServerName());
 							if ( targetEndpoint != null && !targetEndpoint.isSending() ) {
 
 								// Don't poll status for static publishing
@@ -290,6 +288,8 @@ public class PublisherQueueJob implements StatefulJob {
 										EndpointDetail detail = new EndpointDetail();
 										detail.setStatus(Status.FAILED_TO_PUBLISH.getCode());
 										endpointTrackingMap.put(failedAuditUpdate, map(failedAuditUpdate, detail));
+
+										PushPublishLogger.log(this.getClass(), "Status update: Failed to publish bundle");
 									}
 								} else {
 									PublishAuditStatus pas = pubAuditAPI.getPublishAuditStatus(bundleAudit.getBundleId());
@@ -383,6 +383,7 @@ public class PublisherQueueJob implements StatefulJob {
 				}
 			} finally {
 				MDC.remove(BUNDLE_ID);
+				MDC.remove(ENDPOINT_NAME);
 			}
 		}
 	}
