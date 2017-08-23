@@ -19,6 +19,7 @@ public class CloseDBMethodInterceptor implements MethodInterceptor<Object> {
     @Override
     public Object invoke(final DelegateMethodInvocation<Object> delegate) throws Throwable {
 
+        final boolean isNewConnection = !DbConnectionFactory.isConnectionCreated();
 
         final CloseDB closeDB =
                 getMethodAnnotation(delegate.getMethod(), CloseDB.class);
@@ -29,7 +30,7 @@ public class CloseDBMethodInterceptor implements MethodInterceptor<Object> {
         } finally {
 
             if (null != closeDB && closeDB.connection()
-                    && !DbConnectionFactory.inTransaction()) {
+                    && isNewConnection) {
 
                 DbConnectionFactory.closeSilently();
             }
