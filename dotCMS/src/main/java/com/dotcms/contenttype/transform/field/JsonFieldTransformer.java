@@ -19,6 +19,9 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
 public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
+
+  private static final String CATEGORIES_PROPERTY_NAME = "categories";
+
   final List<Field> list;
 
   public JsonFieldTransformer(Field field) {
@@ -90,9 +93,9 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
 
     try {
       JSONObject jo = new JSONObject(input);
-      Object categories = jo.get("categories");
 
-      if (categories != null){
+      if (jo.has(CATEGORIES_PROPERTY_NAME)){
+        Object categories = jo.get(CATEGORIES_PROPERTY_NAME);
         jo.put("values", categories);
       }
 
@@ -100,6 +103,8 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
     } catch (Exception e) {
       throw new DotStateException(e);
     }
+
+
   }
 
   @Override
