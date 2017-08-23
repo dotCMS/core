@@ -1,6 +1,6 @@
 package com.dotmarketing.business;
 
-import com.dotcms.business.CloseDB;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -260,7 +260,7 @@ public class RoleAPIImpl implements RoleAPI {
 		return CMS_OWNER;
 	}
 
-	@CloseDB
+	@CloseDBIfOpened
 	public Role loadLoggedinSiteRole() throws DotDataException {
 		if(LOGGEDIN_SITE_USER == null){
 			LOGGEDIN_SITE_USER =  rf.loadRoleByKey(Config.getStringProperty("CMS_LOGGED_IN_SITE_USER_ROLE"));

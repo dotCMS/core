@@ -119,7 +119,7 @@ public class DbConnectionFactory {
      * Otherwise will returns false, that means a new connection will be created.
      * @return boolean
      */
-    public static boolean isConnectionCreated() {
+    public static boolean connectionExists() {
 
         boolean isCreated = false;
         final Map<String, Connection> connectionsMap =
@@ -136,7 +136,7 @@ public class DbConnectionFactory {
         }
 
         return isCreated;
-    } // isConnectionCreated.
+    } // connectionExists.
 
     /**
      * Returns if the db is in a transaction - it will not open a db connection
