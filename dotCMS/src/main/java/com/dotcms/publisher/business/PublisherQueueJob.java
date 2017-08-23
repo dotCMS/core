@@ -93,7 +93,7 @@ public class PublisherQueueJob implements StatefulJob {
 	 * will send a bundle to publish (see
 	 * {@link com.dotcms.publishing.PublisherAPI#publish(PublisherConfig)}).
 	 *
-	 * @param jobExecution
+	 * @param jobExecutionContext
 	 *            - Context Containing the current job context information (the
 	 *            data).
 	 * @throws JobExecutionException
@@ -383,6 +383,7 @@ public class PublisherQueueJob implements StatefulJob {
 				}
 			} finally {
 				MDC.remove(BUNDLE_ID);
+				MDC.remove(ENDPOINT_NAME);
 			}
 		}
 	}
