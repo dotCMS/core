@@ -8,15 +8,11 @@ package com.dotmarketing.filters;
 
 import static com.liferay.util.CookieUtil.COOKIES_HTTP_ONLY;
 
-import javax.servlet.ServletRequest;
+import com.dotmarketing.util.Config;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
-
-
-import com.dotmarketing.util.Config;
 
 
 public class CookieServletResponse extends HttpServletResponseWrapper {
