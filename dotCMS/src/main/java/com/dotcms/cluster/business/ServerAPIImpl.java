@@ -155,10 +155,10 @@ public class ServerAPIImpl implements ServerAPI {
 
 
         File serverFile = serverIdFile();
+        serverFile.mkdirs();
+        serverFile.delete();
 
-		if(serverFile.exists()){
-			serverFile.delete();
-		}
+		
 		OutputStream os = new FileOutputStream(serverFile);
 		os.write(serverId.getBytes());
 		os.flush();
