@@ -2,6 +2,7 @@ package com.dotcms.util;
 
 import com.dotcms.repackage.org.apache.commons.dbcp.BasicDataSource;
 import com.dotmarketing.util.Constants;
+import com.dotmarketing.util.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -72,8 +73,8 @@ public class TestInitialContext extends InitialContext {
 
         try (InputStream resourceStream = loader.getResourceAsStream("db-config.properties")) {
             prop.load(resourceStream);
-        } catch (IOException e) {
-            throw new NamingException("Unable to get properties from db-config.properties");
+        } catch (Exception e) {
+            Logger.info(this.getClass(), "Unable to get properties from file db-config.properties - let's try the environment");
         }
         for(String key :System.getenv().keySet()){
           prop.put(key, System.getenv(key));
