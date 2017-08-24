@@ -1,20 +1,25 @@
-package com.dotmarketing.db;
+package com.dotcms.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.test.ReadOnlyTester;
+import com.dotcms.test.TransactionalTester;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-
+import com.dotmarketing.portlets.links.model.Link;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.UUID;
 
-import static org.hamcrest.MatcherAssert.assertThat;
+public class LocalTransactionAndCloseDBIfOpenedFactoryTest extends IntegrationTestBase {
 
+    final String SQL_COUNT = "select count(*) as test from inode";
+    final String SQL_INSERT = "insert into counter(name, currentid) values (?, ?)";
 
-public class DbConnectionFactoryTest extends IntegrationTestBase {
+    final DotConnect dc = new DotConnect();
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -23,191 +28,154 @@ public class DbConnectionFactoryTest extends IntegrationTestBase {
         IntegrationTestInitService.getInstance().init();
     }
 
-
-    final String SQL_COUNT = "select count(*) as test from inode";
-    final String SQL_INSERT = "insert into inode (inode, idate, owner, type) values (?,?,?,'testing')";
-
-    final DotConnect dc = new DotConnect();
-
-
     @Test
-    public void testSelectTransaction() throws Exception {
-        assertThat("No transaction", !DbConnectionFactory.inTransaction());
-        int i = testSelectInTransaction();
-        assertThat("we got the results of our query", i > 0);
-        assertThat("No transaction", !DbConnectionFactory.inTransaction());
-    }
+    public void testUpdateSelectTransaction() throws Exception {
 
-    @Test
-    public void testRollback() throws Exception {
-        assertThat("No transaction", !DbConnectionFactory.inTransaction());
-        int count = getCount();
-        boolean exceptionThrown = false;
-        try {
-            rollbackTransaction();
-        } catch (DotDataException dde) {
-            exceptionThrown = true;
-        }
-        assertThat("nothing was added", count == getCount());
-        assertThat("No transaction", !DbConnectionFactory.inTransaction());
-        assertThat("Exception was thrown and handled", exceptionThrown);
-    }
+        final TransactionalTester tx1        = new TransactionalTester();
+        final ReadOnlyTester readOnlyTester1 = new ReadOnlyTester();
+        final TransactionalTester tx2        = new TransactionalTester();
+        final ReadOnlyTester readOnlyTester2 = new ReadOnlyTester();
+        final StringBuilder builder          = new StringBuilder();
 
+        DbConnectionFactory.closeSilently(); // make sure any previous conn is already closed before start
 
-    @Test
-    public void testStartTransactionIfNeeded() throws Exception {
-        assertThat("No transaction", !DbConnectionFactory.inTransaction());
-        assertThat("Transaction started", DbConnectionFactory.startTransactionIfNeeded());
-        assertThat("No need to start another transaction", !DbConnectionFactory.startTransactionIfNeeded());
-        assertThat("In transaction", DbConnectionFactory.inTransaction());
-        DbConnectionFactory.closeAndCommit();
-        assertThat("No transaction", !DbConnectionFactory.inTransaction());
+        tx1.test(() -> {
 
-    }
+            builder.append(DbConnectionFactory.getConnection().toString());
+            update();
+            Assert.assertEquals(DbConnectionFactory.getConnection().toString(), builder.toString());
 
-    @Test
-    public void testNestedTransactions() throws Exception {
-        assertThat("No transaction", !DbConnectionFactory.inTransaction());
-        int count = getCount();
-        int count2 = testNestedTransactions(0);
-        assertThat("No transaction", !DbConnectionFactory.inTransaction());
-        assertThat("Counts are the same", count == count2);
+            readOnlyTester1.test( () -> {
+                // the con will be already created by the aspect.
+                Assert.assertTrue(DbConnectionFactory.connectionExists());
+                Assert.assertTrue(DbConnectionFactory.inTransaction());
+                Assert.assertEquals(DbConnectionFactory.getConnection().toString(), builder.toString());
+                getCount();
+                Assert.assertTrue(DbConnectionFactory.inTransaction());
+                Assert.assertEquals(DbConnectionFactory.getConnection().toString(), builder.toString());
+                final HibernateUtil hibernateUtil = new HibernateUtil(Link.class);
+                Link l = new Link();
+                String tableName = l.getType();
 
-        boolean exceptionThrown = false;
-        try {
-            count2 = testNestedTransactionsFail(0);
-        } catch (Throwable dse) {
-            dse.printStackTrace();
-            assertThat("we have our DotDataException", dse instanceof DotDataException);
-            assertThat("we have our DotStateException", dse.getCause() instanceof DotStateException);
-            assertThat("we have the right DotStateException", dse.getMessage().equals("crapped out!"));
-            assertThat("No transaction", !DbConnectionFactory.inTransaction());
-            exceptionThrown = true;
-        }
-        assertThat("No transaction", !DbConnectionFactory.inTransaction());
-        assertThat("exception should be thrown", exceptionThrown);
+                final String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
+                        + tableName + "_1_ where tree.child = " + tableName + ".inode and " + tableName
+                        + "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type ='"+tableName+"'";
+                hibernateUtil.setSQLQuery(sql);
 
-        testNestedTransactionsWrap(0);
-        assertThat("No transaction", !DbConnectionFactory.inTransaction());
-    }
+                tx2.test(() -> {
 
+                    Assert.assertTrue(DbConnectionFactory.inTransaction());
+                    Assert.assertEquals(DbConnectionFactory.getConnection().toString(), builder.toString());
+                    update();
+                    Assert.assertTrue(DbConnectionFactory.inTransaction());
+                    Assert.assertEquals(DbConnectionFactory.getConnection().toString(), builder.toString());
 
-    private int testNestedTransactions(final int nest) throws Exception {
-        return LocalTransaction.wrapReturn(() -> {
-            boolean alreadyTransaction = DbConnectionFactory.startTransactionIfNeeded();
+                    readOnlyTester2.test(() -> {
 
-            assertThat("Already in transaction", !alreadyTransaction);
-            if (nest > 10) {
-                return getCount();
-            } else {
-                return testNestedTransactions(nest + 1);
-            }
-        });
+                        Assert.assertTrue(DbConnectionFactory.inTransaction());
+                        Assert.assertEquals(DbConnectionFactory.getConnection().toString(), builder.toString());
+                        getCount();
+                        Assert.assertTrue(DbConnectionFactory.inTransaction());
+                        Assert.assertEquals(DbConnectionFactory.getConnection().toString(), builder.toString());
 
-    }
+                    });
+                });
 
-
-    private void testNestedTransactionsWrap(final int nest) throws Exception {
-        LocalTransaction.wrap(() -> {
-            boolean alreadyTransaction = DbConnectionFactory.startTransactionIfNeeded();
-
-            assertThat("Already in transaction", !alreadyTransaction);
-            if (nest < 10) {
                 try {
-                    testNestedTransactionsWrap(nest + 1);
+                    hibernateUtil.list();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    Assert.fail("Hibernate wired connection still works");
                 }
-            }
-        });
 
-    }
+            } );
 
-    private int testNestedTransactionsFail(final int nest) throws Exception {
-
-        return LocalTransaction.wrapReturn(() -> {
-            boolean alreadyTransaction = DbConnectionFactory.startTransactionIfNeeded();
-
-            assertThat("Already in transaction", !alreadyTransaction);
-            if (nest > 5) {
-                throw new DotStateException("crapped out!");
-            }
-            if (nest > 10) {
-                return getCount();
-            } else {
-                return testNestedTransactionsFail(nest + 1);
-            }
+            Assert.assertTrue(DbConnectionFactory.inTransaction());
+            Assert.assertTrue(DbConnectionFactory.connectionExists());
 
         });
 
+        Assert.assertFalse(DbConnectionFactory.inTransaction());
+        Assert.assertFalse(DbConnectionFactory.connectionExists());
     }
 
+    @Test
+    public void testSelectUpdateTransaction() throws Exception {
+
+        final TransactionalTester tx1        = new TransactionalTester();
+        final ReadOnlyTester readOnlyTester1 = new ReadOnlyTester();
+        final TransactionalTester tx2        = new TransactionalTester();
+        final ReadOnlyTester readOnlyTester2 = new ReadOnlyTester();
+        final StringBuilder builder          = new StringBuilder();
+
+        DbConnectionFactory.closeSilently(); // make sure any previous conn is already closed before start
+
+        readOnlyTester1.test(() -> {
+
+            builder.append(DbConnectionFactory.getConnection().toString());
+            getCount();
+            Assert.assertEquals(DbConnectionFactory.getConnection().toString(), builder.toString());
+
+            tx1.test( () -> {
+                // the con will be already created by the aspect.
+                Assert.assertTrue(DbConnectionFactory.connectionExists());
+                Assert.assertTrue(DbConnectionFactory.inTransaction());
+                Assert.assertEquals(DbConnectionFactory.getConnection().toString(), builder.toString());
+                update();
+                Assert.assertTrue(DbConnectionFactory.inTransaction());
+                Assert.assertEquals(DbConnectionFactory.getConnection().toString(), builder.toString());
+                final HibernateUtil hibernateUtil = new HibernateUtil(Link.class);
+                Link l = new Link();
+                String tableName = l.getType();
+
+                final String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
+                        + tableName + "_1_ where tree.child = " + tableName + ".inode and " + tableName
+                        + "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type ='"+tableName+"'";
+                hibernateUtil.setSQLQuery(sql);
+
+                readOnlyTester2.test(() -> {
+
+                    Assert.assertTrue(DbConnectionFactory.inTransaction());
+                    Assert.assertEquals(DbConnectionFactory.getConnection().toString(), builder.toString());
+                    getCount();
+                    Assert.assertTrue(DbConnectionFactory.inTransaction());
+                    Assert.assertEquals(DbConnectionFactory.getConnection().toString(), builder.toString());
+
+                    tx2.test(() -> {
+
+                        Assert.assertTrue(DbConnectionFactory.inTransaction());
+                        Assert.assertEquals(DbConnectionFactory.getConnection().toString(), builder.toString());
+                        update();
+                        Assert.assertTrue(DbConnectionFactory.inTransaction());
+                        Assert.assertEquals(DbConnectionFactory.getConnection().toString(), builder.toString());
+
+                    });
+                });
+
+                try {
+                    hibernateUtil.list();
+                } catch (Exception e) {
+                    Assert.fail("Hibernate wired connection still works");
+                }
+
+            } );
+
+            Assert.assertFalse(DbConnectionFactory.inTransaction());
+            Assert.assertTrue(DbConnectionFactory.connectionExists());
+        });
+
+        Assert.assertFalse(DbConnectionFactory.inTransaction());
+        Assert.assertFalse(DbConnectionFactory.connectionExists());
+
+    }
 
     private int getCount() {
         dc.setSQL(SQL_COUNT);
         return dc.getInt("test");
     }
 
-    private int rollbackTransaction() throws Exception {
-        int numInodes = getCount();
-        try {
-            return LocalTransaction.wrapReturn(() -> {
-
-                String dupeInode = UUID.randomUUID().toString();
-                assertThat("inTransaction", DbConnectionFactory.inTransaction());
-                dc.setSQL(SQL_INSERT);
-                dc.addParam(UUID.randomUUID().toString());
-                dc.addParam(new java.util.Date());
-                dc.addParam("test");
-                dc.loadResult();
-
-                assertThat("Inserts are visible in transaction", (getCount() == numInodes + 1));
-
-                dc.setSQL(SQL_INSERT);
-                dc.addParam(dupeInode);
-                dc.addParam(new java.util.Date());
-                dc.addParam("test");
-                dc.loadResult();
-
-                assertThat("Inserts visible in transaction", (getCount() == numInodes + 2));
-
-                // this should fail as we are inserting a dupe inode
-                dc.setSQL(SQL_INSERT);
-                dc.addParam(dupeInode);
-                dc.addParam(new java.util.Date());
-                dc.addParam("test");
-                dc.loadResult();
-
-                return getCount();
-            });
-        } catch (Exception e) {
-            //
-            assertThat("we should be rolled back with no transaction here", !DbConnectionFactory.inTransaction());
-            throw new DotDataException(e.getMessage(), e);
-        } finally {
-            assertThat("inTransaction", !DbConnectionFactory.inTransaction());
-        }
-    }
-
-
-    private int testSelectInTransaction() throws Exception {
-
-        assertThat("No transaction", !DbConnectionFactory.inTransaction());
-
-        assertThat("No transaction", !DbConnectionFactory.inTransaction());
-
-        try {
-            return LocalTransaction.wrapReturn(() -> {
-                dc.setSQL(SQL_COUNT);
-                int ret = dc.getInt("test");
-                assertThat("inTransaction", DbConnectionFactory.inTransaction());
-                return ret;
-            });
-        } catch (Exception e) {
-            throw new DotDataException(e.getMessage(), e);
-        } finally {
-            assertThat("inTransaction", !DbConnectionFactory.inTransaction());
-        }
+    private void update() throws DotDataException {
+        dc.executeUpdate(SQL_INSERT,
+                "test" + System.currentTimeMillis(), 1);
     }
 
 
