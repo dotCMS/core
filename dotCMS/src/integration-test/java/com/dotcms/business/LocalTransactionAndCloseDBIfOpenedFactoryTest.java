@@ -67,15 +67,9 @@ public class DbConnectionFactoryTest extends IntegrationTestBase {
 
     @Test
     public void testNestedTransactions() throws Exception {
-        final boolean isNewConnection  = !DbConnectionFactory.connectionExists();
         assertThat("No transaction", !DbConnectionFactory.inTransaction());
         int count = getCount();
         int count2 = testNestedTransactions(0);
-
-        if (isNewConnection) {
-            DbConnectionFactory.closeSilently();
-        }
-
         assertThat("No transaction", !DbConnectionFactory.inTransaction());
         assertThat("Counts are the same", count == count2);
 
