@@ -60,9 +60,7 @@ public class DbConnectionFactory {
     public static void setAutoCommit(final boolean autoCommit) {
 
         try {
-            if (inTransaction()) {
-                getConnection().setAutoCommit(autoCommit);
-            }
+            getConnection().setAutoCommit(autoCommit);
         } catch (SQLException e) {
             Logger.error(DbConnectionFactory.class,
                     "---------- DBConnectionFactory: error setting the autocommit " + Constants.DATABASE_DEFAULT_DATASOURCE,
