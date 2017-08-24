@@ -130,7 +130,7 @@ public class PublisherQueueJob implements StatefulJob {
 
 					Logger.info(this, "Processing bundle: ID: " + bundle.get("bundle_id") + ". Status: "
 							+ (UtilMethods.isSet(bundle.get("status")) ? bundle.get("status") : "Starting")
-							+ ". Date: " + publishDate);
+							+ ". Publish Date: " + publishDate);
 					if ( publishDate.before(new Date()) ) {
 						tempBundleId = (String) bundle.get("bundle_id");
 						MDC.put(BUNDLE_ID, BUNDLE_ID + "=" + tempBundleId);
