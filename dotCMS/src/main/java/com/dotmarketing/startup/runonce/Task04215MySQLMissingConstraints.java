@@ -1,7 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Logger;
 import java.sql.Connection;
@@ -44,42 +43,38 @@ public class Task04215MySQLMissingConstraints extends AbstractJDBCStartupTask {
     @Override
     public String getMySQLScript() {
         String sql = "";
-        final String fk_workflow_assign = "ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_assign FOREIGN KEY (assigned_to) REFERENCES cms_role (id);";
-        final String fk_workflow_task_asset = "ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_task_asset FOREIGN KEY (webasset) REFERENCES identifier (id);";
-        final String fk_workflow_step = "ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_step FOREIGN KEY (status) REFERENCES workflow_step (id);";
+        final String fkWorkflowAssign = "ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_assign FOREIGN KEY (assigned_to) REFERENCES cms_role (id);";
+        final String fkWorkflowTaskAsset = "ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_task_asset FOREIGN KEY (webasset) REFERENCES identifier (id);";
+        final String fkWorkflowStep = "ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_step FOREIGN KEY (status) REFERENCES workflow_step (id);";
         Connection conn = null;
-        final List<String> tables = new ArrayList<String>(
+        final List<String> tables = new ArrayList<>(
                 Arrays.asList("workflow_task"));
         try {
             conn = DbConnectionFactory.getDataSource().getConnection();
             conn.setAutoCommit(true);
             final List<ForeignKey> listForeignKeys = this.getForeingKeys(conn, tables, false);
-            final List<String> listForeignKeysNames = new ArrayList<String>();
-            for(ForeignKey foreignKey : listForeignKeys){
+            final List<String> listForeignKeysNames = new ArrayList<>();
+            for(final ForeignKey foreignKey : listForeignKeys){
                 listForeignKeysNames.add(foreignKey.fkName());
             }
             if(!listForeignKeysNames.contains("FK_workflow_assign")){
-                sql = sql + fk_workflow_assign;
+                sql += fkWorkflowAssign;
             }
             if(!listForeignKeysNames.contains("FK_workflow_task_asset")){
-                sql = sql + fk_workflow_task_asset;
+                sql += fkWorkflowTaskAsset;
             }
             if(!listForeignKeysNames.contains("FK_workflow_step")){
-                sql = sql + fk_workflow_step;
+                sql += fkWorkflowStep;
             }
         } catch (Exception e) {
-            Logger.error(this,
-                    String.format("Error running the upgrade task 4215",
-                            e.getMessage()), e);
+            Logger.error(this,"Error Running Upgrade Task 4215 " + e.getMessage(),e);
         } finally {
             try {
                 if (conn != null) {
                     conn.close();
                 }
             } catch (SQLException ex) {
-                Logger.error(this,
-                        String.format("Error closing the connection",
-                                ex.getMessage()), ex);
+                Logger.error(this,"Error Closing the Connection " + ex.getMessage(),ex);
             }
         }
 
