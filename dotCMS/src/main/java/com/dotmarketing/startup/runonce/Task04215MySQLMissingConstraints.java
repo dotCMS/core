@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Logger;
@@ -43,9 +44,9 @@ public class Task04215MySQLMissingConstraints extends AbstractJDBCStartupTask {
     @Override
     public String getMySQLScript() {
         String sql = "";
-        final String fkWorkflowAssign = "ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_assign FOREIGN KEY (assigned_to) REFERENCES cms_role (id);";
-        final String fkWorkflowTaskAsset = "ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_task_asset FOREIGN KEY (webasset) REFERENCES identifier (id);";
-        final String fkWorkflowStep = "ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_step FOREIGN KEY (status) REFERENCES workflow_step (id);";
+        final String FKWORKFLOWASSIGN = "ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_assign FOREIGN KEY (assigned_to) REFERENCES cms_role (id);";
+        final String FKWORKFLOWTASKASSET = "ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_task_asset FOREIGN KEY (webasset) REFERENCES identifier (id);";
+        final String FKWORKFLOWSTEP = "ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_step FOREIGN KEY (status) REFERENCES workflow_step (id);";
         Connection conn = null;
         final List<String> tables = new ArrayList<>(
                 Arrays.asList("workflow_task"));
@@ -53,18 +54,16 @@ public class Task04215MySQLMissingConstraints extends AbstractJDBCStartupTask {
             conn = DbConnectionFactory.getDataSource().getConnection();
             conn.setAutoCommit(true);
             final List<ForeignKey> listForeignKeys = this.getForeingKeys(conn, tables, false);
-            final List<String> listForeignKeysNames = new ArrayList<>();
-            for(final ForeignKey foreignKey : listForeignKeys){
-                listForeignKeysNames.add(foreignKey.fkName());
-            }
+            final List<String> listForeignKeysNames = listForeignKeys.stream().map(ForeignKey::fkName).collect(
+                    CollectionsUtils.toImmutableList());
             if(!listForeignKeysNames.contains("FK_workflow_assign")){
-                sql += fkWorkflowAssign;
+                sql += FKWORKFLOWASSIGN;
             }
             if(!listForeignKeysNames.contains("FK_workflow_task_asset")){
-                sql += fkWorkflowTaskAsset;
+                sql += FKWORKFLOWTASKASSET;
             }
             if(!listForeignKeysNames.contains("FK_workflow_step")){
-                sql += fkWorkflowStep;
+                sql += FKWORKFLOWSTEP;
             }
         } catch (Exception e) {
             Logger.error(this,"Error Running Upgrade Task 4215 " + e.getMessage(),e);
