@@ -36,6 +36,40 @@ public class DbConnectionFactory {
     protected static final String MSSQL = "Microsoft SQL Server";
     protected static final String H2 = "H2";
 
+    /**
+     * Gets the autoCommit for the current connection
+     * @return boolean
+     */
+    public static boolean getAutoCommit() {
+
+        boolean autoCommit = false;
+
+        try {
+            autoCommit = getConnection().getAutoCommit();
+        } catch (SQLException e) {
+            autoCommit = false;
+        }
+
+        return autoCommit;
+    } // getAutoCommit.
+
+    /**
+     * If is in transaction, will set the autocommit value
+     * @param autoCommit boolean
+     */
+    public static void setAutoCommit(final boolean autoCommit) {
+
+        try {
+            if (inTransaction()) {
+                getConnection().setAutoCommit(autoCommit);
+            }
+        } catch (SQLException e) {
+            Logger.error(DbConnectionFactory.class,
+                    "---------- DBConnectionFactory: error setting the autocommit " + Constants.DATABASE_DEFAULT_DATASOURCE,
+                    e);
+        }
+    } // setAutoCommit.
+
     public enum DataBaseType {
         POSTGRES, MySQL, MSSQL, ORACLE, H2;
     }
@@ -515,6 +549,7 @@ public class DbConnectionFactory {
         try {
             if (inTransaction()) {
                 DbConnectionFactory.getConnection().commit();
+
             }
         } catch (Exception e) {
             throw new DotDataException(e.getMessage(), e);

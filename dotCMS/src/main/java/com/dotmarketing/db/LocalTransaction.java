@@ -28,7 +28,10 @@ public class LocalTransaction {
     static public <T> T wrapReturn(final ReturnableDelegate<T> delegate) throws DotDataException {
 
         final boolean isNewConnection    = !DbConnectionFactory.connectionExists();
+        boolean autoCommit               = (!isNewConnection)?DbConnectionFactory.getAutoCommit():false;
         final boolean isLocalTransaction = DbConnectionFactory.startTransactionIfNeeded();
+        autoCommit                       = (isNewConnection)?DbConnectionFactory.getAutoCommit():autoCommit;
+
         T result = null;
 
         try {
@@ -36,6 +39,7 @@ public class LocalTransaction {
             result= delegate.execute();
             if (isLocalTransaction) {
                 DbConnectionFactory.commit();
+                DbConnectionFactory.setAutoCommit(autoCommit);
             }
         } catch (Throwable e) {
 
