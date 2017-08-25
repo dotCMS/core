@@ -1,9 +1,8 @@
 package com.dotmarketing.util;
 
-import com.dotmarketing.business.APILocator;
-
 import java.io.File;
-import java.util.UUID;
+
+import com.dotmarketing.business.APILocator;
 
 /**
  * Generic class to get return configuration parameters, and any logic required
@@ -16,21 +15,6 @@ import java.util.UUID;
 public class ConfigUtils {
 
 
-    /*
-     * This property determine if the app is running on dev mode.
-     */
-    public static final String DEV_MODE_KEY = "dotcms.dev.mode";
-
-	/**
-	 * Returns true if app is running on dev mode.
-	 * @return boolean
-     */
-	public static boolean isDevMode () {
-
-        // by default if the vars does not exists, we assume is not
-        // running on dev mode, so it is false.
-        return Config.getBooleanProperty(DEV_MODE_KEY, false);
-	}
 
 	public static String getDynamicContentPath() {
 		String realPath = Config.getStringProperty("DYNAMIC_CONTENT_PATH");
@@ -54,9 +38,6 @@ public class ConfigUtils {
 		return com.liferay.util.FileUtil.getRealPath("/WEB-INF/achecker_sql");
 	}
 
-	public static String getLucenePath() {
-		return getDynamicContentPath() + File.separator + "dotlucene";
-	}
 
 	public static String getBackupPath() {
 		return getDynamicContentPath() + File.separator + "backup";
@@ -91,22 +72,14 @@ public class ConfigUtils {
 
 		return path;
 	}
-
+	/**
+	 *
+	 * @deprecated use {@link ServerAPI.readServerId()} instead.  
+	 */
+	@Deprecated
 	public static String getServerId(){
-		String serverId;
-		if (Config.getStringProperty("DIST_INDEXATION_SERVER_ID")==null || Config.getStringProperty("DIST_INDEXATION_SERVER_ID").equalsIgnoreCase("")) {
-			serverId = APILocator.getServerAPI().readServerId();
+		return APILocator.getServerAPI().readServerId();
 
-			if(!UtilMethods.isSet(serverId)) {
-				serverId = UUID.randomUUID().toString();
-
-			}
-
-			Config.setProperty("DIST_INDEXATION_SERVER_ID", serverId);
-		} else {
-			serverId= Config.getStringProperty("DIST_INDEXATION_SERVER_ID");
-		}
-		return serverId;
 	}
 
 
