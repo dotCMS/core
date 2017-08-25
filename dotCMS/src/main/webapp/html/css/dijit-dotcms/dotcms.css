@@ -4448,7 +4448,7 @@ html, body {
   top: 10px;
   left: 3px;
   transform: rotate(-45deg);
-  background: white;
+  background: #fff;
   border-left: 1px solid #8A8A8A;
   border-top: 1px solid #8A8A8A;
 }
