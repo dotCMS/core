@@ -1007,7 +1007,7 @@ public class HostAPIImpl implements HostAPI {
         try {
 
             StringBuilder queryBuffer = new StringBuilder(condition);
-            queryBuffer.append(String.format("%s:%s", CONTENT_TYPE_CONDITION, Host.HOST_VELOCITY_VAR_NAME));
+            queryBuffer.append(String.format(" %s:%s", CONTENT_TYPE_CONDITION, Host.HOST_VELOCITY_VAR_NAME));
 
             if(UtilMethods.isSet(filter)){
                 queryBuffer.append( String.format(" +%s.hostName:%s*", Host.HOST_VELOCITY_VAR_NAME, filter.trim() ) );
