@@ -4,6 +4,8 @@ import static com.dotcms.vanityurl.business.VanityUrlAPIImpl.LEGACY_CMS_HOME_PAG
 import static org.mockito.Matchers.startsWith;
 
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.util.FiltersUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -24,6 +26,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.servlet.FilterChain;
 import javax.servlet.RequestDispatcher;
@@ -46,7 +49,7 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-public class CMSFilterTest {
+public class FiltersTest {
 
     private static ContentletAPI contentletAPI;
     private static Host defaultHost;
@@ -259,6 +262,73 @@ public class CMSFilterTest {
                     "looking for /about-us" + CMSFilter.CMS_INDEX_PAGE + ", got:" + request
                             .getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
             Assert.assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE,
+                    request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+            Assert.fail();
+
+        } finally {
+            try {
+                //Delete the test Vanity URL
+                if(vanityURLContentlet != null) {
+                    contentletAPI.delete(vanityURLContentlet, user, false);
+                }
+            } catch (Exception e) {
+                Logger.error(this.getClass(), "Error deleting Vanity URL");
+            }
+
+        }
+    }
+
+    /**
+     * Creates a vanity url that will redirect to a content that is a url map (news).
+     *
+     * @throws IOException
+     * @throws DotDataException
+     */
+    @Test
+    public void vanityRedirectURLMAP() throws IOException, DotDataException {
+
+        Contentlet vanityURLContentlet = null;
+
+        try {
+
+            final List<ContentType> listContentType = APILocator.getContentTypeAPI(user).findUrlMapped();
+            ContentType newsContentType =  null;
+            for(final ContentType contentType : listContentType){
+                if(("news").equalsIgnoreCase(contentType.variable())){
+                    newsContentType = contentType;
+                    break;
+                }
+            }
+            final Contentlet urlmapContentlet = contentletAPI.findByStructure(new StructureTransformer(newsContentType).asStructure(), user, true, -1, 0).get(0);
+
+            final String forwardTo = "/news/" + urlmapContentlet.getStringProperty("urlTitle");
+
+            //Create the VanityURL
+            vanityURLContentlet = filtersUtil
+                    .createVanityUrl("urlmap", defaultHost.getIdentifier(),
+                            "/urlnews",
+                            forwardTo, 200, 1, defaultLanguageId);
+            filtersUtil.publishVanityUrl(vanityURLContentlet);
+
+            VanityURLFilter filter = new VanityURLFilter();
+            FilterChain chain = Mockito.mock(FilterChain.class);
+
+            Logger.info(this.getClass(),
+                    "/urlnews should forward to " + forwardTo);
+            final HttpServletRequest request = getMockRequest("demo.dotcms.com", "/urlnews");
+            final MockResponseWrapper response = new MockResponseWrapper(
+                    Mockito.mock(HttpServletResponse.class));
+            filter.doFilter(request, response, chain);
+            Logger.info(this.getClass(), "looking for 200, got:" + response.getStatus());
+            Assert.assertEquals(200, response.getStatus());
+            Logger.info(this.getClass(),
+                    "looking for " + forwardTo + ", got:" + request
+                            .getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
+            Assert.assertEquals(forwardTo,
                     request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
 
         } catch (Exception e) {

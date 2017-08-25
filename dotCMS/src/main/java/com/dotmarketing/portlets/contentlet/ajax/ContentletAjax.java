@@ -759,9 +759,13 @@ public class ContentletAjax {
 		    }
 		}
 
-		if (!UtilMethods.isSet(orderBy)){
-			orderBy = "modDate desc";
-		}
+        if (!UtilMethods.isSet(orderBy)){
+            orderBy = "modDate desc";
+        }else{
+            if(orderBy.charAt(0)=='.'){
+                orderBy = st.getVelocityVarName() + orderBy;
+            }
+        }
 
 		lastSearchMap.put("showDeleted", showDeleted);
 		lastSearchMap.put("filterSystemHost", filterSystemHost);

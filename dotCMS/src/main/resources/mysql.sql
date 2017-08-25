@@ -2080,6 +2080,13 @@ create index workflow_idx_scheme_structure_1 on
 create unique index workflow_idx_scheme_structure_2 on
     workflow_scheme_x_structure(structure_id);
 
+delete from workflow_history;
+delete from workflow_comment;
+delete from workflowtask_files;
+delete from workflow_task;
+ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_assign FOREIGN KEY (assigned_to) REFERENCES cms_role (id);
+ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_task_asset FOREIGN KEY (webasset) REFERENCES identifier (id);
+ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_step FOREIGN KEY (status) REFERENCES workflow_step (id);
 alter table workflow_step add constraint fk_escalation_action foreign key (escalation_action) references workflow_action(id);
 
 alter table contentlet_version_info add constraint FK_con_ver_lockedby foreign key (locked_by) references user_(userid);

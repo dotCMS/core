@@ -149,6 +149,10 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 					+ INDEX_NAME + "]";
 		}
 
+		public String fkName(){
+			return FK_NAME;
+		}
+
 	}
 
 	/**
