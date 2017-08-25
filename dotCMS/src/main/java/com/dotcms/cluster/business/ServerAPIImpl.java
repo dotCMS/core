@@ -47,6 +47,7 @@ public class ServerAPIImpl implements ServerAPI {
 				if(localTransaction){
 					DbConnectionFactory.rollbackTransaction();
 				}
+				throw new DotDataException(e.getMessage(), e);
 			}finally {
 				if (localTransaction) {
 					try {
