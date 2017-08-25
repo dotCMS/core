@@ -7,8 +7,9 @@ import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.db.LocalTransaction;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.*;
 
 import java.io.*;
@@ -38,10 +39,23 @@ public class ServerAPIImpl implements ServerAPI {
     public Server getOrCreateServer(final String serverId) throws DotDataException {
 	    Server tryServer = getServer(serverId);
         if(tryServer==null || tryServer.getServerId() ==null)  {
-            LocalTransaction.wrap(() ->{
+			boolean localTransaction = false;
+        	try {
+				localTransaction =  DbConnectionFactory.startTransactionIfNeeded();
 				getServerTransaction(serverId);
-       
-            });
+			}catch(Exception e){
+				if(localTransaction){
+					DbConnectionFactory.rollbackTransaction();
+				}
+			}finally {
+				if (localTransaction) {
+					try {
+						DbConnectionFactory.closeAndCommit();
+					} catch (DotHibernateException e) {
+						throw new DotDataException(e.getMessage(), e);
+					}
+				}
+			}
 
         }
         
