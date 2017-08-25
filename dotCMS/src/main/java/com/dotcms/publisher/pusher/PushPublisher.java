@@ -1,5 +1,6 @@
 package com.dotcms.publisher.pusher;
 
+import com.dotcms.repackage.org.apache.log4j.MDC;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.pushpublish.AllEndpointsFailureEvent;
 import com.dotcms.system.event.local.type.pushpublish.AllEndpointsSuccessEvent;
@@ -95,10 +96,13 @@ public class PushPublisher extends Publisher {
     private PublishingEndPointAPI publishingEndPointAPI = APILocator.getPublisherEndPointAPI();
     private LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
 
-    private static final String PROTOCOL_HTTP = "http";
+    private static final String PROTOCOL_HTTP  = "http";
     private static final String PROTOCOL_HTTPS = "https";
-    private static final String HTTP_PORT = "80";
-	private static final String HTTPS_PORT = "443";
+    private static final String HTTP_PORT      = "80";
+	private static final String HTTPS_PORT 	   = "443";
+
+	private static final String BUNDLE_ID      = "BundleId";
+	private static final String ENDPOINT_NAME  = "EndpointName";
 
     @Override
     public PublisherConfig init ( PublisherConfig config ) throws DotPublishingException {
@@ -206,9 +210,16 @@ public class PushPublisher extends Publisher {
 					EndpointDetail detail = new EndpointDetail();
 
 					InputStream bundleStream = new BufferedInputStream(new FileInputStream(bundle));
+
+
+
 	        		try {
 	        			Bundle b=APILocator.getBundleAPI().getBundleById(this.config.getId());
 
+						//For logging purpose
+						MDC.put(ENDPOINT_NAME, ENDPOINT_NAME + "=" + endpoint.getServerName());
+						MDC.put(BUNDLE_ID, BUNDLE_ID + "=" + b.getName());
+						PushPublishLogger.log(this.getClass(), "Status Update: Sending Bundle");
 	        			WebTarget webTarget = client.target(endpoint.toURL()+"/api/bundlePublisher/publish")
 	        					.queryParam("AUTH_TOKEN", retriveKeyString(PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString())))
 	        					.queryParam("GROUP_ID", UtilMethods.isSet(endpoint.getGroupId()) ? endpoint.getGroupId() : endpoint.getId())
@@ -228,6 +239,7 @@ public class PushPublisher extends Publisher {
 	        				detail.setInfo("Everything ok");
 	        			} else {
 
+							PushPublishLogger.log(this.getClass(), "Status Update: Failed to send bundle.");
 	        				if(currentStatusHistory.getNumTries()==PublisherQueueJob.MAX_NUM_TRIES) {
 		        				APILocator.getPushedAssetsAPI().deletePushedAssets(this.config.getId(), environment.getId());
 		        			}
@@ -252,9 +264,13 @@ public class PushPublisher extends Publisher {
 						detail.setInfo(error);
 	        			failedEnvironment |= true;
 	        			errorCounter++;
-	        			Logger.error(this.getClass(), error);
+	        			Logger.error(this.getClass(), error, e);
+
+						PushPublishLogger.log(this.getClass(), "Status Update: Failed to send bundle. Exception: " + e.getMessage());
 	        		} finally {
 	        			CloseUtils.closeQuietly(bundleStream);
+						MDC.remove(ENDPOINT_NAME);
+						MDC.remove(BUNDLE_ID);
 	        		}
 	        		if (isHistoryEmpty || failedEnvironment) {
 	        			currentStatusHistory.addOrUpdateEndpoint(environment.getId(), endpoint.getId(), detail);
