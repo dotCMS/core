@@ -296,8 +296,9 @@ public class PublisherQueueJob implements StatefulJob {
 									}
 								} else {
 									PublishAuditStatus pas = pubAuditAPI.getPublishAuditStatus(bundleAudit.getBundleId());
+									endpointTrackingMap.putAll(pas.getStatusPojo().getEndpointsMap());
 									if (pas != null && pas.getStatus() == PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY) {
-										countGroupFailed--;
+										countGroupOk++;
 									} else if (pas != null && pas.getStatus().name().toLowerCase().startsWith("failed") && localHistory.getNumTries() >= MAX_NUM_TRIES) {
 										countGroupFailed++;
 									}
