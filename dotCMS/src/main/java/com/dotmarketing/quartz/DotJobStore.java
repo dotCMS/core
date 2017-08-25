@@ -47,7 +47,6 @@ public class DotJobStore extends JobStoreCMT {
 		setDataSource(TX_DATA_SOURCE_PREFIX + getInstanceName());
 		setDontSetAutoCommitFalse(true);
 
-//		String serverName = Config.getStringProperty("DIST_INDEXATION_SERVER_ID");
 		String serverName = APILocator.getServerAPI().readServerId();
 		if(!UtilMethods.isSet(serverName)){
 			serverName = "dotCMSServer";
