@@ -490,7 +490,7 @@
 		<!-- CURRENT LICENSE INFO -->
 		<div style="width:50%;float:left;border-right: #efefef 1px solid;padding-right:30px;">
 		   <h2><%= LanguageUtil.get(pageContext, "license-current-info") %></h2>
-		<div style="margin:10px ;border:1px solid silver;">
+		<div style="margin:10px ;border:1px solid silver;box-shadow: 2px 2px 2px #eeeeee;">
 		   
 			<table class="listingTable" >
 
@@ -585,7 +585,7 @@
 	        <div>
 
 	                <div style="margin:10px;">
-	                    <textarea style="width:500px;height:150px;color:rgb(38, 51, 63);font-family:Menlo, Monaco, Consolas;font-size:13px;background:#f5f5f5;padding:7px;"  id="licenseCodePasteField"  name="license_text_two" ><%= LanguageUtil.get(pageContext, "paste-your-license") %></textarea>
+	                    <textarea style="width:500px;height:150px;color:rgb(38, 51, 63);font-family:Menlo, Monaco, Consolas;font-size:13px;background:#f5f5f5;padding:7px;"  id="licenseCodePasteField"  name="license_text_two" placeholder="<%= LanguageUtil.get(pageContext, "paste-your-license") %>"></textarea>
 	                </div>
 	
 		           <div style="margin:20px;text-align: center">
