@@ -21,7 +21,7 @@ import com.dotmarketing.util.UUIDGenerator;
  *
  */
 
-public class Task00010CheckAnonymousUser implements StartupTask{
+public class Task00040CheckAnonymousUser implements StartupTask{
 	
 	private static final String SQL_SELECT_CMS_ROLE = "SELECT id, parent from cms_role where role_key = ?";
 	private static final String SQL_SELECT_USERS_CMS_ROLES = "SELECT id, role_id from users_cms_roles where role_id = ?";

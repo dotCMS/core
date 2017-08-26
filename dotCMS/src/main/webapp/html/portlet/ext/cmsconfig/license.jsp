@@ -23,15 +23,10 @@
         error = LicenseUtil.processForm( request );
     }
 
-    String serverId = "";
-    boolean badId=false;
-    try {
-        LicenseUtil.getLevel();
-        serverId = LicenseUtil.getDisplayServerId();
-    }
-    catch(Exception ex) {
-        badId=true;
-    }
+    String serverId= APILocator.getServerAPI().readServerId();
+
+
+
 
 
     boolean isCommunity =LicenseUtil.getLevel()==LicenseLevel.COMMUNITY.level;
@@ -151,31 +146,8 @@
 	    	dojo.xhrPost(xhrArgs);
 	    },
 
-	    showCurrentCustomer : function(){
-	    	//console.log("showing");
-			dojo.removeClass("currentCustomer", "hidden");
-			dojo.addClass("pasteTrial", "hidden");
-			dojo.addClass("currentCustomerBtn", "btn-warning");
-			
-			this.hideCurrentEvent = dojo.connect(dojo.byId("currentCustomerBtn"), "onclick", function(evt){
-			    licenseAdmin.hideCurrentCustomer();
-			});
-	    	
-	    },
+
 	    
-	    
-	    hideCurrentCustomer : function(){
-	    	//console.log("hiding");
-			dojo.addClass("currentCustomer", "hidden");
-			dojo.removeClass("pasteTrial", "hidden");
-			dojo.removeClass("currentCustomerBtn", "btn-warning");
-			dojo.removeClass("generateCode", "hidden");
-			
-			this.showCurrentEvent=dojo.connect(dojo.byId("currentCustomerBtn"), "onclick", function(evt){
-			    licenseAdmin.showCurrentCustomer();
-			});
-	    	
-	    },
 	    
 	    
 	    
@@ -213,17 +185,17 @@
 	   	
 	    doLicensePaste :function () {
 
-	   		
+	  
 	    	var data;
 
 	   		if(dojo.byId("licenseCodePasteField").value==undefined || dojo.byId("licenseCodePasteField").value.length>0){
 	   			 data = dojo.byId("licenseCodePasteField").value;
 	   		}
 	   		else{
-	   			console.log("test");
+	   			
 	   			 data = dojo.byId("licenseCodePasteFieldTwo").value;
 	   		}
-	   	 		
+
 	   		
 	   		var dataEncoded = encodeURIComponent(data);
 	   		
@@ -249,7 +221,9 @@
 	   	},
 
 		 levelName : function(level) {
-		    switch(level) {
+			 
+			var x = parseInt(level);
+		    switch(x) {
 		        case 100: return "Community";break;
 		        case 200: return "Professional"; break;
 		        case 300: return "Enterprise"; break;
@@ -270,6 +244,20 @@
 
          currentServerId :'<%= serverId %>',
 
+         
+         
+         displayId : function (id){
+        	 if(id== undefined || id.length==0){
+        		 return "";
+        	 }
+        	 else{
+        		 return id.split("-")[0]
+        	 }
+
+         },
+         
+         
+         
          load : function () {
         	if(dojo.byId("repotableBody") ==undefined){
         		return;
@@ -279,11 +267,10 @@
                 url: "/api/license/all/",
                 handleAs: "json",
                 load: function(data) {
-
                     dojo.forEach(data, function(lic) {
                         var row;
 
-                        if(lic.serverid===licenseAdmin.currentServerId) {
+                        if(lic.serverId===licenseAdmin.currentServerId) {
                             row=dojo.create("tr",{"class":"current_server_row selected"},dojo.byId("repotableBody"),"first");
                         }
                         else {
@@ -293,13 +280,13 @@
                         var serial=lic.id;
                         var optd=dojo.create("td",{"nowrap":"true", class: 'license-manager__listing-action'},row);
 
-                        if(lic.serverid==licenseAdmin.currentServerId  ) {
-                        	dojo.addClass(dojo.byId("generateCode"), "hidden");
+                        if(lic.serverId==licenseAdmin.currentServerId  ) {
+                        	
                             dojo.create("span",{"class":"unlockIcon", title:"<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-tip-free") )%>"},
                                     dojo.create("a",{href:"javascript:licenseAdmin.free()"},optd));
                         
                         } else if(lic.available == "false") {
-                        	dojo.addClass(dojo.byId("generateCode"), "hidden");
+                        	
                             dojo.create("span",{"class":"unlockIcon", title:"<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-tip-free") )%>"},
                                     dojo.create("a",{href:"javascript:licenseAdmin.free('"+lic.id+"','"+lic.fullserverid+"')"},optd));	
                         } else {
@@ -311,27 +298,24 @@
                                     dojo.create("a",{href:"javascript:licenseAdmin.del('"+serial+"')"},optd));
                         }
 
-                        if(lic.serverid==licenseAdmin.currentServerId  ) {
-                            dojo.create("td", { innerHTML: lic.serverid + " (this server)" }, row);
+                        if(lic.serverId==licenseAdmin.currentServerId  ) {
+                            dojo.create("td", { innerHTML: licenseAdmin.displayId(lic.serverId) + " (this server)" }, row);
                         }
                         else{
-                        	dojo.create("td", { innerHTML: lic.serverid }, row);
+                        	dojo.create("td", { innerHTML: licenseAdmin.displayId(lic.serverId) }, row);
                         }
-                        dojo.create("td", { innerHTML: lic.idDisplay}, row);
-                        dojo.create("td", { innerHTML: !lic.available || lic.serverid ? lic.lastping : ""}, row);
-                        dojo.create("td", { innerHTML: lic.perpetual ? "Perpetual" : lic.validUntil}, row);
-                        dojo.create("td", { innerHTML: licenseAdmin.levelName(lic.level)}, row);
+                        dojo.create("td", { innerHTML: licenseAdmin.displayId(lic.serial)}, row);
+                        dojo.create("td", { innerHTML: !lic.available || lic.serverId ? lic.lastPingStr : ""}, row);
+                        dojo.create("td", { innerHTML: (lic.perpetual ) ? "Perpetual" : lic.validUntilStr}, row);
+                        dojo.create("td", { innerHTML: lic.level}, row);
                         dojo.create("td", { innerHTML: licenseAdmin.typeName(lic.licenseType)}, row);
                     });
                     if(data.length==0){
                     	var row=dojo.create("tr",null,dojo.byId("repotableBody"));
                     	var optd=dojo.create("td",{"colspan":100,"align":"center"},row);
                     	optd.innerHTML="<a href='#' onclick=\"dijit.byId('uploadDiaWindow').show()\"><%= LanguageUtil.get(pageContext, "No-Results-Found") %></a>";
-                    	licenseAdmin.hideCurrentCustomer();
                     }
-                    else{
-                    	licenseAdmin.showCurrentCustomer();
-                    }
+                    
                     
                 } 
             
@@ -544,7 +528,7 @@
 
 						<%= LanguageUtil.get(pageContext, "request-trial-license") %>
 					</a>
-					</div></a>
+					</div>
 				<%}else{ %>
 					<b><%= LicenseUtil.getLevelName()  %></b>
 				<%} %>
@@ -556,7 +540,7 @@
 				Server ID:
 			</td>
 			<td>
-				<%= serverId %>
+				<%= serverId.split("-")[0] %>
 			</td>
 		</tr>
 		 <% if(!isCommunity){  %>
@@ -591,99 +575,30 @@
 				</tr>
 			<% } %>
 	</table>
+	
+    <!-- PASTE YOUR LICENSE KEY -->
+    <div >
+        <h2><%= LanguageUtil.get(pageContext, "I-already-have-a-license") %></h2>
+        <div>
 
-	<div style="text-align:center;margin:30px 0;">
-		<a href="/html/blank.jsp"
-			target="trialRequestWindow"
-			onclick="licenseAdmin.requestTrial()"
-			id="trailBtn"
-			class="btn btn-info">
-			<%= LanguageUtil.get(pageContext, "request-trial-license") %>
-		</a>
+                <div class="yui-u first" style="font-weight: bold;text-align: justify;">
+                    <%= LanguageUtil.get(pageContext, "paste-your-license") %>
+                </div>
+                <div class="yui-u">
+                    <textarea style="width:500px;height:150px;color:rgb(38, 51, 63);font-family:Menlo, Monaco, Consolas;font-size:13px;background:#f5f5f5;padding:7px;"  id="licenseCodePasteField"  name="license_text_two" ></textarea>
+                </div>
 
-		<span id="currentCustomerToggle">
-			<a href="#" id="currentCustomerBtn" class="btn" ><%= LanguageUtil.get(pageContext, "request-license-current-customers") %></a>
-		</span>
-	</div>
-
-
-	<div id="currentCustomer" <%if(isCommunity){ %>class="hidden"<%} %>>
-		<!-- CURRENT CUSTOMERS Single License -->
-		<div class="generateCode" id="generateCode">
-			<hr>
-			<div style="padding-bottom: 10px;">
-				<h2><%= LanguageUtil.get(pageContext, "request-license-code") %></h2>
-				<p><%= LanguageUtil.get(pageContext, "request-license-steps-explaination") %></p>
-			</div>
+   
+                <button type="button" onclick="licenseAdmin.doLicensePaste()" data-dojo-id="uploadButton" id="uploadButton" data-dojo-type="dijit.form.Button" name="upload_button" iconClass="keyIcon" value="upload">
+                    <%= LanguageUtil.get(pageContext, "save-license") %>
+                </button>
+         
+        </div>
+    </div>
+    
 
 
-			<div class="yui-gb" style="display: flex; align-items: stretch;">
-				<div class="yui-u first">
-					<div class="stepHeader"><%= LanguageUtil.get(pageContext, "global-step1") %> <small><%= LanguageUtil.get(pageContext, "request-license-step1-words") %></small></div>
-					<div class="stepBody">
-						<p>
-							<%= LanguageUtil.get(pageContext, "request-license-generate-code") %>
-						</p>
-						<div style="height:102px;">
-							<table border="0" class="blankTable">
-								<tr>
-									<th style="text-align: right;"><label for="license_type"><%= LanguageUtil.get(pageContext, "request-license-type") %>: </label></th>
-									<td>
-										<select onchange="licenseAdmin.doCodeRequest()" style="width:160px;"  data-dojo-id="license_type" id="license_type" name="license_type" data-dojo-type="dijit.form.Select">
-											<option value="--"></option>
-											<option value="prod"><%= LanguageUtil.get(pageContext, "request-license-prod") %></option>
-											<option value="dev"><%= LanguageUtil.get(pageContext, "request-license-dev") %></option>
-										</select>
-									</td>
-								</tr>
-								<tr>
-									<th style="text-align: right;"><label for="license_level"><%= LanguageUtil.get(pageContext, "request-license-level") %>: </label></th>
-									<td>
-										<select onchange="licenseAdmin.doCodeRequest()" style="width:160px;" data-dojo-id="license_level" id="license_level" name="license_level" data-dojo-type="dijit.form.Select">
-											<option value="<%=LicenseLevel.COMMUNITY.level%>"></option>
-											<option value="<%=LicenseLevel.STANDARD.level%>"><%= LanguageUtil.get(pageContext, "request-license-standard") %></option>
-											<option value="<%=LicenseLevel.PROFESSIONAL.level%>"><%= LanguageUtil.get(pageContext, "request-license-professional") %></option>
-											<option value="<%=LicenseLevel.PRIME.level%>"><%= LanguageUtil.get(pageContext, "request-license-prime") %></option>
-											<option value="<%=LicenseLevel.PLATFORM.level%>"><%= LanguageUtil.get(pageContext, "request-license-platform") %></option>
-										</select>
-									</td>
-								</tr>
-							</table>
-						</div>
-					  </div>
-				  </div>
-
-				<div class="yui-u">
-					<div class="stepHeader"><%= LanguageUtil.get(pageContext, "global-step2") %> <small><%= LanguageUtil.get(pageContext, "request-license-step2-words") %></small></div>
-					<div class="stepBody">
-						<div id="getMeMyLicenseCode">
-							<p><%= LanguageUtil.get(pageContext, "request-license-copy-code-to-portal") %></p>
-							<div style="word-wrap: break-word;font-family: monospace;">
-								<textarea id="licenseCode" style="width:100%;margin:auto;height:100px;font-family: monospace;border:1px solid silver;"></textarea>
-							</div>
-							<div style="text-align:center;margin-top: 15px;">
-								<button type="button" onclick="window.open('http://my.dotcms.com')" data-dojo-id="openPortal" id="openPortal"
-									  data-dojo-type="dijit.form.Button" name="openPortal" iconClass="" value="openPortal">
-									<%= LanguageUtil.get(pageContext, "request-license-go-to-portal") %>
-								</button>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="yui-u">
-					<div class="stepHeader"><%= LanguageUtil.get(pageContext, "global-step3") %> <small><%= LanguageUtil.get(pageContext, "request-license-step3-words") %></small></div>
-					<div class="stepBody">
-						<p><%= LanguageUtil.get(pageContext, "request-license-paste-code") %></p>
-						<textarea id="licenseCodePasteField"  name="license_text" style="width:100%;margin:auto;height:100px;font-family: monospace;border:1px solid silver;"></textarea>
-						<div style="padding:15px;text-align:center;">
-							<button type="button" onclick="licenseAdmin.doLicensePaste()" data-dojo-id="uploadButton2" id="uploadButton2" data-dojo-type="dijit.form.Button" name="upload_button2" iconClass="keyIcon" value="upload">
-								<%= LanguageUtil.get(pageContext, "save-license") %>
-							</button>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
+	<div id="currentCustomer">
 
 		<hr>
 
@@ -693,7 +608,7 @@
 				<%= LanguageUtil.get(pageContext, "Upload-license-pack-button") %>
 			</button>
 
-			<h2><%= LanguageUtil.get(pageContext, "cluster-licenses") %></h2>
+			<h2><%= LanguageUtil.get(pageContext, "Licenses") %></h2>
 			<p><%= LanguageUtil.get(pageContext, "request-license-cluster-license-explaination") %></p>
 
 			<table border="0" width="100%" class="listingTable">
@@ -717,25 +632,7 @@
 		</div>
 	</div><!-- /CURRENT CUSTOMER -->
 
-	<!-- PASTE YOUR LICENSE KEY -->
-	<div id="pasteTrial" <%if(!isCommunity){ %>class="hidden"<%} %>>
-		<h2><%= LanguageUtil.get(pageContext, "I-already-have-a-license") %></h2>
-		<div class="alert alert-warning">
-			<div class="yui-gf">
-				<div class="yui-u first" style="font-weight: bold;text-align: justify;">
-					<%= LanguageUtil.get(pageContext, "paste-your-license") %>
-				</div>
-				<div class="yui-u">
-					<textarea rows="5" cols="100"  id="licenseCodePasteFieldTwo"  name="license_text_two" ></textarea>
-				</div>
-			</div>
-			<div style="padding:10px;text-align:center;">
-				<button type="button" onclick="licenseAdmin.doLicensePaste()" data-dojo-id="uploadButton" id="uploadButton" data-dojo-type="dijit.form.Button" name="upload_button" iconClass="keyIcon" value="upload">
-					<%= LanguageUtil.get(pageContext, "save-license") %>
-				</button>
-			</div>
-		</div>
-	</div>
+
 
 </div><!-- /CONTENT WRAPPER -->
 
