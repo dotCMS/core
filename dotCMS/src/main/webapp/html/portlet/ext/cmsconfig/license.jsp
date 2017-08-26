@@ -580,26 +580,23 @@
 	
 	<div style="width:50%;float:left;vertical-align: top;padding-left:30px">
 	   <h2><%= LanguageUtil.get(pageContext, "I-already-have-a-license") %></h2>
-	    <div>
-	        
-	        <div>
+	    <div style="margin:10px ;">
+			<div >
+			    <textarea style="width:100%;height:150px;color:rgb(38, 51, 63);font-family:Menlo, Monaco, Consolas;font-size:13px;background:#f5f5f5;padding:7px;"  id="licenseCodePasteField"  name="license_text_two" placeholder="<%= LanguageUtil.get(pageContext, "paste-your-license") %>"></textarea>
+			</div>
+			
+			<div style="margin:20px;text-align: center">
+				<button type="button" onclick="licenseAdmin.doLicensePaste()" data-dojo-id="uploadButton" id="uploadButton" data-dojo-type="dijit.form.Button" name="upload_button" iconClass="keyIcon" value="upload">
+				    <%= LanguageUtil.get(pageContext, "save-license") %>
+				</button>
+			     &nbsp;&nbsp;&nbsp;or&nbsp;&nbsp;&nbsp;
+			     <button data-dojo-type="dijit.form.Button" onClick="dijit.byId('uploadDiaWindow').show()">
+			         <%= LanguageUtil.get(pageContext, "Upload-license-pack-button") %>
+			    </button>
+			</div>
+         
+        </div>
 
-	                <div style="margin:10px;">
-	                    <textarea style="width:500px;height:150px;color:rgb(38, 51, 63);font-family:Menlo, Monaco, Consolas;font-size:13px;background:#f5f5f5;padding:7px;"  id="licenseCodePasteField"  name="license_text_two" placeholder="<%= LanguageUtil.get(pageContext, "paste-your-license") %>"></textarea>
-	                </div>
-	
-		           <div style="margin:20px;text-align: center">
-		                <button type="button" onclick="licenseAdmin.doLicensePaste()" data-dojo-id="uploadButton" id="uploadButton" data-dojo-type="dijit.form.Button" name="upload_button" iconClass="keyIcon" value="upload">
-		                    <%= LanguageUtil.get(pageContext, "save-license") %>
-		                </button>
-		              &nbsp;&nbsp;&nbsp;or&nbsp;&nbsp;&nbsp;
-	                    <button data-dojo-type="dijit.form.Button" onClick="dijit.byId('uploadDiaWindow').show()">
-	                        <%= LanguageUtil.get(pageContext, "Upload-license-pack-button") %>
-	                    </button>
-	                </div>
-	         
-	        </div>
-	    </div>
     </div>
     <div style="clear: both;"></div>
     <hr>
