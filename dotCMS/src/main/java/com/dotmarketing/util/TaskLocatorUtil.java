@@ -21,14 +21,7 @@ import com.dotmarketing.fixtask.tasks.FixTask00060FixAssetType;
 import com.dotmarketing.fixtask.tasks.FixTask00070FixVersionInfo;
 import com.dotmarketing.fixtask.tasks.FixTask00080DeleteOrphanedContentTypeFields;
 import com.dotmarketing.fixtask.tasks.FixTask00090RecreateMissingFoldersInParentPath;
-import com.dotmarketing.startup.runalways.Task00001LoadSchema;
-import com.dotmarketing.startup.runalways.Task00003CreateSystemRoles;
-import com.dotmarketing.startup.runalways.Task00004LoadStarter;
-import com.dotmarketing.startup.runalways.Task00005LoadFixassets;
-import com.dotmarketing.startup.runalways.Task00006CreateSystemLayout;
-import com.dotmarketing.startup.runalways.Task00007RemoveSitesearchQuartzJob;
-import com.dotmarketing.startup.runalways.Task00009ClusterInitialize;
-import com.dotmarketing.startup.runalways.Task00010CheckAnonymousUser;
+import com.dotmarketing.startup.runalways.*;
 import com.dotmarketing.startup.runonce.*;
 
 /**
