@@ -14,6 +14,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -22,6 +23,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
@@ -30,6 +32,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import org.elasticsearch.indices.IndexMissingException;
 
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -594,8 +597,48 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     @Override
     public void validateVanityUrl(final Contentlet contentlet) {
 
-        final VanityUrl vanityUrl =
-                this.getVanityUrlFromContentlet(contentlet);
+        final User user = getUser(contentlet);
+        final Language language =
+                APILocator.getLanguageAPI().getLanguage(user.getLanguageId());
+
+        // check fields
+        checkMissingField(contentlet, language, VanityUrlContentType.ACTION_FIELD_VAR);
+        checkMissingField(contentlet, language, VanityUrlContentType.URI_FIELD_VAR);
+
+        final Integer action     =
+                (int)contentlet.getLongProperty(VanityUrlContentType.ACTION_FIELD_VAR);
+        final String uri         =
+                contentlet.getStringProperty(VanityUrlContentType.URI_FIELD_VAR);
+
+        if(!this.allowedActions.contains(action)){
+            String message = this.languageAPI
+                    .getStringKey(language, "message.vanity.url.error.invalidAction");
+
+            throw new DotContentletValidationException(message);
+        }
+
+        if (!isValidRegex(uri)) {
+          String message = this.languageAPI
+                    .getStringKey(language, "message.vanity.url.error.invalidURIPattern");
+
+            throw new DotContentletValidationException(message);
+        }
+    } // validateVanityUrl.
+
+    private void checkMissingField(final Contentlet contentlet,
+                                   final Language language,
+                                   final String fieldName) {
+        if (!contentlet.getMap().containsKey(fieldName)) {
+
+            throw new DotContentletValidationException(
+                    MessageFormat.format(
+                            this.languageAPI.getStringKey(language, "missing.field"),
+                            fieldName)
+                    );
+        }
+    }
+
+    private User getUser(final Contentlet contentlet) {
         User user;
         try {
             user = this.userAPI.loadUserById(contentlet.getModUser());
@@ -603,23 +646,8 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
             Logger.debug(this,e.getMessage(),e);
             user = this.systemUser;
         }
-        
-        final Language l = APILocator.getLanguageAPI().getLanguage(user.getLanguageId());
-        
-        if(!allowedActions.contains(vanityUrl.getAction())){
-            String message = APILocator.getLanguageAPI()
-                    .getStringKey(l, "message.vanity.url.error.invalidAction");
-
-            throw new DotContentletValidationException(message);
-        }
-      
-        if (!isValidRegex(vanityUrl.getURI())) {
-          String message = APILocator.getLanguageAPI()
-                    .getStringKey(l, "message.vanity.url.error.invalidURIPattern");
-
-            throw new DotContentletValidationException(message);
-        }
-    } // validateVanityUrl.
+        return user;
+    }
 
     /**
      * Get the list of cached Vanity URLs associated to a given site and SYSTEM_HOST
