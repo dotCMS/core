@@ -4437,15 +4437,15 @@ html, body {
   color: inherit;
   font-size: inherit;
   padding: 8px;
-  margin-left: 10px;
+  margin-left: 7px;
   border-radius: 2px;
 }
 .dijitTooltipContainer:before {
-  width: 14px;
-  height: 14px;
+  width: 8px;
+  height: 8px;
   content: "";
   position: absolute;
-  top: 10px;
+  top: 12px;
   left: 3px;
   transform: rotate(-45deg);
   background: #fff;
@@ -9680,7 +9680,8 @@ Styles for commons fields along the backend
   color: #D0021B;
   font-size: 9px;
   position: relative;
-  top: -2px;
+  top: -4px;
+  left: 2px;
 }
 
 #inline-form, .fileSelectorControls, .inline-form {
