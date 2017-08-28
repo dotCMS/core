@@ -310,6 +310,7 @@ public class PublishFactory {
                     Contentlet c = (Contentlet) asset;
                     if ( !APILocator.getWorkflowAPI().findSchemeForStruct( c.getStructure() ).isMandatory() ) {
                         contentletAPI.publish( (Contentlet) asset, user, false );
+                        ContentletServices.invalidateLive(c);
                     }
                 } catch ( DotSecurityException e ) {
                     //User has no permission to publish the content in the page so we just skip it
