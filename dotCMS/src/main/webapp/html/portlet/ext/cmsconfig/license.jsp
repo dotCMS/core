@@ -56,182 +56,182 @@
 
 <script type="text/javascript">
 
-	dojo.declare("dotcms.dijit.cmsconfig.LicenseAdmin", null, {
+    dojo.declare("dotcms.dijit.cmsconfig.LicenseAdmin", null, {
 
-	    isCommunity		:"<%=isCommunity%>",
-	    
-	    requestTrial : function(){
-	    	var data = {"licenseLevel":"<%=LicenseLevel.PLATFORM.level%>","licenseType":"trial"};
-	   		
-	    	var xhrArgs = {
-	    		url: "/api/license/requestCode/licenseType/"+ data.licenseType +'/licenseLevel/'+ data.licenseLevel,
-	   	        handleAs: "text",
-	   	        load: function(data) {
-	   	        	var isError = false;
-	   	        	var json = data;
-	   	        	
-	   	        	try{
-	    				json = JSON.parse(json);
-					} catch (e) {
-						console.log(e);
-						console.log(json)
-					}
-				
-	   	        	if (json.success == false || json.success == "false") {
-	   	        		isError = true;
-	   	        	}
+        isCommunity     :"<%=isCommunity%>",
+        
+        requestTrial : function(){
+            var data = {"licenseLevel":"<%=LicenseLevel.PLATFORM.level%>","licenseType":"trial"};
+            
+            var xhrArgs = {
+                url: "/api/license/requestCode/licenseType/"+ data.licenseType +'/licenseLevel/'+ data.licenseLevel,
+                handleAs: "text",
+                load: function(data) {
+                    var isError = false;
+                    var json = data;
+                    
+                    try{
+                        json = JSON.parse(json);
+                    } catch (e) {
+                        console.log(e);
+                        console.log(json)
+                    }
+                
+                    if (json.success == false || json.success == "false") {
+                        isError = true;
+                    }
 
-	   	        	if(isError){
-	   	        		showDotCMSSystemMessage("There was an error generating the Request Code. Please try again",true);
-	   	        	}else{
-	   	        		var requestCode = json.requestCode;
-	   	        		dojo.byId("trialLicenseRequestCode").value=requestCode;
-					dojo.byId("trialLicenseForm").submit();
-	   	        }
-	   	        },
-		   	    error: function (error) {
-		   	    	showDotCMSSystemMessage("ERROR:" + error,true);
-		   	    	
-		   	    	console.log(error);
-		   	    }
-	   	    };
-	    	
-	    	dojo.xhrPost(xhrArgs);
-	    },
-	
-	    doCodeRequest : function () {
-	    	
-	    	if(dijit.byId("license_type").getValue()==undefined || dijit.byId("license_type").getValue()=="--"){
-	    		//console.log("code request: " + dijit.byId("license_type").getValue());
-	    		dojo.byId("licenseCode").value="";
-	    		return;
-	    	}
-	    	if(dijit.byId("license_level").getValue() == "<%=LicenseLevel.COMMUNITY.level%>"){
-	    		//console.log("code request: " + dijit.byId("license_level").getValue());
-	    		dojo.byId("licenseCode").value="";
-	    		return;
-	    	}
-	    	
+                    if(isError){
+                        showDotCMSSystemMessage("There was an error generating the Request Code. Please try again",true);
+                    }else{
+                        var requestCode = json.requestCode;
+                        dojo.byId("trialLicenseRequestCode").value=requestCode;
+                    dojo.byId("trialLicenseForm").submit();
+                }
+                },
+                error: function (error) {
+                    showDotCMSSystemMessage("ERROR:" + error,true);
+                    
+                    console.log(error);
+                }
+            };
+            
+            dojo.xhrPost(xhrArgs);
+        },
+    
+        doCodeRequest : function () {
+            
+            if(dijit.byId("license_type").getValue()==undefined || dijit.byId("license_type").getValue()=="--"){
+                //console.log("code request: " + dijit.byId("license_type").getValue());
+                dojo.byId("licenseCode").value="";
+                return;
+            }
+            if(dijit.byId("license_level").getValue() == "<%=LicenseLevel.COMMUNITY.level%>"){
+                //console.log("code request: " + dijit.byId("license_level").getValue());
+                dojo.byId("licenseCode").value="";
+                return;
+            }
+            
 
-	    	var licenseType = dijit.byId("license_type").getValue();
-	    	var licenseLevel = dijit.byId("license_level").getValue();
-					
-	    	var xhrArgs = {
-	    		url: "/api/license/requestCode/licenseType/"+ licenseType + '/licenseLevel/' + licenseLevel,
-	    		handleAs: "text",
-	    		load: function (data) {
-	    			console.log('data is '+ data)
-	    			var json = JSON.parse(data);
-	    			
-	    			var isError = false;
-					
-	    			if (json.success == false || json.success == "false") {
-	    				isError = true;
-	   	        }
-	
-	    			if(isError){
-	    				showDotCMSSystemMessage("There was an error generating the Request Code. Please try again", true);
-	    			} else {
-	    				console.log(json.requestCode);
-	    				var requestCode = json.requestCode;
-	    				dojo.byId("licenseCode").value=requestCode;
-	    			}
-	    		},
-	    		error: function (error) {
-	    			showDotCMSSystemMessage("ERROR:" + error,true);
-	    			console.log(error);
-	    		}
-	    	};
-	   	
-	    	dojo.xhrPost(xhrArgs);
-	    },
+            var licenseType = dijit.byId("license_type").getValue();
+            var licenseLevel = dijit.byId("license_level").getValue();
+                    
+            var xhrArgs = {
+                url: "/api/license/requestCode/licenseType/"+ licenseType + '/licenseLevel/' + licenseLevel,
+                handleAs: "text",
+                load: function (data) {
+                    console.log('data is '+ data)
+                    var json = JSON.parse(data);
+                    
+                    var isError = false;
+                    
+                    if (json.success == false || json.success == "false") {
+                        isError = true;
+                }
+    
+                    if(isError){
+                        showDotCMSSystemMessage("There was an error generating the Request Code. Please try again", true);
+                    } else {
+                        console.log(json.requestCode);
+                        var requestCode = json.requestCode;
+                        dojo.byId("licenseCode").value=requestCode;
+                    }
+                },
+                error: function (error) {
+                    showDotCMSSystemMessage("ERROR:" + error,true);
+                    console.log(error);
+                }
+            };
+        
+            dojo.xhrPost(xhrArgs);
+        },
 
 
-	    
-	    
-	    
-	    
-	    resetLicense :function () {
+        
+        
+        
+        
+        resetLicense :function () {
 
-	    	var data = {"licenseText":"reset"};
-	   	    dojo.xhrPost({
-	   	        url: "/api/license/resetLicense/",
-	   	        handleAs: "text",
-	   	        postData: data,
-	   	        load: function(message) {
+            var data = {"licenseText":"reset"};
+            dojo.xhrPost({
+                url: "/api/license/resetLicense/",
+                handleAs: "text",
+                postData: data,
+                load: function(message) {
                     licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-reset")) %>')
-	   	        },
-	   	     	error: function(error){
-	   	     		showDotCMSSystemMessage("ERROR:" + error,true);
-	   	     		//licenseAdmin.refreshLayout();
-	   	     	
-	   	     	}
-	   	    });
-	   	},
-	   	
-	   	
-	   	refreshLayout : function(text){
-	   		if(dijit.byId('uploadDiaWindow')){
-	   			dijit.byId('uploadDiaWindow').hide();
-	   		}
-	   		if(dijit.byId('uploadgetLicenseCodeDiaDiaWindow')){
-	   			dijit.byId('getLicenseCodeDia').hide();
-	   		}
+                },
+                error: function(error){
+                    showDotCMSSystemMessage("ERROR:" + error,true);
+                    //licenseAdmin.refreshLayout();
+                
+                }
+            });
+        },
+        
+        
+        refreshLayout : function(text){
+            if(dijit.byId('uploadDiaWindow')){
+                dijit.byId('uploadDiaWindow').hide();
+            }
+            if(dijit.byId('uploadgetLicenseCodeDiaDiaWindow')){
+                dijit.byId('getLicenseCodeDia').hide();
+            }
 
-	   		loadLicenseTabMessage(text);
-	   	},
-	   	
-	    	
-	   	
-	    doLicensePaste :function () {
+            loadLicenseTabMessage(text);
+        },
+        
+            
+        
+        doLicensePaste :function () {
 
-	  
-	    	var data;
+      
+            var data;
 
-	   		if(dojo.byId("licenseCodePasteField").value==undefined || dojo.byId("licenseCodePasteField").value.length>0){
-	   			 data = dojo.byId("licenseCodePasteField").value;
-	   		}
-	   		else{
-	   			
-	   			 data = dojo.byId("licenseCodePasteFieldTwo").value;
-	   		}
+            if(dojo.byId("licenseCodePasteField").value==undefined || dojo.byId("licenseCodePasteField").value.length>0){
+                 data = dojo.byId("licenseCodePasteField").value;
+            }
+            else{
+                
+                 data = dojo.byId("licenseCodePasteFieldTwo").value;
+            }
 
-	   		
-	   		var dataEncoded = encodeURIComponent(data);
-	   		
-	   		
-	   	    dojo.xhrPost({
-	   	        url: "/api/license/applyLicense?licenseText="+dataEncoded,
-	   	        handleAs: "text",
-	   	        load: function(message) {
-	   	        	
-	   	        	if(! message ){
-	   	        		licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-applied")) %>');
-	   	        	}
-	   	        	else{
-	   	        		showDotCMSSystemMessage("ERROR: " + message,true);
-	   	        		console.log("message:" + message);
-	   	        	}
-	   	        },
-	   	     	error: function(error){
-	   	     		
-	   	     	
-	   	     	}
-	   	    });
-	   	},
+            
+            var dataEncoded = encodeURIComponent(data);
+            
+            
+            dojo.xhrPost({
+                url: "/api/license/applyLicense?licenseText="+dataEncoded,
+                handleAs: "text",
+                load: function(message) {
+                    
+                    if(! message ){
+                        licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-applied")) %>');
+                    }
+                    else{
+                        showDotCMSSystemMessage("ERROR: " + message,true);
+                        console.log("message:" + message);
+                    }
+                },
+                error: function(error){
+                    
+                
+                }
+            });
+        },
 
-		 levelName : function(level) {
-			 
-			var x = parseInt(level);
-		    switch(x) {
-		        case 100: return "Community";break;
-		        case 200: return "Professional"; break;
-		        case 300: return "Enterprise"; break;
-		        case 400: return "Prime"; break;
+         levelName : function(level) {
+             
+            var x = parseInt(level);
+            switch(x) {
+                case 100: return "Community";break;
+                case 200: return "Professional"; break;
+                case 300: return "Enterprise"; break;
+                case 400: return "Prime"; break;
                 case 500: return "Platform"; break;
-		        default: return "-";
-		    }
-		},
+                default: return "-";
+            }
+        },
         
         typeName : function (type) {
             switch(type) {
@@ -247,21 +247,21 @@
          
          
          displayId : function (id){
-        	 if(id== undefined || id.length==0){
-        		 return "";
-        	 }
-        	 else{
-        		 return id.split("-")[0]
-        	 }
+             if(id== undefined || id.length==0){
+                 return "";
+             }
+             else{
+                 return id.split("-")[0]
+             }
 
          },
          
          
          
          load : function () {
-        	if(dojo.byId("repotableBody") ==undefined){
-        		return;
-        	}
+            if(dojo.byId("repotableBody") ==undefined){
+                return;
+            }
             dojo.empty("repotableBody");
             dojo.xhrGet({
                 url: "/api/license/all/",
@@ -269,7 +269,8 @@
                 load: function(data) {
                     dojo.forEach(data, function(lic) {
                         var row;
-
+                        var expiredSpan=(lic.expired) ?  "<span style='text-decoration: line-through;'>" : "<span>";
+                        var closeSpan= "</span>";
                         if(lic.serverId===licenseAdmin.currentServerId) {
                             row=dojo.create("tr",{"class":"current_server_row selected"},dojo.byId("repotableBody"),"first");
                         }
@@ -281,39 +282,49 @@
                         var optd=dojo.create("td",{"nowrap":"true", class: 'license-manager__listing-action'},row);
 
                         if(lic.serverId==licenseAdmin.currentServerId  ) {
-                        	
+                            
                             dojo.create("span",{"class":"unlockIcon", title:"<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-tip-free") )%>"},
                                     dojo.create("a",{href:"javascript:licenseAdmin.free()"},optd));
-                        
+                            dojo.create("img", {src:"/html/images/shim.gif", style:"width:16px;height:16px"},optd);
                         } else if(lic.available == "false") {
-                        	
+                            
                             dojo.create("span",{"class":"unlockIcon", title:"<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-tip-free") )%>"},
-                                    dojo.create("a",{href:"javascript:licenseAdmin.free('"+lic.id+"','"+lic.fullserverid+"')"},optd));	
+                                    dojo.create("a",{href:"javascript:licenseAdmin.free('"+lic.id+"','"+lic.fullserverid+"')"},optd));  
                         } else {
-
-                            dojo.create("span",{"class":"downloadIcon",title:"<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-tip-pick")) %>"},
+                            if(lic.expired){
+                            	dojo.create("img", {src:"/html/images/shim.gif", style:"width:16px;height:16px"},optd);
+                            }
+                            else{
+                                dojo.create("span",{"class":"downloadIcon",title:"<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-tip-pick")) %>"},
                                     dojo.create("a",{href:"javascript:licenseAdmin.pick('"+serial+"')"},optd));
-
+                            }
                             dojo.create("span",{"class":"deleteIcon", title:"<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-tip-del")) %>"},
                                     dojo.create("a",{href:"javascript:licenseAdmin.del('"+serial+"')"},optd));
                         }
 
                         if(lic.serverId==licenseAdmin.currentServerId  ) {
-                            dojo.create("td", { innerHTML: licenseAdmin.displayId(lic.serverId) + " (this server)" }, row);
+                            dojo.create("td", { innerHTML:expiredSpan + licenseAdmin.displayId(lic.serverId) + " (this server)" }, row);
                         }
                         else{
-                        	dojo.create("td", { innerHTML: licenseAdmin.displayId(lic.serverId) }, row);
+                            dojo.create("td", { innerHTML: expiredSpan + licenseAdmin.displayId(lic.serverId) + closeSpan }, row);
                         }
-                        dojo.create("td", { innerHTML: licenseAdmin.displayId(lic.serial)}, row);
+                        dojo.create("td", { innerHTML: expiredSpan + licenseAdmin.displayId(lic.serial) + closeSpan}, row);
                         dojo.create("td", { innerHTML: !lic.available || lic.serverId ? lic.lastPingStr : ""}, row);
-                        dojo.create("td", { innerHTML: (lic.perpetual ) ? "Perpetual" : lic.validUntilStr}, row);
-                        dojo.create("td", { innerHTML: lic.level}, row);
-                        dojo.create("td", { innerHTML: licenseAdmin.typeName(lic.licenseType)}, row);
+                        
+                        
+                        
+                        dojo.create("td", { innerHTML: (lic.perpetual ) 
+                            ? "<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "request-license-perpetual")) %>" 
+                            : (lic.expired)
+                               ? "<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "request-license-expired")) %>" 
+                               : lic.validUntilStr}, row);
+                        dojo.create("td", { innerHTML:expiredSpan + lic.level + closeSpan}, row);
+                        dojo.create("td", { innerHTML:expiredSpan + licenseAdmin.typeName(lic.licenseType)+ closeSpan}, row);
                     });
                     if(data.length==0){
-                    	var row=dojo.create("tr",null,dojo.byId("repotableBody"));
-                    	var optd=dojo.create("td",{"colspan":100,"align":"center"},row);
-                    	optd.innerHTML="<a href='#' onclick=\"dijit.byId('uploadDiaWindow').show()\"><%= LanguageUtil.get(pageContext, "No-Results-Found") %></a>";
+                        var row=dojo.create("tr",null,dojo.byId("repotableBody"));
+                        var optd=dojo.create("td",{"colspan":100,"align":"center"},row);
+                        optd.innerHTML="<a href='#' onclick=\"dijit.byId('uploadDiaWindow').show()\"><%= LanguageUtil.get(pageContext, "No-Results-Found") %></a>";
                     }
                     
                     
@@ -322,9 +333,9 @@
             
 
             });
-        	<%if(UtilMethods.isSet(request.getParameter("message"))){ %>
-    			showDotCMSSystemMessage('<%= UtilMethods.javaScriptify(request.getParameter("message")) %>');
-    		<%} %>
+            <%if(UtilMethods.isSet(request.getParameter("message"))){ %>
+                showDotCMSSystemMessage('<%= UtilMethods.javaScriptify(request.getParameter("message")) %>');
+            <%} %>
         },
 
         del:  function (serial) {
@@ -332,7 +343,7 @@
             dojo.xhrDelete({
                 url: "/api/license/delete/id/"+serial+"/",
                 load: function() {
-                	licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-deleted")) %>');
+                    licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-deleted")) %>');
                 }
             });
         },
@@ -342,7 +353,7 @@
             dojo.xhrPost({
                 url: "/api/license/pick/serial/"+serial+"/",
                 load: function() {
-                	licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-applied")) %>');
+                    licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-applied")) %>');
                 }
             });
         },
@@ -352,7 +363,7 @@
             dojo.xhrPost({
                 url: "/api/license/free/",
                 load: function() {
-                	licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-freed") )%>');
+                    licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-freed") )%>');
                 }
             });
             
@@ -363,7 +374,7 @@
             dojo.xhrPost({
                 url: "/api/license/free/serial/"+serial+"/serverid/"+serverid+"/",
                 load: function() {
-                	licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-freed") )%>');
+                    licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-freed") )%>');
                 }
             });
             
@@ -371,35 +382,35 @@
         
         doPackUpload : function () {
 
-        	if(!dojo.byId("uploadPackFile").value || dojo.byId("uploadPackFile").value.length<1){
-        		return;
-        	}
+            if(!dojo.byId("uploadPackFile").value || dojo.byId("uploadPackFile").value.length<1){
+                return;
+            }
 
-        	dojo.io.iframe.send({
+            dojo.io.iframe.send({
 
-	   	     	form: dojo.byId("uploadPackForm"),
-	   	        load: function(message, ioArgs) {
-	   	        	console.log(message);
-	   	        	licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "licenses-uploaded") )%>');
-	   	        },
-	   	     	error: function(error){
-	   	     		//showDotCMSSystemMessage("ERROR:" + error,true);
-	   	     	licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "licenses-uploaded") )%>');
-	   	     	
-	   	     	}
-	   	    });
-        	
+                form: dojo.byId("uploadPackForm"),
+                load: function(message, ioArgs) {
+                    console.log(message);
+                    licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "licenses-uploaded") )%>');
+                },
+                error: function(error){
+                    //showDotCMSSystemMessage("ERROR:" + error,true);
+                licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "licenses-uploaded") )%>');
+                
+                }
+            });
+            
             //dojo.byId('uploadPackForm').submit();
             return false;
         }
-	});
-	
+    });
+    
 
-		var licenseAdmin = new dotcms.dijit.cmsconfig.LicenseAdmin({});
+        var licenseAdmin = new dotcms.dijit.cmsconfig.LicenseAdmin({});
 
-	dojo.require("dojo.io.iframe");
-	dojo.ready(licenseAdmin.load);
-	
+    dojo.require("dojo.io.iframe");
+    dojo.ready(licenseAdmin.load);
+    
 </script>
 
 
@@ -407,78 +418,78 @@
 
 <style type="text/css">
     .blankTable,  .blankTable th, .blankTable td {
-		border: 0px solid #ffffff;
+        border: 0px solid #ffffff;
     }
     .blankTable {width: 100%;}
     .blankTable td {padding: 8px 10px;}
     .blankTable th {font-weight: bold;background: #fff;}
     .alert {
-    	border-radius: 4px;
-    	padding: 25px 20px 20px 20px;
-    	border: 1px solid transparent;
+        border-radius: 4px;
+        padding: 25px 20px 20px 20px;
+        border: 1px solid transparent;
     }
     .alert-info {
-    	color: #31708f;
-		background-color: #d9edf7;
-		border-color: #bce8f1;
+        color: #31708f;
+        background-color: #d9edf7;
+        border-color: #bce8f1;
     }
     .alert-warning {
-    	color: #8a6d3b;
-		background-color: #fcf8e3;
-		border-color: #faebcc;
+        color: #8a6d3b;
+        background-color: #fcf8e3;
+        border-color: #faebcc;
     }
     .hidden{display: none;}
     hr {
-    	margin: 40px 0;
+        margin: 40px 0;
     }
     .stepHeader {
-    	color: #31708f;
-    	background-color: #d9edf7;
-    	border: 1px solid #bce8f1;
-    	padding:5px 8px;
-    	font-size: 16px;
-    	font-weight: bold;
+        color: #31708f;
+        background-color: #d9edf7;
+        border: 1px solid #bce8f1;
+        padding:5px 8px;
+        font-size: 16px;
+        font-weight: bold;
     }
     .stepHeader small {
-    	font-weight: 300;
-    	font-size: 12px;
+        font-weight: 300;
+        font-size: 12px;
     }
     .stepBody {
-    	border: 1px solid #bce8f1;
-    	padding: 15px 10px;
-    	border-top: 0;
-    	height: 90%;
+        border: 1px solid #bce8f1;
+        padding: 15px 10px;
+        border-top: 0;
+        height: 90%;
     }
     .btn{
-    	display: inline-blcok;
-    	padding: 8px 12px;
-    	font-size: 1.2em;
-    	text-decoration: none;
-    	margin-right: 20px;
-    	-webkit-transition: background 200ms ease-in 200ms; /* property duration timing-function delay */
-	    -moz-transition: background 200ms ease-in 200ms;
-	    -o-transition: background 200ms ease-in 200ms;
-	    transition: background 200ms ease-in 200ms;
-	    background: #f2f2f2;
-    	color: #555555;
+        display: inline-blcok;
+        padding: 8px 12px;
+        font-size: 1.2em;
+        text-decoration: none;
+        margin-right: 20px;
+        -webkit-transition: background 200ms ease-in 200ms; /* property duration timing-function delay */
+        -moz-transition: background 200ms ease-in 200ms;
+        -o-transition: background 200ms ease-in 200ms;
+        transition: background 200ms ease-in 200ms;
+        background: #f2f2f2;
+        color: #555555;
     }
     .btn:hover{
-    	background: #DDD;
+        background: #DDD;
     }
     
     .btn-info {
-    	background: #088AC8;
-    	color: #ffffff;
+        background: #088AC8;
+        color: #ffffff;
     }
     .btn-info:hover{
-    	background: #22A1D7;
+        background: #22A1D7;
     }
     .btn-warning {
-    	background: #f0ad4e;
-    	color: #ffffff;
+        background: #f0ad4e;
+        color: #ffffff;
     }
     .btn-warning:hover{
-    	background: #ec971f;
+        background: #ec971f;
     }
 </style>
 
@@ -486,114 +497,114 @@
     <input type="hidden" value="" name="trialLicenseRequestCode" id="trialLicenseRequestCode">
 </form>
 
-	<div class="license-manager">
-		<!-- CURRENT LICENSE INFO -->
-		<div style="width:50%;float:left;border-right: #efefef 1px solid;padding-right:30px;">
-		   <h2><%= LanguageUtil.get(pageContext, "license-current-info") %></h2>
-		<div style="margin:10px ;border:1px solid silver;box-shadow: 2px 2px 2px #eeeeee;">
-		   
-			<table class="listingTable" >
+    <div class="license-manager">
+        <!-- CURRENT LICENSE INFO -->
+        <div style="width:50%;float:left;border-right: #efefef 1px solid;padding-right:30px;">
+           <h2><%= LanguageUtil.get(pageContext, "license-current-info") %></h2>
+        <div style="margin:10px ;border:1px solid silver;box-shadow: 2px 2px 2px #eeeeee;">
+           
+            <table class="listingTable" >
 
-				<tr>
-					<td width="25%" nowrap="true">
-						<%= LanguageUtil.get(pageContext, "license-level") %>
-					</td>
-					<td>
-						<% if(isCommunity){  %>
-							<a href="/html/blank.jsp"
-									target="trialRequestWindow"
-									onclick="licenseAdmin.requestTrial()"
-									>
-								<b><%= LicenseUtil.getLevelName()  %></b>
-							</a>
+                <tr>
+                    <td width="25%" nowrap="true">
+                        <%= LanguageUtil.get(pageContext, "license-level") %>
+                    </td>
+                    <td>
+                        <% if(isCommunity){  %>
+                            <a href="/html/blank.jsp"
+                                    target="trialRequestWindow"
+                                    onclick="licenseAdmin.requestTrial()"
+                                    >
+                                <b><%= LicenseUtil.getLevelName()  %></b>
+                            </a>
 
-						<%}else{ %>
-							<b><%= LicenseUtil.getLevelName()  %></b>
-						<%} %>
-					</td>
-				</tr>
-		
-				<tr>
-					<td>
-						Server ID:
-					</td>
-					<td>
-						<%= serverId.split("-")[0] %>
-					</td>
-				</tr>
-				 <% if(!isCommunity){  %>
-						<tr>
-							<td nowrap="true"><%= LanguageUtil.get(pageContext, "license-valid-until") %>:</td>
-							<td>
-									<% if(isPerpetual) { %>
-										<%= LanguageUtil.get(pageContext, "request-license-perpetual") %>
-									<%} else {%>
-										<%if(expired && !isPerpetual){ %>
-											<font color="red">
-										<%} %>
-										<%= expireString %>
-										<%if(expired && !isPerpetual){ %>
-											<%= LanguageUtil.get(pageContext, "request-license-expired") %></font>
-										<%} %>
-								 <%}%>
-							</td>
-						</tr>
-		
-						<tr>
-							<td><%= LanguageUtil.get(pageContext, "licensed-to") %>:</td>
-							<td><%=  UtilMethods.isSet(LicenseUtil.getClientName()) ? LicenseUtil.getClientName() : "No License Found" %></td>
-						</tr>
-						<tr>
-							<td><%= LanguageUtil.get(pageContext, "license-type") %>:</td>
-							<td><%= LicenseUtil.getLicenseType() %></td>
-						</tr>
-						<tr>
-							<td><%= LanguageUtil.get(pageContext, "license-serial") %>:</td>
-							<td><%= LicenseUtil.getDisplaySerial() %></td>
-						</tr>
-					<% } %>
-			</table>
-		</div>
-		<div style="text-align:center;font-weight:normal;">
-		<% if(!isCommunity){  %>
-		        
+                        <%}else{ %>
+                            <b><%= LicenseUtil.getLevelName()  %></b>
+                        <%} %>
+                    </td>
+                </tr>
+        
+                <tr>
+                    <td>
+                        Server ID:
+                    </td>
+                    <td>
+                        <%= serverId.split("-")[0] %>
+                    </td>
+                </tr>
+                 <% if(!isCommunity){  %>
+                        <tr>
+                            <td nowrap="true"><%= LanguageUtil.get(pageContext, "license-valid-until") %>:</td>
+                            <td>
+                                    <% if(isPerpetual) { %>
+                                        <%= LanguageUtil.get(pageContext, "request-license-perpetual") %>
+                                    <%} else {%>
+                                        <%if(expired && !isPerpetual){ %>
+                                            <font color="red">
+                                        <%} %>
+                                        <%= expireString %>
+                                        <%if(expired && !isPerpetual){ %>
+                                            <%= LanguageUtil.get(pageContext, "request-license-expired") %></font>
+                                        <%} %>
+                                 <%}%>
+                            </td>
+                        </tr>
+        
+                        <tr>
+                            <td><%= LanguageUtil.get(pageContext, "licensed-to") %>:</td>
+                            <td><%=  UtilMethods.isSet(LicenseUtil.getClientName()) ? LicenseUtil.getClientName() : "No License Found" %></td>
+                        </tr>
+                        <tr>
+                            <td><%= LanguageUtil.get(pageContext, "license-type") %>:</td>
+                            <td><%= LicenseUtil.getLicenseType() %></td>
+                        </tr>
+                        <tr>
+                            <td><%= LanguageUtil.get(pageContext, "license-serial") %>:</td>
+                            <td><%= LicenseUtil.getDisplaySerial() %></td>
+                        </tr>
+                    <% } %>
+            </table>
+        </div>
+        <div style="text-align:center;font-weight:normal;">
+        <% if(!isCommunity){  %>
+                
             <button data-dojo-type="dijit.form.Button" onClick="licenseAdmin.resetLicense()" iconClass="resetIcon">
                 <%= LanguageUtil.get(pageContext, "license-bad-id-button") %>
             </button>
 
-		 <%} else {%>
-		    <div style="text-align:center;margin:30px 0;">
-		        <a href="/html/blank.jsp"
-		            target="trialRequestWindow"
-		            onclick="licenseAdmin.requestTrial()"
-		            id="trailBtn"
-		            class="btn btn-info">
-		            <%= LanguageUtil.get(pageContext, "request-trial-license") %>
-		        </a>
-		
+         <%} else {%>
+            <div style="text-align:center;margin:30px 0;">
+                <a href="/html/blank.jsp"
+                    target="trialRequestWindow"
+                    onclick="licenseAdmin.requestTrial()"
+                    id="trailBtn"
+                    class="btn btn-info">
+                    <%= LanguageUtil.get(pageContext, "request-trial-license") %>
+                </a>
+        
 
-		    </div>
-		 <%} %>
-		</div>
-	</div>
-	
-	
-	<div style="width:50%;float:left;vertical-align: top;padding-left:30px">
-	   <h2><%= LanguageUtil.get(pageContext, "I-already-have-a-license") %></h2>
-	    <div style="margin:10px ;">
-			<div >
-			    <textarea style="width:100%;height:150px;color:rgb(38, 51, 63);font-family:Menlo, Monaco, Consolas;font-size:13px;background:#f5f5f5;padding:7px;"  id="licenseCodePasteField"  name="license_text_two" placeholder="<%= LanguageUtil.get(pageContext, "paste-your-license") %>"></textarea>
-			</div>
-			
-			<div style="margin:20px;text-align: center">
-				<button type="button" onclick="licenseAdmin.doLicensePaste()" data-dojo-id="uploadButton" id="uploadButton" data-dojo-type="dijit.form.Button" name="upload_button" iconClass="keyIcon" value="upload">
-				    <%= LanguageUtil.get(pageContext, "save-license") %>
-				</button>
-			     &nbsp;&nbsp;&nbsp;or&nbsp;&nbsp;&nbsp;
-			     <button data-dojo-type="dijit.form.Button" onClick="dijit.byId('uploadDiaWindow').show()">
-			         <%= LanguageUtil.get(pageContext, "Upload-license-pack-button") %>
-			    </button>
-			</div>
+            </div>
+         <%} %>
+        </div>
+    </div>
+    
+    
+    <div style="width:50%;float:left;vertical-align: top;padding-left:30px">
+       <h2><%= LanguageUtil.get(pageContext, "I-already-have-a-license") %></h2>
+        <div style="margin:10px ;">
+            <div >
+                <textarea style="width:100%;height:150px;color:rgb(38, 51, 63);font-family:Menlo, Monaco, Consolas;font-size:13px;background:#f5f5f5;padding:7px;"  id="licenseCodePasteField"  name="license_text_two" placeholder="<%= LanguageUtil.get(pageContext, "paste-your-license") %>"></textarea>
+            </div>
+            
+            <div style="margin:20px;text-align: center">
+                <button type="button" onclick="licenseAdmin.doLicensePaste()" data-dojo-id="uploadButton" id="uploadButton" data-dojo-type="dijit.form.Button" name="upload_button" iconClass="keyIcon" value="upload">
+                    <%= LanguageUtil.get(pageContext, "save-license") %>
+                </button>
+                 &nbsp;&nbsp;&nbsp;or&nbsp;&nbsp;&nbsp;
+                 <button data-dojo-type="dijit.form.Button" onClick="dijit.byId('uploadDiaWindow').show()">
+                     <%= LanguageUtil.get(pageContext, "Upload-license-pack-button") %>
+                </button>
+            </div>
          
         </div>
 
@@ -604,32 +615,32 @@
 
 
 
-		<!-- LICENSE PACK -->
-		<div id="licensePack" style="margin:30px;">
+        <!-- LICENSE PACK -->
+        <div id="licensePack" style="margin:30px;">
 
 
-			<h2><%= LanguageUtil.get(pageContext, "Licenses") %></h2>
-			<p><%= LanguageUtil.get(pageContext, "request-license-cluster-license-explaination") %></p>
+            <h2><%= LanguageUtil.get(pageContext, "Licenses") %></h2>
+            <p><%= LanguageUtil.get(pageContext, "request-license-cluster-license-explaination") %></p>
 
-			<table border="0" width="100%" class="listingTable">
-				<thead>
-				<tr>
-					<th>&nbsp;</th>
-					<th><%= LanguageUtil.get(pageContext, "license-repo-serverid") %></th>
-					<th><%= LanguageUtil.get(pageContext, "license-serial") %></th>
-					<th><%= LanguageUtil.get(pageContext, "license-repo-last-ping") %></th>
-					<th><%= LanguageUtil.get(pageContext, "license-repo-validuntil") %></th>
-					<th><%= LanguageUtil.get(pageContext, "license-repo-level") %></th>
-					<th><%= LanguageUtil.get(pageContext, "license-repo-type") %></th>
-				</tr>
-				</thead>
-				<tbody id="repotableBody">
-					<tr>
-						<td colspan="7"><%= LanguageUtil.get(pageContext, "license-repo-type") %></td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
+            <table border="0" width="100%" class="listingTable">
+                <thead>
+                <tr>
+                    <th>&nbsp;</th>
+                    <th><%= LanguageUtil.get(pageContext, "license-repo-serverid") %></th>
+                    <th><%= LanguageUtil.get(pageContext, "license-serial") %></th>
+                    <th><%= LanguageUtil.get(pageContext, "license-repo-last-ping") %></th>
+                    <th><%= LanguageUtil.get(pageContext, "license-repo-validuntil") %></th>
+                    <th><%= LanguageUtil.get(pageContext, "license-repo-level") %></th>
+                    <th><%= LanguageUtil.get(pageContext, "license-repo-type") %></th>
+                </tr>
+                </thead>
+                <tbody id="repotableBody">
+                    <tr>
+                        <td colspan="7"><%= LanguageUtil.get(pageContext, "license-repo-type") %></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
 
 
@@ -637,10 +648,10 @@
 </div><!-- /CONTENT WRAPPER -->
 
 <div dojoType="dijit.Dialog" id="uploadDiaWindow" title="<%= LanguageUtil.get(pageContext, "Upload-license-pack") %>">
-	<form method="POST" data-dojo-type="dijit.form.Form" action="/api/license/upload/" onSubmit="return false" encType="multipart/form-data" id="uploadPackForm">
-		<div class="inline-form">
-			<input type="file" name="file" id="uploadPackFile" accept="application/zip"/>
-			<button data-dojo-type="dijit.form.Button" name="btnSubmit" iconClass="uploadIcon" onClick="licenseAdmin.doPackUpload()"><%= LanguageUtil.get(pageContext, "Upload-license-pack-button") %></button>
-		</div>
-	</form>
+    <form method="POST" data-dojo-type="dijit.form.Form" action="/api/license/upload/" onSubmit="return false" encType="multipart/form-data" id="uploadPackForm">
+        <div class="inline-form">
+            <input type="file" name="file" id="uploadPackFile" accept="application/zip"/>
+            <button data-dojo-type="dijit.form.Button" name="btnSubmit" iconClass="uploadIcon" onClick="licenseAdmin.doPackUpload()"><%= LanguageUtil.get(pageContext, "Upload-license-pack-button") %></button>
+        </div>
+    </form>
 </div>
