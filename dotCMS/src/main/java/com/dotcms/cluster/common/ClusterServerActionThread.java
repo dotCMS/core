@@ -46,7 +46,7 @@ public class ClusterServerActionThread extends Thread {
 				start = false;
 			}
 			
-			Connection connection = null;
+
 			
 			try {
 				//Get my Server ID.
@@ -56,15 +56,13 @@ public class ClusterServerActionThread extends Thread {
 				List<ServerActionBean> listServerActionBeans = serverActionAPI.getNewServerActionBeans(myServerID);
 				
 				if(!listServerActionBeans.isEmpty()){
-					connection = DbConnectionFactory.getDataSource().getConnection();
-					connection.setAutoCommit(false);
+
 					
 					//For each ServerActionBean we need to handle it.
 					for (ServerActionBean serverActionBean : listServerActionBeans) {
 						serverActionAPI.handleServerAction(serverActionBean);
 					}
-					connection.commit();
-					connection.close();
+
 				}
 
 				if(LicenseUtil.getLevel()== LicenseLevel.COMMUNITY.level){
@@ -81,28 +79,12 @@ public class ClusterServerActionThread extends Thread {
 				    noLicense=0;
 				}
 			} catch (Exception e) {
-				try {
+
 					Logger.error(ClusterServerActionThread.class, 
 							"Error trying handle ServerActionBean " + e.getMessage(), e);
-					
-					if(connection != null && !connection.isClosed()){
-						connection.rollback();
-					}
-					
-				} catch (SQLException sqlException) {
-					Logger.error(ClusterServerActionThread.class, 
-							"Error trying to Rollback DB connection " + sqlException.getMessage(), sqlException);
-				}
-				
+
 			} finally {
-				try {
-					if(connection != null && !connection.isClosed()){
-						connection.close();
-					}
-				} catch (SQLException sqlException) {
-					Logger.error(ClusterServerActionThread.class, 
-							"Error trying to close DB connection " + sqlException.getMessage(), sqlException);
-				}
+				DbConnectionFactory.closeSilently();
 			}
 			
 			//Sleep for X millis. Configurable
