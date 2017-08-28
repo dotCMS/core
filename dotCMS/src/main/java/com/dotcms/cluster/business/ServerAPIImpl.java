@@ -33,9 +33,10 @@ public class ServerAPIImpl implements ServerAPI {
 		serverFactory.saveServer(server);
 	}
 
-	public Server getServer(String serverId) {
+	public Server getServer(String serverId) throws DotDataException{
 		return serverFactory.getServer(serverId);
 	}
+	
 	@Override
     public Server getOrCreateServer(final String serverId) throws DotDataException {
 	    Server tryServer = getServer(serverId);
