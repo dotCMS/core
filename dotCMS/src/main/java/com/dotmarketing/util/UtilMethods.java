@@ -1,12 +1,13 @@
-/*
- *  UtilMethods.java
- *
- *  Created on March 4, 2002, 2:56 PM
- */
 package com.dotmarketing.util;
 
 import java.beans.PropertyDescriptor;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -19,6 +20,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
@@ -35,18 +37,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
-import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
-
-import com.dotcms.repackage.org.apache.struts.Globals;
-import com.dotmarketing.beans.Inode;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.velocity.VelocityServlet;
 
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
@@ -54,10 +48,14 @@ import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 
 import com.dotcms.repackage.com.csvreader.CsvReader;
+import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
+import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
@@ -71,16 +69,18 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.links.model.LinkVersionInfo;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
+import com.dotmarketing.velocity.VelocityServlet;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 
 /**
- * @author will
- * @created April 23, 2002
- */
-/**
- * @author Carlos Rivas
- *
+ * Provides several widely used routines that handle, verify or format many data structures, such as
+ * date/time handling and conversion, array handling, collection handling and verification, HTTP
+ * Request operations, file operations, business logic operations, etc.
+ * 
+ * @author Will Ezell
+ * @since April 23, 2002
+ * 
  */
 public class UtilMethods {
 
@@ -342,6 +342,17 @@ public class UtilMethods {
         return (x.trim().length() > 1);
     }
 
+    /**
+     * Determines if a collection of objects is different from {@code null} and is not empty.
+     * 
+     * @param collection - The {@link Collection} to check.
+     * @return If the collection is not null and is not empty, returns {@code true}. Otherwise,
+     *         returns {@code false}.
+     */
+    public static final boolean isSet(Collection<?> collection) {
+        return null != collection && !collection.isEmpty();
+    }
+    
     public static final boolean isValidEmail(String email) {
         if (email == null) {
             return false;
