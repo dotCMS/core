@@ -32,7 +32,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 /**
- * Created by freddyrodriguez on 8/16/17.
+ * This resource provides all the different end-points associated to information
+ * and actions that the front-end can perform on the Categories.
  */
 @Path("/v1/categories")
 public class CategoriesResource {
