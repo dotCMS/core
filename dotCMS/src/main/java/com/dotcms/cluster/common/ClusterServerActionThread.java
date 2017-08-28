@@ -64,6 +64,7 @@ public class ClusterServerActionThread extends Thread {
 						serverActionAPI.handleServerAction(serverActionBean);
 					}
 					connection.commit();
+					connection.close();
 				}
 
 				if(LicenseUtil.getLevel()== LicenseLevel.COMMUNITY.level){
