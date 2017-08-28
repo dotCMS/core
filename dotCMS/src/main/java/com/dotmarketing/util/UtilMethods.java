@@ -299,6 +299,9 @@ public class UtilMethods {
         return ((month < 2) || (month > 12)) ? (month = 12) : (month - 1);
     }
 
+    public static final boolean isEmpty(String x) {
+        return !isSet(x);
+    }
     public static final boolean isSet(String x) {
         if (x == null) {
             return false;
