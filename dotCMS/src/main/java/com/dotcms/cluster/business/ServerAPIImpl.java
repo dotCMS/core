@@ -15,6 +15,7 @@ import com.dotmarketing.util.*;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -107,15 +108,12 @@ public class ServerAPIImpl implements ServerAPI {
 
 	private File serverIdFile(){
 	    
-        String dynamicContentPath = ConfigUtils.getDynamicContentPath();
-
+	    String realPath = ConfigUtils.getDynamicContentPath() 
+	                    + File.separator 
+	                    + "license"  
+	                     + File.separator 
+	                    + "server_id.dat";
         
-        String realPath;
-        if ( dynamicContentPath.endsWith( File.separator ) ) {
-            realPath = ConfigUtils.getDynamicContentPath() + "server_id.dat";
-        } else {
-            realPath = ConfigUtils.getDynamicContentPath() + File.separator + "server_id.dat";
-        }
         Logger.debug(ServerAPIImpl.class, "Server Id " + realPath);
 
         return new File(realPath);
@@ -128,56 +126,37 @@ public class ServerAPIImpl implements ServerAPI {
 	@Override
 	public String readServerId()  {
 	    // once set this should never change
-		BufferedReader br = null;
-		FileReader reader = null;
+
 	    if(SERVER_ID==null){
     	    try{
-
         	    File serverFile = serverIdFile();
-        
         	    if(!serverFile.exists()){
         	        writeServerIdToDisk(UUIDUtil.uuid());
         	    }
-
-        	    reader = new FileReader(serverFile);
-        		br =  new BufferedReader(reader);
-        		SERVER_ID = br.readLine();
-        		Logger.debug(ServerAPIImpl.class, "ServerID: " + SERVER_ID);
-        
+        	    
+        	    try (BufferedReader br = Files.newBufferedReader(serverFile.toPath())) {
+            		SERVER_ID = br.readLine();
+            		Logger.debug(ServerAPIImpl.class, "ServerID: " + SERVER_ID);
+        	    }
     
     	    } catch(IOException ioe){
     	        throw new DotStateException("Unable to read server id at " + serverIdFile() +
 						" please make sure that the directory exists and is readable and writeable. If problems" +
 						" persist, try deleting the file.  The system will recreate a new one on startup", ioe);
-    	    } finally{
-				try {
-					if (reader != null){
-						reader.close();
-					}
-					if (br != null){
-						br.close();
-					}
-
-				} catch (IOException e) {
-					Logger.error(this.getClass(), e.getMessage());
-				}
-			}
+    	    } 
 	    }
 	    return SERVER_ID;
 	}
 
 	private  void writeServerIdToDisk(String serverId) throws IOException {
 
+		File serverFile = serverIdFile();
+		serverFile.mkdirs();
+		serverFile.delete();
 
-        File serverFile = serverIdFile();
-
-		if(serverFile.exists()){
-			serverFile.delete();
+		try(OutputStream os = Files.newOutputStream(serverFile.toPath())){
+			os.write(serverId.getBytes());
 		}
-		OutputStream os = new FileOutputStream(serverFile);
-		os.write(serverId.getBytes());
-		os.flush();
-		os.close();
 
 	}
 
@@ -198,10 +177,9 @@ public class ServerAPIImpl implements ServerAPI {
 
 			File heartBeat = new File(realPath + java.io.File.separator + "heartbeat.dat");
 
-			OutputStream os = new FileOutputStream(heartBeat);
-			os.write(UtilMethods.dateToHTMLDate(new Date(), "yyyy-MM-dd H:mm:ss").getBytes());
-			os.flush();
-			os.close();
+			try(OutputStream os = Files.newOutputStream(heartBeat.toPath())){
+			    os.write(UtilMethods.dateToHTMLDate(new Date(), "yyyy-MM-dd H:mm:ss").getBytes());
+			}
 		} else {
 			Logger.warn(ServerAPIImpl.class, "ENABLE_SERVER_HEARTBEAT is set to false to we do not need to write to Disk " );
 		}

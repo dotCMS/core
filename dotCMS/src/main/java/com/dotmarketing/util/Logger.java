@@ -120,8 +120,12 @@ public class Logger{
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
-
-        logger.error(message, ex);
+    	try{
+    	    logger.error(message, ex);
+    	}
+    	catch(java.lang.IllegalStateException e){
+    	    ex.printStackTrace();
+    	}
     }
 
     public static void fatal(Object ob, String message) {
