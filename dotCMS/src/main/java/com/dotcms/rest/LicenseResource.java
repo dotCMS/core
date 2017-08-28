@@ -24,6 +24,7 @@ import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataContent
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
 import com.dotcms.repackage.org.json.JSONArray;
 import com.dotcms.repackage.org.json.JSONObject;
+import com.dotcms.repackage.org.python.modules.newmodule;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -72,6 +73,9 @@ public class LicenseResource {
                 obj.put("serverId", lic.serverId);
                 obj.put("perpetual", lic.dotLicense.perpetual);
                 obj.put("validUntil", lic.dotLicense.validUntil);
+                obj.put("expired", lic.dotLicense.expired);
+                
+                
                 obj.put("serial", lic.dotLicense.serial);
                 obj.put("level",  LicenseManager.getInstance().getLevelName(lic.dotLicense.level));
                 obj.put("id", lic.dotLicense.serial);

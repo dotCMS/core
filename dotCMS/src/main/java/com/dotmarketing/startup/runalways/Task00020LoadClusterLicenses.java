@@ -13,6 +13,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
 public class Task00020LoadClusterLicenses implements StartupTask {
@@ -44,10 +45,12 @@ public class Task00020LoadClusterLicenses implements StartupTask {
         for(File pack : licensePackFiles()){
             Logger.info(this.getClass(), "found license pack: " + pack);
             File oldPack = new File(pack.getParent() + File.separator + "imported_" + now  + "_" + pack.getName());
-            
+            pack.renameTo(oldPack);
             try(InputStream in = Files.newInputStream(pack.toPath())){
                 LicenseUtil.uploadLicenseRepoFile(in);
-                //pack.renameTo(oldPack);
+                if(Config.getBooleanProperty("ARCHIVE_IMPORTED_LICENSE_PACKS", true)){
+                    pack.renameTo(oldPack);
+                }
             } catch (IOException e) {
                 Logger.info(this.getClass(), "Unable to import licenses: " + e.getMessage());
             }
