@@ -307,10 +307,10 @@ public class PublishFactory {
             if ( asset instanceof Contentlet ) {
                 Logger.debug( PublishFactory.class, "*****I'm an HTML Page -- Publishing my Contentlet Child=" + ((Contentlet) asset).getInode() );
                 try {
-                    Contentlet c = (Contentlet) asset;
-                    if ( !APILocator.getWorkflowAPI().findSchemeForStruct( c.getStructure() ).isMandatory() ) {
+                    Contentlet contentlet = (Contentlet) asset;
+                    if ( !APILocator.getWorkflowAPI().findSchemeForStruct( contentlet.getStructure() ).isMandatory() ) {
                         contentletAPI.publish( (Contentlet) asset, user, false );
-                        ContentletServices.invalidateLive(c);
+                        ContentletServices.invalidateLive(contentlet);
                     }
                 } catch ( DotSecurityException e ) {
                     //User has no permission to publish the content in the page so we just skip it
