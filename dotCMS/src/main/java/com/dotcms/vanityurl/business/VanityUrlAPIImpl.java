@@ -611,29 +611,33 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                 contentlet.getStringProperty(VanityUrlContentType.URI_FIELD_VAR);
 
         if(!this.allowedActions.contains(action)){
-            String message = this.languageAPI
-                    .getStringKey(language, "message.vanity.url.error.invalidAction");
-
-            throw new DotContentletValidationException(message);
+            throwContentletValidationError(language, "message.vanity.url.error.invalidAction");
         }
 
         if (!isValidRegex(uri)) {
-          String message = this.languageAPI
-                    .getStringKey(language, "message.vanity.url.error.invalidURIPattern");
-
-            throw new DotContentletValidationException(message);
+            throwContentletValidationError(language, "message.vanity.url.error.invalidURIPattern");
         }
     } // validateVanityUrl.
+
+    private void throwContentletValidationError(final Language language, final String key) {
+        final String message = this.languageAPI
+                .getStringKey(language, key);
+
+        throw new DotContentletValidationException(message);
+    }
 
     private void checkMissingField(final Contentlet contentlet,
                                    final Language language,
                                    final String fieldName) {
+
+        final String identifier = contentlet.getIdentifier();
+
         if (!contentlet.getMap().containsKey(fieldName)) {
 
             throw new DotContentletValidationException(
                     MessageFormat.format(
                             this.languageAPI.getStringKey(language, "missing.field"),
-                            fieldName)
+                            fieldName, identifier)
                     );
         }
     }
