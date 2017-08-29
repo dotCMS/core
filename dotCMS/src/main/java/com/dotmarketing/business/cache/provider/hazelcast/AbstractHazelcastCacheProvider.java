@@ -9,6 +9,7 @@ import com.dotcms.cluster.business.HazelcastUtil.HazelcastInstanceType;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
@@ -23,6 +24,7 @@ public abstract class AbstractHazelcastCacheProvider extends CacheProvider {
     private boolean initialized = false;
     private boolean recovering =false;
 
+    private final boolean ASYNC_PUT = Config.getBooleanProperty("HAZELCAST_ASYNC_PUT", false);
     protected abstract HazelcastInstanceType getHazelcastInstanceType();
     protected abstract CacheStats getStats(String group);
 
@@ -78,11 +80,16 @@ public abstract class AbstractHazelcastCacheProvider extends CacheProvider {
 
     @Override
     public void put(String group, String key, Object content) {
+
         if(isRecovering()){
             return;
         }
         try{
-            getHazelcastInstance().getMap(group).set(key, content);
+            if(ASYNC_PUT){
+                getHazelcastInstance().getMap(group).putAsync(key, content);
+            }else{
+                getHazelcastInstance().getMap(group).set(key, content);
+            }
         } catch (HazelcastInstanceNotActiveException hce){
             reInitialize();
         }
@@ -107,7 +114,7 @@ public abstract class AbstractHazelcastCacheProvider extends CacheProvider {
             return;
         }
         try{
-            getHazelcastInstance().getMap(group).remove(key);
+            getHazelcastInstance().getMap(group).removeAsync(key);
         } catch (HazelcastInstanceNotActiveException hce){
             reInitialize();
         }
