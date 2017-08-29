@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
-import com.dotcms.business.CloseDB;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.repackage.org.apache.commons.lang.math.NumberUtils;
@@ -71,13 +71,13 @@ public class LanguageAPIImpl implements LanguageAPI {
         Logger.debug(this, "deleteFallbackLanguage, rowsAffected: " + rowsAffected);
 	} // deleteFallbackLanguage.
 
-    @CloseDB
+    @CloseDBIfOpened
     @Override
 	public Language getLanguage(final String languageCode, final String countryCode) {
 		return factory.getLanguage(languageCode, countryCode);
 	}
 
-    @CloseDB
+    @CloseDBIfOpened
 	@Override
     public boolean isAssetTypeLanguage(final String id) {
         if (!NumberUtils.isDigits(id)) {
@@ -94,7 +94,7 @@ public class LanguageAPIImpl implements LanguageAPI {
         return false;
     }
 
-    @CloseDB
+    @CloseDBIfOpened
 	@Override
 	public Language getLanguage(final String id) {
 		return factory.getLanguage(id);
@@ -111,13 +111,13 @@ public class LanguageAPIImpl implements LanguageAPI {
 		return language;
 	}
 
-	@CloseDB
+	@CloseDBIfOpened
 	@Override
 	public Language getLanguage(final long id) {
 		return factory.getLanguage(id);
 	}
 
-	@CloseDB
+	@CloseDBIfOpened
 	@Override
 	public List<Language> getLanguages() {
 		return factory.getLanguages();
@@ -131,37 +131,37 @@ public class LanguageAPIImpl implements LanguageAPI {
         Logger.debug(this, "Created language: " + language);
 	}
 
-    @CloseDB
+    @CloseDBIfOpened
 	@Override
 	public String getLanguageCodeAndCountry(final long id, final String langId) {
 		return factory.getLanguageCodeAndCountry(id, langId);
 	}
 
-    @CloseDB
+    @CloseDBIfOpened
 	@Override
 	public Language getDefaultLanguage() {
 		return factory.getDefaultLanguage();
 	}
 
-    @CloseDB
+    @CloseDBIfOpened
 	@Override
 	public boolean hasLanguage(final String id) {
 		return factory.hasLanguage(id);
 	}
 
-    @CloseDB
+    @CloseDBIfOpened
 	@Override
 	public boolean hasLanguage(final long id) {
 		return factory.hasLanguage(id);
 	}
 
-    @CloseDB
+    @CloseDBIfOpened
 	@Override
 	public boolean hasLanguage(final String languageCode, final String countryCode) {
 		return factory.hasLanguage(languageCode, countryCode);
 	}
 
-    @CloseDB
+    @CloseDBIfOpened
 	@Override
 	public List<LanguageKey> getLanguageKeys(final String langCode) {
 		final List<LanguageKey> list = factory.getLanguageKeys(langCode);
@@ -169,7 +169,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 		return list;
 	}
 
-    @CloseDB
+    @CloseDBIfOpened
 	@Override
 	public List<LanguageKey> getLanguageKeys(final String langCode, final String countryCode) {
 		final List<LanguageKey> list = factory.getLanguageKeys(langCode, countryCode);
@@ -177,7 +177,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 		return list;
 	}
 
-    @CloseDB
+    @CloseDBIfOpened
 	@Override
 	public List<LanguageKey> getLanguageKeys(final Language lang) {
 		final String langCode = lang.getLanguageCode();
@@ -247,7 +247,7 @@ public class LanguageAPIImpl implements LanguageAPI {
         }
 	}
 
-	@CloseDB
+	@CloseDBIfOpened
 	@Override
     public String getStringKey ( final Language lang, final String key ) {
 
@@ -295,39 +295,39 @@ public class LanguageAPIImpl implements LanguageAPI {
 		return user;
 	}
 
-	@CloseDB
+	@CloseDBIfOpened
 	@Override
 	public boolean getBooleanKey(final Language lang, final String key) {
 		return Boolean.parseBoolean(getStringKey(lang, key));
 	}
 
-    @CloseDB
+    @CloseDBIfOpened
 	@Override
 	public boolean getBooleanKey(final Language lang, final String key, final boolean defaultVal) {
 		return (getStringKey(lang, key) != null)?
 			Boolean.parseBoolean(getStringKey(lang, key)):defaultVal;
 	}
 
-    @CloseDB
+    @CloseDBIfOpened
 	@Override
 	public float getFloatKey(final Language lang, final String key) {
 		return Float.parseFloat(getStringKey(lang, key));
 	}
 
-    @CloseDB
+    @CloseDBIfOpened
 	@Override
 	public float getFloatKey(final Language lang, final String key, final float defaultVal) {
 		return (getStringKey(lang, key) != null)?
 			Float.parseFloat(getStringKey(lang, key)):defaultVal;
 	}
 
-    @CloseDB
+    @CloseDBIfOpened
 	@Override
 	public int getIntKey(final Language lang, final String key) {
 		return Integer.parseInt(getStringKey(lang, key));
 	}
 
-    @CloseDB
+    @CloseDBIfOpened
 	@Override
 	public int getIntKey(final Language lang, final String key, final int defaultVal) {
 		return (getStringKey(lang, key) != null)?
@@ -339,7 +339,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 		CacheLocator.getLanguageCache().clearCache();
 	}
 
-	@CloseDB
+	@CloseDBIfOpened
     @Override
     public Language getFallbackLanguage(final String languageCode) {
         return this.factory.getFallbackLanguage(languageCode);

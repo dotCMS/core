@@ -3,7 +3,7 @@
  */
 package com.dotmarketing.business.web;
 
-import com.dotcms.business.CloseDB;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import javax.servlet.http.HttpServletRequest;
@@ -49,7 +49,7 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
 	}
 	
 	
-	@CloseDB
+	@CloseDBIfOpened
 	public Host getCurrentHost(HttpServletRequest request) throws DotDataException, DotSecurityException, PortalException, SystemException {
 		Host host = null;
 		HttpSession session = request.getSession(false);

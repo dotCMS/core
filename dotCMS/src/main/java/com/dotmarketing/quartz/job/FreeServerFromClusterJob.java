@@ -4,6 +4,7 @@ import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.enterprise.license.DotLicenseRepoEntry;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -46,10 +47,10 @@ public class FreeServerFromClusterJob implements StatefulJob {
                     String serverID = inactiveServer.getServerId();
 
                     //Frees the license.
-                    for (Map<String, Object> lic : LicenseUtil.getLicenseRepoList()) {
+                    for (DotLicenseRepoEntry lic : LicenseUtil.getLicenseRepoList()) {
 
-                        if (serverID.equals(lic.get("serverid"))) {
-                            LicenseUtil.freeLicenseOnRepo((String) lic.get("serial"), serverID);
+                        if (serverID.equals(lic.serverId)) {
+                            LicenseUtil.freeLicenseOnRepo(lic.dotLicense.serial, serverID);
                             shouldRewire = true;
                             break;
                         }

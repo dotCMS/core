@@ -87,17 +87,17 @@ public class ClusterResource {
         List<ServerActionBean> resultActionBeans = new ArrayList<ServerActionBean>();
         JSONArray jsonNodes = new JSONArray();
         
-        NodeStatusServerAction nodeStatusServerAction = new NodeStatusServerAction();
+
         Long timeoutSeconds = new Long(1);
 		
 		for (Server server : servers) {
-			
+	        NodeStatusServerAction nodeStatusServerAction = new NodeStatusServerAction();
 			ServerActionBean nodeStatusServerActionBean = 
 					nodeStatusServerAction.getNewServerAction(myServerId, server.getServerId(), timeoutSeconds);
-			
-			nodeStatusServerActionBean = 
-					APILocator.getServerActionAPI().saveServerActionBean(nodeStatusServerActionBean);
-			
+			if(myServerId.equals(server.getServerId())){
+			    nodeStatusServerActionBean= APILocator.getServerActionAPI().handleServerAction(nodeStatusServerActionBean);  
+			}
+			nodeStatusServerActionBean = APILocator.getServerActionAPI().saveServerActionBean(nodeStatusServerActionBean);
 			actionBeans.add(nodeStatusServerActionBean);
 		}
 		

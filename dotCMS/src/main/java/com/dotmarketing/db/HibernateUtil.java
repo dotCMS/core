@@ -577,6 +577,8 @@ public class HibernateUtil {
 			#################################
 			*/
 			Configuration cfg = new Configuration().configure();
+			cfg.setProperty("hibernate.cache.provider_class", "com.dotmarketing.db.NoCacheProvider");
+			
 
 			if (DbConnectionFactory.isMySql()) {
 				//http://jira.dotmarketing.net/browse/DOTCMS-4937
