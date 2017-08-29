@@ -112,7 +112,7 @@ public class LicenseResource {
         }
         
     }
-    
+    @NoCache
     @POST
     @Path("/upload/{params:.*}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -142,7 +142,7 @@ public class LicenseResource {
     }
 
     
-    
+    @NoCache
     @DELETE
     @Path("/delete/{params:.*}")
     public Response delete(@Context HttpServletRequest request, @PathParam("params") String params) {
@@ -171,7 +171,7 @@ public class LicenseResource {
             return Response.serverError().build();
         }
     }
-    
+    @NoCache
     @POST
     @Path("/pick/{params:.*}")
     public Response pickLicense(@Context HttpServletRequest request, @PathParam("params") String params) {
@@ -212,7 +212,7 @@ public class LicenseResource {
             return Response.ok().build();
         }
     }
-    
+    @NoCache
     @POST
     @Path("/free/{params:.*}")
     public Response freeLicense(@Context HttpServletRequest request, @PathParam("params") String params) {
@@ -363,7 +363,7 @@ public class LicenseResource {
         }
         
     }
-    
+    @NoCache
     @POST
     @Path("/applyLicense")
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
@@ -406,7 +406,7 @@ public class LicenseResource {
         }
         
     }
-    
+    @NoCache
     @POST
     @Path("/resetLicense/{params:.*}")
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
