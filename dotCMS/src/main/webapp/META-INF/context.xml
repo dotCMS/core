@@ -27,6 +27,7 @@
 
     <!-- H2 -->
     <Resource name="jdbc/dotCMSPool" auth="Container"
+              factory="org.apache.tomcat.jdbc.pool.DataSourceFactory"
               type="javax.sql.DataSource"
               driverClassName="org.h2.Driver"
               url="jdbc:h2:WEB-INF/H2_DATABASE/h2_dotcms_data;MVCC=TRUE;LOCK_TIMEOUT=15000"
@@ -37,6 +38,7 @@
     <!-- POSTGRESQL
     <Resource name="jdbc/dotCMSPool" auth="Container"
           type="javax.sql.DataSource"
+          factory="org.apache.tomcat.jdbc.pool.DataSourceFactory"
           driverClassName="org.postgresql.Driver"
           url="jdbc:postgresql://localhost/dotcms"
           username="{your db user}" password="{your db password}" maxTotal="60" maxIdle="10" maxWaitMillis="60000"
@@ -45,6 +47,7 @@
     -->
     <!-- MYSQL UTF8
     <Resource name="jdbc/dotCMSPool" auth="Container"
+          factory="org.apache.tomcat.jdbc.pool.DataSourceFactory"
           type="javax.sql.DataSource" driverClassName="com.mysql.jdbc.Driver"
           url="jdbc:mysql://localhost/dotcms?characterEncoding=UTF-8&amp;useLegacyDatetimeCode=false&amp;serverTimezone=UTC"
           username="{your db user}" password="{your db password}" maxTotal="60" maxIdle="10" maxWaitMillis="60000"
@@ -53,6 +56,7 @@
     -->
     <!-- Oracle
     <Resource name="jdbc/dotCMSPool" auth="Container"
+          factory="org.apache.tomcat.jdbc.pool.DataSourceFactory"
           type="javax.sql.DataSource" driverClassName="oracle.jdbc.OracleDriver"
           url="jdbc:oracle:thin:@localhost:1521:XE"
           username="{your db user}" password="{your db password}" maxTotal="60" maxIdle="10" maxWaitMillis="60000"
@@ -61,6 +65,7 @@
     -->
     <!-- MSSQL
     <Resource name="jdbc/dotCMSPool" auth="Container"
+          factory="org.apache.tomcat.jdbc.pool.DataSourceFactory"
           type="javax.sql.DataSource" driverClassName="com.microsoft.sqlserver.jdbc.SQLServerDriver"
           url="jdbc:sqlserver://{your server}.database.windows.net:1433;databaseName={your DB name}"
           username="{your user}@{your server}" password="{your password}" maxTotal="60" maxIdle="10" maxWaitMillis="60000"
