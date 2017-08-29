@@ -1,51 +1,59 @@
 package com.dotmarketing.viewtools;
 
+import static com.dotcms.contenttype.model.type.KeyValueContentType.MULTILINGUABLE_FALLBACK_KEY;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.KeyValueContentType;
 import com.dotcms.integrationtestutil.content.ContentUtils;
+import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.util.Locale;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import java.util.Locale;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Unit test for {@link UtilMethods}
  */
 public class LanguageWebAPITest extends IntegrationTestBase {
 
-	private static final int GENERAL_ENGLISH = 3;
+	private static Language spanishNoCountryLanguage;
+	private static Language spanishCostaRicaLanguage;
 
-	private static long englishLanguageId;
-	private static long spanishLanguageId;
-	private static long spanishNoCountryLanguageId;
-	private static long spanishCostaRicaLanguageId;
+	private static String LANGUAGE_KEY_TEST_EXAMPLE = "test.example";
+	private static final String LANGUAGE_VALUE_TEST_EXAMPLE_NO_COUNTRY = "Value for NO country language";
+	private static final String LANGUAGE_VALUE_TEST_EXAMPLE_COUNTRY = "Value for COUNTRY language";
+	private static final String LANGUAGE_VALUE_TEST_EXAMPLE_DEFAULT_LANGUAGE = "Value for DEFAULT language";
 
 	@BeforeClass
 	public static void prepare() throws Exception {
+
+		LANGUAGE_KEY_TEST_EXAMPLE += "_" + System.currentTimeMillis();
+
 		//Setting web app environment
 		IntegrationTestInitService.getInstance().init();
 		final User systemUser = APILocator.systemUser();
 		final String contentTypeVelocityVarName = LanguageVariableAPI.LANGUAGEVARIABLE;
-		ContentType languageVariableContentType = null;
 
+		ContentType languageVariableContentType;
 		try {
 			// Using the provided Language Variable Content Type
 			languageVariableContentType = APILocator.getContentTypeAPI(systemUser).find(contentTypeVelocityVarName);
@@ -55,23 +63,76 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 		}
 		Assert.assertNotNull("The Language Variable Content Type MUST EXIST in order to run this Integration Test.",
 				languageVariableContentType);
-		englishLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-		spanishLanguageId = APILocator.getLanguageAPI().getLanguage("es", "ES").getId();
 
+		//Create the test languages
 		createSpanishNoCountryLanguage ();
 		createSpanishCostaRicaLanguage ();
-		if (null == APILocator.getLanguageVariableAPI().get("text.example", spanishNoCountryLanguageId, systemUser, false)) {
-			ContentUtils.createTestLanguageVariableContent("test.example", "Esto es una prueba general", spanishNoCountryLanguageId,
+
+		//Create the test language keys
+
+		//DEFAULT LANGUAGE
+		//Search for the default language
+		Long englishLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+		KeyValue keyValue = APILocator.getKeyValueAPI()
+				.get(LANGUAGE_KEY_TEST_EXAMPLE, englishLanguageId,
+						languageVariableContentType, systemUser, false);
+		String defaultLanguageVariable = (null != keyValue) ? keyValue.getValue() : null;
+		if (null == defaultLanguageVariable || defaultLanguageVariable
+				.equals(LANGUAGE_KEY_TEST_EXAMPLE)) {
+			ContentUtils.createTestKeyValueContent(LANGUAGE_KEY_TEST_EXAMPLE,
+					LANGUAGE_VALUE_TEST_EXAMPLE_DEFAULT_LANGUAGE, englishLanguageId,
 					languageVariableContentType, systemUser);
 		}
-		if (null == APILocator.getLanguageVariableAPI().get("text.example", spanishCostaRicaLanguageId, systemUser, false)) {
-			ContentUtils.createTestLanguageVariableContent("test.example", "Esto es una prueba puravida", spanishCostaRicaLanguageId,
+
+		//NO COUNTRY
+		keyValue = APILocator.getKeyValueAPI()
+				.get(LANGUAGE_KEY_TEST_EXAMPLE, spanishNoCountryLanguage.getId(),
+						languageVariableContentType, systemUser, false);
+		String noCountryLanguageVariable = (null != keyValue) ? keyValue.getValue() : null;
+		if (null == noCountryLanguageVariable || noCountryLanguageVariable
+				.equals(LANGUAGE_KEY_TEST_EXAMPLE)) {
+			ContentUtils.createTestKeyValueContent(LANGUAGE_KEY_TEST_EXAMPLE,
+					LANGUAGE_VALUE_TEST_EXAMPLE_NO_COUNTRY, spanishNoCountryLanguage.getId(),
 					languageVariableContentType, systemUser);
 		}
+
+		//COUNTRY
+		keyValue = APILocator.getKeyValueAPI()
+				.get(LANGUAGE_KEY_TEST_EXAMPLE, spanishCostaRicaLanguage.getId(),
+						languageVariableContentType, systemUser, false);
+		String countryLanguageVariable = (null != keyValue) ? keyValue.getValue() : null;
+		if (null == countryLanguageVariable || countryLanguageVariable
+				.equals(LANGUAGE_KEY_TEST_EXAMPLE)) {
+			ContentUtils.createTestKeyValueContent(LANGUAGE_KEY_TEST_EXAMPLE,
+					LANGUAGE_VALUE_TEST_EXAMPLE_COUNTRY, spanishCostaRicaLanguage.getId(),
+					languageVariableContentType, systemUser);
+		}
+
+		//Validate the just created Language Variables
+		defaultLanguageVariable = APILocator.getLanguageVariableAPI()
+				.get(LANGUAGE_KEY_TEST_EXAMPLE, englishLanguageId, systemUser,
+						false);
+		assertNotNull(defaultLanguageVariable);
+		assertNotEquals(defaultLanguageVariable, LANGUAGE_KEY_TEST_EXAMPLE);
+		assertEquals(defaultLanguageVariable, LANGUAGE_VALUE_TEST_EXAMPLE_DEFAULT_LANGUAGE);
+
+		noCountryLanguageVariable = APILocator.getLanguageVariableAPI()
+				.get(LANGUAGE_KEY_TEST_EXAMPLE, spanishNoCountryLanguage.getId(), systemUser,
+						false);
+		assertNotNull(noCountryLanguageVariable);
+		assertNotEquals(noCountryLanguageVariable, LANGUAGE_KEY_TEST_EXAMPLE);
+		assertEquals(noCountryLanguageVariable, LANGUAGE_VALUE_TEST_EXAMPLE_NO_COUNTRY);
+
+		countryLanguageVariable = APILocator.getLanguageVariableAPI()
+				.get(LANGUAGE_KEY_TEST_EXAMPLE, spanishCostaRicaLanguage.getId(), systemUser,
+						false);
+		assertNotNull(countryLanguageVariable);
+		assertNotEquals(countryLanguageVariable, LANGUAGE_KEY_TEST_EXAMPLE);
+		assertEquals(countryLanguageVariable, LANGUAGE_VALUE_TEST_EXAMPLE_COUNTRY);
 	}
 
 	private static ContentType createLanguageVariable (final User systemUser,
-													   final String contentTypeVelocityVarName) throws Exception {
+			final String contentTypeVelocityVarName) throws Exception {
 
 		final String contentTypeName = "Language Variable";
 		final Host site = APILocator.getHostAPI().findDefaultHost(systemUser, Boolean.FALSE);
@@ -84,7 +145,7 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 
 	private static void createSpanishNoCountryLanguage() {
 
-		Language language = null;
+		Language language;
 
 		try {
 			language =
@@ -100,13 +161,13 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 			language.setLanguageCode("es");
 			APILocator.getLanguageAPI().saveLanguage(language);
 		}
-		spanishNoCountryLanguageId =
-				APILocator.getLanguageAPI().getLanguage("es", "").getId();
+		spanishNoCountryLanguage =
+				APILocator.getLanguageAPI().getLanguage("es", "");
 	}
 
 	private static void createSpanishCostaRicaLanguage() {
 
-		Language language = null;
+		Language language;
 
 		try {
 			language =
@@ -120,29 +181,93 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 
 			language = new Language();
 			language.setLanguageCode("es");
+			language.setCountryCode("CR");
 			APILocator.getLanguageAPI().saveLanguage(language);
 		}
-		spanishCostaRicaLanguageId =
-				APILocator.getLanguageAPI().getLanguage("es", "CR").getId();
+		spanishCostaRicaLanguage =
+				APILocator.getLanguageAPI().getLanguage("es", "CR");
 	}
 
 	@Test
-    public void testLangNoCountryDefaultRequestLocaleGet() {
+	public void testLangNoCountryDefaultRequestLocaleGet() {
+		testNoCountryLanguage("es", "CR",
+				Boolean.FALSE, LANGUAGE_VALUE_TEST_EXAMPLE_COUNTRY,
+				spanishNoCountryLanguage.getId());
+	}
 
-		final LanguageWebAPI languageWebAPI = new LanguageWebAPI();
-		final HttpServletRequest request    = mock(HttpServletRequest.class);
-		final HttpSession session = mock(HttpSession.class);
-		final ViewContext    viewContext    = mock(ViewContext.class);
-		when(viewContext.getRequest()).thenReturn(request);
-		when(request.getSession()).thenReturn(session);
-		when(request.getLocale()).thenReturn(new Locale("es", "CR"));
-		when(session.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(spanishNoCountryLanguageId));
+	@Test
+	public void testLangNoCountryDefaultRequestLocaleGetWithFallback() {
+		testNoCountryLanguage("es", "CR",
+				Boolean.TRUE, LANGUAGE_VALUE_TEST_EXAMPLE_COUNTRY,
+				spanishNoCountryLanguage.getId());
+	}
 
-		languageWebAPI.init(viewContext);
+	@Test
+	public void testDefaultContentToDefaultLanguage() {
+		testNoCountryLanguage("fr", "FR",
+				Boolean.TRUE, LANGUAGE_VALUE_TEST_EXAMPLE_DEFAULT_LANGUAGE,
+				8985);//Non existing language
+	}
 
-		final String text = languageWebAPI.get("test.example");
+	@Test
+	public void testDefaultContentToDefaultLanguage2() {
+		testNoCountryLanguage("fr", "FR",
+				Boolean.FALSE, LANGUAGE_KEY_TEST_EXAMPLE,
+				8985);//Non existing language
+	}
 
+	@Test
+	public void testDefaultContentToDefaultLanguage3() {
+		testNoCountryLanguage("fr", "FR",
+				Boolean.TRUE, LANGUAGE_VALUE_TEST_EXAMPLE_NO_COUNTRY,
+				spanishNoCountryLanguage.getId());
+	}
 
-        assertEquals("Esto es una prueba puravida", text);
-    }
+	@Test
+	public void testDefaultContentToDefaultLanguage4() {
+		testNoCountryLanguage("fr", "FR",
+				Boolean.FALSE, LANGUAGE_VALUE_TEST_EXAMPLE_NO_COUNTRY,
+				spanishNoCountryLanguage.getId());
+	}
+
+	@Test
+	public void testSimpleGetLocaleNoCountry() {
+		testNoCountryLanguage("es", "",
+				Boolean.FALSE, LANGUAGE_VALUE_TEST_EXAMPLE_NO_COUNTRY,
+				spanishNoCountryLanguage.getId());
+	}
+
+	@Test
+	public void testSimpleGetLocaleNoCountryWithFallback() {
+		testNoCountryLanguage("es", "",
+				Boolean.TRUE, LANGUAGE_VALUE_TEST_EXAMPLE_NO_COUNTRY,
+				spanishNoCountryLanguage.getId());
+	}
+
+	private void testNoCountryLanguage(String languageCode, String countryCode, Boolean fallback,
+			String value, long requestLanguageId) {
+		try {
+			final LanguageWebAPI languageWebAPI = new LanguageWebAPI();
+			final HttpServletRequest request = mock(HttpServletRequest.class);
+			final HttpSession session = mock(HttpSession.class);
+			final ViewContext viewContext = mock(ViewContext.class);
+
+			when(viewContext.getRequest()).thenReturn(request);
+			when(request.getSession()).thenReturn(session);
+			when(request.getLocale()).thenReturn(new Locale(languageCode, countryCode));
+			when(session.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE))
+					.thenReturn(String.valueOf(requestLanguageId));
+
+			Config.setProperty(MULTILINGUABLE_FALLBACK_KEY, fallback);
+
+			languageWebAPI.init(viewContext);
+			final String text = languageWebAPI.get(LANGUAGE_KEY_TEST_EXAMPLE);
+
+			assertEquals(value, text);
+		} finally {
+			//Clean up
+			Config.setProperty(MULTILINGUABLE_FALLBACK_KEY, Boolean.FALSE);
+		}
+	}
+
 }
