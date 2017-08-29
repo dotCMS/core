@@ -72,7 +72,7 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 
 		//DEFAULT LANGUAGE
 		//Search for the default language
-		Long englishLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+		final Long englishLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 		KeyValue keyValue = APILocator.getKeyValueAPI()
 				.get(LANGUAGE_KEY_TEST_EXAMPLE, englishLanguageId,
 						languageVariableContentType, systemUser, false);
