@@ -164,9 +164,9 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
 
         createPortugueseLanguageWithCountry();
         createPortugueseLanguageNoCountry();
-        Language portugueseLanguage = languageAPI
+        final Language portugueseLanguage = languageAPI
                 .getLanguage(PORTUGAL_LANGUAGE_CODE, PORTUGAL_COUNTRY_CODE);
-        Language fallbackPortugueseLanguage = languageAPI
+        final Language fallbackPortugueseLanguage = languageAPI
                 .getFallbackLanguage(PORTUGAL_LANGUAGE_CODE);
 
         Assert.assertNotNull(portugueseLanguage);

@@ -244,7 +244,7 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 				spanishNoCountryLanguage.getId());
 	}
 
-	private void testNoCountryLanguage(String languageCode, String countryCode, Boolean fallback,
+	private void testNoCountryLanguage(final String languageCode, String countryCode, Boolean fallback,
 			String value, long requestLanguageId) {
 		try {
 			final LanguageWebAPI languageWebAPI = new LanguageWebAPI();
