@@ -74,6 +74,28 @@ public class FunctionUtils {
         return ifOrElse(booleanSupplier.get(), onTrueCallback, onFalseCallback);
     } // ifOrElse.
 
+    /**
+     * Tries to get the value, if some error happens it is not logged or anything, just quietly returned the defaultValue.
+     * @param delegate {@link ReturnableDelegate} delegate to call
+     * @param defaultValue T default value in case of error
+     * @param <T>
+     * @return T
+     */
+    public static <T> T getValueOrDefault (final ReturnableDelegate<T> delegate, final T defaultValue) {
+
+        T returnValue = defaultValue;
+
+        try {
+
+            returnValue = delegate.execute();
+        } catch (Throwable e) {
+
+            returnValue = defaultValue;
+        }
+
+        return returnValue;
+    } // getValueOrDefault.
+
 
     /**
      * Just encapsulates a single callback
@@ -85,4 +107,6 @@ public class FunctionUtils {
          */
         void call ();
     } // Callback.
+
+
 } // E:O:F:FunctionUtils.
