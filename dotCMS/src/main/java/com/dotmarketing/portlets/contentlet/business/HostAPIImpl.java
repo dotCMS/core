@@ -61,7 +61,7 @@ public class HostAPIImpl implements HostAPI {
     private HostCache hostCache = CacheLocator.getHostCache();
     private Host systemHost;
     private final SystemEventsAPI systemEventsAPI;
-    private final String CONTENT_TYPE_CONDITION = "+contentType";
+    private static final String CONTENT_TYPE_CONDITION = "+contentType";
 
     public HostAPIImpl() {
         this.systemEventsAPI = APILocator.getSystemEventsAPI();
