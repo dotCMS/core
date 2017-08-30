@@ -114,7 +114,12 @@ public abstract class AbstractHazelcastCacheProvider extends CacheProvider {
             return;
         }
         try{
-            getHazelcastInstance().getMap(group).removeAsync(key);
+            if(ASYNC_PUT){
+                getHazelcastInstance().getMap(group).removeAsync(key);
+            }
+            else{
+                getHazelcastInstance().getMap(group).remove(key);
+            }
         } catch (HazelcastInstanceNotActiveException hce){
             reInitialize();
         }
