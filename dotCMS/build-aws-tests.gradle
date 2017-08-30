@@ -470,6 +470,8 @@ task executeScript(dependsOn: [describeInstance, describeDBInstance]) {
   			}
 		}
 
+        println( "Getting License file from: $System.env.JENKINS_HOME/license.dat")
+
 		//Copy license file to the instance
 		ssh.run {
 			session(
