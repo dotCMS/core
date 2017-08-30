@@ -59,7 +59,7 @@ mv context.xml dotserver/tomcat/webapps/ROOT/META-INF/context.xml
 
 # Move license file to dotsecure folder
 mkdir -p dotserver/tomcat/webapps/ROOT/dotsecure/license
-mv ~/license.dat ~/repo/$BRANCH/dotserver/tomcat/webapps/ROOT/dotsecure/license/
+mv ~/license.dat dotserver/tomcat/webapps/ROOT/dotsecure/license/
 
 # Setup ports
 #PORT_SEED		= Math.abs( Objects.hash( database, branch )	//Pseudo-unique number based on database/branch combination
