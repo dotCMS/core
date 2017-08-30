@@ -9,6 +9,7 @@ import com.dotcms.cluster.business.HazelcastUtil.HazelcastInstanceType;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
@@ -21,7 +22,7 @@ public abstract class AbstractHazelcastCacheProvider extends CacheProvider {
 	private static final long serialVersionUID = 1L;
     protected Boolean initialized = false;
 
-
+    private final boolean ASYNC_PUT = Config.getBooleanProperty("HAZELCAST_ASYNC_PUT", true);
     protected abstract HazelcastInstanceType getHazelcastInstanceType();
 
     protected abstract CacheStats getStats(String group);
@@ -50,7 +51,11 @@ public abstract class AbstractHazelcastCacheProvider extends CacheProvider {
 
     @Override
     public void put(String group, String key, Object content) {
-        getHazelcastInstance().getMap(group).set(key, content);
+        if(ASYNC_PUT){
+            getHazelcastInstance().getMap(group).setAsync(key, content);
+        }else{
+            getHazelcastInstance().getMap(group).set(key, content);
+        }
     }
 
     @Override
@@ -60,7 +65,12 @@ public abstract class AbstractHazelcastCacheProvider extends CacheProvider {
 
     @Override
     public void remove(String group, String key) {
-        getHazelcastInstance().getMap(group).remove(key);
+        if(ASYNC_PUT){
+            getHazelcastInstance().getMap(group).removeAsync(key);
+        }
+        else{
+            getHazelcastInstance().getMap(group).remove(key);
+        }
     }
 
     @Override
