@@ -24,7 +24,7 @@ public abstract class AbstractHazelcastCacheProvider extends CacheProvider {
     private boolean initialized = false;
     private boolean recovering =false;
 
-    private final boolean ASYNC_PUT = Config.getBooleanProperty("HAZELCAST_ASYNC_PUT", false);
+    private final boolean ASYNC_PUT = Config.getBooleanProperty("HAZELCAST_ASYNC_PUT", true);
     protected abstract HazelcastInstanceType getHazelcastInstanceType();
     protected abstract CacheStats getStats(String group);
 
