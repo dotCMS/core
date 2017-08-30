@@ -58,7 +58,7 @@ jar xf dotserver/tomcat/webapps/ROOT/WEB-INF/lib/dotcms_*-functionalTest.jar con
 mv context.xml dotserver/tomcat/webapps/ROOT/META-INF/context.xml
 
 # Move license file to dotsecure folder
-mkdir dotserver/tomcat/webapps/ROOT/dotsecure/license
+mkdir -p dotserver/tomcat/webapps/ROOT/dotsecure/license
 mv ~/license.dat dotserver/tomcat/webapps/ROOT/dotsecure/license/
 
 # Setup ports
