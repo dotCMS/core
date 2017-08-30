@@ -90,12 +90,8 @@ public class CategoryCacheImpl extends CategoryCache {
 	public void putChildren(Categorizable parent, List<Category> children)
 			throws DotDataException, DotCacheException {
 		
-		List<String> catsIds = new ArrayList<String>();
-		for(Category cat : children) {
-			catsIds.add(cat.getInode());
-		}
-		cache.put(categoryChildrenCacheGroup + parent.getCategoryId(), catsIds, categoryChildrenCacheGroup);
 
+		cache.put(categoryChildrenCacheGroup + parent.getCategoryId(), children, categoryChildrenCacheGroup);
 		//Putting the children cats on the plain cache
 		for(Category cat : children) {
 			put(cat);

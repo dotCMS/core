@@ -457,7 +457,7 @@ public class CategoryAPIImpl implements CategoryAPI {
 		LinkedList<Category> children = new LinkedList<Category>(getChildren(category, user, respectFrontendRoles));
 		if (children != null) {
 			while(children.size() > 0) {
-				Category child = children.poll();
+				Category child = (Category) children.poll();
 				children.addAll(getChildren(child, user, respectFrontendRoles));
 				categoryTree.add(child);
 			}
