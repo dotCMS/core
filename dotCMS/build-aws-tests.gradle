@@ -479,7 +479,7 @@ task executeScript(dependsOn: [describeInstance, describeDBInstance]) {
 			) {
 				// Transfer temporal script as an executable file into remote home directory
 				put( from: file( instanceScriptFilePath ), into: "/home/"+ properties.getProperty("ssh.username") )
-				put( from: file("$System.env.JENKINS/license.dat"), into: "/home/"+ properties.getProperty("ssh.username") )
+				put( from: file("$System.env.JENKINS_HOME/license.dat"), into: "/home/"+ properties.getProperty("ssh.username") )
 				execute( "chmod 777 "+ instanceScriptFileName )
 
 				// Execute temporal script transferred to remote home directory
