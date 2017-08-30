@@ -1,14 +1,10 @@
 package com.dotcms.util.pagination;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -26,7 +22,7 @@ public class CategoriesPaginator implements Paginator<Category> {
     private int lastTotalRecords;
 
     @VisibleForTesting
-    public CategoriesPaginator(CategoryAPI categoryAPI){
+    public CategoriesPaginator(final CategoryAPI categoryAPI){
         this.categoryAPI = categoryAPI;
     }
 
@@ -35,12 +31,13 @@ public class CategoriesPaginator implements Paginator<Category> {
     }
 
     @Override
-    public long getTotalRecords(String filter) {
+    public long getTotalRecords(final String filter) {
         return lastTotalRecords;
     }
 
     @Override
-    public Collection<Category> getItems(User user, String filter, int limit, int offset, String orderby, OrderDirection direction, Map<String, Object> extraParams) {
+    public Collection<Category> getItems(final User user, final String filter, final int limit, final int offset,
+                                         final String orderby, final OrderDirection direction, final Map<String, Object> extraParams) {
         try {
             String categoriesSort = null;
 
@@ -48,7 +45,7 @@ public class CategoriesPaginator implements Paginator<Category> {
                 categoriesSort = direction == OrderDirection.DESC ? "-" + orderby : orderby;
             }
 
-            PaginatedCategories topLevelCategories = categoryAPI.findTopLevelCategories(user, false, offset, limit, filter, categoriesSort);
+            final PaginatedCategories topLevelCategories = categoryAPI.findTopLevelCategories(user, false, offset, limit, filter, categoriesSort);
             lastTotalRecords = topLevelCategories.getTotalCount();
 
             return topLevelCategories.getCategories();

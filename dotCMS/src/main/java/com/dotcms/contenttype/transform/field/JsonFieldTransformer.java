@@ -47,9 +47,9 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
       }
     } catch (Exception e) {
       try {
-        JSONObject jo = new JSONObject(json);
-        if (jo.has("fields")) {
-          l = fromJsonArray(jo.getJSONArray("fields"));
+        final JSONObject fieldJsonObjec = new JSONObject(json);
+        if (fieldJsonObjec.has("fields")) {
+          l = fromJsonArray(fieldJsonObjec.getJSONArray("fields"));
         } else {
           l.add(fromJsonStr(json));
         }
@@ -95,7 +95,7 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
       JSONObject jo = new JSONObject(input);
 
       if (jo.has(CATEGORIES_PROPERTY_NAME)){
-        Object categories = jo.get(CATEGORIES_PROPERTY_NAME);
+        final Object categories = jo.get(CATEGORIES_PROPERTY_NAME);
         jo.put("values", categories);
       }
 

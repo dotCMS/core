@@ -17,7 +17,6 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Collection;
 import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.toImmutableList;
@@ -48,9 +47,9 @@ public class FieldTypeResource {
     public Response getFieldTypes(@Context final HttpServletRequest req) {
 
         final InitDataObject initData = this.webResource.init(null, true, req, true, null);
-        User user = initData.getUser();
+        final User user = initData.getUser();
 
-        ImmutableList<Map<String, Object>> fieldTypesMap = fieldTypeAPI.getFieldTypes(user).stream()
+        final ImmutableList<Map<String, Object>> fieldTypesMap = fieldTypeAPI.getFieldTypes(user).stream()
                 .map(fieldType -> fieldType.toMap())
                 .collect(toImmutableList());
 

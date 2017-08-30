@@ -1,7 +1,9 @@
 package com.dotcms.contenttype.model.field;
 
 /**
+ * Set of Properties allow for the fields
  *
+ * @see Field#getFieldContentTypeProperties
  */
 public enum ContentTypeFieldProperties {
     NAME("name"),
@@ -19,7 +21,7 @@ public enum ContentTypeFieldProperties {
 
     private String name;
 
-    ContentTypeFieldProperties(String name) {
+    ContentTypeFieldProperties(final String name) {
         this.name = name;
     }
 

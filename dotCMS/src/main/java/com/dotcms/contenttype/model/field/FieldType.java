@@ -44,7 +44,7 @@ public class FieldType implements Comparable<FieldType>{
     }
 
     public Map<String, Object> toMap(){
-        ImmutableList<String> propertiesName = properties.stream()
+        final ImmutableList<String> propertiesName = properties.stream()
                 .map(property -> property.getName())
                 .collect(toImmutableList());
 
