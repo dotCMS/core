@@ -63,7 +63,7 @@ public abstract class CategoryCache implements Cachable{
 	 * @return
 	 * @throws DotDataException
 	 */
-	abstract protected List<String> getChildren(Categorizable parentId) throws DotDataException;
+	abstract protected List<Category> getChildren(Categorizable parentId) throws DotDataException;
 
 	/**
 	 * Sets the list of children based on the given parent id/inode
@@ -123,7 +123,7 @@ public abstract class CategoryCache implements Cachable{
 	 * @return
 	 * @throws DotDataException
 	 */
-	abstract protected List<String> getParents(Categorizable childId) throws DotDataException;
+	abstract protected List<Category> getParents(Categorizable childId) throws DotDataException;
 
 	/**
 	 * Sets the list of parent categories of the given child id/inode
