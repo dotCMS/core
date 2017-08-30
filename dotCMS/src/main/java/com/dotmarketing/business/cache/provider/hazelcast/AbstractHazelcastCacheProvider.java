@@ -9,6 +9,7 @@ import com.dotcms.cluster.business.HazelcastUtil.HazelcastInstanceType;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
@@ -25,6 +26,8 @@ public abstract class AbstractHazelcastCacheProvider extends CacheProvider {
 
     protected abstract HazelcastInstanceType getHazelcastInstanceType();
     protected abstract CacheStats getStats(String group);
+
+    private final boolean ASYNC_PUT = Config.getBooleanProperty("HAZELCAST_ASYNC_PUT", true);
 
     protected HazelcastInstance getHazelcastInstance() {
     	return HazelcastUtil.getInstance().getHazel(getHazelcastInstanceType());
@@ -81,9 +84,14 @@ public abstract class AbstractHazelcastCacheProvider extends CacheProvider {
         if(isRecovering()){
             return;
         }
+
         try{
-            getHazelcastInstance().getMap(group).set(key, content);
-        } catch (HazelcastInstanceNotActiveException hce){
+            if(ASYNC_PUT){
+                getHazelcastInstance().getMap(group).setAsync(key, content);
+            }else{
+                getHazelcastInstance().getMap(group).set(key, content);
+            }
+        } catch (HazelcastInstanceNotActiveException hce) {
             reInitialize();
         }
     }
@@ -107,7 +115,12 @@ public abstract class AbstractHazelcastCacheProvider extends CacheProvider {
             return;
         }
         try{
-            getHazelcastInstance().getMap(group).remove(key);
+            if(ASYNC_PUT){
+                getHazelcastInstance().getMap(group).removeAsync(key);
+            }
+            else {
+                getHazelcastInstance().getMap(group).remove(key);
+            }
         } catch (HazelcastInstanceNotActiveException hce){
             reInitialize();
         }
