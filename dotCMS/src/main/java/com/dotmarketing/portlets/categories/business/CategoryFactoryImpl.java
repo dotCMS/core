@@ -236,7 +236,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
 		List<Category> children = catCache.getChildren(parent);
 		if(children == null) {
-		    children = getChildren(parent, "sort_order, category_name");
+		    children = getChildren(parent, "sort_order");
 			
 			try {
 				catCache.putChildren(parent, children);
@@ -255,7 +255,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		HibernateUtil hu = new HibernateUtil(Category.class);
 		hu.setSQLQuery("select {category.*} from inode category_1_, category, tree where " +
 				"category.inode = tree.child and tree.parent = ? and category_1_.inode = category.inode " +
-				"and category_1_.type = 'category' order by " + orderBy);
+				"and category_1_.type = 'category' order by " + orderBy + ",category_name");
 		hu.setParam(parent.getCategoryId());
 		return (List<Category>) hu.list();
 	}
