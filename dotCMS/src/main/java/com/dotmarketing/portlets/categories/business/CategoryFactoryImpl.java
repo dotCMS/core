@@ -234,16 +234,17 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	@Override
 		protected List<Category> getChildren(Categorizable parent) throws DotDataException {
 
-		List<Category> children = catCache.getChildren(parent);
+
+		List<Category> children= catCache.getChildren(parent);
 		if(children == null) {
-		    children = getChildren(parent, "sort_order");
-			
+      children = getChildren(parent, "sort_order");
 			try {
 				catCache.putChildren(parent, children);
 			} catch (DotCacheException e) {
 				throw new DotDataException(e.getMessage(), e);
 			}
 		} 
+
 		return children;
 	}
 
@@ -251,6 +252,9 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	@Override
 	protected List<Category> getChildren(Categorizable parent, String orderBy)
 	throws DotDataException {
+	    
+	    
+	    
 		orderBy = SQLUtil.sanitizeSortBy(orderBy);
 		HibernateUtil hu = new HibernateUtil(Category.class);
 		hu.setSQLQuery("select {category.*} from inode category_1_, category, tree where " +
@@ -776,10 +780,12 @@ public class CategoryFactoryImpl extends CategoryFactory {
                 catCache.removeChildren( parentId );
             }
         }
-        List<Category> childrenIds = catCache.getChildren( category );
-        if ( childrenIds != null ) {
-            for ( Category childId : childrenIds ) {
-                catCache.removeParents( childId );
+
+        List<Category> children = catCache.getChildren( category );
+        if ( children != null ) {
+            for ( Category child : children ) {
+                catCache.removeParents( child.getCategoryId() );
+
             }
         }
     }
