@@ -10,6 +10,7 @@ import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.fixtask.tasks.FixTask00085FixEmptyParentPathOnIdentifier;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -18,7 +19,6 @@ import org.junit.Test;
 public class FixTask00085FixEmptyParentPathOnIdentifierTest extends IntegrationTestBase {
 
     DotConnect dc = new DotConnect();
-    private FixTask00085FixEmptyParentPathOnIdentifier fixTask;
     private static String DUMMY_IDENTIFIER;
     private static IdentifierAPI identifierAPI;
     final String ASSET_NAME = "test" + System.currentTimeMillis() + ".jpg";
@@ -129,19 +129,16 @@ public class FixTask00085FixEmptyParentPathOnIdentifierTest extends IntegrationT
     }
 
     @Test
-    public void executeFix() throws DotDataException {
+    public void testExecuteFix() throws DotDataException {
         try {
             removeTrigger();
             insertRecordOnIndentifier();
             Identifier identifier = identifierAPI.find(DUMMY_IDENTIFIER);
             Assert.assertEquals(null, identifier.getParentPath());
-            fixTask = new FixTask00085FixEmptyParentPathOnIdentifier();
+            FixTask00085FixEmptyParentPathOnIdentifier fixTask = new FixTask00085FixEmptyParentPathOnIdentifier();
             fixTask.executeFix();
             identifier = identifierAPI.find(DUMMY_IDENTIFIER);
             Assert.assertEquals("/", identifier.getParentPath());
-
-        } catch (DotDataException e) {
-            e.printStackTrace();
         } finally {
             identifierAPI.delete(identifierAPI.find(DUMMY_IDENTIFIER));
             recreateTrigger();

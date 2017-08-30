@@ -21,9 +21,9 @@ public class FixTask00085FixEmptyParentPathOnIdentifier implements FixTask {
     private int total = 0;
 
     @Override
-    public List<Map<String, Object>> executeFix() throws DotDataException, DotRuntimeException {
+    public List<Map<String, Object>> executeFix() throws DotDataException {
 
-        List<Map<String, Object>> returnValue = new ArrayList<Map<String, Object>>();
+        final List<Map<String, Object>> returnValue = new ArrayList<>();
 
         Logger.info(FixTask00085FixEmptyParentPathOnIdentifier.class,
                 "Beginning FixTask00085FixEmptyParentPathOnIdentifier");
@@ -37,7 +37,7 @@ public class FixTask00085FixEmptyParentPathOnIdentifier implements FixTask {
 
             try {
                 HibernateUtil.startTransaction();
-                DotConnect dc = new DotConnect();
+                final DotConnect dc = new DotConnect();
 
                 dc.setSQL(
                         "update identifier set parent_path = '/' where parent_path is null or parent_path = ''");
@@ -50,12 +50,12 @@ public class FixTask00085FixEmptyParentPathOnIdentifier implements FixTask {
 
                 FixAssetsProcessStatus.setErrorsFixed(total);
 
-                FixAudit Audit = new FixAudit();
-                Audit.setTableName("identifier");
-                Audit.setDatetime(new Date());
-                Audit.setRecordsAltered(total);
-                Audit.setAction("Task 85: Fixed EmptyParentPathInIdentifiers");
-                HibernateUtil.save(Audit);
+                final FixAudit audit = new FixAudit();
+                audit.setTableName("identifier");
+                audit.setDatetime(new Date());
+                audit.setRecordsAltered(total);
+                audit.setAction("Task 85: Fixed EmptyParentPathInIdentifiers");
+                HibernateUtil.save(audit);
                 HibernateUtil.commitTransaction();
                 MaintenanceUtil.flushCache();
 
@@ -77,18 +77,18 @@ public class FixTask00085FixEmptyParentPathOnIdentifier implements FixTask {
 
     @Override
     public List<Map<String, String>> getModifiedData() {
-        return new ArrayList<Map<String, String>>();
+        return new ArrayList<>();
     }
 
     @Override
     public boolean shouldRun() {
         List<HashMap<String, String>> identifiers = null;
 
-        DotConnect db = new DotConnect();
-        String query = "select id, parent_path from identifier where parent_path is null or parent_path = ''";
-        db.setSQL(query);
+        final DotConnect db = new DotConnect();
+        final String SQL_SELECT_PARENT_PATH_NULL_OR_EMPTY = "select id, parent_path from identifier where parent_path is null or parent_path = ''";
+        db.setSQL(SQL_SELECT_PARENT_PATH_NULL_OR_EMPTY);
         try {
-            identifiers = db.getResults();
+            identifiers = db.loadResults();
 
             total = identifiers.size();
         } catch (DotDataException e) {
