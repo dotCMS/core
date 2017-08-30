@@ -89,6 +89,8 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 
+import static com.dotcms.util.FunctionUtils.*;
+
 /**
  * This class handles the communication between the view and the back-end
  * service that returns information to the user regarding Contentlets in dotCMS.
@@ -502,7 +504,7 @@ public class ContentletAjax {
 	 *             A system error has occurred.
 	 */
 	@SuppressWarnings("rawtypes")
-	public List searchContentletsByUser(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage, User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
+	public List searchContentletsByUser(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage, final User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
 		if(perPage < 1){
 			perPage = Config.getIntProperty("PER_PAGE", 40);
 		}
@@ -899,7 +901,9 @@ public class ContentletAjax {
 			searchResult.put("inode", con.getInode());
 			searchResult.put("Identifier",con.getIdentifier());
 			searchResult.put("identifier", con.getIdentifier());
-			searchResult.put("__title__", conAPI.getName(con, currentUser, false));
+			final Contentlet contentlet = con;
+			searchResult.put("__title__", getValueOrDefault (
+					() -> conAPI.getName(contentlet, currentUser, false), "Unknown"));
 			
 			String spanClass = (s.getStructureType() ==1)
 			        ? "contentIcon"
@@ -1100,6 +1104,8 @@ public class ContentletAjax {
 
 		return results;
 	}
+
+
 
 	public ArrayList<String[]> doSearchGlossaryTerm(String valueToComplete, String language) throws Exception {
 		ArrayList<String[]> list = new ArrayList<String[]>(15);
