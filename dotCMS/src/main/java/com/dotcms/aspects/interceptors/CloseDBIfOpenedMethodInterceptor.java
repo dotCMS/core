@@ -2,26 +2,27 @@ package com.dotcms.aspects.interceptors;
 
 import com.dotcms.aspects.DelegateMethodInvocation;
 import com.dotcms.aspects.MethodInterceptor;
-import com.dotcms.business.CloseDB;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.db.DbConnectionFactory;
 
 import static com.dotcms.util.AnnotationUtils.getMethodAnnotation;
 
 /**
- * Method handler for the {@link CloseDB} annotation aspect
+ * Method handler for the {@link CloseDBIfOpened} annotation aspect
  * @author jsanca
  */
-public class CloseDBMethodInterceptor implements MethodInterceptor<Object> {
+public class CloseDBIfOpenedMethodInterceptor implements MethodInterceptor<Object> {
 
-    public static final CloseDBMethodInterceptor INSTANCE = new CloseDBMethodInterceptor();
+    public static final CloseDBIfOpenedMethodInterceptor INSTANCE = new CloseDBIfOpenedMethodInterceptor();
 
 
     @Override
     public Object invoke(final DelegateMethodInvocation<Object> delegate) throws Throwable {
 
+        final boolean isNewConnection = !DbConnectionFactory.connectionExists();
 
-        final CloseDB closeDB =
-                getMethodAnnotation(delegate.getMethod(), CloseDB.class);
+        final CloseDBIfOpened closeDB =
+                getMethodAnnotation(delegate.getMethod(), CloseDBIfOpened.class);
         Object methodReturn = null;
 
         try {
@@ -29,7 +30,7 @@ public class CloseDBMethodInterceptor implements MethodInterceptor<Object> {
         } finally {
 
             if (null != closeDB && closeDB.connection()
-                    && !DbConnectionFactory.inTransaction()) {
+                    && isNewConnection) {
 
                 DbConnectionFactory.closeSilently();
             }

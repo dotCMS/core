@@ -1,6 +1,6 @@
 package com.dotcms.vanityurl.business;
 
-import com.dotcms.business.CloseDB;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
@@ -14,7 +14,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -23,7 +22,6 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
@@ -33,11 +31,7 @@ import com.liferay.util.StringPool;
 import org.elasticsearch.indices.IndexMissingException;
 
 import java.text.MessageFormat;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 
 import static com.dotcms.util.CollectionsUtils.map;
@@ -101,7 +95,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
     }
 
-    @CloseDB
+    @CloseDBIfOpened
     @Override
     public void initializeVanityURLsCache(final User user) {
         searchAndPopulate(GET_ACTIVE_VANITY_URL, user, null, null, true);
@@ -158,7 +152,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                 .equals(cachedVanityUrl.getVanityUrlId());
     }
 
-    @CloseDB
+    @CloseDBIfOpened
     @Override
     public boolean isVanityUrl(final String url, final Host host, final long languageId) {
 
@@ -203,7 +197,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
         return isVanityURL;
     } // isVanityUrl
 
-    @CloseDB
+    @CloseDBIfOpened
     @Override
     public VanityUrl getVanityUrlFromContentlet(final Contentlet contentlet) {
 
@@ -303,7 +297,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
     } // getSiteId.
 
-    @CloseDB
+    @CloseDBIfOpened
     @Override
     public CachedVanityUrl getLiveCachedVanityUrl(final String uri, final Host site,
             final long languageId, final User user) {
@@ -593,7 +587,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                     this.vanityUrlServices.setCachedVanityUrlList (k.hostId(), k.languageId(), vanityUrlBuilder.build()));
     } // addSecondaryVanityURLCacheCollection.
 
-    @CloseDB
+    @CloseDBIfOpened
     @Override
     public void validateVanityUrl(final Contentlet contentlet) {
 
@@ -611,29 +605,33 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
                 contentlet.getStringProperty(VanityUrlContentType.URI_FIELD_VAR);
 
         if(!this.allowedActions.contains(action)){
-            String message = this.languageAPI
-                    .getStringKey(language, "message.vanity.url.error.invalidAction");
-
-            throw new DotContentletValidationException(message);
+            throwContentletValidationError(language, "message.vanity.url.error.invalidAction");
         }
 
         if (!isValidRegex(uri)) {
-          String message = this.languageAPI
-                    .getStringKey(language, "message.vanity.url.error.invalidURIPattern");
-
-            throw new DotContentletValidationException(message);
+            throwContentletValidationError(language, "message.vanity.url.error.invalidURIPattern");
         }
     } // validateVanityUrl.
+
+    private void throwContentletValidationError(final Language language, final String key) {
+        final String message = this.languageAPI
+                .getStringKey(language, key);
+
+        throw new DotContentletValidationException(message);
+    }
 
     private void checkMissingField(final Contentlet contentlet,
                                    final Language language,
                                    final String fieldName) {
+
+        final String identifier = contentlet.getIdentifier();
+
         if (!contentlet.getMap().containsKey(fieldName)) {
 
             throw new DotContentletValidationException(
                     MessageFormat.format(
                             this.languageAPI.getStringKey(language, "missing.field"),
-                            fieldName)
+                            fieldName, identifier)
                     );
         }
     }

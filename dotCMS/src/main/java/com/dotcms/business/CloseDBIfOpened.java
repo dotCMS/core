@@ -3,13 +3,13 @@ package com.dotcms.business;
 import java.lang.annotation.*;
 
 /**
- * A method annotated with CloseDB annotation will close resources in the current thread if needed, such as database connections...
+ * A method annotated with CloseDBIfOpened annotation will close resources in the current thread if needed, such as database connections...
  * @author jsanca
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface CloseDB {
+public @interface CloseDBIfOpened {
 
     /**
      * By default in true, set to false if you do not want to close the connection hold on the current thread

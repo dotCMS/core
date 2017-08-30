@@ -67,9 +67,11 @@ public class DbConnectionFactoryTest extends IntegrationTestBase {
 
     @Test
     public void testNestedTransactions() throws Exception {
+
         assertThat("No transaction", !DbConnectionFactory.inTransaction());
         int count = getCount();
         int count2 = testNestedTransactions(0);
+
         assertThat("No transaction", !DbConnectionFactory.inTransaction());
         assertThat("Counts are the same", count == count2);
 

@@ -3,7 +3,7 @@ package com.dotmarketing.business.web;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.business.CloseDB;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.UserAPIImpl;
@@ -23,7 +23,7 @@ public class UserWebAPIImpl extends UserAPIImpl implements UserWebAPI {
 		
 	}
 
-	@CloseDB
+	@CloseDBIfOpened
     @Override
     public User getUser(HttpServletRequest request) {
       try{
