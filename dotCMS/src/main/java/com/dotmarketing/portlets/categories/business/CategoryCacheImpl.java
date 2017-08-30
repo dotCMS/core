@@ -58,11 +58,11 @@ public class CategoryCacheImpl extends CategoryCache {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	protected List<String> getParents(Categorizable child) throws DotDataException {
+	protected List<Category> getParents(Categorizable child) throws DotDataException {
 		
-		List<String> catsIds = null;
+		List<Category> catsIds = null;
 		try{
-			catsIds = (List<String>) cache.get(categoryParentsCacheGroup + child.getCategoryId(), categoryParentsCacheGroup);
+			catsIds = (List<Category>) cache.get(categoryParentsCacheGroup + child.getCategoryId(), categoryParentsCacheGroup);
 			return catsIds;
 		}catch (DotCacheException e) {
 			Logger.debug(this, "Cache Entry not found", e);
