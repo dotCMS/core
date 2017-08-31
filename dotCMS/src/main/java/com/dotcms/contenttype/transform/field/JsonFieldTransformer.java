@@ -47,9 +47,9 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
       }
     } catch (Exception e) {
       try {
-        final JSONObject fieldJsonObjec = new JSONObject(json);
-        if (fieldJsonObjec.has("fields")) {
-          l = fromJsonArray(fieldJsonObjec.getJSONArray("fields"));
+        final JSONObject fieldJsonObject = new JSONObject(json);
+        if (fieldJsonObject.has("fields")) {
+          l = fromJsonArray(fieldJsonObject.getJSONArray("fields"));
         } else {
           l.add(fromJsonStr(json));
         }
@@ -72,11 +72,11 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
       throws JSONException, JsonParseException, JsonMappingException, IOException {
     List<Field> fields = new ArrayList<>();
     for (int i = 0; i < jarr.length(); i++) {
-      JSONObject jo = jarr.getJSONObject(i);
-      jo.remove("acceptedDataTypes");
-      Field f = fromJsonStr(jo.toString());
-      if (jo.has("fieldVariables")) {
-        String varStr = jo.getJSONArray("fieldVariables").toString();
+      JSONObject fieldJsonObject = jarr.getJSONObject(i);
+      fieldJsonObject.remove("acceptedDataTypes");
+      Field f = fromJsonStr(fieldJsonObject.toString());
+      if (fieldJsonObject.has("fieldVariables")) {
+        String varStr = fieldJsonObject.getJSONArray("fieldVariables").toString();
         List<FieldVariable> vars = mapper.readValue(varStr,
             mapper.getTypeFactory().constructCollectionType(List.class, ImmutableFieldVariable.class));
         f.constructFieldVariables(vars);

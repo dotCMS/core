@@ -2,6 +2,7 @@ package com.dotcms.util.pagination;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
@@ -14,12 +15,12 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.liferay.portal.model.User;
 
 /**
- * Created by freddyrodriguez on 8/16/17.
+ * Category paginator
  */
 public class CategoriesPaginator implements Paginator<Category> {
 
-    private CategoryAPI categoryAPI;
-    private int lastTotalRecords;
+    private final CategoryAPI categoryAPI;
+    private AtomicInteger lastTotalRecords;
 
     @VisibleForTesting
     public CategoriesPaginator(final CategoryAPI categoryAPI){
@@ -32,7 +33,7 @@ public class CategoriesPaginator implements Paginator<Category> {
 
     @Override
     public long getTotalRecords(final String filter) {
-        return lastTotalRecords;
+        return lastTotalRecords.get();
     }
 
     @Override
@@ -46,7 +47,7 @@ public class CategoriesPaginator implements Paginator<Category> {
             }
 
             final PaginatedCategories topLevelCategories = categoryAPI.findTopLevelCategories(user, false, offset, limit, filter, categoriesSort);
-            lastTotalRecords = topLevelCategories.getTotalCount();
+            lastTotalRecords = new AtomicInteger(topLevelCategories.getTotalCount());
 
             return topLevelCategories.getCategories();
         } catch (DotDataException|DotSecurityException e) {

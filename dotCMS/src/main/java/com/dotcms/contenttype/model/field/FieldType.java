@@ -5,7 +5,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Map;
-import static com.dotcms.util.CollectionsUtils.map;
+
+import static com.dotcms.util.CollectionsUtils.imap;
 import static com.dotcms.util.CollectionsUtils.toImmutableList;
 
 /**
@@ -45,10 +46,10 @@ public class FieldType implements Comparable<FieldType>{
 
     public Map<String, Object> toMap(){
         final ImmutableList<String> propertiesName = properties.stream()
-                .map(property -> property.getName())
+                .map(ContentTypeFieldProperties::getName)
                 .collect(toImmutableList());
 
-        return map("id", id,
+        return imap("id", id,
                 "label", label,
                 "properties", propertiesName,
                 "clazz", clazz,

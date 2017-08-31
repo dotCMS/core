@@ -19,7 +19,7 @@ public enum ContentTypeFieldProperties {
     DEFAULT_VALUE("defaultValue"),
     DATA_TYPE("dataType");
 
-    private String name;
+    private final String name;
 
     ContentTypeFieldProperties(final String name) {
         this.name = name;
