@@ -22,7 +22,7 @@ public abstract class AbstractHazelcastCacheProvider extends CacheProvider {
 	private static final long serialVersionUID = 1L;
     protected Boolean initialized = false;
 
-    private final boolean ASYNC_PUT = Config.getBooleanProperty("HAZELCAST_ASYNC_PUT", true);
+
     protected abstract HazelcastInstanceType getHazelcastInstanceType();
 
     protected abstract CacheStats getStats(String group);
