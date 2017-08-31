@@ -46,9 +46,8 @@ public abstract class CategoryField extends Field {
 
 	@JsonIgnore
 	public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
-		return list(ContentTypeFieldProperties.REQUIRED, ContentTypeFieldProperties.LABEL,
-				ContentTypeFieldProperties.CATEGORY, ContentTypeFieldProperties.DISPLAY_TYPE,
-				ContentTypeFieldProperties.HINT, ContentTypeFieldProperties.USER_SEARCHABLE,
-				ContentTypeFieldProperties.RADIO_TEXT, ContentTypeFieldProperties.CATEGORIES);
+		return list(ContentTypeFieldProperties.REQUIRED, ContentTypeFieldProperties.NAME,
+				ContentTypeFieldProperties.CATEGORIES, ContentTypeFieldProperties.HINT,
+				ContentTypeFieldProperties.SEARCHABLE);
 	}
 }
