@@ -660,9 +660,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         	for(String identifier : identifiers){
         		for(Language lang : APILocator.getLanguageAPI().getLanguages()){
                 	try{
+                	    ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, lang.getId());
+                	    if(cvi==null) continue;
                 		Contentlet languageContentlet = null;
                 		try{
-                			languageContentlet = findContentletByIdentifier(identifier, false, lang.getId(), user, respectFrontendRoles);
+                			languageContentlet = conFac.find(cvi.getWorkingInode());
                 		}catch (DotContentletStateException e) {
                 			Logger.debug(this,e.getMessage(),e);
 						}
@@ -1237,7 +1239,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         try{
         	return perAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         }catch (Exception e) {
-            if(e.getMessage().contains("[query_fetch]")){
+            if(e.getMessage()!=null && e.getMessage().contains("[query_fetch]")){
                 try{
                 APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,true);
                 	return perAPI.filterCollection(searchByIdentifier(q, 1, 0, rel.getRelationTypeValue() + "" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
