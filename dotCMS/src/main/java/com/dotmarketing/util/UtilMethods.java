@@ -352,8 +352,19 @@ public class UtilMethods {
      * @return If the collection is not null and is not empty, returns {@code true}. Otherwise,
      *         returns {@code false}.
      */
-    public static final boolean isSet(Collection<?> collection) {
+    public static final boolean isSet(final Collection<?> collection) {
         return null != collection && !collection.isEmpty();
+    }
+
+    /**
+     * Determines if a array of objects is different from {@code null} and is not empty.
+     *
+     * @param array - The {@link Object} array to check.
+     * @return If the collection is not null and is not empty, returns {@code true}. Otherwise,
+     *         returns {@code false}.
+     */
+    public static final boolean isSet(final Object[] array) {
+        return null != array && array.length > 0;
     }
     
     public static final boolean isValidEmail(String email) {
