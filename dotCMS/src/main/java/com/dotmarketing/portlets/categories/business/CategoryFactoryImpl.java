@@ -237,7 +237,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
 		List<Category> children= catCache.getChildren(parent);
 		if(children == null) {
-      children = getChildren(parent, "sort_order");
+		    children = getChildren(parent, "sort_order");
 			try {
 				catCache.putChildren(parent, children);
 			} catch (DotCacheException e) {
@@ -252,9 +252,6 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	@Override
 	protected List<Category> getChildren(Categorizable parent, String orderBy)
 	throws DotDataException {
-	    
-	    
-	    
 		orderBy = SQLUtil.sanitizeSortBy(orderBy);
 		HibernateUtil hu = new HibernateUtil(Category.class);
 		hu.setSQLQuery("select {category.*} from inode category_1_, category, tree where " +

@@ -139,9 +139,9 @@ public class CategoryCacheImpl extends CategoryCache {
     @SuppressWarnings ("unchecked")
     @Override
     protected void removeChildren ( String parentId ) throws DotDataException, DotCacheException {
-        List<String> childrenIds = null;
+        List<Category> childrenIds = null;
         try {
-            childrenIds = (List<String>) cache.get( categoryChildrenCacheGroup + parentId, categoryChildrenCacheGroup );
+            childrenIds = (List<Category>) cache.get( categoryChildrenCacheGroup + parentId, categoryChildrenCacheGroup );
         } catch ( DotCacheException e ) {
             Logger.debug( this, "Cache Entry not found", e );
         }
@@ -149,8 +149,8 @@ public class CategoryCacheImpl extends CategoryCache {
 
         //Updating the associated parent caches to keep it consistent
         if ( childrenIds != null ) {
-            for ( String child : childrenIds ) {
-                cache.remove( categoryParentsCacheGroup + child, categoryParentsCacheGroup );
+            for ( Category child : childrenIds ) {
+                cache.remove( categoryParentsCacheGroup + child.getCategoryId(), categoryParentsCacheGroup );
             }
         }
     }

@@ -536,11 +536,11 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 	public boolean isParent(Category givenChild, Category givenParent, User user) {
 
-		CategoryAPI catAPI = APILocator.getCategoryAPI();
+
 		List<Category> parents;
 
 		try {
-			parents = catAPI.getParents(givenChild, user, false);
+			parents = getParents(givenChild, user, false);
 
 			if(parents==null || parents.isEmpty()) {
 				return false;
