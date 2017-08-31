@@ -20,7 +20,7 @@ import com.liferay.portal.model.User;
 public class CategoriesPaginator implements Paginator<Category> {
 
     private final CategoryAPI categoryAPI;
-    private AtomicInteger lastTotalRecords;
+    private final AtomicInteger lastTotalRecords =  new AtomicInteger(0);
 
     @VisibleForTesting
     public CategoriesPaginator(final CategoryAPI categoryAPI){
@@ -47,7 +47,7 @@ public class CategoriesPaginator implements Paginator<Category> {
             }
 
             final PaginatedCategories topLevelCategories = categoryAPI.findTopLevelCategories(user, false, offset, limit, filter, categoriesSort);
-            lastTotalRecords = new AtomicInteger(topLevelCategories.getTotalCount());
+            lastTotalRecords.set(topLevelCategories.getTotalCount());
 
             return topLevelCategories.getCategories();
         } catch (DotDataException|DotSecurityException e) {
