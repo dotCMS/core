@@ -16,7 +16,6 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
 
 /**
  * This resource provides all the different end-points associated to information
@@ -42,7 +41,7 @@ public class CategoriesResource {
     @JSONP
     @NoCache
     @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-    public final Response loginAsData(@Context final HttpServletRequest request,
+    public final Response getCategories(@Context final HttpServletRequest request,
                                       @QueryParam(PaginationUtil.FILTER)   final String filter,
                                       @QueryParam(PaginationUtil.PAGE) final int page,
                                       @QueryParam(PaginationUtil.PER_PAGE) final int perPage) {
