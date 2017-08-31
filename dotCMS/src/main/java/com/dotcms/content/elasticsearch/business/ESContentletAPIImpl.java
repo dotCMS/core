@@ -657,7 +657,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         List<Contentlet> contentlets = new ArrayList<Contentlet>();
         if(anyLanguage){
-        	for(String identifier : identifiers){
+        	for(String identifier : identifierList){
         		for(Language lang : APILocator.getLanguageAPI().getLanguages()){
                 	try{
                 	    ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, lang.getId());
@@ -681,15 +681,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         	contentlets = findContentletsByIdentifiers(identifiers, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontendRoles);
         }
 
-        Map<String, Contentlet> map = new HashMap<String, Contentlet>(contentlets.size());
         for (Contentlet contentlet : contentlets) {
-            map.put(contentlet.getIdentifier(), contentlet);
+            if (identifierList.contains(contentlet.getIdentifier()))
+                contents.add(contentlet);
         }
-        for (String identifier : identifiers) {
-            if(map.get(identifier) != null && !contents.contains(map.get(identifier))){
-                contents.add(map.get(identifier));
-            }
-        }
+
         return contents;
 
     }
