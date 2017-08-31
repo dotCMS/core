@@ -6,6 +6,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
@@ -15,10 +16,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
@@ -311,60 +317,40 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected void loadCategories(Contentlet con, Map<String,String> m) throws DotDataException, DotSecurityException {
+	protected void loadCategories(final Contentlet con, final Map<String,String> m) throws DotDataException, DotSecurityException {
 	    // first we check if there is a category field in the structure. We don't hit db if not needed
-	    boolean thereiscategory=false;
-	    Structure st=CacheLocator.getContentTypeCache().getStructureByInode(con.getStructureInode());
-	    List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
-	    for(Field f : fields)
-	        thereiscategory = thereiscategory ||
-	         f.getFieldType().equals(FieldType.CATEGORY.toString());
 
-	    String categoriesString="";
+	    ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(con.getContentTypeId());
+	    List<com.dotcms.contenttype.model.field.Field> catFields = type.fields().stream().filter(field -> field instanceof CategoryField).collect(Collectors.toList());
 
-	    if(thereiscategory) {
-    	    String categoriesSQL = "select category.category_velocity_var_name as cat_velocity_var "+
-                    " from  category join tree on (tree.parent = category.inode) join contentlet c on (c.inode = tree.child) " +
-                    " where c.inode = ?";
-    	    DotConnect db = new DotConnect();
-            db.setSQL(categoriesSQL);
-            db.addParam(con.getInode());
-            ArrayList<String> categories=new ArrayList<String>();
-    	    List<HashMap<String, String>> categoriesResults = db.loadResults();
-    	    for (HashMap<String, String> crow : categoriesResults)
-    	        categories.add(crow.get("cat_velocity_var"));
+        if(catFields.size()==0) return;
 
-    	    categoriesString=UtilMethods.join(categories, " ").trim();
 
-	        for(Field f : fields) {
-	            if(f.getFieldType().equals(FieldType.CATEGORY.toString())) {
-    	            String catString="";
-    	            if(!categories.isEmpty()) {
-        	            String catId=f.getValues();
-
-        	            // we get all subcategories (recursive)
-        	            Category category=APILocator.getCategoryAPI().find(catId, APILocator.getUserAPI().getSystemUser(), false);
-        	            List<Category> childrens=APILocator.getCategoryAPI().getAllChildren(
-        	                    category, APILocator.getUserAPI().getSystemUser(), false);
-
-        	            // we look for categories that match childrens for the
-        	            // categoryId of the field
-        	            ArrayList<String> fieldCategories=new ArrayList<String>();
-        	            for(String catvelvarname : categories)
-        	                for(Category chCat : childrens)
-        	                    if(chCat.getCategoryVelocityVarName().equals(catvelvarname))
-        	                        fieldCategories.add(catvelvarname);
-
-        	            // after matching them we create the JSON field
-        	            if(!fieldCategories.isEmpty())
-            	            catString=UtilMethods.join(fieldCategories, " ").trim();
-    	            }
-    	            m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), catString);
-	            }
-	        }
+	    List<Category> myCats = APILocator.getCategoryAPI().getParents(con, APILocator.systemUser(), false);
+	    StringWriter myCatsString=new StringWriter();
+	    for(Category me : myCats){
+	        myCatsString.append(me.getCategoryVelocityVarName()).append(" ");
 	    }
 
-        m.put("categories", categoriesString);
+        m.put("categories", myCatsString.toString());
+        
+
+	    for(com.dotcms.contenttype.model.field.Field f : catFields){/*
+	        StringWriter fieldCatString=new StringWriter();
+	        Category parent = APILocator.getCategoryAPI().find(f.values(), APILocator.systemUser(), false);
+            List<Category> childrens=APILocator.getCategoryAPI().getAllChildren(
+                            parent, APILocator.systemUser(), false);
+            for(Category me : myCats){
+                if(childrens.contains(me)){
+                    fieldCatString.append(me.getCategoryVelocityVarName()).append(" ");
+                }
+            }
+            */
+	        // I don't think we care if we put all the categories in each field
+            m.put(type.variable() + "." + f.variable(), myCatsString.toString());
+	    
+	    }
+
 	}
 
 	@SuppressWarnings("unchecked")

@@ -252,9 +252,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	@Override
 	protected List<Category> getChildren(Categorizable parent, String orderBy)
 	throws DotDataException {
-	    
-	    
-	    
+
 		orderBy = SQLUtil.sanitizeSortBy(orderBy);
 		HibernateUtil hu = new HibernateUtil(Category.class);
 		hu.setSQLQuery("select {category.*} from inode category_1_, category, tree where " +
