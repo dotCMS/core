@@ -68,25 +68,24 @@ export class ContentTypesFormComponent extends BaseComponent {
     ) {
         super(
             [
-                'Detail-Page',
-                'Expire-Date-Field',
-                'Host-Folder',
-                'Identifier',
-                'No-Date-Fields-Defined',
-                'Properties',
-                'Publish-Date-Field',
-                'URL-Map-Pattern-hint1',
-                'URL-Pattern',
-                'Variable',
-                'Workflow',
-                'Only-Default-Scheme-is-available-in-Community',
-                'cancel',
-                'description',
-                'name',
-                'save',
-                'update',
-                'edit',
-                'delete'
+                'contenttypes.form.field.detail.page',
+                'contenttypes.form.field.expire.date.field',
+                'contenttypes.form.field.host_folder.label',
+                'contenttypes.form.identifier',
+                'contenttypes.form.message.no.date.fields.defined',
+                'contenttypes.form.label.publish.date.field',
+                'contenttypes.hint.URL.map.pattern.hint1',
+                'contenttypes.form.label.URL.pattern',
+                'contenttypes.content.variable',
+                'contenttypes.form.label.workflow',
+                'contenttypes.form.hint.error.only.default.scheme.available.in.Community',
+                'contenttypes.action.cancel',
+                'contenttypes.form.label.description',
+                'contenttypes.form.name',
+                'contenttypes.action.save',
+                'contenttypes.action.update',
+                'contenttypes.action.edit',
+                'contenttypes.action.delete'
             ],
             messageService
         );
@@ -97,18 +96,18 @@ export class ContentTypesFormComponent extends BaseComponent {
 
         this.messageService.messageMap$.subscribe(res => {
             this.actionButtonLabel = this.isEditMode
-                ? this.i18nMessages['update']
-                : this.i18nMessages['save'];
+                ? this.i18nMessages['contenttypes.action.update']
+                : this.i18nMessages['contenttypes.action.save'];
             this.formOptions = [
                 {
                     command: this.toggleForm.bind(this),
-                    label: this.i18nMessages['edit']
+                    label: this.i18nMessages['contenttypes.action.edit']
                 },
                 {
                     command: () => {
                         this.onDelete.emit();
                     },
-                    label: this.i18nMessages['delete']
+                    label: this.i18nMessages['contenttypes.action.delete']
                 }
             ];
         });

@@ -1,5 +1,5 @@
 <p-overlayPanel [dismissable]="true" #hint [style]="{'width':'350px'}">
-    <div [innerHTML]="i18nMessages['URL-Map-Pattern-hint1']"></div>
+    <div [innerHTML]="i18nMessages['contenttypes.hint.URL.map.pattern.hint1']"></div>
 </p-overlayPanel>
 
 <form [formGroup]="form" class="content-type__form container-fluid" (ngSubmit)="submitContent($event)" id="content-type-form-form" novalidate>
@@ -8,7 +8,7 @@
             <div class="ui-g-6">
                 <div class="form__group content-type__form-title">
                     <i class="fa" [ngClass]="icon"></i>
-                    <input pInputText type="text" id="content-type-form-name" (focus)="formState === 'collapsed' && toggleForm()" [placeholder]="name ? name + ' ' + i18nMessages['name'] : ''" name="name"
+                    <input pInputText type="text" id="content-type-form-name" (focus)="formState === 'collapsed' && toggleForm()" [placeholder]="name ? name + ' ' + i18nMessages['contenttypes.form.name'] : ''" name="name"
                         formControlName="name" />
                     <field-validation-message message="Name is required" [submitted]="submitAttempt" [field]="form.controls.name"></field-validation-message>
                 </div>
@@ -26,47 +26,47 @@
         <div class="ui-g">
             <div class="ui-g-6">
                 <div class="form__group" *ngIf="isEditMode">
-                    <b>{{i18nMessages['Variable']}}:</b>
+                    <b>{{i18nMessages['contenttypes.content.variable']}}:</b>
                     <a href="#">{{data.variable }}</a>
                 </div>
                 <div class="form__group">
-                    <label for="content-type-form-description" class="form__label">{{i18nMessages['description']}}</label>
+                    <label for="content-type-form-description" class="form__label">{{i18nMessages['contenttypes.form.label.description']}}</label>
                     <input pInputText type="text" id="content-type-form-description" name="description" formControlName="description" />
                 </div>
                 <div class="form__group">
-                    <label for="content-type-form-host" class="form__label">{{i18nMessages['Host-Folder']}}</label>
+                    <label for="content-type-form-host" class="form__label">{{i18nMessages['contenttypes.form.field.host_folder.label']}}</label>
                     <site-selector-component id="content-type-form-host" formControlName="host" [system]="true"></site-selector-component> 
                 </div>
                 <div class="form__group">
-                    <label for="content-type-form-workflow" class="form__label">{{i18nMessages['Workflow']}}</label>
+                    <label for="content-type-form-workflow" class="form__label">{{i18nMessages['contenttypes.form.label.workflow']}}</label>
                     <p-dropdown [options]="workflowOptions" [style]="{'min-width':'90px'}" id="content-type-form-workflow" name="workflow" formControlName="workflow"></p-dropdown>
                 </div>
-                <span id="field-workflow-hint" class="form__group-hint" *ngIf="form.get('workflow').disabled">{{i18nMessages['Only-Default-Scheme-is-available-in-Community']}}</span>
+                <span id="field-workflow-hint" class="form__group-hint" *ngIf="form.get('workflow').disabled">{{i18nMessages['contenttypes.form.hint.error.only.default.scheme.available.in.Community']}}</span>
             </div>
             <div class="ui-g-6">
                 <div class="form__group" *ngIf="isEditMode">
-                    <b>{{i18nMessages['Identifier']}}:</b>
+                    <b>{{i18nMessages['contenttypes.form.identifier']}}:</b>
                     <a href="#">{{data.id }}</a>
                 </div>
                 <div class="form__group" *ngIf="isEditMode">
                     <div class="ui-g-6">
-                        <label for="content-type-form-publish-date-field" class="form__label">{{i18nMessages['Publish-Date-Field']}}</label>
+                        <label for="content-type-form-publish-date-field" class="form__label">{{i18nMessages['contenttypes.form.label.publish.date.field']}}</label>
                         <p-dropdown [options]="dateVarOptions" id="content-type-form-publish-date-field" name="publishDateVar" formControlName="publishDateVar" (onChange)="handleDateVarChange($event, 'publishDateVar')" [style]="{'min-width':'90px'}"></p-dropdown>
                     </div>
                     <div class="ui-g-6">
-                        <label for="content-type-form-expire-date-field" class="form__label">{{i18nMessages['Expire-Date-Field']}}</label>
+                        <label for="content-type-form-expire-date-field" class="form__label">{{i18nMessages['contenttypes.form.field.expire.date.field']}}</label>
                         <p-dropdown [options]="dateVarOptions" id="content-type-form-expire-date-field" name="expireDateVar" formControlName="expireDateVar" (onChange)="handleDateVarChange($event, 'expireDateVar')" [style]="{'min-width':'90px'}"></p-dropdown>
                     </div>                    
                 </div>
-                <span class="form__group-hint" *ngIf="isEditMode && !dateVarOptions.length">{{i18nMessages['No-Date-Fields-Defined']}}</span>
+                <span class="form__group-hint" *ngIf="isEditMode && !dateVarOptions.length">{{i18nMessages['contenttypes.form.message.no.date.fields.defined']}}</span>
 
                 <div class="form__group" *ngIf="form.get('detailPage')">
-                    <label for="content-type-form-detail-page" class="form__label">{{i18nMessages['Detail-Page']}}</label>
+                    <label for="content-type-form-detail-page" class="form__label">{{i18nMessages['contenttypes.form.field.detail.page']}}</label>
                     <input pInputText type="text" id="content-type-form-detail-page" name="detailPage" formControlName="detailPage" />
                 </div>
                 <div class="form__group" *ngIf="form.get('urlMapPattern')">
                     <i class="fa fa-question form__hint-icon" (click)="hint.show($event)"></i>
-                    <label for="content-type-form-url-map-pattern" class="form__label">{{i18nMessages['URL-Pattern']}}</label>
+                    <label for="content-type-form-url-map-pattern" class="form__label">{{i18nMessages['contenttypes.form.label.URL.pattern']}}</label>
                     <input pInputText type="text" id="content-type-form-url-map-pattern" name="urlMapPattern" formControlName="urlMapPattern"
                     />
                 </div>
@@ -74,7 +74,7 @@
         </div>
         <div class="form__buttons">
             <button pButton type="button" flat id="content-type-form-collapse" label="Collapse" (click)="toggleForm()"></button>
-            <button pButton type="button" flat id="content-type-form-cancel" label="{{i18nMessages['cancel']}}" (click)="onCancelHandle($event)"></button>
+            <button pButton type="button" flat id="content-type-form-cancel" label="{{i18nMessages['contenttypes.action.cancel']}}" (click)="onCancelHandle($event)"></button>
             <button pButton type="submit" id="content-type-form-submit" label="{{actionButtonLabel}}"></button>
         </div>
     </div>

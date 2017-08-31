@@ -18,10 +18,10 @@ describe('ContentTypesPortletComponent', () => {
 
     beforeEach(() => {
         let messageServiceMock = new MockMessageService({
-            'Description': 'Description',
-            'Entries': 'Entries',
-            'Structure-Name': 'Content Type Name',
-            'Variable': 'Variable Name',
+            'contenttypes.form.label.description': 'Description',
+            'contenttypes.fieldname.entries': 'Entries',
+            'contenttypes.fieldname.structure.name': 'Content Type Name',
+            'contenttypes.content.variable': 'Variable Name',
             'mod_date': 'Last Edit Date'
         });
 

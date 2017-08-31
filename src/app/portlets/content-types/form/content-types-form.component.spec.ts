@@ -31,21 +31,20 @@ describe('ContentTypesFormComponent', () => {
     beforeEach(async(() => {
 
         let messageServiceMock = new MockMessageService({
-            'Detail-Page': 'Detail Page',
-            'Expire-Date-Field': 'Expire Date Field',
-            'Host-Folder': 'Host or Folder',
-            'Identifier': 'Identifier',
-            'Properties': 'Properties',
-            'Publish-Date-Field': 'Publish Date Field',
-            'URL-Map-Pattern-hint1': 'Hello World',
-            'URL-Pattern': 'URL Pattern',
-            'Variable': 'Variable',
-            'Workflow': 'Workflow',
-            'cancel': 'Cancel',
-            'description': 'Description',
-            'name': 'Name',
-            'save': 'Save',
-            'update': 'Update'
+            'contenttypes.form.field.detail.page': 'Detail Page',
+            'contenttypes.form.field.expire.date.field': 'Expire Date Field',
+            'contenttypes.form.field.host_folder.label': 'Host or Folder',
+            'contenttypes.form.identifier': 'Identifier',
+            'contenttypes.form.label.publish.date.field': 'Publish Date Field',
+            'contenttypes.hint.URL.map.pattern.hint1': 'Hello World',
+            'contenttypes.form.label.URL.pattern': 'URL Pattern',
+            'contenttypes.content.variable': 'Variable',
+            'contenttypes.form.label.workflow': 'Workflow',
+            'contenttypes.action.cancel': 'Cancel',
+            'contenttypes.form.label.description': 'Description',
+            'contenttypes.form.name': 'Name',
+            'contenttypes.action.save': 'Save',
+            'contenttypes.action.update': 'Update'
         });
 
         DOTTestBed.configureTestingModule({

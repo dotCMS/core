@@ -66,12 +66,10 @@ describe('ContentTypesEditComponent', () => {
 
     beforeEach(async(() => {
         let messageServiceMock = new MockMessageService({
-            'Content': 'Content',
-            'File': 'File',
-            'Form': 'Form',
-            'Page': 'Page',
-            'Persona': 'Persona',
-            'Widget': 'Widget'
+            'message.structure.cantdelete': 'Delete Content Type',
+            'message.structure.delete.structure.and.content': 'Are you sure you want to delete this Content Type?',
+            'contenttypes.action.yes': 'Yes',
+            'contenttypes.action.no': 'No'
         });
 
         DOTTestBed.configureTestingModule({

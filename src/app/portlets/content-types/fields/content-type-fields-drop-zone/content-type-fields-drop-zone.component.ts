@@ -34,10 +34,10 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
     constructor(private fieldDragDropService: FieldDragDropService, messageService: MessageService) {
         super(
             [
-                'Save',
-                'Cancel',
-                'edit',
-                'Create-field',
+                'contenttypes.dropzone.action.save',
+                'contenttypes.dropzone.action.cancel',
+                'contenttypes.dropzone.action.edit',
+                'contenttypes.dropzone.action.create.field',
                 'contenttypes.dropzone.empty.message'
             ],
             messageService

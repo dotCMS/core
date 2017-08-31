@@ -37,10 +37,10 @@ xdescribe('ContentTypeFieldsDropZoneComponent', () => {
         navigate: jasmine.createSpy('navigate')
     };
     const messageServiceMock = new MockMessageService({
-        'Save': 'Save',
-        'Cancel': 'Cancel',
-        'edit': 'Edit',
-        'Create-field': 'Create field'
+        'contenttypes.dropzone.action.save': 'Save',
+        'contenttypes.dropzone.action.cancel': 'Cancel',
+        'contenttypes.dropzone.action.edit': 'Edit',
+        'contenttypes.dropzone.action.create.field': 'Create field'
     });
 
     beforeEach(async(() => {

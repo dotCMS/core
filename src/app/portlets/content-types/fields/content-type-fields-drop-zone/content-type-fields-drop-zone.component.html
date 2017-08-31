@@ -19,7 +19,7 @@
     </div>
 </div>
 <p-dialog 
-    [header]="formData && formData.id ? i18nMessages['edit'] : i18nMessages['created']"
+    [header]="formData && formData.id ? i18nMessages['contenttypes.dropzone.action.edit'] : i18nMessages['contenttypes.dropzone.action.create.field']"
     [(visible)]="displayDialog"
     modal="modal"
     width="300"
@@ -30,7 +30,7 @@
         #fieldPropertiesForm>
     </content-type-fields-properties-form>
     <p-footer>
-        <button type="button" pButton (click)="fieldPropertiesForm.saveFieldProperties(fieldPropertiesForm.form.value, fieldPropertiesForm.form.valid)" [label]="i18nMessages['Save']"></button>
-        <button type="button" pButton (click)="removeFieldsWithoutId()" [label]="i18nMessages['Cancel']"></button>
+        <button type="button" pButton (click)="fieldPropertiesForm.saveFieldProperties(fieldPropertiesForm.form.value, fieldPropertiesForm.form.valid)" [label]="i18nMessages['contenttypes.dropzone.action.save']"></button>
+        <button type="button" pButton (click)="removeFieldsWithoutId()" [label]="i18nMessages['contenttypes.dropzone.action.cancel']"></button>
     </p-footer>
 </p-dialog>

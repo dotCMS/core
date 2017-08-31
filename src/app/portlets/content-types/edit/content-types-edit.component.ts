@@ -44,16 +44,10 @@ export class ContentTypesEditComponent extends BaseComponent {
     ) {
         super(
             [
-                'File',
-                'Content',
-                'Form',
-                'Persona',
-                'Widget',
-                'Page',
                 'message.structure.cantdelete',
                 'message.structure.delete.structure.and.content',
-                'Yes',
-                'No'
+                'contenttypes.action.yes',
+                'contenttypes.action.no'
             ],
             messageService
         );

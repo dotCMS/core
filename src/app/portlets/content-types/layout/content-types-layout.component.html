@@ -1,6 +1,6 @@
 <div class="content-type" id="content-type">
     <p-tabView>
-        <p-tabPanel header="{{i18nMessages['fields']}}">
+        <p-tabPanel header="{{i18nMessages['contenttypes.tab.header.fields']}}">
             <div class="content-type__fields-layout" id="content-type-form-layout">
                 <div class="content-type__fields-main" id="content-type-form-main">
                     <ng-content></ng-content>
@@ -13,12 +13,12 @@
                 </div>
             </div>
         </p-tabPanel>
-        <p-tabPanel header="{{i18nMessages['Permissions']}}" *ngIf="mode === 'edit'">
+        <p-tabPanel header="{{i18nMessages['contenttypes.tab.header.permissions']}}" *ngIf="mode === 'edit'">
             <div class="container-fluid">
                 Content 2
             </div>
         </p-tabPanel>
-        <p-tabPanel header="{{i18nMessages['publisher_push_history']}}">
+        <p-tabPanel header="{{i18nMessages['contenttypes.tab.header.publisher.push.history']}}">
             <div class="container-fluid">
                 Content 3
             </div>

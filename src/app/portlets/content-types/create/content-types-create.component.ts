@@ -42,19 +42,19 @@ export class ContentTypesCreateComponent extends BaseComponent implements OnInit
         router: Router
     ) {
         super([
-            'File',
-            'Content',
-            'Form',
-            'Persona',
-            'Widget',
-            'Page'
+            'contenttypes.content.file',
+            'contenttypes.content.content',
+            'contenttypes.content.form',
+            'contenttypes.content.persona',
+            'contenttypes.content.widget',
+            'contenttypes.content.page'
         ], messageService);
     }
 
     ngOnInit(): void {
         this.route.url.subscribe(res => {
             const type = res[1].path;
-            this.contentTypeName = this.messageService.messageMap$.pluck(this.stringUtils.titleCase(type));
+            this.contentTypeName = this.messageService.messageMap$.pluck(`contenttypes.content.${type}`);
             this.contentTypeType = type;
             this.contentTypeIcon = this.contentTypesInfoService.getIcon(type);
         });
