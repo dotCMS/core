@@ -50,7 +50,7 @@ public class FieldTypeResource {
         final User user = initData.getUser();
 
         final ImmutableList<Map<String, Object>> fieldTypesMap = fieldTypeAPI.getFieldTypes(user).stream()
-                .map(fieldType -> fieldType.toMap())
+                .map(FieldType::toMap)
                 .collect(toImmutableList());
 
         return Response.ok( new ResponseEntityView( fieldTypesMap ) ).build();
