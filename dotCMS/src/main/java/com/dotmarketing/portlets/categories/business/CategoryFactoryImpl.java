@@ -257,7 +257,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		HibernateUtil hu = new HibernateUtil(Category.class);
 		hu.setSQLQuery("select {category.*} from inode category_1_, category, tree where " +
 				"category.inode = tree.child and tree.parent = ? and category_1_.inode = category.inode " +
-				"and category_1_.type = 'category' order by " + orderBy);
+				"and category_1_.type = 'category' order by " + orderBy + ",category_name");
 		hu.setParam(parent.getCategoryId());
 		return (List<Category>) hu.list();
 	}
@@ -297,9 +297,9 @@ public class CategoryFactoryImpl extends CategoryFactory {
     @Override
     protected List<Category> getParents ( Categorizable child ) throws DotDataException {
 
-        List<String> parentIds = catCache.getParents( child );
-        List<Category> parents;
-        if ( parentIds == null ) {
+        List<Category> parents = catCache.getParents( child );
+
+        if ( parents == null ) {
 
             HibernateUtil hu = new HibernateUtil( Category.class );
             hu.setSQLQuery( "select {category.*} from inode category_1_, category, tree " +
@@ -313,15 +313,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
             } catch ( DotCacheException e ) {
                 throw new DotDataException( e.getMessage(), e );
             }
-        } else {
-            parents = new ArrayList<Category>();
-            for ( String id : parentIds ) {
-                Category cat = find( id );
-                if ( cat != null ) {
-                    parents.add( cat );
-                }
-            }
-        }
+        } 
 
         return parents;
     }
@@ -780,16 +772,18 @@ public class CategoryFactoryImpl extends CategoryFactory {
      */
     private void cleanParentChildrenCaches ( Category category ) throws DotDataException, DotCacheException {
 
-        List<String> parentIds = catCache.getParents( category );
+        List<Category> parentIds = catCache.getParents( category );
         if ( parentIds != null ) {
-            for ( String parentId : parentIds ) {
+            for ( Category parentId : parentIds ) {
                 catCache.removeChildren( parentId );
             }
         }
+
         List<Category> children = catCache.getChildren( category );
         if ( children != null ) {
             for ( Category child : children ) {
                 catCache.removeParents( child.getCategoryId() );
+
             }
         }
     }
