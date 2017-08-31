@@ -151,10 +151,11 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     public String getInode() {
-    	if(InodeUtils.isSet((String) map.get(INODE_KEY)))
-    		return (String) map.get(INODE_KEY);
+    	if(map.get(INODE_KEY)==null) {
+			return "";
+		}
 
-    	return "";
+		return (String) map.get(INODE_KEY);
     }
 
     public void setInode(String inode) {
