@@ -641,11 +641,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @Override
     public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission, boolean anyLanguage) throws DotDataException,DotSecurityException {
-        PaginatedArrayList<Contentlet> contents = new PaginatedArrayList<Contentlet>();
         PaginatedArrayList <ContentletSearch> list =(PaginatedArrayList)searchIndex(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles);
-        contents.setTotalResults(list.getTotalResults());
 
-        List<String> identifierList = new ArrayList<String>();
+        Set<String> identifierList = new HashSet<>();
         for(ContentletSearch conwrap: list){
             String ident=conwrap.getIdentifier();
             Identifier ii=APILocator.getIdentifierAPI().find(ident);
@@ -657,7 +655,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         List<Contentlet> contentlets = new ArrayList<Contentlet>();
         if(anyLanguage){
-        	for(String identifier : identifiers){
+        	for(String identifier : identifierList){
         		for(Language lang : APILocator.getLanguageAPI().getLanguages()){
                 	try{
                 		Contentlet languageContentlet = null;
@@ -679,16 +677,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         	contentlets = findContentletsByIdentifiers(identifiers, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontendRoles);
         }
 
-        Map<String, Contentlet> map = new HashMap<String, Contentlet>(contentlets.size());
-        for (Contentlet contentlet : contentlets) {
-            map.put(contentlet.getIdentifier(), contentlet);
-        }
-        for (String identifier : identifiers) {
-            if(map.get(identifier) != null && !contents.contains(map.get(identifier))){
-                contents.add(map.get(identifier));
-            }
-        }
-        return contents;
+        return contentlets;
 
     }
 
