@@ -14,10 +14,13 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.List;
@@ -165,13 +168,14 @@ public class BundleResource {
 	@GET
 	@Path("/deleteenvironmentpushhistory/{params:.*}")
 	@Produces("application/json")
-	public Response deleteEnvironmentPushHistory(@Context HttpServletRequest request, @PathParam("params") String params) {
+	public Response deleteEnvironmentPushHistory(@Context HttpServletRequest request, @PathParam("params") String params) throws JSONException, LanguageException {
 
         InitDataObject initData = webResource.init(params, true, request, true, null);
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
 		String environmentId = initData.getParamsMap().get("environmentid");
+        StringBuilder responseMessage = new StringBuilder();
 
 		try {
 
@@ -180,13 +184,19 @@ public class BundleResource {
 			}
 
 			APILocator.getPushedAssetsAPI().deletePushedAssetsByEnvironment(environmentId);
+			PushPublishLogger.log(getClass(), "Deleted Pushed Assets for Environment Id: " + environmentId);
+            JSONObject jsonResponse = new JSONObject();
+            jsonResponse.put( "success", true );
+            jsonResponse.put( "message", LanguageUtil
+                    .get( initData.getUser().getLocale(), "publisher_Environments_deleted_assets-history" ) );
+            responseMessage.append( jsonResponse.toString() );
 
 		} catch (DotDataException e) {
 			Logger.error(getClass(), "Error trying to delete Pushed Assets for environment Id: " + environmentId);
             return responseResource.response( "false" );
 		}
 
-        return responseResource.response( "true" );
+        return responseResource.response( responseMessage.toString() );
 	}
 
 }

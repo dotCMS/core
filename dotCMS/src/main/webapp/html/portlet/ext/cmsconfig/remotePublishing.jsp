@@ -830,31 +830,27 @@ function removeFromWhoCanUse(myId) {
 }
 
 function deleteEnvPushHistory(envId) {
+    if (confirm("<%= LanguageUtil.get(pageContext, "publisher_Delete_Assets_History_Confirm")%>")) {
 
-    var xhrArgs = {
-        url : '/api/bundle/deleteenvironmentpushhistory/environmentid/'+envId,
-        handleAs : "json",
-        sync: false,
-        load : function(data) {
-            var confirmDialog = dijit.byId("deleteHistory");
+        var xhrArgs = {
+            url : '/api/bundle/deleteenvironmentpushhistory/environmentid/'+envId,
+            handleAs : "json",
+            sync: false,
+            load : function(data) {
 
-            if(confirmDialog===null || confirmDialog === undefined) {
-                confirmDialog = new dijit.Dialog({
-                    id: "deleteHistory",
-                    class: "noDijitDialogTitleBar",
-                    content: "<span style=\"display:block;text-align:center\"><%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "publisher_Environments_deleted_assets-history")) %>.<br /><br /><button data-dojo-type=\"dijit/form/Button\" type=\"submit\" id=\"ok\"><%= LanguageUtil.get(pageContext, "ok") %></button></span>"
-                });
+                var isError = false;
+                if (data.success == false || data.success == "false") {
+                    isError = true;
+                }
+                showDotCMSSystemMessage(data.message, isError);
+            },
+            error: function (error) {
+                showDotCMSSystemMessage(error.responseText, true);
             }
+        };
+        var deferred = dojo.xhrGet(xhrArgs);
+    }
 
-            confirmDialog.show();
-        },
-        error : function(error) {
-            console.log("this is the error:" + error);
-            showDotCMSSystemMessage(error.responseText, true);
-        }
-    };
-
-    var deferred = dojo.xhrGet(xhrArgs);
 }
 
 </script>
