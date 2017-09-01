@@ -802,7 +802,7 @@ public class HibernateUtil {
 
 	private static void finalizeCommitListeners() throws DotDataException{
 		
-		final List<DotRunnable> listeners = new ArrayList<DotRunnable>(commitListeners.get().values());
+		final List<DotRunnable> listeners = new ArrayList<>(commitListeners.get().values());
 		commitListeners.get().clear();
      
 		final DotRunnableThread thread = new DotRunnableThread(listeners);
