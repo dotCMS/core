@@ -65,25 +65,27 @@
 <% if(null!=currentEndpointHistory){%>
 
 
-<div style="float:right">
+<div style="white-space: nowrap;padding:10px;">
             
             
-                <button dojoType="dijit.form.Button" onClick="window.location='/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadBundle/bid/<%=bundleId%>';" iconClass="downloadIcon"><%= LanguageUtil.get(pageContext, "download") %></button>
+     <button dojoType="dijit.form.Button" onClick="window.location='/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadBundle/bid/<%=bundleId%>';" iconClass="downloadIcon"><%= LanguageUtil.get(pageContext, "download") %></button>
 
-                <% if ( (statusCode != 0 && status != null) && (status.equals( PublishAuditStatus.Status.FAILED_TO_PUBLISH ) || status.equals( PublishAuditStatus.Status.SUCCESS )) ) { %>
-                    <button id="retryButton" dojoType="dijit.form.Button" onClick="retryBundles('<%=bundleId%>')" iconClass="repeatIcon"><%= LanguageUtil.get(pageContext, "publisher_retry") %></button>
-                <%}%>
-                &nbsp;&nbsp;
-                <input dojoType="dijit.form.CheckBox" type="checkbox"name="chkBoxForcePush"class="chkBoxAudits"value="true" id="forcePush<%= bundleId %>"/> Force Push
-                &nbsp;&nbsp;
-                Re-Send To:
-                <select dojoType="dijit.form.Select" name="deliveryStrategy" id="deliveryStrategy<%= bundleId %>" style="float: right; width: 30%;">
-                    <option value="1">All End-points</option>
-                    <option value="2">Failed End-points Only</option>
-                </select>
-                
-                
-            </div>
+     <% if ( (statusCode != 0 && status != null) && (status.equals( PublishAuditStatus.Status.FAILED_TO_PUBLISH ) || status.equals( PublishAuditStatus.Status.SUCCESS )) ) { %>
+         
+     <%}%>
+     &nbsp;&nbsp;
+    <div style="white-space: nowrap;float: right">
+	     &nbsp;&nbsp;
+	     
+	     <select dojoType="dijit.form.Select" name="deliveryStrategy" id="deliveryStrategy<%= bundleId %>" style="width: 175px">
+	         <option value="1">All End-points</option>
+	         <option value="2">Failed End-points Only</option>
+	     </select> &nbsp;&nbsp;
+	      <input dojoType="dijit.form.CheckBox" type="checkbox"name="chkBoxForcePush"class="chkBoxAudits"value="true" id="forcePush<%= bundleId %>"/> Force
+	       &nbsp;&nbsp;
+	      <button id="retryButton" dojoType="dijit.form.Button" onClick="retryBundles('<%=bundleId%>')" iconClass="repeatIcon"><%= LanguageUtil.get(pageContext, "publisher_retry") %></button>
+      </div>          
+</div>
 
 <table class="listingTable shadowBox">
     <tr>
