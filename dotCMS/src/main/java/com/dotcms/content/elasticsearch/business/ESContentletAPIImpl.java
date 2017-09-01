@@ -115,6 +115,7 @@ import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeanUtils;
 
 import java.io.BufferedOutputStream;
@@ -1216,22 +1217,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private List<ContentletSearch> getRelatedContentFromIndex(Contentlet contentlet,Relationship rel, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
 
-        boolean isSameStructRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
-        String q = "";
-
-        if(isSameStructRelationship) {
-            q = "+type:content +(" + rel.getRelationTypeValue() + "-parent:" + contentlet.getIdentifier() + " " +
-                    rel.getRelationTypeValue() + "-child:" + contentlet.getIdentifier() + ") ";
-            if(!InodeUtils.isSet(contentlet.getIdentifier())){
-                q = "+type:content +(" + rel.getRelationTypeValue() + "-parent:" + "0 " +
-                        rel.getRelationTypeValue() + "-child:"  + "0 ) ";
-            }
-        } else {
-            q = "+type:content +" + rel.getRelationTypeValue() + ":" + contentlet.getIdentifier();
-            if(!InodeUtils.isSet(contentlet.getIdentifier())){
-                q = "+type:content +" + rel.getRelationTypeValue() + ":" + "0";
-            }
-        }
+        String q = getRelatedContentESQuery(contentlet, rel);
 
         return searchIndex(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order", user, respectFrontendRoles);
     }
@@ -1239,6 +1225,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public List<Contentlet> getRelatedContent(Contentlet contentlet,Relationship rel, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
 
+        String q = getRelatedContentESQuery(contentlet, rel);
+
+        try{
+        	return perAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+        }catch (Exception e) {
+            if(e.getMessage().contains("[query_fetch]")){
+                try{
+                APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,true);
+                	return perAPI.filterCollection(searchByIdentifier(q, 1, 0, rel.getRelationTypeValue() + "" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+                }catch(Exception ex){
+                	throw new DotDataException("Unable look up related content",ex);
+                }
+            }
+            	throw new DotDataException("Unable look up related content",e);
+        }
+    }
+
+    @NotNull
+    private String getRelatedContentESQuery(Contentlet contentlet, Relationship rel) {
         boolean isSameStructRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
         String q = "";
 
@@ -1255,21 +1260,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 q = "+type:content +" + rel.getRelationTypeValue() + ":" + "0";
             }
         }
-
-        try{
-        	return perAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
-        }catch (Exception e) {
-            if(e.getMessage().contains("[query_fetch]")){
-                try{
-                APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,true);
-                	return perAPI.filterCollection(searchByIdentifier(q, 1, 0, rel.getRelationTypeValue() + "" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
-                }catch(Exception ex){
-                	throw new DotDataException("Unable look up related content",ex);
-                }
-            }
-            	throw new DotDataException("Unable look up related content",e);
-        }
+        return q;
     }
+
 
     @Override
     public List<Contentlet> getRelatedContent(Contentlet contentlet,Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
