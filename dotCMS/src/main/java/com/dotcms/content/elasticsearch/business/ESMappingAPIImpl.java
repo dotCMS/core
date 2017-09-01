@@ -84,6 +84,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		}
 	}
 
+	
+	
 	/**
 	 * This method takes a mapping string, a type and puts it as the mapping
 	 * @param indexName
@@ -156,26 +158,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 	}
 
-
-
-	private String getElasticType(Field f) throws DotMappingException {
-		if (f.getFieldType().equals(Field.FieldType.TAG.toString())) {
-			return ESMappingConstants.FIELD_TYPE_TAG;
-		}
-		if (f.getFieldContentlet().contains(ESMappingConstants.FIELD_ELASTIC_TYPE_INTEGER)) {
-			return ESMappingConstants.FIELD_ELASTIC_TYPE_INTEGER;
-		} else if (f.getFieldContentlet().contains(ESMappingConstants.FIELD_ELASTIC_TYPE_DATE)) {
-			return ESMappingConstants.FIELD_ELASTIC_TYPE_DATE;
-		} else if (f.getFieldContentlet().contains(ESMappingConstants.FIELD_ELASTIC_TYPE_BOOLEAN)) {
-			return ESMappingConstants.FIELD_ELASTIC_TYPE_BOOLEAN;
-		} else if (f.getFieldContentlet().contains(ESMappingConstants.FIELD_ELASTIC_TYPE_FLOAT)) {
-			return ESMappingConstants.FIELD_ELASTIC_TYPE_FLOAT;
-		}
-		return ESMappingConstants.FIELD_ELASTIC_TYPE_STRING;
-		// throw new
-		// DotMappingException("unable to find mapping for indexed field " + f);
-
-	}
 
 	@SuppressWarnings("unchecked")
 	public String toJson(Contentlet con) throws DotMappingException {
@@ -643,10 +625,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			String relType=relatedEntry.get(ESMappingConstants.RELATION_TYPE).toString();
 			String order = relatedEntry.get(ESMappingConstants.TREE_ORDER).toString();
 
+			if("child".equals(relType)) continue;
+
 			Relationship rel = FactoryLocator.getRelationshipFactory().byTypeValue(relType);
 
 			if(rel!=null && InodeUtils.isSet(rel.getInode())) {
-				boolean isSameStructRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
+				boolean isSameStructRelationship = rel.getParentStructureInode().equals(rel.getChildStructureInode());
 
 				String propName = isSameStructRelationship ?
 						(con.getIdentifier().equals(parentId)?rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_CHILD:rel.getRelationTypeValue() + ESMappingConstants.SUFFIX_PARENT)
@@ -654,9 +638,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 				String orderKey = rel.getRelationTypeValue()+ESMappingConstants.SUFFIX_ORDER;
 
-				if(relatedEntry.get(ESMappingConstants.RELATION_TYPE).equals(rel.getRelationTypeValue())) {
-					String me = con.getIdentifier();
-					String related = me.equals(childId)? parentId : childId;
+
+                if(relType.equals(rel.getRelationTypeValue())) {
+                    String me = con.getIdentifier();
+                    String related = me.equals(childId)? parentId : childId;
 
 					// put a pointer to the related content
 					m.put(propName, (m.get(propName) != null ? m.get(propName) : "") + related + " " );

@@ -1253,7 +1253,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         try{
             return perAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         }catch (Exception e) {
-            if(e.getMessage().contains("[query_fetch]")){
+            if(e.getMessage() != null && e.getMessage().contains("[query_fetch]")){
                 try{
                     APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,true);
                     return perAPI.filterCollection(searchByIdentifier(q, 1, 0, rel.getRelationTypeValue() + "" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
