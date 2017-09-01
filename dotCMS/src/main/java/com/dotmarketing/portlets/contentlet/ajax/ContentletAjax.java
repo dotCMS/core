@@ -1058,9 +1058,14 @@ public class ContentletAjax {
 				Long LanguageId = con.getLanguageId();
 				searchResult.put("languageId", LanguageId.toString());
 				searchResult.put("permissions", permissionsSt.toString());
+			} catch (DotSecurityException e) {
+
+				Logger.debug(this, "Does not have permissions to read the content: " + searchResult, e);
+				searchResult = null;
+
 			} catch (Exception e) {
 
-				Logger.debug(this, "Couldn't read the content: " + searchResult, e);
+				Logger.error(this, "Couldn't read the content: " + searchResult, e);
 				searchResult = null;
 
 			}
