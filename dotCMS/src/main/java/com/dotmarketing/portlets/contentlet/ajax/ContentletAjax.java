@@ -904,7 +904,7 @@ public class ContentletAjax {
 
 					searchResult.put(fieldContentlet, fieldValue);
 				}
-				
+
 				searchResult.put("inode", con.getInode());
 				searchResult.put("Identifier",con.getIdentifier());
 				searchResult.put("identifier", con.getIdentifier());
@@ -1060,7 +1060,9 @@ public class ContentletAjax {
 				searchResult.put("permissions", permissionsSt.toString());
 			} catch (Exception e) {
 
+				Logger.debug(this, "Couldn't read the content: " + searchResult, e);
 				searchResult = null;
+
 			}
 
 			if (UtilMethods.isSet(searchResult)) {
