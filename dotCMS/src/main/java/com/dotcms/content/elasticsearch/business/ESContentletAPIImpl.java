@@ -657,14 +657,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         List<Contentlet> contentlets = new ArrayList<Contentlet>();
         if(anyLanguage){
-        	for(String identifier : identifierList){
+        	for(String identifier : identifiers){
         		for(Language lang : APILocator.getLanguageAPI().getLanguages()){
                 	try{
-                	    ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, lang.getId());
-                	    if(cvi==null) continue;
                 		Contentlet languageContentlet = null;
                 		try{
-                			languageContentlet = conFac.find(cvi.getWorkingInode());
+                			languageContentlet = findContentletByIdentifier(identifier, false, lang.getId(), user, respectFrontendRoles);
                 		}catch (DotContentletStateException e) {
                 			Logger.debug(this,e.getMessage(),e);
 						}
@@ -681,11 +679,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
         	contentlets = findContentletsByIdentifiers(identifiers, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontendRoles);
         }
 
+        Map<String, Contentlet> map = new HashMap<String, Contentlet>(contentlets.size());
         for (Contentlet contentlet : contentlets) {
-            if (identifierList.contains(contentlet.getIdentifier()))
-                contents.add(contentlet);
+            map.put(contentlet.getIdentifier(), contentlet);
         }
-
+        for (String identifier : identifiers) {
+            if(map.get(identifier) != null && !contents.contains(map.get(identifier))){
+                contents.add(map.get(identifier));
+            }
+        }
         return contents;
 
     }
@@ -1235,7 +1237,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         try{
         	return perAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         }catch (Exception e) {
-            if(e.getMessage()!=null && e.getMessage().contains("[query_fetch]")){
+            if(e.getMessage() != null && e.getMessage().contains("[query_fetch]")){
                 try{
                 APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,true);
                 	return perAPI.filterCollection(searchByIdentifier(q, 1, 0, rel.getRelationTypeValue() + "" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
@@ -1243,7 +1245,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 	throw new DotDataException("Unable look up related content",ex);
                 }
             }
-            	throw new DotDataException("Unable look up related content",e);
+            throw new DotDataException("Unable look up related content",e);
         }
     }
 
