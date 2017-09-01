@@ -111,10 +111,7 @@ public class FieldAPIImpl implements FieldAPI {
         CacheLocator.getContentTypeCache().remove(structure);
         StructureServices.removeStructureFile(structure);
 
-        //Refreshing permissions
-        if(oldField != null && field instanceof HostFolderField){
-        	perAPI.resetChildrenPermissionReferences(structure);
-        }
+
 
         //http://jira.dotmarketing.net/browse/DOTCMS-5178
         if(oldField != null && ((!oldField.indexed() && field.indexed()) || (oldField.indexed() && !field.indexed()))){

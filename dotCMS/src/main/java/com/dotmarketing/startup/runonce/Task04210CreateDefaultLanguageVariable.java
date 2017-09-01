@@ -35,7 +35,7 @@ public class Task04210CreateDefaultLanguageVariable implements StartupTask {
     private static final String LANGUAGE_VARIABLE_INODE = "f4d7c1b8-2c88-4071-abf1-a5328977b07d";
     private static final String LANGUAGE_VARIABLE_VARNAME = "Languagevariable";
     private static final String LANGUAGE_VARIABLE_NAME = "Language Variable";
-    private static final String LANGUAGE_VARIABLE_DESCRIPTION = "Language Variable as Content";
+    private static final String LANGUAGE_VARIABLE_DESCRIPTION = "Default Content Type for Language Variables";
     private static final String INSERT_INODE_QUERY = "INSERT INTO inode (inode, owner, idate, type) VALUES (?, ?, ?, ?)";
     private static final String INSERT_FIELD_QUERY = "INSERT INTO field "
                     + "(inode, structure_inode, field_name, field_type, field_relation_type, field_contentlet, "

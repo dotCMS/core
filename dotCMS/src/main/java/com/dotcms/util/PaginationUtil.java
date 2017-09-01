@@ -118,7 +118,8 @@ public class PaginationUtil {
 		final int minIndex = getMinIndex(pageValue, perPageValue);
 		final String sanitizefilter = SQLUtil.sanitizeParameter(filter);
 
-		final Collection items = paginator.getItems(user, sanitizefilter, perPageValue, minIndex, orderBy, direction, extraParams);
+		Collection items = paginator.getItems(user, sanitizefilter, perPageValue, minIndex, orderBy, direction, extraParams);
+		items =  !UtilMethods.isSet(items) ? Collections.emptyList() : items;
 		final long totalRecords = paginator.getTotalRecords(filter);
 		final String linkHeaderValue = getHeaderValue(req.getRequestURL().toString(), sanitizefilter, pageValue, perPageValue,
 				totalRecords, orderBy, direction, extraParams);

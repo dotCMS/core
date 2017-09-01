@@ -904,26 +904,27 @@ public class ContentletAjax {
 
 					searchResult.put(fieldContentlet, fieldValue);
 				}
+				
 				searchResult.put("inode", con.getInode());
-				searchResult.put("Identifier", con.getIdentifier());
+				searchResult.put("Identifier",con.getIdentifier());
 				searchResult.put("identifier", con.getIdentifier());
 				final Contentlet contentlet = con;
 				searchResult.put("__title__", conAPI.getName(contentlet, currentUser, false));
 
-				String spanClass = (s.getStructureType() == 1)
+				String spanClass = (s.getStructureType() ==1)
 						? "contentIcon"
-						: (s.getStructureType() == 2)
-						? "gearIcon"
-						: (s.getStructureType() == 3)
-						? "formIcon"
-						: (s.getStructureType() == 4)
-						? "uknIcon " + UtilMethods.getFileExtension(ident.getURI()) + "Icon"
-						: (s.getStructureType() == 5)
-						? "pageIcon"
-						: "personaIcon";
+								:  (s.getStructureType() ==2)
+								? "gearIcon"
+										:  (s.getStructureType() ==3)
+										? "formIcon"
+											:  (s.getStructureType() ==4)
+											? "uknIcon " + UtilMethods.getFileExtension( ident.getURI()) + "Icon"
+												:  (s.getStructureType() ==5)
+												? "pageIcon"
+														: "personaIcon";
 
-				String typeStringToShow = s.getName();
-				searchResult.put("__type__", "<div class='typeCCol'><span class='" + spanClass + "'></span>&nbsp;" + typeStringToShow + "</div>");
+				String typeStringToShow = s.getName() ;
+				searchResult.put("__type__", "<div class='typeCCol'><span class='" + spanClass +"'></span>&nbsp;" + typeStringToShow +"</div>");
 
 				String fieldValue = UtilMethods.dateToHTMLDate(con.getModDate()) + " " + UtilMethods.dateToHTMLTime(con.getModDate());
 
@@ -931,10 +932,10 @@ public class ContentletAjax {
 				String user = "";
 				User contentEditor = null;
 				try {
-					contentEditor = APILocator.getUserAPI().loadUserById(con.getModUser(), APILocator.getUserAPI().getSystemUser(), false);
+					contentEditor = APILocator.getUserAPI().loadUserById(con.getModUser(),APILocator.getUserAPI().getSystemUser(),false);
 				} catch (Exception e1) {
-					Logger.error(ContentletAjax.class, e1.getMessage() + " no such user.  did mod_user get deleted?");
-					Logger.debug(ContentletAjax.class, e1.getMessage(), e1);
+					Logger.error(ContentletAjax.class,e1.getMessage() + " no such user.  did mod_user get deleted?");
+					Logger.debug(ContentletAjax.class,e1.getMessage(), e1);
 					contentEditor = new User();
 				}
 

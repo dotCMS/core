@@ -1,29 +1,31 @@
 package com.dotcms.contenttype.model.field;
 
 /**
+ * Set of Properties allow for the fields
  *
+ * @see Field#getFieldContentTypeProperties
  */
 public enum ContentTypeFieldProperties {
-    REQUIRED,
-    LABEL,
-    CATEGORY,
-    DISPLAY_TYPE,
-    USER_SEARCHABLE,
-    CATEGORIES,
-    VALUE,
-    TEXT_AREA_VALUES,
-    DEFAULT_TEXT,
-    INDEXED,
-    DATA_TYPE,
-    VALIDATION,
-    LISTED,
-    UNIQUE,
-    HINT,
-    RADIO_DATE,
-    RADIO_BLOCK_TEXT,
-    RADIO_TEXT,
-    RADIO_BOOL,
-    RADIO_BINARY,
-    RADIO_DECIMAL,
-    RADIO_NUMBER,
+    NAME("name"),
+    VALUES("values"),
+    CATEGORIES("categories"),
+    REGEX_CHECK("regexCheck"),
+    HINT("hint"),
+    REQUIRED("required"),
+    SEARCHABLE("searchable"),
+    INDEXED("indexed"),
+    LISTED("listed"),
+    UNIQUE("unique"),
+    DEFAULT_VALUE("defaultValue"),
+    DATA_TYPE("dataType");
+
+    private final String name;
+
+    ContentTypeFieldProperties(final String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
 }

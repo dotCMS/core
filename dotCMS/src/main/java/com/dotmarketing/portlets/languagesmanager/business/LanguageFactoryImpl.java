@@ -86,6 +86,12 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	            dh.setParam(languageCode);
 	            dh.setParam(countryCode);
 	            lang = (Language) dh.load();
+
+	            //Validate we are returning a valid Language object
+				if(lang != null && lang.getId() == 0){
+					lang = null;//Clean up as the dh.load() returned just an empty instance
+				}
+
 	            if(lang != null){
 	            	CacheLocator.getLanguageCache().addLanguage(lang);
 	            }
@@ -162,6 +168,12 @@ public class LanguageFactoryImpl extends LanguageFactory {
             dh.setQuery("from language in class com.dotmarketing.portlets.languagesmanager.model.Language where id = ? ");
             dh.setParam(id);
             lang = (Language) dh.load();
+
+			//Validate we are returning a valid Language object
+			if(lang != null && lang.getId() == 0){
+				lang = null;//Clean up as the dh.load() returned just an empty instance
+			}
+
             if(lang != null){
             	CacheLocator.getLanguageCache().addLanguage(lang);
             }

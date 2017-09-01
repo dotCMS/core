@@ -1,9 +1,5 @@
 package com.dotcms.keyvalue.model;
 
-import java.io.Serializable;
-import java.util.Map;
-
-import com.dotcms.contenttype.model.type.MultilinguableFallback;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Ruleable;
@@ -11,7 +7,8 @@ import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Config;
+import java.io.Serializable;
+import java.util.Map;
 
 /**
  * Represents a content of type Key/Value in the system. These types of contents are very useful for
@@ -23,9 +20,7 @@ import com.dotmarketing.util.Config;
  * @since Jun 19, 2017
  *
  */
-public interface KeyValue extends Serializable, Versionable, Permissionable, Treeable, Ruleable, MultilinguableFallback {
-
-    public static final String MULTILINGUAGE_FALLBACK_KEY = "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE";
+public interface KeyValue extends Serializable, Versionable, Permissionable, Treeable, Ruleable {
 
     /**
      * Returns the Key/Value identifier.
@@ -102,15 +97,5 @@ public interface KeyValue extends Serializable, Versionable, Permissionable, Tre
      * can be set to a Key/Value object as it is also a Contentlet.
      */
     public Map<String, Object> getMap() throws DotStateException, DotDataException, DotSecurityException;
-
-    /**
-     * Returns based on DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, if the system default language is supported for the KeyValue
-     * False by default
-     * @return boolean
-     */
-    default boolean fallback(){
-        return Config.getBooleanProperty
-                (MULTILINGUAGE_FALLBACK_KEY, Boolean.FALSE);
-    }
 
 }
