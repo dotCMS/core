@@ -1,8 +1,10 @@
-<ul *ngIf="fieldTypes"
+<ul 
+    *ngIf="fieldTypes"
     class="content-types-fields-list"
     [dragulaModel]="fieldTypes"
     dragula="fields-bag"   
     data-drag-type="source">
+    
     <li class="content-types-fields-list__item"
         *ngFor="let fieldType of fieldTypes">
         <i class="fa content-types-fields-list__item-icon" [ngClass]="getIcon(fieldType.clazz)"></i>

@@ -35,14 +35,14 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
     }));
 
     it('should has a ul', () => {
-        let ul = de.query(By.css('ul'));
+        const ul = de.query(By.css('ul'));
 
         expect('fields-row-bag').toEqual(ul.attributes['dragula']);
         expect('source').toEqual(ul.attributes['data-drag-type']);
     });
 
     it('should set drag and drop options', () => {
-        let fieldDragDropService = fixture.debugElement.injector.get(FieldDragDropService);
+        const fieldDragDropService = fixture.debugElement.injector.get(FieldDragDropService);
         spyOn(fieldDragDropService, 'setFieldRowBagOptions');
 
         comp.ngOnInit();
@@ -51,13 +51,13 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
     });
 
     it('should has a list of items', () => {
-        let fieldDragDropService = fixture.debugElement.injector.get(FieldDragDropService);
+        const fieldDragDropService = fixture.debugElement.injector.get(FieldDragDropService);
         spyOn(fieldDragDropService, 'setFieldRowBagOptions');
 
         comp.ngOnInit();
         fixture.detectChanges();
 
-        let lis = de.queryAll(By.css('li'));
+        const lis = de.queryAll(By.css('li'));
         expect(4).toEqual(lis.length);
     });
 });

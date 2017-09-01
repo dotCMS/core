@@ -1,6 +1,6 @@
 import { ActivatedRoute, Router } from '@angular/router';
 import { BaseComponent } from '../../../view/components/_common/_base/base-component';
-import { Component, ViewChild } from '@angular/core';
+import { Component, ViewChild, OnInit } from '@angular/core';
 import { ContentType } from '../main/index';
 import { ContentTypesFormComponent } from '../form';
 import { ContentTypesInfoService } from '../../../api/services/content-types-info';
@@ -23,7 +23,7 @@ import { ConfirmationService } from 'primeng/primeng';
     selector: 'content-types-edit',
     templateUrl: './content-types-edit.component.html'
 })
-export class ContentTypesEditComponent extends BaseComponent {
+export class ContentTypesEditComponent extends BaseComponent implements OnInit {
     @ViewChild('form') form: ContentTypesFormComponent;
     contentTypeItem: Observable<any>;
     contentTypeName: Observable<string>;
@@ -57,15 +57,15 @@ export class ContentTypesEditComponent extends BaseComponent {
         this.route.url.subscribe(res => {
             this.contentTypeItem = this.crudService
                 .getDataById('v1/contenttype', res[1].path)
-                .map(res => {
-                    const type = this.contentTypesInfoService.getLabel(res.clazz);
+                .map(contentType => {
+                    const type = this.contentTypesInfoService.getLabel(contentType.clazz);
                     this.contentTypeName = this.messageService.messageMap$.pluck(
                         this.stringUtils.titleCase(type)
                     );
                     this.contentTypeType = type;
-                    this.contentTypeIcon = this.contentTypesInfoService.getIcon(res.clazz);
-                    this.data = res;
-                    return res;
+                    this.contentTypeIcon = this.contentTypesInfoService.getIcon(contentType.clazz);
+                    this.data = contentType;
+                    return contentType;
                 });
         });
     }

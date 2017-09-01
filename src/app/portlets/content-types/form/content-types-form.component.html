@@ -10,7 +10,7 @@
                     <i class="fa" [ngClass]="icon"></i>
                     <input pInputText type="text" id="content-type-form-name" (focus)="formState === 'collapsed' && toggleForm()" [placeholder]="name ? name + ' ' + i18nMessages['contenttypes.form.name'] : ''" name="name"
                         formControlName="name" />
-                    <field-validation-message message="Name is required" [submitted]="submitAttempt" [field]="form.controls.name"></field-validation-message>
+                    <field-validation-message [message]="i18nMessages['contenttypes.form.name.error.required']" [field]="form.get('name')"></field-validation-message>
                 </div>
             </div>
             <div class="ui-g-6 content-type__form-actions">
@@ -22,7 +22,7 @@
             </div>
         </div>
     </div>
-    <div class="content-type__full-form" [@enterAnimation]="formState" id="content-type-form-full">
+    <div class="content-type__full-form" [class.content-type__full-form--expanded]="formState === 'expanded'" [@enterAnimation]="formState" id="content-type-form-full">
         <div class="ui-g">
             <div class="ui-g-6">
                 <div class="form__group" *ngIf="isEditMode">

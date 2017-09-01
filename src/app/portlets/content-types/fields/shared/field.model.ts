@@ -11,6 +11,6 @@ export interface Field {
     required?: boolean;
     searchable?: boolean;
     sortOrder?: number;
-    unique?: boolean;
-    variable?: string;
+    dataType?: string;
+    hint?: string;
 }

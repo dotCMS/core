@@ -1,0 +1,12 @@
+<div [formGroup]="group">
+    <label class="form__label">{{i18nMessages['contenttypes.field.properties.name.label']}}</label>
+    <input 
+        pInputText 
+        type="text"
+        [disabled]="true"
+        [formControlName]="property.name">
+    <field-validation-message 
+        [message]="i18nMessages['contenttypes.field.properties.name.error.required']" 
+        [field]="group.controls[property.name]">
+    </field-validation-message>
+</div>

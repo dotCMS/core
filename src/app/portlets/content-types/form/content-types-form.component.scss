@@ -26,7 +26,13 @@
 
 .content-type__full-form {
     margin: 0 $basic-padding * 3;
+
+    &--expanded {
+        margin-bottom: $basic-padding * 3;
+    }
 }
+
+
 
 .content-type__form-actions {
     align-items: center;

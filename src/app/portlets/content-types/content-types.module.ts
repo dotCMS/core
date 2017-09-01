@@ -22,7 +22,8 @@ import { SiteService } from '../../api/services/site-service';
 import { StringUtils } from '../../api/util/string.utils';
 import { DragulaModule } from 'ng2-dragula';
 import { DragulaService } from 'ng2-dragula';
-import { FieldService, FieldDragDropService } from './fields/service';
+import { FieldService, FieldDragDropService, FieldPropertyService } from './fields/service';
+
 import {
     ContentTypeFieldsDropZoneComponent,
     ContentTypeFieldsPropertiesFormComponent,
@@ -39,8 +40,24 @@ import {
     InputTextModule,
     OverlayPanelModule,
     SplitButtonModule,
+    RadioButtonModule,
+    CheckboxModule,
     TabViewModule
 } from 'primeng/primeng';
+import {
+
+    NamePropertyComponent,
+    CheckboxPropertyComponent,
+    CategoriesPropertyComponent,
+    DataTypePropertyComponent,
+    HintPropertyComponent,
+    DefaultValuePropertyComponent,
+    RegexCheckPropertyComponent,
+    ValuesPropertyComponent
+} from './fields/content-type-fields-properties-form/field-properties';
+import {
+    DynamicFieldPropertyDirective
+} from './fields/content-type-fields-properties-form/field-properties/dynamic-field-property-directive/dynamic-field-property.directive';
 
 @NgModule({
     declarations: [
@@ -55,6 +72,28 @@ import {
         ContentTypesFormComponent,
         ContentTypesLayoutComponent,
         ContentTypesPortletComponent,
+        ContentTypeFieldsDropZoneComponent,
+        ContentTypeFieldsRowComponent,
+        ContentTypeFieldsRowListComponent,
+        NamePropertyComponent,
+        DynamicFieldPropertyDirective,
+        CheckboxPropertyComponent,
+        CategoriesPropertyComponent,
+        DataTypePropertyComponent,
+        HintPropertyComponent,
+        DefaultValuePropertyComponent,
+        RegexCheckPropertyComponent,
+        ValuesPropertyComponent
+    ],
+    entryComponents: [
+        NamePropertyComponent,
+        CheckboxPropertyComponent,
+        CategoriesPropertyComponent,
+        DataTypePropertyComponent,
+        DefaultValuePropertyComponent,
+        HintPropertyComponent,
+        RegexCheckPropertyComponent,
+        ValuesPropertyComponent
     ],
     exports: [
         ContentTypesPortletComponent
@@ -64,6 +103,7 @@ import {
         CommonModule,
         ConfirmDialogModule,
         ContentTypesRoutingModule,
+        CheckboxModule,
         DialogModule,
         DragulaModule,
         DropdownModule,
@@ -71,6 +111,8 @@ import {
         FormsModule,
         IconButtonTooltipModule,
         InputTextModule,
+        SplitButtonModule,
+        RadioButtonModule,
         ListingDataTableModule,
         OverlayPanelModule,
         ReactiveFormsModule,
@@ -84,6 +126,7 @@ import {
         DotcmsConfig,
         DragulaService,
         FieldDragDropService,
+        FieldPropertyService,
         FieldService,
         FormatDateService,
         LoginService,

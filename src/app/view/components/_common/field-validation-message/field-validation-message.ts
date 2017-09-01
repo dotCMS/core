@@ -13,7 +13,6 @@ import { NgControl } from '@angular/forms';
 })
 export class FieldValidationMessageComponent {
   @Input() field: NgControl;
-  @Input() submitted = false;
   @Input() message: string;
 
   constructor() { }

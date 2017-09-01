@@ -172,14 +172,14 @@
                         <span md-inputtext label="Placeholder">
                             <input pInputText type="text" id="inputTextFloatingLabel" name="inputTextFloatingLabel" #inputTextFloatingLabel="ngModel" [(ngModel)]="model.inputTextFloatingLabel" required />
                         </span>
-                        <field-validation-message message="InputText is required" [submitted]="submitAttempt" [field]="inputTextFloatingLabel"></field-validation-message>
+                        <field-validation-message message="InputText is required" [field]="inputTextFloatingLabel"></field-validation-message>
                     </div>
                     <span class="form__group-hint">This is a hint text</span>
 
                     <div class="form__group">
                         <label for="inputTextRegularField" class="form__label">Label</label>
                         <input pInputText type="text" id="inputTextRegularField" name="inputTextRegularField" placeholder="Placeholder" #inputTextRegularField="ngModel" [(ngModel)]="model.inputTextRegularField" required />
-                        <field-validation-message message="InputText is required" [submitted]="submitAttempt" [field]="inputTextRegularField"></field-validation-message>
+                        <field-validation-message message="InputText is required" [field]="inputTextRegularField"></field-validation-message>
                     </div>
                     <span class="form__group-hint">This is a hint text</span>
 
@@ -191,13 +191,13 @@
                         <span md-inputtext label="Textarea">
                             <textarea rows="5" pInputTextarea name="textareaFloatingLabel" #textareaFloatingLabel="ngModel" [(ngModel)]="model.textareaFloatingLabel" required></textarea>
                         </span>
-                        <field-validation-message message="TextArea is required" [submitted]="submitAttempt" [field]="textareaFloatingLabel"></field-validation-message>
+                        <field-validation-message message="TextArea is required" [field]="textareaFloatingLabel"></field-validation-message>
                     </div>
 
                     <div class="form__group">
                         <label for="textareaRegularField" class="form__label">Textarea with Label</label>
                         <textarea rows="5" pInputTextarea id="textareaRegularField" name="textareaRegularField" #textareaRegularField="ngModel" [(ngModel)]="model.textareaRegularField" required></textarea>
-                        <field-validation-message message="TextArea is required" [submitted]="submitAttempt" [field]="textareaRegularField"></field-validation-message>
+                        <field-validation-message message="TextArea is required"  [field]="textareaRegularField"></field-validation-message>
                     </div>
 
                     <div class="form__group">
@@ -209,7 +209,7 @@
                             <p-dropdown [options]="cities" name="dropdownNormal" #dropdownNormal="ngModel" [(ngModel)]="model.dropdownNormal" required></p-dropdown>
                             <p-dropdown disabled="true" [options]="cities" ></p-dropdown>
                         </div>
-                        <field-validation-message message="Dropdown is required" [submitted]="submitAttempt" [field]="dropdownNormal"></field-validation-message>
+                        <field-validation-message message="Dropdown is required" [field]="dropdownNormal"></field-validation-message>
                     </div>
 
                     <div class="form__group">

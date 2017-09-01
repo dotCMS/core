@@ -28,7 +28,7 @@ export class WebSocketProtocol extends Protocol {
     constructor(private url: Url, loggerService: LoggerService, config?: WebSocketConfig, private protocols?: Array<string> ) {
         super(loggerService, config);
 
-        let match = new RegExp('wss?:\/\/').test(url.url);
+        const match = new RegExp('wss?:\/\/').test(url.url);
         if (!match) {
             throw new Error('Invalid url provided [' + url.url + ']');
         }
@@ -37,7 +37,7 @@ export class WebSocketProtocol extends Protocol {
     }
 
     connect(force = false): void {
-        let self = this;
+        const self = this;
         if (force || !this.socket || this.socket.readyState !== this.readyStateConstants.OPEN) {
             this.loggerService.debug('Connecting with Web socket', this.url.url);
             try {
@@ -53,8 +53,10 @@ export class WebSocketProtocol extends Protocol {
                 };
 
                 self.socket.onclose = (ev: CloseEvent) => {
-                    if ((this.reconnectIfNotNormalClose && ev.code !== this.normalCloseCode) || this.reconnectableStatusCodes.indexOf(ev.code) > -1) {
-                        this.loggerService.debug('Reconnecting Web EventsSocket connection');
+                    if ((this.reconnectIfNotNormalClose && ev.code !== this.normalCloseCode)
+                        || this.reconnectableStatusCodes.indexOf(ev.code) > -1) {
+
+                            this.loggerService.debug('Reconnecting Web EventsSocket connection');
                         this.reconnect();
                     } else {
                         this._close.next(ev);
@@ -89,7 +91,7 @@ export class WebSocketProtocol extends Protocol {
 
     fireQueue(): void {
         while (this.sendQueue.length && this.socket.readyState === this.readyStateConstants.OPEN) {
-            let data = this.sendQueue.shift();
+            const data = this.sendQueue.shift();
 
             this.socket.send(
                 _.isString(data.message) ? data.message : JSON.stringify(data.message)

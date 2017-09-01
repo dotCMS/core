@@ -11,16 +11,27 @@ export class FieldDragDropService {
     private static readonly FIELD_BAG_NAME = 'fields-bag';
     private static readonly FIELD_ROW_BAG_NAME = 'fields-row-bag';
 
-    private _fieldDrop: Subject<any> = new Subject();
+    private _fieldDropFromSource: Subject<any> = new Subject();
+    private _fieldDropFromTarget: Subject<any> = new Subject();
 
     constructor(private dragulaService: DragulaService) {
         dragulaService.dropModel.subscribe(value => {
-            this._fieldDrop.next(value);
+            this.handleDropField(value[0], value[3].dataset.dragType);
         });
 
         dragulaService.removeModel.subscribe(value => {
-            this._fieldDrop.next();
+            this.handleDropField(value[0], value[3].dataset.dragType);
         });
+    }
+
+    private handleDropField(dragType: string, source: string) {
+        if (dragType === 'fields-bag') {
+            if (source === 'source') {
+                this._fieldDropFromSource.next();
+            } else if (source === 'target') {
+                this._fieldDropFromTarget.next();
+            }
+        }
     }
 
     /**
@@ -32,7 +43,8 @@ export class FieldDragDropService {
 
         if (!fieldBagOpts) {
             this.dragulaService.setOptions(FieldDragDropService.FIELD_BAG_NAME, {
-                copy: this.shouldCopy
+                copy: this.shouldCopy,
+                accepts: this.shouldAccepts
             });
         }
     }
@@ -52,8 +64,12 @@ export class FieldDragDropService {
         }
     }
 
-    get fieldDrop$(): Observable<any> {
-        return this._fieldDrop.asObservable();
+    get fieldDropFromSource$(): Observable<any> {
+        return this._fieldDropFromSource.asObservable();
+    }
+
+    get fieldDropFromTarget$(): Observable<any> {
+        return this._fieldDropFromTarget.asObservable();
     }
 
     private shouldCopy(
@@ -62,6 +78,7 @@ export class FieldDragDropService {
         handle: HTMLElement,
         sibling: HTMLElement
     ): boolean {
+
         return source.dataset.dragType === 'source';
     }
 
@@ -73,5 +90,14 @@ export class FieldDragDropService {
     ): boolean {
         const isDragButton = handle.parentElement.classList.contains('row-header__drag') || handle.classList.contains('row-header__drag');
         return source.dataset.dragType === 'source' || isDragButton;
+    }
+
+    private shouldAccepts(
+        el: HTMLElement,
+        source: HTMLElement,
+        handle: HTMLElement,
+        sibling: HTMLElement
+    ): boolean {
+        return source.dataset.dragType !== 'source';
     }
 }

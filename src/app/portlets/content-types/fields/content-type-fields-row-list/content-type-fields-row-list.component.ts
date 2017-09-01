@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 
 import { FieldService, FieldDragDropService } from '../service';
-import { FieldRow, LINE_DIVIDER } from '../shared';
+import { FieldRow } from '../shared';
 
 /**
  * Fields row container

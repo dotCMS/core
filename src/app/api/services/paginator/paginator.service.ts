@@ -33,18 +33,18 @@ export class PaginatorService {
     constructor(private coreWebService: CoreWebService) {
     }
 
-    get url(): string{
+    get url(): string {
         return this._url;
     }
 
-    set url(url: string){
+    set url(url: string) {
         if (this._url !== url) {
             this.links = {};
             this._url = url;
         }
     }
 
-    get filter(): string{
+    get filter(): string {
         return this._filter;
     }
 
@@ -65,22 +65,22 @@ export class PaginatorService {
         return this._extraParams;
     }
 
-    get sortField(): string{
+    get sortField(): string {
         return this._sortField;
     }
 
-    set sortField(sortField: string){
+    set sortField(sortField: string) {
         if (this._sortField !== sortField) {
             this.links = {};
             this._sortField = sortField;
         }
     }
 
-    get sortOrder(): OrderDirection{
+    get sortOrder(): OrderDirection {
         return this._sortOrder;
     }
 
-    set sortOrder(sortOrder: OrderDirection){
+    set sortOrder(sortOrder: OrderDirection) {
         if (this._sortOrder !== sortOrder) {
             this.links = {};
             this._sortOrder = sortOrder;
@@ -96,7 +96,7 @@ export class PaginatorService {
      * @param url base url
      */
     public get(url?: string): Observable<any[]> {
-        let params: URLSearchParams = new URLSearchParams();
+        const params: URLSearchParams = new URLSearchParams();
 
         if (this.filter) {
             params.set('filter', `${this.filter}`);
@@ -153,7 +153,7 @@ export class PaginatorService {
      * @memberof PaginatorServic
      */
     public getPage(pageParam = 1): Observable<any[]> {
-        let urlPage = this.links['x-page'] ? this.links['x-page'].replace('pageValue', String(pageParam))
+        const urlPage = this.links['x-page'] ? this.links['x-page'].replace('pageValue', String(pageParam))
                         : undefined;
         return this.get(urlPage);
     }
@@ -192,7 +192,7 @@ export class PaginatorService {
      * @memberof PaginatorService
      */
     public getWithOffset(offset: number): Observable<any[]> {
-        let page = this.getPageFromOffset(offset);
+        const page = this.getPageFromOffset(offset);
         return this.getPage(page);
     }
 
@@ -201,13 +201,13 @@ export class PaginatorService {
     }
 
     private setLinks(linksString: string): void {
-        let linkSplit = linksString.split(',');
+        const linkSplit = linksString.split(',');
 
         linkSplit.forEach(linkRel => {
-            let linkrealSplit = linkRel.split(';');
-            let url = linkrealSplit[0].substring(1, linkrealSplit[0].length - 1);
-            let relSplit = linkrealSplit[1].split('=');
-            let rel = relSplit[1].substring(1, relSplit[1].length - 1);
+            const linkrealSplit = linkRel.split(';');
+            const url = linkrealSplit[0].substring(1, linkrealSplit[0].length - 1);
+            const relSplit = linkrealSplit[1].split('=');
+            const rel = relSplit[1].substring(1, relSplit[1].length - 1);
             this.links[rel] = url;
         });
     }

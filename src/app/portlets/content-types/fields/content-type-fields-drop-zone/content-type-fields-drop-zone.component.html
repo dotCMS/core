@@ -19,18 +19,23 @@
     </div>
 </div>
 <p-dialog 
-    [header]="formData && formData.id ? i18nMessages['contenttypes.dropzone.action.edit'] : i18nMessages['contenttypes.dropzone.action.create.field']"
-    [(visible)]="displayDialog"
     modal="modal"
     width="300"
-    [responsive]="true">
+    [header]="getDialogHeader()"
+    [(visible)]="displayDialog"
+    [responsive]="true"
+    [resizable]="false"
+    [draggable]="false"
+    (onHide)="removeFieldsWithoutId()">
+    
     <content-type-fields-properties-form 
         [formFieldData]="formData"
-        (fieldProperties)="saveFieldsHandler($event)"
+        (saveField)="saveFieldsHandler($event)"
         #fieldPropertiesForm>
     </content-type-fields-properties-form>
+    
     <p-footer>
+        <button type="button" flat pButton (click)="toggleDialog()" [label]="i18nMessages['contenttypes.dropzone.action.cancel']"></button>
         <button type="button" pButton (click)="fieldPropertiesForm.saveFieldProperties(fieldPropertiesForm.form.value, fieldPropertiesForm.form.valid)" [label]="i18nMessages['contenttypes.dropzone.action.save']"></button>
-        <button type="button" pButton (click)="removeFieldsWithoutId()" [label]="i18nMessages['contenttypes.dropzone.action.cancel']"></button>
     </p-footer>
 </p-dialog>

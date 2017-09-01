@@ -6,12 +6,14 @@ import {
     Output,
     EventEmitter,
     OnInit,
-    OnChanges
+    OnChanges,
+    ViewChild
 } from '@angular/core';
 import { FieldService, FieldDragDropService } from '../service';
-import { FieldRow, Field, FieldColumn, TAB_DIVIDER, LINE_DIVIDER } from '../shared';
+import { FieldRow, Field, FieldColumn } from '../shared';
 import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
 import { MessageService } from '../../../../api/services/messages-service';
+import { FieldUtil } from '../util/field-util';
 
 /**
  * Display all the Field Types
@@ -28,6 +30,10 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
     displayDialog = false;
     fieldRows: FieldRow[] = [];
     formData: Field;
+    fieldProperties: string[];
+
+    @ViewChild('fieldPropertiesForm') propertiesForm: ContentTypeFieldsPropertiesFormComponent;
+
     @Input() fields: Field[];
     @Output() saveFields = new EventEmitter<Field[]>();
 
@@ -45,13 +51,14 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
     }
 
     ngOnInit(): void {
-        this.fieldDragDropService.fieldDrop$.subscribe((data) => {
-            const dragType = data[0];
+        this.fieldDragDropService.fieldDropFromSource$.subscribe(() => {
+            this.setDroppedField();
+            this.toggleDialog();
+        });
 
-            if (dragType === 'fields-bag') {
-                this.setDroppedField();
-                this.toggleDialog();
-            }
+        this.fieldDragDropService.fieldDropFromTarget$.subscribe(() => {
+            const fields = this.getFields();
+            this.emitSaveFields(fields);
         });
     }
 
@@ -74,19 +81,48 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
      */
     saveFieldsHandler(fieldToSave: Field): void {
         const fields = this.getFields();
-        // Needs a better implementation
-        fields.map(field => {
-            if (this.isNewField(field)) {
-                field = Object.assign(field, fieldToSave);
-            } else if (field.id === this.formData.id) {
-                field = Object.assign(field, fieldToSave);
-            }
-
-            return field;
-        });
-
-        this.saveFields.emit(fields);
+        this.updateCurrentField(fieldToSave, fields);
+        this.emitSaveFields(fields);
         this.toggleDialog();
+    }
+
+    private emitSaveFields(fields: Field[]): void {
+        this.saveFields.emit(fields);
+    }
+
+    private updateCurrentField(fieldToSave: Field, fields: Field[]): void {
+        let field: Field = this.formData && this.formData.id ? this.getUpdatedField(this.formData.id, fields)
+                                : this.getNewField(fields);
+
+        field = Object.assign(field, fieldToSave);
+    }
+
+    private getUpdatedField(fieldId: string, fields: Field[]): Field {
+        let result: Field;
+
+        for (let i = 0; i < fields.length; i++) {
+            const field = this.fields[i];
+
+            if (fieldId === this.fields[i].id) {
+                result = field;
+                break;
+            }
+        }
+
+        return result;
+    }
+
+    private getNewField(fields: Field[]): Field {
+        let result: Field;
+
+        for (let i = 0; i < fields.length; i++) {
+           if (FieldUtil.isNewField(fields[i])) {
+                result = fields[i];
+                break;
+            }
+        }
+
+        return result;
     }
 
     /**
@@ -95,14 +131,9 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     editField(fieldToEdit: Field): void {
+        console.log('fieldToEdit', fieldToEdit);
         const fields = this.getFields();
-        // Needs a better implementation
-        fields.forEach((field) => {
-            if (fieldToEdit.id === field.id) {
-                this.formData = fieldToEdit;
-            }
-        });
-
+        this.formData = fields.filter(field => fieldToEdit.id === field.id)[0];
         this.toggleDialog();
     }
 
@@ -112,19 +143,14 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
      */
     setDroppedField(): void {
         const fields = this.getFields();
-        // Needs a better implementation
-        fields.forEach(field => {
-            if (this.isNewField(field)) {
-                this.formData = field;
-            }
-        });
+        this.formData = fields.filter(field => FieldUtil.isNewField(field))[0];
     }
 
     /**
      * Show or hide dialog
      * @memberof ContentTypeFieldsDropZoneComponent
      */
-    toggleDialog(): void {
+    private toggleDialog(): void {
         this.displayDialog = !this.displayDialog;
     }
 
@@ -145,60 +171,25 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
             });
         });
 
-        this.toggleDialog();
+        this.formData = null;
+        this.propertiesForm.destroy();
     }
 
-    /**
-     * Verify if the Field already exist
-     * @param {Field} field
-     * @returns {Boolean}
-     * @memberof ContentTypeFieldsDropZoneComponent
-     */
-    isNewField(field: Field): Boolean {
-        return !field.id && !(this.isRow(field) || this.isColumn(field));
-    }
+    getDialogHeader(): string {
+        const dialogTitle = this.formData && this.formData.id ?
+            this.i18nMessages['contenttypes.dropzone.action.edit'] : this.i18nMessages['contenttypes.dropzone.action.create.field'];
+        const name = this.formData && this.formData.name ? this.formData.name : '';
 
-    /**
-     * Verify if the Field is a row
-     * @param {Field} field
-     * @returns {Boolean}
-     * @memberof ContentTypeFieldsDropZoneComponent
-     */
-    isRow(field: Field): Boolean {
-        return field.clazz === LINE_DIVIDER.clazz ? true : false;
-    }
-
-    /**
-     * Verify if the Field is a column
-     * @param {Field} field
-     * @returns {Boolean}
-     * @memberof ContentTypeFieldsDropZoneComponent
-     */
-    isColumn(field: Field): Boolean {
-        return field.clazz === TAB_DIVIDER.clazz ? true : false;
-    }
-
-    private splitFieldsByLineDiveder(fields: Field[]): Field[][] {
-        const result: Field[][] = [];
-        let currentFields: Field[];
-        fields.forEach(field => {
-            if (field.clazz === LINE_DIVIDER.clazz) {
-                currentFields = [];
-                result.push(currentFields);
-            }
-            currentFields.push(field);
-        });
-
-        return result;
+        return `${dialogTitle} ${name}`;
     }
 
     private getRowFields(fields: Field[]): FieldRow[] {
         let fieldRows: FieldRow[] = [];
-        const splitFields: Field[][] = this.splitFieldsByLineDiveder(fields);
+        const splitFields: Field[][] = FieldUtil.splitFieldsByLineDivider(fields);
 
-        fieldRows = splitFields.map(fields => {
+        fieldRows = splitFields.map(fieldsByLineDivider => {
             const fieldRow: FieldRow = new FieldRow();
-            fieldRow.addFields(fields);
+            fieldRow.addFields(fieldsByLineDivider);
             return fieldRow;
         });
 
@@ -212,10 +203,9 @@ export class ContentTypeFieldsDropZoneComponent extends BaseComponent implements
         this.fieldRows.forEach((fieldRow, rowIndex) => {
             fields.push(fieldRow.lineDivider);
 
-            fieldRow.columns.forEach( (fieldColumn, colIndex) => {
+            fieldRow.columns.forEach((fieldColumn, colIndex) => {
                 fields.push(fieldColumn.tabDivider);
-
-                fieldColumn.fields.forEach( field => fields.push(field));
+                fieldColumn.fields.forEach(field => fields.push(field));
             });
         });
 

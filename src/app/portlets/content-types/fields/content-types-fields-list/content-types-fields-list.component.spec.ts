@@ -38,9 +38,11 @@ describe('ContentTypesFieldsListComponent', () => {
         el = de.nativeElement;
     }));
 
+
     it('should renderer each items', () => {
         const fieldService = fixture.debugElement.injector.get(FieldService);
         const itemsData = [
+
             {
                 label: 'Text'
             },

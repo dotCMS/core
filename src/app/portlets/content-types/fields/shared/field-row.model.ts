@@ -1,6 +1,6 @@
-import { FieldColumn } from './field-column';
-import { Field } from './field';
-import { TAB_DIVIDER, LINE_DIVIDER } from './field-dividers';
+import { FieldUtil } from '../util/field-util';
+import { FieldColumn } from './field-column.model';
+import { Field } from './field.model';
 
 export class FieldRow {
 
@@ -16,7 +16,7 @@ export class FieldRow {
             }
         }
 
-        this.lineDivider = Object.assign({}, LINE_DIVIDER);
+        this.lineDivider = FieldUtil.createLineDivider();
     }
 
     /**
@@ -53,28 +53,14 @@ export class FieldRow {
     addFields(fields:  Field[]): void {
         let offset = 0;
 
-        if (fields[0] && fields[0].clazz === LINE_DIVIDER.clazz) {
+        if (fields[0] && FieldUtil.isRow(fields[0])) {
             this.lineDivider = fields[0];
             offset = 1;
         }
 
-        const fieldsSplitByTabDivider: Field[][] = this.splitFieldsByTabDiveder(fields.splice(offset));
-        fieldsSplitByTabDivider.forEach(fields =>  {
-            this.columns.push(new FieldColumn(fields));
+        const fieldsSplitByTabDivider: Field[][] = FieldUtil.splitFieldsByTabDivider(fields.splice(offset));
+        fieldsSplitByTabDivider.forEach(tabDividerFields =>  {
+            this.columns.push(new FieldColumn(tabDividerFields));
         });
-    }
-
-    private splitFieldsByTabDiveder(fields: Field[]): Field[][] {
-        const result: Field[][] = [];
-        let currentFields: Field[];
-
-        fields.map(field => {
-            if (field.clazz === TAB_DIVIDER.clazz) {
-                currentFields = [];
-                result.push(currentFields);
-            }
-            currentFields.push(field);
-        });
-        return result;
     }
 }

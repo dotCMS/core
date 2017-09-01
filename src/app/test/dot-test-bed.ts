@@ -14,8 +14,9 @@ import { StringUtils } from '../api/util/string.utils';
 import { UserModel } from '../api/auth/UserModel';
 import { ConfirmDialogModule } from 'primeng/components/confirmdialog/confirmdialog';
 import { ConfirmationService } from 'primeng/primeng';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NGFACES_MODULES } from '../modules';
+import { CommonModule } from '@angular/common';
 
 @Component({
     selector: 'p-confirmDialog',
@@ -25,7 +26,12 @@ class FakeConfirmDialogComponent {}
 
 export class DOTTestBed {
     private static DEFAULT_CONFIG = {
-        imports: [...NGFACES_MODULES, FormsModule],
+        imports: [
+            ...NGFACES_MODULES,
+            CommonModule,
+            FormsModule,
+            ReactiveFormsModule
+        ],
         providers: [
             { provide: ConnectionBackend, useClass: MockBackend },
             { provide: RequestOptions, useClass: BaseRequestOptions },
