@@ -620,15 +620,29 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
                 String orderKey = rel.getRelationTypeValue()+"-order";
 
+
                 if(relType.equals(rel.getRelationTypeValue())) {
                     String me = con.getIdentifier();
                     String related = me.equals(childId)? parentId : childId;
 
-                    // put a pointer to the related content
-                    m.put(propName, (m.get(propName) != null ? m.get(propName) : "") + related + " " );
+                    String previousPropNameValue = m.get(propName);
+                    int previousPropNameValueLength = previousPropNameValue!=null?previousPropNameValue.length():0;
 
+
+                    StringBuilder propNameValue = new StringBuilder(previousPropNameValueLength + 36 + 1);
+                    // put a pointer to the related content
+                    m.put(propName, propNameValue.append(previousPropNameValue != null ? previousPropNameValue : "")
+                            .append(related).append(" ").toString() );
+
+
+                    String previousOrderKeyValue = m.get(orderKey);
+                    int previousOrderKeyValueLength = previousOrderKeyValue!=null?previousOrderKeyValue.length():0;
+                    int orderLength = order!=null?order.length():0;
+
+                    StringBuilder orderKeyValue = new StringBuilder(previousOrderKeyValueLength + 36 + 1 + orderLength + 1);
                     // make a way to sort
-                    m.put(orderKey, (m.get(orderKey)!=null ? m.get(orderKey) : "") + related + "_" + order + " ");
+                    m.put(orderKey, orderKeyValue.append(previousOrderKeyValue!=null ? previousOrderKeyValue : "")
+                            .append(related).append("_").append(order).append(" ").toString());
                 }
             }
         }
