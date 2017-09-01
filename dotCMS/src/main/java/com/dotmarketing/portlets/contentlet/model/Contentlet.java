@@ -252,17 +252,22 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		}
     }
 
-    public boolean equals(Object o) {
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
 
-    	if( !(o instanceof Contentlet) )
-    		return false;
-    	return o != null && ((Contentlet)o).getInode().equalsIgnoreCase(this.getInode());
-    }
-    public int hashCode() {
-        return new HashCodeBuilder().append(getInode()).toHashCode();
-    }
+		Contentlet that = (Contentlet) o;
 
-    public static long getSerialVersionUID() {
+		return getInode().equals(that.getInode());
+	}
+
+	@Override
+	public int hashCode() {
+		return getInode().hashCode();
+	}
+
+	public static long getSerialVersionUID() {
         return serialVersionUID;
     }
 
