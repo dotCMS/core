@@ -1214,6 +1214,28 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return perAPI.filterCollection(conFac.getRelatedLinks(contentlet), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
     }
 
+    private List<ContentletSearch> getRelatedContentFromIndex(Contentlet contentlet,Relationship rel, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
+
+        boolean isSameStructRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
+        String q = "";
+
+        if(isSameStructRelationship) {
+            q = "+type:content +(" + rel.getRelationTypeValue() + "-parent:" + contentlet.getIdentifier() + " " +
+                    rel.getRelationTypeValue() + "-child:" + contentlet.getIdentifier() + ") ";
+            if(!InodeUtils.isSet(contentlet.getIdentifier())){
+                q = "+type:content +(" + rel.getRelationTypeValue() + "-parent:" + "0 " +
+                        rel.getRelationTypeValue() + "-child:"  + "0 ) ";
+            }
+        } else {
+            q = "+type:content +" + rel.getRelationTypeValue() + ":" + contentlet.getIdentifier();
+            if(!InodeUtils.isSet(contentlet.getIdentifier())){
+                q = "+type:content +" + rel.getRelationTypeValue() + ":" + "0";
+            }
+        }
+
+        return searchIndex(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order", user, respectFrontendRoles);
+    }
+
     @Override
     public List<Contentlet> getRelatedContent(Contentlet contentlet,Relationship rel, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
 
@@ -4319,9 +4341,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
 					}
 					for (Contentlet con : cons) {
 						try {
-							List<Contentlet> relatedCon = getRelatedContent(
-									con, rel, APILocator.getUserAPI()
-											.getSystemUser(), true);
+
+                            List<ContentletSearch> relatedCon = getRelatedContentFromIndex(con, rel, APILocator.getUserAPI()
+                                    .getSystemUser(), true);
+
+//							List<Contentlet> relatedCon = getRelatedContent(
+//									con, rel, APILocator.getUserAPI()
+//											.getSystemUser(), true);
 							// If there's a 1-N relationship and the parent
 							// content is relating to a child that already has
 							// a parent...
