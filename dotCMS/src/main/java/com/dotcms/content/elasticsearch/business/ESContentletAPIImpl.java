@@ -2783,14 +2783,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             }
                         }
                         if (!isCMSOwner) {
-                            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
-                                    +" doesn't have write permissions to Contentlet: "
-                                    + (contentlet != null && UtilMethods.isSet(contentlet.getIdentifier()) ? contentlet.getIdentifier() : "Unknown"));
+                            this.throwSecurityException(contentlet, user);
                         }
                     } else {
-                        throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
-                                +" doesn't have write permissions to Contentlet: "
-                                + (contentlet != null && UtilMethods.isSet(contentlet.getIdentifier())? contentlet.getIdentifier() : "Unknown"));
+
+                        this.throwSecurityException(contentlet, user);
                     }
                 }
                 if (createNewVersion && (contentRelationships == null || cats == null || permissions == null))
@@ -3409,6 +3406,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         return contentlet;
+    }
+
+    private void throwSecurityException(final Contentlet contentlet,
+                                              final User user) throws DotSecurityException {
+
+        final String userName = (user != null ? user.getUserId() : "Unknown");
+        final String message  = UtilMethods.isSet(contentlet.getIdentifier())?
+                "User: " + userName +" doesn't have write permissions to Contentlet: " + contentlet.getIdentifier():
+                "User: " + userName +" doesn't have write permissions to create the Contentlet";
+
+        throw new DotSecurityException(message);
     }
 
     @Override
