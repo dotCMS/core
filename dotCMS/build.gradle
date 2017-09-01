@@ -1,23 +1,21 @@
 buildscript {
     repositories {
         maven { url "http://repo.dotcms.com/artifactory/libs-release" }
-        maven { url "https://maven.eveoh.nl/content/repositories/releases" }
         jcenter()
     }
     dependencies {
         classpath 'org.ajoberstar:grgit:1.7.0'
         classpath 'org.unbroken-dome.gradle-plugins:gradle-testsets-plugin:1.0.2'
         classpath 'com.dotcms.lib:dot.commons-io:2.0.1_2'
-        classpath 'nl.eveoh:gradle-aspectj:1.6'
+    }
+    project.ext {
+        aspectjVersion = '1.8.10'
     }
 }
 
 plugins {
     id "com.moowork.node" version "1.1.1"
-}
-
-project.ext {
-    aspectjVersion = '1.8.4'
+    id "aspectj.gradle" version "0.1.6"// https://plugins.gradle.org/plugin/aspectj.gradle
 }
 
 node {
@@ -57,7 +55,6 @@ configurations.all({
 
 // Apply the java plugin to add support for Java.
 apply plugin: 'java'
-apply plugin: 'aspectj'
 apply plugin: 'war'
 apply plugin: 'org.unbroken-dome.test-sets'
 apply plugin: 'idea'
