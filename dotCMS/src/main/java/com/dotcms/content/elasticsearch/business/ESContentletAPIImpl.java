@@ -4327,9 +4327,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             List<ContentletSearch> relatedCon = getRelatedContentFromIndex(con, rel, APILocator.getUserAPI()
                                     .getSystemUser(), true);
 
-//							List<Contentlet> relatedCon = getRelatedContent(
-//									con, rel, APILocator.getUserAPI()
-//											.getSystemUser(), true);
 							// If there's a 1-N relationship and the parent
 							// content is relating to a child that already has
 							// a parent...

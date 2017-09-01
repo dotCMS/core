@@ -628,19 +628,19 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                     String previousPropNameValue = m.get(propName);
                     int previousPropNameValueLength = previousPropNameValue!=null?previousPropNameValue.length():0;
 
-                    // put a pointer to the related content
+
                     StringBuilder propNameValue = new StringBuilder(previousPropNameValueLength + 36 + 1);
-//                    StringBuilder propNameValue = new StringBuilder();
+                    // put a pointer to the related content
                     m.put(propName, propNameValue.append(previousPropNameValue != null ? previousPropNameValue : "")
                             .append(related).append(" ").toString() );
 
-                    // make a way to sort
+
                     String previousOrderKeyValue = m.get(orderKey);
                     int previousOrderKeyValueLength = previousOrderKeyValue!=null?previousOrderKeyValue.length():0;
                     int orderLength = order!=null?order.length():0;
 
                     StringBuilder orderKeyValue = new StringBuilder(previousOrderKeyValueLength + 36 + 1 + orderLength + 1);
-//                    StringBuilder orderKeyValue = new StringBuilder();
+                    // make a way to sort
                     m.put(orderKey, orderKeyValue.append(previousOrderKeyValue!=null ? previousOrderKeyValue : "")
                             .append(related).append("_").append(order).append(" ").toString());
                 }
