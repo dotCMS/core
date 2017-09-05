@@ -42,10 +42,9 @@ public abstract class CustomField extends Field {
 
 	@JsonIgnore
 	public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
-		return list(ContentTypeFieldProperties.REQUIRED, ContentTypeFieldProperties.LABEL, ContentTypeFieldProperties.VALUE,
-				ContentTypeFieldProperties.TEXT_AREA_VALUES, ContentTypeFieldProperties.DISPLAY_TYPE,
-				ContentTypeFieldProperties.VALIDATION, ContentTypeFieldProperties.DEFAULT_TEXT,
-				ContentTypeFieldProperties.USER_SEARCHABLE, ContentTypeFieldProperties.INDEXED,
+		return list(ContentTypeFieldProperties.REQUIRED, ContentTypeFieldProperties.NAME, ContentTypeFieldProperties.VALUES,
+				ContentTypeFieldProperties.REGEX_CHECK, ContentTypeFieldProperties.DEFAULT_VALUE,
+				ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.INDEXED,
 				ContentTypeFieldProperties.LISTED, ContentTypeFieldProperties.UNIQUE, ContentTypeFieldProperties.HINT);
 	}
 

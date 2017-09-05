@@ -49,10 +49,9 @@ public abstract class TagField extends Field  implements OnePerContentType{
 
 	@JsonIgnore
 	public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
-		return list(ContentTypeFieldProperties.LABEL, ContentTypeFieldProperties.REQUIRED,
-				ContentTypeFieldProperties.DISPLAY_TYPE, ContentTypeFieldProperties.DEFAULT_TEXT,
-				ContentTypeFieldProperties.HINT, ContentTypeFieldProperties.USER_SEARCHABLE,
-				ContentTypeFieldProperties.DATA_TYPE, ContentTypeFieldProperties.RADIO_BLOCK_TEXT);
+		return list(ContentTypeFieldProperties.NAME, ContentTypeFieldProperties.REQUIRED,
+				ContentTypeFieldProperties.DEFAULT_VALUE, ContentTypeFieldProperties.HINT,
+				ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.DATA_TYPE);
 	}
 	
 }
