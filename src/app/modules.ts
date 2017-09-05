@@ -1,42 +1,56 @@
+// CUSTOM MDOULES
+import { ActionButtonModule } from './view/components/_common/action-button/action-button.module';
+import { FieldValidationMessageModule } from './view/components/_common/field-validation-message/file-validation-message.module';
+import { ListingDataTableModule } from './view/components/listing-data-table/listing-data-table.module';
+import { SiteSelectorModule } from './view/components/_common/site-selector/site-selector.module';
+import { SearchableDropDownModule } from './view/components/_common/searchable-dropdown';
+
 import {
-  AutoCompleteModule,
-  BreadcrumbModule,
-  ButtonModule,
-  CalendarModule,
-  CheckboxModule,
-  ConfirmDialogModule,
-  DataTableModule, SharedModule,
-  DialogModule,
-  DropdownModule,
-  InputTextModule,
-  InputTextareaModule,
-  PasswordModule,
-  RadioButtonModule,
-  SplitButtonModule,
-  TabViewModule,
-  ToolbarModule,
-  TreeTableModule
+    AutoCompleteModule,
+    BreadcrumbModule,
+    ButtonModule,
+    CalendarModule,
+    CheckboxModule,
+    ConfirmDialogModule,
+    DataTableModule,
+    DialogModule,
+    DropdownModule,
+    InputTextModule,
+    InputTextareaModule,
+    PasswordModule,
+    RadioButtonModule,
+    SharedModule,
+    SplitButtonModule,
+    TabViewModule,
+    ToolbarModule,
+    TreeTableModule
 } from 'primeng/primeng';
-import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
+
+export const CUSTOM_MODULES = [
+    ActionButtonModule,
+    FieldValidationMessageModule,
+    ListingDataTableModule,
+    SearchableDropDownModule,
+    SiteSelectorModule,
+];
 
 export const NGFACES_MODULES = [
-  AutoCompleteModule,
-  BrowserAnimationsModule,
-  BreadcrumbModule,
-  ButtonModule,
-  CalendarModule,
-  CheckboxModule,
-  ConfirmDialogModule,
-  DataTableModule,
-  DialogModule,
-  DropdownModule,
-  InputTextModule,
-  InputTextareaModule,
-  PasswordModule,
-  RadioButtonModule,
-  SharedModule,
-  SplitButtonModule,
-  TabViewModule,
-  ToolbarModule,
-  TreeTableModule
+    AutoCompleteModule,
+    BreadcrumbModule,
+    ButtonModule,
+    CalendarModule,
+    CheckboxModule,
+    ConfirmDialogModule,
+    DataTableModule,
+    DialogModule,
+    DropdownModule,
+    InputTextModule,
+    InputTextareaModule,
+    PasswordModule,
+    RadioButtonModule,
+    SharedModule,
+    SplitButtonModule,
+    TabViewModule,
+    ToolbarModule,
+    TreeTableModule
 ];

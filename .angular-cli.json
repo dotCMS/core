@@ -16,10 +16,7 @@
             "testTsconfig": "tsconfig.spec.json",
             "prefix": "app",
             "styles": ["styles.scss"],
-            "scripts": [
-                "app/portlets/rule-engine/semantic/assets/jquery.min.js",
-                "app/portlets/rule-engine/semantic/assets/semantic.js"
-            ],
+            "scripts": [],
             "environmentSource": "environments/environment.ts",
             "environments": {
                 "dev": "environments/environment.ts",

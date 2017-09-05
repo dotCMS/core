@@ -1,11 +1,9 @@
-import {CoreWebService} from './core-web-service';
-import {Injectable} from '@angular/core';
-import {LoginService} from './login-service';
-import {Observable} from 'rxjs/Rx';
-import {DotcmsEventsService} from './dotcms-events-service';
-import {RequestMethod} from '@angular/http';
-import {DotRouterService} from './dot-router-service';
-import {Subject} from 'rxjs/Subject';
+import { CoreWebService, LoginService, DotcmsEventsService } from 'dotcms-js/dotcms-js';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs/Rx';
+import { RequestMethod } from '@angular/http';
+import { DotRouterService } from './dot-router-service';
+import { Subject } from 'rxjs/Subject';
 
 @Injectable()
 export class RoutingService {
@@ -19,17 +17,22 @@ export class RoutingService {
     private _currentPortlet$ = new Subject<string>();
 
     // TODO: I think we should be able to remove the routing injection
-    constructor(loginService: LoginService, private router: DotRouterService,
-                private coreWebService: CoreWebService, dotcmsEventsService: DotcmsEventsService) {
-
+    constructor(
+        loginService: LoginService,
+        private router: DotRouterService,
+        private coreWebService: CoreWebService,
+        dotcmsEventsService: DotcmsEventsService
+    ) {
         this.urlMenus = 'v1/CORE_WEB/menu';
         this.portlets = new Map();
 
         loginService.watchUser(this.loadMenus.bind(this));
-        dotcmsEventsService.subscribeTo('UPDATE_PORTLET_LAYOUTS').subscribe(this.loadMenus.bind(this));
+        dotcmsEventsService
+            .subscribeTo('UPDATE_PORTLET_LAYOUTS')
+            .subscribe(this.loadMenus.bind(this));
     }
 
-    get currentPortletId(): string{
+    get currentPortletId(): string {
         return this._currentPortletId;
     }
 
@@ -46,7 +49,7 @@ export class RoutingService {
     }
 
     get firstPortlet(): string {
-        let porlets = this.portlets.entries().next().value;
+        const porlets = this.portlets.entries().next().value;
         return porlets ? porlets[0] : null;
     }
 
@@ -95,7 +98,7 @@ export class RoutingService {
                 let menu = this.menus[i];
 
                 for (let k = 0; k < menu.menuItems.length; k++) {
-                    let subMenuItem = menu.menuItems[k];
+                    const subMenuItem = menu.menuItems[k];
                     if (subMenuItem.angular) {
                         this.portlets.set(subMenuItem.id, subMenuItem.url);
                     } else {
@@ -113,23 +116,28 @@ export class RoutingService {
      * @param url portlet url
      */
     public changeRefreshPortlet(url: string): void {
-        let portletId = this.getPortletId(url);
+        const portletId = this.getPortletId(url);
         if (portletId === this.currentPortletId) {
             this._portletUrlSource$.next(url);
         }
     }
 
     private loadMenus(): void {
-        this.coreWebService.requestView({
-            method: RequestMethod.Get,
-            url: this.urlMenus,
-        }).subscribe(response => {
-            this.setMenus(response.entity);
-        }, error => this._menusChange$.error(error));
+        this.coreWebService
+            .requestView({
+                method: RequestMethod.Get,
+                url: this.urlMenus
+            })
+            .subscribe(
+                response => {
+                    this.setMenus(response.entity);
+                },
+                error => this._menusChange$.error(error)
+            );
     }
 
     private getPortletId(url: string): string {
-        let urlSplit = url.split('/');
+        const urlSplit = url.split('/');
         return urlSplit[urlSplit.length - 1];
     }
 }

@@ -3,13 +3,11 @@ import { DebugElement } from '@angular/core';
 import { RouterTestingModule } from '@angular/router/testing';
 import { TestBed, async } from '@angular/core/testing';
 
-
 import { AppComponent } from './app.component';
 import { DOTTestBed } from './test/dot-test-bed';
 import { NotLicensedService } from './api/services/not-licensed-service';
 import { RoutingService } from './api/services/routing-service';
-import { LoginService } from './api/services/login-service';
-import { SocketFactory } from './api/services/protocol/socket-factory';
+import { LoginService, SocketFactory } from 'dotcms-js/dotcms-js';
 import { DotRouterService } from './api/services/dot-router-service';
 
 describe('AppComponent', () => {

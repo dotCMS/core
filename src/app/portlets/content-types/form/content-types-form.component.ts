@@ -1,12 +1,13 @@
-import { BaseComponent } from '../../../view/components/_common/_base/base-component';
-import { Component, ViewChild, Input, Output, EventEmitter, Renderer2, OnInit, OnChanges } from '@angular/core';
-import { DotcmsConfig } from '../../../api/services/system/dotcms-config';
-import { MessageService } from '../../../api/services/messages-service';
-import { NgForm, FormGroup, FormBuilder, Validators, FormControl } from '@angular/forms';
-import { Observable } from 'rxjs/Observable';
-import { SplitButtonModule, MenuItem, ConfirmationService } from 'primeng/primeng';
-import { SelectItem } from 'primeng/components/common/api';
 import { trigger, state, style, transition, animate } from '@angular/animations';
+import { Component, ViewChild, Input, Output, EventEmitter, Renderer2, OnInit, OnChanges } from '@angular/core';
+import { NgForm, FormGroup, FormBuilder, Validators, FormControl } from '@angular/forms';
+
+import { Observable } from 'rxjs/Observable';
+import { SplitButtonModule, MenuItem, ConfirmationService, SelectItem } from 'primeng/primeng';
+
+import { BaseComponent } from '../../../view/components/_common/_base/base-component';
+import { DotcmsConfig } from 'dotcms-js/dotcms-js';
+import { MessageService } from '../../../api/services/messages-service';
 import { SiteSelectorComponent } from '../../../view/components/_common/site-selector/site-selector.component';
 
 /**

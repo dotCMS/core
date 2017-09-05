@@ -5,6 +5,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { SplitButtonModule, MenuItem } from 'primeng/primeng';
 import { ActionButtonComponent } from './action-button.component';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 describe('ActionButtonComponent', () => {
     let comp: ActionButtonComponent;
@@ -15,6 +16,7 @@ describe('ActionButtonComponent', () => {
         DOTTestBed.configureTestingModule({
             declarations: [ActionButtonComponent],
             imports: [
+                BrowserAnimationsModule,
                 SplitButtonModule,
                 RouterTestingModule.withRoutes([{
                     component: ActionButtonComponent,
@@ -28,7 +30,7 @@ describe('ActionButtonComponent', () => {
     }));
 
     it('should display an action button with opctions', () => {
-        let fakeButtonItems: MenuItem[] = [{
+        const fakeButtonItems: MenuItem[] = [{
             command: () => {},
             icon: 'fa-refresh',
             label: 'Update'

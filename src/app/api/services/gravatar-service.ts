@@ -11,6 +11,6 @@ export class GravatarService {
 
     loadGravatarProfile(hash): Observable<any> {
         return this.jsonp.get(`//www.gravatar.com/${hash}.json?callback=JSONP_CALLBACK`)
-                            .map(data => data.json());
+          .map(data => data.json());
     }
 }

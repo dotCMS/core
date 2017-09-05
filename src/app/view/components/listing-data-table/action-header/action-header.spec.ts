@@ -9,6 +9,7 @@ import { MessageService } from '../../../../api/services/messages-service';
 import { MockMessageService } from '../../../../test/message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { SplitButtonModule } from 'primeng/primeng';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 describe('ActionHeaderComponent', () => {
     let comp: ActionHeaderComponent;
@@ -25,6 +26,7 @@ describe('ActionHeaderComponent', () => {
                 ActionHeaderComponent
             ],
             imports: [
+                BrowserAnimationsModule,
                 ActionButtonModule,
                 RouterTestingModule.withRoutes([{
                     component: ActionHeaderComponent,
@@ -72,7 +74,7 @@ describe('ActionHeaderComponent', () => {
         };
         comp.options = options;
         fixture.detectChanges();
-        let actionButton = de.query(By.css('.action-header__primary-button'));
+        const actionButton = de.query(By.css('.action-header__primary-button'));
         expect(actionButton).not.toBeNull();
     });
 

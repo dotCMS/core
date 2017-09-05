@@ -1,22 +1,23 @@
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, async, fakeAsync, tick } from '@angular/core/testing';
+import { DebugElement, SimpleChange } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
+import { RequestMethod } from '@angular/http';
+import { Router, ActivatedRoute, Params } from '@angular/router';
+
+import { Observable } from 'rxjs/Observable';
+import { SocketFactory } from 'dotcms-js/core/socket-factory.service';
+
 import { ContentTypesFormComponent } from './content-types-form.component';
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { DebugElement, SimpleChange } from '@angular/core';
-import { DotcmsConfig } from '../../../api/services/system/dotcms-config';
+import { DotcmsConfig, LoginService } from 'dotcms-js/dotcms-js';
 import { DropdownModule, OverlayPanelModule, ButtonModule, InputTextModule, TabViewModule } from 'primeng/primeng';
 import { FieldValidationMessageModule } from '../../../view/components/_common/field-validation-message/file-validation-message.module';
-import { LoginService } from '../../../api/services/login-service';
 import { LoginServiceMock } from '../../../test/login-service.mock';
 import { MessageService } from '../../../api/services/messages-service';
 import { MockMessageService } from '../../../test/message-service.mock';
-import { Observable } from 'rxjs/Observable';
-import { ReactiveFormsModule } from '@angular/forms';
-import { RequestMethod } from '@angular/http';
 import { SiteSelectorModule } from '../../../view/components/_common/site-selector/site-selector.module';
-import { SocketFactory } from '../../../api/services/protocol/socket-factory';
-import { Router, ActivatedRoute, Params } from '@angular/router';
 
 describe('ContentTypesFormComponent', () => {
     let comp: ContentTypesFormComponent;
@@ -24,13 +25,13 @@ describe('ContentTypesFormComponent', () => {
     let de: DebugElement;
     let el: HTMLElement;
     let deleteAction: any;
-    let mockRouter = {
+    const mockRouter = {
         navigate: jasmine.createSpy('navigate')
     };
 
     beforeEach(async(() => {
 
-        let messageServiceMock = new MockMessageService({
+        const messageServiceMock = new MockMessageService({
             'contenttypes.form.field.detail.page': 'Detail Page',
             'contenttypes.form.field.expire.date.field': 'Expire Date Field',
             'contenttypes.form.field.host_folder.label': 'Host or Folder',
@@ -75,14 +76,14 @@ describe('ContentTypesFormComponent', () => {
         de = fixture.debugElement.query(By.css('#content-type-form-form'));
         el = de.nativeElement;
 
-        let changes: SimpleChange = new SimpleChange(null, null, true);
+        const changes: SimpleChange = new SimpleChange(null, null, true);
         comp.ngOnChanges({
             data: changes
         });
     }));
 
     it('should show workflow if the license its diferent to comunity(true)', async(() => {
-        let dotcmsConfig = fixture.debugElement.injector.get(DotcmsConfig);
+        const dotcmsConfig = fixture.debugElement.injector.get(DotcmsConfig);
 
         spyOn(dotcmsConfig, 'getConfig').and.returnValue(Observable.of({
             license: {isCommunity: true}
@@ -91,7 +92,7 @@ describe('ContentTypesFormComponent', () => {
         fixture.detectChanges();
         fixture.whenStable().then(() => {
             fixture.detectChanges();
-            let workflowMsg = de.query(By.css('#field-workflow-hint'));
+            const workflowMsg = de.query(By.css('#field-workflow-hint'));
             expect(workflowMsg).not.toBeNull();
             expect(comp.form.get('workflow').disabled).toBeTruthy();
 
@@ -99,7 +100,7 @@ describe('ContentTypesFormComponent', () => {
     }));
 
     it('should show workflow if the license its diferent to comunity(false)', async(() => {
-        let dotcmsConfig = fixture.debugElement.injector.get(DotcmsConfig);
+        const dotcmsConfig = fixture.debugElement.injector.get(DotcmsConfig);
 
         spyOn(dotcmsConfig, 'getConfig').and.returnValue(Observable.of({
             license: {isCommunity: false}
@@ -108,7 +109,7 @@ describe('ContentTypesFormComponent', () => {
         fixture.detectChanges();
         fixture.whenStable().then(() => {
             fixture.detectChanges();
-            let workflowMsg = de.query(By.css('#field-workflow-hint'));
+            const workflowMsg = de.query(By.css('#field-workflow-hint'));
             expect(workflowMsg).toBeNull();
             expect(comp.form.get('workflow').disabled).toBeFalsy();
 
@@ -116,7 +117,7 @@ describe('ContentTypesFormComponent', () => {
     }));
 
     it('should have a button to expand/collapse the form', () => {
-        let expandFormButton: DebugElement = fixture.debugElement.query(By.css('#custom-type-form-expand-button'));
+        const expandFormButton: DebugElement = fixture.debugElement.query(By.css('#custom-type-form-expand-button'));
         expect(expandFormButton).toBeDefined();
     });
 
@@ -136,7 +137,7 @@ describe('ContentTypesFormComponent', () => {
             data: new SimpleChange(null, comp.data, true)
         });
         fixture.detectChanges();
-        let expandFormEditButton: DebugElement = fixture
+        const expandFormEditButton: DebugElement = fixture
             .debugElement.query(By.css('.content-type__form-actions p-splitButton .ui-menu-list .ui-menuitem:first-child a'));
 
         expandFormEditButton.nativeNode.click();
@@ -160,7 +161,7 @@ describe('ContentTypesFormComponent', () => {
         comp.onDelete.subscribe(() => this.action = true);
         fixture.detectChanges();
 
-        let expandFormDeleteButton: DebugElement = fixture
+        const expandFormDeleteButton: DebugElement = fixture
             .debugElement.query(By.css('.content-type__form-actions p-splitButton .ui-menu-list .ui-menuitem:nth-child(2) a'));
 
         expandFormDeleteButton.nativeNode.click();
@@ -182,7 +183,7 @@ describe('ContentTypesFormComponent', () => {
             data: new SimpleChange(null, comp.data, true)
         });
         fixture.detectChanges();
-        let expandFormButton: DebugElement = fixture
+        const expandFormButton: DebugElement = fixture
             .debugElement.query(By.css('.content-type__form-actions p-splitButton .ui-menu-list .ui-menuitem:first-child a'));
         expandFormButton.nativeNode.click();
         expect(comp.formState).toBe('expanded');
@@ -191,7 +192,7 @@ describe('ContentTypesFormComponent', () => {
     });
 
     it('should toggle formState when the user focus on the name field', async(() => {
-        let nameDebugEl: DebugElement = fixture.debugElement.query(By.css('#content-type-form-name'));
+        const nameDebugEl: DebugElement = fixture.debugElement.query(By.css('#content-type-form-name'));
         spyOn(nameDebugEl.nativeElement, 'focus');
         nameDebugEl.nativeNode.focus();
         fixture.detectChanges();
@@ -212,7 +213,7 @@ describe('ContentTypesFormComponent', () => {
         expect(comp.form.get('detailPage')).toBeNull();
         expect(comp.form.get('urlMapPattern')).toBeNull();
 
-        let fields = [
+        const fields = [
             '#content-type-form-description',
             '#content-type-form-host',
             '#content-type-form-name',
@@ -239,7 +240,7 @@ describe('ContentTypesFormComponent', () => {
         expect(comp.form.get('detailPage')).not.toBeNull();
         expect(comp.form.get('urlMapPattern')).not.toBeNull();
 
-        let fields = [
+        const fields = [
             '#content-type-form-description',
             '#content-type-form-detail-page',
             '#content-type-form-host',
@@ -275,7 +276,7 @@ describe('ContentTypesFormComponent', () => {
         expect(comp.form.get('publishDateVar')).not.toBeNull();
         expect(comp.form.get('expireDateVar')).not.toBeNull();
 
-        let fields = [
+        const fields = [
             '#content-type-form-description',
             '#content-type-form-detail-page',
             '#content-type-form-host',
@@ -341,7 +342,7 @@ describe('ContentTypesFormComponent', () => {
         spyOn(comp, 'submitContent').and.callThrough();
 
         comp.onSubmit.subscribe(res => data = res);
-        let submitFormButton: DebugElement = fixture.debugElement.query(By.css('#content-type-form-submit'));
+        const submitFormButton: DebugElement = fixture.debugElement.query(By.css('#content-type-form-submit'));
         submitFormButton.nativeElement.click();
 
         expect(comp.submitContent).toHaveBeenCalledTimes(1);
@@ -360,7 +361,7 @@ describe('ContentTypesFormComponent', () => {
 
         comp.form.controls.name.setValue('A content type name');
 
-        let submitFormButton: DebugElement = fixture.debugElement.query(By.css('#content-type-form-submit'));
+        const submitFormButton: DebugElement = fixture.debugElement.query(By.css('#content-type-form-submit'));
         submitFormButton.nativeElement.click();
 
         expect(comp.submitContent).toHaveBeenCalledTimes(1);
@@ -377,16 +378,16 @@ describe('ContentTypesFormComponent', () => {
     xit('should have full form collapsed by default', () => {
         // TODO: Needs to figute it out why by default the offsetHeight it's not 0
         fixture.detectChanges();
-        let fullForm: DebugElement = fixture.debugElement.query(By.css('#content-type-form-full'));
-        let fullFormEl: HTMLElement = fullForm.nativeElement;
+        const fullForm: DebugElement = fixture.debugElement.query(By.css('#content-type-form-full'));
+        const fullFormEl: HTMLElement = fullForm.nativeElement;
         expect(fullFormEl.offsetHeight).toBe(0);
     });
 
     xit('should expand full form action button click', () => {
         // TODO: Needs to fix previous test
-        let fullForm: DebugElement = fixture.debugElement.query(By.css('#content-type-form-full'));
-        let fullFormEl: HTMLElement = fullForm.nativeElement;
-        let expandFormButton: DebugElement = fixture.debugElement.query(By.css('#content-type-form-expand-button'));
+        const fullForm: DebugElement = fixture.debugElement.query(By.css('#content-type-form-full'));
+        const fullFormEl: HTMLElement = fullForm.nativeElement;
+        const expandFormButton: DebugElement = fixture.debugElement.query(By.css('#content-type-form-expand-button'));
         expandFormButton.triggerEventHandler('click', null);
         fixture.detectChanges();
         expect(fullFormEl.offsetHeight).toBeGreaterThan(0);

@@ -1,4 +1,4 @@
-import { Site } from '../api/services/site-service';
+import { Site } from 'dotcms-js/dotcms-js';
 import { Observable } from 'rxjs/Observable';
 
 export class SiteServiceMock {

@@ -1,15 +1,18 @@
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, async } from '@angular/core/testing';
-import { DebugElement, SimpleChange } from '@angular/core';
+import { DebugElement } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { LoginAsComponent } from './login-as';
 import { MockMessageService } from '../../../test/message-service.mock';
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { SEARCHABLE_NGFACES_MODULES, SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
+import {
+    SEARCHABLE_NGFACES_MODULES,
+    SearchableDropDownModule
+} from '../_common/searchable-dropdown/searchable-dropdown.module';
 import { MessageService } from '../../../api/services/messages-service';
-import { LoginService, User } from '../../../api/services/login-service';
+import { LoginService, User } from 'dotcms-js/dotcms-js';
 import { PaginatorService } from '../../../api/services/paginator';
-import { Router, ActivatedRoute } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs/Rx';
 import { InputTextModule } from 'primeng/primeng';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -17,120 +20,126 @@ import { DotRouterService } from '../../../api/services/dot-router-service';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 describe('LoginAsComponent', () => {
+    let comp: LoginAsComponent;
+    let fixture: ComponentFixture<LoginAsComponent>;
+    let de: DebugElement;
+    let el: HTMLElement;
 
-  const NROWS = 6;
+    beforeEach(
+        async(() => {
+            const messageServiceMock = new MockMessageService({
+                Change: 'Change',
+                cancel: 'cancel',
+                'login-as': 'login-as',
+                'loginas.select.loginas.user': 'loginas.select.loginas.user',
+                password: 'password'
+            });
 
-  let comp: LoginAsComponent;
-  let fixture: ComponentFixture<LoginAsComponent>;
-  let de: DebugElement;
-  let el: HTMLElement;
-  let data = [];
-  let rows: number;
-  let pageLinkSize: number;
+            DOTTestBed.configureTestingModule({
+                declarations: [LoginAsComponent],
+                imports: [
+                    ...SEARCHABLE_NGFACES_MODULES,
+                    BrowserAnimationsModule,
+                    InputTextModule,
+                    ReactiveFormsModule,
+                    SearchableDropDownModule
+                ],
+                providers: [
+                    { provide: MessageService, useValue: messageServiceMock },
+                    { provide: LoginService, useValue: {} },
+                    { provide: DotRouterService, useValue: {} },
+                    {
+                        provide: ActivatedRoute,
+                        useValue: { params: Observable.from([{ id: '1234' }]) }
+                    },
+                    PaginatorService
+                ]
+            });
 
-  beforeEach(async(() => {
+            fixture = DOTTestBed.createComponent(LoginAsComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement;
+            el = de.nativeElement;
+        })
+    );
 
-    let messageServiceMock = new MockMessageService({
-        'Change': 'Change',
-        'cancel': 'cancel',
-        'login-as': 'login-as',
-        'loginas.select.loginas.user': 'loginas.select.loginas.user',
-        'password': 'password'
+    it('Should load the first page', () => {
+        const users: User[] = [
+            {
+                emailAddress: 'a@a.com',
+                firstName: 'user_first_name',
+                lastName: 'user_lastname',
+                loggedInDate: 1,
+                name: 'user 1',
+                userId: '1'
+            }
+        ];
+        const paginatorService = fixture.debugElement.injector.get(PaginatorService);
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of(users));
+
+        comp.ngOnInit();
+        fixture.detectChanges();
+
+        expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+        expect(paginatorService.url).toEqual('v2/users/loginAsData');
+        expect(paginatorService.filter).toEqual('');
+        expect(comp.userCurrentPage).toEqual(users);
     });
 
-    let mockRouter = {
-        navigate: jasmine.createSpy('navigate')
-    };
+    it(
+        'Should change page',
+        fakeAsync(() => {
+            const users: User[] = [
+                {
+                    emailAddress: 'a@a.com',
+                    firstName: 'user_first_name',
+                    lastName: 'user_lastname',
+                    loggedInDate: 1,
+                    name: 'user 1',
+                    userId: '1'
+                }
+            ];
 
-    DOTTestBed.configureTestingModule({
-        declarations: [ LoginAsComponent ],
-        imports: [
-            ...SEARCHABLE_NGFACES_MODULES,
-            BrowserAnimationsModule,
-            InputTextModule,
-            ReactiveFormsModule,
-            SearchableDropDownModule
-        ],
-        providers: [
-            { provide: MessageService, useValue: messageServiceMock },
-            { provide: LoginService, useValue: {} },
-            { provide: DotRouterService, useValue: {} },
-            { provide: ActivatedRoute, useValue: {'params': Observable.from([{ id: '1234' }])} },
-            PaginatorService
-        ]
-    });
+            const paginatorService = fixture.debugElement.injector.get(PaginatorService);
+            spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of(users));
 
-    fixture = DOTTestBed.createComponent(LoginAsComponent);
-    comp = fixture.componentInstance;
-    de = fixture.debugElement;
-    el = de.nativeElement;
-  }));
+            const searchableDropdown = de.query(By.css('searchable-dropdown'));
+            searchableDropdown.componentInstance.pageChange.emit({
+                filter: 'filter',
+                first: 1
+            });
 
-  it('Should load the first page', (() => {
-    let users: User[] = [{
-        emailAddress: 'a@a.com',
-        firstName: 'user_first_name',
-        lastName: 'user_lastname',
-        loggedInDate: 1,
-        name: 'user 1',
-        userId: '1'
-    }];
-    let paginatorService = fixture.debugElement.injector.get(PaginatorService);
-    spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of(users));
+            tick();
 
-    comp.ngOnInit();
-    fixture.detectChanges();
+            expect(paginatorService.getWithOffset).toHaveBeenCalledWith(1);
+            expect(paginatorService.filter).toEqual('filter');
+        })
+    );
 
-    expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
-    expect(paginatorService.url).toEqual('v2/users/loginAsData');
-    expect(paginatorService.filter).toEqual('');
-    expect(comp.userCurrentPage).toEqual(users);
-  }));
+    it(
+        'Should change filter',
+        fakeAsync(() => {
+            const users: User[] = [
+                {
+                    emailAddress: 'a@a.com',
+                    firstName: 'user_first_name',
+                    lastName: 'user_lastname',
+                    loggedInDate: 1,
+                    name: 'user 1',
+                    userId: '1'
+                }
+            ];
 
-  it('Should change page', fakeAsync(() => {
-    let users: User[] = [{
-        emailAddress: 'a@a.com',
-        firstName: 'user_first_name',
-        lastName: 'user_lastname',
-        loggedInDate: 1,
-        name: 'user 1',
-        userId: '1'
-    }];
+            const paginatorService = fixture.debugElement.injector.get(PaginatorService);
+            spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of(users));
 
-    let paginatorService = fixture.debugElement.injector.get(PaginatorService);
-    spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of(users));
+            const searchableDropdown = de.query(By.css('searchable-dropdown'));
+            searchableDropdown.componentInstance.filterChange.emit('new filter');
 
-    let searchableDropdown = de.query(By.css('searchable-dropdown'));
-    searchableDropdown.componentInstance.pageChange.emit({
-        filter: 'filter',
-        first: 1
-    });
+            tick();
 
-    tick();
-
-    expect(paginatorService.getWithOffset).toHaveBeenCalledWith(1);
-    expect(paginatorService.filter).toEqual('filter');
-  }));
-
-  it('Should change filter', fakeAsync(() => {
-    let users: User[] = [{
-        emailAddress: 'a@a.com',
-        firstName: 'user_first_name',
-        lastName: 'user_lastname',
-        loggedInDate: 1,
-        name: 'user 1',
-        userId: '1'
-    }];
-
-    let paginatorService = fixture.debugElement.injector.get(PaginatorService);
-    spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of(users));
-
-    let searchableDropdown = de.query(By.css('searchable-dropdown'));
-    searchableDropdown.componentInstance.filterChange.emit('new filter');
-
-    tick();
-
-    expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
-    expect(paginatorService.filter).toEqual('new filter');
-  }));
+            expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+            expect(paginatorService.filter).toEqual('new filter');
+        })
+    );
 });

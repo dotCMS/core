@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, Input } from '@angular/core';
 
 @Component({
     selector: 'icon-button-tooltip',
@@ -12,7 +12,6 @@ import { Component, OnInit, Input } from '@angular/core';
 export class IconButtonTooltipComponent {
     @Input() icon: string;
     @Input() tooltipText: string;
-    @Input() tooltipPosition = 'bottom';
 
     constructor() { }
 }

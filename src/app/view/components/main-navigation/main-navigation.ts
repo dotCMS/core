@@ -1,5 +1,5 @@
-import {Component, ViewEncapsulation} from '@angular/core';
-import {RoutingService, Menu} from '../../../api/services/routing-service';
+import { Component, ViewEncapsulation } from '@angular/core';
+import { RoutingService, Menu } from '../../../api/services/routing-service';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -7,10 +7,9 @@ import {RoutingService, Menu} from '../../../api/services/routing-service';
     providers: [],
     selector: 'dot-main-nav',
     styleUrls: ['./main-navigation.scss'],
-    templateUrl: 'main-navigation.html',
+    templateUrl: 'main-navigation.html'
 })
 export class MainNavigation {
-
     private menuItems: Menu[];
 
     private menuItemIdActive: string;
@@ -45,6 +44,8 @@ export class MainNavigation {
     }
 
     private getMenuSelected(menuItemSelectedId: string): Menu {
-        return this.menuItems.filter(menu => menu.menuItems.filter( menuItem => menuItem.id === menuItemSelectedId).length > 0)[0];
+        return this.menuItems.filter(
+            menu => menu.menuItems.filter(menuItem => menuItem.id === menuItemSelectedId).length > 0
+        )[0];
     }
 }

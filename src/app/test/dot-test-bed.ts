@@ -3,15 +3,17 @@ import { Logger } from 'angular2-logger/core';
 import { MockBackend } from '@angular/http/testing';
 import { TestBed, TestModuleMetadata, ComponentFixture } from '@angular/core/testing';
 import { Type, Provider, Injector, ReflectiveInjector, Component, LOCALE_ID } from '@angular/core';
-import { ApiRoot } from '../api/persistence/ApiRoot';
-import { BrowserUtil } from '../api/util/browser-util';
-import { Config } from '../api/util/config';
-import { CoreWebService } from '../api/services/core-web-service';
-import { DotcmsConfig } from '../api/services/system/dotcms-config';
-import { DotcmsEventsService } from '../api/services/dotcms-events-service';
-import { LoggerService } from '../api/services/logger.service';
-import { StringUtils } from '../api/util/string.utils';
-import { UserModel } from '../api/auth/UserModel';
+import {
+    ApiRoot,
+    BrowserUtil,
+    Config,
+    CoreWebService,
+    DotcmsConfig,
+    DotcmsEventsService,
+    LoggerService,
+    StringUtils,
+    UserModel
+} from 'dotcms-js/dotcms-js';
 import { ConfirmDialogModule } from 'primeng/components/confirmdialog/confirmdialog';
 import { ConfirmationService } from 'primeng/primeng';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -35,7 +37,7 @@ export class DOTTestBed {
         providers: [
             { provide: ConnectionBackend, useClass: MockBackend },
             { provide: RequestOptions, useClass: BaseRequestOptions },
-            {provide: LOCALE_ID, useValue: {}},
+            { provide: LOCALE_ID, useValue: {} },
             ApiRoot,
             BrowserUtil,
             Config,

@@ -1,9 +1,14 @@
-import {BaseComponent} from '../_common/_base/base-component';
-import {Component, Output, EventEmitter, Input, ViewEncapsulation, ViewChild} from '@angular/core';
-import { LoginService, User } from '../../../api/services/login-service';
-import {MessageService} from '../../../api/services/messages-service';
-import {DotRouterService} from '../../../api/services/dot-router-service';
-import {AutoComplete} from 'primeng/primeng';
+import { BaseComponent } from '../_common/_base/base-component';
+import {
+    Component,
+    Output,
+    EventEmitter,
+    Input,
+    ViewEncapsulation
+} from '@angular/core';
+import { LoginService, User } from 'dotcms-js/dotcms-js';
+import { MessageService } from '../../../api/services/messages-service';
+import { DotRouterService } from '../../../api/services/dot-router-service';
 import { PaginatorService } from '../../../api/services/paginator';
 import { FormGroup, FormBuilder, FormControl } from '@angular/forms';
 
@@ -19,10 +24,7 @@ export class LoginAsComponent extends BaseComponent {
     @Input() visible: boolean;
 
     userCurrentPage: User[];
-
     private needPassword = false;
-    private filteredLoginAsUsersResults: Array<any>;
-
     private form: FormGroup;
 
     constructor(
@@ -30,9 +32,12 @@ export class LoginAsComponent extends BaseComponent {
         private router: DotRouterService,
         messageService: MessageService,
         public paginationService: PaginatorService,
-        private fb: FormBuilder,
+        private fb: FormBuilder
     ) {
-        super(['Change', 'cancel', 'password', 'loginas.select.loginas.user', 'login-as'], messageService);
+        super(
+            ['Change', 'cancel', 'password', 'loginas.select.loginas.user', 'login-as'],
+            messageService
+        );
     }
 
     ngOnInit(): void {
@@ -58,23 +63,25 @@ export class LoginAsComponent extends BaseComponent {
      * @param options - The parameters required by the back-end service.
      */
     doLoginAs(): void {
-        let password: string = this.form.value.password;
-        let user: User = this.form.value.loginAsUser;
+        const password: string = this.form.value.password;
+        const user: User = this.form.value.loginAsUser;
 
-        this.loginService.loginAs({user: user, password: password})
-            .subscribe(data => {
+        this.loginService.loginAs({ user: user, password: password }).subscribe(
+            data => {
                 if (data) {
                     this.router.goToMain();
                     this.close();
                 }
                 // TODO: Replace the alert below with a modal error message.
-            }, response => {
+            },
+            response => {
                 if (response.entity) {
                     alert(response.errorsMessages);
                 } else {
                     alert(response);
                 }
-            });
+            }
+        );
     }
 
     userSelectedHandler(user: User): void {
@@ -87,9 +94,9 @@ export class LoginAsComponent extends BaseComponent {
      * @param {number} [page=1]
      * @memberof SiteSelectorComponent
      */
-    getUsersList(filter = '',  offset = 0): void {
+    getUsersList(filter = '', offset = 0): void {
         this.paginationService.filter = filter;
-        this.paginationService.getWithOffset(offset).subscribe( items => {
+        this.paginationService.getWithOffset(offset).subscribe(items => {
             // items.splice(0) is used to return a new object and trigger the change detection in angular
             this.userCurrentPage = items.splice(0);
         });

@@ -1,7 +1,7 @@
-import {Injectable} from '@angular/core';
-import {CoreWebService} from '../services/core-web-service';
-import {RequestMethod} from '@angular/http';
-import {Observable} from 'rxjs/Rx';
+import { Injectable } from '@angular/core';
+import { CoreWebService } from 'dotcms-js/dotcms-js';
+import { RequestMethod } from '@angular/http';
+import { Observable } from 'rxjs/Rx';
 
 @Injectable()
 export class NotificationsService {
@@ -19,7 +19,7 @@ export class NotificationsService {
     getLastNotifications(): Observable<any> {
         return this.coreWebService.request({
             method: RequestMethod.Get,
-        url: this.urls.getLastNotificationsUrl
+            url: this.urls.getLastNotificationsUrl
         });
     }
 
@@ -30,19 +30,18 @@ export class NotificationsService {
         });
     }
 
-    dismissNotifications(items: Object): Observable<any>  {
+    dismissNotifications(items: Object): Observable<any> {
         return this.coreWebService.request({
             body: items,
             method: RequestMethod.Put,
-            url: this.urls.dismissNotificationsUrl,
+            url: this.urls.dismissNotificationsUrl
         });
     }
 
-    markAllAsRead(): Observable<any>  {
+    markAllAsRead(): Observable<any> {
         return this.coreWebService.request({
             method: RequestMethod.Put,
-            url: this.urls.markAsReadNotificationsUrl,
+            url: this.urls.markAsReadNotificationsUrl
         });
     }
-
 }

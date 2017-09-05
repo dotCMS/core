@@ -1,14 +1,13 @@
 import { ActionHeaderModule } from './action-header/action-header.module';
 import { CommonModule } from '@angular/common';
 import { CrudService } from '../../../api/services/crud/crud.service';
-import { DotcmsConfig } from '../../../api/services/system/dotcms-config';
+import { DotcmsConfig, LoggerService } from 'dotcms-js/dotcms-js';
 import { FormsModule } from '@angular/forms';
 import { FormatDateService } from '../../../api/services/format-date-service';
 import { ListingDataTableComponent } from './listing-data-table.component';
-import { LoggerService } from '../../../api/services/logger.service';
 import { MessageService } from '../../../api/services/messages-service';
 import { NgModule } from '@angular/core';
-import { ConfirmDialogModule, DataTableModule, InputTextModule, SplitButtonModule} from 'primeng/primeng';
+import { DataTableModule, InputTextModule } from 'primeng/primeng';
 
 @NgModule({
     declarations: [

@@ -1,9 +1,4 @@
-import {
-    Directive,
-    ElementRef,
-    HostListener,
-    Renderer
-} from '@angular/core';
+import { Directive, ElementRef, HostListener, Renderer } from '@angular/core';
 import { ColorUtil } from '../../../api/util/ColorUtil';
 
 /**
@@ -31,14 +26,18 @@ export class DotRippleEffectDirective {
     private rippleSize: RippleSize;
     private hostNativeElement: HTMLElement;
 
-    constructor(private host: ElementRef, private renderer: Renderer, private colorUtil: ColorUtil) {
+    constructor(
+        private host: ElementRef,
+        private renderer: Renderer,
+        private colorUtil: ColorUtil
+    ) {
         this.hostNativeElement = host.nativeElement;
     }
 
     @HostListener('click', ['$event'])
     onClick(event: MouseEvent): void {
         if (!this.rippleElement) {
-             this.createRippleElement();
+            this.createRippleElement();
         }
 
         this.setRipplePosition(event);
@@ -62,27 +61,31 @@ export class DotRippleEffectDirective {
     }
 
     private getRippleColor(): string {
-        let hostBackgroundColor = window.getComputedStyle(this.hostNativeElement, null).backgroundColor;
-        let isBright = this.colorUtil.isBrightness(hostBackgroundColor);
+        const hostBackgroundColor = window.getComputedStyle(this.hostNativeElement, null)
+            .backgroundColor;
+        const isBright = this.colorUtil.isBrightness(hostBackgroundColor);
 
-        return isBright ? DotRippleEffectDirective.WHITE_COLOR : DotRippleEffectDirective.EFFECT_DEFAULT_COLOR;
+        return isBright
+            ? DotRippleEffectDirective.WHITE_COLOR
+            : DotRippleEffectDirective.EFFECT_DEFAULT_COLOR;
     }
 
     private getRipplePosition(event: MouseEvent): RipplePosition {
-        let btnOffset = this.hostNativeElement.getBoundingClientRect();
-        let xPos = event.pageX - btnOffset.left;
-        let yPos = event.pageY - btnOffset.top;
+        const btnOffset = this.hostNativeElement.getBoundingClientRect();
+        const xPos = event.pageX - btnOffset.left;
+        const yPos = event.pageY - btnOffset.top;
 
         return {
-            x: (xPos - (this.rippleSize.width / 2)),
-            y: (yPos - (this.rippleSize.height / 2))
+            x: xPos - this.rippleSize.width / 2,
+            y: yPos - this.rippleSize.height / 2
         };
     }
 
     private getRippleSize(): RippleSize {
-        let btnOffset = this.host.nativeElement.getBoundingClientRect();
-        let rippleSize = Math.sqrt(btnOffset.width * btnOffset.width +
-          btnOffset.height * btnOffset.height) * 2 + 2;
+        const btnOffset = this.host.nativeElement.getBoundingClientRect();
+        const rippleSize =
+            Math.sqrt(btnOffset.width * btnOffset.width + btnOffset.height * btnOffset.height) * 2 +
+            2;
 
         return {
             height: rippleSize,
@@ -91,9 +94,9 @@ export class DotRippleEffectDirective {
     }
 
     private setRipplePosition(event: MouseEvent): void {
-        let ripplePosition: RipplePosition = this.getRipplePosition(event);
+        const ripplePosition: RipplePosition = this.getRipplePosition(event);
         this.renderer.setElementStyle(this.rippleElement, 'top', `${ripplePosition.y}px`);
-        this.renderer.setElementStyle(this.rippleElement, 'left',  `${ripplePosition.x}px`);
+        this.renderer.setElementStyle(this.rippleElement, 'left', `${ripplePosition.x}px`);
     }
 }
 

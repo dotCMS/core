@@ -1,11 +1,11 @@
-import {Directive, ElementRef} from '@angular/core';
-import {MessageService} from '../../api/services/messages-service';
+import {Directive, ElementRef, OnDestroy, OnInit} from '@angular/core';
+import { MessageService } from '../../api/services/messages-service';
 
 @Directive({
     host: {},
-    selector: '[messagekey]',
+    selector: '[messagekey]'
 })
-export class MessageKeyDirective {
+export class MessageKeyDirective implements OnInit, OnDestroy{
     private key: string;
     private messageMapSubscription;
 

@@ -6,17 +6,11 @@ import {
     Output,
     EventEmitter,
     Input,
-    SimpleChanges
 } from '@angular/core';
-import { AutoComplete } from 'primeng/primeng';
-import { BaseComponent } from '../_base/base-component';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { DotcmsConfig } from '../../../../api/services/system/dotcms-config';
-import { IframeOverlayService } from '../../../../api/services/iframe-overlay-service';
+import { Site, SiteService } from 'dotcms-js/dotcms-js';
 import { PaginatorService } from '../../../../api/services/paginator';
 import { SearchableDropdownComponent } from '../searchable-dropdown/component';
-import { Site } from '../../../../api/services/site-service';
-import { SiteService } from '../../../../api/services/site-service';
 import { Observable } from 'rxjs/Observable';
 
 /**
@@ -55,17 +49,9 @@ export class SiteSelectorComponent implements ControlValueAccessor {
     totalRecords: number;
     sitesCurrentPage: Site[];
 
-    private paginatorLinks: number;
-    private paginationQuery = '';
-    private paginationPerPage: number;
-    private paginationPage = 1;
-    private filteredSitesResults: Array<any>;
-
     propagateChange = (_: any) => {};
 
     constructor(
-        private config: DotcmsConfig,
-        private iframeOverlayService: IframeOverlayService,
         private siteService: SiteService,
         public paginationService: PaginatorService
     ) {}

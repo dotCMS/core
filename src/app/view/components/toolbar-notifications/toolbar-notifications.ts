@@ -1,11 +1,10 @@
 import { Component, ViewEncapsulation, ElementRef, ViewChild } from '@angular/core';
 
 import { BaseComponent } from '../_common/_base/base-component';
-import { DotcmsEventsService } from '../../../api/services/dotcms-events-service';
+import { DotcmsEventsService, LoginService } from 'dotcms-js/dotcms-js';
 import { DropdownComponent } from '../_common/dropdown-component/dropdown-component';
 import { INotification } from '../../../shared/models/notifications';
 import { IframeOverlayService } from '../../../api/services/iframe-overlay-service';
-import { LoginService } from '../../../api/services/login-service';
 import { MessageService } from '../../../api/services/messages-service';
 import { NotificationsService } from '../../../api/services/notifications-service';
 

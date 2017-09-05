@@ -1,11 +1,10 @@
 import _ from 'lodash';
-import {CoreWebService} from './core-web-service';
-import {FormatDateService} from './format-date-service';
-import {Injectable} from '@angular/core';
-import {LoginService, User} from './login-service';
-import {Observable} from 'rxjs/Observable';
-import {RequestMethod} from '@angular/http';
-import {Subject} from 'rxjs/Subject';
+import { CoreWebService, LoginService, User } from 'dotcms-js/dotcms-js';
+import { FormatDateService } from './format-date-service';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs/Observable';
+import { RequestMethod } from '@angular/http';
+import { Subject } from 'rxjs/Subject';
 
 @Injectable()
 export class MessageService {
@@ -16,9 +15,11 @@ export class MessageService {
     private messageKeys: String[];
     private messagesLoaded: any;
 
-    constructor(loginService: LoginService, private formatDateService: FormatDateService,
-                private coreWebService: CoreWebService) {
-
+    constructor(
+        loginService: LoginService,
+        private formatDateService: FormatDateService,
+        private coreWebService: CoreWebService
+    ) {
         // There are tons of components asking for messages at the same time, when messages are not loaded yet
         // instead of doing tons of request, we acumulate the keys every component is asking for and then do one
         // request with all of them. More info: https://lodash.com/docs/4.15.0#debounce
@@ -30,7 +31,7 @@ export class MessageService {
         this.messagesLoaded = {};
         this.setRelativeDateMessages();
 
-        loginService.auth$.pluck('user').subscribe( (user: User) => {
+        loginService.auth$.pluck('user').subscribe((user: User) => {
             if (user && this.lang !== user.languageId) {
                 this.messagesLoaded = {};
                 this.messageKeys = [];
@@ -60,7 +61,7 @@ export class MessageService {
             } else {
                 this.messageKeys = _.concat(this.messageKeys, _.difference(keys, this.messageKeys));
                 this.doMessageLoad();
-                let messageMapSub = this.messageMap$.subscribe(res => {
+                const messageMapSub = this.messageMap$.subscribe(res => {
                     observer.next(_.pick(res, keys));
                     messageMapSub.unsubscribe();
                 });
@@ -68,8 +69,8 @@ export class MessageService {
         });
     }
 
-    private setRelativeDateMessages(): string|void {
-        let relativeDateKeys = [
+    private setRelativeDateMessages(): string | void {
+        const relativeDateKeys = [
             'relativetime.future',
             'relativetime.past',
             'relativetime.s',
@@ -85,7 +86,7 @@ export class MessageService {
             'relativetime.yy'
         ];
         this.getMessages(relativeDateKeys).subscribe(res => {
-            let relativeDateMessages = _.mapKeys(res, (value, key: string) => {
+            const relativeDateMessages = _.mapKeys(res, (value, key: string) => {
                 return key.replace('relativetime.', '');
             });
             this.formatDateService.setLang(this.lang.split('_')[0], relativeDateMessages);
@@ -96,16 +97,19 @@ export class MessageService {
      * Do the request to the server to get messages
      */
     private requestMessages(): void {
-        this.coreWebService.requestView({
-            body: {
-                messagesKey: this.messageKeys
-            },
-            method: RequestMethod.Post,
-            url: this.i18nUrl,
-        }).pluck('i18nMessagesMap').subscribe(messages => {
-            this.messageKeys = [];
-            this.messagesLoaded = Object.assign({}, this.messagesLoaded, messages);
-            this._messageMap$.next(this.messagesLoaded);
-        });
+        this.coreWebService
+            .requestView({
+                body: {
+                    messagesKey: this.messageKeys
+                },
+                method: RequestMethod.Post,
+                url: this.i18nUrl
+            })
+            .pluck('i18nMessagesMap')
+            .subscribe(messages => {
+                this.messageKeys = [];
+                this.messagesLoaded = Object.assign({}, this.messagesLoaded, messages);
+                this._messageMap$.next(this.messagesLoaded);
+            });
     }
 }

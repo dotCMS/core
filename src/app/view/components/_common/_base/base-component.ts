@@ -1,15 +1,13 @@
 
-import {Component, ViewEncapsulation} from '@angular/core';
+import {Component, OnDestroy, ViewEncapsulation} from '@angular/core';
 import {MessageService} from '../../../../api/services/messages-service';
-import { Observable } from 'rxjs/Observable';
-import { Subject } from 'rxjs/Subject';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
     selector: 'base'
 })
 
-export class BaseComponent {
+export class BaseComponent implements OnDestroy {
     public messageMapSubscription;
     public i18nMessages = {};
 

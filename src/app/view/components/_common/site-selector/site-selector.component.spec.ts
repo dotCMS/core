@@ -16,9 +16,8 @@ import { MessageService } from '../../../../api/services/messages-service';
 import { MockMessageService } from '../../../../test/message-service.mock';
 import { SiteServiceMock } from '../../../../test/site-service.mock';
 import { IframeOverlayService } from '../../../../api/services/iframe-overlay-service';
-import { SiteService } from '../../../../api/services/site-service';
+import { SiteService, DotcmsConfig } from 'dotcms-js/dotcms-js';
 import { Observable } from 'rxjs/Observable';
-import { DotcmsConfig } from '../../../../api/services/system/dotcms-config';
 import { SearchableDropdownComponent } from '../searchable-dropdown/component/searchable-dropdown.component';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { PaginatorService } from '../../../../api/services/paginator';
@@ -88,15 +87,15 @@ describe('Site Selector Component', () => {
             name: 'Site 1'
         };
 
-        let site2 = {
+        const site2 = {
             identifier: 2,
             name: 'Site 2'
         };
 
-        let siteService = de.injector.get(SiteService);
+        const siteService = de.injector.get(SiteService);
         spyOn(siteService, 'switchSite$').and.returnValue(Observable.of(site1));
 
-        let paginatorService = de.injector.get(PaginatorService);
+        const paginatorService = de.injector.get(PaginatorService);
         spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([site1, site2]));
 
         fixture.detectChanges();
@@ -105,18 +104,18 @@ describe('Site Selector Component', () => {
     });
 
     it('should call refresh if a event happen', async(() => {
-        let site1 = {
+        const site1 = {
             identifier: 1,
             name: 'Site 1'
         };
 
-        let site2 = {
+        const site2 = {
             identifier: 2,
             name: 'Site 2'
         };
 
-        let siteService = de.injector.get(SiteService);
-        let spy = spyOn(siteService, 'refreshSites$').and.returnValue(
+        const siteService = de.injector.get(SiteService);
+        const spy = spyOn(siteService, 'refreshSites$').and.returnValue(
             Observable.of([site1, site2])
         );
 
@@ -126,19 +125,19 @@ describe('Site Selector Component', () => {
     }));
 
     it('should change Page', fakeAsync(() => {
-        let filter = 'filter';
-        let page = 1;
+        const filter = 'filter';
+        const page = 1;
 
-        let paginatorService = de.injector.get(PaginatorService);
+        const paginatorService = de.injector.get(PaginatorService);
         paginatorService.totalRecords = 2;
         spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
 
-        let siteService = de.injector.get(SiteService);
+        const siteService = de.injector.get(SiteService);
         spyOn(siteService, 'switchSite$').and.returnValue(Observable.of({}));
 
         fixture.detectChanges();
 
-        let searchableDropdownComponent: SearchableDropdownComponent = de.query(
+        const searchableDropdownComponent: SearchableDropdownComponent = de.query(
             By.css('searchable-dropdown')
         ).componentInstance;
 
@@ -156,19 +155,19 @@ describe('Site Selector Component', () => {
     }));
 
     it('should paginate when the filter change', fakeAsync(() => {
-        let filter = 'filter';
-        let first = 2;
+        const filter = 'filter';
+        const first = 2;
 
-        let paginatorService = de.injector.get(PaginatorService);
+        const paginatorService = de.injector.get(PaginatorService);
         paginatorService.totalRecords = 2;
         spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
 
-        let siteService = de.injector.get(SiteService);
+        const siteService = de.injector.get(SiteService);
         spyOn(siteService, 'switchSite$').and.returnValue(Observable.of({}));
 
         fixture.detectChanges();
 
-        let searchableDropdownComponent: SearchableDropdownComponent = de.query(
+        const searchableDropdownComponent: SearchableDropdownComponent = de.query(
             By.css('searchable-dropdown')
         ).componentInstance;
 

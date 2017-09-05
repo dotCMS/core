@@ -1,4 +1,4 @@
-import {Component, ViewEncapsulation} from '@angular/core';
+import {Component, OnDestroy, OnInit, ViewEncapsulation} from '@angular/core';
 
 @Component({
     encapsulation: ViewEncapsulation.None,
@@ -7,7 +7,7 @@ import {Component, ViewEncapsulation} from '@angular/core';
     styleUrls: ['./main-legacy.component.scss'],
     templateUrl: './main-legacy.component.html',
 })
-export class MainComponentLegacy {
+export class MainComponentLegacy implements OnInit, OnDestroy{
     private messages: any = {};
     private label = '';
     private isMenuCollapsed = false;

@@ -1,4 +1,4 @@
-import { User, Auth } from '../api/services/login-service';
+import { User, Auth } from 'dotcms-js/dotcms-js';
 import { Observable } from 'rxjs/Observable';
 
 export class LoginServiceMock {

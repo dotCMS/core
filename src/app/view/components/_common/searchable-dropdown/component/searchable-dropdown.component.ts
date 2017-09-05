@@ -3,7 +3,6 @@ import {
     ElementRef,
     EventEmitter,
     Input,
-    NgZone,
     Output,
     ViewChild,
     ViewEncapsulation,

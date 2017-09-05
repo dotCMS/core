@@ -1,9 +1,4 @@
-import {
-    Directive,
-    ElementRef,
-    Renderer,
-    Input,
-} from '@angular/core';
+import { Directive, ElementRef, Renderer, Input, OnChanges } from '@angular/core';
 
 /**
  * Directives material design floating label textfield.
@@ -17,7 +12,7 @@ import {
 @Directive({
     selector: '[md-inputtext]'
 })
-export class MaterialDesignTextfield {
+export class MaterialDesignTextfield implements OnChanges {
     @Input() private label: string;
     private hostNativeElement: HTMLElement;
     private floatingLabel: HTMLElement;
@@ -35,6 +30,6 @@ export class MaterialDesignTextfield {
         if (!this.floatingLabel) {
             this.floatingLabel = this.renderer.createElement(this.hostNativeElement, 'label');
         }
-        this.floatingLabel. innerHTML = this.label;
+        this.floatingLabel.innerHTML = this.label;
     }
 }

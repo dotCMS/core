@@ -1,15 +1,18 @@
-import {Injectable} from '@angular/core';
-import {CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot} from '@angular/router';
-import {RoutingService} from './routing-service';
-import {Observable, Observer} from 'rxjs/Rx';
-import {DotcmsConfig} from './system/dotcms-config';
-import {LoginService} from './login-service';
-import {DotRouterService} from './dot-router-service';
+import { Injectable } from '@angular/core';
+import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+import { RoutingService } from './routing-service';
+import { Observable, Observer } from 'rxjs/Rx';
+import { DotcmsConfig, LoginService } from 'dotcms-js/dotcms-js';
+import { DotRouterService } from './dot-router-service';
 
 @Injectable()
 export class RoutingPrivateAuthService implements CanActivate {
-    constructor(private router: DotRouterService, private routingService: RoutingService,
-             private loginService: LoginService, private dotcmsConfig: DotcmsConfig) {}
+    constructor(
+        private router: DotRouterService,
+        private routingService: RoutingService,
+        private loginService: LoginService,
+        private dotcmsConfig: DotcmsConfig
+    ) {}
 
     canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
         return Observable.create(obs => {
@@ -58,7 +61,7 @@ export class RoutingPrivateAuthService implements CanActivate {
 
     private check(url: string): boolean {
         if (url !== '/c/pl') {
-            let isRouteLoaded = this.routingService.isPortlet(url);
+            const isRouteLoaded = this.routingService.isPortlet(url);
 
             if (isRouteLoaded) {
                 this.routingService.setCurrentPortlet(url);

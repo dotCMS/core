@@ -1,5 +1,5 @@
 import { Component, ViewEncapsulation, ViewChild } from '@angular/core';
-import { LoggerService } from '../../../../api/services/logger.service';
+import { LoggerService } from 'dotcms-js/dotcms-js';
 import { Router } from '@angular/router';
 import { SelectItem, AutoComplete } from 'primeng/primeng';
 import { FormGroup, FormBuilder } from '@angular/forms';
@@ -170,7 +170,7 @@ export class PatternLibrary {
     private initSites(): void {
         for (let k = 0; k < 50; k++) {
             let text = '';
-            let possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
             for ( let i = 0; i < 5; i++ ) {
                 text += possible.charAt(Math.floor(Math.random() * possible.length));

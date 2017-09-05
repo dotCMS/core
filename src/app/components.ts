@@ -1,20 +1,3 @@
-// RULES ENGINE COMPONENTS
-
-// import { AddToBundleDialogComponent } from './view/components/push-publish/add-to-bundle-dialog-component';
-// import { AddToBundleDialogContainer } from './view/components/push-publish/add-to-bundle-dialog-container';
-import { AreaPickerDialogComponent } from './portlets/rule-engine/google-map/area-picker-dialog.component';
-import { ModalDialogComponent } from './portlets/rule-engine/modal-dialog/dialog-component';
-// import { PushPublishDialogComponent } from './view/components/push-publish/push-publish-dialog-component';
-// import { PushPublishDialogContainer } from './view/components/push-publish/push-publish-dialog-container';
-
-// import {SiteSelectorComponent as SiteSelectorComponentDotJS} from '../dotcms-js/components/site-selector/site-selector.component';
-// import {DotcmsBreadcrumbModule} from '../dotcms-js/components/breadcrumb/breadcrumb.component';
-// import {DotcmsSiteTreeTableModule} from '../dotcms-js/components/site-treetable/site-treetable.component';
-// import {DotcmsSiteDatatableModule} from '../dotcms-js/components/site-datatable/site-datatable.component';
-// import {DotcmsTreeableDetailModule} from '../dotcms-js/components/treeable-detail/treeable-detail.component';
-// import {DotBrowserComponent} from './portlets/dot-browser/dot-browser-component';
-
-
 // CUSTOM COMPONENTS
 import { Accordion, AccordionGroup } from './view/components/_common/accordion/accordion';
 import { CustomTimeComponent } from './view/components/_common/custom-time/custom-time';
@@ -39,7 +22,6 @@ import { NotificationsList, NotificationsItem } from './view/components/_common/
 import { PatternLibrary } from './view/components/_common/pattern-library/pattern-library';
 import { ResetPasswordComponent } from './view/components/login/reset-password-component/reset-password-component';
 import { ResetPasswordContainer } from './view/components/login/reset-password-component/reset-password-container';
-import { SiteSelectorComponent } from './view/components/_common/site-selector/site-selector.component';
 import { ToolbarNotifications } from './view/components/toolbar-notifications/toolbar-notifications';
 import { ToolbarUserComponent } from './view/components/toolbar-user/toolbar-user';
 import { ToolbarComponent } from './view/components/toolbar/toolbar.component';
@@ -48,7 +30,6 @@ export const COMPONENTS = [
     Accordion,
     AccordionGroup,
     CustomTimeComponent,
-    // DotBrowserComponent,
     DotLoadingIndicator,
     DropdownComponent,
     ForgotPasswordComponent,
@@ -71,7 +52,6 @@ export const COMPONENTS = [
     PatternLibrary,
     ResetPasswordComponent,
     ResetPasswordContainer,
-    // SiteSelectorComponentDotJS,
     ToolbarAddContenletBodyComponent,
     ToolbarAddContenletComponent,
     ToolbarComponent,

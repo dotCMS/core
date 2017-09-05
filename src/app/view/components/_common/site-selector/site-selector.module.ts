@@ -1,11 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { DotcmsConfig } from '../../../../api/services/system/dotcms-config';
+import { DotcmsConfig, SiteService } from 'dotcms-js/dotcms-js';
 import { FormsModule } from '@angular/forms';
 import { IframeOverlayService } from '../../../../api/services/iframe-overlay-service';
 import { NgModule } from '@angular/core';
 import { SearchableDropDownModule } from '../searchable-dropdown/searchable-dropdown.module';
 import { SiteSelectorComponent } from './site-selector.component';
-import { SiteService } from '../../../../api/services/site-service';
 
 @NgModule({
     declarations: [

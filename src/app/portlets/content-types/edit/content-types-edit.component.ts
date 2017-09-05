@@ -1,16 +1,18 @@
 import { ActivatedRoute, Router } from '@angular/router';
-import { BaseComponent } from '../../../view/components/_common/_base/base-component';
 import { Component, ViewChild, OnInit } from '@angular/core';
+
+import { Observable } from 'rxjs/Observable';
+import { ConfirmationService } from 'primeng/primeng';
+import { StringUtils } from 'dotcms-js/dotcms-js';
+
+import { BaseComponent } from '../../../view/components/_common/_base/base-component';
 import { ContentType } from '../main/index';
 import { ContentTypesFormComponent } from '../form';
 import { ContentTypesInfoService } from '../../../api/services/content-types-info';
 import { CrudService } from '../../../api/services/crud';
-import { MessageService } from '../../../api/services/messages-service';
-import { Observable } from 'rxjs/Observable';
-import { StringUtils } from '../../../api/util/string.utils';
-import { Field } from '../fields';
+import { Field } from '../fields/index';
 import { FieldService } from '../fields/service';
-import { ConfirmationService } from 'primeng/primeng';
+import { MessageService } from '../../../api/services/messages-service';
 
 /**
  * Portlet component for edit content types

@@ -1,14 +1,10 @@
 import { Component, Input, Output, EventEmitter, OnChanges } from '@angular/core';
-
 import { LazyLoadEvent } from 'primeng/primeng';
-
 import { ActionHeaderOptions, ButtonAction } from '../../../shared/models/action-header';
 import { BaseComponent } from '../_common/_base/base-component';
-import { CrudService } from '../../../api/services/crud';
 import { DataTableColumn } from '../../../shared/models/data-table/data-table-column';
-import { DotcmsConfig } from '../../../api/services/system/dotcms-config';
+import { LoggerService } from 'dotcms-js/dotcms-js';
 import { FormatDateService } from '../../../api/services/format-date-service';
-import { LoggerService } from '../../../api/services/logger.service';
 import { MessageService } from '../../../api/services/messages-service';
 import { PaginatorService, OrderDirection } from '../../../api/services/paginator';
 
@@ -31,14 +27,11 @@ export class ListingDataTableComponent extends BaseComponent implements OnChange
 
     readonly DATE_FORMAT = 'date';
 
-    paginatorRows: number;
-    paginatorLinks: number;
     items: any[];
     filter;
     dateColumns: DataTableColumn[];
 
     constructor(
-        private crudService: CrudService,
         messageService: MessageService,
         public loggerService: LoggerService,
         private paginatorService: PaginatorService,

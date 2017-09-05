@@ -1,22 +1,20 @@
 import _ from 'lodash';
-import {Subject} from 'rxjs/Subject';
-import {LoggerService} from '../logger.service';
-import {Protocol, Url} from './protocol';
+import { Subject } from 'rxjs/Subject';
+import { LoggerService, Protocol, Url } from 'dotcms-js/dotcms-js';
 
 export class WebSocketProtocol extends Protocol {
-
     private static readonly AVAILABLE_FOR_USER_WS_CLOSE_STATUS = 4000;
     private socket: WebSocket;
 
     private sendQueue = [];
 
     private readyStateConstants = {
-        'CONNECTING': 0,
-        'OPEN': 1,
+        CONNECTING: 0,
+        OPEN: 1,
         // tslint:disable-next-line:object-literal-sort-keys
-        'CLOSING': 2,
-        'CLOSED': 3,
-        'RECONNECT_ABORTED': 4
+        CLOSING: 2,
+        CLOSED: 3,
+        RECONNECT_ABORTED: 4
     };
 
     private normalCloseCode = 1000;
@@ -25,14 +23,20 @@ export class WebSocketProtocol extends Protocol {
     private internalConnectionState: number;
     private reconnectIfNotNormalClose: boolean;
 
-    constructor(private url: Url, loggerService: LoggerService, config?: WebSocketConfig, private protocols?: Array<string> ) {
+    constructor(
+        private url: Url,
+        loggerService: LoggerService,
+        config?: WebSocketConfig,
+        private protocols?: Array<string>
+    ) {
         super(loggerService, config);
 
-        const match = new RegExp('wss?:\/\/').test(url.url);
+        const match = new RegExp('wss?://').test(url.url);
         if (!match) {
             throw new Error('Invalid url provided [' + url.url + ']');
         }
-        this.reconnectIfNotNormalClose = config && config.reconnectIfNotNormalClose ? config.reconnectIfNotNormalClose : false;
+        this.reconnectIfNotNormalClose =
+            config && config.reconnectIfNotNormalClose ? config.reconnectIfNotNormalClose : false;
         this.dataStream = new Subject();
     }
 
@@ -41,7 +45,9 @@ export class WebSocketProtocol extends Protocol {
         if (force || !this.socket || this.socket.readyState !== this.readyStateConstants.OPEN) {
             this.loggerService.debug('Connecting with Web socket', this.url.url);
             try {
-                self.socket = this.protocols ? new WebSocket(this.url.url, this.protocols) : new WebSocket(this.url.url);
+                self.socket = this.protocols
+                    ? new WebSocket(this.url.url, this.protocols)
+                    : new WebSocket(this.url.url);
 
                 self.socket.onopen = (ev: Event) => {
                     this.loggerService.debug('Web socket connected', this.url.url);
@@ -53,10 +59,11 @@ export class WebSocketProtocol extends Protocol {
                 };
 
                 self.socket.onclose = (ev: CloseEvent) => {
-                    if ((this.reconnectIfNotNormalClose && ev.code !== this.normalCloseCode)
-                        || this.reconnectableStatusCodes.indexOf(ev.code) > -1) {
-
-                            this.loggerService.debug('Reconnecting Web EventsSocket connection');
+                    if (
+                        (this.reconnectIfNotNormalClose && ev.code !== this.normalCloseCode) ||
+                        this.reconnectableStatusCodes.indexOf(ev.code) > -1
+                    ) {
+                        this.loggerService.debug('Reconnecting Web EventsSocket connection');
                         this.reconnect();
                     } else {
                         this._close.next(ev);
@@ -67,7 +74,7 @@ export class WebSocketProtocol extends Protocol {
                 self.socket.onerror = (ev: ErrorEvent) => {
                     this._error.next(ev);
                 };
-            }catch (error) {
+            } catch (error) {
                 this.loggerService.debug('Web EventsSocket connection error', error);
                 this._error.next(error);
             }
@@ -75,7 +82,10 @@ export class WebSocketProtocol extends Protocol {
     }
 
     send(data): Promise<any> {
-        if (this.getReadyState() !== this.readyStateConstants.OPEN && this.getReadyState() !== this.readyStateConstants.CONNECTING) {
+        if (
+            this.getReadyState() !== this.readyStateConstants.OPEN &&
+            this.getReadyState() !== this.readyStateConstants.CONNECTING
+        ) {
             this.connect();
         }
         // TODO: change this for an observer
@@ -83,7 +93,7 @@ export class WebSocketProtocol extends Protocol {
             if (this.socket.readyState === this.readyStateConstants.RECONNECT_ABORTED) {
                 reject('EventsSocket connection has been closed');
             } else {
-                this.sendQueue.push({message: data});
+                this.sendQueue.push({ message: data });
                 this.fireQueue();
             }
         });

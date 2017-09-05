@@ -6,5 +6,4 @@ import {Component, ViewEncapsulation} from '@angular/core';
     selector: 'dot-main-core-component',
     template: '<router-outlet></router-outlet>',
 })
-export class MainCoreLegacyComponent {
-}
+export class MainCoreLegacyComponent {}

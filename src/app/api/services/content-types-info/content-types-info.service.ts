@@ -11,27 +11,27 @@ export class ContentTypesInfoService {
         {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             icon: 'fa-newspaper-o',
-            label: 'content',
+            label: 'content'
         },
         {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableWidgetContentType',
             icon: 'fa-cog',
-            label: 'widget',
+            label: 'widget'
         },
         {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableFileAssetContentType',
             icon: 'fa-file-o',
-            label: 'fileasset',
+            label: 'fileasset'
         },
         {
             clazz: 'com.dotcms.contenttype.model.type.ImmutablePageContentType',
             icon: 'fa-file-text-o',
-            label: 'page',
+            label: 'page'
         },
         {
             clazz: 'com.dotcms.contenttype.model.type.ImmutablePersonaContentType',
             icon: 'fa-user',
-            label: 'persona',
+            label: 'persona'
         },
         {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableFormContentType',
@@ -83,8 +83,11 @@ export class ContentTypesInfoService {
             type = this.getTypeName(type);
 
             for (let i = 0; i < this.contentTypeInfoCollection.length; i++) {
-                let item = this.contentTypeInfoCollection[i];
-                if (item.clazz.toLocaleLowerCase() === type.toLocaleLowerCase() || item.label.toLocaleLowerCase() === type.toLocaleLowerCase()) {
+                const item = this.contentTypeInfoCollection[i];
+                if (
+                    item.clazz.toLocaleLowerCase() === type.toLocaleLowerCase() ||
+                    item.label.toLocaleLowerCase() === type.toLocaleLowerCase()
+                ) {
                     result = item[prop];
                     break;
                 }
@@ -108,5 +111,4 @@ export class ContentTypesInfoService {
 
         return type;
     }
-
 }

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs/Observable';
 import { Field, FieldType, FieldRow } from '../shared';
-import { CoreWebService } from '../../../../api/services/core-web-service';
+import { CoreWebService } from 'dotcms-js/dotcms-js';
 import { RequestMethod } from '@angular/http';
 import { FieldUtil } from '../util/field-util';
 
@@ -10,16 +10,15 @@ import { FieldUtil } from '../util/field-util';
  */
 @Injectable()
 export class FieldService {
-
-    constructor(private coreWebService: CoreWebService) {
-
-    }
+    constructor(private coreWebService: CoreWebService) {}
 
     loadFieldTypes(): Observable<FieldType[]> {
-        return this.coreWebService.requestView({
-            method: RequestMethod.Get,
-            url: '/v1/fieldTypes'
-        }).pluck('entity');
+        return this.coreWebService
+            .requestView({
+                method: RequestMethod.Get,
+                url: '/v1/fieldTypes'
+            })
+            .pluck('entity');
     }
 
     /**
@@ -32,8 +31,8 @@ export class FieldService {
     saveFields(contentTypeId: string, fields: Field[]): Observable<any> {
         const observables: Observable<any>[] = fields.map((field, index) => {
             const fieldToSend = Object.assign({}, field, {
-                'contentTypeId': contentTypeId,
-                'sortOrder': index + 1
+                contentTypeId: contentTypeId,
+                sortOrder: index + 1
             });
 
             if (FieldUtil.isColumn(fieldToSend) || FieldUtil.isRow(fieldToSend)) {
@@ -45,17 +44,21 @@ export class FieldService {
             }
 
             if (!fieldToSend.id) {
-                return this.coreWebService.requestView({
-                    body: fieldToSend,
-                    method: RequestMethod.Post,
-                    url: `v1/contenttype/${contentTypeId}/fields`
-                }).pluck('entity');
+                return this.coreWebService
+                    .requestView({
+                        body: fieldToSend,
+                        method: RequestMethod.Post,
+                        url: `v1/contenttype/${contentTypeId}/fields`
+                    })
+                    .pluck('entity');
             } else {
-                return this.coreWebService.requestView({
-                    body: fieldToSend,
-                    method: RequestMethod.Put,
-                    url: `v1/contenttype/${contentTypeId}/fields/id/${fieldToSend.id}`
-                }).pluck('entity');
+                return this.coreWebService
+                    .requestView({
+                        body: fieldToSend,
+                        method: RequestMethod.Put,
+                        url: `v1/contenttype/${contentTypeId}/fields/id/${fieldToSend.id}`
+                    })
+                    .pluck('entity');
             }
             return Observable.of(fieldToSend);
         });

@@ -1,3 +1,6 @@
+import { FormGroup, FormControl, NgControl } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { RegexCheckPropertyComponent } from './index';
 import { ComponentFixture, async, fakeAsync, tick } from '@angular/core/testing';
@@ -5,8 +8,6 @@ import { DebugElement, Component, Input } from '@angular/core';
 import { MockMessageService } from '../../../../../../test/message-service.mock';
 import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 import { MessageService } from '../../../../../../api/services/messages-service';
-import { FormGroup, FormControl, NgControl } from '@angular/forms';
-import { By } from '@angular/platform-browser';
 
 describe('RegexCheckPropertyComponent', () => {
     let comp: RegexCheckPropertyComponent;
@@ -32,6 +33,7 @@ describe('RegexCheckPropertyComponent', () => {
                 RegexCheckPropertyComponent
             ],
             imports: [
+                NoopAnimationsModule
             ],
             providers: [
                 { provide: MessageService, useValue: messageServiceMock },

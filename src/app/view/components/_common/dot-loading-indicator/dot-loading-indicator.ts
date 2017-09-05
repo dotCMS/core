@@ -1,5 +1,5 @@
 import {Component, Input, ViewEncapsulation} from '@angular/core';
-import {LoggerService} from '../../../../api/services/logger.service';
+import {LoggerService} from 'dotcms-js/dotcms-js';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,

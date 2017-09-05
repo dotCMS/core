@@ -1,9 +1,6 @@
-import {Component, ViewEncapsulation} from '@angular/core';
-import {HttpRequestUtils} from '../../../../api/util/httpRequestUtils';
-import {LoginService} from '../../../../api/services/login-service';
-import {DotRouterService} from '../../../../api/services/dot-router-service';
-import { LoggerService } from '../../../../api/services/logger.service';
-import { HttpCode } from '../../../../api/util/http-code';
+import { Component, ViewEncapsulation } from '@angular/core';
+import { HttpRequestUtils, LoginService, LoggerService, HttpCode } from 'dotcms-js/dotcms-js';
+import { DotRouterService } from '../../../../api/services/dot-router-service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
@@ -20,7 +17,7 @@ import { HttpCode } from '../../../../api/util/http-code';
             [resetEmail]="resetEmail"
         >
         </dot-login-component>
-    `,
+    `
 })
 export class LoginContainer {
     private isLoginInProgress = false;
@@ -29,13 +26,17 @@ export class LoginContainer {
     private resetEmail = '';
     private resetEmailSent = false;
 
-    constructor(private loginService: LoginService, private router: DotRouterService,
-                private httprequestUtils: HttpRequestUtils, private loggerService: LoggerService) {
+    constructor(
+        private loginService: LoginService,
+        private router: DotRouterService,
+        private httprequestUtils: HttpRequestUtils,
+        private loggerService: LoggerService
+    ) {
         // TODO: change the httpRequestUtils.getQueryParams() with an NG2 method equivalent to QueryParams on NGRX.
-        let queryParams: Map<string, any> = this.httprequestUtils.getQueryParams();
-        if (<boolean> queryParams.get('changedPassword')) {
+        const queryParams: Map<string, any> = this.httprequestUtils.getQueryParams();
+        if (<boolean>queryParams.get('changedPassword')) {
             this.passwordChanged = queryParams.get('changedPassword');
-        } else if (<boolean> queryParams.get('resetEmailSent')) {
+        } else if (<boolean>queryParams.get('resetEmailSent')) {
             this.resetEmailSent = queryParams.get('resetEmailSent');
             this.resetEmail = decodeURIComponent(queryParams.get('resetEmail'));
         }
@@ -45,19 +46,30 @@ export class LoginContainer {
         this.isLoginInProgress = true;
         this.message = '';
 
-        this.loginService.loginUser(loginData.login, loginData.password, loginData.remenberMe, loginData.language).subscribe((result: any) => {
-            this.message = '';
-            this.router.goToMain();
-         }, (error) => {
-
-            if (error.response.status === HttpCode.BAD_REQUEST || error.response.status === HttpCode.UNAUTHORIZED) {
-                this.message = error.errorsMessages;
-            } else {
-                this.loggerService.debug(error);
-            }
-            this.isLoginInProgress = false
-            ;
-        });
+        this.loginService
+            .loginUser(
+                loginData.login,
+                loginData.password,
+                loginData.remenberMe,
+                loginData.language
+            )
+            .subscribe(
+                (result: any) => {
+                    this.message = '';
+                    this.router.goToMain();
+                },
+                error => {
+                    if (
+                        error.response.status === HttpCode.BAD_REQUEST ||
+                        error.response.status === HttpCode.UNAUTHORIZED
+                    ) {
+                        this.message = error.errorsMessages;
+                    } else {
+                        this.loggerService.debug(error);
+                    }
+                    this.isLoginInProgress = false;
+                }
+            );
     }
 
     /**
@@ -66,7 +78,6 @@ export class LoginContainer {
     showForgotPassword(): void {
         this.router.goToForgotPassword();
     }
-
 }
 
 export interface LoginData {
