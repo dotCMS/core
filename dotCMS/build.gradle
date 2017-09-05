@@ -34,6 +34,7 @@ configurations {
     compile
     buildlibs
     starter
+    profiler
     provided
     felix
 }
@@ -130,6 +131,8 @@ dependencies {
     compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
     starter group: 'com.dotcms', name: 'starter', version: '20170901', ext: 'zip'
+
+    profiler group: 'org.glowroot', name: 'glowroot-agent', version: '0.9.24'
 
     providedCompile "javax.servlet:javax.servlet-api:3.1.0"
     providedCompile fileTree("../libs/buildlibs").include('**/*.jar')
@@ -269,6 +272,11 @@ war {
     from (configurations.starter) {
         into dotcmsFolder
         rename ( /starter(.+)\.zip/, "starter.zip" )
+    }
+
+    from (configurations.profiler) {
+        into profilerFolder
+        rename ( /glowroot(.+)\.jar/, "profiler.jar" )
     }
 }
 war.finalizedBy 'undeployPlugins'
