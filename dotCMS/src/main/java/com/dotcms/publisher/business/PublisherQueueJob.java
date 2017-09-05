@@ -251,9 +251,9 @@ public class PublisherQueueJob implements StatefulJob {
 						// For each end-point (server) in the group
 						for ( String endpointID : endpointsGroup.keySet() ) {
 							PublishingEndPoint targetEndpoint = endpointAPI.findEndPointById(endpointID);
-							MDC.put(ENDPOINT_NAME, ENDPOINT_NAME + "=" + targetEndpoint.getServerName());
-							if ( targetEndpoint != null && !targetEndpoint.isSending() ) {
 
+							if ( targetEndpoint != null && !targetEndpoint.isSending() ) {
+								MDC.put(ENDPOINT_NAME, ENDPOINT_NAME + "=" + targetEndpoint.getServerName());
 								// Don't poll status for static publishing
 								if (!AWSS3Publisher.PROTOCOL_AWS_S3.equalsIgnoreCase(targetEndpoint.getProtocol())) {
 									WebTarget webTarget = client.target(targetEndpoint.toURL() + "/api/auditPublishing");
