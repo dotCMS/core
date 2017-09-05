@@ -74,7 +74,7 @@
          
      <%}%>
      &nbsp;&nbsp;
-    <div style="white-space: nowrap;float: right">
+    <div style="white-space: nowrap;float: right;display:none;" id="ppRetryOptionsDiv">
 	     &nbsp;&nbsp;
 	     
 	     <select dojoType="dijit.form.Select" name="deliveryStrategy" id="deliveryStrategy<%= bundleId %>" style="width: 175px">
@@ -162,6 +162,11 @@
 					        <div style="float:right;color:silver">
 								 <%= LanguageUtil.get(pageContext, "Push-To-All") %>: <%=env.getPushToAll()%>
 						    </div>
+						    
+						    <script>
+						        document.getElementById("ppRetryOptionsDiv").style.display="";
+						    </script>
+						    
 						</td>
 					</tr>
 				    <%
