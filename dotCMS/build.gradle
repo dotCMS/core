@@ -1,6 +1,6 @@
 buildscript {
     repositories {
-        maven { url "http://repo.dotcms.com/artifactory/ext-release-local" }
+        
         maven { url "http://repo.dotcms.com/artifactory/libs-release" }
         jcenter()
     }
