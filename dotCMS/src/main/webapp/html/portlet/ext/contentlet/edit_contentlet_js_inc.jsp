@@ -1,11 +1,9 @@
-<%@page import="com.dotmarketing.util.Config"%>
-<%@page import="java.util.Random"%>
-<%@ page import="com.dotmarketing.util.UtilMethods" %>
-<%@ page import="com.liferay.portal.language.LanguageUtil"%>
-<%@page import="java.util.*"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
-<%@page import="com.dotmarketing.filters.CMSFilter"%>
+<%@ page import="com.dotmarketing.filters.CMSFilter" %>
+<%@ page import="com.dotmarketing.util.Config"%>
+<%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%
 
 	String catCount = (String) request.getAttribute("counter");
@@ -683,7 +681,8 @@
             }
 
             var license = <%=LicenseUtil.getLevel()%>;
-            if ( license <= LicenseLevel.STANDARD.level ||  fieldRelatedData['fileName'].toLowerCase().endsWith("svg")){
+            var licenseLevelStandard = <%=LicenseLevel.STANDARD.level%>;
+            if ( license <= licenseLevelStandard ||  fieldRelatedData['fileName'].toLowerCase().endsWith("svg")){
                 var newFileDialogTitle = "<%=LanguageUtil.get(pageContext,"Image") %>";
 
                 var newFileDialogContent = '<div style="text-align:center;margin:auto;overflow:auto;width:700px;height:400px;">'
