@@ -1,5 +1,6 @@
 buildscript {
     repositories {
+        
         maven { url "http://repo.dotcms.com/artifactory/libs-release" }
         jcenter()
     }
@@ -7,16 +8,18 @@ buildscript {
         classpath 'org.ajoberstar:grgit:1.7.0'
         classpath 'org.unbroken-dome.gradle-plugins:gradle-testsets-plugin:1.0.2'
         classpath 'com.dotcms.lib:dot.commons-io:2.0.1_2'
-    }
-    project.ext {
-        aspectjVersion = '1.8.10'
+        classpath 'nl.eveoh:gradle-aspectj:1.6'
     }
 }
 
 plugins {
     id "com.moowork.node" version "1.1.1"
-    id "aspectj.gradle" version "0.1.6"// https://plugins.gradle.org/plugin/aspectj.gradle
 }
+
+project.ext {
+    aspectjVersion = '1.8.10'
+}
+
 
 node {
     // Version of node to use.
@@ -34,6 +37,7 @@ configurations {
     compile
     buildlibs
     starter
+    profiler
     provided
     felix
 }
@@ -55,10 +59,12 @@ configurations.all({
 
 // Apply the java plugin to add support for Java.
 apply plugin: 'java'
+apply plugin: 'aspectj'
 apply plugin: 'war'
 apply plugin: 'org.unbroken-dome.test-sets'
 apply plugin: 'idea'
 apply plugin: 'eclipse'
+
 
 // In this section you declare where to find the dependencies of your project.
 repositories {
@@ -131,6 +137,8 @@ dependencies {
 
     starter group: 'com.dotcms', name: 'starter', version: '20170901', ext: 'zip'
 
+    profiler group: 'org.glowroot', name: 'glowroot-agent', version: '0.9.24'
+
     providedCompile "javax.servlet:javax.servlet-api:3.1.0"
     providedCompile fileTree("../libs/buildlibs").include('**/*.jar')
     providedCompile fileTree("../libs/buildlibs").include('jtds-*.jar', 'mail.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'sqljdbc*.jar')
@@ -147,6 +155,7 @@ dependencies {
 
 // Import and apply the dependencies from the dependencies scripts.
 apply from: "$rootDir/dependencies.gradle"
+
 
 def enterpriseSrcFolder = file("$enterpriseProjectHome/src/main/java")
 
@@ -242,9 +251,9 @@ war {
                 } else {
                     srcDirs = ["src/main/java", "$generatedSourceFolder"]
                 }
-
             }
         }
+
     }
 
     classpath = classpath - sourceSets.main.output.classesDir
@@ -269,6 +278,11 @@ war {
     from (configurations.starter) {
         into dotcmsFolder
         rename ( /starter(.+)\.zip/, "starter.zip" )
+    }
+
+    from (configurations.profiler) {
+        into profilerFolder
+        rename ( /glowroot(.+)\.jar/, "profiler.jar" )
     }
 }
 war.finalizedBy 'undeployPlugins'
