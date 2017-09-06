@@ -2599,14 +2599,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(workingCon != null) {
                 permissions = perAPI.getPermissions(workingCon);
                 cats = catAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
-                contentRelationships = findContentRelationships(workingCon);
+                contentRelationships = findContentRelationshipsFromIndex(workingCon);
             } else {
-                contentRelationships = findContentRelationships(contentlet);
+                contentRelationships = findContentRelationshipsFromIndex(contentlet);
             }
         }
         else
         {
-            contentRelationships = findContentRelationships(contentlet);
+            contentRelationships = findContentRelationshipsFromIndex(contentlet);
         }
 
         if(permissions == null)

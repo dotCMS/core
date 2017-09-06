@@ -82,6 +82,8 @@ public class HibernateUtil {
             return TransactionListenerStatus.ENABLED;
         }
     };
+
+	private static final ThreadLocal<Boolean> asyncCommitListenersFinalization = ThreadLocal.withInitial(()->true);
 	
 	private static final ThreadLocal< Map<String,DotRunnable> > commitListeners=new ThreadLocal<Map<String,DotRunnable>>() {
 	    protected java.util.Map<String,DotRunnable> initialValue() {
@@ -731,6 +733,14 @@ public class HibernateUtil {
 	public static void setTransactionListenersStatus(TransactionListenerStatus status) {
 		listenersStatus.set(status);
 	}
+
+	public static ThreadLocal<Boolean> getAsyncCommitListenersFinalization() {
+		return asyncCommitListenersFinalization;
+	}
+
+	public static void setAsyncCommitListenersFinalization(boolean finalizeAsync) {
+		asyncCommitListenersFinalization.set(finalizeAsync);
+	}
 	
 	public static void addCommitListener(DotRunnable listener) throws DotHibernateException {
 	    addCommitListener(UUIDGenerator.generateUuid(),listener);
@@ -805,7 +815,8 @@ public class HibernateUtil {
 
 		final DotRunnableThread thread = new DotRunnableThread(listeners);
 
-		if(Config.getBooleanProperty("REINDEX_ON_SAVE_IN_SEPARATE_THREAD",true)){
+		if(getAsyncCommitListenersFinalization().get()
+				&& Config.getBooleanProperty("REINDEX_ON_SAVE_IN_SEPARATE_THREAD",true)){
 			thread.start();
 		}  else{
 			thread.run();
