@@ -26,10 +26,10 @@ public class DBTreeTransformer {
 	
 	private List<Tree> listToTreeList(final List<Map<String, Object>> mapList){
 		List<Tree> trees = new ArrayList<>();
-		if(mapList==null || mapList.size()==0) return trees;
-		for(Map<String, Object> m : mapList){
-			trees.add(mapToTree(m));
-			
+		if(mapList!=null) {
+			for(Map<String, Object> m : mapList){
+				trees.add(mapToTree(m));
+			}
 		}
 		return ImmutableList.copyOf(trees);
 	}
