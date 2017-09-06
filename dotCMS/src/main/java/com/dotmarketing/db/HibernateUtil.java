@@ -28,6 +28,7 @@ import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
 import com.dotcms.repackage.net.sf.hibernate.cfg.Mappings;
 import com.dotcms.repackage.net.sf.hibernate.type.Type;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -801,50 +802,21 @@ public class HibernateUtil {
 
 	private static void finalizeCommitListeners() throws DotDataException{
 		
-		List<DotRunnable> listeners = new ArrayList<DotRunnable>(commitListeners.get().values());
+		final List<DotRunnable> listeners = new ArrayList<>(commitListeners.get().values());
 		commitListeners.get().clear();
-		
-		Set<String> reindexInodes= new HashSet<String>();
-		List<Contentlet> contentToIndex = new ArrayList<Contentlet>();
-		
-		
-		List<List<Contentlet>> listOfLists = new ArrayList<List<Contentlet>>();
-		int batchSize = Config.getIntProperty("INDEX_COMMIT_LISTENER_BATCH_SIZE", 50);
-		
-		
-		for(DotRunnable runner : listeners){
-			if(runner instanceof ReindexRunnable){
-				ReindexRunnable rrunner = (ReindexRunnable) runner;
-				if(rrunner.getAction().equals(ReindexRunnable.Action.REMOVING)){
-					rrunner.run();
-					continue;
-				}
-				List<Contentlet> cons  	=  rrunner.getReindexIds();
-				for(Contentlet con : cons){
-					if(!reindexInodes.contains(con.getInode())){
-						reindexInodes.add(con.getInode());
-						contentToIndex.add(con);
-						if(contentToIndex.size() == batchSize){
-							listOfLists.add(contentToIndex);
-							contentToIndex = new ArrayList<Contentlet>();
-						}
-					}
-				}
-			} else {
-				runner.run();
-			}
-		}
-		listOfLists.add(contentToIndex);
-		
-		for(List<Contentlet> batchList : listOfLists){
-			
-			new ReindexRunnable(batchList, ReindexRunnable.Action.ADDING, null, false) {}.run();
-		}
-		
+     
+		final DotRunnableThread thread = new DotRunnableThread(listeners);
+        
+        if(Config.getBooleanProperty("REINDEX_ON_SAVE_IN_SEPARATE_THREAD",true)){
+            thread.start();
+        }  else{
+            thread.run();
+        }
+	
 
 	}
 	
-	
+
 	
 	
 	
