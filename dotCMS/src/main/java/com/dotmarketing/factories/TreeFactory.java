@@ -44,6 +44,10 @@ public class TreeFactory {
 			return new Tree();
 		}
 	}
+
+	public static Tree getTreeDC(Tree tree) {
+		return getTree(tree.getChild(), tree.getParent(), tree.getRelationType());
+	}
 	
 	public static Tree getTree(Inode parent, Inode child) {
 		String relationType = "child";
@@ -313,12 +317,9 @@ public class TreeFactory {
 		}
 	}
 
-	public static void deleteTreesByParentById(String parentId) {
-		try {
-			HibernateUtil.delete("from tree in class com.dotmarketing.beans.Tree where tree.parent = '" + parentId+"'");
-		} catch (DotHibernateException e) {
-			throw new DotStateException(e);
-		}
+	public static void deleteTreesByParentById(String parentId) throws DotDataException {
+		DotConnect dc = new DotConnect();
+		dc.setSQL("DELETE FROM tree WHERE parent = ?").addParam(parentId).loadResult();
 	}
 
 	public static void deleteTreesByParentAndRelationType(Inode parent, String relationType) {
@@ -362,12 +363,9 @@ public class TreeFactory {
 		}
 	}
 
-	public static void deleteTreesByChildId(String childId) {
-		try {
-			HibernateUtil.delete("from tree in class com.dotmarketing.beans.Tree where tree.child = '" + childId+"'");
-		} catch (DotHibernateException e) {
-			throw new DotStateException(e);
-		}
+	public static void deleteTreesByChildId(String childId) throws DotDataException {
+		DotConnect dc = new DotConnect();
+		dc.setSQL("DELETE FROM tree WHERE child = ?").addParam(childId).loadResult();
 	}
 
 	public static void deleteTreesByRelationType(String relationType) {
@@ -384,6 +382,20 @@ public class TreeFactory {
 			HibernateUtil.saveOrUpdate(tree);
 		} catch (DotHibernateException e) {
 		  throw new DotStateException(e);
+		}
+	}
+
+	public static void saveTreeDC(Tree tree) {
+		try {
+			DotConnect dc = new DotConnect();
+			dc.setSQL("INSERT INTO tree values(?,?,?,?)")
+                    .addParam(tree.getChild())
+                    .addParam(tree.getParent())
+                    .addParam(tree.getRelationType())
+                    .addParam(tree.getTreeOrder())
+                    .loadResult();
+		} catch (DotDataException e) {
+			throw new DotStateException(e.getMessage(), e);
 		}
 	}
 
