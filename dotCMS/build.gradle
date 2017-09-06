@@ -1,7 +1,7 @@
 buildscript {
     repositories {
+        
         maven { url "http://repo.dotcms.com/artifactory/libs-release" }
-        maven { url "https://maven.eveoh.nl/content/repositories/releases" }
         jcenter()
     }
     dependencies {
@@ -17,8 +17,9 @@ plugins {
 }
 
 project.ext {
-    aspectjVersion = '1.8.4'
+    aspectjVersion = '1.8.10'
 }
+
 
 node {
     // Version of node to use.
@@ -36,6 +37,7 @@ configurations {
     compile
     buildlibs
     starter
+    profiler
     provided
     felix
 }
@@ -62,6 +64,7 @@ apply plugin: 'war'
 apply plugin: 'org.unbroken-dome.test-sets'
 apply plugin: 'idea'
 apply plugin: 'eclipse'
+
 
 // In this section you declare where to find the dependencies of your project.
 repositories {
@@ -132,7 +135,9 @@ dependencies {
     /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
     compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
-    starter group: 'com.dotcms', name: 'starter', version: '20170614', ext: 'zip'
+    starter group: 'com.dotcms', name: 'starter', version: '20170901', ext: 'zip'
+
+    profiler group: 'org.glowroot', name: 'glowroot-agent', version: '0.9.24'
 
     providedCompile "javax.servlet:javax.servlet-api:3.1.0"
     providedCompile fileTree("../libs/buildlibs").include('**/*.jar')
@@ -150,6 +155,7 @@ dependencies {
 
 // Import and apply the dependencies from the dependencies scripts.
 apply from: "$rootDir/dependencies.gradle"
+
 
 def enterpriseSrcFolder = file("$enterpriseProjectHome/src/main/java")
 
@@ -245,9 +251,9 @@ war {
                 } else {
                     srcDirs = ["src/main/java", "$generatedSourceFolder"]
                 }
-
             }
         }
+
     }
 
     classpath = classpath - sourceSets.main.output.classesDir
@@ -272,6 +278,11 @@ war {
     from (configurations.starter) {
         into dotcmsFolder
         rename ( /starter(.+)\.zip/, "starter.zip" )
+    }
+
+    from (configurations.profiler) {
+        into profilerFolder
+        rename ( /glowroot(.+)\.jar/, "profiler.jar" )
     }
 }
 war.finalizedBy 'undeployPlugins'

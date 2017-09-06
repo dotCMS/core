@@ -1,10 +1,13 @@
 package com.dotcms.contenttype.model.field;
 
+import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Map;
-import static com.dotcms.util.CollectionsUtils.map;
+
+import static com.dotcms.util.CollectionsUtils.imap;
+import static com.dotcms.util.CollectionsUtils.toImmutableList;
 
 /**
  * Intances of the class FieldType represent a Field's Type.
@@ -42,9 +45,14 @@ public class FieldType implements Comparable<FieldType>{
     }
 
     public Map<String, Object> toMap(){
-        return map("id", id,
+        final ImmutableList<String> propertiesName = properties.stream()
+                .map(ContentTypeFieldProperties::getName)
+                .collect(toImmutableList());
+
+        return imap("id", id,
                 "label", label,
-                "properties", properties,
+                "properties", propertiesName,
+                "clazz", clazz,
                 "helpText", helpText);
     }
 

@@ -19,6 +19,9 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
 public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
+
+  private static final String CATEGORIES_PROPERTY_NAME = "categories";
+
   final List<Field> list;
 
   public JsonFieldTransformer(Field field) {
@@ -44,9 +47,9 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
       }
     } catch (Exception e) {
       try {
-      	JSONObject jo = new JSONObject(json);
-        if (jo.has("fields")) {
-          l = fromJsonArray(jo.getJSONArray("fields"));
+        final JSONObject fieldJsonObject = new JSONObject(json);
+        if (fieldJsonObject.has("fields")) {
+          l = fromJsonArray(fieldJsonObject.getJSONArray("fields"));
         } else {
           l.add(fromJsonStr(json));
         }
@@ -69,11 +72,11 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
       throws JSONException, JsonParseException, JsonMappingException, IOException {
     List<Field> fields = new ArrayList<>();
     for (int i = 0; i < jarr.length(); i++) {
-      JSONObject jo = jarr.getJSONObject(i);
-      jo.remove("acceptedDataTypes");
-      Field f = fromJsonStr(jo.toString());
-      if (jo.has("fieldVariables")) {
-        String varStr = jo.getJSONArray("fieldVariables").toString();
+      JSONObject fieldJsonObject = jarr.getJSONObject(i);
+      fieldJsonObject.remove("acceptedDataTypes");
+      Field f = fromJsonStr(fieldJsonObject.toString());
+      if (fieldJsonObject.has("fieldVariables")) {
+        String varStr = fieldJsonObject.getJSONArray("fieldVariables").toString();
         List<FieldVariable> vars = mapper.readValue(varStr,
             mapper.getTypeFactory().constructCollectionType(List.class, ImmutableFieldVariable.class));
         f.constructFieldVariables(vars);
@@ -89,10 +92,19 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
   private Field fromJsonStr(String input) throws DotStateException {
 
     try {
-      return (Field) mapper.readValue(input, Field.class);
+      JSONObject jo = new JSONObject(input);
+
+      if (jo.has(CATEGORIES_PROPERTY_NAME)){
+        final Object categories = jo.get(CATEGORIES_PROPERTY_NAME);
+        jo.put("values", categories);
+      }
+
+      return (Field) mapper.readValue(jo.toString(), Field.class);
     } catch (Exception e) {
       throw new DotStateException(e);
     }
+
+
   }
 
   @Override

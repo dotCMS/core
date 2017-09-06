@@ -838,7 +838,7 @@ function deleteEnvPushHistory(envId) {
         load : function(data) {
             var confirmDialog = dijit.byId("deleteHistory");
 
-            if(confirmDialog===null) {
+            if(confirmDialog===null || confirmDialog === undefined) {
                 confirmDialog = new dijit.Dialog({
                     id: "deleteHistory",
                     class: "noDijitDialogTitleBar",
@@ -849,7 +849,7 @@ function deleteEnvPushHistory(envId) {
             confirmDialog.show();
         },
         error : function(error) {
-            console.log(error);
+            console.log("this is the error:" + error);
             showDotCMSSystemMessage(error.responseText, true);
         }
     };
