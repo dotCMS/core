@@ -157,12 +157,15 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     @Override
-    public String getInode() {
-    	if(InodeUtils.isSet((String) map.get(INODE_KEY))) {
-    		return (String) map.get(INODE_KEY);
-    	}
-    	return "";
-    }
+	public String getInode() {
+		final String inode = (String) map.get(INODE_KEY);
+
+		if(inode==null) {
+			return "";
+		}
+
+		return inode;
+	}
 
     /**
      * 
@@ -324,18 +327,20 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		}
     }
 
-    @Override
-    public boolean equals(Object o) {
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
 
-    	if( !(o instanceof Contentlet) )
-    		return false;
-    	return o != null && ((Contentlet)o).getInode().equalsIgnoreCase(this.getInode());
-    }
+		Contentlet that = (Contentlet) o;
 
-    @Override
-    public int hashCode() {
-        return new HashCodeBuilder().append(getInode()).toHashCode();
-    }
+		return getInode().equals(that.getInode());
+	}
+
+	@Override
+	public int hashCode() {
+		return getInode().hashCode();
+	}
 
     /**
      * 

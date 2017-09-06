@@ -10,7 +10,9 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Logger;
 
@@ -292,6 +294,11 @@ public class TreeFactory {
 		}
 	}
 
+	public static void deleteTreesByParentById(String parentId) throws DotDataException {
+		DotConnect dc = new DotConnect();
+		dc.setSQL("DELETE FROM tree WHERE parent = ?").addParam(parentId).loadResult();
+	}
+
 	public static void deleteTreesByParentAndRelationType(Inode parent, String relationType) {
 		try {
 			HibernateUtil.delete("from tree in class com.dotmarketing.beans.Tree where tree.parent = '" + parent.getInode() + 
@@ -317,6 +324,11 @@ public class TreeFactory {
 		} catch (DotHibernateException e) {
 		  throw new DotStateException(e);
 		}
+	}
+
+	public static void deleteTreesByChildId(String childId) throws DotDataException {
+		DotConnect dc = new DotConnect();
+		dc.setSQL("DELETE FROM tree WHERE child = ?").addParam(childId).loadResult();
 	}
 
 	public static void deleteTreesByRelationType(String relationType) {
