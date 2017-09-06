@@ -141,6 +141,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -1204,11 +1205,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return perAPI.filterCollection(conFac.getRelatedLinks(contentlet), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
     }
 
-    private List<ContentletSearch> getRelatedContentFromIndex(Contentlet contentlet,Relationship rel, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
+    private List<ContentletSearch> getRelatedContentSearchFromIndex(Contentlet contentlet,Relationship rel, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
 
         String q = getRelatedContentESQuery(contentlet, rel);
 
         return searchIndex(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order", user, respectFrontendRoles);
+
+    }
+
+    private List<Contentlet> getRelatedContentFromIndex(Contentlet contentlet,Relationship rel, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
+
+        List<ContentletSearch> contentletSearchList = getRelatedContentSearchFromIndex(contentlet, rel, user, respectFrontendRoles);
+        return contentletSearchList.stream().map(ESContentletAPIImpl::transformContentletSearchToContent).collect(Collectors.toList());
+    }
+
+    private static Contentlet transformContentletSearchToContent(ContentletSearch contentletSearch) {
+        Contentlet contentlet = new Contentlet();
+        contentlet.setInode(contentletSearch.getInode());
+        contentlet.setIdentifier(contentletSearch.getIdentifier());
+        return contentlet;
     }
 
     @Override
@@ -1252,10 +1267,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return q;
     }
 
-
-    @Override
-    public List<Contentlet> getRelatedContent(Contentlet contentlet,Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
-
+    private String getRelatedContentESQuery(Contentlet contentlet,Relationship rel, boolean pullByParent) {
         boolean isSameStructureRelationship = rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode());
         String q = "";
 
@@ -1271,6 +1283,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 q = "+type:content +" + rel.getRelationTypeValue() + ":" + "0";
         }
 
+        return q;
+    }
+
+    @Override
+    public List<Contentlet> getRelatedContent(Contentlet contentlet,Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
+
+        String q = getRelatedContentESQuery(contentlet, rel, pullByParent);
+
         try{
         	return perAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         }catch (Exception e) {
@@ -1284,6 +1304,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
         	}
     		 throw new DotDataException("Unable look up related content",e);
         }
+
+    }
+
+    public List<Contentlet> getRelatedContentFromIndex(Contentlet contentlet,Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
+
+        String q = getRelatedContentESQuery(contentlet, rel, pullByParent);
+
+        List<ContentletSearch> contentletSearchList =  searchIndex(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order", user, respectFrontendRoles);
+        return contentletSearchList.stream().map(ESContentletAPIImpl::transformContentletSearchToContent).collect(Collectors.toList());
 
     }
 
@@ -2310,7 +2339,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	        Set<Tree> uniqueRelationshipSet = new HashSet<Tree>();
 
 	        Relationship rel = related.getRelationship();
-	        List<Contentlet> conRels = getRelatedContent(contentlet,related.getRelationship(), related.isHasParent(), user,respectFrontendRoles) ;
+	        List<Contentlet> conRels = getRelatedContentFromIndex(contentlet,related.getRelationship(), related.isHasParent(), user,respectFrontendRoles) ;
 
 	        int treePosition = (conRels != null && conRels.size() != 0) ? conRels.size() : 1 ;
 	        int positionInParent = 1;
@@ -2318,10 +2347,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	        for (Contentlet c : related.getRecords()) {
 	            if (child) {
 	                for (Tree currentTree: contentParents) {
-				if (currentTree.getRelationType().equals(rel.getRelationTypeValue()) && c.getIdentifier().equals(currentTree.getParent())) {
-					positionInParent = currentTree.getTreeOrder();
-				}
-			}
+                        if (currentTree.getRelationType().equals(rel.getRelationTypeValue()) && c.getIdentifier().equals(currentTree.getParent())) {
+                            positionInParent = currentTree.getTreeOrder();
+                        }
+			        }
 
 	                newTree = new Tree(c.getIdentifier(), contentlet.getIdentifier(), rel.getRelationTypeValue(), positionInParent);
 	            } else {
@@ -2547,14 +2576,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(workingCon != null) {
 	            permissions = perAPI.getPermissions(workingCon);
 	            cats = catAPI.getParents(workingCon, APILocator.getUserAPI().getSystemUser(), true);
-	            contentRelationships = findContentRelationships(workingCon);
+	            contentRelationships = findContentRelationshipsFromIndex(workingCon);
             } else {
-            	contentRelationships = findContentRelationships(contentlet);
+            	contentRelationships = findContentRelationshipsFromIndex(contentlet);
             }
         }
         else
         {
-            contentRelationships = findContentRelationships(contentlet);
+            contentRelationships = findContentRelationshipsFromIndex(contentlet);
         }
 
         if(permissions == null)
@@ -3471,7 +3500,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
 
                 //Adding to the list all the records the user was not able to see becuase permissions forcing them into the relationship
-                List<Contentlet> cons = getRelatedContent(fromContentlet, r, true, APILocator.getUserAPI().getSystemUser(), true);
+                List<Contentlet> cons = getRelatedContentFromIndex(fromContentlet, r, true, APILocator.getUserAPI().getSystemUser(), true);
                 for (Contentlet contentlet : cons) {
                     if (!perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false)) {
                         selectedRecords.getRecords().add(0, contentlet);
@@ -3515,7 +3544,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
 
                 //Adding to the list all the records the user was not able to see because permissions forcing them into the relationship
-                List<Contentlet> cons = getRelatedContent(fromContentlet, r, APILocator.getUserAPI().getSystemUser(), true);
+                List<Contentlet> cons = getRelatedContentFromIndex(fromContentlet, r, APILocator.getUserAPI().getSystemUser(), true);
                 for (Contentlet contentlet : cons) {
                     if (!perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false)) {
                         selectedRecords.getRecords().add(0, contentlet);
@@ -4324,7 +4353,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 					for (Contentlet con : cons) {
 						try {
 
-                            List<ContentletSearch> relatedCon = getRelatedContentFromIndex(con, rel, APILocator.getUserAPI()
+                            List<ContentletSearch> relatedCon = getRelatedContentSearchFromIndex(con, rel, APILocator.getUserAPI()
                                     .getSystemUser(), true);
 
 							// If there's a 1-N relationship and the parent
@@ -4521,6 +4550,24 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 contentRelationships.put(r, new ArrayList<Contentlet>());
             }
             List<Contentlet> cons = getRelatedContent(contentlet, r, APILocator.getUserAPI().getSystemUser(), true);
+            for (Contentlet c : cons) {
+                List<Contentlet> l = contentRelationships.get(r);
+                l.add(c);
+            }
+        }
+        return contentRelationships;
+    }
+
+    private Map<Relationship, List<Contentlet>> findContentRelationshipsFromIndex(Contentlet contentlet) throws DotDataException, DotSecurityException{
+        Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<Relationship, List<Contentlet>>();
+        if(contentlet == null)
+            return contentRelationships;
+        List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(contentlet.getStructure());
+        for (Relationship r : rels) {
+            if(!contentRelationships.containsKey(r)){
+                contentRelationships.put(r, new ArrayList<Contentlet>());
+            }
+            List<Contentlet> cons = getRelatedContentFromIndex(contentlet, r, APILocator.getUserAPI().getSystemUser(), true);
             for (Contentlet c : cons) {
                 List<Contentlet> l = contentRelationships.get(r);
                 l.add(c);
