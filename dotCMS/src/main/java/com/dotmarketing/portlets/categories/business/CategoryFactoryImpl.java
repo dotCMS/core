@@ -245,32 +245,16 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	@Override
 		protected List<Category> getChildren(Categorizable parent) throws DotDataException {
 
-		List<String> childrenIds = catCache.getChildren(parent);
-		List<Category> children;
-		if(childrenIds == null) {
-		    DotConnect dc = new DotConnect();
-		    dc.setSQL("select inode,category_name,category_key,sort_order,active,keywords,category_velocity_var_name "+
-		              " from category join tree on (category.inode = tree.child) where tree.parent = ? "+
-		              " order by sort_order, category_name");
-		    dc.addParam(parent.getCategoryId());
-		    children = readCatFromDotConnect(dc.loadObjectResults());
+		List<Category> children = catCache.getChildren(parent);
+		if(children == null) {
+		    children = getChildren(parent, "sort_order");
 			
 			try {
 				catCache.putChildren(parent, children);
 			} catch (DotCacheException e) {
 				throw new DotDataException(e.getMessage(), e);
 			}
-		} else {
-			children = new ArrayList<Category>();
-			for(String id : childrenIds) {
-				Category cat = find(id);
-				if(cat != null) {
-					children.add(cat);
-				}
-			}
-			Collections.sort(children,new CategoryComparator());
-		}
-
+		} 
 		return children;
 	}
 
@@ -282,7 +266,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		HibernateUtil hu = new HibernateUtil(Category.class);
 		hu.setSQLQuery("select {category.*} from inode category_1_, category, tree where " +
 				"category.inode = tree.child and tree.parent = ? and category_1_.inode = category.inode " +
-				"and category_1_.type = 'category' order by " + orderBy);
+				"and category_1_.type = 'category' order by " + orderBy + ",category_name");
 		hu.setParam(parent.getCategoryId());
 		return (List<Category>) hu.list();
 	}
@@ -322,9 +306,9 @@ public class CategoryFactoryImpl extends CategoryFactory {
     @Override
     protected List<Category> getParents ( Categorizable child ) throws DotDataException {
 
-        List<String> parentIds = catCache.getParents( child );
-        List<Category> parents;
-        if ( parentIds == null ) {
+        List<Category> parents = catCache.getParents( child );
+
+        if ( parents == null ) {
 
             HibernateUtil hu = new HibernateUtil( Category.class );
             hu.setSQLQuery( "select {category.*} from inode category_1_, category, tree " +
@@ -338,15 +322,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
             } catch ( DotCacheException e ) {
                 throw new DotDataException( e.getMessage(), e );
             }
-        } else {
-            parents = new ArrayList<Category>();
-            for ( String id : parentIds ) {
-                Category cat = find( id );
-                if ( cat != null ) {
-                    parents.add( cat );
-                }
-            }
-        }
+        } 
 
         return parents;
     }
@@ -805,15 +781,15 @@ public class CategoryFactoryImpl extends CategoryFactory {
      */
     private void cleanParentChildrenCaches ( Category category ) throws DotDataException, DotCacheException {
 
-        List<String> parentIds = catCache.getParents( category );
+        List<Category> parentIds = catCache.getParents( category );
         if ( parentIds != null ) {
-            for ( String parentId : parentIds ) {
+            for ( Category parentId : parentIds ) {
                 catCache.removeChildren( parentId );
             }
         }
-        List<String> childrenIds = catCache.getChildren( category );
+        List<Category> childrenIds = catCache.getChildren( category );
         if ( childrenIds != null ) {
-            for ( String childId : childrenIds ) {
+            for ( Category childId : childrenIds ) {
                 catCache.removeParents( childId );
             }
         }

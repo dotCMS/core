@@ -45,10 +45,10 @@ public class CategoryCacheImpl extends CategoryCache {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	protected List<String> getChildren(Categorizable parent) throws DotDataException {
-		List<String> childrenIds = null;
+	protected List<Category> getChildren(Categorizable parent) throws DotDataException {
+		List<Category> childrenIds = null;
 		try{
-			childrenIds = (List<String>) cache.get(categoryChildrenCacheGroup + parent.getCategoryId(),categoryChildrenCacheGroup);
+			childrenIds = (List<Category>) cache.get(categoryChildrenCacheGroup + parent.getCategoryId(),categoryChildrenCacheGroup);
 			return childrenIds;
 		}catch (DotCacheException e) {
 			Logger.debug(this, "Cache Entry not found", e);
@@ -58,11 +58,11 @@ public class CategoryCacheImpl extends CategoryCache {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	protected List<String> getParents(Categorizable child) throws DotDataException {
+	protected List<Category> getParents(Categorizable child) throws DotDataException {
 		
-		List<String> catsIds = null;
+		List<Category> catsIds = null;
 		try{
-			catsIds = (List<String>) cache.get(categoryParentsCacheGroup + child.getCategoryId(), categoryParentsCacheGroup);
+			catsIds = (List<Category>) cache.get(categoryParentsCacheGroup + child.getCategoryId(), categoryParentsCacheGroup);
 			return catsIds;
 		}catch (DotCacheException e) {
 			Logger.debug(this, "Cache Entry not found", e);
@@ -90,12 +90,8 @@ public class CategoryCacheImpl extends CategoryCache {
 	public void putChildren(Categorizable parent, List<Category> children)
 			throws DotDataException, DotCacheException {
 		
-		List<String> catsIds = new ArrayList<String>();
-		for(Category cat : children) {
-			catsIds.add(cat.getInode());
-		}
-		cache.put(categoryChildrenCacheGroup + parent.getCategoryId(), catsIds, categoryChildrenCacheGroup);
 
+		cache.put(categoryChildrenCacheGroup + parent.getCategoryId(), children, categoryChildrenCacheGroup);
 		//Putting the children cats on the plain cache
 		for(Category cat : children) {
 			put(cat);

@@ -406,7 +406,7 @@ public class CategoryAPITest extends IntegrationTestBase {
 
         //PARENT CATEGORY
         //Verify If we find the children for the parent category we just added categories
-        List<String> cachedCategories = categoryCache.getChildren( parentCategory );
+        List<Category> cachedCategories = categoryCache.getChildren( parentCategory );
         assertNull( cachedCategories );//Verify the cache -> We should have nothing on cache at this point
         List<Category> children = categoryAPI.getChildren( parentCategory, user, true );
         assertNotNull( children );
