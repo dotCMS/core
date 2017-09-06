@@ -538,19 +538,16 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
      */
     @Override
     public  void deleteByContent(Contentlet contentlet, Relationship relationship, List<Contentlet> relatedContentlets) throws DotDataException{
-    	Tree t = new Tree();
-		for (Contentlet con : relatedContentlets) {
-
-			t= TreeFactory.getTree(contentlet.getIdentifier(), con.getIdentifier(), relationship.getRelationTypeValue());
-			if(InodeUtils.isSet(t.getChild())  & InodeUtils.isSet(t.getParent())){
-				TreeFactory.deleteTree(t);
-			}else{
-				t= TreeFactory.getTree(con.getIdentifier(),contentlet.getIdentifier(), relationship.getRelationTypeValue());
-				if(InodeUtils.isSet(t.getChild()) & InodeUtils.isSet(t.getParent())){
-					TreeFactory.deleteTree(t);
-				}
-			}
-		}
+        if(contentlet.getIdentifier()!=null){
+            for (Contentlet con : relatedContentlets) {
+                if(con.getIdentifier()!=null){
+                    TreeFactory.deleteTreesByParentAndChildAndRelationType(contentlet.getIdentifier(),
+                            con.getIdentifier(), relationship.getRelationTypeValue());
+                    TreeFactory.deleteTreesByParentAndChildAndRelationType(con.getIdentifier(),
+                            contentlet.getIdentifier(), relationship.getRelationTypeValue());
+                }
+            }
+        }
     }
 
     /**
