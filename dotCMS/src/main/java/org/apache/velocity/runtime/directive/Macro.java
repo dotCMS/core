@@ -116,7 +116,7 @@ public class Macro extends Directive
         String argArray[] = getArgArray(node, rs);
         int numArgs = node.jjtGetNumChildren();
         rs.addVelocimacro(argArray[0], node.jjtGetChild(numArgs - 1), argArray, node.getTemplateName());
-        String macroName = node.jjtGetChild(0).literal();
+        String macroName = node.jjtGetChild(0).getFirstTokenImage();
         String macroContent = node.literal();
 
         CacheLocator.getVeloctyResourceCache().putMacro(macroName,macroContent);
