@@ -251,8 +251,11 @@
                     
                 </div>
                 <div class="portlet-toolbar__actions-secondary">
+                    <button  dojoType="dijit.form.Button" onClick="showBundleUpload();" iconClass="uploadIcon">
+                        <%= LanguageUtil.get(pageContext, "publisher_upload") %>
+                    </button>
                 	<button dojoType="dijit.form.Button" onClick="deleteQueue();" iconClass="deleteIcon" class="dijitButtonDanger">
-                        <%= LanguageUtil.get(pageContext, "publisher_Delete_from_queue") %>
+                        <%= LanguageUtil.get(pageContext, "Delete") %>
                     </button>
                     <button  dojoType="dijit.form.Button" onClick="doQueueFilter();" class="dijitButtonFlat">
                         <%= LanguageUtil.get(pageContext, "publisher_Refresh") %>
@@ -270,11 +273,14 @@
                 </div>
 
 				<div class="portlet-toolbar__actions-secondary">
-					<button dojoType="dijit.form.Button" onClick="deleteAudits();" id="deleteAuditsBtn" iconClass="deleteIcon">
-                        <%= LanguageUtil.get(pageContext, "Delete") %>
-                    </button>
-                    <button  dojoType="dijit.form.Button" onClick="retryBundles();" iconClass="repeatIcon">
+				     <button  dojoType="dijit.form.Button" onClick="retryBundles();" iconClass="repeatIcon">
                         <%= LanguageUtil.get(pageContext, "publisher_retry_bundles") %>
+                    </button>
+				     <button  dojoType="dijit.form.Button" onClick="showBundleUpload();" iconClass="uploadIcon">
+                        <%= LanguageUtil.get(pageContext, "publisher_upload") %>
+                    </button>
+					<button dojoType="dijit.form.Button" onClick="deleteAudits();" id="deleteAuditsBtn" iconClass="deleteIcon" class="dijitButtonDanger">
+                        <%= LanguageUtil.get(pageContext, "Delete") %>
                     </button>
                     <button  dojoType="dijit.form.Button" onClick="doAuditFilter();" class="dijitButtonFlat">
                         <%= LanguageUtil.get(pageContext, "publisher_Refresh") %>
