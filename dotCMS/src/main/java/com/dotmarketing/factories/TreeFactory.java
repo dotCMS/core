@@ -227,6 +227,8 @@ public class TreeFactory {
 		return new ArrayList<Tree>();
 	}
 
+
+
 	public static void swapTrees(Inode i1, Inode i2) throws HibernateException {
 
 		List<Tree> newTrees = new ArrayList<Tree>();
@@ -292,6 +294,14 @@ public class TreeFactory {
 		}
 	}
 
+	public static void deleteTreesByParentById(String parentId) {
+		try {
+			HibernateUtil.delete("from tree in class com.dotmarketing.beans.Tree where tree.parent = '" + parentId+"'");
+		} catch (DotHibernateException e) {
+			throw new DotStateException(e);
+		}
+	}
+
 	public static void deleteTreesByParentAndRelationType(Inode parent, String relationType) {
 		try {
 			HibernateUtil.delete("from tree in class com.dotmarketing.beans.Tree where tree.parent = '" + parent.getInode() + 
@@ -316,6 +326,14 @@ public class TreeFactory {
 			HibernateUtil.delete("from tree in class com.dotmarketing.beans.Tree where tree.child = '" + child.getInode()+"'");
 		} catch (DotHibernateException e) {
 		  throw new DotStateException(e);
+		}
+	}
+
+	public static void deleteTreesByChildId(String childId) {
+		try {
+			HibernateUtil.delete("from tree in class com.dotmarketing.beans.Tree where tree.child = '" + childId+"'");
+		} catch (DotHibernateException e) {
+			throw new DotStateException(e);
 		}
 	}
 
