@@ -734,8 +734,8 @@ public class HibernateUtil {
 		listenersStatus.set(status);
 	}
 
-	public static ThreadLocal<Boolean> getAsyncCommitListenersFinalization() {
-		return asyncCommitListenersFinalization;
+	public static boolean getAsyncCommitListenersFinalization() {
+		return asyncCommitListenersFinalization.get();
 	}
 
 	public static void setAsyncCommitListenersFinalization(boolean finalizeAsync) {
@@ -815,7 +815,7 @@ public class HibernateUtil {
 
 		final DotRunnableThread thread = new DotRunnableThread(listeners);
 
-		if(getAsyncCommitListenersFinalization().get()
+		if(getAsyncCommitListenersFinalization()
 				&& Config.getBooleanProperty("REINDEX_ON_SAVE_IN_SEPARATE_THREAD",true)){
 			thread.start();
 		}  else{
