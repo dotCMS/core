@@ -2,6 +2,7 @@ package com.dotcms.api.system.event;
 
 import com.dotcms.api.system.event.dao.SystemEventsDAO;
 import com.dotcms.api.system.event.dto.SystemEventDTO;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.notifications.bean.Notification;
@@ -193,6 +194,7 @@ public class SystemEventsFactory implements Serializable {
 		}
 
 		@Override
+		@CloseDBIfOpened
 		public Collection<SystemEvent> getEventsSince(final long createdDate) throws DotDataException {
 			if (createdDate <= 0) {
 				final String msg = "System Event creation date must be greater than zero.";

@@ -16,6 +16,7 @@ import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.repackage.org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
@@ -118,21 +119,28 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		return assets;
 
 	}
-	
-	public List<FileAsset> findFileAssetsByHost(Host parentHost, User user, boolean live, boolean working, boolean archived, boolean respectFrontendRoles) throws DotDataException,
-	DotSecurityException {
+
+	@CloseDBIfOpened
+	public List<FileAsset> findFileAssetsByHost(final Host parentHost, final User user, final boolean live,
+												final boolean working, final boolean archived,
+												final boolean respectFrontendRoles)
+										throws DotDataException, DotSecurityException {
+
 		List<FileAsset> assets = null;
-		try{
-			Folder parentFolder = APILocator.getFolderAPI().find(FolderAPI.SYSTEM_FOLDER, user, false);
-			assets = fromContentlets(perAPI.filterCollection(contAPI.search("+conHost:" +parentHost.getIdentifier() +" +structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode() + (live?" +live:true":"") + (working? " +working:true":"") + (archived? " +deleted:true":""), -1, 0, null , user, respectFrontendRoles),
+
+		try {
+
+			final Folder parentFolder = APILocator.getFolderAPI().find(FolderAPI.SYSTEM_FOLDER, user, false);
+			assets = fromContentlets(perAPI.filterCollection
+					(contAPI.search("+conHost:" +parentHost.getIdentifier() +" +structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode() + (live?" +live:true":"") + (working? " +working:true":"") + (archived? " +deleted:true":""), -1, 0, null , user, respectFrontendRoles),
 					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
-		return assets;
 
-	}
+		return assets;
+	} // findFileAssetsByHost.
 
 	public void createBaseFileAssetFields(Structure structure) throws DotDataException, DotStateException {
 		if (structure == null || !InodeUtils.isSet(structure.getInode())) {

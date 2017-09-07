@@ -3,6 +3,7 @@ package com.dotmarketing.business;
 import java.util.Date;
 import java.util.List;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -18,36 +19,36 @@ import com.dotmarketing.util.UtilMethods;
 
 public class IdentifierAPIImpl implements IdentifierAPI {
 
-	private ContentletAPI conAPI;
-	private IdentifierFactory ifac;
+	private final ContentletAPI contentletAPI;
+	private final IdentifierFactory identifierFactory;
 
 	public IdentifierAPIImpl() {
-		conAPI = APILocator.getContentletAPI();
-		ifac = FactoryLocator.getIdentifierFactory();
+		contentletAPI = APILocator.getContentletAPI();
+		identifierFactory = FactoryLocator.getIdentifierFactory();
 	}
 
 	@Override
 	public List<Identifier> findByURIPattern(String assetType, String uri,boolean hasLive, boolean onlyDeleted,boolean include,Host host) throws DotDataException {
-		return ifac.findByURIPattern(assetType,uri,hasLive,onlyDeleted,include, host);
+		return identifierFactory.findByURIPattern(assetType,uri,hasLive,onlyDeleted,include, host);
 	}
 	
 	@Override
 	public List<Identifier> findByURIPattern(String assetType, String uri, boolean hasLive,boolean onlyDeleted, boolean include, Host host, Date startDate, Date endDate) throws DotDataException {
-		return ifac.findByURIPattern(assetType, uri, hasLive,onlyDeleted,include, host, startDate, endDate);
+		return identifierFactory.findByURIPattern(assetType, uri, hasLive,onlyDeleted,include, host, startDate, endDate);
 	}
 	
 	public Identifier findFromInode(String inodeOrIdentifier) throws DotDataException {
-		Identifier ident = ifac.loadFromCache(inodeOrIdentifier);
+		Identifier ident = identifierFactory.loadFromCache(inodeOrIdentifier);
 
 		if(ident == null || !InodeUtils.isSet(ident.getInode())){
-			ident = ifac.loadFromCacheFromInode(inodeOrIdentifier);
+			ident = identifierFactory.loadFromCacheFromInode(inodeOrIdentifier);
 		}
 		
 		if (ident == null || !InodeUtils.isSet(ident.getInode())) {
 			try {
-				Contentlet con = conAPI.find(inodeOrIdentifier, APILocator.getUserAPI().getSystemUser(), false);
+				Contentlet con = contentletAPI.find(inodeOrIdentifier, APILocator.getUserAPI().getSystemUser(), false);
 				if (con != null && InodeUtils.isSet(con.getInode())) {
-					ident = ifac.find(con.getIdentifier());
+					ident = identifierFactory.find(con.getIdentifier());
 					return ident;
 				}
 			} catch (Exception e) {
@@ -58,14 +59,14 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 		}
 
 		try {
-			ident = ifac.find(inodeOrIdentifier);
+			ident = identifierFactory.find(inodeOrIdentifier);
 		} catch (DotHibernateException e) {
 			Logger.debug(this, "Unable to find inodeOrIdentifier as identifier : ", e);
 		}
 
 		
 		if (ident == null || !InodeUtils.isSet(ident.getInode())) {
-			 ident = ifac.find(InodeFactory.getInode(inodeOrIdentifier, Inode.class));
+			 ident = identifierFactory.find(InodeFactory.getInode(inodeOrIdentifier, Inode.class));
 		}
 		
 		if (ident != null && InodeUtils.isSet(ident.getId()) ) {
@@ -76,45 +77,49 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 		
 	}
 
-	public Identifier find(String identifier) throws DotDataException {
-		return ifac.find(identifier);
+	@CloseDBIfOpened
+	public Identifier find(final String identifier) throws DotDataException {
+		return identifierFactory.find(identifier);
 
 	}
 
-	public Identifier find(Versionable versionable) throws DotDataException {
+	@CloseDBIfOpened
+	public Identifier find(final Versionable versionable) throws DotDataException {
+
 		if (versionable == null || (!InodeUtils.isSet(versionable.getVersionId()) && !InodeUtils.isSet(versionable.getInode()))) {
+
 			throw new DotStateException("Versionable is null");
 		}
-		return ifac.find(versionable);
+		return this.identifierFactory.find(versionable);
 
 	}
 
 	public boolean isIdentifier(String identifierInode) throws DotDataException {
-		return ifac.isIdentifier(identifierInode);
+		return identifierFactory.isIdentifier(identifierInode);
 	}
 
 	public Identifier find(Host host, String uri) throws DotDataException, DotStateException {
-		return ifac.findByURI(host, uri);
+		return identifierFactory.findByURI(host, uri);
 	}
 
 	public Identifier loadFromCache(Host host, String uri) throws DotDataException, DotStateException {
-		return ifac.loadByURIFromCache(host, uri);
+		return identifierFactory.loadByURIFromCache(host, uri);
 	}
 
 	public Identifier loadFromCache(Versionable version) throws DotDataException, DotStateException {
-		return ifac.loadFromCache(version);
+		return identifierFactory.loadFromCache(version);
 	}
 
 	public Identifier loadFromCache(String id) throws DotDataException, DotStateException {
-		return ifac.loadFromCache(id);
+		return identifierFactory.loadFromCache(id);
 	}
 
 	public Identifier loadFromDb(String id) throws DotDataException, DotStateException {
-		return ifac.loadFromDb(id);
+		return identifierFactory.loadFromDb(id);
 	}
 
 	public Identifier save(Identifier id) throws DotDataException, DotStateException {
-		Identifier ident = ifac.saveIdentifier(id);
+		Identifier ident = identifierFactory.saveIdentifier(id);
 		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(ident.getId());
 		return ident;
 	}
@@ -123,7 +128,7 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 		if(id==null || !UtilMethods.isSet(id.getId())){
 			throw new DotStateException ("you cannot delete a null identifier");
 		}
-		ifac.deleteIdentifier(id);
+		identifierFactory.deleteIdentifier(id);
 	}
 	public Identifier createNew(Versionable asset, Treeable parent) throws DotDataException{
 	    return createNew(asset,parent,null);
@@ -131,14 +136,14 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	public Identifier createNew(Versionable asset, Treeable parent, String existingId) throws DotDataException{
 		if(parent instanceof Folder){
 		    if(UtilMethods.isSet(existingId))
-		        return ifac.createNewIdentifier(asset, (Folder) parent, existingId);
+		        return identifierFactory.createNewIdentifier(asset, (Folder) parent, existingId);
 		    else
-		        return ifac.createNewIdentifier(asset, (Folder) parent);
+		        return identifierFactory.createNewIdentifier(asset, (Folder) parent);
 		}else if(parent instanceof Host){
 		    if(UtilMethods.isSet(existingId))
-		        return ifac.createNewIdentifier(asset, (Host) parent, existingId);
+		        return identifierFactory.createNewIdentifier(asset, (Host) parent, existingId);
 		    else
-		        return ifac.createNewIdentifier(asset, (Host) parent);
+		        return identifierFactory.createNewIdentifier(asset, (Host) parent);
 		}
 		else{
 			throw new DotStateException("You can only create an identifier on a host of folder.  Trying: " + parent);
@@ -146,15 +151,15 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	}
 
 	public void updateIdentifierURI(Versionable webasset, Folder folder) throws DotDataException {
-		ifac.updateIdentifierURI(webasset, folder);
+		identifierFactory.updateIdentifierURI(webasset, folder);
 	}
 	
 	public List<Identifier> findByParentPath(String hostId, String parent_path) throws DotHibernateException {
-	    return ifac.findByParentPath(hostId, parent_path);
+	    return identifierFactory.findByParentPath(hostId, parent_path);
 	}
 
 	public String getAssetTypeFromDB(String identifier) throws DotDataException{
-		return ifac.getAssetTypeFromDB(identifier);
+		return identifierFactory.getAssetTypeFromDB(identifier);
 	}
 
 }

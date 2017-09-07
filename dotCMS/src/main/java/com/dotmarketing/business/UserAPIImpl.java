@@ -5,6 +5,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.notifications.business.NotificationAPI;
@@ -154,7 +155,7 @@ public class UserAPIImpl implements UserAPI {
 	
 	
 	
-
+	@CloseDBIfOpened
 	private User _getSystemUser() throws DotDataException {
 		User user = null;
 		RoleAPI roleAPI = com.dotmarketing.business.APILocator.getRoleAPI();

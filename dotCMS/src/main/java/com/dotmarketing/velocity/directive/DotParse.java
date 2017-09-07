@@ -110,7 +110,7 @@ public class DotParse extends DotDirective {
       }
 
 
-      return asset.getFileAsset().getAbsolutePath();
+      return (null != asset.getFileAsset())?asset.getFileAsset().getAbsolutePath():null;
     } 
     catch (ResourceNotFoundException e) {
         Logger.warn(this.getClass(), " - unable to resolve " + templatePath + " getting this: "+ e.getMessage() );

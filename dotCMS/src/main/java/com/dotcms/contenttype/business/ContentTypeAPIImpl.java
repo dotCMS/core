@@ -4,6 +4,7 @@ import com.dotcms.api.system.event.ContentTypePayloadDataWrapper;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.Visibility;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
@@ -22,7 +23,6 @@ import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -39,24 +39,24 @@ import java.util.*;
 
 public class ContentTypeAPIImpl implements ContentTypeAPI {
 
-  final ContentTypeFactory fac;
-  final FieldFactory ffac;
-  final PermissionAPI perms;
-  final User user;
-  final Boolean respectFrontendRoles;
-  final FieldAPI fAPI;
+  private final ContentTypeFactory contentTypeFactory;
+  private final FieldFactory fieldFactory;
+  private final PermissionAPI perms;
+  private final User user;
+  private final Boolean respectFrontendRoles;
+  private final FieldAPI fieldAPI;
 
 
 
   public ContentTypeAPIImpl(User user, boolean respectFrontendRoles, ContentTypeFactory fac, FieldFactory ffac,
       PermissionAPI perms, FieldAPI fAPI) {
     super();
-    this.fac = fac;
-    this.ffac = ffac;
+    this.contentTypeFactory = fac;
+    this.fieldFactory = ffac;
     this.perms = perms;
     this.user = user;
     this.respectFrontendRoles = respectFrontendRoles;
-    this.fAPI = fAPI;
+    this.fieldAPI = fAPI;
   }
 
 
@@ -95,7 +95,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
 
     try {
-      fac.delete(type);
+      contentTypeFactory.delete(type);
     } catch (DotStateException | DotDataException e) {
       Logger.error(ContentType.class, e.getMessage(), e);
       throw new BaseRuntimeInternationalizationException(e);
@@ -113,11 +113,16 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   }
 
   @Override
-  public ContentType find(String inode) throws DotSecurityException, DotDataException {
-    ContentType type = this.fac.find(inode);
+  @CloseDBIfOpened
+  public ContentType find(final String inode) throws DotSecurityException, DotDataException {
+
+    final ContentType type = this.contentTypeFactory.find(inode);
+
     if (perms.doesUserHavePermission(type, PermissionAPI.PERMISSION_READ, user)) {
+
       return type;
     }
+
     throw new DotSecurityException("User " + user + " does not have READ permissions on ContentType " + type);
   }
 
@@ -126,7 +131,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     // TODO Auto-generated method stub
 
     try {
-      return perms.filterCollection(this.fac.findAll(), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+      return perms.filterCollection(this.contentTypeFactory.findAll(), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
     } catch (DotSecurityException e) {
       Logger.warn(this.getClass(), e.getMessage(), e);
       return ImmutableList.of();
@@ -139,7 +144,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     // TODO Auto-generated method stub
 
     try {
-      return perms.filterCollection(this.fac.findAll(orderBy), PermissionAPI.PERMISSION_READ, respectFrontendRoles,
+      return perms.filterCollection(this.contentTypeFactory.findAll(orderBy), PermissionAPI.PERMISSION_READ, respectFrontendRoles,
           user);
     } catch (DotSecurityException e) {
       Logger.warn(this.getClass(), e.getMessage(), e);
@@ -151,7 +156,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @Override
   public List<ContentType> search(String condition) throws DotDataException {
     try {
-      return perms.filterCollection(this.fac.search(condition, "mod_date", -1, 0), PermissionAPI.PERMISSION_READ,
+      return perms.filterCollection(this.contentTypeFactory.search(condition, "mod_date", -1, 0), PermissionAPI.PERMISSION_READ,
           respectFrontendRoles, user);
     } catch (DotSecurityException e) {
       throw new DotStateException(e);
@@ -173,7 +178,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @Override
   public int count(String condition, BaseContentType base) throws DotDataException {
     try {
-      return perms.filterCollection(this.fac.search(condition, base, "mod_date", -1, 0), PermissionAPI.PERMISSION_READ,
+      return perms.filterCollection(this.contentTypeFactory.search(condition, base, "mod_date", -1, 0), PermissionAPI.PERMISSION_READ,
           true, user).size();
     } catch (DotSecurityException e) {
       throw new DotStateException(e);
@@ -192,20 +197,20 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     if (!UtilMethods.isSet(tryVar)) {
       return UUID.randomUUID().toString();
     } else {
-      return this.fac.suggestVelocityVar(tryVar);
+      return this.contentTypeFactory.suggestVelocityVar(tryVar);
     }
   }
 
   @Override
   public ContentType setAsDefault(ContentType type) throws DotDataException, DotSecurityException {
     perms.checkPermission(type, PermissionLevel.READ, user);
-    return fac.setAsDefault(type);
+    return contentTypeFactory.setAsDefault(type);
 
   }
 
   @Override
   public ContentType findDefault() throws DotDataException, DotSecurityException {
-    ContentType type = fac.findDefaultType();
+    ContentType type = contentTypeFactory.findDefaultType();
     perms.checkPermission(type, PermissionLevel.READ, user);
     return type;
 
@@ -215,7 +220,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   public List<ContentType> findByBaseType(BaseContentType type, String orderBy, int limit, int offset)
       throws DotDataException {
     try {
-      return perms.filterCollection(this.fac.search("1=1", type, orderBy, limit, offset), PermissionAPI.PERMISSION_READ,
+      return perms.filterCollection(this.contentTypeFactory.search("1=1", type, orderBy, limit, offset), PermissionAPI.PERMISSION_READ,
           respectFrontendRoles, user);
     } catch (DotSecurityException e) {
       return ImmutableList.of();
@@ -227,7 +232,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   public List<ContentType> findByType(BaseContentType type) throws DotDataException, DotSecurityException {
 
     try {
-      return perms.filterCollection(this.fac.findByBaseType(type), PermissionAPI.PERMISSION_READ, respectFrontendRoles,
+      return perms.filterCollection(this.contentTypeFactory.findByBaseType(type), PermissionAPI.PERMISSION_READ, respectFrontendRoles,
           user);
     } catch (DotSecurityException e) {
       return ImmutableList.of();
@@ -238,7 +243,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   public List<SimpleStructureURLMap> findStructureURLMapPatterns() throws DotDataException {
     List<SimpleStructureURLMap> res = new ArrayList<>();
 
-    for (ContentType type : fac.findUrlMapped()) {
+    for (ContentType type : contentTypeFactory.findUrlMapped()) {
       if (type instanceof UrlMapable) {
         res.add(new SimpleStructureURLMap(type.id(), type.urlMapPattern()));
       }
@@ -260,7 +265,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
 
 
-      type = fac.save(builder.build());
+      type = contentTypeFactory.save(builder.build());
       CacheLocator.getContentTypeCache2().remove(type);
       perms.resetPermissionReferences(type);
     }
@@ -344,7 +349,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @Override
   public List<ContentType> search(String condition, String orderBy, int limit, int offset) throws DotDataException {
     try {
-      return perms.filterCollection(this.fac.search(condition, orderBy, limit, offset), PermissionAPI.PERMISSION_READ,
+      return perms.filterCollection(this.contentTypeFactory.search(condition, orderBy, limit, offset), PermissionAPI.PERMISSION_READ,
           respectFrontendRoles, user);
 
     } catch (DotSecurityException e) {
@@ -358,7 +363,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       throws DotDataException {
 
     try {
-      return perms.filterCollection(this.fac.search(condition, base, orderBy, limit, offset),
+      return perms.filterCollection(this.contentTypeFactory.search(condition, base, orderBy, limit, offset),
           PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
     } catch (DotSecurityException e) {
       throw new DotStateException(e);
@@ -368,7 +373,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   @Override
   public List<ContentType> findUrlMapped() throws DotDataException {
-    return fac.findUrlMapped();
+    return contentTypeFactory.findUrlMapped();
   }
 
   @Override
@@ -411,7 +416,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       ContentType contentTypeToSave = ctype;
 
       // set to system folder if on system host or the host id of the folder it is on
-      List<Field> oldFields = fAPI.byContentTypeId(contentTypeToSave.id());
+      List<Field> oldFields = fieldAPI.byContentTypeId(contentTypeToSave.id());
 
       // Checks if the folder has been set, if so checks the host where that folder lives and set
       // it.
@@ -431,13 +436,13 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       ContentType oldType = null;
       try {
         if (contentTypeToSave.id() != null) {
-          oldType = this.fac.find(contentTypeToSave.id());
+          oldType = this.contentTypeFactory.find(contentTypeToSave.id());
         }
       } catch (NotFoundInDbException notThere) {
         // not logging, expected when inserting new from separate environment
       }
 
-      contentTypeToSave = this.fac.save(contentTypeToSave);
+      contentTypeToSave = this.contentTypeFactory.save(contentTypeToSave);
 
       if (oldType != null) {
         if (fireUpdateIdentifiers(oldType.expireDateVar(), contentTypeToSave.expireDateVar())) {
@@ -465,7 +470,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
               Logger.info(this, "Deleting no longer needed Field: " + oldField.name() + " with ID: " + oldField.id()
                   + ", from Content Type: " + contentTypeToSave.name());
 
-              fAPI.delete(oldField);
+              fieldAPI.delete(oldField);
             } else {
               Logger.info(this, "Can't delete Field because is fixed: " + oldField.name() + " with ID: " + oldField.id()
                   + ", from Content Type: " + contentTypeToSave.name());
@@ -478,7 +483,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         // properties if it does
         for (Field field : newFields) {
           if (!varNamesCantDelete.containsKey(field.variable())) {
-            fAPI.save(field, APILocator.systemUser());
+            fieldAPI.save(field, APILocator.systemUser());
           } else {
             // We replace the newField-ID with the oldField-ID in order to be able to update the
             // Field
@@ -489,7 +494,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
               // Create a copy of the new Field with the oldField-ID,
               field = FieldBuilder.builder(field).id(oldField.id()).build();
-              fAPI.save(field, APILocator.systemUser());
+              fieldAPI.save(field, APILocator.systemUser());
             } else {
               // If the field don't match on VariableName and DBColumn we log an error.
               Logger.error(this, "Can't save Field with already existing VariableName: " + field.variable() + ", id: "
@@ -500,7 +505,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
           if (newFieldVariables != null && !newFieldVariables.isEmpty()) {
             for (FieldVariable fieldVariable : newFieldVariables) {
               if (fieldVariable.fieldId().equals(field.inode())) {
-                fAPI.save(fieldVariable, APILocator.systemUser());
+                fieldAPI.save(fieldVariable, APILocator.systemUser());
               }
             }
           }
@@ -515,7 +520,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   public boolean updateModDate(ContentType type) throws DotDataException {
     boolean updated = false;
 
-    fac.updateModDate(type);
+    contentTypeFactory.updateModDate(type);
 
     updated = true;
 
@@ -524,6 +529,6 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   @Override
   public boolean updateModDate(Field field) throws DotDataException {
-    return this.updateModDate( fac.find( field.contentTypeId() ) );
+    return this.updateModDate( contentTypeFactory.find( field.contentTypeId() ) );
   }
 }

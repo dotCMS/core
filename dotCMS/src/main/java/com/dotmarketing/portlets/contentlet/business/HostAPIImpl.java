@@ -4,6 +4,7 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -289,14 +290,18 @@ public class HostAPIImpl implements HostAPI {
         }
     }
 
+    @CloseDBIfOpened
+    public Host find(final String id, final User user,
+                     final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-    public Host find(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        if(!UtilMethods.isSet(id)){
+        if(!UtilMethods.isSet(id)) {
             return null;
         }
+
         if(Host.SYSTEM_HOST.equals(id)){
             return findSystemHost();
         }
+
         Host host  = hostCache.get(id);
 
         if(host ==null){

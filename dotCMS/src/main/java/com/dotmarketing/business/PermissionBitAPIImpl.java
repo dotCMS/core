@@ -896,7 +896,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionAPI#getPermissionIdsFromRoles()
 	 */
-	public List<Integer> getPermissionIdsFromRoles(Permissionable permissionable, Role[] roles, User user)throws DotDataException {
+	@CloseDBIfOpened
+	public List<Integer> getPermissionIdsFromRoles(final Permissionable permissionable, final Role[] roles,
+												   final User user) throws DotDataException {
 		Set<Integer> permissions = new TreeSet<Integer>();
 		List<Permission> assetsPermissions;
 
@@ -1148,7 +1150,10 @@ public class PermissionBitAPIImpl implements PermissionAPI {
         CacheLocator.getPermissionCache().remove(permissionableId);
     }
 
-	public <P extends Permissionable> List<P> filterCollection(List<P> inputList, int requiredTypePermission,boolean respectFrontendRoles, User user) throws DotDataException, DotSecurityException {
+    @CloseDBIfOpened
+	public <P extends Permissionable> List<P> filterCollection(final List<P> inputList,
+															   final int requiredTypePermission,
+															   final boolean respectFrontendRoles, User user) throws DotDataException, DotSecurityException {
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 
