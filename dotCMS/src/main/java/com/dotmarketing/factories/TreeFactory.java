@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
+
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Tree;
@@ -21,12 +21,12 @@ public class TreeFactory {
 
 
 	
-	public static Tree getTree(Inode parent, Inode child) {
+	public static Tree getTree(final Inode parent,final  Inode child) {
 
 		return getTree(parent.getInode(), child.getInode());
 	}
 
-	public static Tree getTree(String parent, String child) {
+	public static Tree getTree(final String parent, final String child) {
 		String relationType = "child";
 		return getTree(parent, child, relationType);
 	}
@@ -51,14 +51,25 @@ public class TreeFactory {
 		return new Tree();
 	}
 
-	public static Tree getTree(Tree tree) {
+	public static Tree getTree(final Tree tree) {
 		return getTree(tree.getParent(), tree.getChild(), tree.getRelationType());
 	}
 	
+	public static List<Tree> getAllTrees(final int limit, final int offset) throws DotDataException {
+
+			DotConnect dc = new DotConnect()
+				.setSQL("select * from tree order by parent,child,relation_type ")
+				.setMaxRows(limit)
+				.setStartRow(offset);
+
+			return new DBTreeTransformer(dc.loadObjectResults()).trees();
+
+
+
+	}
 	
 	
-	
-	public static Tree getTree(Inode parent, Inode child, String relationType) {
+	public static Tree getTree(final Inode parent, final Inode child,final String relationType) {
 		return getTree(parent.getInode(), child.getInode(), relationType);
 	}
 
@@ -68,12 +79,12 @@ public class TreeFactory {
 		return getTreesByParentAndRelationType(parent.getId(), relationType);
 	}
 	
-	@SuppressWarnings("unchecked")
+
 	public static List<Tree> getTreesByParentAndRelationType(Inode parent, String relationType) {
 		return getTreesByParentAndRelationType(parent.getInode(), relationType);
 	}
 	
-	@SuppressWarnings("unchecked")
+
 	private static List<Tree> getTreesByParentAndRelationType(String parent, String relationType) {
 		try {
 			DotConnect dc = new DotConnect();
@@ -90,7 +101,7 @@ public class TreeFactory {
 	}
 	
 	
-	@SuppressWarnings("unchecked")
+
 	private static List<Tree> getTreesByChildAndRelationType(String child, String relationType) {
 		try {
 			DotConnect dc = new DotConnect();
@@ -106,7 +117,7 @@ public class TreeFactory {
 		return new ArrayList<Tree>();
 	}
 
-	@SuppressWarnings("unchecked")
+
 	public static List<Tree> getTreesByChildAndRelationType(Inode child, String relationType) {
 		return getTreesByChildAndRelationType(child.getInode(), relationType);
 	}
@@ -115,7 +126,7 @@ public class TreeFactory {
 		return getTreesByChildAndRelationType(child.getId(), relationType);
 	}
 
-	@SuppressWarnings("unchecked")
+
 	public static List<Tree> getTreesByRelationType(String relationType) {
 		try {
 			DotConnect dc = new DotConnect();
@@ -130,12 +141,12 @@ public class TreeFactory {
 		return new ArrayList<Tree>();
 	}
 
-	@SuppressWarnings("unchecked")
+
 	public static List<Tree> getTreesByParent(Inode inode) {
 		return getTreesByParent(inode.getInode());
 	}
 	
-	@SuppressWarnings("unchecked")
+
 	public static List<Tree> getTreesByParent(String inode) {
 		try {
 			DotConnect dc = new DotConnect();
@@ -154,7 +165,7 @@ public class TreeFactory {
 		return getTreesByChild(inode.getInode());
 	}
 	
-	@SuppressWarnings("unchecked")
+
 	public static List<Tree> getTreesByChild(String inode) {
 		try {
 			DotConnect dc = new DotConnect();
@@ -169,7 +180,7 @@ public class TreeFactory {
 		return new ArrayList<Tree>();
 	}
 
-	public static void swapTrees(Inode i1, Inode i2) throws HibernateException {
+	public static void swapTrees(final Inode i1, final Inode i2) throws DotDataException {
 
 		List<Tree> newTrees = new ArrayList<Tree>();
 
@@ -297,12 +308,19 @@ public class TreeFactory {
 			throw new DotStateException(e);
 		}
 	}
-
+	/**
+	 * Does a upsert into the tree table
+	 * @param tree
+	 */
 	public static void saveTree(Tree tree) {
 		deleteTree(tree);
 		insertTree(tree);
 	}
-	private static void insertTree(Tree tree) {
+	/**
+	 * Does an insert into the tree table
+	 * @param tree
+	 */
+	public static void insertTree(Tree tree) {
 		DotConnect dc = new DotConnect();
 		dc.setSQL("insert into tree (child,parent,relation_type,tree_order) values (?,?,?,?)");
 		dc.addParam(tree.getChild());
@@ -314,8 +332,6 @@ public class TreeFactory {
 		} catch (DotDataException e) {
 			throw new DotStateException(e);
 		}
-		
-		
 	}
 	
 }

@@ -42,9 +42,11 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.logConsole.model.LogMapperRow;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -1312,6 +1314,19 @@ public class ImportExportUtil {
                     dc.addParam(portletPreferences.getPreferences());
                     dc.getResults();
                 }
+            }else if (_importClass.equals(Tree.class)) {
+                for (int j = 0; j < l.size(); j++) {
+                	Tree tree = (Tree)l.get(j);
+                	try{
+	                	LocalTransaction.wrap(()->{
+	                		TreeFactory.insertTree(tree);
+	                	});
+                	}catch(Throwable r){
+                		Logger.warn(this.getClass(), "Unable to import tree :" + r.getMessage());
+                	}
+                }
+                
+                
             }else if (_importClass.equals(User.class)) {
                 for (int j = 0; j < l.size(); j++) {
                     User u = (User)l.get(j);
@@ -1406,33 +1421,13 @@ public class ImportExportUtil {
                             }
                         }
                     } else {
-                        if(obj instanceof Tree){
-                            Tree t = (Tree) obj;
-                            DotConnect dc = new DotConnect();
-                            List<String> inodeList = new ArrayList<String>();
-                            dc.setSQL("select inode from inode where inode = ? or inode = ?");
-                            dc.addParam(t.getParent());
-                            dc.addParam(t.getChild());
-                            inodeList = dc.getResults();
-                            dc.setSQL("select id from identifier where id = ? or id = ?");
-                            dc.addParam(t.getParent());
-                            dc.addParam(t.getChild());
-                            inodeList.addAll(dc.getResults());
-                            if(inodeList.size() > 1){
-                                HibernateUtil.save(obj);
-                            }
-                            else{
-                                Logger.warn(this.getClass(), "Can't import tree- no matching inodes: {parent=" + t.getParent() + ", child=" + t.getChild() +"}");
 
-                            }
+                        try {
+                            HibernateUtil.save(obj);
+                        } catch (DotHibernateException e) {
+                            Logger.error(this,e.getMessage(),e);
                         }
-                        else{
-                            try {
-                                HibernateUtil.save(obj);
-                            } catch (DotHibernateException e) {
-                                Logger.error(this,e.getMessage(),e);
-                            }
-                        }
+                        
                     }
                     HibernateUtil.getSession().flush();
                     HibernateUtil.closeSession();

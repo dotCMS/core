@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
+import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -49,6 +50,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.PermissionReference;
+import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.NoSuchUserException;
@@ -59,6 +61,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.calendar.model.CalendarReminder;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
@@ -615,6 +618,22 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				int total =0;
 				java.text.NumberFormat formatter = new java.text.DecimalFormat("0000000000");
 				/* we will only export 10,000,000 items of any given type */
+				
+
+				for(i=0;i < 10000000;i=i+step){
+					List<Tree> trees = TreeFactory.getAllTrees(step * i, step);
+					if(trees==null || trees.isEmpty()){
+						break;
+					}
+					File f  = new File(backupTempFilePath + "/" + Tree.class.getName() + "_" + formatter.format(i) + ".xml");
+					try(OutputStream out = Files.newOutputStream(f.toPath())){
+						_xstream.toXML(trees, out);
+					}
+				}
+				
+				
+				
+				
 				for(i=0;i < 10000000;i=i+step){
 
                     _dh = new HibernateUtil(clazz);
