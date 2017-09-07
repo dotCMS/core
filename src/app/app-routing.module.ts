@@ -16,15 +16,15 @@ import { environment } from '../environments/environment';
 
 const angularComponents: any[] = [
     {
-        id: 'content-types-angular',
+        path: 'content-types-angular',
         loadChildren: 'app/portlets/content-types/content-types.module#ContentTypesModule'
     },
     {
-        id: 'rules',
+        path: 'rules',
         loadChildren: 'app/portlets/rule-engine/rule-engine.module#RuleEngineModule',
     },
     {
-        id: 'dot-browser',
+        path: 'dot-browser',
         loadChildren: 'app/portlets/dot-browser/dot-browser.module#DotBrowserModule'
     },
 ];
@@ -70,25 +70,11 @@ const angularChildren: any[] = [
         path: 'c/:id',
     },
 ];
-angularComponents.forEach(item => {
-    const route: any = {
-        canActivate: [RoutingPrivateAuthService],
-        path: item.path ? item.path : item.id
-    };
-
-    if (item.loadChildren) {
-        route.loadChildren = item.loadChildren;
-    } else if (item.component) {
-        route.component = item.component;
-    }
-
-    angularChildren.push(route);
-});
 
 const appRoutes: Routes = [
     {
         canActivate: [RoutingPrivateAuthService],
-        children: angularChildren,
+        children: angularComponents,
         component: MainComponentLegacy,
         path: '',
     },
