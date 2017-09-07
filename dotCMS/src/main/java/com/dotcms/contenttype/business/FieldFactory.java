@@ -5,6 +5,7 @@ import java.util.List;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 
 public interface FieldFactory {
@@ -59,6 +60,12 @@ public interface FieldFactory {
     String nextAvailableColumn(Field field) throws DotDataException;
 
 
-    
+    public void moveSortOrderForward(int from, int to) throws DotDataException;
+
+    public void moveSortOrderBackward(int from, int to) throws DotDataException;
+
+    public void moveSortOrderForward(int from) throws DotDataException;
+
+    public void moveSortOrderBackward(int to) throws DotDataException;
 
 }
