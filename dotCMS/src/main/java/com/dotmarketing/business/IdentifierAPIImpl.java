@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -27,17 +28,28 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 		identifierFactory = FactoryLocator.getIdentifierFactory();
 	}
 
+	@CloseDBIfOpened
 	@Override
-	public List<Identifier> findByURIPattern(String assetType, String uri,boolean hasLive, boolean onlyDeleted,boolean include,Host host) throws DotDataException {
-		return identifierFactory.findByURIPattern(assetType,uri,hasLive,onlyDeleted,include, host);
+	public List<Identifier> findByURIPattern(final String assetType, final String uri,
+											 final boolean hasLive,  final boolean onlyDeleted,
+											 final boolean include,  final Host host) throws DotDataException {
+
+		return this.identifierFactory.findByURIPattern(assetType,uri,hasLive,onlyDeleted,include, host);
 	}
-	
+
+	@CloseDBIfOpened
 	@Override
-	public List<Identifier> findByURIPattern(String assetType, String uri, boolean hasLive,boolean onlyDeleted, boolean include, Host host, Date startDate, Date endDate) throws DotDataException {
-		return identifierFactory.findByURIPattern(assetType, uri, hasLive,onlyDeleted,include, host, startDate, endDate);
+	public List<Identifier> findByURIPattern(final String assetType, final String uri,
+											 final boolean hasLive,  final boolean onlyDeleted,
+											 final boolean include,  final Host host,
+											 final Date startDate,   final Date endDate) throws DotDataException {
+
+		return this.identifierFactory.findByURIPattern(assetType, uri, hasLive,onlyDeleted,include, host, startDate, endDate);
 	}
-	
-	public Identifier findFromInode(String inodeOrIdentifier) throws DotDataException {
+
+	@CloseDBIfOpened
+	public Identifier findFromInode(final String inodeOrIdentifier) throws DotDataException {
+
 		Identifier ident = identifierFactory.loadFromCache(inodeOrIdentifier);
 
 		if(ident == null || !InodeUtils.isSet(ident.getInode())){
@@ -94,46 +106,57 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 
 	}
 
-	public boolean isIdentifier(String identifierInode) throws DotDataException {
+	@CloseDBIfOpened
+	public boolean isIdentifier(final String identifierInode) throws DotDataException {
 		return identifierFactory.isIdentifier(identifierInode);
 	}
 
-	public Identifier find(Host host, String uri) throws DotDataException, DotStateException {
+	@CloseDBIfOpened
+	public Identifier find(final Host host, final String uri) throws DotDataException, DotStateException {
 		return identifierFactory.findByURI(host, uri);
 	}
 
-	public Identifier loadFromCache(Host host, String uri) throws DotDataException, DotStateException {
+	public Identifier loadFromCache(final Host host, final String uri) throws DotDataException, DotStateException {
 		return identifierFactory.loadByURIFromCache(host, uri);
 	}
 
-	public Identifier loadFromCache(Versionable version) throws DotDataException, DotStateException {
+	public Identifier loadFromCache(final Versionable version) throws DotDataException, DotStateException {
 		return identifierFactory.loadFromCache(version);
 	}
 
-	public Identifier loadFromCache(String id) throws DotDataException, DotStateException {
+	public Identifier loadFromCache(final String id) throws DotDataException, DotStateException {
 		return identifierFactory.loadFromCache(id);
 	}
 
-	public Identifier loadFromDb(String id) throws DotDataException, DotStateException {
+	@CloseDBIfOpened
+	public Identifier loadFromDb(final String id) throws DotDataException, DotStateException {
 		return identifierFactory.loadFromDb(id);
 	}
 
-	public Identifier save(Identifier id) throws DotDataException, DotStateException {
-		Identifier ident = identifierFactory.saveIdentifier(id);
+	@WrapInTransaction
+	public Identifier save(final Identifier id) throws DotDataException, DotStateException {
+		final Identifier ident = identifierFactory.saveIdentifier(id);
 		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(ident.getId());
 		return ident;
 	}
 
+	@WrapInTransaction
 	public void delete(Identifier id) throws DotDataException, DotStateException {
 		if(id==null || !UtilMethods.isSet(id.getId())){
 			throw new DotStateException ("you cannot delete a null identifier");
 		}
 		identifierFactory.deleteIdentifier(id);
 	}
-	public Identifier createNew(Versionable asset, Treeable parent) throws DotDataException{
+
+
+	public Identifier createNew(final Versionable asset, final Treeable parent) throws DotDataException{
 	    return createNew(asset,parent,null);
 	}
-	public Identifier createNew(Versionable asset, Treeable parent, String existingId) throws DotDataException{
+
+	@WrapInTransaction
+	public Identifier createNew(final Versionable asset, final Treeable parent,
+								final String existingId) throws DotDataException {
+
 		if(parent instanceof Folder){
 		    if(UtilMethods.isSet(existingId))
 		        return identifierFactory.createNewIdentifier(asset, (Folder) parent, existingId);
@@ -150,15 +173,21 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 		}
 	}
 
-	public void updateIdentifierURI(Versionable webasset, Folder folder) throws DotDataException {
+	@WrapInTransaction
+	public void updateIdentifierURI(final Versionable webasset, final Folder folder) throws DotDataException {
+
 		identifierFactory.updateIdentifierURI(webasset, folder);
 	}
-	
-	public List<Identifier> findByParentPath(String hostId, String parent_path) throws DotHibernateException {
-	    return identifierFactory.findByParentPath(hostId, parent_path);
+
+	@CloseDBIfOpened
+	public List<Identifier> findByParentPath(final String hostId, final String parentPath) throws DotHibernateException {
+
+	    return identifierFactory.findByParentPath(hostId, parentPath);
 	}
 
-	public String getAssetTypeFromDB(String identifier) throws DotDataException{
+	@CloseDBIfOpened
+	public String getAssetTypeFromDB(final String identifier) throws DotDataException {
+
 		return identifierFactory.getAssetTypeFromDB(identifier);
 	}
 

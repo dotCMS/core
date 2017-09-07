@@ -57,6 +57,7 @@ public class RoleAPIImpl implements RoleAPI {
 	}
 	
 
+	@CloseDBIfOpened
 	public List<Role> loadRolesForUser(String userId, boolean includeImplicitRoles)
 			throws DotDataException {
 		return roleFactory.loadRolesForUser(userId,includeImplicitRoles);
@@ -298,7 +299,8 @@ public class RoleAPIImpl implements RoleAPI {
 		Role role = roleFactory.getRoleById(roleId);
 		return findUsersForRole(role);
 	}
-	
+
+	@CloseDBIfOpened
 	public List<String> loadLayoutIdsForRole(Role role) throws DotDataException {
 		return roleFactory.loadLayoutIdsForRole(role);
 	}

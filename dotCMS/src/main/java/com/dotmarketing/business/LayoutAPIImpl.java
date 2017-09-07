@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Portlet;
@@ -72,10 +73,11 @@ public class LayoutAPIImpl implements LayoutAPI {
 		lf.setPortletsToLayout(layout, portletIds);
 	}
 
-	public List<Layout> loadLayoutsForUser(User user) throws DotDataException {
+	@CloseDBIfOpened
+	public List<Layout> loadLayoutsForUser(final User user) throws DotDataException {
 		
-		List<Role> urs = APILocator.getRoleAPI().loadRolesForUser(user.getUserId(), false);
-		Set<String> lids = new HashSet<String>();
+		final List<Role> urs = APILocator.getRoleAPI().loadRolesForUser(user.getUserId(), false);
+		final Set<String> lids = new HashSet<String>();
 		for (Role role : urs) {
 			 lids.addAll(APILocator.getRoleAPI().loadLayoutIdsForRole(role));	
 		}
