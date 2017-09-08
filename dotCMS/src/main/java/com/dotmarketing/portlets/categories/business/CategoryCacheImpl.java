@@ -211,30 +211,6 @@ public class CategoryCacheImpl extends CategoryCache {
         removeParents( child.getCategoryId() );
     }
 
-	@SuppressWarnings("unchecked")
-	@Override
-	protected void addChild(Categorizable parent, Category child, List<Category> children)throws DotDataException, DotCacheException {
-		if(children == null)
-			children = new ArrayList<Category>();
-		else
-			children = new ArrayList<Category>(children);
-		
-		List<String> childrenIds = new ArrayList<String>();
-		for(Category childcat : children) {
-			childrenIds.add(childcat.getInode());
-		}
-		
-		childrenIds.add(child.getCategoryId());
-		cache.put(categoryChildrenCacheGroup + parent.getCategoryId(), childrenIds, categoryChildrenCacheGroup);
-		
-		//putting the parent in the plain category cache if it's a category type
-		if(parent instanceof Category){
-			put((Category)parent);
-		}
-		
-		//putting the parent in the plain category cache if it's a category type
-		put(child);
-	}
 
 	@SuppressWarnings("unchecked")
 	@Override

@@ -4,8 +4,10 @@ import java.util.List;
 
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.util.Logger;
 
 /**
  * 
@@ -75,15 +77,6 @@ public abstract class CategoryCache implements Cachable{
 	 */
 	abstract protected void putChildren(Categorizable parentId, List<Category> children) throws DotDataException, DotCacheException;
 
-	/**
-	 * Sets the list of children based on the given parent id/inode
-	 * @param parentId
-	 * @param children
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotCacheException 
-	 */
-	abstract protected void addChild(Categorizable parentId, Category child, List<Category> children) throws DotDataException, DotCacheException;
 
     /**
      * Removes the list of children categories based using the given parent id/inode
