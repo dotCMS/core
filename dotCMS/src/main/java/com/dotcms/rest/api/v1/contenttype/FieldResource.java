@@ -62,7 +62,7 @@ public class FieldResource implements Serializable {
 		Response response = null;
 		
 		try {
-			List<Field> fields = new JsonFieldTransformer(fieldsJson).asList();
+			final List<Field> fields = new JsonFieldTransformer(fieldsJson).asList();
 
 			for (Field field : fields) {
 				field = fapi.save(field, user);
@@ -341,9 +341,9 @@ public class FieldResource implements Serializable {
 
 		Response response = null;
 		try {
-			List<String> deletedIds = new ArrayList<String>();
+			final List<String> deletedIds = new ArrayList<String>();
 
-			for (String fieldId : fieldsID) {
+			for (final String fieldId : fieldsID) {
 				try {
 					Field field = fapi.find(fieldId);
 					fapi.delete(field, user);
@@ -353,7 +353,7 @@ public class FieldResource implements Serializable {
 				}
 			}
 
-			List<Field> contentTypeFields = fapi.byContentTypeId(typeId);
+			final List<Field> contentTypeFields = fapi.byContentTypeId(typeId);
 			response = Response.ok(new ResponseEntityView(imap("deletedIds", deletedIds,
 					"fields", new JsonFieldTransformer(contentTypeFields).mapList()))).build();
 		}catch (Exception e) {
