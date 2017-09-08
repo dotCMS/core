@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import com.dotcms.api.system.event.*;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
@@ -64,28 +65,28 @@ public class FolderAPIImpl implements FolderAPI  {
 	private final FolderFactory folderFactory = FactoryLocator.getFolderFactory();
 	private final PermissionAPI permissionAPI = getPermissionAPI();
 
-
-	public Folder findFolderByPath(String path, Host host, User user, boolean respectFrontEndPermissions) throws DotStateException,
+    @CloseDBIfOpened
+	public Folder findFolderByPath(final String path, final Host host,
+								   final User user, final boolean respectFrontEndPermissions) throws DotStateException,
 			DotDataException, DotSecurityException {
 
-		Folder f = folderFactory.findFolderByPath(path, host);
+		final Folder folder = folderFactory.findFolderByPath(path, host);
 
-
-		if (f != null && InodeUtils.isSet(f.getInode()) && !permissionAPI.doesUserHavePermission(f, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
+		if (folder != null && InodeUtils.isSet(folder.getInode()) &&
+				!permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
 
 			// SYSTEM_FOLDER means if the user has permissions to the host, then they can see host.com/
-			if(FolderAPI.SYSTEM_FOLDER.equals(f.getInode())) {
+			if(FolderAPI.SYSTEM_FOLDER.equals(folder.getInode())) {
 				if(!Host.SYSTEM_HOST.equals(host.getIdentifier())){
 					if(!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
-						throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read folder " + f.getPath());
+						throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read folder " + folder.getPath());
 					}
 				}
 			}
 
 		}
-		return f;
 
-
+		return folder;
 	}
 
 
@@ -96,7 +97,9 @@ public class FolderAPIImpl implements FolderAPI  {
 		return findFolderByPath(path,host,user, respectFrontEndPermissions);
 	}
 
-	public boolean renameFolder(Folder folder, String newName, User user, boolean respectFrontEndPermissions) throws DotDataException,
+	@WrapInTransaction
+	public boolean renameFolder(final Folder folder, final String newName,
+								final User user, final boolean respectFrontEndPermissions) throws DotDataException,
 			DotSecurityException {
 
 		boolean renamed = false;
@@ -105,28 +108,19 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to edit folder" + folder.getPath());
 		}
 
-		boolean localTransaction = false;
 		try {
-			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 
-			renamed= folderFactory.renameFolder(folder, newName, user, respectFrontEndPermissions);
-
-			if (localTransaction) {
-                HibernateUtil.commitTransaction();
-            }
+			renamed = folderFactory.renameFolder(folder, newName, user, respectFrontEndPermissions);
 
 			return renamed;
 		} catch (Exception e) {
 
-			if (localTransaction) {
-				HibernateUtil.rollbackTransaction();
-			}
 			throw new DotDataException(e.getMessage(),e);
 		}
 	}
 
-
-	public Folder findParentFolder(Treeable asset, User user, boolean respectFrontEndPermissions) throws DotIdentifierStateException,
+	@CloseDBIfOpened
+	public Folder findParentFolder(final Treeable asset, final User user, final boolean respectFrontEndPermissions) throws DotIdentifierStateException,
 			DotDataException, DotSecurityException {
 		Identifier id = APILocator.getIdentifierAPI().find(asset.getIdentifier());
 		if(id==null) return null;
@@ -195,7 +189,9 @@ public class FolderAPIImpl implements FolderAPI  {
 		return subFolders;
 	}
 
-	public List<Folder> findThemes(Host host, User user, boolean respectFrontEndPermissions) throws DotDataException,
+	@CloseDBIfOpened
+	public List<Folder> findThemes(final Host host, final User user,
+								   final boolean respectFrontEndPermissions) throws DotDataException,
 	DotSecurityException {
 
 		if (!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
@@ -243,7 +239,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-
+	@CloseDBIfOpened
 	public List<Folder> findSubFoldersRecursively(Host host, User user, boolean respectFrontEndPermissions) throws DotDataException,
 			DotSecurityException {
 		if (!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
@@ -269,8 +265,9 @@ public class FolderAPIImpl implements FolderAPI  {
 	 * @throws IOException
 	 * @throws DotStateException
 	 */
-
-	public void copy(Folder folderToCopy, Folder newParentFolder, User user, boolean respectFrontEndPermissions) throws DotDataException,
+	@CloseDBIfOpened
+	public void copy(final Folder folderToCopy, final Folder newParentFolder,
+					 final User user, final boolean respectFrontEndPermissions) throws DotDataException,
 			DotSecurityException, DotStateException, IOException {
 
 		if (!permissionAPI.doesUserHavePermission(folderToCopy, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
@@ -287,9 +284,11 @@ public class FolderAPIImpl implements FolderAPI  {
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
-
-	public void copy(Folder folderToCopy, Host newParentHost, User user, boolean respectFrontEndPermissions) throws DotDataException,
+	@CloseDBIfOpened
+	public void copy(final Folder folderToCopy, final Host newParentHost,
+					 final User user, final boolean respectFrontEndPermissions) throws DotDataException,
 			DotSecurityException, DotStateException, IOException {
+
 		if (!permissionAPI.doesUserHavePermission(folderToCopy, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + folderToCopy.getPath());
 		}
@@ -304,13 +303,14 @@ public class FolderAPIImpl implements FolderAPI  {
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
-
+	@CloseDBIfOpened
 	public boolean exists(String folderInode) throws DotDataException {
 		return folderFactory.exists(folderInode);
 	}
 
 
 	@SuppressWarnings("unchecked")
+	@CloseDBIfOpened
 	public List<Inode> findMenuItems(Folder folder, User user, boolean respectFrontEndPermissions) throws DotStateException, DotDataException {
 		return folderFactory.getMenuItems(folder);
 	}
@@ -324,7 +324,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-
+	@WrapInTransaction
 	public void delete(Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 
 		String path = StringUtils.EMPTY;
@@ -348,15 +348,9 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("YOU CANNOT DELETE THE SYSTEM FOLDER");
 		}
 
-		boolean localTransaction = false;
 
 		// start transactional delete
 		try {
-			localTransaction = DbConnectionFactory.getConnection().getAutoCommit();
-
-			if (localTransaction) {
-				HibernateUtil.startTransaction();
-			}
 
 			PermissionAPI papi = getPermissionAPI();
 			if (!papi.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user)) {
@@ -440,16 +434,8 @@ public class FolderAPIImpl implements FolderAPI  {
 			}
 
 			PublisherAPI.getInstance().deleteElementFromPublishQueueTable(folder.getInode());
-
-			if(localTransaction){
-                HibernateUtil.commitTransaction();
-            }
-
 		} catch (Exception e) {
 
-			if (localTransaction) {
-				HibernateUtil.rollbackTransaction();
-			}
 			throw new DotDataException(e.getMessage(),e);
 		}
 	}
@@ -555,8 +541,9 @@ public class FolderAPIImpl implements FolderAPI  {
 	 * @throws DotSecurityException
 	 * @throws DotStateException
 	 */
-
-	public void save(Folder folder, String existingId, User user, boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
+	@WrapInTransaction
+	public void save(final Folder folder, final String existingId,
+					 final User user, final boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
 
 		Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 		if(id ==null || !UtilMethods.isSet(id.getId())){
@@ -592,14 +579,13 @@ public class FolderAPIImpl implements FolderAPI  {
 
 	}
 
-
+	@CloseDBIfOpened
 	public Folder findSystemFolder() throws DotDataException {
 		return folderFactory.findSystemFolder();
 	}
 
 
-
-
+	// todo: not sure if this should be a transaction
 	public Folder createFolders(String path, Host host, User user, boolean respectFrontEndPermissions) throws DotHibernateException,
 			DotSecurityException, DotDataException {
 
@@ -636,6 +622,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		return parent;
 	}
 
+	@CloseDBIfOpened
 	public List<Map<String, Serializable>> DBSearch(Query query, User user, boolean respectFrontendRoles) throws ValidationException,
 			DotDataException {
 		Map<String, String> dbColToObjectAttribute = new HashMap<String, String>();
@@ -660,7 +647,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	 */
 
 
-
+	@CloseDBIfOpened
 	public List<Folder> findFoldersByHost(Host host, User user, boolean respectFrontendRoles) throws DotHibernateException {
 		return folderFactory.findFoldersByHost(host);
 	}
@@ -682,6 +669,7 @@ public class FolderAPIImpl implements FolderAPI  {
         return permissionAPI.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
     }
 
+	@CloseDBIfOpened
     public List<Link> getLinks ( Host host, boolean working, boolean deleted, User user, boolean respectFrontEndPermissions ) throws DotStateException, DotDataException, DotSecurityException {
 
         if ( !permissionAPI.doesUserHavePermission( host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions ) ) {
@@ -695,6 +683,7 @@ public class FolderAPIImpl implements FolderAPI  {
         return permissionAPI.filterCollection( list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user );
     }
 
+	@CloseDBIfOpened
     public List<Link> getLinks ( Host host, User user, boolean respectFrontEndPermissions ) throws DotStateException, DotDataException, DotSecurityException {
 
         if ( !permissionAPI.doesUserHavePermission( host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions ) ) {
@@ -705,6 +694,7 @@ public class FolderAPIImpl implements FolderAPI  {
         return permissionAPI.filterCollection( list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user );
     }
 
+	@CloseDBIfOpened
     public List<Link> getLinks ( Folder parent, User user, boolean respectFrontEndPermissions ) throws DotStateException, DotDataException, DotSecurityException {
 
         if ( !permissionAPI.doesUserHavePermission( parent, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions ) ) {
@@ -715,6 +705,7 @@ public class FolderAPIImpl implements FolderAPI  {
         return permissionAPI.filterCollection( list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user );
     }
 
+	@CloseDBIfOpened
 	public  List<Contentlet> getContent(Folder parent, User user, boolean respectFrontEndPermissions) throws DotStateException,
 		DotDataException, DotSecurityException{
 		if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
@@ -724,6 +715,8 @@ public class FolderAPIImpl implements FolderAPI  {
 		List list = folderFactory.getChildrenClass(parent, Contentlet.class);
 		return permissionAPI.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
 	}
+
+	@CloseDBIfOpened
 	public  List<Structure> getStructures(Folder parent, User user, boolean respectFrontEndPermissions) throws DotStateException,
 		DotDataException, DotSecurityException{
 		if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
@@ -733,30 +726,32 @@ public class FolderAPIImpl implements FolderAPI  {
 		return permissionAPI.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
 	}
 
+	@CloseDBIfOpened
 	public boolean isChildFolder(Folder folder1, Folder folder2) throws DotDataException,DotSecurityException {
 	   return folderFactory.isChildFolder(folder1, folder2);
 	}
 
-
+	@CloseDBIfOpened
 	public boolean matchFilter(Folder folder, String fileName) {
 		return folderFactory.matchFilter(folder, fileName);
 	}
 
-
+	@CloseDBIfOpened
 	public List findMenuItems(Folder folder, int orderDirection) throws DotDataException{
 		return folderFactory.getMenuItems(folder, orderDirection);
 	}
 
+	@CloseDBIfOpened
 	public List<Inode> findMenuItems(Host host,User user,boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		return folderFactory.getMenuItems(host);
 	}
 
-
+	@CloseDBIfOpened
 	public List<Folder> findSubFoldersTitleSort(Folder folder,User user,boolean respectFrontEndPermissions)throws DotDataException {
 		return folderFactory.getSubFoldersTitleSort(folder);
 	}
 
-
+	@WrapInTransaction
 	public boolean move(Folder folderToMove, Folder newParentFolder,User user,boolean respectFrontEndPermissions)throws DotDataException, DotSecurityException {
 		if (!permissionAPI.doesUserHavePermission(folderToMove, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + folderToMove.getPath());
@@ -773,7 +768,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		return move;
 	}
 
-
+	@WrapInTransaction
 	public boolean move(Folder folderToMove, Host newParentHost,User user,boolean respectFrontEndPermissions)throws DotDataException, DotSecurityException {
 		if (!permissionAPI.doesUserHavePermission(folderToMove, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + folderToMove.getPath());
@@ -790,14 +785,17 @@ public class FolderAPIImpl implements FolderAPI  {
 		return move;
 	}
 
+	@CloseDBIfOpened
 	public List<Folder> findSubFolders(Host host, boolean showOnMenu) throws DotHibernateException{
 		return folderFactory.findSubFolders(host, showOnMenu);
 	}
 
+	@CloseDBIfOpened
 	public List<Folder> findSubFolders(Folder folder,boolean showOnMenu)throws DotStateException, DotDataException {
 		return folderFactory.findSubFolders(folder, showOnMenu);
 	}
 
+	@CloseDBIfOpened
 	public List<String> getEntriesTree(Folder mainFolder, String openNodes,String view, String content, String structureInode,User user)
 			throws DotStateException, DotDataException, DotSecurityException {
 		Locale locale = user.getLocale();
@@ -808,6 +806,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	}
 
 
+	@CloseDBIfOpened
 	public List<String> getFolderTree(String openNodes, String view,
 			String content, String structureInode,User user)
 			throws DotStateException, DotDataException, DotSecurityException {
@@ -818,6 +817,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		return folderFactory.getFolderTree(openNodes, view, content, structureInode, locale, timeZone, roles, isAdminUser, user);
 	}
 
+	@CloseDBIfOpened
 	public List<Contentlet> getLiveContent(Folder parent, User user,boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + parent.getName());
@@ -847,6 +847,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		return permissionAPI.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
 	}
 
+	@CloseDBIfOpened
 	public List<Contentlet> getWorkingContent(Folder parent, User user,boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + parent.getPath());
@@ -859,6 +860,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		return permissionAPI.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
 	}
 
+	@CloseDBIfOpened
 	public List<Link> getWorkingLinks(Folder parent, User user,boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		if (!permissionAPI.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + user.getUserId() != null?user.getUserId():"" + " does not have permission to read Folder " + parent.getPath());

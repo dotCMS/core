@@ -5,6 +5,7 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
@@ -67,6 +68,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   }
 
 
+  @WrapInTransaction
   @Override
   public void delete(ContentType type) throws DotSecurityException, DotDataException {
     perms.checkPermission(type, PermissionLevel.PUBLISH, user);
@@ -126,9 +128,9 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     throw new DotSecurityException("User " + user + " does not have READ permissions on ContentType " + type);
   }
 
+  @CloseDBIfOpened
   @Override
   public List<ContentType> findAll() throws DotDataException {
-    // TODO Auto-generated method stub
 
     try {
       return perms.filterCollection(this.contentTypeFactory.findAll(), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
@@ -139,9 +141,9 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   }
 
+  @CloseDBIfOpened
   @Override
   public List<ContentType> findAll(String orderBy) throws DotDataException {
-    // TODO Auto-generated method stub
 
     try {
       return perms.filterCollection(this.contentTypeFactory.findAll(orderBy), PermissionAPI.PERMISSION_READ, respectFrontendRoles,
@@ -153,6 +155,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   }
 
+  @CloseDBIfOpened
   @Override
   public List<ContentType> search(String condition) throws DotDataException {
     try {
@@ -175,6 +178,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   }
 
 
+  @CloseDBIfOpened
   @Override
   public int count(String condition, BaseContentType base) throws DotDataException {
     try {
@@ -192,6 +196,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     return save(type, null, null);
   }
 
+  @CloseDBIfOpened
   @Override
   public synchronized String suggestVelocityVar(final String tryVar) throws DotDataException {
     if (!UtilMethods.isSet(tryVar)) {
@@ -201,6 +206,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
   }
 
+  @WrapInTransaction
   @Override
   public ContentType setAsDefault(ContentType type) throws DotDataException, DotSecurityException {
     perms.checkPermission(type, PermissionLevel.READ, user);
@@ -208,6 +214,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   }
 
+  @CloseDBIfOpened
   @Override
   public ContentType findDefault() throws DotDataException, DotSecurityException {
     ContentType type = contentTypeFactory.findDefaultType();
@@ -216,6 +223,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   }
 
+  @CloseDBIfOpened
   @Override
   public List<ContentType> findByBaseType(BaseContentType type, String orderBy, int limit, int offset)
       throws DotDataException {
@@ -228,6 +236,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   }
 
+  @CloseDBIfOpened
   @Override
   public List<ContentType> findByType(BaseContentType type) throws DotDataException, DotSecurityException {
 
@@ -239,6 +248,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
   }
 
+  @CloseDBIfOpened
   @Override
   public List<SimpleStructureURLMap> findStructureURLMapPatterns() throws DotDataException {
     List<SimpleStructureURLMap> res = new ArrayList<>();
@@ -253,6 +263,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     return ImmutableList.copyOf(res);
   }
 
+  @WrapInTransaction
   @Override
   public void moveToSystemFolder(Folder folder) throws DotDataException {
 
@@ -346,6 +357,8 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
   }
 
+
+  @CloseDBIfOpened
   @Override
   public List<ContentType> search(String condition, String orderBy, int limit, int offset) throws DotDataException {
     try {
@@ -358,6 +371,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   }
 
+  @CloseDBIfOpened
   @Override
   public List<ContentType> search(String condition, BaseContentType base, String orderBy, int limit, int offset)
       throws DotDataException {
@@ -371,6 +385,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   }
 
+  @CloseDBIfOpened
   @Override
   public List<ContentType> findUrlMapped() throws DotDataException {
     return contentTypeFactory.findUrlMapped();
@@ -516,8 +531,9 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     });
   }
 
+  @WrapInTransaction
   @Override
-  public boolean updateModDate(ContentType type) throws DotDataException {
+  public boolean updateModDate(final ContentType type) throws DotDataException {
     boolean updated = false;
 
     contentTypeFactory.updateModDate(type);
@@ -527,6 +543,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     return updated;
   }
 
+  @WrapInTransaction
   @Override
   public boolean updateModDate(Field field) throws DotDataException {
     return this.updateModDate( contentTypeFactory.find( field.contentTypeId() ) );

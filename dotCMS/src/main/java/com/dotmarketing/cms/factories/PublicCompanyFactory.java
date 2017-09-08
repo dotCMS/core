@@ -22,15 +22,6 @@
 
 package com.dotmarketing.cms.factories;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.servlet.ServletContext;
-
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -39,6 +30,14 @@ import com.liferay.portal.ejb.CompanyUtil;
 import com.liferay.portal.ejb.ImageManagerUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.util.FileUtil;
+
+import javax.servlet.ServletContext;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <a href="AddressUtil.java.html"><b><i>View Source</i></b></a>
@@ -72,13 +71,11 @@ public class PublicCompanyFactory extends CompanyUtil {
 	}
 	
 	
-
 	public static List getCompanies() {
 			
 			try {
 				return findAll();
 			} catch (SystemException e) {
-				// TODO Auto-generated catch block
 				Logger.error(PublicCompanyFactory.class,e.getMessage(),e);
 			}
 			return new ArrayList();

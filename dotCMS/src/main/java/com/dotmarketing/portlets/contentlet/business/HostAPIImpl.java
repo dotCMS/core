@@ -138,7 +138,7 @@ public class HostAPIImpl implements HostAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-
+    @CloseDBIfOpened
     public Host resolveHostName(String serverName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
         Host host = hostCache.getHostByAlias(serverName);
@@ -362,17 +362,20 @@ public class HostAPIImpl implements HostAPI {
      * @throws DotDataException
      *
      */
-    public List<Host> findAllFromDB(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        List<Host> hosts =new ArrayList<Host>();
+    @CloseDBIfOpened
+    public List<Host> findAllFromDB(final User user,
+                                    final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        final List<Host> hosts = new ArrayList<Host>();
 
-        String sql = "select  c.title, c.inode from contentlet_version_info clvi, contentlet c, structure s  " +
+        final String sql = "select  c.title, c.inode from contentlet_version_info clvi, contentlet c, structure s  " +
                 " where c.structure_inode = s.inode and  s.name = 'Host' and c.identifier <> ? and clvi.working_inode = c.inode ";
 
-        DotConnect dc = new DotConnect();
+        final DotConnect dc = new DotConnect();
         dc.setSQL(sql);
         dc.addParam(Host.SYSTEM_HOST);
         @SuppressWarnings("unchecked")
-        List<Map<String,String>> ret = dc.loadResults();
+        final List<Map<String,String>> ret = dc.loadResults();
+
         for(Map<String,String> m : ret) {
             String inode=m.get("inode");
             final Contentlet con=APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);

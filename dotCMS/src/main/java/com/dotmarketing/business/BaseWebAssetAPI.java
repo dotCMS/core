@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.business;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -417,6 +418,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		return WebAssetFactory.getAssetsCountPerConditionWithPermission(hostId, condition, c, -1, 0, parent, user);
 	}
 
+	@WrapInTransaction
 	public int deleteOldVersions(final Date olderThan, final String type) throws DotDataException {
         DotConnect dc = new DotConnect();
 

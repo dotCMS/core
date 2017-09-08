@@ -22,6 +22,8 @@
 
 package com.liferay.portal.ejb;
 
+import com.dotcms.business.CloseDBIfOpened;
+
 import java.util.Locale;
 
 /**
@@ -62,6 +64,7 @@ public class UserManagerUtil {
 		}
 	}
 
+	@CloseDBIfOpened
 	public static int authenticateByEmailAddress(java.lang.String companyId,
 		java.lang.String emailAddress, java.lang.String password)
 		throws com.liferay.portal.PortalException, 
@@ -83,6 +86,7 @@ public class UserManagerUtil {
 		}
 	}
 
+	@CloseDBIfOpened
 	public static int authenticateByUserId(java.lang.String companyId,
 		java.lang.String userId, java.lang.String password)
 		throws com.liferay.portal.PortalException, 
@@ -335,6 +339,7 @@ public class UserManagerUtil {
 		}
 	}
 
+	@CloseDBIfOpened
 	public static java.lang.String getUserId(java.lang.String companyId,
 		java.lang.String emailAddress)
 		throws com.liferay.portal.PortalException, 

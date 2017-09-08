@@ -1,5 +1,6 @@
 package com.dotmarketing.startup;
 
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -332,6 +333,9 @@ public class StartupTasksExecutor {
 				throw new DotDataException(
 						"Exception finishing upgrade tasks: " + e.getMessage(),
 						e);
+			} finally {
+
+				CloseUtils.closeQuietly(conn);
 			}
 			Logger.info(this, "Finishing upgrade tasks.");
 		}

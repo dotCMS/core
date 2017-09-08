@@ -5,6 +5,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
@@ -25,7 +27,7 @@ public class DashboardAPIImpl implements DashboardAPI{
 	
 	static DashboardFactory dashboardFactory = FactoryLocator.getDashboardFactory();
 
-
+	@CloseDBIfOpened
 	public List<DashboardSummary404> get404s(String userId, String hostId,
 			boolean showIgnored, Date fromDate, Date toDate, int limit,
 			int offset, String sortBy) throws DotDataException,
@@ -33,92 +35,101 @@ public class DashboardAPIImpl implements DashboardAPI{
 		return dashboardFactory.get404s(userId, hostId, showIgnored, fromDate, toDate, limit, offset, sortBy);
 	}
 
+	@CloseDBIfOpened
 	public DashboardSummary getDashboardSummary(String hostId, Date fromDate,
 			Date toDate) throws DotDataException, DotHibernateException {
 		return dashboardFactory.getDashboardSummary(hostId, fromDate, toDate);
 	}
 
+	@CloseDBIfOpened
 	public List<DashboardSummaryVisits> getDashboardSummaryVisits(
 			String hostId, ViewType viewType, Date fromDate, Date toDate) throws DotDataException,
 			DotHibernateException {
 		return dashboardFactory.getDashboardSummaryVisits(hostId, viewType, fromDate, toDate);
 	}
 
+	@CloseDBIfOpened
 	public List<Host> getHostList(User user, boolean includeArchived,
 			Map<String, Object> params, int limit, int offset, String sortBy)
 			throws DotDataException, DotHibernateException {
 		return dashboardFactory.getHostList(user, includeArchived, params, limit, offset, sortBy);
 	}
 
-	
+	@CloseDBIfOpened
 	public List<DashboardSummaryContent> getTopContent(String hostId,
 			Date fromDate, Date toDate, int limit, int offset, String sortBy)
 			throws DotDataException, DotHibernateException {
 		return dashboardFactory.getTopContent(hostId, fromDate, toDate, limit, offset, sortBy);
 	}
 
-	
-
+	@CloseDBIfOpened
 	public List<DashboardSummaryPage> getTopPages(String hostId, Date fromDate,
 			Date toDate, int limit, int offset, String sortBy)
 			throws DotDataException, DotHibernateException {
 		return dashboardFactory.getTopPages(hostId, fromDate, toDate, limit, offset, sortBy);
 	}
 
-	
-
+	@CloseDBIfOpened
 	public List<DashboardSummaryReferer> getTopReferers(String hostId,
 			Date fromDate, Date toDate, int limit, int offset, String sortBy)
 			throws DotDataException, DotHibernateException {
 		return dashboardFactory.getTopReferers(hostId, fromDate, toDate, limit, offset, sortBy);
 	}
 	
-
+	@CloseDBIfOpened
 	public List<DashboardWorkStream> getWorkStreamList(User user,
 			String hostId, String userId, Date fromDate, Date toDate,
 			int limit, int offset, String sortBy) throws DotDataException,
 			DotHibernateException {
 		return dashboardFactory.getWorkStreamList(user, hostId, userId, fromDate, toDate, limit, offset, sortBy);
 	}
-	
+
+	@WrapInTransaction
 	public void setIgnored(User user, long id, boolean ignored)
 			throws DotDataException, DotHibernateException {
 		dashboardFactory.setIgnored(user, id, ignored);
 	}
 
+	@CloseDBIfOpened
 	public long get404Count(String userId, String hostId, boolean showIgnored,
 			Date fromDate, Date toDate) throws DotDataException,
 			DotHibernateException {
 		return dashboardFactory.get404Count(userId, hostId, showIgnored, fromDate, toDate);
 	}
 
+	@CloseDBIfOpened
 	public long getHostListCount(User user, boolean includeArchived,
 			Map<String, Object> params) throws DotDataException,
 			DotHibernateException {
 		return dashboardFactory.getHostListCount(user, includeArchived, params);
 	}
 
+	@CloseDBIfOpened
 	public long getTopContentCount(String hostId, Date fromDate, Date toDate)
 			throws DotDataException, DotHibernateException {
 	    return dashboardFactory.getTopContentCount(hostId, fromDate, toDate);
 	}
 
+	@CloseDBIfOpened
 	public long getTopPagesCount(String hostId, Date fromDate, Date toDate)
 			throws DotDataException, DotHibernateException {
 		 return dashboardFactory.getTopPagesCount(hostId, fromDate, toDate);
 	}
 
+	@CloseDBIfOpened
 	public long getTopReferersCount(String hostId, Date fromDate, Date toDate)
 			throws DotDataException, DotHibernateException {
 		 return dashboardFactory.getTopReferersCount(hostId, fromDate, toDate);
 	}
 
+	@CloseDBIfOpened
 	public long getWorkStreamListCount(User user, String hostId, String userId,
 			Date fromDate, Date toDate) throws DotDataException,
 			DotHibernateException {
 		 return dashboardFactory.getWorkStreamListCount(user, hostId, userId, fromDate, toDate);
 	}
 
+	@CloseDBIfOpened
 	public List<TopAsset> getTopAssets(User user, String hostId)
 			throws DotDataException {
 		return dashboardFactory.getTopAssets(user, hostId);
@@ -128,6 +139,7 @@ public class DashboardAPIImpl implements DashboardAPI{
 		dashboardFactory.populateAnalyticSummaryTables();
 	}
 
+	@CloseDBIfOpened
 	public int checkPeriodData(int month, int year) {
 		
 		if(month==0 || year==0){
@@ -140,10 +152,8 @@ public class DashboardAPIImpl implements DashboardAPI{
 				year = cal.get(Calendar.YEAR);
 			}
 		}
+
 		return dashboardFactory.checkPeriodData(month, year);
-		
 	}
-
-
 
 }

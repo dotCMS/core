@@ -1,6 +1,7 @@
 package com.dotmarketing.business;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -43,22 +44,27 @@ public class RoleAPIImpl implements RoleAPI {
 		this.userAPI = userAPI;
 	}
 
-	public List<Role> findAllAssignableRoles(boolean showSystemRoles) throws DotDataException {
+	@CloseDBIfOpened
+	@Override
+	public List<Role> findAllAssignableRoles(final boolean showSystemRoles) throws DotDataException {
 		return roleFactory.findAllAssignableRoles(showSystemRoles);
-	}
-	
-	public Role loadRoleById(String roleId) throws DotDataException {
-		return roleFactory.getRoleById(roleId);
 	}
 
 	@CloseDBIfOpened
-	public List<Role> loadRolesForUser(String userId) throws DotDataException {
+	@Override
+	public Role loadRoleById(final String roleId) throws DotDataException {
+		return roleFactory.getRoleById(roleId);
+	}
+
+	@Override
+	public List<Role> loadRolesForUser(final String userId) throws DotDataException {
 		return loadRolesForUser(userId, true);
 	}
 	
 
 	@CloseDBIfOpened
-	public List<Role> loadRolesForUser(String userId, boolean includeImplicitRoles)
+	@Override
+	public List<Role> loadRolesForUser(final String userId, final boolean includeImplicitRoles)
 			throws DotDataException {
 		return roleFactory.loadRolesForUser(userId,includeImplicitRoles);
 	}
@@ -66,11 +72,16 @@ public class RoleAPIImpl implements RoleAPI {
     /* (non-Javadoc)
 	 * @see com.dotmarketing.business.RoleAPI#getRolesByName(java.lang.String, int, int)
 	 */
-    public List<Role> findRolesByNameFilter(String filter, int start,int limit) throws DotDataException {
+    @CloseDBIfOpened
+	@Override
+    public List<Role> findRolesByNameFilter(final String filter, final int start, final int limit) throws DotDataException {
     	return roleFactory.getRolesByName(filter, start, limit);
     }
 
-	public List<User> findUsersForRole(Role role, boolean inherited) throws DotDataException, NoSuchUserException, DotSecurityException{
+    @CloseDBIfOpened
+	@Override
+	public List<User> findUsersForRole(final Role role, final boolean inherited) throws DotDataException, NoSuchUserException, DotSecurityException {
+
 		if(!inherited){
 			return findUsersForRole(role);
 		}
@@ -85,7 +96,8 @@ public class RoleAPIImpl implements RoleAPI {
         }
         return users;
 	}
-	
+
+	@Override
 	public List<Role> findRoleHierarchy(Role role) throws DotDataException, NoSuchUserException, DotSecurityException{
 
 		
@@ -106,19 +118,23 @@ public class RoleAPIImpl implements RoleAPI {
     /* (non-Javadoc)
 	 * @see com.dotmarketing.business.RoleAPI#getRolesByName(java.lang.String, int, int)
 	 */
-    public List<Role> findRolesByFilterLeftWildcard(String filter, int start,int limit) throws DotDataException {
+	@Override
+    public List<Role> findRolesByFilterLeftWildcard(String filter, final int start, final int limit) throws DotDataException {
     	
 		if(filter !=null)
 			filter = filter.toLowerCase() + "%";
 
     	return roleFactory.getRolesByNameFiltered(filter, start, limit);
     }
-    
-    public Role findRoleByName(String rolename, Role parent) throws DotDataException {
+
+    @Override
+    public Role findRoleByName(final String rolename, final Role parent) throws DotDataException {
     	return roleFactory.findRoleByName(rolename, parent);
     }
 
-    public void delete ( Role role ) throws DotDataException, DotStateException {
+    @WrapInTransaction
+	@Override
+    public void delete (final Role role ) throws DotDataException, DotStateException {
 
         Role r = loadRoleById( role.getId() );
 
@@ -133,14 +149,7 @@ public class RoleAPIImpl implements RoleAPI {
             throw new DotStateException( "Cannot edit a system role" );
         }
 
-        boolean local = false;
         try {
-            try {
-                local = HibernateUtil.startLocalTransactionIfNeeded();
-            } catch ( DotDataException e ) {
-                Logger.error( this.getClass(), e.getMessage(), e );
-                throw new DotHibernateException( "Unable to start a local transaction " + e.getMessage(), e );
-            }
 
             r.setEditPermissions( true );
             r.setEditLayouts( true );
@@ -161,14 +170,9 @@ public class RoleAPIImpl implements RoleAPI {
                 removeLayoutFromRole( l, role );
             }
             roleFactory.delete( role );
-            
-            if ( local ) {
-                HibernateUtil.commitTransaction();
-            }
+
         } catch ( Exception e ) {
-            if ( local ) {
-                HibernateUtil.rollbackTransaction();
-            }
+
             if ( role != null ) {
                 Logger.error( this.getClass(), "Error deleting Role: " + role.getName(), e );
             } else {
@@ -178,17 +182,18 @@ public class RoleAPIImpl implements RoleAPI {
         }
     }
 
-	public boolean roleExistsByName(String roleName, Role parent) throws DotDataException {
+    @WrapInTransaction
+	@Override
+	public boolean roleExistsByName(final String roleName, final Role parent) throws DotDataException {
 		Role r = roleFactory.findRoleByName(roleName, parent);
-		if(r == null){
-			return false;
-		}
-		return true;
+		return (r != null);
 	}
-	
-	public void addRoleToUser(Role role, User user) throws DotDataException, DotStateException {
-		Role r = loadRoleById(role.getId());
-		if(!r.isEditUsers()){
+
+	@WrapInTransaction
+	@Override
+	public void addRoleToUser(final Role role, final User user) throws DotDataException, DotStateException {
+		final Role currentRole = loadRoleById(role.getId());
+		if(!currentRole.isEditUsers()){
 			throw new DotStateException("Cannot alter users on this role.  Name:" + role.getName() + ", id:" + role.getId());
 		}
 		roleFactory.addRoleToUser(role, user);
@@ -199,7 +204,9 @@ public class RoleAPIImpl implements RoleAPI {
 		addRoleToUser(r, user);
 	}
 
-	public Role save(Role role) throws DotDataException, DotStateException {
+	@WrapInTransaction
+	@Override
+	public Role save(final Role role) throws DotDataException, DotStateException {
 		if(InodeUtils.isSet(role.getId())) {
 			if(role.isLocked() || role.isSystem()){
 				throw new DotStateException("Cannot save locked or system role");
@@ -228,26 +235,36 @@ public class RoleAPIImpl implements RoleAPI {
 		
 		return roleFactory.save(role);
 	}
-	
-	public Role save(Role role, String existingId) throws DotDataException, DotStateException {
+
+	@WrapInTransaction
+	@Override
+	public Role save(final Role role, final String existingId) throws DotDataException, DotStateException {
 		if(role==null) return null;
 		
 		return roleFactory.save(role, existingId);
 	}
-	
+
+	@CloseDBIfOpened
+	@Override
 	public List<Role> findRootRoles() throws DotDataException {
 		return roleFactory.findRootRoles();
 	}
-	
-	public boolean doesUserHaveRole(User user, Role role) throws DotDataException {
+
+	@CloseDBIfOpened
+	@Override
+	public boolean doesUserHaveRole(final User user, final Role role) throws DotDataException {
 		return roleFactory.doesUserHaveRole(user, role);
 	}
-	
-	public boolean doesUserHaveRole(User user, String roleId) throws DotDataException {
-		Role role = roleFactory.getRoleById(roleId);
+
+	@CloseDBIfOpened
+	@Override
+	public boolean doesUserHaveRole(final User user, final String roleId) throws DotDataException {
+		final Role role = roleFactory.getRoleById(roleId);
 		return doesUserHaveRole(user, role);
 	}
-	
+
+	@CloseDBIfOpened
+	@Override
 	public Role loadCMSAnonymousRole() throws DotDataException {
 		if(CMS_ANON == null){
 			CMS_ANON =  roleFactory.loadRoleByKey(Config.getStringProperty("CMS_ANONYMOUS_ROLE"));
@@ -256,6 +273,7 @@ public class RoleAPIImpl implements RoleAPI {
 	}
 
 	@CloseDBIfOpened
+	@Override
 	public Role loadCMSOwnerRole() throws DotDataException {
 		if(CMS_OWNER == null){
 			CMS_OWNER =  roleFactory.loadRoleByKey(Config.getStringProperty("CMS_OWNER_ROLE"));
@@ -264,6 +282,7 @@ public class RoleAPIImpl implements RoleAPI {
 	}
 
 	@CloseDBIfOpened
+	@Override
 	public Role loadLoggedinSiteRole() throws DotDataException {
 		if(LOGGEDIN_SITE_USER == null){
 			LOGGEDIN_SITE_USER =  roleFactory.loadRoleByKey(Config.getStringProperty("CMS_LOGGED_IN_SITE_USER_ROLE"));
@@ -272,6 +291,7 @@ public class RoleAPIImpl implements RoleAPI {
 	}
 
 	@CloseDBIfOpened
+	@Override
 	public Role loadCMSAdminRole() throws DotDataException {
 		if(CMS_ADMIN == null){
 			CMS_ADMIN = roleFactory.loadRoleByKey(Config.getStringProperty("CMS_ADMINISTRATOR_ROLE"));
@@ -279,86 +299,112 @@ public class RoleAPIImpl implements RoleAPI {
 		return CMS_ADMIN;		
 	}
 
+	@CloseDBIfOpened
+	@Override
     public Role loadDefaultRole () throws DotDataException {
         return roleFactory.loadRoleByKey( DEFAULT_USER_ROLE_KEY );
     }
-	
-	public List<String> findUserIdsForRole(Role role) throws DotDataException {
+
+    @CloseDBIfOpened
+	@Override
+	public List<String> findUserIdsForRole(final Role role) throws DotDataException {
 		return roleFactory.findUserIdsForRole(role);
 	}
-	
-	public List<User> findUsersForRole(Role role) throws DotDataException, NoSuchUserException, DotSecurityException {
+
+	@Override
+	public List<User> findUsersForRole(final Role role) throws DotDataException, NoSuchUserException, DotSecurityException {
 		List<String> uids = findUserIdsForRole(role);
 		List<User> users = new ArrayList<User>();
 		for (String uid : uids)
 			users.add(APILocator.getUserAPI().loadUserById(uid, APILocator.getUserAPI().getSystemUser(), true));
 		return users;
 	}
-	
-	public List<User> findUsersForRole(String roleId) throws DotDataException, NoSuchUserException, DotSecurityException {
+
+	@CloseDBIfOpened
+	@Override
+	public List<User> findUsersForRole(final String roleId) throws DotDataException, NoSuchUserException, DotSecurityException {
 		Role role = roleFactory.getRoleById(roleId);
 		return findUsersForRole(role);
 	}
 
 	@CloseDBIfOpened
-	public List<String> loadLayoutIdsForRole(Role role) throws DotDataException {
+	@Override
+	public List<String> loadLayoutIdsForRole(final Role role) throws DotDataException {
 		return roleFactory.loadLayoutIdsForRole(role);
 	}
-	
-	public void addLayoutToRole(Layout layout, Role role) throws DotDataException, DotStateException {
+
+	@WrapInTransaction
+	@Override
+	public void addLayoutToRole(final Layout layout, final Role role) throws DotDataException, DotStateException {
 		Role r = loadRoleById(role.getId());
 		if(!r.isEditLayouts()){
 			throw new DotStateException("Cannot alter layouts on this role");
 		}
 		roleFactory.addLayoutToRole(layout, role);
 	}
-	
-	public void removeLayoutFromRole(Layout layout, Role role) throws DotDataException, DotStateException {
+
+	@WrapInTransaction
+	@Override
+	public void removeLayoutFromRole(final Layout layout, final Role role) throws DotDataException, DotStateException {
 		Role r = loadRoleById(role.getId());
 		if(!r.isEditLayouts()){
 			throw new DotStateException("Cannot alter layouts on this role");
 		}
 		roleFactory.removeLayoutFromRole(layout, role);
 	}
-	
-	public Role findRoleByFQN(String FQN) throws DotDataException {
+
+	@CloseDBIfOpened
+	@Override
+	public Role findRoleByFQN(final String FQN) throws DotDataException {
 		return roleFactory.findRoleByFQN(FQN);
 	}
-	public void removeRoleFromUser(Role role, User user) throws DotDataException, DotStateException {
-		Role r = loadRoleById(role.getId());
-		roleFactory.removeRoleFromUser(role, user);
-	}
-	
 
-	public void removeAllRolesFromUser(User user) throws DotDataException,
+	@WrapInTransaction
+	@Override
+	public void removeRoleFromUser(final Role role, final User user) throws DotDataException, DotStateException {
+		final Role roleFromDb = loadRoleById(role.getId());
+		roleFactory.removeRoleFromUser(roleFromDb, user);
+	}
+
+	@Override
+	public void removeAllRolesFromUser(final User user) throws DotDataException,
 			DotStateException {
-		List<Role> roles = loadRolesForUser(user.getUserId(), false);
+		final List<Role> roles = loadRolesForUser(user.getUserId(), false);
 		for(Role role : roles) {
 			removeRoleFromUser(role, user);
 		}
-	}	
-	
-	public void lock(Role role) throws DotDataException {
-		Role r = loadRoleById(role.getId());
+	}
+
+	@WrapInTransaction
+	@Override
+	public void lock(final Role role) throws DotDataException {
+		final Role roleDb = loadRoleById(role.getId());
 		//if(r.isSystem())
 		//	throw new DotStateException("Cannot lock a system role");
-		r.setLocked(true);
-		roleFactory.save(r);
+		roleDb.setLocked(true);
+		roleFactory.save(roleDb);
 	}
-	
-	public void unLock(Role role) throws DotDataException {
-		Role r = loadRoleById(role.getId());
+
+	@WrapInTransaction
+	@Override
+	public void unLock(final Role role) throws DotDataException {
+		final Role roleDb = loadRoleById(role.getId());
 		//if(r.isSystem())
 		//	throw new DotStateException("Cannot unlock a system role");
-		r.setLocked(false);
-		roleFactory.save(r);
+		roleDb.setLocked(false);
+		roleFactory.save(roleDb);
 	}
-	
-	public Role loadRoleByKey(String key) throws DotDataException {
+
+	@CloseDBIfOpened
+	@Override
+	public Role loadRoleByKey(final String key) throws DotDataException {
 		return roleFactory.loadRoleByKey(key);
 	}
 
-	public Role getUserRole(User user) throws DotDataException {
+	@WrapInTransaction
+	@Override
+	public Role getUserRole(final User user) throws DotDataException {
+
 		Role role = loadRoleByKey(user.getUserId());
 		if(role == null) {
 			role = roleFactory.addUserRole(user);
@@ -372,7 +418,8 @@ public class RoleAPIImpl implements RoleAPI {
 		return role;
 	}
 
-	public boolean doesUserHaveRoles(String userId, List<String> roleIds){
+	public boolean doesUserHaveRoles(final String userId, final List<String> roleIds) {
+
 		if (!UtilMethods.isSet(userId) || roleIds == null || roleIds.size() == 0) {
 			return false;
 		}

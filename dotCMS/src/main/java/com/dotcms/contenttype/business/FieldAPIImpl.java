@@ -2,6 +2,8 @@ package com.dotcms.contenttype.business;
 
 import java.util.List;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -41,7 +43,6 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -56,7 +57,7 @@ import com.liferay.portal.model.User;
 
 public class FieldAPIImpl implements FieldAPI {
 
-  private List<Class> baseFieldTypes = ImmutableList.of(BinaryField.class, CategoryField.class,
+  private final List<Class> baseFieldTypes = ImmutableList.of(BinaryField.class, CategoryField.class,
       ConstantField.class, CheckboxField.class, CustomField.class, DateField.class,
       DateTimeField.class, FileField.class, HiddenField.class, HostFolderField.class,
       ImageField.class, KeyValueField.class, LineDividerField.class, MultiSelectField.class,
@@ -64,11 +65,11 @@ public class FieldAPIImpl implements FieldAPI {
       TabDividerField.class, TagField.class, TextAreaField.class, TimeField.class,
       WysiwygField.class);
 
-  private final PermissionAPI perAPI;
-  private final ContentletAPI conAPI;
+  private final PermissionAPI permissionAPI;
+  private final ContentletAPI contentletAPI;
   private final UserAPI userAPI;
 
-  private FieldFactory fac = new FieldFactoryImpl();
+  private final FieldFactory fieldFactory = new FieldFactoryImpl();
 
   public FieldAPIImpl() {
       this(APILocator.getPermissionAPI(),
@@ -82,27 +83,29 @@ public class FieldAPIImpl implements FieldAPI {
                         final ContentletAPI conAPI,
                         final UserAPI userAPI,
                         final DeleteFieldJobHelper deleteFieldJobHelper) {
-      this.perAPI = perAPI;
-      this.conAPI = conAPI;
+      this.permissionAPI = perAPI;
+      this.contentletAPI = conAPI;
       this.userAPI = userAPI;
   }
 
+  @WrapInTransaction
   @Override
-	public Field save(Field field, User user) throws DotDataException, DotSecurityException {
+  public Field save(final Field field, final User user) throws DotDataException, DotSecurityException {
+
 		ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
 		ContentType type = contentTypeAPI.find(field.contentTypeId()) ;
-		perAPI.checkPermission(type, PermissionLevel.PUBLISH, user);
+		permissionAPI.checkPermission(type, PermissionLevel.PUBLISH, user);
 
 	    Field oldField = null;
 	    if (UtilMethods.isSet(field.id())) {
 	    	try {
-	    		oldField = fac.byId(field.id());
+	    		oldField = fieldFactory.byId(field.id());
 	    	} catch(NotFoundInDbException e) {
 	    		//Do nothing as Starter comes with id but field is unexisting yet
 	    	}
 	    }
 
-		Field result = fac.save(field);
+		Field result = fieldFactory.save(field);
 		//update Content Type mod_date to detect the changes done on the field
 		contentTypeAPI.updateModDate(type);
 		
@@ -116,27 +119,28 @@ public class FieldAPIImpl implements FieldAPI {
         //http://jira.dotmarketing.net/browse/DOTCMS-5178
         if(oldField != null && ((!oldField.indexed() && field.indexed()) || (oldField.indexed() && !field.indexed()))){
           // rebuild contentlets indexes
-          conAPI.reindex(structure);
+          contentletAPI.reindex(structure);
         }
 
         if (field instanceof ConstantField) {
             ContentletServices.removeContentletFile(structure);
             ContentletMapServices.removeContentletMapFile(structure);
-            conAPI.refresh(structure);
+            contentletAPI.refresh(structure);
         }
 
         return result;
 	}
-  
+
+  @WrapInTransaction
   @Override
-  public FieldVariable save(FieldVariable var, User user) throws DotDataException, DotSecurityException {
+  public FieldVariable save(final FieldVariable var, final User user) throws DotDataException, DotSecurityException {
       ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
-      Field field = fac.byId(var.fieldId());
+      Field field = fieldFactory.byId(var.fieldId());
 
       ContentType type = contentTypeAPI.find(field.contentTypeId()) ;
       APILocator.getPermissionAPI().checkPermission(type, PermissionLevel.PUBLISH, user);
 
-      FieldVariable newFieldVariable = fac.save(ImmutableFieldVariable.builder().from(var).userId(user.getUserId()).build());
+      FieldVariable newFieldVariable = fieldFactory.save(ImmutableFieldVariable.builder().from(var).userId(user.getUserId()).build());
       
       //update Content Type mod_date to detect the changes done on the field variables
       contentTypeAPI.updateModDate(type);
@@ -145,7 +149,7 @@ public class FieldAPIImpl implements FieldAPI {
   }
 
   @Override
-  public void delete(Field field) throws DotDataException {
+  public void delete(final Field field) throws DotDataException {
 	  try {
 		  this.delete(field, this.userAPI.getSystemUser());
 	  } catch (DotSecurityException e){
@@ -153,16 +157,16 @@ public class FieldAPIImpl implements FieldAPI {
 	  }
   }
 
+  @WrapInTransaction
   @Override
-  public void delete(Field field, User user) throws DotDataException, DotSecurityException {
-	  LocalTransaction.wrapReturn(() -> {
+  public void delete(final Field field, final User user) throws DotDataException, DotSecurityException {
 
-		  ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
-		  ContentType type = contentTypeAPI.find(field.contentTypeId());
+		  final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+		  final ContentType type = contentTypeAPI.find(field.contentTypeId());
 
-		  perAPI.checkPermission(type, PermissionLevel.PUBLISH, user);
+		  permissionAPI.checkPermission(type, PermissionLevel.PUBLISH, user);
 
-		  Field oldField = fac.byId(field.id());
+		  Field oldField = fieldFactory.byId(field.id());
 		  if(oldField.fixed() || oldField.readOnly()){
 		    throw new DotDataException("You cannot delete a fixed or read only fiedl");
 		  }
@@ -181,10 +185,10 @@ public class FieldAPIImpl implements FieldAPI {
 	        	  !(field instanceof HostFolderField) &&
 	        	  structure != null
 	      ) {
-	    	  this.conAPI.cleanField(structure, legacyField, this.userAPI.getSystemUser(), false);    	  
+	    	  this.contentletAPI.cleanField(structure, legacyField, this.userAPI.getSystemUser(), false);
 	      }
 
-	      fac.delete(field);
+	      fieldFactory.delete(field);
 	      //update Content Type mod_date to detect the changes done on the field
 	      contentTypeAPI.updateModDate(type);
 
@@ -194,55 +198,60 @@ public class FieldAPIImpl implements FieldAPI {
 	      //Refreshing permissions
 	      if (field instanceof HostFolderField) {
 	    	  try {
-	    		  this.conAPI.cleanHostField(structure, this.userAPI.getSystemUser(), false);
+	    		  this.contentletAPI.cleanHostField(structure, this.userAPI.getSystemUser(), false);
 	    	  } catch(DotMappingException e) {}
 
-	    	  this.perAPI.resetChildrenPermissionReferences(structure);
+	    	  this.permissionAPI.resetChildrenPermissionReferences(structure);
 	      }
 
 	      // rebuild contentlets indexes
 	      if(field.indexed()){
-	        conAPI.reindex(structure);
+	        contentletAPI.reindex(structure);
 	      }
 	      // remove the file from the cache
 	      ContentletServices.removeContentletFile(structure);
 	      ContentletMapServices.removeContentletMapFile(structure);
-
-	      return null;
-	  });
   }
 
 
+  @CloseDBIfOpened
   @Override
-  public List<Field> byContentTypeId(String typeId) throws DotDataException {
-    return fac.byContentTypeId(typeId);
-  }
-  @Override
-  public String nextAvailableColumn(Field field) throws DotDataException{
-      return fac.nextAvailableColumn(field);
-  }
-  @Override
-  public Field find(String id) throws DotDataException {
-    return fac.byId(id);
+  public List<Field> byContentTypeId(final String typeId) throws DotDataException {
+    return fieldFactory.byContentTypeId(typeId);
   }
 
+  @CloseDBIfOpened
   @Override
-  public Field byContentTypeAndVar(ContentType type, String fieldVar) throws DotDataException {
-    return fac.byContentTypeFieldVar(type, fieldVar);
+  public String nextAvailableColumn(final Field field) throws DotDataException{
+      return fieldFactory.nextAvailableColumn(field);
   }
 
+  @CloseDBIfOpened
   @Override
-  public Field byContentTypeIdAndVar(String id, String fieldVar) throws DotDataException {
+  public Field find(final String id) throws DotDataException {
+    return fieldFactory.byId(id);
+  }
+
+  @CloseDBIfOpened
+  @Override
+  public Field byContentTypeAndVar(final ContentType type, final String fieldVar) throws DotDataException {
+    return fieldFactory.byContentTypeFieldVar(type, fieldVar);
+  }
+
+  @CloseDBIfOpened
+  @Override
+  public Field byContentTypeIdAndVar(final String id, final String fieldVar) throws DotDataException {
     try {
         return byContentTypeAndVar(APILocator.getContentTypeAPI(APILocator.systemUser()).find(id), fieldVar);
     } catch (DotSecurityException e) {
         throw new DotDataException(e);
     }
   }
-  
+
+  @WrapInTransaction
   @Override
-  public void deleteFieldsByContentType(ContentType type) throws DotDataException {
-    fac.deleteByContentType(type);
+  public void deleteFieldsByContentType(final ContentType type) throws DotDataException {
+    fieldFactory.deleteByContentType(type);
   }
 
   @Override
@@ -260,9 +269,11 @@ public class FieldAPIImpl implements FieldAPI {
     throw new DotStateException("Not implemented");
   }
 
-@Override
-public void delete(FieldVariable fieldVar) throws DotDataException {
-    fac.delete(fieldVar);
+  @WrapInTransaction
+  @Override
+  public void delete(final FieldVariable fieldVar) throws DotDataException {
+
+    fieldFactory.delete(fieldVar);
     Field field = this.find(fieldVar.fieldId());
     ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(this.userAPI.getSystemUser());
 	ContentType type;
@@ -273,8 +284,7 @@ public void delete(FieldVariable fieldVar) throws DotDataException {
 	} catch (DotSecurityException e) {
 		throw new DotDataException("Error updating Content Type mode_date for FieldVariable("+fieldVar.id()+"). "+e.getMessage());
 	}
-	
-}
+  }
   
   
   

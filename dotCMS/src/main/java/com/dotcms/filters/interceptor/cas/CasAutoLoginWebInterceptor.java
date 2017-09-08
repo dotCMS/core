@@ -1,7 +1,10 @@
 package com.dotcms.filters.interceptor.cas;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.util.Config;
@@ -19,6 +22,16 @@ import java.io.IOException;
  */
 public class CasAutoLoginWebInterceptor implements WebInterceptor {
 
+    private final LoginServiceAPI loginServiceAPI;
+
+    public CasAutoLoginWebInterceptor() {
+        this(APILocator.getLoginServiceAPI());
+    }
+
+    public CasAutoLoginWebInterceptor(final LoginServiceAPI loginServiceAPI) {
+        this.loginServiceAPI = loginServiceAPI;
+    }
+
     @Override
     public Result intercept(final HttpServletRequest request,
                             final HttpServletResponse response) throws IOException {
@@ -35,7 +48,7 @@ public class CasAutoLoginWebInterceptor implements WebInterceptor {
 
             if (UtilMethods.isSet(userID)) {
 
-                if (LoginFactory.doCookieLogin(PublicEncryptionFactory.encryptString
+                if (this.loginServiceAPI.doCookieLogin(PublicEncryptionFactory.encryptString
                         (userID), request, response)) {
 
                     result = Result.SKIP;

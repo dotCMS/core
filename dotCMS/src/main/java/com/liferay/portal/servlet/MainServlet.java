@@ -37,6 +37,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
 
+import com.dotcms.business.CloseDBIfOpened;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -92,6 +93,7 @@ import com.liferay.util.servlet.UploadServletRequest;
  */
 public class MainServlet extends ActionServlet {
 
+	@CloseDBIfOpened
 	public void init(ServletConfig config) throws ServletException {
 		synchronized (MainServlet.class) {
 			super.init(config);
