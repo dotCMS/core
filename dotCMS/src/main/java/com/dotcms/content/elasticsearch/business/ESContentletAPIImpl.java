@@ -645,7 +645,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public List<Contentlet> searchByIdentifier(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission, boolean anyLanguage) throws DotDataException,DotSecurityException {
         PaginatedArrayList <ContentletSearch> list =(PaginatedArrayList)searchIndex(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles);
 
-        Set<String> identifierList = new HashSet<>();
+        List<String> identifierList = new ArrayList<>();
         for(ContentletSearch conwrap: list){
             String ident=conwrap.getIdentifier();
             Identifier ii=APILocator.getIdentifierAPI().find(ident);
