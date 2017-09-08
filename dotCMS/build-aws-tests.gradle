@@ -470,6 +470,19 @@ task executeScript(dependsOn: [describeInstance, describeDBInstance]) {
   			}
 		}
 
+        println( "Getting License file from: $System.env.JENKINS_HOME/license.dat")
+
+		//Copy license file to the instance
+		ssh.run {
+			session(
+					host: project.instancePublicDnsName, user: properties.getProperty("ssh.username"),
+					identity: file( project.keyFile )
+			) {
+				put( from: file("$System.env.JENKINS_HOME/license.dat"), into: "/home/"+ properties.getProperty("ssh.username") )
+			}
+		}
+
+		println( "License file saved" )
 
 		// Open SSH session in order to run the interpolated script and transfer its output
 		ssh.run {
