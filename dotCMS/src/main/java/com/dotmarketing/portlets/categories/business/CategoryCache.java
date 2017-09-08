@@ -4,10 +4,8 @@ import java.util.List;
 
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.util.Logger;
 
 /**
  * 
