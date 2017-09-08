@@ -2944,6 +2944,76 @@ public class ContentletAPITest extends ContentletBaseTest {
 
     }
 
+    @Test(expected = DotContentletValidationException.class)
+    public void testUniqueTextFieldWithDataTypeWholeNumber()
+            throws DotDataException, DotSecurityException {
+        String contentTypeName = "contentTypeTxtField" + System.currentTimeMillis();
+        ContentType contentType = null;
+        try{
+            contentType = createContentType(contentTypeName, BaseContentType.CONTENT);
+            com.dotcms.contenttype.model.field.Field field =  ImmutableTextField.builder()
+                    .name("Whole Number Unique")
+                    .contentTypeId(contentType.id())
+                    .dataType(DataTypes.INTEGER)
+                    .unique(true)
+                    .build();
+            field = fieldAPI.save(field, user);
+
+            Contentlet contentlet = new Contentlet();
+            contentlet.setContentTypeId(contentType.inode());
+            contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentlet.setLongProperty(field.variable(),1);
+            contentlet = contentletAPI.checkin(contentlet, user, false);
+            contentletAPI.isInodeIndexed(contentlet.getInode());
+            contentlet = contentletAPI.find(contentlet.getInode(), user, false);
+
+            Contentlet contentlet2 = new Contentlet();
+            contentlet2.setContentTypeId(contentType.inode());
+            contentlet2.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentlet2.setLongProperty(field.variable(),1);
+            contentlet2 = contentletAPI.checkin(contentlet2, user, false);
+
+
+        }finally{
+            if(contentType != null) contentTypeAPI.delete(contentType);
+        }
+    }
+
+    @Test(expected = DotContentletValidationException.class)
+    public void testUniqueTextFieldContentletsWithDiffLanguages()
+            throws DotDataException, DotSecurityException {
+        String contentTypeName = "contentTypeTxtField" + System.currentTimeMillis();
+        ContentType contentType = null;
+        try{
+            contentType = createContentType(contentTypeName, BaseContentType.CONTENT);
+            com.dotcms.contenttype.model.field.Field field =  ImmutableTextField.builder()
+                    .name("Text Unique")
+                    .contentTypeId(contentType.id())
+                    .dataType(DataTypes.TEXT)
+                    .unique(true)
+                    .build();
+            field = fieldAPI.save(field, user);
+
+            Contentlet contentlet = new Contentlet();
+            contentlet.setContentTypeId(contentType.inode());
+            contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            contentlet.setStringProperty(field.variable(),"test");
+            contentlet = contentletAPI.checkin(contentlet, user, false);
+            contentletAPI.isInodeIndexed(contentlet.getInode());
+            contentlet = contentletAPI.find(contentlet.getInode(), user, false);
+
+            Contentlet contentlet2 = new Contentlet();
+            contentlet2.setContentTypeId(contentType.inode());
+            contentlet2.setLanguageId(2);
+            contentlet2.setStringProperty(field.variable(),"test");
+            contentlet2 = contentletAPI.checkin(contentlet2, user, false);
+
+
+        }finally{
+            if(contentType != null) contentTypeAPI.delete(contentType);
+        }
+    }
+
     private File getBinaryAsset(String inode, String varName, String binaryName) {
 
         FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
