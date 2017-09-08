@@ -58,13 +58,7 @@ public class FreeServerFromClusterJob implements StatefulJob {
 
                     if (shouldRewire) {
                         //Rewires the other nodes.
-                        if(ClusterUtils.isTransportAutoWire()) {
-                            ClusterFactory.addNodeToCacheCluster(APILocator.getServerAPI().getCurrentServer());
-                        }
-
-                        if(ClusterUtils.isESAutoWire()) {
-                            ClusterFactory.addNodeToESCluster();
-                        }
+                    	ClusterFactory.rewireCluster();
                     }
 
                 }
@@ -77,14 +71,7 @@ public class FreeServerFromClusterJob implements StatefulJob {
         } catch (Exception exception) {
             Logger.error(FreeServerFromClusterJob.class, "Error trying to Free Server from Cluster", exception);
         } finally {
-            try {
-                HibernateUtil.closeSession();
-            } catch (DotHibernateException e) {
-                Logger.warn(this, e.getMessage(), e);
-            }
-            finally {
-                DbConnectionFactory.closeConnection();
-            }
+            DbConnectionFactory.closeSilently();
         }
     }
 }
