@@ -16,9 +16,4 @@ public class ClusterUtils {
 		return isESAutoWire()
 			&& Config.getBooleanProperty("AUTOWIRE_MANAGE_ES_REPLICAS", true);
 	}
-	
-	
-    public static boolean isAutoScaleConfigured() {
-        return isTransportAutoWire() || isESAutoWire();
-    }
 }

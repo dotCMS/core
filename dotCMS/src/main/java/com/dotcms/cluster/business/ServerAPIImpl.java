@@ -86,7 +86,7 @@ public class ServerAPIImpl implements ServerAPI {
 		updateServer(newServer);
 
 		try {
-            writeHeartBeatToDisk();
+            writeHeartBeatToDisk(newServer.getServerId());
         } catch (IOException e) {
             Logger.error(ClusterFactory.class, "Could not write Server ID to file system" , e);
         }
@@ -147,8 +147,8 @@ public class ServerAPIImpl implements ServerAPI {
 
 	}
 
-	public  void writeHeartBeatToDisk() throws IOException {
-		String serverId = readServerId();
+	public  void writeHeartBeatToDisk(String serverId) throws IOException {
+
 		//First We need to check if the heartbeat job is enable.
 		if ( Config.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", true) ) {
 			String realPath = APILocator.getFileAssetAPI().getRealAssetsRootPath()
@@ -181,8 +181,8 @@ public class ServerAPIImpl implements ServerAPI {
 		return serverFactory.getAliveServers(toExclude);
 	}
 
-	public void createServerUptime() throws DotDataException {
-		serverFactory.createServerUptime();
+	public void createServerUptime(String serverId) throws DotDataException {
+		serverFactory.createServerUptime(serverId);
 	}
 
 	public void updateHeartbeat() throws DotDataException {
