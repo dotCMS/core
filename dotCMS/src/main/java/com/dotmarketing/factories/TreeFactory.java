@@ -23,6 +23,8 @@ import com.dotmarketing.util.Logger;
  */
 public class TreeFactory {
 
+	private static final String CHILD_RELATION_TYPE = "child";
+
 	public static Tree getTree(String x) {
 		try {
 			return (Tree) new HibernateUtil(Tree.class).load(Long.parseLong(x));
@@ -46,13 +48,11 @@ public class TreeFactory {
 	}
 	
 	public static Tree getTree(Inode parent, Inode child) {
-		String relationType = "child";
-		return getTree(parent, child, relationType);
+		return getTree(parent, child, CHILD_RELATION_TYPE);
 	}
 
 	public static Tree getTree(String parent, String child) {
-		String relationType = "child";
-		return getTree(parent, child, relationType);
+		return getTree(parent, child, CHILD_RELATION_TYPE);
 	}
 
 	public static Tree getTree(String parent, String child, String relationType) {
