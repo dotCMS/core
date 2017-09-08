@@ -18,6 +18,17 @@ public class CategoryWrapper {
 	private Category category;
 	private Set<String> children;
 	private Operation operation;
+
+	public CategoryWrapper(){
+	    
+    }
+
+	public CategoryWrapper(boolean topLevel, Category category, Set<String> children, Operation operation){
+        this.topLevel = topLevel;
+        this.category = category;
+        this.children = children;
+        this.operation = operation;
+    }
 	
 	public boolean isTopLevel() {
 		return topLevel;
@@ -43,6 +54,24 @@ public class CategoryWrapper {
 	public void setOperation(Operation operation) {
 		this.operation = operation;
 	}
-	
-	
+
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+
+		CategoryWrapper that = (CategoryWrapper) o;
+
+		return category != null ? category.equals(that.category) : that.category == null;
+	}
+
+	@Override
+	public int hashCode() {
+		return category != null ? category.hashCode() : 0;
+	}
 }

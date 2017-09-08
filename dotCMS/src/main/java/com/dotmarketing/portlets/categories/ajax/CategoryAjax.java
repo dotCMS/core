@@ -350,34 +350,16 @@ public class CategoryAjax {
 				cat = categoryAPI.find(inode, user, false);
 				cat.setCategoryName(name);
 				setVelocityVarName(cat, var, name);
-//				cat.setSortOrder(sort);
 				cat.setKeywords(keywords);
-
-				// avoiding editing key with a already used one
-				Category aux = categoryAPI.findByKey(key, user, false);
-				if(aux!=null && !aux.getInode().equals(cat.getInode())) {
-					cat.setKey(getUniqueKey(key, user, 1));
-				} else {
-					cat.setKey(key);
-				}
-
+				cat.setKey(key);
 			}
 
 
 		} else { // replace
-
 			cat.setCategoryName(name);
 			setVelocityVarName(cat, var, name);
 			cat.setSortOrder(sort);
-
-			if(UtilMethods.isSet(key)) {
-				Category aux = categoryAPI.findByKey(key, user, false);
-				if(aux!=null) {
-					cat.setKey(getUniqueKey(key, user, 1));
-				} else {
-					cat.setKey(key);
-				}
-			}
+            cat.setKey(key);
 		}
 
 		try {
@@ -426,17 +408,6 @@ public class CategoryAjax {
 				cat.setCategoryVelocityVarName(catvelvar);
 			}
 		}
-	}
-
-	private String getUniqueKey(String key, User user, Integer consecutive) throws DotDataException, DotSecurityException {
-
-		String validKey = key+"-"+consecutive;
-
-		if(categoryAPI.findByKey(validKey, user, false)!=null) {
-			validKey = getUniqueKey(key, user, ++consecutive);
-		}
-
-		return validKey;
 	}
 
 	public boolean getPermission(String inode) throws Exception {

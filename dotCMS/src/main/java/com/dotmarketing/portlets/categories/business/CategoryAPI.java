@@ -176,9 +176,20 @@ public interface CategoryAPI {
 	 * @throws DotSecurityException 
 	 */
 	public void save(Category parent, Category object, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-	
+
+    /**
+     * Important: should be use only for Push Publish.
+     *
+     * Save Remote categories, in this case we don't need to check if this category exists into
+     * the system but just save with its own inode.
+     *
+     */
+    void saveRemote(Category parent, Category object, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
 	/**
-	 * Publish Remote categories,
+	 * * Important: should be use only for Push Publish.
+     *
+     * Publish Remote categories,
 	 * in this case we don't need to check if this category exists into the system but just save with its own inode.
 	 * 
 	 * Mar 6, 2013 - 10:12:47 AM
