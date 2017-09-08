@@ -11,7 +11,7 @@ public abstract class ServerFactory {
 
 	public abstract Server getServer(String serverId) throws DotDataException;
 
-	public abstract void createServerUptime() throws DotDataException;
+	public abstract void createServerUptime(String serverId) throws DotDataException;
 
 	public abstract void updateHeartbeat(String serverId) throws DotDataException;
 

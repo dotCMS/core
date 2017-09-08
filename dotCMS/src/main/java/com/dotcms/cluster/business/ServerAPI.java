@@ -12,9 +12,11 @@ public interface ServerAPI {
 
 	public Server getServer(String serverId) throws DotDataException;
 
-	public void createServerUptime() throws DotDataException;
+	public void createServerUptime(String serverId) throws DotDataException;
 
 	public String readServerId();
+
+
 
 	public void updateHeartbeat() throws DotDataException;
 
@@ -22,7 +24,7 @@ public interface ServerAPI {
 
 	public List<Server> getAliveServers(List<String> toExclude) throws DotDataException;
 
-	public  void writeHeartBeatToDisk() throws IOException;
+	public  void writeHeartBeatToDisk(String serverId) throws IOException;
 
 	public void updateServer(Server server) throws DotDataException;
 
