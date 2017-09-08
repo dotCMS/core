@@ -17,24 +17,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.util.ESClient;
-import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.vanityurl.model.VanityUrl;
-import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.org.apache.commons.collections.CollectionUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
-import com.dotcms.util.VanityUrlUtil;
 
+import com.dotcms.util.CollectionsUtils;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ListenableActionFuture;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
@@ -61,7 +57,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 
 import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.KeyValueFieldUtil;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -77,6 +72,7 @@ import com.dotmarketing.util.UtilMethods;
 
 public class ESMappingAPIImpl implements ContentMappingAPI {
 
+	private static final int UUID_LENGTH = 36;
 	static ObjectMapper mapper = null;
 
 	public ESMappingAPIImpl() {
@@ -304,25 +300,28 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected void loadCategories(final Contentlet con, final Map<String,String> m) throws DotDataException, DotSecurityException {
+	protected void loadCategories(final Contentlet con, final Map<String,String> m)
+			throws DotDataException, DotSecurityException {
 	    // first we check if there is a category field in the structure. We don't hit db if not needed
 
-	    ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(con.getContentTypeId());
-	    List<com.dotcms.contenttype.model.field.Field> catFields = type.fields().stream().filter(field -> field instanceof CategoryField).collect(Collectors.toList());
+	    final ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(con.getContentTypeId());
+	    List<com.dotcms.contenttype.model.field.Field> catFields = type.fields().stream()
+				.filter(field -> field instanceof CategoryField).collect(CollectionsUtils.toImmutableList());
 
-        if(catFields.size()==0) return;
-
+        if(catFields.isEmpty()) {
+        	return;
+		}
 
 	    List<Category> myCats = APILocator.getCategoryAPI().getParents(con, APILocator.systemUser(), false);
-	    StringWriter myCatsString=new StringWriter();
-	    for(Category me : myCats){
+	    final StringWriter myCatsString=new StringWriter();
+	    for(final Category me : myCats){
 	        myCatsString.append(me.getCategoryVelocityVarName()).append(" ");
 	    }
 
         m.put(ESMappingConstants.CATEGORIES, myCatsString.toString());
         
 
-	    for(com.dotcms.contenttype.model.field.Field f : catFields){/*
+	    for(final com.dotcms.contenttype.model.field.Field f : catFields){/*
 	        StringWriter fieldCatString=new StringWriter();
 	        Category parent = APILocator.getCategoryAPI().find(f.values(), APILocator.systemUser(), false);
             List<Category> childrens=APILocator.getCategoryAPI().getAllChildren(
@@ -611,7 +610,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			String relType=relatedEntry.get(ESMappingConstants.RELATION_TYPE).toString();
 			String order = relatedEntry.get(ESMappingConstants.TREE_ORDER).toString();
 
-			if("child".equals(relType)) continue;
+			if("child".equals(relType)) {
+				continue;
+			}
 
 			Relationship rel = FactoryLocator.getRelationshipFactory().byTypeValue(relType);
 
@@ -632,7 +633,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					String previousPropNameValue = m.get(propName);
 					int previousPropNameValueLength = previousPropNameValue!=null?previousPropNameValue.length():0;
 
-					StringBuilder propNameValue = new StringBuilder(previousPropNameValueLength + 36 + 1);
+					StringBuilder propNameValue = new StringBuilder(previousPropNameValueLength + UUID_LENGTH + 1);
 
 					// put a pointer to the related content
 					m.put(propName, propNameValue.append(previousPropNameValue != null ? previousPropNameValue : "")
@@ -642,7 +643,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					int previousOrderKeyValueLength = previousOrderKeyValue!=null?previousOrderKeyValue.length():0;
 					int orderLength = order!=null?order.length():0;
 
-					StringBuilder orderKeyValue = new StringBuilder(previousOrderKeyValueLength + 36 + 1 + orderLength + 1);
+					StringBuilder orderKeyValue = new StringBuilder(previousOrderKeyValueLength + UUID_LENGTH + 1 + orderLength + 1);
 
 					// make a way to sort
 					m.put(orderKey, orderKeyValue.append(previousOrderKeyValue!=null ? previousOrderKeyValue : "")

@@ -803,36 +803,6 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		}
     }
 
-	private class CategoryComparator implements Comparator<Category> {
-
-		public int compare(Category cat1, Category cat2) {
-
-			int returnValue = 0;
-			try
-			{
-				if(cat1.getSortOrder() > cat2.getSortOrder())
-				{
-					returnValue = 1;
-				}
-				else if(cat2.getSortOrder() > cat1.getSortOrder())
-				{
-					returnValue = -1;
-				}
-				else if (Objects.equals(cat1.getSortOrder(), cat2.getSortOrder()))
-				{
-					returnValue = cat1.getCategoryName().compareTo(cat2.getCategoryName());
-				}
-			}
-			catch(Exception ex)
-			{
-				Logger.debug(CategoryFactoryImpl.class, ex.getMessage());
-				//At this point we can not do any comparation as the compareTo it self failed, so just return a -1
-				returnValue = -1;
-			}
-			return returnValue;
-		}
-	}
-
     protected String suggestVelocityVarName(String categoryVelVarName) throws DotDataException {
         DotConnect dc = new DotConnect();
         String var = VelocityUtil.convertToVelocityVariable(categoryVelVarName, false);

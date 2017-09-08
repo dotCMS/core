@@ -428,8 +428,8 @@ public class CategoryAPITest extends IntegrationTestBase {
         assertEquals( parents.get( 0 ), parentCategory );
         //Now it should be something in cache
         cachedCategoriesStr = categoryCache.getParents( childCategory1 );
-        assertNotNull( cachedCategories );
-        assertTrue( cachedCategories.size() == 1 );
+        assertNotNull( cachedCategoriesStr );
+        assertTrue( cachedCategoriesStr.size() == 1 );
 
         //---------------------------------------------------------------
         //CATEGORY 2
@@ -460,8 +460,8 @@ public class CategoryAPITest extends IntegrationTestBase {
         assertEquals( parents.get( 0 ), childCategory2 );
         //Now it should be something in cache
         cachedCategoriesStr = categoryCache.getParents( subCategory );
-        assertNotNull( cachedCategories );
-        assertTrue( cachedCategories.size() == 1 );
+        assertNotNull( cachedCategoriesStr );
+        assertTrue( cachedCategoriesStr.size() == 1 );
 
         //***************************************************************
         //Lets add another subcategory to verify we are cleaning the caches

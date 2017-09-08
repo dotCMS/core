@@ -16,11 +16,13 @@ import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.repackage.org.apache.commons.collections.CollectionUtils;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.jboss.util.Strings;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.services.VanityUrlServices;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -1220,7 +1222,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return perAPI.filterCollection(conFac.getRelatedLinks(contentlet), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
     }
 
-    private List<ContentletSearch> getRelatedContentSearchFromIndex(Contentlet contentlet,Relationship rel, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
+    private List<ContentletSearch> getRelatedContentSearchFromIndex(Contentlet contentlet,Relationship rel, User user, boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
 
         String q = getRelatedContentESQuery(contentlet, rel);
 
@@ -1230,7 +1233,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private List<Contentlet> getRelatedContentFromIndex(Contentlet contentlet,Relationship rel, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
 
         List<ContentletSearch> contentletSearchList = getRelatedContentSearchFromIndex(contentlet, rel, user, respectFrontendRoles);
-        return contentletSearchList.stream().map(ESContentletAPIImpl::transformContentletSearchToContent).collect(Collectors.toList());
+        return contentletSearchList.stream().map(ESContentletAPIImpl::transformContentletSearchToContent).collect(CollectionsUtils.toImmutableList());
     }
 
     private static Contentlet transformContentletSearchToContent(ContentletSearch contentletSearch) {
@@ -1320,12 +1323,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
-    public List<Contentlet> getRelatedContentFromIndex(Contentlet contentlet,Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
+    public List<Contentlet> getRelatedContentFromIndex(Contentlet contentlet,Relationship rel, boolean pullByParent,
+                                                       User user, boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
 
         String q = getRelatedContentESQuery(contentlet, rel, pullByParent);
+        String sortBy = rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order";
 
-        List<ContentletSearch> contentletSearchList =  searchIndex(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order", user, respectFrontendRoles);
-        return contentletSearchList.stream().map(ESContentletAPIImpl::transformContentletSearchToContent).collect(Collectors.toList());
+        List<ContentletSearch> contentletSearchList =
+                searchIndex(q, -1, 0, sortBy, user, respectFrontendRoles);
+        return contentletSearchList.stream().map(ESContentletAPIImpl::transformContentletSearchToContent)
+                .collect(CollectionsUtils.toImmutableList());
 
     }
 
@@ -2362,7 +2370,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             Set<Tree> uniqueRelationshipSet = new HashSet<Tree>();
 
             Relationship rel = related.getRelationship();
-            List<Contentlet> conRels = getRelatedContentFromIndex(contentlet,related.getRelationship(), related.isHasParent(), user,respectFrontendRoles) ;
+            List<Contentlet> conRels = getRelatedContentFromIndex(contentlet,related.getRelationship(),
+                    related.isHasParent(), user,respectFrontendRoles) ;
 
             int treePosition = (conRels != null && conRels.size() != 0) ? conRels.size() : 1 ;
             int positionInParent = 1;
@@ -4620,17 +4629,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentRelationships;
     }
 
-    private Map<Relationship, List<Contentlet>> findContentRelationshipsFromIndex(Contentlet contentlet) throws DotDataException, DotSecurityException{
+    private Map<Relationship, List<Contentlet>> findContentRelationshipsFromIndex(Contentlet contentlet)
+            throws DotDataException, DotSecurityException{
         Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<Relationship, List<Contentlet>>();
-        if(contentlet == null)
+        if(contentlet == null) {
             return contentRelationships;
+        }
 
         List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(contentlet.getStructure());
         for (Relationship r : rels) {
             if(!contentRelationships.containsKey(r)){
                 contentRelationships.put(r, new ArrayList<Contentlet>());
             }
-            List<Contentlet> cons = getRelatedContentFromIndex(contentlet, r, APILocator.getUserAPI().getSystemUser(), true);
+            List<Contentlet> cons = getRelatedContentFromIndex(contentlet, r, APILocator.getUserAPI().getSystemUser(),
+                    true);
             for (Contentlet c : cons) {
                 List<Contentlet> l = contentRelationships.get(r);
                 l.add(c);

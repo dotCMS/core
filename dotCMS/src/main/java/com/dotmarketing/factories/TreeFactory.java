@@ -57,19 +57,21 @@ public class TreeFactory {
 
 	public static Tree getTree(String parent, String child, String relationType) {
 		try {
-			DotConnect dc = new DotConnect();
+			final DotConnect dc = new DotConnect();
 			String query = "select * from tree where parent = ? and child = ? ";
 			if(relationType != null) query += " and relation_type = ?";
 
 			dc.setSQL(query);
 			dc.addParam(parent);
 			dc.addParam(child);
-			if(relationType != null) dc.addParam(relationType);
+			if(relationType != null) {
+				dc.addParam(relationType);
+			}
 
-			List<Map<String, Object>> res = dc.loadObjectResults();
+			final List<Map<String, Object>> res = dc.loadObjectResults();
 			if(res!=null && !res.isEmpty()) {
-				Tree tree  = new Tree();
-				Map resultMap = res.get(0);
+				final Tree tree  = new Tree();
+				final Map resultMap = res.get(0);
 				tree.setChild(resultMap.get("child").toString());
 				tree.setParent(resultMap.get("parent").toString());
 				tree.setRelationType(resultMap.get("relation_type").toString());
@@ -311,7 +313,7 @@ public class TreeFactory {
 		}
 	}
 
-	public static void deleteTreesByParentById(String parentId) throws DotDataException {
+	public static void deleteTreesByParentById(final String parentId) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		dc.setSQL("DELETE FROM tree WHERE parent = ?").addParam(parentId).loadResult();
 	}
@@ -325,7 +327,8 @@ public class TreeFactory {
 		}
 	}
 
-	public static void deleteTreesByParentAndChildAndRelationType(String parent, String child, String relationType) {
+	public static void deleteTreesByParentAndChildAndRelationType(final String parent, final String child,
+																  final String relationType) {
 		try {
 
 			DotConnect dc = new DotConnect();
@@ -357,7 +360,7 @@ public class TreeFactory {
 		}
 	}
 
-	public static void deleteTreesByChildId(String childId) throws DotDataException {
+	public static void deleteTreesByChildId(final String childId) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		dc.setSQL("DELETE FROM tree WHERE child = ?").addParam(childId).loadResult();
 	}

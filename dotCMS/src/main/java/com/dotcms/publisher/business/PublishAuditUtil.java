@@ -102,7 +102,7 @@ public class PublishAuditUtil {
         assuming the content will always exist in the default language is wrong.
          */
         List<Contentlet> allLanguages = APILocator.getContentletAPI().search( "+identifier:" + identifier, 0, 0, "moddate", user, false );
-        if(allLanguages.size()>0) {
+        if(!allLanguages.isEmpty()) {
             /*
             For display purposes we are trying to return the contentlet with the default language, if
             nothing found for the default language just return the first one.

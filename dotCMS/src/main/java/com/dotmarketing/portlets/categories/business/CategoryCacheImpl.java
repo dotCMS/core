@@ -46,7 +46,6 @@ public class CategoryCacheImpl extends CategoryCache {
 	@SuppressWarnings("unchecked")
 	@Override
 	protected List<Category> getChildren(Categorizable parent) throws DotDataException {
-		List<String> childrenIds = null;
 		try{
 			return (List<Category>) cache.get(categoryChildrenCacheGroup + parent.getCategoryId(),categoryChildrenCacheGroup);
 		}catch (DotCacheException e) {
@@ -152,7 +151,7 @@ public class CategoryCacheImpl extends CategoryCache {
 
         //Updating the associated parent caches to keep it consistent
         if ( childrenIds != null ) {
-            for ( Category child : childrenIds ) {
+            for (final Category child : childrenIds ) {
                 cache.remove( categoryParentsCacheGroup + child.getCategoryId(), categoryParentsCacheGroup );
             }
         }

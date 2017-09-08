@@ -329,8 +329,12 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 	@Override
 	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
 
 		Contentlet that = (Contentlet) o;
 
