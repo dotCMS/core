@@ -685,33 +685,37 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void cleanBinaryField() throws DotDataException, DotSecurityException {
 
-        //Getting a known structure
-        Structure structure = structures.iterator().next();
+        try {
+            //Getting a known structure
+            Structure structure = structures.iterator().next();
 
-        Long identifier = uniqueIdentifier.get(structure.getName());
+            Long identifier = uniqueIdentifier.get(structure.getName());
 
-        //Search the contentlet for this structure
-        List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
-        Contentlet contentlet = contentletList.iterator().next();
+            //Search the contentlet for this structure
+            List<Contentlet> contentletList = contentletAPI.findByStructure(structure, user, false, 0, 0);
+            Contentlet contentlet = contentletList.iterator().next();
 
-        //Getting a known binary field for this structure
-        //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
+            //Getting a known binary field for this structure
+            //TODO: The definition of the method getFieldByName receive a parameter named "String:structureType", some examples I saw send the Inode, but actually what it needs is the structure name....
 
-        Field foundBinaryField = FieldFactory.getFieldByVariableName( structure.getInode(), "junitTestBinary" + identifier );
+            Field foundBinaryField = FieldFactory.getFieldByVariableName(structure.getInode(), "junitTestBinary" + identifier);
 
 
-        //Getting the current value for this field
-        Object value = contentletAPI.getFieldValue( contentlet, foundBinaryField );
+            //Getting the current value for this field
+            Object value = contentletAPI.getFieldValue(contentlet, foundBinaryField);
 
-        //Validations
-        assertNotNull( value );
-        assertTrue( ((java.io.File) value).exists() );
+            //Validations
+            assertNotNull(value);
+            assertTrue(((java.io.File) value).exists());
 
-        //Cleaning the binary field
-        contentletAPI.cleanField( structure, foundBinaryField, user, false );
+            //Cleaning the binary field
+            contentletAPI.cleanField(structure, foundBinaryField, user, false);
 
-        //Validations
-        assertFalse( ((java.io.File) value).exists() );
+            //Validations
+            assertFalse(((java.io.File) value).exists());
+        } finally {
+            HibernateUtil.setAsyncCommitListenersFinalization(true);
+        }
     }
 
     /**

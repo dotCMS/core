@@ -3,6 +3,7 @@ package com.dotmarketing.factories;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 
@@ -10,7 +11,9 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Logger;
 
@@ -19,6 +22,8 @@ import com.dotmarketing.util.Logger;
  * @author maria
  */
 public class TreeFactory {
+
+	private static final String CHILD_RELATION_TYPE = "child";
 
 	public static Tree getTree(String x) {
 		try {
@@ -43,27 +48,38 @@ public class TreeFactory {
 	}
 	
 	public static Tree getTree(Inode parent, Inode child) {
-		String relationType = "child";
-		return getTree(parent, child, relationType);
+		return getTree(parent, child, CHILD_RELATION_TYPE);
 	}
 
 	public static Tree getTree(String parent, String child) {
-		String relationType = "child";
-		return getTree(parent, child, relationType);
+		return getTree(parent, child, CHILD_RELATION_TYPE);
 	}
 
 	public static Tree getTree(String parent, String child, String relationType) {
 		try {
-			String query = "from tree in class com.dotmarketing.beans.Tree where parent = ? and child = ? ";
+			final DotConnect dc = new DotConnect();
+			String query = "select * from tree where parent = ? and child = ? ";
 			if(relationType != null) query += " and relation_type = ?";
-			HibernateUtil dh = new HibernateUtil(Tree.class);
-			dh.setQuery(query);
-			dh.setParam(parent);
-			dh.setParam(child);
-			if(relationType != null) dh.setParam(relationType);
 
-			return (Tree) dh.load();
-		} catch (Exception e) {
+			dc.setSQL(query);
+			dc.addParam(parent);
+			dc.addParam(child);
+			if(relationType != null) {
+				dc.addParam(relationType);
+			}
+
+			final List<Map<String, Object>> res = dc.loadObjectResults();
+			if(res!=null && !res.isEmpty()) {
+				final Tree tree  = new Tree();
+				final Map resultMap = res.get(0);
+				tree.setChild(resultMap.get("child").toString());
+				tree.setParent(resultMap.get("parent").toString());
+				tree.setRelationType(resultMap.get("relation_type").toString());
+				tree.setTreeOrder(Integer.parseInt(resultMap.get("tree_order").toString()));
+				return tree;
+			}
+
+		} catch (DotDataException e) {
 			Logger.warn(TreeFactory.class, "getTree failed:" + e, e);
 		}
 
@@ -278,9 +294,14 @@ public class TreeFactory {
 
 	public static void deleteTree(Tree tree) {
 		try {
-			HibernateUtil.delete(tree);
-		} catch (DotHibernateException e) {
-		  throw new DotStateException(e);
+			DotConnect dc = new DotConnect();
+			dc.setSQL("delete from tree where parent = ? and child = ? and tree.relation_type = ?");
+			dc.addParam(tree.getParent());
+			dc.addParam(tree.getChild());
+			dc.addParam(tree.getRelationType());
+			dc.loadResult();
+		} catch (DotDataException e) {
+			throw new DotStateException(e);
 		}
 	}
 
@@ -292,12 +313,32 @@ public class TreeFactory {
 		}
 	}
 
+	public static void deleteTreesByParentById(final String parentId) throws DotDataException {
+		DotConnect dc = new DotConnect();
+		dc.setSQL("DELETE FROM tree WHERE parent = ?").addParam(parentId).loadResult();
+	}
+
 	public static void deleteTreesByParentAndRelationType(Inode parent, String relationType) {
 		try {
 			HibernateUtil.delete("from tree in class com.dotmarketing.beans.Tree where tree.parent = '" + parent.getInode() + 
 					"' and tree.relationType = '" + relationType + "'");
 		} catch (DotHibernateException e) {
 		  throw new DotStateException(e);
+		}
+	}
+
+	public static void deleteTreesByParentAndChildAndRelationType(final String parent, final String child,
+																  final String relationType) {
+		try {
+
+			DotConnect dc = new DotConnect();
+			dc.setSQL("delete from tree where parent = ? and child = ? and tree.relation_type = ?");
+			dc.addParam(parent);
+			dc.addParam(child);
+			dc.addParam(relationType);
+			dc.loadResult();
+		} catch (DotDataException e) {
+			throw new DotStateException(e);
 		}
 	}
 
@@ -317,6 +358,11 @@ public class TreeFactory {
 		} catch (DotHibernateException e) {
 		  throw new DotStateException(e);
 		}
+	}
+
+	public static void deleteTreesByChildId(final String childId) throws DotDataException {
+		DotConnect dc = new DotConnect();
+		dc.setSQL("DELETE FROM tree WHERE child = ?").addParam(childId).loadResult();
 	}
 
 	public static void deleteTreesByRelationType(String relationType) {

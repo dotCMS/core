@@ -10,19 +10,12 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.client.Client;
-
-import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.repackage.net.sf.hibernate.*;
 import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
 import com.dotcms.repackage.net.sf.hibernate.cfg.Mappings;
@@ -32,8 +25,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.workflows.business.WorkflowAPIImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -82,6 +73,8 @@ public class HibernateUtil {
             return TransactionListenerStatus.ENABLED;
         }
     };
+
+	private static final ThreadLocal<Boolean> asyncCommitListenersFinalization = ThreadLocal.withInitial(()->true);
 	
 	private static final ThreadLocal< Map<String,DotRunnable> > commitListeners=new ThreadLocal<Map<String,DotRunnable>>() {
 	    protected java.util.Map<String,DotRunnable> initialValue() {
@@ -731,6 +724,14 @@ public class HibernateUtil {
 	public static void setTransactionListenersStatus(TransactionListenerStatus status) {
 		listenersStatus.set(status);
 	}
+
+	public static boolean getAsyncCommitListenersFinalization() {
+		return asyncCommitListenersFinalization.get();
+	}
+
+	public static void setAsyncCommitListenersFinalization(boolean finalizeAsync) {
+		asyncCommitListenersFinalization.set(finalizeAsync);
+	}
 	
 	public static void addCommitListener(DotRunnable listener) throws DotHibernateException {
 	    addCommitListener(UUIDGenerator.generateUuid(),listener);
@@ -800,56 +801,19 @@ public class HibernateUtil {
 	}
 
 	private static void finalizeCommitListeners() throws DotDataException{
-		
-		List<DotRunnable> listeners = new ArrayList<DotRunnable>(commitListeners.get().values());
+		final List<DotRunnable> listeners = new ArrayList<>(commitListeners.get().values());
 		commitListeners.get().clear();
-		
-		Set<String> reindexInodes= new HashSet<String>();
-		List<Contentlet> contentToIndex = new ArrayList<Contentlet>();
-		
-		
-		List<List<Contentlet>> listOfLists = new ArrayList<List<Contentlet>>();
-		int batchSize = Config.getIntProperty("INDEX_COMMIT_LISTENER_BATCH_SIZE", 50);
-		
-		
-		for(DotRunnable runner : listeners){
-			if(runner instanceof ReindexRunnable){
-				ReindexRunnable rrunner = (ReindexRunnable) runner;
-				if(rrunner.getAction().equals(ReindexRunnable.Action.REMOVING)){
-					rrunner.run();
-					continue;
-				}
-				List<Contentlet> cons  	=  rrunner.getReindexIds();
-				for(Contentlet con : cons){
-					if(!reindexInodes.contains(con.getInode())){
-						reindexInodes.add(con.getInode());
-						contentToIndex.add(con);
-						if(contentToIndex.size() == batchSize){
-							listOfLists.add(contentToIndex);
-							contentToIndex = new ArrayList<Contentlet>();
-						}
-					}
-				}
-			} else {
-				runner.run();
-			}
-		}
-		listOfLists.add(contentToIndex);
-		
-		for(List<Contentlet> batchList : listOfLists){
-			
-			new ReindexRunnable(batchList, ReindexRunnable.Action.ADDING, null, false) {}.run();
-		}
-		
 
+		final DotRunnableThread thread = new DotRunnableThread(listeners);
+
+		if(getAsyncCommitListenersFinalization()
+				&& Config.getBooleanProperty("REINDEX_ON_SAVE_IN_SEPARATE_THREAD",true)){
+			thread.start();
+		}  else{
+			thread.run();
+		}
 	}
-	
-	
-	
-	
-	
-	
-	
+
 	public static void startTransaction()  throws DotHibernateException{
 		try{
 

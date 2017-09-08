@@ -5,12 +5,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.sql.Connection;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
@@ -342,7 +337,10 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 					" contents, starting with identifier [ " + contentToIndex.get(0).getMap().get("identifier") + "]");
 		}
 
-		for(Contentlet con : contentToIndex) {
+		// eliminate dups
+		Set<Contentlet> contentToIndexSet = new HashSet<>(contentToIndex);
+
+		for(Contentlet con : contentToIndexSet) {
             String id=con.getIdentifier()+"_"+con.getLanguageId();
             IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
             Gson gson=new Gson();
