@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.org.apache.oro.text.regex.MalformedPatternException;
 import com.dotcms.repackage.org.apache.oro.text.regex.MatchResult;
 import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Compiler;
@@ -72,35 +74,36 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		}
 	}
 
+	@CloseDBIfOpened
 	public List<Template> findTemplatesAssignedTo(Host parentHost) throws DotDataException {
 		return FactoryLocator.getTemplateFactory().findTemplatesAssignedTo(parentHost, false);
 	}
 
+	@CloseDBIfOpened
 	public List<Template> findTemplatesAssignedTo(Host parentHost, boolean includeArchived) throws DotDataException {
 		return FactoryLocator.getTemplateFactory().findTemplatesAssignedTo(parentHost, includeArchived);
 	}
 
+	@CloseDBIfOpened
 	public List<Template> findTemplatesUserCanUse(User user, String hostName, String query, boolean searchHost,int offset, int limit) throws DotDataException, DotSecurityException {
 		return FactoryLocator.getTemplateFactory().findTemplatesUserCanUse(user, hostName, query, searchHost, offset, limit);
 	}
 
+	@WrapInTransaction
 	public void delete(Template template) throws DotDataException {
 		FactoryLocator.getTemplateFactory().delete(template);
 	}
 
 	@Override
-	public Template copy(Template sourceTemplate, User user) throws DotDataException, DotSecurityException {
+	public Template copy(final Template sourceTemplate, final User user) throws DotDataException, DotSecurityException {
 
-		Identifier id = APILocator.getIdentifierAPI().find(sourceTemplate.getIdentifier());
+		final Identifier identifier = APILocator.getIdentifierAPI().find(sourceTemplate.getIdentifier());
+		final Host  host = APILocator.getHostAPI().find(identifier.getHostId(), user, false);
 
-		Host  h = APILocator.getHostAPI().find(id.getHostId(), user, false);
-
-
-
-		return copy(sourceTemplate, h, false, false, user, false);
-
+		return copy(sourceTemplate, host, false, false, user, false);
 	}
 
+	@WrapInTransaction
 	@Override
 	public Template copy(Template sourceTemplate, Host destination, boolean forceOverwrite, List<ContainerRemapTuple> containerMappings, User user,
 			boolean respectFrontendRoles)
@@ -167,6 +170,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		return newTemplate;
 	}
 
+	// todo: should be on a transaction???
 	public Template copy(Template sourceTemplate, Host destination, boolean forceOverwrite,
 			boolean copySourceContainers, User user, boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException {
@@ -207,7 +211,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	}
 
 
-
+	@WrapInTransaction
 	public Template saveTemplate(Template template, Host destination, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		boolean existingId=false, existingInode=false;
 	    if(UtilMethods.isSet(template.getIdentifier())) {
@@ -281,6 +285,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
         return template;
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 	    if(template!=null && InodeUtils.isSet(template.getInode())) {
@@ -426,6 +431,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 	}
 
+	@WrapInTransaction
 	public boolean delete(Template template, User user, boolean respectFrontendRoles) throws DotSecurityException,
 			Exception {
 		if(permissionAPI.doesUserHavePermission(template, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
@@ -441,6 +447,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 	}
 
+	@CloseDBIfOpened
 	public List<Template> findTemplates(User user, boolean includeArchived,
 			Map<String, Object> params, String hostId, String inode, String identifier, String parent,
 			int offset, int limit, String orderBy) throws DotSecurityException,
@@ -448,6 +455,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		return templateFactory.findTemplates(user, includeArchived, params, hostId, inode, identifier, parent, offset, limit, orderBy);
 	}
 
+	@CloseDBIfOpened
 	@Override
 	public Template find(String inode, User user,  boolean respectFrontEndRoles) throws DotSecurityException,
 			DotDataException {
@@ -460,6 +468,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 
 	}
 
+	@WrapInTransaction
 	public void associateContainers(List<Container> containerIdentifiers,Template template) throws DotHibernateException {
 		templateFactory.associateContainers(containerIdentifiers, template);
 	}
@@ -475,6 +484,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
         return deleteOldVersions(assetsOlderThan,"template");
     }
 
+    @WrapInTransaction
     public void updateThemeWithoutVersioning(String templateInode, String theme) throws DotDataException{
     	templateFactory.updateThemeWithoutVersioning(templateInode, theme);
     }
@@ -488,6 +498,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 	 * @throws DotStateException There is a data inconsistency
 	 * @throws DotSecurityException 
 	 */
+	@WrapInTransaction
 	public void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException{
 		templateFactory.updateUserReferences(userId, replacementUserId);
 	}

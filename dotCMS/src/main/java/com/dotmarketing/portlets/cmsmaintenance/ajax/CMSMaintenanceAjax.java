@@ -22,6 +22,7 @@ import java.util.zip.ZipOutputStream;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
 import org.quartz.JobExecutionContext;
 
@@ -356,7 +357,7 @@ public class CMSMaintenanceAjax {
 				String x = UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');
 				File zipFile = new File(backupFilePath + File.separator + "backup_" + x + "_.zip");
 				message +="Zipping up to file:" + zipFile.getAbsolutePath();
-				BufferedOutputStream bout = new BufferedOutputStream(new FileOutputStream(zipFile));
+				BufferedOutputStream bout = new BufferedOutputStream(new FileOutputStream(zipFile)); // todo: change it to new nio api
 				Logger.info(this, "Creating zipped backup file in "+ backupFilePath + " folder. Please wait");
 				zipTempDirectoryToStream(bout);
 				message +=". Done.";
@@ -669,6 +670,8 @@ public class CMSMaintenanceAjax {
 				Logger.error(this,e.getMessage(),e);
 			} catch (SystemException e) {
 				Logger.error(this,e.getMessage(),e);
+			} finally {
+				DbConnectionFactory.closeSilently();
 			}
 
 		}

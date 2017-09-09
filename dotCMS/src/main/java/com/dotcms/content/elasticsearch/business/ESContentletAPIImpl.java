@@ -204,11 +204,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return APILocator.getEsSearchAPI().esSearch(esQuery, live, user, respectFrontendRoles);
     }
 
+    @CloseDBIfOpened
     @Override
     public Object loadField(String inode, Field f) throws DotDataException {
         return contentFactory.loadField(inode, f.getFieldContentlet());
     }
 
+    @CloseDBIfOpened
     @Override
     public List<Contentlet> findAllContent(int offset, int limit) throws DotDataException{
         return contentFactory.findAllCurrent(offset, limit);
@@ -252,6 +254,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    @CloseDBIfOpened
     @Override
     public List<Contentlet> findByStructure(String structureInode, User user,   boolean respectFrontendRoles, int limit, int offset) throws DotDataException,DotSecurityException {
         List<Contentlet> contentlets = contentFactory.findByStructure(structureInode, limit, offset);
@@ -263,6 +266,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return findByStructure(structure.getInode(), user, respectFrontendRoles, limit, offset);
     }
 
+    @CloseDBIfOpened
     @Override
     public Contentlet findContentletForLanguage(long languageId,    Identifier contentletId) throws DotDataException, DotSecurityException {
         Contentlet con = contentFactory.findContentletForLanguage(languageId, contentletId);
@@ -314,6 +318,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentFactory.findContentlets(inodes);
     }
 
+    @CloseDBIfOpened
     @Override
     public List<Contentlet> findContentletsByFolder(Folder parentFolder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
@@ -326,6 +331,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    @CloseDBIfOpened
     @Override
     public List<Contentlet> findContentletsByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         try {
@@ -336,6 +342,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    @CloseDBIfOpened
     @Override
     public List<Contentlet> findContentletsByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         try {
@@ -359,6 +366,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    @CloseDBIfOpened
     @Override
     public List<Contentlet> findContentletsByHostBaseType(Host parentHost, List<Integer> includingBaseTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         try {
@@ -1067,6 +1075,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    @WrapInTransaction
     @Override
     public void addLinkToContentlet(Contentlet contentlet, String linkInode, String relationName, User user, boolean respectFrontendRoles)throws DotSecurityException, DotDataException {
         if(contentlet.getInode().equals(""))
@@ -1079,6 +1088,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    @CloseDBIfOpened
     @Override
     public List<Contentlet> findPageContentlets(String HTMLPageIdentifier,String containerIdentifier, String orderby, boolean working, long languageId, User user, boolean respectFrontendRoles)    throws DotSecurityException, DotDataException {
         List<Contentlet> contentlets = contentFactory.findPageContentlets(HTMLPageIdentifier, containerIdentifier, orderby, working, languageId);
@@ -1091,6 +1101,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return getAllRelationships(find(contentletInode, user, respectFrontendRoles));
     }
 
+    @CloseDBIfOpened
     @Override
     public ContentletRelationships getAllRelationships(Contentlet contentlet)throws DotDataException {
 
@@ -1159,6 +1170,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return cRelationships;
     }
 
+    @CloseDBIfOpened
     @Override
     public List<Contentlet> getAllLanguages(Contentlet contentlet, Boolean isLiveContent, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
@@ -1220,6 +1232,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
     }
 
+    @CloseDBIfOpened
     @Override
     public Identifier getRelatedIdentifier(Contentlet contentlet,String relationshipType, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
         if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
@@ -1228,6 +1241,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentFactory.getRelatedIdentifier(contentlet, relationshipType);
     }
 
+    @CloseDBIfOpened
     @Override
     public List<Link> getRelatedLinks(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException {
         return permissionAPI.filterCollection(contentFactory.getRelatedLinks(contentlet), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
@@ -2402,6 +2416,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    @CloseDBIfOpened
     @Override
     public boolean isContentEqual(Contentlet contentlet1,Contentlet contentlet2, User user, boolean respectFrontendRoles)throws DotSecurityException, DotDataException {
         if(!permissionAPI.doesUserHavePermission(contentlet1, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
@@ -2418,6 +2433,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return false;
     }
 
+    @CloseDBIfOpened
     @Override
     public List<Contentlet> getSiblings(String identifier)throws DotDataException, DotSecurityException {
         List<Contentlet> contentletList = contentFactory.getContentletsByIdentifier(identifier );
@@ -3603,6 +3619,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         indexAPI.addContentToIndex(contentlet);
     }
 
+    @CloseDBIfOpened
     @Override
     public List<Contentlet> findAllUserVersions(Identifier identifier,User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException {
         List<Contentlet> contentlets = contentFactory.findAllUserVersions(identifier);
@@ -3629,6 +3646,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentlets;
     }
 
+    @CloseDBIfOpened
     @Override
     public String getName(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException,DotContentletStateException, DotDataException {
 
@@ -4534,6 +4552,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return false;
     }
 
+    @CloseDBIfOpened
     @Override
     public com.dotmarketing.portlets.contentlet.business.Contentlet convertContentletToFatContentlet(
             Contentlet cont,
@@ -4595,6 +4614,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentRelationships;
     }
 
+    @WrapInTransaction
     @Override
     public int deleteOldContent(Date deleteFrom) throws DotDataException {
         int results = 0;
@@ -4605,6 +4625,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return results;
     }
 
+    @CloseDBIfOpened
     @Override
     public List<String> findFieldValues(String structureInode, Field field, User user, boolean respectFrontEndRoles) throws DotDataException {
         List<String> result = new ArrayList<String>();
@@ -4804,11 +4825,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return binaryFile;
     }
 
+    @CloseDBIfOpened
     @Override
     public long contentletCount() throws DotDataException {
         return contentFactory.contentletCount();
     }
 
+    @CloseDBIfOpened
     @Override
     public long contentletIdentifierCount() throws DotDataException {
         return contentFactory.contentletIdentifierCount();
@@ -5314,16 +5337,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return found;
     }
 
+    @CloseDBIfOpened
     @Override
     public void UpdateContentWithSystemHost(String hostIdentifier)throws DotDataException, DotSecurityException {
         contentFactory.UpdateContentWithSystemHost(hostIdentifier);
     }
 
+    @CloseDBIfOpened
     @Override
     public void removeUserReferences(String userId)throws DotDataException, DotSecurityException {
         contentFactory.removeUserReferences(userId);
     }
 
+    @WrapInTransaction
     @Override
     public void updateUserReferences(User userToReplace, String replacementUserId, User user) throws DotDataException, DotSecurityException{
         contentFactory.updateUserReferences(userToReplace, replacementUserId, user);

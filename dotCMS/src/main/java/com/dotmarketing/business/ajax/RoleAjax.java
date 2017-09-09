@@ -3,6 +3,7 @@ package com.dotmarketing.business.ajax;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
@@ -894,6 +895,7 @@ public class RoleAjax {
 		return portletTitles;
 	}
 
+	@CloseDBIfOpened
 	public Map<String, Object>  isPermissionableInheriting(String assetId) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException{
 
 		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
