@@ -178,4 +178,22 @@ describe('Site Selector Component', () => {
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
         expect(paginatorService.filter).toEqual(filter);
     }));
+
+    it('should be assign to filter if empty', fakeAsync(() => {
+        const paginatorService = de.injector.get(PaginatorService);
+        paginatorService.filter = 'filter';
+        paginatorService.totalRecords = 2;
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(Observable.of([]));
+
+        fixture.detectChanges();
+
+        const searchableDropdownComponent: SearchableDropdownComponent = de.query(
+            By.css('searchable-dropdown')
+        ).componentInstance;
+
+        searchableDropdownComponent.filterChange.emit('');
+
+        tick();
+        expect(paginatorService.filter).toEqual('');
+    }));
 });
