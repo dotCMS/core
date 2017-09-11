@@ -34,13 +34,15 @@ import static com.dotcms.util.CollectionsUtils.imap;
 @Path("/v1/contenttype/{typeId}/fields")
 public class FieldResource implements Serializable {
 	private final WebResource webResource;
+	private final FieldAPI fieldAPI;
 
 	public FieldResource() {
-		this(new WebResource());
+		this(new WebResource(), APILocator.getContentTypeFieldAPI());
 	}
 
 	@VisibleForTesting
-	public FieldResource(final WebResource webresource) {
+	public FieldResource(final WebResource webresource, final FieldAPI fieldAPI) {
+		this.fieldAPI = fieldAPI;
 		this.webResource = webresource;
 	}
 
@@ -57,7 +59,6 @@ public class FieldResource implements Serializable {
 
 		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
 		final User user = initData.getUser();
-		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 		
 		Response response = null;
 		
@@ -65,10 +66,10 @@ public class FieldResource implements Serializable {
 			final List<Field> fields = new JsonFieldTransformer(fieldsJson).asList();
 
 			for (Field field : fields) {
-				field = fapi.save(field, user);
+				fieldAPI.save(field, user);
 			}
 
-			List<Field> contentTypeFields = fapi.byContentTypeId(typeId);
+			final List<Field> contentTypeFields = fieldAPI.byContentTypeId(typeId);
 			response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(contentTypeFields).mapList())).build();
 		} catch (DotStateException e) {
 
@@ -337,23 +338,22 @@ public class FieldResource implements Serializable {
 
 		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
 		final User user = initData.getUser();
-		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 
 		Response response = null;
 		try {
-			final List<String> deletedIds = new ArrayList<String>();
+			final List<String> deletedIds = new ArrayList<>();
 
 			for (final String fieldId : fieldsID) {
 				try {
-					Field field = fapi.find(fieldId);
-					fapi.delete(field, user);
+					Field field = fieldAPI.find(fieldId);
+					fieldAPI.delete(field, user);
 					deletedIds.add(fieldId);
 				} catch (NotFoundInDbException e) {
 					continue;
 				}
 			}
 
-			final List<Field> contentTypeFields = fapi.byContentTypeId(typeId);
+			final List<Field> contentTypeFields = fieldAPI.byContentTypeId(typeId);
 			response = Response.ok(new ResponseEntityView(imap("deletedIds", deletedIds,
 					"fields", new JsonFieldTransformer(contentTypeFields).mapList()))).build();
 		}catch (Exception e) {
@@ -375,14 +375,12 @@ public class FieldResource implements Serializable {
 
 		final InitDataObject initData = this.webResource.init(null, false, req, false, null);
 		final User user = initData.getUser();
-		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 
 		Response response = null;
 		try {
 
-			Field field = fapi.find(fieldId);
-
-			fapi.delete(field, user);
+			Field field = fieldAPI.find(fieldId);
+			fieldAPI.delete(field, user);
 
 			response = Response.ok(new ResponseEntityView(null)).build();
 
