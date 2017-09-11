@@ -5,21 +5,25 @@ import com.dotcms.repackage.org.dom4j.DocumentHelper;
 import com.dotcms.repackage.org.dom4j.Element;
 import com.dotcms.repackage.org.dom4j.io.OutputFormat;
 import com.dotcms.repackage.org.dom4j.io.XMLWriter;
-import org.junit.runner.Description;
-import org.junit.runner.Result;
-import org.junit.runner.notification.Failure;
-import org.junit.runner.notification.RunListener;
-
-import javax.servlet.http.HttpServletResponse;
-
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.regex.Pattern;
+import javax.servlet.http.HttpServletResponse;
+import org.junit.runner.Description;
+import org.junit.runner.Result;
+import org.junit.runner.notification.Failure;
+import org.junit.runner.notification.RunListener;
 
 /**
  * Created by Jonathan Gamba.
@@ -35,20 +39,21 @@ public class TestXmlRingingListener extends RunListener {
     private Document document;
     private Element root;
     private String name;
-    int nError = 0;
-    int nFailure = 0;
-    private Element currentFailureNode;
-    DecimalFormat TIME_FORMAT = new DecimalFormat( "######0.000" );
+    private int nError = 0;
+    private int nFailure = 0;
+    private Collection<Element> currentFailureNodes;
+    private DecimalFormat TIME_FORMAT = new DecimalFormat("######0.000");
     private long t1;
 
-    ByteArrayOutputStream err = new ByteArrayOutputStream();
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    private ByteArrayOutputStream err = new ByteArrayOutputStream();
+    private ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-    PrintStream originalErr;
-    PrintStream originalOut;
+    private PrintStream originalErr;
+    private PrintStream originalOut;
 
     public TestXmlRingingListener ( File reportDirectory ) {
         this.reportDirectory = reportDirectory;
+        this.currentFailureNodes = new ArrayList<>();
     }
 
     private String formatTime ( long time ) {
@@ -139,7 +144,8 @@ public class TestXmlRingingListener extends RunListener {
      */
     @Override
     public void testFinished ( Description description ) throws Exception {
-    	originalOut.println( (currentFailureNode != null) ? " FAILED" : " PASSED");
+        originalOut.println((!this.currentFailureNodes.isEmpty()) ? " FAILED"
+                : " PASSED");
 
         long time = System.currentTimeMillis() - t1;
 
@@ -147,10 +153,16 @@ public class TestXmlRingingListener extends RunListener {
         currentTestcase.addAttribute( "time", formatTime( time ) );
         currentTestcase.addAttribute( "classname", description.getClassName() );
         currentTestcase.addAttribute( "name", description.getMethodName() );
-        if ( currentFailureNode != null ) {
-            currentTestcase.add( currentFailureNode );
-            currentFailureNode = null;
+
+        //Adding the errors and failures to this test, a test could have multiple errors
+        if (!this.currentFailureNodes.isEmpty()) {
+            for (Element trace : this.currentFailureNodes) {
+                currentTestcase.add(trace);
+            }
+
+            this.currentFailureNodes.clear();
         }
+
     }
 
     /**
@@ -169,24 +181,26 @@ public class TestXmlRingingListener extends RunListener {
     }
 
     private void error ( Failure failure ) {
-        nError++;
-        final String elementName = "error";
-        currentFailureNode = createFailure( elementName, failure );
+
+        if (this.currentFailureNodes.isEmpty()) {
+            nError++;
+        }
+
+        this.currentFailureNodes.add(createFailure("error", failure));
     }
 
-    private Element createFailure ( String elementName, Failure failure ) {
-
-        final Element element = DocumentHelper.createElement( elementName );
-        element.addAttribute( "message", failure.getMessage() );
-        element.addAttribute( "type", failure.getException().getClass().getName() );
-        element.addText( failure.getTrace() );
-        return element;
-    }
-
-    private void failure ( Failure failure ) {
-
+    private void failure(Failure failure) {
         nFailure++;
-        currentFailureNode = createFailure( "failure", failure );
+        this.currentFailureNodes.add(createFailure("failure", failure));
+    }
+
+    private Element createFailure(String elementName, Failure failure) {
+
+        final Element element = DocumentHelper.createElement(elementName);
+        element.addAttribute("message", failure.getMessage());
+        element.addAttribute("type", failure.getException().getClass().getName());
+        element.addText(failure.getTrace());
+        return element;
     }
 
     /**
