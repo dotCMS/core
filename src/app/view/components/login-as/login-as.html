@@ -14,7 +14,8 @@
                 [totalRecords]="paginationService.totalRecords"
                 placeholder="{{i18nMessages['loginas.select.loginas.user']}}"
                 formControlName="loginAsUser"
-                labelPropertyName="fullName">
+                labelPropertyName="fullName"
+                width="100%">
             </searchable-dropdown>
         </div>
         <div class="form__group" *ngIf="needPassword">

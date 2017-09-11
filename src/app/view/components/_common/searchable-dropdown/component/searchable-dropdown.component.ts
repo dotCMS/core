@@ -46,7 +46,7 @@ export class SearchableDropdownComponent extends BaseComponent
     @Input() rows: number;
     @Input() totalRecords: number;
     @Input() placeholder = '';
-
+    @Input() width: string;
     @Output() change: EventEmitter<any> = new EventEmitter();
     @Output() filterChange: EventEmitter<string> = new EventEmitter();
     @Output() hide: EventEmitter<any> = new EventEmitter();

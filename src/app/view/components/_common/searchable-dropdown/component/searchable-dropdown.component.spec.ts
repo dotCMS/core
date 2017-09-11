@@ -137,4 +137,19 @@ describe('SearchableDropdownComponent', () => {
 
     expect(placeholderValue).toEqual(comp.valueString);
   });
+
+  it('should set width', () => {
+    comp.width = '50%';
+    fixture.detectChanges();
+
+    const button = fixture.debugElement.query(By.css('button'));
+    expect('50%').toEqual(button.styles.width);
+   });
+
+   it('should width undefined', () => {
+    fixture.detectChanges();
+
+    const button = fixture.debugElement.query(By.css('button'));
+    expect(button.styles.width).toBeNull();
+   });
 });
