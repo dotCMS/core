@@ -116,9 +116,8 @@ export class SiteSelectorComponent implements ControlValueAccessor {
      * @memberof SiteSelectorComponent
      */
     getSitesList(filter = '',  offset = 0): void {
-        if (filter.length) {
-            this.paginationService.filter = filter;
-        }
+        // Set filter if undefined
+        this.paginationService.filter = filter;
         this.paginationService.getWithOffset(offset).subscribe( items => {
             // items.splice(0) is used to return a new object and trigger the change detection in angular
             this.sitesCurrentPage = items.splice(0);
