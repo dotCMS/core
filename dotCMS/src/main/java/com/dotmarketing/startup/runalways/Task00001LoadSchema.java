@@ -11,6 +11,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -96,6 +97,8 @@ public class Task00001LoadSchema implements StartupTask {
 			Logger.fatal(this.getClass(), "Error: " + e.getMessage() + " proccessed "
 					+ processedStatementCount + " statements", e);
 		}
+
+		LicenseManager.getInstance().reloadInstance();
 
 	}
 
