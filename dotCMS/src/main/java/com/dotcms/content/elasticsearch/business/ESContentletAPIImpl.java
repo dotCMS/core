@@ -19,28 +19,14 @@ import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
-import com.dotcms.repackage.javax.ws.rs.HEAD;
-import com.dotcms.repackage.org.apache.commons.collections.CollectionUtils;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.jboss.util.Strings;
-import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.services.VanityUrlServices;
+import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.CollectionsUtils;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.Permission;
-import com.dotmarketing.beans.Tree;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotCacheAdministrator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.Treeable;
+import com.dotmarketing.beans.*;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
@@ -49,15 +35,10 @@ import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.common.reindex.ReindexThread;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.DotRunnable;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.exception.*;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.PublishFactory;
@@ -66,14 +47,7 @@ import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.ContentletCache;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
-import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
-import com.dotmarketing.portlets.contentlet.business.DotLockException;
-import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.business.*;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletAndBinary;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -103,54 +77,25 @@ import com.dotmarketing.services.ContentletServices;
 import com.dotmarketing.services.PageServices;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.AdminLogger;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PaginatedArrayList;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.RegExMatch;
-import com.dotmarketing.util.TrashUtils;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.Serializable;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.springframework.beans.BeanUtils;
-import java.util.stream.Collectors;
+
+import java.io.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.Calendar;
+import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -1287,12 +1232,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         String q = getRelatedContentESQuery(contentlet, rel);
 
         try{
-            return perAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+            return permissionAPI.filterCollection(searchByIdentifier(q, -1, 0, rel.getRelationTypeValue() + "-" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
         }catch (Exception e) {
             if(e.getMessage() != null && e.getMessage().contains("[query_fetch]")){
                 try{
                     APILocator.getContentletIndexAPI().addContentToIndex(contentlet,false,true);
-                    return perAPI.filterCollection(searchByIdentifier(q, 1, 0, rel.getRelationTypeValue() + "" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+                    return permissionAPI.filterCollection(searchByIdentifier(q, 1, 0, rel.getRelationTypeValue() + "" + contentlet.getIdentifier() + "-order" , user, respectFrontendRoles, PermissionAPI.PERMISSION_READ, true), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
                 }catch(Exception ex){
                     throw new DotDataException("Unable look up related content",ex);
                 }
@@ -1341,7 +1286,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
-    public List<Contentlet> getRelatedContent(Contentlet contentlet,Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException {
+    public List<Contentlet> getRelatedContent(Contentlet contentlet,Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
         String q = getRelatedContentESQuery(contentlet, rel, pullByParent);
 
