@@ -186,7 +186,7 @@ var editButtonRow="editEventButtonRow";
     			tabDividerOpen = true;%>
 					</div>
 				</div>
-				<div id="<%=f.getFieldContentlet()%>" dojoType="dijit.layout.ContentPane" title="<%=f.getFieldName()%>">
+				<div id="<%=f.getVelocityVarName()%>" dojoType="dijit.layout.ContentPane" title="<%=f.getFieldName()%>">
 					<div class="wrapperRight" style="height:100%;">
 						<div style="height:20px;"></div>
 			<% } else if(f.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString())) {
