@@ -98,10 +98,20 @@ public class FieldAPIImpl implements FieldAPI {
 	    if (UtilMethods.isSet(field.id())) {
 	    	try {
 	    		oldField = fac.byId(field.id());
+
+	    		if (oldField.sortOrder() != field.sortOrder()){
+	    		    if (oldField.sortOrder() > field.sortOrder()) {
+                        fac.moveSortOrderForward(field.sortOrder(), oldField.sortOrder());
+                    } else {
+                        fac.moveSortOrderBackward(oldField.sortOrder(), field.sortOrder());
+                    }
+                }
 	    	} catch(NotFoundInDbException e) {
 	    		//Do nothing as Starter comes with id but field is unexisting yet
 	    	}
-	    }
+	    }else {
+            fac.moveSortOrderForward(field.sortOrder());
+        }
 
 		Field result = fac.save(field);
 		//update Content Type mod_date to detect the changes done on the field
@@ -184,6 +194,7 @@ public class FieldAPIImpl implements FieldAPI {
 	    	  this.conAPI.cleanField(structure, legacyField, this.userAPI.getSystemUser(), false);    	  
 	      }
 
+	      fac.moveSortOrderBackward(oldField.sortOrder());
 	      fac.delete(field);
 	      //update Content Type mod_date to detect the changes done on the field
 	      contentTypeAPI.updateModDate(type);
