@@ -79,7 +79,6 @@ export class ContentTypeFieldsPropertiesFormComponent extends BaseComponent impl
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        console.log('changes');
         if (changes.formFieldData.currentValue && this.formFieldData) {
 
             if (!this.formFieldData.id) {

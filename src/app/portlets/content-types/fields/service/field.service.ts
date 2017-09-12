@@ -16,7 +16,7 @@ export class FieldService {
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Get,
-                url: '/v1/fieldTypes'
+                url: 'v1/fieldTypes'
             })
             .pluck('entity');
     }

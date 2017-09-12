@@ -119,7 +119,6 @@ describe('ContentTypeFieldsRowComponent', () => {
             let removeField;
 
             const field = this.fieldRow.columns[0].fields[0];
-            console.log('field222', field);
             fixture.detectChanges();
 
             const column = de.query(By.css('.row-columns__item'));
